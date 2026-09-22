@@ -675,6 +675,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
     @Published private(set) var trafficSignPictogram: TrafficSignPresentationCatalog.Sign?
     @Published private(set) var trafficSignEndOverlayVisible = false
+    @Published private(set) var trafficSignEndPictogram: TrafficSignPresentationCatalog.Sign?
     private var trafficSignPresentationCatalog = TrafficSignPresentationCatalog.bundled()
     private var trafficSignDisplayState = TrafficSignDisplayState()
     var trafficSignCityEntryRecognitionAvailable: Bool {
@@ -992,6 +993,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var activeBundleDBSHA256: String?
     private var currentLocalCorrectionSpeedKmh: Int?
     private var currentLocalCorrectionValue: String?
+    private var currentLocalCorrectionIsUser = false
     private var currentBaseSpeedLimitDisplayText: String?
     private var currentBundledUnlimitedSpeedLimitActive = false
     private var currentBaseUnlimitedSpeedLimitActive = false
@@ -1602,7 +1604,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // the national model only on route/download changes leaves the default
         // German model running against another country's map. Reconcile here
         // for every bundle activation, independently of penalty eligibility.
-        switchTrafficSignModelIfNeeded(for: activeMapCountryCode, reason: modelSelectionReason)
+        switchTrafficSignModelIfNeeded(for: countryPackSelection.activeCountry ?? activeMapCountryCode,
+                                       reason: modelSelectionReason)
 
         // Location evidence outranks an installed map, including when the
         // driver has crossed into a country whose map has not been downloaded.
@@ -2129,7 +2132,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let base = EffectiveSpeedLimitState.base(
             localValue: currentLocalCorrectionValue,
             bundledSpeedKmh: currentBundledSpeedLimitKmh,
-            bundledUnlimited: currentBaseUnlimitedSpeedLimitActive
+            bundledUnlimited: currentBaseUnlimitedSpeedLimitActive,
+            localIsUserCorrection: currentLocalCorrectionIsUser
         )
         guard staleBundleSpeedLimitActive,
               base.source == .bundle,
@@ -2144,18 +2148,23 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         )
     }
 
-    private func speedLimitFallbackAfterEnd() -> EffectiveSpeedLimitValue? {
-        if currentBaseEffectiveSpeedLimitState().source == .staleBundle {
-            return nil
+    private func speedLimitFallbackAfterEnd(action: TrafficSignStructuralAction) -> EffectiveSpeedLimitValue? {
+        guard currentBaseEffectiveSpeedLimitState().source != .staleBundle,
+              let context = latestTrafficSignDetectionContext, context.matchedWayStable else { return nil }
+        let country = countryPackSelection.activeCountry ?? activeMapCountryCode
+        let highway: String?
+        if case .cityEntry = action { highway = nil }
+        else { highway = latestTrafficSignMapFix?.geometry.roadClass }
+        let region = SpeedRegulationRegions.bundled?.region(latitude: context.latitude, longitude: context.longitude)
+        let inside: Bool?
+        switch action {
+        case .cityEntry: inside = true
+        case .cityExit: inside = false
+        default:
+            inside = lastLookupCitySource.hasPrefix("settlement:") && lastLookupCitySource.hasSuffix(":high") ? lastLookupInsideCity : nil
         }
-        if let speed = TrafficSignBundleContextPolicy.defaultSpeedKmh(
-            insideCity: lastLookupInsideCity, citySource: lastLookupCitySource
-        ) {
-            return .numeric(speed)
-        }
-        let baseState = currentBaseEffectiveSpeedLimitState()
-        let base = baseState.value
-        return base == .unknown ? nil : base
+        if highway == "motorway", PenaltyCountryCode.alpha2(country) == "DE" { return .unlimited }
+        return TrafficSignRoadDefaultPolicy.speedKmh(country: country, region: region, highway: highway, insideCity: inside).map { .numeric($0) }
     }
 
     private var currentCoordinateForTrafficSignEvaluation: TrafficSignCoordinate? {
@@ -2168,7 +2177,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func publishEffectiveSpeedLimitState(_ state: EffectiveSpeedLimitState) {
         let presentedState: EffectiveSpeedLimitState
-        if state.source == .camera {
+        if state.source == .camera || state.isUserCorrection || state.hasCameraEvidenceMarker {
             presentedState = state
         } else if let speedKmh = trafficSignOverridePolicy.cameraSpeedKmh(
             currentContext: latestTrafficSignDetectionContext
@@ -2263,7 +2272,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard trafficSignRuntime == nil, trafficSignRuntimeLoadTask == nil else { return }
 
         let countryCode = TrafficSignModelPackSelection.availableCountryCode(
-            requestedCountryCode ?? activeMapCountryCode ?? Self.defaultTrafficSignCountryCode
+            requestedCountryCode ?? countryPackSelection.activeCountry ?? activeMapCountryCode ?? Self.defaultTrafficSignCountryCode
         ) ?? Self.defaultTrafficSignCountryCode
         trafficSignRuntimeRequestedCountryCode = countryCode
         trafficSignPresentationCatalog = TrafficSignPresentationCatalog.bundled(countryCode: countryCode)
@@ -2789,8 +2798,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             emission.event.applicabilityDecision?.scope.contextGeneration == trafficSignContextGeneration &&
             emission.event.roadContext?.traversalEpoch == latestTrafficSignDetectionContext?.traversalEpoch &&
             emission.event.roadContext?.sourceSignature.bundleSHA256 == latestTrafficSignDetectionContext?.sourceSignature.bundleSHA256)
-        if displayPermitted && emission.displayObservation?.isSpeedLimitEnd == true {
-            showTrafficSignEndOverlay()
+        if displayPermitted, let observation = emission.displayObservation, observation.isSpeedLimitEnd {
+            showTrafficSignEndOverlay(classID: observation.classID)
         }
         if displayPermitted && trafficSignPictogramEnabled {
             trafficSignDisplayState.consume(emission.displayObservation, catalog: trafficSignPresentationCatalog)
@@ -2844,7 +2853,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let commit = trafficSignEffectiveLimitResolver.commit(
             passage,
             base: currentBaseEffectiveSpeedLimitState(),
-            fallbackSpeedLimitAfterEnd: speedLimitFallbackAfterEnd()
+            fallbackSpeedLimitAfterEnd: speedLimitFallbackAfterEnd(action: passage.action)
         )
         guard commit.applied else {
             appendTSRLog(
@@ -3142,9 +3151,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignEndOverlayTask = nil
         trafficSignEndOverlayGeneration &+= 1
         trafficSignEndOverlayVisible = false
+        trafficSignEndPictogram = nil
     }
 
-    private func showTrafficSignEndOverlay() {
+    private func showTrafficSignEndOverlay(classID: String) {
+        guard let sign = trafficSignPresentationCatalog?.endSign(for: classID) else { return }
+        trafficSignEndPictogram = sign
         trafficSignEndOverlayGeneration &+= 1
         let generation = trafficSignEndOverlayGeneration
         trafficSignEndOverlayTask?.cancel()
@@ -3157,6 +3169,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
             guard let self, self.trafficSignEndOverlayGeneration == generation else { return }
             self.trafficSignEndOverlayVisible = false
+            self.trafficSignEndPictogram = nil
             self.trafficSignEndOverlayTask = nil
         }
     }
@@ -5094,6 +5107,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         let matches = regionalPackCatalog.matches(longitude: location.coordinate.longitude, latitude: location.coordinate.latitude)
         let country = countryPackSelection.update(countries: Set(matches.map(\.country)), timestamp: location.timestamp.timeIntervalSince1970)
+        // Bundled national classifiers do not require downloading that country's
+        // map. Keep the last confirmed selection through border ambiguity and
+        // reject stale/poor fixes above; map refreshes must not undo a crossing.
+        switchTrafficSignModelIfNeeded(for: country, reason: "location_country")
         let os = ProcessInfo.processInfo.operatingSystemVersion
         let state = countryPackRegistry?.decision(
             country: country, platform: "ios", appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "",
@@ -5867,7 +5884,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 : currentIndexedNumeric
             let currentRoadCorrectionChanged = currentWayID != nil
                 && (currentLocalCorrectionSpeedKmh != targetCurrentNumeric
-                    || currentLocalCorrectionValue != targetCurrentValue)
+                    || currentLocalCorrectionValue != targetCurrentValue
+                    || currentLocalCorrectionIsUser != (indexedCurrentCorrection.map { $0.modality != .computer_vision } ?? false))
             localObservations = observations
             localSpeedOverridesByWayID = resolvedNumeric
             localSpeedOverrideValuesByWayID = resolvedValues
@@ -5880,6 +5898,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 }
                 currentLocalCorrectionSpeedKmh = targetCurrentNumeric
                 currentLocalCorrectionValue = targetCurrentValue
+                currentLocalCorrectionIsUser = indexedCurrentCorrection.map { $0.modality != .computer_vision } ?? false
                 currentBaseSpeedLimitDisplayText = Self.speedLimitDisplayText(
                     for: targetCurrentValue
                 )
@@ -5912,7 +5931,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     static func resolveLocalSpeedOverrides(from observations: [LocalObservation]) -> [String: Int] {
         var resolved: [String: Int] = [:]
-        for observation in observations {
+        for observation in observations.filter({ $0.modality != .computer_vision }) + observations.filter({ $0.modality == .computer_vision }) {
             guard isWayWideRuntimeCorrection(observation) else {
                 continue
             }
@@ -5933,7 +5952,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     static func resolveLocalSpeedOverrideValues(from observations: [LocalObservation]) -> [String: String] {
         var resolved: [String: String] = [:]
-        for observation in observations {
+        for observation in observations.filter({ $0.modality != .computer_vision }) + observations.filter({ $0.modality == .computer_vision }) {
             guard isWayWideRuntimeCorrection(observation) else {
                 continue
             }
@@ -5956,7 +5975,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         from observations: [LocalObservation]
     ) -> [String: String] {
         var resolved: [String: String] = [:]
-        for observation in observations {
+        for observation in observations.filter({ $0.modality != .computer_vision }) + observations.filter({ $0.modality == .computer_vision }) {
             guard isWayWideRuntimeCorrection(observation),
                   let wayID = observation.roadCandidateIDs.first?
                     .trimmingCharacters(in: .whitespacesAndNewlines),
@@ -6261,6 +6280,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         currentLocalCorrectionSpeedKmh = nil
                     }
                     currentLocalCorrectionValue = selection.value
+                    currentLocalCorrectionIsUser = true
                     let displayText = Self.speedLimitDisplayText(for: selection.value)
                     currentBaseSpeedLimitDisplayText = displayText
                     currentBaseUnlimitedSpeedLimitActive = false
@@ -6913,6 +6933,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     }
                     self.currentLocalCorrectionSpeedKmh = localOverride
                     self.currentLocalCorrectionValue = localOverrideValue
+                    self.currentLocalCorrectionIsUser = propagatedOverrideValue != nil
+                        || directLocalObservation.map { $0.modality != .computer_vision } == true
                     let baseSpeedLimitDisplayText = Self.speedLimitDisplayText(
                         for: localOverrideValue
                     )
@@ -7642,6 +7664,8 @@ extension DriveSessionViewModel {
     func testRefreshActiveBundleCountry(preferredCountryCode: String? = nil) async {
         await applyCountryContextForActiveBundle(preferredCountryCode: preferredCountryCode)
     }
+
+    func testDiscoverPacks(for location: CLLocation) { discoverPacks(for: location) }
 
     func testWaitForTrafficSignModelLoad(timeout: TimeInterval = 30) async throws {
         let deadline = Date().addingTimeInterval(timeout)

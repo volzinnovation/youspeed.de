@@ -1043,6 +1043,61 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
     @MainActor
+    func testAllFiveNationalMappingsReachTheCorrectRuntimeActionsAndArtwork() throws {
+        let cases: [String: [String: TrafficSignStructuralAction]] = [
+            "DE": ["no:end": .allRestrictionsEnd, "maxspeed:end": .maximumSpeedEnd(nil), "zone:30:end": .zoneEnd(30)],
+            "BE": ["no:end": .allRestrictionsEnd, "city:start": .cityEntry("BE"), "city:end": .cityExit, "zone:50:end": .zoneEnd(50)],
+            "FR": ["B31": .allRestrictionsEnd, "B33-70": .maximumSpeedEnd(70), "B14-45": .postedMaximum(45), "B30": .zoneStart(30), "B51": .zoneEnd(30), "B52": .zoneStart(20), "B53": .zoneEnd(20), "B54": .pedestrianZoneStart, "B55": .pedestrianZoneEnd, "EB10": .cityEntry("FR"), "EB20": .cityExit, "C208": .motorwayExit, "C108": .motorroadExit],
+            "NL": ["no:end": .allRestrictionsEnd, "maxspeed:100": .postedMaximum(100), "zone:60:end": .zoneEnd(60), "zone:pedestrian": .pedestrianZoneStart],
+            "CH": ["no:end": .allRestrictionsEnd, "maxspeed:end": .maximumSpeedEnd(nil), "zone:calm": .zoneStart(20), "zone:calm:end": .zoneEnd(20), "zone:pedestrian:end": .pedestrianZoneEnd],
+        ]
+        for country in ["DE", "BE", "FR", "NL", "CH"] {
+            let directory = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(countryCode: country)
+            let decoder = JSONDecoder(); decoder.keyDecodingStrategy = .convertFromSnakeCase
+            let pack = try decoder.decode(TrafficSignModelPackManifest.self, from: Data(contentsOf: directory.appendingPathComponent("manifest.json")))
+            let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled(countryCode: country))
+            XCTAssertEqual(pack.classMapping.map(\.classId), catalog.classLabels)
+            for mapping in pack.classMapping {
+                let candidate = TrafficSignRecognitionCandidate(rawClassId: mapping.classId, rawLabel: mapping.label,
+                    semanticKind: mapping.semantic.kind.rawValue, value: mapping.semantic.value, unit: mapping.semantic.unit,
+                    rawScore: 0.99, calibratedConfidence: nil, boundingBox: .init(x: 0.6, y: 0.3, width: 0.1, height: 0.1), trackId: nil, evidenceFrames: 2)
+                let action = TrafficSignStructuralAction.normalized(from: candidate, countryCode: country)
+                if let expected = cases[country]?[mapping.classId] { XCTAssertEqual(action, expected, country + ":" + mapping.classId) }
+                if mapping.semantic.kind == .unknown { XCTAssertFalse(action.passageEventEligible, country + ":" + mapping.classId) }
+            }
+            let end = try XCTUnwrap(catalog.endSign(for: country == "FR" ? "B31" : "no:end"))
+            XCTAssertNotNil(end.imageURL())
+            XCTAssertEqual(catalog.endSign(for: "maxspeed:end")?.imagePath, end.imagePath)
+            XCTAssertNil(catalog.endSign(for: "zone:unknown:end"))
+            XCTAssertFalse(catalog.sign(for: "maxheight")?.displayEligible ?? false)
+        }
+    }
+
+    func testPacaBundleFindsExitTopologyOutsideTightMatchRadiusWithoutWayLinks() throws {
+        let sqlURL = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "paca-exit-topology-v1", withExtension: "sql"))
+        let dbURL = FileManager.default.temporaryDirectory.appendingPathComponent("paca-exit-\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: dbURL) }
+        var db: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(dbURL.path, &db), SQLITE_OK)
+        XCTAssertEqual(sqlite3_exec(db, try String(contentsOf: sqlURL), nil, nil, nil), SQLITE_OK)
+        sqlite3_close(db)
+        let service = V3SpeedLimitService(dbPath: dbURL.path, countryCode: "FR",
+            matchingModel: MatcherDebugProfile.defaultProfile.matchingModel)
+        for (lat, lon, way, road) in [(43.8928129, 4.9207605, "135439915", "motorway"),
+            (43.8948728, 4.9188749, "4355708", "motorway"), (43.8974263, 4.9177386, "4077706", "motorway_link")] {
+            let result = try service.lookupSpeedLimit(lat: lat, lon: lon, radiusM: 15, maxCandidates: 32,
+                headingDeg: 335, headingAccuracyDeg: 5, speedKmh: 80, horizontalAccuracyM: 5, gpsSignalBars: 4)
+            XCTAssertEqual(result.wayID, way)
+            let geometry = try XCTUnwrap(result.applicabilityGeometry)
+            XCTAssertEqual(geometry.roadClass, road)
+            if road == "motorway" {
+                XCTAssertEqual(geometry.postedSpeedKmh, 130)
+                XCTAssertTrue(geometry.branches.contains { $0.wayId == "4077706" && $0.endpointLinked && $0.roadClass == "motorway_link" })
+            }
+        }
+    }
+
+    @MainActor
     func testStartupRestoresBelgiumTrafficSignModelWithoutLocationOrBundleSwitch() async throws {
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
@@ -1093,6 +1148,19 @@ final class SpeedConsumerTests: XCTestCase {
         try await model.testWaitForTrafficSignModelLoad()
         XCTAssertEqual(model.trafficSignRecognitionModelPackID, "be-panoramax-bootstrap-evaluation-v1")
         XCTAssertEqual(model.testTrafficSignCatalogCountryCode, "BE")
+
+        let now = Date()
+        let coordinate = CLLocationCoordinate2D(latitude: 43.95, longitude: 4.80)
+        model.testDiscoverPacks(for: CLLocation(coordinate: coordinate, altitude: 0, horizontalAccuracy: 624, verticalAccuracy: -1, timestamp: now))
+        XCTAssertEqual(model.testRequestedTrafficSignModelCountryCode, "BE", "A poor indoor fix must not switch models")
+        model.testDiscoverPacks(for: CLLocation(coordinate: coordinate, altitude: 0, horizontalAccuracy: 5, verticalAccuracy: -1, timestamp: now.addingTimeInterval(-120)))
+        XCTAssertEqual(model.testRequestedTrafficSignModelCountryCode, "BE", "A stale location must not switch models")
+        model.testDiscoverPacks(for: CLLocation(coordinate: coordinate, altitude: 0, horizontalAccuracy: 5, verticalAccuracy: -1, timestamp: now))
+        try await model.testWaitForTrafficSignModelLoad()
+        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "fr-panoramax-bootstrap-evaluation-v1")
+        XCTAssertEqual(model.testTrafficSignCatalogCountryCode, "FR")
+        await model.testRefreshActiveBundleCountry(preferredCountryCode: "BEL")
+        XCTAssertEqual(model.testRequestedTrafficSignModelCountryCode, "FR", "The installed Belgium map cannot revert a confirmed French position")
     }
 
     @MainActor
@@ -15561,6 +15629,56 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
     private let baseTime = Date(timeIntervalSince1970: 1_788_279_200)
     private let verifiedSHA = String(repeating: "a", count: 64)
 
+    func testUserRecordingPrecedesEveryCameraActionAndReconciliation() {
+        let context = makeContext()
+        let manual = EffectiveSpeedLimitState.base(localValue: "90", bundledSpeedKmh: 130, bundledUnlimited: false)
+        for action in [TrafficSignStructuralAction.postedMaximum(50), .allRestrictionsEnd, .cityEntry("FR"), .cityExit] {
+            var resolver = TrafficSignEffectiveLimitResolver()
+            let outcome = resolver.commit(makePassage(action: action, context: context), base: manual, fallbackSpeedLimitAfterEnd: .numeric(80))
+            XCTAssertFalse(outcome.applied)
+            XCTAssertEqual(outcome.effectiveState.value, .numeric(90))
+            XCTAssertTrue(outcome.effectiveState.isUserCorrection)
+            XCTAssertEqual(resolver.resolve(base: manual, currentContext: context, currentCoordinate: nil, timestamp: baseTime).value, .numeric(90))
+        }
+        var resolver = TrafficSignEffectiveLimitResolver()
+        _ = resolver.commit(makePassage(action: .postedMaximum(50), context: context), base: makeBase(130))
+        XCTAssertEqual(resolver.resolve(base: manual, currentContext: context, currentCoordinate: nil, timestamp: baseTime).value, .numeric(90))
+        XCTAssertNil(resolver.activePassage)
+    }
+
+    func testNationalEndAndCityTransitionsDiscardPreviousPostedLimits() {
+        let context = makeContext()
+        for action in [TrafficSignStructuralAction.maximumSpeedEnd(70), .allRestrictionsEnd, .cityExit] {
+            var resolver = TrafficSignEffectiveLimitResolver()
+            _ = resolver.commit(makePassage(action: .postedMaximum(70), context: context), base: makeBase(70))
+            let ended = resolver.commit(makePassage(action: action, context: context, eventID: "end"), base: makeBase(70), fallbackSpeedLimitAfterEnd: .numeric(130))
+            XCTAssertEqual(ended.effectiveState.value, .numeric(130))
+            XCTAssertEqual(resolver.resolve(base: makeBase(70), currentContext: context, currentCoordinate: nil, timestamp: baseTime).value, .numeric(130))
+        }
+        for country in ["FR", "BE"] {
+            var resolver = TrafficSignEffectiveLimitResolver()
+            _ = resolver.commit(makePassage(action: .postedMaximum(90), context: context), base: makeBase(90))
+            let entered = resolver.commit(makePassage(action: .cityEntry(country), context: context, eventID: "city"), base: makeBase(90), fallbackSpeedLimitAfterEnd: .numeric(50))
+            XCTAssertEqual(entered.effectiveState.value, .numeric(50))
+        }
+    }
+
+    func testRoadDefaultsUseCountryRegionAndKnownRoadContext() throws {
+        XCTAssertEqual(TrafficSignRoadDefaultPolicy.speedKmh(country: "FR", region: nil, highway: "motorway", insideCity: nil), 130)
+        XCTAssertEqual(TrafficSignRoadDefaultPolicy.speedKmh(country: "CH", region: nil, highway: "motorway", insideCity: nil), 120)
+        XCTAssertEqual(TrafficSignRoadDefaultPolicy.speedKmh(country: "CH", region: nil, highway: "trunk", insideCity: false), 100)
+        XCTAssertEqual(TrafficSignRoadDefaultPolicy.speedKmh(country: "BE", region: "BE-VLG", highway: "secondary", insideCity: false), 70)
+        XCTAssertEqual(TrafficSignRoadDefaultPolicy.speedKmh(country: "BE", region: "BE-WAL", highway: "secondary", insideCity: false), 90)
+        XCTAssertEqual(TrafficSignRoadDefaultPolicy.speedKmh(country: "BE", region: "BE-BRU", highway: "residential", insideCity: true), 30)
+        XCTAssertNil(TrafficSignRoadDefaultPolicy.speedKmh(country: "NL", region: nil, highway: "motorway", insideCity: nil))
+        XCTAssertNil(TrafficSignRoadDefaultPolicy.speedKmh(country: "BE", region: nil, highway: "secondary", insideCity: false))
+        let regions = try XCTUnwrap(SpeedRegulationRegions.bundled)
+        XCTAssertEqual(regions.region(latitude: 51.1212, longitude: 5.6473), "BE-VLG")
+        XCTAssertEqual(regions.region(latitude: 49.55, longitude: 5.50), "BE-WAL")
+        XCTAssertEqual(regions.region(latitude: 50.85, longitude: 4.35), "BE-BRU")
+        XCTAssertNil(regions.region(latitude: 43.95, longitude: 4.80))
+    }
+
     func testRepeatedTrackCommitsOnSecondMissingFrameAndFreezesFirstBoundary() throws {
         var finalizer = TrafficSignPassageFinalizer()
         let context = makeContext()
@@ -16753,8 +16871,8 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             base: makeBase(80)
         )
         XCTAssertEqual(matchingSpeedEnd.effectiveState.value, .numeric(50), "City entry survives the end of a posted speed")
-        XCTAssertFalse(resolver.commit(
-            makePassage(action: .cityEntry("FR"), context: verified, eventID: "unsupported-city-default"),
+        XCTAssertTrue(resolver.commit(
+            makePassage(action: .cityEntry("FR"), context: verified, eventID: "french-city-default"),
             base: makeBase(80)
         ).applied)
         XCTAssertEqual(
@@ -17045,7 +17163,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             wayID: "91002",
             direction: .backward
         )
-        XCTAssertEqual(latestBackward?.value, "70")
+        XCTAssertEqual(latestBackward?.value, "40", "An older user recording outranks a newer camera observation")
     }
 
     func testBulkExportRetainsManualLocalOnlyCompatibilityButRequiresCameraApproval() async throws {

@@ -33,6 +33,7 @@ data class LocalRuntimeCorrection(
     val numericSpeedKmh: Int?,
     val directionScope: TrafficSignTravelDirection,
     val effectiveAtUtc: String,
+    val isUserCorrection: Boolean = false,
 )
 
 enum class LocalObservationState(val rawValue: String) {
@@ -1116,7 +1117,7 @@ internal class LocalObservationStore(
         FROM observations
         WHERE primary_way_id = ? AND runtime_applicable = 1
           AND direction_scope IN (?, ?)
-        ORDER BY julianday(effective_at_utc) DESC, rowid DESC
+        ORDER BY CASE WHEN modality = 'computer_vision' THEN 1 ELSE 0 END, julianday(effective_at_utc) DESC, rowid DESC
         """.trimIndent(),
         arrayOf(
             wayId,
@@ -1139,6 +1140,7 @@ internal class LocalObservationStore(
         numericSpeedKmh = newSpeedKmh ?: newSpeedValue?.toIntOrNull(),
         directionScope = directionScope,
         effectiveAtUtc = effectiveAtUTC,
+        isUserCorrection = modality != LocalObservationModality.COMPUTER_VISION,
     )
 
     private fun isExportableCorrection(observation: LocalObservation): Boolean {

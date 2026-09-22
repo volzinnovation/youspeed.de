@@ -577,7 +577,11 @@ private fun MainScreen(
                             screenInset = screenInset,
                             landscape = landscape,
                         )
-                        SpeedLimitSign(
+                        if (ui.isTrafficSignEndOverlayVisible && ui.trafficSignEndPictogram != null &&
+                            !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
+                            RecognizedTrafficSignPictogram(ui.trafficSignEndPictogram,
+                                modifier = Modifier.testTag("speed-limit-end-sign"), signSize = signSize)
+                        } else SpeedLimitSign(
                             limitText = limitText, signSize = signSize, numberFontSize = primaryMetricFont,
                             showsUnlimitedIcon = !showsPedestrianZoneSign && ui.isUnlimitedSpeedLimitActive &&
                                 !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
@@ -591,10 +595,6 @@ private fun MainScreen(
                                 else -> stringResource(R.string.ui_camera_sign)
                             },
                             onDoubleTap = onCapture,
-                        )
-                        if (ui.isTrafficSignEndOverlayVisible) EndOfSpeedLimitSign(
-                            modifier = Modifier.offset(y = -(signSize * 0.42f)).testTag("speed-limit-end-overlay"),
-                            signSize = signSize * 0.34f,
                         )
                         // Draw the recognized secondary sign after the speed
                         // sign. This is intentionally the same z-order as the
@@ -763,9 +763,10 @@ private fun TopCornerButtons(
 private fun RecognizedTrafficSignPictogram(
     pictogram: TrafficSignPictogram,
     modifier: Modifier = Modifier,
+    signSize: androidx.compose.ui.unit.Dp = 72.dp,
 ) {
     val pictogramModifier = modifier
-        .size(72.dp)
+        .size(signSize)
         .padding(5.dp)
         .testTag("last-traffic-sign-pictogram")
     val context = LocalContext.current
@@ -780,34 +781,6 @@ private fun RecognizedTrafficSignPictogram(
             contentDescription = stringResource(R.string.ui_last_recognized_sign, pictogram.label()),
             modifier = pictogramModifier,
         )
-    }
-}
-
-@Composable
-private fun EndOfSpeedLimitSign(modifier: Modifier = Modifier, signSize: androidx.compose.ui.unit.Dp) {
-    val description = stringResource(R.string.ui_camera_speed_limit_end)
-    Canvas(
-        modifier = modifier
-            .size(signSize)
-            .semantics { contentDescription = description },
-    ) {
-        val borderWidth = size.minDimension * 0.028f
-        drawCircle(Color.White)
-        clipPath(Path().apply { addOval(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height)) }) {
-            repeat(5) { index ->
-                rotate(degrees = -51f, pivot = center) {
-                    val stripeWidth = size.minDimension * 0.035f
-                    val stripeHeight = size.minDimension * 1.7f
-                    val offsetX = (index - 2) * size.minDimension * 0.12f
-                    drawRect(
-                        color = Color.Black.copy(alpha = 0.42f),
-                        topLeft = Offset(center.x + offsetX - stripeWidth / 2f, center.y - stripeHeight / 2f),
-                        size = Size(stripeWidth, stripeHeight),
-                    )
-                }
-            }
-        }
-        drawCircle(Color.Black.copy(alpha = 0.82f), radius = (size.minDimension - borderWidth) / 2f, style = Stroke(width = borderWidth))
     }
 }
 

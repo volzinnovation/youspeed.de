@@ -31,136 +31,32 @@
   },
   "class_mapping": [
     {
-      "class_id": "B21a2",
-      "label": "B21a2",
+      "class_id": "A00",
+      "label": "A00",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "A13a",
+      "label": "A13a",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B21-2",
-      "label": "B21-2",
+      "class_id": "A13b",
+      "label": "A13b",
       "semantic": {
         "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B21-1",
-      "label": "B21-1",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B21b",
-      "label": "B21b",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B21e",
-      "label": "B21e",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B21d1",
-      "label": "B21d1",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B21c2",
-      "label": "B21c2",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B21d2",
-      "label": "B21d2",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B21c1",
-      "label": "B21c1",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B40",
-      "label": "B40",
-      "semantic": {
-        "kind": "restriction_end"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B22a",
-      "label": "B22a",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B27a",
-      "label": "B27a",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B26",
-      "label": "B26",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "EB20",
-      "label": "EB20",
-      "semantic": {
-        "kind": "city_exit"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "EB10",
-      "label": "EB10",
-      "semantic": {
-        "kind": "city_entry"
       },
       "threshold": 0.7
     },
     {
       "class_id": "A14",
       "label": "A14",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A23",
-      "label": "A23",
       "semantic": {
         "kind": "unknown"
       },
@@ -183,64 +79,8 @@
       "threshold": 0.7
     },
     {
-      "class_id": "A21",
-      "label": "A21",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A18",
-      "label": "A18",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A2b",
-      "label": "A2b",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A2a",
-      "label": "A2a",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "AB1",
-      "label": "AB1",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A20",
-      "label": "A20",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "C3",
-      "label": "C3",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "AK22",
-      "label": "AK22",
+      "class_id": "A15b",
+      "label": "A15b",
       "semantic": {
         "kind": "unknown"
       },
@@ -263,64 +103,16 @@
       "threshold": 0.7
     },
     {
-      "class_id": "AB2",
-      "label": "AB2",
+      "class_id": "A17",
+      "label": "A17",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "A7",
-      "label": "A7",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A6",
-      "label": "A6",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A3",
-      "label": "A3",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A3b",
-      "label": "A3b",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A3a",
-      "label": "A3a",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A13b",
-      "label": "A13b",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "AK5",
-      "label": "AK5",
+      "class_id": "A18",
+      "label": "A18",
       "semantic": {
         "kind": "unknown"
       },
@@ -335,62 +127,6 @@
       "threshold": 0.7
     },
     {
-      "class_id": "AB25",
-      "label": "AB25",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A13a",
-      "label": "A13a",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A4",
-      "label": "A4",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A17",
-      "label": "A17",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A8",
-      "label": "A8",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A9",
-      "label": "A9",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A1b",
-      "label": "A1b",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
       "class_id": "A1a",
       "label": "A1a",
       "semantic": {
@@ -399,16 +135,8 @@
       "threshold": 0.7
     },
     {
-      "class_id": "A15b",
-      "label": "A15b",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "A24",
-      "label": "A24",
+      "class_id": "A1b",
+      "label": "A1b",
       "semantic": {
         "kind": "unknown"
       },
@@ -431,32 +159,288 @@
       "threshold": 0.7
     },
     {
-      "class_id": "B42",
-      "label": "B42",
-      "semantic": {
-        "kind": "restriction_end"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "CE3a",
-      "label": "CE3a",
+      "class_id": "A20",
+      "label": "A20",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "CE22",
-      "label": "CE22",
+      "class_id": "A21",
+      "label": "A21",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B13a",
-      "label": "B13a",
+      "class_id": "A23",
+      "label": "A23",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "A23b",
+      "label": "A23b",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "A24",
+      "label": "A24",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "A2a",
+      "label": "A2a",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "A2b",
+      "label": "A2b",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "A3",
+      "label": "A3",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "A3a",
+      "label": "A3a",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "A3b",
+      "label": "A3b",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "A4",
+      "label": "A4",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "A6",
+      "label": "A6",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "A7",
+      "label": "A7",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "A8",
+      "label": "A8",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "A9",
+      "label": "A9",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "AB1",
+      "label": "AB1",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "AB2",
+      "label": "AB2",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "AB25",
+      "label": "AB25",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "AB3",
+      "label": "AB3",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "AB4",
+      "label": "AB4",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "AB6",
+      "label": "AB6",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "AB7",
+      "label": "AB7",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "AK14",
+      "label": "AK14",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "AK17",
+      "label": "AK17",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "AK2",
+      "label": "AK2",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "AK22",
+      "label": "AK22",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "AK3",
+      "label": "AK3",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "AK30",
+      "label": "AK30",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "AK4",
+      "label": "AK4",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "AK5",
+      "label": "AK5",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "AKz",
+      "label": "AKz",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "Az1",
+      "label": "Az1",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "Azz",
+      "label": "Azz",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B0",
+      "label": "B0",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B1",
+      "label": "B1",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B11",
+      "label": "B11",
       "semantic": {
         "kind": "unknown"
       },
@@ -465,6 +449,22 @@
     {
       "class_id": "B12",
       "label": "B12",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B13",
+      "label": "B13",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B13a",
+      "label": "B13a",
       "semantic": {
         "kind": "unknown"
       },
@@ -531,6 +531,16 @@
       "threshold": 0.7
     },
     {
+      "class_id": "B14-25",
+      "label": "B14-25",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 25,
+        "unit": "km/h"
+      },
+      "threshold": 0.7
+    },
+    {
       "class_id": "B14-30",
       "label": "B14-30",
       "semantic": {
@@ -546,6 +556,16 @@
       "semantic": {
         "kind": "maximum_speed",
         "value": 40,
+        "unit": "km/h"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B14-45",
+      "label": "B14-45",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 45,
         "unit": "km/h"
       },
       "threshold": 0.7
@@ -611,20 +631,28 @@
       "threshold": 0.7
     },
     {
-      "class_id": "B13",
-      "label": "B13",
+      "class_id": "B15",
+      "label": "B15",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B16",
+      "label": "B16",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B11",
-      "label": "B11",
+      "class_id": "B16z",
+      "label": "B16z",
+      "threshold": 0.7,
       "semantic": {
         "kind": "unknown"
-      },
-      "threshold": 0.7
+      }
     },
     {
       "class_id": "B17",
@@ -635,40 +663,8 @@
       "threshold": 0.7
     },
     {
-      "class_id": "B9d",
-      "label": "B9d",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B9b",
-      "label": "B9b",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B9f",
-      "label": "B9f",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B7a",
-      "label": "B7a",
-      "semantic": {
-        "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "B9i",
-      "label": "B9i",
+      "class_id": "B18a",
+      "label": "B18a",
       "semantic": {
         "kind": "unknown"
       },
@@ -691,100 +687,172 @@
       "threshold": 0.7
     },
     {
-      "class_id": "B18a",
-      "label": "B18a",
+      "class_id": "B19",
+      "label": "B19",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B1j",
+      "label": "B1j",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B21-1",
+      "label": "B21-1",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B1",
-      "label": "B1",
+      "class_id": "B21-2",
+      "label": "B21-2",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "C13a",
-      "label": "C13a",
+      "class_id": "B21a1",
+      "label": "B21a1",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B21a2",
+      "label": "B21a2",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B8",
-      "label": "B8",
+      "class_id": "B21b",
+      "label": "B21b",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B16",
-      "label": "B16",
+      "class_id": "B21c1",
+      "label": "B21c1",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B3",
-      "label": "B3",
+      "class_id": "B21c2",
+      "label": "B21c2",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B3a",
-      "label": "B3a",
+      "class_id": "B21d1",
+      "label": "B21d1",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B6a1",
-      "label": "B6a1",
+      "class_id": "B21d2",
+      "label": "B21d2",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B6a2",
-      "label": "B6a2",
+      "class_id": "B21e",
+      "label": "B21e",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B6a3",
-      "label": "B6a3",
+      "class_id": "B21z1",
+      "label": "B21z1",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B22a",
+      "label": "B22a",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B9a",
-      "label": "B9a",
+      "class_id": "B22b",
+      "label": "B22b",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B26",
+      "label": "B26",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B6d",
-      "label": "B6d",
+      "class_id": "B27a",
+      "label": "B27a",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "B27b",
+      "label": "B27b",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B27z",
+      "label": "B27z",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B29",
+      "label": "B29",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B29-lent",
+      "label": "B29-lent",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     },
     {
       "class_id": "B2a",
@@ -811,10 +879,20 @@
       "threshold": 0.7
     },
     {
-      "class_id": "B0",
-      "label": "B0",
+      "class_id": "B3",
+      "label": "B3",
       "semantic": {
         "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B30",
+      "label": "B30",
+      "semantic": {
+        "kind": "zone_start",
+        "value": 30,
+        "unit": "km/h"
       },
       "threshold": 0.7
     },
@@ -825,6 +903,534 @@
         "kind": "restriction_end"
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "B33-30",
+      "label": "B33-30",
+      "semantic": {
+        "kind": "restriction_end",
+        "value": 30
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B33-50",
+      "label": "B33-50",
+      "semantic": {
+        "kind": "restriction_end",
+        "value": 50
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B33-70",
+      "label": "B33-70",
+      "semantic": {
+        "kind": "restriction_end",
+        "value": 70
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B33-90",
+      "label": "B33-90",
+      "semantic": {
+        "kind": "restriction_end",
+        "value": 90
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B34",
+      "label": "B34",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B34a",
+      "label": "B34a",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B3a",
+      "label": "B3a",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B40",
+      "label": "B40",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B41",
+      "label": "B41",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B42",
+      "label": "B42",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B45",
+      "label": "B45",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B50a",
+      "label": "B50a",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B50b",
+      "label": "B50b",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B50c",
+      "label": "B50c",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B50d",
+      "label": "B50d",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B51",
+      "label": "B51",
+      "semantic": {
+        "kind": "zone_end",
+        "value": 30
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B52",
+      "label": "B52",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "zone_start",
+        "value": 20,
+        "unit": "km/h"
+      }
+    },
+    {
+      "class_id": "B53",
+      "label": "B53",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "zone_end",
+        "value": 20
+      }
+    },
+    {
+      "class_id": "B54",
+      "label": "B54",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "pedestrian_zone_start"
+      }
+    },
+    {
+      "class_id": "B55",
+      "label": "B55",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "pedestrian_zone_end"
+      }
+    },
+    {
+      "class_id": "B56",
+      "label": "B56",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B57",
+      "label": "B57",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B5c",
+      "label": "B5c",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B6a1",
+      "label": "B6a1",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B6a2",
+      "label": "B6a2",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B6a3",
+      "label": "B6a3",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B6b1",
+      "label": "B6b1",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B6b2",
+      "label": "B6b2",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B6b3",
+      "label": "B6b3",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B6b4",
+      "label": "B6b4",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B6d",
+      "label": "B6d",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B6d-M6a",
+      "label": "B6d-M6a",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B6d-M6c",
+      "label": "B6d-M6c",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B6d-M6h",
+      "label": "B6d-M6h",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B6d-M6i",
+      "label": "B6d-M6i",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B6d-M6k",
+      "label": "B6d-M6k",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B7a",
+      "label": "B7a",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B7b",
+      "label": "B7b",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B7x",
+      "label": "B7x",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B8",
+      "label": "B8",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B9-cavaliers",
+      "label": "B9-cavaliers",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B9a",
+      "label": "B9a",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B9b",
+      "label": "B9b",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B9d",
+      "label": "B9d",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B9f",
+      "label": "B9f",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B9g",
+      "label": "B9g",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B9h",
+      "label": "B9h",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B9i",
+      "label": "B9i",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "B9z1",
+      "label": "B9z1",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B9z2",
+      "label": "B9z2",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "B9zz",
+      "label": "B9zz",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "Bzz",
+      "label": "Bzz",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C107",
+      "label": "C107",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "C108",
+      "label": "C108",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "restriction_end"
+      }
+    },
+    {
+      "class_id": "C111",
+      "label": "C111",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C112",
+      "label": "C112",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C113",
+      "label": "C113",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C114",
+      "label": "C114",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C115",
+      "label": "C115",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C115z",
+      "label": "C115z",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C116",
+      "label": "C116",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C12",
+      "label": "C12",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C13a",
+      "label": "C13a",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "C13b",
+      "label": "C13b",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C18",
+      "label": "C18",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     },
     {
       "class_id": "C1a",
@@ -851,20 +1457,60 @@
       "threshold": 0.7
     },
     {
-      "class_id": "C5",
-      "label": "C5",
+      "class_id": "C1x1",
+      "label": "C1x1",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C1x2",
+      "label": "C1x2",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C1x3",
+      "label": "C1x3",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C1x4",
+      "label": "C1x4",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C2",
+      "label": "C2",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C207",
+      "label": "C207",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "B41",
-      "label": "B41",
+      "class_id": "C208",
+      "label": "C208",
+      "threshold": 0.7,
       "semantic": {
-        "kind": "pedestrian_zone_end"
-      },
-      "threshold": 0.7
+        "kind": "restriction_end"
+      }
     },
     {
       "class_id": "C20a",
@@ -875,28 +1521,604 @@
       "threshold": 0.7
     },
     {
-      "class_id": "AB4",
-      "label": "AB4",
+      "class_id": "C20b",
+      "label": "C20b",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C20c",
+      "label": "C20c",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C23",
+      "label": "C23",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C24a",
+      "label": "C24a",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C24x",
+      "label": "C24x",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C24z",
+      "label": "C24z",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C26a",
+      "label": "C26a",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C26b",
+      "label": "C26b",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C27",
+      "label": "C27",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C3",
+      "label": "C3",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "C107",
-      "label": "C107",
+      "class_id": "C4a",
+      "label": "C4a",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C5",
+      "label": "C5",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "C207",
-      "label": "C207",
+      "class_id": "C50",
+      "label": "C50",
+      "threshold": 0.7,
       "semantic": {
-        "kind": "restriction_end"
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C6",
+      "label": "C6",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C62",
+      "label": "C62",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C64d",
+      "label": "C64d",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C8",
+      "label": "C8",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "C9",
+      "label": "C9",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE12",
+      "label": "CE12",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE12zzz",
+      "label": "CE12zzz",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE14",
+      "label": "CE14",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE15a",
+      "label": "CE15a",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE15c",
+      "label": "CE15c",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE15g",
+      "label": "CE15g",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE15h",
+      "label": "CE15h",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE15i",
+      "label": "CE15i",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE16",
+      "label": "CE16",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE17",
+      "label": "CE17",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE18",
+      "label": "CE18",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE19",
+      "label": "CE19",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE21",
+      "label": "CE21",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE22",
+      "label": "CE22",
+      "semantic": {
+        "kind": "unknown"
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "CE23",
+      "label": "CE23",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE24",
+      "label": "CE24",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE28",
+      "label": "CE28",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE2e",
+      "label": "CE2e",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE2eZ",
+      "label": "CE2eZ",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE3a",
+      "label": "CE3a",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "CE4a",
+      "label": "CE4a",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE4c",
+      "label": "CE4c",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE52",
+      "label": "CE52",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE5a",
+      "label": "CE5a",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE5b",
+      "label": "CE5b",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE6a",
+      "label": "CE6a",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "CE7",
+      "label": "CE7",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "EB10",
+      "label": "EB10",
+      "semantic": {
+        "kind": "city_entry"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "EB20",
+      "label": "EB20",
+      "semantic": {
+        "kind": "city_exit"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "J5",
+      "label": "J5",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "M12d",
+      "label": "M12d",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "M12f",
+      "label": "M12f",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "M12fd",
+      "label": "M12fd",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "M12g",
+      "label": "M12g",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "M12gf",
+      "label": "M12gf",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "M12gfd",
+      "label": "M12gfd",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "M6h",
+      "label": "M6h",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "M9-rappel",
+      "label": "M9-rappel",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "M9v",
+      "label": "M9v",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "PEI",
+      "label": "PEI",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "SR3",
+      "label": "SR3",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "Z",
+      "label": "Z",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "Z-fin-covoiturage",
+      "label": "Z-fin-covoiturage",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z-feux",
+      "label": "z-feux",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z-randonneurs",
+      "label": "z-randonneurs",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z0",
+      "label": "z0",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z1",
+      "label": "z1",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z10-chaussidou",
+      "label": "z10-chaussidou",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z11-zone30-radar",
+      "label": "z11-zone30-radar",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z2",
+      "label": "z2",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z3",
+      "label": "z3",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z4",
+      "label": "z4",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z5",
+      "label": "z5",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z7",
+      "label": "z7",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z8",
+      "label": "z8",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "z9",
+      "label": "z9",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "zBAN",
+      "label": "zBAN",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     }
   ],
   "lineage": {

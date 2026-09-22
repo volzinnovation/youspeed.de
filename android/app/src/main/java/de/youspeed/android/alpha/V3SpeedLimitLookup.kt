@@ -72,7 +72,8 @@ internal class V3SpeedLimitLookup(
     private enum class CandidateNetwork(val wireName: String) {
         SURFACE("surface"),
         TUNNEL("tunnel"),
-        MOTORWAY("motorway");
+        MOTORWAY("motorway"),
+        MOTORWAY_LINK("motorway_link");
 
         val rtreeTableName: String
             get() = "${wireName}_way_network_rtree"
@@ -1218,9 +1219,16 @@ internal class V3SpeedLimitLookup(
     }
 
     private fun applicabilityGeometry(selected: WayCandidate?, candidates: List<WayCandidate>, links: WayLinksContext): TSRMapGeometry {
-        val alternatives = candidates.filter { it.wayId != selected?.wayId }.sortedWith(compareBy<WayCandidate> { it.distanceM }.thenBy { it.wayId ?: "" })
+        val nearby = if (selected?.highway == "motorway") runCatching {
+            queryWayCandidatesForNetwork(selected.queryPoint.lat, selected.queryPoint.lon, 400.0, 64, null, CandidateNetwork.MOTORWAY_LINK)
+        }.getOrDefault(emptyList()) else emptyList()
+        val alternatives = (candidates + nearby).distinctBy { it.wayId }.filter { it.wayId != selected?.wayId }
+            .sortedWith(compareBy<WayCandidate> { it.distanceM }.thenBy { it.wayId ?: "" })
         val branches = if (selected == null) emptyList() else alternatives.filter {
-            it.wayId in links.linkedByFrom[selected.wayId].orEmpty()
+            it.wayId in links.linkedByFrom[selected.wayId].orEmpty() ||
+                listOfNotNull(selected.points.firstOrNull(), selected.points.lastOrNull()).any { point ->
+                    point in listOfNotNull(it.points.firstOrNull(), it.points.lastOrNull())
+                }
         }.mapNotNull { candidate ->
             val point = sharedJunctionPoint(selected, candidate) ?: return@mapNotNull null
             val incoming = junctionNodeHeadingDeg(selected, point, true)
@@ -1238,7 +1246,7 @@ internal class V3SpeedLimitLookup(
         if (alternatives.size > 8 || branches.size > 8) capabilities += "context_truncated"
         return TSRMapGeometry(selected?.wayId, selected?.localHeadingDeg, selected?.highway,
             alternatives.take(8).map { TSRApplicabilityCorridor(it.wayId ?: "unknown", it.localHeadingDeg, it.distanceM.takeIf { d -> d.isFinite() }, it.highway, false, null) },
-            branches.take(8), capabilities.toList())
+            branches.take(8), capabilities.toList(), selected?.speedLimitKmh?.takeIf { selected.speedSource == DerivedSpeedSource.EXPLICIT_TAG })
     }
 
     private fun loadWayLinksContext(
@@ -5339,6 +5347,7 @@ internal class V3SpeedLimitLookup(
             CandidateNetwork.SURFACE -> "NOT ($tunnelCondition) AND $highwayExpr != 'motorway'"
             CandidateNetwork.TUNNEL -> tunnelCondition
             CandidateNetwork.MOTORWAY -> "NOT ($tunnelCondition) AND $highwayExpr = 'motorway'"
+            CandidateNetwork.MOTORWAY_LINK -> "NOT ($tunnelCondition) AND $highwayExpr = 'motorway_link'"
         }
     }
 
@@ -5347,6 +5356,7 @@ internal class V3SpeedLimitLookup(
             CandidateNetwork.SURFACE -> hasSurfaceWayNetworkRtreeTable
             CandidateNetwork.TUNNEL -> hasTunnelWayNetworkRtreeTable
             CandidateNetwork.MOTORWAY -> hasMotorwayWayNetworkRtreeTable
+            CandidateNetwork.MOTORWAY_LINK -> false // Read bounded links from ways_rtree; no dedicated bundle table.
         }
 
     private fun normalizedWayId(raw: String?): String? = raw?.trim()?.ifBlank { null }

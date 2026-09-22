@@ -32,7 +32,7 @@ def test_schematic_speed_mapping_does_not_require_artwork_and_is_idempotent():
     assert [m['class_id'] for m in mappings] == names[:3]
     assert [m['semantic'] for m in mappings] == [
         {'kind': 'zone_start', 'value': 30, 'unit': 'km/h'},
-        {'kind': 'zone_end'},
+        {'kind': 'zone_end', 'value': 30},
         {'kind': 'maximum_speed', 'value': 15, 'unit': 'km/h'},
     ]
 

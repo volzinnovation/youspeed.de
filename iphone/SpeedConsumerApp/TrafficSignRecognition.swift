@@ -431,7 +431,8 @@ enum TrafficSignModelPackValidator {
 
         let components = [manifest.detector] + [manifest.classifier].compactMap { $0 }
         for component in components {
-            try validate(component: component, calibration: manifest.calibration)
+            try validate(component: component, calibration: manifest.calibration,
+                         uncalibratedLineage: manifest.calibration.calibrated ? [] : manifest.lineage.datasetInventorySha256s)
         }
         try validate(lineage: manifest.lineage)
 
@@ -601,7 +602,12 @@ enum TrafficSignModelPackValidator {
                         "Speed TSR semantic requires a 5...200 value and unit"
                     )
                 }
-            case .zoneEnd, .restrictionEnd, .cityEntry, .cityExit,
+            case .zoneEnd, .restrictionEnd:
+                guard semantic.value.map({ (5...200).contains($0) }) ?? true,
+                      semantic.unit == nil else {
+                    throw TrafficSignPackValidationError.invalid("End TSR semantic requires an optional 5...200 ended value and no unit")
+                }
+            case .cityEntry, .cityExit,
                     .pedestrianZoneStart, .pedestrianZoneEnd, .unknown:
                 guard semantic.value == nil, semantic.unit == nil else {
                     throw TrafficSignPackValidationError.invalid(
@@ -614,7 +620,8 @@ enum TrafficSignModelPackValidator {
 
     private static func validate(
         component: TrafficSignModelPackManifest.Component,
-        calibration: TrafficSignModelPackManifest.Calibration
+        calibration: TrafficSignModelPackManifest.Calibration,
+        uncalibratedLineage: [String]
     ) throws {
         guard !component.componentId.isEmpty,
               !component.sourceCheckpoint.uri.isEmpty,
@@ -632,7 +639,8 @@ enum TrafficSignModelPackValidator {
                   isSHA256(artifact.sourceCheckpointSha256),
                   artifact.sourceCheckpointSha256 == component.sourceCheckpoint.sha256,
                   isSHA256(artifact.calibrationDatasetSha256),
-                  artifact.calibrationDatasetSha256 == calibration.datasetSha256,
+                  (artifact.calibrationDatasetSha256 == calibration.datasetSha256
+                    || uncalibratedLineage.contains(artifact.calibrationDatasetSha256)),
                   artifact.inputShape.count == 3 || artifact.inputShape.count == 4,
                   artifact.inputShape.allSatisfy({ $0 > 0 }),
                   !artifact.outputSchema.isEmpty,

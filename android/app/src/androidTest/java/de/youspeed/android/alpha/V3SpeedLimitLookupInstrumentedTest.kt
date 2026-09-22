@@ -12,6 +12,26 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class V3SpeedLimitLookupInstrumentedTest {
+    @Test fun pacaBundleExposesConnectedExitBeyondTheMatchRadius() {
+        val sql = InstrumentationRegistry.getInstrumentation().targetContext.assets
+            .open("tsr/applicability/paca-exit-topology-v1.sql").bufferedReader().use { it.readText() }
+        val file = createFixtureDb("paca-exit-${UUID.randomUUID()}.sqlite") { db -> execSql(db, sql) }
+        V3SpeedLimitLookup(file.absolutePath, countryCode = "FR",
+            matchingModel = LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC).use { lookup ->
+            for ((point, way) in listOf((43.8928129 to 4.9207605) to "135439915",
+                (43.8948728 to 4.9188749) to "4355708", (43.8974263 to 4.9177386) to "4077706")) {
+                val result = lookup.lookup(point.first, point.second, 15.0, 32, 335.0,
+                    speedKmh = 80.0, horizontalAccuracyM = 5.0, gpsSignalBars = 4, headingAccuracyDeg = 5.0)
+                assertEquals(way, result.wayId)
+                val geometry = requireNotNull(result.applicabilityGeometry)
+                assertEquals(if (way == "4077706") "motorway_link" else "motorway", geometry.roadClass)
+                if (way != "4077706") {
+                    assertEquals(130, geometry.postedSpeedKmh)
+                    assertTrue(geometry.branches.any { it.wayId == "4077706" && it.endpointLinked && it.roadClass == "motorway_link" })
+                }
+            }
+        }
+    }
     @Test
     fun schema2WayTilePrefilterCanServeLookup() {
         val dbFile = createFixtureDb("schema2-way-tile-${UUID.randomUUID()}.sqlite") { db ->

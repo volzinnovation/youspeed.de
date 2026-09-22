@@ -46,12 +46,12 @@ struct RegionalPackCatalog: Decodable, Sendable {
     let boundaryKind: String
     let regions: [Region]
 
-    static func decode(_ data: Data) throws -> Self {
+    static func decode(_ data: Data, boundaryKind: String = "buffered_extract_coverage") throws -> Self {
         guard data.count <= 8_000_000 else { throw DiscoveryError.invalidCatalog }
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         let result = try decoder.decode(Self.self, from: data)
-        guard result.schemaVersion == 1, result.boundaryKind == "buffered_extract_coverage",
+        guard result.schemaVersion == 1, result.boundaryKind == boundaryKind,
               !result.regions.isEmpty, result.regions.count <= 1000,
               Set(result.regions.map(\.id)).count == result.regions.count else { throw DiscoveryError.invalidCatalog }
         for region in result.regions {
@@ -144,5 +144,32 @@ enum FirstLocationPackPolicy {
         [latitude, longitude, accuracy, timestamp, now].allSatisfy(\.isFinite) &&
             (-90...90).contains(latitude) && (-180...180).contains(longitude) &&
             (0...100).contains(accuracy) && (0...30).contains(now - timestamp)
+    }
+}
+
+/// Administrative regions used only for Belgian default-speed differences.
+/// The coarse source boundary has a 1 km abstention band, never a bounding-box guess.
+struct SpeedRegulationRegions {
+    let catalog: RegionalPackCatalog
+    static let bundled: Self? = {
+        guard let url = Bundle.main.url(forResource: "speed-regulation-regions-v1", withExtension: "json", subdirectory: "RegionalCoverage"),
+              let bytes = try? Data(contentsOf: url),
+              let catalog = try? RegionalPackCatalog.decode(bytes, boundaryKind: "administrative_regulation_regions") else { return nil }
+        return Self(catalog: catalog)
+    }()
+    func region(latitude: Double, longitude: Double) -> String? {
+        let matches = catalog.matches(longitude: longitude, latitude: latitude)
+        guard matches.count == 1, let region = matches.first else { return nil }
+        let sx = cos(latitude * .pi / 180) * 111_320.0, sy = 111_320.0
+        for polygon in region.polygons { for ring in polygon {
+            for i in 0..<(ring.count - 1) {
+                let ax = (ring[i][0] - longitude) * sx, ay = (ring[i][1] - latitude) * sy
+                let bx = (ring[i+1][0] - longitude) * sx, by = (ring[i+1][1] - latitude) * sy
+                let dx = bx - ax, dy = by - ay, length2 = dx * dx + dy * dy
+                let t = length2 > 0 ? max(0, min(1, -(ax * dx + ay * dy) / length2)) : 0
+                if hypot(ax + t * dx, ay + t * dy) < 1000 { return nil }
+            }
+        } }
+        return region.id
     }
 }

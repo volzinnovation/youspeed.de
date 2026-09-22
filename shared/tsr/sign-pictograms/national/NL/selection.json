@@ -869,13 +869,14 @@
       "runtime_model_class": "pedestrian_crossing"
     },
     {
-      "semantic_id": "pedestrian:start",
+      "semantic_id": "priority:start",
       "sign_code": "B01",
       "artwork_id": "nl-b01",
       "mapping_status": "reviewed_model_code",
-      "mapping_basis": "Panoramax road_signs_mapping.csv class pedestrian:start maps to national sign code B01; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning.",
-      "source_model_class": "pedestrian:start",
-      "runtime_model_class": "pedestrian:start"
+      "mapping_basis": "Corrected against national regulation in the 2026-09-23 five-country mapping review; original upstream semantic retained separately.",
+      "source_model_class": "priority:start",
+      "runtime_model_class": "priority:start",
+      "upstream_semantic_id": "pedestrian:start"
     },
     {
       "semantic_id": "priority:backward",

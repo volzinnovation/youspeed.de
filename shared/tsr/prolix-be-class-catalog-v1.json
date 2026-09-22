@@ -910,15 +910,15 @@
     },
     {
       "class_id": "maxheight",
-      "sign_code": "C27",
-      "image_path": "tsr/sign-pictograms/national/BE/png/be-c27.png",
+      "sign_code": "C29",
+      "image_path": null,
       "label": {
         "en": "C27 — maxheight",
         "de": "C27 — maxheight",
         "fr": "C27 — maxheight",
         "nl": "C27 — maxheight"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "be-c27",
       "source_provenance": {
         "commons_title": "File:Belgian traffic sign C27.svg",
@@ -926,19 +926,20 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C27.svg",
         "original_sha256": "07e391297b739edeb6a7ba479473275df0c00e4e149f4fba757261468219f8ee",
         "png_sha256": "ede4a31d82d41aa2577865070d542f96e77dd2daad0cd81207d5126d9217c0ec"
-      }
+      },
+      "notes": "Current Belgian C29 is height; C27 is width. Generic classifier does not identify metres; no numeric pictogram displayed."
     },
     {
       "class_id": "maxlength",
       "sign_code": "C25",
-      "image_path": "tsr/sign-pictograms/national/BE/png/be-c25.png",
+      "image_path": null,
       "label": {
         "en": "C25 — maxlength",
         "de": "C25 — maxlength",
         "fr": "C25 — maxlength",
         "nl": "C25 — maxlength"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "be-c25",
       "source_provenance": {
         "commons_title": "File:Belgian traffic sign C25.svg",
@@ -946,7 +947,8 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C25.svg",
         "original_sha256": "94d4cb77073aaed80a52f50d9d90f2e27319381844e4573ba287bac54695d3cc",
         "png_sha256": "216ea77813b7d8301f99476d29b3ebc2b2446386d1f0debed81694b91b2693c0"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "maxspeed:100",
@@ -1111,14 +1113,14 @@
     {
       "class_id": "maxspeed:end",
       "sign_code": "C45",
-      "image_path": "tsr/sign-pictograms/national/BE/png/be-c45.png",
+      "image_path": null,
       "label": {
         "en": "C45 — maxspeed:end",
         "de": "C45 — maxspeed:end",
         "fr": "C45 — maxspeed:end",
         "nl": "C45 — maxspeed:end"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "be-c45",
       "source_provenance": {
         "commons_title": "File:Belgian road sign C45.svg",
@@ -1126,19 +1128,20 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_road_sign_C45.svg",
         "original_sha256": "f4468b8c31a324efe62814f112e3e97823e60bd4a813d31e3f630e720cdb51e6",
         "png_sha256": "02bd3910affa23712c16fca8e2b5ba1b1f82aebfb6f4fbc83a54d53a0490a701"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "maxweight",
       "sign_code": "C21",
-      "image_path": "tsr/sign-pictograms/national/BE/png/be-c21.png",
+      "image_path": null,
       "label": {
         "en": "C21 — maxweight",
         "de": "C21 — maxweight",
         "fr": "C21 — maxweight",
         "nl": "C21 — maxweight"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "be-c21",
       "source_provenance": {
         "commons_title": "File:Belgian road sign C21.svg",
@@ -1146,7 +1149,8 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_road_sign_C21.svg",
         "original_sha256": "6f88d3b8f7aebd4ef2c79a9a9785b714c0c0aea7d7358a57060c90368809dc51",
         "png_sha256": "86b2688d1aeca2c9295e472b5486636ea5723db22d421f1dac506c13df9aabfc"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "motorway:end",
@@ -1947,6 +1951,711 @@
         "original_sha256": "aa2cdd647d15da8a92efb09c8f2d99c6b0453edf9587ddc15c7126c5a0540189",
         "png_sha256": "bee8c43137832520f231f343890e3b2b8ebb45430e9dfcdec2c2a3662105d45b"
       }
+    },
+    {
+      "class_id": "arrow:other:red",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "arrow:other:red",
+        "de": "arrow:other:red",
+        "fr": "arrow:other:red",
+        "nl": "arrow:other:red"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "arrow_turn_right",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "arrow_turn_right",
+        "de": "arrow_turn_right",
+        "fr": "arrow_turn_right",
+        "nl": "arrow_turn_right"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "bad",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "bad",
+        "de": "bad",
+        "fr": "bad",
+        "nl": "bad"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "bad:back",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "bad:back",
+        "de": "bad:back",
+        "fr": "bad:back",
+        "nl": "bad:back"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "bad:buildings",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "bad:buildings",
+        "de": "bad:buildings",
+        "fr": "bad:buildings",
+        "nl": "bad:buildings"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "bad:round",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "bad:round",
+        "de": "bad:round",
+        "fr": "bad:round",
+        "nl": "bad:round"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "bad:windows",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "bad:windows",
+        "de": "bad:windows",
+        "fr": "bad:windows",
+        "nl": "bad:windows"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "bicycle:end",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "bicycle:end",
+        "de": "bicycle:end",
+        "fr": "bicycle:end",
+        "nl": "bicycle:end"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "bicycle_crossing",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "bicycle_crossing",
+        "de": "bicycle_crossing",
+        "fr": "bicycle_crossing",
+        "nl": "bicycle_crossing"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "bike_route",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "bike_route",
+        "de": "bike_route",
+        "fr": "bike_route",
+        "nl": "bike_route"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "bothways",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "bothways",
+        "de": "bothways",
+        "fr": "bothways",
+        "nl": "bothways"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "bus:lane",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "bus:lane",
+        "de": "bus:lane",
+        "fr": "bus:lane",
+        "nl": "bus:lane"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "hazard:crossing",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "hazard:crossing",
+        "de": "hazard:crossing",
+        "fr": "hazard:crossing",
+        "nl": "hazard:crossing"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "hazard:incline",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "hazard:incline",
+        "de": "hazard:incline",
+        "fr": "hazard:incline",
+        "nl": "hazard:incline"
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
+    },
+    {
+      "class_id": "hazard:intersection",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "hazard:intersection",
+        "de": "hazard:intersection",
+        "fr": "hazard:intersection",
+        "nl": "hazard:intersection"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "hazard:intersection:left",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "hazard:intersection:left",
+        "de": "hazard:intersection:left",
+        "fr": "hazard:intersection:left",
+        "nl": "hazard:intersection:left"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "hazard:intersection:right",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "hazard:intersection:right",
+        "de": "hazard:intersection:right",
+        "fr": "hazard:intersection:right",
+        "nl": "hazard:intersection:right"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "hazard:left_turn",
+      "sign_code": "A1a",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a1a.png",
+      "display_eligible": true,
+      "artwork_id": "be-a1a",
+      "label": {
+        "en": "A1a — hazard:left_turn",
+        "de": "A1a — hazard:left_turn",
+        "fr": "A1a — hazard:left_turn",
+        "nl": "A1a — hazard:left_turn"
+      },
+      "notes": "Exact label spelling/country-code reconciliation; mapping-review-v1.json.",
+      "source_provenance": {
+        "commons_title": "File:Belgian road sign A1a.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_road_sign_A1a.svg",
+        "original_sha256": "0a28850050d883839498c58c8187bbf1e40c9f3cf6d4d81c95618a78f9f44d0f",
+        "png_sha256": "2ac4f6271a72d09ed1f432c24826f15bdb68aad54c867d923b244e4c686271d5"
+      }
+    },
+    {
+      "class_id": "hazard:other",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "hazard:other",
+        "de": "hazard:other",
+        "fr": "hazard:other",
+        "nl": "hazard:other"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "hazard:right_turn",
+      "sign_code": "A1b",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a1b.png",
+      "display_eligible": true,
+      "artwork_id": "be-a1b",
+      "label": {
+        "en": "A1b — hazard:right_turn",
+        "de": "A1b — hazard:right_turn",
+        "fr": "A1b — hazard:right_turn",
+        "nl": "A1b — hazard:right_turn"
+      },
+      "notes": "Exact label spelling/country-code reconciliation; mapping-review-v1.json.",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A1b KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A1b_KB-AR_03-06-2024.svg",
+        "original_sha256": "5b367b80b7665109d009f70e7b079767b488ae73cae4f5cd2dca816596ea63bb",
+        "png_sha256": "899569ebd1e0875104dfe8753a7f1937f622026e3743528290237a6657b92805"
+      }
+    },
+    {
+      "class_id": "hazard:roundabout",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "hazard:roundabout",
+        "de": "hazard:roundabout",
+        "fr": "hazard:roundabout",
+        "nl": "hazard:roundabout"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "lanes",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "lanes",
+        "de": "lanes",
+        "fr": "lanes",
+        "nl": "lanes"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxspeed:10",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxspeed:10",
+        "de": "maxspeed:10",
+        "fr": "maxspeed:10",
+        "nl": "maxspeed:10"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxspeed:15",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxspeed:15",
+        "de": "maxspeed:15",
+        "fr": "maxspeed:15",
+        "nl": "maxspeed:15"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxspeed:5",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxspeed:5",
+        "de": "maxspeed:5",
+        "fr": "maxspeed:5",
+        "nl": "maxspeed:5"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxwidth",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxwidth",
+        "de": "maxwidth",
+        "fr": "maxwidth",
+        "nl": "maxwidth"
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
+    },
+    {
+      "class_id": "no:other",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "no:other",
+        "de": "no:other",
+        "fr": "no:other",
+        "nl": "no:other"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "no:other:dog",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "no:other:dog",
+        "de": "no:other:dog",
+        "fr": "no:other:dog",
+        "nl": "no:other:dog"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "no:other:smoking",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "no:other:smoking",
+        "de": "no:other:smoking",
+        "fr": "no:other:smoking",
+        "nl": "no:other:smoking"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "no_car_bicycle",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "no_car_bicycle",
+        "de": "no_car_bicycle",
+        "fr": "no_car_bicycle",
+        "nl": "no_car_bicycle"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "no_u_turn",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "no_u_turn",
+        "de": "no_u_turn",
+        "fr": "no_u_turn",
+        "nl": "no_u_turn"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "other",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "other",
+        "de": "other",
+        "fr": "other",
+        "nl": "other"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "other:multi",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "other:multi",
+        "de": "other:multi",
+        "fr": "other:multi",
+        "nl": "other:multi"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "parking:charging",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "parking:charging",
+        "de": "parking:charging",
+        "fr": "parking:charging",
+        "nl": "parking:charging"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "parking:disabled",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "parking:disabled",
+        "de": "parking:disabled",
+        "fr": "parking:disabled",
+        "nl": "parking:disabled"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "parking:disc",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "parking:disc",
+        "de": "parking:disc",
+        "fr": "parking:disc",
+        "nl": "parking:disc"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "parking:sidewalk",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "parking:sidewalk",
+        "de": "parking:sidewalk",
+        "fr": "parking:sidewalk",
+        "nl": "parking:sidewalk"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "pedestrian_crossing",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "pedestrian_crossing",
+        "de": "pedestrian_crossing",
+        "fr": "pedestrian_crossing",
+        "nl": "pedestrian_crossing"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "road_works:end",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "road_works:end",
+        "de": "road_works:end",
+        "fr": "road_works:end",
+        "nl": "road_works:end"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "traffic_calming",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "traffic_calming",
+        "de": "traffic_calming",
+        "fr": "traffic_calming",
+        "nl": "traffic_calming"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "traffic_signal",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "traffic_signal",
+        "de": "traffic_signal",
+        "fr": "traffic_signal",
+        "nl": "traffic_signal"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "trunk:end",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "trunk:end",
+        "de": "trunk:end",
+        "fr": "trunk:end",
+        "nl": "trunk:end"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "trunk:start",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "trunk:start",
+        "de": "trunk:start",
+        "fr": "trunk:start",
+        "nl": "trunk:start"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "zone:30",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "zone:30",
+        "de": "zone:30",
+        "fr": "zone:30",
+        "nl": "zone:30"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "zone:30:end",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "zone:30:end",
+        "de": "zone:30:end",
+        "fr": "zone:30:end",
+        "nl": "zone:30:end"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "zone:50",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "zone:50",
+        "de": "zone:50",
+        "fr": "zone:50",
+        "nl": "zone:50"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "zone:50:end",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "zone:50:end",
+        "de": "zone:50:end",
+        "fr": "zone:50:end",
+        "nl": "zone:50:end"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "zone:low_emission",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "zone:low_emission",
+        "de": "zone:low_emission",
+        "fr": "zone:low_emission",
+        "nl": "zone:low_emission"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "zone:no_hgv",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "zone:no_hgv",
+        "de": "zone:no_hgv",
+        "fr": "zone:no_hgv",
+        "nl": "zone:no_hgv"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "zone:no_parking",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "zone:no_parking",
+        "de": "zone:no_parking",
+        "fr": "zone:no_parking",
+        "nl": "zone:no_parking"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "zone:no_parking:end",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "zone:no_parking:end",
+        "de": "zone:no_parking:end",
+        "fr": "zone:no_parking:end",
+        "nl": "zone:no_parking:end"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "zone:other",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "zone:other",
+        "de": "zone:other",
+        "fr": "zone:other",
+        "nl": "zone:other"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "zone:other:end",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "zone:other:end",
+        "de": "zone:other:end",
+        "fr": "zone:other:end",
+        "nl": "zone:other:end"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
     }
   ],
   "policy": {

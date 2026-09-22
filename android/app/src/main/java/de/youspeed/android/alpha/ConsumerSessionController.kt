@@ -301,6 +301,7 @@ data class ConsumerUiState(
     val otherTrafficSignDisplayEnabled: Boolean = false,
     val lastTrafficSignPictogram: TrafficSignPictogram? = null,
     val isTrafficSignEndOverlayVisible: Boolean = false,
+    val trafficSignEndPictogram: TrafficSignPictogram? = null,
     val trafficSignCameraRuntimeState: TrafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
     val trafficSignCameraRuntimeDetail: String = ConsumerRuntimeText.CAMERA_DISABLED.text(),
     val panoramaxCaptureEnabled: Boolean = true,
@@ -468,6 +469,9 @@ class ConsumerSessionController(
     private val manifestEndpoints = targetsConfig?.manifestEndpoints(preferredCountryCode = "DEU").orEmpty()
     private val regionalPackCatalog = runCatching {
         RegionalPackCatalog.decode(assetReader.readText("RegionalCoverage/catalog-v1.json").toByteArray())
+    }.getOrNull()
+    private val speedRegulationRegions = runCatching {
+        SpeedRegulationRegions(RegionalPackCatalog.decode(assetReader.readText("RegionalCoverage/speed-regulation-regions-v1.json").toByteArray(), "administrative_regulation_regions"))
     }.getOrNull()
     private val countryPackRegistry = runCatching {
         TrafficSignCountryPackRegistry.decodeBundled(assetReader.readText("tsr/country-pack-registry-v1.json").toByteArray())
@@ -991,6 +995,9 @@ class ConsumerSessionController(
         }
         val matches = catalog.matches(location.longitude, location.latitude)
         val country = countryPackSelection.update(matches.map { it.country }.toSet(), location.time / 1000.0)
+        AndroidTrafficSignModelPackSelection.availableCountryCode(country)?.let {
+            host?.selectTrafficSignModel(it, "location_country")
+        }
         val state = countryPackRegistry?.decision(country, "android", BuildConfig.VERSION_NAME.removeSuffix("-debug"),
             android.os.Build.VERSION.SDK_INT.toString(), now = clock.millis() / 1000)?.state
         val prefix = country?.let { ConsumerRuntimeText.MODEL_COUNTRY_PREFIX.text(it) } ?: ConsumerRuntimeText.MODEL_PREFIX.text()
@@ -1499,7 +1506,7 @@ class ConsumerSessionController(
                         eventContext.hasVerifiedBundle
                 } == true
                 val previous = immediateTrafficSignOverride
-                immediateTrafficSignOverride = if (
+                immediateTrafficSignOverride = if (latestTrafficSignBase.isUserCorrection) null else if (
                     event.permitsApplicability("immediate") && (TSRApplicabilityConfiguration.defaultMode == "shadow" || event.applicabilityDecision?.scope?.contextGeneration == generation) && event.source == TrafficSignInputSource.LIVE_FRAME && contextMatches && currentSignature != null
                 ) {
                     TrafficSignSpeedOverridePolicy.applyRecognition(
@@ -1593,10 +1600,10 @@ class ConsumerSessionController(
         )
     }
 
-    /** The route country is also the source of truth for the bundled TSR pack. */
+    /** Confirmed location outranks the installed map, including without a local map. */
     internal fun trafficSignModelCountryCode(): String {
         return AndroidTrafficSignModelPackSelection.availableCountryCode(
-            activeMapCountryCode
+            countryPackSelection.activeCountry ?: activeMapCountryCode
                 ?: normalizedCountryCode(bootstrapper.activeState()?.countryCode)
                 ?: inferCountryCodeFromDBPath(uiState.activeDBPath)
         ) ?: "DE"
@@ -1650,7 +1657,7 @@ class ConsumerSessionController(
             ?: ActivePenaltyRules.unavailable()
         updateState { copy(activePenaltyRules = rules) }
         host?.selectTrafficSignModel(
-            AndroidTrafficSignModelPackSelection.availableCountryCode(countryCode),
+            AndroidTrafficSignModelPackSelection.availableCountryCode(countryPackSelection.activeCountry ?: countryCode),
             reason,
         )
     }
@@ -2017,7 +2024,7 @@ class ConsumerSessionController(
             )
             return
         }
-        if (observation.isSpeedLimitEnd) showTrafficSignEndOverlay(observation.generation, observation.driveSessionId)
+        if (observation.isSpeedLimitEnd) showTrafficSignEndOverlay(observation.generation, observation.driveSessionId, observation.candidate.rawClassId)
         postState {
             if (!applicable() || observation.generation != this@ConsumerSessionController.trafficSignGeneration.get() || observation.driveSessionId != trafficSignDriveSessionId ||
                 !otherTrafficSignDisplayEnabled || !trafficSignRecognitionEnabled || !isDriving) {
@@ -2028,17 +2035,22 @@ class ConsumerSessionController(
         }
     }
 
-    private fun showTrafficSignEndOverlay(expectedGeneration: Long, expectedSession: String) {
+    private fun showTrafficSignEndOverlay(expectedGeneration: Long, expectedSession: String, classId: String) {
         mainHandler.post {
             if (expectedGeneration != trafficSignGeneration.get() || expectedSession != trafficSignDriveSessionId || !isDriving) return@post
             if (isDisposed.get()) return@post
             trafficSignEndOverlayGeneration += 1L
             val generation = trafficSignEndOverlayGeneration
             trafficSignEndOverlayHideRunnable?.let(mainHandler::removeCallbacks)
-            updateState { copy(isTrafficSignEndOverlayVisible = true) }
+            val sign = trafficSignDisplayCatalog.pictogram(classId)
+                ?: if (classId == "maxspeed:end" || classId.startsWith("B33-")) {
+                    trafficSignDisplayCatalog.pictogram(if (trafficSignModelCountryCode() == "FR") "B31" else "no:end")
+                } else null
+                ?: return@post
+            updateState { copy(isTrafficSignEndOverlayVisible = true, trafficSignEndPictogram = sign) }
             val hide = Runnable {
                 if (generation == trafficSignEndOverlayGeneration) {
-                    updateState { copy(isTrafficSignEndOverlayVisible = false) }
+                    updateState { copy(isTrafficSignEndOverlayVisible = false, trafficSignEndPictogram = null) }
                 }
             }
             trafficSignEndOverlayHideRunnable = hide
@@ -2369,7 +2381,7 @@ class ConsumerSessionController(
                 var effective = trafficSignResolver.commit(
                     event,
                     base,
-                    fallbackSpeedLimitAfterEnd = speedLimitFallbackAfterEnd(),
+                    fallbackSpeedLimitAfterEnd = speedLimitFallbackAfterEnd(event.action),
                 )
                 freshContext?.let { current ->
                     effective = trafficSignResolver.reconcile(
@@ -2506,7 +2518,7 @@ class ConsumerSessionController(
                 if (event.generation == trafficSignGeneration.get() && isDriving &&
                     uiState.trafficSignRecognitionEnabled && event.driveSessionId == trafficSignDriveSessionId
                 ) {
-                    trafficSignBaseForPersistedCorrection(latestTrafficSignContext, correction)?.let { localBase ->
+                    trafficSignBaseForPersistedCorrection(latestTrafficSignContext, correction)?.takeUnless { latestTrafficSignBase.isUserCorrection }?.let { localBase ->
                         latestTrafficSignBase = localBase
                     }
                 }
@@ -2533,6 +2545,7 @@ class ConsumerSessionController(
         submittedAtNanos: Long,
     ) {
         val presented = synchronized(trafficSignStateLock) {
+            if (latestTrafficSignBase.isUserCorrection) return@synchronized latestTrafficSignBase.effective()
             val override = immediateTrafficSignOverride?.takeIf { candidate ->
                 val current = latestTrafficSignContext
                 current != null &&
@@ -2540,7 +2553,8 @@ class ConsumerSessionController(
                     candidate.context.travelDirection == current.travelDirection &&
                     candidate.context.sourceSignature == current.sourceSignature
             }
-            if (override != null && effective.source != EffectiveSpeedLimitSource.CAMERA) {
+            if (override != null && effective.source != EffectiveSpeedLimitSource.CAMERA &&
+                !effective.isUserCorrection && !effective.cameraEvidence) {
                 EffectiveSpeedLimit(
                     resolution = TrafficSignResolvedLimit(
                         TrafficSignResolvedLimitKind.NUMERIC,
@@ -2830,6 +2844,17 @@ class ConsumerSessionController(
                 localSpeedOverridesByWayId = resolveLocalSpeedOverrides(updated)
                 localSpeedOverrideValuesByWayId = resolveLocalSpeedOverrideValues(updated)
                 activateLocalSpeedCorrectionIfPossible(selection, savedObservation)
+                synchronized(trafficSignStateLock) {
+                    if (wayId != null && wayId == latestTrafficSignContext?.wayId) {
+                        latestTrafficSignBase = TrafficSignBaseLimit(
+                            resolvedLimitForCanonicalValue(selection.value), EffectiveSpeedLimitSource.LOCAL_CORRECTION,
+                            "user_correction", isUserCorrection = true,
+                        )
+                        trafficSignResolver.clear()
+                        immediateTrafficSignOverride = null
+                        trafficSignStateRevision.incrementAndGet()
+                    }
+                }
                 val displayText = speedLimitDisplayTextForValue(selection.value)
                 resetSpeedCaptureTransientState()
                 postState {
@@ -2840,6 +2865,7 @@ class ConsumerSessionController(
                         speedCaptureTranscript = "",
                         maintenanceMessage = "",
                         lastError = "",
+                        effectiveSpeedLimitSource = if (wayId != null && wayId == limitWayId) EffectiveSpeedLimitSource.LOCAL_CORRECTION else effectiveSpeedLimitSource,
                         speedLimitKmh = when {
                             wayId != null && wayId == limitWayId && numericSpeed != null -> numericSpeed
                             wayId != null && wayId == limitWayId && displayText != null -> null
@@ -3916,6 +3942,7 @@ class ConsumerSessionController(
                     result = result,
                     countryCode = effectiveCountryCode ?: "ZZZ",
                     staleSpeedLimitKmh = staleSpeedLimitKmh,
+                    isUserCorrection = activeCorrectionOverrideValue != null || indexedCorrection?.isUserCorrection == true,
                 )
                 val evaluation = evaluateTrafficSignSources(
                     expectedLookupToken = token,
@@ -4594,6 +4621,7 @@ class ConsumerSessionController(
         result: SpeedLookupResult,
         countryCode: String,
         staleSpeedLimitKmh: Int? = null,
+        isUserCorrection: Boolean = false,
     ): TrafficSignBaseLimit {
         val localResolution = resolvedLimitForCanonicalValue(localOverrideValue)
         if (localResolution != null) {
@@ -4601,6 +4629,7 @@ class ConsumerSessionController(
                 resolution = localResolution,
                 source = EffectiveSpeedLimitSource.LOCAL_CORRECTION,
                 reason = "local_correction:${localCorrectionId ?: "session"}",
+                isUserCorrection = isUserCorrection,
             )
         }
         val bundleResolution = when {
@@ -4629,16 +4658,25 @@ class ConsumerSessionController(
         )
     }
 
-    private fun speedLimitFallbackAfterEnd(): TrafficSignResolvedLimit? =
-        if (latestTrafficSignBase.source == EffectiveSpeedLimitSource.STALE_BUNDLE) {
-            null
-        } else latestTrafficSignInsideCity?.takeIf {
-            latestTrafficSignCitySource?.startsWith("settlement:") == true && latestTrafficSignCitySource?.endsWith(":high") == true
-        }?.let { insideCity ->
-            TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, if (insideCity) 50 else 100)
-        } ?: latestTrafficSignBase.resolution?.takeUnless {
-            latestTrafficSignBase.source == EffectiveSpeedLimitSource.STALE_BUNDLE
+    private fun speedLimitFallbackAfterEnd(action: TrafficSignAction): TrafficSignResolvedLimit? {
+        if (latestTrafficSignBase.source == EffectiveSpeedLimitSource.STALE_BUNDLE) return null
+        val context = latestTrafficSignContext?.takeIf { it.matchedWayStable } ?: return null
+        val country = countryPackSelection.activeCountry ?: activeMapCountryCode
+        val highway = latestTrafficSignMapFix?.geometry?.roadClass.takeUnless { action.kind == TrafficSignActionKind.CITY_ENTRY }
+        val region = context.latitude?.let { lat -> context.longitude?.let { lon -> speedRegulationRegions?.region(lat, lon) } }
+        val inside = when (action.kind) {
+            TrafficSignActionKind.CITY_ENTRY -> true
+            TrafficSignActionKind.CITY_EXIT -> false
+            else -> latestTrafficSignInsideCity?.takeIf {
+                latestTrafficSignCitySource?.startsWith("settlement:") == true && latestTrafficSignCitySource?.endsWith(":high") == true
+            }
         }
+        if (highway == "motorway" && PenaltyCountryCodes.alpha2(country) == "DE")
+            return TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNLIMITED)
+        return TrafficSignRoadDefaultPolicy.speedKmh(country, region, highway, inside)?.let {
+            TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, it)
+        }
+    }
 
     private fun resolvedLimitForCanonicalValue(value: String?): TrafficSignResolvedLimit? = when (
         val normalized = value?.trim()?.lowercase(Locale.US)
@@ -5072,7 +5110,7 @@ class ConsumerSessionController(
 
     private fun resolveLocalSpeedOverrides(observations: List<LocalObservation>): Map<String, Int> {
         val resolved = linkedMapOf<String, Int>()
-        observations.forEach { observation ->
+        observations.sortedBy { it.modality == LocalObservationModality.COMPUTER_VISION }.forEach { observation ->
             val wayId = observation.wayId?.trim().orEmpty()
             if (observation.state == LocalObservationState.DISCARDED) {
                 return@forEach
@@ -5087,7 +5125,7 @@ class ConsumerSessionController(
 
     private fun resolveLocalSpeedOverrideValues(observations: List<LocalObservation>): Map<String, String> {
         val resolved = linkedMapOf<String, String>()
-        observations.forEach { observation ->
+        observations.sortedBy { it.modality == LocalObservationModality.COMPUTER_VISION }.forEach { observation ->
             val wayId = observation.wayId?.trim().orEmpty()
             val maxspeedValue = observation.newSpeedValue?.trim().orEmpty()
             if (observation.state == LocalObservationState.DISCARDED) {

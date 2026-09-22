@@ -219,7 +219,13 @@ struct MainView: View {
                 layout {
                     ZStack(alignment: .top) {
                         ZStack {
-                            SpeedLimitSignView(
+                            if viewModel.trafficSignEndOverlayVisible, !viewModel.isInSpeedCaptureMode,
+                               let sign = viewModel.trafficSignEndPictogram {
+                                TrafficSignPictogramView(sign: sign)
+                                    .frame(width: signSize, height: signSize)
+                                    .accessibilityIdentifier("dashboard.speedLimitEndSign")
+                            } else {
+                              SpeedLimitSignView(
                                 limitText: limitText,
                                 numberFontSize: signSize * speedLimitNumberScale,
                                 showsTunnelIcon: shouldShowTunnelSignIcon,
@@ -230,18 +236,12 @@ struct MainView: View {
                                 accessibilityDescription: speedLimitAccessibilityDescription
                             )
                             .frame(width: signSize, height: signSize)
+                            }
                             Color.clear
                                 .frame(width: signSize, height: signSize)
                                 .allowsHitTesting(false)
                                 .accessibilityIdentifier("dashboard.speedSignGeometry")
 
-                            if viewModel.trafficSignEndOverlayVisible {
-                                EndOfSpeedLimitSignView()
-                                    .frame(width: signSize * 0.34, height: signSize * 0.34)
-                                    .offset(y: -signSize * 0.42)
-                                    .transition(.opacity)
-                                    .accessibilityLabel(NSLocalizedString("limit.accessibility.end", comment: ""))
-                            }
                         }
                         .background {
                             if showsActiveCameraLimitIndicator {
@@ -1711,35 +1711,6 @@ private struct SpeedLimitSignView: View {
                 ? "\(accessibilityDescription), von der Kamera übernommen"
                 : accessibilityDescription
         )
-    }
-}
-
-private struct EndOfSpeedLimitSignView: View {
-    var body: some View {
-        GeometryReader { proxy in
-            let size = min(proxy.size.width, proxy.size.height)
-            let borderWidth = max(1, size * 0.028)
-            ZStack {
-                Circle()
-                    .fill(.white)
-                ZStack {
-                    ForEach(0..<5, id: \.self) { index in
-                        Rectangle()
-                            .fill(Color.black.opacity(0.42))
-                            .frame(width: max(2, size * 0.035), height: size * 1.7)
-                            .rotationEffect(.degrees(-51))
-                            .offset(x: (CGFloat(index) - 2) * size * 0.12)
-                    }
-                }
-                .frame(width: size - borderWidth * 2, height: size - borderWidth * 2)
-                .clipShape(Circle())
-                Circle()
-                    .strokeBorder(Color.black.opacity(0.82), lineWidth: borderWidth)
-            }
-            .frame(width: size, height: size)
-        }
-        .aspectRatio(1, contentMode: .fit)
-        .accessibilityElement(children: .ignore)
     }
 }
 

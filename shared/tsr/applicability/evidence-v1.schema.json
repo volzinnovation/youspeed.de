@@ -312,6 +312,14 @@
               "type": "null"
             }
           ]
+        },
+        "postedSpeedKmh": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 5,
+          "maximum": 200
         }
       }
     },

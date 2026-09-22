@@ -31,12 +31,12 @@
   },
   "class_mapping": [
     {
-      "class_id": "arrow_left_down",
-      "label": "arrow_left_down",
+      "class_id": "arrow:other:red",
+      "label": "arrow:other:red",
+      "threshold": 0.7,
       "semantic": {
         "kind": "unknown"
-      },
-      "threshold": 0.7
+      }
     },
     {
       "class_id": "arrow_left",
@@ -47,8 +47,8 @@
       "threshold": 0.7
     },
     {
-      "class_id": "arrow_right_down",
-      "label": "arrow_right_down",
+      "class_id": "arrow_left_down",
+      "label": "arrow_left_down",
       "semantic": {
         "kind": "unknown"
       },
@@ -63,16 +63,16 @@
       "threshold": 0.7
     },
     {
-      "class_id": "arrow_through",
-      "label": "arrow_through",
+      "class_id": "arrow_right_down",
+      "label": "arrow_right_down",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "arrow_turn_left_through",
-      "label": "arrow_turn_left_through",
+      "class_id": "arrow_through",
+      "label": "arrow_through",
       "semantic": {
         "kind": "unknown"
       },
@@ -87,12 +87,76 @@
       "threshold": 0.7
     },
     {
+      "class_id": "arrow_turn_left_through",
+      "label": "arrow_turn_left_through",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "arrow_turn_right",
+      "label": "arrow_turn_right",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
       "class_id": "arrow_turn_right_through",
       "label": "arrow_turn_right_through",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "bad",
+      "label": "bad",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "bad:back",
+      "label": "bad:back",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "bad:buildings",
+      "label": "bad:buildings",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "bad:round",
+      "label": "bad:round",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "bad:windows",
+      "label": "bad:windows",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "bicycle:end",
+      "label": "bicycle:end",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     },
     {
       "class_id": "bicycle:priority",
@@ -117,6 +181,38 @@
         "kind": "unknown"
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "bicycle_crossing",
+      "label": "bicycle_crossing",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "bike_route",
+      "label": "bike_route",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "bothways",
+      "label": "bothways",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "bus:lane",
+      "label": "bus:lane",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     },
     {
       "class_id": "city:end",
@@ -199,12 +295,60 @@
       "threshold": 0.7
     },
     {
+      "class_id": "hazard:crossing",
+      "label": "hazard:crossing",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
       "class_id": "hazard:gravel",
       "label": "hazard:gravel",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "hazard:incline",
+      "label": "hazard:incline",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "hazard:intersection",
+      "label": "hazard:intersection",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "hazard:intersection:left",
+      "label": "hazard:intersection:left",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "hazard:intersection:right",
+      "label": "hazard:intersection:right",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "hazard:left_turn",
+      "label": "hazard:left_turn",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     },
     {
       "class_id": "hazard:level_crossing",
@@ -247,12 +391,28 @@
       "threshold": 0.7
     },
     {
+      "class_id": "hazard:other",
+      "label": "hazard:other",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
       "class_id": "hazard:pedestrian_crossing",
       "label": "hazard:pedestrian_crossing",
       "semantic": {
         "kind": "unknown"
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "hazard:right_turn",
+      "label": "hazard:right_turn",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     },
     {
       "class_id": "hazard:road_works",
@@ -269,6 +429,14 @@
         "kind": "unknown"
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "hazard:roundabout",
+      "label": "hazard:roundabout",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     },
     {
       "class_id": "hazard:school",
@@ -335,6 +503,14 @@
       "threshold": 0.7
     },
     {
+      "class_id": "lanes",
+      "label": "lanes",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
       "class_id": "maxheight",
       "label": "maxheight",
       "semantic": {
@@ -351,11 +527,31 @@
       "threshold": 0.7
     },
     {
+      "class_id": "maxspeed:10",
+      "label": "maxspeed:10",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 10,
+        "unit": "km/h"
+      },
+      "threshold": 0.7
+    },
+    {
       "class_id": "maxspeed:100",
       "label": "maxspeed:100",
       "semantic": {
         "kind": "maximum_speed",
         "value": 100,
+        "unit": "km/h"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "maxspeed:15",
+      "label": "maxspeed:15",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 15,
         "unit": "km/h"
       },
       "threshold": 0.7
@@ -376,6 +572,16 @@
       "semantic": {
         "kind": "maximum_speed",
         "value": 30,
+        "unit": "km/h"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "maxspeed:5",
+      "label": "maxspeed:5",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 5,
         "unit": "km/h"
       },
       "threshold": 0.7
@@ -447,6 +653,14 @@
       "threshold": 0.7
     },
     {
+      "class_id": "maxwidth",
+      "label": "maxwidth",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
       "class_id": "motorway:end",
       "label": "motorway:end",
       "semantic": {
@@ -461,6 +675,38 @@
         "kind": "unknown"
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "no:end",
+      "label": "no:end",
+      "semantic": {
+        "kind": "restriction_end"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "no:other",
+      "label": "no:other",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "no:other:dog",
+      "label": "no:other:dog",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "no:other:smoking",
+      "label": "no:other:smoking",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     },
     {
       "class_id": "no_agriculture",
@@ -493,6 +739,14 @@
         "kind": "unknown"
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "no_car_bicycle",
+      "label": "no_car_bicycle",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     },
     {
       "class_id": "no_dangerous",
@@ -631,18 +885,18 @@
       "threshold": 0.7
     },
     {
+      "class_id": "no_u_turn",
+      "label": "no_u_turn",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
       "class_id": "no_way",
       "label": "no_way",
       "semantic": {
         "kind": "unknown"
-      },
-      "threshold": 0.7
-    },
-    {
-      "class_id": "no:end",
-      "label": "no:end",
-      "semantic": {
-        "kind": "restriction_end"
       },
       "threshold": 0.7
     },
@@ -653,6 +907,22 @@
         "kind": "unknown"
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "other",
+      "label": "other",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "other:multi",
+      "label": "other:multi",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     },
     {
       "class_id": "parking",
@@ -679,6 +949,30 @@
       "threshold": 0.7
     },
     {
+      "class_id": "parking:charging",
+      "label": "parking:charging",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "parking:disabled",
+      "label": "parking:disabled",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "parking:disc",
+      "label": "parking:disc",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
       "class_id": "parking:hgv",
       "label": "parking:hgv",
       "semantic": {
@@ -689,6 +983,22 @@
     {
       "class_id": "parking:motorhome",
       "label": "parking:motorhome",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "parking:sidewalk",
+      "label": "parking:sidewalk",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "pedestrian:start",
+      "label": "pedestrian:start",
       "semantic": {
         "kind": "unknown"
       },
@@ -711,12 +1021,12 @@
       "threshold": 0.7
     },
     {
-      "class_id": "pedestrian:start",
-      "label": "pedestrian:start",
+      "class_id": "pedestrian_crossing",
+      "label": "pedestrian_crossing",
+      "threshold": 0.7,
       "semantic": {
-        "kind": "pedestrian_zone_start"
-      },
-      "threshold": 0.7
+        "kind": "unknown"
+      }
     },
     {
       "class_id": "priority:backward",
@@ -751,12 +1061,12 @@
       "threshold": 0.7
     },
     {
-      "class_id": "stop",
-      "label": "stop",
+      "class_id": "road_works:end",
+      "label": "road_works:end",
+      "threshold": 0.7,
       "semantic": {
         "kind": "unknown"
-      },
-      "threshold": 0.7
+      }
     },
     {
       "class_id": "roundabout",
@@ -767,34 +1077,44 @@
       "threshold": 0.7
     },
     {
-      "class_id": "maxspeed:10",
-      "label": "maxspeed:10",
+      "class_id": "stop",
+      "label": "stop",
       "semantic": {
-        "kind": "maximum_speed",
-        "value": 10,
-        "unit": "km/h"
+        "kind": "unknown"
       },
       "threshold": 0.7
     },
     {
-      "class_id": "maxspeed:15",
-      "label": "maxspeed:15",
+      "class_id": "traffic_calming",
+      "label": "traffic_calming",
+      "threshold": 0.7,
       "semantic": {
-        "kind": "maximum_speed",
-        "value": 15,
-        "unit": "km/h"
-      },
-      "threshold": 0.7
+        "kind": "unknown"
+      }
     },
     {
-      "class_id": "maxspeed:5",
-      "label": "maxspeed:5",
+      "class_id": "traffic_signal",
+      "label": "traffic_signal",
+      "threshold": 0.7,
       "semantic": {
-        "kind": "maximum_speed",
-        "value": 5,
-        "unit": "km/h"
-      },
-      "threshold": 0.7
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "trunk:end",
+      "label": "trunk:end",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "restriction_end"
+      }
+    },
+    {
+      "class_id": "trunk:start",
+      "label": "trunk:start",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     },
     {
       "class_id": "zone:30",
@@ -810,7 +1130,8 @@
       "class_id": "zone:30:end",
       "label": "zone:30:end",
       "semantic": {
-        "kind": "zone_end"
+        "kind": "zone_end",
+        "value": 30
       },
       "threshold": 0.7
     },
@@ -828,9 +1149,58 @@
       "class_id": "zone:50:end",
       "label": "zone:50:end",
       "semantic": {
-        "kind": "zone_end"
+        "kind": "zone_end",
+        "value": 50
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "zone:low_emission",
+      "label": "zone:low_emission",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "zone:no_hgv",
+      "label": "zone:no_hgv",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "zone:no_parking",
+      "label": "zone:no_parking",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "zone:no_parking:end",
+      "label": "zone:no_parking:end",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "zone:other",
+      "label": "zone:other",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
+    },
+    {
+      "class_id": "zone:other:end",
+      "label": "zone:other:end",
+      "threshold": 0.7,
+      "semantic": {
+        "kind": "unknown"
+      }
     }
   ],
   "lineage": {

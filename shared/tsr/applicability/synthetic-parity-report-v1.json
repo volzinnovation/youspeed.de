@@ -7,12 +7,12 @@
   "fieldQualified": false,
   "parity": "passed",
   "numericTolerance": 1e-09,
-  "corpusSha256": "8901bc7970b87fbb6d03a8446cbddbd52fa6e49ac1c99f78fceec9cb812a6652",
-  "configSha256": "ff87a27c0a2dc643225fad1f34cfd3f131bf00b2e2e5a2b647ab5ed3e81738e3",
+  "corpusSha256": "99af996489517307febec528f5fb89304d183a015fb3233cf0e7c49f8cd331fd",
+  "configSha256": "6278259f59578238acabe7df1abe53f8cd580115b20c6036ef3f89657e97ca11",
   "sourceHashes": {
-    "iphone/SpeedConsumerApp/TrafficSignApplicability.swift": "dbee01e42e555e03c805c29e082fc98a22453c35074c3627cf5eebc829f655c3",
-    "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignApplicability.kt": "dacf78c0f304c43409b19e9b2b90e49d95ef0499865d304244823bc66c084375",
-    "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignApplicabilityJson.kt": "2f681b87b4ba22af1e0b8cfac7865e9a8451e8135904df20ec75f01b82f17f56"
+    "iphone/SpeedConsumerApp/TrafficSignApplicability.swift": "d8e7234e039aa0bc183a65c52800855aa89ba6258bec9a1d66c34e543beb4b01",
+    "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignApplicability.kt": "f65832a43ae84610fe1a1388d3195c67308195e7c907ada434559c85b67c257d",
+    "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignApplicabilityJson.kt": "acf274adcf4d4c5d4023482c850de086ddb6024cd50f4e7e7b6f790995691cac"
   },
   "scenarios": [
     {
@@ -423,51 +423,154 @@
           ]
         }
       ]
+    },
+    {
+      "scenario": "motorway_exit_90",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "motorway_exit_ambiguous_speed"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "motorway_exit_70",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "motorway_exit_ambiguous_speed"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "motorway_exit_50",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "motorway_exit_ambiguous_speed"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "exit_taken",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "mainline_limit_already_90",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "unconnected_parallel",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "on_ramp_merge",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "stale_motorway",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "stale_road_context"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "poor_gps_motorway",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "unreliable_road_context"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "paired_mainline_repeat",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        },
+        {
+          "trackId": "track-2",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
     }
   ],
+  "processWallTimeIncludingStartupMs": {
+    "swift": 368.7779999454506,
+    "kotlin": 208.7917919852771
+  },
   "pending": [
     "Reviewed real sequence corpus and baseline",
     "Full-image inference replay",
     "Independent holdout and frozen empirical gates",
     "Minimum-device sustained performance, battery and thermal evidence",
     "Explicit paired-platform rollout approval"
-  ],
-  "validationDate": "2026-09-20",
-  "baseRevision": "3a37fce41c8203391870a3d34c1e0c4059d92e60",
-  "revisionNote": "Implementation on codex/8-tsr-applicability; sourceHashes identify the replayed native policy bytes. Validation results describe the 2026-09-20 run before device deployment.",
-  "qualificationDecision": "NO_GO",
-  "validation": {
-    "iphoneConsumerSimulator": {
-      "tests": 326,
-      "skipped": 23,
-      "failures": 0,
-      "result": "passed"
-    },
-    "androidUnit": {
-      "tests": 321,
-      "skipped": 0,
-      "failures": 0,
-      "result": "passed"
-    },
-    "sharedApplicabilityAndFrozenContracts": {
-      "tests": 48,
-      "failures": 0,
-      "result": "passed"
-    },
-    "inspector": {
-      "tests": 24,
-      "failures": 0,
-      "result": "passed"
-    },
-    "broaderPythonTsr": {
-      "passed": 279,
-      "failed": 1,
-      "result": "preexisting_failure",
-      "failure": "test_national_sign_set_index_is_explicit_and_schema_valid: Dutch PNG bytes differ from the national-sign manifest; the same mismatch exists at baseRevision."
-    },
-    "physicalDevices": "not_run",
-    "reviewedRealEncounters": 0,
-    "fullImageNativeReplay": "pending",
-    "deployment": "not_performed"
-  }
+  ]
 }

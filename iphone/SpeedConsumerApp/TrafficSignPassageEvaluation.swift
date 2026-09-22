@@ -43,6 +43,7 @@ struct EffectiveSpeedLimitState: Codable, Equatable, Sendable {
     let source: EffectiveSpeedLimitSource
     let presentationReason: String
     let hasCameraEvidenceMarker: Bool
+    var isUserCorrection: Bool = false
 
     static let none = EffectiveSpeedLimitState(
         value: .unknown,
@@ -54,7 +55,8 @@ struct EffectiveSpeedLimitState: Codable, Equatable, Sendable {
     static func base(
         localValue: String?,
         bundledSpeedKmh: Int?,
-        bundledUnlimited: Bool
+        bundledUnlimited: Bool,
+        localIsUserCorrection: Bool = true
     ) -> EffectiveSpeedLimitState {
         if let normalized = localValue?
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -64,7 +66,7 @@ struct EffectiveSpeedLimitState: Codable, Equatable, Sendable {
                     value: .walk,
                     source: .localCorrection,
                     presentationReason: "local_correction_walk",
-                    hasCameraEvidenceMarker: false
+                    hasCameraEvidenceMarker: false, isUserCorrection: localIsUserCorrection
                 )
             }
             if normalized == "none" {
@@ -72,7 +74,7 @@ struct EffectiveSpeedLimitState: Codable, Equatable, Sendable {
                     value: .unlimited,
                     source: .localCorrection,
                     presentationReason: "local_correction_unlimited",
-                    hasCameraEvidenceMarker: false
+                    hasCameraEvidenceMarker: false, isUserCorrection: localIsUserCorrection
                 )
             }
             if let speed = Int(normalized), speed > 0 {
@@ -80,7 +82,7 @@ struct EffectiveSpeedLimitState: Codable, Equatable, Sendable {
                     value: .numeric(speed),
                     source: .localCorrection,
                     presentationReason: "local_correction_numeric",
-                    hasCameraEvidenceMarker: false
+                    hasCameraEvidenceMarker: false, isUserCorrection: localIsUserCorrection
                 )
             }
         }
@@ -171,8 +173,8 @@ enum TrafficSignStructuralAction: Codable, Equatable, Hashable, Sendable {
         let rawClass = candidate.rawClassId.lowercased()
         // Reviewed reference aliases support future classifier packs and
         // diagnostic replay; they do not add classes to the bundled model.
-        if rawClass.hasPrefix("de:278-") {
-            guard let value = Int(rawClass.dropFirst("de:278-".count)), (5...200).contains(value) else {
+        if rawClass.hasPrefix("de:278-") || rawClass.hasPrefix("b33-") {
+            guard let value = Int(rawClass.split(separator: "-").last ?? ""), (5...200).contains(value) else {
                 return .unresolved(candidate.rawClassId)
             }
             return .maximumSpeedEnd(value)
@@ -181,13 +183,13 @@ enum TrafficSignStructuralAction: Codable, Equatable, Hashable, Sendable {
         case "de:278":
             guard candidate.value.map({ (5...200).contains($0) }) ?? true else { return .unresolved(candidate.rawClassId) }
             return .maximumSpeedEnd(candidate.value)
-        case "de:282", "no:end": return .allRestrictionsEnd
+        case "de:282", "no:end", "b31": return .allRestrictionsEnd
         case "de:280", "de:281", "no_overtaking:end", "no_overtaking:hgv:end", "no_overtaking:end:hgv": return .nonSpeedRestrictionEnd
         case "de:310": return .cityEntry("DE")
         case "city:start", "city_limit:start": return .cityEntry(countryCode)
         case "de:311", "city:end", "city_limit:end": return .cityExit
-        case "motorway:end": return .motorwayExit
-        case "trunk:end": return .motorroadExit
+        case "motorway:end", "c208": return .motorwayExit
+        case "trunk:end", "c108": return .motorroadExit
         default: break
         }
         switch candidate.semanticKind {
@@ -311,6 +313,7 @@ struct TrafficSignPassageEvent: Codable, Equatable, Sendable {
 
     // In-memory envelope only. Wire v1 remains frozen; persisted evidence uses a versioned sidecar.
     var applicabilityDecision: TSRApplicabilityDecision? = nil
+    var countryCode: String? = nil
     private enum CodingKeys: String, CodingKey {
         case schemaVersion
         case finalizedEventID
@@ -323,6 +326,7 @@ struct TrafficSignPassageEvent: Codable, Equatable, Sendable {
         case preprocessingVersion
         case modelComponents
         case action
+        case countryCode
         case conditionState
         case restrictions
         case firstSeenTimestampUTC
@@ -503,6 +507,7 @@ enum TrafficSignPassageWireEncoder {
         let eligibleMemberships = event.recognitionRouteRelationMemberships
         let action = try actionWire(
             event.action,
+            countryCode: event.countryCode,
             condition: event.conditionState,
             restrictions: event.restrictions
         )
@@ -594,6 +599,7 @@ enum TrafficSignPassageWireEncoder {
 
     private static func actionWire(
         _ action: TrafficSignStructuralAction,
+        countryCode: String?,
         condition: TrafficSignConditionState,
         restrictions: [TrafficSignRestriction]
     ) throws -> [String: Any] {
@@ -612,7 +618,7 @@ enum TrafficSignPassageWireEncoder {
         case .cityEntry(let country):
             result["kind"] = "city_entry"; result["country"] = country.uppercased()
         case .cityExit:
-            result["kind"] = "city_exit"; result["country"] = "DE"
+            result["kind"] = "city_exit"; result["country"] = countryCode?.uppercased() ?? "DE"
         case .pedestrianZoneStart: result["kind"] = "pedestrian_zone_start"
         case .pedestrianZoneEnd: result["kind"] = "pedestrian_zone_end"
         case .maximumSpeedEnd(let value):
@@ -891,8 +897,10 @@ struct TrafficSignPassageFinalizer: Sendable {
     private var queuedTrack: Track?
     private var mostRecentCommittedSign: CommittedSignSuppression?
 
-    init(configuration: Configuration = Configuration()) {
+    private let countryCode: String
+    init(configuration: Configuration = Configuration(), countryCode: String = "DE") {
         self.configuration = configuration
+        self.countryCode = countryCode
     }
 
     mutating func reset() {
@@ -922,7 +930,7 @@ struct TrafficSignPassageFinalizer: Sendable {
         if let candidate = event.candidate,
            event.analysisEligible != false,
            event.state == .provisional || event.state == .confirmed {
-            let action = TrafficSignStructuralAction.normalized(from: candidate)
+            let action = TrafficSignStructuralAction.normalized(from: candidate, countryCode: countryCode)
             guard action.passageEventEligible else {
                 // UNKNOWN and non-speed signs are neutral to an already armed
                 // speed track. Only explicit analyzed-missing output or a
@@ -1339,7 +1347,8 @@ struct TrafficSignPassageFinalizer: Sendable {
             lossReason: current.lossReason,
             negativeFramesRequired: current.negativeFramesRequired,
             sessionGeneration: current.sessionGeneration,
-            contextGeneration: current.contextGeneration
+            contextGeneration: current.contextGeneration,
+            countryCode: countryCode
         )
         mostRecentCommittedSign = CommittedSignSuppression(
             physicalTrackID: current.id,
@@ -1767,6 +1776,33 @@ enum TrafficSignBundleContextPolicy {
 
 }
 
+/// Passenger-car defaults after an observed restriction ends. Posted map values
+/// are deliberately not an input: the map may still contain the ended restriction.
+enum TrafficSignRoadDefaultPolicy {
+    static func speedKmh(country: String?, region: String?, highway: String?, insideCity: Bool?) -> Int? {
+        let country = PenaltyCountryCode.alpha2(country)
+        if highway == "motorway" {
+            // Dutch motorway limits require the signed time/road regime, which
+            // the current bundle does not carry. Do not invent a 100/130 switch.
+            return ["BE", "CH"].contains(country) ? 120 : country == "FR" ? 130 : nil
+        }
+        guard let insideCity else { return nil }
+        if insideCity {
+            if country == "BE" { return region == "BE-BRU" ? 30 : ["BE-VLG", "BE-WAL"].contains(region) ? 50 : nil }
+            return ["DE", "FR", "NL", "CH"].contains(country) ? 50 : nil
+        }
+        if highway == "trunk", ["NL", "CH"].contains(country) { return 100 }
+        guard ["primary", "secondary", "tertiary", "unclassified", "residential", "road"].contains(highway) else { return nil }
+        switch country {
+        case "DE": return 100
+        case "FR": return 80
+        case "NL", "CH": return 80
+        case "BE": return region == "BE-VLG" ? 70 : region == "BE-WAL" ? 90 : nil
+        default: return nil
+        }
+    }
+}
+
 enum TrafficSignBundleContextTransition: Equatable, Sendable {
     case none
     case enteredCity
@@ -1904,6 +1940,13 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
         verifiedEnclosingBase: EffectiveSpeedLimitState? = nil,
         fallbackSpeedLimitAfterEnd: EffectiveSpeedLimitValue? = nil
     ) -> TrafficSignPassageCommitResult {
+        if base.isUserCorrection {
+            _ = clear(base: base)
+            return TrafficSignPassageCommitResult(applied: false, effectiveState: base,
+                persistence: TrafficSignPassagePersistenceDecision(value: nil, oldSpeedKmh: base.value.speedKmh,
+                    runtimeApplicable: false, initialState: .needsReview, operation: nil, directionScope: .unknown,
+                    applicability: .permanent, exportTagKey: nil, reason: "user_correction_precedence"))
+        }
         guard passage.permitsApplicability() else {
             return TrafficSignPassageCommitResult(applied: false, effectiveState: assertion?.effectiveState ?? base,
                 persistence: TrafficSignPassagePersistenceDecision(value: nil, oldSpeedKmh: base.value.speedKmh,
@@ -2036,6 +2079,7 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
         currentCoordinate: TrafficSignCoordinate?,
         timestamp: Date
     ) -> EffectiveSpeedLimitState {
+        if base.isUserCorrection { return clear(base: base) }
         guard var assertion else {
             lastEffectiveState = base
             return base
@@ -2113,12 +2157,10 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
             rules.posted = nil
             return (true, .numeric(value), "camera_zone_start")
         case .cityEntry(let country):
-            guard ["DE", "DEU"].contains(country.uppercased()) else {
-                return (false, .unknown, "camera_city_entry_unsupported_country")
-            }
-            rules.city = .numeric(50)
+            let city = fallbackSpeedLimitAfterEnd ?? (["DE", "DEU", "FR", "FRA", "NL", "NLD"].contains(country.uppercased()) ? .numeric(50) : .unknown)
+            rules.city = city
             rules.posted = nil
-            return (true, .numeric(50), "camera_german_city_entry")
+            return (true, rules.pedestrian ? .walk : rules.zone.map { .numeric($0.value) } ?? city, "camera_city_entry")
         case .pedestrianZoneStart:
             rules.pedestrian = true
             rules.posted = nil
@@ -2161,11 +2203,11 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
         case .allRestrictionsEnd:
             let ended = rules.posted
             rules.posted = nil
-            return resolvedEnclosing(afterEnding: ended, reason: "camera_all_restrictions_end")
+            return resolvedEnclosing(afterEnding: ended, reason: "camera_all_restrictions_end", fallbackSpeedLimitAfterEnd: fallbackSpeedLimitAfterEnd)
         case .zoneEnd(let expected):
             guard let zone = rules.zone else {
                 rules.posted = nil
-                return (true, .unknown, "camera_zone_end_unresolved")
+                return resolvedEnclosing(afterEnding: nil, reason: "camera_zone_end", fallbackSpeedLimitAfterEnd: fallbackSpeedLimitAfterEnd)
             }
             guard expected == nil || expected == zone.value else {
                 // Contradictory crossed-out values are review evidence only;
@@ -2180,12 +2222,9 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
                 fallbackSpeedLimitAfterEnd: fallbackSpeedLimitAfterEnd
             )
         case .cityExit:
-            guard rules.city != nil else {
-                return (true, .unknown, "camera_city_exit_unresolved")
-            }
             rules.city = nil
             rules.posted = nil
-            return resolvedEnclosing(afterEnding: 50, reason: "camera_city_exit")
+            return resolvedEnclosing(afterEnding: 50, reason: "camera_city_exit", fallbackSpeedLimitAfterEnd: fallbackSpeedLimitAfterEnd)
         case .pedestrianZoneEnd:
             guard rules.pedestrian else {
                 return (true, .unknown, "camera_pedestrian_zone_end_unresolved")
@@ -2323,7 +2362,7 @@ extension TrafficSignStructuralAction {
 
     var isSpeedLimitEnd: Bool {
         switch self {
-        case .maximumSpeedEnd, .zoneEnd:
+        case .maximumSpeedEnd, .zoneEnd, .allRestrictionsEnd:
             return true
         default:
             return false

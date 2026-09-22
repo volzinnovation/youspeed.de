@@ -3,7 +3,24 @@ import XCTest
 
 final class TrafficSignApplicabilityTests: XCTestCase {
     struct Vectors: Decodable { let scenarios: [Scenario] }
-    struct Scenario: Decodable { let id: String; let expectedFinalClass: String?; let batches: [TSRFrameCandidateBatch] }
+    struct Scenario: Decodable { let id: String; let expectedFinalClass: String?; let batches: [TSRFrameCandidateBatch]; let expectedWithheldCount: Int? }
+    func testExitGuardOperatesInShadowAndKeepsActualRampAndMainlineRepeats() throws {
+        for scenario in try scenarios() {
+            guard let count = scenario.expectedWithheldCount else { continue }
+            var session = TSRApplicabilitySession()
+            for batch in scenario.batches {
+                XCTAssertEqual(TSRMotorwayExitPolicy.withheldCandidates(batch).count, count, scenario.id)
+                let output = session.evaluate(batch)
+                for decision in output.decisions where decision.reasons.contains(TSRMotorwayExitPolicy.reason) {
+                    for sink in ["display", "immediate", "passage"] {
+                        XCTAssertFalse(TSRApplicabilityAuthority.allows(decision, scope: batch.scope, frameId: batch.frameId,
+                            trackId: decision.trackId, sink: sink, mode: "shadow"), scenario.id)
+                    }
+                    XCTAssertFalse(session.canConsumePassage(activeTrackId: decision.trackId, selectedTrackId: nil, mode: "shadow"))
+                }
+            }
+        }
+    }
     func scenarios() throws -> [Scenario] {
         let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "golden-vectors-v1", withExtension: "json"))
         return try JSONDecoder().decode(Vectors.self, from: Data(contentsOf: url)).scenarios

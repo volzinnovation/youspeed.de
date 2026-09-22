@@ -20,5 +20,13 @@
   "branchMarginDeg": 12.0,
   "maxBranches": 8,
   "maxHypotheses": 8,
-  "maxJunctionDistanceM": 100.0
+  "maxJunctionDistanceM": 100.0,
+  "motorwayExitPolicyVersion": "motorway-exit-guard-v1",
+  "motorwayExitMinPostedSpeed": 100,
+  "motorwayExitMinCandidateSpeed": 30,
+  "motorwayExitMaxCandidateSpeed": 90,
+  "motorwayExitMaxJunctionDistanceM": 350.0,
+  "motorwayExitMaxHeadingDeltaDeg": 60.0,
+  "motorwayExitMinSignCenterX": 0.6,
+  "motorwayExitPairedRepeatMaxCenterX": 0.5
 }

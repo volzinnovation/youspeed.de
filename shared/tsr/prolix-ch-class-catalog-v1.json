@@ -333,14 +333,14 @@
     {
       "class_id": "hazard:include:down",
       "sign_code": "CH:1.10",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-10.png",
+      "image_path": null,
       "label": {
         "en": "CH:1.10 — hazard:include:down",
         "de": "CH:1.10 — hazard:include:down",
         "fr": "CH:1.10 — hazard:include:down",
         "nl": "CH:1.10 — hazard:include:down"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-1-10",
       "source_provenance": {
         "source_archive": "1.01-1.18.zip",
@@ -350,19 +350,20 @@
         "original_sha256": "1504a32c918bbad6ce238b747e78259c7a6817632f15c6985d8157eef17cf9d7",
         "png_sha256": "27a7361efacbad4ed44d9b524c2ece83addc974b4343a0f6ee6ecca9918d31ef",
         "source_original_sha256": "734cdd756de9317e94df1f952d225e90e17e992dfcaf4b865c15d2f7ed1360e9"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "hazard:incline:up",
       "sign_code": "CH:1.11",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-11.png",
+      "image_path": null,
       "label": {
         "en": "CH:1.11 — hazard:incline:up",
         "de": "CH:1.11 — hazard:incline:up",
         "fr": "CH:1.11 — hazard:incline:up",
         "nl": "CH:1.11 — hazard:incline:up"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-1-11",
       "source_provenance": {
         "source_archive": "1.01-1.18.zip",
@@ -372,7 +373,8 @@
         "original_sha256": "f8611bb06bbe55dcb5f108ff53618d49a1831781b83bfbc8f68a5c1070e48093",
         "png_sha256": "ecdc2f8893d830098076c616ee6eec0ddc0441bb2538776570704a3d85c45fdf",
         "source_original_sha256": "2a6e706d7fe7189a4a3b621ba5c4d289f7f0edc8cb7d4e3eab79dd0e3889971d"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "hazard:gravel",
@@ -531,14 +533,14 @@
     {
       "class_id": "hazard:horse",
       "sign_code": "CH:1.24a",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-24.png",
+      "image_path": null,
       "label": {
         "en": "CH:1.24a — hazard:horse",
         "de": "CH:1.24a — hazard:horse",
         "fr": "CH:1.24a — hazard:horse",
         "nl": "CH:1.24a — hazard:horse"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-1-24",
       "source_provenance": {
         "source_archive": "1.22-1.32.zip",
@@ -548,7 +550,8 @@
         "original_sha256": "ecd8c17502c32c31e904b0d764935084ac350b3f63845fa75f997465fc76e63b",
         "png_sha256": "6afb143e198f30dc41b276a9c7dea304ee80bfc104417f7ba6ca4ac36c798019",
         "source_original_sha256": "a281195282ca9639905101d313837e39891a86128d2a749a7a064995cb96b4bd"
-      }
+      },
+      "notes": "ASTRA 1.24.eps shows wild animals (deer), not horses. No faithful horse-warning asset is available."
     },
     {
       "class_id": "hazard:animals",
@@ -1103,14 +1106,14 @@
     {
       "class_id": "maxweight",
       "sign_code": "CH:2.16",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-16.png",
+      "image_path": null,
       "label": {
         "en": "CH:2.16 — maxweight",
         "de": "CH:2.16 — maxweight",
         "fr": "CH:2.16 — maxweight",
         "nl": "CH:2.16 — maxweight"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-2-16",
       "source_provenance": {
         "source_archive": "2.01-2.20.zip",
@@ -1120,19 +1123,20 @@
         "original_sha256": "0d088cd0acd91e69d4646e029edd2dcbcbb3489a55834c355977e8fe3d3ceb1c",
         "png_sha256": "c69cef32315831263893c0ae648520ff81b5fa9c4b97d3e9f1214f4bf64ba619",
         "source_original_sha256": "ac5f6bd066087c826614c9fa62b6f894f52599983796ea869ff3a2c7d9160945"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "maxaxleweight",
       "sign_code": "CH:2.17",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-17.png",
+      "image_path": null,
       "label": {
         "en": "CH:2.17 — maxaxleweight",
         "de": "CH:2.17 — maxaxleweight",
         "fr": "CH:2.17 — maxaxleweight",
         "nl": "CH:2.17 — maxaxleweight"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-2-17",
       "source_provenance": {
         "source_archive": "2.01-2.20.zip",
@@ -1142,19 +1146,20 @@
         "original_sha256": "79c20e81d7b148edc7ad0377c073f4cf02112e9f376cd8df3b84e28d2402d75e",
         "png_sha256": "babd11811ff0fe425ca711fb7cc70fea3d7508f36fc62482e4ed4e7a0998f3a8",
         "source_original_sha256": "5ea1a0f0aaf75a782915d8bb707bd56272832b11ca95823a0de9b9a1ef1cf6e0"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "maxwidth",
       "sign_code": "CH:2.18",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-18.png",
+      "image_path": null,
       "label": {
         "en": "CH:2.18 — maxwidth",
         "de": "CH:2.18 — maxwidth",
         "fr": "CH:2.18 — maxwidth",
         "nl": "CH:2.18 — maxwidth"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-2-18",
       "source_provenance": {
         "source_archive": "2.01-2.20.zip",
@@ -1164,19 +1169,20 @@
         "original_sha256": "f892d9a1f59b8e739f78ddf3ab98f660b671dcba421353eb8dfc75166607764e",
         "png_sha256": "4cf2d09058c58c54a62b45caca60bf78dbaf4f09ad5e5ba057bb1ac5e7ce4a4a",
         "source_original_sha256": "c81d06b37d4e5763133cc1cf9d6eb7be7c9f64bf101acce93588cb6fb2bbe9e9"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "maxheight",
       "sign_code": "CH:2.19",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-19.png",
+      "image_path": null,
       "label": {
         "en": "CH:2.19 — maxheight",
         "de": "CH:2.19 — maxheight",
         "fr": "CH:2.19 — maxheight",
         "nl": "CH:2.19 — maxheight"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-2-19",
       "source_provenance": {
         "source_archive": "2.01-2.20.zip",
@@ -1186,19 +1192,20 @@
         "original_sha256": "6a87c7c07c67ce5be706841650fa828123c17b09e247afd303e702548c115fc6",
         "png_sha256": "d2d95eb2f57e2a2862ea4cfa11122e4a64fc44b24cfca4b91f80cb2e24c2bcb3",
         "source_original_sha256": "cb1778e4c20db40f3f2bfd44dc5c506611a1109cb54ff8d2f94c2985e0911705"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "maxlength",
       "sign_code": "CH:2.20",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-20.png",
+      "image_path": null,
       "label": {
         "en": "CH:2.20 — maxlength",
         "de": "CH:2.20 — maxlength",
         "fr": "CH:2.20 — maxlength",
         "nl": "CH:2.20 — maxlength"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-2-20",
       "source_provenance": {
         "source_archive": "2.01-2.20.zip",
@@ -1208,19 +1215,20 @@
         "original_sha256": "7bc17c0f7b2aecde9cfbc83989ade5c072d7982a86e85917ce2ee0ef122df0ee",
         "png_sha256": "f98fd45a891dbf2a9eea407a9dd3c7de70a8b7747e153613cd188b2a1df99a6d",
         "source_original_sha256": "d558b2833998389cf3ad85ba77c41e0511c35ce4f63cb9c0df4cc7a11e90fc98"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "min_speed",
       "sign_code": "CH:2.31",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-31.png",
+      "image_path": null,
       "label": {
         "en": "CH:2.31 — min_speed",
         "de": "CH:2.31 — min_speed",
         "fr": "CH:2.31 — min_speed",
         "nl": "CH:2.31 — min_speed"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-2-31",
       "source_provenance": {
         "source_archive": "2.30-2.59.6.zip",
@@ -1230,7 +1238,8 @@
         "original_sha256": "222bb8fd8a9abec835f0497ce03517c2742a535b678c0487b779de4e53fa7ed7",
         "png_sha256": "e349f53057f26746993c1db59f3a9008a87e59191513d0608739e673cd183462",
         "source_original_sha256": "a77299c21e0da429454ad6bec07253ca1bf263ea170fa7a6dd2e75a09c0304bc"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "arrow_right",
@@ -1587,14 +1596,14 @@
     {
       "class_id": "min_distance",
       "sign_code": "CH:2.47",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-47.png",
+      "image_path": null,
       "label": {
         "en": "CH:2.47 — min_distance",
         "de": "CH:2.47 — min_distance",
         "fr": "CH:2.47 — min_distance",
         "nl": "CH:2.47 — min_distance"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-2-47",
       "source_provenance": {
         "source_archive": "2.30-2.59.6.zip",
@@ -1604,7 +1613,8 @@
         "original_sha256": "91d4eb059d83aa26fe9f2024f9a3c0bac26ed41a7af64f62cff7e04450d12018",
         "png_sha256": "7ae0622a5f68f4378ddbd971b560af1ca95d1a8aea1e3b4799e8f974fb9358a3",
         "source_original_sha256": "0cca75fe61915f37eb772f1d52c61a68664009b8e62b092551fecfccd486e79a"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "chains",
@@ -1697,14 +1707,14 @@
     {
       "class_id": "maxspeed:end",
       "sign_code": "CH:2.53",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-53.png",
+      "image_path": null,
       "label": {
         "en": "CH:2.53 — maxspeed:end",
         "de": "CH:2.53 — maxspeed:end",
         "fr": "CH:2.53 — maxspeed:end",
         "nl": "CH:2.53 — maxspeed:end"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-2-53",
       "source_provenance": {
         "source_archive": "2.30-2.59.6.zip",
@@ -1714,19 +1724,20 @@
         "original_sha256": "53a8a13e1fc71306c039ab42e84921aa6fcabd7c052820609f21886452320eba",
         "png_sha256": "a9eb1022e7ec738a61c4745a5b092aafc47f14cbc374410e38936e7e9102cd85",
         "source_original_sha256": "adb1d51ce6d241033fd5171e75efebd479db25c70cf46d9395f232ca521daed4"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "min_speed:end",
       "sign_code": "CH:2.54",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-54.png",
+      "image_path": null,
       "label": {
         "en": "CH:2.54 — min_speed:end",
         "de": "CH:2.54 — min_speed:end",
         "fr": "CH:2.54 — min_speed:end",
         "nl": "CH:2.54 — min_speed:end"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-2-54",
       "source_provenance": {
         "source_archive": "2.30-2.59.6.zip",
@@ -1736,7 +1747,8 @@
         "original_sha256": "ae82fd6b567d7830680ea305ae1385c3b346c4bb3373ddc08f78a3b8428df79a",
         "png_sha256": "285199e085ac43758ba10ae51a686c69ee8cb230f3f0dbd45d10dbca7477acfd",
         "source_original_sha256": "eef9cceb776346e910b6afcd6e9ef75f18583c0da0e61df09dee73ba9a95c7b8"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "no_overtaking:end",
@@ -1851,14 +1863,14 @@
     {
       "class_id": "zone:no_parking:end",
       "sign_code": "CH:2.59.2e",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-59-2.png",
+      "image_path": null,
       "label": {
         "en": "CH:2.59.2e — zone:no_parking:end",
         "de": "CH:2.59.2e — zone:no_parking:end",
         "fr": "CH:2.59.2e — zone:no_parking:end",
         "nl": "CH:2.59.2e — zone:no_parking:end"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-2-59-2",
       "source_provenance": {
         "source_archive": "2.30-2.59.6.zip",
@@ -1868,7 +1880,8 @@
         "original_sha256": "7e7d079574e69e4c8badbf66fbf74074a03e901aa6ee2e74f68d53f8add92910",
         "png_sha256": "e7010620d84deb8f926beb91b055641e32627f030b990feb15a0588d4a77bf98",
         "source_original_sha256": "76513ceeaf57d4ea46efea67298325bc6db6608f086434d6a77d05caf7835af9"
-      }
+      },
+      "notes": "ASTRA source 2.59.2 (D+F).eps depicts end of a 30 zone, not end of parking restrictions. No faithful parking-zone-end asset is available. No speed action."
     },
     {
       "class_id": "zone:pedestrian",
@@ -2445,14 +2458,14 @@
     {
       "class_id": "no_exit:car",
       "sign_code": "CH:4.10",
-      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-10.png",
+      "image_path": null,
       "label": {
         "en": "CH:4.10 — no_exit:car",
         "de": "CH:4.10 — no_exit:car",
         "fr": "CH:4.10 — no_exit:car",
         "nl": "CH:4.10 — no_exit:car"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "ch-4-10",
       "source_provenance": {
         "source_archive": "4.01-4.25.zip",
@@ -2462,7 +2475,8 @@
         "original_sha256": "506283349e4dafd411cd1d54d92725f401aafea173aecfeb5bdd8872cf4defe4",
         "png_sha256": "20229ebb647b67afd431b433c8c2841295a60eaff466cc4a8274997ce0543e10",
         "source_original_sha256": "be7ce7142ad8726ee277750a1eafe89731fed8368dd026b03fd25c5e660384b6"
-      }
+      },
+      "notes": "ASTRA 4.10 is water protection, not a dead end with exceptions (4.09.1). No faithful model-linked asset is available."
     },
     {
       "class_id": "pedestrian_crossing",
@@ -2683,6 +2697,149 @@
         "png_sha256": "b3e443eaf4903bf983271b89cbb4f3c51dcf6fc9dde204b75059f92b12014d7c",
         "source_original_sha256": "339ffad57e0e38cb80d6d9ef59e2b911b9f1e6fc060b6ab8ee0ea931c6a81a0b"
       }
+    },
+    {
+      "class_id": "hazard:wild_animals",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "hazard:wild_animals",
+        "de": "hazard:wild_animals",
+        "fr": "hazard:wild_animals",
+        "nl": "hazard:wild_animals"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxspeed:100",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxspeed:100",
+        "de": "maxspeed:100",
+        "fr": "maxspeed:100",
+        "nl": "maxspeed:100"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxspeed:20",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxspeed:20",
+        "de": "maxspeed:20",
+        "fr": "maxspeed:20",
+        "nl": "maxspeed:20"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxspeed:30",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxspeed:30",
+        "de": "maxspeed:30",
+        "fr": "maxspeed:30",
+        "nl": "maxspeed:30"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxspeed:40",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxspeed:40",
+        "de": "maxspeed:40",
+        "fr": "maxspeed:40",
+        "nl": "maxspeed:40"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxspeed:5",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxspeed:5",
+        "de": "maxspeed:5",
+        "fr": "maxspeed:5",
+        "nl": "maxspeed:5"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxspeed:50",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxspeed:50",
+        "de": "maxspeed:50",
+        "fr": "maxspeed:50",
+        "nl": "maxspeed:50"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxspeed:60",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxspeed:60",
+        "de": "maxspeed:60",
+        "fr": "maxspeed:60",
+        "nl": "maxspeed:60"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxspeed:70",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxspeed:70",
+        "de": "maxspeed:70",
+        "fr": "maxspeed:70",
+        "nl": "maxspeed:70"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "maxspeed:80",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "maxspeed:80",
+        "de": "maxspeed:80",
+        "fr": "maxspeed:80",
+        "nl": "maxspeed:80"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "zone:no_parking",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "zone:no_parking",
+        "de": "zone:no_parking",
+        "fr": "zone:no_parking",
+        "nl": "zone:no_parking"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
     }
   ],
   "policy": {

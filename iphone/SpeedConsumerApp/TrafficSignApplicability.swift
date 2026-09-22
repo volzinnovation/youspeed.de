@@ -60,6 +60,7 @@ struct TrafficSignMapContextSnapshot: Codable, Equatable, Sendable {
     let capabilities: [String]
     let cameraHorizontalFovDeg: Double?
     let cameraYawDeg: Double?
+    var postedSpeedKmh: Int? = nil
 }
 
 struct TSRFrameCandidateBatch: Codable, Equatable, Sendable {
@@ -117,7 +118,7 @@ struct TSRApplicabilityDiagnostic: Codable, Equatable, Sendable {
 // Generated contract values are checked against shared/tsr/applicability/policy-v1.json.
 struct TSRApplicabilityConfiguration: Sendable {
     static let policyVersion = "applicability-heuristic-v1"
-    static let configHash = "ff87a27c0a2dc643225fad1f34cfd3f131bf00b2e2e5a2b647ab5ed3e81738e3"
+    static let configHash = "6278259f59578238acabe7df1abe53f8cd580115b20c6036ef3f89657e97ca11"
     static let defaultMode = "shadow"
     static let maxCandidates = 32
     static let maxTracks = 24
@@ -138,6 +139,14 @@ struct TSRApplicabilityConfiguration: Sendable {
     static let maxBranches = 8
     static let maxHypotheses = 8
     static let maxJunctionDistanceM = 100.0
+    static let motorwayExitPolicyVersion = "motorway-exit-guard-v1"
+    static let motorwayExitMinPostedSpeed = 100
+    static let motorwayExitMinCandidateSpeed = 30
+    static let motorwayExitMaxCandidateSpeed = 90
+    static let motorwayExitMaxJunctionDistanceM = 350.0
+    static let motorwayExitMaxHeadingDeltaDeg = 60.0
+    static let motorwayExitMinSignCenterX = 0.6
+    static let motorwayExitPairedRepeatMaxCenterX = 0.5
 }
 
 /// Bounded, deterministic one-to-one physical association before semantic fusion.
@@ -326,6 +335,7 @@ enum TSRApplicabilityPolicy {
 enum TSRApplicabilityAuthority {
     static func allows(_ decision: TSRApplicabilityDecision?, scope: TSRApplicabilityScope, frameId: String,
                        trackId: String, sink: String, mode: String = TSRApplicabilityConfiguration.defaultMode) -> Bool {
+        if decision?.reasons.contains(TSRMotorwayExitPolicy.reason) == true { return false }
         if mode == "shadow" { return true }
         guard mode == "enforce", let decision, decision.schemaVersion == 1, decision.scope == scope, decision.frameId == frameId,
               decision.trackId == trackId, decision.policyVersion == TSRApplicabilityConfiguration.policyVersion,
@@ -348,13 +358,14 @@ struct TSRMapGeometry: Codable, Equatable, Sendable {
     let hypotheses: [TSRApplicabilityCorridor]
     let branches: [TSRApplicabilityCorridor]
     let capabilities: [String]
+    var postedSpeedKmh: Int? = nil
 
     func snapshot(scope: TSRApplicabilityScope, fixTimeMs: Double, accuracyM: Double?, courseDeg: Double?, courseAccuracyDeg: Double?, stable: Bool) -> TrafficSignMapContextSnapshot {
         TrafficSignMapContextSnapshot(snapshotId: "\(scope.bundleId):\(scope.traversalEpoch):\(fixTimeMs)",
             capturedAtMs: fixTimeMs, scope: scope, wayId: wayId, horizontalAccuracyM: accuracyM,
             courseAccuracyDeg: courseAccuracyDeg, courseDeg: courseDeg, localTangentDeg: localTangentDeg,
             matchedStable: stable, roadClass: roadClass, hypotheses: hypotheses, branches: branches,
-            capabilities: capabilities, cameraHorizontalFovDeg: nil, cameraYawDeg: nil)
+            capabilities: capabilities, cameraHorizontalFovDeg: nil, cameraYawDeg: nil, postedSpeedKmh: postedSpeedKmh)
     }
 }
 
@@ -371,6 +382,39 @@ struct TSRMapFix: Equatable, Sendable {
     }
 }
 
+/// A narrow, active ambiguity guard for deceleration signs beside a mapped exit.
+/// It does not claim to read an arrow plate or establish legal lane applicability.
+/// Mainline repeats and signs after a stable ramp match remain eligible.
+enum TSRMotorwayExitPolicy {
+    static let reason = "motorway_exit_ambiguous_speed"
+    static func withheldCandidates(_ batch: TSRFrameCandidateBatch) -> Set<String> {
+        guard batch.status == "analyzed", let road = batch.road, road.scope == batch.scope,
+              road.roadClass == "motorway", road.matchedStable,
+              let posted = road.postedSpeedKmh, posted >= TSRApplicabilityConfiguration.motorwayExitMinPostedSpeed,
+              (0...1500).contains(batch.capturedAtMs - road.capturedAtMs),
+              let accuracy = road.horizontalAccuracyM, (0...20).contains(accuracy),
+              let course = road.courseDeg, (0..<360).contains(course),
+              let courseAccuracy = road.courseAccuracyDeg, (0...25).contains(courseAccuracy),
+              road.branches.contains(where: { branch in
+                  branch.endpointLinked && branch.roadClass == "motorway_link"
+                      && branch.distanceM.map { (0...TSRApplicabilityConfiguration.motorwayExitMaxJunctionDistanceM).contains($0) } == true
+                      && branch.headingDeg.map { abs(TSRApplicabilityPolicy.signedAngle($0 - course)) <= TSRApplicabilityConfiguration.motorwayExitMaxHeadingDeltaDeg } == true
+              }) else { return [] }
+        return Set(batch.candidates.filter { candidate in
+            let components = candidate.semanticKey.split(separator: ":")
+            guard components.first == "maximum_speed", components.count >= 2,
+                  let speed = Int(components[1]), (TSRApplicabilityConfiguration.motorwayExitMinCandidateSpeed...TSRApplicabilityConfiguration.motorwayExitMaxCandidateSpeed).contains(speed), speed < posted,
+                  candidate.recognitionEligible, candidate.box.valid, candidate.box.centerX >= TSRApplicabilityConfiguration.motorwayExitMinSignCenterX else { return false }
+            // A matching left/central repeat is positive evidence of a mainline
+            // restriction (including roadworks), despite a nearby exit.
+            return !batch.candidates.contains { other in
+                other.candidateId != candidate.candidateId && other.recognitionEligible && other.box.valid
+                    && other.semanticKey == candidate.semanticKey && other.box.centerX < TSRApplicabilityConfiguration.motorwayExitPairedRepeatMaxCenterX
+            }
+        }.map(\.candidateId))
+    }
+}
+
 struct TSRApplicabilitySession: Sendable {
     private var tracker = TSRPhysicalSignTracker()
     private var decisionsByTrack: [String: TSRApplicabilityDecision] = [:]
@@ -378,7 +422,17 @@ struct TSRApplicabilitySession: Sendable {
     mutating func reset() { tracker.reset(); decisionsByTrack = [:]; diagnostic = nil }
     mutating func evaluate(_ batch: TSRFrameCandidateBatch) -> TSRApplicabilityDiagnostic {
         let tracks = tracker.ingest(batch)
-        let decisions = tracks.map { TSRApplicabilityPolicy.evaluate($0, batch: batch) }
+        let withheld = TSRMotorwayExitPolicy.withheldCandidates(batch)
+        let decisions = tracks.map { track in
+            let decision = TSRApplicabilityPolicy.evaluate(track, batch: batch)
+            guard let sample = track.samples.last, sample.frameId == batch.frameId,
+                  withheld.contains(sample.candidate.candidateId) else { return decision }
+            return TSRApplicabilityDecision(schemaVersion: decision.schemaVersion, policyVersion: decision.policyVersion,
+                configHash: decision.configHash, frameId: decision.frameId, trackId: decision.trackId,
+                scope: decision.scope, roadSnapshotId: decision.roadSnapshotId, classification: "UNKNOWN",
+                reasons: [TSRMotorwayExitPolicy.reason], evidence: ["connected_motorway_link", "mainline_match", "right_side_lower_speed"],
+                imageSupport: decision.imageSupport, displayEligible: false, immediateEligible: false, passageEligible: false)
+        }
         decisionsByTrack = decisionsByTrack.filter { key, value in tracks.contains { $0.trackId == key && $0.scope == value.scope } }
         for (track, decision) in zip(tracks, decisions) where track.visibility == "observed" {
             decisionsByTrack[track.trackId] = decision
@@ -389,6 +443,7 @@ struct TSRApplicabilitySession: Sendable {
     }
     func passageDecision(trackId: String) -> TSRApplicabilityDecision? { decisionsByTrack[trackId] }
     func canConsumePassage(activeTrackId: String?, selectedTrackId: String?, mode: String) -> Bool {
+        if diagnostic?.decisions.contains(where: { $0.reasons.contains(TSRMotorwayExitPolicy.reason) }) == true { return false }
         if mode == "shadow" { return true }
         guard mode == "enforce", let diagnostic, diagnostic.batch.status == "analyzed", !diagnostic.batch.truncated else { return false }
         guard let activeTrackId else { return selectedTrackId != nil }

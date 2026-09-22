@@ -1748,7 +1748,7 @@ actor LocalObservationStore {
         WHERE primary_way_id = ?1
           AND direction_scope IN (\(placeholders))
           AND runtime_applicable = 1
-        ORDER BY effective_at_utc DESC,
+        ORDER BY CASE WHEN modality = 'computer_vision' THEN 1 ELSE 0 END, effective_at_utc DESC,
                  CASE WHEN direction_scope = ?2 THEN 0 ELSE 1 END,
                  observation_id DESC
         """

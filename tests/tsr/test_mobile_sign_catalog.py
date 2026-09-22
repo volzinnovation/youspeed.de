@@ -34,7 +34,7 @@ def test_mobile_semantic_mappings_match_and_only_use_real_model_outputs():
         assert mappings[label] == {"kind": "restriction_end"}
     # Overtaking ends must never become actionable speed-limit changes.
     for label in ("no_overtaking:end", "no_overtaking:end:hgv", "DE:280", "DE:281"):
-        assert label not in mappings
+        assert mappings.get(label, {"kind": "unknown"}) == {"kind": "unknown"}
     # Typed town-boundary support is not evidence that this model recognizes it.
     assert "DE:310" not in mappings
     assert "city_entry" not in mappings

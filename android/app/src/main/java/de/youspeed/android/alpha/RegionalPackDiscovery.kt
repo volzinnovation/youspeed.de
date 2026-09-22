@@ -44,11 +44,11 @@ data class RegionalPackCatalog(val regions: List<Region>) {
         regions.filter { it.contains(longitude, latitude) }.sortedWith(compareBy<Region> { it.area }.thenBy { it.id })
 
     companion object {
-        fun decode(bytes: ByteArray): RegionalPackCatalog {
+        fun decode(bytes: ByteArray, boundaryKind: String = "buffered_extract_coverage"): RegionalPackCatalog {
             require(bytes.size <= 8_000_000)
             val root = Json.parseToJsonElement(bytes.toString(Charsets.UTF_8)).jsonObject
             require(root.getValue("schema_version").jsonPrimitive.int == 1)
-            require(root.getValue("boundary_kind").jsonPrimitive.content == "buffered_extract_coverage")
+            require(root.getValue("boundary_kind").jsonPrimitive.content == boundaryKind)
             val regions = root.getValue("regions").jsonArray.map { value ->
                 val item = value.jsonObject
                 Region(
@@ -133,4 +133,21 @@ object FirstLocationPackPolicy {
     fun acceptsFix(latitude: Double, longitude: Double, accuracy: Double, timestamp: Double, now: Double): Boolean =
         listOf(latitude, longitude, accuracy, timestamp, now).all { it.isFinite() } &&
             latitude in -90.0..90.0 && longitude in -180.0..180.0 && accuracy in 0.0..100.0 && now - timestamp in 0.0..30.0
+}
+
+/** Administrative region lookup with the same 1 km boundary abstention band as iOS. */
+class SpeedRegulationRegions(val catalog: RegionalPackCatalog) {
+    fun region(latitude: Double, longitude: Double): String? {
+        val region = catalog.matches(longitude, latitude).singleOrNull() ?: return null
+        val sx = kotlin.math.cos(latitude * Math.PI / 180) * 111_320.0
+        val sy = 111_320.0
+        for (polygon in region.polygons) for (ring in polygon) for (i in 0 until ring.size - 1) {
+            val ax = (ring[i][0] - longitude) * sx; val ay = (ring[i][1] - latitude) * sy
+            val bx = (ring[i+1][0] - longitude) * sx; val by = (ring[i+1][1] - latitude) * sy
+            val dx = bx - ax; val dy = by - ay; val length2 = dx * dx + dy * dy
+            val t = if (length2 > 0) (-(ax * dx + ay * dy) / length2).coerceIn(0.0, 1.0) else 0.0
+            if (kotlin.math.hypot(ax + t * dx, ay + t * dy) < 1000) return null
+        }
+        return region.id
+    }
 }

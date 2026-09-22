@@ -7,7 +7,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.10"
-    CURRENT_PROJECT_VERSION: 10010
+    CURRENT_PROJECT_VERSION: 10011
     MARKETING_VERSION: "1.1"
 targets:
   SpeedConsumer:
@@ -126,6 +126,8 @@ targets:
       - path: SpeedConsumerApp/SpeedConsumerTests.swift
       - path: SpeedConsumerApp/TrafficSignApplicabilityTests.swift
       - path: ../shared/tsr/applicability/golden-vectors-v1.json
+        buildPhase: resources
+      - path: ../shared/tsr/applicability/paca-exit-topology-v1.sql
         buildPhase: resources
       - path: SpeedConsumerApp/TestFixtures
         buildPhase: resources

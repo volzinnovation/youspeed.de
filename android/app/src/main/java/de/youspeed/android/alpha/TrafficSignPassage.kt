@@ -778,7 +778,7 @@ fun resolveDirectAction(action: TrafficSignAction): TrafficSignResolvedLimit = w
     TrafficSignActionKind.ZONE_START -> action.valueKmh?.let {
         TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, it)
     } ?: TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNKNOWN)
-    TrafficSignActionKind.CITY_ENTRY -> if (action.countryCode.equals("DE", true) || action.countryCode.equals("DEU", true)) {
+    TrafficSignActionKind.CITY_ENTRY -> if (PenaltyCountryCodes.alpha2(action.countryCode) in setOf("DE", "FR", "NL")) {
         TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 50)
     } else {
         TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNKNOWN)
@@ -800,6 +800,7 @@ data class EffectiveSpeedLimit(
     val source: EffectiveSpeedLimitSource,
     val presentationReason: String,
     val cameraEvidence: Boolean = source == EffectiveSpeedLimitSource.CAMERA,
+    val isUserCorrection: Boolean = false,
 )
 
 data class TrafficSignBaseLimit(
@@ -807,12 +808,13 @@ data class TrafficSignBaseLimit(
     val source: EffectiveSpeedLimitSource,
     val reason: String,
     val structurallyVerifiedForEnd: Boolean = false,
+    val isUserCorrection: Boolean = false,
 ) {
     init {
         require(source != EffectiveSpeedLimitSource.CAMERA)
     }
 
-    fun effective() = EffectiveSpeedLimit(resolution, source, reason)
+    fun effective() = EffectiveSpeedLimit(resolution, source, reason, isUserCorrection = isUserCorrection)
 }
 
 data class TrafficSignApplicabilityScope(
@@ -888,6 +890,7 @@ class TrafficSignRuntimeSourceResolver(
         base: TrafficSignBaseLimit,
         fallbackSpeedLimitAfterEnd: TrafficSignResolvedLimit? = null,
     ): EffectiveSpeedLimit {
+        if (base.isUserCorrection) { clear(); return base.effective() }
         if (!event.permitsApplicability() || !event.overrideEligible) return effective(base)
         val context = event.activationContext
         if (context == null || context.wayId.isNullOrBlank()) {
@@ -992,6 +995,7 @@ class TrafficSignRuntimeSourceResolver(
     }
 
     fun reconcile(match: TrafficSignRoadMatch, base: TrafficSignBaseLimit): EffectiveSpeedLimit {
+        if (base.isUserCorrection) { clear(); return base.effective() }
         reconcilePending(match, base)?.let { return it }
         val assertion = active ?: return base.effective()
         if (match.traversalReversed) {
@@ -1102,6 +1106,7 @@ class TrafficSignRuntimeSourceResolver(
     }
 
     fun effective(base: TrafficSignBaseLimit): EffectiveSpeedLimit {
+        if (base.isUserCorrection) return base.effective()
         val assertion = active ?: return base.effective()
         return if (assertion.resolution.kind == TrafficSignResolvedLimitKind.UNKNOWN) {
             EffectiveSpeedLimit(
@@ -1146,10 +1151,15 @@ class TrafficSignRuntimeSourceResolver(
                 return ReducedLayers(layers, resolved, "camera_zone_start")
             }
             TrafficSignActionKind.CITY_ENTRY -> {
-                val resolved = resolveDirectAction(action)
-                if (resolved.kind == TrafficSignResolvedLimitKind.UNKNOWN) return unresolved(layers, "camera_city_entry_unresolved")
-                add(action.kind, resolved, setOf(TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.POSTED_MAXIMUM))
-                return ReducedLayers(layers, resolved, "camera_city_entry")
+                val resolved = fallbackSpeedLimitAfterEnd ?: resolveDirectAction(action)
+                if (resolved.kind == TrafficSignResolvedLimitKind.UNKNOWN) {
+                    layers.removeAll { it.kind in setOf(TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.POSTED_MAXIMUM) }
+                    return layers.lastOrNull()?.let { ReducedLayers(layers, it.resolution, "camera_city_entry_preserved_zone") }
+                        ?: unresolved(layers, "camera_city_entry_unresolved")
+                }
+                layers.removeAll { it.kind in setOf(TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.POSTED_MAXIMUM) }
+                layers.add(0, TrafficSignRuleLayer(action.kind, resolved, eventId))
+                return ReducedLayers(layers, layers.last().resolution, "camera_city_entry")
             }
             TrafficSignActionKind.PEDESTRIAN_ZONE_START -> {
                 val resolved = resolveDirectAction(action)
@@ -1184,7 +1194,7 @@ class TrafficSignRuntimeSourceResolver(
             }
             TrafficSignActionKind.ALL_RESTRICTIONS_END -> {
                 layers.removeAll { it.kind in setOf(TrafficSignActionKind.POSTED_MAXIMUM, TrafficSignActionKind.TEMPORARY_MAXIMUM) }
-                return restored(layers, base, "camera_all_restrictions_end", null)
+                return restored(layers, base, "camera_all_restrictions_end", fallbackSpeedLimitAfterEnd)
             }
             TrafficSignActionKind.ZONE_END -> {
                 val zoneIndex = layers.indexOfLast { it.kind == TrafficSignActionKind.ZONE_START }
@@ -1209,7 +1219,7 @@ class TrafficSignRuntimeSourceResolver(
             }
             TrafficSignActionKind.CITY_EXIT -> {
                 layers.removeAll { it.kind in setOf(TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.POSTED_MAXIMUM) }
-                return restored(layers, base, "camera_city_exit", null)
+                return restored(layers, base, "camera_city_exit", fallbackSpeedLimitAfterEnd)
             }
             TrafficSignActionKind.PEDESTRIAN_ZONE_END -> {
                 layers.removeAll {
@@ -1315,4 +1325,25 @@ internal fun trafficSignPassageContextIsCurrent(
     }
     return anchor.continuityCapable && currentContext.continuityCapable &&
         event.eligibleRouteRelationGroupIds.intersect(currentContext.routeRelationGroupIds).isNotEmpty()
+}
+
+/** Passenger-car defaults; an old posted map limit is not evidence after an end sign. */
+object TrafficSignRoadDefaultPolicy {
+    fun speedKmh(country: String?, region: String?, highway: String?, insideCity: Boolean?): Int? {
+        val code = PenaltyCountryCodes.alpha2(country)
+        if (highway == "motorway") return when (code) { "BE", "CH" -> 120; "FR" -> 130; else -> null }
+        if (insideCity == null) return null
+        if (insideCity) {
+            if (code == "BE") return when (region) { "BE-BRU" -> 30; "BE-VLG", "BE-WAL" -> 50; else -> null }
+            return if (code in setOf("DE", "FR", "NL", "CH")) 50 else null
+        }
+        if (highway == "trunk" && code in setOf("NL", "CH")) return 100
+        if (highway !in setOf("primary", "secondary", "tertiary", "unclassified", "residential", "road")) return null
+        return when (code) {
+            "DE" -> 100
+            "FR", "NL", "CH" -> 80
+            "BE" -> when (region) { "BE-VLG" -> 70; "BE-WAL" -> 90; else -> null }
+            else -> null
+        }
+    }
 }

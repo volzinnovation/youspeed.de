@@ -6,6 +6,23 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class TrafficSignApplicabilityTests {
+    @Test fun activeExitGuardKeepsRampAndRepeatedMainlineSigns() {
+        for (scenario in scenarios()) {
+            val count = scenario["expectedWithheldCount"]?.jsonPrimitive?.int ?: continue
+            val session = TSRApplicabilitySession()
+            for (raw in scenario.getValue("batches").jsonArray) {
+                val batch = TSRApplicabilityJson.decodeBatch(raw.jsonObject)
+                assertEquals(scenario.getValue("id").toString(), count, TSRMotorwayExitPolicy.withheldCandidates(batch).size)
+                val output = session.evaluate(batch)
+                for (decision in output.decisions.filter { TSRMotorwayExitPolicy.reason in it.reasons }) {
+                    for (sink in listOf("display", "immediate", "passage")) {
+                        assertFalse(TSRApplicabilityAuthority.allows(decision, batch.scope, batch.frameId, decision.trackId, sink, "shadow"))
+                    }
+                    assertFalse(session.canConsumePassage(decision.trackId, null, "shadow"))
+                }
+            }
+        }
+    }
     private fun scenarios(): List<JsonObject> {
         val file = listOf(File("../../shared/tsr/applicability/golden-vectors-v1.json"), File("../shared/tsr/applicability/golden-vectors-v1.json"))
             .first { it.exists() }

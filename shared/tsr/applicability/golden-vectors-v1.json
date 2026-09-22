@@ -6466,6 +6466,2381 @@
           }
         }
       ]
+    },
+    {
+      "id": "motorway_exit_90",
+      "origin": "synthetic",
+      "expectedFinalClass": "UNKNOWN",
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "motorway_exit_90-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "motorway_exit_90",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "motorway_exit_90-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "motorway_exit_90",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "motorway_exit_90-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "motorway_exit_90",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "motorway_exit_90-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "motorway_exit_90",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "motorway_exit_90-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "motorway_exit_90",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "motorway_exit_90-2:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.13,
+                "height": 0.13
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "motorway_exit_90",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        }
+      ],
+      "expectedWithheldCount": 1
+    },
+    {
+      "id": "motorway_exit_70",
+      "origin": "synthetic",
+      "expectedFinalClass": "UNKNOWN",
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "motorway_exit_70-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "motorway_exit_70",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "motorway_exit_70-0:0",
+              "semanticKey": "maximum_speed:70:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "motorway_exit_70",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "motorway_exit_70-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "motorway_exit_70",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "motorway_exit_70-1:0",
+              "semanticKey": "maximum_speed:70:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "motorway_exit_70",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "motorway_exit_70-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "motorway_exit_70",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "motorway_exit_70-2:0",
+              "semanticKey": "maximum_speed:70:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.13,
+                "height": 0.13
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "motorway_exit_70",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        }
+      ],
+      "expectedWithheldCount": 1
+    },
+    {
+      "id": "motorway_exit_50",
+      "origin": "synthetic",
+      "expectedFinalClass": "UNKNOWN",
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "motorway_exit_50-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "motorway_exit_50",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "motorway_exit_50-0:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "motorway_exit_50",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "motorway_exit_50-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "motorway_exit_50",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "motorway_exit_50-1:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "motorway_exit_50",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "motorway_exit_50-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "motorway_exit_50",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "motorway_exit_50-2:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.13,
+                "height": 0.13
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "motorway_exit_50",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        }
+      ],
+      "expectedWithheldCount": 1
+    },
+    {
+      "id": "exit_taken",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "exit_taken-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "exit_taken",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "exit_taken-0:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "exit_taken",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway_link",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "exit_taken-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "exit_taken",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "exit_taken-1:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "exit_taken",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway_link",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "exit_taken-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "exit_taken",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "exit_taken-2:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.13,
+                "height": 0.13
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "exit_taken",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway_link",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        }
+      ],
+      "expectedWithheldCount": 0
+    },
+    {
+      "id": "mainline_limit_already_90",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "mainline_limit_already_90-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "mainline_limit_already_90",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "mainline_limit_already_90-0:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "mainline_limit_already_90",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 90
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "mainline_limit_already_90-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "mainline_limit_already_90",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "mainline_limit_already_90-1:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "mainline_limit_already_90",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 90
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "mainline_limit_already_90-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "mainline_limit_already_90",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "mainline_limit_already_90-2:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.13,
+                "height": 0.13
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "mainline_limit_already_90",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 90
+          }
+        }
+      ],
+      "expectedWithheldCount": 0
+    },
+    {
+      "id": "unconnected_parallel",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "unconnected_parallel-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "unconnected_parallel",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "unconnected_parallel-0:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "unconnected_parallel",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": false,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "unconnected_parallel-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "unconnected_parallel",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "unconnected_parallel-1:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "unconnected_parallel",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": false,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "unconnected_parallel-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "unconnected_parallel",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "unconnected_parallel-2:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.13,
+                "height": 0.13
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "unconnected_parallel",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": false,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        }
+      ],
+      "expectedWithheldCount": 0
+    },
+    {
+      "id": "on_ramp_merge",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "on_ramp_merge-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "on_ramp_merge",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "on_ramp_merge-0:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "on_ramp_merge",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 180,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "on_ramp_merge-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "on_ramp_merge",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "on_ramp_merge-1:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "on_ramp_merge",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 180,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "on_ramp_merge-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "on_ramp_merge",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "on_ramp_merge-2:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.13,
+                "height": 0.13
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "on_ramp_merge",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 180,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        }
+      ],
+      "expectedWithheldCount": 0
+    },
+    {
+      "id": "stale_motorway",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "stale_motorway-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "stale_motorway",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "stale_motorway-0:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": -2000,
+            "scope": {
+              "sessionId": "stale_motorway",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "stale_motorway-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "stale_motorway",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "stale_motorway-1:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": -1600,
+            "scope": {
+              "sessionId": "stale_motorway",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "stale_motorway-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "stale_motorway",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "stale_motorway-2:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.13,
+                "height": 0.13
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": -1200,
+            "scope": {
+              "sessionId": "stale_motorway",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        }
+      ],
+      "expectedWithheldCount": 0
+    },
+    {
+      "id": "poor_gps_motorway",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "poor_gps_motorway-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "poor_gps_motorway",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "poor_gps_motorway-0:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "poor_gps_motorway",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 80,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "poor_gps_motorway-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "poor_gps_motorway",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "poor_gps_motorway-1:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "poor_gps_motorway",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 80,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "poor_gps_motorway-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "poor_gps_motorway",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "poor_gps_motorway-2:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.13,
+                "height": 0.13
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "poor_gps_motorway",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 80,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        }
+      ],
+      "expectedWithheldCount": 0
+    },
+    {
+      "id": "paired_mainline_repeat",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "paired_mainline_repeat-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "paired_mainline_repeat",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "paired_mainline_repeat-0:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            },
+            {
+              "candidateId": "paired_mainline_repeat-0:1",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.2,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-1"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 2,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "paired_mainline_repeat",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "paired_mainline_repeat-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "paired_mainline_repeat",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "paired_mainline_repeat-1:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            },
+            {
+              "candidateId": "paired_mainline_repeat-1:1",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.2,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-1"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 2,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "paired_mainline_repeat",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "paired_mainline_repeat-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "paired_mainline_repeat",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "paired_mainline_repeat-2:0",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.6,
+                "y": 0.35,
+                "width": 0.13,
+                "height": 0.13
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            },
+            {
+              "candidateId": "paired_mainline_repeat-2:1",
+              "semanticKey": "maximum_speed:50:km/h",
+              "box": {
+                "x": 0.2,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-1"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 2,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "paired_mainline_repeat",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "motorway",
+            "hypotheses": [],
+            "branches": [
+              {
+                "wayId": "2",
+                "headingDeg": 12,
+                "distanceM": 30,
+                "roadClass": "motorway_link",
+                "endpointLinked": true,
+                "turnAngleDeg": 12
+              }
+            ],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": null,
+            "cameraYawDeg": null,
+            "postedSpeedKmh": 130
+          }
+        }
+      ],
+      "expectedWithheldCount": 0
     }
   ]
 }

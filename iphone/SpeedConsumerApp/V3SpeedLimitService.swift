@@ -466,6 +466,7 @@ final class V3SpeedLimitService {
         case surface
         case tunnel
         case motorway
+        case motorwayLink = "motorway_link"
 
         var rtreeTableName: String {
             "\(rawValue)_way_network_rtree"
@@ -1143,7 +1144,7 @@ final class V3SpeedLimitService {
             }
 
             return SpeedLimitResult(
-                applicabilityGeometry: applicabilityGeometry(selected: finalSelected, candidates: rankedCandidates, links: wayLinksContext),
+                applicabilityGeometry: applicabilityGeometry(db: db, selected: finalSelected, candidates: rankedCandidates, links: wayLinksContext),
                 speedLimitKmh: effectiveSpeed,
                 isUnlimitedSpeedLimit: finalSelected?.isUnlimitedSpeedLimit == true ? true : nil,
                 wayID: finalSelected?.wayID,
@@ -1734,7 +1735,7 @@ final class V3SpeedLimitService {
             }
 
             return SpeedLimitResult(
-                applicabilityGeometry: applicabilityGeometry(selected: finalSelected, candidates: rankedCandidates, links: wayLinksContext),
+                applicabilityGeometry: applicabilityGeometry(db: db, selected: finalSelected, candidates: rankedCandidates, links: wayLinksContext),
                 speedLimitKmh: effectiveSpeed,
                 isUnlimitedSpeedLimit: finalSelected?.isUnlimitedSpeedLimit == true ? true : nil,
                 wayID: finalSelected?.wayID,
@@ -2270,6 +2271,8 @@ final class V3SpeedLimitService {
             return tunnelCondition
         case .motorway:
             return "NOT (\(tunnelCondition)) AND \(highwayExpr) = 'motorway'"
+        case .motorwayLink:
+            return "NOT (\(tunnelCondition)) AND \(highwayExpr) = 'motorway_link'"
         }
     }
 
@@ -6801,14 +6804,26 @@ final class V3SpeedLimitService {
         }
     }
 
-    private func applicabilityGeometry(selected: WayCandidate?, candidates: [WayCandidate], links: WayLinksContext) -> TSRMapGeometry {
-        let alternatives = candidates.filter { $0.wayID != selected?.wayID }.sorted {
+    private func applicabilityGeometry(db: OpaquePointer, selected: WayCandidate?, candidates: [WayCandidate], links: WayLinksContext) -> TSRMapGeometry {
+        // Recognition sees signs ahead of the narrow GPS matching window. This
+        // bounded lookup supplies context only; it never changes the matched way.
+        let nearby = selected.flatMap { selected in
+            selected.highway == "motorway" ? try? loadCandidates(db: db,
+                lat: selected.queryPoint.0, lon: selected.queryPoint.1, radiusM: 400,
+                maxCandidates: 64, headingForScoring: nil, network: .motorwayLink) : nil
+        } ?? []
+        let combined = candidates + nearby.filter { candidate in !candidates.contains { $0.wayID == candidate.wayID } }
+        let alternatives = combined.filter { $0.wayID != selected?.wayID }.sorted {
             if $0.distanceM != $1.distanceM { return $0.distanceM < $1.distanceM }
             return ($0.wayID ?? "") < ($1.wayID ?? "")
         }
         var branches: [TSRApplicabilityCorridor] = []
         if let selected, let wayID = selected.wayID {
-            for candidate in alternatives where links.byWayID[wayID]?.linkedWayIDs.contains(candidate.wayID ?? "") == true {
+            for candidate in alternatives {
+                let linked = links.byWayID[wayID]?.linkedWayIDs.contains(candidate.wayID ?? "") == true
+                let endpointKeys = Set([selected.startNodeKey, selected.endNodeKey].compactMap { $0 })
+                let endpointMatch = !endpointKeys.isDisjoint(with: [candidate.startNodeKey, candidate.endNodeKey].compactMap { $0 })
+                guard linked || endpointMatch else { continue }
                 guard let point = sharedJunctionPoint(between: selected, and: candidate) else { continue }
                 let incoming = junctionNodeHeadingDeg(for: selected, sharedPoint: point, traversal: .towardNode)
                 let outgoing = junctionNodeHeadingDeg(for: candidate, sharedPoint: point, traversal: .awayFromNode)
@@ -6829,7 +6844,8 @@ final class V3SpeedLimitService {
         return TSRMapGeometry(wayId: selected?.wayID, localTangentDeg: selected?.localHeadingDeg, roadClass: selected?.highway,
             hypotheses: alternatives.prefix(8).map { TSRApplicabilityCorridor(wayId: $0.wayID ?? "unknown", headingDeg: $0.localHeadingDeg,
                 distanceM: $0.distanceM.isFinite ? $0.distanceM : nil, roadClass: $0.highway, endpointLinked: false, turnAngleDeg: nil) },
-            branches: Array(branches.prefix(8)), capabilities: capabilities)
+            branches: Array(branches.prefix(8)), capabilities: capabilities,
+            postedSpeedKmh: selected?.speedSource == .explicitTag ? selected?.speedKmh : nil)
     }
 
     private func loadWayLinksContext(

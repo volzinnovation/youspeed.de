@@ -612,7 +612,9 @@ object TrafficSignModelPackValidator {
         if (pack.classMapping.isEmpty()) add("class_mapping must not be empty")
         if (pack.classMapping.map { it.classId }.distinct().size != pack.classMapping.size) add("class_id values must be unique")
         pack.classMapping.forEachIndexed { index, mapping -> validateClassMapping(mapping, "class_mapping[$index]", this) }
-        validateComponent(pack.detector, "detector", pack.calibration.datasetSha256, this)
+        val componentDatasets = if (pack.calibration.calibrated) setOf(pack.calibration.datasetSha256)
+            else (pack.lineage.datasetInventorySha256s + pack.calibration.datasetSha256).toSet()
+        validateComponent(pack.detector, "detector", componentDatasets, this)
         when (pack.pipeline) {
             TrafficSignPipeline.DIRECT_DETECTION -> if (pack.classifier != null) {
                 add("direct_detection must not declare a classifier")
@@ -621,7 +623,7 @@ object TrafficSignModelPackValidator {
                 add("proposal_classification requires a classifier")
             }
         }
-        pack.classifier?.let { validateComponent(it, "classifier", pack.calibration.datasetSha256, this) }
+        pack.classifier?.let { validateComponent(it, "classifier", componentDatasets, this) }
         validateLineage(pack.lineage, this)
         if (pack.licenses.isEmpty()) add("licenses must not be empty")
         pack.licenses.forEachIndexed { index, license ->
@@ -731,7 +733,7 @@ object TrafficSignModelPackValidator {
     private fun validateComponent(
         value: TrafficSignComponent,
         path: String,
-        calibrationDatasetSha256: String,
+        calibrationDatasetSha256s: Set<String>,
         errors: MutableList<String>,
     ) {
         if (value.componentId.isBlank()) errors += "$path.component_id is missing"
@@ -753,7 +755,7 @@ object TrafficSignModelPackValidator {
             if (artifact.sourceCheckpointSha256 != value.sourceCheckpoint.sha256) {
                 errors += "$artifactPath.source_checkpoint_sha256 does not match its component"
             }
-            if (artifact.calibrationDatasetSha256 != calibrationDatasetSha256) {
+            if (artifact.calibrationDatasetSha256 !in calibrationDatasetSha256s) {
                 errors += "$artifactPath.calibration_dataset_sha256 does not match the pack"
             }
             if (artifact.exporter.name.isBlank() || artifact.exporter.version.isBlank() || artifact.exporter.configuration.isBlank()) {

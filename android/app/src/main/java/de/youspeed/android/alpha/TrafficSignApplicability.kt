@@ -21,7 +21,7 @@ data class TrafficSignMapContextSnapshot(val snapshotId: String, val capturedAtM
     val wayId: String?, val horizontalAccuracyM: Double?, val courseAccuracyDeg: Double?, val courseDeg: Double?,
     val localTangentDeg: Double?, val matchedStable: Boolean, val roadClass: String?,
     val hypotheses: List<TSRApplicabilityCorridor>, val branches: List<TSRApplicabilityCorridor>, val capabilities: List<String>,
-    val cameraHorizontalFovDeg: Double?, val cameraYawDeg: Double?)
+    val cameraHorizontalFovDeg: Double?, val cameraYawDeg: Double?, val postedSpeedKmh: Int? = null)
 data class TSRFrameCandidateBatch(val schemaVersion: Int, val frameId: String, val capturedAtMs: Double,
     val scope: TSRApplicabilityScope, val status: String, val candidates: List<TSRApplicabilityCandidate>,
     val truncated: Boolean, val rawCandidateCount: Int, val modelId: String, val preprocessingId: String,
@@ -38,7 +38,7 @@ data class TSRApplicabilityDiagnostic(val schemaVersion: Int, val batch: TSRFram
 
 object TSRApplicabilityConfiguration {
     const val policyVersion = "applicability-heuristic-v1"
-    const val configHash = "ff87a27c0a2dc643225fad1f34cfd3f131bf00b2e2e5a2b647ab5ed3e81738e3"
+    const val configHash = "6278259f59578238acabe7df1abe53f8cd580115b20c6036ef3f89657e97ca11"
     const val defaultMode = "shadow"
     const val maxCandidates = 32
     const val maxTracks = 24
@@ -59,6 +59,14 @@ object TSRApplicabilityConfiguration {
     const val maxBranches = 8
     const val maxHypotheses = 8
     const val maxJunctionDistanceM = 100.0
+    const val motorwayExitPolicyVersion = "motorway-exit-guard-v1"
+    const val motorwayExitMinPostedSpeed = 100
+    const val motorwayExitMinCandidateSpeed = 30
+    const val motorwayExitMaxCandidateSpeed = 90
+    const val motorwayExitMaxJunctionDistanceM = 350.0
+    const val motorwayExitMaxHeadingDeltaDeg = 60.0
+    const val motorwayExitMinSignCenterX = 0.6
+    const val motorwayExitPairedRepeatMaxCenterX = 0.5
 }
 
 /** Deterministic one-to-one association. Uncertain or skipped work never synthesizes loss. */
@@ -191,6 +199,7 @@ object TSRApplicabilityPolicy {
 object TSRApplicabilityAuthority {
     fun allows(decision: TSRApplicabilityDecision?, scope: TSRApplicabilityScope, frameId: String, trackId: String,
         sink: String, mode: String = TSRApplicabilityConfiguration.defaultMode): Boolean {
+        if (decision?.reasons?.contains(TSRMotorwayExitPolicy.reason) == true) return false
         if (mode == "shadow") return true
         if (mode != "enforce" || decision == null || decision.schemaVersion != 1 || decision.scope != scope || decision.frameId != frameId || decision.trackId != trackId ||
             decision.policyVersion != TSRApplicabilityConfiguration.policyVersion || decision.configHash != TSRApplicabilityConfiguration.configHash || decision.classification != "LIKELY_EGO_CORRIDOR") return false
@@ -199,15 +208,42 @@ object TSRApplicabilityAuthority {
 }
 
 data class TSRMapGeometry(val wayId: String?, val localTangentDeg: Double?, val roadClass: String?,
-    val hypotheses: List<TSRApplicabilityCorridor>, val branches: List<TSRApplicabilityCorridor>, val capabilities: List<String>) {
+    val hypotheses: List<TSRApplicabilityCorridor>, val branches: List<TSRApplicabilityCorridor>, val capabilities: List<String>, val postedSpeedKmh: Int? = null) {
     fun snapshot(scope: TSRApplicabilityScope, fixTimeMs: Double, accuracyM: Double?, courseDeg: Double?, courseAccuracyDeg: Double?, stable: Boolean) =
         TrafficSignMapContextSnapshot("${scope.bundleId}:${scope.traversalEpoch}:$fixTimeMs", fixTimeMs, scope,
-            wayId, accuracyM, courseAccuracyDeg, courseDeg, localTangentDeg, stable, roadClass, hypotheses.toList(), branches.toList(), capabilities.toList(), null, null)
+            wayId, accuracyM, courseAccuracyDeg, courseDeg, localTangentDeg, stable, roadClass, hypotheses.toList(), branches.toList(), capabilities.toList(), null, null, postedSpeedKmh)
 }
 
 data class TSRMapFix(val geometry: TSRMapGeometry, val timestampMs: Double, val accuracyM: Double?,
     val courseDeg: Double?, val courseAccuracyDeg: Double?, val stable: Boolean) {
     fun snapshot(scope: TSRApplicabilityScope) = geometry.snapshot(scope, timestampMs, accuracyM, courseDeg, courseAccuracyDeg, stable)
+}
+
+/** Active ambiguity guard; this is not an arrow classifier or a legal lane assignment. */
+object TSRMotorwayExitPolicy {
+    const val reason = "motorway_exit_ambiguous_speed"
+    fun withheldCandidates(batch: TSRFrameCandidateBatch): Set<String> {
+        val road = batch.road ?: return emptySet()
+        val posted = road.postedSpeedKmh ?: return emptySet()
+        val course = road.courseDeg ?: return emptySet()
+        if (batch.status != "analyzed" || road.scope != batch.scope || road.roadClass != "motorway" || !road.matchedStable ||
+            posted < TSRApplicabilityConfiguration.motorwayExitMinPostedSpeed || batch.capturedAtMs - road.capturedAtMs !in 0.0..1500.0 ||
+            road.horizontalAccuracyM?.let { it in 0.0..20.0 } != true || course !in 0.0..<360.0 ||
+            road.courseAccuracyDeg?.let { it in 0.0..25.0 } != true || road.branches.none { branch ->
+                branch.endpointLinked && branch.roadClass == "motorway_link" && branch.distanceM?.let { it in 0.0..TSRApplicabilityConfiguration.motorwayExitMaxJunctionDistanceM } == true &&
+                    branch.headingDeg?.let { abs(TSRApplicabilityPolicy.signedAngle(it - course)) <= TSRApplicabilityConfiguration.motorwayExitMaxHeadingDeltaDeg } == true
+            }) return emptySet()
+        return batch.candidates.filter { candidate ->
+            val components = candidate.semanticKey.split(':')
+            val speed = components.getOrNull(1)?.toIntOrNull()
+            components.firstOrNull() == "maximum_speed" && speed != null && speed in TSRApplicabilityConfiguration.motorwayExitMinCandidateSpeed..TSRApplicabilityConfiguration.motorwayExitMaxCandidateSpeed && speed < posted &&
+                candidate.recognitionEligible && candidate.box.valid && candidate.box.centerX >= TSRApplicabilityConfiguration.motorwayExitMinSignCenterX &&
+                batch.candidates.none { other ->
+                    other.candidateId != candidate.candidateId && other.recognitionEligible && other.box.valid &&
+                        other.semanticKey == candidate.semanticKey && other.box.centerX < TSRApplicabilityConfiguration.motorwayExitPairedRepeatMaxCenterX
+                }
+        }.map { it.candidateId }.toSet()
+    }
 }
 
 class TSRApplicabilitySession {
@@ -217,13 +253,23 @@ class TSRApplicabilitySession {
     fun reset() { tracker.reset(); decisionsByTrack.clear(); diagnostic = null }
     fun evaluate(batch: TSRFrameCandidateBatch): TSRApplicabilityDiagnostic {
         val tracks = tracker.ingest(batch)
-        val decisions = tracks.map { TSRApplicabilityPolicy.evaluate(it, batch) }
+        val withheld = TSRMotorwayExitPolicy.withheldCandidates(batch)
+        val decisions = tracks.map { track ->
+            val decision = TSRApplicabilityPolicy.evaluate(track, batch)
+            val sample = track.samples.lastOrNull()
+            if (sample?.frameId == batch.frameId && sample.candidate.candidateId in withheld)
+                decision.copy(classification = "UNKNOWN", reasons = listOf(TSRMotorwayExitPolicy.reason),
+                    evidence = listOf("connected_motorway_link", "mainline_match", "right_side_lower_speed"),
+                    displayEligible = false, immediateEligible = false, passageEligible = false)
+            else decision
+        }
         decisionsByTrack.entries.removeAll { (key, value) -> tracks.none { it.trackId == key && it.scope == value.scope } }
         tracks.zip(decisions).filter { it.first.visibility == "observed" }.forEach { (track, decision) -> decisionsByTrack[track.trackId] = decision }
         return TSRApplicabilityDiagnostic(1, batch, tracks, decisions).also { diagnostic = it }
     }
     fun passageDecision(trackId: String): TSRApplicabilityDecision? = decisionsByTrack[trackId]
     fun canConsumePassage(activeTrackId: String?, selectedTrackId: String?, mode: String): Boolean {
+        if (diagnostic?.decisions?.any { it.reasons.contains(TSRMotorwayExitPolicy.reason) } == true) return false
         if (mode == "shadow") return true
         val current = diagnostic ?: return false
         if (mode != "enforce" || current.batch.status != "analyzed" || current.batch.truncated) return false

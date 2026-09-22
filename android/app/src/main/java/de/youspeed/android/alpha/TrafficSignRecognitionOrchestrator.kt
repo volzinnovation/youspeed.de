@@ -669,6 +669,13 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         }
         if (sourceIsCurrent) applicabilityScope = scope
         val applicability = if (sourceIsCurrent) applicabilitySession.evaluate(batch) else null
+        val exitWithheld = if (sourceIsCurrent) TSRMotorwayExitPolicy.withheldCandidates(batch) else emptySet()
+        val exitEligibleDetections = rawDetections.filterIndexed { index, _ ->
+            "${batch.frameId}:$index" !in exitWithheld
+        }
+        if (exitWithheld.isNotEmpty()) {
+            fusionEngine.reset(); passageFinalizer.reset(active.accepted.contextGeneration)
+        }
         val enforcing = TSRApplicabilityConfiguration.defaultMode != "shadow"
         if (enforcing && applicability != null && passageFinalizer.activePhysicalTrackId()?.let { id -> applicability.tracks.none { it.trackId == id } } == true) {
             passageFinalizer.reset(active.accepted.contextGeneration) // Expiry is cancellation, never passage.
@@ -677,7 +684,12 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             ?.sortedWith(compareByDescending<TSRPhysicalTrackSnapshot> { it.trackId == passageFinalizer.activePhysicalTrackId() }
                 .thenByDescending { it.samples.lastOrNull()?.candidate?.rawScore ?: 0.0 }.thenBy { it.trackId })?.firstOrNull()
         val selectedIndex = selectedTrack?.samples?.lastOrNull()?.candidate?.candidateId?.substringAfterLast(':')?.toIntOrNull()
-        val selectedDetection = if (enforcing) selectedIndex?.let { rawDetections[it] } else (backendResult as? TrafficSignBackendResult.Recognition)?.detection
+        val selectedDetection = if (enforcing) selectedIndex?.let { rawDetections[it] } else
+            (backendResult as? TrafficSignBackendResult.Recognition)?.detection?.takeIf {
+                exitWithheld.isEmpty() || exitEligibleDetections.any { eligible ->
+                    eligible.candidate.rawClassId == it.candidate.rawClassId && eligible.candidate.boundingBox == it.candidate.boundingBox
+                }
+            }
         val physicalSamples = selectedTrack?.samples?.filter { it.candidate.recognitionEligible && batch.capturedAtMs - it.capturedAtMs <= fusionEngine.confirmationWindowMs }.orEmpty()
         val fusion = when (backendResult) {
             is TrafficSignBackendResult.Recognition -> if (sourceIsCurrent) {
@@ -756,7 +768,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             },
         )
         // Independent raw confirmation feeds only the existing annotation sink.
-        val annotationEvent = if (enforcing && sourceIsCurrent && backendResult is TrafficSignBackendResult.Recognition) {
+        val annotationEvent = if ((enforcing || exitWithheld.isNotEmpty()) && sourceIsCurrent && backendResult is TrafficSignBackendResult.Recognition) {
             val raw = annotationFusion.observe(backendResult.detection,
                 observedAtMs = active.accepted.metadata.capturedAtMonotonicNanos / NANOS_PER_MILLISECOND)
             val index = rawDetections.indexOf(backendResult.detection)
@@ -772,9 +784,10 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             applicabilityDiagnostic = applicability,
             annotationEvent = annotationEvent,
             selectedTrackId = selectedTrack?.trackId,
-            displayDetections = if (enforcing) listOfNotNull(selectedDetection) else rawDetections,
+            displayDetections = if (enforcing) listOfNotNull(selectedDetection) else exitEligibleDetections,
             contextIsCurrent = sourceIsCurrent,
             qualifiedAnalyzedFrame = backendResult is TrafficSignBackendResult.Recognition &&
+                exitWithheld.isEmpty() &&
                 sourceIsCurrent &&
                 active.accepted.metadata.source == TrafficSignInputSource.LIVE_FRAME,
         )

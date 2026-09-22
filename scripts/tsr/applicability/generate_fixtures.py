@@ -59,6 +59,27 @@ def build():
     add('duplicate_frame',ego,lambda fs:fs.append(copy.deepcopy(fs[-1])))
     add('occlusion_reappearance',ego,lambda fs:fs.insert(2,dict(copy.deepcopy(fs[1]),frameId='occlusion-miss',capturedAtMs=1600,candidates=[],rawCandidateCount=0)))
     add('sequential_same_value',unknown,lambda fs:fs[-1].update(capturedAtMs=6000,road=dict(fs[-1]['road'],capturedAtMs=5900)))
+    def motorway(fs):
+        for f in fs:
+            f['road'].update(roadClass='motorway', postedSpeedKmh=130, branches=[corridor(heading=12)],
+                cameraHorizontalFovDeg=None, cameraYawDeg=None)
+    for speed in [90,70,50]:
+        add(f'motorway_exit_{speed}',unknown,motorway,semantic=f'maximum_speed:{speed}:km/h')
+        vectors[-1]['expectedWithheldCount']=1
+    for name, edit in [
+        ('exit_taken',lambda f:f['road'].update(roadClass='motorway_link')),
+        ('mainline_limit_already_90',lambda f:f['road'].update(postedSpeedKmh=90)),
+        ('unconnected_parallel',lambda f:f['road']['branches'][0].update(endpointLinked=False)),
+        ('on_ramp_merge',lambda f:f['road']['branches'][0].update(headingDeg=180)),
+        ('stale_motorway',lambda f:f['road'].update(capturedAtMs=f['capturedAtMs']-3000)),
+        ('poor_gps_motorway',lambda f:f['road'].update(horizontalAccuracyM=80)),
+        ('paired_mainline_repeat',lambda f:f.update(candidates=f['candidates']+[candidate(f['frameId'],1,x=.2)],rawCandidateCount=2)),
+    ]:
+        def prepare(fs, edit=edit):
+            motorway(fs)
+            for f in fs: edit(f)
+        add(name,None,prepare)
+        vectors[-1]['expectedWithheldCount']=0
     return dict(schemaVersion=1,description='Synthetic engineering fixtures; not field accuracy evidence. Expected policy outcomes are separate from raw proposals.',scenarios=vectors)
 
 if __name__=='__main__':

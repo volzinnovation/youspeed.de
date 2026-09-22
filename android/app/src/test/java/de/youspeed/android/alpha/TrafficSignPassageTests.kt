@@ -14,6 +14,51 @@ import org.junit.Test
 class TrafficSignPassageTests {
     private val t0 = Instant.parse("2026-09-04T08:00:00Z")
 
+    @Test fun userRecordingPrecedesCameraStartsEndsAndReconciliation() {
+        val manual = base(90, EffectiveSpeedLimitSource.LOCAL_CORRECTION).copy(isUserCorrection = true)
+        for (action in listOf(TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 50),
+            TrafficSignAction(TrafficSignActionKind.ALL_RESTRICTIONS_END),
+            TrafficSignAction(TrafficSignActionKind.CITY_ENTRY, countryCode = "FR"))) {
+            val resolver = TrafficSignRuntimeSourceResolver()
+            resolver.commit(passage(), base(130, EffectiveSpeedLimitSource.BUNDLE))
+            val result = resolver.commit(passage(action = action), manual)
+            assertEquals(90, result.resolution?.speedKmh)
+            assertTrue(result.isUserCorrection)
+            assertNull(resolver.activeAssertion())
+            assertEquals(90, resolver.effective(manual).resolution?.speedKmh)
+        }
+    }
+
+    @Test fun nationalEndAndCityTransitionsDiscardOldPostedLimits() {
+        val bundle = base(70, EffectiveSpeedLimitSource.BUNDLE)
+        for (action in listOf(TrafficSignAction(TrafficSignActionKind.MAXIMUM_SPEED_END, 70),
+            TrafficSignAction(TrafficSignActionKind.ALL_RESTRICTIONS_END), TrafficSignAction(TrafficSignActionKind.CITY_EXIT))) {
+            val resolver = TrafficSignRuntimeSourceResolver()
+            resolver.commit(passage(action = TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 70)), bundle)
+            val ended = resolver.commit(passage(action = action, at = t0.plusSeconds(2)), bundle,
+                TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 130))
+            assertEquals(130, ended.resolution?.speedKmh)
+            assertEquals(130, resolver.effective(bundle).resolution?.speedKmh)
+        }
+        for (country in listOf("FR", "BE")) {
+            val resolver = TrafficSignRuntimeSourceResolver()
+            resolver.commit(passage(), bundle)
+            assertEquals(50, resolver.commit(passage(action = TrafficSignAction(TrafficSignActionKind.CITY_ENTRY, countryCode = country),
+                at = t0.plusSeconds(2)), bundle, TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 50)).resolution?.speedKmh)
+        }
+    }
+
+    @Test fun roadDefaultsRequireCountryRegionAndRoadContext() {
+        assertEquals(130, TrafficSignRoadDefaultPolicy.speedKmh("FR", null, "motorway", null))
+        assertEquals(120, TrafficSignRoadDefaultPolicy.speedKmh("CH", null, "motorway", null))
+        assertEquals(100, TrafficSignRoadDefaultPolicy.speedKmh("CH", null, "trunk", false))
+        assertEquals(70, TrafficSignRoadDefaultPolicy.speedKmh("BE", "BE-VLG", "secondary", false))
+        assertEquals(90, TrafficSignRoadDefaultPolicy.speedKmh("BE", "BE-WAL", "secondary", false))
+        assertEquals(30, TrafficSignRoadDefaultPolicy.speedKmh("BE", "BE-BRU", "residential", true))
+        assertNull(TrafficSignRoadDefaultPolicy.speedKmh("NL", null, "motorway", null))
+        assertNull(TrafficSignRoadDefaultPolicy.speedKmh("BE", null, "secondary", false))
+    }
+
     @Test
     fun visibleFramesNeverActivateAndOnlyQualifiedLiveLossFinalizes() {
         val finalizer = TrafficSignPassageFinalizer()

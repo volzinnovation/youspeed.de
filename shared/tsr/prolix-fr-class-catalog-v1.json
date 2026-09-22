@@ -684,14 +684,14 @@
     {
       "class_id": "A2b",
       "sign_code": "A2b",
-      "image_path": "tsr/sign-pictograms/national/FR/png/fr-a2b.png",
+      "image_path": null,
       "label": {
         "en": "A2b — hazard:bump",
         "de": "A2b — hazard:bump",
         "fr": "A2b — hazard:bump",
         "nl": "A2b — hazard:bump"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "fr-a2b",
       "source_provenance": {
         "commons_title": "File:France road sign A2b.svg",
@@ -699,19 +699,20 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A2b.svg",
         "original_sha256": "b3229b7584c7b40060fc4e8d921a5ded5071eb86bb760fa2a7ee1a442e9c60c1",
         "png_sha256": "1e84173d9b47af676457b90d95aac9724f11095e20f3e0ff1f53a068f7ca42c9"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "A2a",
       "sign_code": "A2a",
-      "image_path": "tsr/sign-pictograms/national/FR/png/fr-a2a.png",
+      "image_path": null,
       "label": {
         "en": "A2a — hazard:bumps",
         "de": "A2a — hazard:bumps",
         "fr": "A2a — hazard:bumps",
         "nl": "A2a — hazard:bumps"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "fr-a2a",
       "source_provenance": {
         "commons_title": "File:France road sign A2a.svg",
@@ -719,7 +720,8 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A2a.svg",
         "original_sha256": "65b5c68a81143d1fa9eaecf560a486d4d8621ff48c21503493c042a6bbb06a10",
         "png_sha256": "94c2a00d20f15e486b3c8a283cd4e3979ad0cb27e70a07efba4f3db8e7585e12"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "AB1",
@@ -1324,14 +1326,14 @@
     {
       "class_id": "B13a",
       "sign_code": "B13a",
-      "image_path": "tsr/sign-pictograms/national/FR/png/fr-b13a.png",
+      "image_path": null,
       "label": {
         "en": "B13a — maxaxleweight",
         "de": "B13a — maxaxleweight",
         "fr": "B13a — maxaxleweight",
         "nl": "B13a — maxaxleweight"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "fr-b13a",
       "source_provenance": {
         "commons_title": "File:France road sign B13a.svg",
@@ -1339,19 +1341,20 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B13a.svg",
         "original_sha256": "7cae1e94534fd732a19d6004ed3d4a525bf43bd9aa5ba4ea17f69a0067431cf6",
         "png_sha256": "a13c62769510f20acfd00d52a6653835206a7acd8e3d6f890fa8f711eb46cd61"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "B12",
       "sign_code": "B12",
-      "image_path": "tsr/sign-pictograms/national/FR/png/fr-b12.png",
+      "image_path": null,
       "label": {
         "en": "B12 — maxheight",
         "de": "B12 — maxheight",
         "fr": "B12 — maxheight",
         "nl": "B12 — maxheight"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "fr-b12",
       "source_provenance": {
         "commons_title": "File:France road sign B12.svg",
@@ -1359,7 +1362,8 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B12.svg",
         "original_sha256": "cf9a680bfb80aef745f5f94b3bf8cb8f56405ee8c59f48beb1678dde80e3d386",
         "png_sha256": "d089caa37c07ae481d9198916371947fd1cc96c1779b88a2c972ec0ca4928f86"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "B14-10",
@@ -1644,14 +1648,14 @@
     {
       "class_id": "B13",
       "sign_code": "B13",
-      "image_path": "tsr/sign-pictograms/national/FR/png/fr-b13.png",
+      "image_path": null,
       "label": {
         "en": "B13 — maxweight",
         "de": "B13 — maxweight",
         "fr": "B13 — maxweight",
         "nl": "B13 — maxweight"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "fr-b13",
       "source_provenance": {
         "commons_title": "File:France road sign B13.svg",
@@ -1659,19 +1663,20 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B13.svg",
         "original_sha256": "c941cfd0f017ac7d1bd40d173d08e99bb33558390ef33e34a36517c1fd542d83",
         "png_sha256": "ff252d01b5f59c8641cbc5ee5fd326b17d41986e26d17587c980296f35c50781"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "B11",
       "sign_code": "B11",
-      "image_path": "tsr/sign-pictograms/national/FR/png/fr-b11.png",
+      "image_path": null,
       "label": {
         "en": "B11 — maxwidth",
         "de": "B11 — maxwidth",
         "fr": "B11 — maxwidth",
         "nl": "B11 — maxwidth"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "fr-b11",
       "source_provenance": {
         "commons_title": "File:France road sign B11.svg",
@@ -1679,19 +1684,20 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B11.svg",
         "original_sha256": "008a49f3d266843835aa01a75a6ad5c3e88eb2167b2e984c599a5b72a68053f0",
         "png_sha256": "9a74c7d063adfe9ee02f49792aed9ee3c173b80d2d7069a75384e539bac0dae5"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "B17",
       "sign_code": "B17",
-      "image_path": "tsr/sign-pictograms/national/FR/png/fr-b17.png",
+      "image_path": null,
       "label": {
         "en": "B17 — min distance",
         "de": "B17 — min distance",
         "fr": "B17 — min distance",
         "nl": "B17 — min distance"
       },
-      "display_eligible": true,
+      "display_eligible": false,
       "artwork_id": "fr-b17",
       "source_provenance": {
         "commons_title": "File:France road sign B17.svg",
@@ -1699,7 +1705,8 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B17.svg",
         "original_sha256": "867bc85f90dc45c165c5d2ff695ae34bad09fb2017de467b4b1b106901382066",
         "png_sha256": "3a5772e39350e13de8e901c92d8ec359f582f529c4a2749715a3dfc8cfc8744b"
-      }
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "B9d",
@@ -2266,10 +2273,10 @@
       "sign_code": "B41",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b41.png",
       "label": {
-        "en": "B41 — pedestrian:end",
-        "de": "B41 — pedestrian:end",
-        "fr": "B41 — pedestrian:end",
-        "nl": "B41 — pedestrian:end"
+        "en": "B41 — end of mandatory footpath",
+        "de": "B41 — end of mandatory footpath",
+        "fr": "B41 — end of mandatory footpath",
+        "nl": "B41 — end of mandatory footpath"
       },
       "display_eligible": true,
       "artwork_id": "fr-b41",
@@ -2279,7 +2286,8 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B41.svg",
         "original_sha256": "f0c9ab2e27a4b379e2028412e45fcdb32cc951850b4088df59a95cf96df9e648",
         "png_sha256": "9559f9e55fa0da5905df062d952d6358ea7a039f2d60d0515947a14bd35fafea"
-      }
+      },
+      "notes": "Corrected against the French sign regulation; this is not a speed-end action."
     },
     {
       "class_id": "C20a",
@@ -2326,10 +2334,10 @@
       "sign_code": "C107",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-c107.png",
       "label": {
-        "en": "C107 — motorway start",
-        "de": "C107 — motorway start",
-        "fr": "C107 — motorway start",
-        "nl": "C107 — motorway start"
+        "en": "C107 — motorroad entry",
+        "de": "C107 — motorroad entry",
+        "fr": "C107 — motorroad entry",
+        "nl": "C107 — motorroad entry"
       },
       "display_eligible": true,
       "artwork_id": "fr-c107",
@@ -2339,17 +2347,18 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_C107.svg",
         "original_sha256": "a235bf0c29b537fe97f5b5610d9f1161962d3b8782f99610f43d34b799037f13",
         "png_sha256": "d2d4f6d5f7658696d930a31b76f217e1659b51387d3243ef052eef50f4a4dd2f"
-      }
+      },
+      "notes": "Corrected against the French sign regulation; this is not a speed-end action."
     },
     {
       "class_id": "C207",
       "sign_code": "C207",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-c207.png",
       "label": {
-        "en": "C207 — motorway end",
-        "de": "C207 — motorway end",
-        "fr": "C207 — motorway end",
-        "nl": "C207 — motorway end"
+        "en": "C207 — motorway entry",
+        "de": "C207 — motorway entry",
+        "fr": "C207 — motorway entry",
+        "nl": "C207 — motorway entry"
       },
       "display_eligible": true,
       "artwork_id": "fr-c207",
@@ -2359,7 +2368,1971 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_C207.svg",
         "original_sha256": "b5b5ce5b6c2eaf49bf77443244da86c223598dbd7073208b125957aa6a70b986",
         "png_sha256": "c73b7d9c35ed656794335f86ffdbdf582127dc4a8eeaa16ddf62b917463753e6"
-      }
+      },
+      "notes": "Corrected against the French sign regulation; this is not a speed-end action."
+    },
+    {
+      "class_id": "A00",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "A00",
+        "de": "A00",
+        "fr": "A00",
+        "nl": "A00"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "A23b",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "A23b",
+        "de": "A23b",
+        "fr": "A23b",
+        "nl": "A23b"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "AB3",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "AB3",
+        "de": "AB3",
+        "fr": "AB3",
+        "nl": "AB3"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "AB6",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "AB6",
+        "de": "AB6",
+        "fr": "AB6",
+        "nl": "AB6"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "AB7",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "AB7",
+        "de": "AB7",
+        "fr": "AB7",
+        "nl": "AB7"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "AK14",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "AK14",
+        "de": "AK14",
+        "fr": "AK14",
+        "nl": "AK14"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "AK17",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "AK17",
+        "de": "AK17",
+        "fr": "AK17",
+        "nl": "AK17"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "AK2",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "AK2",
+        "de": "AK2",
+        "fr": "AK2",
+        "nl": "AK2"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "AK3",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "AK3",
+        "de": "AK3",
+        "fr": "AK3",
+        "nl": "AK3"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "AK30",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "AK30",
+        "de": "AK30",
+        "fr": "AK30",
+        "nl": "AK30"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "AK4",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "AK4",
+        "de": "AK4",
+        "fr": "AK4",
+        "nl": "AK4"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "AKz",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "AKz",
+        "de": "AKz",
+        "fr": "AKz",
+        "nl": "AKz"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "Az1",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "Az1",
+        "de": "Az1",
+        "fr": "Az1",
+        "nl": "Az1"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "Azz",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "Azz",
+        "de": "Azz",
+        "fr": "Azz",
+        "nl": "Azz"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B14-25",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B14-25",
+        "de": "B14-25",
+        "fr": "B14-25",
+        "nl": "B14-25"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B14-45",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B14-45",
+        "de": "B14-45",
+        "fr": "B14-45",
+        "nl": "B14-45"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B15",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B15",
+        "de": "B15",
+        "fr": "B15",
+        "nl": "B15"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B16z",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B16z",
+        "de": "B16z",
+        "fr": "B16z",
+        "nl": "B16z"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B19",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B19",
+        "de": "B19",
+        "fr": "B19",
+        "nl": "B19"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B1j",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B1j",
+        "de": "B1j",
+        "fr": "B1j",
+        "nl": "B1j"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B21a1",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B21a1",
+        "de": "B21a1",
+        "fr": "B21a1",
+        "nl": "B21a1"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B21z1",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B21z1",
+        "de": "B21z1",
+        "fr": "B21z1",
+        "nl": "B21z1"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B22b",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B22b",
+        "de": "B22b",
+        "fr": "B22b",
+        "nl": "B22b"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B27b",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B27b",
+        "de": "B27b",
+        "fr": "B27b",
+        "nl": "B27b"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B27z",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B27z",
+        "de": "B27z",
+        "fr": "B27z",
+        "nl": "B27z"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B29",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B29",
+        "de": "B29",
+        "fr": "B29",
+        "nl": "B29"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B29-lent",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B29-lent",
+        "de": "B29-lent",
+        "fr": "B29-lent",
+        "nl": "B29-lent"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B30",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B30",
+        "de": "B30",
+        "fr": "B30",
+        "nl": "B30"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B33-30",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B33-30",
+        "de": "B33-30",
+        "fr": "B33-30",
+        "nl": "B33-30"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B33-50",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B33-50",
+        "de": "B33-50",
+        "fr": "B33-50",
+        "nl": "B33-50"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B33-70",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B33-70",
+        "de": "B33-70",
+        "fr": "B33-70",
+        "nl": "B33-70"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B33-90",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B33-90",
+        "de": "B33-90",
+        "fr": "B33-90",
+        "nl": "B33-90"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B34",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B34",
+        "de": "B34",
+        "fr": "B34",
+        "nl": "B34"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B34a",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B34a",
+        "de": "B34a",
+        "fr": "B34a",
+        "nl": "B34a"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B45",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B45",
+        "de": "B45",
+        "fr": "B45",
+        "nl": "B45"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B50a",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B50a",
+        "de": "B50a",
+        "fr": "B50a",
+        "nl": "B50a"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B50b",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B50b",
+        "de": "B50b",
+        "fr": "B50b",
+        "nl": "B50b"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B50c",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B50c",
+        "de": "B50c",
+        "fr": "B50c",
+        "nl": "B50c"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B50d",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B50d",
+        "de": "B50d",
+        "fr": "B50d",
+        "nl": "B50d"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B51",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B51",
+        "de": "B51",
+        "fr": "B51",
+        "nl": "B51"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B52",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B52",
+        "de": "B52",
+        "fr": "B52",
+        "nl": "B52"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B53",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B53",
+        "de": "B53",
+        "fr": "B53",
+        "nl": "B53"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B54",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B54",
+        "de": "B54",
+        "fr": "B54",
+        "nl": "B54"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B55",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B55",
+        "de": "B55",
+        "fr": "B55",
+        "nl": "B55"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B56",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B56",
+        "de": "B56",
+        "fr": "B56",
+        "nl": "B56"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B57",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B57",
+        "de": "B57",
+        "fr": "B57",
+        "nl": "B57"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B5c",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B5c",
+        "de": "B5c",
+        "fr": "B5c",
+        "nl": "B5c"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B6b1",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B6b1",
+        "de": "B6b1",
+        "fr": "B6b1",
+        "nl": "B6b1"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B6b2",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B6b2",
+        "de": "B6b2",
+        "fr": "B6b2",
+        "nl": "B6b2"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B6b3",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B6b3",
+        "de": "B6b3",
+        "fr": "B6b3",
+        "nl": "B6b3"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B6b4",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B6b4",
+        "de": "B6b4",
+        "fr": "B6b4",
+        "nl": "B6b4"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B6d-M6a",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B6d-M6a",
+        "de": "B6d-M6a",
+        "fr": "B6d-M6a",
+        "nl": "B6d-M6a"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B6d-M6c",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B6d-M6c",
+        "de": "B6d-M6c",
+        "fr": "B6d-M6c",
+        "nl": "B6d-M6c"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B6d-M6h",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B6d-M6h",
+        "de": "B6d-M6h",
+        "fr": "B6d-M6h",
+        "nl": "B6d-M6h"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B6d-M6i",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B6d-M6i",
+        "de": "B6d-M6i",
+        "fr": "B6d-M6i",
+        "nl": "B6d-M6i"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B6d-M6k",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B6d-M6k",
+        "de": "B6d-M6k",
+        "fr": "B6d-M6k",
+        "nl": "B6d-M6k"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B7b",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B7b",
+        "de": "B7b",
+        "fr": "B7b",
+        "nl": "B7b"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B7x",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B7x",
+        "de": "B7x",
+        "fr": "B7x",
+        "nl": "B7x"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B9-cavaliers",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B9-cavaliers",
+        "de": "B9-cavaliers",
+        "fr": "B9-cavaliers",
+        "nl": "B9-cavaliers"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B9g",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B9g",
+        "de": "B9g",
+        "fr": "B9g",
+        "nl": "B9g"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B9h",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B9h",
+        "de": "B9h",
+        "fr": "B9h",
+        "nl": "B9h"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B9z1",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B9z1",
+        "de": "B9z1",
+        "fr": "B9z1",
+        "nl": "B9z1"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B9z2",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B9z2",
+        "de": "B9z2",
+        "fr": "B9z2",
+        "nl": "B9z2"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "B9zz",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "B9zz",
+        "de": "B9zz",
+        "fr": "B9zz",
+        "nl": "B9zz"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "Bzz",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "Bzz",
+        "de": "Bzz",
+        "fr": "Bzz",
+        "nl": "Bzz"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C108",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C108",
+        "de": "C108",
+        "fr": "C108",
+        "nl": "C108"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C111",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C111",
+        "de": "C111",
+        "fr": "C111",
+        "nl": "C111"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C112",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C112",
+        "de": "C112",
+        "fr": "C112",
+        "nl": "C112"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C113",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C113",
+        "de": "C113",
+        "fr": "C113",
+        "nl": "C113"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C114",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C114",
+        "de": "C114",
+        "fr": "C114",
+        "nl": "C114"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C115",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C115",
+        "de": "C115",
+        "fr": "C115",
+        "nl": "C115"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C115z",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C115z",
+        "de": "C115z",
+        "fr": "C115z",
+        "nl": "C115z"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C116",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C116",
+        "de": "C116",
+        "fr": "C116",
+        "nl": "C116"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C12",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C12",
+        "de": "C12",
+        "fr": "C12",
+        "nl": "C12"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C13b",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C13b",
+        "de": "C13b",
+        "fr": "C13b",
+        "nl": "C13b"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C18",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C18",
+        "de": "C18",
+        "fr": "C18",
+        "nl": "C18"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C1x1",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C1x1",
+        "de": "C1x1",
+        "fr": "C1x1",
+        "nl": "C1x1"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C1x2",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C1x2",
+        "de": "C1x2",
+        "fr": "C1x2",
+        "nl": "C1x2"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C1x3",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C1x3",
+        "de": "C1x3",
+        "fr": "C1x3",
+        "nl": "C1x3"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C1x4",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C1x4",
+        "de": "C1x4",
+        "fr": "C1x4",
+        "nl": "C1x4"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C2",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C2",
+        "de": "C2",
+        "fr": "C2",
+        "nl": "C2"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C208",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C208",
+        "de": "C208",
+        "fr": "C208",
+        "nl": "C208"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C20b",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C20b",
+        "de": "C20b",
+        "fr": "C20b",
+        "nl": "C20b"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C20c",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C20c",
+        "de": "C20c",
+        "fr": "C20c",
+        "nl": "C20c"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C23",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C23",
+        "de": "C23",
+        "fr": "C23",
+        "nl": "C23"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C24a",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C24a",
+        "de": "C24a",
+        "fr": "C24a",
+        "nl": "C24a"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C24x",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C24x",
+        "de": "C24x",
+        "fr": "C24x",
+        "nl": "C24x"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C24z",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C24z",
+        "de": "C24z",
+        "fr": "C24z",
+        "nl": "C24z"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C26a",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C26a",
+        "de": "C26a",
+        "fr": "C26a",
+        "nl": "C26a"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C26b",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C26b",
+        "de": "C26b",
+        "fr": "C26b",
+        "nl": "C26b"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C27",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C27",
+        "de": "C27",
+        "fr": "C27",
+        "nl": "C27"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C4a",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C4a",
+        "de": "C4a",
+        "fr": "C4a",
+        "nl": "C4a"
+      },
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
+    },
+    {
+      "class_id": "C50",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C50",
+        "de": "C50",
+        "fr": "C50",
+        "nl": "C50"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C6",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C6",
+        "de": "C6",
+        "fr": "C6",
+        "nl": "C6"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C62",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C62",
+        "de": "C62",
+        "fr": "C62",
+        "nl": "C62"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C64d",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C64d",
+        "de": "C64d",
+        "fr": "C64d",
+        "nl": "C64d"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C8",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C8",
+        "de": "C8",
+        "fr": "C8",
+        "nl": "C8"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "C9",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "C9",
+        "de": "C9",
+        "fr": "C9",
+        "nl": "C9"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE12",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE12",
+        "de": "CE12",
+        "fr": "CE12",
+        "nl": "CE12"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE12zzz",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE12zzz",
+        "de": "CE12zzz",
+        "fr": "CE12zzz",
+        "nl": "CE12zzz"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE14",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE14",
+        "de": "CE14",
+        "fr": "CE14",
+        "nl": "CE14"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE15a",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE15a",
+        "de": "CE15a",
+        "fr": "CE15a",
+        "nl": "CE15a"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE15c",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE15c",
+        "de": "CE15c",
+        "fr": "CE15c",
+        "nl": "CE15c"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE15g",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE15g",
+        "de": "CE15g",
+        "fr": "CE15g",
+        "nl": "CE15g"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE15h",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE15h",
+        "de": "CE15h",
+        "fr": "CE15h",
+        "nl": "CE15h"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE15i",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE15i",
+        "de": "CE15i",
+        "fr": "CE15i",
+        "nl": "CE15i"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE16",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE16",
+        "de": "CE16",
+        "fr": "CE16",
+        "nl": "CE16"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE17",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE17",
+        "de": "CE17",
+        "fr": "CE17",
+        "nl": "CE17"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE18",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE18",
+        "de": "CE18",
+        "fr": "CE18",
+        "nl": "CE18"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE19",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE19",
+        "de": "CE19",
+        "fr": "CE19",
+        "nl": "CE19"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE21",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE21",
+        "de": "CE21",
+        "fr": "CE21",
+        "nl": "CE21"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE23",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE23",
+        "de": "CE23",
+        "fr": "CE23",
+        "nl": "CE23"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE24",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE24",
+        "de": "CE24",
+        "fr": "CE24",
+        "nl": "CE24"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE28",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE28",
+        "de": "CE28",
+        "fr": "CE28",
+        "nl": "CE28"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE2e",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE2e",
+        "de": "CE2e",
+        "fr": "CE2e",
+        "nl": "CE2e"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE2eZ",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE2eZ",
+        "de": "CE2eZ",
+        "fr": "CE2eZ",
+        "nl": "CE2eZ"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE4a",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE4a",
+        "de": "CE4a",
+        "fr": "CE4a",
+        "nl": "CE4a"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE4c",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE4c",
+        "de": "CE4c",
+        "fr": "CE4c",
+        "nl": "CE4c"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE52",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE52",
+        "de": "CE52",
+        "fr": "CE52",
+        "nl": "CE52"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE5a",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE5a",
+        "de": "CE5a",
+        "fr": "CE5a",
+        "nl": "CE5a"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE5b",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE5b",
+        "de": "CE5b",
+        "fr": "CE5b",
+        "nl": "CE5b"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE6a",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE6a",
+        "de": "CE6a",
+        "fr": "CE6a",
+        "nl": "CE6a"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "CE7",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "CE7",
+        "de": "CE7",
+        "fr": "CE7",
+        "nl": "CE7"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "J5",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "J5",
+        "de": "J5",
+        "fr": "J5",
+        "nl": "J5"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "M12d",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "M12d",
+        "de": "M12d",
+        "fr": "M12d",
+        "nl": "M12d"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "M12f",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "M12f",
+        "de": "M12f",
+        "fr": "M12f",
+        "nl": "M12f"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "M12fd",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "M12fd",
+        "de": "M12fd",
+        "fr": "M12fd",
+        "nl": "M12fd"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "M12g",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "M12g",
+        "de": "M12g",
+        "fr": "M12g",
+        "nl": "M12g"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "M12gf",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "M12gf",
+        "de": "M12gf",
+        "fr": "M12gf",
+        "nl": "M12gf"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "M12gfd",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "M12gfd",
+        "de": "M12gfd",
+        "fr": "M12gfd",
+        "nl": "M12gfd"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "M6h",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "M6h",
+        "de": "M6h",
+        "fr": "M6h",
+        "nl": "M6h"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "M9-rappel",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "M9-rappel",
+        "de": "M9-rappel",
+        "fr": "M9-rappel",
+        "nl": "M9-rappel"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "M9v",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "M9v",
+        "de": "M9v",
+        "fr": "M9v",
+        "nl": "M9v"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "PEI",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "PEI",
+        "de": "PEI",
+        "fr": "PEI",
+        "nl": "PEI"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "SR3",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "SR3",
+        "de": "SR3",
+        "fr": "SR3",
+        "nl": "SR3"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "Z",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "Z",
+        "de": "Z",
+        "fr": "Z",
+        "nl": "Z"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "Z-fin-covoiturage",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "Z-fin-covoiturage",
+        "de": "Z-fin-covoiturage",
+        "fr": "Z-fin-covoiturage",
+        "nl": "Z-fin-covoiturage"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z-feux",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z-feux",
+        "de": "z-feux",
+        "fr": "z-feux",
+        "nl": "z-feux"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z-randonneurs",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z-randonneurs",
+        "de": "z-randonneurs",
+        "fr": "z-randonneurs",
+        "nl": "z-randonneurs"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z0",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z0",
+        "de": "z0",
+        "fr": "z0",
+        "nl": "z0"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z1",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z1",
+        "de": "z1",
+        "fr": "z1",
+        "nl": "z1"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z10-chaussidou",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z10-chaussidou",
+        "de": "z10-chaussidou",
+        "fr": "z10-chaussidou",
+        "nl": "z10-chaussidou"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z11-zone30-radar",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z11-zone30-radar",
+        "de": "z11-zone30-radar",
+        "fr": "z11-zone30-radar",
+        "nl": "z11-zone30-radar"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z2",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z2",
+        "de": "z2",
+        "fr": "z2",
+        "nl": "z2"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z3",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z3",
+        "de": "z3",
+        "fr": "z3",
+        "nl": "z3"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z4",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z4",
+        "de": "z4",
+        "fr": "z4",
+        "nl": "z4"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z5",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z5",
+        "de": "z5",
+        "fr": "z5",
+        "nl": "z5"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z7",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z7",
+        "de": "z7",
+        "fr": "z7",
+        "nl": "z7"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z8",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z8",
+        "de": "z8",
+        "fr": "z8",
+        "nl": "z8"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "z9",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "z9",
+        "de": "z9",
+        "fr": "z9",
+        "nl": "z9"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
+    },
+    {
+      "class_id": "zBAN",
+      "sign_code": null,
+      "image_path": null,
+      "display_eligible": false,
+      "label": {
+        "en": "zBAN",
+        "de": "zBAN",
+        "fr": "zBAN",
+        "nl": "zBAN"
+      },
+      "notes": "No reviewed artwork for this actual model label; speed actions do not depend on artwork."
     }
   ],
   "policy": {

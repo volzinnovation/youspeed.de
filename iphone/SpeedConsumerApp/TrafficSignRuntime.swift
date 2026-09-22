@@ -1243,6 +1243,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         shadowEvidenceStoreV2: TrafficSignShadowEvidenceStoreV2? = nil
     ) {
         self.verifiedPack = verifiedPack
+        self.passageFinalizer = TrafficSignPassageFinalizer(countryCode: verifiedPack.manifest.countries.first ?? "DE")
         self.backend = backend
         self.snapshotProvider = snapshotProvider
         self.callbackQueue = callbackQueue
@@ -1542,6 +1543,15 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     }
                     self.applicabilityScope = scope
                     let applicability = self.applicabilitySession.evaluate(batch)
+                    let exitWithheld = TSRMotorwayExitPolicy.withheldCandidates(batch)
+                    let exitEligibleDetections = detections.enumerated().filter {
+                        !exitWithheld.contains("\(item.frameId):\($0.offset)")
+                    }.map(\.element)
+                    if !exitWithheld.isEmpty {
+                        // Withholding is not an analyzed disappearance and must
+                        // never finalize an earlier view of the same exit sign.
+                        self.fusion.reset(); self.passageFinalizer.reset()
+                    }
                     let enforcing = TSRApplicabilityConfiguration.defaultMode != "shadow"
                     if enforcing, let activeID = self.passageFinalizer.activePhysicalTrackID,
                        !applicability.tracks.contains(where: { $0.trackId == activeID }) {
@@ -1557,7 +1567,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     }
                     let selectedTrack = eligibleTracks.first
                     let selectedIndex = selectedTrack?.samples.last?.candidate.candidateId.split(separator: ":").last.flatMap { Int($0) }
-                    let selectedDetections = enforcing ? selectedIndex.map { [detections[$0]] } ?? [] : detections
+                    let selectedDetections = enforcing ? selectedIndex.map { [detections[$0]] } ?? [] : exitEligibleDetections
                     let physicalSamples = selectedTrack?.samples.filter {
                         $0.candidate.recognitionEligible && batch.capturedAtMs - $0.capturedAtMs <= Double(self.verifiedPack.manifest.thresholds.confirmationWindowMs)
                     } ?? []
@@ -1585,7 +1595,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     // Raw confirmation remains available only to the annotation sink. It is
                     // never sent to preview, display, finalizer, resolver or correction storage.
                     var annotationEvent: TrafficSignRecognitionEvent? = nil
-                    if enforcing {
+                    if enforcing || !exitWithheld.isEmpty {
                         var raw = self.annotationFusion.ingest(detections: detections, source: item.source,
                             timestamp: item.timestampUTC, roadContext: item.snapshot.context, latencyMs: latencyMs,
                             thermalState: item.snapshot.conditions.thermalState, frameID: item.frameId,
@@ -1609,7 +1619,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                         frameSpeedKmh: item.snapshot.conditions.speedKmh,
                         // Speed-limit activation is based on an admitted live
                         // frame, not on the vehicle's current speed.
-                        calibratedActivationEligible: item.source == .liveFrame && canConsumePassage
+                        calibratedActivationEligible: item.source == .liveFrame && canConsumePassage && exitWithheld.isEmpty
                     )
                     if case .committed(var passage) = passageUpdate {
                         passage.applicabilityDecision = self.applicabilitySession.passageDecision(trackId: passage.physicalTrackID)

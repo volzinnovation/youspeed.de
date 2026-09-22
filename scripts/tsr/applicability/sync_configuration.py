@@ -12,7 +12,7 @@ def generated(language):
     config=json.loads(CONFIG.read_text()); digest=hashlib.sha256(CONFIG.read_bytes()).hexdigest()
     values={'policyVersion':config['policyVersion'],'configHash':digest,'defaultMode':config['mode']}
     values.update({k:v for k,v in config.items() if k not in ('schemaVersion','policyVersion','mode')})
-    ints={'maxCandidates','maxTracks','maxHistory','minObservations','maxBranches','maxHypotheses'}
+    ints={'maxCandidates','maxTracks','maxHistory','minObservations','maxBranches','maxHypotheses','motorwayExitMinPostedSpeed','motorwayExitMinCandidateSpeed','motorwayExitMaxCandidateSpeed'}
     declaration='struct TSRApplicabilityConfiguration: Sendable' if language=='swift' else 'object TSRApplicabilityConfiguration'
     lines=[declaration+' {']
     for k,v in values.items():

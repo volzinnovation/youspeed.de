@@ -81,7 +81,7 @@ object TSRApplicabilityJson {
         put("turnAngleDeg", v.turnAngleDeg?.let { JsonPrimitive(it) } ?: JsonNull)
     }
     fun decodeRoad(o: JsonObject): TrafficSignMapContextSnapshot {
-        require(o.keys.all { it in setOf("snapshotId", "capturedAtMs", "scope", "wayId", "horizontalAccuracyM", "courseAccuracyDeg", "courseDeg", "localTangentDeg", "matchedStable", "roadClass", "hypotheses", "branches", "capabilities", "cameraHorizontalFovDeg", "cameraYawDeg") } && o.keys.containsAll(setOf("snapshotId", "capturedAtMs", "scope", "matchedStable", "hypotheses", "branches", "capabilities"))) { "Invalid road fields" }
+        require(o.keys.all { it in setOf("snapshotId", "capturedAtMs", "scope", "wayId", "horizontalAccuracyM", "courseAccuracyDeg", "courseDeg", "localTangentDeg", "matchedStable", "roadClass", "hypotheses", "branches", "capabilities", "cameraHorizontalFovDeg", "cameraYawDeg", "postedSpeedKmh") } && o.keys.containsAll(setOf("snapshotId", "capturedAtMs", "scope", "matchedStable", "hypotheses", "branches", "capabilities"))) { "Invalid road fields" }
         return TrafficSignMapContextSnapshot(
             snapshotId = o.getValue("snapshotId").jsonPrimitive.content,
             capturedAtMs = o.getValue("capturedAtMs").jsonPrimitive.double,
@@ -97,7 +97,8 @@ object TSRApplicabilityJson {
             branches = o.getValue("branches").jsonArray.map { decodeCorridor(it.jsonObject) },
             capabilities = o.getValue("capabilities").jsonArray.map { it.jsonPrimitive.content },
             cameraHorizontalFovDeg = o["cameraHorizontalFovDeg"]?.takeUnless { it is JsonNull }?.let { it.jsonPrimitive.double },
-            cameraYawDeg = o["cameraYawDeg"]?.takeUnless { it is JsonNull }?.let { it.jsonPrimitive.double }
+            cameraYawDeg = o["cameraYawDeg"]?.takeUnless { it is JsonNull }?.let { it.jsonPrimitive.double },
+            postedSpeedKmh = o["postedSpeedKmh"]?.takeUnless { it is JsonNull }?.jsonPrimitive?.int
         )
     }
     fun encodeRoad(v: TrafficSignMapContextSnapshot): JsonObject = buildJsonObject {
@@ -116,6 +117,7 @@ object TSRApplicabilityJson {
         put("capabilities", JsonArray(v.capabilities.map { JsonPrimitive(it) }))
         put("cameraHorizontalFovDeg", v.cameraHorizontalFovDeg?.let { JsonPrimitive(it) } ?: JsonNull)
         put("cameraYawDeg", v.cameraYawDeg?.let { JsonPrimitive(it) } ?: JsonNull)
+        v.postedSpeedKmh?.let { put("postedSpeedKmh", it) }
     }
     fun decodeBatch(o: JsonObject): TSRFrameCandidateBatch {
         require(o.keys.all { it in setOf("schemaVersion", "frameId", "capturedAtMs", "scope", "status", "candidates", "truncated", "rawCandidateCount", "modelId", "preprocessingId", "road") } && o.keys.containsAll(setOf("schemaVersion", "frameId", "capturedAtMs", "scope", "status", "candidates", "truncated", "rawCandidateCount", "modelId", "preprocessingId"))) { "Invalid batch fields" }
