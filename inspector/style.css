@@ -1837,3 +1837,32 @@ a:focus-visible,
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Paired drive/recognition review; colors describe logged actions, not correctness. */
+.track-tsr-panel { border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin: 16px 0; }
+.track-tsr-panel h2 { margin-top: 0; }
+.track-tsr-panel > label { display: block; margin: 8px 0; }
+.track-tsr-panel input[type=file] { width: 100%; }
+.track-tsr-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.track-tsr-filters label { font-size: 12px; color: var(--muted); }
+.track-tsr-filters select { display: block; width: 100%; margin-top: 5px; padding: 8px; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px; }
+.track-tsr-check { font-size: 13px; }
+.track-tsr-check input { width: auto; }
+.track-tsr-list { max-height: 320px; overflow: auto; display: grid; gap: 5px; }
+.track-tsr-row { display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px; border-left: 3px solid var(--warning); width: 100%; }
+.track-tsr-row.applied { border-left-color: var(--success); }
+.track-tsr-row.rejected { border-left-color: var(--danger); }
+.track-tsr-row.active { background: #263c54; outline: 1px solid var(--accent); }
+.track-tsr-row img, .track-tsr-detail-title img { width: 40px; height: 40px; object-fit: contain; }
+.track-tsr-row small { display: block; color: var(--muted); margin-top: 4px; }
+.track-tsr-marker { border: 0; background: none; filter: drop-shadow(0 1px 2px #222); }
+.track-tsr-marker img { width: 42px; height: 42px; object-fit: contain; }
+.track-tsr-marker b { position: absolute; right: -5px; bottom: 0; min-width: 19px; text-align: center; border-radius: 8px; color: #111; background: #ffb454; font-size: 11px; padding: 1px 4px; }
+.track-tsr-marker.applied b { background: #7fda8b; }
+.track-tsr-marker.rejected b { background: #ff6a6a; }
+.track-tsr-placeholder { display: inline-grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; background: #263345; color: #fff; border: 1px dashed #b5c6df; border-radius: 4px; font-size: 16px; }
+.track-tsr-detail { overflow-wrap: anywhere; }
+.track-tsr-detail-title { display: flex; gap: 12px; align-items: center; margin-top: 16px; }
+.track-tsr-detail dl { display: grid; grid-template-columns: minmax(95px, 1fr) minmax(0, 2fr); gap: 7px 12px; font-size: 12px; }
+.track-tsr-detail dt { color: var(--muted); }
+.track-tsr-detail dd { margin: 0; }

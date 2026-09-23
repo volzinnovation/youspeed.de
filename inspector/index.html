@@ -31,7 +31,7 @@
           aria-selected="true"
           aria-controls="matcher-workspace"
         >
-          Map Matcher
+          Karte &amp; TSR
         </button>
         <button
           id="tsr-mode-btn"
@@ -94,6 +94,40 @@
           <div><span>Bundle:</span> <strong id="bundle-value">nicht geladen</strong></div>
         </div>
         <p id="status" class="status">Bereit.</p>
+
+        <section class="track-tsr-panel" aria-labelledby="track-tsr-title">
+          <h2 id="track-tsr-title">Verkehrszeichen auf der Fahrt</h2>
+          <p class="hint">Drive-Log oben und zugehöriges TSR-Log hier öffnen. Kein SQLite-Bundle nötig.
+            Dateien bleiben lokal; die Hintergrundkarte lädt Kartenkacheln von OpenStreetMap.</p>
+          <label for="track-tsr-file">TSR-Log (.ndjson / .json / .log)</label>
+          <input id="track-tsr-file" type="file" accept=".ndjson,.jsonl,.json,.log,.txt" />
+          <div class="track-tsr-filters">
+            <label>Land, falls im Log unbekannt
+              <select id="track-tsr-country">
+                <option value="">Unbekannt</option>
+                <option>FR</option><option>BE</option><option>DE</option><option>NL</option><option>CH</option>
+              </select>
+            </label>
+            <label>Ereignisse
+              <select id="track-tsr-kind">
+                <option value="all">Alle</option><option value="detection">Detektionen</option>
+                <option value="applied">Angewendet</option><option value="rejected">Abgelehnt</option>
+              </select>
+            </label>
+          </div>
+          <label class="track-tsr-check"><input id="track-tsr-unknown" type="checkbox" /> Auch unbekannte Semantik</label>
+          <div class="way-row">
+            <button id="track-tsr-fit" type="button">Fahrt anzeigen</button>
+            <button id="track-tsr-clear" type="button">TSR entfernen</button>
+          </div>
+          <p id="track-tsr-summary" class="hint" role="status">Noch kein TSR-Log geladen.</p>
+          <p class="hint compact">Orange: detektiert · Grün: angewendet · Rot: abgelehnt.
+            Marker = Fahrzeugposition beim ersten Auftreten (GPS-Abstand höchstens 2 s), kein vermessener Schildstandort.
+            Wiederholungen innerhalb von 3 s werden je Track/Semantik zusammengefasst.</p>
+          <div id="track-tsr-list" class="track-tsr-list" aria-label="TSR-Ereignisse"></div>
+          <div id="track-tsr-detail" class="track-tsr-detail" aria-live="polite"></div>
+          <p class="hint compact"><a href="../shared/tsr/sign-pictograms/THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">Piktogramm-Quellen &amp; Lizenzen</a></p>
+        </section>
 
         <section class="portal-panel">
           <h2>Tunnel / Motorway Portals</h2>
@@ -367,6 +401,8 @@
       crossorigin=""
     ></script>
     <script src="./app.js"></script>
+    <script src="./track-tsr-core.js"></script>
+    <script src="./track-tsr.js"></script>
     <script src="./tsr-qa-core.js"></script>
     <script src="./tsr-qa.js"></script>
   </body>

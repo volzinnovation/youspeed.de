@@ -1521,6 +1521,7 @@ function loadDriveLogEntries(entries, sourceLabel, options = {}) {
   renderDriveLogList();
   drawDriveLogPath();
   renderSelectedDriveLogEntry({ focusMap: false });
+  window.dispatchEvent(new CustomEvent("inspector:drive-log"));
 
   if (drivePathLayer) {
     map.fitBounds(drivePathLayer.getBounds(), { padding: [36, 36] });
@@ -2992,6 +2993,8 @@ adminBoundaryLegendEl?.addEventListener("click", (event) => {
 });
 
 async function ensureMatcherData() {
+  // Track review does not need a database or an unrelated bundled example drive.
+  if (window.location.hash === "#track") return;
   if (matcherDataLoadPromise) {
     return matcherDataLoadPromise;
   }
@@ -3009,6 +3012,15 @@ async function ensureMatcherData() {
 }
 
 window.YouSpeedInspectorBridge = Object.freeze({
+  trackMap: map,
+  getDriveEntries: () => loadedDriveLogEntries,
+  selectDriveFix: (index) => {
+    if (!Number.isInteger(index) || !loadedDriveLogEntries[index]) return;
+    logListEl.querySelector(`[data-log-index="${selectedDriveLogIndex}"]`)?.classList.remove("active");
+    selectedDriveLogIndex = index;
+    logListEl.querySelector(`[data-log-index="${index}"]`)?.classList.add("active");
+    renderSelectedDriveLogEntry({ focusMap: false });
+  },
   focusTSRContext,
   clearTSRContext: clearTSRContextLayers,
   ensureMapTiles,
@@ -3032,7 +3044,7 @@ map.whenReady(() => {
   if (window.location.hash === "#tsr") {
     setStatus("TSR QA aktiv. Matcher-Daten werden erst beim Kartenwechsel geladen.");
   } else {
-    setStatus("Bereit. SQLite-Bundle laden.");
+    setStatus(window.location.hash === "#track" ? "Bereit. Drive-Log und zugehöriges TSR-Log laden." : "Bereit. SQLite-Bundle laden.");
     ensureMapTiles();
     void window.YouSpeedInspectorBridge.ensureMatcherData();
   }

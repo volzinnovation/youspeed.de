@@ -80,3 +80,65 @@ Dann im Browser öffnen:
 `http://localhost:8080/inspector/`
 
 Hinweis: Geolocation benötigt einen sicheren Kontext (`https://` oder `localhost`).
+
+## Verkehrszeichen entlang einer aufgezeichneten Fahrt
+
+`http://localhost:8080/inspector/#track` öffnet **Karte & TSR**, ohne ein
+SQLite-Bundle oder den Beispiel-Drive automatisch zu laden. Den Server wie oben
+vom Repository-Root starten; die nationalen Piktogramme und Modell-Manifeste
+werden von dort gelesen.
+
+1. Unter **Drive-Log** die `*_drive_match_log.ndjson` der Fahrt öffnen.
+2. Unter **Verkehrszeichen auf der Fahrt** die zugehörige
+   `*_tsr_log.ndjson` öffnen. Beide Importe dürfen in beliebiger Reihenfolge
+   erfolgen und können unabhängig ersetzt werden.
+3. Auf ein Piktogramm oder einen Eintrag in der chronologischen Liste klicken.
+   Die Karte zeigt die Fahrzeugposition; die Detailansicht zeigt Zeit, Land,
+   Erkennungsscore, Kartenlimit, wirksames Limit, Drive-Status und Quellzeile.
+   Gleichzeitig wird der entsprechende GPS-Fix im bestehenden Matcher ausgewählt.
+4. Mit **Ereignisse** zwischen Detektionen, angewendeten Änderungen und
+   abgelehnten Änderungen filtern. **Fahrt anzeigen** stellt die Übersicht wieder
+   her; **TSR entfernen** entfernt die Zeichen, ohne den Drive zu löschen.
+
+Orange Marker sind beobachtete Kandidaten (auch unterhalb der Erkennungsschwelle),
+grüne Marker explizit protokollierte `passage_activation=applied`-Ereignisse,
+rote Marker abgelehnte Aktivierungen. Aktivierungen sind separate Ereignisse:
+Sie werden nicht anhand ähnlicher Zeiten einem vermeintlich identischen
+physischen Schild zugeschrieben. `UNKNOWN` in der Applicability-Diagnose ist
+kein Beleg für eine tatsächliche Ablehnung durch den aktiven Resolver.
+
+Unterstützt werden die gemischten iPhone-Textlogs mit eingebetteten
+`tsr_applicability_v1`-JSON-Frames, reine Diagnose-JSON/NDJSON-Dateien bzw.
+`frames`-Arrays und Android-`tsr_applicability_v1`-Evidence-Envelopes. Ältere
+Textlogs ohne Diagnose-Frames können ihre protokollierten numerischen
+provisional/confirmed-Zustände darstellen; ein bestätigter Zustand gilt dabei
+nicht automatisch als angewendet. Fehlerhafte Zeilen werden mit Zeilennummer
+gezählt; identische doppelte Frames nur einmal verarbeitet.
+
+Die Zuordnung verwendet den zeitlich nächsten gültigen GPS-Fix mit maximal
+**2 Sekunden** Abstand, ohne interpolierte Koordinaten. Ereignisse ohne solchen
+Fix bleiben in der Liste. Wiederholungen derselben Semantik werden innerhalb
+von **3 Sekunden** je Land, Modell, Track und vollständigem Laufzeit-Scope zu
+Sichtungsgruppen zusammengefasst. Diese Gruppierung behauptet keine physische
+Schildidentität über Track-/Scope-Wechsel hinweg. Der Marker liegt beim ersten
+Auftreten; der höchste Score und die Anzahl der Sichtungen stehen im Detail.
+
+Das Land stammt aus dem Log bzw. der protokollierten Modell-Auswahl; ohne diese
+Information kann es manuell ergänzt werden. Alle fünf Kataloge (DE, FR, BE, NL,
+CH) verwenden die vorhandenen gemeinsamen PNG-Dateien unverändert. Ohne genaue
+Klassen-ID wird nur eine eindeutige semantische Katalog-Zuordnung verwendet und
+als **Symbol aus Semantik** gekennzeichnet. Fehlende/nicht eindeutige oder nicht
+anzeigbare Klassen erhalten einen Platzhalter. Für Streckenlimit-Enden wird bei
+fehlender Variante das nationale Endsymbol mit entsprechendem Hinweis gezeigt;
+Zonenenden erhalten niemals ersatzweise dieses Symbol. Illustrative Ortsnamen
+in den Piktogrammen sind keine aus dem Log erkannten Ortsnamen. Ältere Logs mit
+`unknown::` ohne Klassen-ID können keine konkreten Warn-/Gebotszeichen belegen;
+**Auch unbekannte Semantik** macht diese Einträge sichtbar.
+
+Dateien bleiben im Browser und werden nicht hochgeladen oder gespeichert.
+Die Kartenansicht lädt wie bisher OSM-Kacheln (sichtbarer Kartenausschnitt wird
+an OSM übermittelt); `#tsr` bleibt ohne Kacheln, bis zur Karte gewechselt wird.
+Private Fahrdaten gehören nicht in das Repository. Kein neuer Bundle-Build und
+keine Änderung an der mobilen Erkennungs- oder Geschwindigkeitslogik ist nötig.
+
+Tests: `node --test tests/inspector/*test.js`
