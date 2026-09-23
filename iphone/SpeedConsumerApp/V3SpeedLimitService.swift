@@ -22,6 +22,7 @@ final class V3SpeedLimitService {
 
     private let dbPath: String
     private let countryCode: String?
+    private let regulationRegion: ((Double, Double) -> String?)?
     private let matchingModel: MatchingModel
     private let corridorPairCacheLock = NSLock()
     private var cachedCorridorPairContext: CorridorPairContext?
@@ -850,11 +851,13 @@ final class V3SpeedLimitService {
     init(
         dbPath: String,
         countryCode: String? = nil,
-        matchingModel: MatchingModel = .corridorHMM
+        matchingModel: MatchingModel = .corridorHMM,
+        regulationRegion: ((Double, Double) -> String?)? = nil
     ) {
         self.dbPath = dbPath
         self.countryCode = Self.normalizedCountryCode(countryCode) ?? Self.inferCountryCode(fromDBPath: dbPath)
         self.matchingModel = matchingModel
+        self.regulationRegion = regulationRegion
     }
 
     func lookupSpeedLimit(
@@ -2105,12 +2108,12 @@ final class V3SpeedLimitService {
         return resolved
     }
 
-    static func deriveSpeedLimitKmh(maxspeed: String?, maxspeedType: String?, sourceMaxspeed: String?, highway: String?) -> Int? {
+    static func deriveSpeedLimitKmh(maxspeed: String?, maxspeedType: String?, sourceMaxspeed: String?, highway: String?, country: String? = "DE") -> Int? {
         deriveSpeedLimitWithSource(
             maxspeed: maxspeed,
             maxspeedType: maxspeedType,
             sourceMaxspeed: sourceMaxspeed,
-            highway: highway
+            highway: highway, country: country
         ).speed
     }
 
@@ -2127,7 +2130,7 @@ final class V3SpeedLimitService {
         maxspeed: String?,
         maxspeedType: String?,
         sourceMaxspeed: String?,
-        highway: String?
+        highway: String?, country: String? = "DE"
     ) -> (speed: Int?, source: DerivedSpeedSource, isUnlimited: Bool) {
         if isUnlimitedSpeedTag(maxspeed) {
             return (nil, .explicitUnlimitedTag, true)
@@ -2136,15 +2139,13 @@ final class V3SpeedLimitService {
             return (explicit, .explicitTag, false)
         }
 
-        let inherited = [maxspeedType, sourceMaxspeed].compactMap { $0 }.joined(separator: " ").lowercased()
-        if inherited.contains("urban") {
-            return (50, .inheritedTag, false)
+        for tag in [maxspeed, maxspeedType, sourceMaxspeed] {
+            if let speed = RoadSpeedDefaults.symbolicSpeed(tag, country: country) {
+                return (speed, .inheritedTag, false)
+            }
         }
-        if inherited.contains("rural") {
-            return (100, .inheritedTag, false)
-        }
-        if inherited.contains("motorway") {
-            return (nil, .inheritedTag, false)
+        if RoadSpeedDefaults.country(country) != "DE" {
+            return (RoadSpeedDefaults.speedKmh(country: country, region: nil, highway: highway, insideCity: nil), .highwayClass, false)
         }
 
         switch highway?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
@@ -2175,10 +2176,11 @@ final class V3SpeedLimitService {
             return nil
         }
         let code = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        guard code.count == 3 else {
+        let alpha3 = ["DE": "DEU", "FR": "FRA", "BE": "BEL", "NL": "NLD", "CH": "CHE"][code] ?? code
+        guard alpha3.count == 3 else {
             return nil
         }
-        return code
+        return alpha3
     }
 
     private static func inferCountryCode(fromDBPath dbPath: String) -> String? {
@@ -2187,15 +2189,11 @@ final class V3SpeedLimitService {
             return nil
         }
         let prefix = String(fileName.prefix(3))
-        return prefix.allSatisfy(\.isLetter) ? prefix : nil
+        return ["DEU", "FRA", "BEL", "NLD", "CHE"].contains(prefix) ? prefix : nil
     }
 
     static func parseExplicitSpeed(_ raw: String) -> Int? {
-        let digits = raw.filter(\.isNumber)
-        guard !digits.isEmpty, let value = Int(digits), value > 0 else {
-            return nil
-        }
-        return value
+        RoadSpeedDefaults.explicitSpeed(raw)
     }
 
     static func formattedStreetDisplay(streetName: String?, ref: String?) -> String? {
@@ -2452,7 +2450,7 @@ final class V3SpeedLimitService {
                 maxspeed: maxspeedRaw,
                 maxspeedType: maxspeedType,
                 sourceMaxspeed: sourceMaxspeed,
-                highway: highway
+                highway: highway, country: countryCode ?? "DE"
             )
             let localHeadingDeg = polylineMetrics?.localHeadingDeg
             let headingPenalty: Double
@@ -3918,7 +3916,7 @@ final class V3SpeedLimitService {
         }
 
         let continuityIdentity: (tokens: Set<String>, source: SimpleContinuityIdentitySource)
-        let previousContinuityCandidate: WayCandidate?
+        let unboundedContinuityCandidate: WayCandidate?
         if useGuardedStreetNameFallbackContinuity,
            let guardedContinuity = preferredGuardedStreetNameContinuityCandidate(
                rankedCandidates: rankedCandidates,
@@ -3927,7 +3925,7 @@ final class V3SpeedLimitService {
                horizontalAccuracyM: horizontalAccuracyM
            ) {
             continuityIdentity = (guardedContinuity.tokens, .streetName)
-            previousContinuityCandidate = guardedContinuity.candidate
+            unboundedContinuityCandidate = guardedContinuity.candidate
             selectionTrace.append(guardedContinuity.trace)
         } else {
             continuityIdentity = preferredSimpleContinuityIdentity(
@@ -3940,10 +3938,19 @@ final class V3SpeedLimitService {
                 matchContext: matchContext,
                 useStreetNameFallbackContinuity: useStreetNameFallbackContinuity || useGuardedStreetNameFallbackContinuity
             )
-            previousContinuityCandidate = preferredContinuity?.candidate
+            unboundedContinuityCandidate = preferredContinuity?.candidate
             if let trace = preferredContinuity?.trace {
                 selectionTrace.append(trace)
             }
+        }
+
+        let continuationRadius = max(25.0, 3 * max(0, horizontalAccuracyM ?? 10))
+        let previousContinuityCandidate = unboundedContinuityCandidate.flatMap { candidate -> WayCandidate? in
+            guard !matchContext.isInTunnelMode,
+                  candidate.distanceM > continuationRadius,
+                  candidate.distanceM > bestCandidate.distanceM + max(10, horizontalAccuracyM ?? 10) else { return candidate }
+            selectionTrace.append(MatchSelectionTrace(step: "continuity_geometry_release", detail: "previous road lies outside GPS continuity radius"))
+            return nil
         }
 
         let urbanReleasePressureActive: Bool
@@ -4024,6 +4031,14 @@ final class V3SpeedLimitService {
                     detail: "released same-ref \(previousContinuityCandidate?.wayID ?? "nil") for linked turn \(lowSpeedJunctionRelease.candidate.wayID ?? "nil") via anchor \(lowSpeedJunctionRelease.anchorCandidate.wayID ?? "nil") at speed_kmh=\(String(format: "%.1f", speedKmh ?? 0.0)) candidate_m=\(String(format: "%.1f", lowSpeedJunctionRelease.candidate.distanceM))"
                 )
             )
+        } else if let previousContinuityCandidate,
+                  let heading = observedHeadingDeg,
+                  let tangent = previousContinuityCandidate.localHeadingDeg,
+                  previousContinuityCandidate.distanceM <= bestCandidate.distanceM + max(3, horizontalAccuracyM ?? 3),
+                  previousContinuityCandidate.distanceM <= continuationRadius,
+                  headingMismatchDeg(headingDeg: heading, approxHeadingDeg: tangent) <= 25 {
+            selected = previousContinuityCandidate
+            selectionTrace.append(MatchSelectionTrace(step: "continuity_within_gps_uncertainty", detail: "preserved aligned road while distance advantage is within GPS uncertainty"))
         } else if let speedKmh, speedKmh >= lowSpeedThresholdKmh, let previousContinuityCandidate {
             if urbanSameRefReleaseEnabled,
                urbanReleasePressureActive,
@@ -6837,7 +6852,12 @@ final class V3SpeedLimitService {
                     turnAngleDeg: incoming.flatMap { a in outgoing.map { TSRApplicabilityPolicy.signedAngle($0 - a) } }))
             }
         }
+        let exitApproaches = directedExitApproaches(db: db, selected: selected)
+        let directedIDs = Set(exitApproaches.map(\.wayId))
+        branches.removeAll { directedIDs.contains($0.wayId) }
+        branches.insert(contentsOf: exitApproaches, at: 0)
         var capabilities = ["endpoint_topology_only", "no_legal_direction", "no_lane_metadata", "interior_junctions_unavailable"]
+        if !exitApproaches.isEmpty { capabilities.append("directed_motorway_exit_lookahead_v1") }
         if links.available { capabilities.append("endpoint_links") }
         if selected?.localHeadingDeg != nil { capabilities.append("local_tangent") }
         if alternatives.count > 8 || branches.count > 8 { capabilities.append("context_truncated") }
@@ -6845,7 +6865,28 @@ final class V3SpeedLimitService {
             hypotheses: alternatives.prefix(8).map { TSRApplicabilityCorridor(wayId: $0.wayID ?? "unknown", headingDeg: $0.localHeadingDeg,
                 distanceM: $0.distanceM.isFinite ? $0.distanceM : nil, roadClass: $0.highway, endpointLinked: false, turnAngleDeg: nil) },
             branches: Array(branches.prefix(8)), capabilities: capabilities,
-            postedSpeedKmh: selected?.speedSource == .explicitTag ? selected?.speedKmh : nil)
+            postedSpeedKmh: selected?.highway == "motorway" ? selected?.speedKmh : nil)
+    }
+
+    private func directedExitApproaches(db: OpaquePointer, selected: WayCandidate?) -> [TSRApplicabilityCorridor] {
+        guard let selected, selected.highway == "motorway", let wayID = selected.wayID,
+              tableExists(db: db, name: "motorway_exit_approach") else { return [] }
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "SELECT endpoint_side,exit_way_id,path_distance_m,branch_heading_deg FROM motorway_exit_approach WHERE way_id=?1", -1, &statement, nil) == SQLITE_OK,
+              let statement else { return [] }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, wayID, -1, SQLITE_TRANSIENT)
+        var result: [TSRApplicabilityCorridor] = []
+        while sqlite3_step(statement) == SQLITE_ROW {
+            let side = cStringOptional(sqlite3_column_text(statement, 0))
+            guard let remaining = side == "start" ? selected.distanceToStartM : selected.distanceToEndM else { continue }
+            let distance = remaining + sqlite3_column_double(statement, 2)
+            guard distance.isFinite, (0...350).contains(distance) else { continue }
+            result.append(TSRApplicabilityCorridor(wayId: String(sqlite3_column_int64(statement, 1)),
+                headingDeg: sqlite3_column_double(statement, 3), distanceM: distance,
+                roadClass: "motorway_link", endpointLinked: true, turnAngleDeg: nil))
+        }
+        return result.sorted { ($0.distanceM ?? .infinity) < ($1.distanceM ?? .infinity) }
     }
 
     private func loadWayLinksContext(
@@ -9074,15 +9115,20 @@ final class V3SpeedLimitService {
         guard let candidate else { return nil }
         if candidate.isUnlimitedSpeedLimit { return nil }
         if candidate.speedSource == .explicitTag { return candidate.speedKmh }
+        let code = RoadSpeedDefaults.country(countryCode ?? "DE")
+        let region = code == "BE" ? regulationRegion?(candidate.queryPoint.0, candidate.queryPoint.1) : nil
+        if settlement.source == "conflict" { return nil }
+        if candidate.speedSource == .inheritedTag {
+            return code != "DE" || settlement.confidence == "high" ? candidate.speedKmh : nil
+        }
         if candidate.highway?.lowercased() == "living_street" { return candidate.speedKmh }
         if !Self.allowsResidentialAreaFallback(highway: candidate.highway) { return candidate.speedKmh }
-        if settlement.confidence == "high", let inside = settlement.insideCity {
-            return inside ? 50 : 100
+        if settlement.confidence == "high" || (code == "FR" && settlement.confidence == "low") {
+            return RoadSpeedDefaults.speedKmh(country: code, region: region, highway: candidate.highway, insideCity: settlement.insideCity)
         }
         let highway = candidate.highway?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if candidate.speedSource == .highwayClass, highway == "residential" || highway == "service" {
-            // A road-class speed default does not establish settlement context.
-            return 50
+            return RoadSpeedDefaults.speedKmh(country: code, region: region, highway: highway, insideCity: true)
         }
         return nil
     }

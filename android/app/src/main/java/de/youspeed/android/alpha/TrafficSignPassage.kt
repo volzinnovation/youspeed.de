@@ -257,7 +257,7 @@ data class TrafficSignPassageFinalizerConfiguration(
     val repeatedTrackNegativeFrames: Int = 2,
     val strongPassGeometryNegativeFrames: Int = 1,
     val singleFrameNegativeFrames: Int = 3,
-    val singleFrameArmThreshold: Double = 0.94,
+    val singleFrameArmThreshold: Double = 0.97,
     val maximumEvidenceFrames: Int = 16,
     val physicalTrackSuppressionWindow: Duration = Duration.ofSeconds(12),
     val physicalTrackSuppressionDistanceM: Double = 45.0,
@@ -500,9 +500,14 @@ class TrafficSignPassageFinalizer(
             assemblyConfidence = candidate.assemblyConfidence ?: candidate.calibratedConfidence,
         )
         while (current.evidence.size > configuration.maximumEvidenceFrames) current.evidence.removeFirst()
+        val action = candidate.toAction(event.roadContext?.countryCode)
+        val structuralReset = !action.isConditional && event.roadContext?.matchedWayStable == true && action.kind in setOf(
+            TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.CITY_EXIT,
+            TrafficSignActionKind.MAXIMUM_SPEED_END, TrafficSignActionKind.ALL_RESTRICTIONS_END,
+        )
         current.armed = when {
-            current.framesSeen == 1 -> confidence >= configuration.singleFrameArmThreshold
-            event.state == TrafficSignRecognitionState.CONFIRMED -> true
+            current.framesSeen == 1 -> confidence >= if (structuralReset) 0.75 else configuration.singleFrameArmThreshold
+            event.state == TrafficSignRecognitionState.CONFIRMED || current.accumulatedSupport >= 0.72 -> true
             else -> current.armed
         }
         return current
@@ -830,6 +835,7 @@ data class TrafficSignApplicabilityScope(
     val lastMatchedAtUtc: Instant,
     val gapStartedAtUtc: Instant? = null,
     val gapDistanceM: Double = 0.0,
+    val roadIdentity: String? = null,
 )
 
 data class TrafficSignRuleLayer(
@@ -855,8 +861,8 @@ data class TrafficSignRoadMatch(
 )
 
 data class TrafficSignSourceResolverConfiguration(
-    val maximumNoMatchDuration: Duration = Duration.ofSeconds(5),
-    val maximumNoMatchDistanceM: Double = 120.0,
+    val maximumNoMatchDuration: Duration = Duration.ofSeconds(8),
+    val maximumNoMatchDistanceM: Double = 160.0,
 )
 
 /** Stateful camera layer above the ordinary local-correction/bundle base. */
@@ -951,6 +957,7 @@ class TrafficSignRuntimeSourceResolver(
             sourceRelationIds = event.sourceRelationIds.intersect(context.sourceRelationIds),
             continuityCapable = context.continuityCapable,
             lastMatchedAtUtc = event.passageBoundary.timestampUtc,
+            roadIdentity = context.roadIdentity,
         )
         active = TrafficSignCameraAssertion(
             event = event,
@@ -997,7 +1004,14 @@ class TrafficSignRuntimeSourceResolver(
     fun reconcile(match: TrafficSignRoadMatch, base: TrafficSignBaseLimit): EffectiveSpeedLimit {
         if (base.isUserCorrection) { clear(); return base.effective() }
         reconcilePending(match, base)?.let { return it }
-        val assertion = active ?: return base.effective()
+        var assertion = active ?: return base.effective()
+        if (assertion.layers.any { it.kind == TrafficSignActionKind.POSTED_MAXIMUM } &&
+            Duration.between(assertion.event.activationAtUtc, match.matchedAtUtc).seconds >= DrivingRoadIdentity.MAXIMUM_ASSERTION_AGE_SECONDS) {
+            val enclosing = assertion.layers.filterNot { it.kind == TrafficSignActionKind.POSTED_MAXIMUM }
+            if (enclosing.isEmpty()) { clear(); return base.effective() }
+            assertion = assertion.copy(layers = enclosing, resolution = enclosing.last().resolution, presentationReason = "camera_posted_timeout_enclosing")
+            active = assertion
+        }
         if (match.traversalReversed) {
             active = null
             return base.effective()
@@ -1017,6 +1031,10 @@ class TrafficSignRuntimeSourceResolver(
         }
         if (!match.stabilized) return effective(base)
         val wayId = context.wayId
+        if (assertion.scope.roadIdentity != null && context.roadIdentity != null && assertion.scope.roadIdentity != context.roadIdentity) {
+            clear()
+            return base.effective()
+        }
         if (context.traversalEpoch != assertion.scope.traversalEpoch) {
             active = null
             return base.effective()
@@ -1047,7 +1065,8 @@ class TrafficSignRuntimeSourceResolver(
             return effective(base)
         }
         val sharedGroups = assertion.scope.eligibleRouteRelationGroupIds.intersect(context.routeRelationGroupIds)
-        if (!context.continuityCapable || sharedGroups.isEmpty()) {
+        val sameRoad = assertion.scope.roadIdentity != null && assertion.scope.roadIdentity == context.roadIdentity
+        if (!sameRoad && (!context.continuityCapable || sharedGroups.isEmpty())) {
             active = null
             return base.effective()
         }
@@ -1330,20 +1349,6 @@ internal fun trafficSignPassageContextIsCurrent(
 /** Passenger-car defaults; an old posted map limit is not evidence after an end sign. */
 object TrafficSignRoadDefaultPolicy {
     fun speedKmh(country: String?, region: String?, highway: String?, insideCity: Boolean?): Int? {
-        val code = PenaltyCountryCodes.alpha2(country)
-        if (highway == "motorway") return when (code) { "BE", "CH" -> 120; "FR" -> 130; else -> null }
-        if (insideCity == null) return null
-        if (insideCity) {
-            if (code == "BE") return when (region) { "BE-BRU" -> 30; "BE-VLG", "BE-WAL" -> 50; else -> null }
-            return if (code in setOf("DE", "FR", "NL", "CH")) 50 else null
-        }
-        if (highway == "trunk" && code in setOf("NL", "CH")) return 100
-        if (highway !in setOf("primary", "secondary", "tertiary", "unclassified", "residential", "road")) return null
-        return when (code) {
-            "DE" -> 100
-            "FR", "NL", "CH" -> 80
-            "BE" -> when (region) { "BE-VLG" -> 70; "BE-WAL" -> 90; else -> null }
-            else -> null
-        }
+        return RoadSpeedDefaults.speedKmh(country, region, highway, insideCity)
     }
 }

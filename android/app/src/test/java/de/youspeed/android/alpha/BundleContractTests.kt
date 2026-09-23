@@ -496,6 +496,21 @@ class BundleContractTests {
     }
 
     @Test
+    fun repairedBundleVersionReplacesOlderCoverageEvenWhenOldBBoxIsSmaller() {
+        val root = createTempDirectory("android-pilot-update").toFile()
+        try {
+            val broad = BundleCoverageBBox(7.0, 47.0, 10.0, 50.0)
+            val narrow = BundleCoverageBBox(8.2, 48.6, 8.7, 49.0)
+            val fresh = writeCoverageBundle(root, "fresh", "2026-09-22-fr-pilot-1", "pilot", "fresh.sqlite", broad, null)
+            val old = writeCoverageBundle(root, "old", "2026-07-03", "pilot", "old.sqlite", narrow, null)
+            val bootstrapper = BundleBootstrapper(rootDir = root, httpFetcher = FakeHttpFetcher(emptyMap()), deltaDatabase = ContractTestDatabase)
+            val candidates = bootstrapper.resolveLocalBundleRoutes(48.80117, 8.44278, old.absolutePath)
+            assertEquals(1, candidates.size)
+            assertEquals(fresh.absolutePath, candidates.single().dbPath)
+        } finally { root.deleteRecursively() }
+    }
+
+    @Test
     fun resolveLocalBundleRoutesReturnsAllOverlappingInstalledCandidates() {
         val tempRoot = createTempDirectory("android-alpha-route-overlap").toFile()
         tempRoot.deleteOnExit()

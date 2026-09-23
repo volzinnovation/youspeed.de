@@ -21,6 +21,7 @@
 		197A06403B8311B89F11D4D6 /* SpeedConsumerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AFD1E3971781FBA2D203E7C /* SpeedConsumerTests.swift */; };
 		1F1321E8954330ADD63D4419 /* .gitkeep in Resources */ = {isa = PBXBuildFile; fileRef = CE138CD23AE2B4EC6E7F347B /* .gitkeep */; };
 		1F69E46C3D85B97143F1A3FF /* AssetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB9DAD9053AB3234DEB88DBA /* AssetStore.swift */; };
+		21D59A3A210E221DD1DD7D6C /* provence-alpes-cote-d-azur.poly in Resources */ = {isa = PBXBuildFile; fileRef = 0F082B4FCB53285378CC3975 /* provence-alpes-cote-d-azur.poly */; };
 		252EE9995F351E54A258C171 /* prolix-de-class-catalog-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 243D12B482203C249B54D205 /* prolix-de-class-catalog-v1.json */; };
 		260CAE5EB44878D86FBB618F /* SpeedConsumerAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */; };
 		2ADF071D330B6BD4E18E707D /* PanoramaxAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = B614104428FC9E28C9AE0255 /* PanoramaxAccount.swift */; };
@@ -48,6 +49,7 @@
 		5F554FF958BBABA79B8DD61D /* country-pack-registry-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 5EA55E7167CE2EF7F6A46FB3 /* country-pack-registry-v1.json */; };
 		63A1FDBA6F50BAF6E0D5A450 /* replay_track.kml in Resources */ = {isa = PBXBuildFile; fileRef = 9555D2DA081CCC7879470683 /* replay_track.kml */; };
 		6585DC782BAD25DF008F4257 /* ISL-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 91B1B7ECB133C4AB02844194 /* ISL-rules.json */; };
+		66D32A7668E727C096B0C3C4 /* languedoc-roussillon.poly in Resources */ = {isa = PBXBuildFile; fileRef = 181326EC95B23A11D74B4110 /* languedoc-roussillon.poly */; };
 		7006E9AACC2D0E6939BEB8F9 /* SpeedDBBenchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6714BC0E2B255C7AB5618D /* SpeedDBBenchApp.swift */; };
 		742D763EA2475FF202180A34 /* bremen.poly in Resources */ = {isa = PBXBuildFile; fileRef = 817610973D395000FCEA8AF3 /* bremen.poly */; };
 		7451111A890B7585403A4372 /* TrafficSignShadowRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8508CFB9C9C5E5675C173D23 /* TrafficSignShadowRuntime.swift */; };
@@ -57,6 +59,7 @@
 		818F634B507A352BB849827C /* hessen.poly in Resources */ = {isa = PBXBuildFile; fileRef = 69FF9109F78E912ED14AD0E5 /* hessen.poly */; };
 		82116926C18402EA492E9BD4 /* belgium.poly in Resources */ = {isa = PBXBuildFile; fileRef = A6ED7E750AD7935392C27FFB /* belgium.poly */; };
 		828070161944FD011DF0C9BE /* baden-wuerttemberg.poly in Resources */ = {isa = PBXBuildFile; fileRef = 68FFEA14CC3B9A22101A4B5C /* baden-wuerttemberg.poly */; };
+		83CA531B4F53005881C8C3A9 /* RoadSpeedDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1268C073515BF6EA04CAD322 /* RoadSpeedDefaults.swift */; };
 		83D2D9CBFC7A54D8A7C7DC9B /* SpeedDBBenchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 485C60A9FAC79B491934A959 /* SpeedDBBenchTests.swift */; };
 		87705B3C550857EC8BE703D6 /* karlsruhe_v3_B_waylinks.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = FB2521825812DB4BA5E1D984 /* karlsruhe_v3_B_waylinks.sqlite */; };
 		8AD0BA1C7889B65F2BEE8BAF /* ScreenOrientationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F279F32CF2B1BE105A935A81 /* ScreenOrientationUITests.swift */; };
@@ -103,6 +106,7 @@
 		D6FFB2D51E09A1FD34FD07B5 /* PanoramaxRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AC054A6BC61AC4CD32E2F38 /* PanoramaxRecorder.swift */; };
 		D70C48E9F6CAEF7621025A83 /* attributions in Resources */ = {isa = PBXBuildFile; fileRef = 8C96B1695E93488607A5558F /* attributions */; };
 		D711F742798EA9D22533DD9A /* TrafficSignRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03C46F5B39F4707AAB46BEE0 /* TrafficSignRuntime.swift */; };
+		D88037B4D0A84DBE65C1134C /* RoadSpeedDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1268C073515BF6EA04CAD322 /* RoadSpeedDefaults.swift */; };
 		DB637F1F956128BA7B69264C /* SQLiteBenchmarkRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA7B3A780871037A868C74EA /* SQLiteBenchmarkRunner.swift */; };
 		DF7F3AC271FF986527A1F159 /* prolix-be-class-catalog-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 309E97F1DBD1520586110FA8 /* prolix-be-class-catalog-v1.json */; };
 		E0878342351689F72CF6243B /* sachsen-anhalt.poly in Resources */ = {isa = PBXBuildFile; fileRef = CFB95C79A397D9A68CD1CDB5 /* sachsen-anhalt.poly */; };
@@ -152,11 +156,14 @@
 		08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerAppDelegate.swift; sourceTree = "<group>"; };
 		0C37DB03A3AAA79ED104121D /* BundleDownloadQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleDownloadQueue.swift; sourceTree = "<group>"; };
 		0DBC61BE4404AA5DD74A305E /* de.lproj */ = {isa = PBXFileReference; path = de.lproj; sourceTree = "<group>"; };
+		0F082B4FCB53285378CC3975 /* provence-alpes-cote-d-azur.poly */ = {isa = PBXFileReference; path = "provence-alpes-cote-d-azur.poly"; sourceTree = "<group>"; };
 		0FA7950BF984ADA10C90CC8B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V3SpeedLimitService.swift; sourceTree = "<group>"; };
+		1268C073515BF6EA04CAD322 /* RoadSpeedDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadSpeedDefaults.swift; sourceTree = "<group>"; };
 		12B7F7EA0C73DB02413070D3 /* netherlands.poly */ = {isa = PBXFileReference; path = netherlands.poly; sourceTree = "<group>"; };
 		164CEBA57DF27BAEAA389B50 /* prolix-fr-class-catalog-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "prolix-fr-class-catalog-v1.json"; sourceTree = "<group>"; };
 		16BE266A4DD3AE0B606D3F37 /* SpeedPenaltyRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedPenaltyRules.swift; sourceTree = "<group>"; };
+		181326EC95B23A11D74B4110 /* languedoc-roussillon.poly */ = {isa = PBXFileReference; path = "languedoc-roussillon.poly"; sourceTree = "<group>"; };
 		19061D4394196CBC45064188 /* prolix-ch-class-catalog-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "prolix-ch-class-catalog-v1.json"; sourceTree = "<group>"; };
 		1A4DFF1458783C22C951DD6D /* niedersachsen.poly */ = {isa = PBXFileReference; path = niedersachsen.poly; sourceTree = "<group>"; };
 		1C5127D2273F9BD3C32AB6EE /* nordrhein-westfalen.poly */ = {isa = PBXFileReference; path = "nordrhein-westfalen.poly"; sourceTree = "<group>"; };
@@ -281,6 +288,7 @@
 				9A2F4102E4235FC0D1C10EE1 /* PanoramaxUploadClient.swift */,
 				0FA7950BF984ADA10C90CC8B /* PrivacyInfo.xcprivacy */,
 				BC4FBAA4D4D2DDF2468DB698 /* RegionalPackDiscovery.swift */,
+				1268C073515BF6EA04CAD322 /* RoadSpeedDefaults.swift */,
 				8ABDD7FDF0FBA9F194D4E506 /* ScreenOrientation.swift */,
 				F279F32CF2B1BE105A935A81 /* ScreenOrientationUITests.swift */,
 				6E3C55C0CB5CEEEF45D3AEBA /* SourceAttributions.swift */,
@@ -428,6 +436,7 @@
 				FBE90CAE15446042E62B6F56 /* hamburg.poly */,
 				69FF9109F78E912ED14AD0E5 /* hessen.poly */,
 				3402DBBFAB304CAAFB0D5BAF /* iceland.poly */,
+				181326EC95B23A11D74B4110 /* languedoc-roussillon.poly */,
 				5DC9B412B9EC756FC6B1F6F4 /* liechtenstein.poly */,
 				3A73CDF8C3D4A7F7690153AA /* luxembourg.poly */,
 				7417B3F5E0AF2A8D476C110E /* mecklenburg-vorpommern.poly */,
@@ -435,6 +444,7 @@
 				12B7F7EA0C73DB02413070D3 /* netherlands.poly */,
 				1A4DFF1458783C22C951DD6D /* niedersachsen.poly */,
 				1C5127D2273F9BD3C32AB6EE /* nordrhein-westfalen.poly */,
+				0F082B4FCB53285378CC3975 /* provence-alpes-cote-d-azur.poly */,
 				93E309A6D9FCEB5490D68E8B /* rheinland-pfalz.poly */,
 				04E3DFEEB128C612F8014906 /* romania.poly */,
 				47046B94A6EDE1D906F83F16 /* saarland.poly */,
@@ -682,6 +692,7 @@
 				7B95EF995D7D187B2EF50727 /* hamburg.poly in Resources */,
 				818F634B507A352BB849827C /* hessen.poly in Resources */,
 				4E22751463668A7F86A3E491 /* iceland.poly in Resources */,
+				66D32A7668E727C096B0C3C4 /* languedoc-roussillon.poly in Resources */,
 				4F0869F2CF922E1DDBAA2D65 /* legal.txt in Resources */,
 				39F558FC00EF4122DD334E94 /* liechtenstein.poly in Resources */,
 				3DB5A95CCF0E10954593C7A9 /* luxembourg.poly in Resources */,
@@ -696,6 +707,7 @@
 				252EE9995F351E54A258C171 /* prolix-de-class-catalog-v1.json in Resources */,
 				CDCB3CDFA1B596B83503174E /* prolix-fr-class-catalog-v1.json in Resources */,
 				947FDC9DA8FD4E2A9862B131 /* prolix-nl-class-catalog-v1.json in Resources */,
+				21D59A3A210E221DD1DD7D6C /* provence-alpes-cote-d-azur.poly in Resources */,
 				B9EC55825741DB7817CAE5CE /* rheinland-pfalz.poly in Resources */,
 				A75797D06DDA6313931524D2 /* romania.poly in Resources */,
 				7A8782BF58A82747D013A8F3 /* saarland.poly in Resources */,
@@ -745,6 +757,7 @@
 				D6FFB2D51E09A1FD34FD07B5 /* PanoramaxRecorder.swift in Sources */,
 				3D0DF63AA1C368A285F7954A /* PanoramaxUploadClient.swift in Sources */,
 				F4B34C3BA2DFAA8D971C9D4F /* RegionalPackDiscovery.swift in Sources */,
+				D88037B4D0A84DBE65C1134C /* RoadSpeedDefaults.swift in Sources */,
 				5DB1AC8BEAB4B43223C85CD7 /* ScreenOrientation.swift in Sources */,
 				3C73A3DCE26AB7A90E4EA23C /* SourceAttributions.swift in Sources */,
 				F5FB0BA9CF92051C17E8285A /* SpeedConsumerApp.swift in Sources */,
@@ -789,6 +802,7 @@
 				C3883B48011E83773BC9DE9C /* BenchmarkModels.swift in Sources */,
 				0B40049C2440D677338FE301 /* ContentView.swift in Sources */,
 				05136C0FECBCD839A9FA22E6 /* MatcherCoreModels.swift in Sources */,
+				83CA531B4F53005881C8C3A9 /* RoadSpeedDefaults.swift in Sources */,
 				9D5415A12FA9D38F9D3B9B88 /* RouteScenarioBenchmarkRunner.swift in Sources */,
 				DB637F1F956128BA7B69264C /* SQLiteBenchmarkRunner.swift in Sources */,
 				7006E9AACC2D0E6939BEB8F9 /* SpeedDBBenchApp.swift in Sources */,
@@ -928,7 +942,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10013;
+				CURRENT_PROJECT_VERSION = 10014;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -941,7 +955,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.1.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1068,7 +1082,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10013;
+				CURRENT_PROJECT_VERSION = 10014;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1087,7 +1101,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.1.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

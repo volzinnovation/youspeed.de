@@ -2807,6 +2807,20 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(runtime.metrics.completedInferences, 6)
     }
 
+    func testTrafficSignFramePreviewCannotReturnAfterFiveMinuteExpiry() {
+        let context = makeTrafficSignDetectionContext()
+        let start = Date(timeIntervalSince1970: 2_000)
+        var policy = TrafficSignTransientOverridePolicy()
+        XCTAssertTrue(policy.ingestConfirmedDetection(
+            makeConfirmedTrafficSignEvent(value: 90, timestamp: start, context: context),
+            currentSourceSignature: context.sourceSignature
+        ))
+        XCTAssertEqual(policy.cameraSpeedKmh(currentContext: context, timestamp: start.addingTimeInterval(299)), 90)
+        XCTAssertNil(policy.cameraSpeedKmh(currentContext: context, timestamp: start.addingTimeInterval(300)))
+        XCTAssertNil(policy.activeOverride)
+        XCTAssertNil(policy.cameraSpeedKmh(currentContext: context, timestamp: start.addingTimeInterval(301)))
+    }
+
     func testTrafficSignTransientOverrideOutranksLocalAndOSMUntilSourceChanges() throws {
         let signature = TrafficSignRuntimeSourceSignature(
             osmRevision: "bundle-de-v42:way-123:50",
@@ -6142,6 +6156,98 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(Set(candidates.map(\.region)), Set(["broad", "narrow"]))
     }
 
+    func testRepairedBundleVersionReplacesOlderCoverageEvenWhenOldBBoxIsSmaller() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let bundlesRoot = supportDir.appendingPathComponent("bundles", isDirectory: true)
+        let broadDir = bundlesRoot.appendingPathComponent("broad", isDirectory: true)
+        let narrowDir = bundlesRoot.appendingPathComponent("narrow", isDirectory: true)
+        try fm.createDirectory(at: broadDir, withIntermediateDirectories: true)
+        try fm.createDirectory(at: narrowDir, withIntermediateDirectories: true)
+
+        let broadDB = broadDir.appendingPathComponent("broad.sqlite")
+        let narrowDB = narrowDir.appendingPathComponent("narrow.sqlite")
+        try createFixtureV3DB(at: broadDB)
+        try createFixtureV3DB(at: narrowDB)
+
+        let broadManifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "pilot-region",
+            countryCode: "DEU",
+            bundleVersion: "2026-09-22-fr-pilot-1",
+            createdAtUTC: "2026-03-17T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: broadDB.lastPathComponent,
+                bytes: try fileSize(broadDB),
+                sha256: sha256Hex(try Data(contentsOf: broadDB)),
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: BundleCoverage(
+                bbox: BundleCoverageBBox(minLon: 7.0, minLat: 47.0, maxLon: 10.0, maxLat: 50.0),
+                poly: nil
+            )
+        )
+        let narrowManifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "pilot-region",
+            countryCode: "DEU",
+            bundleVersion: "2026-03-17",
+            createdAtUTC: "2026-03-17T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: narrowDB.lastPathComponent,
+                bytes: try fileSize(narrowDB),
+                sha256: sha256Hex(try Data(contentsOf: narrowDB)),
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: BundleCoverage(
+                bbox: BundleCoverageBBox(minLon: 8.2, minLat: 48.6, maxLon: 8.7, maxLat: 49.0),
+                poly: nil
+            )
+        )
+
+        try JSONEncoder().encode(broadManifest).write(
+            to: broadDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+        try JSONEncoder().encode(narrowManifest).write(
+            to: narrowDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let route = try await manager.resolveLocalBundleRoute(
+            lat: 48.80117,
+            lon: 8.44278,
+            fallbackDBPath: broadDB.path
+        )
+        XCTAssertEqual(route?.region, "pilot-region")
+        assertPathEqual(route?.dbPath, broadDB.path)
+        let candidates = try await manager.resolveLocalBundleRoutes(
+            lat: 48.80117,
+            lon: 8.44278,
+            fallbackDBPath: broadDB.path
+        )
+        XCTAssertEqual(candidates.count, 1)
+        XCTAssertEqual(Set(candidates.map(\.region)), Set(["pilot-region"]))
+    }
+
     func testResolvePenaltyRuleContextUsesManifestCountryAndRulesFile() async throws {
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
@@ -6801,6 +6907,21 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721266"))
         XCTAssertNil(viewModel.testActiveLocalSpeedCorrectionWayID)
 
+        try await viewModel.testResetLocalObservationStore()
+    }
+
+    @MainActor
+    func testVoiceCorrectionFollowsRoadReferenceAndExpiresWithoutRefreshingItsAge() async throws {
+        let viewModel = DriveSessionViewModel()
+        try await viewModel.testResetLocalObservationStore()
+        let start = Date()
+        viewModel.testSetActiveLocalSpeedCorrection(wayID: "1", value: "130", numericSpeedKmh: 130, roadIdentity: "ref:A9", startedAt: start)
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "2", ref: "A 9", timestamp: start.addingTimeInterval(30)), "130")
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "3", ref: "A9", timestamp: start.addingTimeInterval(299)), "130")
+        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "3", ref: "A9", timestamp: start.addingTimeInterval(300)))
+        XCTAssertNil(viewModel.testActiveLocalSpeedCorrectionWayID)
+        viewModel.testSetActiveLocalSpeedCorrection(wayID: "1", value: "130", numericSpeedKmh: 130, roadIdentity: "ref:A9", startedAt: start)
+        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "2", ref: "D19", timestamp: start.addingTimeInterval(1)))
         try await viewModel.testResetLocalObservationStore()
     }
 
@@ -10458,7 +10579,8 @@ final class SpeedConsumerTests: XCTestCase {
             speedKmh: 33.0,
             horizontalAccuracyM: 4.0
         )
-        XCTAssertEqual(baselineResult.wayID, "100")
+        XCTAssertEqual(baselineResult.wayID, "300", "Even the baseline must release a stale reference outside the GPS continuity radius")
+        XCTAssertTrue(baselineResult.selectionTrace.contains { $0.step == "continuity_geometry_release" })
 
         let fallbackResult = try m8.lookupSpeedLimit(
             lat: 52.0000,
@@ -17622,7 +17744,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
     }
 
     @MainActor
-    func testPersistedDirectionalCameraCorrectionBecomesBaseWithoutDisplacingCamera() async throws {
+    func testPersistedDirectionalCameraEvidenceCannotReviveExpiredRuntimeLimit() async throws {
         let viewModel = DriveSessionViewModel()
         try await viewModel.testWaitForStartupDataLoad()
         try await viewModel.testResetLocalObservationStore()
@@ -17657,16 +17779,15 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             "70",
             "Stored row was rejected: \(stored); evidence=\(evidenceDiagnostic)"
         )
-        // Refreshing the durable base must not displace the higher-priority
-        // active camera assertion.
+        // Saving evidence must not displace the active camera assertion.
         XCTAssertEqual(viewModel.effectiveSpeedLimitState.source, .camera)
         XCTAssertEqual(viewModel.effectiveSpeedLimitState.value, .numeric(70))
 
-        // Disabling TSR clears only the transient assertion. The just-written
-        // directional local correction is already installed underneath it.
+        // Once the runtime assertion is cleared, archived camera evidence must
+        // not reinstall the expired sign as an indefinite local correction.
         viewModel.testClearTrafficSignAssertionKeepingCurrentBase()
-        XCTAssertEqual(viewModel.effectiveSpeedLimitState.source, .localCorrection)
-        XCTAssertEqual(viewModel.effectiveSpeedLimitState.value, .numeric(70))
+        XCTAssertEqual(viewModel.effectiveSpeedLimitState.source, .bundle)
+        XCTAssertEqual(viewModel.effectiveSpeedLimitState.value, .numeric(50))
         try await viewModel.testResetLocalObservationStore()
     }
 
@@ -17887,6 +18008,66 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         )
     }
 
+    func testFrenchDefaultsAndStrictSpeedTags() {
+        XCTAssertEqual(RoadSpeedDefaults.symbolicSpeed("FR:rural", country: "FRA"), 80)
+        XCTAssertEqual(RoadSpeedDefaults.symbolicSpeed("FR:urban", country: "FR"), 50)
+        XCTAssertEqual(RoadSpeedDefaults.speedKmh(country: "FR", region: nil, highway: "secondary", insideCity: false), 80)
+        XCTAssertEqual(RoadSpeedDefaults.speedKmh(country: "FR", region: nil, highway: "secondary", insideCity: true), 50)
+        XCTAssertNil(RoadSpeedDefaults.speedKmh(country: "FR", region: nil, highway: "trunk", insideCity: false))
+        XCTAssertNil(RoadSpeedDefaults.speedKmh(country: "FR", region: nil, highway: "motorway_link", insideCity: false))
+        for value in ["50;70", "50 @ (wet)", "signals", "50/80", "none", "0", "999"] { XCTAssertNil(RoadSpeedDefaults.explicitSpeed(value), value) }
+        XCTAssertEqual(RoadSpeedDefaults.explicitSpeed("50 km/h"), 50)
+        XCTAssertEqual(RoadSpeedDefaults.explicitSpeed("30 mph"), 48)
+        XCTAssertEqual(DrivingRoadIdentity.key(ref: " A 9 ", name: nil, highway: "motorway"), "ref:A9")
+        XCTAssertNotEqual(DrivingRoadIdentity.key(ref: "A9", name: nil, highway: "motorway"), DrivingRoadIdentity.key(ref: "A9", name: nil, highway: "motorway_link"))
+    }
+
+    func testCameraLimitSurvivesWaySplitsButExpiresAfterFiveMinutes() {
+        var resolver = TrafficSignEffectiveLimitResolver()
+        let base = EffectiveSpeedLimitState.base(localValue: nil, bundledSpeedKmh: 130, bundledUnlimited: false)
+        let first = makeContext(wayID: "1", groups: [], continuity: false, roadIdentity: "ref:A9")
+        let next = makeContext(wayID: "2", groups: [], continuity: false, roadIdentity: "ref:A9")
+        let passage = makePassage(action: .postedMaximum(90), context: first)
+        XCTAssertTrue(resolver.commit(passage, base: base).applied)
+        XCTAssertEqual(resolver.resolve(base: base, currentContext: next, currentCoordinate: nil, timestamp: passage.activationTimestampUTC.addingTimeInterval(299)).value, .numeric(90))
+        XCTAssertEqual(resolver.resolve(base: base, currentContext: next, currentCoordinate: nil, timestamp: passage.activationTimestampUTC.addingTimeInterval(300)).value, .numeric(130))
+        XCTAssertNil(resolver.activePassage)
+    }
+
+    func testRoadReferenceChangeClearsCameraEvenWithinSameRouteRelation() {
+        var resolver = TrafficSignEffectiveLimitResolver()
+        let base = EffectiveSpeedLimitState.base(localValue: nil, bundledSpeedKmh: 80, bundledUnlimited: false)
+        let first = makeContext(roadIdentity: "ref:D19")
+        let next = makeContext(wayID: "124", roadIdentity: "ref:D228")
+        _ = resolver.commit(makePassage(action: .postedMaximum(30), context: first), base: base)
+        XCTAssertEqual(resolver.resolve(base: base, currentContext: next, currentCoordinate: nil, timestamp: baseTime.addingTimeInterval(1)), base)
+    }
+
+    func testPostedTimeoutRetainsEnclosingZone() {
+        var resolver = TrafficSignEffectiveLimitResolver()
+        let base = EffectiveSpeedLimitState.base(localValue: nil, bundledSpeedKmh: 80, bundledUnlimited: false)
+        let context = makeContext()
+        _ = resolver.commit(makePassage(action: .zoneStart(30), context: context), base: base)
+        let sign = makePassage(action: .postedMaximum(20), context: context, eventID: "posted", timeOffset: 1)
+        _ = resolver.commit(sign, base: base)
+        XCTAssertEqual(resolver.resolve(base: base, currentContext: context, currentCoordinate: nil, timestamp: sign.activationTimestampUTC.addingTimeInterval(300)).value, .numeric(30))
+    }
+
+    func testSingleStructuralSignRequiresStableContextAndThreeNegativeFrames() {
+        for stable in [true, false] {
+            var finalizer = TrafficSignPassageFinalizer()
+            let context = makeContext(stable: stable)
+            let event = makeEvent(offset: 0, state: .provisional, candidate: makeCandidate(value: nil, confidence: 0.777, semanticKind: TrafficSignSemanticKind.restrictionEnd.rawValue, rawClassID: "b31"), context: context)
+            _ = finalizer.ingest(event, sessionGeneration: 1, contextGeneration: 1, calibratedActivationEligible: true)
+            for index in 1...2 {
+                let early = finalizer.ingest(makeMissing(offset: Double(index) * 0.2, context: context), sessionGeneration: 1, contextGeneration: 1, calibratedActivationEligible: true)
+                if case .committed = early { XCTFail("Structural end committed before three analyzed negative frames") }
+            }
+            let final = finalizer.ingest(makeMissing(offset: 0.6, context: context), sessionGeneration: 1, contextGeneration: 1, calibratedActivationEligible: true)
+            if case .committed = final { XCTAssertTrue(stable) } else { XCTAssertFalse(stable) }
+        }
+    }
+
     private func makeContext(
         wayID: String = "123",
         direction: TrafficSignTravelDirection = .forward,
@@ -17897,7 +18078,8 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         latitude: Double = 48,
         longitude: Double = 8,
         bundleSHA: String? = nil,
-        useDefaultSHA: Bool = true
+        useDefaultSHA: Bool = true,
+        roadIdentity: String? = nil
     ) -> TrafficSignDetectionContext {
         let sha = useDefaultSHA ? (bundleSHA ?? verifiedSHA) : bundleSHA
         return TrafficSignDetectionContext(
@@ -17916,7 +18098,8 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
                 TrafficSignRouteRelationMembership(groupID: $0, sourceRelationID: Int64($0 + 1_000))
             },
             traversalEpoch: epoch,
-            matchedWayStable: stable
+            matchedWayStable: stable,
+            roadIdentity: roadIdentity
         )
     }
 

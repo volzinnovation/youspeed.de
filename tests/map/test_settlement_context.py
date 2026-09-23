@@ -64,6 +64,33 @@ class Fixture:
 
 @unittest.skipUnless(AVAILABLE, "requires pyosmium and Shapely >= 2")
 class SettlementContextTests(unittest.TestCase):
+    def test_french_city_signs_split_original_geometry_in_both_directions(self):
+        f = Fixture()
+        before = f.node(4, 44)
+        entry = f.node(4.001, 44, traffic_sign="FR:EB10", direction="forward")
+        exit_node = f.node(4.002, 44, traffic_sign="FR:EB20", direction="forward")
+        after = f.node(4.003, 44)
+        road = f.way(refs=[before, entry, exit_node, after], highway="secondary")
+        conn, _ = self.build(f, country_code="FR")
+        rows = conn.execute("SELECT inside_city FROM settlement_segment WHERE way_id=? AND direction=1 ORDER BY segment_index", (road,)).fetchall()
+        self.assertEqual(rows, [(0,), (1,), (0,)])
+        self.assertEqual(conn.execute("SELECT COUNT(*) FROM settlement_sign WHERE association='node_membership'").fetchone(), (2,))
+
+    def test_french_unmapped_countryside_is_only_a_low_confidence_estimate(self):
+        f = Fixture()
+        f.way(coords=[(4, 44), (4.003, 44)], highway="secondary")
+        conn, _ = self.build(f, country_code="FR")
+        rows = conn.execute("SELECT inside_city,source,confidence,evidence_json FROM settlement_segment").fetchall()
+        self.assertTrue(rows)
+        for inside, source, confidence, evidence in rows:
+            self.assertEqual((inside, source, confidence), (0, "landuse", "low"))
+            self.assertIn("outside_mapped_built_up_areas", evidence)
+
+    def test_road_geometry_preserves_bends_beyond_legacy_point_budget(self):
+        from pack_runtime_artifacts_pyosmium import _downsample_coords
+        points = [(4 + index * .00001, 44 + (.0005 if index == 51 else 0)) for index in range(100)]
+        self.assertEqual(_downsample_coords(points, 24), points)
+
     def test_irrelevant_node_tags_are_not_iterated_or_location_accessed(self):
         class NonSignTags:
             def __init__(self):

@@ -46,6 +46,7 @@ data class TrafficSignDetectionContext(
     val traversalEpoch: Long = 0L,
     val matchedWayStable: Boolean = true,
     val speedMetersPerSecond: Double = 0.0,
+    val roadIdentity: String? = null,
 ) {
     init {
         require(wayId == null || wayId.isNotBlank()) { "Detection way ID must not be blank" }
@@ -83,6 +84,18 @@ data class TrafficSignSpeedOverride(
 
 /** Pure transition rules; controller wiring deliberately remains outside this slice. */
 object TrafficSignSpeedOverridePolicy {
+    fun currentForPresentation(
+        current: TrafficSignSpeedOverride?,
+        context: TrafficSignDetectionContext?,
+        now: java.time.Instant,
+    ): TrafficSignSpeedOverride? = current?.takeIf {
+        context != null &&
+            now.isBefore(it.detectedAtUtc.plusSeconds(DrivingRoadIdentity.MAXIMUM_ASSERTION_AGE_SECONDS)) &&
+            it.context.wayId == context.wayId &&
+            it.context.travelDirection == context.travelDirection &&
+            it.context.sourceSignature == context.sourceSignature
+    }
+
     /**
      * Pack/event v2 enters the app only through this fail-closed overload in
      * M0. Even a confirmed numeric shadow event leaves the current source

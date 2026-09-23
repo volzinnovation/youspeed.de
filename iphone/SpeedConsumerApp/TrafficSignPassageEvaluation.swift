@@ -1058,6 +1058,7 @@ struct TrafficSignPassageFinalizer: Sendable {
                     evidenceCount: current.evidence.count,
                     support: current.support,
                     eventState: event.state,
+                    structuralReset: current.action.isBoundaryReset && current.conditionState == .none && current.restrictions.isEmpty && event.roadContext?.matchedWayStable == true,
                     configuration: configuration
                 )
                 track = current
@@ -1161,6 +1162,7 @@ struct TrafficSignPassageFinalizer: Sendable {
                         evidenceCount: 1,
                         support: confidence,
                         eventState: event.state,
+                        structuralReset: action.isBoundaryReset && candidate.conditionState == .none && candidate.restrictions.isEmpty && event.roadContext?.matchedWayStable == true,
                         configuration: configuration
                     ),
                     boundaryEvent: nil,
@@ -1534,12 +1536,15 @@ struct TrafficSignPassageFinalizer: Sendable {
         evidenceCount: Int,
         support: Double,
         eventState: TrafficSignRecognitionResultState,
+        structuralReset: Bool,
         configuration: Configuration
     ) -> Bool {
         if evidenceCount >= 2 {
             return eventState == .confirmed || support >= configuration.repeatedSightingMinimumSupport
         }
-        return support >= configuration.singleSightingMinimumSupport
+        // Structural signs are often visible for just one analyzed frame. They
+        // still require three successful negative frames before a passage.
+        return support >= (structuralReset ? 0.75 : configuration.singleSightingMinimumSupport)
     }
 
     private static func accumulatedSupport(previous: Double, next: Double, discount: Double) -> Double {
@@ -1574,12 +1579,14 @@ struct TrafficSignTraversalUpdate: Equatable, Sendable {
 /// its own recognition-time intersection to prevent transitive relation hops.
 struct TrafficSignTraversalTracker: Sendable {
     private(set) var epoch: UInt64 = 1
+    private var previousRoadIdentity: String?
     private var previousWayID: String?
     private var previousDirection: TrafficSignTravelDirection = .unknown
     private var previousMembershipsByGroupID: [Int: TrafficSignRouteRelationMembership] = [:]
 
     mutating func reset() {
         epoch &+= 1
+        previousRoadIdentity = nil
         previousWayID = nil
         previousDirection = .unknown
         previousMembershipsByGroupID = [:]
@@ -1589,8 +1596,13 @@ struct TrafficSignTraversalTracker: Sendable {
         wayID: String,
         direction: TrafficSignTravelDirection,
         continuityAvailable: Bool,
-        memberships: [TrafficSignRouteRelationMembership]
+        memberships: [TrafficSignRouteRelationMembership],
+        roadIdentity: String? = nil
     ) -> TrafficSignTraversalUpdate {
+        let identityChanged = previousRoadIdentity != nil && roadIdentity != nil && previousRoadIdentity != roadIdentity
+        let sameRoad = roadIdentity != nil && previousRoadIdentity == roadIdentity
+        if identityChanged { reset() }
+        if let roadIdentity { previousRoadIdentity = roadIdentity }
         let normalized = Dictionary(
             uniqueKeysWithValues: memberships.filter(\.isValid).map { ($0.groupID, $0) }
         )
@@ -1633,7 +1645,7 @@ struct TrafficSignTraversalTracker: Sendable {
         }
 
         let sharedIDs = Set(previousMembershipsByGroupID.keys).intersection(normalized.keys)
-        if continuityAvailable, !previousMembershipsByGroupID.isEmpty, !sharedIDs.isEmpty {
+        if sameRoad || (continuityAvailable && !previousMembershipsByGroupID.isEmpty && !sharedIDs.isEmpty) {
             previousMembershipsByGroupID = normalized
             self.previousWayID = wayID
             previousDirection = direction
@@ -1739,6 +1751,7 @@ struct TrafficSignApplicabilityScope: Codable, Equatable, Sendable {
     var lastCoordinate: TrafficSignCoordinate
     var gapStartedAt: Date?
     var gapStartedCoordinate: TrafficSignCoordinate?
+    var roadIdentity: String? = nil
 }
 
 struct TrafficSignCoordinate: Codable, Equatable, Sendable {
@@ -1780,26 +1793,7 @@ enum TrafficSignBundleContextPolicy {
 /// are deliberately not an input: the map may still contain the ended restriction.
 enum TrafficSignRoadDefaultPolicy {
     static func speedKmh(country: String?, region: String?, highway: String?, insideCity: Bool?) -> Int? {
-        let country = PenaltyCountryCode.alpha2(country)
-        if highway == "motorway" {
-            // Dutch motorway limits require the signed time/road regime, which
-            // the current bundle does not carry. Do not invent a 100/130 switch.
-            return ["BE", "CH"].contains(country) ? 120 : country == "FR" ? 130 : nil
-        }
-        guard let insideCity else { return nil }
-        if insideCity {
-            if country == "BE" { return region == "BE-BRU" ? 30 : ["BE-VLG", "BE-WAL"].contains(region) ? 50 : nil }
-            return ["DE", "FR", "NL", "CH"].contains(country) ? 50 : nil
-        }
-        if highway == "trunk", ["NL", "CH"].contains(country) { return 100 }
-        guard ["primary", "secondary", "tertiary", "unclassified", "residential", "road"].contains(highway) else { return nil }
-        switch country {
-        case "DE": return 100
-        case "FR": return 80
-        case "NL", "CH": return 80
-        case "BE": return region == "BE-VLG" ? 70 : region == "BE-WAL" ? 90 : nil
-        default: return nil
-        }
+        RoadSpeedDefaults.speedKmh(country: country, region: region, highway: highway, insideCity: insideCity)
     }
 }
 
@@ -1905,7 +1899,8 @@ private struct TrafficSignRuleState: Equatable, Sendable {
 private struct TrafficSignCameraAssertion: Equatable, Sendable {
     let passage: TrafficSignPassageEvent
     var scope: TrafficSignApplicabilityScope
-    let effectiveState: EffectiveSpeedLimitState
+    var effectiveState: EffectiveSpeedLimitState
+    var postedExpired = false
 }
 
 /// Session-scoped source reducer. Base revisions never invalidate an applicable
@@ -2064,6 +2059,7 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
             scope: scope,
             effectiveState: state
         )
+        assertion?.scope.roadIdentity = context.roadIdentity
         activePassage = passage
         lastEffectiveState = state
         return TrafficSignPassageCommitResult(
@@ -2084,6 +2080,14 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
             lastEffectiveState = base
             return base
         }
+        if case .postedMaximum = assertion.passage.action, !assertion.postedExpired,
+           timestamp.timeIntervalSince(assertion.passage.activationTimestampUTC) >= DrivingRoadIdentity.maximumAssertionAge {
+            rules.posted = nil
+            let enclosing: EffectiveSpeedLimitValue? = rules.pedestrian ? .walk : rules.zone.map { .numeric($0.value) } ?? rules.city
+            guard let enclosing else { return clear(base: base) }
+            assertion.postedExpired = true
+            assertion.effectiveState = EffectiveSpeedLimitState(value: enclosing, source: .camera, presentationReason: "camera_posted_timeout_enclosing", hasCameraEvidenceMarker: true)
+        }
         guard let currentContext else {
             if assertion.scope.gapStartedAt == nil {
                 assertion.scope.gapStartedAt = timestamp
@@ -2102,6 +2106,9 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
             return assertion.effectiveState
         }
 
+        if let identity = assertion.scope.roadIdentity, let current = currentContext.roadIdentity, identity != current {
+            return clear(base: base)
+        }
         guard currentContext.sourceSignature.bundleRevision == assertion.scope.bundleRevision,
               currentContext.traversalEpoch == assertion.scope.traversalEpoch else {
             return clear(base: base)
@@ -2118,9 +2125,8 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
                 uniqueKeysWithValues: currentContext.routeRelationMemberships.map { ($0.groupID, $0) }
             )
             let shared = assertion.scope.eligibleMemberships.filter { currentByID[$0.groupID] != nil }
-            guard currentContext.routeContinuityAvailable,
-                  !assertion.scope.eligibleMemberships.isEmpty,
-                  !shared.isEmpty else {
+            let sameRoad = assertion.scope.roadIdentity != nil && assertion.scope.roadIdentity == currentContext.roadIdentity
+            guard sameRoad || (currentContext.routeContinuityAvailable && !assertion.scope.eligibleMemberships.isEmpty && !shared.isEmpty) else {
                 return clear(base: base)
             }
             assertion.scope.eligibleMemberships = shared
@@ -2343,6 +2349,13 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
 }
 
 extension TrafficSignStructuralAction {
+    var isBoundaryReset: Bool {
+        switch self {
+        case .cityEntry, .cityExit, .maximumSpeedEnd, .allRestrictionsEnd: return true
+        default: return false
+        }
+    }
+
     var isTemporary: Bool {
         if case .temporaryMaximum = self { return true }
         return false

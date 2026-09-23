@@ -100,10 +100,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install osmium
-          if [[ "${{ inputs.build_settlement_context }}" == "true" ]]; then
-            python -m pip install -r scripts/map/requirements-settlement.txt
-          fi
+          python -m pip install -r scripts/map/requirements-settlement.txt
           chmod +x scripts/map/build_region_artifacts.sh
           chmod +x scripts/map/publish_v3_release_assets.sh
           chmod +x scripts/map/prune_v3_release_assets.py
@@ -436,15 +433,15 @@ jobs:
             --v1-dist "mapdata/dist/${{ steps.plan.outputs.region_slug }}" \
             --out-db "mapdata/dist-v3/${{ steps.plan.outputs.region_slug }}/speeds_v3.sqlite" \
             --input-pbf "${{ steps.plan.outputs.input_pbf_path }}" \
-            --corridor-mode none
+            --corridor-mode none --country-code "${{ steps.plan.outputs.iso2 }}"
           )
-          if [[ "${{ inputs.build_settlement_context }}" == "true" ]]; then
+          if [[ "${{ inputs.build_settlement_context }}" == "true" || "${{ steps.plan.outputs.iso2 }}" == "FR" ]]; then
             build_cmd+=(--build-settlement-context --country-code "${{ steps.plan.outputs.iso2 }}")
           fi
           "${build_cmd[@]}"
 
       - name: Build New Incremental Delta (If Possible)
-        if: ${{ inputs.execute && !inputs.build_settlement_context && steps.compare.outputs.needs_publish == '1' && steps.version.outputs.diff_changed == '1' }}
+        if: ${{ inputs.execute && !inputs.build_settlement_context && steps.plan.outputs.iso2 != 'FR' && steps.compare.outputs.needs_publish == '1' && steps.version.outputs.diff_changed == '1' }}
         id: delta
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -541,7 +538,7 @@ jobs:
           mkdir -p "${{ steps.plan.outputs.bundle_dir }}"
           release_base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ steps.params.outputs.release_tag }}"
           existing_args=()
-          if [[ "${{ inputs.build_settlement_context }}" != "true" && -f "/tmp/country-prev/${{ steps.plan.outputs.delta_index_asset }}" ]]; then
+          if [[ "${{ inputs.build_settlement_context }}" != "true" && "${{ steps.plan.outputs.iso2 }}" != "FR" && -f "/tmp/country-prev/${{ steps.plan.outputs.delta_index_asset }}" ]]; then
             existing_args=(--existing-index "/tmp/country-prev/${{ steps.plan.outputs.delta_index_asset }}")
           fi
 
@@ -579,6 +576,10 @@ jobs:
             --delta-index "${{ steps.plan.outputs.bundle_dir }}/${{ steps.plan.outputs.delta_index_asset }}"
             --delta-index-file-name "${{ steps.plan.outputs.delta_index_asset }}"
           )
+
+          if [[ "${{ steps.plan.outputs.iso2 }}" == "FR" ]]; then
+            cmd+=(--min-app-version 1.1.1)
+          fi
 
           if [[ -f "${{ steps.plan.outputs.input_poly_path }}" ]]; then
             cmd+=(--coverage-poly "${{ steps.plan.outputs.input_poly_path }}")

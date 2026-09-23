@@ -1210,6 +1210,7 @@ struct TrafficSignDetectionContext: Codable, Equatable, Sendable {
     let routeRelationMemberships: [TrafficSignRouteRelationMembership]
     let traversalEpoch: UInt64
     let matchedWayStable: Bool
+    let roadIdentity: String?
 
     init(
         wayId: String,
@@ -1221,7 +1222,8 @@ struct TrafficSignDetectionContext: Codable, Equatable, Sendable {
         routeContinuityAvailable: Bool = false,
         routeRelationMemberships: [TrafficSignRouteRelationMembership] = [],
         traversalEpoch: UInt64 = 0,
-        matchedWayStable: Bool = false
+        matchedWayStable: Bool = false,
+        roadIdentity: String? = nil
     ) {
         self.wayId = wayId
         self.latitude = latitude
@@ -1233,6 +1235,7 @@ struct TrafficSignDetectionContext: Codable, Equatable, Sendable {
         self.routeRelationMemberships = routeRelationMemberships
         self.traversalEpoch = traversalEpoch
         self.matchedWayStable = matchedWayStable
+        self.roadIdentity = roadIdentity
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -1246,6 +1249,7 @@ struct TrafficSignDetectionContext: Codable, Equatable, Sendable {
         case routeRelationMemberships
         case traversalEpoch
         case matchedWayStable
+        case roadIdentity
     }
 
     init(from decoder: Decoder) throws {
@@ -1263,6 +1267,7 @@ struct TrafficSignDetectionContext: Codable, Equatable, Sendable {
         ) ?? []
         traversalEpoch = try container.decodeIfPresent(UInt64.self, forKey: .traversalEpoch) ?? 0
         matchedWayStable = try container.decodeIfPresent(Bool.self, forKey: .matchedWayStable) ?? false
+        roadIdentity = try container.decodeIfPresent(String.self, forKey: .roadIdentity)
     }
 
     var isValid: Bool {
@@ -1298,10 +1303,12 @@ struct TrafficSignTransientOverridePolicy: Sendable {
     /// to `resolvedSpeedKmh`; passage finalization may later replace it with a
     /// durable assertion.
     mutating func cameraSpeedKmh(
-        currentContext: TrafficSignDetectionContext?
+        currentContext: TrafficSignDetectionContext?,
+        timestamp: Date = Date()
     ) -> Int? {
         guard let activeOverride else { return nil }
-        guard let currentContext,
+        guard timestamp.timeIntervalSince(activeOverride.detectedAt) < DrivingRoadIdentity.maximumAssertionAge,
+              let currentContext,
               currentContext.isValid,
               activeOverride.context.wayId == currentContext.wayId,
               activeOverride.context.travelDirection == currentContext.travelDirection,

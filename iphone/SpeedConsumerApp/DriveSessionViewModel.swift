@@ -1049,6 +1049,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let defaultAudioAlertThresholdKmh = 8
     private static let defaultAudioAlertsEnabled = true
     private static let defaultTrafficSignCountryCode = "DE"
+    private var pendingTrafficSignEndDisplay: (classID: String, timestamp: Date)?
     private static let trafficSignEndOverlayDurationNanos: UInt64 = 2_000_000_000
     private static let drivingBanWarningReminderInterval: TimeInterval = 24
     private static let fallbackLookupRadiusM: Double = 50.0
@@ -1076,6 +1077,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let wayID: String
         let maxspeedValue: String
         let numericSpeedKmh: Int?
+        var roadIdentity: String? = nil
+        var direction: TrafficSignTravelDirection = .unknown
+        var observationID: String? = nil
+        var startedAt: Date = Date()
+        var lastMatchedAt: Date = Date()
     }
     // Source: https://taginfo.openstreetmap.org/api/4/key/values?key=maxspeed&filter=all&lang=de&sortname=count&sortorder=desc&rp=26
     // Snapshot date: 2026-03-03
@@ -1604,7 +1610,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             countryCode: normalizedCountryCode(preferredCountryCode)
                 ?? activeMapCountryCode
                 ?? normalizedCountryCode(inferCountryCodeFromDBPath(dbPath)),
-            matchingModel: matcherDebugProfile.matchingModel
+            matchingModel: matcherDebugProfile.matchingModel,
+            regulationRegion: { SpeedRegulationRegions.bundled?.region(latitude: $0, longitude: $1) }
         )
     }
 
@@ -2184,7 +2191,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         case .cityEntry: inside = true
         case .cityExit: inside = false
         default:
-            inside = lastLookupCitySource.hasPrefix("settlement:") && lastLookupCitySource.hasSuffix(":high") ? lastLookupInsideCity : nil
+            inside = lastLookupCitySource.hasPrefix("settlement:") && (lastLookupCitySource.hasSuffix(":high") || (PenaltyCountryCode.alpha2(country) == "FR" && lastLookupCitySource.hasSuffix(":low"))) ? lastLookupInsideCity : nil
         }
         if highway == "motorway", PenaltyCountryCode.alpha2(country) == "DE" { return .unlimited }
         return TrafficSignRoadDefaultPolicy.speedKmh(country: country, region: region, highway: highway, insideCity: inside).map { .numeric($0) }
@@ -2692,6 +2699,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         timestamp: Date
     ) {
         guard transition != .none else { return }
+        clearActiveLocalSpeedCorrection()
         resetTrafficSignPictogram()
         let base = currentBaseEffectiveSpeedLimitState()
         trafficSignContextGeneration &+= 1
@@ -2822,7 +2830,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             emission.event.roadContext?.traversalEpoch == latestTrafficSignDetectionContext?.traversalEpoch &&
             emission.event.roadContext?.sourceSignature.bundleSHA256 == latestTrafficSignDetectionContext?.sourceSignature.bundleSHA256)
         if displayPermitted, let observation = emission.displayObservation, observation.isSpeedLimitEnd {
-            showTrafficSignEndOverlay(classID: observation.classID)
+            pendingTrafficSignEndDisplay = (observation.classID, emission.event.frameTimestampUtc)
         }
         if displayPermitted && trafficSignPictogramEnabled {
             trafficSignDisplayState.consume(emission.displayObservation, catalog: trafficSignPresentationCatalog)
@@ -2873,6 +2881,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return
         }
 
+        if passage.isUnconditional && passage.permitsApplicability() {
+            switch passage.action {
+            case .cityEntry, .cityExit, .maximumSpeedEnd, .allRestrictionsEnd:
+                clearActiveLocalSpeedCorrection()
+            default: break
+            }
+        }
         let commit = trafficSignEffectiveLimitResolver.commit(
             passage,
             base: currentBaseEffectiveSpeedLimitState(),
@@ -2889,6 +2904,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 expectedToken: trafficSignGenerationToken
             )
             return
+        }
+        // Passage ownership replaces the frame preview. It must not resurrect
+        // the same reading after the durable camera assertion expires.
+        if trafficSignOverridePolicy.activeOverride?.trackId == passage.physicalTrackID {
+            trafficSignOverridePolicy.clear()
+        }
+        if passage.action.isSpeedLimitEnd || passage.action == .allRestrictionsEnd {
+            let recent = pendingTrafficSignEndDisplay.flatMap {
+                emission.event.frameTimestampUtc.timeIntervalSince($0.timestamp) <= 8 ? $0.classID : nil
+            }
+            showTrafficSignEndOverlay(classID: recent ?? "maxspeed:end")
+            pendingTrafficSignEndDisplay = nil
         }
         let effective = trafficSignEffectiveLimitResolver.resolve(
             base: currentBaseEffectiveSpeedLimitState(),
@@ -3168,6 +3195,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func resetTrafficSignPictogram() {
+        pendingTrafficSignEndDisplay = nil
         trafficSignDisplayState.reset()
         trafficSignPictogram = nil
         trafficSignEndOverlayTask?.cancel()
@@ -5892,69 +5920,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             let resolvedNumeric = Self.resolveLocalSpeedOverrides(from: observations)
             let resolvedValues = Self.resolveLocalSpeedOverrideValues(from: observations)
             let resolvedRevisions = Self.resolveLocalSpeedOverrideRevisions(from: observations)
-            let contextAtLookup = latestTrafficSignDetectionContext
-            let currentWayID = contextAtLookup?.wayId
-                ?? limitWayID?.trimmingCharacters(in: .whitespacesAndNewlines)
-            let currentDirection = Self.localObservationDirectionScope(
-                contextAtLookup?.travelDirection ?? currentTrafficSignTravelDirection
-            )
-            var indexedCurrentCorrection: LocalObservation?
-            if let currentWayID, !currentWayID.isEmpty {
-                indexedCurrentCorrection = try await localObservationStore
-                    .fetchLatestRuntimeApplicableCorrection(
-                        wayID: currentWayID,
-                        direction: currentDirection
-                    )
-                let latestWayID = latestTrafficSignDetectionContext?.wayId
-                    ?? limitWayID?.trimmingCharacters(in: .whitespacesAndNewlines)
-                let latestDirection = Self.localObservationDirectionScope(
-                    latestTrafficSignDetectionContext?.travelDirection
-                        ?? currentTrafficSignTravelDirection
-                )
-                if latestWayID != currentWayID || latestDirection != currentDirection {
-                    indexedCurrentCorrection = nil
-                }
-            }
-            let currentIndexedValue = indexedCurrentCorrection?.value?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            let currentIndexedNumeric = indexedCurrentCorrection?.newSpeedKmh
-                ?? currentIndexedValue.flatMap(Int.init)
-            let targetCurrentValue = currentIndexedValue
-                ?? currentWayID.flatMap { resolvedValues[$0] }
-            let targetCurrentNumeric = indexedCurrentCorrection == nil
-                ? currentWayID.flatMap { resolvedNumeric[$0] }
-                : currentIndexedNumeric
-            let currentRoadCorrectionChanged = currentWayID != nil
-                && (currentLocalCorrectionSpeedKmh != targetCurrentNumeric
-                    || currentLocalCorrectionValue != targetCurrentValue
-                    || currentLocalCorrectionIsUser != (indexedCurrentCorrection.map { $0.modality != .computer_vision } ?? false))
             localObservations = observations
             localSpeedOverridesByWayID = resolvedNumeric
             localSpeedOverrideValuesByWayID = resolvedValues
             localSpeedOverrideRevisionsByWayID = resolvedRevisions
             localObservationStreetNames = resolveStreetNames(for: observations)
-            if currentRoadCorrectionChanged, let currentWayID {
-                if activeLocalSpeedCorrection?.wayID == currentWayID,
-                   activeLocalSpeedCorrection?.maxspeedValue != targetCurrentValue {
-                    activeLocalSpeedCorrection = nil
-                }
-                currentLocalCorrectionSpeedKmh = targetCurrentNumeric
-                currentLocalCorrectionValue = targetCurrentValue
-                currentLocalCorrectionIsUser = indexedCurrentCorrection.map { $0.modality != .computer_vision } ?? false
-                currentBaseSpeedLimitDisplayText = Self.speedLimitDisplayText(
-                    for: targetCurrentValue
-                )
-                currentBaseUnlimitedSpeedLimitActive = targetCurrentValue == "none"
-                    || (targetCurrentValue == nil && currentBundledUnlimitedSpeedLimitActive)
-                let effective = trafficSignEffectiveLimitResolver.resolve(
-                    base: currentBaseEffectiveSpeedLimitState(),
-                    currentContext: latestTrafficSignDetectionContext,
-                    currentCoordinate: currentCoordinateForTrafficSignEvaluation,
-                    timestamp: Date()
-                )
-                publishEffectiveSpeedLimitState(effective)
-                refreshTrafficSignFrameSnapshot()
+            if let id = activeLocalSpeedCorrection?.observationID,
+               observations.contains(where: { $0.id == id && $0.state == .discarded }) {
+                clearActiveLocalSpeedCorrection()
+                publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
             }
+
         } catch {
             localObservationStatus = "Lokale Beobachtungen konnten nicht geladen werden: \(error.localizedDescription)"
             lastError = localObservationStatus
@@ -6368,32 +6344,48 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         activeLocalSpeedCorrection = ActiveLocalSpeedCorrection(
             wayID: wayID,
             maxspeedValue: selection.value,
-            numericSpeedKmh: observation.newSpeedKmh ?? Int(selection.value)
+            numericSpeedKmh: observation.newSpeedKmh ?? Int(selection.value),
+            roadIdentity: latestTrafficSignDetectionContext?.roadIdentity,
+            direction: latestTrafficSignDetectionContext?.travelDirection ?? .unknown,
+            observationID: observation.id
         )
+        trafficSignOverridePolicy.clear()
+
         Self.logger.notice(
             "capture_corr session_started way=\(wayID, privacy: .public) value=\(selection.value, privacy: .public)"
         )
     }
 
-    private func applyActiveLocalSpeedCorrectionIfNeeded(for result: SpeedLimitResult, lat _: Double, lon _: Double) -> String? {
-        guard let correction = activeLocalSpeedCorrection else {
+    private func clearActiveLocalSpeedCorrection() {
+        activeLocalSpeedCorrection = nil
+        currentLocalCorrectionValue = nil
+        currentLocalCorrectionSpeedKmh = nil
+        currentLocalCorrectionIsUser = false
+        currentBaseSpeedLimitDisplayText = nil
+        currentBaseUnlimitedSpeedLimitActive = currentBundledUnlimitedSpeedLimitActive
+        trafficSignOverridePolicy.clear()
+    }
+
+    private func applyActiveLocalSpeedCorrectionIfNeeded(for result: SpeedLimitResult, lat _: Double, lon _: Double, timestamp: Date = Date(), direction: TrafficSignTravelDirection = .unknown) -> String? {
+        guard var correction = activeLocalSpeedCorrection else { return nil }
+        guard timestamp.timeIntervalSince(correction.startedAt) < DrivingRoadIdentity.maximumAssertionAge else {
+            clearActiveLocalSpeedCorrection()
             return nil
         }
         guard let wayID = result.wayID?.trimmingCharacters(in: .whitespacesAndNewlines), !wayID.isEmpty else {
+            if timestamp.timeIntervalSince(correction.lastMatchedAt) > 8 { clearActiveLocalSpeedCorrection() }
             return nil
         }
-        guard wayID == correction.wayID else {
-            Self.logger.notice(
-                "capture_corr session_stopped reason=way_changed from=\(correction.wayID, privacy: .public) to=\(wayID, privacy: .public)"
-            )
-            activeLocalSpeedCorrection = nil
+        let identity = DrivingRoadIdentity.key(ref: result.streetRef, name: result.streetBaseName, highway: result.highway)
+        let sameRoad = correction.roadIdentity != nil && correction.roadIdentity == identity
+        let changedIdentity = correction.roadIdentity != nil && identity != nil && correction.roadIdentity != identity
+        let reversed = wayID == correction.wayID && correction.direction != .unknown && direction != .unknown && correction.direction != direction
+        guard !changedIdentity, !reversed, wayID == correction.wayID || sameRoad else {
+            clearActiveLocalSpeedCorrection()
             return nil
         }
-
-        localSpeedOverrideValuesByWayID[wayID] = correction.maxspeedValue
-        if let numeric = correction.numericSpeedKmh {
-            localSpeedOverridesByWayID[wayID] = numeric
-        }
+        correction.lastMatchedAt = timestamp
+        activeLocalSpeedCorrection = correction
         return correction.maxspeedValue
     }
 
@@ -6457,7 +6449,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             routeRelationMemberships: result.routeRelationMemberships ?? [],
             traversalEpoch: traversal.epoch,
             matchedWayStable: matchedFixCount >= 1
-                && (previousMatchedWayID == wayId || traversal.continuouslyRelated)
+                && (previousMatchedWayID == wayId || traversal.continuouslyRelated),
+            roadIdentity: DrivingRoadIdentity.key(ref: result.streetRef, name: result.streetBaseName, highway: result.highway)
         )
         return context.isValid ? context : nil
     }
@@ -6756,7 +6749,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                             let result = try V3SpeedLimitService(
                                 dbPath: candidate.dbPath,
                                 countryCode: candidate.countryCode,
-                                matchingModel: matchingModel
+                                matchingModel: matchingModel,
+                                regulationRegion: { SpeedRegulationRegions.bundled?.region(latitude: $0, longitude: $1) }
                             ).lookupSpeedLimit(
                                 lat: lat,
                                 lon: lon,
@@ -6891,8 +6885,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let matchContext = currentWayMatchContext()
         let gpsBars = gpsSignalBars
         let lookupContextGeneration = trafficSignContextGeneration
-        let observationStore = localObservationStore
-
         Task.detached(priority: .utility) {
             do {
                 let result = try service.lookupSpeedLimit(
@@ -6911,22 +6903,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     for: result,
                     headingDegrees: course
                 )
-                let lookupDirection: LocalObservationDirectionScope
-                switch travelDirection {
-                case .forward: lookupDirection = .forward
-                case .reverse: lookupDirection = .backward
-                case .unknown: lookupDirection = .unknown
-                }
-                let directLocalObservation: LocalObservation?
-                if let wayID = result.wayID?.trimmingCharacters(in: .whitespacesAndNewlines),
-                   !wayID.isEmpty {
-                    directLocalObservation = try await observationStore.fetchLatestRuntimeApplicableCorrection(
-                        wayID: wayID,
-                        direction: lookupDirection
-                    )
-                } else {
-                    directLocalObservation = nil
-                }
                 await MainActor.run {
                     guard fixID == self.latestTrafficSignLookupFixID,
                           lookupContextGeneration == self.trafficSignContextGeneration else {
@@ -6935,23 +6911,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         )
                         return
                     }
-                    let propagatedOverrideValue = self.applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: lat, lon: lon)
+                    let propagatedOverrideValue = self.applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: lat, lon: lon, timestamp: location.timestamp, direction: travelDirection)
                     let localOverrideValue = propagatedOverrideValue
-                        ?? directLocalObservation?.value
-                        ?? result.wayID.flatMap { self.localSpeedOverrideValuesByWayID[$0] }
                     let localOverride = localOverrideValue.flatMap(Int.init)
-                    if let directLocalObservation,
-                       let directWayID = directLocalObservation.primaryWayID ?? directLocalObservation.roadCandidateIDs.first {
-                        self.localSpeedOverrideValuesByWayID[directWayID] = directLocalObservation.value
-                        self.localSpeedOverrideRevisionsByWayID[directWayID] =
-                            Self.localSpeedCorrectionRevisionToken(for: directLocalObservation)
-                        if let numeric = directLocalObservation.newSpeedKmh
-                            ?? directLocalObservation.value.flatMap(Int.init) {
-                            self.localSpeedOverridesByWayID[directWayID] = numeric
-                        } else {
-                            self.localSpeedOverridesByWayID.removeValue(forKey: directWayID)
-                        }
-                    }
                     let sourceSignature = self.makeTrafficSignSourceSignature(
                         result: result,
                         localOverrideValue: localOverrideValue,
@@ -6995,7 +6957,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.currentLocalCorrectionSpeedKmh = localOverride
                     self.currentLocalCorrectionValue = localOverrideValue
                     self.currentLocalCorrectionIsUser = propagatedOverrideValue != nil
-                        || directLocalObservation.map { $0.modality != .computer_vision } == true
                     let baseSpeedLimitDisplayText = Self.speedLimitDisplayText(
                         for: localOverrideValue
                     )
@@ -7020,7 +6981,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                             wayID: wayID,
                             direction: travelDirection,
                             continuityAvailable: result.routeContinuityAvailable == true,
-                            memberships: result.routeRelationMemberships ?? []
+                            memberships: result.routeRelationMemberships ?? [],
+                            roadIdentity: DrivingRoadIdentity.key(ref: result.streetRef, name: result.streetBaseName, highway: result.highway)
                         )
                         nextTrafficSignContext = self.makeTrafficSignDetectionContext(
                             result: result,
@@ -7085,7 +7047,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     if unlimitedMatch {
                         lookupStatus = "matched_unlimited"
                     } else if effectiveSpeedLimit == nil {
-                        lookupStatus = "no_match"
+                        lookupStatus = result.wayID == nil ? "no_match" : "matched_no_speed"
                     } else if hasTrafficSignOverride {
                         lookupStatus = "matched_camera_override"
                     } else if localOverride != nil {
@@ -7853,15 +7815,15 @@ extension DriveSessionViewModel {
         try await waitForTestSpeedCaptureToBecomeIdle()
     }
 
-    func testSetActiveLocalSpeedCorrection(wayID: String, value: String, numericSpeedKmh: Int?) {
+    func testSetActiveLocalSpeedCorrection(wayID: String, value: String, numericSpeedKmh: Int?, roadIdentity: String? = nil, startedAt: Date = Date()) {
         activeLocalSpeedCorrection = ActiveLocalSpeedCorrection(
             wayID: wayID,
             maxspeedValue: value,
-            numericSpeedKmh: numericSpeedKmh
+            numericSpeedKmh: numericSpeedKmh, roadIdentity: roadIdentity, startedAt: startedAt, lastMatchedAt: startedAt
         )
     }
 
-    func testApplyActiveLocalSpeedCorrection(wayID: String?) -> String? {
+    func testApplyActiveLocalSpeedCorrection(wayID: String?, ref: String? = nil, timestamp: Date = Date()) -> String? {
         let result = SpeedLimitResult(
             speedLimitKmh: 50,
             isUnlimitedSpeedLimit: false,
@@ -7877,7 +7839,7 @@ extension DriveSessionViewModel {
             isTunnelSegment: false,
             streetName: nil,
             streetBaseName: nil,
-            streetRef: nil,
+            streetRef: ref,
             matchedEndpointProximityM: nil,
             cityName: nil,
             cityPlaceName: nil,
@@ -7904,7 +7866,7 @@ extension DriveSessionViewModel {
             routeContinuityAvailable: nil,
             routeRelationMemberships: nil
         )
-        return applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: 0, lon: 0)
+        return applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: 0, lon: 0, timestamp: timestamp)
     }
 
     var testSpeedCaptureDidResolve: Bool {

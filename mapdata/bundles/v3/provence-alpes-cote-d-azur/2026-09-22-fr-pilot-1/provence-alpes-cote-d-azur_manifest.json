@@ -1,0 +1,44 @@
+{
+  "bundle_version": "2026-09-22-fr-pilot-1",
+  "country_code": "FRA",
+  "coverage": {
+    "bbox": {
+      "max_lat": 45.12887,
+      "max_lon": 7.748528,
+      "min_lat": 42.31539,
+      "min_lon": 4.144746
+    },
+    "poly": {
+      "bytes": 14430,
+      "file": "provence-alpes-cote-d-azur.poly",
+      "sha256": "1abf1a2149aa4710bbdb07dfbfb6f9a989254b9ed07c79b6ca6f1e231ad53abb",
+      "url": "https://github.com/volzinnovation/youspeed.de/releases/download/provence-alpes-cote-d-azur/provence-alpes-cote-d-azur.poly"
+    }
+  },
+  "created_at_utc": "2026-09-23T20:41:29Z",
+  "db": {
+    "bytes": 257364330,
+    "compression": "gzip",
+    "file": "provence-alpes-cote-d-azur_2026-09-22-fr-pilot-1_speeds.sqlite",
+    "sha256": "05ba111764ad8d863b81f8b079bfd01de13919bbd2e37ca8da7a1df32f2a3091",
+    "uncompressed_bytes": 836677632,
+    "uncompressed_sha256": "34b31d513f74c92b6eefc4df821cc3d5fb6bb75b1694a63dab53d009096b1804",
+    "url": "https://github.com/volzinnovation/youspeed.de/releases/download/provence-alpes-cote-d-azur/provence-alpes-cote-d-azur_2026-09-22-fr-pilot-1_speeds.sqlite.gz"
+  },
+  "delta_index": null,
+  "format": "youspeed.v3.bundle.manifest",
+  "min_app_version": "1.1.1",
+  "penalty_rules": {
+    "bytes": 9366,
+    "file": "FRA-rules.json",
+    "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6",
+    "url": "https://github.com/volzinnovation/youspeed.de/releases/download/provence-alpes-cote-d-azur/FRA-rules.json"
+  },
+  "region": "provence-alpes-cote-d-azur",
+  "schema_version": 1,
+  "self": {
+    "file": "provence-alpes-cote-d-azur_manifest.json",
+    "url": "https://github.com/volzinnovation/youspeed.de/releases/download/provence-alpes-cote-d-azur/provence-alpes-cote-d-azur_manifest.json"
+  },
+  "variant": "v3"
+}

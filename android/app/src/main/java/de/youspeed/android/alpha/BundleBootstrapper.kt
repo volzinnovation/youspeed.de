@@ -761,9 +761,13 @@ class BundleBootstrapper(
             )
         }
 
-        cachedCoverageEntries = loaded
+        // Retain previous downloads for rollback without routing through them.
+        val latest = loaded.groupBy { it.region.lowercase(Locale.US) }.values.map { entries ->
+            entries.maxBy { if (it.bundleVersion == "seed") "" else it.bundleVersion }
+        }
+        cachedCoverageEntries = latest
         coverageCacheLoadedAtMillis = now
-        return loaded
+        return latest
     }
 
     private fun loadCoveragePolyText(

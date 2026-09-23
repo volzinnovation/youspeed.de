@@ -17,12 +17,14 @@ internal class TrafficSignTraversalTracker {
     var epoch: Long = 1L
         private set
 
+    private var previousRoadIdentity: String? = null
     private var previousWayId: String? = null
     private var previousDirection = TrafficSignTravelDirection.UNKNOWN
     private var previousContinuityGroups: Set<Long> = emptySet()
 
     fun reset() {
         epoch += 1L
+        previousRoadIdentity = null
         previousWayId = null
         previousDirection = TrafficSignTravelDirection.UNKNOWN
         previousContinuityGroups = emptySet()
@@ -33,7 +35,12 @@ internal class TrafficSignTraversalTracker {
         direction: TrafficSignTravelDirection,
         continuityAvailable: Boolean,
         continuityGroups: Set<Long>,
+        roadIdentity: String? = null,
     ): TrafficSignTraversalUpdate {
+        val changedRoad = previousRoadIdentity != null && roadIdentity != null && previousRoadIdentity != roadIdentity
+        val sameRoad = roadIdentity != null && previousRoadIdentity == roadIdentity
+        if (changedRoad) reset()
+        if (roadIdentity != null) previousRoadIdentity = roadIdentity
         val normalizedWayId = normalizeWayId(wayId) ?: return TrafficSignTraversalUpdate(
             epoch = epoch,
             continuouslyRelated = false,
@@ -69,7 +76,7 @@ internal class TrafficSignTraversalTracker {
         }
 
         val sharedGroups = previousContinuityGroups.intersect(normalizedGroups)
-        if (continuityAvailable && previousContinuityGroups.isNotEmpty() && sharedGroups.isNotEmpty()) {
+        if (sameRoad || (continuityAvailable && previousContinuityGroups.isNotEmpty() && sharedGroups.isNotEmpty())) {
             previousWayId = normalizedWayId
             previousDirection = direction
             previousContinuityGroups = normalizedGroups

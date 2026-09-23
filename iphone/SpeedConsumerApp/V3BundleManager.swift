@@ -1526,9 +1526,14 @@ actor V3BundleManager {
             )
         }
 
-        cachedCoverageEntries = loaded
+        // Old regional versions remain available for rollback, but must never
+        // compete with a repaired version during GPS routing.
+        let latest = Dictionary(grouping: loaded, by: { $0.region.lowercased() }).values.compactMap { entries in
+            entries.max { ($0.bundleVersion == "seed" ? "" : $0.bundleVersion) < ($1.bundleVersion == "seed" ? "" : $1.bundleVersion) }
+        }
+        cachedCoverageEntries = latest
         coverageCacheUpdatedAt = now
-        return loaded
+        return latest
     }
 
     private func resolveCoveragePolyURL(polyFile: String, region: String, bundleDir: URL) -> URL? {

@@ -68,6 +68,7 @@ internal class V3SpeedLimitLookup(
     private val dbPath: String,
     countryCode: String? = null,
     private val matchingModel: LookupMatchingModel = LookupMatchingModel.CORRIDOR_HMM,
+    private val regulationRegion: ((Double, Double) -> String?)? = null,
 ) : Closeable {
     private enum class CandidateNetwork(val wireName: String) {
         SURFACE("surface"),
@@ -283,14 +284,18 @@ internal class V3SpeedLimitLookup(
             heading = SettlementContextPolicy.reliableHeading(headingDeg, speedKmh, headingAccuracyDeg),
             residentialInside = residential.insideCity,
         )
+        val region = if (RoadSpeedDefaults.country(countryCode) == "BE") regulationRegion?.invoke(lat, lon) else null
         val effectiveSpeed = when {
             best == null || best.isUnlimitedSpeedLimit -> null
             best.speedSource == DerivedSpeedSource.EXPLICIT_TAG -> best.speedLimitKmh
             best.highway?.lowercase() == "living_street" -> best.speedLimitKmh
             !allowsResidentialAreaFallback(best.highway) -> best.speedLimitKmh
-            settlement.isHighConfidence -> if (settlement.insideCity == true) 50 else 100
+            settlement.source == "conflict" -> null
+            best.speedSource == DerivedSpeedSource.INHERITED_TAG -> best.speedLimitKmh.takeIf { RoadSpeedDefaults.country(countryCode ?: "DE") != "DE" || settlement.isHighConfidence }
+            settlement.isHighConfidence || (RoadSpeedDefaults.country(countryCode) == "FR" && settlement.confidence == "low") ->
+                RoadSpeedDefaults.speedKmh(countryCode ?: "DE", region, best.highway, settlement.insideCity)
             best.speedSource == DerivedSpeedSource.HIGHWAY_CLASS &&
-                best.highway?.trim()?.lowercase() in setOf("residential", "service") -> 50
+                best.highway?.trim()?.lowercase() in setOf("residential", "service") -> RoadSpeedDefaults.speedKmh(countryCode ?: "DE", region, best.highway, true)
             else -> null
         }
 
@@ -1224,7 +1229,7 @@ internal class V3SpeedLimitLookup(
         }.getOrDefault(emptyList()) else emptyList()
         val alternatives = (candidates + nearby).distinctBy { it.wayId }.filter { it.wayId != selected?.wayId }
             .sortedWith(compareBy<WayCandidate> { it.distanceM }.thenBy { it.wayId ?: "" })
-        val branches = if (selected == null) emptyList() else alternatives.filter {
+        val directBranches = if (selected == null) emptyList() else alternatives.filter {
             it.wayId in links.linkedByFrom[selected.wayId].orEmpty() ||
                 listOfNotNull(selected.points.firstOrNull(), selected.points.lastOrNull()).any { point ->
                     point in listOfNotNull(it.points.firstOrNull(), it.points.lastOrNull())
@@ -1240,13 +1245,31 @@ internal class V3SpeedLimitLookup(
                 junctionDistance?.takeIf { it.isFinite() },
                 candidate.highway, true, if (incoming != null && outgoing != null) TSRApplicabilityPolicy.signedAngle(outgoing - incoming) else null)
         }
+        val exitApproaches = directedExitApproaches(selected)
+        val directedIds = exitApproaches.map { it.wayId }.toSet()
+        val branches = exitApproaches + directBranches.filter { it.wayId !in directedIds }
         val capabilities = mutableListOf("endpoint_topology_only", "no_legal_direction", "no_lane_metadata", "interior_junctions_unavailable")
+        if (exitApproaches.isNotEmpty()) capabilities += "directed_motorway_exit_lookahead_v1"
         if (links.available) capabilities += "endpoint_links"
         if (selected?.localHeadingDeg != null) capabilities += "local_tangent"
         if (alternatives.size > 8 || branches.size > 8) capabilities += "context_truncated"
         return TSRMapGeometry(selected?.wayId, selected?.localHeadingDeg, selected?.highway,
             alternatives.take(8).map { TSRApplicabilityCorridor(it.wayId ?: "unknown", it.localHeadingDeg, it.distanceM.takeIf { d -> d.isFinite() }, it.highway, false, null) },
-            branches.take(8), capabilities.toList(), selected?.speedLimitKmh?.takeIf { selected.speedSource == DerivedSpeedSource.EXPLICIT_TAG })
+            branches.take(8), capabilities.toList(), selected?.speedLimitKmh?.takeIf { selected.highway == "motorway" })
+    }
+
+    private fun directedExitApproaches(selected: WayCandidate?): List<TSRApplicabilityCorridor> {
+        if (selected?.highway != "motorway" || selected.wayId == null || !tableExists("motorway_exit_approach")) return emptyList()
+        val result = mutableListOf<TSRApplicabilityCorridor>()
+        db.rawQuery("SELECT endpoint_side,exit_way_id,path_distance_m,branch_heading_deg FROM motorway_exit_approach WHERE way_id=?", arrayOf(selected.wayId)).use { cursor ->
+            while (cursor.moveToNext()) {
+                val remaining = (if (cursor.getString(0) == "start") selected.distanceToStartM else selected.distanceToEndM) ?: continue
+                val distance = remaining + cursor.getDouble(2)
+                if (!distance.isFinite() || distance !in 0.0..350.0) continue
+                result += TSRApplicabilityCorridor(cursor.getString(1), cursor.getDouble(3), distance, "motorway_link", true, null)
+            }
+        }
+        return result.sortedBy { it.distanceM }
     }
 
     private fun loadWayLinksContext(
@@ -2761,7 +2784,7 @@ internal class V3SpeedLimitLookup(
             }
         }
         val continuityIdentity: Pair<Set<String>, SimpleContinuityIdentitySource>
-        val previousContinuityCandidate: WayCandidate?
+        val unboundedContinuityCandidate: WayCandidate?
         if (useGuardedStreetNameFallbackContinuity) {
             val guardedContinuity = preferredGuardedStreetNameContinuityCandidate(
                 rankedCandidates = rankedCandidates,
@@ -2771,7 +2794,7 @@ internal class V3SpeedLimitLookup(
             )
             if (guardedContinuity != null) {
                 continuityIdentity = guardedContinuity.tokens to SimpleContinuityIdentitySource.STREET_NAME
-                previousContinuityCandidate = guardedContinuity.candidate
+                unboundedContinuityCandidate = guardedContinuity.candidate
                 selectionTrace += guardedContinuity.trace
             } else {
                 continuityIdentity = preferredSimpleContinuityIdentity(
@@ -2779,7 +2802,7 @@ internal class V3SpeedLimitLookup(
                     useStreetNameFallbackContinuity = useStreetNameFallbackContinuity,
                     ageOutStaleRefContinuity = true,
                 )
-                previousContinuityCandidate = rankedCandidates.filter { candidate ->
+                unboundedContinuityCandidate = rankedCandidates.filter { candidate ->
                     val candidateTokens = continuityTokens(
                         candidate = candidate,
                         source = continuityIdentity.second,
@@ -2795,7 +2818,7 @@ internal class V3SpeedLimitLookup(
                 useStreetNameFallbackContinuity = useStreetNameFallbackContinuity,
                 ageOutStaleRefContinuity = false,
             )
-            previousContinuityCandidate = rankedCandidates.filter { candidate ->
+            unboundedContinuityCandidate = rankedCandidates.filter { candidate ->
                 val candidateTokens = continuityTokens(
                     candidate = candidate,
                     source = continuityIdentity.second,
@@ -2806,6 +2829,14 @@ internal class V3SpeedLimitLookup(
                 .thenComparator { lhs, rhs -> if (isBetterDistanceCandidate(lhs, rhs)) -1 else if (isBetterDistanceCandidate(rhs, lhs)) 1 else 0 })
         }
 
+        val continuationRadius = max(25.0, 3 * max(0.0, horizontalAccuracyM ?: 10.0))
+        val previousContinuityCandidate = unboundedContinuityCandidate?.takeUnless {
+            !matchContext.isInTunnelMode && it.distanceM > continuationRadius &&
+                it.distanceM > bestCandidate.distanceM + max(10.0, horizontalAccuracyM ?: 10.0)
+        }
+        if (unboundedContinuityCandidate != null && previousContinuityCandidate == null) {
+            selectionTrace += MatchSelectionTrace("continuity_geometry_release", "previous road lies outside GPS continuity radius")
+        }
         val urbanReleasePressureActive = if (
             urbanSameRefReleaseEnabled &&
             speedKmh != null &&
@@ -2853,6 +2884,13 @@ internal class V3SpeedLimitLookup(
                 detail = "kept preferred ${preferredWayCandidate.wayId ?: "nil"} over nearest ${bestCandidate.wayId ?: "nil"} at speed_kmh=${formatMetric(speedKmh)} preferred_m=${formatMetric(preferredWayCandidate.distanceM)} nearest_m=${formatMetric(bestCandidate.distanceM)}",
             )
             preferredWayCandidate
+        } else if (previousContinuityCandidate != null && observedHeadingDeg != null &&
+            previousContinuityCandidate.localHeadingDeg != null &&
+            previousContinuityCandidate.distanceM <= bestCandidate.distanceM + max(3.0, horizontalAccuracyM ?: 3.0) &&
+            previousContinuityCandidate.distanceM <= continuationRadius &&
+            headingMismatchDeg(observedHeadingDeg, previousContinuityCandidate.localHeadingDeg) <= 25.0) {
+            selectionTrace += MatchSelectionTrace("continuity_within_gps_uncertainty", "preserved aligned road while distance advantage is within GPS uncertainty")
+            previousContinuityCandidate
         } else if (speedKmh != null && speedKmh >= lowSpeedThresholdKmh && previousContinuityCandidate != null) {
             if (
                 urbanSameRefReleaseEnabled &&
@@ -5581,6 +5619,7 @@ internal class V3SpeedLimitLookup(
                         maxspeedType = cursor.stringOrNull(5),
                         sourceMaxspeed = cursor.stringOrNull(6),
                         highway = highway,
+                        country = countryCode ?: "DE",
                     )
                     val approxHeading = cursor.doubleOrNull(7)
                     val service = cursor.stringOrNull(8)
@@ -6294,8 +6333,9 @@ internal class V3SpeedLimitLookup(
             maxspeedType: String?,
             sourceMaxspeed: String?,
             highway: String?,
+            country: String? = "DE",
         ): Int? {
-            return deriveSpeedLimitWithSource(maxspeed, maxspeedType, sourceMaxspeed, highway).speed
+            return deriveSpeedLimitWithSource(maxspeed, maxspeedType, sourceMaxspeed, highway, country).speed
         }
 
         internal fun deriveSpeedLimitWithSource(
@@ -6303,6 +6343,7 @@ internal class V3SpeedLimitLookup(
             maxspeedType: String?,
             sourceMaxspeed: String?,
             highway: String?,
+            country: String? = "DE",
         ): DerivedSpeedResult {
             if (isUnlimitedSpeedTag(maxspeed)) {
                 return DerivedSpeedResult(speed = null, source = DerivedSpeedSource.EXPLICIT_UNLIMITED_TAG, isUnlimited = true)
@@ -6311,15 +6352,13 @@ internal class V3SpeedLimitLookup(
                 return DerivedSpeedResult(speed = explicit, source = DerivedSpeedSource.EXPLICIT_TAG, isUnlimited = false)
             }
 
-            val inherited = listOfNotNull(maxspeedType, sourceMaxspeed).joinToString(" ").lowercase()
-            if ("urban" in inherited) {
-                return DerivedSpeedResult(speed = 50, source = DerivedSpeedSource.INHERITED_TAG, isUnlimited = false)
+            for (tag in listOf(maxspeed, maxspeedType, sourceMaxspeed)) {
+                RoadSpeedDefaults.symbolicSpeed(tag, country)?.let {
+                    return DerivedSpeedResult(it, DerivedSpeedSource.INHERITED_TAG, false)
+                }
             }
-            if ("rural" in inherited) {
-                return DerivedSpeedResult(speed = 100, source = DerivedSpeedSource.INHERITED_TAG, isUnlimited = false)
-            }
-            if ("motorway" in inherited) {
-                return DerivedSpeedResult(speed = null, source = DerivedSpeedSource.INHERITED_TAG, isUnlimited = false)
+            if (RoadSpeedDefaults.country(country) != "DE") {
+                return DerivedSpeedResult(RoadSpeedDefaults.speedKmh(country, null, highway, null), DerivedSpeedSource.HIGHWAY_CLASS, false)
             }
 
             return when (highway?.trim()?.lowercase()) {
@@ -6336,9 +6375,7 @@ internal class V3SpeedLimitLookup(
         }
 
         internal fun parseExplicitSpeed(raw: String?): Int? {
-            val digits = raw?.filter(Char::isDigit).orEmpty()
-            val value = digits.toIntOrNull() ?: return null
-            return value.takeIf { it > 0 }
+            return RoadSpeedDefaults.explicitSpeed(raw)
         }
 
         internal fun isUnlimitedSpeedTag(raw: String?): Boolean {
@@ -6347,7 +6384,7 @@ internal class V3SpeedLimitLookup(
 
         private fun normalizedCountryCode(raw: String?): String? {
             val code = raw?.trim()?.uppercase(Locale.US) ?: return null
-            return code.takeIf { it.length == 3 }
+            return (mapOf("DE" to "DEU", "FR" to "FRA", "BE" to "BEL", "NL" to "NLD", "CH" to "CHE")[code] ?: code).takeIf { it.length == 3 }
         }
 
         private fun inferCountryCodeFromDbPath(dbPath: String): String? {
@@ -6356,7 +6393,7 @@ internal class V3SpeedLimitLookup(
                 return null
             }
             val prefix = fileName.take(3)
-            return prefix.takeIf { it.all(Char::isLetter) }
+            return prefix.takeIf { it in setOf("DEU", "FRA", "BEL", "NLD", "CHE") }
         }
 
         private fun allowsResidentialAreaFallback(highway: String?): Boolean {

@@ -1262,9 +1262,6 @@ struct MainView: View {
     }
 
     private var screenBackgroundColor: Color {
-        if showsUnlimitedAutobahnSign {
-            return Color(red: 0.03, green: 0.33, blue: 0.78)
-        }
         guard let progress = overspeedBackgroundProgress else {
             return .black
         }
@@ -1365,9 +1362,6 @@ struct MainView: View {
     }
 
     private var usesDarkForeground: Bool {
-        if showsUnlimitedAutobahnSign {
-            return true
-        }
         guard let progress = overspeedBackgroundProgress else {
             return false
         }

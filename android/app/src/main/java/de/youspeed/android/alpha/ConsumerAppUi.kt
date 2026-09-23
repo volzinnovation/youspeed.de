@@ -2139,9 +2139,6 @@ private fun mainBackgroundColor(ui: ConsumerUiState, pulseFraction: Float): Colo
     if (ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
         return Paper
     }
-    if (ui.isUnlimitedSpeedLimitActive) {
-        return HighwayBlue
-    }
     if (ConsumerMainScreenLogic.isDrivingBanWarningActive(ui)) {
         return lerp(NightRed, NightRedDark, 0.25f + (pulseFraction * 0.75f))
     }

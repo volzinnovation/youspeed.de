@@ -14,6 +14,66 @@ import org.junit.Test
 class TrafficSignPassageTests {
     private val t0 = Instant.parse("2026-09-04T08:00:00Z")
 
+    @Test fun framePreviewCannotReturnAfterFiveMinuteExpiry() {
+        val context = context("1", emptySet())
+        val preview = TrafficSignSpeedOverride(90, t0, "preview", context)
+        assertEquals(preview, TrafficSignSpeedOverridePolicy.currentForPresentation(preview, context, t0.plusSeconds(299)))
+        assertNull(TrafficSignSpeedOverridePolicy.currentForPresentation(preview, context, t0.plusSeconds(300)))
+        assertNull(TrafficSignSpeedOverridePolicy.currentForPresentation(preview, context.copy(wayId = "2"), t0.plusSeconds(1)))
+    }
+
+    @Test fun frenchDefaultsAndStrictSpeedTags() {
+        assertEquals(80, RoadSpeedDefaults.symbolicSpeed("FR:rural", "FRA"))
+        assertEquals(50, RoadSpeedDefaults.symbolicSpeed("FR:urban", "FR"))
+        assertEquals(80, RoadSpeedDefaults.speedKmh("FR", null, "secondary", false))
+        assertEquals(50, RoadSpeedDefaults.speedKmh("FR", null, "secondary", true))
+        assertNull(RoadSpeedDefaults.speedKmh("FR", null, "trunk", false))
+        assertNull(RoadSpeedDefaults.speedKmh("FR", null, "motorway_link", false))
+        for (value in listOf("50;70", "50 @ (wet)", "signals", "50/80", "none", "0", "999")) assertNull(value, RoadSpeedDefaults.explicitSpeed(value))
+        assertEquals(50, RoadSpeedDefaults.explicitSpeed("50 km/h"))
+        assertEquals(48, RoadSpeedDefaults.explicitSpeed("30 mph"))
+        assertEquals("ref:A9", DrivingRoadIdentity.key(" A 9 ", null, "motorway"))
+        assertFalse(DrivingRoadIdentity.key("A9", null, "motorway") == DrivingRoadIdentity.key("A9", null, "motorway_link"))
+    }
+
+    @Test fun cameraLimitSurvivesWaySplitsButExpiresAfterFiveMinutes() {
+        val resolver = TrafficSignRuntimeSourceResolver()
+        val bundle = base(130, EffectiveSpeedLimitSource.BUNDLE)
+        val first = context("1", emptySet()).copy(continuityCapable = false, roadIdentity = "ref:A9")
+        val next = context("2", emptySet()).copy(continuityCapable = false, roadIdentity = "ref:A9")
+        resolver.commit(passage(TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 90), first), bundle)
+        assertEquals(90, resolver.reconcile(TrafficSignRoadMatch(next, t0.plusSeconds(299)), bundle).resolution?.speedKmh)
+        assertEquals(130, resolver.reconcile(TrafficSignRoadMatch(next, t0.plusSeconds(300)), bundle).resolution?.speedKmh)
+        assertNull(resolver.activeAssertion())
+    }
+
+    @Test fun roadReferenceChangeClearsCameraEvenWithinSameRouteRelation() {
+        val resolver = TrafficSignRuntimeSourceResolver()
+        val bundle = base(80, EffectiveSpeedLimitSource.BUNDLE)
+        resolver.commit(passage(context = context("100", setOf(1)).copy(roadIdentity = "ref:D19")), bundle)
+        assertEquals(80, resolver.reconcile(TrafficSignRoadMatch(context("101", setOf(1)).copy(roadIdentity = "ref:D228"), t0.plusSeconds(1)), bundle).resolution?.speedKmh)
+    }
+
+    @Test fun postedTimeoutRetainsEnclosingZone() {
+        val resolver = TrafficSignRuntimeSourceResolver()
+        val bundle = base(80, EffectiveSpeedLimitSource.BUNDLE)
+        resolver.commit(passage(TrafficSignAction(TrafficSignActionKind.ZONE_START, 30)), bundle)
+        resolver.commit(passage(TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 20), at = t0.plusSeconds(1)), bundle)
+        assertEquals(30, resolver.reconcile(TrafficSignRoadMatch(context("100", setOf(1)), t0.plusSeconds(301)), bundle).resolution?.speedKmh)
+    }
+
+    @Test fun singleStructuralSignRequiresStableContextAndThreeNegativeFrames() {
+        for (stable in listOf(true, false)) {
+            val finalizer = TrafficSignPassageFinalizer()
+            val context = context("100", setOf(1)).copy(matchedWayStable = stable)
+            val seen = recognition(t0, confidence = 0.777).let { it.copy(roadContext = context, candidate = it.candidate?.copy(
+                rawClassId = "maxspeed:end", semantic = TrafficSignSemantic(TrafficSignSemanticKind.RESTRICTION_END))) }
+            finalizer.observe(seen, 0.777, 1, true, true)
+            for (index in 1..2) assertNull(finalizer.observe(missing(t0.plusMillis(index * 200L)).copy(roadContext = context), null, 1, true, true))
+            assertEquals(stable, finalizer.observe(missing(t0.plusMillis(600)).copy(roadContext = context), null, 1, true, true) != null)
+        }
+    }
+
     @Test fun userRecordingPrecedesCameraStartsEndsAndReconciliation() {
         val manual = base(90, EffectiveSpeedLimitSource.LOCAL_CORRECTION).copy(isUserCorrection = true)
         for (action in listOf(TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 50),
@@ -613,42 +673,14 @@ class TrafficSignPassageTests {
         assertEquals(listOf(oldEvent.finalizedEventId to 70), persisted)
     }
 
-    @Test
-    fun persistedDirectionalCorrectionBecomesBaseBeneathCameraAndSurvivesDisable() {
-        val resolver = TrafficSignRuntimeSourceResolver()
-        val road = context("5001", setOf(7))
-        val bundle = base(50, EffectiveSpeedLimitSource.BUNDLE)
-        val cameraEvent = passage(
-            action = TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 70),
-            context = road,
-        )
-        assertEquals(EffectiveSpeedLimitSource.CAMERA, resolver.commit(cameraEvent, bundle).source)
-        val persistedBase = requireNotNull(
-            trafficSignBaseForPersistedCorrection(
-                currentContext = road,
-                correction = LocalRuntimeCorrection(
-                    observationId = "cv-forward-70",
-                    wayId = "5001",
-                    tagKey = "maxspeed:forward",
-                    canonicalValue = "70",
-                    numericSpeedKmh = 70,
-                    directionScope = TrafficSignTravelDirection.FORWARD,
-                    effectiveAtUtc = t0.toString(),
-                ),
-            ),
-        )
-
-        val whileCameraActive = resolver.reconcile(
-            TrafficSignRoadMatch(road, t0.plusSeconds(1)),
-            persistedBase,
-        )
-        assertEquals(70, whileCameraActive.resolution?.speedKmh)
-        assertEquals(EffectiveSpeedLimitSource.CAMERA, whileCameraActive.source)
-
-        resolver.clear() // Mirrors TSR disable clearing only the camera assertion.
-        val afterDisable = persistedBase.effective()
-        assertEquals(70, afterDisable.resolution?.speedKmh)
-        assertEquals(EffectiveSpeedLimitSource.LOCAL_CORRECTION, afterDisable.source)
+    @Test fun voiceCorrectionFollowsRoadReferenceAndExpiresWithoutRefreshingItsAge() {
+        var correction = ActiveLocalSpeedCorrection("1", "130", 130, roadIdentity = "ref:A9", startedAt = t0)
+        assertEquals(LocalSpeedCorrectionDecision.APPLY, LocalSpeedCorrectionPolicy.decide(correction, "2", "ref:A9", TrafficSignTravelDirection.FORWARD, t0.plusSeconds(30)))
+        correction = correction.copy(lastMatchedAt = t0.plusSeconds(299))
+        assertEquals(LocalSpeedCorrectionDecision.APPLY, LocalSpeedCorrectionPolicy.decide(correction, "3", "ref:A9", TrafficSignTravelDirection.FORWARD, t0.plusSeconds(299)))
+        assertEquals(LocalSpeedCorrectionDecision.EXPIRE, LocalSpeedCorrectionPolicy.decide(correction, "3", "ref:A9", TrafficSignTravelDirection.FORWARD, t0.plusSeconds(300)))
+        assertEquals(LocalSpeedCorrectionDecision.EXPIRE, LocalSpeedCorrectionPolicy.decide(correction, "2", "ref:D19", TrafficSignTravelDirection.FORWARD, t0.plusSeconds(1)))
+        assertEquals(LocalSpeedCorrectionDecision.EXPIRE, LocalSpeedCorrectionPolicy.decide(correction.copy(direction = TrafficSignTravelDirection.FORWARD), "1", "ref:A9", TrafficSignTravelDirection.REVERSE, t0.plusSeconds(1)))
     }
 
     @Test

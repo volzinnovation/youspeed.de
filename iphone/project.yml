@@ -7,8 +7,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.10"
-    CURRENT_PROJECT_VERSION: 10013
-    MARKETING_VERSION: "1.1"
+    CURRENT_PROJECT_VERSION: 10014
+    MARKETING_VERSION: "1.1.1"
 targets:
   SpeedConsumer:
     type: application
@@ -96,6 +96,7 @@ targets:
           - "SpeedDBBenchTests.swift"
           - "README.md"
       - path: SpeedConsumerApp/V3SpeedLimitService.swift
+      - path: SpeedConsumerApp/RoadSpeedDefaults.swift
       - path: SpeedDBBenchSketch/BenchmarkAssets
         buildPhase: resources
     settings:
