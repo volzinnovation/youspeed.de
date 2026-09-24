@@ -336,6 +336,8 @@ data class PanoramaxCadenceConfig(
 
 /** Pure policy: cadence is independent from TSR frames or sign detections. */
 object PanoramaxCapturePolicy {
+    fun isMoving(speedMetersPerSecond: Double) = speedMetersPerSecond.isFinite() && speedMetersPerSecond >= 0.5
+
     fun shouldCapture(
         lastCapture: PanoramaxLocationSample?,
         current: PanoramaxLocationSample,

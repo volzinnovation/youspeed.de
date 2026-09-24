@@ -2,8 +2,53 @@ import XCTest
 @testable import SpeedConsumer
 
 final class TrafficSignApplicabilityTests: XCTestCase {
+    func testSecondarySignLogMetadataRoundTripAndLegacyDecode() throws {
+        let legacy = try XCTUnwrap(try scenarios().first?.batches.first)
+        XCTAssertNil(legacy.country)
+        XCTAssertNil(legacy.candidates.first?.rawClassId)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy)) as? [String: Any])
+        var candidates = try XCTUnwrap(object["candidates"] as? [[String: Any]])
+        candidates[0]["rawClassId"] = "AB4"
+        candidates[0]["detectorRawScore"] = 0.3
+        candidates[0]["classifierRawScore"] = 0.99
+        candidates[0]["semanticKey"] = "unknown::"
+        object["candidates"] = candidates
+        object["country"] = "FR"
+        let batch = try JSONDecoder().decode(TSRFrameCandidateBatch.self, from: JSONSerialization.data(withJSONObject: object))
+        var session = TSRApplicabilitySession()
+        let diagnostic = session.evaluate(batch)
+        let decoded = try JSONDecoder().decode(TSRApplicabilityDiagnostic.self, from: JSONEncoder().encode(diagnostic))
+        XCTAssertEqual(decoded.batch.country, "FR")
+        XCTAssertEqual(decoded.batch.candidates.first?.detectorRawScore, 0.3)
+        XCTAssertEqual(decoded.batch.candidates.first?.classifierRawScore, 0.99)
+        XCTAssertEqual(decoded.batch.candidates.first?.rawClassId, "AB4")
+        XCTAssertEqual(decoded.batch.candidates.first?.semanticKey, "unknown::")
+        XCTAssertEqual(decoded.tracks.first?.samples.first?.candidate.rawClassId, "AB4")
+    }
     struct Vectors: Decodable { let scenarios: [Scenario] }
-    struct Scenario: Decodable { let id: String; let expectedFinalClass: String?; let batches: [TSRFrameCandidateBatch]; let expectedWithheldCount: Int? }
+    struct Scenario: Decodable { let id: String; let expectedFinalClass: String?; let batches: [TSRFrameCandidateBatch]; let expectedWithheldCount: Int?; let expectedAccessWithheldCounts: [Int]? }
+
+    func testAccessRoadConflictAndLegitimateMainlineChanges() throws {
+        for scenario in try scenarios() {
+            guard let counts = scenario.expectedAccessWithheldCounts else { continue }
+            var session = TSRApplicabilitySession()
+            for (index, batch) in scenario.batches.enumerated() {
+                let output = session.evaluate(batch)
+                XCTAssertEqual(session.accessRoadWithheldCandidateIDs.count, counts[index], scenario.id + " frame " + String(index))
+                if counts[index] > 0 {
+                    XCTAssertTrue(session.canConsumePassage(activeTrackId: "previous-main-road-sign", selectedTrackId: nil, mode: "shadow"))
+                }
+                for decision in output.decisions where decision.reasons.contains(TSRAccessRoadPolicy.reason) {
+                    for sink in ["display", "immediate", "passage"] {
+                        XCTAssertFalse(TSRApplicabilityAuthority.allows(decision, scope: batch.scope, frameId: batch.frameId, trackId: decision.trackId, sink: sink, mode: "shadow"))
+                    }
+                }
+            }
+            session.reset()
+            _ = session.evaluate(scenario.batches[2])
+            XCTAssertTrue(session.accessRoadWithheldCandidateIDs.isEmpty, "Reset must clear main-road history")
+        }
+    }
     func testExitGuardOperatesInShadowAndKeepsActualRampAndMainlineRepeats() throws {
         for scenario in try scenarios() {
             guard let count = scenario.expectedWithheldCount else { continue }

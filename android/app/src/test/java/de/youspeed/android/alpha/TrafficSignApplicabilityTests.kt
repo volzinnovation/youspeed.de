@@ -6,6 +6,41 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class TrafficSignApplicabilityTests {
+    @Test fun secondarySignLogMetadataRoundTripAndLegacyDecode() {
+        val legacy = TSRApplicabilityJson.decodeBatch(scenarios().first().getValue("batches").jsonArray.first().jsonObject)
+        assertNull(legacy.country)
+        assertNull(legacy.candidates.first().rawClassId)
+        val batch = legacy.copy(country = "FR", candidates = legacy.candidates.map {
+            it.copy(rawClassId = "AB4", semanticKey = "unknown::", detectorRawScore = 0.3, classifierRawScore = 0.99)
+        })
+        val diagnostic = TSRApplicabilitySession().evaluate(batch)
+        val decoded = TSRApplicabilityJson.decodeDiagnostic(TSRApplicabilityJson.encodeDiagnostic(diagnostic))
+        assertEquals("FR", decoded.batch.country)
+        assertEquals(0.3, decoded.batch.candidates.first().detectorRawScore)
+        assertEquals(0.99, decoded.batch.candidates.first().classifierRawScore)
+        assertEquals("AB4", decoded.batch.candidates.first().rawClassId)
+        assertEquals("unknown::", decoded.batch.candidates.first().semanticKey)
+        assertEquals("AB4", decoded.tracks.first().samples.first().candidate.rawClassId)
+    }
+
+    @Test fun accessRoadConflictAndLegitimateMainlineChanges() {
+        for (scenario in scenarios()) {
+            val counts = scenario["expectedAccessWithheldCounts"]?.jsonArray ?: continue
+            val session = TSRApplicabilitySession()
+            val batches = scenario.getValue("batches").jsonArray.map { TSRApplicabilityJson.decodeBatch(it.jsonObject) }
+            for ((index, batch) in batches.withIndex()) {
+                val output = session.evaluate(batch)
+                assertEquals(scenario.getValue("id").toString() + " frame " + index, counts[index].jsonPrimitive.int, session.accessRoadWithheldCandidateIDs.size)
+                if (counts[index].jsonPrimitive.int > 0) assertTrue(session.canConsumePassage("previous-main-road-sign", null, "shadow"))
+                for (decision in output.decisions.filter { TSRAccessRoadPolicy.reason in it.reasons })
+                    for (sink in listOf("display", "immediate", "passage"))
+                        assertFalse(TSRApplicabilityAuthority.allows(decision, batch.scope, batch.frameId, decision.trackId, sink, "shadow"))
+            }
+            session.reset()
+            session.evaluate(batches[2])
+            assertTrue(session.accessRoadWithheldCandidateIDs.isEmpty())
+        }
+    }
     @Test fun activeExitGuardKeepsRampAndRepeatedMainlineSigns() {
         for (scenario in scenarios()) {
             val count = scenario["expectedWithheldCount"]?.jsonPrimitive?.int ?: continue

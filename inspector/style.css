@@ -1866,3 +1866,44 @@ a:focus-visible,
 .track-tsr-detail dl { display: grid; grid-template-columns: minmax(95px, 1fr) minmax(0, 2fr); gap: 7px 12px; font-size: 12px; }
 .track-tsr-detail dt { color: var(--muted); }
 .track-tsr-detail dd { margin: 0; }
+.track-tsr-statistics { margin: 14px 0; padding: 10px 0; border-block: 1px solid var(--border); }
+.track-tsr-statistics summary { cursor: pointer; font-size: 14px; font-weight: 650; margin-bottom: 10px; }
+.track-tsr-statistics label { display: block; color: var(--muted); font-size: 12px; margin: 8px 0 4px; }
+.track-tsr-statistics select { width: 100%; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 7px; }
+.track-tsr-statistics-scroll { max-height: 380px; overflow: auto; }
+.track-tsr-statistics-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; }
+.track-tsr-statistics-table caption { text-align: left; padding: 6px 0; }
+.track-tsr-statistics-table th, .track-tsr-statistics-table td { padding: 8px 3px; border-bottom: 1px solid var(--border); }
+.track-tsr-statistics-table thead th { font-weight: 600; text-align: right; overflow-wrap: anywhere; vertical-align: bottom; position: sticky; top: 0; background: var(--panel); }
+.track-tsr-statistics-table thead th:first-child { width: 52%; text-align: left; }
+.track-tsr-statistics-table td { text-align: right; font-variant-numeric: tabular-nums; }
+.track-tsr-statistics-table [aria-sort=descending]::after { content: ' ↓'; color: var(--accent); }
+.track-tsr-statistics-sign { display: flex; align-items: center; gap: 6px; text-align: left; overflow-wrap: anywhere; font-weight: normal; }
+.track-tsr-statistics-sign img, .track-tsr-statistics-sign .track-tsr-placeholder { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
+.track-tsr-statistics-sign small { display: block; color: var(--muted); margin-top: 3px; }
+
+.track-media-workspace { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.track-video-panel { padding: .55rem .75rem; border-top: 1px solid var(--border); background: var(--panel); max-height: 65vh; overflow: auto; }
+.track-video-toolbar { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.track-video-toolbar button, .track-video-toolbar input, .track-video-toolbar select { padding: .35rem .45rem; font-size: .8rem; }
+.track-video-toolbar label { display: flex; gap: .4rem; align-items: center; font-size: .8rem; }
+.track-video-file { flex: 1; min-width: 0; }
+.track-video-file input { min-width: 0; max-width: 100%; }
+#track-video { display: block; width: 100%; height: min(34vh, 340px); background: #000; margin: .4rem 0; }
+#track-video-clock { display: block; font: .8rem ui-monospace, monospace; margin: .4rem 0; }
+.track-video-alignment { font-size: .8rem; }
+.track-video-alignment label { display: flex; gap: .5rem; margin: .3rem 0; align-items: center; }
+.track-video-alignment input { padding: .3rem; min-width: 0; flex: 1; }
+#track-video-reverse[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+/* Keep map overlays inside their row when a video is open. */
+.track-media-workspace .map-wrap { min-height: 0; overflow: hidden; }
+.track-media-workspace .map-legend { max-height: calc(100% - 2rem); overflow: auto; }
+@media (min-width: 721px) and (max-width: 980px) {
+  .track-video-panel { max-height: 34vh; }
+  #track-video { height: 18vh; }
+}
+@media (max-width: 720px) {
+  .track-media-workspace { grid-template-rows: minmax(240px, 40vh) auto; }
+  .layout { grid-template-rows: minmax(22rem, 46svh) auto; }
+}

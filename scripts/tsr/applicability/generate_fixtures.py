@@ -80,6 +80,39 @@ def build():
             for f in fs: edit(f)
         add(name,None,prepare)
         vectors[-1]['expectedWithheldCount']=0
+
+    # A repeated main-road 90 followed by a small, right-hand access-road 30.
+    # Includes the brief missing-map frame seen in the field, without private coordinates.
+    for variant in ['conflict', 'missing_map', 'hold_expired', 'no_access', 'turned',
+                    'paired', 'single_main', 'mixed_main', 'stale', 'poor_gps', 'new_camera',
+                    'new_session', 'selected_access', 'truncated', 'duplicate']:
+        name = 'access_' + variant
+        fs = sequence(name, x=.3, semantic='maximum_speed:90:km/h')
+        fs[2]['candidates'] = [candidate(fs[2]['frameId'], x=.70, size=.03, semantic='maximum_speed:30:km/h')]
+        fs[2]['road']['hypotheses'] = [dict(corridor(heading=5, linked=False), roadClass='service', distanceM=5)]
+        expected = [0, 0, 1]
+        if variant in ['missing_map', 'hold_expired']:
+            extra = copy.deepcopy(fs[2])
+            extra.update(frameId=name+'-3', capturedAtMs=fs[2]['capturedAtMs']+(500 if variant=='missing_map' else 2000), road=None)
+            extra['candidates'][0]['candidateId'] = name+'-3:0'
+            extra['candidates'][0]['box']['x'] = .84
+            fs.append(extra); expected.append(1 if variant=='missing_map' else 0)
+        elif variant == 'no_access': fs[2]['road']['hypotheses'] = []; expected[-1] = 0
+        elif variant == 'turned': fs[2]['road']['courseDeg'] = 70; expected[-1] = 0
+        elif variant == 'paired':
+            fs[2]['candidates'].append(candidate(fs[2]['frameId'], 1, x=.25, size=.03, semantic='maximum_speed:30:km/h'))
+            fs[2]['rawCandidateCount'] = 2; expected[-1] = 0
+        elif variant == 'single_main': fs[0]['candidates'] = []; fs[0]['rawCandidateCount'] = 0; expected[-1] = 0
+        elif variant == 'mixed_main': fs[0]['candidates'][0]['semanticKey'] = 'maximum_speed:70:km/h'; expected[-1] = 0
+        elif variant == 'stale': fs[2]['road']['capturedAtMs'] -= 3000; expected[-1] = 0
+        elif variant == 'poor_gps': fs[2]['road']['horizontalAccuracyM'] = 50; expected[-1] = 0
+        elif variant in ['new_camera','new_session']:
+            fs[2]['scope'] = dict(fs[2]['scope'], **({'cameraGeometryId':'remounted'} if variant=='new_camera' else {'sessionId':'new'}))
+            expected[-1] = 0
+        elif variant == 'selected_access': fs[2]['road']['roadClass'] = 'service'; expected[-1] = 0
+        elif variant == 'truncated': fs[2]['truncated'] = True; expected[-1] = 0
+        elif variant == 'duplicate': fs[1] = copy.deepcopy(fs[0]); expected[-1] = 0
+        vectors.append(dict(id=name, origin='synthetic', expectedFinalClass=None, expectedAccessWithheldCounts=expected, batches=fs))
     return dict(schemaVersion=1,description='Synthetic engineering fixtures; not field accuracy evidence. Expected policy outcomes are separate from raw proposals.',scenarios=vectors)
 
 if __name__=='__main__':

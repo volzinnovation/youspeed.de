@@ -79,8 +79,8 @@
     <string name="onboarding_independent">Erkennen ohne Rekorderstart</string>
     <string name="onboarding_independent_body">Bei aktivierter Erkennung nutzt diese Option die Kamera auf dem Fahrbildschirm, ohne ein Dashcam-Video zu speichern. Du kannst auch während einer Rekorder-Sitzung nur das Video ausschalten und die Erkennung eingeschaltet lassen.</string>
     <string name="onboarding_panoramax_title">Für Panoramax fotografieren</string>
-    <string name="onboarding_panoramax_body">Nimm mit dem Rekorder Straßenfotos mit GPS auf, auch ohne Video. Die Fotos bleiben auf deinem Handy, bis du sie auf Panoramax veröffentlichst.</string>
-    <string name="onboarding_panoramax_capture">Fotos mit dem Rekorder aufnehmen</string>
+    <string name="onboarding_panoramax_body">Wenn aktiviert, werden bei geöffneter App während der Bewegung automatisch Fotos im gewählten Abstand oder Zeitintervall aufgenommen. Dashcam-Videos sind unabhängig davon. Fotos bleiben bis zur Prüfung und zum Upload auf diesem Gerät.</string>
+    <string name="onboarding_panoramax_capture">Fotos automatisch aufnehmen</string>
     <string name="onboarding_panoramax_review_title">Stoppen, prüfen und auswählen</string>
     <string name="onboarding_panoramax_review_body">Fotos werden während der Rekorder-Sitzung in Abständen aufgenommen. Stoppe den Rekorder und öffne die Fotogalerie. Öffne ein Foto groß und zoome zum Prüfen. Markiere Favoriten zum Schutz vor automatischer Bereinigung. Wähle einzelne oder alle Fotos aus, hebe die Auswahl auf oder lösche unerwünschte lokale Fotos.</string>
     <string name="onboarding_panoramax_upload_title">Verbinden, bestätigen und hochladen</string>

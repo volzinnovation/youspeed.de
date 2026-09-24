@@ -14,7 +14,8 @@ data class TSRApplicabilityBox(val x: Double, val y: Double, val width: Double, 
 }
 data class TSRApplicabilityCandidate(val candidateId: String, val semanticKey: String, val box: TSRApplicabilityBox,
     val rawScore: Double, val recognitionEligible: Boolean, val assemblyId: String?,
-    val recognitionScore: Double? = null, val calibratedConfidence: Double? = null)
+    val recognitionScore: Double? = null, val calibratedConfidence: Double? = null,
+    val rawClassId: String? = null, val detectorRawScore: Double? = null, val classifierRawScore: Double? = null) // Presentation evidence; never grants speed authority.
 data class TSRApplicabilityCorridor(val wayId: String, val headingDeg: Double?, val distanceM: Double?,
     val roadClass: String?, val endpointLinked: Boolean, val turnAngleDeg: Double?)
 data class TrafficSignMapContextSnapshot(val snapshotId: String, val capturedAtMs: Double, val scope: TSRApplicabilityScope,
@@ -25,7 +26,7 @@ data class TrafficSignMapContextSnapshot(val snapshotId: String, val capturedAtM
 data class TSRFrameCandidateBatch(val schemaVersion: Int, val frameId: String, val capturedAtMs: Double,
     val scope: TSRApplicabilityScope, val status: String, val candidates: List<TSRApplicabilityCandidate>,
     val truncated: Boolean, val rawCandidateCount: Int, val modelId: String, val preprocessingId: String,
-    val road: TrafficSignMapContextSnapshot?)
+    val road: TrafficSignMapContextSnapshot?, val country: String? = null)
 data class TSRTrackSample(val frameId: String, val capturedAtMs: Double, val candidate: TSRApplicabilityCandidate)
 data class TSRPhysicalTrackSnapshot(val trackId: String, val scope: TSRApplicabilityScope, val samples: List<TSRTrackSample>,
     val visibility: String, val associationAmbiguous: Boolean)
@@ -38,7 +39,7 @@ data class TSRApplicabilityDiagnostic(val schemaVersion: Int, val batch: TSRFram
 
 object TSRApplicabilityConfiguration {
     const val policyVersion = "applicability-heuristic-v1"
-    const val configHash = "6278259f59578238acabe7df1abe53f8cd580115b20c6036ef3f89657e97ca11"
+    const val configHash = "de643abbfd8e53976fca01551d33b143e0781c38e63ed49a0d315a36f39b4949"
     const val defaultMode = "shadow"
     const val maxCandidates = 32
     const val maxTracks = 24
@@ -67,6 +68,7 @@ object TSRApplicabilityConfiguration {
     const val motorwayExitMaxHeadingDeltaDeg = 60.0
     const val motorwayExitMinSignCenterX = 0.6
     const val motorwayExitPairedRepeatMaxCenterX = 0.5
+    const val accessRoadPolicyVersion = "access-road-conflict-v1"
 }
 
 /** Deterministic one-to-one association. Uncertain or skipped work never synthesizes loss. */
@@ -199,7 +201,7 @@ object TSRApplicabilityPolicy {
 object TSRApplicabilityAuthority {
     fun allows(decision: TSRApplicabilityDecision?, scope: TSRApplicabilityScope, frameId: String, trackId: String,
         sink: String, mode: String = TSRApplicabilityConfiguration.defaultMode): Boolean {
-        if (decision?.reasons?.contains(TSRMotorwayExitPolicy.reason) == true) return false
+        if (decision?.reasons?.any { it in listOf(TSRMotorwayExitPolicy.reason, TSRAccessRoadPolicy.reason) } == true) return false
         if (mode == "shadow") return true
         if (mode != "enforce" || decision == null || decision.schemaVersion != 1 || decision.scope != scope || decision.frameId != frameId || decision.trackId != trackId ||
             decision.policyVersion != TSRApplicabilityConfiguration.policyVersion || decision.configHash != TSRApplicabilityConfiguration.configHash || decision.classification != "LIKELY_EGO_CORRIDOR") return false
@@ -246,18 +248,90 @@ object TSRMotorwayExitPolicy {
     }
 }
 
+/** Conflicting low sign beside an access road after a repeated main-road limit. */
+class TSRAccessRoadPolicy {
+    companion object { const val reason = "access_road_conflicting_speed" }
+    private data class Sighting(val time: Double, val speed: Int, val frame: String)
+    private data class Hold(val time: Double, val speed: Int, val box: TSRApplicabilityBox)
+    private val sightings = mutableListOf<Sighting>()
+    private var contextKey = ""
+    private var lastTime = Double.NEGATIVE_INFINITY
+    private var held: Hold? = null
+    fun reset() { sightings.clear(); contextKey = ""; lastTime = Double.NEGATIVE_INFINITY; held = null }
+    fun withheldCandidates(batch: TSRFrameCandidateBatch): Set<String> {
+        val s = batch.scope
+        val key = listOf(s.sessionId, s.generation, s.contextGeneration, s.cameraGeometryId).joinToString("|")
+        if (key != contextKey) { reset(); contextKey = key }
+        if (!batch.capturedAtMs.isFinite() || batch.capturedAtMs <= lastTime) return emptySet()
+        lastTime = batch.capturedAtMs
+        sightings.removeAll { batch.capturedAtMs - it.time > 4000 }
+        if (held?.let { batch.capturedAtMs - it.time > 1500 } == true) held = null
+        if (batch.status != "analyzed" || batch.truncated) return emptySet()
+        val road = batch.road
+        val mainRoad = road?.roadClass in listOf("trunk", "primary", "secondary")
+        if (road != null && (!mainRoad || !road.matchedStable)) { sightings.clear(); held = null; return emptySet() }
+        fun speed(candidate: TSRApplicabilityCandidate): Int? {
+            val parts = candidate.semanticKey.split(':')
+            return if (parts.firstOrNull() == "maximum_speed") parts.getOrNull(1)?.toIntOrNull() else null
+        }
+        val candidates = batch.candidates.filter { it.recognitionEligible && it.box.valid }
+        val result = mutableSetOf<String>()
+        for (candidate in candidates) {
+            val value = speed(candidate) ?: continue
+            if (value !in 10..50 || candidate.box.centerX < 0.68) continue
+            if (candidates.any { it.candidateId != candidate.candidateId && speed(it) == value && it.box.centerX < 0.5 }) continue
+            val repeatedMainLimit = sightings.filter { it.speed >= 70 && it.speed > value }.groupBy { it.speed }.values.any { group -> group.map { it.frame }.toSet().size >= 2 }
+            val course = road?.courseDeg
+            val tangent = road?.localTangentDeg
+            var competingAccess = false
+            if (road != null && road.scope == batch.scope && batch.capturedAtMs - road.capturedAtMs in 0.0..1500.0 &&
+                road.horizontalAccuracyM?.let { it in 0.0..20.0 } == true && course != null && course in 0.0..<360.0 &&
+                road.courseAccuracyDeg?.let { it in 0.0..15.0 } == true && tangent != null) {
+                val delta = abs(TSRApplicabilityPolicy.signedAngle(tangent - course))
+                competingAccess = minOf(delta, 180 - delta) <= 15 && (road.branches + road.hypotheses).any {
+                    it.wayId != road.wayId && it.roadClass == "service" && it.distanceM?.let { d -> d in 0.0..40.0 } == true &&
+                        it.headingDeg?.let { heading -> val a = abs(TSRApplicabilityPolicy.signedAngle(heading-course)); minOf(a, 180-a) <= 35 } == true
+                }
+            }
+            val continuedHold = held?.let {
+                it.speed == value && batch.capturedAtMs-it.time <= 1500 && abs(candidate.box.centerX-it.box.centerX) <= 0.2
+            } == true
+            if (mainRoad && competingAccess && repeatedMainLimit || road == null && continuedHold) {
+                result.add(candidate.candidateId)
+                if (road != null) held = Hold(batch.capturedAtMs, value, candidate.box)
+            }
+        }
+        if (mainRoad) {
+            for (candidate in candidates) {
+                val value = speed(candidate) ?: continue
+                if (value >= 70 && candidate.box.centerX < 0.55 && (candidate.recognitionScore ?: candidate.rawScore) >= 0.8)
+                    sightings.add(Sighting(batch.capturedAtMs, value, batch.frameId))
+            }
+            while (sightings.size > 16) sightings.removeAt(0)
+        }
+        return result
+    }
+}
+
 class TSRApplicabilitySession {
+    private val accessPolicy = TSRAccessRoadPolicy()
+    var accessRoadWithheldCandidateIDs: Set<String> = emptySet(); private set
     private val tracker = TSRPhysicalSignTracker()
     private val decisionsByTrack = mutableMapOf<String, TSRApplicabilityDecision>()
     var diagnostic: TSRApplicabilityDiagnostic? = null; private set
-    fun reset() { tracker.reset(); decisionsByTrack.clear(); diagnostic = null }
+    fun reset() { tracker.reset(); accessPolicy.reset(); accessRoadWithheldCandidateIDs = emptySet(); decisionsByTrack.clear(); diagnostic = null }
     fun evaluate(batch: TSRFrameCandidateBatch): TSRApplicabilityDiagnostic {
         val tracks = tracker.ingest(batch)
         val withheld = TSRMotorwayExitPolicy.withheldCandidates(batch)
+        accessRoadWithheldCandidateIDs = accessPolicy.withheldCandidates(batch)
         val decisions = tracks.map { track ->
             val decision = TSRApplicabilityPolicy.evaluate(track, batch)
             val sample = track.samples.lastOrNull()
-            if (sample?.frameId == batch.frameId && sample.candidate.candidateId in withheld)
+            if (sample?.frameId == batch.frameId && sample.candidate.candidateId in accessRoadWithheldCandidateIDs)
+                decision.copy(classification = "UNKNOWN", reasons = listOf(TSRAccessRoadPolicy.reason),
+                    evidence = listOf("recent_repeated_mainline_limit", "nearby_access_road", "right_side_conflicting_speed"),
+                    displayEligible = false, immediateEligible = false, passageEligible = false)
+            else if (sample?.frameId == batch.frameId && sample.candidate.candidateId in withheld)
                 decision.copy(classification = "UNKNOWN", reasons = listOf(TSRMotorwayExitPolicy.reason),
                     evidence = listOf("connected_motorway_link", "mainline_match", "right_side_lower_speed"),
                     displayEligible = false, immediateEligible = false, passageEligible = false)

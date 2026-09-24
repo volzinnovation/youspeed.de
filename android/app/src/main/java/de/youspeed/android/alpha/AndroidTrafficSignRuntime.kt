@@ -742,6 +742,7 @@ internal class AndroidTrafficSignCameraRuntime(
     private var cameraBound = false
     private var cameraBindingInProgress = false
     private var graphIncludesRecorderOutputs = false
+    private var graphIncludesPhotoOutput = false
     private var videoRequested = false
     private var recordingStopRequested = false
     private var videoTerminallyStopped = false
@@ -958,8 +959,9 @@ internal class AndroidTrafficSignCameraRuntime(
 
     private fun bindCamera(startGeneration: Long) {
         val recorderOutputsNeeded = controller.isDriveRecorderSessionActive()
+        val photoOutputNeeded = controller.isPanoramaxCaptureEnabled()
         if (cameraBindingInProgress ||
-            (cameraBound && (!recorderOutputsNeeded || graphIncludesRecorderOutputs))
+            (cameraBound && (!recorderOutputsNeeded || graphIncludesRecorderOutputs) && (!photoOutputNeeded || graphIncludesPhotoOutput))
         ) return
         cameraBindingInProgress = true
         val providerFuture = ProcessCameraProvider.getInstance(context)
@@ -1004,7 +1006,7 @@ internal class AndroidTrafficSignCameraRuntime(
                 // attached for the complete graph lifetime. A Panoramax setting
                 // can otherwise race graph activation and leave the preference
                 // enabled with no ImageCapture instance to receive GPS requests.
-                val capture = if (includeRecorderOutputs) imageCapture ?: run {
+                val capture = if (includeRecorderOutputs || photoOutputNeeded || graphIncludesPhotoOutput) imageCapture ?: run {
                     val builder = ImageCapture.Builder()
                     configureInfinityFocus(builder)
                     builder
@@ -1042,6 +1044,7 @@ internal class AndroidTrafficSignCameraRuntime(
                 videoCapture = video
                 preview = currentPreview
                 graphIncludesRecorderOutputs = includeRecorderOutputs
+                graphIncludesPhotoOutput = capture != null
                 refreshAnalysisConsumer()
             }.onFailure { failure ->
                 cameraBindingInProgress = false

@@ -819,6 +819,34 @@ struct TrafficSignDetection: Equatable, Sendable {
     }
 }
 
+/// Observation admission is distinct from confirmation. End-sign crops may be
+/// well classified before the generic detector becomes confident. Preserve those
+/// approach frames, but leave fused scores and confirmation thresholds unchanged.
+enum TrafficSignObservationQualification {
+    static func isEligible(kind: TrafficSignSemanticKind, score: Double?,
+                           detectorScore: Double?, classifierScore: Double?,
+                           unknownThreshold: Double, classThreshold: Double) -> Bool {
+        guard let score, score.isFinite, (0...1).contains(score) else { return false }
+        let threshold = max(unknownThreshold, classThreshold)
+        if score >= threshold { return true }
+        guard kind == .restrictionEnd, score >= unknownThreshold,
+              let detectorScore, detectorScore.isFinite, (unknownThreshold...1).contains(detectorScore),
+              let classifierScore, classifierScore.isFinite, (threshold...1).contains(classifierScore) else { return false }
+        return true
+    }
+}
+
+extension TrafficSignDetection {
+    func isQualifiedObservation(runtimeOutput: TrafficSignModelPackManifest.Calibration.RuntimeOutput,
+                                unknownThreshold: Double) -> Bool {
+        TrafficSignObservationQualification.isEligible(kind: semantic.kind,
+            score: runtimeOutput == .rawScore ? rawScore : calibratedConfidence,
+            detectorScore: runtimeOutput == .rawScore ? detectorRawScore : detectorCalibratedConfidence,
+            classifierScore: runtimeOutput == .rawScore ? classifierRawScore : classifierCalibratedConfidence,
+            unknownThreshold: unknownThreshold, classThreshold: classThreshold)
+    }
+}
+
 enum TrafficSignSpatialAssembly {
     struct ClassifiedDetection: Equatable, Sendable {
         let detection: TrafficSignDetection
@@ -1543,9 +1571,7 @@ struct TrafficSignFusionEngine: Sendable {
             .map(Self.livePrimaryOnlyDetection)
             .filter { detection in
                 detection.boundingBox.isValid
-                    && effectiveScore(for: detection).map {
-                        $0 >= max(thresholds.unknown, detection.classThreshold)
-                    } == true
+                    && detection.isQualifiedObservation(runtimeOutput: runtimeOutput, unknownThreshold: thresholds.unknown)
             }
             .sorted { lhs, rhs in
                 let lhsScore = effectiveScore(for: lhs) ?? -.infinity

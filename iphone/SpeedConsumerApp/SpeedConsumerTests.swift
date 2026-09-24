@@ -387,11 +387,23 @@ final class SpeedConsumerTests: XCTestCase {
         ))
     }
 
+    func testAutomaticPhotosFollowSelectionAndLifecycleWithoutDashcamOrTSR() {
+        XCTAssertTrue(DriveRecorderPolicy.shouldRunAutomaticPhotos(enabled: true, driving: true, applicationActive: true, storageReady: true))
+        XCTAssertFalse(DriveRecorderPolicy.shouldRunAutomaticPhotos(enabled: false, driving: true, applicationActive: true, storageReady: true))
+        XCTAssertFalse(DriveRecorderPolicy.shouldRunAutomaticPhotos(enabled: true, driving: false, applicationActive: true, storageReady: true))
+        XCTAssertFalse(DriveRecorderPolicy.shouldRunAutomaticPhotos(enabled: true, driving: true, applicationActive: false, storageReady: true))
+        XCTAssertFalse(DriveRecorderPolicy.shouldRunAutomaticPhotos(enabled: true, driving: true, applicationActive: true, storageReady: false))
+        XCTAssertFalse(PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: 0))
+        XCTAssertFalse(PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: -1))
+        XCTAssertFalse(PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: .nan))
+        XCTAssertTrue(PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: 0.5))
+    }
+
     func testStandaloneTSRCaptureDoesNotPresentAsDriveRecording() {
         XCTAssertEqual(
             DriveRecorderPolicy.presentedRecorderState(
                 captureState: .recording,
-                purpose: .standaloneTrafficSignRecognition,
+                purpose: .automaticCapture,
                 driveStartPending: false
             ),
             .disabled
@@ -399,7 +411,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(
             DriveRecorderPolicy.presentedRecorderState(
                 captureState: .recording,
-                purpose: .standaloneTrafficSignRecognition,
+                purpose: .automaticCapture,
                 driveStartPending: true
             ),
             .preparing
@@ -465,7 +477,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .failed))
         XCTAssertTrue(DriveRecorderPolicy.canProcessPanoramaxUploads(
             for: .recording,
-            purpose: .standaloneTrafficSignRecognition
+            purpose: .automaticCapture
         ))
         XCTAssertFalse(DriveRecorderPolicy.canProcessPanoramaxUploads(
             for: .recording,
@@ -1858,6 +1870,63 @@ final class SpeedConsumerTests: XCTestCase {
         let result = try XCTUnwrap(assembled.first)
         XCTAssertEqual(result.conditionState, .unresolved)
         XCTAssertTrue(result.restrictions.isEmpty)
+    }
+
+    func testEndSignsContributeQualifiedApproachFramesButStillNeedStrongConfirmation() throws {
+        for classID in ["B31", "B33-50", "C46", "282", "F08", "2.58"] {
+            var engine = TrafficSignFusionEngine(packId: "end-fixture", artifactSha256: String(repeating: "a", count: 64),
+                preprocessingVersion: "fixture", thresholds: .init(provisional: 0.45, confirmed: 0.7,
+                    unknown: 0.25, confirmationFrames: 3, confirmationWindowMs: 1500, minimumTrackIou: 0.2))
+            for (index, score) in [0.30, 0.36, 0.85].enumerated() {
+                let detection = TrafficSignDetection(rawClassId: classID, rawLabel: classID,
+                    semantic: .init(kind: .restrictionEnd, value: nil, unit: nil), rawScore: score,
+                    calibratedConfidence: nil, detectorRawScore: score, classifierRawScore: 0.99,
+                    boundingBox: .init(x: 0.6, y: 0.3, width: 0.1, height: 0.1), classThreshold: 0.7)
+                XCTAssertTrue(detection.isQualifiedObservation(runtimeOutput: .rawScore, unknownThreshold: 0.25))
+                let event = engine.ingest(detections: [detection], source: .liveFrame,
+                    timestamp: Date(timeIntervalSince1970: 1000 + Double(index) * 0.4),
+                    roadContext: makeTrafficSignDetectionContext(), latencyMs: 20, thermalState: .nominal)
+                XCTAssertEqual(event.state, index == 2 ? .confirmed : .provisional, classID)
+                XCTAssertEqual(event.candidate?.evidenceFrames, index + 1)
+                XCTAssertEqual(event.candidate?.rawScore, score) // Never promote classifier confidence to detector confidence.
+            }
+        }
+    }
+
+    func testEndObservationRejectsWeakMissingNonfiniteAndUncalibratedEvidence() {
+        for (kind, score, detector, classifier) in [
+            (TrafficSignSemanticKind.maximumSpeed, 0.3, 0.3, 0.99),
+            (.restrictionEnd, 0.24, 0.24, 0.99),
+            (.restrictionEnd, 0.3, 0.3, 0.69),
+            (.restrictionEnd, 0.3, Double.nan, 0.99),
+            (.restrictionEnd, 0.3, 0.3, Double.infinity)
+        ] {
+            XCTAssertFalse(TrafficSignObservationQualification.isEligible(kind: kind, score: score,
+                detectorScore: detector, classifierScore: classifier, unknownThreshold: 0.25, classThreshold: 0.7))
+        }
+        let detection = TrafficSignDetection(rawClassId: "B31", rawLabel: "end",
+            semantic: .init(kind: .restrictionEnd, value: nil, unit: nil), rawScore: 0.3,
+            calibratedConfidence: 0.3, detectorRawScore: 0.3, classifierRawScore: 0.99,
+            boundingBox: .init(x: 0.6, y: 0.3, width: 0.1, height: 0.1), classThreshold: 0.7)
+        XCTAssertFalse(detection.isQualifiedObservation(runtimeOutput: .calibratedConfidence, unknownThreshold: 0.25))
+        XCTAssertFalse(TrafficSignObservationQualification.isEligible(kind: .restrictionEnd, score: 0.3,
+            detectorScore: nil, classifierScore: nil, unknownThreshold: 0.25, classThreshold: 0.7))
+    }
+
+    func testWeakEndObservationsNeverConfirmByRepetitionAlone() {
+        var engine = TrafficSignFusionEngine(packId: "end-fixture", artifactSha256: String(repeating: "a", count: 64),
+            preprocessingVersion: "fixture", thresholds: .init(provisional: 0.45, confirmed: 0.7,
+                unknown: 0.25, confirmationFrames: 3, confirmationWindowMs: 1500, minimumTrackIou: 0.2))
+        let detection = TrafficSignDetection(rawClassId: "B31", rawLabel: "end",
+            semantic: .init(kind: .restrictionEnd, value: nil, unit: nil), rawScore: 0.36,
+            calibratedConfidence: nil, detectorRawScore: 0.36, classifierRawScore: 0.99,
+            boundingBox: .init(x: 0.6, y: 0.3, width: 0.1, height: 0.1), classThreshold: 0.7)
+        for index in 0..<10 {
+            let event = engine.ingest(detections: [detection], source: .liveFrame,
+                timestamp: Date(timeIntervalSince1970: 1000 + Double(index) * 0.1),
+                roadContext: makeTrafficSignDetectionContext(), latencyMs: 20, thermalState: .nominal)
+            XCTAssertEqual(event.state, .provisional)
+        }
     }
 
     func testTrafficSignFusionKeepsOneTrackWhileSignMovesAcrossFrame() throws {
@@ -6865,6 +6934,69 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(afterSecondCapture.dropFirst().first?.value, "30")
 
         try await viewModel.testResetLocalObservationStore()
+    }
+
+    @MainActor
+    func testSecondSpeedCaptureIgnoresPreviousRecognizerCallbacksAndTimeout() async throws {
+        let model = DriveSessionViewModel()
+        try await model.testResetLocalObservationStore()
+        model.speedLimitKmh = 50
+        model.limitWayID = "17721265"
+        model.currentLatitude = 48.797626
+        model.currentLongitude = 8.437309
+        model.activeBundleVersion = "seed"
+
+        let first = model.testBeginSpeedCaptureListening()
+        model.testDeliverSpeedCaptureRecognition(attemptID: first, transcript: "30", isFinal: true)
+        XCTAssertEqual(model.speedCaptureMode, .saving)
+        // Cancelling the native recognizer after a final result emits another callback.
+        model.testDeliverSpeedCaptureRecognition(attemptID: first, error: "Recognition cancelled")
+        model.testDeliverSpeedCaptureRecognition(attemptID: first, transcript: "90", isFinal: true)
+        XCTAssertEqual(model.speedCaptureMode, .saving)
+        try await model.waitForTestSpeedCaptureToBecomeIdle()
+
+        let second = model.testBeginSpeedCaptureListening()
+        XCTAssertEqual(model.testActiveLocalSpeedCorrectionWayID, "17721265")
+        model.testDeliverSpeedCaptureRecognition(attemptID: first, error: "Recognition cancelled")
+        model.testDeliverSpeedCaptureRecognition(attemptID: first, transcript: "90", isFinal: true)
+        model.testDeliverSpeedCaptureTimeout(attemptID: first)
+        XCTAssertEqual(model.speedCaptureMode, .listening)
+        XCTAssertEqual(model.speedCaptureSignText, "?")
+        XCTAssertEqual(model.testSpeedCaptureLatestTranscript, "")
+        // A new partial result also survives a late timeout from the old attempt.
+        model.testDeliverSpeedCaptureRecognition(attemptID: second, transcript: "40")
+        model.testDeliverSpeedCaptureTimeout(attemptID: first)
+        XCTAssertEqual(model.speedCaptureMode, .listening)
+        XCTAssertEqual(model.testSpeedCaptureLatestTranscript, "40")
+        model.testDeliverSpeedCaptureRecognition(attemptID: second, transcript: "40", isFinal: true)
+        try await model.waitForTestSpeedCaptureToBecomeIdle()
+        let saved = try await model.testStoredLocalObservations()
+        XCTAssertEqual(saved.map(\.value), ["40", "30"])
+        XCTAssertEqual(model.speedLimitKmh, 40)
+        try await model.testResetLocalObservationStore()
+    }
+
+    @MainActor
+    func testCancelledSpeedCaptureCannotEndRetryOrDiscardPreviousCorrection() async throws {
+        let model = DriveSessionViewModel()
+        try await model.testResetLocalObservationStore()
+        model.testSetActiveLocalSpeedCorrection(wayID: "17721265", value: "30", numericSpeedKmh: 30)
+        let cancelled = model.testBeginSpeedCaptureListening()
+        model.testCancelSpeedCapture()
+        let retry = model.testBeginSpeedCaptureListening()
+        model.testDeliverSpeedCaptureRecognition(attemptID: cancelled, error: "Recognition cancelled")
+        model.testDeliverSpeedCaptureRecognition(attemptID: cancelled, transcript: "90", isFinal: true)
+        model.testDeliverSpeedCaptureTimeout(attemptID: cancelled)
+        XCTAssertEqual(model.speedCaptureMode, .listening)
+        XCTAssertEqual(model.testActiveLocalSpeedCorrectionWayID, "17721265")
+        // Only the current attempt may time out; an unsuccessful replacement keeps the old limit.
+        model.testDeliverSpeedCaptureTimeout(attemptID: retry)
+        XCTAssertEqual(model.speedCaptureMode, .idle)
+        XCTAssertEqual(model.testActiveLocalSpeedCorrectionWayID, "17721265")
+        model.testDeliverSpeedCaptureRecognition(attemptID: retry, transcript: "90", isFinal: true)
+        let saved = try await model.testStoredLocalObservations()
+        XCTAssertTrue(saved.isEmpty)
+        try await model.testResetLocalObservationStore()
     }
 
     @MainActor
@@ -15847,6 +15979,38 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
     private let baseTime = Date(timeIntervalSince1970: 1_788_279_200)
     private let verifiedSHA = String(repeating: "a", count: 64)
 
+
+    func testConfirmedPassageSurvivesNearbySplitOfSameNumberedRoad() throws {
+        let first = makeContext(wayID: "1", groups: [], continuity: false, roadIdentity: "ref:D1555")
+        let next = makeContext(wayID: "2", groups: [], continuity: false, latitude: 48.0001, roadIdentity: "ref:D1555")
+        var finalizer = TrafficSignPassageFinalizer()
+        _ = finalizer.ingest(makeSeen(offset: 0, context: first, confidence: 0.90), sessionGeneration: 1, contextGeneration: 2, calibratedActivationEligible: true)
+        _ = finalizer.ingest(makeSeen(offset: 0.5, context: first, confidence: 0.93, state: .confirmed), sessionGeneration: 1, contextGeneration: 2, calibratedActivationEligible: true)
+        _ = finalizer.ingest(makeMissing(offset: 1, context: next), sessionGeneration: 1, contextGeneration: 2, calibratedActivationEligible: true)
+        let result = finalizer.ingest(makeMissing(offset: 1.5, context: next), sessionGeneration: 1, contextGeneration: 2, calibratedActivationEligible: true)
+        guard case .committed(let passage) = result else { return XCTFail("Confirmed sign must survive an OSM way split: " + String(describing: result)) }
+        XCTAssertTrue(passage.recognitionRouteRelationMemberships.isEmpty, "Do not invent route membership")
+        XCTAssertTrue(passage.isCompatibleWithLatestRoadScope(next, coordinate: nil, timestamp: baseTime.addingTimeInterval(1.5)))
+        var resolver = TrafficSignEffectiveLimitResolver()
+        XCTAssertTrue(resolver.commit(passage, base: makeBase(90)).applied)
+    }
+
+    func testNumberedRoadContinuityRejectsChangedScopeTurnsAndUnverifiedBundles() {
+        let first = makeContext(wayID: "1", groups: [], continuity: false, roadIdentity: "ref:D1555")
+        let invalid = [
+            makeContext(wayID: "2", roadIdentity: "ref:D19"),
+            makeContext(wayID: "2", epoch: 8, roadIdentity: "ref:D1555"),
+            makeContext(wayID: "2", stable: false, roadIdentity: "ref:D1555"),
+            makeContext(wayID: "2", latitude: 48.01, roadIdentity: "ref:D1555"),
+            makeContext(wayID: "2", bundleSHA: String(repeating: "b", count: 64), roadIdentity: "ref:D1555"),
+            makeContext(wayID: "2", useDefaultSHA: false, roadIdentity: "ref:D1555"),
+            makeContext(wayID: "2", roadIdentity: "ref:D1555", heading: 180)
+        ]
+        for next in invalid { XCTAssertFalse(next.continuesSignedRoad(from: first)) }
+        let named = makeContext(wayID: "1", roadIdentity: "name:Main Street")
+        XCTAssertFalse(makeContext(wayID: "2", roadIdentity: "name:Main Street").continuesSignedRoad(from: named))
+    }
+
     func testUserRecordingPrecedesEveryCameraActionAndReconciliation() {
         let context = makeContext()
         let manual = EffectiveSpeedLimitState.base(localValue: "90", bundledSpeedKmh: 130, bundledUnlimited: false)
@@ -16673,6 +16837,71 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         tracker.reset()
         XCTAssertTrue(tracker.observe(insideCity: true, citySource: high,
             timestamp: baseTime.addingTimeInterval(6), coordinate: coordinate))
+    }
+
+    func testLastKnownPresentationPreservesLatestValueAcrossMissingRoadAndEnd() {
+        var cache = LastKnownSpeedLimitPresentation()
+        XCTAssertEqual(cache.present(.none), .none)
+        let voice = EffectiveSpeedLimitState.base(localValue: "70", bundledSpeedKmh: 50, bundledUnlimited: false)
+        XCTAssertEqual(cache.present(voice), voice)
+        for _ in 0..<1000 {
+            let stale = cache.present(.none)
+            XCTAssertEqual(stale.value, .numeric(70))
+            XCTAssertEqual(stale.source, .lastKnown)
+            XCTAssertFalse(stale.isUserCorrection)
+            XCTAssertFalse(stale.hasCameraEvidenceMarker)
+        }
+        let camera = EffectiveSpeedLimitState(value: .numeric(30), source: .camera,
+            presentationReason: "camera", hasCameraEvidenceMarker: true)
+        XCTAssertEqual(cache.present(camera), camera)
+        let end = EffectiveSpeedLimitState(value: .unknown, source: .none,
+            presentationReason: "end_unknown", hasCameraEvidenceMarker: true)
+        XCTAssertEqual(cache.present(end).value, .numeric(30))
+        for value in [EffectiveSpeedLimitValue.walk, .unlimited] {
+            _ = cache.present(EffectiveSpeedLimitState(value: value, source: .bundle,
+                presentationReason: "map", hasCameraEvidenceMarker: false))
+            XCTAssertEqual(cache.present(.none).value, value)
+        }
+        cache.reset()
+        XCTAssertEqual(cache.present(.none), .none)
+    }
+
+    @MainActor
+    func testUnknownMapRetainsCameraLimitInGreyWithoutWarnings() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .postedMaximum(30), context: context))
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: nil)
+        XCTAssertEqual(model.speedLimitKmh, 30)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown)
+        XCTAssertFalse(model.effectiveSpeedLimitState.hasCameraEvidenceMarker)
+        model.currentSpeedKmh = 80
+        XCTAssertEqual(model.currentOverspeedKmh, 0)
+        XCTAssertNil(model.currentPenaltyNotice)
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 70)
+        XCTAssertEqual(model.speedLimitKmh, 70)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+    }
+
+    @MainActor
+    func testMapAndCameraUpdatesCannotReplaceActiveVoiceCapturePresentation() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        let attempt = model.testBeginSpeedCaptureListening()
+        let prompt = model.speedCapturePrimaryMetricText
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        XCTAssertEqual(model.speedCaptureMode, .listening)
+        XCTAssertEqual(model.speedCaptureSignText, "?")
+        XCTAssertEqual(model.speedCapturePrimaryMetricText, prompt)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .postedMaximum(30), context: context))
+        XCTAssertEqual(model.effectiveSpeedLimitState.value, .numeric(30))
+        XCTAssertEqual(model.speedCaptureMode, .listening)
+        XCTAssertEqual(model.speedCaptureSignText, "?")
+        XCTAssertEqual(model.speedCapturePrimaryMetricText, prompt)
+        model.testDeliverSpeedCaptureRecognition(attemptID: attempt, transcript: "40")
+        XCTAssertEqual(model.testSpeedCaptureLatestTranscript, "40")
+        model.testCancelSpeedCapture()
     }
 
     @MainActor
@@ -18079,14 +18308,15 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         longitude: Double = 8,
         bundleSHA: String? = nil,
         useDefaultSHA: Bool = true,
-        roadIdentity: String? = nil
+        roadIdentity: String? = nil,
+        heading: Double = 90
     ) -> TrafficSignDetectionContext {
         let sha = useDefaultSHA ? (bundleSHA ?? verifiedSHA) : bundleSHA
         return TrafficSignDetectionContext(
             wayId: wayID,
             latitude: latitude,
             longitude: longitude,
-            headingDegrees: 90,
+            headingDegrees: heading,
             travelDirection: direction,
             sourceSignature: TrafficSignRuntimeSourceSignature(
                 osmRevision: "bundle:test|way:\(wayID)",

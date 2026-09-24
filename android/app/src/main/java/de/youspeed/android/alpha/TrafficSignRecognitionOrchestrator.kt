@@ -659,19 +659,20 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                 val score = if (modelPack.calibration.runtimeOutput == TrafficSignCalibrationOutput.RAW_SCORE) c.rawScore else c.calibratedConfidence ?: Double.NEGATIVE_INFINITY
                 TSRApplicabilityCandidate("${active.accepted.metadata.frameId}:$index", "${c.semantic.kind.wireValue}:${c.semantic.value}:${c.semantic.unit}",
                     TSRApplicabilityBox(b.x, b.y, b.width, b.height), c.rawScore,
-                    score >= maxOf(modelPack.thresholds.unknown, modelPack.classMapping.firstOrNull { it.classId == c.rawClassId }?.threshold ?: 0.0), c.assemblyId, score.takeIf { it.isFinite() }, c.calibratedConfidence)
+                    c.isQualifiedObservation(modelPack.calibration.runtimeOutput, modelPack.thresholds.unknown, modelPack.classMapping.firstOrNull { it.classId == c.rawClassId }?.threshold ?: 0.0), c.assemblyId, score.takeIf { it.isFinite() }, c.calibratedConfidence, rawClassId = c.rawClassId, detectorRawScore = c.proposalRawScore, classifierRawScore = c.classifierRawScore)
             }, rawDetections.size > TSRApplicabilityConfiguration.maxCandidates ||
                 ((backendResult as? TrafficSignBackendResult.Recognition)?.diagnostics?.detectorProposalCount ?: 0) >= 12,
             rawDetections.size, runtimeArtifact.sha256, modelPack.preprocessing.version,
-            active.accepted.applicabilityMapFix?.snapshot(scope))
+            active.accepted.applicabilityMapFix?.snapshot(scope), country = modelPack.countries.singleOrNull())
         if (sourceIsCurrent && TSRApplicabilityConfiguration.defaultMode != "shadow" && applicabilityScope != scope) {
             fusionEngine.reset(); annotationFusion.reset(); passageFinalizer.reset(active.accepted.contextGeneration)
         }
         if (sourceIsCurrent) applicabilityScope = scope
         val applicability = if (sourceIsCurrent) applicabilitySession.evaluate(batch) else null
         val exitWithheld = if (sourceIsCurrent) TSRMotorwayExitPolicy.withheldCandidates(batch) else emptySet()
+        val accessWithheld = if (sourceIsCurrent) applicabilitySession.accessRoadWithheldCandidateIDs else emptySet()
         val exitEligibleDetections = rawDetections.filterIndexed { index, _ ->
-            "${batch.frameId}:$index" !in exitWithheld
+            "${batch.frameId}:$index" !in exitWithheld && (batch.frameId + ":" + index) !in accessWithheld
         }
         if (exitWithheld.isNotEmpty()) {
             fusionEngine.reset(); passageFinalizer.reset(active.accepted.contextGeneration)
@@ -686,7 +687,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         val selectedIndex = selectedTrack?.samples?.lastOrNull()?.candidate?.candidateId?.substringAfterLast(':')?.toIntOrNull()
         val selectedDetection = if (enforcing) selectedIndex?.let { rawDetections[it] } else
             (backendResult as? TrafficSignBackendResult.Recognition)?.detection?.takeIf {
-                exitWithheld.isEmpty() || exitEligibleDetections.any { eligible ->
+                (exitWithheld.isEmpty() && accessWithheld.isEmpty()) || exitEligibleDetections.any { eligible ->
                     eligible.candidate.rawClassId == it.candidate.rawClassId && eligible.candidate.boundingBox == it.candidate.boundingBox
                 }
             }
@@ -768,7 +769,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             },
         )
         // Independent raw confirmation feeds only the existing annotation sink.
-        val annotationEvent = if ((enforcing || exitWithheld.isNotEmpty()) && sourceIsCurrent && backendResult is TrafficSignBackendResult.Recognition) {
+        val annotationEvent = if ((enforcing || exitWithheld.isNotEmpty() || accessWithheld.isNotEmpty()) && sourceIsCurrent && backendResult is TrafficSignBackendResult.Recognition) {
             val raw = annotationFusion.observe(backendResult.detection,
                 observedAtMs = active.accepted.metadata.capturedAtMonotonicNanos / NANOS_PER_MILLISECOND)
             val index = rawDetections.indexOf(backendResult.detection)
@@ -905,6 +906,7 @@ private fun contextsShareScope(
             next.travelDirection == TrafficSignTravelDirection.UNKNOWN ||
             previous.travelDirection == next.travelDirection
     }
+    if (next.continuesSignedRoad(previous)) return true
     if (!previous.continuityCapable || !next.continuityCapable) return false
     return eligibleRouteRelationGroupIds.intersect(next.routeRelationGroupIds).isNotEmpty()
 }

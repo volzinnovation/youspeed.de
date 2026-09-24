@@ -1528,8 +1528,10 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                         return TSRApplicabilityCandidate(candidateId: "\(item.frameId):\(index)", semanticKey: detection.semantic.stableKey,
                             box: TSRApplicabilityBox(x: detection.boundingBox.x, y: detection.boundingBox.y,
                                 width: detection.boundingBox.width, height: detection.boundingBox.height),
-                            rawScore: detection.rawScore, recognitionEligible: score >= max(self.verifiedPack.manifest.thresholds.unknown, detection.classThreshold),
-                            assemblyId: detection.assemblyId, recognitionScore: score.isFinite ? score : nil, calibratedConfidence: detection.calibratedConfidence)
+                            rawScore: detection.rawScore, recognitionEligible: detection.isQualifiedObservation(runtimeOutput: self.verifiedPack.manifest.calibration.runtimeOutput, unknownThreshold: self.verifiedPack.manifest.thresholds.unknown),
+                            assemblyId: detection.assemblyId, recognitionScore: score.isFinite ? score : nil,
+                            calibratedConfidence: detection.calibratedConfidence, rawClassId: detection.rawClassId,
+                            detectorRawScore: detection.detectorRawScore, classifierRawScore: detection.classifierRawScore)
                     }
                     let batch = TSRFrameCandidateBatch(schemaVersion: 1, frameId: item.frameId,
                         capturedAtMs: item.timestampUTC.timeIntervalSince1970 * 1000, scope: scope, status: "analyzed",
@@ -1537,15 +1539,17 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                             || twoStageResult?.proposalsTruncated == true,
                         rawCandidateCount: detections.count, modelId: self.verifiedPack.detectorArtifact.sha256,
                         preprocessingId: self.verifiedPack.manifest.preprocessing.version,
-                        road: item.snapshot.applicabilityMapFix?.snapshot(scope: scope))
+                        road: item.snapshot.applicabilityMapFix?.snapshot(scope: scope),
+                        country: self.verifiedPack.manifest.countries.count == 1 ? self.verifiedPack.manifest.countries.first : nil)
                     if TSRApplicabilityConfiguration.defaultMode != "shadow", self.applicabilityScope != scope {
                         self.fusion.reset(); self.annotationFusion.reset(); self.passageFinalizer.reset()
                     }
                     self.applicabilityScope = scope
                     let applicability = self.applicabilitySession.evaluate(batch)
                     let exitWithheld = TSRMotorwayExitPolicy.withheldCandidates(batch)
+                    let accessWithheld = self.applicabilitySession.accessRoadWithheldCandidateIDs
                     let exitEligibleDetections = detections.enumerated().filter {
-                        !exitWithheld.contains("\(item.frameId):\($0.offset)")
+                        !exitWithheld.contains("\(item.frameId):\($0.offset)") && !accessWithheld.contains("\(item.frameId):\($0.offset)")
                     }.map(\.element)
                     if !exitWithheld.isEmpty {
                         // Withholding is not an analyzed disappearance and must
@@ -1595,7 +1599,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     // Raw confirmation remains available only to the annotation sink. It is
                     // never sent to preview, display, finalizer, resolver or correction storage.
                     var annotationEvent: TrafficSignRecognitionEvent? = nil
-                    if enforcing || !exitWithheld.isEmpty {
+                    if enforcing || !exitWithheld.isEmpty || !accessWithheld.isEmpty {
                         var raw = self.annotationFusion.ingest(detections: detections, source: item.source,
                             timestamp: item.timestampUTC, roadContext: item.snapshot.context, latencyMs: latencyMs,
                             thermalState: item.snapshot.conditions.thermalState, frameID: item.frameId,

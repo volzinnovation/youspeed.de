@@ -79,8 +79,8 @@
     <string name="onboarding_independent">Herkennen zonder de recorder te starten</string>
     <string name="onboarding_independent_body">Met herkenning ingeschakeld gebruikt deze optie de camera op het rijscherm zonder een dashcamvideo op te slaan. Je kunt ook video uitzetten tijdens een opnamesessie en herkenning aan laten.</string>
     <string name="onboarding_panoramax_title">Foto’s maken voor Panoramax</string>
-    <string name="onboarding_panoramax_body">Maak straatfoto’s met GPS terwijl de recorder draait, ook zonder video. Foto’s blijven op je telefoon totdat je ze op Panoramax wilt publiceren.</string>
-    <string name="onboarding_panoramax_capture">Foto’s maken met de recorder</string>
+    <string name="onboarding_panoramax_body">Als dit is ingeschakeld, worden tijdens het bewegen met de app geopend automatisch foto’s gemaakt volgens de gekozen afstand of tijd. Dashcamvideo staat hier los van. Foto’s blijven op dit apparaat om vóór het uploaden te bekijken.</string>
+    <string name="onboarding_panoramax_capture">Automatisch foto’s maken</string>
     <string name="onboarding_panoramax_review_title">Stoppen, bekijken en selecteren</string>
     <string name="onboarding_panoramax_review_body">Foto’s worden met tussenpozen gemaakt tijdens de opnamesessie. Stop de recorder en open de fotogalerij. Open een foto op volledig formaat en zoom om deze te bekijken. Markeer favorieten als bescherming tegen automatisch opruimen. Selecteer enkele of alle foto’s, wis de selectie of verwijder ongewenste lokale foto’s.</string>
     <string name="onboarding_panoramax_upload_title">Verbinden, bevestigen en uploaden</string>

@@ -538,6 +538,7 @@ class ConsumerSessionController(
         }
 
     private var host: ConsumerHost? = null
+    private val lastKnownLimitPresentation = LastKnownSpeedLimitPresentation()
     @Volatile private var isDriving = false
     @Volatile private var trafficSignDriveSessionId: String? = null
     private val lookupServiceLock = Any()
@@ -1033,7 +1034,9 @@ class ConsumerSessionController(
 
     internal fun isDriveRecorderSessionActive(): Boolean = driveRecorderEnabled && isDriving && applicationActive
     internal fun isDashcamRecordingEnabled(): Boolean = isDriveRecorderSessionActive() && uiState.dashcamRecordingEnabled
-    internal fun isPanoramaxCaptureEnabled(): Boolean = panoramaxCaptureEnabled && isDriveRecorderSessionActive()
+    internal fun isPanoramaxCaptureEnabled(): Boolean = !shouldPresentOnboarding() &&
+        DriveRecorderPolicy.shouldRunAutomaticPhotos(panoramaxCaptureEnabled, isDriving, applicationActive,
+            !uiState.panoramaxMaintenanceInProgress)
 
     fun canProcessPanoramaxUploads(): Boolean = !driveRecorderEnabled && DriveRecorderPolicy.canProcessPanoramaxUploads(uiState.driveRecorderState) &&
         !uiState.panoramaxMaintenanceInProgress
@@ -1150,7 +1153,6 @@ class ConsumerSessionController(
         driveRecorderEnabled = false
         updateState { copy(driveRecorderState = DriveRecorderState.STOPPING, dashcamRecordingEnabled = false,
             driveRecorderPanoramaxActive = false) }
-        endPanoramaxCaptureSession()
         reconcileTrafficSignCamera()
         if (!uiState.driveRecorderDashcamActive && !uiState.driveRecorderDashcamTransitioning) {
             updateState { copy(driveRecorderState = DriveRecorderState.DISABLED, driveRecorderStartedAt = null) }
@@ -1178,10 +1180,12 @@ class ConsumerSessionController(
     }
 
     fun setPanoramaxCaptureEnabled(enabled: Boolean) {
-        if (panoramaxCaptureEnabled == enabled || DriveRecorderPolicy.isActive(uiState.driveRecorderState)) return
+        if (panoramaxCaptureEnabled == enabled) return
         panoramaxCaptureEnabled = enabled
         preferences.edit().putBoolean(KEY_PANORAMAX_CAPTURE_ENABLED, enabled).apply()
         updateState { copy(panoramaxCaptureEnabled = enabled) }
+        if (!enabled) endPanoramaxCaptureSession()
+        reconcileTrafficSignCamera()
     }
 
     internal fun currentPanoramaxLocationSample(): PanoramaxLocationSample? {
@@ -1240,12 +1244,8 @@ class ConsumerSessionController(
      */
     private fun ensurePanoramaxCaptureSessionIfCameraActive() {
         if (DriveRecorderPolicy.shouldEnsurePanoramaxCaptureSession(
-                driveRecorderEnabled = driveRecorderEnabled,
-                panoramaxEnabled = panoramaxCaptureEnabled,
-                driving = isDriving,
-                applicationActive = applicationActive,
-                cameraState = uiState.trafficSignCameraRuntimeState,
-            )) {
+                panoramaxEnabled = isPanoramaxCaptureEnabled(), driving = isDriving,
+                applicationActive = applicationActive, cameraState = uiState.trafficSignCameraRuntimeState)) {
             beginPanoramaxCaptureSession()
         }
     }
@@ -1341,7 +1341,8 @@ class ConsumerSessionController(
     }
 
     private fun maybeCapturePanoramaxPhoto() {
-        if (!isPanoramaxCaptureEnabled() || uiState.driveRecorderState != DriveRecorderState.RECORDING) return
+        if (!isPanoramaxCaptureEnabled() || uiState.trafficSignCameraRuntimeState != TrafficSignCameraRuntimeState.ACTIVE) return
+        if (!PanoramaxCapturePolicy.isMoving(uiState.currentSpeedKmh / 3.6)) return
         val sample = currentPanoramaxLocationSample() ?: return
         val request = synchronized(captureLock) {
             val sessionId = panoramaxCaptureSessionId ?: return
@@ -1376,6 +1377,7 @@ class ConsumerSessionController(
                     panoramaxMaintenanceInProgress = false) }
             }.onFailure { error -> postState { copy(panoramaxMaintenanceIssue = error.message, panoramaxMaintenanceInProgress = false) } }
             refreshPanoramaxBatches()
+            mainHandler.post { reconcileTrafficSignCamera() }
         }
     }
 
@@ -1810,6 +1812,7 @@ class ConsumerSessionController(
         if (uiState.appScreenshotState != null || uiState.startupDataState != StartupDataState.READY) {
             return
         }
+        if (!isDriving) lastKnownLimitPresentation.reset()
         isDriving = true
         trafficSignDriveSessionId = UUID.randomUUID().toString().lowercase(Locale.US)
         invalidateTrafficSignGeneration(
@@ -1833,6 +1836,7 @@ class ConsumerSessionController(
     }
 
     fun stopDriving() {
+        lastKnownLimitPresentation.reset()
         latestCaptureLocation = null
         latestTrafficSignPosition = null
         lookupWorker.clearPending()
@@ -2094,6 +2098,9 @@ class ConsumerSessionController(
                 details = mapOf("state" to state.name.lowercase(Locale.US), "detail" to detail),
             )
         }
+        if (state == TrafficSignCameraRuntimeState.ACTIVE && isPanoramaxCaptureEnabled()) beginPanoramaxCaptureSession()
+        if (state in setOf(TrafficSignCameraRuntimeState.DISABLED, TrafficSignCameraRuntimeState.FAILED,
+                TrafficSignCameraRuntimeState.UNAVAILABLE, TrafficSignCameraRuntimeState.DENIED)) endPanoramaxCaptureSession()
         if (driveRecorderEnabled) {
             val recorderState = when (state) {
                 TrafficSignCameraRuntimeState.ACTIVE -> DriveRecorderState.RECORDING
@@ -2160,7 +2167,12 @@ class ConsumerSessionController(
         (uiState.currentSpeedKmh / 3.6).takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
 
     private fun reconcileTrafficSignCamera() {
-        val shouldRun = !shouldPresentOnboarding() && (isTrafficSignRecognitionRuntimeEnabled() || isDriveRecorderSessionActive()) && uiState.appScreenshotState == null
+        val shouldRun = !shouldPresentOnboarding() && (isTrafficSignRecognitionRuntimeEnabled() || isDriveRecorderSessionActive() || isPanoramaxCaptureEnabled()) && uiState.appScreenshotState == null
+        appendRuntimeDiagnosticEvent("capture_configuration", mapOf(
+            "photosSelected" to panoramaxCaptureEnabled, "photosEnabled" to isPanoramaxCaptureEnabled(),
+            "dashcamEnabled" to isDashcamRecordingEnabled(), "recognitionEnabled" to isTrafficSignRecognitionRuntimeEnabled(),
+            "applicationActive" to applicationActive, "driving" to isDriving))
+        if (!isPanoramaxCaptureEnabled()) endPanoramaxCaptureSession()
         if (!shouldRun) {
             host?.stopTrafficSignCamera()
             updateState {
@@ -2174,6 +2186,8 @@ class ConsumerSessionController(
         if (hasCameraPermission()) {
             host?.startTrafficSignCamera()
             ensurePanoramaxCaptureSessionIfCameraActive()
+            updateState { copy(driveRecorderPanoramaxActive = isPanoramaxCaptureEnabled() &&
+                trafficSignCameraRuntimeState == TrafficSignCameraRuntimeState.ACTIVE && panoramaxCaptureSessionId != null) }
             // Reusing an already-active shared camera does not emit another ACTIVE callback.
             // Bring the recorder state across the same boundary synchronously so the movie
             // consumer and Panoramax capture are not left in PREPARING forever.
@@ -3508,6 +3522,8 @@ class ConsumerSessionController(
             }.onFailure {
                 updateState {
                     copy(
+                        speedLimitKmh = null, speedLimitDisplayText = null, isUnlimitedSpeedLimitActive = false,
+                        effectiveSpeedLimitSource = EffectiveSpeedLimitSource.NONE, cameraSpeedLimitEvidence = false,
                         driveStatus = "location_error",
                         lastError = it.message ?: ConsumerRuntimeText.LOCATION_UPDATES_FAILED.text(),
                     )
@@ -4124,6 +4140,8 @@ class ConsumerSessionController(
                         activeBundleVersion = effectiveBundleVersion,
                         activeDBPath = effectiveDBPath,
 
+                        speedLimitKmh = null, speedLimitDisplayText = null, isUnlimitedSpeedLimitActive = false,
+                        effectiveSpeedLimitSource = EffectiveSpeedLimitSource.NONE, cameraSpeedLimitEvidence = false,
                         driveStatus = "location_error",
                         lastError = error.message ?: error.javaClass.simpleName,
                         gpsLogPath = gpsLogFile().absolutePath,
@@ -4352,7 +4370,9 @@ class ConsumerSessionController(
     }
 
     private fun startSpeedCaptureListening() {
-        if (isSpeedCaptureResolved) {
+        if (isSpeedCaptureResolved || uiState.speedCaptureMode !in setOf(
+                SpeedCaptureModeState.PREPARING, SpeedCaptureModeState.SPEAKING_PROMPT,
+            )) {
             return
         }
         val model = bundledVoskModel ?: return showSpeedCaptureFailure(reason = ConsumerRuntimeText.SPEECH_NOT_LOADED.text())
@@ -4376,17 +4396,23 @@ class ConsumerSessionController(
             session.start(
                 timeoutMs = SpeedCaptureSpeech.listeningWindowMs + SpeedCaptureSpeech.timeoutPaddingMs,
                 listener = object : VoskSpeedCaptureSession.Listener {
+                    // Closed sessions can still have callbacks queued on the main thread.
+                    private fun ownsListeningWindow() = activeVoskSpeedCaptureSession === session &&
+                        uiState.speedCaptureMode == SpeedCaptureModeState.LISTENING && !isSpeedCaptureResolved
+
                     override fun onPartialTranscript(transcript: String) {
-                        if (transcript.isNotBlank()) {
+                        if (ownsListeningWindow() && transcript.isNotBlank()) {
                             updateState { copy(speedCaptureTranscript = transcript) }
                         }
                     }
 
                     override fun onCompleted(transcripts: List<String>, source: String) {
+                        if (!ownsListeningWindow()) return
                         finishSpeedCaptureListening(source = source, transcripts = transcripts)
                     }
 
                     override fun onError(message: String) {
+                        if (!ownsListeningWindow()) return
                         showSpeedCaptureFailure(reason = ConsumerRuntimeText.SPEECH_FAILED.text(message))
                     }
                 },
@@ -4401,7 +4427,7 @@ class ConsumerSessionController(
     }
 
     private fun finishSpeedCaptureListening(@Suppress("UNUSED_PARAMETER") source: String, transcripts: List<String> = emptyList()) {
-        if (isSpeedCaptureResolved) {
+        if (isSpeedCaptureResolved || uiState.speedCaptureMode != SpeedCaptureModeState.LISTENING) {
             return
         }
         isSpeedCaptureResolved = true
@@ -4428,8 +4454,9 @@ class ConsumerSessionController(
     private fun stopActiveSpeedCaptureRecognition(clearStatus: Boolean) {
         mainHandler.removeCallbacks(speedCapturePromptFallbackRunnable)
         mainHandler.removeCallbacks(speedCaptureListeningStartRunnable)
-        runCatching { activeVoskSpeedCaptureSession?.close() }
+        val session = activeVoskSpeedCaptureSession
         activeVoskSpeedCaptureSession = null
+        runCatching { session?.close() }
         if (clearStatus) {
             updateState { copy(localObservationStatus = "") }
         }
@@ -5602,6 +5629,24 @@ class ConsumerSessionController(
         return state.copy(onboardingCompleted = false, onboardingStep = 0)
     }
 
+    private fun preserveLastKnownLimit(state: ConsumerUiState): ConsumerUiState {
+        if (!isDriving || state.appScreenshotState != null) return state
+        val resolution = when {
+            state.isUnlimitedSpeedLimitActive -> TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNLIMITED)
+            state.speedLimitKmh != null -> TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, state.speedLimitKmh)
+            state.speedLimitDisplayText != null -> TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.WALK)
+            else -> null
+        }
+        val presented = lastKnownLimitPresentation.present(EffectiveSpeedLimit(resolution,
+            state.effectiveSpeedLimitSource, "ui_state"))
+        if (presented.source != EffectiveSpeedLimitSource.LAST_KNOWN) return state
+        return state.copy(speedLimitKmh = presented.resolution?.speedKmh,
+            speedLimitDisplayText = if (presented.resolution?.kind == TrafficSignResolvedLimitKind.WALK) "Schritt" else null,
+            isUnlimitedSpeedLimitActive = presented.resolution?.kind == TrafficSignResolvedLimitKind.UNLIMITED,
+            effectiveSpeedLimitSource = presented.source, effectiveSpeedLimitReason = presented.presentationReason,
+            cameraSpeedLimitEvidence = false, trafficSignFinalConfidence = null, trafficSignAccumulatedSupport = null)
+    }
+
     private fun updateState(transform: ConsumerUiState.() -> ConsumerUiState) {
         if (isDisposed.get()) {
             return
@@ -5610,7 +5655,7 @@ class ConsumerSessionController(
             postState(transform)
             return
         }
-        uiState = normalizeOnboardingState(uiState.transform()).withCurrentTrafficSignDisplayGeneration(
+        uiState = normalizeOnboardingState(preserveLastKnownLimit(uiState.transform())).withCurrentTrafficSignDisplayGeneration(
             previousGeneration = uiState.trafficSignGeneration, currentGeneration = trafficSignGeneration.get(),
         )
         if (!isSyncingNow() && bundleDownloadQueue.ids.isNotEmpty()) mainHandler.post { startNextBundleDownload() }
@@ -5624,7 +5669,7 @@ class ConsumerSessionController(
             if (isDisposed.get()) {
                 return@post
             }
-            uiState = normalizeOnboardingState(uiState.transform()).withCurrentTrafficSignDisplayGeneration(
+            uiState = normalizeOnboardingState(preserveLastKnownLimit(uiState.transform())).withCurrentTrafficSignDisplayGeneration(
                 previousGeneration = uiState.trafficSignGeneration, currentGeneration = trafficSignGeneration.get(),
             )
             if (!isSyncingNow() && bundleDownloadQueue.ids.isNotEmpty()) mainHandler.post { startNextBundleDownload() }

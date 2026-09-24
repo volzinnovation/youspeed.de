@@ -12,6 +12,9 @@ enum EffectiveSpeedLimitSource: String, Codable, Equatable, Sendable {
     case localCorrection = "local_correction"
     case bundle
     case staleBundle = "stale_bundle"
+    case lastKnown = "last_known"
+
+    var isStale: Bool { self == .staleBundle || self == .lastKnown }
     case none
 }
 
@@ -35,6 +38,23 @@ enum EffectiveSpeedLimitValue: Codable, Equatable, Sendable {
         case .unlimited, .unknown:
             return nil
         }
+    }
+}
+
+/// Keeps display continuity without extending a camera/user assertion's scope.
+struct LastKnownSpeedLimitPresentation {
+    private var lastValue: EffectiveSpeedLimitValue?
+
+    mutating func reset() { lastValue = nil }
+
+    mutating func present(_ state: EffectiveSpeedLimitState) -> EffectiveSpeedLimitState {
+        if state.value != .unknown && !state.source.isStale {
+            lastValue = state.value
+            return state
+        }
+        guard let lastValue else { return state }
+        return EffectiveSpeedLimitState(value: lastValue, source: .lastKnown,
+            presentationReason: "last_known_display_only", hasCameraEvidenceMarker: false)
     }
 }
 
@@ -800,6 +820,25 @@ enum TrafficSignPassageFinalizerUpdate: Equatable, Sendable {
     case committed(TrafficSignPassageEvent)
 }
 
+// Adjacent OSM way IDs may split one signed road. Reuse the identity already
+// frozen by the matcher, while retaining bundle, traversal, distance and course
+// guards. A name-only match is insufficient evidence for passage admission.
+extension TrafficSignDetectionContext {
+    func continuesSignedRoad(from original: TrafficSignDetectionContext) -> Bool {
+        guard isValid, original.isValid, matchedWayStable, original.matchedWayStable,
+              let identity = roadIdentity, identity.hasPrefix("ref:"), identity == original.roadIdentity,
+              traversalEpoch == original.traversalEpoch,
+              sourceSignature.bundleRevision == original.sourceSignature.bundleRevision,
+              let sha = sourceSignature.bundleSHA256, sha == original.sourceSignature.bundleSHA256 else { return false }
+        let heading = abs(TSRApplicabilityPolicy.signedAngle(headingDegrees - original.headingDegrees))
+        guard heading <= 45 else { return false }
+        let radians = Double.pi / 180
+        let a = pow(sin((latitude-original.latitude)*radians/2), 2)
+            + cos(latitude*radians)*cos(original.latitude*radians)*pow(sin((longitude-original.longitude)*radians/2), 2)
+        return 6_371_000 * 2 * asin(sqrt(min(1, max(0, a)))) <= 160
+    }
+}
+
 /// Converts successful analyzed-frame results into one physical passage event.
 /// Only explicit `.noRecognition` results are negative evidence; absent callbacks,
 /// resets, stopped capture, throttling, and inference errors never call `ingest`.
@@ -1479,6 +1518,7 @@ struct TrafficSignPassageFinalizer: Sendable {
                 || context.travelDirection == .unknown
                 || context.travelDirection == original.travelDirection
         }
+        if context.continuesSignedRoad(from: original) { return true }
         guard context.routeContinuityAvailable, original.routeContinuityAvailable else { return false }
         let originalGroups = Set(original.routeRelationMemberships.map(\.groupID))
         let currentGroups = Set(context.routeRelationMemberships.map(\.groupID))
@@ -1505,6 +1545,7 @@ struct TrafficSignPassageFinalizer: Sendable {
                 || context.travelDirection == .unknown
                 || context.travelDirection == initial.travelDirection
         }
+        if context.continuesSignedRoad(from: initial) { return true }
         guard context.routeContinuityAvailable,
               initial.routeContinuityAvailable else { return false }
         let eligibleGroupIDs = Set(track.recognitionRouteRelationMemberships.map(\.groupID))
@@ -1720,6 +1761,7 @@ extension TrafficSignPassageEvent {
                 || currentContext.travelDirection == .unknown
                 || currentContext.travelDirection == originalContext.travelDirection
         }
+        if currentContext.continuesSignedRoad(from: originalContext) { return true }
         guard currentContext.routeContinuityAvailable,
               !recognitionRouteRelationMemberships.isEmpty else { return false }
         let currentGroups = Set(currentContext.routeRelationMemberships.map(\.groupID))
@@ -1962,6 +2004,7 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
             guard let firstMatchedWay = passage.initialRecognitionContext?.wayId,
                   firstMatchedWay != context.wayId else { return false }
             return passage.recognitionRouteRelationMemberships.isEmpty
+                && passage.initialRecognitionContext.map { !context.continuesSignedRoad(from: $0) } != false
         }()
         if !action.hasSupportedSpeedValue {
             resolution = (false, .unknown, "camera_speed_value_out_of_range_review_only")

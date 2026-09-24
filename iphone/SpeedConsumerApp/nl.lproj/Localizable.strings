@@ -57,7 +57,7 @@
 "drive_recorder.settings.tsr_feedback_silent" = "Stil";
 "tsr.feedback.spoken_speed_format" = "Snelheidslimiet %d kilometer per uur.";
 "drive_recorder.settings.panoramax" = "Foto’s maken";
-"drive_recorder.settings.panoramax_description" = "Slaat volledige straatbeelden met locatie lokaal op om later te beoordelen.";
+"drive_recorder.settings.panoramax_description" = "Als dit is ingeschakeld, worden tijdens het bewegen met de app geopend automatisch foto’s gemaakt volgens de gekozen afstand of tijd. Dashcamvideo staat hier los van. Foto’s blijven op dit apparaat om vóór het uploaden te bekijken.";
 "drive_recorder.settings.shared_camera" = "Modules delen één achtercamerasessie; dashcam en bordherkenning kunnen tijdens de opname worden geschakeld.";
 "drive_recorder.settings.upload_later" = "Panoramax-beoordeling, goedkeuring en upload gebeuren na de rit.";
 "drive_recorder.library.title" = "Dashcamvideo’s";
@@ -157,7 +157,7 @@
 "drive_recorder.library.delete_title" = "Geselecteerde video’s verwijderen?";
 "drive_recorder.library.delete_message" = "%d geselecteerde video’s worden permanent verwijderd.";
 "panoramax.settings.section" = "Ritrecorder";
-"panoramax.settings.description" = "Start de opname met de rode knop linksonder. Foto’s blijven eerst op deze iPhone en kunnen later worden gecontroleerd en geüpload.";
+"panoramax.settings.description" = "Als dit is ingeschakeld, worden tijdens het bewegen met de app geopend automatisch foto’s gemaakt volgens de gekozen afstand of tijd. Dashcamvideo staat hier los van. Foto’s blijven op dit apparaat om vóór het uploaden te bekijken.";
 "panoramax.settings.status" = "Status";
 "panoramax.settings.saved_images" = "Opgeslagen foto’s";
 "panoramax.settings.trigger" = "Trigger";
@@ -177,7 +177,7 @@
 "panoramax.review.title" = "Panoramax-foto’s";
 "panoramax.review.local_count" = "%d lokale foto’s controleren";
 "panoramax.review.empty_title" = "Geen Panoramax-foto’s";
-"panoramax.review.empty_description" = "Schakel de ritrecorder tijdens een rit in.";
+"panoramax.review.empty_description" = "Schakel Panoramax-foto’s in via de instellingen en beweeg met de app geopend.";
 "panoramax.review.approve" = "Batch goedkeuren voor upload";
 "panoramax.review.upload_via_gallery" = "Upload vanuit de galerij starten";
 "panoramax.review.selected_count" = "%d foto’s geselecteerd";
@@ -336,7 +336,7 @@
 "onboarding.sources.independent" = "Onafhankelijke herkenning gebruikt de camera op het actieve rijscherm, zonder video of Panoramax-foto’s. Uitgeschakeld werkt herkenning alleen met de recorder.";
 "onboarding.panoramax.title" = "Draag straatbeelden bij";
 "onboarding.panoramax.body" = "Draag straatfoto’s met locatie bij aan Panoramax. Kies de beelden en start na controle de upload.";
-"onboarding.panoramax.capture" = "Ingeschakeld worden foto’s opgeslagen terwijl de recorder actief is. Je kunt dashcamvideo uitschakelen en foto’s blijven maken.";
+"onboarding.panoramax.capture" = "Als dit is ingeschakeld, worden tijdens het bewegen met de app geopend automatisch foto’s gemaakt volgens de gekozen afstand of tijd. Dashcamvideo staat hier los van. Foto’s blijven op dit apparaat om vóór het uploaden te bekijken.";
 "onboarding.panoramax.review" = "Stop de recorder, open de fotogalerij en controleer of sluit beelden uit voordat je een upload voorbereidt.";
 "onboarding.panoramax.upload" = "Verbind een Panoramax-account in Instellingen. Geselecteerde beelden uploaden is een aparte actie die internet gebruikt.";
 "onboarding.panoramax.later" = "Je kunt alle opties in Instellingen wijzigen en deze uitleg opnieuw openen als de recorder gestopt is.";

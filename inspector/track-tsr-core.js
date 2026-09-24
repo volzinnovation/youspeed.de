@@ -71,7 +71,8 @@
               s.frameId === batch.frameId && s.candidate?.candidateId === candidate.candidateId));
             const decisions = (value.decisions ?? []).filter(d => track && d.trackId === track.trackId && d.frameId === batch.frameId);
             observations.push({ time: Number(batch.capturedAtMs), line, kind: "detection",
-              country: country(batch.country ?? value.country) ?? activeCountry, semantic: candidate.semanticKey ?? "unknown::",
+              country: country(batch.country ?? value.country) ?? activeCountry,
+              semantic: candidate.semanticKey.split(":").map((part, i) => i > 0 && part === "null" ? "" : part).join(":"),
               classId: candidate.rawClassId ?? candidate.classId ?? null,
               score: number(candidate.recognitionScore ?? candidate.rawScore), eligible: candidate.recognitionEligible === true,
               scope: scopeKey(batch.scope), trackId: track?.trackId ?? null, frameId: batch.frameId,
@@ -164,5 +165,52 @@
     return {country: selectedCountry, sign: valid(sign) ? sign : null, basis,
       url: valid(sign) ? `../shared/${sign.image_path}` : null};
   }
-  return {countries, parseLog, joinTrack, artwork};
+  function category(event, catalogs, manifests, fallbackCountry = null) {
+    if (event.kind !== "detection") return "primary";
+    const selectedCountry = event.country ?? country(fallbackCountry);
+    const mapping = manifests[selectedCountry]?.class_mapping?.find(c => c.class_id === event.classId);
+    const primaryKinds = new Set(["maximum_speed", "maximum_speed_end", "restriction_end", "zone_start", "zone_end",
+      "city_entry", "city_exit", "pedestrian_zone_start", "pedestrian_zone_end"]);
+    if (primaryKinds.has(event.semantic.split(":")[0]) || primaryKinds.has(mapping?.semantic?.kind)) return "primary";
+    // Only an actual national class identity can turn unknown speed semantics into a secondary sign.
+    const sign = catalogs[selectedCountry]?.signs.find(s => s.class_id === event.classId);
+    return sign?.display_eligible && event.classId ? "secondary" : "unknown";
+  }
+
+  function isVisible(event, catalogs, manifests, options = {}) {
+    if (options.kind && options.kind !== "all" && event.kind !== options.kind) return false;
+    const type = category(event, catalogs, manifests, options.country);
+    return type === "primary" || (type === "secondary" ? options.secondary === true : options.unknown === true);
+  }
+  function signStatistics(events, fallbackCountry = null, sortBy = "occurrences") {
+    const groups = new Map();
+    let occurrences = 0, detections = 0, withoutClass = 0;
+    for (const event of events) {
+      // Activation records describe policy actions, not additional sign sightings.
+      if (event.kind !== "detection") continue;
+      const selectedCountry = country(event.country) ?? country(fallbackCountry);
+      const classId = typeof event.classId === "string" && event.classId.trim() ? event.classId : null;
+      // Never infer a YOLO/classifier class from speed semantics in historical logs.
+      const key = JSON.stringify([selectedCountry, classId, classId ? null : event.semantic]);
+      const count = Number.isInteger(event.count) && event.count > 0 ? event.count : 1;
+      let row = groups.get(key);
+      if (!row) {
+        row = {country: selectedCountry, classId, semantic: event.semantic, occurrences: 0, detections: 0,
+          example: {...event, country: selectedCountry, classId}};
+        groups.set(key, row);
+      }
+      row.occurrences++;
+      row.detections += count;
+      occurrences++;
+      detections += count;
+      if (!classId) withoutClass++;
+    }
+    const metric = sortBy === "detections" ? "detections" : "occurrences";
+    const rows = Array.from(groups.values()).sort((a, b) => b[metric] - a[metric] ||
+      b.occurrences - a.occurrences || b.detections - a.detections ||
+      (a.country ?? "").localeCompare(b.country ?? "") ||
+      (a.classId ?? a.semantic).localeCompare(b.classId ?? b.semantic));
+    return {rows, occurrences, detections, withoutClass};
+  }
+  return {countries, parseLog, joinTrack, artwork, category, isVisible, signStatistics};
 });

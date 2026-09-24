@@ -75,7 +75,7 @@ class TrafficSignFusionEngine(
 
         val score = effectiveScore(primaryDetection.candidate)
         val classThreshold = classThresholds[primaryDetection.candidate.rawClassId] ?: 0.0
-        if (!score.isFinite() || score < max(thresholds.unknown, classThreshold)) return noRecognition()
+        if (!primaryDetection.candidate.isQualifiedObservation(scoreSource, thresholds.unknown, classThreshold)) return noRecognition()
         if (primaryDetection.candidate.semantic.kind == TrafficSignSemanticKind.UNKNOWN) {
             return TrafficSignFusionResult(
                 state = TrafficSignRecognitionState.UNKNOWN,
@@ -110,7 +110,11 @@ class TrafficSignFusionEngine(
             TrafficSignRecognitionState.PROVISIONAL
         }
 
-        val best = if (physicalTrackId != null) primaryDetection.candidate else matchingTrack.bestCrop.detection.candidate
+        // End-sign approach observations can carry a weak proposal score. Use
+        // the current qualified observation for authority, as on iPhone;
+        // an earlier crop must not replace the confirming frame's confidence.
+        val best = if (physicalTrackId != null || TrafficSignObservationQualification.isSpeedEnd(primaryDetection.candidate.semantic.kind))
+            primaryDetection.candidate else matchingTrack.bestCrop.detection.candidate
         val assemblyId = matchingTrack.observations
             .asReversed()
             .firstNotNullOfOrNull { it.detection.candidate.assemblyId }
@@ -193,3 +197,28 @@ class TrafficSignFusionEngine(
         }
     }
 }
+
+/** End signs may contribute approach evidence before detector confirmation.
+ * This never raises their fused score or relaxes the confirmation thresholds. */
+internal object TrafficSignObservationQualification {
+    fun isSpeedEnd(kind: TrafficSignSemanticKind) = kind in setOf(TrafficSignSemanticKind.RESTRICTION_END,
+        TrafficSignSemanticKind.MAXIMUM_SPEED_END, TrafficSignSemanticKind.ALL_RESTRICTIONS_END)
+    fun isEligible(kind: TrafficSignSemanticKind, score: Double?, detectorScore: Double?,
+                   classifierScore: Double?, unknownThreshold: Double, classThreshold: Double): Boolean {
+        if (score == null || !score.isFinite() || score !in 0.0..1.0) return false
+        val threshold = maxOf(unknownThreshold, classThreshold)
+        if (score >= threshold) return true
+        return isSpeedEnd(kind) && score >= unknownThreshold &&
+            detectorScore != null && detectorScore.isFinite() && detectorScore in unknownThreshold..1.0 &&
+            classifierScore != null && classifierScore.isFinite() && classifierScore in threshold..1.0
+    }
+}
+
+internal fun TrafficSignCandidate.isQualifiedObservation(output: TrafficSignCalibrationOutput,
+    unknownThreshold: Double, classThreshold: Double): Boolean = TrafficSignObservationQualification.isEligible(
+    semantic.kind,
+    if (output == TrafficSignCalibrationOutput.RAW_SCORE) rawScore else calibratedConfidence,
+    if (output == TrafficSignCalibrationOutput.RAW_SCORE) proposalRawScore else proposalCalibratedConfidence,
+    if (output == TrafficSignCalibrationOutput.RAW_SCORE) classifierRawScore else classifierCalibratedConfidence,
+    unknownThreshold, classThreshold,
+)

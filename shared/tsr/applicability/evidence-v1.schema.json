@@ -91,6 +91,14 @@
           "type": "string",
           "minLength": 1
         },
+        "rawClassId": {
+          "description": "Optional original classifier label for national pictograms; no speed/applicability authority. Absent in older logs.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
         "box": {
           "$ref": "#/$defs/box"
         },
@@ -122,6 +130,22 @@
             "number",
             "null"
           ]
+        },
+        "detectorRawScore": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "classifierRawScore": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
         }
       }
     },
@@ -381,6 +405,14 @@
         "preprocessingId": {
           "type": "string",
           "minLength": 1
+        },
+        "country": {
+          "description": "Optional ISO-2 country of the single-country model pack; no location or applicability assertion.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Z]{2}$"
         },
         "road": {
           "anyOf": [

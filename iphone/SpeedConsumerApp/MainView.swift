@@ -232,7 +232,7 @@ struct MainView: View {
                                 showsUnlimitedIcon: !showsPedestrianZoneSign && showsUnlimitedAutobahnSign,
                                 showsPedestrianZoneIcon: showsPedestrianZoneSign,
                                 showsActiveCameraLimitIndicator: showsActiveCameraLimitIndicator,
-                                showsStaleBundleLimitIndicator: viewModel.effectiveSpeedLimitState.source == .staleBundle,
+                                showsStaleBundleLimitIndicator: viewModel.effectiveSpeedLimitState.source.isStale,
                                 accessibilityDescription: speedLimitAccessibilityDescription
                             )
                             .frame(width: signSize, height: signSize)
@@ -661,7 +661,7 @@ struct MainView: View {
     }
 
     private var showsDriveRecorderStatusStrip: Bool {
-        viewModel.driveRecorderState != .disabled
+        viewModel.driveRecorderState != .disabled || viewModel.driveRecorderPanoramaxActive
     }
 
     private func driveRecorderModuleIndicator(
@@ -1203,7 +1203,7 @@ struct MainView: View {
         let state = viewModel.effectiveSpeedLimitState
         switch state.value {
         case .numeric(let value):
-            if state.source == .staleBundle {
+            if state.source.isStale {
                 return String(format: NSLocalizedString("limit.accessibility.numeric_stale", comment: ""), value)
             }
             return String(format: NSLocalizedString("limit.accessibility.numeric", comment: ""), value)

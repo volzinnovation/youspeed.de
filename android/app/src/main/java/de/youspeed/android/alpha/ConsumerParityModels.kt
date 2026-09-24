@@ -7,6 +7,9 @@ enum class TrafficSignFeedbackMode { SPOKEN_SPEED, SOUND, SILENT }
 
 /** Mirrors the iPhone recorder's distinction between a session and its consumers. */
 object DriveRecorderPolicy {
+    fun shouldRunAutomaticPhotos(enabled: Boolean, driving: Boolean, applicationActive: Boolean, storageReady: Boolean) =
+        enabled && driving && applicationActive && storageReady
+
     fun isActive(state: DriveRecorderState): Boolean = state in setOf(
         DriveRecorderState.REQUESTING_PERMISSION, DriveRecorderState.PREPARING,
         DriveRecorderState.RECORDING, DriveRecorderState.STOPPING,
@@ -19,12 +22,11 @@ object DriveRecorderPolicy {
         enabled && (independent || recording) && driving && applicationActive
 
     fun shouldEnsurePanoramaxCaptureSession(
-        driveRecorderEnabled: Boolean,
         panoramaxEnabled: Boolean,
         driving: Boolean,
         applicationActive: Boolean,
         cameraState: TrafficSignCameraRuntimeState,
-    ): Boolean = driveRecorderEnabled && panoramaxEnabled && driving && applicationActive &&
+    ): Boolean = panoramaxEnabled && driving && applicationActive &&
         cameraState == TrafficSignCameraRuntimeState.ACTIVE
 
     fun canShowPreview(state: DriveRecorderState, dashcamActive: Boolean, captureActive: Boolean): Boolean =

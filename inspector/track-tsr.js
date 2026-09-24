@@ -11,6 +11,10 @@
     unknown: "Unbekannte Semantik", pedestrian_zone_start: "Fußgängerzone Beginn", pedestrian_zone_end: "Fußgängerzone Ende"};
   const clock = time => new Date(time).toLocaleTimeString([], {hour12: false});
   const title = e => { const [kind, value, unit] = e.semantic.split(":");
+    if (core.category(e, catalogs, manifests, el("country").value) === "secondary") {
+      const art = core.artwork(e, catalogs, manifests, el("country").value);
+      return art.sign?.label?.de ?? art.sign?.label?.en ?? e.classId;
+    }
     return `${semanticLabels[kind] ?? kind}${value ? ` ${value}${unit ? ` ${unit}` : ""}` : ""}`; };
   let parsed = null, fileName = "", events = [], markers = new Map(), selected = null, importVersion = 0;
   const layer = L.layerGroup().addTo(map), catalogs = {}, manifests = {};
@@ -58,7 +62,7 @@
       <p class="hint compact">Eine Detektion belegt weder die Richtigkeit des Zeichens noch seine Gültigkeit für die befahrene Spur.
         Angewendet/abgelehnt sind separate Aktivierungsereignisse; eine Zuordnung zum gleichen physischen Schild wird nicht behauptet.</p>`;
   }
-  function select(index, focus = true) {
+  function select(index, focus = true, revealVideo = true) {
     selected = index;
     const event = events[index];
     if (!event) return;
@@ -70,14 +74,42 @@
       if (focus) map.setView([event.fix.lat, event.fix.lon], Math.max(16, map.getZoom()));
       markers.get(index)?.openPopup();
     }
+    window.dispatchEvent(new CustomEvent("inspector:tsr-select", {detail: {time: event.time, revealVideo}}));
+  }
+  function renderStatistics() {
+    const sort = el("statistics-sort").value;
+    el("occurrences-heading").setAttribute("aria-sort", sort === "occurrences" ? "descending" : "none");
+    el("detections-heading").setAttribute("aria-sort", sort === "detections" ? "descending" : "none");
+    el("statistics-body").replaceChildren();
+    if (!parsed) { el("statistics-summary").textContent = "Noch kein TSR-Log geladen."; return; }
+    const stats = core.signStatistics(parsed.events, el("country").value, sort);
+    el("statistics-summary").textContent = `${stats.occurrences} Vorkommen · ${stats.detections} Einzeldetektionen · ${stats.rows.length} Zeilen. ` +
+      (stats.withoutClass ? `${stats.withoutClass} Vorkommen ohne Klassen-ID: separat nach Semantik aufgeführt, keine nachträglich erratene Klasse.` : "");
+    const fragment = document.createDocumentFragment();
+    for (const row of stats.rows) {
+      const art = pictogram(row.example);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<th scope="row"><div class="track-tsr-statistics-sign">${art.html}<span><strong>${escape(row.classId ?? "Klasse fehlt")}</strong>
+        <small>${escape(row.country ?? "Land unbekannt")}${row.classId ? "" : ` · ${escape(row.semantic)}`}</small></span></div></th>
+        <td>${row.occurrences}</td><td>${row.detections}</td>`;
+      fragment.append(tr);
+    }
+    el("statistics-body").append(fragment);
   }
   function render() {
     layer.clearLayers(); markers.clear(); el("list").replaceChildren(); el("detail").replaceChildren();
-    if (!parsed) { el("summary").textContent = "Noch kein TSR-Log geladen."; return; }
+    renderStatistics();
+    if (!parsed) { el("summary").textContent = "Noch kein TSR-Log geladen."; el("secondary-status").textContent = ""; return; }
     events = core.joinTrack(parsed.events, bridge.getDriveEntries());
-    const kind = el("kind").value, unknown = el("unknown").checked;
+    const options = {kind: el("kind").value, unknown: el("unknown").checked,
+      secondary: el("secondary").checked, country: el("country").value};
     const visible = events.map((event, index) => ({event, index})).filter(({event}) =>
-      (kind === "all" || event.kind === kind) && (unknown || event.kind !== "detection" || !event.semantic.startsWith("unknown:") || event.classId));
+      core.isVisible(event, catalogs, manifests, options));
+    const secondaryCount = events.filter(e => core.category(e, catalogs, manifests, options.country) === "secondary").length;
+    const unidentified = events.filter(e => e.kind === "detection" && e.semantic.startsWith("unknown:") && !e.classId).length;
+    el("secondary-status").textContent = `${secondaryCount} sekundäre Sichtungsgruppen mit nationaler Piktogramm-Zuordnung. ` +
+      (unidentified ? `${unidentified} Gruppen ohne Klassen-ID: Diese älteren Aufzeichnungen lassen sich nicht nachträglich als konkrete Zeichen darstellen.` : "") +
+      " Detektionen belegen nicht, dass ein Zeichen im sekundären Feld der App angezeigt wurde.";
     const unmatched = events.filter(e => !e.fix).length;
     el("summary").textContent = `${fileName} · ${parsed.frames} Frames · ${parsed.samples} Kandidaten · ${visible.length} sichtbare Ereignisse · ${unmatched} ohne GPS-Zuordnung. ` +
       `${events.filter(e => e.kind === "applied").length} angewendet, ${events.filter(e => e.kind === "rejected").length} abgelehnt. ` +
@@ -90,7 +122,7 @@
       const button = document.createElement("button");
       button.type = "button"; button.className = `track-tsr-row ${event.kind}`; button.dataset.tsrEvent = index;
       button.innerHTML = `${art.html}<span><strong>${escape(clock(event.time))} · ${escape(title(event))}</strong>
-        <small>${escape(art.country ?? "Land ?")} · ${labels[event.kind]} · ${event.count}×${event.fix ? "" : " · ohne GPS"}</small></span>`;
+        <small>${escape(art.country ?? "Land ?")} · ${labels[event.kind]}${core.category(event, catalogs, manifests, options.country) === "secondary" ? " · Sekundär" : ""} · ${event.count}×${event.fix ? "" : " · ohne GPS"}</small></span>`;
       fragment.append(button);
       if (!event.fix) continue;
       const marker = L.marker([event.fix.lat, event.fix.lon], {title: `${clock(event.time)} · ${title(event)} · ${labels[event.kind]}`,
@@ -102,7 +134,7 @@
       marker.on("click", () => select(index, false)); markers.set(index, marker);
     }
     el("list").append(fragment);
-    if (selected != null && visible.some(x => x.index === selected)) select(selected, false);
+    if (selected != null && visible.some(x => x.index === selected)) select(selected, false, false);
   }
   el("file").addEventListener("change", async event => {
     const file = event.target.files?.[0]; if (!file) return;
@@ -121,7 +153,8 @@
     } finally { if (version === importVersion) el("file").value = ""; }
   });
   el("clear").addEventListener("click", () => { importVersion++; parsed = null; selected = null; render(); });
-  for (const id of ["country", "kind", "unknown"]) el(id).addEventListener("change", render);
+  for (const id of ["country", "kind", "unknown", "secondary"]) el(id).addEventListener("change", render);
+  el("statistics-sort").addEventListener("change", renderStatistics);
   el("list").addEventListener("click", event => {
     const button = event.target.closest("[data-tsr-event]"); if (button) select(Number(button.dataset.tsrEvent));
   });

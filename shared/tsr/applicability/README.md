@@ -204,3 +204,50 @@ does not modify those assets. Its result was 279 passed and one failed.
 No device performance, real inference accuracy, calibrated mount quality or
 field improvement is established by these checks. The report is **NO-GO** for
 enforcement. Its source hashes should be regenerated after any policy change.
+
+### Original classifier identity for track inspection
+
+Candidates may carry optional `rawClassId`, retained unchanged from the classifier
+on iPhone and Android. It distinguishes national warning/priority/other signs
+whose speed semantic is `unknown`. The inspector uses it only for catalog artwork
+and a separate secondary-sign visibility toggle. It does not imply that the app
+accepted/displayed the sign, change association/scoring/authority, or expand the
+model vocabulary. Old captures omit this field and remain readable; their lost
+class identity cannot be reconstructed from `unknown` semantics. The optional
+field is also preserved in candidate copies in track histories.
+
+Each new batch also carries optional `country` from its single-country model
+pack (ISO-2). This is model-selection evidence, not a claim about GPS location.
+It makes standalone frame exports self-contained and takes precedence over
+older surrounding lifecycle lines in the inspector. A multi-country pack omits
+this field rather than guessing. Old batches without it remain decodable.
+### Access-road conflict guard (2026-09-24)
+
+Both clients exclude a low (10–50) right-side proposal from driver-facing
+selection when two distinct recent frames agree on a left/central main-road
+limit of at least 70, and fresh, accurate matching shows a nearly aligned
+service-road alternative beside the current trunk/primary/secondary road.
+A simultaneous left-side repeat of the low limit or a match onto the access
+road preserves normal recognition. A held conflict survives at most 1.5 seconds
+of missing map context. Diagnostics retain original proposals and the reason
+`access_road_conflicting_speed`.
+
+This guard also applies in shadow mode, like the motorway-exit guard. It excludes
+the conflicting candidate without resetting an earlier main-road passage.
+Nearby geometry alone does not establish which lane a sign legally regulates.
+The heuristic needs independent driving evidence, especially genuine sudden
+main-road reductions beside service roads. Detector thresholds are unchanged.
+
+Shared fixtures cover positive conflict/missing-map cases and negative cases
+for turns, actual access-road matches, paired low signs, weak/mixed main-road
+evidence, stale/poor GPS, capture changes, truncation and duplicate frames.
+Native tests verify shadow-mode withholding and that a previous passage can
+still finish.
+
+End-sign observation admission uses separate detector/classifier evidence on both
+clients. A proposal above the pack observation floor with a classifier above its
+class threshold can contribute approach evidence; the combined confidence and
+confirmation thresholds remain unchanged. Optional `detectorRawScore` and
+`classifierRawScore` fields preserve that distinction in the candidate sidecar.
+See [the end-sign review](../end-sign-review-2026-09-24.md) for field evidence,
+regressions, and the Panoramax tag-based training-candidate selector.

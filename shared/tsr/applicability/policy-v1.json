@@ -28,5 +28,6 @@
   "motorwayExitMaxJunctionDistanceM": 350.0,
   "motorwayExitMaxHeadingDeltaDeg": 60.0,
   "motorwayExitMinSignCenterX": 0.6,
-  "motorwayExitPairedRepeatMaxCenterX": 0.5
+  "motorwayExitPairedRepeatMaxCenterX": 0.5,
+  "accessRoadPolicyVersion": "access-road-conflict-v1"
 }

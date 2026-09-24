@@ -687,7 +687,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 trafficSignRecognitionIndependentEnabled,
                 forKey: Self.trafficSignRecognitionIndependentEnabledDefaultsKey
             )
-            reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: true)
+            reconcileAutomaticCapture(allowTerminalRetry: true)
         }
     }
     @Published var trafficSignPictogramEnabled: Bool {
@@ -721,6 +721,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         didSet {
             guard panoramaxCaptureEnabled != oldValue else { return }
             UserDefaults.standard.set(panoramaxCaptureEnabled, forKey: Self.panoramaxCaptureEnabledDefaultsKey)
+            reconcileAutomaticCapture(allowTerminalRetry: true)
         }
     }
     @Published private(set) var screenOrientation = ScreenOrientation.load()
@@ -993,6 +994,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var trafficSignEndOverlayGeneration = 0
     private var speedCaptureLatestTranscript: String = ""
     private var speedCaptureDidResolve = false
+    private var speedCaptureAttemptID = UUID()
+    private var lastKnownLimitPresentation = LastKnownSpeedLimitPresentation()
     private var lastKnownSpeedLimitKmh: Int?
     private var lastKnownBundleSpeedLimitKmh: Int?
     private var lastKnownBundleSpeedLimitAt: Date?
@@ -1789,6 +1792,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         driveCaptureCoordinator?.onChange = { [weak self] in
             self?.syncDriveRecorderState()
         }
+        driveCaptureCoordinator?.onDiagnostic = { [weak self] detail in
+            self?.appendTSRLog("event=drive_capture \(detail)")
+        }
         driveCaptureCoordinator?.onTrafficSignAnnotation = { [weak self] detail in
             self?.appendTSRLog("image_link=attached \(detail)")
             self?.refreshPanoramaxBatches()
@@ -1955,7 +1961,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     var isPanoramaxRecordingActive: Bool {
-        isDriveRecorderActive && panoramaxCaptureEnabled
+        driveRecorderPanoramaxActive
     }
 
     var canProcessPanoramaxUploads: Bool {
@@ -1982,7 +1988,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return
         }
         if let driveCaptureCoordinator,
-           driveCaptureCoordinator.isStandaloneTrafficSignRecognitionSession,
+           driveCaptureCoordinator.isAutomaticCaptureSession,
            driveCaptureCoordinator.state == .preparing
                 || driveCaptureCoordinator.state == .recording {
             driveRecorderStartPending = true
@@ -2060,7 +2066,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignApplicationIsActive = isActive
         updateTrafficSignWriteGate()
         refreshTrafficSignFrameSnapshot()
-        reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: isActive)
+        reconcileAutomaticCapture(allowTerminalRetry: isActive)
     }
 
     private var trafficSignProcessingIsEnabled: Bool {
@@ -2102,59 +2108,48 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         updateTrafficSignWriteGate()
         publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
         refreshTrafficSignFrameSnapshot()
-        reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: true)
+        reconcileAutomaticCapture(allowTerminalRetry: true)
     }
 
-    private func reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: Bool = false) {
+    private func reconcileAutomaticCapture(allowTerminalRetry: Bool = false) {
         guard let driveCaptureCoordinator else { return }
-        let shouldRun = DriveRecorderPolicy.shouldRunStandaloneTrafficSignRecognition(
+        let recognition = DriveRecorderPolicy.shouldRunStandaloneTrafficSignRecognition(
             recognitionEnabled: trafficSignRecognitionEnabled,
             independentRecognitionEnabled: trafficSignRecognitionIndependentEnabled,
             runtimeReady: trafficSignRuntime != nil,
             isDriving: isDriving,
             applicationIsActive: trafficSignApplicationIsActive
         )
-
-        if driveCaptureCoordinator.isStandaloneTrafficSignRecognitionSession {
-            if shouldRun {
-                if driveCaptureCoordinator.state == .recording,
-                   !driveCaptureCoordinator.isTrafficSignRecognitionModuleActive {
-                    _ = driveCaptureCoordinator
-                        .setTrafficSignRecognitionEnabledDuringRecording(true)
-                } else if allowTerminalRetry,
-                          driveCaptureCoordinator.state == .denied
-                            || driveCaptureCoordinator.state == .unavailable
-                            || driveCaptureCoordinator.state == .failed {
-                    driveCaptureCoordinator.start(
-                        dashcamEnabled: false,
-                        trafficSignRecognitionEnabled: true,
-                        panoramaxEnabled: false,
-                        purpose: .standaloneTrafficSignRecognition
-                    )
+        let photos = DriveRecorderPolicy.shouldRunAutomaticPhotos(
+            enabled: panoramaxCaptureEnabled, driving: isDriving,
+            applicationActive: trafficSignApplicationIsActive,
+            storageReady: !panoramaxQueueMaintenanceInProgress && panoramaxQueueStore != nil
+        )
+        let shouldRun = recognition || photos
+        if driveCaptureCoordinator.isAutomaticCaptureSession {
+            if driveCaptureCoordinator.state == .recording || driveCaptureCoordinator.state == .preparing {
+                if !shouldRun || driveCaptureCoordinator.requestedPanoramaxEnabled != photos {
+                    // Photo-output changes require a new fixed camera graph. onChange
+                    // restarts the automatic session after stop has finished.
+                    driveCaptureCoordinator.stop()
+                } else if driveCaptureCoordinator.state == .recording,
+                          driveCaptureCoordinator.isTrafficSignRecognitionModuleActive != recognition {
+                    _ = driveCaptureCoordinator.setTrafficSignRecognitionEnabledDuringRecording(recognition)
                 }
-            } else if driveCaptureCoordinator.state == .preparing
-                        || driveCaptureCoordinator.state == .recording {
-                driveCaptureCoordinator.stop()
+                return
             }
-            return
         }
-
         guard shouldRun, !driveRecorderStartPending else { return }
         let canStart: Bool
         switch driveCaptureCoordinator.state {
-        case .disabled:
-            canStart = true
-        case .denied, .unavailable, .failed:
-            canStart = allowTerminalRetry
-        case .preparing, .recording, .stopping:
-            canStart = false
+        case .disabled: canStart = true
+        case .denied, .unavailable, .failed: canStart = allowTerminalRetry
+        default: canStart = false
         }
         guard canStart else { return }
         driveCaptureCoordinator.start(
-            dashcamEnabled: false,
-            trafficSignRecognitionEnabled: true,
-            panoramaxEnabled: false,
-            purpose: .standaloneTrafficSignRecognition
+            dashcamEnabled: false, trafficSignRecognitionEnabled: recognition,
+            panoramaxEnabled: photos, purpose: .automaticCapture
         )
     }
 
@@ -2230,7 +2225,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 hasCameraEvidenceMarker: true
             )
         } else {
-            presentationState = presentedState
+            presentationState = lastKnownLimitPresentation.present(presentedState)
         }
         effectiveSpeedLimitState = presentationState
         switch presentationState.value {
@@ -2407,7 +2402,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.trafficSignRecognitionState = .noRecognition
                 }
                 self.syncDriveRecorderState()
-                self.reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: true)
+                self.reconcileAutomaticCapture(allowTerminalRetry: true)
             case .unavailable(let reason):
                 self.handleTrafficSignRuntimeUnavailability(reason)
             }
@@ -3343,6 +3338,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // still in progress. Honor the persisted chip selection as soon as the
         // coordinator reaches recording instead of requiring a second tap.
         if captureState == .recording,
+           capturePurpose == .driveRecording || trafficSignRecognitionIndependentEnabled,
            trafficSignRecognitionEnabled,
            trafficSignRuntime != nil,
            !driveRecorderTrafficSignRecognitionActive,
@@ -3383,7 +3379,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         } else if trafficSignRecognitionState == .unavailable {
             trafficSignRecognitionState = .noRecognition
         }
-        panoramaxCaptureState = driveRecorderState
+        panoramaxCaptureState = driveRecorderPanoramaxActive ? captureState : .disabled
         panoramaxCaptureCount = driveCaptureCoordinator?.capturedImageCount ?? 0
         panoramaxLastCaptureAt = driveCaptureCoordinator?.lastCaptureAt
         panoramaxLastCaptureDetail = driveCaptureCoordinator?.lastCaptureDetail ?? "Panoramax-Speicher nicht verfuegbar"
@@ -3434,7 +3430,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             startDriveRecorder()
             return
         }
-        reconcileStandaloneTrafficSignRecognition()
+        reconcileAutomaticCapture()
     }
 
     private func restoreBaseSpeedLimitPresentation() {
@@ -3693,6 +3689,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             if generation == panoramaxQueueMaintenanceGeneration {
                 panoramaxQueueMaintenanceInProgress = false
                 panoramaxQueueMaintenanceTask = nil
+                reconcileAutomaticCapture(allowTerminalRetry: true)
             }
         }
     }
@@ -3716,6 +3713,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             if generation == panoramaxQueueMaintenanceGeneration {
                 panoramaxQueueMaintenanceInProgress = false
                 panoramaxQueueMaintenanceTask = nil
+                reconcileAutomaticCapture(allowTerminalRetry: true)
             }
         }
     }
@@ -5211,6 +5209,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     func startDriving() {
         guard isScreenshotMode || (onboardingStateLoaded && !shouldPresentOnboarding) else { return }
+        if !isDriving { lastKnownLimitPresentation.reset() }
         trafficSignBundleContextTracker.reset()
         resetTrafficSignPictogram()
         if speedLimitService == nil && startupDataState != .ready {
@@ -5244,10 +5243,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             driveStatus = "location_denied"
             lastError = "Location permission denied"
         }
-        reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: true)
+        reconcileAutomaticCapture(allowTerminalRetry: true)
     }
 
     func stopDriving() {
+        lastKnownLimitPresentation.reset()
         trafficSignBundleContextTracker.reset()
         resetTrafficSignPictogram()
         isDriving = false
@@ -5725,16 +5725,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if speechSynthesizer.isSpeaking {
             speechSynthesizer.stopSpeaking(at: .immediate)
         }
-        activeLocalSpeedCorrection = nil
-        awaitingSpeedCapturePromptCompletion = false
-        speedCapturePromptFallbackTask?.cancel()
-        speedCapturePromptFallbackTask = nil
-        speedCaptureStartListeningTask?.cancel()
-        speedCaptureStartListeningTask = nil
-        speedCaptureMode = .speakingPrompt
-        localObservationStatus = "Jetzt sprechen."
-        speedCaptureLatestTranscript = ""
-        speedCaptureDidResolve = false
+        let attemptID = prepareSpeedCaptureAttempt()
 #if DEBUG
         if ProcessInfo.processInfo.environment["YOUSPEED_GUIDE_ASSUME_SPEECH"] == "1" {
             speedCaptureMode = .listening
@@ -5746,12 +5737,31 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 return
             }
             do {
-                try await self.prepareSpeedCaptureRecognizer()
+                let recognizer = try await self.prepareSpeedCaptureRecognizer()
+                guard self.speedCaptureAttemptID == attemptID, self.speedCaptureMode == .speakingPrompt else { return }
+                self.speedCaptureRecognizer = recognizer
                 self.startSpeedCaptureListening()
             } catch {
+                guard self.speedCaptureAttemptID == attemptID else { return }
                 self.cancelSpeedCapture(reason: "Spracherfassung nicht verfuegbar: \(error.localizedDescription)")
             }
         }
+    }
+
+    // Each attempt owns its asynchronous callbacks. Cancellation from a previous
+    // recognizer must never end a new correction or discard its transcript.
+    private func prepareSpeedCaptureAttempt() -> UUID {
+        speedCaptureAttemptID = UUID()
+        awaitingSpeedCapturePromptCompletion = false
+        speedCapturePromptFallbackTask?.cancel()
+        speedCapturePromptFallbackTask = nil
+        speedCaptureStartListeningTask?.cancel()
+        speedCaptureStartListeningTask = nil
+        speedCaptureMode = .speakingPrompt
+        localObservationStatus = "Jetzt sprechen."
+        speedCaptureLatestTranscript = ""
+        speedCaptureDidResolve = false
+        return speedCaptureAttemptID
     }
 
     func deleteLocalObservation(_ observationID: String) {
@@ -6115,6 +6125,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         speechSynthesizer.speak(utterance)
 
         speedCapturePromptFallbackTask?.cancel()
+        let attemptID = speedCaptureAttemptID
         speedCapturePromptFallbackTask = Task { [weak self] in
             let fallbackDelayNanos = 3_800_000_000 as UInt64
             try? await Task.sleep(nanoseconds: fallbackDelayNanos)
@@ -6122,7 +6133,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 return
             }
             await MainActor.run {
-                guard let self, self.awaitingSpeedCapturePromptCompletion else {
+                guard let self, self.speedCaptureAttemptID == attemptID, self.awaitingSpeedCapturePromptCompletion else {
                     return
                 }
                 self.awaitingSpeedCapturePromptCompletion = false
@@ -6133,6 +6144,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func scheduleSpeedCaptureListeningStart() {
         speedCaptureStartListeningTask?.cancel()
+        let attemptID = speedCaptureAttemptID
         speedCaptureStartListeningTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: Self.speedCaptureStartDelayNanos)
             guard !Task.isCancelled else {
@@ -6142,7 +6154,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 guard let self else {
                     return
                 }
-                guard self.speedCaptureMode == .speakingPrompt else {
+                guard self.speedCaptureAttemptID == attemptID, self.speedCaptureMode == .speakingPrompt else {
                     return
                 }
                 self.startSpeedCaptureListening()
@@ -6154,7 +6166,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard !speedCaptureDidResolve else {
             return
         }
-        guard speedCaptureMode == .speakingPrompt || speedCaptureMode == .listening else {
+        guard speedCaptureMode == .speakingPrompt else {
             return
         }
         guard let recognizer = speedCaptureRecognizer else {
@@ -6185,36 +6197,25 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             let inputNode = engine.inputNode
             inputNode.removeTap(onBus: 0)
             let format = inputNode.outputFormat(forBus: 0)
-            inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-                self?.speedCaptureRecognitionRequest?.append(buffer)
+            inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
+                request.append(buffer)
             }
             engine.prepare()
             try engine.start()
         } catch {
-            cancelSpeedCapture(reason: "\(Self.speedCaptureFailureText()) (error.localizedDescription)")
+            cancelSpeedCapture(reason: "\(Self.speedCaptureFailureText()) \(error.localizedDescription)")
             return
         }
 
+        let attemptID = speedCaptureAttemptID
         speedCaptureRecognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
             Task { @MainActor [weak self] in
-                guard let self else {
-                    return
-                }
-                if let transcript = result?.bestTranscription.formattedString,
-                   !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    self.speedCaptureLatestTranscript = transcript
-                }
-                if let error {
-                    if !self.speedCaptureLatestTranscript.isEmpty {
-                        self.finishSpeedCaptureListening(source: "recognition_error_with_transcript")
-                    } else {
-                        self.cancelSpeedCapture(reason: "\(Self.speedCaptureFailureText()) (error.localizedDescription)")
-                    }
-                    return
-                }
-                if result?.isFinal == true {
-                    self.finishSpeedCaptureListening(source: "final_result")
-                }
+                self?.handleSpeedCaptureRecognition(
+                    attemptID: attemptID,
+                    transcript: result?.bestTranscription.formattedString,
+                    isFinal: result?.isFinal == true,
+                    errorDescription: error?.localizedDescription
+                )
             }
         }
 
@@ -6226,13 +6227,29 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 return
             }
             await MainActor.run {
-                self?.finishSpeedCaptureListening(source: "timeout")
+                self?.finishSpeedCaptureListening(source: "timeout", attemptID: attemptID)
             }
         }
     }
 
-    private func finishSpeedCaptureListening(source: String) {
-        guard !speedCaptureDidResolve else {
+    private func handleSpeedCaptureRecognition(attemptID: UUID, transcript: String?, isFinal: Bool, errorDescription: String?) {
+        guard speedCaptureAttemptID == attemptID, speedCaptureMode == .listening, !speedCaptureDidResolve else { return }
+        if let transcript, !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            speedCaptureLatestTranscript = transcript
+        }
+        if let errorDescription {
+            if !speedCaptureLatestTranscript.isEmpty {
+                finishSpeedCaptureListening(source: "recognition_error_with_transcript", attemptID: attemptID)
+            } else {
+                cancelSpeedCapture(reason: "\(Self.speedCaptureFailureText()) \(errorDescription)")
+            }
+        } else if isFinal {
+            finishSpeedCaptureListening(source: "final_result", attemptID: attemptID)
+        }
+    }
+
+    private func finishSpeedCaptureListening(source: String, attemptID: UUID) {
+        guard speedCaptureAttemptID == attemptID, speedCaptureMode == .listening, !speedCaptureDidResolve else {
             return
         }
         speedCaptureDidResolve = true
@@ -6260,8 +6277,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private func commitSpeedCaptureObservation(selection: SpeedCaptureWhitelistEntry) {
         speedCaptureMode = .saving
         let oldSpeed = speedLimitKmh
+        let attemptID = speedCaptureAttemptID
         Task { @MainActor [weak self] in
-            guard let self else {
+            guard let self, self.speedCaptureAttemptID == attemptID else {
                 return
             }
             do {
@@ -6275,6 +6293,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     newMaxspeedValue: selection.value,
                     context: captureContext
                 )
+                guard speedCaptureAttemptID == attemptID else { return }
                 if let wayID = observation.roadCandidateIDs.first,
                    !wayID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     localSpeedOverrideValuesByWayID[wayID] = selection.value
@@ -6317,9 +6336,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 )
                 activateLocalSpeedCorrectionIfPossible(selection: selection, observation: observation)
                 await refreshLocalObservations()
+                guard speedCaptureAttemptID == attemptID else { return }
                 cancelSpeedCapture(reason: nil)
                 playSpeedCaptureConfirmationTone()
             } catch {
+                guard speedCaptureAttemptID == attemptID else { return }
                 let message = "Erfassung fehlgeschlagen: \(error.localizedDescription)"
                 localObservationStatus = message
                 lastError = message
@@ -6537,6 +6558,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func cancelSpeedCapture(reason: String?) {
+        speedCaptureAttemptID = UUID()
         stopActiveSpeedCaptureRecognition(keepStatus: true)
         speedCaptureStartListeningTask?.cancel()
         speedCaptureStartListeningTask = nil
@@ -6572,7 +6594,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func prepareSpeedCaptureRecognizer() async throws {
+    private func prepareSpeedCaptureRecognizer() async throws -> SFSpeechRecognizer {
         let speechAuth = await requestSpeechRecognitionAuthorization()
         guard speechAuth == .authorized else {
             throw ConsumerAppError.io(Self.speechAuthorizationDescription(speechAuth))
@@ -6591,7 +6613,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard recognizer.supportsOnDeviceRecognition else {
             throw ConsumerAppError.io("On-Device-Spracherkennung fuer \(locale.identifier) nicht verfuegbar.")
         }
-        speedCaptureRecognizer = recognizer
+        return recognizer
     }
 
     private func requestSpeechRecognitionAuthorization() async -> SFSpeechRecognizerAuthorizationStatus {
@@ -6858,7 +6880,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
         guard let service = speedLimitService else {
             wasDrivingBanWarningActive = false
-            isUnlimitedSpeedLimitActive = false
+            publishEffectiveSpeedLimitState(.none)
             resetTunnelModeTracking()
             matchedFixCount = 0
             hadRecentGPSSignalLoss = true
@@ -7118,6 +7140,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.trafficSignFrameContextIsCurrent = false
                     self.trafficSignFrameState.update(nil)
                     self.isUnlimitedSpeedLimitActive = false
+                    self.publishEffectiveSpeedLimitState(.none)
                     self.lastLookupStatus = "error"
                     self.lastError = error.localizedDescription
                     self.wasDrivingBanWarningActive = false
@@ -7527,7 +7550,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     var currentOverspeedKmh: Int {
-        guard effectiveSpeedLimitState.source != .staleBundle,
+        guard !effectiveSpeedLimitState.source.isStale,
               !isUnlimitedSpeedLimitActive,
               let speedLimitKmh else {
             return 0
@@ -7751,7 +7774,7 @@ extension DriveSessionViewModel {
 
     func testConfigureCurrentTrafficSignBase(
         context: TrafficSignDetectionContext,
-        bundledSpeedKmh: Int
+        bundledSpeedKmh: Int?
     ) {
         latestTrafficSignDetectionContext = context
         trafficSignFrameContextIsCurrent = true
@@ -7808,11 +7831,28 @@ extension DriveSessionViewModel {
     }
 
     func testSimulateRecognizedSpeedCapture(transcript: String, source: String = "unit_test") async throws {
-        speedCaptureMode = .listening
+        let attemptID = testBeginSpeedCaptureListening()
         speedCaptureLatestTranscript = transcript
-        speedCaptureDidResolve = false
-        finishSpeedCaptureListening(source: source)
+        finishSpeedCaptureListening(source: source, attemptID: attemptID)
         try await waitForTestSpeedCaptureToBecomeIdle()
+    }
+
+    func testBeginSpeedCaptureListening() -> UUID {
+        let attemptID = prepareSpeedCaptureAttempt()
+        speedCaptureMode = .listening
+        return attemptID
+    }
+
+    func testDeliverSpeedCaptureRecognition(attemptID: UUID, transcript: String? = nil, isFinal: Bool = false, error: String? = nil) {
+        handleSpeedCaptureRecognition(attemptID: attemptID, transcript: transcript, isFinal: isFinal, errorDescription: error)
+    }
+
+    func testDeliverSpeedCaptureTimeout(attemptID: UUID) {
+        finishSpeedCaptureListening(source: "timeout", attemptID: attemptID)
+    }
+
+    func testCancelSpeedCapture() {
+        cancelSpeedCapture(reason: nil)
     }
 
     func testSetActiveLocalSpeedCorrection(wayID: String, value: String, numericSpeedKmh: Int?, roadIdentity: String? = nil, startedAt: Date = Date()) {
@@ -7881,7 +7921,7 @@ extension DriveSessionViewModel {
         activeLocalSpeedCorrection?.wayID
     }
 
-    private func waitForTestSpeedCaptureToBecomeIdle(timeoutNanoseconds: UInt64 = 2_000_000_000) async throws {
+    func waitForTestSpeedCaptureToBecomeIdle(timeoutNanoseconds: UInt64 = 2_000_000_000) async throws {
         let startedAt = DispatchTime.now().uptimeNanoseconds
         while DispatchTime.now().uptimeNanoseconds - startedAt < timeoutNanoseconds {
             if speedCaptureMode == .idle {
@@ -7960,7 +8000,7 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
                 : nil
             currentLatitude = location.coordinate.latitude
             currentLongitude = location.coordinate.longitude
-            driveCaptureCoordinator?.ingest(location: location)
+            driveCaptureCoordinator?.ingest(location: location, speedMetersPerSecond: displaySpeedKmh / 3.6)
             gpsFixCount += 1
             maybeSpeakOverspeedWarning()
             let fixID = gpsFixCount

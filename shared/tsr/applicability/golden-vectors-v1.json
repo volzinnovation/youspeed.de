@@ -8841,6 +8841,3310 @@
         }
       ],
       "expectedWithheldCount": 0
+    },
+    {
+      "id": "access_conflict",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        1
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_conflict-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_conflict",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_conflict-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_conflict",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_conflict-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_conflict",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_conflict-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_conflict",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_conflict-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_conflict",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_conflict-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_conflict",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_missing_map",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_missing_map-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_missing_map",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_missing_map-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_missing_map",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_missing_map-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_missing_map",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_missing_map-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_missing_map",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_missing_map-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_missing_map",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_missing_map-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_missing_map",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_missing_map-3",
+          "capturedAtMs": 2300,
+          "scope": {
+            "sessionId": "access_missing_map",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_missing_map-3:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.84,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": null
+        }
+      ]
+    },
+    {
+      "id": "access_hold_expired",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        1,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_hold_expired-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_hold_expired",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_hold_expired-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_hold_expired",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_hold_expired-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_hold_expired",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_hold_expired-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_hold_expired",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_hold_expired-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_hold_expired",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_hold_expired-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_hold_expired",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_hold_expired-3",
+          "capturedAtMs": 3800,
+          "scope": {
+            "sessionId": "access_hold_expired",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_hold_expired-3:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.84,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": null
+        }
+      ]
+    },
+    {
+      "id": "access_no_access",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_no_access-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_no_access",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_no_access-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_no_access",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_no_access-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_no_access",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_no_access-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_no_access",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_no_access-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_no_access",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_no_access-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_no_access",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_turned",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_turned-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_turned",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_turned-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_turned",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_turned-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_turned",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_turned-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_turned",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_turned-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_turned",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_turned-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_turned",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 70,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_paired",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_paired-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_paired",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_paired-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_paired",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_paired-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_paired",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_paired-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_paired",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_paired-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_paired",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_paired-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            },
+            {
+              "candidateId": "access_paired-2:1",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.25,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-1"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 2,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_paired",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_single_main",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_single_main-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_single_main",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [],
+          "truncated": false,
+          "rawCandidateCount": 0,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_single_main",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_single_main-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_single_main",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_single_main-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_single_main",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_single_main-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_single_main",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_single_main-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_single_main",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_mixed_main",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_mixed_main-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_mixed_main",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_mixed_main-0:0",
+              "semanticKey": "maximum_speed:70:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_mixed_main",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_mixed_main-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_mixed_main",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_mixed_main-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_mixed_main",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_mixed_main-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_mixed_main",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_mixed_main-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_mixed_main",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_stale",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_stale-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_stale",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_stale-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_stale",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_stale-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_stale",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_stale-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_stale",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_stale-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_stale",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_stale-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": -1300,
+            "scope": {
+              "sessionId": "access_stale",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_poor_gps",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_poor_gps-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_poor_gps",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_poor_gps-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_poor_gps",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_poor_gps-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_poor_gps",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_poor_gps-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_poor_gps",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_poor_gps-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_poor_gps",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_poor_gps-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_poor_gps",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 50,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_new_camera",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_new_camera-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_new_camera",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_new_camera-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_new_camera",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_new_camera-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_new_camera",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_new_camera-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_new_camera",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_new_camera-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_new_camera",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "remounted",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_new_camera-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_new_camera",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_new_session",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_new_session-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_new_session",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_new_session-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_new_session",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_new_session-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_new_session",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_new_session-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_new_session",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_new_session-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "new",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_new_session-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_new_session",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_selected_access",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_selected_access-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_selected_access",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_selected_access-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_selected_access",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_selected_access-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_selected_access",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_selected_access-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_selected_access",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_selected_access-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_selected_access",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_selected_access-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_selected_access",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "service",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_truncated",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_truncated-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_truncated",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_truncated-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_truncated",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_truncated-1",
+          "capturedAtMs": 1400,
+          "scope": {
+            "sessionId": "access_truncated",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_truncated-1:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.1,
+                "height": 0.1
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-1",
+            "capturedAtMs": 1300,
+            "scope": {
+              "sessionId": "access_truncated",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_truncated-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_truncated",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_truncated-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": true,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_truncated",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_duplicate",
+      "origin": "synthetic",
+      "expectedFinalClass": null,
+      "expectedAccessWithheldCounts": [
+        0,
+        0,
+        0
+      ],
+      "batches": [
+        {
+          "schemaVersion": 1,
+          "frameId": "access_duplicate-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_duplicate",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_duplicate-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_duplicate",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_duplicate-0",
+          "capturedAtMs": 1000,
+          "scope": {
+            "sessionId": "access_duplicate",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_duplicate-0:0",
+              "semanticKey": "maximum_speed:90:km/h",
+              "box": {
+                "x": 0.3,
+                "y": 0.35,
+                "width": 0.08,
+                "height": 0.08
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-0",
+            "capturedAtMs": 900,
+            "scope": {
+              "sessionId": "access_duplicate",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        },
+        {
+          "schemaVersion": 1,
+          "frameId": "access_duplicate-2",
+          "capturedAtMs": 1800,
+          "scope": {
+            "sessionId": "access_duplicate",
+            "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "cameraGeometryId": "fixture-calibrated",
+            "generation": 1,
+            "contextGeneration": 1,
+            "traversalEpoch": 1
+          },
+          "status": "analyzed",
+          "candidates": [
+            {
+              "candidateId": "access_duplicate-2:0",
+              "semanticKey": "maximum_speed:30:km/h",
+              "box": {
+                "x": 0.7,
+                "y": 0.35,
+                "width": 0.03,
+                "height": 0.03
+              },
+              "rawScore": 0.97,
+              "recognitionScore": 0.97,
+              "calibratedConfidence": null,
+              "recognitionEligible": true,
+              "assemblyId": "assembly-0"
+            }
+          ],
+          "truncated": false,
+          "rawCandidateCount": 1,
+          "modelId": "synthetic-model",
+          "preprocessingId": "synthetic-normalized-v1",
+          "road": {
+            "snapshotId": "fix-2",
+            "capturedAtMs": 1700,
+            "scope": {
+              "sessionId": "access_duplicate",
+              "bundleId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "cameraGeometryId": "fixture-calibrated",
+              "generation": 1,
+              "contextGeneration": 1,
+              "traversalEpoch": 1
+            },
+            "wayId": "1",
+            "horizontalAccuracyM": 5,
+            "courseAccuracyDeg": 5,
+            "courseDeg": 0,
+            "localTangentDeg": 0,
+            "matchedStable": true,
+            "roadClass": "primary",
+            "hypotheses": [
+              {
+                "wayId": "2",
+                "headingDeg": 5,
+                "distanceM": 5,
+                "roadClass": "service",
+                "endpointLinked": false,
+                "turnAngleDeg": null
+              }
+            ],
+            "branches": [],
+            "capabilities": [
+              "local_tangent",
+              "endpoint_links",
+              "endpoint_topology_only",
+              "no_lane_metadata",
+              "no_legal_direction"
+            ],
+            "cameraHorizontalFovDeg": 80,
+            "cameraYawDeg": 0
+          }
+        }
+      ]
     }
   ]
 }

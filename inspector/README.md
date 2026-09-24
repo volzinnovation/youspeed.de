@@ -1,5 +1,32 @@
 # YouSpeed Web Inspector
 
+## Dashcam zum Drive-Log
+
+In **Karte & TSR** Drive-Log und TSR-Log laden, dann unter der Karte **Dashcam**
+auswählen. Das Video bleibt lokal und wird als Blob-URL abgespielt; auch mehr als
+4 GB werden nicht vollständig in JavaScript eingelesen.
+
+- Klick auf Zeichen (Karte oder Liste) bzw. GPS-Fix springt zur Aufnahmezeit.
+  Bei geladenem Video bringt ein Zeichenklick den passenden Frame in Sicht
+  und setzt den Tastaturfokus auf das Video. Filteränderungen scrollen nicht.
+  Der blaue Punkt folgt dem nächsten GPS-Fix innerhalb von zwei Sekunden.
+- Kleine Tasten bieten ±5 Sekunden, ±1 Bild, Play/Pause und schrittweisen
+  Rücklauf ohne Ton; Tempo ist zwischen 0,25× und 2× wählbar.
+- Unter **Zeitabgleich / Bildrate** den UTC-Start kontrollieren. Die automatisch
+  gelesene QuickTime-Erstellungszeit hat nur Sekundengenauigkeit und kann bei
+  exportierten Videos ungeeignet sein. Manuelle ISO-Zeitstempel brauchen eine
+  Zeitzone, etwa `2026-09-24T11:53:07Z`. Die Bildrate ist zunächst 30; Schritte
+  sind nominelle 1/fps-Zeitsprünge, keine Garantie auf exakt einen dekodierten
+  Frame bei variabler Bildrate.
+- Alternative Zeitdatei: `{"schema":"youspeed-dashcam-alignment-v1","videoFile":"drive.mov","startUTC":"2026-09-24T11:53:07Z","frameRate":30,"source":"Geprüfter Aufnahmebeginn"}`.
+  Der Dateiname muss zum ausgewählten Video passen.
+- Außerhalb der Laufzeit wird das alte Bild ausgeblendet und die fehlende
+  Abdeckung angezeigt. Keine Zuordnung zum ersten/letzten Frame durch Clamping.
+- HEVC/MOV benötigt Decoder-Unterstützung des Browsers. Bei lokaler
+  H.264-Konvertierung den ursprünglichen Zeitabgleich manuell übernehmen.
+- Dateien nach einem Reload erneut auswählen. Eine Video-Auswahl ersetzt nur
+  das vorherige Video, nicht die geladenen Logs.
+
 Eigenständiges Browser-Tool zum visuellen Prüfen von Ways auf OSM-Karte gegen lokale YouSpeed-SQLite.
 
 ## Features
@@ -133,7 +160,7 @@ fehlender Variante das nationale Endsymbol mit entsprechendem Hinweis gezeigt;
 Zonenenden erhalten niemals ersatzweise dieses Symbol. Illustrative Ortsnamen
 in den Piktogrammen sind keine aus dem Log erkannten Ortsnamen. Ältere Logs mit
 `unknown::` ohne Klassen-ID können keine konkreten Warn-/Gebotszeichen belegen;
-**Auch unbekannte Semantik** macht diese Einträge sichtbar.
+**Auch nicht identifizierbare Kandidaten** macht diese Einträge sichtbar.
 
 Dateien bleiben im Browser und werden nicht hochgeladen oder gespeichert.
 Die Kartenansicht lädt wie bisher OSM-Kacheln (sichtbarer Kartenausschnitt wird
@@ -142,3 +169,49 @@ Private Fahrdaten gehören nicht in das Repository. Kein neuer Bundle-Build und
 keine Änderung an der mobilen Erkennungs- oder Geschwindigkeitslogik ist nötig.
 
 Tests: `node --test tests/inspector/*test.js`
+
+### Sekundäre Verkehrszeichen
+
+**Auch sekundäre Zeichen (z. B. Vorfahrt, Warnungen)** blendet zusätzlich
+Kandidaten mit einer konkreten nationalen Klassen-ID und freigegebenem
+Piktogramm in Karte und Liste ein. Die Option ist zunächst aus und unabhängig
+von **Auch nicht identifizierbare Kandidaten**. Filter wie **Angewendet** gelten
+weiterhin: Ein sekundärer Kandidat wird nicht als angewendetes Tempolimit
+behandelt. Bezeichnungen stammen aus dem jeweiligen Länderkatalog.
+
+Die optionalen `rawClassId`-Felder in neuen iPhone- und Android-
+Applicability-Aufzeichnungen erhalten die Originalklasse auch bei
+`semanticKey=unknown::` (keine Geschwindigkeitsemantik). Es handelt sich um
+Detektionen, nicht um den Nachweis, dass das Zeichen im sekundären Feld der App
+angezeigt wurde. Das Additivfeld ändert keine Erkennungs- oder Geschwindigkeits-
+Entscheidung und benötigt keinen neuen Karten-Bundle.
+
+Ältere Logs ohne diese Klassen-IDs können nicht rückwirkend konkrete sekundäre
+Zeichen liefern. Der Inspector nennt die Anzahl solcher nicht identifizierbaren
+Gruppen ausdrücklich; der Schalter erfindet dafür keine Piktogramme.
+
+Neue Frames enthalten außerdem `batch.country` aus dem verwendeten Modell-Pack.
+Damit funktioniert die nationale Zuordnung auch in Android-
+`runtime_diagnostics.ndjson` und in Log-Ausschnitten ohne Lifecycle-Zeilen.
+Das Feld hat Vorrang vor einem vorher protokollierten Modellwechsel.
+
+### Häufigkeiten pro Zeichenklasse
+
+**Zeichenstatistik · gesamtes TSR-Log** zählt pro Land und protokollierter
+YOLO-/Klassifikator-Klasse. Das zugehörige Piktogramm stammt aus dem gemeinsamen
+Länderkatalog. Die Tabelle ist standardmäßig nach **Vorkommen** absteigend
+sortiert; **Einzeldetektionen** kann alternativ als Sortiermaß gewählt werden.
+
+- **Vorkommen**: Anzahl der bereits gebildeten Sichtungsgruppen (gleiche Klasse,
+  Land, Modell, Semantik und Track/Scope, höchstens 3 Sekunden zwischen Frames).
+  Das ist keine garantierte Zahl physisch unterschiedlicher Schilder.
+- **Einzeldetektionen**: Summe der Kandidaten in diesen Gruppen. Identische
+  doppelte Frames werden bereits beim Import entfernt.
+- Alle Detektionsgruppen zählen, auch unterhalb der Erkennungsschwelle, ohne
+  GPS und bei ausgeschalteten sekundären Zeichen. Kartenfilter beeinflussen die
+  Statistik nicht; angewendete/abgelehnte Aktivierungen zählen nicht zusätzlich.
+- Alte Logs ohne Klassen-ID bekommen separat nach Land/Semantik gezählte
+  **Klasse fehlt**-Zeilen. Eine Klasse wird nicht aus einem Piktogramm oder
+  Tempowert abgeleitet. Auch diese Zeilen fließen in die ausgewiesene Summe ein.
+
+Die Statistik benötigt nur das TSR-Log, keinen Drive-Log oder Karten-Bundle.

@@ -39,7 +39,7 @@ object TSRApplicabilityJson {
         put("height", JsonPrimitive(v.height))
     }
     fun decodeCandidate(o: JsonObject): TSRApplicabilityCandidate {
-        require(o.keys.all { it in setOf("candidateId", "semanticKey", "box", "rawScore", "recognitionEligible", "assemblyId", "recognitionScore", "calibratedConfidence") } && o.keys.containsAll(setOf("candidateId", "semanticKey", "box", "rawScore", "recognitionEligible"))) { "Invalid candidate fields" }
+        require(o.keys.all { it in setOf("candidateId", "semanticKey", "box", "rawScore", "recognitionEligible", "assemblyId", "recognitionScore", "calibratedConfidence", "rawClassId", "detectorRawScore", "classifierRawScore") } && o.keys.containsAll(setOf("candidateId", "semanticKey", "box", "rawScore", "recognitionEligible"))) { "Invalid candidate fields" }
         return TSRApplicabilityCandidate(
             candidateId = o.getValue("candidateId").jsonPrimitive.content,
             semanticKey = o.getValue("semanticKey").jsonPrimitive.content,
@@ -48,7 +48,10 @@ object TSRApplicabilityJson {
             recognitionEligible = o.getValue("recognitionEligible").jsonPrimitive.boolean,
             assemblyId = o["assemblyId"]?.takeUnless { it is JsonNull }?.let { it.jsonPrimitive.content },
             recognitionScore = o["recognitionScore"]?.takeUnless { it is JsonNull }?.let { it.jsonPrimitive.double },
-            calibratedConfidence = o["calibratedConfidence"]?.takeUnless { it is JsonNull }?.let { it.jsonPrimitive.double }
+            calibratedConfidence = o["calibratedConfidence"]?.takeUnless { it is JsonNull }?.let { it.jsonPrimitive.double },
+            rawClassId = o["rawClassId"]?.takeUnless { it is JsonNull }?.let { it.jsonPrimitive.content },
+            detectorRawScore = o["detectorRawScore"]?.takeUnless { it is JsonNull }?.jsonPrimitive?.double,
+            classifierRawScore = o["classifierRawScore"]?.takeUnless { it is JsonNull }?.jsonPrimitive?.double
         )
     }
     fun encodeCandidate(v: TSRApplicabilityCandidate): JsonObject = buildJsonObject {
@@ -60,6 +63,9 @@ object TSRApplicabilityJson {
         put("assemblyId", v.assemblyId?.let { JsonPrimitive(it) } ?: JsonNull)
         put("recognitionScore", v.recognitionScore?.let { JsonPrimitive(it) } ?: JsonNull)
         put("calibratedConfidence", v.calibratedConfidence?.let { JsonPrimitive(it) } ?: JsonNull)
+        v.rawClassId?.let { put("rawClassId", JsonPrimitive(it)) }
+        v.detectorRawScore?.let { put("detectorRawScore", JsonPrimitive(it)) }
+        v.classifierRawScore?.let { put("classifierRawScore", JsonPrimitive(it)) }
     }
     fun decodeCorridor(o: JsonObject): TSRApplicabilityCorridor {
         require(o.keys.all { it in setOf("wayId", "headingDeg", "distanceM", "roadClass", "endpointLinked", "turnAngleDeg") } && o.keys.containsAll(setOf("wayId", "endpointLinked"))) { "Invalid corridor fields" }
@@ -120,7 +126,7 @@ object TSRApplicabilityJson {
         v.postedSpeedKmh?.let { put("postedSpeedKmh", it) }
     }
     fun decodeBatch(o: JsonObject): TSRFrameCandidateBatch {
-        require(o.keys.all { it in setOf("schemaVersion", "frameId", "capturedAtMs", "scope", "status", "candidates", "truncated", "rawCandidateCount", "modelId", "preprocessingId", "road") } && o.keys.containsAll(setOf("schemaVersion", "frameId", "capturedAtMs", "scope", "status", "candidates", "truncated", "rawCandidateCount", "modelId", "preprocessingId"))) { "Invalid batch fields" }
+        require(o.keys.all { it in setOf("schemaVersion", "frameId", "capturedAtMs", "scope", "status", "candidates", "truncated", "rawCandidateCount", "modelId", "preprocessingId", "road", "country") } && o.keys.containsAll(setOf("schemaVersion", "frameId", "capturedAtMs", "scope", "status", "candidates", "truncated", "rawCandidateCount", "modelId", "preprocessingId"))) { "Invalid batch fields" }
         return TSRFrameCandidateBatch(
             schemaVersion = o.getValue("schemaVersion").jsonPrimitive.int,
             frameId = o.getValue("frameId").jsonPrimitive.content,
@@ -132,7 +138,8 @@ object TSRApplicabilityJson {
             rawCandidateCount = o.getValue("rawCandidateCount").jsonPrimitive.int,
             modelId = o.getValue("modelId").jsonPrimitive.content,
             preprocessingId = o.getValue("preprocessingId").jsonPrimitive.content,
-            road = o["road"]?.takeUnless { it is JsonNull }?.let { decodeRoad(it.jsonObject) }
+            road = o["road"]?.takeUnless { it is JsonNull }?.let { decodeRoad(it.jsonObject) },
+            country = o["country"]?.takeUnless { it is JsonNull }?.let { it.jsonPrimitive.content }
         )
     }
     fun encodeBatch(v: TSRFrameCandidateBatch): JsonObject = buildJsonObject {
@@ -147,6 +154,7 @@ object TSRApplicabilityJson {
         put("modelId", JsonPrimitive(v.modelId))
         put("preprocessingId", JsonPrimitive(v.preprocessingId))
         put("road", v.road?.let { encodeRoad(it) } ?: JsonNull)
+        v.country?.let { put("country", JsonPrimitive(it)) }
     }
     fun decodeSample(o: JsonObject): TSRTrackSample {
         require(o.keys.all { it in setOf("frameId", "capturedAtMs", "candidate") } && o.keys.containsAll(setOf("frameId", "capturedAtMs", "candidate"))) { "Invalid sample fields" }

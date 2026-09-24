@@ -79,8 +79,8 @@
     <string name="onboarding_independent">Reconnaître sans démarrer l’enregistreur</string>
     <string name="onboarding_independent_body">Si la reconnaissance est activée, cette option utilise la caméra sur l’écran de conduite sans enregistrer de vidéo. Vous pouvez aussi désactiver la vidéo pendant une session et garder la reconnaissance.</string>
     <string name="onboarding_panoramax_title">Photographiez pour Panoramax</string>
-    <string name="onboarding_panoramax_body">Prenez des photos de rue avec GPS pendant l’enregistrement, même sans vidéo. Elles restent sur le téléphone jusqu’à votre choix de publication sur Panoramax.</string>
-    <string name="onboarding_panoramax_capture">Prendre des photos avec l’enregistreur</string>
+    <string name="onboarding_panoramax_body">Lorsque cette option est activée, des photos sont prises automatiquement pendant vos déplacements avec l’application ouverte, selon la distance ou l’intervalle choisi. La vidéo dashcam est indépendante. Les photos restent sur cet appareil pour vérification avant envoi.</string>
+    <string name="onboarding_panoramax_capture">Prendre des photos automatiquement</string>
     <string name="onboarding_panoramax_review_title">Arrêter, vérifier et sélectionner</string>
     <string name="onboarding_panoramax_review_body">Les photos sont prises à intervalles pendant la session. Arrêtez l’enregistreur et ouvrez la galerie. Ouvrez une photo en grand et zoomez pour la vérifier. Marquez les favoris pour les protéger du nettoyage automatique. Sélectionnez certaines photos ou toutes, effacez la sélection ou supprimez les photos locales indésirables.</string>
     <string name="onboarding_panoramax_upload_title">Connecter, confirmer et envoyer</string>

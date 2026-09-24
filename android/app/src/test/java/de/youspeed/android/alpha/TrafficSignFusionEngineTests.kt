@@ -6,6 +6,51 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrafficSignFusionEngineTests {
+    private fun endEngine(classId: String) = TrafficSignFusionEngine(
+        thresholds = TrafficSignThresholds(0.45, 0.7, 0.25, 3, 1500, 0.2),
+        scoreSource = TrafficSignCalibrationOutput.RAW_SCORE, classThresholds = mapOf(classId to 0.7))
+
+    private fun endDetection(classId: String, score: Double) = detection(box(0.6, 0.3)).let {
+        it.copy(candidate = it.candidate.copy(rawClassId = classId,
+            semantic = TrafficSignSemantic(TrafficSignSemanticKind.RESTRICTION_END),
+            rawScore = score, proposalRawScore = score, classifierRawScore = 0.99))
+    }
+
+    @Test fun endSignsContributeApproachEvidenceWithoutRelaxingConfirmation() {
+        for (classId in listOf("B31", "B33-50", "C46", "282", "F08", "2.58")) {
+            val engine = endEngine(classId)
+            listOf(0.30, 0.36, 0.85).forEachIndexed { index, score ->
+                val detection = endDetection(classId, score)
+                assertTrue(detection.candidate.isQualifiedObservation(TrafficSignCalibrationOutput.RAW_SCORE, 0.25, 0.7))
+                val event = engine.observe(detection, observedAtMs = index * 400L)
+                assertEquals(if (index == 2) TrafficSignRecognitionState.CONFIRMED else TrafficSignRecognitionState.PROVISIONAL, event.state)
+                assertEquals(index + 1, event.candidate?.evidenceFrames)
+                assertEquals(score, event.candidate?.rawScore)
+            }
+        }
+    }
+
+    @Test fun weakEndObservationsNeverConfirmByRepetitionAlone() {
+        val engine = endEngine("B31")
+        repeat(10) { index ->
+            assertEquals(TrafficSignRecognitionState.PROVISIONAL,
+                engine.observe(endDetection("B31", 0.36), observedAtMs = index * 100L).state)
+        }
+    }
+
+    @Test fun endObservationRejectsWeakMissingNonfiniteAndUncalibratedEvidence() {
+        val valid = endDetection("B31", 0.3).candidate
+        for (candidate in listOf(
+            valid.copy(semantic = TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, 50, "km/h")),
+            valid.copy(rawScore = 0.24, proposalRawScore = 0.24),
+            valid.copy(classifierRawScore = 0.69), valid.copy(proposalRawScore = Double.NaN),
+            valid.copy(classifierRawScore = Double.POSITIVE_INFINITY),
+            valid.copy(proposalRawScore = null, classifierRawScore = null)
+        )) assertTrue(!candidate.isQualifiedObservation(TrafficSignCalibrationOutput.RAW_SCORE, 0.25, 0.7))
+        assertTrue(!valid.copy(calibratedConfidence = 0.3, proposalCalibratedConfidence = null, classifierCalibratedConfidence = null)
+            .isQualifiedObservation(TrafficSignCalibrationOutput.CALIBRATED_CONFIDENCE, 0.25, 0.7))
+    }
+
     @Test
     fun repeatedOverlappingEvidenceProgressesFromProvisionalToConfirmed() {
         val engine = engine()

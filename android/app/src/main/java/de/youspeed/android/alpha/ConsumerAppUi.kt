@@ -443,7 +443,7 @@ private fun MainScreen(
     onCapture: () -> Unit,
 ) {
     var previewSelected by rememberSaveable { mutableStateOf(true) }
-    val recorderVisible = ui.driveRecorderState != DriveRecorderState.DISABLED
+    val recorderVisible = ui.driveRecorderState != DriveRecorderState.DISABLED || ui.driveRecorderPanoramaxActive
     LaunchedEffect(ui.driveRecorderState, ui.driveRecorderDashcamActive) {
         if (ui.driveRecorderDashcamActive) previewSelected = true
     }
@@ -589,7 +589,7 @@ private fun MainScreen(
                                 !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
                             showsPedestrianZoneIcon = showsPedestrianZoneSign,
                             showsActiveCameraLimitIndicator = showsActiveCameraLimitIndicator,
-                            showsStaleBundleLimitIndicator = ui.effectiveSpeedLimitSource == EffectiveSpeedLimitSource.STALE_BUNDLE,
+                            showsStaleBundleLimitIndicator = ui.effectiveSpeedLimitSource.isStale,
                             cameraSourceStateDescription = when {
                                 ui.isUnlimitedSpeedLimitActive -> stringResource(R.string.ui_camera_unlimited)
                                 ui.speedLimitDisplayText == "Schritt" -> stringResource(R.string.ui_camera_walking)

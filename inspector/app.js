@@ -488,6 +488,7 @@ function closeCurrentDatabase() {
 }
 
 function renderAdminBoundaryLegend() {
+  if (adminBoundaryLegendEl) adminBoundaryLegendEl.hidden = !sqlDatabase;
   if (!adminBoundaryLegendEl) {
     return;
   }
@@ -1352,6 +1353,7 @@ function renderSelectedDriveLogEntry(options = {}) {
     return;
   }
 
+  window.dispatchEvent(new CustomEvent("inspector:drive-fix", {detail: {time: Date.parse(entry.timestampUTC)}}));
   const debug = replayDebug(entry);
   const replay = replayResult(entry);
   const result = entry.result ?? replay ?? {};

@@ -57,7 +57,7 @@
 "drive_recorder.settings.tsr_feedback_silent" = "Silencieux";
 "tsr.feedback.spoken_speed_format" = "Limitation de vitesse : %d kilomètres par heure.";
 "drive_recorder.settings.panoramax" = "Prendre des photos";
-"drive_recorder.settings.panoramax_description" = "Enregistre localement des scènes de rue géolocalisées pour un examen ultérieur.";
+"drive_recorder.settings.panoramax_description" = "Lorsque cette option est activée, des photos sont prises automatiquement pendant vos déplacements avec l’application ouverte, selon la distance ou l’intervalle choisi. La vidéo dashcam est indépendante. Les photos restent sur cet appareil pour vérification avant envoi.";
 "drive_recorder.settings.shared_camera" = "Les modules partagent une caméra arrière ; la dashcam et la reconnaissance des panneaux peuvent être activées pendant l’enregistrement.";
 "drive_recorder.settings.upload_later" = "L’examen, l’approbation et l’envoi Panoramax ont lieu après le trajet.";
 "drive_recorder.library.title" = "Vidéos dashcam";
@@ -157,7 +157,7 @@
 "drive_recorder.library.delete_title" = "Supprimer les vidéos sélectionnées ?";
 "drive_recorder.library.delete_message" = "%d vidéos sélectionnées seront supprimées définitivement.";
 "panoramax.settings.section" = "Enregistreur de trajet";
-"panoramax.settings.description" = "Démarrez l’enregistrement avec le bouton rouge en bas à gauche. Les images restent d’abord sur cet iPhone et peuvent ensuite être vérifiées et téléversées.";
+"panoramax.settings.description" = "Lorsque cette option est activée, des photos sont prises automatiquement pendant vos déplacements avec l’application ouverte, selon la distance ou l’intervalle choisi. La vidéo dashcam est indépendante. Les photos restent sur cet appareil pour vérification avant envoi.";
 "panoramax.settings.status" = "État";
 "panoramax.settings.saved_images" = "Images enregistrées";
 "panoramax.settings.trigger" = "Déclencheur";
@@ -177,7 +177,7 @@
 "panoramax.review.title" = "Images Panoramax";
 "panoramax.review.local_count" = "%d images locales à vérifier";
 "panoramax.review.empty_title" = "Aucune image Panoramax";
-"panoramax.review.empty_description" = "Activez l’enregistreur de trajet pendant un déplacement.";
+"panoramax.review.empty_description" = "Activez les photos Panoramax dans les réglages et déplacez-vous avec l’application ouverte.";
 "panoramax.review.approve" = "Valider le lot pour téléversement";
 "panoramax.review.upload_via_gallery" = "Démarrer le téléversement depuis la galerie";
 "panoramax.review.selected_count" = "%d images sélectionnées";
@@ -336,7 +336,7 @@
 "onboarding.sources.independent" = "La reconnaissance indépendante utilise la caméra sur l’écran de conduite, sans vidéo ni photos Panoramax. Désactivée, elle reste liée à l’enregistreur.";
 "onboarding.panoramax.title" = "Contribuez des photos de rue";
 "onboarding.panoramax.body" = "Contribuez des photos de rue géolocalisées à Panoramax. Choisissez les images et lancez l’envoi après vérification.";
-"onboarding.panoramax.capture" = "Activées, les photos sont enregistrées lorsque l’enregistreur fonctionne. Vous pouvez couper la vidéo et continuer les photos.";
+"onboarding.panoramax.capture" = "Lorsque cette option est activée, des photos sont prises automatiquement pendant vos déplacements avec l’application ouverte, selon la distance ou l’intervalle choisi. La vidéo dashcam est indépendante. Les photos restent sur cet appareil pour vérification avant envoi.";
 "onboarding.panoramax.review" = "Arrêtez l’enregistreur, ouvrez la galerie et vérifiez ou excluez des images avant de préparer l’envoi.";
 "onboarding.panoramax.upload" = "Connectez un compte Panoramax dans les réglages. L’envoi des images sélectionnées est une action distincte qui utilise Internet.";
 "onboarding.panoramax.later" = "Vous pouvez modifier ces options dans les réglages et revoir ce guide après l’arrêt de l’enregistreur.";

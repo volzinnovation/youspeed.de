@@ -75,3 +75,32 @@ def test_metadata_import_preserves_immutable_links_and_source_truth_separation()
     changed=copy.deepcopy(envelope);changed['batch']['candidates'][0]['rawScore']=0.2
     with pytest.raises(ValueError,match='Conflicting'):
         importer.extract(text+'\n'+'tsr_applicability_v1='+json.dumps(changed))
+
+
+def test_original_class_id_is_optional_presentation_evidence():
+    validator = jsonschema.Draft202012Validator(load('evidence-v1.schema.json'))
+    batch = copy.deepcopy(load('golden-vectors-v1.json')['scenarios'][0]['batches'][0])
+    validator.validate(batch)  # Old captures have no class ID.
+    candidate = batch['candidates'][0]
+    candidate['semanticKey'] = 'unknown::'
+    candidate['rawClassId'] = 'AB3a'
+    validator.validate(batch)
+    candidate['rawClassId'] = None
+    validator.validate(batch)
+    for invalid in ['', 42, {'label': 'AB3a'}]:
+        candidate['rawClassId'] = invalid
+        with pytest.raises(jsonschema.ValidationError):
+            validator.validate(batch)
+
+
+def test_frame_country_is_optional_and_requires_iso2_when_present():
+    validator = jsonschema.Draft202012Validator(load('evidence-v1.schema.json'))
+    batch = copy.deepcopy(load('golden-vectors-v1.json')['scenarios'][0]['batches'][0])
+    validator.validate(batch)
+    for country in ['DE', 'FR', 'BE', 'NL', 'CH', None]:
+        batch['country'] = country
+        validator.validate(batch)
+    for invalid in ['', 'France', 42]:
+        batch['country'] = invalid
+        with pytest.raises(jsonschema.ValidationError):
+            validator.validate(batch)

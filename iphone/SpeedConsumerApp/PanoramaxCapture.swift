@@ -514,6 +514,10 @@ enum PanoramaxCaptureTriggerMode: String, CaseIterable, Codable {
 }
 
 enum PanoramaxCapturePolicy {
+    static func isMoving(speedMetersPerSecond: Double) -> Bool {
+        speedMetersPerSecond.isFinite && speedMetersPerSecond >= 0.5
+    }
+
     static func shouldCapture(
         lastCapture: PanoramaxLocationSample?,
         current: PanoramaxLocationSample,

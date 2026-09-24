@@ -33,6 +33,10 @@ struct TSRApplicabilityCandidate: Codable, Equatable, Sendable {
     let assemblyId: String?
     var recognitionScore: Double? = nil
     var calibratedConfidence: Double? = nil
+    // Presentation evidence only; unknown speed semantics may still identify a warning/priority sign.
+    var rawClassId: String? = nil
+    var detectorRawScore: Double? = nil
+    var classifierRawScore: Double? = nil
 }
 
 struct TSRApplicabilityCorridor: Codable, Equatable, Sendable {
@@ -75,6 +79,7 @@ struct TSRFrameCandidateBatch: Codable, Equatable, Sendable {
     let modelId: String
     let preprocessingId: String
     let road: TrafficSignMapContextSnapshot?
+    var country: String? = nil // Model-pack country, independent of surrounding lifecycle log lines.
 }
 
 struct TSRTrackSample: Codable, Equatable, Sendable {
@@ -118,7 +123,7 @@ struct TSRApplicabilityDiagnostic: Codable, Equatable, Sendable {
 // Generated contract values are checked against shared/tsr/applicability/policy-v1.json.
 struct TSRApplicabilityConfiguration: Sendable {
     static let policyVersion = "applicability-heuristic-v1"
-    static let configHash = "6278259f59578238acabe7df1abe53f8cd580115b20c6036ef3f89657e97ca11"
+    static let configHash = "de643abbfd8e53976fca01551d33b143e0781c38e63ed49a0d315a36f39b4949"
     static let defaultMode = "shadow"
     static let maxCandidates = 32
     static let maxTracks = 24
@@ -147,6 +152,7 @@ struct TSRApplicabilityConfiguration: Sendable {
     static let motorwayExitMaxHeadingDeltaDeg = 60.0
     static let motorwayExitMinSignCenterX = 0.6
     static let motorwayExitPairedRepeatMaxCenterX = 0.5
+    static let accessRoadPolicyVersion = "access-road-conflict-v1"
 }
 
 /// Bounded, deterministic one-to-one physical association before semantic fusion.
@@ -335,7 +341,7 @@ enum TSRApplicabilityPolicy {
 enum TSRApplicabilityAuthority {
     static func allows(_ decision: TSRApplicabilityDecision?, scope: TSRApplicabilityScope, frameId: String,
                        trackId: String, sink: String, mode: String = TSRApplicabilityConfiguration.defaultMode) -> Bool {
-        if decision?.reasons.contains(TSRMotorwayExitPolicy.reason) == true { return false }
+        if decision?.reasons.contains(where: { [TSRMotorwayExitPolicy.reason, TSRAccessRoadPolicy.reason].contains($0) }) == true { return false }
         if mode == "shadow" { return true }
         guard mode == "enforce", let decision, decision.schemaVersion == 1, decision.scope == scope, decision.frameId == frameId,
               decision.trackId == trackId, decision.policyVersion == TSRApplicabilityConfiguration.policyVersion,
@@ -415,16 +421,98 @@ enum TSRMotorwayExitPolicy {
     }
 }
 
+/// Conflicting low sign beside an access road after a repeated main-road limit.
+/// It is an ambiguity guard, not a general right-side sign filter.
+struct TSRAccessRoadPolicy: Sendable {
+    static let reason = "access_road_conflicting_speed"
+    private struct Sighting { let time: Double; let speed: Int; let frame: String }
+    private var sightings: [Sighting] = []
+    private var contextKey = ""
+    private var lastTime = -Double.infinity
+    private var held: (time: Double, speed: Int, box: TSRApplicabilityBox)?
+    mutating func reset() { sightings = []; contextKey = ""; lastTime = -.infinity; held = nil }
+    mutating func withheldCandidates(_ batch: TSRFrameCandidateBatch) -> Set<String> {
+        let s = batch.scope
+        let key = "\(s.sessionId)|\(s.generation)|\(s.contextGeneration)|\(s.cameraGeometryId)"
+        if key != contextKey { reset(); contextKey = key }
+        guard batch.capturedAtMs.isFinite, batch.capturedAtMs > lastTime else { return [] }
+        lastTime = batch.capturedAtMs
+        sightings.removeAll { batch.capturedAtMs - $0.time > 4000 }
+        if let h = held, batch.capturedAtMs - h.time > 1500 { held = nil }
+        guard batch.status == "analyzed", !batch.truncated else { return [] }
+        let road = batch.road
+        let mainRoad = road.map { ["trunk", "primary", "secondary"].contains($0.roadClass ?? "") } ?? false
+        if let road, !mainRoad || !road.matchedStable { sightings = []; held = nil; return [] }
+        func speed(_ candidate: TSRApplicabilityCandidate) -> Int? {
+            let parts = candidate.semanticKey.split(separator: ":")
+            return parts.first == "maximum_speed" && parts.count > 1 ? Int(parts[1]) : nil
+        }
+        let candidates = batch.candidates.filter { $0.recognitionEligible && $0.box.valid }
+        var result = Set<String>()
+        for candidate in candidates {
+            guard let value = speed(candidate), (10...50).contains(value), candidate.box.centerX >= 0.68 else { continue }
+            if candidates.contains(where: { $0.candidateId != candidate.candidateId && speed($0) == value && $0.box.centerX < 0.5 }) { continue }
+            let repeatedMainLimit = Dictionary(grouping: sightings.filter { $0.speed >= 70 && $0.speed > value }, by: \.speed)
+                .values.contains { Set($0.map(\.frame)).count >= 2 }
+            var competingAccess = false
+            if let road, road.scope == batch.scope,
+               (0...1500).contains(batch.capturedAtMs - road.capturedAtMs),
+               let accuracy = road.horizontalAccuracyM, (0...20).contains(accuracy),
+               let course = road.courseDeg, (0..<360).contains(course),
+               let courseAccuracy = road.courseAccuracyDeg, (0...15).contains(courseAccuracy),
+               let tangent = road.localTangentDeg {
+                let delta = abs(TSRApplicabilityPolicy.signedAngle(tangent - course))
+                competingAccess = min(delta, 180 - delta) <= 15 && (road.branches + road.hypotheses).contains {
+                    $0.wayId != road.wayId && $0.roadClass == "service"
+                        && $0.distanceM.map { (0...40).contains($0) } == true
+                        && $0.headingDeg.map { heading in
+                            let a = abs(TSRApplicabilityPolicy.signedAngle(heading - course))
+                            return min(a, 180 - a) <= 35
+                        } == true
+                }
+            }
+            let continuedHold = held.map { h in
+                h.speed == value && batch.capturedAtMs - h.time <= 1500
+                    && abs(candidate.box.centerX - h.box.centerX) <= 0.2
+            } == true
+            if mainRoad && competingAccess && repeatedMainLimit || road == nil && continuedHold {
+                result.insert(candidate.candidateId)
+                if road != nil { held = (batch.capturedAtMs, value, candidate.box) }
+            }
+        }
+        if mainRoad {
+            for candidate in candidates {
+                guard let value = speed(candidate), value >= 70, candidate.box.centerX < 0.55,
+                      (candidate.recognitionScore ?? candidate.rawScore) >= 0.8 else { continue }
+                sightings.append(Sighting(time: batch.capturedAtMs, speed: value, frame: batch.frameId))
+            }
+            sightings = Array(sightings.suffix(16))
+        }
+        return result
+    }
+}
+
 struct TSRApplicabilitySession: Sendable {
+    private var accessPolicy = TSRAccessRoadPolicy()
+    private(set) var accessRoadWithheldCandidateIDs = Set<String>()
     private var tracker = TSRPhysicalSignTracker()
     private var decisionsByTrack: [String: TSRApplicabilityDecision] = [:]
     private(set) var diagnostic: TSRApplicabilityDiagnostic?
-    mutating func reset() { tracker.reset(); decisionsByTrack = [:]; diagnostic = nil }
+    mutating func reset() { tracker.reset(); accessPolicy.reset(); accessRoadWithheldCandidateIDs = []; decisionsByTrack = [:]; diagnostic = nil }
     mutating func evaluate(_ batch: TSRFrameCandidateBatch) -> TSRApplicabilityDiagnostic {
         let tracks = tracker.ingest(batch)
         let withheld = TSRMotorwayExitPolicy.withheldCandidates(batch)
+        accessRoadWithheldCandidateIDs = accessPolicy.withheldCandidates(batch)
+        let accessWithheld = accessRoadWithheldCandidateIDs
         let decisions = tracks.map { track in
             let decision = TSRApplicabilityPolicy.evaluate(track, batch: batch)
+            if let sample = track.samples.last, sample.frameId == batch.frameId, accessWithheld.contains(sample.candidate.candidateId) {
+                return TSRApplicabilityDecision(schemaVersion: decision.schemaVersion, policyVersion: decision.policyVersion,
+                    configHash: decision.configHash, frameId: decision.frameId, trackId: decision.trackId, scope: decision.scope,
+                    roadSnapshotId: decision.roadSnapshotId, classification: "UNKNOWN", reasons: [TSRAccessRoadPolicy.reason],
+                    evidence: ["recent_repeated_mainline_limit", "nearby_access_road", "right_side_conflicting_speed"],
+                    imageSupport: decision.imageSupport, displayEligible: false, immediateEligible: false, passageEligible: false)
+            }
             guard let sample = track.samples.last, sample.frameId == batch.frameId,
                   withheld.contains(sample.candidate.candidateId) else { return decision }
             return TSRApplicabilityDecision(schemaVersion: decision.schemaVersion, policyVersion: decision.policyVersion,

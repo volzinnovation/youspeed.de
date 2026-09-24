@@ -81,8 +81,8 @@
     <string name="onboarding_independent" tools:ignore="MissingTranslation">Recognize without starting the recorder</string>
     <string name="onboarding_independent_body" tools:ignore="MissingTranslation">With recognition enabled, this option uses the camera on the driving screen without saving a dashcam video. You can also turn video off during a recorder session and keep recognition on.</string>
     <string name="onboarding_panoramax_title" tools:ignore="MissingTranslation">Capture for Panoramax</string>
-    <string name="onboarding_panoramax_body" tools:ignore="MissingTranslation">Capture street-level photos with GPS while the recorder runs, even with video off. Photos stay on your phone until you choose to publish them on Panoramax.</string>
-    <string name="onboarding_panoramax_capture" tools:ignore="MissingTranslation">Capture photos with the recorder</string>
+    <string name="onboarding_panoramax_body" tools:ignore="MissingTranslation">When enabled, photos are captured automatically while you move with the app open, using the selected distance or time interval. Dashcam video is independent. Photos stay on this device for review before upload.</string>
+    <string name="onboarding_panoramax_capture" tools:ignore="MissingTranslation">Capture photos automatically</string>
     <string name="onboarding_panoramax_review_title" tools:ignore="MissingTranslation">Stop, inspect and select</string>
     <string name="onboarding_panoramax_review_body" tools:ignore="MissingTranslation">Photos are captured at intervals during the recorder session. Stop the recorder, then open the photo gallery. Open a photo full-size and zoom to inspect it. Mark favorites to protect them from automatic cleanup. Select individual photos or all, clear the selection, or delete unwanted local photos.</string>
     <string name="onboarding_panoramax_upload_title" tools:ignore="MissingTranslation">Connect, confirm and upload</string>

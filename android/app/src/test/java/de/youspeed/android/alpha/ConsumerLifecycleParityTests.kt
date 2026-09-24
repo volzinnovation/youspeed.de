@@ -5,6 +5,18 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ConsumerLifecycleParityTests {
+    @Test fun automaticPhotosFollowSelectionAndLifecycleWithoutDashcamOrTsr() {
+        assertTrue(DriveRecorderPolicy.shouldRunAutomaticPhotos(true, true, true, true))
+        assertFalse(DriveRecorderPolicy.shouldRunAutomaticPhotos(false, true, true, true))
+        assertFalse(DriveRecorderPolicy.shouldRunAutomaticPhotos(true, false, true, true))
+        assertFalse(DriveRecorderPolicy.shouldRunAutomaticPhotos(true, true, false, true))
+        assertFalse(DriveRecorderPolicy.shouldRunAutomaticPhotos(true, true, true, false))
+        assertFalse(PanoramaxCapturePolicy.isMoving(0.0))
+        assertFalse(PanoramaxCapturePolicy.isMoving(-1.0))
+        assertFalse(PanoramaxCapturePolicy.isMoving(Double.NaN))
+        assertTrue(PanoramaxCapturePolicy.isMoving(0.5))
+    }
+
     @Test fun standaloneRecognitionIsOptInAndRequiresForegroundDriving() {
         assertFalse(DriveRecorderPolicy.shouldRunRecognition(true, false, false, true, true))
         assertTrue(DriveRecorderPolicy.shouldRunRecognition(true, true, false, true, true))
@@ -37,22 +49,21 @@ class ConsumerLifecycleParityTests {
 
     @Test fun panoramaxSessionIsRecheckedWhenCameraWasAlreadyActive() {
         assertTrue(DriveRecorderPolicy.shouldEnsurePanoramaxCaptureSession(
-            driveRecorderEnabled = true,
             panoramaxEnabled = true,
             driving = true,
             applicationActive = true,
             cameraState = TrafficSignCameraRuntimeState.ACTIVE,
         ))
         assertFalse(DriveRecorderPolicy.shouldEnsurePanoramaxCaptureSession(
-            driveRecorderEnabled = true, panoramaxEnabled = true, driving = true,
+            panoramaxEnabled = true, driving = true,
             applicationActive = true, cameraState = TrafficSignCameraRuntimeState.STARTING,
         ))
-        assertFalse(DriveRecorderPolicy.shouldEnsurePanoramaxCaptureSession(
-            driveRecorderEnabled = false, panoramaxEnabled = true, driving = true,
+        assertTrue(DriveRecorderPolicy.shouldEnsurePanoramaxCaptureSession(
+            panoramaxEnabled = true, driving = true,
             applicationActive = true, cameraState = TrafficSignCameraRuntimeState.ACTIVE,
         ))
         assertFalse(DriveRecorderPolicy.shouldEnsurePanoramaxCaptureSession(
-            driveRecorderEnabled = true, panoramaxEnabled = false, driving = true,
+            panoramaxEnabled = false, driving = true,
             applicationActive = true, cameraState = TrafficSignCameraRuntimeState.ACTIVE,
         ))
     }

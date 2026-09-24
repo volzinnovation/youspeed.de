@@ -18,7 +18,7 @@ enum DriveRecorderState: Equatable {
 
 enum DriveCaptureSessionPurpose: Equatable {
     case driveRecording
-    case standaloneTrafficSignRecognition
+    case automaticCapture
 }
 
 enum TrafficSignRecognitionState: Equatable {
@@ -37,6 +37,10 @@ struct DriveRecorderStartConfiguration: Equatable {
 }
 
 enum DriveRecorderPolicy {
+    static func shouldRunAutomaticPhotos(enabled: Bool, driving: Bool, applicationActive: Bool, storageReady: Bool) -> Bool {
+        enabled && driving && applicationActive && storageReady
+    }
+
     static func shouldKeepCameraAfterMovieFinalization(
         panoramaxActive: Bool,
         trafficSignRecognitionActive: Bool,
@@ -81,7 +85,7 @@ enum DriveRecorderPolicy {
         if driveStartPending {
             return .preparing
         }
-        if purpose == .standaloneTrafficSignRecognition {
+        if purpose == .automaticCapture {
             return .disabled
         }
         return captureState
@@ -121,10 +125,9 @@ enum DriveRecorderPolicy {
         for state: DriveRecorderState,
         purpose: DriveCaptureSessionPurpose? = nil
     ) -> Bool {
-        // Standalone TSR keeps the camera session alive while driving, but it
-        // is not a Panoramax/drive recording and must not block post-drive
-        // review or upload.
-        if purpose == .standaloneTrafficSignRecognition {
+        // Automatic photos/TSR do not own the movie controls. Completed batches
+        // remain reviewable; the queue separately protects the capturing batch.
+        if purpose == .automaticCapture {
             return true
         }
         switch state {
@@ -308,6 +311,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     @Published private(set) var lastAccuracyMeters: Double?
 
     var onChange: (() -> Void)?
+    var onDiagnostic: ((String) -> Void)?
+    private var lastDiagnosticSnapshot: String?
     var onTrafficSignAnnotation: ((String) -> Void)?
 
     private let queueStore: PanoramaxQueueStore?
@@ -403,9 +408,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     var isDashcamModuleActive: Bool { activeDashcamEnabled }
     var isPanoramaxModuleActive: Bool { activePanoramaxEnabled }
     var isTrafficSignRecognitionModuleActive: Bool { activeTSREnabled }
-    var isStandaloneTrafficSignRecognitionSession: Bool {
-        sessionPurpose == .standaloneTrafficSignRecognition
+    var isAutomaticCaptureSession: Bool {
+        sessionPurpose == .automaticCapture
     }
+    private(set) var requestedPanoramaxEnabled = false
     var activeCaptureSessionID: String? { captureSessionID }
     var hasTrafficSignRecognitionConsumer: Bool { frameDispatcher.hasConsumer }
     var isDashcamOutputAvailable: Bool { movieOutputAvailable }
@@ -524,6 +530,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         lastAccuracyMeters = nil
         lastCaptureDetail = "Kamera wird vorbereitet"
         activeDashcamEnabled = dashcamEnabled
+        requestedPanoramaxEnabled = panoramaxEnabled
         activePanoramaxEnabled = panoramaxEnabled
         activeTSREnabled = tsrEnabled
         notifyChange()
@@ -753,7 +760,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
     }
 
-    func ingest(location: CLLocation) {
+    func ingest(location: CLLocation, speedMetersPerSecond: Double? = nil) {
         guard state == .recording,
               activePanoramaxEnabled,
               !photoInFlight,
@@ -762,6 +769,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
         let accuracy = location.horizontalAccuracy
         let requestedAt = Date()
+        guard PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: speedMetersPerSecond ?? location.speed) else { return }
         guard accuracy >= 0,
               accuracy.isFinite,
               requestedAt.timeIntervalSince(location.timestamp) <= cadenceConfiguration.maxLocationAge else {
@@ -823,7 +831,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         } catch {
             activePanoramaxEnabled = false
             batch = nil
-            lastCaptureDetail = "Panoramax-Batch konnte nicht erstellt werden"
+            lastCaptureDetail = "Panoramax-Batch konnte nicht erstellt werden: \(error.localizedDescription)"
         }
     }
 
@@ -1002,7 +1010,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             pendingSample = nil
             pendingPhotoUniqueID = nil
             if state == .recording {
-                lastCaptureDetail = error == nil ? "Aufnahme verworfen" : "Aufnahme fehlgeschlagen"
+                lastCaptureDetail = error.map { "Aufnahme fehlgeschlagen: \($0.localizedDescription)" } ?? "Aufnahme verworfen"
             }
             notifyChange()
             return
@@ -1550,6 +1558,12 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     }
 
     private func notifyChange() {
+        let snapshot = "state=\(state) purpose=\(String(describing: sessionPurpose)) photos_requested=\(requestedPanoramaxEnabled) photos_active=\(activePanoramaxEnabled) photo_output=\(photoOutputAvailable) dashcam_active=\(activeDashcamEnabled) tsr_active=\(activeTSREnabled) photos=\(capturedImageCount) detail=\(lastCaptureDetail)"
+        if snapshot != lastDiagnosticSnapshot {
+            lastDiagnosticSnapshot = snapshot
+            Self.logger.notice("capture_state \(snapshot, privacy: .public)")
+            onDiagnostic?(snapshot)
+        }
         onChange?()
     }
 

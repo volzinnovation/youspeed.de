@@ -14,6 +14,75 @@ import org.junit.Test
 class TrafficSignPassageTests {
     private val t0 = Instant.parse("2026-09-04T08:00:00Z")
 
+
+    @Test fun lastKnownPresentationSurvivesUnknownRoadAndEndUntilFreshInformation() {
+        val cache = LastKnownSpeedLimitPresentation()
+        val unknown = EffectiveSpeedLimit(null, EffectiveSpeedLimitSource.NONE, "no_limit")
+        assertNull(cache.present(unknown).resolution)
+        val voice = EffectiveSpeedLimit(TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 70),
+            EffectiveSpeedLimitSource.LOCAL_CORRECTION, "voice", isUserCorrection = true)
+        assertEquals(voice, cache.present(voice))
+        repeat(1000) {
+            val stale = cache.present(unknown)
+            assertEquals(70, stale.resolution?.speedKmh)
+            assertEquals(EffectiveSpeedLimitSource.LAST_KNOWN, stale.source)
+            assertFalse(stale.isUserCorrection)
+            assertFalse(stale.cameraEvidence)
+        }
+        val camera = EffectiveSpeedLimit(TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 30),
+            EffectiveSpeedLimitSource.CAMERA, "camera")
+        assertEquals(camera, cache.present(camera))
+        val end = unknown.copy(resolution = TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNKNOWN),
+            presentationReason = "end_unknown")
+        assertEquals(30, cache.present(end).resolution?.speedKmh)
+        val state = ConsumerUiState(speedLimitKmh = 30, currentSpeedKmh = 80.0,
+            effectiveSpeedLimitSource = EffectiveSpeedLimitSource.LAST_KNOWN)
+        assertEquals(0, ConsumerMainScreenLogic.currentOverspeedKmh(state))
+        assertNull(ConsumerMainScreenLogic.currentPenaltyNotice(state))
+        cache.reset()
+        assertNull(cache.present(unknown).resolution)
+    }
+
+    @Test fun lastKnownPresentationKeepsUnlimitedAndWalkingValues() {
+        val cache = LastKnownSpeedLimitPresentation()
+        for (kind in listOf(TrafficSignResolvedLimitKind.UNLIMITED, TrafficSignResolvedLimitKind.WALK)) {
+            val current = EffectiveSpeedLimit(TrafficSignResolvedLimit(kind), EffectiveSpeedLimitSource.BUNDLE, "map")
+            assertEquals(current, cache.present(current))
+            val stale = cache.present(EffectiveSpeedLimit(null, EffectiveSpeedLimitSource.NONE, "missing"))
+            assertEquals(kind, stale.resolution?.kind)
+            assertEquals(EffectiveSpeedLimitSource.LAST_KNOWN, stale.source)
+        }
+    }
+
+    @Test fun confirmedPassageSurvivesNearbyNumberedRoadSplit() {
+        val first = context("1", emptySet()).copy(continuityCapable = false, roadIdentity = "ref:D1555")
+        val next = context("2", emptySet()).copy(continuityCapable = false, roadIdentity = "ref:D1555", latitude = 49.0001)
+        val finalizer = TrafficSignPassageFinalizer()
+        finalizer.observe(recognition(t0, confidence = 0.90).copy(roadContext = first), 0.90, 1, true, true)
+        finalizer.observe(recognition(t0.plusMillis(500), confidence = 0.93).copy(roadContext = first), 0.93, 1, true, true)
+        assertNull(finalizer.observe(missing(t0.plusSeconds(1)).copy(roadContext = next), null, 1, true, true))
+        val event = requireNotNull(finalizer.observe(missing(t0.plusMillis(1500)).copy(roadContext = next), null, 1, true, true))
+        assertTrue(event.eligibleRouteRelationGroupIds.isEmpty())
+        assertTrue(trafficSignPassageContextIsCurrent(event, next))
+        val resolver = TrafficSignRuntimeSourceResolver()
+        val result = resolver.commit(event, base(90, EffectiveSpeedLimitSource.BUNDLE))
+        assertEquals(event.resolution.speedKmh, result.resolution?.speedKmh)
+        assertNotNull(resolver.activeAssertion())
+    }
+
+    @Test fun numberedRoadContinuityRejectsTurnsChangedScopesAndUnverifiedBundles() {
+        val first = context("1", emptySet()).copy(roadIdentity = "ref:D1555")
+        val next = first.copy(wayId = "2")
+        assertTrue(next.continuesSignedRoad(first))
+        for (invalid in listOf(next.copy(roadIdentity = "ref:D19"),
+            next.copy(traversalEpoch = 2), next.copy(matchedWayStable = false),
+            next.copy(latitude = 49.01), next.copy(bundleSha256 = "b".repeat(64)),
+            next.copy(bundleSha256 = null), next.copy(headingDegrees = 180.0))) {
+            assertFalse(invalid.continuesSignedRoad(first))
+        }
+        assertFalse(next.copy(roadIdentity = "name:Main Street").continuesSignedRoad(first.copy(roadIdentity = "name:Main Street")))
+    }
+
     @Test fun framePreviewCannotReturnAfterFiveMinuteExpiry() {
         val context = context("1", emptySet())
         val preview = TrafficSignSpeedOverride(90, t0, "preview", context)

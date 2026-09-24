@@ -686,6 +686,12 @@ class TrafficSignPassageFinalizer(
                 }
                 return true
             }
+            if (next.continuesSignedRoad(previous)) {
+                eligibleRouteRelationGroupIds = eligibleRouteRelationGroupIds.intersect(next.routeRelationGroupIds)
+                sourceRelationIds = sourceRelationIds.intersect(next.sourceRelationIds)
+                routeContext = next
+                return true
+            }
             if (!previous.continuityCapable || !next.continuityCapable) return false
             val narrowedRelations = eligibleRouteRelationGroupIds.intersect(next.routeRelationGroupIds)
             if (narrowedRelations.isEmpty()) return false
@@ -797,7 +803,25 @@ enum class EffectiveSpeedLimitSource(val wireValue: String) {
     LOCAL_CORRECTION("local_correction"),
     BUNDLE("bundle"),
     STALE_BUNDLE("stale_bundle"),
+    LAST_KNOWN("last_known"),
     NONE("none"),
+}
+
+val EffectiveSpeedLimitSource.isStale: Boolean
+    get() = this == EffectiveSpeedLimitSource.STALE_BUNDLE || this == EffectiveSpeedLimitSource.LAST_KNOWN
+
+class LastKnownSpeedLimitPresentation {
+    private var lastResolution: TrafficSignResolvedLimit? = null
+    fun reset() { lastResolution = null }
+    fun present(state: EffectiveSpeedLimit): EffectiveSpeedLimit {
+        if (state.resolution != null && state.resolution.kind != TrafficSignResolvedLimitKind.UNKNOWN && !state.source.isStale) {
+            lastResolution = state.resolution
+            return state
+        }
+        val previous = lastResolution ?: return state
+        return EffectiveSpeedLimit(previous, EffectiveSpeedLimitSource.LAST_KNOWN,
+            "last_known_display_only", cameraEvidence = false)
+    }
 }
 
 data class EffectiveSpeedLimit(
@@ -932,7 +956,7 @@ class TrafficSignRuntimeSourceResolver(
             }
         }
         val activationRelationGroups = event.eligibleRouteRelationGroupIds.intersect(context.routeRelationGroupIds)
-        if (wayId != firstSeenWayId && activationRelationGroups.isEmpty()) {
+        if (wayId != firstSeenWayId && activationRelationGroups.isEmpty() && event.firstSeenContext?.let { context.continuesSignedRoad(it) } != true) {
             return if (event.action.kind in SPEED_END_ACTION_KINDS) {
                 maskOrPreserveUnsafeEnd(event, base, "camera_end_recognition_scope_lost", fallbackSpeedLimitAfterEnd)
             } else {
@@ -1111,7 +1135,7 @@ class TrafficSignRuntimeSourceResolver(
         val sameScope = context.traversalEpoch == lastSeen.traversalEpoch &&
             context.sourceSignature.bundleRevision == lastSeen.sourceSignature.bundleRevision &&
             context.bundleSha256 == lastSeen.bundleSha256 &&
-            (sameWay || (context.continuityCapable && sharedGroups.isNotEmpty()))
+            (sameWay || context.continuesSignedRoad(lastSeen) || (context.continuityCapable && sharedGroups.isNotEmpty()))
         pending = null
         if (!sameScope) {
             return null
@@ -1321,6 +1345,18 @@ internal fun distanceMeters(
     return 2.0 * 6_371_000.0 * asin(sqrt(a.coerceIn(0.0, 1.0)))
 }
 
+/** Frozen ref continuity across nearby way splits, never inferred from a name alone. */
+internal fun TrafficSignDetectionContext.continuesSignedRoad(original: TrafficSignDetectionContext): Boolean {
+    if (wayId.isNullOrBlank() || original.wayId.isNullOrBlank() ||
+        !matchedWayStable || !original.matchedWayStable || roadIdentity?.startsWith("ref:") != true ||
+        roadIdentity != original.roadIdentity || traversalEpoch != original.traversalEpoch ||
+        sourceSignature.bundleRevision != original.sourceSignature.bundleRevision ||
+        bundleSha256 == null || bundleSha256 != original.bundleSha256) return false
+    if (!headingDegrees.isFinite() || !original.headingDegrees.isFinite() ||
+        kotlin.math.abs(TSRApplicabilityPolicy.signedAngle(headingDegrees-original.headingDegrees)) > 45) return false
+    return distanceMeters(latitude, longitude, original.latitude, original.longitude) <= 160
+}
+
 /** Admission guard for a delayed finalized result before it may mutate/persist. */
 internal fun trafficSignPassageContextIsCurrent(
     event: TrafficSignPassageEvent,
@@ -1342,6 +1378,7 @@ internal fun trafficSignPassageContextIsCurrent(
             currentContext.travelDirection == TrafficSignTravelDirection.UNKNOWN ||
             anchor.travelDirection == currentContext.travelDirection
     }
+    if (currentContext.continuesSignedRoad(event.firstSeenContext ?: anchor)) return true
     return anchor.continuityCapable && currentContext.continuityCapable &&
         event.eligibleRouteRelationGroupIds.intersect(currentContext.routeRelationGroupIds).isNotEmpty()
 }

@@ -107,3 +107,82 @@ test('all display-eligible catalog images resolve to existing shared local bytes
     assert.ok(fs.existsSync(path.join(root, 'inspector', art.url)), `${c} ${sign.class_id}`);
   }
 });
+
+test('secondary-sign switch is independent of unidentified candidates and action filters for all countries', () => {
+  for (const country of core.countries) {
+    const mapping = manifests[country].class_mapping.find(m => m.semantic.kind === 'unknown' &&
+      catalogs[country].signs.some(s => s.class_id === m.class_id && s.display_eligible));
+    assert.ok(mapping, country);
+    const secondary = {kind: 'detection', country, semantic: 'unknown::', classId: mapping.class_id};
+    assert.equal(core.category(secondary, catalogs, manifests), 'secondary');
+    assert.equal(core.isVisible(secondary, catalogs, manifests), false);
+    assert.equal(core.isVisible(secondary, catalogs, manifests, {unknown: true}), false);
+    assert.equal(core.isVisible(secondary, catalogs, manifests, {secondary: true}), true);
+    assert.equal(core.isVisible(secondary, catalogs, manifests, {secondary: true, kind: 'applied'}), false);
+    assert.ok(core.artwork(secondary, catalogs, manifests).url);
+    const primary = {kind: 'detection', country, semantic: 'maximum_speed:50:km/h'};
+    assert.equal(core.isVisible(primary, catalogs, manifests), true);
+    const unknown = {kind: 'detection', country, semantic: 'unknown::'};
+    assert.equal(core.isVisible(unknown, catalogs, manifests, {secondary: true}), false);
+    assert.equal(core.isVisible(unknown, catalogs, manifests, {unknown: true}), true);
+    assert.equal(core.category({...unknown, classId: 'not-a-model-class'}, catalogs, manifests), 'unknown');
+  }
+});
+
+test('secondary raw class IDs survive import/grouping, including Android null semantic components', () => {
+  const a = frame(), b = frame(2000), c = frame(2500);
+  for (const f of [a, b, c]) f.batch.candidates[0].semanticKey = 'unknown:null:null';
+  a.batch.candidates[0].rawClassId = 'AB1'; b.batch.candidates[0].rawClassId = 'AB1'; c.batch.candidates[0].rawClassId = 'AB4';
+  const result = core.parseLog('lifecycle=ready pack=fr-panoramax-bootstrap-evaluation-v1\n' +
+    [a, b, c].map(f => JSON.stringify({event: 'tsr_applicability_v1', details: {evidence: JSON.stringify(f)}})).join('\n'));
+  assert.equal(result.events.length, 2);
+  assert.equal(result.events[0].count, 2);
+  assert.equal(result.events[0].classId, 'AB1');
+  assert.equal(result.events[0].semantic, 'unknown::');
+  assert.equal(result.events[1].classId, 'AB4');
+  assert.ok(result.events.every(e => core.category(e, catalogs, manifests) === 'secondary'));
+  assert.notEqual(core.artwork(result.events[0], catalogs, manifests).url, core.artwork(result.events[1], catalogs, manifests).url);
+});
+
+test('self-contained native frames select the country without lifecycle lines and override stale lifecycle country', () => {
+  const f = frame();
+  f.batch.country = 'FR';
+  f.batch.candidates[0].rawClassId = 'AB4';
+  f.batch.candidates[0].semanticKey = 'unknown::';
+  const standalone = core.parseLog(JSON.stringify({event: 'tsr_applicability_v1', evidence: JSON.stringify(f)}));
+  const switched = core.parseLog('lifecycle=ready pack=de-panoramax-bootstrap-evaluation-v1\n' +
+    'tsr_applicability_v1=' + JSON.stringify(f));
+  for (const result of [standalone, switched]) {
+    assert.equal(result.events[0].country, 'FR');
+    assert.equal(core.category(result.events[0], catalogs, manifests), 'secondary');
+    assert.match(core.artwork(result.events[0], catalogs, manifests).url, /national\/FR\/png\/fr-ab4\.png$/);
+  }
+});
+
+test('statistics count sightings and raw detections separately, sort descending, and exclude activations', () => {
+  const sample = (classId, count, extra = {}) => ({kind: 'detection', country: 'FR', classId, count, semantic: 'unknown::', ...extra});
+  const events = [sample('AB4', 2), sample('AB4', 3), sample('AB1', 10),
+    sample('AB4', 4, {kind: 'applied'}), sample('AB4', 1, {kind: 'rejected'}),
+    sample('AB4', 1, {country: 'BE'}), sample(null, 3, {semantic: 'maximum_speed:50:km/h'}), sample(null, 2)];
+  const stats = core.signStatistics(events);
+  assert.equal(stats.occurrences, 6);
+  assert.equal(stats.detections, 21);
+  assert.equal(stats.withoutClass, 2);
+  assert.equal(stats.rows.length, 5);
+  assert.equal(stats.rows[0].classId, 'AB4');
+  assert.equal(stats.rows[0].country, 'FR');
+  assert.equal(stats.rows[0].occurrences, 2);
+  assert.equal(stats.rows[0].detections, 5);
+  assert.equal(core.signStatistics(events, null, 'detections').rows[0].classId, 'AB1');
+  assert.ok(stats.rows.filter(r => !r.classId).every(r => !r.example.classId));
+  assert.equal(stats.rows.reduce((n, r) => n + r.occurrences, 0), stats.occurrences);
+  assert.equal(stats.rows.reduce((n, r) => n + r.detections, 0), stats.detections);
+});
+
+test('statistics use explicit country before fallback, deterministic ties, and need no GPS', () => {
+  const event = {kind: 'detection', classId: 'AB4', semantic: 'unknown::', count: 1};
+  const stats = core.signStatistics([{...event}, {...event, country: 'BE'}, {...event, classId: 'AB1'}], 'FR');
+  assert.deepEqual(stats.rows.map(r => [r.country, r.classId]), [['BE', 'AB4'], ['FR', 'AB1'], ['FR', 'AB4']]);
+  assert.match(core.artwork(stats.rows[2].example, catalogs, manifests).url, /fr-ab4\.png$/);
+  assert.deepEqual(core.signStatistics([]), {rows: [], occurrences: 0, detections: 0, withoutClass: 0});
+});
