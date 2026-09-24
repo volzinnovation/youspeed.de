@@ -589,7 +589,13 @@ def _bundle_commands(
 
     if build_settlement_context:
         commands[1].extend(["--build-settlement-context", "--country-code", target.iso2])
-        commands[-1].extend(["--min-app-version", "1.1"])
+        commands[-1].extend(["--min-app-version", "1.1.1" if target.iso2 == "FR" else "1.1"])
+
+    if target.iso2 == "FR":
+        commands[-1].extend([
+            "--penalty-rules", str(repo_root / "iphone/SpeedConsumerApp/Rules/FRA-rules.json"),
+            "--penalty-rules-file-name", "FRA-rules.json",
+        ])
 
     if not skip_release_urls:
         publish = commands[-1]

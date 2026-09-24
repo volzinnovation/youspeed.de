@@ -45,6 +45,18 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
         self.assertEqual(commands[2][commands[2].index("--bundle-dir-name") + 1], "2026-09-14-settlement-pilot")
         self.assertNotIn("--github-release-tag", commands[2])
 
+    def test_french_settlement_bundle_includes_rules_and_supported_app_version(self):
+        commands = MODULE._bundle_commands(
+            repo_root=REPO_ROOT, target=self._target("corse", "France", "FR", "FRA"),
+            bundle_version="2026-09-24-review", max_geom_points=24,
+            db_compression="gzip", release_tag="corse", skip_release_urls=False,
+            build_settlement_context=True,
+        )
+        self.assertEqual(commands[2][commands[2].index("--min-app-version") + 1], "1.1.1")
+        self.assertEqual(commands[2][commands[2].index("--penalty-rules-file-name") + 1], "FRA-rules.json")
+        self.assertIn(str(REPO_ROOT / "iphone/SpeedConsumerApp/Rules/FRA-rules.json"), commands[2])
+        self.assertEqual(commands[1][commands[1].index("--country-code") + 1], "FR")
+
     def test_settlement_context_accepts_multiple_regions_and_countries(self):
         targets = [
             self._target("bayern"),

@@ -3,6 +3,11 @@ name: France Regional Incremental Release Sequence
 on:
   workflow_dispatch:
     inputs:
+      build_only:
+        description: "Rebuild selected regions from this workflow commit as validated artifacts; do not publish releases"
+        required: false
+        default: false
+        type: boolean
       targets:
         description: "all, regions, france, all-root, or comma-separated region/shard ids"
         required: false
@@ -43,6 +48,7 @@ concurrency:
 
 jobs:
   dispatch:
+    if: ${{ !inputs.build_only }}
     runs-on: ubuntu-latest
     timeout-minutes: 1440
     env:
@@ -89,3 +95,66 @@ jobs:
           fi
 
           "${cmd[@]}"
+
+  plan-build:
+    if: ${{ inputs.build_only }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      regions: ${{ steps.plan.outputs.regions }}
+      version: ${{ steps.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - id: plan
+        env:
+          TARGETS: ${{ inputs.targets }}
+        run: |
+          regions=$(python3 scripts/map/list_country_release_targets.py --country france --selector "$TARGETS" --format json)
+          echo "regions=$(echo "$regions" | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin), separators=(",", ":")))')" >> "$GITHUB_OUTPUT"
+          echo "version=$(date -u +%F)-fr-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+
+  rebuild-region:
+    needs: plan-build
+    if: ${{ inputs.build_only }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        region: ${{ fromJson(needs.plan-build.outputs.regions) }}
+    env:
+      REGION: ${{ matrix.region }}
+      BUNDLE_VERSION: ${{ needs.plan-build.outputs.version }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build dependencies
+        run: python3 -m pip install -r scripts/map/requirements-settlement.txt
+      - name: Build full regional bundle
+        run: |
+          python3 scripts/map/generate_v3_country_bundles.py \
+            --bundle-region "$REGION" --iso2 FR --execute \
+            --build-settlement-context --bundle-version "$BUNDLE_VERSION"
+      - name: Validate database and record provenance
+        run: |
+          python3 scripts/map/validate_france_rebuild.py \
+            --region "$REGION" --bundle-version "$BUNDLE_VERSION" --commit "$GITHUB_SHA"
+      - name: Retain validated bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: france-${{ matrix.region }}-${{ github.sha }}
+          path: mapdata/bundles/v3/${{ matrix.region }}/${{ needs.plan-build.outputs.version }}/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
