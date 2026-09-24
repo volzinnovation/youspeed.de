@@ -142,6 +142,8 @@ struct MainView: View {
     @State private var showingLocalRecordings = false
     @State private var showingPanoramaxGallery = false
     @State private var showingTrafficSignDetails = false
+    @State private var photoCaptureFeedbackToken: UUID?
+    @State private var photoCaptureFeedbackVisible = false
     @AppStorage("youspeed.debug.show_tsr_badge") private var showsTrafficSignRecognitionDebugBadge = false
     // Keep the user's selection independent from transient recorder
     // availability. Published recorder fields arrive one after another; if a
@@ -344,6 +346,19 @@ struct MainView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
+        .onChange(of: viewModel.panoramaxLastCaptureAt) { _, capturedAt in
+            // Only a newly saved photo flashes; opening the dashboard or
+            // refreshing the gallery must not replay old captures.
+            photoCaptureFeedbackToken = capturedAt == nil ? nil : UUID()
+        }
+        .task(id: photoCaptureFeedbackToken) {
+            photoCaptureFeedbackVisible = photoCaptureFeedbackToken != nil
+            guard photoCaptureFeedbackToken != nil else { return }
+            do {
+                try await Task.sleep(for: .seconds(1))
+                photoCaptureFeedbackVisible = false
+            } catch { } // A newer capture owns the replacement task.
+        }
         .sheet(isPresented: $showingSettings) {
             DismissibleNavigationSheet {
                 SettingsView(viewModel: viewModel, account: viewModel.panoramaxAccount)
@@ -515,7 +530,7 @@ struct MainView: View {
             } label: {
                 Image(systemName: "photo.on.rectangle")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(galleryControl.isEnabled ? primaryForegroundColor : Color.gray)
+                    .foregroundStyle(photoCaptureFeedbackVisible ? Color.green : (galleryControl.isEnabled ? primaryForegroundColor : Color.gray))
                     .frame(width: buttonDiameter, height: buttonDiameter)
             }
             .buttonStyle(.plain)
@@ -661,7 +676,7 @@ struct MainView: View {
     }
 
     private var showsDriveRecorderStatusStrip: Bool {
-        viewModel.driveRecorderState != .disabled || viewModel.driveRecorderPanoramaxActive
+        viewModel.driveRecorderDashcamActive
     }
 
     private func driveRecorderModuleIndicator(

@@ -318,6 +318,7 @@ data class ConsumerUiState(
     val panoramaxUploadStatusByBatch: Map<String, String> = emptyMap(),
     val panoramaxUploadProgressByBatch: Map<String, PanoramaxUploadProgress> = emptyMap(),
     val panoramaxCaptureCount: Int = 0,
+    val panoramaxLastCaptureAt: Instant? = null,
     val panoramaxLastCaptureDetail: String = "No photo captured",
     val panoramaxBatches: List<PanoramaxBatchRecord> = emptyList(),
     val driveRecorderState: DriveRecorderState = DriveRecorderState.DISABLED,
@@ -1317,7 +1318,7 @@ class ConsumerSessionController(
                     panoramaxLastCaptureSample = request.sample
                     val attachedIds = annotations.map { it.sourceEventId }.toSet()
                     latestAnnotationDrafts = latestAnnotationDrafts.filterNot { it.sourceEventId in attachedIds }
-                    updateState { copy(panoramaxLastCaptureDetail = ConsumerUiStrings.text("Photo saved", "Foto gespeichert", "Photo enregistrée", "Foto opgeslagen")) }
+                    updateState { copy(panoramaxLastCaptureAt = clock.instant(), panoramaxLastCaptureDetail = ConsumerUiStrings.text("Photo saved", "Foto gespeichert", "Photo enregistrée", "Foto opgeslagen")) }
                 }
                 enforcePanoramaxStorageLimit()
             } catch (error: Exception) {

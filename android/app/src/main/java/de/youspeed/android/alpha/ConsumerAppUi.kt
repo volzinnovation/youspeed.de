@@ -443,7 +443,19 @@ private fun MainScreen(
     onCapture: () -> Unit,
 ) {
     var previewSelected by rememberSaveable { mutableStateOf(true) }
-    val recorderVisible = ui.driveRecorderState != DriveRecorderState.DISABLED || ui.driveRecorderPanoramaxActive
+    val recorderVisible = ui.driveRecorderState != DriveRecorderState.DISABLED
+    var previousPhotoCaptureAt by remember { mutableStateOf(ui.panoramaxLastCaptureAt) }
+    var photoCaptureFeedbackVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(ui.panoramaxLastCaptureAt) {
+        val capturedAt = ui.panoramaxLastCaptureAt
+        val newCapture = capturedAt != null && capturedAt != previousPhotoCaptureAt
+        previousPhotoCaptureAt = capturedAt
+        photoCaptureFeedbackVisible = newCapture
+        if (newCapture) {
+            try { kotlinx.coroutines.delay(1_000) }
+            finally { photoCaptureFeedbackVisible = false }
+        }
+    }
     LaunchedEffect(ui.driveRecorderState, ui.driveRecorderDashcamActive) {
         if (ui.driveRecorderDashcamActive) previewSelected = true
     }
@@ -624,7 +636,7 @@ private fun MainScreen(
                         .testTag("main-workspace-pane"),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    if (recorderVisible && landscape) RecorderModuleStrip(
+                    if (ui.driveRecorderDashcamActive && landscape) RecorderModuleStrip(
                         controller,
                         Modifier.padding(horizontal = horizontalPadding, vertical = 6.dp)
                             .testTag("drive-recorder-status"),
@@ -682,7 +694,7 @@ private fun MainScreen(
                             onDismiss = { previewSelected = false },
                         )
                     }
-                    if (recorderVisible && !landscape) RecorderModuleStrip(
+                    if (ui.driveRecorderDashcamActive && !landscape) RecorderModuleStrip(
                         controller, Modifier.padding(top = 6.dp).testTag("drive-recorder-status"),
                         onPreviewRequested = { previewSelected = true },
                     )
@@ -695,6 +707,7 @@ private fun MainScreen(
                         onOpenLocalRecordings = onOpenLocalRecordings,
                         localRecordingsTint = trafficSignBugButtonTint(ui, foreground),
                         driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
+            photoCaptureFeedbackVisible = photoCaptureFeedbackVisible,
                         modifier = Modifier.padding(top = if (recorderVisible) 8.dp else 16.dp),
                     )
                 }
@@ -725,6 +738,7 @@ private fun MainScreen(
             onOpenLocalRecordings = onOpenLocalRecordings,
             localRecordingsTint = trafficSignBugButtonTint(ui, foreground),
             driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
+            photoCaptureFeedbackVisible = photoCaptureFeedbackVisible,
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
         )
     }
@@ -800,6 +814,7 @@ private fun BottomCornerButtons(
     localRecordingsTint: Color,
     driveRecorderState: DriveRecorderState,
     panoramaxCaptureCount: Int,
+    photoCaptureFeedbackVisible: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -843,7 +858,7 @@ private fun BottomCornerButtons(
                 Icon(
                     Icons.Default.PhotoLibrary,
                     contentDescription = stringResource(R.string.ui_panoramax_gallery),
-                    tint = foreground,
+                    tint = if (photoCaptureFeedbackVisible) Color(0xFF22C55E) else foreground,
                 )
                 if (panoramaxCaptureCount > 0) {
                     Text(
