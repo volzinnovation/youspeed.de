@@ -592,6 +592,7 @@ def _bundle_commands(
         commands[-1].extend(["--min-app-version", "1.1.1" if target.iso2 == "FR" else "1.1"])
 
     if target.iso2 == "FR":
+        commands[1].extend(["--build-way-links", "--way-links-schema", "detailed"])
         commands[-1].extend([
             "--penalty-rules", str(repo_root / "iphone/SpeedConsumerApp/Rules/FRA-rules.json"),
             "--penalty-rules-file-name", "FRA-rules.json",
