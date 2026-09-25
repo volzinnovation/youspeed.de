@@ -53,6 +53,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -132,6 +134,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -2027,24 +2030,58 @@ private fun BundleDownloadOptionRow(
 
 @Composable
 private fun PanoramaxGallerySheet(controller: ConsumerSessionController, onDismiss: () -> Unit) {
-    var videos by rememberSaveable { mutableStateOf(false) }
     SheetScaffold(title = stringResource(R.string.ui_panoramax_gallery), onDismiss = onDismiss, testTag = "panoramax-gallery-sheet") {
+        PanoramaxGalleryPane(controller)
+    }
+}
+
+@Composable
+internal fun PanoramaxGalleryPane(controller: ConsumerSessionController) {
+    var videos by rememberSaveable { mutableStateOf(false) }
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // A mounted phone has much less vertical space after the sheet header.
+        // Keep labels and touch targets while giving photos room to scroll.
+        val compact = maxHeight < 360.dp
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.weight(1f)) {
-                if (videos) DashcamLibraryContent(controller) else PanoramaxGalleryContent(controller)
+                if (videos) DashcamLibraryContent(controller) else PanoramaxGalleryContent(controller, compact = compact)
             }
-            NavigationBar {
+            if (compact) Surface(tonalElevation = 3.dp) {
+                Row(Modifier.fillMaxWidth().selectableGroup()) {
+                    listOf(false, true).forEach { videoTab ->
+                        val selected = videos == videoTab
+                        Row(
+                            Modifier.weight(1f).heightIn(min = 48.dp)
+                                .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                                .selectable(selected = selected, role = Role.Tab, onClick = { videos = videoTab })
+                                .testTag(if (videoTab) "gallery-tab-videos" else "gallery-tab-pictures")
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            Icon(if (videoTab) Icons.Default.VideoLibrary else Icons.Default.PhotoLibrary,
+                                contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(if (videoTab) ConsumerUiStrings.text("Videos", "Videos", "Vidéos", "Video’s")
+                                else ConsumerUiStrings.text("Pictures", "Bilder", "Photos", "Foto’s"),
+                                style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+            } else NavigationBar(windowInsets = WindowInsets(0, 0, 0, 0)) {
                 NavigationBarItem(
                     selected = !videos,
                     onClick = { videos = false },
                     icon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },
                     label = { Text(ConsumerUiStrings.text("Pictures", "Bilder", "Photos", "Foto’s")) },
+                    modifier = Modifier.testTag("gallery-tab-pictures"),
                 )
                 NavigationBarItem(
                     selected = videos,
                     onClick = { videos = true },
                     icon = { Icon(Icons.Default.VideoLibrary, contentDescription = null) },
                     label = { Text(ConsumerUiStrings.text("Videos", "Videos", "Vidéos", "Video’s")) },
+                    modifier = Modifier.testTag("gallery-tab-videos"),
                 )
             }
         }

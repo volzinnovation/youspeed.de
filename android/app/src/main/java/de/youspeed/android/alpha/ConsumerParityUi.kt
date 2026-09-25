@@ -470,14 +470,14 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-private fun GalleryActionBar(content: @Composable FlowRowScope.() -> Unit) {
+private fun GalleryActionBar(compact: Boolean = false, content: @Composable FlowRowScope.() -> Unit) {
     Surface(tonalElevation = 3.dp) {
         BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
             // Wrap whole actions on narrow phones. Larger system text gets
             // at most two columns; labels can grow without being clipped.
             val minimumActionWidth = 112.dp
             val spacing = 4.dp
-            val maximumColumns = if (LocalDensity.current.fontScale > 1.3f) 2 else 4
+            val maximumColumns = if (!compact && LocalDensity.current.fontScale > 1.3f) 2 else 4
             val columns = ((maxWidth + spacing) / (minimumActionWidth + spacing)).toInt().coerceIn(1, maximumColumns)
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -497,17 +497,24 @@ private fun FlowRowScope.GalleryAction(
     label: String,
     enabled: Boolean,
     onClick: () -> Unit,
+    compact: Boolean = false,
 ) {
-    Column(
-        Modifier.weight(1f).heightIn(min = 64.dp).testTag("gallery-action")
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+    val modifier = Modifier.weight(1f).heightIn(min = if (compact) 48.dp else 64.dp).testTag("gallery-action")
+        .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+        .padding(horizontal = 6.dp, vertical = 6.dp)
+    val color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    if (compact) Row(modifier, verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = color)
+    } else Column(
+        modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(icon, contentDescription = null, tint = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+        Icon(icon, contentDescription = null, tint = color)
         Text(label, style = MaterialTheme.typography.labelSmall, minLines = 2, textAlign = TextAlign.Center,
-            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+            color = color)
     }
 }
 
@@ -593,7 +600,7 @@ private fun ParityDeleteConfirmation(count: Int, onDismiss: () -> Unit, onDelete
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
+internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, compact: Boolean = false) {
     val ui = controller.uiState
     var selected by remember { mutableStateOf(emptyMap<String, Set<String>>()) }
     var deleteConfirmation by remember { mutableStateOf(false) }
@@ -612,20 +619,24 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
         selected = if (updated.isEmpty()) selected - batch else selected + (batch to updated)
     }
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(parityText("Review photos before upload. Open a photo to inspect it; protect favorites from automatic cleanup.",
-            "Fotos vor dem Hochladen prüfen. Ein Foto zum Prüfen öffnen; Favoriten vor automatischer Bereinigung schützen.",
-            "Vérifiez les photos avant l’envoi. Ouvrez-les pour les inspecter ; les favoris sont protégés du nettoyage automatique.",
-            "Controleer foto’s vóór het uploaden. Open een foto om die te bekijken; favorieten zijn beschermd tegen automatisch opruimen."))
-        if (!controller.canProcessPanoramaxUploads()) Text(parityText("Uploads are available after recording has finished.",
-            "Uploads sind nach Abschluss der Aufnahme verfügbar.", "Les envois sont disponibles après la fin de l’enregistrement.",
-            "Uploaden kan nadat de opname is voltooid."), style = MaterialTheme.typography.bodySmall)
-        if (ui.panoramaxActiveUploadBatchIds.isNotEmpty()) OutlinedButton(onClick = controller::stopPanoramaxUploads) {
-            Text(parityText("Stop uploads", "Uploads stoppen", "Arrêter les envois", "Uploads stoppen"))
-        }
-        if (ui.panoramaxMaintenanceInProgress) LinearProgressIndicator(Modifier.fillMaxWidth())
-        ui.panoramaxMaintenanceIssue?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        if (ui.panoramaxBatches.all { it.items.isEmpty() }) Text(parityText("No photos yet.", "Noch keine Fotos.", "Aucune photo.", "Nog geen foto’s."))
-        LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("panoramax-photo-list"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            item(key = "gallery-introduction") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(parityText("Review photos before upload. Open a photo to inspect it; protect favorites from automatic cleanup.",
+                        "Fotos vor dem Hochladen prüfen. Ein Foto zum Prüfen öffnen; Favoriten vor automatischer Bereinigung schützen.",
+                        "Vérifiez les photos avant l’envoi. Ouvrez-les pour les inspecter ; les favoris sont protégés du nettoyage automatique.",
+                        "Controleer foto’s vóór het uploaden. Open een foto om die te bekijken; favorieten zijn beschermd tegen automatisch opruimen."))
+                    if (!controller.canProcessPanoramaxUploads()) Text(parityText("Uploads are available after recording has finished.",
+                        "Uploads sind nach Abschluss der Aufnahme verfügbar.", "Les envois sont disponibles après la fin de l’enregistrement.",
+                        "Uploaden kan nadat de opname is voltooid."), style = MaterialTheme.typography.bodySmall)
+                    if (ui.panoramaxActiveUploadBatchIds.isNotEmpty()) OutlinedButton(onClick = controller::stopPanoramaxUploads) {
+                        Text(parityText("Stop uploads", "Uploads stoppen", "Arrêter les envois", "Uploads stoppen"))
+                    }
+                    if (ui.panoramaxMaintenanceInProgress) LinearProgressIndicator(Modifier.fillMaxWidth())
+                    ui.panoramaxMaintenanceIssue?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    if (ui.panoramaxBatches.all { it.items.isEmpty() }) Text(parityText("No photos yet.", "Noch keine Fotos.", "Aucune photo.", "Nog geen foto’s."))
+                }
+            }
             ui.panoramaxBatches.forEach { batch ->
                 item(key = "header-${batch.batchId}") {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -648,7 +659,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
                         Column(Modifier.fillMaxWidth().padding(10.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Checkbox(item.itemId in selected[batch.batchId].orEmpty(), { select(batch.batchId, item.itemId, it) }, enabled = editable)
-                                LocalPhoto(controller.panoramaxThumbnailFile(item), Modifier.size(92.dp).clip(RoundedCornerShape(8.dp)).clickable { focused = batch.batchId to item.itemId }, 256,
+                                LocalPhoto(controller.panoramaxThumbnailFile(item), Modifier.size(92.dp).testTag("panoramax-thumbnail-${item.itemId}").clip(RoundedCornerShape(8.dp)).clickable { focused = batch.batchId to item.itemId }, 256,
                                     fallbackFile = controller.panoramaxOriginalFile(item))
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Text(dateText(item.metadata.capturedAt), style = MaterialTheme.typography.bodySmall)
@@ -684,9 +695,10 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
                 }
             }
         }
-        GalleryActionBar {
+        GalleryActionBar(compact = compact) {
             GalleryAction(
                 icon = Icons.Default.CheckCircle,
+                compact = compact,
                 label = parityText("Select all", "Alle auswählen", "Tout sélectionner", "Alles selecteren"),
                 enabled = ui.panoramaxBatches.any { it.batchId !in ui.panoramaxActiveUploadBatchIds && it.state != PanoramaxBatchState.CAPTURING },
                 onClick = {
@@ -696,12 +708,14 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
             )
             GalleryAction(
                 icon = Icons.Default.RadioButtonUnchecked,
+                compact = compact,
                 label = parityText("Select none", "Auswahl aufheben", "Tout désélectionner", "Niets selecteren"),
                 enabled = count > 0,
                 onClick = { selected = emptyMap() },
             )
             GalleryAction(
                 icon = Icons.Default.Delete,
+                compact = compact,
                 label = "${deleteLabel()} ($count)",
                 enabled = count > 0 && controller.canProcessPanoramaxUploads() &&
                     selected.keys.none { it in ui.panoramaxActiveUploadBatchIds },
@@ -710,6 +724,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
             if (ui.panoramaxActiveUploadBatchIds.isEmpty()) {
                 GalleryAction(
                     icon = Icons.Default.Upload,
+                    compact = compact,
                     label = "${parityText("Upload", "Hochladen", "Envoyer", "Uploaden")} ($count)",
                     enabled = count > 0 && controller.canProcessPanoramaxUploads() && ui.panoramaxAccountConnected,
                     onClick = { uploadConfirmation = true },
@@ -717,6 +732,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
             } else {
                 GalleryAction(
                     icon = Icons.Default.Stop,
+                    compact = compact,
                     label = parityText("Stop", "Stopp", "Arrêter", "Stoppen"),
                     enabled = true,
                     onClick = controller::stopPanoramaxUploads,
