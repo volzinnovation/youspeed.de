@@ -128,6 +128,7 @@
 "panoramax.gallery.delete_message" = "%d geselecteerde foto’s worden permanent verwijderd.";
 "panoramax.gallery.delete_confirm" = "Verwijderen";
 "panoramax.gallery.upload" = "Uploaden";
+"panoramax.upload.originals_missing" = "%d geselecteerde foto's ontbreken op dit apparaat en kunnen niet worden geüpload. Deselecteer ze en upload de overige foto's.";
 "panoramax.gallery.upload_requires_account" = "Verbind eerst een Panoramax-account in Instellingen.";
 "panoramax.gallery.account_required_title" = "Panoramax-account vereist";
 "panoramax.gallery.stop_upload" = "Upload stoppen";

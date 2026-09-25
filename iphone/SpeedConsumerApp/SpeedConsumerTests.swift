@@ -3988,6 +3988,60 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(reopened.originalURL(for: repaired.items[0])).path))
     }
 
+    func testPanoramaxStartupPreservesReferencedImagesWhenRootUsesPathAlias() throws {
+        let parent = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: parent) }
+        try FileManager.default.createDirectory(
+            at: parent.appendingPathComponent("alias-parent"),
+            withIntermediateDirectories: true
+        )
+        // Directory enumeration returns normalized URLs. This recreates the
+        // same mismatch as iPhone's /var and /private/var container aliases
+        // without requiring access outside the test application's sandbox.
+        let root = parent.appendingPathComponent("alias-parent/../queue", isDirectory: true)
+        var store: PanoramaxQueueStore? = try PanoramaxQueueStore(root: root)
+        var batches: [PanoramaxBatchRecord] = []
+        var items: [PanoramaxItemRecord] = []
+        for (index, state) in [PanoramaxBatchState.capturing, .partial, .complete].enumerated() {
+            let batch = try XCTUnwrap(store).createBatch(captureSessionID: "aliased-\(index)")
+            let item = try addPanoramaxTestItem(
+                store: try XCTUnwrap(store),
+                batch: batch,
+                itemID: "referenced-\(index)",
+                state: state == .partial ? .queued : state == .complete ? .uploaded : .captured
+            )
+            var persisted = try XCTUnwrap(try XCTUnwrap(store).getBatch(batch.batchID))
+            persisted.state = state
+            persisted.remoteUploadSetID = state == .capturing ? nil : "remote-\(index)"
+            try XCTUnwrap(store).updateBatch(persisted)
+            batches.append(persisted)
+            items.append(item)
+        }
+        let orphanDirectory = root.appendingPathComponent(
+            "Panoramax/batches/\(batches[0].batchID)/orphan",
+            isDirectory: true
+        )
+        try FileManager.default.createDirectory(at: orphanDirectory, withIntermediateDirectories: true)
+        let orphan = orphanDirectory.appendingPathComponent("orphan.jpg")
+        try Data([0xff, 0xd8, 0xff, 0xd9]).write(to: orphan)
+        store = nil
+
+        let reopened = try PanoramaxQueueStore(root: root)
+
+        XCTAssertFalse(reopened.startupCleanupReport.hasFailures)
+        XCTAssertEqual(reopened.startupCleanupReport.removedOrphanFileCount, 1)
+        XCTAssertEqual(reopened.startupCleanupReport.removedOrphanByteCount, 4)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: orphan.path))
+        for (batch, item) in zip(batches, items) {
+            let persisted = try XCTUnwrap(reopened.getBatch(batch.batchID))
+            XCTAssertEqual(persisted.items.map(\.itemID), [item.itemID])
+            XCTAssertEqual(persisted.items.map(\.state), [item.state])
+            XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(reopened.originalURL(for: item)).path))
+            XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(reopened.thumbnailURL(for: item)).path))
+            XCTAssertEqual(item.originalPath, "batches/\(batch.batchID)/\(item.itemID)/\(item.itemID).jpg")
+        }
+    }
+
     func testPanoramaxMaintenanceExecutorRunsStartupRecoveryOffTheCaller() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -4348,6 +4402,118 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(report.deletedItemIDs, [item.itemID])
         XCTAssertEqual(Set(report.failedRelativePaths), ["../outside.jpg", "../outside.thumb.jpg"])
         XCTAssertTrue(report.hasFailures)
+    }
+
+    func testPanoramaxGalleryKeepsUploadOutcomeAfterProgressEnds() {
+        let batch = PanoramaxBatchRecord(
+            batchID: "failed-batch",
+            captureSessionID: "drive",
+            createdAt: Date(timeIntervalSince1970: 1_000),
+            state: .partial,
+            items: []
+        )
+        let statuses = [batch.batchID: "Upload fehlgeschlagen: HTTP 413"]
+
+        XCTAssertTrue(PanoramaxGalleryUploadStatus.visibleStatuses(
+            batches: [batch], statusByBatch: statuses, activeBatchIDs: [batch.batchID]
+        ).isEmpty)
+        XCTAssertEqual(PanoramaxGalleryUploadStatus.visibleStatuses(
+            batches: [batch], statusByBatch: statuses, activeBatchIDs: []
+        ), [PanoramaxGalleryUploadStatus(
+            id: batch.batchID,
+            createdAt: batch.createdAt,
+            message: "Upload fehlgeschlagen: HTTP 413"
+        )])
+    }
+
+    func testPanoramaxGalleryShowsFinishedBatchWhileAnotherUploadContinues() {
+        let batches = ["failed", "processing", "active"].map { id in
+            PanoramaxBatchRecord(
+                batchID: id, captureSessionID: id, createdAt: Date(), state: .partial, items: []
+            )
+        }
+        let visible = PanoramaxGalleryUploadStatus.visibleStatuses(
+            batches: batches,
+            statusByBatch: [
+                "failed": "Upload fehlgeschlagen: HTTP 503",
+                "processing": "Upload uebertragen – Verarbeitung laeuft weiter",
+                "active": "2/10 Bilder uebertragen",
+                "deleted": "Upload abgeschlossen"
+            ],
+            activeBatchIDs: ["active"]
+        )
+
+        XCTAssertEqual(visible.map(\.id), ["failed", "processing"])
+        XCTAssertEqual(visible.last?.message, "Upload uebertragen – Verarbeitung laeuft weiter")
+    }
+
+    func testPanoramaxUploadPreflightReportsMissingOriginalsAndPreservesSelection() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "missing-originals")
+        let missing = try addPanoramaxTestItem(store: store, batch: batch, itemID: "missing", state: .queued)
+        let available = try addPanoramaxTestItem(store: store, batch: batch, itemID: "available", state: .included)
+        try FileManager.default.removeItem(at: XCTUnwrap(store.originalURL(for: missing)))
+        let before = try XCTUnwrap(store.getBatch(batch.batchID))
+
+        do {
+            try await PanoramaxUploadClient.validateLocalOriginals(
+                store: store, batchID: batch.batchID,
+                selectedItemIDs: [missing.itemID, available.itemID],
+                localDeletionIntents: PanoramaxLocalDeletionIntentRegistry()
+            )
+            XCTFail("A selection with a missing original must stop before remote upload work")
+        } catch PanoramaxUploadClient.UploadError.missingOriginals(let count) {
+            XCTAssertEqual(count, 1)
+        }
+
+        XCTAssertEqual(try store.getBatch(batch.batchID), before)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(store.originalURL(for: available)).path))
+    }
+
+    func testPanoramaxUploadPreflightDoesNotRequireAcceptedOrUnselectedOriginals() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "resume-without-originals")
+        let accepted = try addPanoramaxTestItem(store: store, batch: batch, itemID: "accepted", state: .uploaded)
+        let unselected = try addPanoramaxTestItem(store: store, batch: batch, itemID: "unselected", state: .queued)
+        let available = try addPanoramaxTestItem(store: store, batch: batch, itemID: "available", state: .queued)
+        for item in [accepted, unselected] {
+            try FileManager.default.removeItem(at: XCTUnwrap(store.originalURL(for: item)))
+        }
+
+        try await PanoramaxUploadClient.validateLocalOriginals(
+            store: store, batchID: batch.batchID,
+            selectedItemIDs: [accepted.itemID, available.itemID],
+            localDeletionIntents: PanoramaxLocalDeletionIntentRegistry()
+        )
+        try await PanoramaxUploadClient.validateLocalOriginals(
+            store: store, batchID: batch.batchID, selectedItemIDs: [],
+            localDeletionIntents: PanoramaxLocalDeletionIntentRegistry()
+        )
+    }
+
+    func testPanoramaxUploadPreflightRespectsAuthoritativeLocalDeletion() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "preflight-deletion")
+        let pending = try addPanoramaxTestItem(store: store, batch: batch, itemID: "pending-delete", state: .queued)
+        let deleted = try addPanoramaxTestItem(store: store, batch: batch, itemID: "deleted", state: .queued)
+        let available = try addPanoramaxTestItem(store: store, batch: batch, itemID: "available", state: .queued)
+        let intents = PanoramaxLocalDeletionIntentRegistry()
+        intents.mark(batchID: batch.batchID, itemIDs: [pending.itemID])
+        try FileManager.default.removeItem(at: XCTUnwrap(store.originalURL(for: pending)))
+        _ = try store.deleteItem(batchID: batch.batchID, itemID: deleted.itemID)
+
+        try await PanoramaxUploadClient.validateLocalOriginals(
+            store: store, batchID: batch.batchID,
+            selectedItemIDs: [pending.itemID, deleted.itemID, available.itemID],
+            localDeletionIntents: intents
+        )
+        XCTAssertEqual(try store.getBatch(batch.batchID)?.items.map(\.itemID), [pending.itemID, available.itemID])
     }
 
     func testPanoramaxUploadProgressUsesItemCounts() {

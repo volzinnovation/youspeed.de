@@ -128,6 +128,7 @@
 "panoramax.gallery.delete_message" = "%d ausgewählte Bilder werden dauerhaft gelöscht.";
 "panoramax.gallery.delete_confirm" = "Löschen";
 "panoramax.gallery.upload" = "Hochladen";
+"panoramax.upload.originals_missing" = "%d ausgewählte Bilder fehlen auf diesem Gerät und können nicht hochgeladen werden. Wähle sie ab und lade die übrigen Bilder hoch.";
 "panoramax.gallery.upload_requires_account" = "Verbinde zuerst ein Panoramax-Konto in den Einstellungen.";
 "panoramax.gallery.account_required_title" = "Panoramax-Konto erforderlich";
 "panoramax.gallery.stop_upload" = "Upload stoppen";

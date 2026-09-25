@@ -96,6 +96,33 @@ class PanoramaxUploadCoordinator(
             return
         }
 
+        // Check the entire pending selection before creating a remote set or
+        // sending any pictures. A missing local original is not a network
+        // failure, and must not partially upload an otherwise valid selection.
+        val selectedIds = selected.mapTo(mutableSetOf()) { it.itemId }
+        val preflightBatch = store.getBatch(batchId) ?: return
+        val missingIds = preflightBatch.items.filter { it.itemId in selectedIds && it.state in transferableStates }
+            .filter { item ->
+                requireAllowed(job)
+                val original = store.originalFile(item)
+                !original.isFile || !original.canRead()
+            }.mapTo(mutableSetOf()) { it.itemId }
+        if (missingIds.isNotEmpty()) {
+            // Local deletion can race the background scan. Removed/deselected
+            // records no longer require a local file for this upload attempt.
+            val missingCount = store.getBatch(batchId)?.items.orEmpty().count {
+                it.itemId in missingIds && it.state in transferableStates
+            }
+            check(missingCount == 0) {
+                ConsumerUiStrings.text(
+                    "$missingCount selected pictures are missing on this device and cannot be uploaded. Deselect them and upload the remaining pictures.",
+                    "$missingCount ausgewählte Bilder fehlen auf diesem Gerät und können nicht hochgeladen werden. Hebe ihre Auswahl auf und lade die übrigen Bilder hoch.",
+                    "$missingCount photos sélectionnées sont absentes de cet appareil et ne peuvent pas être envoyées. Désélectionnez-les et envoyez les autres photos.",
+                    "$missingCount geselecteerde foto’s ontbreken op dit apparaat en kunnen niet worden geüpload. Deselecteer ze en upload de overige foto’s.",
+                )
+            }
+        }
+
         store.updateBatch(initial.copy(
             state = if (remoteId == null) PanoramaxBatchState.CREATING_UPLOAD_SET else PanoramaxBatchState.UPLOADING,
             instanceOrigin = origin,

@@ -3964,6 +3964,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return
         }
 
+        try await PanoramaxUploadClient.validateLocalOriginals(
+            store: store,
+            batchID: batchID,
+            selectedItemIDs: Set(selected.map(\.itemID)),
+            localDeletionIntents: localDeletionIntents
+        )
+
         if uploadSetID == nil {
             try requirePanoramaxProcessingAllowed()
             let title = "YouSpeed \(initialBatch.createdAt.formatted(date: .abbreviated, time: .shortened))"

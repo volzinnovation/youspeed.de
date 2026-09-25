@@ -314,11 +314,18 @@ class PanoramaxQueueStore(private val appRoot: File) {
     @Synchronized
     fun deleteItems(batchId: String, itemIds: Set<String>): PanoramaxDeletionReport {
         val batch = requireNotNull(getBatch(batchId)) { "Unknown Panoramax batch" }
+        return deleteItems(batch, itemIds).report
+    }
+
+    private data class ItemDeletion(val batch: PanoramaxBatchRecord, val report: PanoramaxDeletionReport)
+
+    /** The caller holds the store lock and supplies its latest validated snapshot. */
+    private fun deleteItems(batch: PanoramaxBatchRecord, itemIds: Set<String>): ItemDeletion {
         val removed = batch.items.filter { it.itemId in itemIds }
-        if (removed.isEmpty()) return PanoramaxDeletionReport()
+        if (removed.isEmpty()) return ItemDeletion(batch, PanoramaxDeletionReport())
         val updated = batch.copy(items = batch.items.filterNot { it.itemId in itemIds })
         write(updated)
-        deletedItemIds.getOrPut(batchId) { mutableSetOf() }.addAll(removed.map { it.itemId })
+        deletedItemIds.getOrPut(batch.batchId) { mutableSetOf() }.addAll(removed.map { it.itemId })
         val failures = mutableListOf<String>()
         removed.forEach { item ->
             listOf(item.originalPath, item.thumbnailPath).forEach { path ->
@@ -328,7 +335,7 @@ class PanoramaxQueueStore(private val appRoot: File) {
             runCatching { originalFile(item).parentFile?.let { if (it.listFiles()?.isEmpty() == true) it.delete() } }
         }
         pruneEmptyBatch(updated, failures)
-        return PanoramaxDeletionReport(removed.map { it.itemId }, failures)
+        return ItemDeletion(updated, PanoramaxDeletionReport(removed.map { it.itemId }, failures))
     }
 
     @Synchronized
@@ -354,20 +361,35 @@ class PanoramaxQueueStore(private val appRoot: File) {
     fun enforceStorageLimit(maxBytes: Long): PanoramaxDeletionReport {
         if (maxBytes <= 0) return PanoramaxDeletionReport()
         val batches = listBatches()
-        val entries = batches.flatMap { batch -> batch.items.map { batch to it } }
-        fun bytes(item: PanoramaxItemRecord) = originalFile(item).length() + thumbnailFile(item).length()
-        var total = entries.sumOf { bytes(it.second) }
+        data class Candidate(val batchId: String, val item: PanoramaxItemRecord, val bytes: Long)
+        val candidates = mutableListOf<Candidate>()
+        var total = 0L
+        batches.forEach { batch -> batch.items.forEach { item ->
+            val bytes = originalFile(item).length() + thumbnailFile(item).length()
+            total += bytes
+            if (!item.isFavorite && PanoramaxQueuePolicy.canEvictItem(batch.state, item.state)) {
+                candidates += Candidate(batch.batchId, item, bytes)
+            }
+        } }
+        if (total <= maxBytes) return PanoramaxDeletionReport()
+        // Retention already owns the store lock. Reuse its validated snapshots;
+        // reloading the whole batch for each image repeatedly canonicalizes every
+        // remaining asset path and can hold this lock for minutes on a long drive.
+        val currentBatches = batches.associateBy { it.batchId }.toMutableMap()
         val deleted = mutableListOf<String>()
         val failures = mutableListOf<String>()
-        entries.filter { (batch, item) -> !item.isFavorite && PanoramaxQueuePolicy.canEvictItem(batch.state, item.state) }
-            .sortedBy { it.second.metadata.capturedAt }.forEach { (batch, item) ->
-                if (total <= maxBytes || failures.isNotEmpty()) return@forEach
-                val size = bytes(item)
-                runCatching { deleteItems(batch.batchId, setOf(item.itemId)) }.onSuccess {
-                    deleted += it.deletedItemIds; failures += it.failedRelativePaths
-                    if (it.deletedItemIds.isNotEmpty()) total -= size
-                }.onFailure { failures += "batches/${batch.batchId}.json" }
-            }
+        for (candidate in candidates.sortedBy { it.item.metadata.capturedAt }) {
+            if (total <= maxBytes || failures.isNotEmpty()) break
+            // Commit one eviction before removing its assets, then stop at the
+            // first failure just as on iPhone. A bulk commit would drop later
+            // gallery records even when an earlier asset could not be removed.
+            runCatching { deleteItems(currentBatches.getValue(candidate.batchId), setOf(candidate.item.itemId)) }
+                .onSuccess { result ->
+                    currentBatches[candidate.batchId] = result.batch
+                    deleted += result.report.deletedItemIds; failures += result.report.failedRelativePaths
+                    if (result.report.deletedItemIds.isNotEmpty()) total -= candidate.bytes
+                }.onFailure { failures += "batches/${candidate.batchId}.json" }
+        }
         return PanoramaxDeletionReport(deleted, failures)
     }
 

@@ -627,9 +627,12 @@ final class PanoramaxQueueStore: @unchecked Sendable {
                 decodedBatches.append(batch)
             }
 
-            let referencedPaths = Set(decodedBatches.flatMap { batch in
+            // Enumeration may return /private/var URLs for a store rooted at
+            // /var. Compare normalized file locations so an alias never makes
+            // a referenced original or thumbnail look like a legacy orphan.
+            let referencedFiles = Set(decodedBatches.flatMap { batch in
                 batch.items.flatMap { [$0.originalPath, $0.thumbnailPath] }
-            })
+            }.compactMap { safeFileURL(forRelativePath: $0)?.resolvingSymlinksInPath().standardizedFileURL })
             for batch in decodedBatches {
                 let batchDirectory = batchesDirectory.appendingPathComponent(batch.batchID, isDirectory: true)
                 let batchValues = try? batchDirectory.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
@@ -647,7 +650,7 @@ final class PanoramaxQueueStore: @unchecked Sendable {
                           isLegacyItemJPEG(candidate, directlyUnder: batchDirectory) else { continue }
                     legacyItemDirectories.insert(candidate.deletingLastPathComponent())
                     let relative = relativePath(candidate)
-                    guard !referencedPaths.contains(relative) else { continue }
+                    guard !referencedFiles.contains(candidate.resolvingSymlinksInPath().standardizedFileURL) else { continue }
                     do {
                         try FileManager.default.removeItem(at: candidate)
                         report.removedOrphanFileCount += 1
@@ -808,7 +811,12 @@ final class PanoramaxQueueStore: @unchecked Sendable {
         }
     }
 
-    private func relativePath(_ url: URL) -> String { url.path.replacingOccurrences(of: root.path + "/", with: "") }
+    private func relativePath(_ url: URL) -> String {
+        let rootComponents = root.resolvingSymlinksInPath().standardizedFileURL.pathComponents
+        let fileComponents = url.resolvingSymlinksInPath().standardizedFileURL.pathComponents
+        guard fileComponents.starts(with: rootComponents) else { return url.path }
+        return fileComponents.dropFirst(rootComponents.count).joined(separator: "/")
+    }
 
     private func protect(_ url: URL) {
         var values = URLResourceValues()

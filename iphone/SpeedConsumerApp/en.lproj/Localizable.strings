@@ -128,6 +128,7 @@
 "panoramax.gallery.delete_message" = "%d selected pictures will be permanently deleted.";
 "panoramax.gallery.delete_confirm" = "Delete";
 "panoramax.gallery.upload" = "Upload";
+"panoramax.upload.originals_missing" = "%d selected pictures are missing on this device and cannot be uploaded. Deselect them and upload the remaining pictures.";
 "panoramax.gallery.upload_requires_account" = "Connect a Panoramax account in Settings first.";
 "panoramax.gallery.account_required_title" = "Panoramax account required";
 "panoramax.gallery.stop_upload" = "Stop upload";

@@ -39,6 +39,8 @@ GET  /api/upload_sets/{id}                     poll until ready/complete
 
 Only user-included Panoramax originals are sent. Dashcam video and transient TSR frames are never part of this protocol. The local queue records the remote upload-set ID and per-item state so a partial upload can be retried later without discarding captures or reopening the camera. Already accepted originals must not be uploaded again.
 
+Before creating an upload set or transferring a selection, clients check that its pending originals are available locally. Missing originals stop the attempt with a visible count and instructions to deselect those images; their queue records remain intact. Already accepted items do not require a local original to resume remote completion or processing.
+
 ## Progress, stopping, and local retention
 
 Uploading is an asynchronous post-drive job. The gallery remains interactive and exposes durable item progress rather than waiting synchronously for an entire upload set. An item waiting for transfer is visibly distinct from one whose successful Panoramax response has already been recorded.

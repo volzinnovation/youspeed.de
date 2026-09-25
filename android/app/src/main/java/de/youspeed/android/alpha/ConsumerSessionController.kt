@@ -501,6 +501,14 @@ class ConsumerSessionController(
     private val trafficSignGeneration = TrafficSignWriteGate()
     private val localObservationStore = LocalObservationStore(appContext, rootDir, preferences, clock)
     private val panoramaxQueueStore = PanoramaxQueueStore(appContext)
+    private val panoramaxGalleryLoader = PanoramaxGalleryLoader(
+        execute = ::submitBackgroundTask,
+        load = panoramaxQueueStore::listBatches,
+        publish = { batches, count ->
+            postState { copy(panoramaxBatches = batches, panoramaxCaptureCount = count) }
+        },
+        onFailure = { error -> postState { copy(panoramaxMaintenanceIssue = error.message) } },
+    )
     private val panoramaxAccount by lazy {
         PanoramaxAccount(appContext).also { account ->
             account.onChange = { postState { copy(panoramaxAccountConnected = account.state.isConnected,
@@ -701,8 +709,6 @@ class ConsumerSessionController(
             panoramaxCaptureEnabled = panoramaxCaptureEnabled,
             dashcamRecordings = listDashcamRecordings(),
             trafficSignGeneration = trafficSignGeneration.get(),
-            panoramaxBatches = panoramaxQueueStore.listBatches(),
-            panoramaxCaptureCount = panoramaxQueueStore.listBatches().sumOf { it.items.size },
         ),
     )
         private set
@@ -771,7 +777,9 @@ class ConsumerSessionController(
         textToSpeech = null
         confirmationToneGenerator?.release()
         confirmationToneGenerator = null
-        executor.shutdownNow()
+        // Wrapped work is skipped after disposal. Scoped capture finalizers
+        // still run after an in-flight JPEG, without making the UI wait.
+        executor.shutdown()
         trafficSignDeliveryExecutor.shutdownNow()
         diagnosticsExecutor.shutdown()
     }
@@ -1205,38 +1213,78 @@ class ConsumerSessionController(
     }
 
     private fun beginPanoramaxCaptureSession() {
-        if (panoramaxCaptureSessionId != null || !panoramaxCaptureEnabled) return
-        val sessionId = UUID.randomUUID().toString().lowercase(Locale.US)
-        runCatching { panoramaxQueueStore.createBatch(sessionId) }
-            .onSuccess {
-                panoramaxCaptureSessionId = sessionId
+        if (!panoramaxCaptureEnabled) return
+        val sessionId = synchronized(captureLock) {
+            if (panoramaxCaptureSessionId != null) return
+            UUID.randomUUID().toString().lowercase(Locale.US).also {
+                // Reserve the session before scheduling disk work. Duplicate
+                // camera callbacks reuse it; photo persistence runs on the
+                // same serial executor after its batch has been created.
+                panoramaxCaptureSessionId = it
                 panoramaxLastCaptureSample = null
                 panoramaxCaptureInFlight = false
             }
-            .onFailure { error ->
-                updateState { copy(lastError = error.message ?: error.javaClass.simpleName) }
-            }
+        }
+        if (!submitBackgroundTask {
+            if (synchronized(captureLock) { panoramaxCaptureSessionId != sessionId }) return@submitBackgroundTask
+            runCatching { panoramaxQueueStore.createBatch(sessionId) }
+                .onFailure { error ->
+                    val current = synchronized(captureLock) {
+                        if (panoramaxCaptureSessionId != sessionId) false else {
+                            panoramaxCaptureSessionId = null
+                            panoramaxCaptureInFlight = false
+                            pendingPhoto = null
+                            true
+                        }
+                    }
+                    if (current) postState { copy(lastError = error.message ?: error.javaClass.simpleName,
+                        driveRecorderPanoramaxActive = false) }
+                }
+        }) synchronized(captureLock) {
+            if (panoramaxCaptureSessionId == sessionId) panoramaxCaptureSessionId = null
+        }
     }
 
     private fun endPanoramaxCaptureSession() {
-        synchronized(captureLock) {
+        val endedSessionId = synchronized(captureLock) {
+            val sessionId = panoramaxCaptureSessionId
             panoramaxCaptureSessionId = null
             panoramaxLastCaptureSample = null
             panoramaxCaptureInFlight = false
             pendingPhoto = null
             annotationEligibleCaptureIds = emptySet()
+            sessionId
         }
-        panoramaxQueueStore.listBatches().filter { it.state == PanoramaxBatchState.CAPTURING }.forEach { batch ->
-            runCatching { panoramaxQueueStore.transitionBatch(batch.batchId, PanoramaxBatchState.AWAITING_REVIEW) }
+        if (endedSessionId == null) return
+        try {
+            // This scoped finalizer must survive disposal, unlike ordinary
+            // background work. It cannot seal a later controller's session.
+            executor.execute {
+                runCatching {
+                    finalizePanoramaxCaptureBatches(endedSessionId)
+                    if (!isDisposed.get()) enforcePanoramaxStorageLimit()
+                }.onFailure { error ->
+                    postState { copy(panoramaxMaintenanceIssue = error.message) }
+                }
+                if (!isDisposed.get()) refreshPanoramaxBatches()
+            }
+        } catch (error: RejectedExecutionException) {
+            postState { copy(panoramaxMaintenanceIssue = error.message) }
         }
-        submitBackgroundTask { enforcePanoramaxStorageLimit(); refreshPanoramaxBatches() }
+    }
+
+    private fun finalizePanoramaxCaptureBatches(sessionId: String) {
+        panoramaxQueueStore.listBatches().filter {
+            it.state == PanoramaxBatchState.CAPTURING && it.captureSessionId == sessionId
+        }.forEach { batch ->
+            panoramaxQueueStore.transitionBatch(batch.batchId, PanoramaxBatchState.AWAITING_REVIEW)
+        }
     }
 
     fun refreshPanoramaxBatches() {
-        updateState {
-            val batches = panoramaxQueueStore.listBatches()
-            copy(panoramaxBatches = batches, panoramaxCaptureCount = batches.sumOf { it.items.size })
-        }
+        // updateState/postState lambdas run on main, even when their caller is
+        // a worker. Only publish the completed snapshot from that lambda.
+        panoramaxGalleryLoader.refresh()
     }
 
     /**
@@ -1264,21 +1312,21 @@ class ConsumerSessionController(
 
     fun setPanoramaxItemIncluded(batchId: String, itemId: String, included: Boolean) {
         if (!canProcessPanoramaxUploads()) return
-        runCatching {
-            val batch = panoramaxQueueStore.getBatch(batchId) ?: return
-            if (!PanoramaxQueuePolicy.canEditSelection(batch.state)) return
-            panoramaxQueueStore.updateItem(
-                batchId,
-                itemId,
-                if (included) PanoramaxItemState.INCLUDED else PanoramaxItemState.EXCLUDED,
-            )
-        }.onSuccess {
-            updateState {
-                val batches = panoramaxQueueStore.listBatches()
-                copy(panoramaxBatches = batches, panoramaxCaptureCount = batches.sumOf { it.items.size })
+        submitBackgroundTask {
+            runCatching {
+                val batch = panoramaxQueueStore.getBatch(batchId) ?: return@submitBackgroundTask
+                if (!PanoramaxQueuePolicy.canEditSelection(batch.state)) return@submitBackgroundTask
+                panoramaxQueueStore.updateItem(
+                    batchId,
+                    itemId,
+                    if (included) PanoramaxItemState.INCLUDED else PanoramaxItemState.EXCLUDED,
+                )
+            }.onSuccess {
+                refreshPanoramaxBatches()
+            }.onFailure { error ->
+                postState { copy(lastError = error.message ?: error.javaClass.simpleName) }
             }
         }
-            .onFailure { error -> updateState { copy(lastError = error.message ?: error.javaClass.simpleName) } }
     }
 
     internal fun onPanoramaxPhotoCaptured(path: String, @Suppress("UNUSED_PARAMETER") sample: PanoramaxLocationSample, requestId: String) {
@@ -1306,18 +1354,27 @@ class ConsumerSessionController(
                     imageWidthPixels = dimensions.first, imageHeightPixels = dimensions.second,
                     trafficSignAnnotations = annotations.takeIf { it.isNotEmpty() },
                 )
-                synchronized(captureLock) {
-                    if (pendingPhoto?.requestId != requestId || panoramaxCaptureSessionId != request.sessionId) return@synchronized
+                val mayPersist = synchronized(captureLock) {
+                    pendingPhoto?.requestId == requestId && panoramaxCaptureSessionId == request.sessionId
+                }
+                if (mayPersist) {
                     val batch = panoramaxQueueStore.listBatches().firstOrNull {
                         it.state == PanoramaxBatchState.CAPTURING && it.captureSessionId == request.sessionId
-                    } ?: return@synchronized
+                    } ?: error("Panoramax capture batch is unavailable")
+                    // Capture finalization is queued on this same executor.
+                    // Never hold the UI/capture lock while waiting for the
+                    // queue lock, hashing/copying a JPEG, or rewriting JSON.
                     panoramaxQueueStore.addJpeg(batch.batchId, original, requireNotNull(thumbnailFile), metadata)
-                    if (request.orientationEpoch == annotationOrientationEpoch) {
-                        annotationEligibleCaptureIds = annotationEligibleCaptureIds + request.requestId
+                    synchronized(captureLock) {
+                        if (panoramaxCaptureSessionId == request.sessionId) {
+                            if (request.orientationEpoch == annotationOrientationEpoch) {
+                                annotationEligibleCaptureIds = annotationEligibleCaptureIds + request.requestId
+                            }
+                            panoramaxLastCaptureSample = request.sample
+                            val attachedIds = annotations.map { it.sourceEventId }.toSet()
+                            latestAnnotationDrafts = latestAnnotationDrafts.filterNot { it.sourceEventId in attachedIds }
+                        }
                     }
-                    panoramaxLastCaptureSample = request.sample
-                    val attachedIds = annotations.map { it.sourceEventId }.toSet()
-                    latestAnnotationDrafts = latestAnnotationDrafts.filterNot { it.sourceEventId in attachedIds }
                     updateState { copy(panoramaxLastCaptureAt = clock.instant(), panoramaxLastCaptureDetail = ConsumerUiStrings.text("Photo saved", "Foto gespeichert", "Photo enregistrée", "Foto opgeslagen")) }
                 }
                 enforcePanoramaxStorageLimit()
@@ -1866,7 +1923,6 @@ class ConsumerSessionController(
                     trafficSignCameraRuntimeDetail = ConsumerRuntimeText.CAMERA_DISABLED.text(),
                     driveRecorderState = DriveRecorderState.DISABLED,
                     panoramaxCaptureEnabled = panoramaxCaptureEnabled,
-                    panoramaxBatches = panoramaxQueueStore.listBatches(),
                 )
             }
         }

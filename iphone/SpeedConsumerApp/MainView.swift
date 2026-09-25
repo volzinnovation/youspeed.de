@@ -2598,6 +2598,13 @@ private struct PictureGalleryView: View {
             ) ? batch.batchID : nil
         })
     }
+    private var uploadStatuses: [PanoramaxGalleryUploadStatus] {
+        PanoramaxGalleryUploadStatus.visibleStatuses(
+            batches: viewModel.panoramaxBatches,
+            statusByBatch: viewModel.panoramaxUploadStatusByBatch,
+            activeBatchIDs: viewModel.activePanoramaxUploadBatchIDs
+        )
+    }
     var body: some View {
         VStack(spacing: 0) {
             Group {
@@ -2695,6 +2702,7 @@ private struct PictureGalleryView: View {
 
             if !entries.isEmpty
                 || !viewModel.activePanoramaxUploadBatchIDs.isEmpty
+                || !uploadStatuses.isEmpty
                 || viewModel.panoramaxMaintenanceIssue != nil {
                 VStack(spacing: 6) {
                     if !viewModel.canProcessPanoramaxUploads {
@@ -2720,6 +2728,21 @@ private struct PictureGalleryView: View {
                                 .font(.caption2.monospacedDigit())
                                 .foregroundStyle(.secondary)
                         }
+                        .padding(.horizontal, 12)
+                    }
+                    if !uploadStatuses.isEmpty {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(uploadStatuses) { status in
+                                    Text("\(status.createdAt.formatted(date: .abbreviated, time: .shortened)): \(status.message)")
+                                        .font(.caption)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .accessibilityIdentifier("panoramax.gallery.upload_status.\(status.id)")
+                                }
+                            }
+                        }
+                        .frame(maxHeight: 88)
+                        .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 12)
                     }
                     HStack(spacing: 8) {
