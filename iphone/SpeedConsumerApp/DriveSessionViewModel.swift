@@ -996,6 +996,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var speedCaptureDidResolve = false
     private var speedCaptureAttemptID = UUID()
     private var lastKnownLimitPresentation = LastKnownSpeedLimitPresentation()
+    private var speedReference = SpeedReferenceRuntime()
+    private var testReferenceClock: Date?
+    private var speedReferenceTickTask: Task<Void, Never>?
+    private var speedReferenceLastLocation: CLLocation?
     private var lastKnownSpeedLimitKmh: Int?
     private var lastKnownBundleSpeedLimitKmh: Int?
     private var lastKnownBundleSpeedLimitAt: Date?
@@ -2153,6 +2157,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         )
     }
 
+    private func applySpeedReferenceBoundary(for passage: TrafficSignPassageEvent) {
+        if passage.isUnconditional {
+            switch passage.action {
+            case .cityEntry: speedReference.boundary("city_entry")
+            case .cityExit: speedReference.boundary("city_exit")
+            case .maximumSpeedEnd, .allRestrictionsEnd, .zoneEnd, .pedestrianZoneEnd, .motorwayExit, .motorroadExit:
+                speedReference.boundary("applicable_end")
+            default: break
+            }
+        }
+    }
+
     private func currentBaseEffectiveSpeedLimitState() -> EffectiveSpeedLimitState {
         let base = EffectiveSpeedLimitState.base(
             localValue: currentLocalCorrectionValue,
@@ -2225,7 +2241,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 hasCameraEvidenceMarker: true
             )
         } else {
-            presentationState = lastKnownLimitPresentation.present(presentedState)
+            if presentedState.hasCameraEvidenceMarker && presentedState.value == .unknown {
+                speedReference.pipelineAuthorityWithdrawn()
+            }
+            if presentedState.source == .camera, let value = SpeedReferenceValue(presentedState.value) {
+                let passage = trafficSignEffectiveLimitResolver.activePassage
+                if let id = passage?.physicalTrackID ?? trafficSignOverridePolicy.activeOverride?.trackId {
+                    let enclosing = trafficSignEffectiveLimitResolver.hasActiveEnclosingSpeedRule
+                    speedReference.camera(id: id + (enclosing ? ":enclosing" : ""), value: value, enclosing: enclosing)
+                }
+            }
+            speedReference.tick()
+            presentationState = speedReference.output?.effectiveState ?? .none
         }
         effectiveSpeedLimitState = presentationState
         switch presentationState.value {
@@ -2694,6 +2721,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         timestamp: Date
     ) {
         guard transition != .none else { return }
+        speedReference.boundary(transition == .enteredCity ? "city_entry" : "city_exit")
         clearActiveLocalSpeedCorrection()
         resetTrafficSignPictogram()
         let base = currentBaseEffectiveSpeedLimitState()
@@ -2900,6 +2928,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
             return
         }
+        applySpeedReferenceBoundary(for: passage)
         // Passage ownership replaces the frame preview. It must not resurrect
         // the same reading after the durable camera assertion expires.
         if trafficSignOverridePolicy.activeOverride?.trackId == passage.physicalTrackID {
@@ -5216,7 +5245,25 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     func startDriving() {
         guard isScreenshotMode || (onboardingStateLoaded && !shouldPresentOnboarding) else { return }
-        if !isDriving { lastKnownLimitPresentation.reset() }
+        if !isDriving {
+            lastKnownLimitPresentation.reset()
+            speedReference.reset()
+            speedReferenceLastLocation = nil
+        }
+        speedReference.onTransition = { [weak self] reference in
+            guard let self else { return }
+            self.appendTSRLog("speed_reference policy=\(self.speedReference.policyIdentity) transition=\(reference.transition) state=\(reference.state) reason=\(self.speedReference.lastEventReason) elapsed_s=\(self.speedReference.elapsedSeconds) distance_m=\(self.speedReference.traveledMeters) evidence=\(reference.evidenceID ?? "none") generation=\(reference.generation) expiry=\(reference.expiryReasons.joined(separator: ","))", timestamp: Date())
+        }
+        appendTSRLog("speed_reference_policy policy=\(speedReference.policyIdentity)", timestamp: Date())
+        speedReferenceTickTask?.cancel()
+        speedReferenceTickTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                guard !Task.isCancelled, let self, self.isDriving else { return }
+                self.speedReference.tick()
+                self.publishEffectiveSpeedLimitState(self.effectiveSpeedLimitState)
+            }
+        }
         trafficSignBundleContextTracker.reset()
         resetTrafficSignPictogram()
         if speedLimitService == nil && startupDataState != .ready {
@@ -5254,6 +5301,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func stopDriving() {
+        speedReferenceTickTask?.cancel()
+        speedReferenceTickTask = nil
+        speedReference.reset()
+        speedReferenceLastLocation = nil
         lastKnownLimitPresentation.reset()
         trafficSignBundleContextTracker.reset()
         resetTrafficSignPictogram()
@@ -6301,6 +6352,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     context: captureContext
                 )
                 guard speedCaptureAttemptID == attemptID else { return }
+                // Establish the reference before publishing saved numeric or walking/unlimited input.
+                activateLocalSpeedCorrectionIfPossible(selection: selection, observation: observation)
                 if let wayID = observation.roadCandidateIDs.first,
                    !wayID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     localSpeedOverrideValuesByWayID[wayID] = selection.value
@@ -6341,7 +6394,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 Self.logger.notice(
                     "capture_speech persist saved id=\(observation.id, privacy: .public) way=\(way, privacy: .public) value=\(observation.value ?? "n/a", privacy: .public) state=\(observation.state.rawValue, privacy: .public)"
                 )
-                activateLocalSpeedCorrectionIfPossible(selection: selection, observation: observation)
                 await refreshLocalObservations()
                 guard speedCaptureAttemptID == attemptID else { return }
                 cancelSpeedCapture(reason: nil)
@@ -6377,6 +6429,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             direction: latestTrafficSignDetectionContext?.travelDirection ?? .unknown,
             observationID: observation.id
         )
+        if wayID == (latestTrafficSignDetectionContext?.wayId ?? limitWayID), let value = SpeedReferenceValue(EffectiveSpeedLimitState.base(localValue: selection.value, bundledSpeedKmh: nil, bundledUnlimited: false).value) {
+            speedReference.context(way: wayID, road: latestTrafficSignDetectionContext?.roadIdentity,
+                relations: [], direction: latestTrafficSignDetectionContext?.travelDirection.rawValue ?? "unknown", stable: true)
+            speedReference.voice(id: observation.id, value: value)
+        }
         trafficSignOverridePolicy.clear()
 
         Self.logger.notice(
@@ -6395,26 +6452,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func applyActiveLocalSpeedCorrectionIfNeeded(for result: SpeedLimitResult, lat _: Double, lon _: Double, timestamp: Date = Date(), direction: TrafficSignTravelDirection = .unknown) -> String? {
-        guard var correction = activeLocalSpeedCorrection else { return nil }
-        guard timestamp.timeIntervalSince(correction.startedAt) < DrivingRoadIdentity.maximumAssertionAge else {
-            clearActiveLocalSpeedCorrection()
-            return nil
-        }
-        guard let wayID = result.wayID?.trimmingCharacters(in: .whitespacesAndNewlines), !wayID.isEmpty else {
-            if timestamp.timeIntervalSince(correction.lastMatchedAt) > 8 { clearActiveLocalSpeedCorrection() }
-            return nil
-        }
-        let identity = DrivingRoadIdentity.key(ref: result.streetRef, name: result.streetBaseName, highway: result.highway)
-        let sameRoad = correction.roadIdentity != nil && correction.roadIdentity == identity
-        let changedIdentity = correction.roadIdentity != nil && identity != nil && correction.roadIdentity != identity
-        let reversed = wayID == correction.wayID && correction.direction != .unknown && direction != .unknown && correction.direction != direction
-        guard !changedIdentity, !reversed, wayID == correction.wayID || sameRoad else {
-            clearActiveLocalSpeedCorrection()
-            return nil
-        }
-        correction.lastMatchedAt = timestamp
-        activeLocalSpeedCorrection = correction
-        return correction.maxspeedValue
+        speedReference.context(way: result.wayID,
+            road: DrivingRoadIdentity.key(ref: result.streetRef, name: result.streetBaseName, highway: result.highway),
+            relations: Set((result.routeRelationMemberships ?? []).compactMap { $0.sourceRelationID.map(String.init) }),
+            direction: direction.rawValue, stable: result.wayID != nil)
+        guard let value = speedReference.voice else { clearActiveLocalSpeedCorrection(); return nil }
+        switch value.kind { case "numeric": return value.kmh.map(String.init); case "walk": return "walk"; case "unlimited": return "none"; default: return nil }
     }
 
     private func makeTrafficSignSourceSignature(
@@ -6886,6 +6929,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard fixID == latestTrafficSignLookupFixID else { return }
 
         guard let service = speedLimitService else {
+            speedReference.context(way: nil, road: nil, relations: [], direction: "unknown", stable: false)
             wasDrivingBanWarningActive = false
             publishEffectiveSpeedLimitState(.none)
             resetTunnelModeTracking()
@@ -7046,6 +7090,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.latestTrafficSignDetectionContext = nextTrafficSignContext
                     self.trafficSignFrameContextIsCurrent = true
                     self.updateTrafficSignWriteGate()
+                    let bundleValue = EffectiveSpeedLimitState.base(localValue: nil,
+                        bundledSpeedKmh: result.speedLimitKmh, bundledUnlimited: bundledUnlimitedMatch).value
+                    self.speedReference.bundle(id: "\(self.activeBundleVersion):\(result.wayID ?? "none")",
+                        value: result.wayID == nil ? nil : SpeedReferenceValue(bundleValue))
                     let effectiveState = self.trafficSignEffectiveLimitResolver.resolve(
                         base: self.currentBaseEffectiveSpeedLimitState(),
                         currentContext: nextTrafficSignContext,
@@ -7054,7 +7102,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     )
                     self.publishEffectiveSpeedLimitState(effectiveState)
                     self.publishLegacyTrafficSignOverride(from: effectiveState)
-                    let effectiveSpeedLimit = effectiveState.value.speedKmh
+                    let effectiveSpeedLimit = self.effectiveSpeedLimitState.value.speedKmh
                     let hasTrafficSignOverride = effectiveState.hasCameraEvidenceMarker
                     let unlimitedMatch = effectiveState.value == .unlimited
                     self.refreshTrafficSignFrameSnapshot()
@@ -7147,6 +7195,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.trafficSignFrameContextIsCurrent = false
                     self.trafficSignFrameState.update(nil)
                     self.isUnlimitedSpeedLimitActive = false
+                    self.speedReference.context(way: nil, road: nil, relations: [], direction: "unknown", stable: false)
                     self.publishEffectiveSpeedLimitState(.none)
                     self.lastLookupStatus = "error"
                     self.lastError = error.localizedDescription
@@ -7793,6 +7842,9 @@ extension DriveSessionViewModel {
         currentLocalCorrectionValue = nil
         currentBaseUnlimitedSpeedLimitActive = false
         trafficSignEffectiveLimitResolver.clear(base: currentBaseEffectiveSpeedLimitState())
+        speedReference.context(way: context.wayId, road: context.roadIdentity,
+            relations: Set(context.routeRelationMemberships.compactMap { $0.sourceRelationID.map(String.init) }), direction: context.travelDirection.rawValue, stable: true)
+        speedReference.bundle(id: "test-bundle", value: bundledSpeedKmh.map { SpeedReferenceValue(kind: "numeric", kmh: $0) })
         publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
     }
 
@@ -7803,6 +7855,7 @@ extension DriveSessionViewModel {
             passage,
             base: currentBaseEffectiveSpeedLimitState()
         )
+        if commit.applied { applySpeedReferenceBoundary(for: passage) }
         let effective = trafficSignEffectiveLimitResolver.resolve(
             base: currentBaseEffectiveSpeedLimitState(),
             currentContext: latestTrafficSignDetectionContext,
@@ -7833,8 +7886,15 @@ extension DriveSessionViewModel {
     }
 
     func testClearTrafficSignAssertionKeepingCurrentBase() {
+        speedReference.boundary("applicable_end")
+        speedReference.bundle(id: "test-bundle", value: currentBundledSpeedLimitKmh.map { SpeedReferenceValue(kind: "numeric", kmh: $0) })
         trafficSignEffectiveLimitResolver.clear(base: currentBaseEffectiveSpeedLimitState())
         publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
+    }
+
+    func testAdvanceSpeedReferenceDistance(_ meters: Double) {
+        speedReference.tick(distance: meters)
+        publishEffectiveSpeedLimitState(effectiveSpeedLimitState)
     }
 
     func testSimulateRecognizedSpeedCapture(transcript: String, source: String = "unit_test") async throws {
@@ -7863,6 +7923,12 @@ extension DriveSessionViewModel {
     }
 
     func testSetActiveLocalSpeedCorrection(wayID: String, value: String, numericSpeedKmh: Int?, roadIdentity: String? = nil, startedAt: Date = Date()) {
+        testReferenceClock = startedAt
+        speedReference = SpeedReferenceRuntime(now: { [weak self] in self?.testReferenceClock?.timeIntervalSinceReferenceDate ?? 0 })
+        speedReference.context(way: wayID, road: roadIdentity, relations: [], direction: "unknown", stable: true)
+        if let typed = SpeedReferenceValue(EffectiveSpeedLimitState.base(localValue: value, bundledSpeedKmh: nil, bundledUnlimited: false).value) {
+            speedReference.voice(id: "test-voice", value: typed)
+        }
         activeLocalSpeedCorrection = ActiveLocalSpeedCorrection(
             wayID: wayID,
             maxspeedValue: value,
@@ -7871,6 +7937,7 @@ extension DriveSessionViewModel {
     }
 
     func testApplyActiveLocalSpeedCorrection(wayID: String?, ref: String? = nil, timestamp: Date = Date()) -> String? {
+        if testReferenceClock != nil { testReferenceClock = timestamp }
         let result = SpeedLimitResult(
             speedLimitKmh: 50,
             isUnlimitedSpeedLimit: false,
@@ -7991,6 +8058,15 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
         for location in locations {
             discoverPacks(for: location)
             guard isDriving else { continue }
+            if location.horizontalAccuracy >= 0 && location.horizontalAccuracy <= 50 {
+                if let previous = speedReferenceLastLocation {
+                    let elapsed = location.timestamp.timeIntervalSince(previous.timestamp)
+                    let traveled = location.distance(from: previous)
+                    if elapsed > 0 && traveled <= max(160, elapsed * 70) { speedReference.tick(distance: traveled) }
+                }
+                if speedReferenceLastLocation.map({ location.timestamp > $0.timestamp }) ?? true { speedReferenceLastLocation = location }
+            }
+            publishEffectiveSpeedLimitState(effectiveSpeedLimitState)
             let displaySpeedKmh = updateCurrentSpeed(from: location)
             let previousLocation = recentSpeedSampleLocations.dropLast().last(where: {
                 location.timestamp > $0.timestamp && location.distance(from: $0) > 0.1

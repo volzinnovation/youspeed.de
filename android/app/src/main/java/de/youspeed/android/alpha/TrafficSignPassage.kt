@@ -900,6 +900,10 @@ class TrafficSignRuntimeSourceResolver(
 
     fun activeAssertion(): TrafficSignCameraAssertion? = active
 
+    fun hasActiveEnclosingSpeedRule(): Boolean = active?.layers?.lastOrNull()?.kind in setOf(
+        TrafficSignActionKind.ZONE_START, TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.PEDESTRIAN_ZONE_START,
+    )
+
     fun clear() {
         active = null
         pending = null

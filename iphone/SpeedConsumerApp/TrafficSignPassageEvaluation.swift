@@ -1962,6 +1962,11 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
     }
 
     var hasActiveCameraAssertion: Bool { assertion != nil }
+    /// Typed lifetime metadata for the downstream reference machine. A numeric
+    /// value alone cannot tell a posted restriction from an enclosing area rule.
+    var hasActiveEnclosingSpeedRule: Bool {
+        assertion != nil && rules.posted == nil && (rules.zone != nil || rules.city != nil || rules.pedestrian)
+    }
 
     mutating func clear(base: EffectiveSpeedLimitState = .none) -> EffectiveSpeedLimitState {
         assertion = nil

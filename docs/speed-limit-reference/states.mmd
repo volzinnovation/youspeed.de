@@ -1,0 +1,20 @@
+stateDiagram-v2
+    [*] --> UNKNOWN: new drive
+    state SELECT <<choice>>
+    VOICE --> SELECT: normalized event / configured transition
+    CAMERA --> SELECT: normalized event / configured transition
+    BUNDLE --> SELECT: normalized event / configured transition
+    LAST_KNOWN --> SELECT: normalized event / configured transition
+    UNKNOWN --> SELECT: normalized event / configured transition
+    SELECT --> VOICE: voice
+    SELECT --> CAMERA: camera
+    SELECT --> CAMERA: camera_context
+    SELECT --> BUNDLE: bundle
+    SELECT --> LAST_KNOWN: last_known
+    SELECT --> UNKNOWN: no remembered value
+    note right of SELECT
+        Priority: voice > camera > bundle
+        Ordinary expiry: 5000 m OR 300 s
+        Camera candidate/applicability pipeline is external
+        LAST_KNOWN is display-only
+    end note

@@ -13,6 +13,119 @@ import UIKit
 
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
+final class DriveCameraFocusTests: XCTestCase {
+    private final class Camera: DriveCameraFocusDevice {
+        var supportedModes: [AVCaptureDevice.FocusMode] = [.locked, .autoFocus, .continuousAutoFocus]
+        var isFocusPointOfInterestSupported = true
+        var isAutoFocusRangeRestrictionSupported = true
+        var failsToLock = false
+        private(set) var locked = false
+        private(set) var lockCount = 0
+        private(set) var unlockCount = 0
+        private(set) var writes = 0
+        var focusMode: AVCaptureDevice.FocusMode = .locked {
+            didSet {
+                recordWrite()
+                XCTAssertTrue(isFocusModeSupported(focusMode))
+                // The mode setter initiates focusing using these preferences.
+                XCTAssertFalse(automaticallyAdjustsFaceDrivenAutoFocusEnabled)
+                XCTAssertFalse(isFaceDrivenAutoFocusEnabled)
+                if isFocusPointOfInterestSupported {
+                    XCTAssertEqual(focusPointOfInterest, CGPoint(x: 0.5, y: 0.5))
+                }
+                if isAutoFocusRangeRestrictionSupported {
+                    XCTAssertEqual(autoFocusRangeRestriction, .far)
+                }
+            }
+        }
+        var focusPointOfInterest = CGPoint(x: 0.1, y: 0.9) {
+            didSet { recordWrite(); XCTAssertTrue(isFocusPointOfInterestSupported) }
+        }
+        var autoFocusRangeRestriction: AVCaptureDevice.AutoFocusRangeRestriction = .near {
+            didSet { recordWrite(); XCTAssertTrue(isAutoFocusRangeRestrictionSupported) }
+        }
+        var automaticallyAdjustsFaceDrivenAutoFocusEnabled = true {
+            didSet { recordWrite(); XCTAssertTrue(supportsAutofocus) }
+        }
+        var isFaceDrivenAutoFocusEnabled = true {
+            didSet {
+                recordWrite()
+                XCTAssertTrue(supportsAutofocus)
+                XCTAssertFalse(automaticallyAdjustsFaceDrivenAutoFocusEnabled)
+            }
+        }
+        private var supportsAutofocus: Bool {
+            supportedModes.contains(.autoFocus) || supportedModes.contains(.continuousAutoFocus)
+        }
+        private func recordWrite() {
+            XCTAssertTrue(locked, "AVFoundation requires exclusive configuration access")
+            writes += 1
+        }
+        func isFocusModeSupported(_ focusMode: AVCaptureDevice.FocusMode) -> Bool {
+            supportedModes.contains(focusMode)
+        }
+        func lockForConfiguration() throws {
+            lockCount += 1
+            if failsToLock { throw NSError(domain: "FocusTest", code: 1) }
+            locked = true
+        }
+        func unlockForConfiguration() {
+            XCTAssertTrue(locked)
+            locked = false
+            unlockCount += 1
+        }
+    }
+
+    func testLockedCameraReacquiresRoadFocusWithPreferencesAppliedBeforeFocusing() throws {
+        let camera = Camera()
+        try DriveCameraFocusConfiguration.apply(to: camera)
+        XCTAssertEqual(camera.focusMode, .continuousAutoFocus)
+        XCTAssertEqual(camera.autoFocusRangeRestriction, .far)
+        XCTAssertEqual(camera.lockCount, 1)
+        XCTAssertEqual(camera.unlockCount, 1)
+        XCTAssertFalse(camera.locked)
+    }
+
+    func testCameraWithoutRangeOrPointControlsStillRecoversFromLockedFocus() throws {
+        let camera = Camera()
+        camera.isAutoFocusRangeRestrictionSupported = false
+        camera.isFocusPointOfInterestSupported = false
+        try DriveCameraFocusConfiguration.apply(to: camera)
+        XCTAssertEqual(camera.focusMode, .continuousAutoFocus)
+        XCTAssertEqual(camera.autoFocusRangeRestriction, .near, "Unsupported control must not be written")
+        XCTAssertEqual(camera.focusPointOfInterest, CGPoint(x: 0.1, y: 0.9))
+        XCTAssertEqual(camera.unlockCount, 1)
+    }
+
+    func testSingleAutofocusFallbackAcquiresFocusInsteadOfKeepingStaleLock() throws {
+        let camera = Camera()
+        camera.supportedModes = [.locked, .autoFocus]
+        try DriveCameraFocusConfiguration.apply(to: camera)
+        XCTAssertEqual(camera.focusMode, .autoFocus)
+        XCTAssertEqual(camera.autoFocusRangeRestriction, .far)
+        XCTAssertEqual(camera.unlockCount, 1)
+    }
+
+    func testFixedFocusCameraDoesNotReceiveUnsupportedAutofocusSettings() throws {
+        let camera = Camera()
+        camera.supportedModes = [.locked]
+        try DriveCameraFocusConfiguration.apply(to: camera)
+        XCTAssertEqual(camera.focusMode, .locked)
+        XCTAssertEqual(camera.writes, 0)
+        XCTAssertEqual(camera.lockCount, 0)
+        XCTAssertEqual(camera.unlockCount, 0)
+    }
+
+    func testConfigurationLockFailureLeavesCameraUntouched() {
+        let camera = Camera()
+        camera.failsToLock = true
+        XCTAssertThrowsError(try DriveCameraFocusConfiguration.apply(to: camera))
+        XCTAssertEqual(camera.writes, 0)
+        XCTAssertEqual(camera.lockCount, 1)
+        XCTAssertEqual(camera.unlockCount, 0)
+    }
+}
+
 private final class DeterministicTrafficSignInferenceBackend:
     TrafficSignInferenceBackend,
     @unchecked Sendable
@@ -7190,21 +7303,17 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
     @MainActor
-    func testActiveLocalSpeedCorrectionExpiresOnNextWayID() async throws {
+    func testActiveLocalSpeedCorrectionWaitsForConfirmedRoadDeparture() async throws {
         let viewModel = DriveSessionViewModel()
         try await viewModel.testResetLocalObservationStore()
-
-        viewModel.testSetActiveLocalSpeedCorrection(wayID: "17721265", value: "30", numericSpeedKmh: 30)
-
-        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: nil))
+        let start = Date()
+        viewModel.testSetActiveLocalSpeedCorrection(wayID: "17721265", value: "30", numericSpeedKmh: 30, startedAt: start)
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: nil, timestamp: start), "30")
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721265", timestamp: start.addingTimeInterval(1)), "30")
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721266", timestamp: start.addingTimeInterval(2)), "30")
         XCTAssertEqual(viewModel.testActiveLocalSpeedCorrectionWayID, "17721265")
-
-        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721265"), "30")
-        XCTAssertEqual(viewModel.testActiveLocalSpeedCorrectionWayID, "17721265")
-
-        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721266"))
+        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721266", timestamp: start.addingTimeInterval(10)))
         XCTAssertNil(viewModel.testActiveLocalSpeedCorrectionWayID)
-
         try await viewModel.testResetLocalObservationStore()
     }
 
@@ -7219,7 +7328,8 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "3", ref: "A9", timestamp: start.addingTimeInterval(300)))
         XCTAssertNil(viewModel.testActiveLocalSpeedCorrectionWayID)
         viewModel.testSetActiveLocalSpeedCorrection(wayID: "1", value: "130", numericSpeedKmh: 130, roadIdentity: "ref:A9", startedAt: start)
-        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "2", ref: "D19", timestamp: start.addingTimeInterval(1)))
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "2", ref: "D19", timestamp: start.addingTimeInterval(1)), "130")
+        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "2", ref: "D19", timestamp: start.addingTimeInterval(9)))
         try await viewModel.testResetLocalObservationStore()
     }
 
@@ -17039,6 +17149,8 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
         _ = model.testApplyTrafficSignPassage(makePassage(action: .postedMaximum(30), context: context))
         model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: nil)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .camera, "Missing bundle data cannot override a current camera assertion")
+        model.testAdvanceSpeedReferenceDistance(5_000)
         XCTAssertEqual(model.speedLimitKmh, 30)
         XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown)
         XCTAssertFalse(model.effectiveSpeedLimitState.hasCameraEvidenceMarker)
@@ -17048,6 +17160,23 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 70)
         XCTAssertEqual(model.speedLimitKmh, 70)
         XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+    }
+
+    @MainActor
+    func testAppliedZoneEndCannotLeaveTheEnclosingCameraRuleAuthoritative() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .zoneStart(30), context: context))
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .camera)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .zoneEnd(30), context: context))
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown)
+        model.currentSpeedKmh = 80
+        XCTAssertEqual(model.currentOverspeedKmh, 0)
+        XCTAssertNil(model.currentPenaltyNotice)
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+        XCTAssertEqual(model.speedLimitKmh, 50)
     }
 
     @MainActor
@@ -17099,8 +17228,11 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             timestamp: baseTime.addingTimeInterval(9), coordinate: coordinate))
         XCTAssertFalse(model.testHasActiveTrafficSignPassage,
             "A confirmed city exit must clear the camera assertion")
-        XCTAssertEqual(model.effectiveSpeedLimitState.value, .numeric(50),
-            "A city exit must expose the current database/base limit")
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown,
+            "Old-scope database evidence must await a fresh lookup after the city boundary")
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        XCTAssertEqual(model.effectiveSpeedLimitState.value, .numeric(50))
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
         XCTAssertFalse(model.testApplySettlementContext(insideCity: true, source: "settlement:landuse:low",
             timestamp: baseTime.addingTimeInterval(10), coordinate: coordinate))
         XCTAssertTrue(model.testApplySettlementContext(insideCity: true, source: high,

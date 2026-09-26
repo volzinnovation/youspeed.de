@@ -6,6 +6,53 @@ import OSLog
 import SwiftUI
 import UIKit
 
+/// The device boundary lets regression tests exercise capability fallbacks and
+/// AVFoundation's required configuration order without a physical camera.
+protocol DriveCameraFocusDevice: AnyObject {
+    func isFocusModeSupported(_ focusMode: AVCaptureDevice.FocusMode) -> Bool
+    func lockForConfiguration() throws
+    func unlockForConfiguration()
+    var focusMode: AVCaptureDevice.FocusMode { get set }
+    var isFocusPointOfInterestSupported: Bool { get }
+    var focusPointOfInterest: CGPoint { get set }
+    var isAutoFocusRangeRestrictionSupported: Bool { get }
+    var autoFocusRangeRestriction: AVCaptureDevice.AutoFocusRangeRestriction { get set }
+    var automaticallyAdjustsFaceDrivenAutoFocusEnabled: Bool { get set }
+    var isFaceDrivenAutoFocusEnabled: Bool { get set }
+}
+
+extension AVCaptureDevice: DriveCameraFocusDevice {}
+
+enum DriveCameraFocusConfiguration {
+    static func apply(to camera: any DriveCameraFocusDevice) throws {
+        let mode: AVCaptureDevice.FocusMode
+        if camera.isFocusModeSupported(.continuousAutoFocus) {
+            mode = .continuousAutoFocus
+        } else if camera.isFocusModeSupported(.autoFocus) {
+            mode = .autoFocus
+        } else {
+            // Fixed-focus hardware has no autofocus controls to configure.
+            return
+        }
+
+        try camera.lockForConfiguration()
+        defer { camera.unlockForConfiguration() }
+        if camera.isFocusPointOfInterestSupported {
+            camera.focusPointOfInterest = CGPoint(x: 0.5, y: 0.5)
+        }
+        if camera.isAutoFocusRangeRestrictionSupported {
+            camera.autoFocusRangeRestriction = .far
+        }
+        // Prefer the road ahead over faces or their windscreen reflections.
+        camera.automaticallyAdjustsFaceDrivenAutoFocusEnabled = false
+        camera.isFaceDrivenAutoFocusEnabled = false
+        // Apply the mode last: setting range/point/face preferences alone does
+        // not initiate focusing. Never lock an uncalibrated lens position:
+        // AVFoundation explicitly does not define lensPosition == 1 as infinity.
+        camera.focusMode = mode
+    }
+}
+
 enum DriveRecorderState: Equatable {
     case disabled
     case preparing
@@ -916,7 +963,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
 
         session.addInput(input)
-        configureInfinityFocus(for: camera)
+        configureRoadFocus(for: camera)
 
         func addMovieOutputIfPossible() {
             guard !movieOutputAvailable, session.canAddOutput(movieOutput) else { return }
@@ -968,23 +1015,13 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
     }
 
-    /// The camera is mounted behind the windscreen, so autofocus can settle on
-    /// dirt or reflections close to the lens instead of the road ahead. Keep
-    /// every camera consumer on the same fixed infinity focus position.
-    private func configureInfinityFocus(for camera: AVCaptureDevice) {
-        guard camera.isFocusModeSupported(.locked) else { return }
+    /// Photos, Dashcam and TSR share road-focused autofocus. Restrict scans to
+    /// distant subjects where supported to avoid focusing on the windscreen.
+    private func configureRoadFocus(for camera: AVCaptureDevice) {
         do {
-            try camera.lockForConfiguration()
-            defer { camera.unlockForConfiguration() }
-            if camera.isLockingFocusWithCustomLensPositionSupported {
-                camera.setFocusModeLocked(lensPosition: 1.0, completionHandler: nil)
-            } else {
-                // Still disable autofocus on fixed-focus hardware even when it
-                // cannot accept an explicit lens position.
-                camera.focusMode = .locked
-            }
+            try DriveCameraFocusConfiguration.apply(to: camera)
         } catch {
-            Self.logger.debug("Could not lock rear camera focus: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error("Could not configure rear camera autofocus: \(error.localizedDescription, privacy: .public)")
         }
     }
 

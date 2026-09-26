@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "target_version": "1.0.0",
+  "runtime_active": true,
+  "approval_date": "2026-09-26",
+  "approval_basis": "Product-owner request on 2026-09-26: apps use the state-machine configuration at runtime; documentation/visualization are for developers, with no in-app machine display. Explicit parameters: 5 km or five minutes; policy edits only by explicit owner command. Camera candidate selection and applicability remain external, with future conditional restrictions on camera and bundle inputs.",
+  "artifacts": [
+    {
+      "file": "policy-v1.0.0.json",
+      "role": "target",
+      "sha256": "f9137704291b308bfec782b201d8ef5332634a3e1113da10bd7d988309295df9"
+    },
+    {
+      "file": "current-v0.1.0.json",
+      "role": "current",
+      "sha256": "0bc9fb4f9a89658bad3674f4d6e0a5d74b62767783f9c4f9c1a8da7272de7b0e"
+    },
+    {
+      "file": "scenarios-v1.0.0.json",
+      "role": "scenarios",
+      "sha256": "4dce2f1f82be7267d5f606cf0079ccb4ed2d12767f0dbad556061ad40a72793d"
+    }
+  ]
+}

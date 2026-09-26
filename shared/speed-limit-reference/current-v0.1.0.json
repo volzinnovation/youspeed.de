@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "model_id": "youspeed.speed-limit-reference.current",
+  "version": "0.1.0",
+  "status": "descriptive_snapshot",
+  "source_commit": "99d62f2",
+  "states": ["VOICE", "CAMERA", "BUNDLE", "LAST_KNOWN", "UNKNOWN"],
+  "priority": ["voice", "camera", "bundle"],
+  "selection": "Active user correction, otherwise camera resolver/frame override, otherwise current bundle; missing/stale output is presented using last-known display memory.",
+  "transitions": [
+    {"event": "voice_saved", "guard": "successful persistence and captured current way", "effect": "activate voice; clear transient camera", "target": "VOICE"},
+    {"event": "camera_numeric", "guard": "voice active", "effect": "reject camera takeover", "target": "VOICE"},
+    {"event": "camera_numeric", "guard": "no voice and existing applicability/scope checks pass", "effect": "activate camera", "target": "CAMERA"},
+    {"event": "lookup", "guard": "voice age >= 300 s", "effect": "clear voice before source selection", "target": "select"},
+    {"event": "lookup", "guard": "different road identity, reversed direction, or different way without same identity", "effect": "clear voice immediately, including a brief erroneous ramp match", "target": "select"},
+    {"event": "lookup", "guard": "voice unmatched for > 8 s", "effect": "clear voice", "target": "select"},
+    {"event": "resolve_camera", "guard": "ordinary posted layer age >= 300 s", "effect": "remove posted layer; restore enclosing layer if available", "target": "select"},
+    {"event": "resolve_camera", "guard": "camera match gap > 8 s or > 160 m, incompatible scope, direction, traversal, or bundle revision", "effect": "clear camera", "target": "select"},
+    {"event": "confirmed_city_context", "guard": "bundle city context transition", "effect": "clear local/camera state", "target": "select"},
+    {"event": "camera_structural", "guard": "eligible unconditional city entry/exit or speed/all-restrictions end", "effect": "controller clears voice before final resolver commit", "target": "select"},
+    {"event": "present", "guard": "current non-stale value exists", "effect": "remember and display value; numeric value feeds overspeed and country penalty rules", "target": "source"},
+    {"event": "present", "guard": "no current value and remembered value exists", "effect": "display last known, mark stale, suppress overspeed/penalties", "target": "LAST_KNOWN"},
+    {"event": "drive_start_or_stop", "guard": "session boundary", "effect": "reset last-known memory", "target": "UNKNOWN"}
+  ],
+  "known_gaps": [
+    {"id": "F1", "finding": "Exit restrictions can still become mainline limits", "missing": "Interior-vertex exit topology and persistent sign-level lane ambiguity; current narrow guard depends on fresh complete context."},
+    {"id": "F2", "finding": "Distance expiry missing on a matched road", "missing": "No total traveled-distance bound for ordinary voice/camera assertions; sampled camera runs survive about 8–9.53 km before the time cap."},
+    {"id": "F3", "finding": "Android voice correction lost on brief ramp match", "missing": "Tentative versus confirmed road departure; 130 correction lost after 137.903 s on A8 → A57 ramp → A8 excursion."},
+    {"id": "F4", "finding": "Lifecycle evidence incomplete", "missing": "Compact activation/expiry reason trace, policy identity, and retained per-session GPS/match logs."},
+    {"id": "F5", "finding": "Source selection distributed across controllers and resolvers", "missing": "One atomic reference output shared by display, violation and penalty computation; artifact-driven selection is not wired yet."}
+  ]
+}

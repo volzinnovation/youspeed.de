@@ -14,6 +14,15 @@
 - Use QuickTime Player to view the attached iPhone's screen on this Mac. The user's setup is in Germany, where iPhone Mirroring is unavailable; do not attempt to use or configure iPhone Mirroring.
 - In QuickTime Player, select the attached iPhone as the camera source for a New Movie Recording preview. Viewing the preview does not require starting a recording. QuickTime provides screen viewing, not touch control; use device tests or interaction on the phone when controls must be exercised.
 
+## Speed-limit reference policy changes
+
+The shared runtime state-machine policy in `shared/speed-limit-reference/` and
+its Swift/Kotlin interpreter semantics may change only on an explicit command
+from the product owner. Follow that directory's `AGENTS.md`, versioning and
+approval-lock process. Bundle/model updates must not change this policy.
+Developer documentation and Mermaid/Graphviz diagrams are in
+`docs/speed-limit-reference/`; do not add an in-app state-machine editor/viewer.
+
 ## Git workflow
 
 - Do not assume the default branch is `master` or `main`; inspect repository configuration first.
