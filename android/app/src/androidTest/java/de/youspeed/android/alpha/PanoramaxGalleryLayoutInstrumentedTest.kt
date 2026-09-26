@@ -16,6 +16,8 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasTestTag
@@ -69,7 +71,20 @@ class PanoramaxGalleryLayoutInstrumentedTest {
             Viewport(640, 276, 2f), Viewport(320, 640, 1.5f))) {
             compose.runOnIdle { viewport.value = size }
             val list = compose.onNodeWithTag("panoramax-photo-list")
-            assertTrue("A complete 92dp thumbnail fits the scroll viewport at $size",
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val layout = buildString {
+                appendLine("$size list=${list.fetchSemanticsNode().boundsInRoot}")
+                compose.onAllNodesWithTag("gallery-action").fetchSemanticsNodes().forEach {
+                    appendLine("action=${it.boundsInRoot}")
+                }
+                appendLine("tabs=${compose.onNodeWithTag("gallery-tab-pictures").fetchSemanticsNode().boundsInRoot}")
+            }
+            File(context.cacheDir, "gallery-layout-${size.width}-${size.height}-${size.fontScale}.txt").writeText(layout)
+            File(context.cacheDir, "gallery-layout-${size.width}-${size.height}-${size.fontScale}-before-scroll.png").outputStream().use {
+                assertTrue(compose.onNodeWithTag("gallery-test-viewport").captureToImage().asAndroidBitmap()
+                    .compress(Bitmap.CompressFormat.PNG, 100, it))
+            }
+            assertTrue("A complete 92dp thumbnail fits the scroll viewport: $layout",
                 list.fetchSemanticsNode().size.height >= 92)
             list.performScrollToNode(hasTestTag("panoramax-thumbnail-gallery-photo-0"))
             val thumbnail = compose.onNodeWithTag("panoramax-thumbnail-gallery-photo-0")
@@ -80,6 +95,14 @@ class PanoramaxGalleryLayoutInstrumentedTest {
 
             val actions = compose.onAllNodesWithTag("gallery-action").fetchSemanticsNodes()
             assertEquals(4, actions.size)
+            if (size.height < 360) {
+                assertEquals("Compact actions stay in one row at $size", 1,
+                    actions.map { it.boundsInRoot.top }.distinct().size)
+            }
+            actions.forEach {
+                assertFalse("Every action keeps its localized label and count at $size",
+                    it.config.getOrNull(SemanticsProperties.Text).isNullOrEmpty())
+            }
             val bounds = compose.onNodeWithTag("gallery-test-viewport").fetchSemanticsNode().boundsInRoot
             val controls = actions + listOf("gallery-tab-pictures", "gallery-tab-videos").map {
                 compose.onNodeWithTag(it).assertIsDisplayed().fetchSemanticsNode()
@@ -90,7 +113,6 @@ class PanoramaxGalleryLayoutInstrumentedTest {
                 assertTrue("Controls stay inside the available content at $size",
                     control.boundsInRoot.top >= bounds.top && control.boundsInRoot.bottom <= bounds.bottom)
             }
-            val context = InstrumentationRegistry.getInstrumentation().targetContext
             File(context.cacheDir, "gallery-layout-${size.width}-${size.height}-${size.fontScale}.png").outputStream().use {
                 assertTrue(compose.onNodeWithTag("gallery-test-viewport").captureToImage().asAndroidBitmap()
                     .compress(Bitmap.CompressFormat.PNG, 100, it))

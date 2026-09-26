@@ -470,45 +470,54 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-private fun GalleryActionBar(compact: Boolean = false, content: @Composable FlowRowScope.() -> Unit) {
+private fun GalleryActionBar(compact: Boolean = false, content: @Composable (Modifier) -> Unit) {
     Surface(tonalElevation = 3.dp) {
         BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
+            val spacing = 4.dp
+            if (compact) {
+                // FlowRow can wrap weighted actions based on the localized
+                // labels' intrinsic widths. Reserve equal columns so larger
+                // text wraps within each action, leaving room for the photos.
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spacing)) {
+                    content(Modifier.weight(1f))
+                }
+                return@BoxWithConstraints
+            }
             // Wrap whole actions on narrow phones. Larger system text gets
             // at most two columns; labels can grow without being clipped.
             val minimumActionWidth = 112.dp
-            val spacing = 4.dp
-            val maximumColumns = if (!compact && LocalDensity.current.fontScale > 1.3f) 2 else 4
+            val maximumColumns = if (LocalDensity.current.fontScale > 1.3f) 2 else 4
             val columns = ((maxWidth + spacing) / (minimumActionWidth + spacing)).toInt().coerceIn(1, maximumColumns)
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 maxItemsInEachRow = columns,
                 horizontalArrangement = Arrangement.spacedBy(spacing),
                 verticalArrangement = Arrangement.spacedBy(spacing),
-                content = content,
-            )
+            ) { content(Modifier.weight(1f)) }
         }
     }
 }
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-private fun FlowRowScope.GalleryAction(
+private fun GalleryAction(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     enabled: Boolean,
     onClick: () -> Unit,
     compact: Boolean = false,
+    modifier: Modifier,
 ) {
-    val modifier = Modifier.weight(1f).heightIn(min = if (compact) 48.dp else 64.dp).testTag("gallery-action")
+    val actionModifier = modifier.heightIn(min = if (compact) 48.dp else 64.dp).testTag("gallery-action")
         .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
         .padding(horizontal = 6.dp, vertical = 6.dp)
     val color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-    if (compact) Row(modifier, verticalAlignment = Alignment.CenterVertically,
+    if (compact) Row(actionModifier, verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = color)
     } else Column(
-        modifier,
+        actionModifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -553,20 +562,23 @@ internal fun DashcamLibraryContent(controller: ConsumerSessionController) {
             }
         }
         if (recordings.isNotEmpty()) {
-            GalleryActionBar {
+            GalleryActionBar { actionModifier ->
                 GalleryAction(
+                    modifier = actionModifier,
                     icon = Icons.Default.CheckCircle,
                     label = parityText("Select all", "Alle auswählen", "Tout sélectionner", "Alles selecteren"),
                     enabled = selected.size != recordings.size,
                     onClick = { selected = recordings.map { it.path }.toSet() },
                 )
                 GalleryAction(
+                    modifier = actionModifier,
                     icon = Icons.Default.RadioButtonUnchecked,
                     label = parityText("Select none", "Auswahl aufheben", "Tout désélectionner", "Niets selecteren"),
                     enabled = selected.isNotEmpty(),
                     onClick = { selected = emptySet() },
                 )
                 GalleryAction(
+                    modifier = actionModifier,
                     icon = Icons.Default.Delete,
                     label = "${deleteLabel()} (${selected.size})",
                     enabled = selected.isNotEmpty() && controller.uiState.driveRecorderState !in
@@ -695,8 +707,9 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                 }
             }
         }
-        GalleryActionBar(compact = compact) {
+        GalleryActionBar(compact = compact) { actionModifier ->
             GalleryAction(
+                modifier = actionModifier,
                 icon = Icons.Default.CheckCircle,
                 compact = compact,
                 label = parityText("Select all", "Alle auswählen", "Tout sélectionner", "Alles selecteren"),
@@ -707,6 +720,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                 },
             )
             GalleryAction(
+                modifier = actionModifier,
                 icon = Icons.Default.RadioButtonUnchecked,
                 compact = compact,
                 label = parityText("Select none", "Auswahl aufheben", "Tout désélectionner", "Niets selecteren"),
@@ -714,6 +728,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                 onClick = { selected = emptyMap() },
             )
             GalleryAction(
+                modifier = actionModifier,
                 icon = Icons.Default.Delete,
                 compact = compact,
                 label = "${deleteLabel()} ($count)",
@@ -723,6 +738,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
             )
             if (ui.panoramaxActiveUploadBatchIds.isEmpty()) {
                 GalleryAction(
+                    modifier = actionModifier,
                     icon = Icons.Default.Upload,
                     compact = compact,
                     label = "${parityText("Upload", "Hochladen", "Envoyer", "Uploaden")} ($count)",
@@ -731,6 +747,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                 )
             } else {
                 GalleryAction(
+                    modifier = actionModifier,
                     icon = Icons.Default.Stop,
                     compact = compact,
                     label = parityText("Stop", "Stopp", "Arrêter", "Stoppen"),
