@@ -1,11 +1,87 @@
 package de.youspeed.android.alpha
 
 import java.util.concurrent.AbstractExecutorService
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.*
 import org.junit.Test
 
 class LatestPendingLookupWorkerTests {
+    @Test
+    fun settingsRejectsRunningAndPausedFixesThenAcceptsFreshFixAfterDismissal() {
+        val worker = LatestPendingLookupWorker()
+        val gate = TrafficSignLookupMutationGate()
+        val started = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val drainedDuringBootstrap = CountDownLatch(1)
+        val replacementPublished = CountDownLatch(1)
+        val published = java.util.concurrent.CopyOnWriteArrayList<String>()
+        val oldToken = gate.snapshot()
+        try {
+            worker.submit {
+                started.countDown()
+                assertTrue(release.await(5, TimeUnit.SECONDS))
+                gate.commitIfCurrent(oldToken, 1) { published += "deleted/context/path" }
+            }
+            assertTrue(started.await(5, TimeUnit.SECONDS))
+            assertTrue(gate.setSettingsVisible(true))
+            worker.clearPending()
+            val duringBootstrap = gate.snapshot()
+            assertFalse(gate.isCurrent(oldToken))
+            assertNull(gate.mutateIfCurrent<Unit>(duringBootstrap) { error("Read a revoked bundle") })
+            worker.submit {
+                gate.commitIfCurrent(duringBootstrap, 2) { published += "bootstrap/old/path" }
+                drainedDuringBootstrap.countDown()
+            }
+            release.countDown()
+            assertTrue(drainedDuringBootstrap.await(5, TimeUnit.SECONDS))
+            assertTrue(published.isEmpty())
+
+            assertTrue(gate.setSettingsVisible(false))
+            assertFalse(gate.isCurrent(duringBootstrap))
+            assertFalse(gate.isLatestCommitted(oldToken, 1))
+            val fresh = gate.snapshot()
+            worker.submit {
+                gate.commitIfCurrent(fresh, 3) { published += "replacement/context/path" }
+                replacementPublished.countDown()
+            }
+            assertTrue(replacementPublished.await(5, TimeUnit.SECONDS))
+            assertEquals(listOf("replacement/context/path"), published)
+        } finally { release.countDown(); worker.close() }
+    }
+
+    @Test
+    fun settingsDismissalWaitsForAllQueuedRemovalsAndRepeatedVisibilityIsIdempotent() {
+        val gate = TrafficSignLookupMutationGate()
+        assertTrue(gate.setSettingsVisible(true))
+        val paused = gate.snapshot()
+        assertFalse(gate.setSettingsVisible(true))
+        assertEquals(paused, gate.snapshot())
+        assertFalse(gate.beginBundleRemoval())
+        assertFalse(gate.beginBundleRemoval())
+        assertFalse(gate.setSettingsVisible(false))
+        assertTrue(gate.isPaused())
+        assertFalse(gate.endBundleRemoval())
+        assertFalse(gate.isCurrent(paused))
+        assertTrue(gate.endBundleRemoval())
+        assertFalse(gate.isPaused())
+        assertFalse(gate.isCurrent(paused))
+        assertTrue(gate.isCurrent(gate.snapshot()))
+        assertFalse(gate.setSettingsVisible(false))
+    }
+
+    @Test
+    fun removalFailureOrRejectedSubmissionCanReleaseItsPauseWhileSettingsIsClosed() {
+        val gate = TrafficSignLookupMutationGate()
+        val previous = gate.snapshot()
+        assertTrue(gate.beginBundleRemoval())
+        assertFalse(gate.isCurrent(previous))
+        // Completion uses the same balancing operation on success, failure and rejection.
+        assertTrue(gate.endBundleRemoval())
+        assertFalse(gate.isPaused())
+        assertTrue(gate.isCurrent(gate.snapshot()))
+    }
+
     @Test
     fun newerGpsFixesDoNotStarveRunningResultAndOnlyNewestPendingFixRuns() {
         val executor = ManualExecutor()

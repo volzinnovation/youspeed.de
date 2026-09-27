@@ -914,6 +914,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     let panoramaxAccount: PanoramaxAccountModel
     private var panoramaxQueueStore: PanoramaxQueueStore?
     private var speedLimitService: V3SpeedLimitService?
+    private let speedLimitServicePool = V3SpeedLimitServicePool()
+    private let mapLookupWorker = LatestPendingLookupWorker()
+    private var mapLookupPauseState = MapLookupPauseState()
+    private var localObservationRefreshRevision: UInt64 = 0
     private var driveCaptureCoordinator: DriveCaptureCoordinator?
     private var driveRecorderStartPending = false
     private var previousDriveCaptureState: DriveRecorderState = .disabled
@@ -1612,8 +1616,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func makeSpeedLimitService(dbPath: String, preferredCountryCode: String? = nil) -> V3SpeedLimitService {
-        V3SpeedLimitService(
+        speedLimitServicePool.service(
             dbPath: dbPath,
+            bundleIdentity: activeBundleDBSHA256,
             countryCode: normalizedCountryCode(preferredCountryCode)
                 ?? activeMapCountryCode
                 ?? normalizedCountryCode(inferCountryCodeFromDBPath(dbPath)),
@@ -1788,9 +1793,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         Self.logger.notice("sync endpoints configured count=\(endpointCount, privacy: .public)")
         super.init()
         trafficSignRecognitionState = trafficSignRecognitionEnabled ? .unavailable : .disabled
-        panoramaxQueueStore = try? PanoramaxQueueStore(performStartupMaintenance: false)
+        driveCaptureCoordinator = DriveCaptureCoordinator(queueStore: nil)
         startPanoramaxQueueMaintenance()
-        driveCaptureCoordinator = DriveCaptureCoordinator(queueStore: panoramaxQueueStore)
         driveCaptureCoordinator?.setScreenOrientation(screenOrientation)
         applyPanoramaxConfiguration()
         driveCaptureCoordinator?.onChange = { [weak self] in
@@ -1799,6 +1803,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         driveCaptureCoordinator?.onDiagnostic = { [weak self] detail in
             self?.appendTSRLog("event=drive_capture \(detail)")
         }
+        driveCaptureCoordinator?.onPanoramaxQueueChange = { [weak self] in self?.refreshPanoramaxBatches() }
         driveCaptureCoordinator?.onTrafficSignAnnotation = { [weak self] detail in
             self?.appendTSRLog("image_link=attached \(detail)")
             self?.refreshPanoramaxBatches()
@@ -2763,6 +2768,54 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         invalidateTrafficSignStateForBundledCityContextTransition(transition, timestamp: timestamp)
     }
 
+    func setSettingsPresented(_ presented: Bool) {
+        mapLookupPauseState.settingsPresented = presented
+        refreshMapLookupPause()
+    }
+
+    private func refreshMapLookupPause() {
+        let paused = mapLookupPauseState.isPaused
+        guard mapLookupWorker.isPaused != paused else { return }
+        mapLookupWorker.setPaused(paused)
+        if paused {
+            localObservationRefreshRevision &+= 1
+            // Frames and name queries captured before opening Settings cannot
+            // publish against sources changed there, even after it closes.
+            invalidateTrafficSignInferenceContext()
+        } else {
+            // A long Settings visit must not count as consecutive matcher fixes.
+            resetWayMatchContinuity()
+            resetTunnelModeTracking()
+        }
+    }
+
+    private func revokeDeletedActiveBundleSource() {
+        speedLimitService = nil
+        activeDBPath = ""
+        activeBundleVersion = "none"
+        activeBundleDBSHA256 = nil
+        localObservationStreetNames = [:]
+        currentBundledSpeedLimitKmh = nil
+        currentBundledUnlimitedSpeedLimitActive = false
+        currentBaseUnlimitedSpeedLimitActive = false
+        lastKnownBundleSpeedLimitKmh = nil
+        lastKnownBundleSpeedLimitAt = nil
+        lastKnownBundleSpeedLimitCoordinate = nil
+        lastKnownBundleDBPath = nil
+        staleBundleSpeedLimitActive = false
+        lastKnownLimitPresentation.reset()
+        clearActiveLocalSpeedCorrection()
+        resetWayMatchContinuity()
+        resetTunnelModeTracking()
+        latestTrafficSignMapFix = nil
+        limitWayID = nil
+        limitStreetName = nil
+        invalidateTrafficSignOverrideForBaseSourceMutation()
+        speedReference.bundle(id: "none", value: nil)
+        speedReference.context(way: nil, road: nil, relations: [], direction: "unknown", stable: false)
+        publishEffectiveSpeedLimitState(.none)
+    }
+
     private func invalidateTrafficSignOverrideIfBundleWillChange(
         bundleVersion: String,
         dbPath: String,
@@ -3520,33 +3573,37 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     func setPanoramaxItemIncluded(batchID: String, itemID: String, included: Bool) {
         guard canProcessPanoramaxUploads,
-              !activePanoramaxUploadBatchIDs.contains(batchID),
-              let batch = try? panoramaxQueueStore?.getBatch(batchID),
-              DriveRecorderPolicy.canEditPanoramaxSelection(in: batch.state),
-              let item = batch.items.first(where: { $0.itemID == itemID }),
-              DriveRecorderPolicy.canSelectPanoramaxItem(in: item.state) else { return }
-        do {
-            _ = try panoramaxQueueStore?.updateItem(
-                batchID: batchID,
-                itemID: itemID,
-                state: included ? .included : .excluded
-            )
-            refreshPanoramaxBatches()
-        } catch {
-            panoramaxLastCaptureDetail = "Bildstatus konnte nicht gespeichert werden"
+              !activePanoramaxUploadBatchIDs.contains(batchID), let store = panoramaxQueueStore else { return }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: store) { store in
+                    _ = try store.mutateBatch(batchID) { batch in
+                        guard DriveRecorderPolicy.canEditPanoramaxSelection(in: batch.state),
+                              let index = batch.items.firstIndex(where: { $0.itemID == itemID }),
+                              DriveRecorderPolicy.canSelectPanoramaxItem(in: batch.items[index].state) else { return }
+                        batch.items[index].state = included ? .included : .excluded
+                    }
+                }
+                refreshPanoramaxBatches()
+            } catch { panoramaxLastCaptureDetail = "Bildstatus konnte nicht gespeichert werden" }
         }
     }
 
     func togglePanoramaxFavorite(batchID: String, itemID: String) {
         guard canProcessPanoramaxUploads,
-              !activePanoramaxUploadBatchIDs.contains(batchID) else { return }
-        guard let batch = panoramaxBatches.first(where: { $0.batchID == batchID }),
-              let item = batch.items.first(where: { $0.itemID == itemID }) else { return }
-        do {
-            _ = try panoramaxQueueStore?.updateItemFavorite(batchID: batchID, itemID: itemID, isFavorite: !item.isFavorite)
-            refreshPanoramaxBatches()
-        } catch {
-            panoramaxLastCaptureDetail = "Favorit konnte nicht gespeichert werden"
+              !activePanoramaxUploadBatchIDs.contains(batchID), let store = panoramaxQueueStore else { return }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: store) { store in
+                    _ = try store.mutateBatch(batchID) { batch in
+                        guard let index = batch.items.firstIndex(where: { $0.itemID == itemID }) else { return }
+                        batch.items[index].isFavorite.toggle()
+                    }
+                }
+                refreshPanoramaxBatches()
+            } catch { panoramaxLastCaptureDetail = "Favorit konnte nicht gespeichert werden" }
         }
     }
 
@@ -3605,7 +3662,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
             reconcilePanoramaxLocalDeletionIntents(
                 [batchID: itemIDs],
-                store: store
+                result: result
             )
             applyPanoramaxMaintenanceResult(
                 result,
@@ -3636,7 +3693,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 store: store,
                 itemIDsByBatch: deletable
             )
-            reconcilePanoramaxLocalDeletionIntents(deletable, store: store)
+            reconcilePanoramaxLocalDeletionIntents(deletable, result: result)
             applyPanoramaxMaintenanceResult(
                 result,
                 publicationGeneration: publicationGeneration
@@ -3646,22 +3703,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func reconcilePanoramaxLocalDeletionIntents(
         _ requestedItemIDsByBatch: [String: Set<String>],
-        store: PanoramaxQueueStore
+        result: PanoramaxQueueMaintenanceResult
     ) {
+        // Keep intents when a durable record could not be read. Upload remains
+        // blocked until an explicit successful deletion can reconcile them.
+        guard result.batchLoadSucceeded else { return }
         for (batchID, requestedItemIDs) in requestedItemIDsByBatch {
-            do {
-                let remainingItemIDs = Set(
-                    try store.getBatch(batchID)?.items.map(\.itemID) ?? []
-                )
-                panoramaxLocalDeletionIntents.reconcile(
-                    batchID: batchID,
-                    requestedItemIDs: requestedItemIDs,
-                    remainingItemIDs: remainingItemIDs
-                )
-            } catch {
-                // Keep every intent when the durable queue cannot be read. A
-                // later explicit delete can retry, but upload must stay blocked.
-            }
+            let remaining = Set(result.batches.first { $0.batchID == batchID }?.items.map(\.itemID) ?? [])
+            panoramaxLocalDeletionIntents.reconcile(
+                batchID: batchID, requestedItemIDs: requestedItemIDs, remainingItemIDs: remaining
+            )
         }
     }
 
@@ -3670,7 +3721,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         itemIDs: Set<String>,
         store: PanoramaxQueueStore
     ) {
-        let batchState = (try? store.getBatch(batchID))?.state
+        let batchState = panoramaxBatches.first { $0.batchID == batchID }?.state
         guard PanoramaxGalleryDeletionPolicy.cancelUploadTaskIfNeeded(
             panoramaxUploadTasks[batchID],
             deleting: itemIDs,
@@ -3699,13 +3750,24 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func startPanoramaxQueueMaintenance() {
-        guard let store = panoramaxQueueStore else { return }
         panoramaxQueueMaintenanceInProgress = true
         panoramaxQueueMaintenanceGeneration &+= 1
         let generation = panoramaxQueueMaintenanceGeneration
         let deleteCompletedUploads = panoramaxDeleteUploadedImages
         panoramaxQueueMaintenanceTask = Task { @MainActor [weak self] in
             guard let self else { return }
+            let store: PanoramaxQueueStore
+            do {
+                if let existing = panoramaxQueueStore { store = existing }
+                else { store = try await PanoramaxQueueMaintenanceExecutor.shared.makeStore() }
+            } catch {
+                panoramaxQueueMaintenanceInProgress = false
+                panoramaxQueueMaintenanceTask = nil
+                notePanoramaxCleanupFailures(["batches"])
+                return
+            }
+            panoramaxQueueStore = store
+            driveCaptureCoordinator?.setQueueStore(store)
             let publicationGeneration = nextPanoramaxBatchPublicationGeneration()
             let result = await PanoramaxQueueMaintenanceExecutor.shared.runStartup(
                 store: store,
@@ -3770,24 +3832,27 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             panoramaxUploadStatusByBatch[batchID] = "Upload erst nach Ende der Aufnahme bearbeiten"
             return
         }
-        do {
-            guard var batch = try panoramaxQueueStore?.getBatch(batchID) else { return }
-            guard batch.state == .awaitingReview else { return }
-            batch.items = batch.items.map { item in
-                guard item.state == .captured else { return item }
-                var included = item
-                included.state = .included
-                return included
-            }
-            guard batch.items.contains(where: { $0.state == .included || $0.state == .retryableError }) else {
-                panoramaxUploadStatusByBatch[batchID] = "Keine Bilder ausgewaehlt"
-                return
-            }
-            batch.state = .approved
-            try panoramaxQueueStore?.updateBatch(batch)
-            refreshPanoramaxBatches()
-        } catch {
-            panoramaxLastCaptureDetail = "Batch konnte nicht freigegeben werden"
+        guard let store = panoramaxQueueStore else { return }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let batch = try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: store) { store in
+                    try store.mutateBatch(batchID) { batch in
+                        guard batch.state == .awaitingReview else { return }
+                        batch.items = batch.items.map { item in
+                            guard item.state == .captured else { return item }
+                            var included = item
+                            included.state = .included
+                            return included
+                        }
+                        if batch.items.contains(where: { $0.state == .included || $0.state == .retryableError }) {
+                            batch.state = .approved
+                        }
+                    }
+                }
+                if batch.state == .awaitingReview { panoramaxUploadStatusByBatch[batchID] = "Keine Bilder ausgewaehlt" }
+                refreshPanoramaxBatches()
+            } catch { panoramaxLastCaptureDetail = "Batch konnte nicht freigegeben werden" }
         }
     }
 
@@ -3830,42 +3895,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
             return
         }
-        guard panoramaxUploadIsReady, let store = panoramaxQueueStore else { return }
-        let selectedByBatch = Dictionary(grouping: selections, by: { $0.batchID })
-        for (batchID, selected) in selectedByBatch {
-            guard !activePanoramaxUploadBatchIDs.contains(batchID) else { continue }
-            let loadedBatch: PanoramaxBatchRecord?
-            do {
-                loadedBatch = try store.getBatch(batchID)
-            } catch {
-                panoramaxUploadStatusByBatch[batchID] = "Auswahl konnte nicht gelesen werden"
-                continue
-            }
-            guard let loadedBatch,
-                  DriveRecorderPolicy.canEditPanoramaxSelection(in: loadedBatch.state) else { continue }
-            var batch = loadedBatch
-            let editableIDs = Set(batch.items.filter { DriveRecorderPolicy.canSelectPanoramaxItem(in: $0.state) }.map(\.itemID))
-            let selectedIDs = Set(selected.map(\.itemID)).intersection(editableIDs)
-            guard !selectedIDs.isEmpty else { continue }
-            batch.items = batch.items.map { item in
-                guard editableIDs.contains(item.itemID) else { return item }
-                var updated = item
-                updated.state = selectedIDs.contains(item.itemID) ? .queued : .excluded
-                return updated
-            }
-            batch.state = .approved
-            do {
-                try store.updateBatch(batch)
-            } catch {
-                panoramaxUploadStatusByBatch[batchID] = "Auswahl konnte nicht gespeichert werden"
-                continue
-            }
-            uploadPanoramaxBatch(batchID: batchID)
+        guard panoramaxUploadIsReady else { return }
+        for (batchID, selected) in Dictionary(grouping: selections, by: { $0.batchID }) {
+            uploadPanoramaxBatch(batchID: batchID, selectedItemIDs: Set(selected.map(\.itemID)))
         }
-        refreshPanoramaxBatches()
     }
 
     func uploadPanoramaxBatch(batchID: String) {
+        uploadPanoramaxBatch(batchID: batchID, selectedItemIDs: nil)
+    }
+
+    private func uploadPanoramaxBatch(batchID: String, selectedItemIDs: Set<String>?) {
         guard canProcessPanoramaxUploads else {
             panoramaxUploadStatusByBatch[batchID] = "Upload erst nach Ende der Aufnahme starten"
             return
@@ -3883,56 +3923,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             panoramaxUploadStatusByBatch[batchID] = "Upload fuer diesen Batch laeuft bereits"
             return
         }
-        let loadedBatch: PanoramaxBatchRecord?
-        do {
-            loadedBatch = try store.getBatch(batchID)
-        } catch {
-            panoramaxUploadStatusByBatch[batchID] = "Batch konnte nicht gelesen werden"
-            return
-        }
-        guard var batch = loadedBatch,
-              DriveRecorderPolicy.canStartPanoramaxUpload(for: batch.state) else {
-            panoramaxUploadStatusByBatch[batchID] = "Batch zuerst fuer Upload freigeben"
-            return
-        }
-        if let batchOrigin = batch.instanceOrigin,
-           batchOrigin.trimmingCharacters(in: CharacterSet(charactersIn: "/")) != origin.absoluteString {
-            panoramaxUploadStatusByBatch[batchID] = NSLocalizedString("panoramax.account.batch_instance_mismatch", comment: "")
-            return
-        }
-        let selected = batch.items.filter {
-            $0.state == .queued || $0.state == .included || $0.state == .retryableError
-        }
-        let previouslyUploadedCount = batch.items.filter {
-            $0.state == .uploaded || $0.state == .accepted || $0.state == .duplicate
-        }.count
-        let canResumeRemoteSet = DriveRecorderPolicy.canResumePanoramaxRemoteSet(
-            batchState: batch.state,
-            remoteUploadSetID: batch.remoteUploadSetID,
-            itemStates: batch.items.map(\.state)
-        )
-        guard !selected.isEmpty || canResumeRemoteSet || batch.state == .processing else {
-            panoramaxUploadStatusByBatch[batchID] = "Keine Bilder ausgewaehlt"
-            return
-        }
-        if batch.state != .processing {
-            batch.state = batch.remoteUploadSetID == nil ? .creatingUploadSet : .uploading
-        }
-        batch.instanceOrigin = batch.instanceOrigin ?? origin.absoluteString
-        do {
-            try store.updateBatch(batch)
-        } catch {
-            panoramaxUploadStatusByBatch[batchID] = "Upload-Status konnte nicht gespeichert werden"
-            return
-        }
-        refreshPanoramaxBatches()
         panoramaxUploadStatusByBatch[batchID] = "Upload wird vorbereitet"
-        panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
-            completedItems: previouslyUploadedCount,
-            totalItems: previouslyUploadedCount + selected.count,
-            phase: .preparing
-        )
-
+        panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(completedItems: 0, totalItems: 0, phase: .preparing)
         activePanoramaxUploadBatchIDs.insert(batchID)
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -3943,6 +3935,45 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 panoramaxUploadProgressByBatch[batchID] = nil
             }
             do {
+                try requirePanoramaxProcessingAllowed()
+                let batch = try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: store) { store in
+                    try Task.checkCancellation()
+                    return try store.mutateBatch(batchID) { batch in
+                        if let selectedItemIDs {
+                            guard DriveRecorderPolicy.canEditPanoramaxSelection(in: batch.state) else {
+                                throw PanoramaxProcessingError.invalidSelection
+                            }
+                            let editableIDs = Set(batch.items.filter { DriveRecorderPolicy.canSelectPanoramaxItem(in: $0.state) }.map(\.itemID))
+                            let selected = selectedItemIDs.intersection(editableIDs)
+                            guard !selected.isEmpty else { throw PanoramaxProcessingError.emptySelection }
+                            for index in batch.items.indices where editableIDs.contains(batch.items[index].itemID) {
+                                batch.items[index].state = selected.contains(batch.items[index].itemID) ? .queued : .excluded
+                            }
+                            batch.state = .approved
+                        }
+                        guard DriveRecorderPolicy.canStartPanoramaxUpload(for: batch.state) else {
+                            throw PanoramaxProcessingError.invalidSelection
+                        }
+                        if let batchOrigin = batch.instanceOrigin,
+                           batchOrigin.trimmingCharacters(in: CharacterSet(charactersIn: "/")) != origin.absoluteString {
+                            throw PanoramaxProcessingError.instanceMismatch
+                        }
+                        let hasSelected = batch.items.contains { $0.state == .queued || $0.state == .included || $0.state == .retryableError }
+                        let canResume = DriveRecorderPolicy.canResumePanoramaxRemoteSet(
+                            batchState: batch.state, remoteUploadSetID: batch.remoteUploadSetID, itemStates: batch.items.map(\.state)
+                        )
+                        guard hasSelected || canResume || batch.state == .processing else { throw PanoramaxProcessingError.emptySelection }
+                        if batch.state != .processing { batch.state = batch.remoteUploadSetID == nil ? .creatingUploadSet : .uploading }
+                        batch.instanceOrigin = batch.instanceOrigin ?? origin.absoluteString
+                    }
+                }
+                try requirePanoramaxProcessingAllowed()
+                let selected = batch.items.filter { $0.state == .queued || $0.state == .included || $0.state == .retryableError }
+                let previouslyUploadedCount = batch.items.filter { $0.state == .uploaded || $0.state == .accepted || $0.state == .duplicate }.count
+                panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
+                    completedItems: previouslyUploadedCount, totalItems: previouslyUploadedCount + selected.count, phase: .preparing
+                )
+                refreshPanoramaxBatches()
                 try await performPanoramaxUpload(
                     batchID: batchID,
                     initialBatch: batch,
@@ -3953,7 +3984,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     store: store
                 )
             } catch {
-                handlePanoramaxUploadFailure(batchID: batchID, error: error, store: store)
+                await handlePanoramaxUploadFailure(batchID: batchID, error: error, store: store)
             }
         }
         panoramaxUploadTasks[batchID] = task
@@ -4008,10 +4039,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 estimatedFileCount: max(selected.count, 1)
             )
             uploadSetID = uploadSet.id
-            guard var current = try store.getBatch(batchID) else { return }
-            current.remoteUploadSetID = uploadSet.id
-            current.state = .uploading
-            try store.updateBatch(current)
+            _ = try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: store) { store in
+                try store.mutateBatch(batchID) { current in
+                    current.remoteUploadSetID = uploadSet.id
+                    current.state = .uploading
+                }
+            }
             refreshPanoramaxBatches()
             // Persist a server ID that was already created even if a drive-start
             // cancellation arrived while the response was in flight. The next
@@ -4030,12 +4063,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         )
         for item in selected {
             try requirePanoramaxProcessingAllowed()
-            guard let durableItem = try store.getBatch(batchID)?
-                .items.first(where: { $0.itemID == item.itemID }),
-                  !localDeletionIntents.contains(batchID: batchID, itemID: item.itemID),
-                  durableItem.state == .queued
-                    || durableItem.state == .included
-                    || durableItem.state == .retryableError else {
+            let preparedOriginal = try await PanoramaxQueueMaintenanceExecutor.shared.prepareOriginalForUpload(
+                store: store,
+                batchID: batchID,
+                itemID: item.itemID,
+                localDeletionIntents: localDeletionIntents
+            )
+            // The recorder may have started while serialized disk work ran.
+            try requirePanoramaxProcessingAllowed()
+            guard let fileURL = preparedOriginal else {
                 total = max(uploaded, total - 1)
                 panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
                     completedItems: uploaded,
@@ -4044,10 +4080,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 )
                 continue
             }
-            let fileURL = try store.prepareOriginalForUpload(
-                batchID: batchID,
-                itemID: durableItem.itemID
-            )
 
             panoramaxInFlightItemIDByBatch[batchID] = item.itemID
             do {
@@ -4074,11 +4106,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                             // the transport can put bytes on the wire. A local
                             // deletion makes this atomic update fail, so a queued
                             // stale snapshot never reaches the transport.
-                            try store.updateItem(
-                                batchID: batchID,
-                                itemID: item.itemID,
-                                state: .uploading
-                            )
+                            try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: store) { store in
+                                try Task.checkCancellation()
+                                guard !localDeletionIntents.contains(batchID: batchID, itemID: item.itemID) else {
+                                    throw PanoramaxProcessingError.locallyDeletedItem
+                                }
+                                _ = try store.updateItem(batchID: batchID, itemID: item.itemID, state: .uploading)
+                            }
                         }
                     )
                 } catch {
@@ -4089,8 +4123,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     }
                     let durableItemAfterFailure: PanoramaxItemRecord?
                     do {
-                        durableItemAfterFailure = try store.getBatch(batchID)?
-                            .items.first(where: { $0.itemID == item.itemID })
+                        durableItemAfterFailure = try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: store) { store in
+                            try store.getBatch(batchID)?.items.first(where: { $0.itemID == item.itemID })
+                        }
                     } catch {
                         throw error
                     }
@@ -4105,14 +4140,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     // A preparation/permit cancellation never reached the
                     // before-request hook, so its queued item must stay retryable.
                     if durableItemAfterFailure.state == .uploading {
-                        _ = try? store.updateItem(
-                            batchID: batchID,
-                            itemID: item.itemID,
-                            state: PanoramaxUploadClient.durableItemStateAfterUploadFailure(
-                                error,
-                                taskIsCancelled: Task.isCancelled
-                            )
-                        )
+                        let failureState = PanoramaxUploadClient.durableItemStateAfterUploadFailure(error, taskIsCancelled: Task.isCancelled)
+                        _ = try? await PanoramaxQueueMaintenanceExecutor.shared.perform(store: store) { store in
+                            try store.updateItem(batchID: batchID, itemID: item.itemID, state: failureState)
+                        }
                     }
                     refreshPanoramaxBatches()
                     throw error
@@ -4127,7 +4158,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     continue
                 }
                 do {
-                    try store.updateItem(batchID: batchID, itemID: item.itemID, state: .uploaded)
+                    _ = try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: store) { store in
+                        try store.updateItem(batchID: batchID, itemID: item.itemID, state: .uploaded)
+                    }
                 } catch PanoramaxQueueStore.QueueError.unknownItem {
                     total = max(uploaded, total - 1)
                     refreshPanoramaxBatches()
@@ -4145,13 +4178,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             try requirePanoramaxProcessingAllowed()
         }
 
-        guard var current = try store.getBatch(batchID) else { return }
+        guard let current = try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: store, { try $0.getBatch(batchID) }) else { return }
         let remaining = current.items.filter {
             $0.state == .queued || $0.state == .included || $0.state == .retryableError
         }
         if !remaining.isEmpty {
-            current.state = .partial
-            try store.updateBatch(current)
+            _ = try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: store) { try $0.transitionBatch(batchID, to: .partial) }
             refreshPanoramaxBatches()
             panoramaxUploadStatusByBatch[batchID] = "\(uploaded)/\(total) uebertragen – erneut versuchen"
             return
@@ -4159,9 +4191,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
         try requirePanoramaxProcessingAllowed()
         _ = try await client.complete(uploadSetID: uploadSetID)
-        current = try store.getBatch(batchID) ?? current
-        current.state = .processing
-        try store.updateBatch(current)
+        _ = try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: store) { try $0.transitionBatch(batchID, to: .processing) }
         refreshPanoramaxBatches()
         panoramaxUploadStatusByBatch[batchID] = "Panoramax verarbeitet den Batch"
         panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
@@ -4210,7 +4240,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         batchID: String,
         error: Error,
         store: PanoramaxQueueStore
-    ) {
+    ) async {
         let wasCancelled = Task.isCancelled
             || error is CancellationError
             || (error as? URLError)?.code == .cancelled
@@ -4219,7 +4249,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             // server response: any item still durably `.uploading` has an
             // unknown remote outcome and must be quarantined immediately,
             // regardless of the error that brought us here.
-            _ = try store.abandonInFlightItems(batchID: batchID)
+            try await PanoramaxQueueMaintenanceExecutor.shared.abandonInFlightItems(store: store, batchID: batchID)
             refreshPanoramaxBatches()
         } catch PanoramaxQueueStore.QueueError.unknownBatch {
             // Authoritative deletion of the final local item may remove the
@@ -4250,7 +4280,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func stopPanoramaxUploads(status: String) {
         for (batchID, task) in panoramaxUploadTasks {
-            _ = try? panoramaxQueueStore?.abandonInFlightItems(batchID: batchID)
+            // Stop the transport immediately without waiting for a JPEG/queue
+            // lock on MainActor. The upload's failure handler durably recovers
+            // its queue before the task leaves the active/stopping state.
+            task.cancel()
             if let progress = panoramaxUploadProgressByBatch[batchID] {
                 panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
                     completedItems: progress.completedItems,
@@ -4258,7 +4291,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     phase: .stopping
                 )
             }
-            task.cancel()
             panoramaxUploadStatusByBatch[batchID] = status
         }
         refreshPanoramaxBatches()
@@ -4267,11 +4299,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private enum PanoramaxProcessingError: LocalizedError {
         case missingRemoteUploadSet
         case locallyDeletedItem
+        case invalidSelection
+        case emptySelection
+        case instanceMismatch
 
         var errorDescription: String? {
             switch self {
             case .missingRemoteUploadSet: return "Panoramax-Upload-ID fehlt"
             case .locallyDeletedItem: return "Lokales Bild wurde gelöscht"
+            case .invalidSelection: return "Batch zuerst fuer Upload freigeben"
+            case .emptySelection: return "Keine Bilder ausgewaehlt"
+            case .instanceMismatch: return NSLocalizedString("panoramax.account.batch_instance_mismatch", comment: "")
             }
         }
     }
@@ -4526,9 +4564,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             maintenanceMessage = "Synchronisierung laeuft bereits."
             return
         }
+        mapLookupPauseState.beginBundleRemoval()
+        refreshMapLookupPause()
         Task { @MainActor [weak self] in
             guard let self else {
                 return
+            }
+            defer {
+                mapLookupPauseState.finishBundleRemoval()
+                refreshMapLookupPause()
             }
             do {
                 let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
@@ -4538,6 +4582,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     removed = try await bundleManager.removeDownloadedBundles(forManifestRegion: countryRegion)
                 }
                 if removed > 0 {
+                    speedLimitServicePool.removeAll()
+                    if !activeDBPath.isEmpty, !FileManager.default.fileExists(atPath: activeDBPath) {
+                        revokeDeletedActiveBundleSource()
+                    }
                     let activeURL = try await bundleManager.activeDatabaseURL()
                     let activeExists = activeURL.map { FileManager.default.fileExists(atPath: $0.path) } ?? false
                     if !activeExists {
@@ -4560,6 +4608,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 }
                 await refreshDownloadedBundleInventory()
             } catch {
+                // Removal can unlink the database before reading active state
+                // fails. Never restore lookup admission to that retained handle.
+                if !activeDBPath.isEmpty, !FileManager.default.fileExists(atPath: activeDBPath) {
+                    speedLimitServicePool.removeAll()
+                    revokeDeletedActiveBundleSource()
+                }
                 let text = "Bundle konnte nicht geloescht werden: \(error.localizedDescription)"
                 maintenanceMessage = text
                 lastError = text
@@ -4798,12 +4852,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return
         }
 
+        mapLookupPauseState.beginBundleRemoval()
+        refreshMapLookupPause()
         Task { @MainActor [weak self] in
             guard let self else {
                 return
             }
+            defer {
+                mapLookupPauseState.finishBundleRemoval()
+                refreshMapLookupPause()
+            }
             do {
                 let removed = try await bundleManager.removeDownloadedBundlesKeepingSeed()
+                speedLimitServicePool.removeAll()
+                if !activeDBPath.isEmpty, !FileManager.default.fileExists(atPath: activeDBPath) {
+                    revokeDeletedActiveBundleSource()
+                }
                 let bootstrap = try await bundleManager.bootstrapSeedIfNeeded()
                 invalidateTrafficSignOverrideIfBundleWillChange(
                     bundleVersion: bootstrap.bundleVersion,
@@ -4823,6 +4887,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     : "Keine heruntergeladene Datenbank gefunden. Seed ist aktiv."
                 Self.logger.notice("maintenance delete_downloaded_bundles removed=\(removed, privacy: .public)")
             } catch {
+                if !activeDBPath.isEmpty, !FileManager.default.fileExists(atPath: activeDBPath) {
+                    speedLimitServicePool.removeAll()
+                    revokeDeletedActiveBundleSource()
+                }
                 let text = "Heruntergeladene Datenbanken konnten nicht geloescht werden: \(error.localizedDescription)"
                 maintenanceMessage = text
                 lastError = text
@@ -4914,6 +4982,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 activeBundleDBSHA256 = startupResult.dbSHA256
                 if startupResult.dbPath.isEmpty {
                     speedLimitService = nil
+                    speedLimitServicePool.removeAll()
                     syncStatus = "not_synced"
                     await refreshDownloadedBundleInventory()
                     startupProgress = 1
@@ -4993,6 +5062,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         isUnlimitedSpeedLimitActive = fixture.isUnlimitedSpeedLimitActive
         audioAlertsEnabled = false
         speedLimitService = nil
+        speedLimitServicePool.removeAll()
         bundleDownloadSections = buildBundleDownloadSections()
         downloadedBundleCountByRegion = [:]
         downloadedBundleLatestVersionByRegion = [:]
@@ -5245,6 +5315,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     func startDriving() {
         guard isScreenshotMode || (onboardingStateLoaded && !shouldPresentOnboarding) else { return }
+        mapLookupWorker.cancel()
         if !isDriving {
             lastKnownLimitPresentation.reset()
             speedReference.reset()
@@ -5301,6 +5372,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func stopDriving() {
+        mapLookupWorker.cancel()
         speedReferenceTickTask?.cancel()
         speedReferenceTickTask = nil
         speedReference.reset()
@@ -5983,8 +6055,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func refreshLocalObservations() async {
+        localObservationRefreshRevision &+= 1
+        let refreshRevision = localObservationRefreshRevision
         do {
             let observations = try await localObservationStore.fetchObservations(limit: 500)
+            guard refreshRevision == localObservationRefreshRevision else { return }
             let resolvedNumeric = Self.resolveLocalSpeedOverrides(from: observations)
             let resolvedValues = Self.resolveLocalSpeedOverrideValues(from: observations)
             let resolvedRevisions = Self.resolveLocalSpeedOverrideRevisions(from: observations)
@@ -5992,14 +6067,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             localSpeedOverridesByWayID = resolvedNumeric
             localSpeedOverrideValuesByWayID = resolvedValues
             localSpeedOverrideRevisionsByWayID = resolvedRevisions
-            localObservationStreetNames = resolveStreetNames(for: observations)
             if let id = activeLocalSpeedCorrection?.observationID,
                observations.contains(where: { $0.id == id && $0.state == .discarded }) {
                 clearActiveLocalSpeedCorrection()
                 publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
             }
+            if let names = await resolveStreetNames(for: observations),
+               refreshRevision == localObservationRefreshRevision {
+                localObservationStreetNames = names
+            }
 
         } catch {
+            guard refreshRevision == localObservationRefreshRevision else { return }
             localObservationStatus = "Lokale Beobachtungen konnten nicht geladen werden: \(error.localizedDescription)"
             lastError = localObservationStatus
         }
@@ -6117,7 +6196,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func resolveStreetNames(for observations: [LocalObservation]) -> [String: String] {
+    private func resolveStreetNames(for observations: [LocalObservation]) async -> [String: String]? {
+        guard !mapLookupWorker.isPaused else { return nil }
         let wayIDs = observations
             .compactMap { $0.roadCandidateIDs.first?.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
@@ -6137,9 +6217,21 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard let resolver else {
             return [:]
         }
+        let lookupPath = activeDBPath
+        let lookupBundleSHA = activeBundleDBSHA256
+        let lookupGeneration = trafficSignContextGeneration
         do {
-            return try resolver.lookupStreetNames(forWayIDs: wayIDs)
+            let names = try await Task.detached(priority: .utility) {
+                try resolver.lookupStreetNames(forWayIDs: wayIDs)
+            }.value
+            guard !mapLookupWorker.isPaused,
+                  lookupPath == activeDBPath, lookupBundleSHA == activeBundleDBSHA256,
+                  lookupGeneration == trafficSignContextGeneration else { return nil }
+            return names
         } catch {
+            guard !mapLookupWorker.isPaused,
+                  lookupPath == activeDBPath, lookupBundleSHA == activeBundleDBSHA256,
+                  lookupGeneration == trafficSignContextGeneration else { return nil }
             Self.logger.warning("streetname lookup for local observations failed: \(error.localizedDescription, privacy: .public)")
             return [:]
         }
@@ -6768,8 +6860,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         horizontalAccuracyM: Double,
         fixTimestamp: String,
         locationTimestamp: Date,
-        fixID: Int
+        fixID: Int,
+        requestToken: LatestPendingLookupWorker.Token
     ) async {
+        guard requestToken.isCurrent, isDriving, !mapLookupWorker.isPaused else { return }
         let routingContextGeneration = trafficSignContextGeneration
         do {
             var routes = try await bundleManager.resolveLocalBundleRoutes(
@@ -6777,6 +6871,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 lon: lon,
                 fallbackDBPath: nil
             )
+            guard requestToken.isCurrent, isDriving else { return }
             // Only actual covering bundles count here. The active database is
             // appended below for lookup continuity, even outside its coverage.
             if fixID == latestTrafficSignLookupFixID {
@@ -6803,7 +6898,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     dbSHA256: activeBundleDBSHA256
                 ))
             }
-            guard !routes.isEmpty else {
+            guard requestToken.isCurrent, isDriving, !routes.isEmpty else {
                 return
             }
 
@@ -6815,11 +6910,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 let probeRadiusM = Self.lookupRadius(forHorizontalAccuracy: horizontalAccuracyM)
                 let probeMaxCandidates = lookupMaxCandidates
                 let matchingModel = matcherDebugProfile.matchingModel
+                let servicePool = speedLimitServicePool
                 let probes = await Task.detached(priority: .utility) {
                     probeRoutes.compactMap { candidate -> BundleRouteProbe? in
                         do {
-                            let result = try V3SpeedLimitService(
+                            let result = try servicePool.service(
                                 dbPath: candidate.dbPath,
+                                bundleIdentity: candidate.dbSHA256,
                                 countryCode: candidate.countryCode,
                                 matchingModel: matchingModel,
                                 regulationRegion: { SpeedRegulationRegions.bundled?.region(latitude: $0, longitude: $1) }
@@ -6847,7 +6944,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 }.value
                 route = BundleRouteSelection.choose(probes: probes, currentDBPath: activeDBPath) ?? routes[0]
             }
-            guard fixID == latestTrafficSignLookupFixID,
+            guard !mapLookupWorker.isPaused,
+                  requestToken.isCurrent, isDriving, fixID == latestTrafficSignLookupFixID,
                   routingContextGeneration == trafficSignContextGeneration else { return }
             let routeCountryCode = normalizedCountryCode(route.countryCode)
             let routeChanged = route.dbPath != activeDBPath
@@ -6890,7 +6988,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 )
             }
         } catch {
-            if fixID == latestTrafficSignLookupFixID { missingCoverageDownloadOptionID = nil }
+            if requestToken.isCurrent, isDriving, fixID == latestTrafficSignLookupFixID { missingCoverageDownloadOptionID = nil }
             Self.logger.warning("regional db route failed: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -6898,18 +6996,19 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private func updateSpeedLimit(
         for location: CLLocation,
         fixID: Int,
+        requestToken: LatestPendingLookupWorker.Token,
         speedKmh: Double,
         headingDegrees: Double?,
         headingAccuracyDegrees: Double?
     ) async {
+        guard requestToken.isCurrent, isDriving, !mapLookupWorker.isPaused,
+              fixID == latestTrafficSignLookupFixID else { return }
         let fixTimestamp = Self.lookupTimestampFormatter.string(from: location.timestamp)
         let fixTimestampISO = Self.isoFormatter.string(from: location.timestamp)
         let lat = location.coordinate.latitude
         let lon = location.coordinate.longitude
         let hAcc = location.horizontalAccuracy
         let vAcc = location.verticalAccuracy
-        gpsHorizontalAccuracyM = hAcc >= 0 ? hAcc : nil
-        gpsSignalBars = Self.gpsSignalBars(horizontalAccuracyM: hAcc)
         let rawCourse = location.course
         let course = headingDegrees
         let courseAccuracy = headingAccuracyDegrees
@@ -6923,10 +7022,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             horizontalAccuracyM: hAcc,
             fixTimestamp: fixTimestamp,
             locationTimestamp: location.timestamp,
-            fixID: fixID
+            fixID: fixID,
+            requestToken: requestToken
         )
 
-        guard fixID == latestTrafficSignLookupFixID else { return }
+        guard requestToken.isCurrent, isDriving, !mapLookupWorker.isPaused,
+              fixID == latestTrafficSignLookupFixID else { return }
 
         guard let service = speedLimitService else {
             speedReference.context(way: nil, road: nil, relations: [], direction: "unknown", stable: false)
@@ -6958,7 +7059,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let matchContext = currentWayMatchContext()
         let gpsBars = gpsSignalBars
         let lookupContextGeneration = trafficSignContextGeneration
-        Task.detached(priority: .utility) {
+        await Task.detached(priority: .utility) {
             do {
                 let result = try service.lookupSpeedLimit(
                     lat: lat,
@@ -6977,7 +7078,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     headingDegrees: course
                 )
                 await MainActor.run {
-                    guard fixID == self.latestTrafficSignLookupFixID,
+                    guard !self.mapLookupWorker.isPaused,
+                          requestToken.isCurrent, self.isDriving, fixID == self.latestTrafficSignLookupFixID,
                           lookupContextGeneration == self.trafficSignContextGeneration else {
                         self.appendLookupEvent(
                             "\(fixTimestamp) fix=\(fixID) status=stale_lookup_or_source_discarded"
@@ -7191,7 +7293,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 }
             } catch {
                 await MainActor.run {
-                    guard fixID == self.latestTrafficSignLookupFixID else { return }
+                    guard !self.mapLookupWorker.isPaused,
+                          requestToken.isCurrent, self.isDriving, fixID == self.latestTrafficSignLookupFixID,
+                          lookupContextGeneration == self.trafficSignContextGeneration else { return }
                     self.trafficSignFrameContextIsCurrent = false
                     self.trafficSignFrameState.update(nil)
                     self.isUnlimitedSpeedLimitActive = false
@@ -7236,7 +7340,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     )
                 }
             }
-        }
+        }.value
     }
 
     private static func lookupRadius(forHorizontalAccuracy horizontalAccuracyM: Double) -> Double {
@@ -8083,18 +8187,19 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
                 : nil
             currentLatitude = location.coordinate.latitude
             currentLongitude = location.coordinate.longitude
+            gpsHorizontalAccuracyM = location.horizontalAccuracy >= 0 ? location.horizontalAccuracy : nil
+            gpsSignalBars = Self.gpsSignalBars(horizontalAccuracyM: location.horizontalAccuracy)
             driveCaptureCoordinator?.ingest(location: location, speedMetersPerSecond: displaySpeedKmh / 3.6)
             gpsFixCount += 1
             maybeSpeakOverspeedWarning()
             let fixID = gpsFixCount
             beginTrafficSignContextLookup(fixID: fixID)
-            Task { @MainActor [weak self] in
-                guard let self else {
-                    return
-                }
-                await updateSpeedLimit(
+            mapLookupWorker.submit { [weak self] requestToken in
+                guard let self, requestToken.isCurrent else { return }
+                await self.updateSpeedLimit(
                     for: location,
                     fixID: fixID,
+                    requestToken: requestToken,
                     speedKmh: displaySpeedKmh,
                     headingDegrees: headingDegrees,
                     headingAccuracyDegrees: headingAccuracyDegrees

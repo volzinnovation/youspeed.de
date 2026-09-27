@@ -2819,7 +2819,7 @@ actor V3BundleManager {
         )
     }
 
-    private func quickValidateDB(at url: URL, runQuickCheck: Bool = true) throws {
+    func quickValidateDB(at url: URL, runQuickCheck: Bool = true) throws {
         var db: OpaquePointer?
         let encodedPath = url.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? url.path
         let uri = "file:\(encodedPath)?mode=ro&immutable=1"
@@ -2848,9 +2848,25 @@ actor V3BundleManager {
         guard runQuickCheck else {
             return
         }
-        if sqlite3_exec(db, "PRAGMA quick_check", nil, nil, nil) != SQLITE_OK {
+        var check: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "PRAGMA quick_check", -1, &check, nil) == SQLITE_OK,
+              let check else {
             let msg = String(cString: sqlite3_errmsg(db))
-            throw ConsumerAppError.sqlite("quick_check failed: \(msg)")
+            throw ConsumerAppError.sqlite("quick_check prepare failed: \(msg)")
+        }
+        defer { sqlite3_finalize(check) }
+        // A successful PRAGMA execution can return integrity errors as rows.
+        // Only its sole "ok" row establishes that the database passed.
+        guard sqlite3_step(check) == SQLITE_ROW,
+              let result = sqlite3_column_text(check, 0) else {
+            throw ConsumerAppError.sqlite("quick_check returned no result: \(String(cString: sqlite3_errmsg(db)))")
+        }
+        let resultText = String(cString: result)
+        guard resultText == "ok" else {
+            throw ConsumerAppError.sqlite("quick_check failed: \(resultText)")
+        }
+        guard sqlite3_step(check) == SQLITE_DONE else {
+            throw ConsumerAppError.sqlite("quick_check did not finish with a single ok result")
         }
     }
 

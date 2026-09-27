@@ -1,5 +1,13 @@
 import Foundation
 
+// Shared by the consumer and benchmark targets; matcher contract changes belong here.
+struct TrafficSignRouteRelationMembership: Codable, Equatable, Hashable, Sendable {
+    let groupID: Int
+    let sourceRelationID: Int64?
+
+    var isValid: Bool { groupID > 0 }
+}
+
 struct WayMatchRecentFix: Sendable {
     let lat: Double
     let lon: Double
@@ -225,7 +233,34 @@ struct MatchSelectionTrace: Codable, Sendable {
     let detail: String
 }
 
+struct DriveMatchReplayHindsightDebug: Codable, Sendable {
+    let wayID: String
+    let futureWindow: Int
+    let minFutureRunLength: Int
+    let minAgreementRatio: Double
+    let loggedMatches: Bool
+    let replayMatches: Bool
+    let loggedCandidateRank: Int?
+    let replayCandidateRank: Int?
+}
+
+struct DriveMatchReplayDebug: Codable, Sendable {
+    let annotationVersion: Int
+    let replayKind: String
+    let sourceLogName: String
+    let outcome: String
+    let isError: Bool
+    let issueKinds: [String]
+    let loggedMatchesReplay: Bool
+    let loggedSelectedRank: Int?
+    let replaySelectedRank: Int?
+    let replayUsedThreeWayGate: Bool
+    let hindsight: DriveMatchReplayHindsightDebug?
+    let replayResult: SpeedLimitResult
+}
+
 struct SpeedLimitResult: Codable, Sendable {
+    var applicabilityGeometry: TSRMapGeometry? = nil
     let speedLimitKmh: Int?
     let isUnlimitedSpeedLimit: Bool?
     let wayID: String?
@@ -264,6 +299,62 @@ struct SpeedLimitResult: Codable, Sendable {
     let candidateTraces: [MatchCandidateTrace]
     let selectionTrace: [MatchSelectionTrace]
     let activeCorridorState: CorridorMatchState?
+    /// `nil` means the result came from an older serialized log. `false`
+    /// means the opened bundle was inspected and lacks the capability.
+    let routeContinuityAvailable: Bool?
+    let routeRelationMemberships: [TrafficSignRouteRelationMembership]?
+}
+
+struct DriveMatchLogEntry: Codable, Sendable {
+    let fixID: Int
+    let timestampUTC: String
+    let lat: Double
+    let lon: Double
+    let speedKmh: Double
+    let horizontalAccM: Double
+    let verticalAccM: Double
+    let courseDeg: Double
+    let gpsSignalBars: Int
+    let status: String
+    let speedLimitOverrideKmh: Int?
+    let tunnelModeState: String
+    let result: SpeedLimitResult?
+    let error: String?
+    let replayDebug: DriveMatchReplayDebug?
+
+    init(
+        fixID: Int,
+        timestampUTC: String,
+        lat: Double,
+        lon: Double,
+        speedKmh: Double,
+        horizontalAccM: Double,
+        verticalAccM: Double,
+        courseDeg: Double,
+        gpsSignalBars: Int,
+        status: String,
+        speedLimitOverrideKmh: Int?,
+        tunnelModeState: String,
+        result: SpeedLimitResult?,
+        error: String?,
+        replayDebug: DriveMatchReplayDebug? = nil
+    ) {
+        self.fixID = fixID
+        self.timestampUTC = timestampUTC
+        self.lat = lat
+        self.lon = lon
+        self.speedKmh = speedKmh
+        self.horizontalAccM = horizontalAccM
+        self.verticalAccM = verticalAccM
+        self.courseDeg = courseDeg
+        self.gpsSignalBars = gpsSignalBars
+        self.status = status
+        self.speedLimitOverrideKmh = speedLimitOverrideKmh
+        self.tunnelModeState = tunnelModeState
+        self.result = result
+        self.error = error
+        self.replayDebug = replayDebug
+    }
 }
 
 enum ConsumerAppError: Error, LocalizedError {

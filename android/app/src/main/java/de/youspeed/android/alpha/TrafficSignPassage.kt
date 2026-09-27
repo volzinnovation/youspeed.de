@@ -259,8 +259,8 @@ data class TrafficSignPassageFinalizerConfiguration(
     val singleFrameNegativeFrames: Int = 3,
     val singleFrameArmThreshold: Double = 0.97,
     val maximumEvidenceFrames: Int = 16,
-    val physicalTrackSuppressionWindow: Duration = Duration.ofSeconds(12),
-    val physicalTrackSuppressionDistanceM: Double = 45.0,
+    val physicalTrackSuppressionWindow: Duration = Duration.ofSeconds(5),
+    val physicalTrackSuppressionDistanceM: Double = 30.0,
 ) {
     init {
         require(repeatedTrackNegativeFrames > 0)
@@ -461,6 +461,10 @@ class TrafficSignPassageFinalizer(
             current.sourceRelationIds = current.sourceRelationIds.intersect(nextContext.sourceRelationIds)
         }
         current.lastSeenContext = nextContext
+        if (nextContext != null) {
+            current.lastSeenLatitude = nextContext.latitude
+            current.lastSeenLongitude = nextContext.longitude
+        }
         if (nextContext != null && !nextContext.wayId.isNullOrBlank() && nextContext.matchedWayStable) {
             current.routeContext = nextContext
         }
@@ -546,16 +550,17 @@ class TrafficSignPassageFinalizer(
             boundary.timestampUtc.toEpochMilli().toString(),
             action.kind.wireValue,
         ).joinToString(":")
-        if (isRecentlyCommittedPhysicalSign(current.candidate, current.lastSeenContext, boundary.timestampUtc)) {
+        if (isRecentlyCommittedPhysicalSign(current.candidate, current.lastSeenContext, boundary.timestampUtc,
+                current.lastSeenLatitude, current.lastSeenLongitude)) {
             track = null
             return null
         }
         lastCommittedPhysicalSign = CommittedPhysicalSign(
             trackId = current.id,
             actionKey = current.candidate.normalizedActionKey(current.lastSeenContext?.countryCode),
-            committedAtUtc = boundary.timestampUtc,
-            latitude = current.lastSeenContext?.latitude,
-            longitude = current.lastSeenContext?.longitude,
+            committedAtUtc = event.frameTimestampUtc,
+            latitude = current.lastSeenLatitude,
+            longitude = current.lastSeenLongitude,
         )
         track = null
         return TrafficSignPassageEvent(
@@ -596,7 +601,8 @@ class TrafficSignPassageFinalizer(
 
     private fun expireSuppression(now: Instant) {
         lastCommittedPhysicalSign = lastCommittedPhysicalSign?.takeUnless { committed ->
-            Duration.between(committed.committedAtUtc, now) > configuration.physicalTrackSuppressionWindow
+            val elapsed = Duration.between(committed.committedAtUtc, now)
+            elapsed.isNegative || elapsed > configuration.physicalTrackSuppressionWindow
         }
     }
 
@@ -604,22 +610,24 @@ class TrafficSignPassageFinalizer(
         candidate: TrafficSignCandidate,
         context: TrafficSignDetectionContext?,
         observedAtUtc: Instant,
+        latitude: Double? = context?.latitude,
+        longitude: Double? = context?.longitude,
     ): Boolean {
         val committed = lastCommittedPhysicalSign ?: return false
         val elapsed = Duration.between(committed.committedAtUtc, observedAtUtc)
         if (elapsed.isNegative || elapsed > configuration.physicalTrackSuppressionWindow) return false
         if (committed.actionKey != candidate.normalizedActionKey(context?.countryCode)) return false
-        if (committed.trackId == candidate.trackId) return true
-        val latitude = context?.latitude ?: return false
-        val longitude = context.longitude
-        val committedLatitude = committed.latitude ?: return false
-        val committedLongitude = committed.longitude ?: return false
-        return distanceMeters(
-            committedLatitude,
-            committedLongitude,
-            latitude,
-            longitude,
-        ) <= configuration.physicalTrackSuppressionDistanceM
+        if (latitude != null && longitude != null && committed.latitude != null && committed.longitude != null) {
+            return distanceMeters(
+                committed.latitude,
+                committed.longitude,
+                latitude,
+                longitude,
+            ) <= configuration.physicalTrackSuppressionDistanceM
+        }
+        // As on iPhone, known coordinates take precedence over a reused track ID.
+        // Identity is only the fallback when one side has no coordinates.
+        return committed.trackId == candidate.trackId
     }
 
     private data class CommittedPhysicalSign(
@@ -650,6 +658,9 @@ class TrafficSignPassageFinalizer(
         var routeContext: TrafficSignDetectionContext?,
         var accumulatedSupport: Double,
         var overrideEligible: Boolean,
+        // A missing map context must not erase the last valid camera position.
+        var lastSeenLatitude: Double? = lastSeenContext?.latitude,
+        var lastSeenLongitude: Double? = lastSeenContext?.longitude,
         val assemblyIds: LinkedHashSet<String> = linkedSetOf(),
         val evidence: ArrayDeque<TrafficSignPassageFrameEvidence> = ArrayDeque(),
         val lossEvidence: ArrayDeque<TrafficSignPassageLossEvidence> = ArrayDeque(),
@@ -736,7 +747,8 @@ private fun TrafficSignCandidate.normalizedActionKey(countryCode: String?): Stri
     return listOf(
         action.kind.wireValue,
         action.valueKmh?.toString().orEmpty(),
-        action.countryCode?.trim()?.uppercase().orEmpty(),
+        // Only city entry has a country-specific structural identity on iPhone.
+        if (action.kind == TrafficSignActionKind.CITY_ENTRY) action.countryCode?.trim()?.uppercase().orEmpty() else "",
         action.conditionState.wireValue,
         action.restrictions
             .map { "${it.kind.wireValue}:${it.normalizedValue.trim()}" }

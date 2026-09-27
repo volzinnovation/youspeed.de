@@ -2,7 +2,7 @@ package de.youspeed.android.alpha
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Coalesces progress/capture refreshes on the controller's serial background executor. */
+/** Coalesces progress/capture refreshes on the serial photo-storage worker. */
 internal class PanoramaxGalleryLoader(
     private val execute: (() -> Unit) -> Boolean,
     private val load: () -> List<PanoramaxBatchRecord>,

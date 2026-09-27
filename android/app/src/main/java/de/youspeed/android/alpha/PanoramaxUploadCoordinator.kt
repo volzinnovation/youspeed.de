@@ -123,17 +123,17 @@ class PanoramaxUploadCoordinator(
             }
         }
 
-        store.updateBatch(initial.copy(
+        store.mutateBatch(batchId) { it.copy(
             state = if (remoteId == null) PanoramaxBatchState.CREATING_UPLOAD_SET else PanoramaxBatchState.UPLOADING,
             instanceOrigin = origin,
-        ))
+        ) }
         changed()
         if (remoteId == null) {
             val response = client.createUploadSet("YouSpeed ${initial.createdAt}", selected.size)
             remoteId = response.id
             // Keep the server ID even if cancellation arrived with the response.
-            val current = store.getBatch(batchId) ?: return
-            store.updateBatch(current.copy(remoteUploadSetId = remoteId, state = PanoramaxBatchState.UPLOADING))
+            if (store.getBatch(batchId) == null) return
+            store.mutateBatch(batchId) { it.copy(remoteUploadSetId = remoteId, state = PanoramaxBatchState.UPLOADING) }
             changed()
             requireAllowed(job)
         }
@@ -224,8 +224,9 @@ class PanoramaxUploadCoordinator(
         progress[batchId]?.let { progress[batchId] = it.copy(phase = PanoramaxUploadPhase.STOPPING) }
         job.cancellation.cancel()
         job.thread?.interrupt()
-        val recovery = runCatching { if (store.getBatch(batchId) != null) store.abandonInFlightItems(batchId) }
-        statuses[batchId] = if (recovery.isSuccess) "Stopping upload" else "Upload stopped — queue recovery failed"
+        // Never wait on JPEG/queue IO on the caller (usually main). The worker
+        // persists recovery in its catch before removing this stopping job.
+        statuses[batchId] = "Stopping upload"
         changed()
     }
 

@@ -326,7 +326,7 @@ class TrafficSignPassageTests {
         assertFalse(finalizer.hasActiveTrack())
 
         // Roughly 73 m east at this latitude: a separate, same-valued sign is
-        // outside the 45 m split-suppression radius even inside the time bound.
+        // outside the 30 m split-suppression radius even inside the time bound.
         finalizer.observe(seen(t0.plusMillis(1_000), "track-c", 8.4010), 0.96, 1, true, true)
         finalizer.observe(seen(t0.plusMillis(1_100), "track-c", 8.4010), 0.97, 1, true, true)
         assertNull(finalizer.observe(missing(t0.plusMillis(1_200)), null, 1, true, true))
@@ -334,6 +334,77 @@ class TrafficSignPassageTests {
             "track-c",
             finalizer.observe(missing(t0.plusMillis(1_300)), null, 1, true, true)?.physicalTrackId,
         )
+    }
+
+    @Test
+    fun duplicateSuppressionEndsFiveSecondsAfterCommitRatherThanFirstMissingFrame() {
+        for ((elapsedMs, suppressed) in listOf(4_999L to true, 5_000L to true, 5_001L to false)) {
+            val finalizer = committedSuppressionFinalizer()
+            // The first missing frame was at 200 ms; the passage committed at 300 ms.
+            finalizer.observe(recognition(t0.plusMillis(300L + elapsedMs)), 0.95, 1, true, true)
+            assertEquals("elapsed since commit: $elapsedMs ms", !suppressed, finalizer.hasActiveTrack())
+        }
+    }
+
+    @Test
+    fun duplicateSuppressionUsesThirtyMetreRadiusEvenWhenTrackerReusesAnId() {
+        val origin = context("100", setOf(1)).copy(latitude = 0.0, longitude = 0.0)
+        for (trackId in listOf("physical-1", "new-physical-id")) {
+            for ((distanceM, suppressed) in listOf(29.999 to true, 30.001 to false, 40.0 to false)) {
+                val finalizer = committedSuppressionFinalizer(origin)
+                val next = origin.copy(latitude = Math.toDegrees(distanceM / 6_371_000.0))
+                finalizer.observe(
+                    recognition(t0.plusMillis(400), trackId = trackId).copy(roadContext = next),
+                    0.95, 1, true, true,
+                )
+                assertEquals("$trackId at $distanceM m", !suppressed, finalizer.hasActiveTrack())
+            }
+        }
+    }
+
+    @Test
+    fun duplicateSuppressionFallsBackToTrackIdentityWhenEitherCoordinateIsMissing() {
+        val known = context("100", setOf(1))
+        for ((previousContext, nextContext) in listOf(known to null, null to known, null to null)) {
+            for (trackId in listOf("physical-1", "new-physical-id")) {
+                val finalizer = committedSuppressionFinalizer(previousContext)
+                finalizer.observe(
+                    recognition(t0.plusMillis(400), trackId = trackId).copy(roadContext = nextContext),
+                    0.95, 1, true, true,
+                )
+                assertEquals("$previousContext -> $nextContext, $trackId", trackId != "physical-1", finalizer.hasActiveTrack())
+            }
+        }
+    }
+
+    @Test
+    fun duplicateSuppressionRetainsLastKnownPositionThroughMissingVisibleContext() {
+        val first = context("100", setOf(1)).copy(latitude = 0.0, longitude = 0.0)
+        val latest = first.copy(latitude = Math.toDegrees(60.0 / 6_371_000.0))
+        for ((nextContext, trackId, suppressed) in listOf(
+            Triple(latest, "new-physical-id", true),
+            Triple(first, "physical-1", false),
+        )) {
+            val finalizer = TrafficSignPassageFinalizer()
+            for ((offset, frameContext) in listOf(0L to first, 100L to latest, 200L to null)) {
+                finalizer.observe(recognition(t0.plusMillis(offset)).copy(roadContext = frameContext),
+                    0.95, 1, true, true)
+            }
+            assertNull(finalizer.observe(missing(t0.plusMillis(300)), null, 1, true, true))
+            val committed = requireNotNull(finalizer.observe(missing(t0.plusMillis(400)), null, 1, true, true))
+            assertNull("Retaining a coordinate must not replace the event's missing context", committed.lastSeenContext)
+            finalizer.observe(recognition(t0.plusMillis(500), trackId = trackId).copy(roadContext = nextContext),
+                0.95, 1, true, true)
+            assertEquals("retained latest position, $trackId", !suppressed, finalizer.hasActiveTrack())
+        }
+    }
+
+    @Test
+    fun timestampRollbackClearsDuplicateSuppressionLikeIphone() {
+        val finalizer = committedSuppressionFinalizer()
+        finalizer.observe(missing(t0.plusMillis(250)), null, 1, false, true)
+        finalizer.observe(recognition(t0.plusMillis(400)), 0.95, 1, true, true)
+        assertTrue(finalizer.hasActiveTrack())
     }
 
     @Test
@@ -1391,6 +1462,20 @@ class TrafficSignPassageTests {
         assertEquals(EffectiveSpeedLimitSource.CAMERA, zoneMismatch.source)
         assertNull(zoneResolver.takeNewlyActivatedEvent())
         assertEquals(zoneMismatchEvent.finalizedEventId, zoneResolver.takeNewlyPersistableEvent()?.finalizedEventId)
+    }
+
+    private fun committedSuppressionFinalizer(
+        recognitionContext: TrafficSignDetectionContext? = context("100", setOf(1)),
+    ): TrafficSignPassageFinalizer = TrafficSignPassageFinalizer().also { finalizer ->
+        for (offset in listOf(0L, 100L)) {
+            finalizer.observe(
+                recognition(t0.plusMillis(offset)).copy(roadContext = recognitionContext),
+                0.95, 1, true, true,
+            )
+        }
+        assertNull(finalizer.observe(missing(t0.plusMillis(200)), null, 1, true, true))
+        assertNotNull(finalizer.observe(missing(t0.plusMillis(300)), null, 1, true, true))
+        assertFalse(finalizer.hasActiveTrack())
     }
 
     private fun recognition(

@@ -359,7 +359,7 @@ struct MainView: View {
                 photoCaptureFeedbackVisible = false
             } catch { } // A newer capture owns the replacement task.
         }
-        .sheet(isPresented: $showingSettings) {
+        .sheet(isPresented: settingsPresentation) {
             DismissibleNavigationSheet {
                 SettingsView(viewModel: viewModel, account: viewModel.panoramaxAccount)
             }
@@ -390,11 +390,12 @@ struct MainView: View {
             }
         }
         .onAppear {
+            viewModel.setSettingsPresented(showingSettings)
             if viewModel.driveStatus == "stopped" {
                 viewModel.startDriving()
             }
             if openSettingsOnAppear && !showingSettings {
-                showingSettings = true
+                settingsPresentation.wrappedValue = true
                 onOpenSettingsConsumed?()
             }
             guard shouldAutoTapSyncForTests, !hasAutoTriggeredSyncForTests else {
@@ -417,6 +418,16 @@ struct MainView: View {
                 setDriveRecorderPreviewVisible(true)
             }
         }
+    }
+
+    private var settingsPresentation: Binding<Bool> {
+        Binding(
+            get: { showingSettings },
+            set: {
+                viewModel.setSettingsPresented($0)
+                showingSettings = $0
+            }
+        )
     }
 
     private var showsPedestrianZoneSign: Bool {
@@ -562,7 +573,7 @@ struct MainView: View {
 
             Spacer()
 
-            RecordingSafeButton { showingSettings = true } label: {
+            RecordingSafeButton { settingsPresentation.wrappedValue = true } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.title3.weight(.semibold))
                     .frame(width: buttonDiameter, height: buttonDiameter)

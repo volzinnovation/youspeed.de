@@ -439,6 +439,7 @@ class ConsumerSessionController(
     private val appContext = context.applicationContext
     private val mainHandler = Handler(Looper.getMainLooper())
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
+    private val panoramaxStorageWorker = PanoramaxStorageWorker()
     private val trafficSignDeliveryExecutor = Executors.newSingleThreadExecutor { task ->
         Thread(task, "traffic-sign-delivery")
     }
@@ -453,6 +454,7 @@ class ConsumerSessionController(
         TrafficSignDisplayCatalog.decode(it.readText(), expectedCountryCode = "DE")
     }
     @Volatile private var activeMapCountryCode: String? = null
+    @Volatile private var selectedLookupCountrySource: LookupCountrySource? = null
     private val bootstrapper = BundleBootstrapper(
         rootDir = rootDir,
         httpFetcher = HttpUrlFetcher(),
@@ -494,6 +496,7 @@ class ConsumerSessionController(
         override fun onLocationChanged(location: Location) { discoverPacks(location) }
     }
     private val lookupToken = TrafficSignLookupMutationGate()
+    @Volatile private var resetLookupHistoryOnResume = false
     private val lookupWorker = LatestPendingLookupWorker(onFailure = { error ->
         appendRuntimeDiagnosticEvent("lookup_worker_failed", mapOf("error" to (error.message ?: error.javaClass.simpleName)))
     })
@@ -502,7 +505,7 @@ class ConsumerSessionController(
     private val localObservationStore = LocalObservationStore(appContext, rootDir, preferences, clock)
     private val panoramaxQueueStore = PanoramaxQueueStore(appContext)
     private val panoramaxGalleryLoader = PanoramaxGalleryLoader(
-        execute = ::submitBackgroundTask,
+        execute = ::submitPanoramaxStorageTask,
         load = panoramaxQueueStore::listBatches,
         publish = { batches, count ->
             postState { copy(panoramaxBatches = batches, panoramaxCaptureCount = count) }
@@ -562,11 +565,11 @@ class ConsumerSessionController(
     }
     @Volatile private var isDriving = false
     @Volatile private var trafficSignDriveSessionId: String? = null
-    private val lookupServiceLock = Any()
-    private var lookupService: V3SpeedLimitLookup? = null
-    private var lookupServicePath: String? = null
-    private var lookupServiceCountryCode: String? = null
-    private var lookupServiceMatcherProfile: MatcherDebugProfile? = null
+    private val lookupResources = LookupSessionResources { key ->
+        V3SpeedLimitLookup(key.dbPath, countryCode = key.countryCode,
+            matchingModel = key.matcherProfile.lookupModel,
+            regulationRegion = { lat, lon -> speedRegulationRegions?.region(lat, lon) })
+    }
     private var localSpeedOverridesByWayId: Map<String, Int> = emptyMap()
     private var localSpeedOverrideValuesByWayId: Map<String, String> = emptyMap()
     private var latestTrafficSignMapFix: TSRMapFix? = null
@@ -792,6 +795,7 @@ class ConsumerSessionController(
         // Wrapped work is skipped after disposal. Scoped capture finalizers
         // still run after an in-flight JPEG, without making the UI wait.
         executor.shutdown()
+        panoramaxStorageWorker.close()
         trafficSignDeliveryExecutor.shutdownNow()
         diagnosticsExecutor.shutdown()
     }
@@ -1237,8 +1241,8 @@ class ConsumerSessionController(
                 panoramaxCaptureInFlight = false
             }
         }
-        if (!submitBackgroundTask {
-            if (synchronized(captureLock) { panoramaxCaptureSessionId != sessionId }) return@submitBackgroundTask
+        if (!submitPanoramaxStorageTask {
+            if (synchronized(captureLock) { panoramaxCaptureSessionId != sessionId }) return@submitPanoramaxStorageTask
             runCatching { panoramaxQueueStore.createBatch(sessionId) }
                 .onFailure { error ->
                     val current = synchronized(captureLock) {
@@ -1271,7 +1275,7 @@ class ConsumerSessionController(
         try {
             // This scoped finalizer must survive disposal, unlike ordinary
             // background work. It cannot seal a later controller's session.
-            executor.execute {
+            panoramaxStorageWorker.execute {
                 runCatching {
                     finalizePanoramaxCaptureBatches(endedSessionId)
                     if (!isDisposed.get()) enforcePanoramaxStorageLimit()
@@ -1324,10 +1328,10 @@ class ConsumerSessionController(
 
     fun setPanoramaxItemIncluded(batchId: String, itemId: String, included: Boolean) {
         if (!canProcessPanoramaxUploads()) return
-        submitBackgroundTask {
+        submitPanoramaxStorageTask {
             runCatching {
-                val batch = panoramaxQueueStore.getBatch(batchId) ?: return@submitBackgroundTask
-                if (!PanoramaxQueuePolicy.canEditSelection(batch.state)) return@submitBackgroundTask
+                val batch = panoramaxQueueStore.getBatch(batchId) ?: return@submitPanoramaxStorageTask
+                if (!PanoramaxQueuePolicy.canEditSelection(batch.state)) return@submitPanoramaxStorageTask
                 panoramaxQueueStore.updateItem(
                     batchId,
                     itemId,
@@ -1342,9 +1346,9 @@ class ConsumerSessionController(
     }
 
     internal fun onPanoramaxPhotoCaptured(path: String, @Suppress("UNUSED_PARAMETER") sample: PanoramaxLocationSample, requestId: String) {
-        if (!submitBackgroundTask {
+        if (!submitPanoramaxStorageTask {
             val request = synchronized(captureLock) { pendingPhoto?.takeIf { it.requestId == requestId && it.sessionId == panoramaxCaptureSessionId } }
-            if (request == null) { File(path).delete(); return@submitBackgroundTask }
+            if (request == null) { File(path).delete(); return@submitPanoramaxStorageTask }
             var thumbnailFile: File? = null
             try {
                 val original = File(path)
@@ -1431,7 +1435,7 @@ class ConsumerSessionController(
     }
 
     private fun preparePanoramaxStorage() {
-        submitBackgroundTask {
+        submitPanoramaxStorageTask {
             runCatching {
                 val failures = panoramaxQueueStore.performStartupMaintenanceNow().failedRelativePaths.toMutableList()
                 panoramaxQueueStore.repairMissingThumbnails()
@@ -1461,7 +1465,7 @@ class ConsumerSessionController(
     fun panoramaxThumbnailFile(item: PanoramaxItemRecord): File = panoramaxQueueStore.thumbnailFile(item)
 
     fun setPanoramaxItemFavorite(batchId: String, itemId: String, favorite: Boolean) {
-        submitBackgroundTask {
+        submitPanoramaxStorageTask {
             runCatching { panoramaxQueueStore.updateItemFavorite(batchId, itemId, favorite) }
                 .onFailure { error -> postState { copy(panoramaxMaintenanceIssue = error.message) } }
             refreshPanoramaxBatches()
@@ -1471,7 +1475,7 @@ class ConsumerSessionController(
     fun deletePanoramaxItems(selections: Map<String, Set<String>>) {
         if (!canProcessPanoramaxUploads()) return
         selections.keys.forEach(panoramaxUploader::stopBatch)
-        submitBackgroundTask {
+        submitPanoramaxStorageTask {
             selections.forEach { (batchId, itemIds) ->
                 runCatching { panoramaxQueueStore.deleteItems(batchId, itemIds) }
                     .onSuccess { if (it.hasFailures) postState { copy(panoramaxMaintenanceIssue = it.failedRelativePaths.joinToString()) } }
@@ -1521,18 +1525,18 @@ class ConsumerSessionController(
     fun setPanoramaxUnlimitedStorage(value: Boolean) {
         preferences.edit().putBoolean("youspeed.panoramax.unlimited_storage", value).apply()
         updateState { copy(panoramaxUnlimitedStorage = value) }
-        submitBackgroundTask { enforcePanoramaxStorageLimit(); refreshPanoramaxBatches() }
+        submitPanoramaxStorageTask { enforcePanoramaxStorageLimit(); refreshPanoramaxBatches() }
     }
     fun setPanoramaxStorageLimitMB(value: Double) {
         val clamped = value.coerceIn(100.0, 10000.0)
         preferences.edit().putFloat("youspeed.panoramax.storage_limit_mb", clamped.toFloat()).apply()
         updateState { copy(panoramaxStorageLimitMB = clamped) }
-        submitBackgroundTask { enforcePanoramaxStorageLimit(); refreshPanoramaxBatches() }
+        submitPanoramaxStorageTask { enforcePanoramaxStorageLimit(); refreshPanoramaxBatches() }
     }
     fun setPanoramaxDeleteUploadedImages(value: Boolean) {
         preferences.edit().putBoolean("youspeed.panoramax.delete_uploaded", value).apply()
         updateState { copy(panoramaxDeleteUploadedImages = value) }
-        if (value) submitBackgroundTask {
+        if (value) submitPanoramaxStorageTask {
             runCatching { panoramaxQueueStore.deleteUploadedItemsInCompletedBatches() }
                 .onSuccess { if (it.hasFailures) postState { copy(panoramaxMaintenanceIssue = it.failedRelativePaths.joinToString()) } }
                 .onFailure { error -> postState { copy(panoramaxMaintenanceIssue = error.message) } }
@@ -1635,7 +1639,7 @@ class ConsumerSessionController(
                         it.physicalSignTrackId != draft.physicalSignTrackId } + draft)
                     panoramaxCaptureSessionId
                 }
-                if (captureSession != null) submitBackgroundTask {
+                if (captureSession != null) submitPanoramaxStorageTask {
                     runCatching {
                         val eligibleCaptures = synchronized(captureLock) {
                             if (generation != trafficSignGeneration.get() || captureSession != panoramaxCaptureSessionId || panoramaxCaptureInFlight)
@@ -1821,7 +1825,7 @@ class ConsumerSessionController(
                     trafficSignDebugRuntimeUnhealthy = true,
                 )
             }
-            if (!driveRecorderEnabled) host?.stopTrafficSignCamera()
+            if (!isDriveRecorderSessionActive() && !isPanoramaxCaptureEnabled()) host?.stopTrafficSignCamera()
         }
     }
 
@@ -2064,16 +2068,9 @@ class ConsumerSessionController(
                 trafficSignDebugGenerationSessionContextMismatch = false,
                 trafficSignDebugRuntimeUnhealthy = false,
                 trafficSignLastEvent = null,
-                trafficSignCameraRuntimeState = if (enabled) {
-                    trafficSignCameraRuntimeState
-                } else {
-                    TrafficSignCameraRuntimeState.DISABLED
-                },
-                trafficSignCameraRuntimeDetail = if (enabled) {
-                    trafficSignCameraRuntimeDetail
-                } else {
-                    ConsumerRuntimeText.CAMERA_DISABLED.text()
-                },
+                // This is the shared camera state, not the TSR consumer state.
+                // Reconcile below stops it only when photos/video also stop;
+                // a retained CameraX graph emits no replacement ACTIVE event.
                 trafficSignGeneration = this@ConsumerSessionController.trafficSignGeneration.get(),
             )
         }
@@ -2788,7 +2785,7 @@ class ConsumerSessionController(
         submitBackgroundTask {
             try {
                 val preferredCountry = bootstrapper.activeState()?.countryCode
-                    ?: lookupServiceCountryCode ?: "DEU"
+                    ?: activeMapCountryCode ?: "DEU"
                 val sync = bootstrapper.syncFromManifestEndpoints(manifestEndpoints, preferredCountry, ::applyBundleSyncProgress)
                 refreshDownloadedBundleInventory()
                 replaceLookupService(sync.dbPath, preferredCountryCode = bootstrapper.activeState()?.countryCode,
@@ -2807,8 +2804,9 @@ class ConsumerSessionController(
     }
 
     fun deleteDownloadedBundlesKeepingSeed() {
-        submitBackgroundTask {
+        submitBundleRemovalTask {
             try {
+                clearRemovedActiveBundleSource()
                 val removed = bootstrapper.removeDownloadedBundlesKeepingSeed()
                 refreshDownloadedBundleInventory()
                 bootstrapBundledSeedIfNeeded()
@@ -2836,6 +2834,7 @@ class ConsumerSessionController(
                     )
                 }
             } catch (error: Exception) {
+                runCatching { lookupResources.invalidateAll() }.onFailure { error.addSuppressed(it) }
                 setError(ConsumerRuntimeText.MAPS_DELETE_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
@@ -2947,33 +2946,106 @@ class ConsumerSessionController(
     }
 
     fun deleteSelectedBundle(option: BundleDownloadOption) {
-        submitBackgroundTask {
+        submitBundleRemovalTask {
             try {
+                clearRemovedActiveBundleSource(option.endpoint.manifestRegion)
                 val removed = bootstrapper.removeDownloadedBundles(option.endpoint.manifestRegion)
                 refreshDownloadedBundleInventory()
                 val active = bootstrapper.activeState()
+                // A non-active deletion must not switch away from a surviving
+                // route just because the persisted download selection differs.
+                val surviving = uiState.takeIf { it.activeDBPath.isNotBlank() && File(it.activeDBPath).exists() }
+                val nextPath = surviving?.activeDBPath ?: active?.dbPath
+                val nextVersion = surviving?.activeBundleVersion ?: active?.bundleVersion ?: "none"
+                val nextCountry = nextPath?.let { path -> lookupCountryForDatabase(path,
+                    selectedLookupCountrySource, active?.let { LookupCountrySource(it.dbPath, it.countryCode) },
+                    inferCountryCodeFromDBPath(path)) }
                 replaceLookupService(
-                    active?.dbPath,
-                    preferredCountryCode = active?.countryCode,
+                    nextPath,
+                    preferredCountryCode = nextCountry,
                     reason = "delete_selected_bundle",
                 )
                 mainHandler.post {
-                    active?.countryCode?.let { countryCode ->
+                    nextCountry?.let { countryCode ->
                         onTrafficSignBundleSelected(countryCode, reason = "bundle_active_state_selection")
                     }
                 }
                 postState {
                     copy(
-                        activeBundleVersion = active?.bundleVersion ?: "none",
-                        activeDBPath = active?.dbPath ?: "",
+                        activeBundleVersion = nextVersion,
+                        activeDBPath = nextPath ?: "",
                         maintenanceMessage = if (removed > 0) ConsumerRuntimeText.MAP_DELETED.text(option.displayName) else ConsumerRuntimeText.MAP_NOT_DELETED.text(option.displayName),
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
+                runCatching { lookupResources.invalidateAll() }.onFailure { error.addSuppressed(it) }
                 setError(ConsumerRuntimeText.MAP_DELETE_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
+    }
+
+    private fun clearRemovedActiveBundleSource(region: String? = null) {
+        val removedPath = uiState.activeDBPath
+        if (!bootstrapper.removalIncludesDatabase(removedPath, region)) return
+        // Settings already pauses lookup work. Remove stale source metadata now,
+        // including when later seed bootstrap fails after the old file is deleted.
+        resetLookupHistoryOnResume = true
+        selectedLookupCountrySource = null
+        synchronized(trafficSignStateLock) {
+            latestTrafficSignBase = TrafficSignBaseLimit(null, EffectiveSpeedLimitSource.NONE, "bundle_removed")
+            latestTrafficSignMapFix = null
+            speedReference.bundle("bundle_removed", null)
+            speedReference.context(null, null, emptySet(), "unknown", false)
+        }
+        invalidateTrafficSignGeneration(clearAssertion = true, reason = "bundle_removed",
+            permitWrites = isDriving && uiState.trafficSignRecognitionEnabled)
+        postState {
+            if (activeDBPath != removedPath) this else copy(
+                activeDBPath = "", activeBundleVersion = "none", limitWayId = null,
+                limitStreetName = null, limitStreetBaseName = null, limitStreetRef = null,
+                limitCityName = null, limitCityPlaceName = null, limitCityDistrictName = null,
+                lastLookupInsideCity = null, lastLookupCitySource = "n/a",
+                coarseCityName = null, coarseCityPlaceName = null, coarseCityDistrictName = null,
+                coarseCitySource = "n/a",
+            )
+        }
+    }
+
+    fun setSettingsVisible(visible: Boolean) {
+        lookupPauseChanged(lookupToken.setSettingsVisible(visible))
+    }
+
+    private fun lookupPauseChanged(changed: Boolean) {
+        if (!changed) return
+        lookupWorker.clearPending()
+        val paused = lookupToken.isPaused()
+        invalidateTrafficSignGeneration(clearAssertion = false,
+            reason = if (paused) "settings_lookup_paused" else "settings_lookup_resumed",
+            permitWrites = !paused && isDriving && uiState.trafficSignRecognitionEnabled,
+            preserveDisplay = true)
+        if (paused) updateState { copy(lastTrafficSignPictogram = null, isTrafficSignEndOverlayVisible = false) }
+        else resetLookupHistoryOnResume = true
+    }
+
+    private fun submitBundleRemovalTask(task: () -> Unit) {
+        // Count requests before enqueueing: dismissing Settings cannot resume map
+        // reads while a removal is still waiting behind another maintenance task.
+        lookupPauseChanged(lookupToken.beginBundleRemoval())
+        fun completed() {
+            // Replacement state posts precede this callback on the same main queue.
+            mainHandler.post { lookupPauseChanged(lookupToken.endBundleRemoval()) }
+        }
+        if (isDisposed.get() || executor.isShutdown || executor.isTerminated) {
+            completed()
+            return
+        }
+        try {
+            executor.execute {
+                try { if (!isDisposed.get()) task() }
+                finally { completed() }
+            }
+        } catch (_: RejectedExecutionException) { completed() }
     }
 
     private fun persistSpeedCaptureSelection(selection: SpeedCaptureSelection) {
@@ -3732,12 +3804,10 @@ class ConsumerSessionController(
         val radiusM = lookupRadiusForHorizontalAccuracy(horizontalAccuracyM ?: 50.0)
         val probes = candidates.mapNotNull { candidate ->
             runCatching {
-                V3SpeedLimitLookup(
+                withLookupService(
                     dbPath = candidate.dbPath,
                     countryCode = candidate.countryCode,
-                    matchingModel = uiState.matcherDebugProfile.lookupModel,
-                    regulationRegion = { lat, lon -> speedRegulationRegions?.region(lat, lon) },
-                ).use { lookup ->
+                ) { lookup ->
                     val result = lookup.lookup(
                         lat = location.latitude,
                         lon = location.longitude,
@@ -3851,6 +3921,9 @@ class ConsumerSessionController(
         maybeSpeakOverspeedWarning()
         maybeCapturePanoramaxPhoto()
 
+        // Recording, capture metadata and raw speed/position above continue in Settings.
+        // Only map routing/SQLite matching is replaceable and paused.
+        if (lookupToken.isPaused()) return
         val token = lookupToken.snapshot()
         val sessionId = trafficSignDriveSessionId
         fun enqueueLookupLog(
@@ -3901,6 +3974,15 @@ class ConsumerSessionController(
                 trafficSignGeneration.get() == expectedGeneration &&
                 TrafficSignRoadContextFreshness.accepts(position, latestTrafficSignPosition, clock.millis())
             if (!lookupIsFresh()) return@lookup
+            if (resetLookupHistoryOnResume) {
+                // The worker owns continuity; reset after the previous query has returned.
+                wayMatchTracker.reset()
+                lastKnownBundleSpeedLimitKmh = null
+                lastKnownBundleSpeedLimitAtMs = null
+                lastKnownBundleSpeedLimitLocation = null
+                lastKnownBundleDBPath = null
+                resetLookupHistoryOnResume = false
+            }
             val fallbackDBPath = uiState.activeDBPath.takeIf { it.isNotBlank() && File(it).exists() }
             val fallbackBundleVersion = uiState.activeBundleVersion
             val coverageResult = runCatching {
@@ -4005,6 +4087,9 @@ class ConsumerSessionController(
                 val selectionReason = if (routeChanged) "bundle_route_switch" else "first_location_bundle_selection"
                 mainHandler.post {
                     if (isDisposed.get() || sessionId != trafficSignDriveSessionId || !lookupToken.isCurrent(token)) return@post
+                    if (effectiveDBPath != null) {
+                        selectedLookupCountrySource = LookupCountrySource(effectiveDBPath, effectiveCountryCode)
+                    }
                     if (BundleRouteSelection.shouldSelectTrafficSignModel(
                             activeCountryCode = activeMapCountryCode,
                             selectedCountryCode = effectiveCountryCode,
@@ -4092,12 +4177,11 @@ class ConsumerSessionController(
 
             try {
                 val matchContext = wayMatchTracker.snapshotOrNull()
-                val result = synchronized(lookupServiceLock) {
-                    ensureLookupServiceLocked(
-                        dbPath = effectiveDBPath,
-                        preferredCountryCode = effectiveCountryCode,
-                        reason = "location_lookup",
-                    ).lookup(
+                val result = withLookupService(
+                    dbPath = effectiveDBPath,
+                    countryCode = resolveLookupCountryCode(effectiveDBPath, effectiveCountryCode),
+                ) { lookup ->
+                    lookup.lookup(
                         lat = location.latitude,
                         lon = location.longitude,
                         radiusM = lookupRadiusForHorizontalAccuracy(location.accuracy.toDouble()),
@@ -4286,18 +4370,20 @@ class ConsumerSessionController(
                 coarseLocationSource = "wifi_network",
             )
         }
+        if (lookupToken.isPaused()) return
         val dbPath = uiState.activeDBPath.takeIf { it.isNotBlank() && File(it).exists() } ?: return
+        val selectedSource = selectedLookupCountrySource
+        val token = lookupToken.snapshot()
         submitBackgroundTask {
-            if (sequence != coarseLocationSequence) return@submitBackgroundTask
-            val countryCode = normalizedCountryCode(bootstrapper.activeState()?.countryCode)
-                ?: inferCountryCodeFromDBPath(dbPath)
+            if (sequence != coarseLocationSequence || !lookupToken.isCurrent(token)) return@submitBackgroundTask
+            val installed = bootstrapper.activeState()
+            val countryCode = lookupCountryForDatabase(dbPath, selectedSource,
+                installed?.let { LookupCountrySource(it.dbPath, it.countryCode) }, inferCountryCodeFromDBPath(dbPath))
             val context = runCatching {
-                V3SpeedLimitLookup(
+                withLookupService(
                     dbPath = dbPath,
                     countryCode = countryCode,
-                    matchingModel = uiState.matcherDebugProfile.lookupModel,
-                    regulationRegion = { lat, lon -> speedRegulationRegions?.region(lat, lon) },
-                ).use { lookup -> lookup.lookupCityContext(location.latitude, location.longitude) }
+                ) { lookup -> lookup.lookupCityContext(location.latitude, location.longitude) }
             }.onFailure { error ->
                 appendRuntimeDiagnosticEvent(
                     event = "coarse_city_lookup_error",
@@ -4310,7 +4396,7 @@ class ConsumerSessionController(
                 )
             }.getOrNull() ?: return@submitBackgroundTask
             postState {
-                if (sequence != coarseLocationSequence) this else copy(
+                if (sequence != coarseLocationSequence || !lookupToken.isCurrent(token) || activeDBPath != dbPath) this else copy(
                     coarseCityName = context.cityName,
                     coarseCityPlaceName = context.cityPlaceName,
                     coarseCityDistrictName = context.cityDistrictName,
@@ -5092,60 +5178,16 @@ class ConsumerSessionController(
             ?: inferCountryCodeFromDBPath(dbPath)
     }
 
-    private fun ensureLookupService(
+    private fun <T> withLookupService(
         dbPath: String,
-        preferredCountryCode: String? = null,
+        countryCode: String?,
         matcherProfile: MatcherDebugProfile = uiState.matcherDebugProfile,
-        reason: String = "unspecified",
-    ): V3SpeedLimitLookup = synchronized(lookupServiceLock) {
-        ensureLookupServiceLocked(
-            dbPath = dbPath,
-            preferredCountryCode = preferredCountryCode,
-            matcherProfile = matcherProfile,
-            reason = reason,
-        )
-    }
-
-    private fun ensureLookupServiceLocked(
-        dbPath: String,
-        preferredCountryCode: String? = null,
-        matcherProfile: MatcherDebugProfile = uiState.matcherDebugProfile,
-        reason: String = "unspecified",
-    ): V3SpeedLimitLookup {
-        val resolvedCountryCode = resolveLookupCountryCode(
-            dbPath = dbPath,
-            preferredCountryCode = preferredCountryCode,
-        )
-        val current = lookupService
-        if (
-            current != null &&
-            lookupServicePath == dbPath &&
-            lookupServiceCountryCode == resolvedCountryCode &&
-            lookupServiceMatcherProfile == matcherProfile
-        ) {
-            return current
-        }
-        closeLookupServiceLocked(reason = "ensure_lookup_service:$reason")
-        return V3SpeedLimitLookup(
-            dbPath,
-            countryCode = resolvedCountryCode,
-            matchingModel = matcherProfile.lookupModel,
-            regulationRegion = { lat, lon -> speedRegulationRegions?.region(lat, lon) },
-        ).also {
-            lookupService = it
-            lookupServicePath = dbPath
-            lookupServiceCountryCode = resolvedCountryCode
-            lookupServiceMatcherProfile = matcherProfile
-            appendRuntimeDiagnosticEvent(
-                event = "lookup_service_opened",
-                details = mapOf(
-                    "reason" to reason,
-                    "dbPath" to dbPath,
-                    "countryCode" to resolvedCountryCode,
-                    "matcherProfile" to matcherProfile.storageValue,
-                ),
-            )
-        }
+        block: (V3SpeedLimitLookup) -> T,
+    ): T {
+        check(!isDisposed.get()) { "Controller is disposed" }
+        val key = LookupConnectionKey(dbPath,
+            normalizedCountryCode(countryCode) ?: inferCountryCodeFromDBPath(dbPath), matcherProfile)
+        return lookupResources.withReader(key, block)
     }
 
     private fun replaceLookupService(
@@ -5153,99 +5195,34 @@ class ConsumerSessionController(
         preferredCountryCode: String? = null,
         matcherProfile: MatcherDebugProfile = uiState.matcherDebugProfile,
         reason: String = "unspecified",
-    ) = synchronized(lookupServiceLock) {
-        replaceLookupServiceLocked(
-            dbPath = dbPath,
-            preferredCountryCode = preferredCountryCode,
-            matcherProfile = matcherProfile,
-            reason = reason,
-        )
-    }
-
-    private fun replaceLookupServiceLocked(
-        dbPath: String?,
-        preferredCountryCode: String? = null,
-        matcherProfile: MatcherDebugProfile = uiState.matcherDebugProfile,
-        reason: String = "unspecified",
     ) {
-        if (dbPath.isNullOrBlank()) {
-            closeLookupServiceLocked(reason = "replace_lookup_service_empty_path:$reason")
-            return
-        }
-        val resolvedCountryCode = resolveLookupCountryCode(
-            dbPath = dbPath,
-            preferredCountryCode = preferredCountryCode,
-        )
-        if (
-            lookupServicePath == dbPath &&
-            lookupServiceCountryCode == resolvedCountryCode &&
-            lookupServiceMatcherProfile == matcherProfile &&
-            lookupService != null
-        ) {
-            return
-        }
-        closeLookupServiceLocked(reason = "replace_lookup_service:$reason")
-        val opened = runCatching {
-            lookupService = V3SpeedLimitLookup(
-                dbPath,
-                countryCode = resolvedCountryCode,
-                matchingModel = matcherProfile.lookupModel,
-            regulationRegion = { lat, lon -> speedRegulationRegions?.region(lat, lon) },
-            )
-            lookupServicePath = dbPath
-            lookupServiceCountryCode = resolvedCountryCode
-            lookupServiceMatcherProfile = matcherProfile
-        }
-        opened.onSuccess {
-            appendRuntimeDiagnosticEvent(
-                event = "lookup_service_opened",
-                details = mapOf(
-                    "reason" to reason,
-                    "dbPath" to dbPath,
-                    "countryCode" to resolvedCountryCode,
-                    "matcherProfile" to matcherProfile.storageValue,
-                ),
-            )
+        // A successful sync/delete may replace bytes at the same path. Always
+        // discard every cached reader, including inactive routing candidates.
+        lookupResources.invalidateAll()
+        if (dbPath.isNullOrBlank() || isDisposed.get()) return
+        runCatching {
+            withLookupService(dbPath, resolveLookupCountryCode(dbPath, preferredCountryCode), matcherProfile) { }
         }.onFailure {
-            appendRuntimeDiagnosticEvent(
-                event = "lookup_service_open_failed",
-                details = mapOf(
-                    "reason" to reason,
-                    "dbPath" to dbPath,
-                    "countryCode" to resolvedCountryCode,
-                    "matcherProfile" to matcherProfile.storageValue,
-                    "errorClass" to it.javaClass.name,
-                    "error" to (it.message ?: it.javaClass.simpleName),
-                ),
-            )
-            lookupService = null
-            lookupServicePath = null
-            lookupServiceCountryCode = null
-            lookupServiceMatcherProfile = null
+            appendRuntimeDiagnosticEvent("lookup_service_open_failed", mapOf(
+                "reason" to reason, "dbPath" to dbPath,
+                "errorClass" to it.javaClass.name, "error" to (it.message ?: it.javaClass.simpleName)))
         }
+        logLookupResources(reason)
     }
 
-    private fun closeLookupService(reason: String = "unspecified") = synchronized(lookupServiceLock) {
-        closeLookupServiceLocked(reason)
+    private fun closeLookupService(reason: String = "unspecified") {
+        // Terminal close prevents a racing, already submitted location task
+        // from reopening a reader after disposal has released the handles.
+        lookupResources.close()
+        logLookupResources(reason)
     }
 
-    private fun closeLookupServiceLocked(reason: String = "unspecified") {
-        if (lookupService != null) {
-            appendRuntimeDiagnosticEvent(
-                event = "lookup_service_closed",
-                details = mapOf(
-                    "reason" to reason,
-                    "dbPath" to lookupServicePath,
-                    "countryCode" to lookupServiceCountryCode,
-                    "matcherProfile" to lookupServiceMatcherProfile?.storageValue,
-                ),
-            )
-        }
-        lookupService?.close()
-        lookupService = null
-        lookupServicePath = null
-        lookupServiceCountryCode = null
-        lookupServiceMatcherProfile = null
+    private fun logLookupResources(reason: String) {
+        val stats = lookupResources.stats()
+        appendRuntimeDiagnosticEvent("lookup_resources", mapOf(
+            "reason" to reason, "opens" to stats.opens, "hits" to stats.hits,
+            "evictions" to stats.evictions, "invalidations" to stats.invalidations,
+            "liveConnections" to stats.liveConnections))
     }
 
     private fun bootstrapBundledSeedIfNeeded() {
@@ -5786,6 +5763,16 @@ class ConsumerSessionController(
         if (isDisposed.get() || trafficSignDeliveryExecutor.isShutdown) return false
         return try {
             trafficSignDeliveryExecutor.execute { if (!isDisposed.get()) task() }
+            true
+        } catch (_: RejectedExecutionException) {
+            false
+        }
+    }
+
+    private fun submitPanoramaxStorageTask(task: () -> Unit): Boolean {
+        if (isDisposed.get()) return false
+        return try {
+            panoramaxStorageWorker.execute { if (!isDisposed.get()) task() }
             true
         } catch (_: RejectedExecutionException) {
             false

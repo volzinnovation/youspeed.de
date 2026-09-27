@@ -52,7 +52,11 @@ class PanoramaxRetentionTests {
 
     @Test fun failedRecordCommitPreservesAllAssetsAndStopsEviction() = withQueue { root, store ->
         val batch = addBatch(root, store, "blocked", listOf(0, 1))
-        val temporary = File(root, "private/panoramax/batches/.${batch.batchId}.json.tmp")
+        // Block the next durable mutation record, not a later checkpoint.
+        val journal = File(root, "private/panoramax/batches/${batch.batchId}.journal")
+        val nextSequence = requireNotNull(journal.listFiles()).filter { it.extension == "json" }
+            .maxOf { it.nameWithoutExtension.toLong() } + 1
+        val temporary = File(journal, ".%020d.json.tmp".format(java.util.Locale.ROOT, nextSequence))
         assertTrue(temporary.mkdir())
         File(temporary, "cannot-replace").writeText("retained")
 

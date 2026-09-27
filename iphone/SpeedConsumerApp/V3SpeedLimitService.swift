@@ -1,8 +1,8 @@
 import Foundation
 import SQLite3
 
-final class V3SpeedLimitService {
-    enum MatchingModel: Sendable {
+final class V3SpeedLimitService: @unchecked Sendable {
+    enum MatchingModel: Sendable, Hashable {
         case corridorHMM
         case corridorHMMRawMiniHMM
         case corridorHMMNoThreeWayGate
@@ -21,6 +21,8 @@ final class V3SpeedLimitService {
     }
 
     private let dbPath: String
+    private let resources: V3LookupResources
+    private var resourceGeneration: UInt64 = 0
     private let countryCode: String?
     private let regulationRegion: ((Double, Double) -> String?)?
     private let matchingModel: MatchingModel
@@ -855,9 +857,34 @@ final class V3SpeedLimitService {
         regulationRegion: ((Double, Double) -> String?)? = nil
     ) {
         self.dbPath = dbPath
+        self.resources = V3LookupResources(path: dbPath)
         self.countryCode = Self.normalizedCountryCode(countryCode) ?? Self.inferCountryCode(fromDBPath: dbPath)
         self.matchingModel = matchingModel
         self.regulationRegion = regulationRegion
+    }
+
+    var resourceStatistics: V3LookupResources.Statistics { resources.statistics }
+
+    func invalidateDatabase() { resources.invalidate() }
+
+    /// Exercises the production surface-network admission query before matcher scoring.
+    func admittedWayIDsForTesting(lat: Double, lon: Double, radiusM: Double, maxCandidates: Int) throws -> [String] {
+        let db = try acquireDatabase()
+        defer { resources.releaseSession() }
+        return try loadCandidates(db: db, lat: lat, lon: lon, radiusM: radiusM,
+                                  maxCandidates: maxCandidates, headingForScoring: nil, network: .surface)
+            .compactMap(\.wayID)
+    }
+
+    private func acquireDatabase() throws -> OpaquePointer {
+        let session = try resources.acquire()
+        if resourceGeneration != session.generation {
+            corridorPairCacheLock.lock()
+            cachedCorridorPairContext = nil
+            corridorPairCacheLock.unlock()
+            resourceGeneration = session.generation
+        }
+        return session.db
     }
 
     func lookupSpeedLimit(
@@ -875,13 +902,8 @@ final class V3SpeedLimitService {
     ) throws -> SpeedLimitResult {
         let t0 = DispatchTime.now().uptimeNanoseconds
 
-        var db: OpaquePointer?
-        let encodedPath = dbPath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? dbPath
-        let uri = "file:\(encodedPath)?mode=ro&immutable=1"
-        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK, let db else {
-            throw ConsumerAppError.sqlite("sqlite open failed for \(dbPath)")
-        }
-        defer { sqlite3_close(db) }
+        let db = try acquireDatabase()
+        defer { resources.releaseSession() }
 
         let resolvedHeading = normalizedHeadingDegrees(headingDeg)
         let headingForScoring = shouldUseHeading(
@@ -2040,13 +2062,8 @@ final class V3SpeedLimitService {
             return [:]
         }
 
-        var db: OpaquePointer?
-        let encodedPath = dbPath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? dbPath
-        let uri = "file:\(encodedPath)?mode=ro&immutable=1"
-        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK, let db else {
-            throw ConsumerAppError.sqlite("sqlite open failed for \(dbPath)")
-        }
-        defer { sqlite3_close(db) }
+        let db = try acquireDatabase()
+        defer { resources.releaseSession() }
 
         guard tableExists(db: db, name: "ways"), columnExists(db: db, table: "ways", column: "way_id") else {
             return [:]
@@ -2075,10 +2092,10 @@ final class V3SpeedLimitService {
             """
 
             var stmt: OpaquePointer?
-            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
                 throw ConsumerAppError.sqlite("prepare failed in street lookup query")
             }
-            defer { sqlite3_finalize(stmt) }
+            defer { resources.release(stmt) }
 
             for (index, wayID) in chunk.enumerated() {
                 sqlite3_bind_text(stmt, Int32(index + 1), wayID, -1, SQLITE_TRANSIENT)
@@ -2391,20 +2408,32 @@ final class V3SpeedLimitService {
         WHERE \(boundsSource).min_lon <= ?1 AND \(boundsSource).max_lon >= ?2
           AND \(boundsSource).min_lat <= ?3 AND \(boundsSource).max_lat >= ?4
           \(extraWhereClause)
+        ORDER BY
+          (CASE WHEN ?6 < w.min_lon THEN (w.min_lon - ?6)
+                WHEN ?6 > w.max_lon THEN (?6 - w.max_lon) ELSE 0 END) *
+          (CASE WHEN ?6 < w.min_lon THEN (w.min_lon - ?6)
+                WHEN ?6 > w.max_lon THEN (?6 - w.max_lon) ELSE 0 END) +
+          (CASE WHEN ?7 < w.min_lat THEN (w.min_lat - ?7)
+                WHEN ?7 > w.max_lat THEN (?7 - w.max_lat) ELSE 0 END) *
+          (CASE WHEN ?7 < w.min_lat THEN (w.min_lat - ?7)
+                WHEN ?7 > w.max_lat THEN (?7 - w.max_lat) ELSE 0 END),
+          CAST(w.way_id AS TEXT) COLLATE BINARY ASC
         LIMIT ?5
         """
 
         var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+        guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             throw ConsumerAppError.sqlite("prepare failed in lookup query")
         }
-        defer { sqlite3_finalize(stmt) }
+        defer { resources.release(stmt) }
 
         sqlite3_bind_double(stmt, 1, bounds.maxLon)
         sqlite3_bind_double(stmt, 2, bounds.minLon)
         sqlite3_bind_double(stmt, 3, bounds.maxLat)
         sqlite3_bind_double(stmt, 4, bounds.minLat)
         sqlite3_bind_int64(stmt, 5, Int64(maxCandidates))
+        sqlite3_bind_double(stmt, 6, lon)
+        sqlite3_bind_double(stmt, 7, lat)
 
         var rankedCandidates: [WayCandidate] = []
         while true {
@@ -2641,8 +2670,8 @@ final class V3SpeedLimitService {
         """
 
         var stmt: OpaquePointer?
-        defer { sqlite3_finalize(stmt) }
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+        defer { resources.release(stmt) }
+        guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             return []
         }
         for (index, wayID) in orderedWayIDs.enumerated() {
@@ -2867,6 +2896,10 @@ final class V3SpeedLimitService {
     }
 
     private func parseWayPoints(_ raw: String?) -> [(Double, Double)] {
+        resources.geometry(raw, decode: Self.decodeWayPoints)
+    }
+
+    private static func decodeWayPoints(_ raw: String?) -> [(Double, Double)] {
         guard let raw, let data = raw.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data),
               let arr = json as? [Any] else {
@@ -4735,8 +4768,8 @@ final class V3SpeedLimitService {
           AND r.min_lat <= ?3 AND r.max_lat >= ?4
         """
         var stmt: OpaquePointer?
-        defer { sqlite3_finalize(stmt) }
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+        defer { resources.release(stmt) }
+        guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             return LocalWayGraphContext(available: false, byWayID: [:], adjacencyByNodeKey: [:], expandedWayCount: 0)
         }
         sqlite3_bind_double(stmt, 1, maxLon + degLon)
@@ -4783,8 +4816,8 @@ final class V3SpeedLimitService {
             WHERE CAST(way_id AS TEXT) IN (\(placeholders))
             """
             var missingStmt: OpaquePointer?
-            defer { sqlite3_finalize(missingStmt) }
-            if sqlite3_prepare_v2(db, sql, -1, &missingStmt, nil) == SQLITE_OK, let missingStmt {
+            defer { resources.release(missingStmt) }
+            if resources.prepare(db, sql, -1, &missingStmt, nil) == SQLITE_OK, let missingStmt {
                 for (index, wayID) in missingWayIDs.sorted().enumerated() {
                     sqlite3_bind_text(
                         missingStmt,
@@ -6693,8 +6726,8 @@ final class V3SpeedLimitService {
         """
 
         var stmt: OpaquePointer?
-        defer { sqlite3_finalize(stmt) }
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+        defer { resources.release(stmt) }
+        guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             return WayContinuityContext(available: true, byWayID: [:])
         }
 
@@ -6773,8 +6806,8 @@ final class V3SpeedLimitService {
         }
 
         var stmt: OpaquePointer?
-        defer { sqlite3_finalize(stmt) }
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+        defer { resources.release(stmt) }
+        guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             return (false, [])
         }
         sqlite3_bind_int64(stmt, 1, numericWayID)
@@ -6808,8 +6841,8 @@ final class V3SpeedLimitService {
         guard tableExists(db: db, name: "metadata") else { return false }
         let sql = "SELECT value FROM metadata WHERE key = 'way_continuity_mode' LIMIT 1"
         var stmt: OpaquePointer?
-        defer { sqlite3_finalize(stmt) }
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK,
+        defer { resources.release(stmt) }
+        guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK,
               let stmt,
               sqlite3_step(stmt) == SQLITE_ROW,
               let value = cStringOptional(sqlite3_column_text(stmt, 0)) else { return false }
@@ -6872,9 +6905,9 @@ final class V3SpeedLimitService {
         guard let selected, selected.highway == "motorway", let wayID = selected.wayID,
               tableExists(db: db, name: "motorway_exit_approach") else { return [] }
         var statement: OpaquePointer?
-        guard sqlite3_prepare_v2(db, "SELECT endpoint_side,exit_way_id,path_distance_m,branch_heading_deg FROM motorway_exit_approach WHERE way_id=?1", -1, &statement, nil) == SQLITE_OK,
+        guard resources.prepare(db, "SELECT endpoint_side,exit_way_id,path_distance_m,branch_heading_deg FROM motorway_exit_approach WHERE way_id=?1", -1, &statement, nil) == SQLITE_OK,
               let statement else { return [] }
-        defer { sqlite3_finalize(statement) }
+        defer { resources.release(statement) }
         sqlite3_bind_text(statement, 1, wayID, -1, SQLITE_TRANSIENT)
         var result: [TSRApplicabilityCorridor] = []
         while sqlite3_step(statement) == SQLITE_ROW {
@@ -6921,8 +6954,8 @@ final class V3SpeedLimitService {
         """
 
         var stmt: OpaquePointer?
-        defer { sqlite3_finalize(stmt) }
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+        defer { resources.release(stmt) }
+        guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             return WayLinksContext(available: true, byWayID: [:])
         }
 
@@ -6981,8 +7014,8 @@ final class V3SpeedLimitService {
         """
 
         var stmt: OpaquePointer?
-        defer { sqlite3_finalize(stmt) }
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+        defer { resources.release(stmt) }
+        guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             return CorridorProgressContext(available: true, byWayID: [:])
         }
         for (index, wayID) in orderedWayIDs.enumerated() {
@@ -7040,8 +7073,8 @@ final class V3SpeedLimitService {
         FROM corridor_pairs
         """
         var stmt: OpaquePointer?
-        defer { sqlite3_finalize(stmt) }
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+        defer { resources.release(stmt) }
+        guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             let emptyContext = CorridorPairContext(available: true, byMainKey: [:], byPairedKey: [:])
             cachedCorridorPairContext = emptyContext
             return emptyContext
@@ -9068,29 +9101,30 @@ final class V3SpeedLimitService {
     }
 
     private func tableExists(db: OpaquePointer, name: String) -> Bool {
-        var stmt: OpaquePointer?
-        defer { sqlite3_finalize(stmt) }
-        let sql = "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?1 LIMIT 1"
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
-            return false
+        resources.capability("table:\(name)") {
+            var stmt: OpaquePointer?
+            defer { resources.release(stmt) }
+            let sql = "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?1 LIMIT 1"
+            guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else { return nil }
+            sqlite3_bind_text(stmt, 1, name, -1, SQLITE_TRANSIENT)
+            let code = sqlite3_step(stmt)
+            return code == SQLITE_ROW ? true : (code == SQLITE_DONE ? false : nil)
         }
-        sqlite3_bind_text(stmt, 1, name, -1, SQLITE_TRANSIENT)
-        return sqlite3_step(stmt) == SQLITE_ROW
     }
 
     private func columnExists(db: OpaquePointer, table: String, column: String) -> Bool {
-        var stmt: OpaquePointer?
-        defer { sqlite3_finalize(stmt) }
-        let sql = "PRAGMA table_info(\(table));"
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
-            return false
-        }
-        while sqlite3_step(stmt) == SQLITE_ROW {
-            if let name = cStringOptional(sqlite3_column_text(stmt, 1)), name == column {
-                return true
+        resources.capability("column:\(table):\(column)") {
+            var stmt: OpaquePointer?
+            defer { resources.release(stmt) }
+            let sql = "PRAGMA table_info(\(table));"
+            guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else { return nil }
+            while true {
+                let code = sqlite3_step(stmt)
+                if code == SQLITE_DONE { return false }
+                guard code == SQLITE_ROW else { return nil }
+                if let name = cStringOptional(sqlite3_column_text(stmt, 1)), name == column { return true }
             }
         }
-        return false
     }
 
     struct SettlementDecision: Equatable {
@@ -9136,9 +9170,9 @@ final class V3SpeedLimitService {
     private func metadataValue(db: OpaquePointer, key: String) -> String? {
         guard tableExists(db: db, name: "metadata") else { return nil }
         var statement: OpaquePointer?
-        guard sqlite3_prepare_v2(db, "SELECT value FROM metadata WHERE key=?1 LIMIT 1", -1, &statement, nil) == SQLITE_OK,
+        guard resources.prepare(db, "SELECT value FROM metadata WHERE key=?1 LIMIT 1", -1, &statement, nil) == SQLITE_OK,
               let statement else { return nil }
-        defer { sqlite3_finalize(statement) }
+        defer { resources.release(statement) }
         sqlite3_bind_text(statement, 1, key, -1, SQLITE_TRANSIENT)
         guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
         return cStringOptional(sqlite3_column_text(statement, 0)) ?? ""
@@ -9154,9 +9188,9 @@ final class V3SpeedLimitService {
             guard version == "1", tableExists(db: db, name: "settlement_segment") else { return .missing }
             let sql = "SELECT direction,inside_city,source,confidence,points_json FROM settlement_segment WHERE way_id=?1 ORDER BY segment_index,direction,segment_id"
             var statement: OpaquePointer?
-            guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK,
+            guard resources.prepare(db, sql, -1, &statement, nil) == SQLITE_OK,
                   let statement else { return .missing }
-            defer { sqlite3_finalize(statement) }
+            defer { resources.release(statement) }
             sqlite3_bind_text(statement, 1, wayID, -1, SQLITE_TRANSIENT)
             var segments: [SettlementSegment] = []
             while sqlite3_step(statement) == SQLITE_ROW {
@@ -9169,7 +9203,8 @@ final class V3SpeedLimitService {
                     insideCity: insideCity,
                     source: cStringOptional(sqlite3_column_text(statement, 2)) ?? "missing",
                     confidence: cStringOptional(sqlite3_column_text(statement, 3)) ?? "unknown",
-                    points: Self.parseSettlementPoints(cStringOptional(sqlite3_column_text(statement, 4)))
+                    points: resources.geometry(cStringOptional(sqlite3_column_text(statement, 4)),
+                                               format: .settlement, decode: Self.parseSettlementPoints)
                 ))
             }
             return Self.selectSettlementSegment(
@@ -9183,8 +9218,8 @@ final class V3SpeedLimitService {
         let columns = keys.map { columnExists(db: db, table: "ways", column: $0) ? $0 : "NULL" }
         var statement: OpaquePointer?
         let sql = "SELECT \(columns.joined(separator: ",")) FROM ways WHERE way_id=?1 LIMIT 1"
-        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement {
-            defer { sqlite3_finalize(statement) }
+        if resources.prepare(db, sql, -1, &statement, nil) == SQLITE_OK, let statement {
+            defer { resources.release(statement) }
             sqlite3_bind_text(statement, 1, wayID, -1, SQLITE_TRANSIENT)
             if sqlite3_step(statement) == SQLITE_ROW {
                 let tags = keys.enumerated().map { ($0.element, cStringOptional(sqlite3_column_text(statement, Int32($0.offset)))) }
@@ -9397,11 +9432,11 @@ final class V3SpeedLimitService {
         """
 
         var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+        guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
             return ResidentialContext(insideCity: nil, candidatePolygons: 0, containingPolygons: 0, resolveMs: elapsed)
         }
-        defer { sqlite3_finalize(stmt) }
+        defer { resources.release(stmt) }
 
         sqlite3_bind_double(stmt, 1, lon)
         sqlite3_bind_double(stmt, 2, lon)
@@ -9450,10 +9485,10 @@ final class V3SpeedLimitService {
         """
 
         var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db, boundarySQL, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+        guard resources.prepare(db, boundarySQL, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             return nil
         }
-        defer { sqlite3_finalize(stmt) }
+        defer { resources.release(stmt) }
 
         sqlite3_bind_double(stmt, 1, lon)
         sqlite3_bind_double(stmt, 2, lon)
@@ -9513,8 +9548,8 @@ final class V3SpeedLimitService {
             LIMIT 16
             """
             var placeStmt: OpaquePointer?
-            if sqlite3_prepare_v2(db, placeSQL, -1, &placeStmt, nil) == SQLITE_OK, let placeStmt {
-                defer { sqlite3_finalize(placeStmt) }
+            if resources.prepare(db, placeSQL, -1, &placeStmt, nil) == SQLITE_OK, let placeStmt {
+                defer { resources.release(placeStmt) }
                 sqlite3_bind_double(placeStmt, 1, lon + 0.3)
                 sqlite3_bind_double(placeStmt, 2, lon - 0.3)
                 sqlite3_bind_double(placeStmt, 3, lat + 0.3)
@@ -9587,7 +9622,7 @@ final class V3SpeedLimitService {
         """
 
         var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+        guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             return (
                 insideCity: nil,
                 cityName: nil,
@@ -9599,7 +9634,7 @@ final class V3SpeedLimitService {
                 placeCandidates: 0
             )
         }
-        defer { sqlite3_finalize(stmt) }
+        defer { resources.release(stmt) }
 
         sqlite3_bind_double(stmt, 1, lon)
         sqlite3_bind_double(stmt, 2, lon)
@@ -9758,10 +9793,10 @@ final class V3SpeedLimitService {
         """
 
         var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+        guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             return false
         }
-        defer { sqlite3_finalize(stmt) }
+        defer { resources.release(stmt) }
 
         sqlite3_bind_int64(stmt, 1, boundaryRowID)
 
@@ -9808,24 +9843,10 @@ final class V3SpeedLimitService {
     }
 
     private func parseRingPoints(_ raw: String) -> [(Double, Double)]? {
-        guard let data = raw.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data),
-              let arr = json as? [Any] else {
-            return nil
-        }
-        var out: [(Double, Double)] = []
-        out.reserveCapacity(arr.count)
-        for element in arr {
-            guard let pair = element as? [Any], pair.count >= 2 else {
-                continue
-            }
-            guard let lon = pair[0] as? Double,
-                  let lat = pair[1] as? Double else {
-                continue
-            }
-            out.append((lon, lat))
-        }
-        return out.count >= 4 ? out : nil
+        // Cache coordinate pairs in their stored order. Ways use lat/lon and
+        // rings use lon/lat; their callers retain that interpretation.
+        let points = resources.geometry(raw, decode: Self.decodeWayPoints)
+        return points.count >= 4 ? points : nil
     }
 
     private func pointInRing(lon: Double, lat: Double, ring: [(Double, Double)]) -> Bool {

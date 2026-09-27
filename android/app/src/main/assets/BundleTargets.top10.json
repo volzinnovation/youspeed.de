@@ -13,7 +13,7 @@
       "iso2": "NL",
       "penalty_rules": {
         "file": "NLD-rules.json",
-        "source": "iphone/SpeedConsumerApp/Rules/NLD-rules.json"
+        "source": "shared/Rules/NLD-rules.json"
       },
       "mode": "single_country",
       "regions": [
@@ -53,7 +53,7 @@
       "iso2": "BE",
       "penalty_rules": {
         "file": "BEL-rules.json",
-        "source": "iphone/SpeedConsumerApp/Rules/BEL-rules.json"
+        "source": "shared/Rules/BEL-rules.json"
       },
       "mode": "single_country",
       "regions": [
@@ -105,7 +105,7 @@
       "iso2": "DE",
       "penalty_rules": {
         "file": "DEU-rules.json",
-        "source": "iphone/SpeedConsumerApp/Rules/DEU-rules.json"
+        "source": "shared/Rules/DEU-rules.json"
       },
       "mode": "regional_shards",
       "include_in_top_country_sequence": false,
@@ -183,7 +183,7 @@
       "iso2": "FR",
       "penalty_rules": {
         "file": "FRA-rules.json",
-        "source": "iphone/SpeedConsumerApp/Rules/FRA-rules.json"
+        "source": "shared/Rules/FRA-rules.json"
       },
       "mode": "regional_shards",
       "include_in_top_country_sequence": false,

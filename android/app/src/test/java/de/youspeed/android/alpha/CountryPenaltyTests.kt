@@ -6,8 +6,29 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CountryPenaltyTests {
-    private fun rules(code: String) = PenaltyRulesParser.parse(File("src/main/assets/Rules/$code-rules.json").readText())
+    private fun rules(code: String) = PenaltyRulesParser.parse(File("../../shared/Rules/$code-rules.json").readText())
     private fun catalog() = RegionalPackCatalog.decode(File("../../shared/RegionalCoverage/catalog-v1.json").readBytes())
+
+    @Test fun malformedSeverityIsRejectedInsteadOfSilentlyBecomingMoneyOnly() {
+        for (value in listOf("\"unknown\"", "\"\"", "42", "true", "{}", "[]")) {
+            assertThrows(IllegalArgumentException::class.java) {
+                PenaltyRulesParser.parse("""{"bands":[{"min_delta_kmh":1,"severity":$value}]}""")
+            }
+        }
+    }
+
+    @Test fun severityAliasesAndOptionalInferenceMatchIphone() {
+        fun severity(fields: String) = PenaltyRulesParser.parse(
+            """{"bands":[{"min_delta_kmh":1,$fields}]}"""
+        ).bands.single().severity
+        assertEquals(PenaltySeverity.MONEY_ONLY, severity("\"severity\":\" NUR_GELDBUSSE \""))
+        assertEquals(PenaltySeverity.POINTS_AND_FINE, severity("\"schweregrad\":\"punkte_und_geldbusse\""))
+        assertEquals(PenaltySeverity.POINTS_AND_FINE, severity("\"penalty_points\":1"))
+        assertEquals(PenaltySeverity.MONEY_ONLY, severity("\"penalty_points\":0"))
+        assertEquals(PenaltySeverity.POINTS_AND_FINE, severity("\"severity\":null,\"penalty_points\":1"))
+        // A present null primary key does not fall through to the German alias.
+        assertEquals(PenaltySeverity.MONEY_ONLY, severity("\"severity\":null,\"schweregrad\":\"points_and_fine\""))
+    }
 
     @Test fun countryAliasesNeverDefaultUnknownToGermany() {
         listOf("DE" to "DEU", "fr" to "FRA", " NL " to "NLD", "BEL" to "BEL").forEach {

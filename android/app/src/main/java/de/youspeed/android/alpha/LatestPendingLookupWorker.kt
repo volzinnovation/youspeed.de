@@ -67,6 +67,9 @@ internal class TrafficSignLookupMutationGate {
     private val lock = Any()
     private var token = 0L
     private var committedSequence = Long.MIN_VALUE
+    private var paused = false
+    private var settingsVisible = false
+    private var pendingBundleRemovals = 0
 
     fun snapshot(): Long = synchronized(lock) { token }
 
@@ -75,18 +78,46 @@ internal class TrafficSignLookupMutationGate {
         ++token
     }
 
-    fun isCurrent(expected: Long): Boolean = synchronized(lock) { token == expected }
+    /** Settings pause invalidates both running work and fixes captured before resuming. */
+    fun setSettingsVisible(value: Boolean): Boolean = synchronized(lock) {
+        settingsVisible = value
+        updatePausedLocked()
+    }
+
+    fun beginBundleRemoval(): Boolean = synchronized(lock) {
+        pendingBundleRemovals++
+        updatePausedLocked()
+    }
+
+    fun endBundleRemoval(): Boolean = synchronized(lock) {
+        check(pendingBundleRemovals > 0)
+        pendingBundleRemovals--
+        updatePausedLocked()
+    }
+
+    private fun updatePausedLocked(): Boolean {
+        val value = settingsVisible || pendingBundleRemovals > 0
+        if (paused == value) return false
+        paused = value
+        committedSequence = Long.MIN_VALUE
+        ++token
+        return true
+    }
+
+    fun isPaused(): Boolean = synchronized(lock) { paused }
+
+    fun isCurrent(expected: Long): Boolean = synchronized(lock) { !paused && token == expected }
 
     fun isLatestCommitted(expected: Long, sequence: Long): Boolean = synchronized(lock) {
-        token == expected && committedSequence == sequence
+        !paused && token == expected && committedSequence == sequence
     }
 
     fun <T> mutateIfCurrent(expected: Long, block: () -> T): T? = synchronized(lock) {
-        if (token != expected) null else block()
+        if (paused || token != expected) null else block()
     }
 
     fun <T> commitIfCurrent(expected: Long, sequence: Long, block: () -> T?): T? = synchronized(lock) {
-        if (token != expected || sequence <= committedSequence) return null
+        if (paused || token != expected || sequence <= committedSequence) return null
         block()?.also { committedSequence = sequence }
     }
 }

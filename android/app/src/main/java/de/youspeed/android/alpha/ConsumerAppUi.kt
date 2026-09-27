@@ -96,6 +96,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -221,6 +222,15 @@ fun ConsumerApp(controller: ConsumerSessionController) {
     var openLocalRecordings by rememberSaveable { mutableStateOf(false) }
     var openPanoramaxGallery by rememberSaveable { mutableStateOf(false) }
 
+    SideEffect { controller.setSettingsVisible(openSettings) }
+    DisposableEffect(controller) {
+        onDispose { controller.setSettingsVisible(false) }
+    }
+    val showSettings = {
+        controller.setSettingsVisible(true)
+        openSettings = true
+    }
+
     val showingOnboarding = controller.shouldPresentOnboarding()
     LaunchedEffect(ui.startupDataState, ui.appScreenshotState, showingOnboarding) {
         if (showingOnboarding) {
@@ -242,7 +252,7 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                     MainScreen(
                         controller = controller,
                         ui = ui,
-                        onOpenSettings = { controller.performButtonAction { openSettings = true } },
+                        onOpenSettings = { controller.performButtonAction(showSettings) },
                         onOpenLegal = { controller.performButtonAction { openLegal = true } },
                         onOpenDebug = { controller.performButtonAction { openDebug = true } },
                         onOpenLocalRecordings = { controller.performButtonAction { openLocalRecordings = true } },
@@ -278,7 +288,7 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                     MainScreen(
                         controller = controller,
                         ui = ui,
-                        onOpenSettings = { controller.performButtonAction { openSettings = true } },
+                        onOpenSettings = { controller.performButtonAction(showSettings) },
                         onOpenLegal = { controller.performButtonAction { openLegal = true } },
                         onOpenDebug = { controller.performButtonAction { openDebug = true } },
                         onOpenLocalRecordings = { controller.performButtonAction { openLocalRecordings = true } },
@@ -313,7 +323,7 @@ fun ConsumerApp(controller: ConsumerSessionController) {
             if (openSettings) {
                 SettingsSheet(
                     controller = controller,
-                    onDismiss = { openSettings = false },
+                    onDismiss = { controller.setSettingsVisible(false); openSettings = false },
                     onOpenDebug = { controller.performButtonAction { openDebug = true } },
                 )
             }

@@ -8,6 +8,7 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
+import java.nio.file.Files
 import java.time.Instant
 import org.junit.Assert.*
 import org.junit.Test
@@ -17,6 +18,21 @@ import org.junit.runner.RunWith
 class PanoramaxMetadataInstrumentedTest {
     private val capturedAt = Instant.parse("2026-09-11T12:34:56Z")
     private val sample = PanoramaxLocationSample(-33.123456, -70.654321, capturedAt, 3.0, -12.5, 359.5)
+
+    @Test fun freshQueueThroughSymlinkSharesRevisionsWithCanonicalPeer() = withDirectory { directory ->
+        val realParent = File(directory, "real").apply { mkdirs() }
+        val alias = File(directory, "alias")
+        Files.createSymbolicLink(alias.toPath(), realParent.toPath())
+        try {
+            val store = PanoramaxQueueStore(File(alias, "not-created-yet"))
+            val batch = store.createBatch("alias-session", capturedAt)
+            assertEquals(PanoramaxBatchState.CAPTURING, store.getBatch(batch.batchId)?.state)
+            val peer = PanoramaxQueueStore(File(realParent, "not-created-yet"))
+            peer.transitionBatch(batch.batchId, PanoramaxBatchState.AWAITING_REVIEW)
+            assertEquals("Both path aliases must invalidate the same warm cache",
+                PanoramaxBatchState.AWAITING_REVIEW, store.getBatch(batch.batchId)?.state)
+        } finally { Files.deleteIfExists(alias.toPath()) }
+    }
 
     @Test fun credentialsRoundTripThroughKeystoreCiphertextWithoutPlaintextAtRest() = withDirectory { directory ->
         val context = InstrumentationRegistry.getInstrumentation().targetContext

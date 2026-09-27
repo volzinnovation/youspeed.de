@@ -46,7 +46,7 @@ def generate():
                             license="Apache-2.0" + (" (chosen from Apache-2.0 OR LGPL-2.1-or-later)" if group == "net.java.dev.jna" else ""),
                             source_url=source, license_url=APACHE,
                             changes="Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."))
-    for path in sorted((ROOT / "iphone/SpeedConsumerApp/Rules").glob("*.json")):
+    for path in sorted((ROOT / "shared/Rules").glob("*.json")):
         rules = json.loads(path.read_text())
         source = rules.get("source_url", rules.get("quelle_url"))
         entries.append(dict(id="rules-" + path.stem, title="Traffic-rule reference · " + rules.get("country_name", rules.get("land_name")),

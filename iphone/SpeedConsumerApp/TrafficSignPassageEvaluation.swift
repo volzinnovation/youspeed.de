@@ -1,12 +1,5 @@
 import Foundation
 
-struct TrafficSignRouteRelationMembership: Codable, Equatable, Hashable, Sendable {
-    let groupID: Int
-    let sourceRelationID: Int64?
-
-    var isValid: Bool { groupID > 0 }
-}
-
 enum EffectiveSpeedLimitSource: String, Codable, Equatable, Sendable {
     case camera
     case localCorrection = "local_correction"

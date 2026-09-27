@@ -553,10 +553,7 @@ class V3SpeedLimitLookupInstrumentedTest {
         db: SQLiteDatabase,
         sql: String,
     ) {
-        sql.split(";")
-            .map(String::trim)
-            .filter(String::isNotEmpty)
-            .forEach(db::execSQL)
+        SqliteFixtureSupport.execSql(db, sql)
     }
 
     private fun createMotorwayCorridorFixtureDb(db: SQLiteDatabase) {

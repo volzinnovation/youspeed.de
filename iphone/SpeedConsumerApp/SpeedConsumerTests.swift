@@ -1605,12 +1605,9 @@ final class SpeedConsumerTests: XCTestCase {
         let backend = try TrafficSignVisionTwoStageCoreMLBackend(verifiedPack: pack)
         let testBundle = Bundle(for: SpeedConsumerTests.self)
 
-        for fixture in [
-            (name: "tsr-panoramax-49e25e66", expectedExtent: nil as String?),
-            (name: "tsr-panoramax-0906fc23", expectedExtent: "2 km"),
-        ] {
+        for fixtureName in ["tsr-panoramax-49e25e66", "tsr-panoramax-0906fc23"] {
             let imageURL = try XCTUnwrap(testBundle.url(
-                forResource: fixture.name,
+                forResource: fixtureName,
                 withExtension: "jpg"
             ))
             let imageData = try Data(contentsOf: imageURL)
@@ -1620,23 +1617,20 @@ final class SpeedConsumerTests: XCTestCase {
                 $0.semantic.kind == .maximumSpeed && $0.semantic.value == 70
             }
 
-            XCTAssertNotNil(speed70, "Expected a 70 km/h sign in \(fixture.name)")
+            XCTAssertNotNil(speed70, "Expected a 70 km/h sign in \(fixtureName)")
             XCTAssertNil(speed70?.calibratedConfidence)
             XCTAssertNil(speed70?.detectorCalibratedConfidence)
             XCTAssertNil(speed70?.classifierCalibratedConfidence)
             XCTAssertGreaterThanOrEqual(
                 speed70?.rawScore ?? 0,
                 0.70,
-                "Expected a usable two-stage score in \(fixture.name)"
+                "Expected a usable two-stage score in \(fixtureName)"
             )
-            if let expectedExtent = fixture.expectedExtent {
-                let extent = speed70?.restrictions.first { $0.kind == .extent }
-                XCTAssertEqual(extent?.normalizedValue, expectedExtent)
-                XCTAssertEqual(speed70?.conditionState, .resolved)
-            } else {
-                XCTAssertEqual(speed70?.conditionState, .unresolved)
-                XCTAssertTrue(speed70?.restrictions.contains { $0.kind == .unknown } == true)
-            }
+            // Since the primary-sign-only runtime change (2abb2568), live
+            // inference deliberately leaves supplementary plates to offline
+            // review. Keep the physical model test aligned with that contract.
+            XCTAssertEqual(speed70?.conditionState, TrafficSignConditionState.none)
+            XCTAssertEqual(speed70?.restrictions, [])
         }
 #endif
     }
@@ -4560,6 +4554,99 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(visible.last?.message, "Upload uebertragen – Verarbeitung laeuft weiter")
     }
 
+    @MainActor
+    func testPanoramaxUploadPreparationRunsOffMainAndHonorsCancellation() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "preparation-cancellation")
+        let first = try addPanoramaxTestItem(store: store, batch: batch, itemID: "first", state: .queued)
+        let second = try addPanoramaxTestItem(store: store, batch: batch, itemID: "second", state: .queued)
+        _ = try store.transitionBatch(batch.batchID, to: .uploading)
+        let started = expectation(description: "Disk preparation started")
+        let release = DispatchSemaphore(value: 0)
+        defer { release.signal() }
+        let worker = PanoramaxQueueMaintenanceExecutor { store, batchID, itemID in
+            XCTAssertFalse(Thread.isMainThread, "JPEG/EXIF/hash work must not occupy the UI thread")
+            XCTAssertEqual(itemID, first.itemID, "Cancelled queued work must not begin disk preparation")
+            started.fulfill()
+            guard release.wait(timeout: .now() + 10) == .success else {
+                throw PanoramaxTransportTestError.timedOut
+            }
+            return try store.prepareOriginalForUpload(batchID: batchID, itemID: itemID)
+        }
+        let intents = PanoramaxLocalDeletionIntentRegistry()
+        let firstTask = Task {
+            do {
+                return try await worker.prepareOriginalForUpload(
+                    store: store, batchID: batch.batchID, itemID: first.itemID, localDeletionIntents: intents
+                )
+            } catch {
+                try await worker.abandonInFlightItems(store: store, batchID: batch.batchID)
+                throw error
+            }
+        }
+        await fulfillment(of: [started], timeout: 5)
+        // This MainActor continuation must run while the storage worker is
+        // blocked, so Stop can be handled before preparation returns.
+        let queuedTask = Task {
+            try await worker.prepareOriginalForUpload(
+                store: store, batchID: batch.batchID, itemID: second.itemID, localDeletionIntents: intents
+            )
+        }
+        firstTask.cancel()
+        queuedTask.cancel()
+        release.signal()
+        for task in [firstTask, queuedTask] {
+            do {
+                _ = try await task.value
+                XCTFail("Cancelled preparation must not return a file for transport")
+            } catch is CancellationError {
+                // Both in-progress and queued preparations retain their pending state.
+            }
+        }
+        XCTAssertEqual(try store.getBatch(batch.batchID)?.items.map(\.state), [.queued, .queued])
+        XCTAssertEqual(try store.getBatch(batch.batchID)?.state, .partial,
+                       "Cancelled tasks must still persist recovery before they finish")
+    }
+
+    @MainActor
+    func testPanoramaxUploadPreparationRespectsDeletionDuringDiskWork() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "preparation-deletion")
+        let item = try addPanoramaxTestItem(store: store, batch: batch, itemID: "pending", state: .queued)
+        let started = expectation(description: "Disk preparation started")
+        let release = DispatchSemaphore(value: 0)
+        defer { release.signal() }
+        let worker = PanoramaxQueueMaintenanceExecutor { store, batchID, itemID in
+            started.fulfill()
+            guard release.wait(timeout: .now() + 10) == .success else {
+                throw PanoramaxTransportTestError.timedOut
+            }
+            return try store.prepareOriginalForUpload(batchID: batchID, itemID: itemID)
+        }
+        let intents = PanoramaxLocalDeletionIntentRegistry()
+        let task = Task {
+            try await worker.prepareOriginalForUpload(
+                store: store, batchID: batch.batchID, itemID: item.itemID, localDeletionIntents: intents
+            )
+        }
+        await fulfillment(of: [started], timeout: 5)
+        intents.mark(batchID: batch.batchID, itemIDs: [item.itemID])
+        release.signal()
+        let prepared = try await task.value
+        XCTAssertNil(prepared, "Pending local deletion must win before a file reaches transport")
+        XCTAssertEqual(try store.getBatch(batch.batchID)?.items.first?.state, .queued)
+
+        intents.clear(batchID: batch.batchID, itemIDs: [item.itemID])
+        let available = try await PanoramaxQueueMaintenanceExecutor.shared.prepareOriginalForUpload(
+            store: store, batchID: batch.batchID, itemID: item.itemID, localDeletionIntents: intents
+        )
+        XCTAssertEqual(available, store.originalURL(for: item))
+    }
+
     func testPanoramaxUploadPreflightReportsMissingOriginalsAndPreservesSelection() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -4836,7 +4923,8 @@ final class SpeedConsumerTests: XCTestCase {
             .uploading
         )
 
-        let stopped = try store.abandonInFlightItems(batchID: batch.batchID)
+        try await PanoramaxQueueMaintenanceExecutor.shared.abandonInFlightItems(store: store, batchID: batch.batchID)
+        let stopped = try XCTUnwrap(store.getBatch(batch.batchID))
         XCTAssertEqual(stopped.items.first?.state, .abandoned)
         let resumedAcceptedUpload = await transport.resumeNextUpload()
         XCTAssertTrue(resumedAcceptedUpload)
@@ -5187,6 +5275,217 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
     @discardableResult
+    func testPanoramaxJournalMakesGrowingCaptureAndStatusWritesLinear() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "linear")
+        let legacyEncoder = JSONEncoder()
+        legacyEncoder.dateEncodingStrategy = .iso8601
+        var legacyBytes: Int64 = Int64(try legacyEncoder.encode(batch).count)
+        for index in 0..<512 {
+            _ = try addPanoramaxTestItem(store: store, batch: batch, itemID: "photo-\(index)")
+            legacyBytes += Int64(try legacyEncoder.encode(XCTUnwrap(store.getBatch(batch.batchID))).count)
+        }
+        let capture = store.persistenceStatistics
+        let captured = try XCTUnwrap(store.getBatch(batch.batchID))
+        for item in captured.items {
+            let snapshot = try store.updateItem(batchID: batch.batchID, itemID: item.itemID, state: .uploaded)
+            legacyBytes += Int64(try legacyEncoder.encode(snapshot).count)
+        }
+        let complete = store.persistenceStatistics
+        // Full JSON rewrites would exceed 80 MB for this fixture. Persisting
+        // only item changes with geometric checkpoints keeps both phases small.
+        XCTAssertLessThan(complete.metadataBytesWritten, 4_000_000)
+        XCTAssertLessThan(complete.metadataBytesWritten * 20, legacyBytes)
+        XCTAssertEqual(complete.journalWrites, 1_024)
+        XCTAssertLessThan(complete.checkpointWrites, 20)
+        XCTAssertEqual(complete.snapshotReads, 0)
+        let reopened = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let restored = try XCTUnwrap(reopened.getBatch(batch.batchID))
+        XCTAssertEqual(restored.items.count, 512)
+        XCTAssertTrue(restored.items.allSatisfy { $0.state == .uploaded })
+        print("Panoramax journal IO: capture512=\(capture); capture512+status512=\(complete); legacyFullRewrites=\(legacyBytes)")
+    }
+
+    func testPanoramaxGalleryScanDoesNotEvictHotCaptureBatch() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        for index in 0..<6 { _ = try store.createBatch(captureSessionID: "archived-\(index)") }
+        let hot = try store.createBatch(captureSessionID: "hot")
+        _ = try addPanoramaxTestItem(store: store, batch: hot, itemID: "first")
+        XCTAssertEqual(try store.listBatches().count, 7)
+        let reads = store.persistenceStatistics.snapshotReads
+        _ = try addPanoramaxTestItem(store: store, batch: hot, itemID: "second")
+        XCTAssertEqual(store.persistenceStatistics.snapshotReads, reads)
+        XCTAssertEqual(try store.getBatch(hot.batchID)?.items.count, 2)
+    }
+
+    func testPanoramaxJournalCheckpointSurvivesInterruptedPruning() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "watermark")
+        let item = try addPanoramaxTestItem(store: store, batch: batch, itemID: "original", state: .uploading)
+        let directory = root.appendingPathComponent("Panoramax/batches/\(batch.batchID).journal")
+        let obsolete = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" }.map { ($0, try Data(contentsOf: $0)) }
+        _ = try store.updateItem(batchID: batch.batchID, itemID: item.itemID, state: .uploaded)
+        try store.checkpoint(batchID: batch.batchID)
+        // Simulate process exit after replacing the checkpoint but before
+        // pruning older pending/in-flight records. Known acceptance must win.
+        for (url, bytes) in obsolete { try bytes.write(to: url) }
+        try Data("unfinished".utf8).write(to: directory.appendingPathComponent("00000000000000099999.json.tmp"))
+        let reopened = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        XCTAssertEqual(try reopened.getBatch(batch.batchID)?.items.first?.state, .uploaded)
+        _ = try reopened.updateItemFavorite(batchID: batch.batchID, itemID: item.itemID, isFavorite: true)
+        XCTAssertEqual(try PanoramaxQueueStore(root: root, performStartupMaintenance: false).getBatch(batch.batchID)?.items.first?.isFavorite, true)
+    }
+
+    func testPanoramaxJournalLegacyUpgradeAndMalformedRecordPreserveAssets() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "legacy", createdAt: Date(timeIntervalSince1970: 1_000))
+        let item = try addPanoramaxTestItem(store: store, batch: batch, itemID: "original")
+        try store.checkpoint(batchID: batch.batchID)
+        let file = root.appendingPathComponent("Panoramax/batches/\(batch.batchID).json")
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        object.removeValue(forKey: "_queue_checkpoint")
+        try JSONSerialization.data(withJSONObject: object).write(to: file, options: .atomic)
+        let legacy = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        XCTAssertEqual(try legacy.getBatch(batch.batchID)?.items.first, item)
+        _ = try legacy.updateItem(batchID: batch.batchID, itemID: item.itemID, state: .accepted)
+        let directory = root.appendingPathComponent("Panoramax/batches/\(batch.batchID).journal")
+        let record = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil).first { $0.pathExtension == "json" })
+        try Data("{broken".utf8).write(to: record)
+        let reopened = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        XCTAssertThrowsError(try reopened.getBatch(batch.batchID))
+        let cleanup = reopened.performStartupMaintenanceNow()
+        XCTAssertTrue(cleanup.hasFailures)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(store.originalURL(for: item)).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(store.thumbnailURL(for: item)).path))
+        XCTAssertEqual(cleanup.removedOrphanFileCount, 0)
+    }
+
+    func testPanoramaxJournalPeerStoresSerializeMutationsAndDeletionTombstones() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "concurrent")
+        for index in 0..<64 { _ = try addPanoramaxTestItem(store: store, batch: batch, itemID: "photo-\(index)") }
+        let stale = try XCTUnwrap(store.getBatch(batch.batchID))
+        let peer = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        _ = try peer.getBatch(batch.batchID)
+        DispatchQueue.concurrentPerform(iterations: 64) { index in
+            do {
+                if index % 2 == 0 {
+                    _ = try store.updateItem(batchID: batch.batchID, itemID: "photo-\(index)", state: .accepted)
+                } else {
+                    _ = try peer.updateItemFavorite(batchID: batch.batchID, itemID: "photo-\(index)", isFavorite: true)
+                }
+            } catch { XCTFail("Concurrent queue mutation failed: \(error)") }
+        }
+        let result = try XCTUnwrap(store.getBatch(batch.batchID))
+        for (index, item) in result.items.enumerated() {
+            if index % 2 == 0 { XCTAssertEqual(item.state, .accepted) }
+            else { XCTAssertTrue(item.isFavorite) }
+        }
+        XCTAssertEqual(try peer.getBatch(batch.batchID), result)
+        _ = try peer.deleteItems(batchID: batch.batchID, itemIDs: ["photo-1"])
+        try store.updateBatch(stale)
+        XCTAssertFalse(try XCTUnwrap(PanoramaxQueueStore(root: root, performStartupMaintenance: false).getBatch(batch.batchID)).items.contains { $0.itemID == "photo-1" })
+    }
+
+    func testPanoramaxJournalFirstStoreThroughMissingAliasSharesPeerMutationsAndTombstones() throws {
+        let fileManager = FileManager.default
+        let directory = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? fileManager.removeItem(at: directory) }
+        let target = directory.appendingPathComponent("target", isDirectory: true)
+        try fileManager.createDirectory(at: target, withIntermediateDirectories: true)
+        let alias = directory.appendingPathComponent("alias", isDirectory: true)
+        try fileManager.createSymbolicLink(at: alias, withDestinationURL: target)
+        let missingRoot = alias.appendingPathComponent("new-queue", isDirectory: true)
+        XCTAssertFalse(fileManager.fileExists(atPath: missingRoot.path))
+
+        // The first store creates a missing queue through an ancestor symlink;
+        // subsequent stores encounter an existing directory. These must share
+        // coordination even though Foundation resolves the two paths differently
+        // before creation. This also reproduces physical iPhone /var aliases.
+        let first = try PanoramaxQueueStore(root: missingRoot, performStartupMaintenance: false)
+        let batch = try first.createBatch(captureSessionID: "aliased-root")
+        let item = try addPanoramaxTestItem(store: first, batch: batch, itemID: "photo")
+        let stale = try XCTUnwrap(first.getBatch(batch.batchID))
+        let peer = try PanoramaxQueueStore(
+            root: target.appendingPathComponent("new-queue", isDirectory: true),
+            performStartupMaintenance: false
+        )
+        _ = try peer.getBatch(batch.batchID)
+        _ = try first.updateItem(batchID: batch.batchID, itemID: item.itemID, state: .accepted)
+        _ = try peer.updateItemFavorite(batchID: batch.batchID, itemID: item.itemID, isFavorite: true)
+        let result = try XCTUnwrap(first.getBatch(batch.batchID))
+        XCTAssertEqual(result.items.first?.state, .accepted)
+        XCTAssertEqual(result.items.first?.isFavorite, true)
+        XCTAssertEqual(try peer.getBatch(batch.batchID), result)
+
+        _ = try peer.deleteItems(batchID: batch.batchID, itemIDs: [item.itemID])
+        try first.updateBatch(stale)
+        let reopened = try PanoramaxQueueStore(root: missingRoot, performStartupMaintenance: false)
+        XCTAssertTrue(try XCTUnwrap(reopened.getBatch(batch.batchID)).items.isEmpty,
+                      "An older aliased store must not resurrect a peer's deleted photo.")
+    }
+
+    func testPanoramaxFailedCheckpointKeepsDurableAcceptance() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "checkpoint-failure")
+        let item = try addPanoramaxTestItem(store: store, batch: batch, itemID: "original")
+        let blocked = root.appendingPathComponent("Panoramax/batches/\(batch.batchID).json.tmp")
+        try FileManager.default.createDirectory(at: blocked, withIntermediateDirectories: true)
+        try Data("blocked".utf8).write(to: blocked.appendingPathComponent("blocked"))
+        for index in 0..<128 { _ = try store.updateItemFavorite(batchID: batch.batchID, itemID: item.itemID, isFavorite: index % 2 == 0) }
+        _ = try store.updateItem(batchID: batch.batchID, itemID: item.itemID, state: .accepted)
+        XCTAssertEqual(try PanoramaxQueueStore(root: root, performStartupMaintenance: false).getBatch(batch.batchID)?.items.first?.state, .accepted)
+    }
+
+    @MainActor
+    func testPanoramaxStorageActorSuspendsUIWhileAnotherOperationOwnsQueueLock() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "blocked-lock")
+        let item = try addPanoramaxTestItem(store: store, batch: batch, itemID: "original", state: .uploading)
+        let worker = PanoramaxQueueMaintenanceExecutor()
+        let started = expectation(description: "A background operation owns the store lock")
+        let release = DispatchSemaphore(value: 0)
+        defer { release.signal() }
+        let blocked = Task.detached {
+            try store.mutateBatch(batch.batchID) { _ in
+                started.fulfill()
+                XCTAssertEqual(release.wait(timeout: .now() + 10), .success)
+            }
+        }
+        await fulfillment(of: [started], timeout: 5)
+        let accepted = Task {
+            try await worker.perform(store: store) { store in
+                XCTAssertFalse(Thread.isMainThread)
+                return try store.updateItem(batchID: batch.batchID, itemID: item.itemID, state: .uploaded)
+            }
+        }
+        // Give the actor time to enter the lock. MainActor must still be able
+        // to handle Stop; acceptance persistence deliberately ignores cancel.
+        try await Task.sleep(nanoseconds: 20_000_000)
+        accepted.cancel()
+        release.signal()
+        _ = try await blocked.value
+        _ = try await accepted.value
+        try await worker.abandonInFlightItems(store: store, batchID: batch.batchID)
+        let snapshot = try await worker.perform(store: store) { try $0.getBatch(batch.batchID) }
+        XCTAssertEqual(snapshot?.items.first?.state, .uploaded)
+    }
+
     private func addPanoramaxTestItem(
         store: PanoramaxQueueStore,
         batch: PanoramaxBatchRecord,
@@ -5758,6 +6057,38 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(MatcherDebugProfile.m11.matchingModel, .simpleSequenceParticleHeuristic)
         XCTAssertEqual(MatcherDebugProfile.m12.debugLabel, "M12 M11 + 10-fix HMM/Viterbi")
         XCTAssertEqual(MatcherDebugProfile.m12.matchingModel, .simpleSequenceViterbiHeuristic)
+    }
+
+    func testBundleQuickCheckRejectsIntegrityErrorsReturnedAsRows() async throws {
+        let database = FileManager.default.temporaryDirectory.appendingPathComponent("quick-check-\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: database) }
+        try createFixtureV3DB(at: database)
+        let manager = V3BundleManager()
+        try await manager.quickValidateDB(at: database)
+
+        // Corrupt a persisted schema declaration without changing its byte
+        // length. This bypasses iOS SQLite's defensive SQL settings only in the
+        // fixture and leaves a NULL in a column now declared NOT NULL.
+        try executeSQL(at: database, sql: """
+        CREATE TABLE integrity_fixture (value INTEGER         );
+        INSERT INTO integrity_fixture VALUES (NULL);
+        """)
+        var bytes = try Data(contentsOf: database)
+        let declaration = Data("value INTEGER         ".utf8)
+        let corruptedDeclaration = Data("value INTEGER NOT NULL".utf8)
+        XCTAssertEqual(declaration.count, corruptedDeclaration.count)
+        let range = try XCTUnwrap(bytes.range(of: declaration))
+        bytes.replaceSubrange(range, with: corruptedDeclaration)
+        try bytes.write(to: database, options: .atomic)
+        do {
+            try await manager.quickValidateDB(at: database)
+            XCTFail("A successful PRAGMA execution is not evidence of database integrity")
+        } catch ConsumerAppError.sqlite(let detail) {
+            XCTAssertTrue(detail.contains("NULL value in integrity_fixture.value"), detail)
+        }
+        // The explicit fast path for an already verified installed bundle
+        // continues to validate capabilities/schema without repeating integrity work.
+        try await manager.quickValidateDB(at: database, runQuickCheck: false)
     }
 
     func testSwitchingRegionsWithSharedReleaseDatesDownloadsTheSelectedDatabase() async throws {
@@ -20812,5 +21143,188 @@ extension SpeedConsumerTests {
             source: "settlement:landuse:low"), "The old confirmed locality must not trigger a warning for the new weak context")
         XCTAssertNil(model.currentPenaltyNotice?.drivingBanMonths)
         XCTAssertEqual(model.lastLookupInsideCity, true)
+    }
+}
+
+/// Real AVFoundation stills in an isolated queue. Movement is synthetic because
+/// an attached stationary phone cannot satisfy Panoramax's GPS-distance rule.
+@MainActor
+final class PhysicalCameraSettingsContinuityTests: XCTestCase {
+    func testRealPhotosContinueAcrossSettingsMapPauseWithIsolatedStorage() async throws {
+#if targetEnvironment(simulator)
+        throw XCTSkip("Requires the physical iPhone camera and an authorized GPS fix")
+#else
+        guard ProcessInfo.processInfo.environment["YOUSPEED_RUN_PHYSICAL_CAMERA_TEST"] == "1" else {
+            throw XCTSkip("Explicit physical-camera test opt-in is required")
+        }
+        guard let restoreAudio = ProcessInfo.processInfo.environment["YOUSPEED_TEST_RESTORE_AUDIO_ALERTS"],
+              ["true", "false", "absent"].contains(restoreAudio) else {
+            throw XCTSkip("A pre-launch audio preference snapshot (true, false, or absent) is required")
+        }
+        addTeardownBlock {
+            let defaults = UserDefaults.standard
+            let key = "youspeed.audio_alerts_enabled"
+            if restoreAudio == "absent" {
+                defaults.removeObject(forKey: key)
+            } else {
+                defaults.set(restoreAudio == "true", forKey: key)
+            }
+            XCTAssertTrue(defaults.synchronize(), "Persist the exact pre-launch audio preference")
+            let domain = try XCTUnwrap(Bundle.main.bundleIdentifier)
+            let restored = defaults.persistentDomain(forName: domain)?[key]
+            if restoreAudio == "absent" {
+                XCTAssertNil(restored)
+            } else {
+                XCTAssertEqual(restored as? Bool, restoreAudio == "true")
+            }
+        }
+        guard AppScreenshotState.current() == .cameraLimitActive else {
+            throw XCTSkip("Requires the camera-limit-active host fixture to isolate the real camera session")
+        }
+        guard AVCaptureDevice.authorizationStatus(for: .video) == .authorized else {
+            throw XCTSkip("Camera permission must already be granted; this test does not change permissions")
+        }
+        guard CLLocationManager.locationServicesEnabled() else {
+            throw XCTSkip("Location services are unavailable")
+        }
+        let manager = CLLocationManager()
+        guard manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways else {
+            throw XCTSkip("Location permission must already be granted")
+        }
+        let locationDelegate = OneShotLocationDelegate()
+        manager.delegate = locationDelegate
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        let locationReceived = expectation(description: "Receive device Core Location anchor")
+        var locationResult: Result<CLLocation, Error>?
+        locationDelegate.onResult = {
+            locationResult = $0
+            locationReceived.fulfill()
+        }
+        manager.requestLocation()
+        await fulfillment(of: [locationReceived], timeout: 20)
+        manager.delegate = nil
+        let anchor = try XCTUnwrap(locationResult, "No Core Location anchor was received").get()
+        XCTAssertTrue(CLLocationCoordinate2DIsValid(anchor.coordinate))
+        XCTAssertGreaterThanOrEqual(anchor.horizontalAccuracy, 0)
+        XCTAssertLessThanOrEqual(abs(anchor.timestamp.timeIntervalSinceNow), 30,
+            "The device GPS anchor must be current, not a cached historical fix")
+
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("physical-camera-settings-\(UUID().uuidString)", isDirectory: true)
+        let store = try PanoramaxQueueStore(root: root)
+        let capture = DriveCaptureCoordinator(queueStore: store)
+        // No movie output: movie completion uses the user's global retention
+        // directory. This test only owns JPEGs under its unique temporary root.
+        capture.updatePanoramaxConfiguration(
+            PanoramaxCadenceConfiguration(distanceMeters: 25, fallbackInterval: 0,
+                maxLocationAge: 10, maxAccuracyMeters: 50, triggerMode: .distance),
+            storageLimitBytes: nil
+        )
+        addTeardownBlock { @MainActor in
+            capture.stop()
+            let deadline = Date().addingTimeInterval(18)
+            while Date() < deadline {
+                let batches = try? store.listBatches()
+                let queueClosed = batches?.allSatisfy { $0.state != .capturing } ?? false
+                if capture.state != .preparing && capture.state != .recording && capture.state != .stopping && queueClosed {
+                    try? FileManager.default.removeItem(at: root)
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+            XCTFail("Isolated camera session did not stop; retained only its temporary test directory")
+        }
+        capture.start(dashcamEnabled: false, trafficSignRecognitionEnabled: false, panoramaxEnabled: true)
+        try await waitForPhysicalCameraCondition("Camera recording state: \(capture.lastCaptureDetail)") {
+            capture.state == .recording
+        }
+        let sessionID = try XCTUnwrap(capture.activeCaptureSessionID)
+        let startedAt = try XCTUnwrap(capture.startedAt)
+        XCTAssertTrue(capture.isPanoramaxModuleActive)
+        XCTAssertNil(capture.dashcamFileURL)
+
+        let worker = LatestPendingLookupWorker()
+        var pause = MapLookupPauseState()
+        let mapStarted = expectation(description: "A pre-Settings map query is blocked")
+        var releaseMap: CheckedContinuation<Void, Never>?
+        var publishedMapResults: [Int] = []
+        worker.submit { token in
+            mapStarted.fulfill()
+            await withCheckedContinuation { releaseMap = $0 }
+            if token.isCurrent { publishedMapResults.append(0) }
+        }
+        await fulfillment(of: [mapStarted], timeout: 2)
+        defer { releaseMap?.resume(); releaseMap = nil; worker.cancel() }
+
+        for phase in 0...2 {
+            if phase == 1 {
+                pause.settingsPresented = true
+                worker.setPaused(pause.isPaused)
+                worker.submit { _ in XCTFail("A map fix ran while Settings was open") }
+            } else if phase == 2 {
+                releaseMap?.resume()
+                releaseMap = nil
+                await worker.waitUntilIdle()
+                XCTAssertTrue(publishedMapResults.isEmpty, "A pre-Settings result must stay invalid")
+                pause.settingsPresented = false
+                worker.setPaused(pause.isPaused)
+                worker.submit { token in
+                    if token.isCurrent { publishedMapResults.append(2) }
+                }
+                await worker.waitUntilIdle()
+            }
+            // Core Location supplies the anchor. Explicit synthetic motion and speed
+            // exercise production cadence while the connected phone stays still.
+            let coordinate = CLLocationCoordinate2D(
+                latitude: anchor.coordinate.latitude + Double(phase) * 0.002,
+                longitude: anchor.coordinate.longitude
+            )
+            let fix = CLLocation(coordinate: coordinate, altitude: anchor.altitude,
+                horizontalAccuracy: 5, verticalAccuracy: 5, course: 0,
+                speed: 8, timestamp: Date())
+            capture.ingest(location: fix, speedMetersPerSecond: 8)
+            try await waitForPhysicalCameraCondition("Persist real JPEG for phase \(phase)") {
+                capture.capturedImageCount == phase + 1
+            }
+            XCTAssertEqual(capture.state, .recording)
+            XCTAssertEqual(capture.activeCaptureSessionID, sessionID)
+            XCTAssertEqual(capture.startedAt, startedAt, "Settings must not restart the camera")
+            let batch = try XCTUnwrap(store.listBatches().first)
+            XCTAssertEqual(batch.items.count, phase + 1)
+            let item = try XCTUnwrap(batch.items.last)
+            XCTAssertEqual(item.metadata.captureSessionID, sessionID)
+            XCTAssertEqual(item.metadata.location.latitude, coordinate.latitude, accuracy: 0.000001)
+            XCTAssertEqual(item.metadata.location.longitude, coordinate.longitude, accuracy: 0.000001)
+            let original = try XCTUnwrap(store.originalURL(for: item))
+            XCTAssertTrue(original.resolvingSymlinksInPath().standardizedFileURL.path.hasPrefix(
+                root.resolvingSymlinksInPath().standardizedFileURL.path + "/"))
+            let source = try XCTUnwrap(CGImageSourceCreateWithURL(original as CFURL, nil))
+            let decoded = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
+            XCTAssertGreaterThan(decoded.width, 0)
+            XCTAssertGreaterThan(decoded.height, 0)
+        }
+        XCTAssertEqual(publishedMapResults, [2])
+        let anchorSource = anchor.sourceInformation.map {
+            "simulated_by_software=\($0.isSimulatedBySoftware) produced_by_accessory=\($0.isProducedByAccessory)"
+        } ?? "source_information=unavailable"
+        let evidence = XCTAttachment(string: "Host isolation: existing camera-limit-active screenshot fixture; live Settings UI is tested separately without that fixture. Independent real AVFoundation camera: 3 decoded JPEGs; same capture session before/during/after production Settings map pause. Core Location anchor: \(anchorSource); explicit synthetic movement and speed. Isolated temporary Panoramax queue; no movie recording or upload. Teardown restores the host fixture's audio preference to the exact pre-launch snapshot.")
+        evidence.name = "physical-camera-settings-continuity.txt"
+        evidence.lifetime = .keepAlways
+        add(evidence)
+#endif
+    }
+
+    private func waitForPhysicalCameraCondition(
+        _ detail: String,
+        condition: @MainActor () -> Bool
+    ) async throws {
+        let deadline = Date().addingTimeInterval(18)
+        while !condition(), Date() < deadline {
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        guard condition() else {
+            throw NSError(domain: "PhysicalCameraSettingsContinuityTests", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: detail])
+        }
     }
 }

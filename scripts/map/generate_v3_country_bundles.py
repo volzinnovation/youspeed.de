@@ -594,7 +594,7 @@ def _bundle_commands(
     if target.iso2 == "FR":
         commands[1].extend(["--build-way-links", "--way-links-schema", "detailed"])
         commands[-1].extend([
-            "--penalty-rules", str(repo_root / "iphone/SpeedConsumerApp/Rules/FRA-rules.json"),
+            "--penalty-rules", str(repo_root / "shared/Rules/FRA-rules.json"),
             "--penalty-rules-file-name", "FRA-rules.json",
         ])
 

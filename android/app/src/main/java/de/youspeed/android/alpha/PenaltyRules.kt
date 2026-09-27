@@ -4,6 +4,7 @@ import java.util.Locale
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
@@ -17,11 +18,11 @@ enum class PenaltySeverity {
     POINTS_AND_FINE;
 
     companion object {
-        fun fromRaw(raw: String?): PenaltySeverity {
-            return when (raw?.trim()?.lowercase(Locale.US)) {
+        fun fromRaw(raw: String): PenaltySeverity {
+            return when (raw.trim().lowercase(Locale.US)) {
                 "money_only", "nur_geldbusse" -> MONEY_ONLY
                 "points_and_fine", "punkte_und_geldbusse" -> POINTS_AND_FINE
-                else -> MONEY_ONLY
+                else -> throw IllegalArgumentException("Unsupported penalty severity: $raw")
             }
         }
     }
@@ -210,7 +211,13 @@ object PenaltyRulesParser {
 
     private fun parseBand(root: JsonObject): OverspeedPenaltyBand {
         val points = root.valueForInt("penalty_points", "punkte")
-        val severity = root.valueForString("severity", "schweregrad")?.let(PenaltySeverity::fromRaw)
+        // Like Swift's decodeFirst, the first present key wins, including null.
+        // Missing/null severity is inferred from points; malformed values are not.
+        val severityValue = listOf("severity", "schweregrad").firstOrNull(root::containsKey)?.let(root::get)
+        val severity = severityValue?.takeUnless { it == JsonNull }?.let {
+            require(it is JsonPrimitive && it.isString) { "Penalty severity must be a string" }
+            PenaltySeverity.fromRaw(it.content)
+        }
             ?: if ((points ?: 0) > 0) PenaltySeverity.POINTS_AND_FINE else PenaltySeverity.MONEY_ONLY
         val variantsRoot = root.valueForObject("locality_variants", "ortsvarianten")
         val postedVariants = root.valueForObject("posted_limit_variants")

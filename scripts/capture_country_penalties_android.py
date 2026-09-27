@@ -34,7 +34,7 @@ def main():
     for code, folder, locale, deltas in matrix:
         destination = args.output / "android" / folder
         destination.mkdir(parents=True, exist_ok=True)
-        rules = json.loads((repo / f"android/app/src/main/assets/Rules/{code}-rules.json").read_text())
+        rules = json.loads((repo / f"shared/Rules/{code}-rules.json").read_text())
         run("shell", "cmd", "locale", "set-app-locales", package, "--locales", locale)
         scenarios = [(delta, 50) for delta in deltas]
         if code == "FRA":

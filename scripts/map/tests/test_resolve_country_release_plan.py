@@ -53,7 +53,7 @@ class ResolveCountryReleasePlanTests(unittest.TestCase):
                     "iso2": "NL",
                     "penalty_rules": {
                         "file": "NLD-rules.json",
-                        "source": "iphone/SpeedConsumerApp/Rules/NLD-rules.json",
+                        "source": "shared/Rules/NLD-rules.json",
                     },
                     "mode": "single_country",
                     "regions": [{"region_id": "netherlands"}],
@@ -103,7 +103,7 @@ class ResolveCountryReleasePlanTests(unittest.TestCase):
         self.assertEqual(plan["penalty_rules_file_name"], "NLD-rules.json")
         self.assertEqual(
             plan["penalty_rules_source_path"],
-            str((root / "iphone/SpeedConsumerApp/Rules/NLD-rules.json").resolve()),
+            str((root / "shared/Rules/NLD-rules.json").resolve()),
         )
 
     def test_resolves_germany_state_release_plan_with_parent_iso2_override(self) -> None:

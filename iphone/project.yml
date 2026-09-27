@@ -35,7 +35,7 @@ targets:
         buildPhase: resources
       - path: SpeedConsumerApp/PrivacyInfo.xcprivacy
         buildPhase: resources
-      - path: SpeedConsumerApp/Rules
+      - path: ../shared/Rules
         buildPhase: resources
       - path: SpeedConsumerApp/TSRModelPacks
         type: folder
@@ -100,6 +100,9 @@ targets:
           - "SpeedDBBenchTests.swift"
           - "README.md"
       - path: SpeedConsumerApp/V3SpeedLimitService.swift
+      - path: SpeedConsumerApp/V3LookupResources.swift
+      - path: SpeedConsumerApp/MatcherCoreModels.swift
+      - path: SpeedConsumerApp/TrafficSignApplicability.swift
       - path: SpeedConsumerApp/RoadSpeedDefaults.swift
       - path: SpeedDBBenchSketch/BenchmarkAssets
         buildPhase: resources
@@ -131,6 +134,18 @@ targets:
       - path: SpeedConsumerApp/SpeedConsumerTests.swift
       - path: SpeedConsumerApp/TrafficSignApplicabilityTests.swift
       - path: SpeedConsumerApp/SpeedLimitReferenceModelTests.swift
+      - path: SpeedConsumerTests
+      - path: ../shared/tsr/passage/suppression-v1.json
+        buildPhase: resources
+      - path: ../shared/matcher/candidate-admission-v1.json
+        buildPhase: resources
+      - path: ../shared/matcher/candidate-admission-v1.sql
+        buildPhase: resources
+      - path: ../shared/matcher/sequence-v1.json
+        buildPhase: resources
+      - path: ../shared/matcher/fixtures
+        type: folder
+        buildPhase: resources
       - path: ../shared/tsr/applicability/golden-vectors-v1.json
         buildPhase: resources
       - path: ../shared/tsr/applicability/paca-exit-topology-v1.sql

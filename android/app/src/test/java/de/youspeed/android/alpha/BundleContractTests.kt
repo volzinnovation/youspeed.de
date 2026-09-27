@@ -641,9 +641,9 @@ private fun bundledTargetsAsset(): File {
 
 private fun bundledRulesAsset(fileName: String): File {
     val candidates = listOf(
-        File("app/src/main/assets/Rules/$fileName"),
-        File("src/main/assets/Rules/$fileName"),
-        File("../app/src/main/assets/Rules/$fileName"),
+        File("../shared/Rules/$fileName"),
+        File("../../shared/Rules/$fileName"),
+        File("shared/Rules/$fileName"),
     )
     return candidates.firstOrNull { it.exists() }
         ?: error("Unable to locate $fileName from ${System.getProperty("user.dir")}")

@@ -23,6 +23,8 @@ jobs:
           python-version: "3.12"
       - name: Verify frozen policy and executable scenarios
         run: python3 scripts/speed_limit_reference/check.py
+      - name: Verify shared mobile rule sources
+        run: python3 scripts/check_mobile_rules.py
 
   android-tests:
     runs-on: ubuntu-latest
@@ -45,12 +47,47 @@ jobs:
         working-directory: android
         env:
           TSR_APPLICABILITY_PARITY_OUTPUT: ${{ github.workspace }}/applicability-kotlin.json
-        run: ./gradlew :app:testDebugUnitTest -Duser.language=de -Duser.country=DE
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug -Duser.language=de -Duser.country=DE
+
+      - name: Verify packaged Android country rules
+        run: python3 scripts/check_mobile_rules.py --android-apk android/app/build/outputs/apk/debug/app-debug.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: applicability-kotlin
           path: applicability-kotlin.json
+
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # These tests need Android SQLite, filesystem, EXIF and Keystore implementations.
+      # The real-Rtree fixture also checks the production fallback when the image lacks Rtree.
+      - name: Run Android native conformance tests
+        uses: reactivecircus/android-emulator-runner@b530d96654c385303d652368551fb075bc2f0b6b # v2.35.0
+        timeout-minutes: 20
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          working-directory: android
+          disable-animations: true
+          script: >-
+            ./gradlew :app:connectedDebugAndroidTest
+            -Pandroid.testInstrumentationRunnerArguments.class=de.youspeed.android.alpha.CandidateAdmissionParityInstrumentedTest,de.youspeed.android.alpha.MatcherSequenceParityInstrumentedTest,de.youspeed.android.alpha.MatcherParityInstrumentedTest,de.youspeed.android.alpha.LookupResourcesInstrumentedTest,de.youspeed.android.alpha.NativeRtreeFallbackInstrumentedTest,de.youspeed.android.alpha.V3SpeedLimitLookupInstrumentedTest,de.youspeed.android.alpha.PanoramaxMetadataInstrumentedTest
+
+      - name: Upload Android native test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-native-conformance
+          path: |
+            android/app/build/reports/androidTests/connected/
+            android/app/build/outputs/androidTest-results/connected/
+          if-no-files-found: warn
+          retention-days: 14
 
   ios-tests:
     runs-on: macos-15
@@ -60,6 +97,9 @@ jobs:
 
       - name: Build consumer app
         run: ./scripts/iphone/build_consumer_app.sh --skip-project-gen
+
+      - name: Verify packaged iPhone country rules
+        run: python3 scripts/check_mobile_rules.py --iphone-app iphone/.derived/SpeedConsumerBuild/Build/Products/Debug-iphonesimulator/SpeedConsumer.app
 
       - name: Run iOS simulator tests
         run: |

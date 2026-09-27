@@ -54,7 +54,7 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
         )
         self.assertEqual(commands[2][commands[2].index("--min-app-version") + 1], "1.1.1")
         self.assertEqual(commands[2][commands[2].index("--penalty-rules-file-name") + 1], "FRA-rules.json")
-        self.assertIn(str(REPO_ROOT / "iphone/SpeedConsumerApp/Rules/FRA-rules.json"), commands[2])
+        self.assertIn(str(REPO_ROOT / "shared/Rules/FRA-rules.json"), commands[2])
         self.assertEqual(commands[1][commands[1].index("--country-code") + 1], "FR")
         self.assertIn("--build-way-links", commands[1])
         self.assertEqual(commands[1][commands[1].index("--way-links-schema") + 1], "detailed")

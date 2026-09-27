@@ -368,6 +368,72 @@ class PanoramaxParityTests {
         assertFalse(store.originalFile(batch.items.first()).exists())
     }
 
+    @Test fun acceptedResponseSurvivesStopWithWorkerInterruptFlagStillSet() = withQueue { root, store ->
+        val batch = addBatch(root, store, "accepted-stop", 2)
+        store.approveSelectionAfterClosing(batch)
+        lateinit var upload: PanoramaxUploadCoordinator
+        val requests = mutableListOf<String>()
+        val transport = PanoramaxUploadTransport { request, _ ->
+            requests += request.path
+            if (request.path.endsWith("/files")) {
+                upload.stopBatch(batch.batchId)
+                assertTrue(Thread.currentThread().isInterrupted)
+                PanoramaxHttpResponse(201)
+            } else response("""{"id":"remote"}""")
+        }
+        upload = coordinator(store, transport)
+        upload.use {
+            upload.uploadBatch(batch.batchId)
+            awaitIdle(upload)
+        }
+        val reopened = PanoramaxQueueStore(File(root, "private"))
+        val recovered = requireNotNull(reopened.getBatch(batch.batchId))
+        assertEquals(listOf(PanoramaxItemState.UPLOADED, PanoramaxItemState.QUEUED), recovered.items.map { it.state })
+        assertEquals(PanoramaxBatchState.PARTIAL, recovered.state)
+        assertEquals(listOf("/api/upload_sets", "/api/upload_sets/remote/files"), requests)
+    }
+
+    @Test fun stopDoesNotWaitForPreparationHoldingTheStoreLock() = withQueue { root, store ->
+        val batch = addBatch(root, store, "blocked-preparation", 1)
+        store.approveSelectionAfterClosing(batch)
+        val preparing = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val stopped = CountDownLatch(1)
+        val fileRequests = AtomicInteger()
+        val coordinator = PanoramaxUploadCoordinator(store, object : PanoramaxAccountAccess {
+            override fun validateConnection() = true
+            override fun tokenForUpload() = "test-token"
+        }, { true }, { false }, {}, PanoramaxUploadTransport { request, _ ->
+            if (request.path.endsWith("/files")) fileRequests.incrementAndGet()
+            response("""{"id":"remote"}""")
+        }, { batchId, _ ->
+            store.mutateBatch(batchId) { current ->
+                preparing.countDown()
+                // JPEG work is not interruptible. Hold the actual store lock,
+                // and ignore interrupt exactly until this fixture releases it.
+                while (release.count > 0) {
+                    try { release.await(50, TimeUnit.MILLISECONDS) } catch (_: InterruptedException) { }
+                }
+                current
+            }
+            store.originalFile(batch.items.single())
+        }, pollingIntervalMillis = 0, pollingAttempts = 1)
+        try {
+            coordinator.uploadBatch(batch.batchId)
+            assertTrue(preparing.await(5, TimeUnit.SECONDS))
+            val caller = Thread { coordinator.stopBatch(batch.batchId); stopped.countDown() }.apply { start() }
+            assertTrue("Stop must return while the queue lock remains owned by preparation", stopped.await(1, TimeUnit.SECONDS))
+            assertTrue(coordinator.activeBatchIds.contains(batch.batchId))
+            assertEquals(PanoramaxUploadPhase.STOPPING, coordinator.progressByBatch[batch.batchId]?.phase)
+            release.countDown()
+            caller.join(5000)
+            awaitIdle(coordinator)
+            assertEquals(0, fileRequests.get())
+            assertEquals(PanoramaxItemState.QUEUED, store.getBatch(batch.batchId)?.items?.single()?.state)
+            assertEquals(PanoramaxBatchState.PARTIAL, store.getBatch(batch.batchId)?.state)
+        } finally { release.countDown(); coordinator.close() }
+    }
+
     private fun coordinator(store: PanoramaxQueueStore, transport: PanoramaxUploadTransport, deleteUploaded: Boolean = false, allowed: () -> Boolean = { true }) =
         PanoramaxUploadCoordinator(store, object : PanoramaxAccountAccess {
             override fun validateConnection() = true

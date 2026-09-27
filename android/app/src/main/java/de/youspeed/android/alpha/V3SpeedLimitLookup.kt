@@ -82,6 +82,14 @@ internal class V3SpeedLimitLookup(
 
     private val countryCode = normalizedCountryCode(countryCode) ?: inferCountryCodeFromDbPath(dbPath)
     private val db: SQLiteDatabase = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READONLY)
+    private val tablePresence = mutableMapOf<String, Boolean>()
+    private val tableColumns = mutableMapOf<String, Set<String>>()
+    private val wayGeometry = DecodedGeometryCache<String, LatLonPoint>(2048, 32_768)
+    private val ringGeometry = DecodedGeometryCache<String, LonLatPoint>(256, 16_384)
+    private var schemaQueryCount = 0L
+    private data class WayQueryShape(val network: CandidateNetwork, val networkRtree: Boolean,
+        val generalRtree: Boolean, val tilePrefilter: Boolean)
+    private val wayCandidateSql = mutableMapOf<WayQueryShape, String>()
     private val settlementContextResolver = SettlementContextResolver(db)
     private val hasWaysTable = tableExists("ways")
     private val hasAreasTable = tableExists("areas")
@@ -464,10 +472,22 @@ internal class V3SpeedLimitLookup(
     }
 
     override fun close() {
+        wayGeometry.clear()
+        ringGeometry.clear()
+        wayCandidateSql.clear()
         if (db.isOpen) {
             db.close()
         }
     }
+
+    internal data class CacheStats(val ways: GeometryCacheStats, val rings: GeometryCacheStats,
+        val schemaQueries: Long, val queryShapes: Int)
+
+    internal fun cacheStats() = CacheStats(wayGeometry.stats(), ringGeometry.stats(), schemaQueryCount, wayCandidateSql.size)
+
+    /** Uses the production SQL before matcher scoring, for the shared dense-candidate fixture. */
+    internal fun admittedWayIdsForTesting(lat: Double, lon: Double, radiusM: Double, maxCandidates: Int): List<String> =
+        queryWayCandidatesForNetwork(lat, lon, radiusM, maxCandidates, null, CandidateNetwork.SURFACE).mapNotNull { it.wayId }
 
     private fun selectCandidate(
         candidates: List<WayCandidate>,
@@ -3319,26 +3339,6 @@ internal class V3SpeedLimitLookup(
             sorted.take(6).mapNotNull { wayMatchHypothesis(it.value.candidate, it.value.cost, it.value.emission) }, trace)
     }
 
-    private fun polylineEndpointDistances(lat: Double, lon: Double, points: List<LatLonPoint>): Pair<Double, Double>? {
-        if (points.isEmpty()) return null
-        if (points.size == 1) return 0.0 to 0.0
-        val lengths = points.zipWithNext().map { (a, b) -> haversineM(a.lat, a.lon, b.lat, b.lon) }
-        var bestDistance = Double.POSITIVE_INFINITY
-        var bestAlong = 0.0
-        var travelled = 0.0
-        for (index in 0 until points.lastIndex) {
-            val a = toXYMeters(points[index].lat, points[index].lon, lat, lon)
-            val b = toXYMeters(points[index+1].lat, points[index+1].lon, lat, lon)
-            val dx = b.x-a.x; val dy = b.y-a.y
-            val lengthSquared = dx*dx+dy*dy
-            val fraction = if (lengthSquared > 0.0) (-(a.x*dx+a.y*dy)/lengthSquared).coerceIn(0.0, 1.0) else 0.0
-            val distance = hypot(a.x+fraction*dx, a.y+fraction*dy)
-            if (distance < bestDistance) { bestDistance = distance; bestAlong = travelled + fraction*lengths[index] }
-            travelled += lengths[index]
-        }
-        return bestAlong to max(0.0, travelled-bestAlong)
-    }
-
     private fun candidateLookupRadiusM(radius: Double, accuracy: Double?): Double =
         if (accuracy != null && accuracy.isFinite() && accuracy >= 0.0) min(max(radius, 0.0), accuracy) else max(radius, 0.0)
 
@@ -5486,12 +5486,6 @@ internal class V3SpeedLimitLookup(
             return emptyList()
         }
         val bounds = queryBounds(lat = lat, lon = lon, radiusM = radiusM)
-        val streetNameSelect = if (hasStreetNameColumn) "w.street_name" else "NULL"
-        val refSelect = if (hasRefColumn) "w.ref" else "NULL"
-        val serviceSelect = if (hasServiceColumn) "w.service" else "NULL"
-        val tunnelSelect = if (hasTunnelColumn) "w.tunnel" else "NULL"
-        val wayGeomJoin = if (hasWayGeomTable) "LEFT JOIN way_geom g ON g.way_id = w.way_id" else ""
-        val wayGeomSelect = if (hasWayGeomTable) "g.points_json" else "NULL"
         val useNetworkRtree = allowWaysRtreeQueries && hasNetworkRtreeTable(network)
         val useGeneralRtree = allowWaysRtreeQueries && hasWaysRtreeTable
         val tileRange = if (bundleSchemaVersion >= 2 && hasWayTileTable && wayTileSizeM != null) {
@@ -5500,82 +5494,90 @@ internal class V3SpeedLimitLookup(
             null
         }
         val useTilePrefilter = tileRange != null
-        val tileCte = if (useTilePrefilter) {
+        val sql = wayCandidateSql.getOrPut(WayQueryShape(network, useNetworkRtree, useGeneralRtree, useTilePrefilter)) {
+            val streetNameSelect = if (hasStreetNameColumn) "w.street_name" else "NULL"
+            val refSelect = if (hasRefColumn) "w.ref" else "NULL"
+            val serviceSelect = if (hasServiceColumn) "w.service" else "NULL"
+            val tunnelSelect = if (hasTunnelColumn) "w.tunnel" else "NULL"
+            val wayGeomJoin = if (hasWayGeomTable) "LEFT JOIN way_geom g ON g.way_id = w.way_id" else ""
+            val wayGeomSelect = if (hasWayGeomTable) "g.points_json" else "NULL"
+            val tileCte = if (useTilePrefilter) {
+                """
+                WITH tile_rows AS (
+                  SELECT DISTINCT way_id
+                  FROM way_tile
+                  WHERE tile_x BETWEEN ? AND ?
+                    AND tile_y BETWEEN ? AND ?
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
+            val fromClause = when {
+                useNetworkRtree && useTilePrefilter ->
+                    "FROM tile_rows t JOIN ${network.rtreeTableName} r ON r.way_id = t.way_id JOIN ways w ON w.way_id = t.way_id"
+                useGeneralRtree && useTilePrefilter ->
+                    "FROM tile_rows t JOIN ways_rtree r ON r.way_id = t.way_id JOIN ways w ON w.way_id = t.way_id"
+                useNetworkRtree -> "FROM ${network.rtreeTableName} r JOIN ways w ON w.way_id = r.way_id"
+                useGeneralRtree -> "FROM ways_rtree r JOIN ways w ON w.way_id = r.way_id"
+                useTilePrefilter -> "FROM tile_rows t JOIN ways w ON w.way_id = t.way_id"
+                else -> "FROM ways w"
+            }
+            val boundsSource = if (useNetworkRtree || useGeneralRtree) "r" else "w"
+            val extraWhereClause = if (useNetworkRtree) "" else "AND ${candidateNetworkFilterSql(network)}"
             """
-            WITH tile_rows AS (
-              SELECT DISTINCT way_id
-              FROM way_tile
-              WHERE tile_x BETWEEN ? AND ?
-                AND tile_y BETWEEN ? AND ?
-            )
+                $tileCte
+                SELECT
+                  w.way_id,
+                  w.highway,
+                  $streetNameSelect AS street_name,
+                  $refSelect AS ref,
+                  w.maxspeed,
+                  w.maxspeed_type,
+                  w.source_maxspeed,
+                  w.approx_heading_deg,
+                  $serviceSelect AS service,
+                  $tunnelSelect AS tunnel,
+                  w.min_lon,
+                  w.min_lat,
+                  w.max_lon,
+                  w.max_lat,
+                  $wayGeomSelect AS points_json
+                $fromClause
+                $wayGeomJoin
+                WHERE $boundsSource.min_lon <= ? AND $boundsSource.max_lon >= ?
+                  AND $boundsSource.min_lat <= ? AND $boundsSource.max_lat >= ?
+                  $extraWhereClause
+                ORDER BY
+                  (
+                    CASE
+                      WHEN ? < w.min_lon THEN (w.min_lon - ?)
+                      WHEN ? > w.max_lon THEN (? - w.max_lon)
+                      ELSE 0
+                    END
+                  ) * (
+                    CASE
+                      WHEN ? < w.min_lon THEN (w.min_lon - ?)
+                      WHEN ? > w.max_lon THEN (? - w.max_lon)
+                      ELSE 0
+                    END
+                  ) +
+                  (
+                    CASE
+                      WHEN ? < w.min_lat THEN (w.min_lat - ?)
+                      WHEN ? > w.max_lat THEN (? - w.max_lat)
+                      ELSE 0
+                    END
+                  ) * (
+                    CASE
+                      WHEN ? < w.min_lat THEN (w.min_lat - ?)
+                      WHEN ? > w.max_lat THEN (? - w.max_lat)
+                      ELSE 0
+                    END
+                  ), CAST(w.way_id AS TEXT) COLLATE BINARY ASC
+                LIMIT ?
             """.trimIndent()
-        } else {
-            ""
         }
-        val fromClause = when {
-            useNetworkRtree && useTilePrefilter ->
-                "FROM tile_rows t JOIN ${network.rtreeTableName} r ON r.way_id = t.way_id JOIN ways w ON w.way_id = t.way_id"
-            useGeneralRtree && useTilePrefilter ->
-                "FROM tile_rows t JOIN ways_rtree r ON r.way_id = t.way_id JOIN ways w ON w.way_id = t.way_id"
-            useNetworkRtree -> "FROM ${network.rtreeTableName} r JOIN ways w ON w.way_id = r.way_id"
-            useGeneralRtree -> "FROM ways_rtree r JOIN ways w ON w.way_id = r.way_id"
-            useTilePrefilter -> "FROM tile_rows t JOIN ways w ON w.way_id = t.way_id"
-            else -> "FROM ways w"
-        }
-        val boundsSource = if (useNetworkRtree || useGeneralRtree) "r" else "w"
-        val extraWhereClause = if (useNetworkRtree) "" else "AND ${candidateNetworkFilterSql(network)}"
-        val sql = """
-            $tileCte
-            SELECT
-              w.way_id,
-              w.highway,
-              $streetNameSelect AS street_name,
-              $refSelect AS ref,
-              w.maxspeed,
-              w.maxspeed_type,
-              w.source_maxspeed,
-              w.approx_heading_deg,
-              $serviceSelect AS service,
-              $tunnelSelect AS tunnel,
-              w.min_lon,
-              w.min_lat,
-              w.max_lon,
-              w.max_lat,
-              $wayGeomSelect AS points_json
-            $fromClause
-            $wayGeomJoin
-            WHERE $boundsSource.min_lon <= ? AND $boundsSource.max_lon >= ?
-              AND $boundsSource.min_lat <= ? AND $boundsSource.max_lat >= ?
-              $extraWhereClause
-            ORDER BY
-              (
-                CASE
-                  WHEN ? < w.min_lon THEN (w.min_lon - ?)
-                  WHEN ? > w.max_lon THEN (? - w.max_lon)
-                  ELSE 0
-                END
-              ) * (
-                CASE
-                  WHEN ? < w.min_lon THEN (w.min_lon - ?)
-                  WHEN ? > w.max_lon THEN (? - w.max_lon)
-                  ELSE 0
-                END
-              ) +
-              (
-                CASE
-                  WHEN ? < w.min_lat THEN (w.min_lat - ?)
-                  WHEN ? > w.max_lat THEN (? - w.max_lat)
-                  ELSE 0
-                END
-              ) * (
-                CASE
-                  WHEN ? < w.min_lat THEN (w.min_lat - ?)
-                  WHEN ? > w.max_lat THEN (? - w.max_lat)
-                  ELSE 0
-                END
-              )
-            LIMIT ?
-        """.trimIndent()
         val params = buildList {
             tileRange?.let {
                 add(it.minX.toString())
@@ -5628,7 +5630,8 @@ internal class V3SpeedLimitLookup(
                     val minLat = cursor.getDouble(11)
                     val maxLon = cursor.getDouble(12)
                     val maxLat = cursor.getDouble(13)
-                    val points = parseWayPoints(cursor.stringOrNull(14))
+                    val points = if (wayId == null) parseWayPoints(cursor.stringOrNull(14)) else
+                        wayGeometry.getOrDecode(wayId) { parseWayPoints(cursor.stringOrNull(14)) }
                     val bboxDistance = distanceToBBoxM(
                         lat = lat,
                         lon = lon,
@@ -5637,13 +5640,12 @@ internal class V3SpeedLimitLookup(
                         maxLon = maxLon,
                         maxLat = maxLat,
                     )
-                    val polylineDistance = polylineDistanceM(lat = lat, lon = lon, points = points)
-                    val alongDistances = polylineEndpointDistances(lat, lon, points)
-                    val distanceToStartM = alongDistances?.first
-                    val distanceToEndM = alongDistances?.second
+                    val metrics = polylineMetrics(lat = lat, lon = lon, points = points)
+                    val distanceToStartM = metrics?.distanceToStartM
+                    val distanceToEndM = metrics?.distanceToEndM
                     val endpointProximityM = min(distanceToStartM ?: Double.POSITIVE_INFINITY, distanceToEndM ?: Double.POSITIVE_INFINITY)
-                    val distance = polylineDistance ?: bboxDistance
-                    val localHeading = polylineHeadingDeg(lat = lat, lon = lon, points = points)
+                    val distance = metrics?.distanceM ?: bboxDistance
+                    val localHeading = metrics?.localHeadingDeg
                     val headingPenalty = if (headingDeg != null) {
                         val candidateHeading = localHeading ?: approxHeading
                         if (candidateHeading != null) {
@@ -5760,7 +5762,9 @@ internal class V3SpeedLimitLookup(
                         maxLon = cursor.getDouble(8),
                         maxLat = cursor.getDouble(9),
                         residential = cursor.stringOrNull(10),
-                        points = parseRingPoints(cursor.stringOrNull(11)),
+                        points = cursor.stringOrNull(0)?.let { id ->
+                            ringGeometry.getOrDecode("area:$id") { parseRingPoints(cursor.stringOrNull(11)) }
+                        } ?: parseRingPoints(cursor.stringOrNull(11)),
                     )
                 }
             }
@@ -5968,7 +5972,7 @@ internal class V3SpeedLimitLookup(
     ): Boolean {
         val ringsByOuter = linkedMapOf<Int, MutableList<List<LonLatPoint>>>()
         val sql = """
-            SELECT outer_index, is_hole, points_json
+            SELECT outer_index, is_hole, points_json, ring_index
             FROM city_ring
             WHERE boundary_row_id = ?
             ORDER BY outer_index, is_hole, ring_index
@@ -5977,7 +5981,9 @@ internal class V3SpeedLimitLookup(
             while (cursor.moveToNext()) {
                 val outerIndex = cursor.getInt(0)
                 val isHole = cursor.getInt(1) != 0
-                val ring = parseRingPoints(cursor.stringOrNull(2))
+                val ring = ringGeometry.getOrDecode("boundary:$boundaryRowId:$outerIndex:$isHole:${cursor.getInt(3)}") {
+                    parseRingPoints(cursor.stringOrNull(2))
+                }
                 if (ring.size < 4) {
                     continue
                 }
@@ -6177,12 +6183,13 @@ internal class V3SpeedLimitLookup(
         return baseScore + cityNameBonus + districtBonus
     }
 
-    private fun tableExists(name: String): Boolean {
+    private fun tableExists(name: String): Boolean = tablePresence.getOrPut(name) {
+        schemaQueryCount++
         db.rawQuery(
             "SELECT 1 FROM sqlite_master WHERE type='table' AND name = ? LIMIT 1",
             arrayOf(name),
         ).use { cursor ->
-            return cursor.moveToFirst()
+            cursor.moveToFirst()
         }
     }
 
@@ -6207,14 +6214,17 @@ internal class V3SpeedLimitLookup(
         if (!tableExists(table)) {
             return false
         }
-        db.rawQuery("PRAGMA table_info($table)", null).use { cursor ->
-            while (cursor.moveToNext()) {
-                if (cursor.stringOrNull(1) == column) {
-                    return true
+        val columns = tableColumns.getOrPut(table) {
+            schemaQueryCount++
+            db.rawQuery("PRAGMA table_info($table)", null).use { cursor ->
+                buildSet {
+                    while (cursor.moveToNext()) {
+                        cursor.stringOrNull(1)?.let(::add)
+                    }
                 }
             }
         }
-        return false
+        return column in columns
     }
 
     companion object {
@@ -6573,86 +6583,66 @@ internal class V3SpeedLimitLookup(
             return haversineM(lat1 = lat, lon1 = lon, lat2 = clampedLat, lon2 = clampedLon)
         }
 
-        private fun polylineDistanceM(
+        internal fun polylineMetrics(
             lat: Double,
             lon: Double,
             points: List<LatLonPoint>,
-        ): Double? {
+        ): PolylineMetrics? {
             if (points.isEmpty()) {
                 return null
             }
             if (points.size == 1) {
-                return haversineM(lat1 = lat, lon1 = lon, lat2 = points.first().lat, lon2 = points.first().lon)
-            }
-            var best = Double.POSITIVE_INFINITY
-            for (index in 0 until points.lastIndex) {
-                val start = points[index]
-                val end = points[index + 1]
-                val projection = pointToSegmentProjection(
-                    lat = lat,
-                    lon = lon,
-                    lat1 = start.lat,
-                    lon1 = start.lon,
-                    lat2 = end.lat,
-                    lon2 = end.lon,
+                return PolylineMetrics(
+                    distanceM = haversineM(lat1 = lat, lon1 = lon, lat2 = points.first().lat, lon2 = points.first().lon),
+                    distanceToStartM = 0.0,
+                    distanceToEndM = 0.0,
+                    localHeadingDeg = null,
                 )
-                if (projection.distanceM < best) {
-                    best = projection.distanceM
-                }
-            }
-            return best.takeIf { it.isFinite() }
-        }
-
-        private fun polylineHeadingDeg(
-            lat: Double,
-            lon: Double,
-            points: List<LatLonPoint>,
-        ): Double? {
-            if (points.size < 2) {
-                return null
             }
             var bestDistance = Double.POSITIVE_INFINITY
             var bestHeading: Double? = null
+            var bestEndpointDistance = Double.POSITIVE_INFINITY
+            var bestAlong = 0.0
+            var travelled = 0.0
             for (index in 0 until points.lastIndex) {
-                val start = points[index]
-                val end = points[index + 1]
-                val projection = pointToSegmentProjection(
-                    lat = lat,
-                    lon = lon,
-                    lat1 = start.lat,
-                    lon1 = start.lon,
-                    lat2 = end.lat,
-                    lon2 = end.lon,
-                )
-                if (projection.distanceM < bestDistance) {
-                    bestDistance = projection.distanceM
-                    bestHeading = computeAxisHeadingDeg(start.lat, start.lon, end.lat, end.lon)
+                val first = points[index]
+                val second = points[index + 1]
+                val start = toXYMeters(first.lat, first.lon, lat, lon)
+                val end = toXYMeters(second.lat, second.lon, lat, lon)
+                val dx = end.x - start.x
+                val dy = end.y - start.y
+                val lengthSquared = (dx * dx) + (dy * dy)
+                val distance = if (dx == 0.0 && dy == 0.0) {
+                    hypot(start.x, start.y)
+                } else {
+                    val numerator = ((0.0 - start.x) * dx) + ((0.0 - start.y) * dy)
+                    val fraction = (numerator / lengthSquared).coerceIn(0.0, 1.0)
+                    hypot(start.x + (fraction * dx), start.y + (fraction * dy))
                 }
-            }
-            return bestHeading
-        }
+                if (distance < bestDistance) {
+                    bestDistance = distance
+                    bestHeading = computeAxisHeadingDeg(first.lat, first.lon, second.lat, second.lon)
+                }
 
-        private fun pointToSegmentProjection(
-            lat: Double,
-            lon: Double,
-            lat1: Double,
-            lon1: Double,
-            lat2: Double,
-            lon2: Double,
-        ): ProjectionResult {
-            val start = toXYMeters(lat = lat1, lon = lon1, originLat = lat, originLon = lon)
-            val end = toXYMeters(lat = lat2, lon = lon2, originLat = lat, originLon = lon)
-            val dx = end.x - start.x
-            val dy = end.y - start.y
-            if (dx == 0.0 && dy == 0.0) {
-                return ProjectionResult(distanceM = hypot(start.x, start.y))
+                // Preserve the endpoint-progress arithmetic and strict first-segment
+                // tie rule, including degenerate/invalid geometry, in this same pass.
+                val fraction = if (lengthSquared > 0.0) {
+                    (-(start.x * dx + start.y * dy) / lengthSquared).coerceIn(0.0, 1.0)
+                } else 0.0
+                val endpointDistance = hypot(start.x + fraction * dx, start.y + fraction * dy)
+                val length = haversineM(first.lat, first.lon, second.lat, second.lon)
+                if (endpointDistance < bestEndpointDistance) {
+                    bestEndpointDistance = endpointDistance
+                    bestAlong = travelled + fraction * length
+                }
+                travelled += length
             }
-            val tNumerator = ((0.0 - start.x) * dx) + ((0.0 - start.y) * dy)
-            val tDenominator = (dx * dx) + (dy * dy)
-            val t = (tNumerator / tDenominator).coerceIn(0.0, 1.0)
-            val projectionX = start.x + (t * dx)
-            val projectionY = start.y + (t * dy)
-            return ProjectionResult(distanceM = hypot(projectionX, projectionY))
+            return PolylineMetrics(
+                distanceM = bestDistance.takeIf { it.isFinite() },
+                distanceToStartM = bestAlong,
+                distanceToEndM = max(0.0, travelled - bestAlong),
+                localHeadingDeg = bestHeading,
+            )
         }
 
         private fun toXYMeters(
@@ -6996,11 +6986,14 @@ private data class XYPoint(
     val y: Double,
 )
 
-private data class ProjectionResult(
-    val distanceM: Double,
+internal data class PolylineMetrics(
+    val distanceM: Double?,
+    val distanceToStartM: Double,
+    val distanceToEndM: Double,
+    val localHeadingDeg: Double?,
 )
 
-private data class LatLonPoint(
+internal data class LatLonPoint(
     val lat: Double,
     val lon: Double,
 )

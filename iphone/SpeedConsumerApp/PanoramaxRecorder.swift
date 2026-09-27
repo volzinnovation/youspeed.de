@@ -361,8 +361,9 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     var onDiagnostic: ((String) -> Void)?
     private var lastDiagnosticSnapshot: String?
     var onTrafficSignAnnotation: ((String) -> Void)?
+    var onPanoramaxQueueChange: (() -> Void)?
 
-    private let queueStore: PanoramaxQueueStore?
+    private var queueStore: PanoramaxQueueStore?
     private let sessionQueue = DispatchQueue(label: "de.youspeed.drive-recorder.camera")
     private let videoQueue = DispatchQueue(label: "de.youspeed.drive-recorder.tsr", qos: .userInitiated)
     private let photoProcessingQueue = DispatchQueue(label: "de.youspeed.drive-recorder.panoramax", qos: .utility)
@@ -478,6 +479,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         dashcamTransitionTimeoutTask?.cancel()
         interactionFinalizationTimeout?.cancel()
         notificationTokens.forEach(NotificationCenter.default.removeObserver)
+    }
+
+    func setQueueStore(_ store: PanoramaxQueueStore) {
+        queueStore = store
     }
 
     func setVideoFrameConsumer(_ consumer: (any DriveVideoFrameConsumer)?) {
@@ -610,7 +615,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                     && videoOutputAvailable
                 activePanoramaxEnabled = activePanoramaxEnabled && photoOutputAvailable
                 if activePanoramaxEnabled {
-                    preparePanoramaxBatch(captureSessionID: captureSessionID)
+                    await preparePanoramaxBatch(captureSessionID: captureSessionID, requestedGeneration: requestedGeneration)
+                    guard generation == requestedGeneration, state == .preparing else { return }
                 }
                 if activeDashcamEnabled {
                     dashcamFileURL = try Self.makeDashcamFileURL(captureSessionID: captureSessionID)
@@ -867,15 +873,27 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
     }
 
-    private func preparePanoramaxBatch(captureSessionID: String) {
+    private func preparePanoramaxBatch(captureSessionID: String, requestedGeneration: Int) async {
         guard let queueStore else {
             activePanoramaxEnabled = false
             lastCaptureDetail = "Panoramax-Speicher nicht verfuegbar"
             return
         }
         do {
-            batch = try queueStore.createBatch(captureSessionID: captureSessionID)
+            let created = try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: queueStore) {
+                try $0.createBatch(captureSessionID: captureSessionID)
+            }
+            guard generation == requestedGeneration, state == .preparing else {
+                // Stop/new start may run while JPEG work owns the queue lock.
+                // Seal only this obsolete batch; never overwrite the new drive.
+                _ = try? await PanoramaxQueueMaintenanceExecutor.shared.perform(store: queueStore) {
+                    try $0.transitionBatch(created.batchID, to: .awaitingReview)
+                }
+                return
+            }
+            batch = created
         } catch {
+            guard generation == requestedGeneration, state == .preparing else { return }
             activePanoramaxEnabled = false
             batch = nil
             lastCaptureDetail = "Panoramax-Batch konnte nicht erstellt werden: \(error.localizedDescription)"
@@ -883,8 +901,13 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     }
 
     private func closePanoramaxBatchForReview() {
-        if let batch {
-            _ = try? queueStore?.transitionBatch(batch.batchID, to: .awaitingReview)
+        if let batch, let queueStore {
+            // FIFO with photo persistence: a finished still already queued for
+            // storage must commit before the batch becomes reviewable.
+            photoProcessingQueue.async { [weak self] in
+                _ = try? queueStore.transitionBatch(batch.batchID, to: .awaitingReview)
+                Task { @MainActor [weak self] in self?.onPanoramaxQueueChange?() }
+            }
         }
         batch = nil
         lastCaptureSample = nil

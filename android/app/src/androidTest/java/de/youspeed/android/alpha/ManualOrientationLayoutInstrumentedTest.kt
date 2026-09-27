@@ -13,6 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -29,6 +33,54 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ManualOrientationLayoutInstrumentedTest {
     @get:Rule val compose = createEmptyComposeRule()
+
+    @Test fun settingsPauseSurvivesNestedDebugRotationAndActivityRestoration() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val preferences = context.getSharedPreferences("youspeed", Context.MODE_PRIVATE)
+        val key = "youspeed.manual_orientation"
+        val previous = preferences.getString(key, null)
+        val device = UiDevice.getInstance(instrumentation)
+        fun gate(controller: ConsumerSessionController): TrafficSignLookupMutationGate =
+            ConsumerSessionController::class.java.getDeclaredField("lookupToken").apply { isAccessible = true }
+                .get(controller) as TrafficSignLookupMutationGate
+        try {
+            assertTrue(preferences.edit().putString(key, ManualOrientation.PORTRAIT.storageValue).commit())
+            ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)
+                .putExtra("screenshot_state", "other-sign-give-way")).use { scenario ->
+                compose.onNodeWithTag("settings-button").performClick()
+                compose.onNodeWithTag("settings-sheet").assertExists()
+                scenario.onActivity { assertTrue(gate(it.sessionController).isPaused()) }
+                compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasTestTag("open-debug-button"))
+                compose.onNodeWithTag("open-debug-button").performClick()
+                compose.onNodeWithTag("debug-sheet").assertExists()
+                scenario.onActivity { assertTrue("Nested Debug retains Settings pause", gate(it.sessionController).isPaused()) }
+                device.pressBack()
+                compose.waitForIdle()
+                compose.onNodeWithTag("debug-sheet").assertDoesNotExist()
+                compose.onNodeWithTag("settings-sheet").assertExists()
+                for (orientation in ManualOrientation.entries) {
+                    scenario.onActivity { it.sessionController.setManualOrientation(orientation) }
+                    compose.waitUntil(15_000) { device.displayRotation == orientation.targetRotation }
+                    compose.onNodeWithTag("settings-sheet").assertExists()
+                    scenario.onActivity { assertTrue("Rotation retains Settings pause", gate(it.sessionController).isPaused()) }
+                }
+                assertTrue(device.takeScreenshot(File(context.cacheDir, "phase1-settings-landscape.png")))
+                scenario.recreate()
+                compose.waitForIdle()
+                compose.onNodeWithTag("settings-sheet").assertExists()
+                scenario.onActivity { assertTrue("Restored Settings pauses the replacement controller", gate(it.sessionController).isPaused()) }
+                device.pressBack()
+                compose.waitForIdle()
+                compose.onNodeWithTag("settings-sheet").assertDoesNotExist()
+                scenario.onActivity { assertFalse("Dismissal resumes admission", gate(it.sessionController).isPaused()) }
+            }
+        } finally {
+            val restore = preferences.edit()
+            if (previous == null) restore.remove(key) else restore.putString(key, previous)
+            assertTrue(restore.commit())
+        }
+    }
 
     @Test fun selectedMountRepositionsStablePanesWithoutLosingConfirmedSign() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -193,12 +245,15 @@ class ManualOrientationLayoutInstrumentedTest {
         } else {
             screenInsetDp + 24f
         }
-        val expectedEyeLeft = eyeCanvas.left + eyeTipInsetDp * density
+        // The accessibility/test bounds describe the artwork inside its 5 dp
+        // padding, while the outer 72 dp pictogram box aligns with the eye tip.
+        val artworkInset = 5 * density
+        val expectedEyeLeft = eyeCanvas.left + eyeTipInsetDp * density + artworkInset
         val alignmentTolerance = 2 * density + 1
         assertEquals("Secondary traffic sign left edge follows the eye in $orientation",
             expectedEyeLeft, pictogram.left.toFloat(), alignmentTolerance)
         assertEquals("Secondary traffic sign upper edge follows the speed circle in $orientation",
-            speedSign.top.toFloat(), pictogram.top.toFloat(), alignmentTolerance)
+            speedSign.top.toFloat() + artworkInset, pictogram.top.toFloat(), alignmentTolerance)
         assertTrue("Secondary traffic sign remains inside the sign pane in $orientation",
             signPane.contains(pictogram))
     }

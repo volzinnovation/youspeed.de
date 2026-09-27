@@ -152,6 +152,17 @@ class BundleBootstrapper(
         }.sortedWith(compareBy<DownloadedBundleInfo> { it.region }.thenByDescending { it.bundleVersion }.thenBy { it.dbFileName })
     }
 
+    internal fun removalIncludesDatabase(dbPath: String, region: String? = null): Boolean {
+        if (dbPath.isBlank()) return false
+        val bundles = File(rootDir, "bundles").toPath().toAbsolutePath().normalize()
+        val database = File(dbPath).toPath().toAbsolutePath().normalize()
+        if (!database.startsWith(bundles)) return false
+        val relative = bundles.relativize(database)
+        if (relative.nameCount < 2) return false
+        val directory = relative.getName(0).toString()
+        return if (region == null) directory != "seed" else directory == tokenize(region)
+    }
+
     fun removeDownloadedBundlesKeepingSeed(): Int {
         val bundlesRoot = File(rootDir, "bundles")
         if (!bundlesRoot.exists()) {

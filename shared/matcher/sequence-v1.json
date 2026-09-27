@@ -1,0 +1,566 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "m7-crossing-tunnel",
+      "fixture": "crossing-tunnel.sql",
+      "profile": "m7",
+      "lat": 52,
+      "lon": 13.00505,
+      "headingDeg": 90,
+      "radiusM": 80,
+      "speedKmh": 20,
+      "horizontalAccuracyM": 5,
+      "gpsSignalBars": 4,
+      "context": null,
+      "wayID": "1002",
+      "isTunnelSegment": false
+    },
+    {
+      "id": "m7-linked-turn",
+      "fixture": "straight-linked.sql",
+      "profile": "m7",
+      "lat": 52.06001,
+      "lon": 13.00413,
+      "headingDeg": null,
+      "radiusM": 45,
+      "speedKmh": 23,
+      "horizontalAccuracyM": 6,
+      "gpsSignalBars": 4,
+      "context": {
+        "preferredWayID": "12001",
+        "preferredHighway": "primary",
+        "preferredEndpointProximityM": 3,
+        "recentWayIDs": [
+          "12001"
+        ],
+        "recentFixes": [
+          {
+            "lat": 52.05995,
+            "lon": 13.00413
+          }
+        ],
+        "preferredStreetRef": "B463",
+        "activeStreetRef": "B463",
+        "recentStreetRefs": [
+          "B463"
+        ]
+      },
+      "wayID": "12003",
+      "isTunnelSegment": false
+    },
+    {
+      "id": "m7-straight-continuity",
+      "fixture": "straight-linked.sql",
+      "profile": "m7",
+      "lat": 52.06001,
+      "lon": 13.00413,
+      "headingDeg": null,
+      "radiusM": 45,
+      "speedKmh": 23,
+      "horizontalAccuracyM": 6,
+      "gpsSignalBars": 4,
+      "context": {
+        "preferredWayID": "12001",
+        "preferredHighway": "primary",
+        "preferredEndpointProximityM": 3,
+        "recentWayIDs": [
+          "12001"
+        ],
+        "recentFixes": [
+          {
+            "lat": 52.06,
+            "lon": 13.004
+          }
+        ],
+        "preferredStreetRef": "B463",
+        "activeStreetRef": "B463",
+        "recentStreetRefs": [
+          "B463"
+        ]
+      },
+      "wayID": "12002",
+      "isTunnelSegment": false
+    },
+    {
+      "id": "m9-curved-turn-held",
+      "fixture": "curved-linked.sql",
+      "profile": "m9",
+      "lat": 52.06001,
+      "lon": 13.00413,
+      "headingDeg": null,
+      "radiusM": 45,
+      "speedKmh": 23,
+      "horizontalAccuracyM": 6,
+      "gpsSignalBars": 4,
+      "context": {
+        "preferredWayID": "12001",
+        "preferredHighway": "primary",
+        "preferredEndpointProximityM": 3,
+        "recentWayIDs": [
+          "12001"
+        ],
+        "recentFixes": [
+          {
+            "lat": 52.05995,
+            "lon": 13.00413
+          }
+        ],
+        "preferredStreetRef": "B463",
+        "activeStreetRef": "B463",
+        "recentStreetRefs": [
+          "B463"
+        ]
+      },
+      "wayID": "12002",
+      "isTunnelSegment": false
+    },
+    {
+      "id": "m10-curved-turn-released",
+      "fixture": "curved-linked.sql",
+      "profile": "m10",
+      "lat": 52.06001,
+      "lon": 13.00413,
+      "headingDeg": null,
+      "radiusM": 45,
+      "speedKmh": 23,
+      "horizontalAccuracyM": 6,
+      "gpsSignalBars": 4,
+      "context": {
+        "preferredWayID": "12001",
+        "preferredHighway": "primary",
+        "preferredEndpointProximityM": 3,
+        "recentWayIDs": [
+          "12001"
+        ],
+        "recentFixes": [
+          {
+            "lat": 52.05995,
+            "lon": 13.00413
+          }
+        ],
+        "preferredStreetRef": "B463",
+        "activeStreetRef": "B463",
+        "recentStreetRefs": [
+          "B463"
+        ]
+      },
+      "wayID": "12003",
+      "isTunnelSegment": false
+    },
+    {
+      "id": "m10-unlinked-turn-held",
+      "fixture": "curved-unlinked.sql",
+      "profile": "m10",
+      "lat": 52.06001,
+      "lon": 13.00413,
+      "headingDeg": null,
+      "radiusM": 45,
+      "speedKmh": 23,
+      "horizontalAccuracyM": 6,
+      "gpsSignalBars": 4,
+      "context": {
+        "preferredWayID": "12001",
+        "preferredHighway": "primary",
+        "preferredEndpointProximityM": 3,
+        "recentWayIDs": [
+          "12001"
+        ],
+        "recentFixes": [
+          {
+            "lat": 52.05995,
+            "lon": 13.00413
+          }
+        ],
+        "preferredStreetRef": "B463",
+        "activeStreetRef": "B463",
+        "recentStreetRefs": [
+          "B463"
+        ]
+      },
+      "wayID": "12002",
+      "isTunnelSegment": false
+    },
+    {
+      "id": "m11-motion-turn",
+      "fixture": "curved-unlinked.sql",
+      "profile": "m11",
+      "lat": 52.06001,
+      "lon": 13.00413,
+      "headingDeg": null,
+      "radiusM": 45,
+      "speedKmh": 23,
+      "horizontalAccuracyM": 6,
+      "gpsSignalBars": 4,
+      "context": {
+        "preferredWayID": "12001",
+        "preferredHighway": "primary",
+        "preferredEndpointProximityM": 3,
+        "recentWayIDs": [
+          "12001"
+        ],
+        "recentFixes": [
+          {
+            "lat": 52.05995,
+            "lon": 13.00413
+          }
+        ],
+        "preferredStreetRef": "B463",
+        "activeStreetRef": "B463",
+        "recentStreetRefs": [
+          "B463"
+        ]
+      },
+      "wayID": "12003",
+      "isTunnelSegment": false
+    },
+    {
+      "id": "m12-nine-fix-sequence",
+      "fixture": "curved-unlinked.sql",
+      "profile": "m12",
+      "lat": 52.06006,
+      "lon": 13.00412,
+      "headingDeg": 46,
+      "radiusM": 45,
+      "speedKmh": 23,
+      "horizontalAccuracyM": 6,
+      "gpsSignalBars": 4,
+      "context": {
+        "preferredWayID": "12001",
+        "preferredHighway": "primary",
+        "preferredEndpointProximityM": 3,
+        "recentWayIDs": [
+          "12001"
+        ],
+        "recentFixes": [
+          {
+            "lat": 52.05996,
+            "lon": 13.00407,
+            "headingDeg": 38,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 23,
+            "horizontalAccuracyM": 6,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.05992,
+            "lon": 13.004000000000001,
+            "headingDeg": 39,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 23,
+            "horizontalAccuracyM": 6,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.05988,
+            "lon": 13.00393,
+            "headingDeg": 40,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 23,
+            "horizontalAccuracyM": 6,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.059839999999994,
+            "lon": 13.003860000000001,
+            "headingDeg": 41,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 23,
+            "horizontalAccuracyM": 6,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.059799999999996,
+            "lon": 13.00379,
+            "headingDeg": 42,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 23,
+            "horizontalAccuracyM": 6,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.05976,
+            "lon": 13.003720000000001,
+            "headingDeg": 43,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 23,
+            "horizontalAccuracyM": 6,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.05972,
+            "lon": 13.00365,
+            "headingDeg": 44,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 23,
+            "horizontalAccuracyM": 6,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.05968,
+            "lon": 13.003580000000001,
+            "headingDeg": 45,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 23,
+            "horizontalAccuracyM": 6,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.059639999999995,
+            "lon": 13.00351,
+            "headingDeg": 46,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 23,
+            "horizontalAccuracyM": 6,
+            "gpsSignalBars": 4
+          }
+        ],
+        "preferredStreetRef": "B463",
+        "activeStreetRef": "B463",
+        "recentStreetRefs": [
+          "B463"
+        ]
+      },
+      "wayID": "12003",
+      "isTunnelSegment": false
+    },
+    {
+      "id": "m7-tunnel-without-portal",
+      "fixture": "ambiguous-tunnel.sql",
+      "profile": "m7",
+      "lat": 52.01007,
+      "lon": 13.00105,
+      "headingDeg": 90,
+      "radiusM": 80,
+      "speedKmh": 30,
+      "horizontalAccuracyM": 5,
+      "gpsSignalBars": 4,
+      "context": {
+        "preferredWayID": "7101",
+        "preferredHighway": "primary",
+        "preferredEndpointProximityM": 0,
+        "recentWayIDs": [
+          "7101"
+        ],
+        "preferredStreetRef": "B 10",
+        "recentStreetRefs": [
+          "B 10"
+        ],
+        "recentTunnelCandidateWayIDs": [
+          "7102"
+        ],
+        "recentTunnelCandidateRefs": [
+          "B 10"
+        ]
+      },
+      "wayID": "7103",
+      "isTunnelSegment": false
+    },
+    {
+      "id": "m7-tunnel-entry",
+      "fixture": "ambiguous-tunnel.sql",
+      "profile": "m7",
+      "lat": 52.01007,
+      "lon": 13.00105,
+      "headingDeg": 90,
+      "radiusM": 80,
+      "speedKmh": 30,
+      "horizontalAccuracyM": 16,
+      "gpsSignalBars": 2,
+      "context": {
+        "preferredWayID": "7101",
+        "preferredHighway": "primary",
+        "preferredEndpointProximityM": 0,
+        "recentWayIDs": [
+          "7101"
+        ],
+        "preferredStreetRef": "B 10",
+        "recentStreetRefs": [
+          "B 10"
+        ],
+        "recentTunnelCandidateWayIDs": [
+          "7102"
+        ],
+        "recentTunnelCandidateRefs": [
+          "B 10"
+        ],
+        "recentTunnelApproachWayIDs": [
+          "7102"
+        ],
+        "recentTunnelApproachRefs": [
+          "B 10"
+        ],
+        "tunnelApproachFixCount": 3,
+        "tunnelApproachBaselineAccuracyM": 5,
+        "tunnelApproachBaselineSignalBars": 4
+      },
+      "wayID": "7102",
+      "isTunnelSegment": true
+    },
+    {
+      "id": "m7-tunnel-gps-recovery",
+      "fixture": "ambiguous-tunnel.sql",
+      "profile": "m7",
+      "lat": 52.01007,
+      "lon": 13.00105,
+      "headingDeg": 90,
+      "radiusM": 80,
+      "speedKmh": 28,
+      "horizontalAccuracyM": 5,
+      "gpsSignalBars": 4,
+      "context": {
+        "preferredWayID": "7102",
+        "preferredHighway": "primary",
+        "preferredEndpointProximityM": 18,
+        "recentWayIDs": [
+          "7102",
+          "7101"
+        ],
+        "preferredStreetRef": "B 10",
+        "recentStreetRefs": [
+          "B 10"
+        ],
+        "recentTunnelCandidateWayIDs": [
+          "7102"
+        ],
+        "recentTunnelCandidateRefs": [
+          "B 10"
+        ],
+        "activeStreetRef": "B 10",
+        "isInTunnelMode": true
+      },
+      "wayID": "7102",
+      "isTunnelSegment": true
+    },
+    {
+      "id": "m12-relation-continuity",
+      "fixture": "continuity-unlinked.sql",
+      "profile": "m12",
+      "lat": 52,
+      "lon": 13.0048,
+      "headingDeg": 90,
+      "radiusM": 40,
+      "speedKmh": 38,
+      "horizontalAccuracyM": 5,
+      "gpsSignalBars": 4,
+      "context": {
+        "preferredWayID": "5001",
+        "preferredHighway": "primary",
+        "preferredEndpointProximityM": 4,
+        "recentWayIDs": [
+          "5001"
+        ],
+        "recentFixes": [
+          {
+            "lat": 52.0001,
+            "lon": 13.0036,
+            "headingDeg": 90,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 38,
+            "horizontalAccuracyM": 5,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.0001,
+            "lon": 13.0032,
+            "headingDeg": 90,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 38,
+            "horizontalAccuracyM": 5,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.0001,
+            "lon": 13.0028,
+            "headingDeg": 90,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 38,
+            "horizontalAccuracyM": 5,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.0001,
+            "lon": 13.0024,
+            "headingDeg": 90,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 38,
+            "horizontalAccuracyM": 5,
+            "gpsSignalBars": 4
+          }
+        ],
+        "preferredStreetRef": "B10",
+        "activeStreetRef": "B10",
+        "recentStreetRefs": [
+          "B10"
+        ],
+        "preferredStreetName": null
+      },
+      "wayID": "5002",
+      "isTunnelSegment": false
+    },
+    {
+      "id": "m12-street-continuity",
+      "fixture": "continuity-unlinked.sql",
+      "profile": "m12",
+      "lat": 52.01006,
+      "lon": 13.0048,
+      "headingDeg": 90,
+      "radiusM": 40,
+      "speedKmh": 34,
+      "horizontalAccuracyM": 5,
+      "gpsSignalBars": 4,
+      "context": {
+        "preferredWayID": "6001",
+        "preferredHighway": "secondary",
+        "preferredEndpointProximityM": 4,
+        "recentWayIDs": [
+          "6001"
+        ],
+        "recentFixes": [
+          {
+            "lat": 52.01,
+            "lon": 13.0036,
+            "headingDeg": 90,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 34,
+            "horizontalAccuracyM": 5,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.01,
+            "lon": 13.0032,
+            "headingDeg": 90,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 34,
+            "horizontalAccuracyM": 5,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.01,
+            "lon": 13.0028,
+            "headingDeg": 90,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 34,
+            "horizontalAccuracyM": 5,
+            "gpsSignalBars": 4
+          },
+          {
+            "lat": 52.01,
+            "lon": 13.0024,
+            "headingDeg": 90,
+            "headingAccuracyDeg": 5,
+            "speedKmh": 34,
+            "horizontalAccuracyM": 5,
+            "gpsSignalBars": 4
+          }
+        ],
+        "preferredStreetRef": null,
+        "activeStreetRef": null,
+        "recentStreetRefs": [],
+        "preferredStreetName": "History Road"
+      },
+      "wayID": "6002",
+      "isTunnelSegment": false
+    }
+  ]
+}
