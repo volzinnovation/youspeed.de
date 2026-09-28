@@ -3,7 +3,7 @@ import Foundation
 
 /// The packaged, owner-controlled runtime policy. Bundle downloads cannot override it.
 struct SpeedLimitReferenceModel {
-    static let approvalLockSHA256 = "d501f8fdcc6b4a0bddd7d6827f2c58753c7c15efb8d341d8b47d6e9992023b3a"
+    static let approvalLockSHA256 = "8c22cf0919080f1c9737dd926d1fad54857636963b4e3c8ccb0bab03241576cb"
     static let directory = "speed-limit-reference"
     let policy: [String: Any]
     let sha256: String

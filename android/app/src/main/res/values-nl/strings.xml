@@ -108,4 +108,5 @@
     <string name="ui_video_save_failed">Video kon niet worden opgeslagen</string>
     <string name="ui_video_save_timeout">De recorder heeft niet bevestigd dat de video is opgeslagen. De aangevraagde actie is geannuleerd.</string>
     <string name="ui_correct_speed_limit">Snelheidslimiet corrigeren</string>
+    <string name="tsr_disregard_vision">Camera negeren en terugkeren naar de weg</string>
 </resources>

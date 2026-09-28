@@ -16,11 +16,11 @@ class SpeedLimitReferenceModelTests {
     }
     @Test fun packagedPolicyIsTheSharedRuntimePolicy() {
         val model = model()
-        assertEquals("1.0.0", model.version)
+        assertEquals("1.1.0", model.version)
         assertEquals(listOf("voice", "camera", "bundle"), model.policy["priority"])
     }
     @Test fun frozenScenariosThroughNativeInterpreter() {
-        val corpus = SpeedLimitReferenceModel.decode(bytes("scenarios-v1.0.0.json"))
+        val corpus = SpeedLimitReferenceModel.decode(bytes("scenarios-v1.1.0.json"))
         for (scenario in corpus["scenarios"] as List<Map<String, Any?>>) {
             val machine = SpeedReferenceMachine(model())
             for ((index, row) in (scenario["steps"] as List<Map<String, Any?>>).withIndex()) {
@@ -53,8 +53,31 @@ class SpeedLimitReferenceModelTests {
         assertEquals("LAST_KNOWN", runtime.output()?.state)
         assertNull(runtime.output()?.baselineKmh)
     }
+    @Test fun repeatedCameraWithdrawalDoesNotEraseFreshRoadEvidence() {
+        val runtime = SpeedReferenceRuntime(model()) { 0.0 }
+        runtime.bundle("map", SpeedReferenceValue("numeric", 80))
+        runtime.camera("sign", SpeedReferenceValue("numeric", 30))
+        runtime.pipelineAuthorityWithdrawn("end-sign")
+        assertEquals("LAST_KNOWN", runtime.output()?.state)
+        runtime.bundle("fresh-map", SpeedReferenceValue("numeric", 80))
+        repeat(100) { runtime.pipelineAuthorityWithdrawn("end-sign") }
+        assertEquals("BUNDLE", runtime.output()?.state)
+        assertEquals(80, runtime.output()?.baselineKmh)
+        runtime.pipelineAuthorityWithdrawn("different-end-sign")
+        assertEquals("LAST_KNOWN", runtime.output()?.state)
+        assertNull(runtime.output()?.baselineKmh)
+    }
+    @Test fun dismissalRejectsDelayedEvidenceButAllowsNewSigns() {
+        val gate = VisionDismissalGate()
+        val now = java.time.Instant.ofEpochSecond(100)
+        gate.dismiss(now, listOf("active"))
+        assertFalse(gate.permits("active", now.plusSeconds(1)))
+        assertFalse(gate.permits("queued", now.minusSeconds(1)))
+        assertFalse(gate.permits("queued", now.plusSeconds(2)))
+        assertTrue(gate.permits("new-sign", now.plusSeconds(3)))
+    }
     @Test fun rejectsChangedPolicyAndApprovalLock() {
-        for (changed in listOf("policy-v1.0.0.json", "approval-lock.json")) {
+        for (changed in listOf("policy-v1.1.0.json", "approval-lock.json")) {
             assertTrue(runCatching { SpeedLimitReferenceModel.load { name -> if (name == changed) bytes(name) + byteArrayOf(32) else bytes(name) } }.isFailure)
         }
         assertTrue(runCatching { SpeedLimitReferenceModel.load { error("missing resource") } }.isFailure)

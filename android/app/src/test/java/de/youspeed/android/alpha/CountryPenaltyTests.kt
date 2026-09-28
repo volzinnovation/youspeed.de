@@ -9,6 +9,31 @@ class CountryPenaltyTests {
     private fun rules(code: String) = PenaltyRulesParser.parse(File("../../shared/Rules/$code-rules.json").readText())
     private fun catalog() = RegionalPackCatalog.decode(File("../../shared/RegionalCoverage/catalog-v1.json").readBytes())
 
+    @Test fun franceToGermanyRestoresFinePresentationAfterBufferedBorderOverlap() {
+        val selector = PenaltyCountrySelection()
+        val catalog = catalog()
+        fun fix(lat: Double, lon: Double, time: Double) = selector.update(catalog, lat, lon, 8.0, time, time)
+        // Coordinates from the 2026-09-28 Panoramax drive, on each side of
+        // the extract overlap. A map switch alone is not location evidence.
+        assertEquals("FRA", fix(48.8419433333, 8.0715816667, 100.0))
+        assertNull(fix(48.8334666667, 8.1058583333, 110.0))
+        assertNull(fix(48.8259633333, 8.12651, 120.0))
+        assertNull(fix(48.8259633333, 8.12651, 128.0))
+        assertEquals("DEU", fix(48.8259633333, 8.12651, 136.0))
+        val state = ConsumerUiState(currentLatitude = 48.8259633333, currentLongitude = 8.12651,
+            gpsSignalBars = 4, currentSpeedKmh = 60.0, speedLimitKmh = 50,
+            effectiveSpeedLimitSource = EffectiveSpeedLimitSource.BUNDLE,
+            activePenaltyRules = ActivePenaltyRules("DEU-rules.json", rules(selector.countryCode!!)),
+            lastLookupInsideCity = false, lastLookupCitySource = "settlement:outside:high")
+        assertEquals(10, state.activePenaltyRules.bandCount)
+        assertEquals(20, ConsumerMainScreenLogic.currentPenaltyNotice(state)?.moneyFineEUR)
+        assertEquals("20", ConsumerMainScreenLogic.primaryMetricText(state))
+        val unavailable = state.copy(activePenaltyRules = ActivePenaltyRules.unavailable())
+        assertNull(ConsumerMainScreenLogic.currentPenaltyNotice(unavailable))
+        assertEquals("60", ConsumerMainScreenLogic.primaryMetricText(unavailable))
+        assertTrue(ConsumerMainScreenLogic.overspeedBackgroundProgress(unavailable)!! > 0)
+    }
+
     @Test fun malformedSeverityIsRejectedInsteadOfSilentlyBecomingMoneyOnly() {
         for (value in listOf("\"unknown\"", "\"\"", "42", "true", "{}", "[]")) {
             assertThrows(IllegalArgumentException::class.java) {

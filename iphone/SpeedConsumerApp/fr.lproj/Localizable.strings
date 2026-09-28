@@ -379,3 +379,10 @@
 
 "settings.maps.preparing" = "Préparation du téléchargement…";
 "settings.maps.download_failed" = "Échec du téléchargement : %@";
+
+"tsr.disregard_vision" = "Ignorer la caméra et revenir à la route";
+
+"gravity_alignment.title" = "Niveau de la caméra";
+"gravity_alignment.unavailable" = "Alignement par gravité indisponible";
+"gravity_alignment.angles" = "Roulis %.0f°, inclinaison %.0f°. La gravité ne détermine pas le cap.";
+"tsr.voice_dismissal.listening" = "Dites « Faux »";

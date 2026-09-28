@@ -379,3 +379,10 @@
 
 "settings.maps.preparing" = "Download voorbereiden…";
 "settings.maps.download_failed" = "Download mislukt: %@";
+
+"tsr.disregard_vision" = "Camera negeren en terugkeren naar de weg";
+
+"gravity_alignment.title" = "Cameraniveau";
+"gravity_alignment.unavailable" = "Zwaartekrachtuitlijning niet beschikbaar";
+"gravity_alignment.angles" = "Rol %.0f°, kanteling %.0f°. Zwaartekracht bepaalt geen rijrichting.";
+"tsr.voice_dismissal.listening" = "Zeg ‘Fout’";

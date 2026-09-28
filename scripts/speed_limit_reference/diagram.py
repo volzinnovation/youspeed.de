@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--format", choices=["dot", "mermaid"], default="dot")
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[2]
-policy = json.loads((root / "shared/speed-limit-reference/policy-v1.0.0.json").read_text())
+policy = json.loads((root / "shared/speed-limit-reference/policy-v1.1.0.json").read_text())
 
 if args.format == "dot":
     def quote(text):

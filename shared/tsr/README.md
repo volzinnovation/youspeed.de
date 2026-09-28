@@ -297,3 +297,11 @@ attestations also bind the benchmark run and physical device identity.
 Its result is an internal engineering model scorecard only. It cannot approve
 privacy handling, legal obligations, signed distribution, app-level override
 lifecycle, or production release; those remain independent fail-closed reviews.
+
+## Swiss classifier acceptance
+
+On 27 September 2026 the product owner accepted the bundled CH v9 classifier
+on the basis of successful driving experience. The [acceptance record](field-acceptance/CH-v9-2026-09-27.json)
+pins both platform exports and their manifests. Both apps already select this
+pack for CH; no classifier replacement is needed. Field acceptance is separate
+from score calibration and signed registry publication.

@@ -89,6 +89,12 @@ internal fun RecorderModuleStrip(
     val ui = controller.uiState
     var previewDialog by remember { mutableStateOf(false) }
     var details by remember { mutableStateOf(false) }
+    LaunchedEffect(ui.drivingControlsAllowed) {
+        if (!ui.drivingControlsAllowed) {
+            previewDialog = false
+            details = false
+        }
+    }
     var now by remember { mutableStateOf(Instant.now()) }
     LaunchedEffect(ui.driveRecorderStartedAt) {
         while (ui.driveRecorderStartedAt != null) { now = Instant.now(); delay(1_000) }
@@ -115,7 +121,15 @@ internal fun RecorderModuleStrip(
         contentColor = foreground,
         border = BorderStroke(1.dp, Color(0xFF74777B)),
     ) {
-        if (compact) {
+        if (!ui.drivingControlsAllowed) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 7.dp),
+                horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("$stateLabel · $elapsed", style = MaterialTheme.typography.labelSmall)
+                Text("Dashcam · ${onOff(ui.driveRecorderDashcamActive)}", style = MaterialTheme.typography.labelSmall)
+                Text("TSR · ${onOff(ui.trafficSignRecognitionEnabled)}", style = MaterialTheme.typography.labelSmall)
+                Text("Panoramax · ${ui.panoramaxCaptureCount}", style = MaterialTheme.typography.labelSmall)
+            }
+        } else if (compact) {
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -215,11 +229,11 @@ internal fun RecorderModuleStrip(
             }
         }
     }
-    if (previewDialog) SheetScaffold(parityText("Camera preview", "Kameravorschau", "Aperçu caméra", "Cameravoorbeeld"),
+    if (previewDialog && ui.drivingControlsAllowed) SheetScaffold(parityText("Camera preview", "Kameravorschau", "Aperçu caméra", "Cameravoorbeeld"),
         { previewDialog = false }, "recorder-preview-sheet") {
         RecorderPreviewWorkspace(controller, Modifier.fillMaxSize(), true)
     }
-    if (details) SheetScaffold(parityText("Recognition details", "Erkennungsdetails", "Détails de reconnaissance", "Herkenningsdetails"),
+    if (details && ui.drivingControlsAllowed) SheetScaffold(parityText("Recognition details", "Erkennungsdetails", "Détails de reconnaissance", "Herkenningsdetails"),
         { details = false }, "traffic-sign-details-sheet") { TrafficSignDetailsContent(controller) }
 }
 
@@ -308,7 +322,7 @@ internal fun RecorderPreviewWorkspace(
                 }
             },
         )
-        if (visible && onDismiss != null) TextButton(onClick = { controller.performButtonAction(onDismiss) },
+        if (visible && onDismiss != null && controller.uiState.drivingControlsAllowed) TextButton(onClick = { controller.performButtonAction(onDismiss) },
             modifier = Modifier.align(Alignment.TopEnd).testTag("recorder-hide-preview")) {
             Text(doneLabel(), color = Color.White)
         }

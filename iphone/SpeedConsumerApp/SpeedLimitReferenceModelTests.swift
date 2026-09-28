@@ -8,12 +8,12 @@ final class SpeedLimitReferenceModelTests: XCTestCase {
     }
     func testPackagedPolicyIsTheSharedRuntimePolicy() throws {
         let model = try SpeedLimitReferenceModel.bundled()
-        XCTAssertEqual(model.version, "1.0.0")
+        XCTAssertEqual(model.version, "1.1.0")
         XCTAssertEqual(model.policy["priority"] as? [String], ["voice", "camera", "bundle"])
     }
     func testFrozenScenariosThroughNativeInterpreter() throws {
         let model = try SpeedLimitReferenceModel.load(read: read)
-        let corpus = try JSONSerialization.jsonObject(with: read("scenarios-v1.0.0.json")) as! [String: Any]
+        let corpus = try JSONSerialization.jsonObject(with: read("scenarios-v1.1.0.json")) as! [String: Any]
         for scenario in corpus["scenarios"] as! [[String: Any]] {
             let machine = SpeedReferenceMachine(model: model)
             for (index, row) in (scenario["steps"] as! [[String: Any]]).enumerated() {
@@ -49,8 +49,31 @@ final class SpeedLimitReferenceModelTests: XCTestCase {
         XCTAssertEqual(runtime.output?.state, "LAST_KNOWN")
         XCTAssertNil(runtime.output?.baselineKmh)
     }
+    func testRepeatedCameraWithdrawalDoesNotEraseFreshRoadEvidence() throws {
+        let runtime = SpeedReferenceRuntime(model: try SpeedLimitReferenceModel.load(read: read), now: { 0 })
+        runtime.bundle(id: "map", value: .init(kind: "numeric", kmh: 80))
+        runtime.camera(id: "sign", value: .init(kind: "numeric", kmh: 30))
+        runtime.pipelineAuthorityWithdrawn(evidenceID: "end-sign")
+        XCTAssertEqual(runtime.output?.state, "LAST_KNOWN")
+        runtime.bundle(id: "fresh-map", value: .init(kind: "numeric", kmh: 80))
+        for _ in 0..<100 { runtime.pipelineAuthorityWithdrawn(evidenceID: "end-sign") }
+        XCTAssertEqual(runtime.output?.state, "BUNDLE")
+        XCTAssertEqual(runtime.output?.baselineKmh, 80)
+        runtime.pipelineAuthorityWithdrawn(evidenceID: "different-end-sign")
+        XCTAssertEqual(runtime.output?.state, "LAST_KNOWN")
+        XCTAssertNil(runtime.output?.baselineKmh)
+    }
+    func testDismissalRejectsDelayedEvidenceButAllowsNewSigns() {
+        var gate = VisionDismissalGate()
+        let now = Date(timeIntervalSince1970: 100)
+        gate.dismiss(at: now, tracks: ["active"])
+        XCTAssertFalse(gate.permits(track: "active", observedAt: now.addingTimeInterval(1)))
+        XCTAssertFalse(gate.permits(track: "queued", observedAt: now.addingTimeInterval(-1)))
+        XCTAssertFalse(gate.permits(track: "queued", observedAt: now.addingTimeInterval(2)))
+        XCTAssertTrue(gate.permits(track: "new-sign", observedAt: now.addingTimeInterval(3)))
+    }
     func testRejectsChangedPolicyAndApprovalLock() throws {
-        for changed in ["policy-v1.0.0.json", "approval-lock.json"] {
+        for changed in ["policy-v1.1.0.json", "approval-lock.json"] {
             XCTAssertThrowsError(try SpeedLimitReferenceModel.load { name in
                 var data = try self.read(name); if name == changed { data.append(32) }; return data
             })

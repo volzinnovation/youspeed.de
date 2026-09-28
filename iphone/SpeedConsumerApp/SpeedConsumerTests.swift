@@ -337,6 +337,82 @@ private final class TrafficSignTestEmissionStore: @unchecked Sendable {
 }
 
 final class SpeedConsumerTests: XCTestCase {
+    @MainActor
+    func testGPSRoutingLeavesCoverageAndReusesReadersWhenReturning() async throws {
+        let fm = FileManager.default
+        let root = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: root.path) { try fm.removeItem(at: root) }
+        defer { try? fm.removeItem(at: root) }
+        func fixture(region: String, country: String, lat: Double, lon: Double, city: String) throws -> URL {
+            let directory = root.appendingPathComponent("bundles/\(country)-gps-route-test")
+            try fm.createDirectory(at: directory, withIntermediateDirectories: true)
+            let database = directory.appendingPathComponent("roads.sqlite")
+            try createCityPolygonFixtureDB(at: database, fixLat: lat, fixLon: lon, adminLevel8Name: city)
+            try executeSQL(at: database, sql: "UPDATE ways SET maxspeed='50';")
+            let data = try Data(contentsOf: database)
+            let manifest = V3BundleManifest(format: "youspeed.v3.bundle.manifest", schemaVersion: 1,
+                variant: "v3", region: region, countryCode: country, bundleVersion: "gps-route-test",
+                createdAtUTC: "2026-09-27T00:00:00Z", minAppVersion: "1.0.0",
+                db: BundleArtifact(file: database.lastPathComponent, bytes: Int64(data.count), sha256: sha256Hex(data), url: nil),
+                dbParts: nil, deltaIndex: nil,
+                coverage: BundleCoverage(bbox: BundleCoverageBBox(minLon: lon - 0.05, minLat: lat - 0.05,
+                    maxLon: lon + 0.05, maxLat: lat + 0.05), poly: nil))
+            try JSONEncoder().encode(manifest).write(to: directory.appendingPathComponent("bundle-manifest.v3.json"))
+            return database
+        }
+        let france = try fixture(region: "france/rhone-alpes", country: "FRA", lat: 45.7204, lon: 5.078, city: "French Test City")
+        let swiss = try fixture(region: "switzerland", country: "CHE", lat: 47, lon: 8, city: "Swiss Test City")
+        let active = ActiveBundleState(region: "switzerland", bundleVersion: "gps-route-test",
+            dbFileName: swiss.lastPathComponent, activatedAtUTC: "2026-09-27T00:00:00Z",
+            dbPath: swiss.path, dbSHA256: sha256Hex(try Data(contentsOf: swiss)))
+        try JSONEncoder().encode(active).write(to: root.appendingPathComponent("active_bundle.json"))
+        let model = DriveSessionViewModel()
+        defer { model.stopDriving() }
+        try await model.testWaitForStartupDataLoad()
+        await model.testRefreshBundleInventory()
+        model.matcherDebugProfile = .m7
+        // Persisted Switzerland must yield to France even 44 m off its nearest road.
+        await model.testRunGPSLookup(latitude: 45.720, longitude: 5.078)
+        XCTAssertEqual(model.activeDBPath, france.path)
+        XCTAssertEqual(model.testMapCountryCode, "FRA")
+        XCTAssertNil(model.limitWayID)
+        XCTAssertEqual(model.limitCityName, "French Test City")
+        let franceReader = try XCTUnwrap(model.testLookupServiceIdentity)
+        await model.testRunGPSLookup(latitude: 45.7204, longitude: 5.078)
+        let opens = try XCTUnwrap(model.testLookupResourceStatistics?.opens)
+        let prepares = try XCTUnwrap(model.testLookupResourceStatistics?.prepares)
+        await model.testRunGPSLookup(latitude: 45.7204, longitude: 5.078)
+        XCTAssertEqual(model.testLookupServiceIdentity, franceReader)
+        XCTAssertEqual(model.testLookupResourceStatistics?.opens, opens)
+        XCTAssertEqual(model.testLookupResourceStatistics?.prepares, prepares)
+        await model.testRunGPSLookup(latitude: 43.2965, longitude: 5.3698)
+        XCTAssertTrue(model.activeDBPath.isEmpty)
+        XCTAssertNil(model.testLookupServiceIdentity)
+        XCTAssertNil(model.limitCityName)
+        XCTAssertNil(model.limitWayID)
+        // Losing map coverage withdraws map evidence. The approved reference
+        // policy may still retain its last known value; do not reset that policy.
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown)
+        XCTAssertEqual(model.missingCoverageDownloadOptionID, "france|provence-alpes-cote-d-azur")
+        XCTAssertTrue(model.hasOnboardingMap)
+        let generation = model.testMapContextGeneration
+        await model.testRunGPSLookup(latitude: 43.2965, longitude: 5.3698)
+        XCTAssertEqual(model.testMapContextGeneration, generation)
+        await model.testRunGPSLookup(latitude: 45.7204, longitude: 5.078)
+        XCTAssertEqual(model.activeDBPath, france.path)
+        XCTAssertEqual(model.testLookupServiceIdentity, franceReader)
+        XCTAssertEqual(model.testLookupResourceStatistics?.opens, opens)
+        await model.testRunGPSLookup(latitude: 47, longitude: 8)
+        XCTAssertEqual(model.activeDBPath, swiss.path)
+        XCTAssertEqual(model.testMapCountryCode, "CHE")
+        await model.testRunGPSLookup(latitude: 45.7204, longitude: 5.078)
+        XCTAssertEqual(model.activeDBPath, france.path)
+        XCTAssertEqual(model.testMapCountryCode, "FRA")
+        XCTAssertEqual(model.testLookupServiceIdentity, franceReader)
+        XCTAssertEqual(model.testLookupResourceStatistics?.opens, opens)
+        XCTAssertNil(model.missingCoverageDownloadOptionID)
+    }
+
     func testMissingCoverageRecommendationUsesAvailableRegionalDownload() throws {
         let catalog = try XCTUnwrap(RegionalPackCatalog.bundled(Bundle(for: SpeedConsumerAppDelegate.self)))
         let ids = Set(catalog.regions.map(\.id))
@@ -7088,7 +7164,7 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
     @MainActor
-    func testViewModelInitClearsExistingDrivingLogs() throws {
+    func testViewModelInitPreservesExistingDrivingLogs() throws {
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
         if fm.fileExists(atPath: supportDir.path) {
@@ -7106,18 +7182,26 @@ final class SpeedConsumerTests: XCTestCase {
         try Data("{\"stale\":true}\n".utf8).write(to: staleMatchLogURL)
         try Data("{\"stale\":true}\n".utf8).write(to: anotherStaleMatchLogURL)
 
+        let oldTSRLogURL = supportDir.appendingPathComponent("20260312_000427_801_tsr_log.ndjson")
+        try Data("previous TSR evidence\n".utf8).write(to: oldTSRLogURL)
         let viewModel = DriveSessionViewModel()
 
-        XCTAssertEqual(try String(contentsOf: gpsLogURL, encoding: .utf8).components(separatedBy: "\n").first, "fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m,vacc_m,course_deg,status,way_id,street_name,city_name,inside_city,city_source,city_resolve_ms,city_candidate_boundaries,city_containing_boundaries,city_place_candidates,speed_limit_kmh,query_ms,candidate_count,speed_candidate_count,nearest_candidate_m,nearest_speed_candidate_m,error")
-        XCTAssertFalse(fm.fileExists(atPath: staleMatchLogURL.path))
-        XCTAssertFalse(fm.fileExists(atPath: anotherStaleMatchLogURL.path))
+        XCTAssertEqual(try String(contentsOf: gpsLogURL, encoding: .utf8), "stale gps")
+        XCTAssertEqual(try String(contentsOf: staleMatchLogURL, encoding: .utf8), "{\"stale\":true}\n")
+        XCTAssertEqual(try String(contentsOf: anotherStaleMatchLogURL, encoding: .utf8), "{\"stale\":true}\n")
+        XCTAssertEqual(try String(contentsOf: oldTSRLogURL, encoding: .utf8), "previous TSR evidence\n")
 
         let currentMatchLogURL = URL(fileURLWithPath: try XCTUnwrap(
             viewModel.matchLogPath.isEmpty ? nil : viewModel.matchLogPath,
-            "Expected current matcher log path after launch reset"
+            "Expected current matcher log path after launch preparation"
         ))
         XCTAssertTrue(fm.fileExists(atPath: currentMatchLogURL.path))
         XCTAssertEqual(try String(contentsOf: currentMatchLogURL, encoding: .utf8), "")
+        let nextLaunch = DriveSessionViewModel()
+        XCTAssertNotEqual(nextLaunch.matchLogPath, viewModel.matchLogPath)
+        XCTAssertNotEqual(nextLaunch.tsrLogPath, viewModel.tsrLogPath)
+        XCTAssertTrue(fm.fileExists(atPath: currentMatchLogURL.path))
+        XCTAssertEqual(try String(contentsOf: gpsLogURL, encoding: .utf8), "stale gps")
     }
 
     func testFlushLocalContributionStateRemovesLocalCorrectionArtifacts() async throws {
@@ -17511,6 +17595,36 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
     }
 
     @MainActor
+    func testUnresolvedEndCannotRepeatedlyClearSuccessfulRoadMatches() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 80)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .maximumSpeedEnd(30), context: context))
+        for _ in 0..<10 {
+            model.testRefreshRoadPreservingTrafficSignAssertion()
+            XCTAssertEqual(model.speedLimitKmh, 80)
+            XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+        }
+    }
+
+    @MainActor
+    func testDisregardVisionReturnsToRoadAndClearsCameraMemory() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 80)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .postedMaximum(30), context: context))
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .camera)
+        model.disregardVision()
+        XCTAssertEqual(model.speedLimitKmh, 80)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: nil)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .postedMaximum(30), context: context, eventID: "new"))
+        model.disregardVision()
+        XCTAssertNotEqual(model.speedLimitKmh, 30)
+        XCTAssertFalse(model.effectiveSpeedLimitState.hasCameraEvidenceMarker)
+    }
+
+    @MainActor
     func testMapAndCameraUpdatesCannotReplaceActiveVoiceCapturePresentation() {
         let model = DriveSessionViewModel()
         let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
@@ -18758,6 +18872,33 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         )
     }
 
+    func testCoveringBundleExcludesForeignActiveRouteBeforeRoadEvidence() {
+        let covering = LocalBundleRoute(region: "france/rhone-alpes", bundleVersion: "v1",
+            countryCode: "FRA", dbPath: "/ra.sqlite")
+        let active = LocalBundleRoute(region: "switzerland", bundleVersion: "v2",
+            countryCode: "CHE", dbPath: "/ch.sqlite")
+        // The Lyon fix can have no road within the selected matcher's radius.
+        // An outside incumbent must never compete, even if it reports a road.
+        for outsideHasRoad in [false, true] {
+            let probes = [
+                BundleRouteProbe(route: covering, hasWayMatch: false, hasSpeedMatch: false,
+                    nearestCandidateDistanceM: nil, nearestSpeedCandidateDistanceM: nil),
+                BundleRouteProbe(route: active, hasWayMatch: outsideHasRoad, hasSpeedMatch: outsideHasRoad,
+                    nearestCandidateDistanceM: nil, nearestSpeedCandidateDistanceM: nil)
+            ]
+            XCTAssertEqual(BundleRouteSelection.choose(probes: probes, currentDBPath: active.dbPath, coveringRoutes: [covering]), covering)
+        }
+    }
+
+    func testBundleRouteCoverageGapNeverUsesActiveDatabase() {
+        let active = LocalBundleRoute(region: "switzerland", bundleVersion: "v2",
+            countryCode: "CHE", dbPath: "/ch.sqlite", dbSHA256: String(repeating: "a", count: 64))
+        let probe = BundleRouteProbe(route: active, hasWayMatch: true, hasSpeedMatch: true,
+            nearestCandidateDistanceM: 0, nearestSpeedCandidateDistanceM: 0)
+        XCTAssertNil(BundleRouteSelection.choose(probes: [probe], currentDBPath: active.dbPath, coveringRoutes: []))
+        XCTAssertNil(BundleRouteSelection.choose(probes: [], currentDBPath: nil, coveringRoutes: []))
+    }
+
     func testOverlappingBundleRouteKeepsCurrentOnTieAndSwitchesToOnlyRoadMatch() {
         let current = LocalBundleRoute(
             region: "germany/rheinland-pfalz",
@@ -18786,7 +18927,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             nearestSpeedCandidateDistanceM: 20
         )
         XCTAssertEqual(
-            BundleRouteSelection.choose(probes: [currentProbe, tiedAlternate], currentDBPath: current.dbPath),
+            BundleRouteSelection.choose(probes: [currentProbe, tiedAlternate], currentDBPath: current.dbPath, coveringRoutes: [current, alternate]),
             current
         )
         let noWayCurrent = BundleRouteProbe(
@@ -18797,7 +18938,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             nearestSpeedCandidateDistanceM: nil
         )
         XCTAssertEqual(
-            BundleRouteSelection.choose(probes: [noWayCurrent, tiedAlternate], currentDBPath: current.dbPath),
+            BundleRouteSelection.choose(probes: [noWayCurrent, tiedAlternate], currentDBPath: current.dbPath, coveringRoutes: [current, alternate]),
             alternate
         )
     }

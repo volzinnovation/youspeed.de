@@ -222,7 +222,20 @@ fun ConsumerApp(controller: ConsumerSessionController) {
     var openLocalRecordings by rememberSaveable { mutableStateOf(false) }
     var openPanoramaxGallery by rememberSaveable { mutableStateOf(false) }
 
-    SideEffect { controller.setSettingsVisible(openSettings) }
+    LaunchedEffect(ui.drivingControlsAllowed) {
+        if (!ui.drivingControlsAllowed) {
+            openSettings = false
+            openLegal = false
+            openDebug = false
+            openLocalRecordings = false
+            openPanoramaxGallery = false
+            controller.setSettingsVisible(false)
+        }
+    }
+    LaunchedEffect(ui.stationarySpeedObservedAt, ui.trafficSignRecognitionEnabled) {
+        controller.prepareVisionDismissalPermissionIfNeeded()
+    }
+    SideEffect { controller.setSettingsVisible(openSettings && ui.drivingControlsAllowed) }
     DisposableEffect(controller) {
         onDispose { controller.setSettingsVisible(false) }
     }
@@ -232,8 +245,8 @@ fun ConsumerApp(controller: ConsumerSessionController) {
     }
 
     val showingOnboarding = controller.shouldPresentOnboarding()
-    LaunchedEffect(ui.startupDataState, ui.appScreenshotState, showingOnboarding) {
-        if (showingOnboarding) {
+    LaunchedEffect(ui.startupDataState, ui.appScreenshotState, showingOnboarding, ui.drivingControlsAllowed) {
+        if (showingOnboarding && ui.drivingControlsAllowed) {
             controller.pauseDrivingForOnboarding()
         } else if (ui.appScreenshotState == null && ui.startupDataState == StartupDataState.READY && ui.driveStatus == "stopped") {
             controller.startDriving()
@@ -248,7 +261,8 @@ fun ConsumerApp(controller: ConsumerSessionController) {
             color = Color.Black,
         ) {
             when {
-                ui.appScreenshotState != null -> {
+                ui.appScreenshotState != null || !ui.drivingControlsAllowed ||
+                    (ui.startupDataState == StartupDataState.READY && !showingOnboarding) -> {
                     MainScreen(
                         controller = controller,
                         ui = ui,
@@ -284,19 +298,6 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                     )
                 }
 
-                ui.startupDataState == StartupDataState.READY -> {
-                    MainScreen(
-                        controller = controller,
-                        ui = ui,
-                        onOpenSettings = { controller.performButtonAction(showSettings) },
-                        onOpenLegal = { controller.performButtonAction { openLegal = true } },
-                        onOpenDebug = { controller.performButtonAction { openDebug = true } },
-                        onOpenLocalRecordings = { controller.performButtonAction { openLocalRecordings = true } },
-                        onOpenPanoramaxGallery = { controller.performButtonAction { openPanoramaxGallery = true } },
-                        onToggleDriveRecorder = controller::toggleDriveRecorder,
-                        onCapture = { controller.performButtonAction(controller::beginSpeedCapture) },
-                    )
-                }
 
                 else -> {
                     StartupScreen(
@@ -311,7 +312,7 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                     title = { Text(stringResource(R.string.ui_video_saving)) },
                     text = { LinearProgressIndicator(Modifier.fillMaxWidth()) })
             }
-            ui.dashcamButtonActionError?.let { error ->
+            ui.dashcamButtonActionError?.takeIf { ui.drivingControlsAllowed }?.let { error ->
                 AlertDialog(onDismissRequest = controller::dismissDashcamButtonActionError,
                     title = { Text(stringResource(R.string.ui_video_save_failed)) },
                     text = { Text(error) },
@@ -320,23 +321,23 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                     } })
             }
 
-            if (openSettings) {
+            if (openSettings && ui.drivingControlsAllowed) {
                 SettingsSheet(
                     controller = controller,
                     onDismiss = { controller.setSettingsVisible(false); openSettings = false },
                     onOpenDebug = { controller.performButtonAction { openDebug = true } },
                 )
             }
-            if (openLegal) {
+            if (openLegal && ui.drivingControlsAllowed) {
                 LegalSheet(ui = ui, onDismiss = { openLegal = false })
             }
-            if (openDebug) {
+            if (openDebug && ui.drivingControlsAllowed) {
                 DebugSheet(controller = controller, onDismiss = { openDebug = false })
             }
-            if (openLocalRecordings) {
+            if (openLocalRecordings && ui.drivingControlsAllowed) {
                 LocalRecordingsSheet(controller = controller, onDismiss = { openLocalRecordings = false })
             }
-            if (openPanoramaxGallery) {
+            if (openPanoramaxGallery && ui.drivingControlsAllowed) {
                 PanoramaxGallerySheet(controller = controller, onDismiss = { openPanoramaxGallery = false })
             }
         }
@@ -456,6 +457,13 @@ private fun MainScreen(
     onCapture: () -> Unit,
 ) {
     var previewSelected by rememberSaveable { mutableStateOf(true) }
+    var alignmentNow by remember { mutableStateOf(Instant.now()) }
+    LaunchedEffect(ui.stationarySpeedObservedAt) {
+        while (ui.stationarySpeedObservedAt != null) {
+            alignmentNow = Instant.now()
+            kotlinx.coroutines.delay(1_000)
+        }
+    }
     val recorderVisible = ui.driveRecorderState != DriveRecorderState.DISABLED
     var previousPhotoCaptureAt by remember { mutableStateOf(ui.panoramaxLastCaptureAt) }
     var photoCaptureFeedbackVisible by remember { mutableStateOf(false) }
@@ -578,13 +586,7 @@ private fun MainScreen(
                 Box(
                     Modifier.fillMaxSize().padding(top = screenInset, bottom = 8.dp).testTag("main-sign-pane"),
                 ) {
-                    TopCornerButtons(
-                        screenInset, foreground, buttonBg, buttonBorder,
-                        trafficSignBugButtonTint(ui, foreground),
-                        showLocalRecordings = false,
-                        onOpenLocalRecordings = onOpenLocalRecordings,
-                        modifier = Modifier.align(Alignment.TopStart),
-                    )
+
                     val showsActiveCameraLimitIndicator = CameraSpeedLimitUsePresentation.isVisible(
                         ConsumerMainScreenLogic.isInSpeedCaptureMode(ui), ui.effectiveSpeedLimitSource,
                         ui.speedLimitKmh != null || ui.speedLimitDisplayText != null || ui.isUnlimitedSpeedLimitActive,
@@ -621,6 +623,7 @@ private fun MainScreen(
                                 ui.speedLimitKmh != null -> stringResource(R.string.ui_camera_speed_limit, ui.speedLimitKmh.toString())
                                 else -> stringResource(R.string.ui_camera_sign)
                             },
+                            touchEnabled = ui.drivingControlsAllowed,
                             onDoubleTap = onCapture,
                         )
                         // Draw the recognized secondary sign after the speed
@@ -643,6 +646,7 @@ private fun MainScreen(
                             }
                         }
                     }
+
                 }
                 Column(
                     Modifier.fillMaxSize().padding(top = if (landscape) screenInset else 0.dp, bottom = 12.dp)
@@ -704,14 +708,14 @@ private fun MainScreen(
                         if (previewPresentation.isAttached) RecorderPreviewWorkspace(
                             controller, Modifier.fillMaxSize().padding(horizontal = horizontalPadding),
                             visible = previewVisible,
-                            onDismiss = { previewSelected = false },
+                            onDismiss = if (ui.drivingControlsAllowed) ({ previewSelected = false }) else null,
                         )
                     }
                     if (ui.driveRecorderDashcamActive && !landscape) RecorderModuleStrip(
                         controller, Modifier.padding(top = 6.dp).testTag("drive-recorder-status"),
                         onPreviewRequested = { previewSelected = true },
                     )
-                    if (landscape) BottomCornerButtons(
+                    if (landscape && ui.drivingControlsAllowed) BottomCornerButtons(
                         horizontalPadding = screenInset, foreground = foreground,
                         buttonBg = buttonBg, buttonBorder = buttonBorder,
                         onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings,
@@ -742,7 +746,7 @@ private fun MainScreen(
                 lower.place(if (landscape) upperWidth else 0, if (landscape) 0 else upperHeight)
             }
         }
-        if (!landscape) BottomCornerButtons(
+        if (!landscape && ui.drivingControlsAllowed) BottomCornerButtons(
             horizontalPadding = screenInset, foreground = foreground,
             buttonBg = buttonBg, buttonBorder = buttonBorder,
             onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings,
@@ -754,6 +758,21 @@ private fun MainScreen(
             photoCaptureFeedbackVisible = photoCaptureFeedbackVisible,
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
         )
+        if (GravityAlignmentVisibility.isVisible(landscape = landscape, controlsAllowed = ui.drivingControlsAllowed,
+            speedKmh = ui.currentSpeedKmh, stationaryObservedAt = ui.stationarySpeedObservedAt,
+            now = maxOf(alignmentNow, Instant.now()), inTunnel = ui.tunnelModeState == TunnelModeState.ACTIVE)) {
+            GravityAlignmentOverlay(
+                orientation = ui.manualOrientation,
+                foregroundColor = foreground,
+                modifier = Modifier.align(Alignment.TopCenter).size(maxWidth * 0.1f, maxHeight * 0.1f),
+            )
+        }
+        if (ui.visionDismissalListening) {
+            Text(stringResource(R.string.tsr_voice_dismissal_listening), color = Color.White,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.align(Alignment.BottomCenter).background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 10.dp, vertical = 4.dp).testTag("vision-dismissal-listening"))
+        }
     }
 }
 
@@ -956,6 +975,7 @@ private fun SpeedLimitSign(
     showsActiveCameraLimitIndicator: Boolean,
     showsStaleBundleLimitIndicator: Boolean,
     cameraSourceStateDescription: String?,
+    touchEnabled: Boolean = true,
     onDoubleTap: () -> Unit,
 ) {
     val currentCaptureAction by rememberUpdatedState(onDoubleTap)
@@ -972,10 +992,10 @@ private fun SpeedLimitSign(
         modifier = Modifier
             .then(modifier)
             .size(signSize)
-            .pointerInput(Unit) { detectTapGestures(onDoubleTap = { currentCaptureAction() }) }
+            .then(if (touchEnabled) Modifier.pointerInput(Unit) { detectTapGestures(onDoubleTap = { currentCaptureAction() }) } else Modifier)
             .semantics {
                 contentDescription = signDescription
-                onClick(label = captureLabel) { currentCaptureAction(); true }
+                if (touchEnabled) onClick(label = captureLabel) { currentCaptureAction(); true }
             }
             .testTag("speed-sign"),
         contentAlignment = Alignment.Center,
@@ -1173,7 +1193,7 @@ private fun LocationStatusBlock(
                     Text(ConsumerMainScreenLogic.debugCoordinateText(ui.copy(limitStreetName = null)),
                         color = foreground, fontSize = debugFont, fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace)
-                    TextButton(onClick = onDownloadData, enabled = !active && !queued,
+                    if (ui.drivingControlsAllowed) TextButton(onClick = onDownloadData, enabled = !active && !queued,
                         modifier = Modifier.heightIn(min = 48.dp).testTag("dashboard-download-data")) {
                         Text(stringResource(if (active) R.string.ui_downloading_data else if (queued) R.string.ui_download_queued else if (ui.bundleDownloadErrors[ui.missingCoverageDownloadOptionId] != null) R.string.onboarding_retry_download else R.string.ui_download_data),
                             color = foreground, fontWeight = FontWeight.Bold, fontSize = 20.sp,
@@ -1188,7 +1208,8 @@ private fun LocationStatusBlock(
                     highlighted = ConsumerMainScreenLogic.shouldHighlightCityBadge(ui),
                 badgeWidth = locationBadgeWidth,
                 foreground = foreground,
-                onOpenDebug = onOpenDebug,
+                onOpenDebug = { if (ui.drivingControlsAllowed) onOpenDebug() },
+                interactionEnabled = ui.drivingControlsAllowed,
                 compact = compact,
             )
             } else {
@@ -1258,11 +1279,12 @@ private fun CityBadge(
     foreground: Color,
     onOpenDebug: () -> Unit,
     compact: Boolean = false,
+    interactionEnabled: Boolean = true,
 ) {
     Card(
         modifier = Modifier
             .width(badgeWidth)
-            .clickable { onOpenDebug() }
+            .then(if (interactionEnabled) Modifier.clickable { onOpenDebug() } else Modifier)
             .testTag("city-badge"),
         colors = CardDefaults.cardColors(
             containerColor = if (highlighted) BrightYellow else Color.Transparent,

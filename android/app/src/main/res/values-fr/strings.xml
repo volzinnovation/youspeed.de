@@ -108,4 +108,5 @@
     <string name="ui_video_save_failed">Impossible d’enregistrer la vidéo</string>
     <string name="ui_video_save_timeout">L’enregistreur n’a pas confirmé la sauvegarde de la vidéo. L’action demandée a été annulée.</string>
     <string name="ui_correct_speed_limit">Corriger la limitation de vitesse</string>
+    <string name="tsr_disregard_vision">Ignorer la caméra et revenir à la route</string>
 </resources>

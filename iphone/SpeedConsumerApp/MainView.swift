@@ -275,6 +275,7 @@ struct MainView: View {
                         .contentShape(Rectangle())
                         .highPriorityGesture(
                             TapGesture(count: 2).onEnded {
+                                guard viewModel.drivingControlsAllowed else { return }
                                 viewModel.performDriveInteraction { viewModel.beginSpeedLimitCapture() }
                             }
                         )
@@ -293,9 +294,6 @@ struct MainView: View {
                             .frame(width: 86, height: 86)
                                 .position(x: eyeLeft + 43, y: signTop + 43)
                         }
-                        topCornerButtons
-                            .padding(.horizontal, screenInset)
-                            .padding(.top, topPadding)
                     }
                     .frame(width: paneWidth, height: signPaneHeight)
                     .environment(\.layoutDirection, textLayoutDirection)
@@ -325,7 +323,7 @@ struct MainView: View {
                                 .padding(.bottom, landscape ? 0 : bottomPadding + controlDiameter + 8)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: landscape ? .top : .bottom)
                         }
-                        if landscape {
+                        if landscape && viewModel.drivingControlsAllowed {
                             bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true,
                                                 buttonDiameter: controlDiameter)
                                 .padding(.bottom, bottomPadding)
@@ -338,13 +336,46 @@ struct MainView: View {
                     .accessibilityIdentifier("dashboard.workspacePane")
                 }
                 .environment(\.layoutDirection, .leftToRight)
+                .allowsHitTesting(viewModel.drivingControlsAllowed)
+                if landscape {
+                    TimelineView(.periodic(from: .now, by: 1)) { _ in
+                        if showsGravityAlignment(at: Date()) {
+                            GravityAlignmentOverlay(orientation: viewModel.screenOrientation, foregroundColor: primaryForegroundColor)
+                                .frame(width: proxy.size.width * 0.1, height: proxy.size.height * 0.1)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                }
+                if viewModel.isVisionDismissalListening {
+                    Label(NSLocalizedString("tsr.voice_dismissal.listening", comment: ""), systemImage: "mic.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(.black.opacity(0.75), in: Capsule())
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        .allowsHitTesting(false)
+                        .accessibilityIdentifier("dashboard.visionDismissalListening")
+                }
             }
-            if !landscape {
+            if !landscape && viewModel.drivingControlsAllowed {
                 bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true,
                                     buttonDiameter: controlDiameter)
                     .padding(.bottom, bottomPadding)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
+        }
+        .onChange(of: viewModel.drivingControlsAllowed) { _, allowed in
+            guard !allowed else { return }
+            settingsPresentation.wrappedValue = false
+            showingLegalInfo = false
+            showingDebug = false
+            showingLocalRecordings = false
+            showingPanoramaxGallery = false
+            showingTrafficSignDetails = false
+        }
+        .onChange(of: viewModel.stationarySpeedObservedAt) { _, _ in
+            viewModel.prepareVisionDismissalVoicePermissionsIfNeeded(isStationary: hasFreshStationarySpeed(at: Date()))
         }
         .onChange(of: viewModel.panoramaxLastCaptureAt) { _, capturedAt in
             // Only a newly saved photo flashes; opening the dashboard or
@@ -394,7 +425,7 @@ struct MainView: View {
             if viewModel.driveStatus == "stopped" {
                 viewModel.startDriving()
             }
-            if openSettingsOnAppear && !showingSettings {
+            if openSettingsOnAppear && !showingSettings && viewModel.drivingControlsAllowed {
                 settingsPresentation.wrappedValue = true
                 onOpenSettingsConsumed?()
             }
@@ -424,10 +455,23 @@ struct MainView: View {
         Binding(
             get: { showingSettings },
             set: {
-                viewModel.setSettingsPresented($0)
-                showingSettings = $0
+                let allowed = $0 && viewModel.drivingControlsAllowed
+                viewModel.setSettingsPresented(allowed)
+                showingSettings = allowed
             }
         )
+    }
+
+    private func hasFreshStationarySpeed(at now: Date) -> Bool {
+        viewModel.drivingControlsAllowed && GravityAlignmentVisibility.isFreshStationary(
+            speedKmh: viewModel.currentSpeedKmh, stationaryObservedAt: viewModel.stationarySpeedObservedAt,
+            now: now, inTunnel: viewModel.isTunnelModeActive)
+    }
+
+    private func showsGravityAlignment(at now: Date) -> Bool {
+        GravityAlignmentVisibility.isVisible(landscape: viewModel.screenOrientation.isLandscape,
+            controlsAllowed: viewModel.drivingControlsAllowed, speedKmh: viewModel.currentSpeedKmh,
+            stationaryObservedAt: viewModel.stationarySpeedObservedAt, now: now, inTunnel: viewModel.isTunnelModeActive)
     }
 
     private var showsPedestrianZoneSign: Bool {
@@ -439,17 +483,6 @@ struct MainView: View {
             isInSpeedCaptureMode: viewModel.isInSpeedCaptureMode,
             effectiveState: viewModel.effectiveSpeedLimitState
         )
-    }
-
-    private var topCornerButtons: some View {
-        HStack(alignment: .top) {
-            if showsTrafficSignRecognitionDebugBadge,
-               !(viewModel.trafficSignPictogramEnabled && viewModel.trafficSignPictogram != nil) {
-                trafficSignRecognitionBadge
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .foregroundStyle(primaryForegroundColor)
     }
 
     private struct TrafficSignPictogramView: View {
@@ -716,6 +749,7 @@ struct MainView: View {
         .accessibilityLabel("\(label), \(NSLocalizedString(enabled ? "drive_recorder.status.on" : "drive_recorder.status.off", comment: ""))")
     }
 
+    @ViewBuilder
     private func driveRecorderModuleButton(
         symbol: String,
         label: String,
@@ -725,47 +759,51 @@ struct MainView: View {
         transitioning: Bool,
         action: @escaping () -> Void
     ) -> some View {
-        RecordingSafeButton(action: action) {
-            VStack(spacing: 1) {
-                if transitioning {
-                    ProgressView()
-                        .controlSize(.mini)
-                        .tint(primaryForegroundColor)
-                } else {
-                    Image(systemName: active ? symbol : (available ? "circle.slash" : "exclamationmark.triangle.fill"))
-                        .font(.caption.weight(.semibold))
+        if !viewModel.drivingControlsAllowed {
+            driveRecorderModuleIndicator(symbol: symbol, label: label, enabled: active)
+        } else {
+            RecordingSafeButton(action: action) {
+                VStack(spacing: 1) {
+                    if transitioning {
+                        ProgressView()
+                            .controlSize(.mini)
+                            .tint(primaryForegroundColor)
+                    } else {
+                        Image(systemName: active ? symbol : (available ? "circle.slash" : "exclamationmark.triangle.fill"))
+                            .font(.caption.weight(.semibold))
+                    }
+                    Text(label)
+                        .font(.system(size: 9, weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.72)
                 }
-                Text(label)
-                    .font(.system(size: 9, weight: .semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
+                .frame(minWidth: 50, minHeight: 44)
+                .contentShape(Rectangle())
+                .background(
+                    active ? Color.red.opacity(0.16) : (selected ? Color.orange.opacity(0.16) : Color.clear),
+                    in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .strokeBorder(
+                            active ? Color.red.opacity(0.9) : (selected ? Color.orange.opacity(0.9) : Color.clear),
+                            lineWidth: 1.5
+                        )
+                }
+                .opacity(active || selected || transitioning ? 1 : 0.62)
             }
-            .frame(minWidth: 50, minHeight: 44)
-            .contentShape(Rectangle())
-            .background(
-                active ? Color.red.opacity(0.16) : (selected ? Color.orange.opacity(0.16) : Color.clear),
-                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .strokeBorder(
-                        active ? Color.red.opacity(0.9) : (selected ? Color.orange.opacity(0.9) : Color.clear),
-                        lineWidth: 1.5
-                    )
-            }
-            .opacity(active || selected || transitioning ? 1 : 0.62)
+            .buttonStyle(.plain)
+            .disabled(!viewModel.canToggleDriveRecorderModules || transitioning)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(label)
+            .accessibilityValue(driveRecorderModuleAccessibilityValue(
+                active: active,
+                selected: selected,
+                available: available,
+                transitioning: transitioning
+            ))
+            .accessibilityHint(NSLocalizedString("drive_recorder.status.toggle_hint", comment: ""))
         }
-        .buttonStyle(.plain)
-        .disabled(!viewModel.canToggleDriveRecorderModules || transitioning)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(label)
-        .accessibilityValue(driveRecorderModuleAccessibilityValue(
-            active: active,
-            selected: selected,
-            available: available,
-            transitioning: transitioning
-        ))
-        .accessibilityHint(NSLocalizedString("drive_recorder.status.toggle_hint", comment: ""))
     }
 
     private func driveRecorderModuleAccessibilityValue(
@@ -962,7 +1000,7 @@ struct MainView: View {
             .allowsHitTesting(!showingPreview)
             .accessibilityHidden(showingPreview)
             .onTapGesture {
-                guard canShowDriveRecorderPreview else { return }
+                guard viewModel.drivingControlsAllowed, canShowDriveRecorderPreview else { return }
                 viewModel.performDriveInteraction { setDriveRecorderPreviewVisible(true) }
             }
 
@@ -993,11 +1031,13 @@ struct MainView: View {
                                 Spacer()
                             }
                             Spacer()
+                            if viewModel.drivingControlsAllowed {
                             Text(NSLocalizedString("drive_recorder.preview.hide", comment: ""))
                                 .font(.caption.weight(.semibold))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
                                 .background(.black.opacity(0.62), in: Capsule())
+                            }
                         }
                         .foregroundStyle(.white)
                         .padding(12)
@@ -1008,10 +1048,10 @@ struct MainView: View {
                     .accessibilityElement(children: .ignore)
                     .accessibilityIdentifier("dashboard.dashcamPreview")
                     .accessibilityLabel(NSLocalizedString("drive_recorder.preview.live", comment: ""))
-                    .accessibilityHint(NSLocalizedString("drive_recorder.preview.hide", comment: ""))
+                    .accessibilityHint(viewModel.drivingControlsAllowed ? NSLocalizedString("drive_recorder.preview.hide", comment: "") : "")
                     .accessibilityHidden(!showingPreview)
                     .onTapGesture {
-                        guard DriveRecorderPreviewInteractionPolicy.canDismissPreview(
+                        guard viewModel.drivingControlsAllowed, DriveRecorderPreviewInteractionPolicy.canDismissPreview(
                             at: Date(),
                             notBefore: driveRecorderPreviewDismissalAllowedAt
                         ) else { return }
@@ -1021,9 +1061,12 @@ struct MainView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: availableHeight)
-        .accessibilityAction(named: NSLocalizedString("drive_recorder.preview.show", comment: "")) {
-            guard canShowDriveRecorderPreview, !showingPreview else { return }
-            viewModel.performDriveInteraction { setDriveRecorderPreviewVisible(true) }
+        .accessibilityActions {
+            if viewModel.drivingControlsAllowed, canShowDriveRecorderPreview, !showingPreview {
+                Button(NSLocalizedString("drive_recorder.preview.show", comment: "")) {
+                    viewModel.performDriveInteraction { setDriveRecorderPreviewVisible(true) }
+                }
+            }
         }
     }
 
@@ -1081,6 +1124,7 @@ struct MainView: View {
                     }
                     let active = viewModel.isActiveBundleDownload(option)
                     let queued = viewModel.queuedBundleDownloadIDs.contains(option.id)
+                    if viewModel.drivingControlsAllowed {
                     RecordingSafeButton { viewModel.downloadSelectedBundle(option) } label: {
                         Label(active ? NSLocalizedString("metric.downloading_data", comment: "")
                               : queued ? NSLocalizedString("settings.maps.queued", comment: "")
@@ -1095,6 +1139,7 @@ struct MainView: View {
                     .disabled(active || queued)
                     .accessibilityHint(viewModel.bundleDownloadErrors[option.id] ?? option.displayName)
                     .accessibilityIdentifier("dashboard.downloadData")
+                    }
                 }
                 .foregroundStyle(primaryForegroundColor)
             } else if showsLocationBadge {
@@ -1109,6 +1154,7 @@ struct MainView: View {
                 )
                 .contentShape(Rectangle())
                 .onLongPressGesture {
+                    guard viewModel.drivingControlsAllowed else { return }
                     viewModel.performDriveInteraction { showingDebug = true }
                 }
             } else {
@@ -1127,6 +1173,7 @@ struct MainView: View {
                 .multilineTextAlignment(.center)
                 .contentShape(Rectangle())
                 .onLongPressGesture {
+                    guard viewModel.drivingControlsAllowed else { return }
                     viewModel.performDriveInteraction { showingDebug = true }
                 }
             }

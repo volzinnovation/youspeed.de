@@ -9,6 +9,7 @@ final class SpeedReferenceRuntime {
     private let now: () -> Double
     private var origin = 0.0
     private var meters = 0.0
+    private var withdrawnCameraEvidence = Set<String>()
     private var cameraOrigins: [String: (Double, Double)] = [:]
     private var way: String?
     private var road: String?
@@ -22,6 +23,7 @@ final class SpeedReferenceRuntime {
     init(model: SpeedLimitReferenceModel? = try? SpeedLimitReferenceModel.bundled(), now: @escaping () -> Double = { ProcessInfo.processInfo.systemUptime }) { self.now = now; machine = model.map(SpeedReferenceMachine.init); reset() }
     func reset() {
         session = UUID().uuidString; sequence = 0; origin = now(); meters = 0
+        withdrawnCameraEvidence = []
         cameraOrigins = [:]; way = nil; road = nil; relations = []; departure = nil; direction = "unknown"
         _ = send("reset")
     }
@@ -57,7 +59,11 @@ final class SpeedReferenceRuntime {
             "observed_distance_m": first.1, "area_verified": enclosing, "scope_kind": "zone"])
     }
     func applicabilityContextChanged(revision: Int) { _ = send("applicability_context_changed", ["next_revision": revision]) }
-    func pipelineAuthorityWithdrawn() { _ = send("camera_scope_invalidated") }
+    func pipelineAuthorityWithdrawn(evidenceID: String) {
+        guard withdrawnCameraEvidence.insert(evidenceID).inserted else { return }
+        _ = send("camera_scope_invalidated")
+    }
+    func dismissCamera() { _ = send("camera_dismissed") }
     func boundary(_ reason: String) {
         tick(); _ = send("context_confirmed", ["id": UUID().uuidString, "confirmed": true, "reason": reason]); departure = nil
     }
@@ -98,5 +104,23 @@ extension SpeedReferenceOutput {
         switch state { case "VOICE": selectedSource = .localCorrection; case "CAMERA": selectedSource = .camera; case "BUNDLE": selectedSource = .bundle; case "LAST_KNOWN": selectedSource = .lastKnown; default: selectedSource = .none }
         return EffectiveSpeedLimitState(value: value?.effectiveValue ?? .unknown, source: selectedSource,
             presentationReason: "reference_\(state.lowercased())_\(transition)", hasCameraEvidenceMarker: state == "CAMERA", isUserCorrection: state == "VOICE")
+    }
+}
+
+/// Reject delayed frames and passages belonging to evidence the driver dismissed.
+/// Track IDs stay suppressed for the session; a new sign can still be recognized.
+struct VisionDismissalGate {
+    private var cutoff: Date?
+    private var tracks = Set<String>()
+    mutating func dismiss(at time: Date, tracks ids: [String]) {
+        cutoff = time
+        tracks.formUnion(ids)
+    }
+    mutating func permits(track: String?, observedAt: Date) -> Bool {
+        if let cutoff, observedAt <= cutoff {
+            if let track { tracks.insert(track) }
+            return false
+        }
+        return track.map { !tracks.contains($0) } ?? true
     }
 }

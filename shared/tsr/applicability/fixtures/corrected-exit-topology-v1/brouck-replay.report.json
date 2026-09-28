@@ -1,0 +1,1016 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "clip-143435",
+  "experiment": "structural_context_coverage_only",
+  "behavior": "off",
+  "learnedGeometry": "not_run",
+  "isAsDrivenBundle": false,
+  "rows": [
+    {
+      "frameId": "bb36f08d-8d2e-4bec-95b6-e8d8c534bfa1",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606070259.0,
+      "recordedRoadAtMs": 1790606066276.0,
+      "recordedAgeMs": 3983.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "b2a65c18-af52-41d4-9244-9bb603fe7a04",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606070749.0,
+      "recordedRoadAtMs": 1790606069303.0,
+      "recordedAgeMs": 1446.0,
+      "recordedContextFresh": true,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "9275c211-665e-47d7-b121-05c67ba29131",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606071108.0,
+      "recordedRoadAtMs": 1790606069303.0,
+      "recordedAgeMs": 1805.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "998a059b-4588-40c0-a1f1-4edbc1331a38",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606071488.0,
+      "recordedRoadAtMs": 1790606069303.0,
+      "recordedAgeMs": 2185.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "88ad9048-757f-4ba6-9587-a390fc0c1f60",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606071838.0,
+      "recordedRoadAtMs": 1790606069303.0,
+      "recordedAgeMs": 2535.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "9cd2756c-0ee0-4c1c-add0-ecbe4257ce70",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606072183.0,
+      "recordedRoadAtMs": 1790606069303.0,
+      "recordedAgeMs": 2880.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "8c7e0f64-d3a5-43d0-a6fc-663014d790c8",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606072537.0,
+      "recordedRoadAtMs": 1790606069303.0,
+      "recordedAgeMs": 3234.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "2ce2f139-f27f-4395-b202-391d68399229",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606072917.0,
+      "recordedRoadAtMs": 1790606069303.0,
+      "recordedAgeMs": 3614.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "b83f4d1f-d723-408d-bb67-4052a316faed",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606073281.0,
+      "recordedRoadAtMs": 1790606069303.0,
+      "recordedAgeMs": 3978.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "e9d83ce1-6201-4185-ad5f-7f8bb15c9c87",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606073673.0,
+      "recordedRoadAtMs": 1790606069303.0,
+      "recordedAgeMs": 4370.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "0835dd32-8150-498c-8f85-96517eb0e319",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606074037.0,
+      "recordedRoadAtMs": 1790606072283.0,
+      "recordedAgeMs": 1754.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "6ca640a8-b35b-4565-a9e4-e42f00535180",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606074386.0,
+      "recordedRoadAtMs": 1790606072283.0,
+      "recordedAgeMs": 2103.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "757876fc-72f9-4fc7-a1fb-4a31aa43bb53",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606074738.0,
+      "recordedRoadAtMs": 1790606072283.0,
+      "recordedAgeMs": 2455.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "7a8b5376-d51f-4708-988d-b660303dbfca",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606075075.0,
+      "recordedRoadAtMs": 1790606072283.0,
+      "recordedAgeMs": 2792.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "bc252494-59f2-4eb4-b944-479ec78383b8",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606075470.0,
+      "recordedRoadAtMs": 1790606072283.0,
+      "recordedAgeMs": 3187.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "9ffb0ad1-90bf-4cb5-9ef4-fa3f7f51efda",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606075824.0,
+      "recordedRoadAtMs": 1790606072283.0,
+      "recordedAgeMs": 3541.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "97e3808c-a563-4d49-8732-6dda11e5e38a",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606076317.0,
+      "recordedRoadAtMs": 1790606072283.0,
+      "recordedAgeMs": 4034.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "656a2e7f-fc1c-4ddf-b87d-b68a59cdc1f0",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606076794.0,
+      "recordedRoadAtMs": 1790606075278.0,
+      "recordedAgeMs": 1516.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "d7bd5d21-ba06-4ab7-b235-76523c2403ef",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606077283.0,
+      "recordedRoadAtMs": 1790606075278.0,
+      "recordedAgeMs": 2005.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "0e860b0d-e965-4b5d-8005-fd1e60a3bb11",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606077861.0,
+      "recordedRoadAtMs": 1790606075278.0,
+      "recordedAgeMs": 2583.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "3ac36e19-7ea4-439c-8d1c-2a2b1172ca85",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606078452.0,
+      "recordedRoadAtMs": 1790606075278.0,
+      "recordedAgeMs": 3174.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "05e750f0-bd1a-423a-b39c-ec975f48a2b3",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606078921.0,
+      "recordedRoadAtMs": 1790606075278.0,
+      "recordedAgeMs": 3643.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "ba7fe13f-1ad1-484f-8abf-37f8b56451ea",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606079410.0,
+      "recordedRoadAtMs": 1790606075278.0,
+      "recordedAgeMs": 4132.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "8ba2d240-7e3f-4892-aa4b-a984c1f87147",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606079938.0,
+      "recordedRoadAtMs": 1790606078278.0,
+      "recordedAgeMs": 1660.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "e358ec1e-da24-48d5-a319-521e469aa3a0",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606080442.0,
+      "recordedRoadAtMs": 1790606078278.0,
+      "recordedAgeMs": 2164.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "d8260da8-286e-40e6-a451-411025446096",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606081046.0,
+      "recordedRoadAtMs": 1790606078278.0,
+      "recordedAgeMs": 2768.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "adbe16f1-64e1-464b-87b9-ac57a633d2cd",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606081753.0,
+      "recordedRoadAtMs": 1790606078278.0,
+      "recordedAgeMs": 3475.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "723ca3bc-2256-4756-baa9-4cff75620b2a",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606082352.0,
+      "recordedRoadAtMs": 1790606078278.0,
+      "recordedAgeMs": 4074.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "9d52c8ca-8264-45c5-ae59-da1cdf80616c",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606082946.0,
+      "recordedRoadAtMs": 1790606081284.0,
+      "recordedAgeMs": 1662.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "624fc37b-6e4e-4676-8252-59b44d4a24e1",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606083524.0,
+      "recordedRoadAtMs": 1790606081284.0,
+      "recordedAgeMs": 2240.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "0a76b010-2f64-417e-a992-37ef9f7acca0",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606084068.0,
+      "recordedRoadAtMs": 1790606081284.0,
+      "recordedAgeMs": 2784.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "dabbb355-3d52-460b-a7bf-bff65be27d7d",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606084578.0,
+      "recordedRoadAtMs": 1790606081284.0,
+      "recordedAgeMs": 3294.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "1e390b64-c028-4b53-8146-7bc64cd4e977",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606085325.0,
+      "recordedRoadAtMs": 1790606081284.0,
+      "recordedAgeMs": 4041.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "f2ef69fb-e39a-4c4a-aaa7-cec71456114a",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606086054.0,
+      "recordedRoadAtMs": 1790606084284.0,
+      "recordedAgeMs": 1770.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "74e420ab-e357-41bf-a167-7a427fd04225",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606086409.0,
+      "recordedRoadAtMs": 1790606084284.0,
+      "recordedAgeMs": 2125.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "c7b25162-9567-49e1-8049-c5e0f5a8622a",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606086753.0,
+      "recordedRoadAtMs": 1790606084284.0,
+      "recordedAgeMs": 2469.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "4b83de42-6e67-4ce0-a089-ae99e804a150",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606087122.0,
+      "recordedRoadAtMs": 1790606084284.0,
+      "recordedAgeMs": 2838.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "18e82323-02c8-4efa-912e-c262c20cc9b1",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606087530.0,
+      "recordedRoadAtMs": 1790606084284.0,
+      "recordedAgeMs": 3246.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "a18fb515-f9fc-4c4a-8a50-b3323e722877",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606087885.0,
+      "recordedRoadAtMs": 1790606084284.0,
+      "recordedAgeMs": 3601.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "1b3bc8be-d968-425e-b0c4-99fd408700ad",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606088279.0,
+      "recordedRoadAtMs": 1790606084284.0,
+      "recordedAgeMs": 3995.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "01cf4fb8-39e2-4c57-afaf-118075ebd6d6",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606088652.0,
+      "recordedRoadAtMs": 1790606087279.0,
+      "recordedAgeMs": 1373.0,
+      "recordedContextFresh": true,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "cd3f9746-1180-4b00-8521-36d1c87c9378",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606089006.0,
+      "recordedRoadAtMs": 1790606087279.0,
+      "recordedAgeMs": 1727.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "785eea3d-40f7-4962-b624-6e549636570f",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606089360.0,
+      "recordedRoadAtMs": 1790606087279.0,
+      "recordedAgeMs": 2081.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "31a548af-42b7-4ba4-9db4-c27c6266c865",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606089734.0,
+      "recordedRoadAtMs": 1790606087279.0,
+      "recordedAgeMs": 2455.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "5eef317b-c1a2-49cb-b3b9-44e2b9429505",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606090080.0,
+      "recordedRoadAtMs": 1790606087279.0,
+      "recordedAgeMs": 2801.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "b79935a7-138a-4802-85f9-043de0f0f08a",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606090448.0,
+      "recordedRoadAtMs": 1790606087279.0,
+      "recordedAgeMs": 3169.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "2a69062a-9632-4e67-ae70-63d490bc3368",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606090856.0,
+      "recordedRoadAtMs": 1790606087279.0,
+      "recordedAgeMs": 3577.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "f1f56b0f-2021-4595-a57a-80c564da016e",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606091227.0,
+      "recordedRoadAtMs": 1790606087279.0,
+      "recordedAgeMs": 3948.0,
+      "recordedContextFresh": false,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    },
+    {
+      "frameId": "e46126c2-ff3f-4848-b025-6a7746630262",
+      "wayId": "216220089",
+      "capturedAtMs": 1790606091659.0,
+      "recordedRoadAtMs": 1790606090290.0,
+      "recordedAgeMs": 1369.0,
+      "recordedContextFresh": true,
+      "recordedBranches": [],
+      "correctedExtractCoversSelectedWay": true,
+      "endpointOnlyCounterfactual": [],
+      "nodeIdentityCounterfactual": [
+        {
+          "fromWayId": "216220089",
+          "toWayId": "4683712",
+          "osmNodeId": "10532395",
+          "interiorNode": true
+        }
+      ],
+      "nativeApplicabilityAfterCorrection": "not_evaluated"
+    }
+  ],
+  "summary": {
+    "recordedFrames": 49,
+    "coveredFrames": 49,
+    "staleOrMissingFrames": 46,
+    "recordedFramesWithBranches": 0,
+    "endpointCounterfactualFramesWithDeparture": 0,
+    "nodeIdentityCounterfactualFramesWithDeparture": 49
+  },
+  "limitations": [
+    "Current topology differs from the recorded bundle; this is a counterfactual.",
+    "Connection somewhere on the selected way does not prove proximity, sign road or ego lane.",
+    "No capture position, camera calibration or sign support is fabricated.",
+    "Corrected topology does not refresh old fixes or resolve physical-sign identity.",
+    "No false-activation, authority, passage or latency improvement is measured."
+  ],
+  "inputs": {
+    "recorded": {
+      "path": "shared/tsr/applicability/fixtures/fr-exit-failures-20260928-v1.json",
+      "sha256": "ac6b7dfc26ed982b61dc67cb8dccaac76e36b519c32b197ba6ea8c3d89b13d4b"
+    },
+    "topology": {
+      "path": "shared/tsr/applicability/fixtures/corrected-exit-topology-v1/brouck.json",
+      "sha256": "09ae65d094d68ac5a1bb1deeedd5cec69d3e899855d88f0a6ef95c743e4bb962"
+    }
+  },
+  "runnerSha256": "71e15bf11cb58c7ccd12bf81daba50b1fbd32792f7c3d1ded0e45175504f4952"
+}

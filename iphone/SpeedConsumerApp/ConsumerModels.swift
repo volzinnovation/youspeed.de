@@ -534,16 +534,21 @@ enum BundleRouteSelection {
 
     static func choose(
         probes: [BundleRouteProbe],
-        currentDBPath: String?
+        currentDBPath: String?,
+        coveringRoutes: [LocalBundleRoute]
     ) -> LocalBundleRoute? {
-        guard !probes.isEmpty else { return nil }
-        let ordered = probes.sorted {
+        // Geographic eligibility comes before road evidence or hysteresis.
+        // In particular, an active database is never a coverage-gap fallback.
+        let coveringPaths = Set(coveringRoutes.map(\.dbPath))
+        let eligible = probes.filter { coveringPaths.contains($0.route.dbPath) }
+        guard !eligible.isEmpty else { return nil }
+        let ordered = eligible.sorted {
             if $0.score != $1.score { return $0.score > $1.score }
             return $0.route.region < $1.route.region
         }
         guard let best = ordered.first else { return nil }
         guard let currentDBPath,
-              let current = probes.first(where: { $0.route.dbPath == currentDBPath }) else {
+              let current = eligible.first(where: { $0.route.dbPath == currentDBPath }) else {
             return best.route
         }
         guard best.route.dbPath != current.route.dbPath else { return current.route }

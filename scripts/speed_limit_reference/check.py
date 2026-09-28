@@ -31,7 +31,7 @@ def check():
     for path in ["iphone/SpeedConsumerApp/SpeedLimitReferenceModel.swift",
                  "android/app/src/main/java/de/youspeed/android/alpha/SpeedLimitReferenceModel.kt"]:
         assert pin in (ROOT / path).read_text(), f"Approval-lock pin mismatch: {path}"
-    policy = json.loads((PACK / "policy-v1.0.0.json").read_text())
+    policy = json.loads((PACK / "policy-v1.1.0.json").read_text())
     assert policy["schema_version"] == 1 and policy["version"] == lock["target_version"]
     assert policy["priority"] == ["voice", "camera", "bundle"]
     assert policy["limits"]["ordinary_max_age_s"] == 300
@@ -45,7 +45,7 @@ def check():
     assert all(re.fullmatch(r"T\d+", r["id"]) for r in rules)
     assert rules[-1]["on"] == "*" and rules[-1]["guard"] == "always"
     assert set(policy["events"]) == {r["on"] for r in rules if r["on"] != "*"}
-    corpus = json.loads((PACK / "scenarios-v1.0.0.json").read_text())
+    corpus = json.loads((PACK / "scenarios-v1.1.0.json").read_text())
     assert corpus["policy_version"] == policy["version"]
     seen_transitions, seen_states, count = set(), set(), 0
     assert len({s["id"] for s in corpus["scenarios"]}) == len(corpus["scenarios"])

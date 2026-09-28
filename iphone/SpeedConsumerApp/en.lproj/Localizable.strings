@@ -379,3 +379,10 @@
 
 "settings.maps.preparing" = "Preparing download…";
 "settings.maps.download_failed" = "Download failed: %@";
+
+"tsr.disregard_vision" = "Disregard vision and return to road";
+
+"gravity_alignment.title" = "Camera level";
+"gravity_alignment.unavailable" = "Gravity alignment unavailable";
+"gravity_alignment.angles" = "Roll %.0f°, tilt %.0f°. Gravity cannot determine heading.";
+"tsr.voice_dismissal.listening" = "Say “Wrong”";

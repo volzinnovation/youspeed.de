@@ -1,0 +1,237 @@
+{
+  "id": "673ed502-6ef0-4f17-999c-297cb465f80a",
+  "bbox": [
+    3.265359,
+    45.539848,
+    3.265359,
+    45.539848
+  ],
+  "type": "Feature",
+  "links": [
+    {
+      "rel": "license",
+      "href": "https://alliance.numerique.gouv.fr/licence-ouverte-open-licence/",
+      "title": "License for this object (etalab-2.0)"
+    },
+    {
+      "rel": "self",
+      "href": "https://api.panoramax.xyz/api/collections/d245e31e-868d-49aa-b6f1-99ae4ef9bfff/items/673ed502-6ef0-4f17-999c-297cb465f80a",
+      "type": "application/geo+json"
+    },
+    {
+      "rel": "collection",
+      "href": "https://api.panoramax.xyz/api/collections/d245e31e-868d-49aa-b6f1-99ae4ef9bfff",
+      "type": "application/json"
+    },
+    {
+      "rel": "parent",
+      "href": "https://api.panoramax.xyz/api/collections/d245e31e-868d-49aa-b6f1-99ae4ef9bfff",
+      "type": "application/json"
+    },
+    {
+      "rel": "root",
+      "href": "https://api.panoramax.xyz/api",
+      "type": "application/json",
+      "title": "Instance catalog"
+    },
+    {
+      "rel": "prev",
+      "href": "https://api.panoramax.xyz/api/collections/d245e31e-868d-49aa-b6f1-99ae4ef9bfff/items/02fba9c1-1a4e-4e80-bb54-e97941d83171",
+      "type": "application/geo+json",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.265314,
+          45.539815
+        ]
+      },
+      "id": "02fba9c1-1a4e-4e80-bb54-e97941d83171"
+    },
+    {
+      "rel": "next",
+      "href": "https://api.panoramax.xyz/api/collections/d245e31e-868d-49aa-b6f1-99ae4ef9bfff/items/97021eec-d3e8-4a89-b44b-ea3da64feaf5",
+      "type": "application/geo+json",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.265404,
+          45.539881
+        ]
+      },
+      "id": "97021eec-d3e8-4a89-b44b-ea3da64feaf5"
+    },
+    {
+      "rel": "via",
+      "href": "https://panoramax.ign.fr",
+      "type": "application/json",
+      "title": "Link to the original instance",
+      "instance_name": "ign"
+    }
+  ],
+  "assets": {
+    "hd": {
+      "href": "https://panoramax.ign.fr/api/pictures/673ed502-6ef0-4f17-999c-297cb465f80a/hd.jpg",
+      "type": "image/jpeg",
+      "roles": [
+        "data"
+      ],
+      "title": "HD picture",
+      "description": "Highest resolution available of this picture"
+    },
+    "sd": {
+      "href": "https://panoramax.ign.fr/api/pictures/673ed502-6ef0-4f17-999c-297cb465f80a/sd.jpg",
+      "type": "image/jpeg",
+      "roles": [
+        "visual"
+      ],
+      "title": "SD picture",
+      "description": "Picture in standard definition (fixed width of 2048px)"
+    },
+    "thumb": {
+      "href": "https://panoramax.ign.fr/api/pictures/673ed502-6ef0-4f17-999c-297cb465f80a/thumb.jpg",
+      "type": "image/jpeg",
+      "roles": [
+        "thumbnail"
+      ],
+      "title": "Thumbnail",
+      "description": "Picture in low definition (fixed width of 500px)"
+    }
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [
+      3.265359,
+      45.539848
+    ]
+  },
+  "providers": [
+    {
+      "id": "301a1b94-2009-464d-8fa1-ffde07f0be24",
+      "name": "dir-mc",
+      "roles": [
+        "producer"
+      ]
+    },
+    {
+      "name": "DIR-MC",
+      "roles": [
+        "producer"
+      ]
+    }
+  ],
+  "collection": "d245e31e-868d-49aa-b6f1-99ae4ef9bfff",
+  "properties": {
+    "exif": {
+      "Exif.Image.Model": "AVT Pike F-210B/C",
+      "Exif.Image.Artist": "DIR-MC",
+      "Exif.Image.GPSTag": "230",
+      "Exif.Image.ExifTag": "124",
+      "Xmp.xmp.CreateDate": "2019-07-02T00:00:00",
+      "Exif.Image.Software": "Ireve stereo processor",
+      "Xmp.xmp.CreatorTool": "Ireve stereo processor",
+      "Xmp.xmpMM.InstanceID": "uuid:faf5bdd5-ba3d-11da-ad31-d33d75182f1b",
+      "Exif.GPSInfo.GPSLatitude": "45539848/1000000 0/1 0/1",
+      "Exif.GPSInfo.GPSLongitude": "3265359/1000000 0/1 0/1",
+      "Exif.Thumbnail.Compression": "6",
+      "Exif.Thumbnail.XResolution": "192/1",
+      "Exif.Thumbnail.YResolution": "192/1",
+      "Exif.GPSInfo.GPSLatitudeRef": "N",
+      "Exif.Photo.DateTimeOriginal": "2019:07:02 00:00:00",
+      "Exif.GPSInfo.GPSLongitudeRef": "E",
+      "Exif.Photo.DateTimeDigitized": "2019:07:02 00:00:00",
+      "Exif.Photo.SubSecTimeOriginal": "10161",
+      "Exif.Thumbnail.ResolutionUnit": "2",
+      "Exif.Photo.SubSecTimeDigitized": "10161",
+      "Exif.Thumbnail.JPEGInterchangeFormat": "426",
+      "Exif.Thumbnail.JPEGInterchangeFormatLength": "8760"
+    },
+    "created": "2026-01-10T12:01:07.784916+00:00",
+    "license": "etalab-2.0",
+    "updated": "2026-01-10T16:56:26.963175+00:00",
+    "datetime": "2019-07-01T22:00:00.101610+00:00",
+    "semantics": [],
+    "collection": {
+      "semantics": []
+    },
+    "datetimetz": "2019-07-02T00:00:00.101610+02:00",
+    "annotations": [
+      {
+        "id": "e8cf48e2-adfc-4209-9b48-f815aecf9efb",
+        "shape": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                1165,
+                317
+              ],
+              [
+                1207,
+                317
+              ],
+              [
+                1207,
+                359
+              ],
+              [
+                1165,
+                359
+              ],
+              [
+                1165,
+                317
+              ]
+            ]
+          ]
+        },
+        "semantics": [
+          {
+            "key": "classification_confidence[osm|traffic_sign=FR:B14[70]]",
+            "value": "1.0"
+          },
+          {
+            "key": "classification_model[osm|traffic_sign=FR:B14[70]]",
+            "value": "classify_fr_road_signs/0.13"
+          },
+          {
+            "key": "detection_confidence[osm|traffic_sign=yes]",
+            "value": "0.824"
+          },
+          {
+            "key": "detection_model[osm|traffic_sign=yes]",
+            "value": "SGBlur-yolo11s/0.1.0"
+          },
+          {
+            "key": "osm|traffic_sign",
+            "value": "FR:B14[70]"
+          },
+          {
+            "key": "osm|traffic_sign",
+            "value": "maxspeed"
+          }
+        ]
+      }
+    ],
+    "view:azimuth": 53,
+    "geovisio:image": "https://panoramax.ign.fr/api/pictures/673ed502-6ef0-4f17-999c-297cb465f80a/hd.jpg",
+    "geovisio:status": "ready",
+    "geovisio:producer": "dir-mc",
+    "geovisio:thumbnail": "https://panoramax.ign.fr/api/pictures/673ed502-6ef0-4f17-999c-297cb465f80a/thumb.jpg",
+    "original_file:name": "000161.jpg",
+    "original_file:size": 187350,
+    "geovisio:visibility": "anyone",
+    "pers:interior_orientation": {
+      "camera_model": "AVT Pike F-210B/C",
+      "sensor_array_dimensions": [
+        1944,
+        1087
+      ]
+    },
+    "geovisio:rank_in_collection": 100
+  },
+  "stac_version": "1.0.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/view/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/perspective-imagery/v1.0.0/schema.json"
+  ]
+}

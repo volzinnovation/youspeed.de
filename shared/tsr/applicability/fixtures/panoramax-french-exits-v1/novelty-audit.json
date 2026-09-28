@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-09-28",
+  "baseline_git_head": "ec03fe1e2d0878379514023720a0eeea7f42a760",
+  "claim": "Geographically new to available local reviewed route corpora only; exploratory external evaluation.",
+  "frame_ids": [
+    "0e5cce14-f369-4006-8613-fea65146f7f9",
+    "971b8de0-feac-43ce-bd60-fca6d6de5089",
+    "b9deefce-ef95-40c0-abf1-6773f8aefac6",
+    "14c2c576-518e-4a80-a586-efff3e8cb0f6",
+    "a6dcdd5b-d4fc-4a1c-b597-4809910d3116",
+    "b7838d58-f8b4-4a42-b6bf-ec25b9e59f95",
+    "fc216837-096f-4691-b3dd-8809d5738e7c",
+    "673ed502-6ef0-4f17-999c-297cb465f80a"
+  ],
+  "sequence_ids": [
+    "1f9300ad-97a9-42bf-a03e-35046cecc757",
+    "574c2057-55b1-4947-a96d-a5d568712cda",
+    "bdeab99c-671d-4cf8-97be-5480463d08d9",
+    "d245e31e-868d-49aa-b6f1-99ae4ef9bfff"
+  ],
+  "tracked_baseline_search": {
+    "paths": [
+      "shared",
+      "scripts",
+      "tests",
+      "docs",
+      "iphone",
+      "android"
+    ],
+    "method": "git grep -I -n -F of exact selected image and sequence UUIDs at baseline HEAD",
+    "matches": []
+  },
+  "current_tsr_json_search": {
+    "files_scanned": 85,
+    "excluded": [
+      "panoramax-french-exits-v1",
+      "corrected-exit-topology-v1"
+    ],
+    "matches": []
+  },
+  "reviewed_existing_sources": [
+    {
+      "path": "shared/tsr/applicability/fixtures/existing-fr-exit-road-labels-v1.json",
+      "sha256": "dc22e8bd925d7a5eeeeb311ad1adad37e9511ce4b852bc1b6c00a2094de73938"
+    },
+    {
+      "path": "shared/tsr/applicability/fixtures/fr-exit-failures-20260928-v1.manifest.json",
+      "sha256": "27853cc22595bea24b312291fba3238331805c1505bcadc385cddd05cd1b708d"
+    },
+    {
+      "path": "shared/tsr/fixtures/panoramax-m0-full-scene-annotations-v2.json",
+      "sha256": "5c844600919d94b5da93ec1f4b6591d514867f1f3fee7658fb394d9e1b271e88"
+    },
+    {
+      "path": "shared/tsr/panoramax-calibration-sources-v1.json",
+      "sha256": "9c644c3098a0d3b3f889dac6c0c2239ae6a067603ba55fbc873080a5ad996b53"
+    },
+    {
+      "path": "shared/tsr/applicability/paca-exit-topology-v1.sql",
+      "sha256": "8bd613c1f8afbdf61f84ed80616a3a61765808fc435f7c3f699206159b120692"
+    }
+  ],
+  "geographic_groups": [
+    {
+      "group": "A10-Orleans-Gidy",
+      "bbox_lonlat": [
+        1.858680556,
+        47.972705556,
+        1.858905556,
+        47.973880556
+      ],
+      "prior_known_routes_excluded": [
+        "A4",
+        "A35",
+        "PACA",
+        "Switzerland",
+        "Karlsruhe Panoramax M0"
+      ]
+    },
+    {
+      "group": "A75-Issoire-exit13",
+      "bbox_lonlat": [
+        3.264909,
+        45.539589,
+        3.268109,
+        45.544547
+      ],
+      "prior_known_routes_excluded": [
+        "A4",
+        "A35",
+        "PACA",
+        "Switzerland",
+        "Karlsruhe Panoramax M0"
+      ]
+    }
+  ],
+  "unknowns": [
+    "Original upstream FR classifier training and validation source-photo inventory is not completely available locally; no training-disjointness claim.",
+    "No full geographic index of every historical ignored drive log exists; route novelty refers to the reviewed available corpora.",
+    "Image selection was deliberate to include visible exit signs, not random prevalence sampling.",
+    "No independent human adjudication; each image was annotated by an assistant reviewer."
+  ],
+  "counts": {
+    "images": 8,
+    "sequences": 4,
+    "geographic_groups": 2,
+    "candidate_observations": 8,
+    "truth": {
+      "other": 7,
+      "ego": 1
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "bundle_version": "2026-09-27-swiss-test",
+  "country_code": "CHE",
+  "coverage": {
+    "bbox": {
+      "max_lat": 47.81126,
+      "max_lon": 10.49584,
+      "min_lat": 45.81642,
+      "min_lon": 5.954418
+    },
+    "poly": {
+      "bytes": 26551,
+      "file": "switzerland.poly",
+      "sha256": "4f254d87aaa51f0903df76052c114685672ccf2de043a334c246d7a3fb8db179",
+      "url": null
+    }
+  },
+  "created_at_utc": "2026-09-27T09:35:24Z",
+  "db": {
+    "bytes": 416646575,
+    "compression": "gzip",
+    "file": "switzerland_speeds.sqlite",
+    "sha256": "2211b7b8e18eb8cd1ffc17dca56b9a55e3b0acecfe60fd72635ff2baefcaf610",
+    "uncompressed_bytes": 1256435712,
+    "uncompressed_sha256": "44176ac7aee8620c1b1ef8197b28629386c02bb943ca9226dc9570a259614a9b",
+    "url": "switzerland_speeds.sqlite.gz"
+  },
+  "delta_index": null,
+  "format": "youspeed.v3.bundle.manifest",
+  "min_app_version": "1.1",
+  "penalty_rules": {
+    "bytes": 6980,
+    "file": "CHE-rules.json",
+    "sha256": "ce06277387b3de4420ecf5cf52f923c9ca46261f8b4f195c6e07bcc09478c8e2",
+    "url": null
+  },
+  "region": "switzerland",
+  "schema_version": 1,
+  "self": {
+    "file": "switzerland_manifest.json",
+    "url": null
+  },
+  "variant": "v3"
+}

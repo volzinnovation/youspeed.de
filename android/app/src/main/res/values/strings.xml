@@ -110,4 +110,5 @@
     <string name="ui_video_save_failed">Video could not be saved</string>
     <string name="ui_video_save_timeout">The recorder did not confirm that the video was saved. The requested action was cancelled.</string>
     <string name="ui_correct_speed_limit">Correct speed limit</string>
+    <string name="tsr_disregard_vision">Disregard vision and return to road</string>
 </resources>

@@ -110,15 +110,38 @@ class ConsumerParityTests {
     }
 
     @Test
+    fun coveringBundleExcludesForeignActiveRouteBeforeRoadEvidence() {
+        val covering = LocalBundleRoute("france/rhone-alpes", "v1", "FRA", "/ra.sqlite")
+        val active = LocalBundleRoute("switzerland", "v2", "CHE", "/ch.sqlite")
+        // The Lyon fix can have no road within the selected matcher's radius.
+        // An outside incumbent must never compete, even if it reports a road.
+        for (outsideHasRoad in listOf(false, true)) {
+            val probes = listOf(
+                BundleRouteProbe(covering, false, false, null, null),
+                BundleRouteProbe(active, outsideHasRoad, outsideHasRoad, null, null),
+            )
+            assertEquals(covering, BundleRouteSelection.choose(probes, active.dbPath, listOf(covering)))
+        }
+    }
+
+    @Test
+    fun bundleRouteCoverageGapNeverUsesActiveDatabase() {
+        val active = LocalBundleRoute("switzerland", "v2", "CHE", "/ch.sqlite", "a".repeat(64))
+        val probe = BundleRouteProbe(active, true, true, 0.0, 0.0)
+        assertNull(BundleRouteSelection.choose(listOf(probe), active.dbPath, emptyList()))
+        assertNull(BundleRouteSelection.choose(emptyList(), null, emptyList()))
+    }
+
+    @Test
     fun overlappingBundleRouteKeepsCurrentOnTieAndSwitchesToOnlyRoadMatch() {
         val current = LocalBundleRoute("germany/rheinland-pfalz", "v1", "DEU", "/rp.sqlite")
         val alternate = LocalBundleRoute("germany/baden-wuerttemberg", "v1", "DEU", "/bw.sqlite")
         val currentProbe = BundleRouteProbe(current, true, true, 20.0, 20.0)
         val tiedAlternate = BundleRouteProbe(alternate, true, true, 20.0, 20.0)
-        assertEquals(current, BundleRouteSelection.choose(listOf(currentProbe, tiedAlternate), current.dbPath))
+        assertEquals(current, BundleRouteSelection.choose(listOf(currentProbe, tiedAlternate), current.dbPath, listOf(current, alternate)))
 
         val noWayCurrent = currentProbe.copy(hasWayMatch = false, hasSpeedMatch = false, nearestCandidateDistanceM = null, nearestSpeedCandidateDistanceM = null)
-        assertEquals(alternate, BundleRouteSelection.choose(listOf(noWayCurrent, tiedAlternate), current.dbPath))
+        assertEquals(alternate, BundleRouteSelection.choose(listOf(noWayCurrent, tiedAlternate), current.dbPath, listOf(current, alternate)))
     }
 
     @Test
@@ -162,6 +185,30 @@ class ConsumerParityTests {
         )
         assertEquals(0, ConsumerMainScreenLogic.currentOverspeedKmh(state))
         assertEquals("50", ConsumerMainScreenLogic.limitText(state))
+    }
+
+    @Test
+    fun startupPreparationPreservesPreviousDriveAndCreatesOnlyMissingFiles() {
+        val root = java.nio.file.Files.createTempDirectory("drive-log-retention").toFile()
+        try {
+            val gps = File(root, "logs/gps.csv")
+            val match = File(root, "logs/match.ndjson")
+            ConsumerSessionController.prepareDrivingLogFiles(gps, match)
+            assertTrue(gps.readText().startsWith("fix_id,timestamp_utc,"))
+            gps.appendText("previous drive GPS\n")
+            match.writeText("{\"previousDrive\":true}\n")
+            val gpsBytes = gps.readBytes()
+            val matchBytes = match.readBytes()
+            repeat(2) { ConsumerSessionController.prepareDrivingLogFiles(gps, match) }
+            assertTrue(gpsBytes.contentEquals(gps.readBytes()))
+            assertTrue(matchBytes.contentEquals(match.readBytes()))
+            match.delete()
+            ConsumerSessionController.prepareDrivingLogFiles(gps, match)
+            assertTrue(gpsBytes.contentEquals(gps.readBytes()))
+            assertEquals("", match.readText())
+        } finally {
+            root.deleteRecursively()
+        }
     }
 
     @Test

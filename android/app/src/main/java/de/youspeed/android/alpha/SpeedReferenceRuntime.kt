@@ -9,6 +9,7 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
     private var sequence = 0
     private var origin = now()
     private var meters = 0.0
+    private val withdrawnCameraEvidence = mutableSetOf<String>()
     private val cameraOrigins = mutableMapOf<String, Pair<Double, Double>>()
     private var way: String? = null
     private var road: String? = null
@@ -22,6 +23,7 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
     init { reset() }
     @Synchronized fun reset() {
         session = UUID.randomUUID().toString(); sequence = 0; origin = now(); meters = 0.0
+        withdrawnCameraEvidence.clear()
         cameraOrigins.clear(); way = null; road = null; relations = emptySet(); departure = null; direction = "unknown"
         send("reset")
     }
@@ -54,7 +56,10 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
             "area_verified" to enclosing, "scope_kind" to "zone"))
     }
     @Synchronized fun applicabilityContextChanged(revision: Int) { send("applicability_context_changed", mapOf("next_revision" to revision)) }
-    @Synchronized fun pipelineAuthorityWithdrawn() { send("camera_scope_invalidated") }
+    @Synchronized fun pipelineAuthorityWithdrawn(evidenceId: String) {
+        if (withdrawnCameraEvidence.add(evidenceId)) send("camera_scope_invalidated")
+    }
+    @Synchronized fun dismissCamera() { send("camera_dismissed") }
     @Synchronized fun boundary(reason: String) { tick(); send("context_confirmed", mapOf("id" to UUID.randomUUID().toString(), "confirmed" to true, "reason" to reason)); departure = null }
     @Synchronized fun context(nextWay: String?, nextRoad: String?, nextRelations: Set<String>, nextDirection: String, stable: Boolean) {
         tick()
@@ -84,4 +89,21 @@ internal fun SpeedReferenceOutput.effective(): EffectiveSpeedLimit {
     val source = when(state) { "VOICE" -> EffectiveSpeedLimitSource.LOCAL_CORRECTION; "CAMERA" -> EffectiveSpeedLimitSource.CAMERA; "BUNDLE" -> EffectiveSpeedLimitSource.BUNDLE; "LAST_KNOWN" -> EffectiveSpeedLimitSource.LAST_KNOWN; else -> EffectiveSpeedLimitSource.NONE }
     val resolution = when(value?.kind) { "numeric" -> TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, value.kmh); "walk" -> TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.WALK); "unlimited" -> TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNLIMITED); else -> null }
     return EffectiveSpeedLimit(resolution, source, "reference_${state.lowercase()}_$transition", cameraEvidence = state == "CAMERA", isUserCorrection = state == "VOICE")
+}
+
+/** Caller holds trafficSignStateLock. Dismissal never disables recognition of new signs. */
+internal class VisionDismissalGate {
+    private var cutoff: java.time.Instant? = null
+    private val tracks = mutableSetOf<String>()
+    fun dismiss(at: java.time.Instant, ids: List<String>) {
+        cutoff = at
+        tracks.addAll(ids)
+    }
+    fun permits(track: String?, observedAt: java.time.Instant): Boolean {
+        if (cutoff?.let { observedAt <= it } == true) {
+            track?.let { tracks.add(it) }
+            return false
+        }
+        return track == null || track !in tracks
+    }
 }

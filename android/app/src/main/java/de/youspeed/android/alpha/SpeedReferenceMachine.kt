@@ -101,6 +101,7 @@ internal class SpeedReferenceMachine(val model: SpeedLimitReferenceModel) {
         if (name in setOf("clear_voice", "clear_camera", "clear_camera_context", "clear_bundle")) { claims.remove(name.removePrefix("clear_")); return }
         when(name) {
             "reset_session" -> { claims.clear(); lastKnown = null; generation = 0; applicabilityRevision = 0; pendingContext = false; gap = null; seen.clear(); origins.clear(); time = 0.0; distance = 0.0; session = e["session_id"] as String; sequence = integer(e["sequence"])!! }
+            "clear_camera_memory" -> { if (lastKnown?.source == "camera") lastKnown = null }
             "advance_generation" -> generation++
             "advance_applicability_revision" -> applicabilityRevision = integer(e["next_revision"])!!
             "mark_pending" -> pendingContext = true

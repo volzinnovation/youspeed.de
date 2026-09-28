@@ -1,0 +1,285 @@
+{
+  "id": "b9deefce-ef95-40c0-abf1-6773f8aefac6",
+  "bbox": [
+    1.858905556,
+    47.973880556,
+    1.858905556,
+    47.973880556
+  ],
+  "type": "Feature",
+  "links": [
+    {
+      "rel": "license",
+      "href": "https://spdx.org/licenses/CC-BY-SA-4.0.html",
+      "title": "License for this object (CC-BY-SA-4.0)"
+    },
+    {
+      "rel": "self",
+      "href": "https://api.panoramax.xyz/api/collections/1f9300ad-97a9-42bf-a03e-35046cecc757/items/b9deefce-ef95-40c0-abf1-6773f8aefac6",
+      "type": "application/geo+json"
+    },
+    {
+      "rel": "collection",
+      "href": "https://api.panoramax.xyz/api/collections/1f9300ad-97a9-42bf-a03e-35046cecc757",
+      "type": "application/json"
+    },
+    {
+      "rel": "parent",
+      "href": "https://api.panoramax.xyz/api/collections/1f9300ad-97a9-42bf-a03e-35046cecc757",
+      "type": "application/json"
+    },
+    {
+      "rel": "root",
+      "href": "https://api.panoramax.xyz/api",
+      "type": "application/json",
+      "title": "Instance catalog"
+    },
+    {
+      "rel": "prev",
+      "href": "https://api.panoramax.xyz/api/collections/1f9300ad-97a9-42bf-a03e-35046cecc757/items/971b8de0-feac-43ce-bd60-fca6d6de5089",
+      "type": "application/geo+json",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          1.858805556,
+          47.973291667
+        ]
+      },
+      "id": "971b8de0-feac-43ce-bd60-fca6d6de5089"
+    },
+    {
+      "rel": "next",
+      "href": "https://api.panoramax.xyz/api/collections/1f9300ad-97a9-42bf-a03e-35046cecc757/items/f62f616c-dc71-4417-b079-82d01fa978b1",
+      "type": "application/geo+json",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          1.858997222,
+          47.974472222
+        ]
+      },
+      "id": "f62f616c-dc71-4417-b079-82d01fa978b1"
+    },
+    {
+      "rel": "via",
+      "href": "https://panoramax.basi.re",
+      "type": "application/json",
+      "title": "Link to the original instance",
+      "instance_name": "at_mathias_house"
+    }
+  ],
+  "assets": {
+    "hd": {
+      "href": "https://images.panoramax.basi.re/permanent/b9/de/ef/ce/ef95-40c0-abf1-6773f8aefac6.jpg",
+      "type": "image/jpeg",
+      "roles": [
+        "data"
+      ],
+      "title": "HD picture",
+      "description": "Highest resolution available of this picture"
+    },
+    "sd": {
+      "href": "https://images.panoramax.basi.re/derivates/b9/de/ef/ce/ef95-40c0-abf1-6773f8aefac6/sd.jpg",
+      "type": "image/jpeg",
+      "roles": [
+        "visual"
+      ],
+      "title": "SD picture",
+      "description": "Picture in standard definition (fixed width of 2048px)"
+    },
+    "thumb": {
+      "href": "https://images.panoramax.basi.re/derivates/b9/de/ef/ce/ef95-40c0-abf1-6773f8aefac6/thumb.jpg",
+      "type": "image/jpeg",
+      "roles": [
+        "thumbnail"
+      ],
+      "title": "Thumbnail",
+      "description": "Picture in low definition (fixed width of 500px)"
+    }
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [
+      1.858905556,
+      47.973880556
+    ]
+  },
+  "providers": [
+    {
+      "id": "4dc58b4b-08bb-4834-b928-22a2de10b742",
+      "name": "MathiasBas",
+      "roles": [
+        "producer"
+      ]
+    }
+  ],
+  "collection": "1f9300ad-97a9-42bf-a03e-35046cecc757",
+  "properties": {
+    "exif": {
+      "Xmp.Camera.Yaw": "90000/1000",
+      "Exif.Image.Make": "Arashi Vision",
+      "Exif.Image.Model": "Insta360 X4",
+      "Exif.Image.GPSTag": "230",
+      "Exif.Image.ExifTag": "120",
+      "Exif.Image.DateTime": "2025:06:15 12:30:11",
+      "Exif.Photo.UserComment": "Lavc61.19.101",
+      "Exif.GPSInfo.GPSLatitude": "47/1 58/1 16231251/625000",
+      "Xmp.GPano.ProjectionType": "equirectangular",
+      "Exif.GPSInfo.GPSDateStamp": "2025-06-15",
+      "Exif.GPSInfo.GPSLongitude": "1/1 51/1 20037501/625000",
+      "Exif.GPSInfo.GPSTimeStamp": "12/1 30/1 11/1",
+      "Exif.GPSInfo.GPSLatitudeRef": "N",
+      "Exif.Photo.DateTimeOriginal": "2025-06-15 14:30:11",
+      "Xmp.GPano.UsePanoramaViewer": "True",
+      "Exif.GPSInfo.GPSImgDirection": "98000/1000",
+      "Exif.GPSInfo.GPSLongitudeRef": "E",
+      "Exif.Photo.DateTimeDigitized": "2025:06:15 12:30:11",
+      "Xmp.GPano.PoseHeadingDegrees": "98000/1000",
+      "Exif.Photo.OffsetTimeOriginal": "+02:00",
+      "Exif.Photo.SubSecTimeOriginal": "000000",
+      "Xmp.GPano.FullPanoWidthPixels": "11264",
+      "Xmp.GPano.CroppedAreaTopPixels": "0",
+      "Xmp.GPano.FullPanoHeightPixels": "5632",
+      "Exif.GPSInfo.GPSImgDirectionRef": "T",
+      "Xmp.GPano.CroppedAreaLeftPixels": "0",
+      "Xmp.GPano.CroppedAreaImageWidthPixels": "11264",
+      "Xmp.GPano.CroppedAreaImageHeightPixels": "5632"
+    },
+    "created": "2026-08-10T21:13:53.271816+00:00",
+    "license": "CC-BY-SA-4.0",
+    "updated": "2026-08-11T05:43:05.984465+00:00",
+    "datetime": "2025-06-15T12:30:11+00:00",
+    "pers:yaw": 90.0,
+    "semantics": [],
+    "collection": {
+      "semantics": [
+        {
+          "key": "original:collection_location",
+          "value": "https://panoramax.openstreetmap.fr/api/collections/1f9300ad-97a9-42bf-a03e-35046cecc757"
+        },
+        {
+          "key": "transport",
+          "value": "car"
+        }
+      ]
+    },
+    "datetimetz": "2025-06-15T14:30:11+02:00",
+    "annotations": [
+      {
+        "id": "554fa753-3f2e-4316-bee9-595b08ca1371",
+        "shape": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                5263,
+                2876
+              ],
+              [
+                5318,
+                2876
+              ],
+              [
+                5318,
+                2970
+              ],
+              [
+                5263,
+                2970
+              ],
+              [
+                5263,
+                2876
+              ]
+            ]
+          ]
+        },
+        "semantics": [
+          {
+            "key": "classification_confidence[osm|traffic_sign=FR:B14[30]]",
+            "value": "1.0"
+          },
+          {
+            "key": "classification_model[osm|traffic_sign=FR:B14[30]]",
+            "value": "classify_fr_road_signs/0.13"
+          },
+          {
+            "key": "detection_confidence[osm|traffic_sign=yes]",
+            "value": "0.832"
+          },
+          {
+            "key": "detection_model[osm|traffic_sign=yes]",
+            "value": "SGBlur-yolo11s/0.1.0"
+          },
+          {
+            "key": "osm|traffic_sign",
+            "value": "FR:B14[30]"
+          },
+          {
+            "key": "osm|traffic_sign",
+            "value": "maxspeed"
+          }
+        ]
+      }
+    ],
+    "view:azimuth": 98,
+    "geovisio:image": "https://images.panoramax.basi.re/permanent/b9/de/ef/ce/ef95-40c0-abf1-6773f8aefac6.jpg",
+    "geovisio:status": "ready",
+    "geovisio:producer": "MathiasBas",
+    "geovisio:thumbnail": "https://images.panoramax.basi.re/derivates/b9/de/ef/ce/ef95-40c0-abf1-6773f8aefac6/thumb.jpg",
+    "original_file:name": "IMG_20250615_123011.jpg",
+    "original_file:size": 2590217,
+    "geovisio:visibility": "anyone",
+    "tiles:tile_matrix_sets": {
+      "geovisio": {
+        "type": "TileMatrixSetType",
+        "title": "GeoVisio tile matrix for picture b9deefce-ef95-40c0-abf1-6773f8aefac6",
+        "identifier": "geovisio-b9deefce-ef95-40c0-abf1-6773f8aefac6",
+        "tileMatrix": [
+          {
+            "type": "TileMatrixType",
+            "tileWidth": 704.0,
+            "identifier": "0",
+            "tileHeight": 704.0,
+            "matrixWidth": 16,
+            "matrixHeight": 8,
+            "topLeftCorner": [
+              0,
+              0
+            ],
+            "scaleDenominator": 1
+          }
+        ]
+      }
+    },
+    "pers:interior_orientation": {
+      "camera_model": "Insta360 X4",
+      "field_of_view": 360,
+      "camera_manufacturer": "Arashi Vision",
+      "sensor_array_dimensions": [
+        11264,
+        5632
+      ]
+    },
+    "geovisio:rank_in_collection": 410,
+    "quality:horizontal_accuracy": 4.0,
+    "panoramax:horizontal_pixel_density": 31
+  },
+  "stac_version": "1.0.0",
+  "asset_templates": {
+    "tiles": {
+      "href": "https://images.panoramax.basi.re/derivates/b9/de/ef/ce/ef95-40c0-abf1-6773f8aefac6/tiles/{TileCol}_{TileRow}.jpg",
+      "type": "image/jpeg",
+      "roles": [
+        "data"
+      ],
+      "title": "HD tiled picture",
+      "description": "Highest resolution available of this picture, as tiles"
+    }
+  },
+  "stac_extensions": [
+    "https://stac-extensions.github.io/view/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/perspective-imagery/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/tiled-assets/v1.0.0/schema.json"
+  ]
+}

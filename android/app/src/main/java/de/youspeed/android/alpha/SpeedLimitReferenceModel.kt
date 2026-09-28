@@ -7,7 +7,7 @@ import kotlinx.serialization.json.*
 internal data class SpeedLimitReferenceModel(val policy: Map<String, Any?>, val sha256: String) {
     val version: String get() = policy["version"] as String
     companion object {
-        const val APPROVAL_LOCK_SHA256 = "d501f8fdcc6b4a0bddd7d6827f2c58753c7c15efb8d341d8b47d6e9992023b3a"
+        const val APPROVAL_LOCK_SHA256 = "8c22cf0919080f1c9737dd926d1fad54857636963b4e3c8ccb0bab03241576cb"
         const val DIRECTORY = "speed-limit-reference"
         fun decode(bytes: ByteArray): Map<String, Any?> = toValue(Json.parseToJsonElement(bytes.toString(Charsets.UTF_8))) as Map<String, Any?>
         private fun toValue(e: JsonElement): Any? = when(e) {

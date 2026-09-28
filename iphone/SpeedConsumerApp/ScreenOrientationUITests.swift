@@ -1,6 +1,21 @@
 import XCTest
 
 final class ScreenOrientationUITests: XCTestCase {
+    func testMovingDashboardHasNoButtonsOrGravityOverlay() {
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "warn-level-0"
+        for mount in ["portrait", "landscape_camera_lower_right"] {
+            app.launchArguments = ["-youspeed.screen_orientation", mount]
+            app.launch()
+            XCTAssertTrue(app.otherElements["dashboard.limitPane"].waitForExistence(timeout: 15))
+            XCTAssertFalse(app.buttons["dashboard.settingsButton"].exists)
+            XCTAssertFalse(app.buttons["dashboard.disregardVision"].exists)
+            XCTAssertTrue(app.buttons.allElementsBoundByIndex.filter { $0.isHittable }.isEmpty)
+            XCTAssertFalse(app.descendants(matching: .any)["dashboard.gravityAlignment"].exists)
+            app.terminate()
+        }
+    }
+
     func testLiveSettingsDismissalReopenAndNestedDebugNavigation() throws {
 #if targetEnvironment(simulator)
         throw XCTSkip("The live Settings smoke test requires an installed map on a physical iPhone.")

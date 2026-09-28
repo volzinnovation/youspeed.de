@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/offline/image-road-corpus-v1.schema.json",
+  "title": "Offline reviewed still-image road attribution corpus; not runtime evidence",
+  "type": "object",
+  "required": ["schema_version", "corpus_id", "frames"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "corpus_id": {"type": "string", "minLength": 1},
+    "frames": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/frame"}}
+  },
+  "$defs": {
+    "unit": {"type": "number", "minimum": 0, "maximum": 1},
+    "point": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/unit"}},
+    "road": {
+      "type": "object", "required": ["road_id", "polygon"],
+      "properties": {
+        "road_id": {"type": "string", "minLength": 1},
+        "role": {"enum": ["mainline", "branch", "service", "other"]},
+        "direction_compatible": {"type": "boolean"},
+        "polygon": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/point"}}
+      }
+    },
+    "anchor": {
+      "type": ["object", "null"],
+      "required": ["x", "y", "uncertainty_radius", "reliable", "source"],
+      "properties": {
+        "x": {"$ref": "#/$defs/unit"}, "y": {"$ref": "#/$defs/unit"},
+        "uncertainty_radius": {"$ref": "#/$defs/unit"},
+        "reliable": {"type": "boolean"}, "source": {"type": "string"}
+      },
+      "if": {"type": "object", "properties": {"reliable": {"const": true}}, "required": ["reliable"]},
+      "then": {"properties": {"source": {"enum": ["visible_post_base", "reviewed_support_projection"]}}}
+    },
+    "sign": {
+      "type": "object", "required": ["sign_id", "box", "expected_applicability"],
+      "properties": {
+        "sign_id": {"type": "string", "minLength": 1},
+        "track_id": {"type": ["string", "null"]}, "track_verified": {"type": "boolean"},
+        "box": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"$ref": "#/$defs/unit"}},
+        "value_kmh": {"type": ["number", "null"], "minimum": 0},
+        "ground_anchor": {"$ref": "#/$defs/anchor"},
+        "expected_applicability": {"enum": ["ego", "other", "unknown"]},
+        "expected_road_id": {"type": ["string", "null"]},
+        "supplementary_arrow": {
+          "type": ["object", "null"],
+          "required": ["road_id", "verified", "source"],
+          "properties": {
+            "road_id": {"type": "string"}, "verified": {"type": "boolean"},
+            "source": {"const": "visible_arrow_to_road_relation"}
+          }
+        }
+      }
+    },
+    "frame": {
+      "type": "object",
+      "required": ["frame_id", "sequence_id", "route_id", "captured_at", "split", "image_path",
+                   "image_sha256", "width", "height", "source", "geometry", "signs"],
+      "properties": {
+        "frame_id": {"type": "string", "minLength": 1},
+        "sequence_id": {"type": "string", "minLength": 1},
+        "route_id": {"type": "string", "minLength": 1},
+        "captured_at": {"type": "string", "format": "date-time"},
+        "split": {"enum": ["development", "held_out"]},
+        "projection": {"enum": ["rectilinear", "equirectangular"]},
+        "temporal_tracking_eligible": {"type": "boolean", "default": false},
+        "legacy_evaluation_eligible": {"type": "boolean", "default": false},
+        "image_path": {"type": "string", "minLength": 1},
+        "image_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "width": {"type": "integer", "minimum": 1}, "height": {"type": "integer", "minimum": 1},
+        "source": {"type": "object", "minProperties": 1},
+        "geometry": {
+          "type": "object", "required": ["reviewed", "current_road_id", "roads"],
+          "properties": {
+            "reviewed": {"type": "boolean"}, "current_road_id": {"type": "string"},
+            "uncertainty_margin": {"$ref": "#/$defs/unit"},
+            "roads": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/road"}}
+          }
+        },
+        "topology": {
+          "type": "object",
+          "properties": {
+            "motorway": {"type": "boolean"}, "map_limit_kmh": {"type": ["number", "null"]},
+            "legacy_branch_available": {"type": "boolean"},
+            "legacy_road_context_fresh": {"type": "boolean"},
+            "directed_branch_available": {"type": "boolean"},
+            "branch_road_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+            "topology_ref": {"type": ["object", "string", "null"]}
+          }
+        },
+        "signs": {"type": "array", "items": {"$ref": "#/$defs/sign"}}
+      }
+    }
+  }
+}

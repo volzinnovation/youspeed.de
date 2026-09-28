@@ -1,6 +1,6 @@
-# Applicable speed-limit reference — runtime policy 1.0.0
+# Applicable speed-limit reference — runtime policy 1.1.0
 
-The [versioned JSON](../../shared/speed-limit-reference/policy-v1.0.0.json) is a
+The [versioned JSON](../../shared/speed-limit-reference/policy-v1.1.0.json) is a
 **deterministic extended finite-state machine (EFSM)**. Both apps load its exact
 packaged bytes, interpret its transition table, selection order and limits, and
 use its selected reference for the displayed limit and overspeed/penalty baseline.
@@ -165,7 +165,7 @@ required: a new frame is not a new sign.
 uses immutable original evidence `t₀,d₀`. `clear_X` removes authority. Other
 primitives increment scope or applicability revision, mark/clear pending context,
 start a gap once, clear the gap, or reset every register for a new drive.
-The full [JSON transition table](../../shared/speed-limit-reference/policy-v1.0.0.json)
+The full [JSON transition table](../../shared/speed-limit-reference/policy-v1.1.0.json)
 is normative; Swift, Kotlin and the Python reference oracle interpret it.
 
 A new voice correction replaces voice and clears ordinary/enclosing camera
@@ -264,3 +264,15 @@ those hashes at runtime. Editing both a JSON file and its adjacent manifest is
 insufficient without updating the compiled pin. These are integrity/change
 controls, not cryptographic proof of human approval. Normal driving events change
 machine state, never the versioned policy.
+
+## Explicit dismissal (1.1.0)
+
+The owner-approved eye-with-slash action sends `camera_dismissed` (T16). It
+clears ordinary/enclosing camera claims and camera-derived display memory,
+retaining current bundle and voice claims. Both controllers clear their visual
+resolvers and immediate overrides, reject queued pre-dismissal frames and
+passages, and suppress dismissed physical tracks while allowing new signs.
+
+An unresolved passage emits `camera_scope_invalidated` only once per physical
+evidence ID. Repeated presentation of that passage cannot erase a subsequent
+verified bundle update. Priorities and expiry/context thresholds are unchanged.

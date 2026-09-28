@@ -1,0 +1,272 @@
+{
+  "schema_version": 1,
+  "corpus_id": "panoramax-swiss-junction-v1",
+  "review": {
+    "status": "user_governing_road_labels_and_assistant_visual_review",
+    "label_source": "Product owner supplied both governing-road labels with this image on 2026-09-28; assistant checked original HD image and sign crops. No second independent reviewer.",
+    "reviewed_at": "2026-09-28",
+    "automatic_recognition_evaluation": false
+  },
+  "behavior_enabled": false,
+  "learned_model_enabled": false,
+  "qualification": "development_challenge_not_final_holdout",
+  "limitations": [
+    "One real still, not a temporal replay. No capture cadence or cross-frame physical association has been established.",
+    "Governing-road labels are user-supplied. Road polygons and support points are approximate assistant image-space annotations, not metric geometry.",
+    "Oracle junction tests supply road association and pose deliberately; they test decision wiring, not inference quality or displayed speed-reference behavior.",
+    "The source EXIF contains a historical app 50 classification. It is provenance only: neither a 30 detection nor a validated sign box/road relation is inferred from it.",
+    "No OSM road assignment, route intention, lane count or device latency has been verified."
+  ],
+  "frames": [
+    {
+      "frame_id": "f8ea80f9-c525-44fb-a6d8-7af479f7fdd8",
+      "sequence_id": "2d99a379-6410-4a15-accd-79264ee714ed",
+      "route_id": "CH-Le-Vaud-Route-de-Bassins-junction",
+      "captured_at": "2026-09-27T13:50:56.384000+00:00",
+      "split": "development",
+      "projection": "rectilinear",
+      "temporal_tracking_eligible": false,
+      "legacy_evaluation_eligible": false,
+      "image_path": "inspector/logs/2026-09-28-swiss-junction-experiment/public-images/f8ea80f9-c525-44fb-a6d8-7af479f7fdd8-hd.jpg",
+      "image_sha256": "7171835ddb2c7be4f3fd1ccf26e6e7ad2dd6a2c17b180f3e687f0febe0fe004f",
+      "width": 4224,
+      "height": 2376,
+      "source": {
+        "kind": "public_panoramax",
+        "viewer_url": "https://panoramax.youspeed.de/?focus=pic&pic=f8ea80f9-c525-44fb-a6d8-7af479f7fdd8&seq=2d99a379-6410-4a15-accd-79264ee714ed",
+        "image_url": "https://panoramax.youspeed.de/permanent/f8/ea/80/f9/c525-44fb-a6d8-7af479f7fdd8.jpg",
+        "item_url": "https://panoramax.youspeed.de/api/collections/2d99a379-6410-4a15-accd-79264ee714ed/items/f8ea80f9-c525-44fb-a6d8-7af479f7fdd8",
+        "metadata_path": "shared/tsr/applicability/fixtures/panoramax-swiss-junction-v1/items/f8ea80f9-c525-44fb-a6d8-7af479f7fdd8.json",
+        "metadata_sha256": "b1b665da7219c19ba9109b9aa0019194f218e7bcbca525824fcc6fa985db79af",
+        "license": "CC-BY-SA-4.0",
+        "license_url": "https://spdx.org/licenses/CC-BY-SA-4.0.html",
+        "attribution": "admin / Panoramax YouSpeed",
+        "origin_host": "panoramax.youspeed.de",
+        "acquisition_date": "2026-09-28",
+        "sequence_rank": 157,
+        "coordinates": [
+          6.232258333,
+          46.474602778
+        ],
+        "camera_azimuth_deg": 30,
+        "projection_note": "Rectilinear HD bytes decode upright with EXIF orientation 1; API original EXIF orientation 3 is not reapplied.",
+        "historical_app_annotation": {
+          "source": "properties.exif.Exif.Photo.UserComment; preserved verbatim in item metadata",
+          "classifier_id": "ch-panoramax-bootstrap-evaluation-v1",
+          "speed_limit_kmh": 50,
+          "applicability_status": "UNKNOWN",
+          "recorded_way_id": "1284897716",
+          "qualification": "historical observation, not verified road identity or current replay input"
+        }
+      },
+      "geometry": {
+        "reviewed": true,
+        "reviewer": "OpenAI assistant, original 4224x2376 image and enlarged sign/support crops",
+        "current_road_id": "le-vaud-current-through-road",
+        "uncertainty_margin": 0.015,
+        "polygons_semantics": "Approximate visible asphalt outlines including the junction mouth. The two semantic corridors meet/overlap at the mouth; neither painted lanes nor a metric road-plane calibration was inferred.",
+        "roads": [
+          {
+            "road_id": "le-vaud-current-through-road",
+            "role": "mainline",
+            "direction_compatible": true,
+            "polygon": [
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                0.885
+              ],
+              [
+                0.129,
+                0.792
+              ],
+              [
+                0.287,
+                0.711
+              ],
+              [
+                0.414,
+                0.649
+              ],
+              [
+                0.481,
+                0.626
+              ],
+              [
+                0.519,
+                0.618
+              ],
+              [
+                0.521,
+                0.638
+              ],
+              [
+                0.493,
+                0.675
+              ],
+              [
+                0.486,
+                0.732
+              ],
+              [
+                0.524,
+                0.848
+              ],
+              [
+                0.652,
+                1
+              ]
+            ]
+          },
+          {
+            "road_id": "le-vaud-left-zone-30-street",
+            "role": "branch",
+            "direction_compatible": true,
+            "polygon": [
+              [
+                0,
+                0.645
+              ],
+              [
+                0.07,
+                0.629
+              ],
+              [
+                0.123,
+                0.603
+              ],
+              [
+                0.158,
+                0.584
+              ],
+              [
+                0.183,
+                0.574
+              ],
+              [
+                0.173,
+                0.588
+              ],
+              [
+                0.175,
+                0.622
+              ],
+              [
+                0.186,
+                0.65
+              ],
+              [
+                0.217,
+                0.67
+              ],
+              [
+                0.266,
+                0.694
+              ],
+              [
+                0.226,
+                0.717
+              ],
+              [
+                0.105,
+                0.698
+              ],
+              [
+                0.027,
+                0.676
+              ],
+              [
+                0,
+                0.667
+              ]
+            ]
+          }
+        ]
+      },
+      "topology": {
+        "motorway": false,
+        "map_limit_kmh": null,
+        "directed_branch_available": true,
+        "branch_road_ids": [
+          "le-vaud-left-zone-30-street"
+        ],
+        "context_provenance": "Manually visible junction/road-continuity hypothesis for offline ablation, not a downloaded OSM graph or as-driven bundle. Main road curves right; branch climbs left. Local semantic IDs are not OSM way IDs."
+      },
+      "visual_cues": {
+        "continuous_painted_ego_lane_boundaries": "not_visible",
+        "current_corridor": "road edges/curb and asphalt continuity around rightward bend",
+        "branch_relation": "left street climbs away from through road; zone 30 panel and 30 road marking face branch approach",
+        "challenge_tags": [
+          "simultaneous_different_limits",
+          "left_branch",
+          "non_motorway",
+          "curved_current_road",
+          "missing_lane_paint",
+          "zone_entry_sign",
+          "roadworks_near_current_sign"
+        ]
+      },
+      "signs": [
+        {
+          "sign_id": "f8ea80f9-c525-44fb-a6d8-7af479f7fdd8-speed-30",
+          "track_id": null,
+          "track_verified": false,
+          "box": [
+            0.20928030303030304,
+            0.5071548821548821,
+            0.014678030303030304,
+            0.026094276094276093
+          ],
+          "box_provenance": {
+            "source": "Panoramax SGBlur-yolo11n/0.1.0 generic traffic-sign proposal, visually matched to the numeric face by assistant",
+            "source_annotation_id": "a7208475-26d7-4aea-99fa-2f4246ca9507",
+            "coordinate_space": "normalized xywh in upright unmodified 4224x2376 HD image",
+            "numeric_class_source": "user label and assistant reading, not SGBlur classification"
+          },
+          "value_kmh": 30,
+          "ground_anchor": {
+            "x": 0.21638257575757575,
+            "y": 0.6519360269360269,
+            "uncertainty_radius": 0.003,
+            "reliable": true,
+            "source": "visible_post_base"
+          },
+          "expected_road_id": "le-vaud-left-zone-30-street",
+          "expected_applicability": "other",
+          "annotation_notes": "ZONE 30 panel on the left street; visible painted zone 30 on that street. Post foot lies beside that street, not on the through carriageway. User explicitly assigns the sign to the left-turn street."
+        },
+        {
+          "sign_id": "f8ea80f9-c525-44fb-a6d8-7af479f7fdd8-speed-50",
+          "track_id": null,
+          "track_verified": false,
+          "box": [
+            0.5184659090909091,
+            0.5197811447811448,
+            0.0390625,
+            0.06944444444444445
+          ],
+          "box_provenance": {
+            "source": "Panoramax SGBlur-yolo11n/0.1.0 generic traffic-sign proposal, visually matched to the numeric face by assistant",
+            "source_annotation_id": "d57dcb75-40d7-49f7-b1f9-292cc1f649d7",
+            "coordinate_space": "normalized xywh in upright unmodified 4224x2376 HD image",
+            "numeric_class_source": "user label and assistant reading, not SGBlur classification"
+          },
+          "value_kmh": 50,
+          "ground_anchor": {
+            "x": 0.5227272727272727,
+            "y": 0.7319023569023569,
+            "uncertainty_radius": 0.004,
+            "reliable": false,
+            "source": "reviewed_support_projection"
+          },
+          "expected_road_id": "le-vaud-current-through-road",
+          "expected_applicability": "ego",
+          "annotation_notes": "50 Limite generale / Le Vaud panel beside the current through road, next to roadworks warning. The box covers the circular speed sign only. Two posts support this panel; the approximate left support ground projection is obscured by the white roadside marker/grass and is explicitly unreliable. User assigns 50 to the main street; that label must not make the support-based geometry algorithm accept it."
+        }
+      ]
+    }
+  ]
+}

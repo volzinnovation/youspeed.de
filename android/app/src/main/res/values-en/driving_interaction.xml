@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gravity_alignment_title">Camera level</string>
+    <string name="gravity_alignment_unavailable">Gravity alignment unavailable</string>
+    <string name="gravity_alignment_angles">Roll %1$.0f°, tilt %2$.0f°. Gravity cannot determine heading.</string>
+    <string name="tsr_voice_dismissal_listening">Say “Wrong”</string>
+</resources>

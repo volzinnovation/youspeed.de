@@ -1,0 +1,982 @@
+{
+  "schema_version": 1,
+  "corpus_id": "public-a75-issoire-exit13-reviewed-fragment-v1",
+  "reviewer": "assistant_visual_review",
+  "independent_human_ground_truth": false,
+  "frames": [
+    {
+      "frame_id": "14c2c576-518e-4a80-a586-efff3e8cb0f6",
+      "sequence_id": "574c2057-55b1-4947-a96d-a5d568712cda",
+      "route_id": "public-A75-Issoire-exit13",
+      "split": "held_out",
+      "captured_at": "2024-08-21T22:00:00.395110+00:00",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/14c2c576-518e-4a80-a586-efff3e8cb0f6.jpg",
+      "image_sha256": "91816968ccd0d9a6e6e69e76425a1a861a1106e3fcac6545cc812dd0db93ef26",
+      "width": 2048,
+      "height": 1148,
+      "projection": "rectilinear",
+      "temporal_tracking_eligible": false,
+      "legacy_evaluation_eligible": false,
+      "source": {
+        "kind": "public_panoramax",
+        "image_url": "https://panoramax.ign.fr/api/pictures/14c2c576-518e-4a80-a586-efff3e8cb0f6/sd.jpg",
+        "metadata_url": "https://api.panoramax.xyz/api/collections/574c2057-55b1-4947-a96d-a5d568712cda/items/14c2c576-518e-4a80-a586-efff3e8cb0f6",
+        "source_host": "panoramax.ign.fr",
+        "discovery_host": "api.panoramax.xyz",
+        "license": "etalab-2.0",
+        "license_url": "https://alliance.numerique.gouv.fr/licence-ouverte-open-licence/",
+        "producer": "DIR-MC",
+        "metadata_path": "shared/tsr/applicability/fixtures/panoramax-french-exits-v1/items/14c2c576-518e-4a80-a586-efff3e8cb0f6.json",
+        "metadata_sha256": "893839c984b68ae63d9de97d5c7df8a7626bcd70723d4bfa5554648b3aa836a9",
+        "coordinates": [
+          3.264909,
+          45.539589
+        ],
+        "reviewer": "assistant_visual_review",
+        "independent_human_review": false,
+        "original_asset": false,
+        "camera_model": "AVT Stingray F504C",
+        "timing_note": "Provider timestamps are retained byte-for-byte. Adjacent images span metres with 10-microsecond timestamp changes at 22:00:00; these are not accepted as a real camera cadence. Physical tracking and driver behavior are not evaluated.",
+        "item_url": "https://api.panoramax.xyz/api/collections/574c2057-55b1-4947-a96d-a5d568712cda/items/14c2c576-518e-4a80-a586-efff3e8cb0f6",
+        "origin_host": "panoramax.ign.fr",
+        "attribution": "DIR-MC / Panoramax IGN",
+        "acquisition_date": "2026-09-28",
+        "camera_azimuth_deg": 51,
+        "sequence_rank": 29510,
+        "asset_variant": "sd",
+        "unmodified_public_derivative": true,
+        "travel_direction": "northbound mainline"
+      },
+      "geometry": {
+        "reviewed": true,
+        "current_road_id": "a75-issoire-north-mainline",
+        "uncertainty_margin": 0.015,
+        "polygons_semantics": "Manually outlined visible asphalt/shoulder extent from this exact perspective image, independently of sign target labels. No ground projection from a bounding-box centre.",
+        "roads": [
+          {
+            "road_id": "a75-issoire-north-mainline",
+            "role": "mainline",
+            "polygon": [
+              [
+                0,
+                0.716
+              ],
+              [
+                0.355,
+                0.357
+              ],
+              [
+                0.407,
+                0.358
+              ],
+              [
+                0.456,
+                0.371
+              ],
+              [
+                0.574,
+                0.464
+              ],
+              [
+                0.691,
+                0.623
+              ],
+              [
+                0.925,
+                1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "direction_compatible": true
+          },
+          {
+            "road_id": "a75-issoire-north-exit13-ramp",
+            "role": "branch",
+            "polygon": [
+              [
+                0.56,
+                0.307
+              ],
+              [
+                0.584,
+                0.307
+              ],
+              [
+                0.616,
+                0.352
+              ],
+              [
+                0.645,
+                0.371
+              ],
+              [
+                0.756,
+                0.429
+              ],
+              [
+                1,
+                0.532
+              ],
+              [
+                1,
+                0.71
+              ],
+              [
+                0.645,
+                0.488
+              ],
+              [
+                0.565,
+                0.424
+              ],
+              [
+                0.558,
+                0.352
+              ]
+            ],
+            "direction_compatible": true
+          }
+        ]
+      },
+      "signs": [
+        {
+          "sign_id": "14c2c576-518e-4a80-a586-efff3e8cb0f6:manual-70",
+          "track_id": "a75-issoire-north-70-post-2024",
+          "track_verified": true,
+          "box": [
+            0.6396484375,
+            0.31097560975609756,
+            0.01416015625,
+            0.02700348432055749
+          ],
+          "value_kmh": 70,
+          "ground_anchor": {
+            "x": 0.646484375,
+            "y": 0.35627177700348434,
+            "uncertainty_radius": 0.02,
+            "reliable": false,
+            "source": "visible_post_occlusion_endpoint",
+            "notes": "Post disappears behind guardrail or verge. No visible ground contact is asserted."
+          },
+          "expected_road_id": "a75-issoire-north-exit13-ramp",
+          "expected_applicability": "other",
+          "review_confidence": "high",
+          "annotation_notes": "Readable 70 stands beside the separated exit ramp. Camera is on the mainline left of the hatched gore; no arrow is visible.",
+          "physical_identity_notes": "The two 2024 views show the same post, nearby barriers, slope and bridge/fence in one sequence; visual identity is reviewed but temporal carry is disabled because source cadence is untrustworthy."
+        }
+      ],
+      "topology": {
+        "motorway": true,
+        "map_limit_kmh": 110,
+        "directed_branch_available": true,
+        "branch_road_ids": [
+          "a75-issoire-north-exit13-ramp"
+        ],
+        "source": "visible_branch_geometry_with_current_OSM_counterfactual_connectivity",
+        "historical_at_capture_verified": false,
+        "native_legacy_context_observed": false,
+        "osm_context": {
+          "path": "inspector/logs/2026-09-28-fr-exit-experiment/osm/issoire.osm",
+          "reviewed_on": "2026-09-28",
+          "mainline_approach_way_id": "546168660",
+          "exit_node_id": "5278217783",
+          "ramp_approach_way_id": "546168667",
+          "ramp_70_way_id": "121582462",
+          "caution": "Current OSM edits postdate the image surveys. These IDs/tags are counterfactual context only, not proof of 2019/2024 map availability or speed policy."
+        },
+        "topology_ref": "shared/tsr/applicability/fixtures/corrected-exit-topology-v1/issoire.json"
+      }
+    },
+    {
+      "frame_id": "a6dcdd5b-d4fc-4a1c-b597-4809910d3116",
+      "sequence_id": "574c2057-55b1-4947-a96d-a5d568712cda",
+      "route_id": "public-A75-Issoire-exit13",
+      "split": "held_out",
+      "captured_at": "2024-08-21T22:00:00.395210+00:00",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/a6dcdd5b-d4fc-4a1c-b597-4809910d3116.jpg",
+      "image_sha256": "8f3cd93390d742a178e7c705161b73c32fa692032d586634eb65bf82cacd890e",
+      "width": 2048,
+      "height": 1148,
+      "projection": "rectilinear",
+      "temporal_tracking_eligible": false,
+      "legacy_evaluation_eligible": false,
+      "source": {
+        "kind": "public_panoramax",
+        "image_url": "https://panoramax.ign.fr/api/pictures/a6dcdd5b-d4fc-4a1c-b597-4809910d3116/sd.jpg",
+        "metadata_url": "https://api.panoramax.xyz/api/collections/574c2057-55b1-4947-a96d-a5d568712cda/items/a6dcdd5b-d4fc-4a1c-b597-4809910d3116",
+        "source_host": "panoramax.ign.fr",
+        "discovery_host": "api.panoramax.xyz",
+        "license": "etalab-2.0",
+        "license_url": "https://alliance.numerique.gouv.fr/licence-ouverte-open-licence/",
+        "producer": "DIR-MC",
+        "metadata_path": "shared/tsr/applicability/fixtures/panoramax-french-exits-v1/items/a6dcdd5b-d4fc-4a1c-b597-4809910d3116.json",
+        "metadata_sha256": "23903d7ec3e5cb384b9e3364194dd6ac461741da74989ab0ef0b56f584e1aa58",
+        "coordinates": [
+          3.26532,
+          45.539935
+        ],
+        "reviewer": "assistant_visual_review",
+        "independent_human_review": false,
+        "original_asset": false,
+        "camera_model": "AVT Stingray F504C",
+        "timing_note": "Provider timestamps are retained byte-for-byte. Adjacent images span metres with 10-microsecond timestamp changes at 22:00:00; these are not accepted as a real camera cadence. Physical tracking and driver behavior are not evaluated.",
+        "item_url": "https://api.panoramax.xyz/api/collections/574c2057-55b1-4947-a96d-a5d568712cda/items/a6dcdd5b-d4fc-4a1c-b597-4809910d3116",
+        "origin_host": "panoramax.ign.fr",
+        "attribution": "DIR-MC / Panoramax IGN",
+        "acquisition_date": "2026-09-28",
+        "camera_azimuth_deg": 48,
+        "sequence_rank": 29520,
+        "asset_variant": "sd",
+        "unmodified_public_derivative": true,
+        "travel_direction": "northbound mainline"
+      },
+      "geometry": {
+        "reviewed": true,
+        "current_road_id": "a75-issoire-north-mainline",
+        "uncertainty_margin": 0.015,
+        "polygons_semantics": "Manually outlined visible asphalt/shoulder extent from this exact perspective image, independently of sign target labels. No ground projection from a bounding-box centre.",
+        "roads": [
+          {
+            "road_id": "a75-issoire-north-mainline",
+            "role": "mainline",
+            "polygon": [
+              [
+                0,
+                0.742
+              ],
+              [
+                0.366,
+                0.359
+              ],
+              [
+                0.425,
+                0.36
+              ],
+              [
+                0.481,
+                0.381
+              ],
+              [
+                0.64,
+                0.602
+              ],
+              [
+                0.846,
+                0.893
+              ],
+              [
+                0.939,
+                1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "direction_compatible": true
+          },
+          {
+            "road_id": "a75-issoire-north-exit13-ramp",
+            "role": "branch",
+            "polygon": [
+              [
+                0.646,
+                0.292
+              ],
+              [
+                0.67,
+                0.296
+              ],
+              [
+                0.681,
+                0.327
+              ],
+              [
+                0.753,
+                0.36
+              ],
+              [
+                1,
+                0.437
+              ],
+              [
+                1,
+                0.608
+              ],
+              [
+                0.817,
+                0.502
+              ],
+              [
+                0.738,
+                0.399
+              ],
+              [
+                0.679,
+                0.32
+              ]
+            ],
+            "direction_compatible": true
+          }
+        ]
+      },
+      "signs": [
+        {
+          "sign_id": "a6dcdd5b-d4fc-4a1c-b597-4809910d3116:manual-70",
+          "track_id": "a75-issoire-north-70-post-2024",
+          "track_verified": true,
+          "box": [
+            0.86572265625,
+            0.2961672473867596,
+            0.02392578125,
+            0.04355400696864112
+          ],
+          "value_kmh": 70,
+          "ground_anchor": {
+            "x": 0.876953125,
+            "y": 0.3667247386759582,
+            "uncertainty_radius": 0.02,
+            "reliable": false,
+            "source": "visible_post_occlusion_endpoint",
+            "notes": "Post disappears behind guardrail or verge. No visible ground contact is asserted."
+          },
+          "expected_road_id": "a75-issoire-north-exit13-ramp",
+          "expected_applicability": "other",
+          "review_confidence": "high",
+          "annotation_notes": "Readable 70 stands beside the separated exit ramp. Camera is on the mainline left of the hatched gore; no arrow is visible.",
+          "physical_identity_notes": "The two 2024 views show the same post, nearby barriers, slope and bridge/fence in one sequence; visual identity is reviewed but temporal carry is disabled because source cadence is untrustworthy."
+        }
+      ],
+      "topology": {
+        "motorway": true,
+        "map_limit_kmh": 110,
+        "directed_branch_available": true,
+        "branch_road_ids": [
+          "a75-issoire-north-exit13-ramp"
+        ],
+        "source": "visible_branch_geometry_with_current_OSM_counterfactual_connectivity",
+        "historical_at_capture_verified": false,
+        "native_legacy_context_observed": false,
+        "osm_context": {
+          "path": "inspector/logs/2026-09-28-fr-exit-experiment/osm/issoire.osm",
+          "reviewed_on": "2026-09-28",
+          "mainline_approach_way_id": "546168660",
+          "exit_node_id": "5278217783",
+          "ramp_approach_way_id": "546168667",
+          "ramp_70_way_id": "121582462",
+          "caution": "Current OSM edits postdate the image surveys. These IDs/tags are counterfactual context only, not proof of 2019/2024 map availability or speed policy."
+        },
+        "topology_ref": "shared/tsr/applicability/fixtures/corrected-exit-topology-v1/issoire.json"
+      }
+    },
+    {
+      "frame_id": "b7838d58-f8b4-4a42-b6bf-ec25b9e59f95",
+      "sequence_id": "bdeab99c-671d-4cf8-97be-5480463d08d9",
+      "route_id": "public-A75-Issoire-exit13",
+      "split": "held_out",
+      "captured_at": "2024-08-18T22:00:00.142940+00:00",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/b7838d58-f8b4-4a42-b6bf-ec25b9e59f95.jpg",
+      "image_sha256": "00a078dcb2d33dd02ebf26b6cc512fdbad14a59a5532f3fd155716588ac6631f",
+      "width": 2048,
+      "height": 1148,
+      "projection": "rectilinear",
+      "temporal_tracking_eligible": false,
+      "legacy_evaluation_eligible": false,
+      "source": {
+        "kind": "public_panoramax",
+        "image_url": "https://panoramax.ign.fr/api/pictures/b7838d58-f8b4-4a42-b6bf-ec25b9e59f95/sd.jpg",
+        "metadata_url": "https://api.panoramax.xyz/api/collections/bdeab99c-671d-4cf8-97be-5480463d08d9/items/b7838d58-f8b4-4a42-b6bf-ec25b9e59f95",
+        "source_host": "panoramax.ign.fr",
+        "discovery_host": "api.panoramax.xyz",
+        "license": "etalab-2.0",
+        "license_url": "https://alliance.numerique.gouv.fr/licence-ouverte-open-licence/",
+        "producer": "DIR-MC",
+        "metadata_path": "shared/tsr/applicability/fixtures/panoramax-french-exits-v1/items/b7838d58-f8b4-4a42-b6bf-ec25b9e59f95.json",
+        "metadata_sha256": "b8efd5ecddf729e996429fa46cd30e3f8a6dddf7ddd47321f613a5daa1eb18a8",
+        "coordinates": [
+          3.268109,
+          45.544547
+        ],
+        "reviewer": "assistant_visual_review",
+        "independent_human_review": false,
+        "original_asset": false,
+        "camera_model": "AVT Stingray F504C",
+        "timing_note": "Provider timestamps are retained byte-for-byte. Adjacent images span metres with 10-microsecond timestamp changes at 22:00:00; these are not accepted as a real camera cadence. Physical tracking and driver behavior are not evaluated.",
+        "item_url": "https://api.panoramax.xyz/api/collections/bdeab99c-671d-4cf8-97be-5480463d08d9/items/b7838d58-f8b4-4a42-b6bf-ec25b9e59f95",
+        "origin_host": "panoramax.ign.fr",
+        "attribution": "DIR-MC / Panoramax IGN",
+        "acquisition_date": "2026-09-28",
+        "camera_azimuth_deg": 206,
+        "sequence_rank": 4295,
+        "asset_variant": "sd",
+        "unmodified_public_derivative": true,
+        "travel_direction": "southbound mainline"
+      },
+      "geometry": {
+        "reviewed": true,
+        "current_road_id": "a75-issoire-south-mainline",
+        "uncertainty_margin": 0.015,
+        "polygons_semantics": "Manually outlined visible asphalt/shoulder extent from this exact perspective image, independently of sign target labels. No ground projection from a bounding-box centre.",
+        "roads": [
+          {
+            "road_id": "a75-issoire-south-mainline",
+            "role": "mainline",
+            "polygon": [
+              [
+                0,
+                0.72
+              ],
+              [
+                0.476,
+                0.343
+              ],
+              [
+                0.523,
+                0.343
+              ],
+              [
+                0.554,
+                0.406
+              ],
+              [
+                0.604,
+                0.517
+              ],
+              [
+                0.704,
+                0.721
+              ],
+              [
+                0.903,
+                1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "direction_compatible": true
+          },
+          {
+            "road_id": "a75-issoire-south-exit13-ramp",
+            "role": "branch",
+            "polygon": [
+              [
+                0.579,
+                0.343
+              ],
+              [
+                0.634,
+                0.31
+              ],
+              [
+                0.667,
+                0.294
+              ],
+              [
+                0.679,
+                0.31
+              ],
+              [
+                0.634,
+                0.36
+              ],
+              [
+                0.617,
+                0.399
+              ],
+              [
+                0.631,
+                0.446
+              ],
+              [
+                1,
+                0.676
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                0.958,
+                1
+              ],
+              [
+                0.665,
+                0.569
+              ],
+              [
+                0.59,
+                0.424
+              ],
+              [
+                0.561,
+                0.396
+              ]
+            ],
+            "direction_compatible": true
+          }
+        ]
+      },
+      "signs": [
+        {
+          "sign_id": "b7838d58-f8b4-4a42-b6bf-ec25b9e59f95:manual-70",
+          "track_id": "a75-issoire-south-70-post-2024",
+          "track_verified": true,
+          "box": [
+            0.6591796875,
+            0.31794425087108014,
+            0.01806640625,
+            0.033101045296167246
+          ],
+          "value_kmh": 70,
+          "ground_anchor": {
+            "x": 0.66796875,
+            "y": 0.3789198606271777,
+            "uncertainty_radius": 0.02,
+            "reliable": false,
+            "source": "visible_post_occlusion_endpoint",
+            "notes": "Post disappears behind guardrail or verge. No visible ground contact is asserted."
+          },
+          "expected_road_id": "a75-issoire-south-exit13-ramp",
+          "expected_applicability": "other",
+          "review_confidence": "high",
+          "annotation_notes": "Camera remains on the mainline and a hatched gore separates the ascending exit. The 70 and downward/right supplementary arrow visibly identify the exit lane.",
+          "physical_identity_notes": "The two 2024 views show the same post, nearby barriers, slope and bridge/fence in one sequence; visual identity is reviewed but temporal carry is disabled because source cadence is untrustworthy.",
+          "supplementary_arrow": {
+            "road_id": "a75-issoire-south-exit13-ramp",
+            "verified": true,
+            "source": "visible_arrow_to_road_relation",
+            "box": [
+              0.6630859375,
+              0.3510452961672474,
+              0.01025390625,
+              0.018292682926829267
+            ],
+            "direction": "down_right",
+            "annotation_notes": "Arrow is directly below the 70 on the same pole; the only roadway reached on that side beyond the painted gore is the ascending exit. This visible assembly/spatial cue is an inference input; target labels are separate."
+          }
+        }
+      ],
+      "topology": {
+        "motorway": true,
+        "map_limit_kmh": 110,
+        "directed_branch_available": true,
+        "branch_road_ids": [
+          "a75-issoire-south-exit13-ramp"
+        ],
+        "source": "visible_branch_geometry_with_current_OSM_counterfactual_connectivity",
+        "historical_at_capture_verified": false,
+        "native_legacy_context_observed": false,
+        "osm_context": {
+          "path": "inspector/logs/2026-09-28-fr-exit-experiment/osm/issoire.osm",
+          "reviewed_on": "2026-09-28",
+          "mainline_approach_way_id": "467446565",
+          "exit_node_id": "637042785",
+          "ramp_approach_way_id": "493957359",
+          "ramp_70_way_id": "50132892",
+          "caution": "Current OSM edits postdate the image surveys. These IDs/tags are counterfactual context only, not proof of 2019/2024 map availability or speed policy."
+        },
+        "topology_ref": "shared/tsr/applicability/fixtures/corrected-exit-topology-v1/issoire.json"
+      }
+    },
+    {
+      "frame_id": "fc216837-096f-4691-b3dd-8809d5738e7c",
+      "sequence_id": "bdeab99c-671d-4cf8-97be-5480463d08d9",
+      "route_id": "public-A75-Issoire-exit13",
+      "split": "held_out",
+      "captured_at": "2024-08-18T22:00:00.143030+00:00",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/fc216837-096f-4691-b3dd-8809d5738e7c.jpg",
+      "image_sha256": "2c4863da5637341d189fa0360b70736a43f2e217469ba0c3a8cbff37d56270f8",
+      "width": 2048,
+      "height": 1148,
+      "projection": "rectilinear",
+      "temporal_tracking_eligible": false,
+      "legacy_evaluation_eligible": false,
+      "source": {
+        "kind": "public_panoramax",
+        "image_url": "https://panoramax.ign.fr/api/pictures/fc216837-096f-4691-b3dd-8809d5738e7c/sd.jpg",
+        "metadata_url": "https://api.panoramax.xyz/api/collections/bdeab99c-671d-4cf8-97be-5480463d08d9/items/fc216837-096f-4691-b3dd-8809d5738e7c",
+        "source_host": "panoramax.ign.fr",
+        "discovery_host": "api.panoramax.xyz",
+        "license": "etalab-2.0",
+        "license_url": "https://alliance.numerique.gouv.fr/licence-ouverte-open-licence/",
+        "producer": "DIR-MC",
+        "metadata_path": "shared/tsr/applicability/fixtures/panoramax-french-exits-v1/items/fc216837-096f-4691-b3dd-8809d5738e7c.json",
+        "metadata_sha256": "644c9b0bd242121265e867c76cef7feea861cb6f24a4a91865ad6c27d6add288",
+        "coordinates": [
+          3.267924,
+          45.544167
+        ],
+        "reviewer": "assistant_visual_review",
+        "independent_human_review": false,
+        "original_asset": false,
+        "camera_model": "AVT Stingray F504C",
+        "timing_note": "Provider timestamps are retained byte-for-byte. Adjacent images span metres with 10-microsecond timestamp changes at 22:00:00; these are not accepted as a real camera cadence. Physical tracking and driver behavior are not evaluated.",
+        "item_url": "https://api.panoramax.xyz/api/collections/bdeab99c-671d-4cf8-97be-5480463d08d9/items/fc216837-096f-4691-b3dd-8809d5738e7c",
+        "origin_host": "panoramax.ign.fr",
+        "attribution": "DIR-MC / Panoramax IGN",
+        "acquisition_date": "2026-09-28",
+        "camera_azimuth_deg": 206,
+        "sequence_rank": 4304,
+        "asset_variant": "sd",
+        "unmodified_public_derivative": true,
+        "travel_direction": "southbound mainline"
+      },
+      "geometry": {
+        "reviewed": true,
+        "current_road_id": "a75-issoire-south-mainline",
+        "uncertainty_margin": 0.015,
+        "polygons_semantics": "Manually outlined visible asphalt/shoulder extent from this exact perspective image, independently of sign target labels. No ground projection from a bounding-box centre.",
+        "roads": [
+          {
+            "road_id": "a75-issoire-south-mainline",
+            "role": "mainline",
+            "polygon": [
+              [
+                0,
+                0.747
+              ],
+              [
+                0.478,
+                0.343
+              ],
+              [
+                0.526,
+                0.343
+              ],
+              [
+                0.557,
+                0.416
+              ],
+              [
+                0.657,
+                0.576
+              ],
+              [
+                0.835,
+                0.809
+              ],
+              [
+                1,
+                0.995
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "direction_compatible": true
+          },
+          {
+            "road_id": "a75-issoire-south-exit13-ramp",
+            "role": "branch",
+            "polygon": [
+              [
+                0.62,
+                0.369
+              ],
+              [
+                0.654,
+                0.326
+              ],
+              [
+                0.739,
+                0.275
+              ],
+              [
+                0.775,
+                0.286
+              ],
+              [
+                0.73,
+                0.342
+              ],
+              [
+                0.723,
+                0.385
+              ],
+              [
+                0.77,
+                0.437
+              ],
+              [
+                1,
+                0.602
+              ],
+              [
+                1,
+                0.856
+              ],
+              [
+                0.726,
+                0.539
+              ],
+              [
+                0.634,
+                0.438
+              ]
+            ],
+            "direction_compatible": true
+          }
+        ]
+      },
+      "signs": [
+        {
+          "sign_id": "fc216837-096f-4691-b3dd-8809d5738e7c:manual-70",
+          "track_id": "a75-issoire-south-70-post-2024",
+          "track_verified": true,
+          "box": [
+            0.853515625,
+            0.2961672473867596,
+            0.04052734375,
+            0.06968641114982578
+          ],
+          "value_kmh": 70,
+          "ground_anchor": {
+            "x": 0.87548828125,
+            "y": 0.4294425087108014,
+            "uncertainty_radius": 0.02,
+            "reliable": false,
+            "source": "visible_post_occlusion_endpoint",
+            "notes": "Post disappears behind guardrail or verge. No visible ground contact is asserted."
+          },
+          "expected_road_id": "a75-issoire-south-exit13-ramp",
+          "expected_applicability": "other",
+          "review_confidence": "high",
+          "annotation_notes": "Camera remains on the mainline and a hatched gore separates the ascending exit. The 70 and downward/right supplementary arrow visibly identify the exit lane.",
+          "physical_identity_notes": "The two 2024 views show the same post, nearby barriers, slope and bridge/fence in one sequence; visual identity is reviewed but temporal carry is disabled because source cadence is untrustworthy.",
+          "supplementary_arrow": {
+            "road_id": "a75-issoire-south-exit13-ramp",
+            "verified": true,
+            "source": "visible_arrow_to_road_relation",
+            "box": [
+              0.86572265625,
+              0.36498257839721254,
+              0.02001953125,
+              0.03484320557491289
+            ],
+            "direction": "down_right",
+            "annotation_notes": "Arrow is directly below the 70 on the same pole; the only roadway reached on that side beyond the painted gore is the ascending exit. This visible assembly/spatial cue is an inference input; target labels are separate."
+          }
+        }
+      ],
+      "topology": {
+        "motorway": true,
+        "map_limit_kmh": 110,
+        "directed_branch_available": true,
+        "branch_road_ids": [
+          "a75-issoire-south-exit13-ramp"
+        ],
+        "source": "visible_branch_geometry_with_current_OSM_counterfactual_connectivity",
+        "historical_at_capture_verified": false,
+        "native_legacy_context_observed": false,
+        "osm_context": {
+          "path": "inspector/logs/2026-09-28-fr-exit-experiment/osm/issoire.osm",
+          "reviewed_on": "2026-09-28",
+          "mainline_approach_way_id": "467446565",
+          "exit_node_id": "637042785",
+          "ramp_approach_way_id": "493957359",
+          "ramp_70_way_id": "50132892",
+          "caution": "Current OSM edits postdate the image surveys. These IDs/tags are counterfactual context only, not proof of 2019/2024 map availability or speed policy."
+        },
+        "topology_ref": "shared/tsr/applicability/fixtures/corrected-exit-topology-v1/issoire.json"
+      }
+    },
+    {
+      "frame_id": "673ed502-6ef0-4f17-999c-297cb465f80a",
+      "sequence_id": "d245e31e-868d-49aa-b6f1-99ae4ef9bfff",
+      "route_id": "public-A75-Issoire-exit13",
+      "split": "held_out",
+      "captured_at": "2019-07-01T22:00:00.101610+00:00",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/673ed502-6ef0-4f17-999c-297cb465f80a.jpg",
+      "image_sha256": "d7b0a1229b63762df993806d46475262415494b9524057226e64515049fc18bd",
+      "width": 2048,
+      "height": 1145,
+      "projection": "rectilinear",
+      "temporal_tracking_eligible": false,
+      "legacy_evaluation_eligible": false,
+      "source": {
+        "kind": "public_panoramax",
+        "image_url": "https://panoramax.ign.fr/api/pictures/673ed502-6ef0-4f17-999c-297cb465f80a/sd.jpg",
+        "metadata_url": "https://api.panoramax.xyz/api/collections/d245e31e-868d-49aa-b6f1-99ae4ef9bfff/items/673ed502-6ef0-4f17-999c-297cb465f80a",
+        "source_host": "panoramax.ign.fr",
+        "discovery_host": "api.panoramax.xyz",
+        "license": "etalab-2.0",
+        "license_url": "https://alliance.numerique.gouv.fr/licence-ouverte-open-licence/",
+        "producer": "DIR-MC",
+        "metadata_path": "shared/tsr/applicability/fixtures/panoramax-french-exits-v1/items/673ed502-6ef0-4f17-999c-297cb465f80a.json",
+        "metadata_sha256": "4affbec7c3f7aa532c569951a0617df0a88a80344225b6ad1fdf192024529569",
+        "coordinates": [
+          3.265359,
+          45.539848
+        ],
+        "reviewer": "assistant_visual_review",
+        "independent_human_review": false,
+        "original_asset": false,
+        "camera_model": "AVT Pike F-210B/C",
+        "timing_note": "Provider timestamps are retained byte-for-byte. Adjacent images span metres with 10-microsecond timestamp changes at 22:00:00; these are not accepted as a real camera cadence. Physical tracking and driver behavior are not evaluated.",
+        "item_url": "https://api.panoramax.xyz/api/collections/d245e31e-868d-49aa-b6f1-99ae4ef9bfff/items/673ed502-6ef0-4f17-999c-297cb465f80a",
+        "origin_host": "panoramax.ign.fr",
+        "attribution": "DIR-MC / Panoramax IGN",
+        "acquisition_date": "2026-09-28",
+        "camera_azimuth_deg": 53,
+        "sequence_rank": 100,
+        "asset_variant": "sd",
+        "unmodified_public_derivative": true,
+        "travel_direction": "northbound exit ramp"
+      },
+      "geometry": {
+        "reviewed": true,
+        "current_road_id": "a75-issoire-north-exit13-ramp",
+        "uncertainty_margin": 0.015,
+        "polygons_semantics": "Manually outlined visible asphalt/shoulder extent from this exact perspective image, independently of sign target labels. No ground projection from a bounding-box centre.",
+        "roads": [
+          {
+            "road_id": "a75-issoire-north-mainline",
+            "role": "mainline",
+            "polygon": [
+              [
+                0,
+                0.487
+              ],
+              [
+                0.205,
+                0.341
+              ],
+              [
+                0.278,
+                0.34
+              ],
+              [
+                0.306,
+                0.388
+              ],
+              [
+                0.229,
+                0.545
+              ],
+              [
+                0,
+                0.78
+              ]
+            ],
+            "direction_compatible": true
+          },
+          {
+            "road_id": "a75-issoire-north-exit13-ramp",
+            "role": "branch",
+            "polygon": [
+              [
+                0.48,
+                0.293
+              ],
+              [
+                0.515,
+                0.304
+              ],
+              [
+                0.583,
+                0.352
+              ],
+              [
+                0.7,
+                0.432
+              ],
+              [
+                1,
+                0.593
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                0.123,
+                1
+              ],
+              [
+                0.373,
+                0.577
+              ],
+              [
+                0.472,
+                0.404
+              ],
+              [
+                0.494,
+                0.336
+              ]
+            ],
+            "direction_compatible": true
+          }
+        ]
+      },
+      "signs": [
+        {
+          "sign_id": "673ed502-6ef0-4f17-999c-297cb465f80a:manual-70",
+          "track_id": null,
+          "track_verified": false,
+          "box": [
+            0.60107421875,
+            0.29170305676855895,
+            0.021484375,
+            0.03842794759825328
+          ],
+          "value_kmh": 70,
+          "ground_anchor": {
+            "x": 0.611328125,
+            "y": 0.36681222707423583,
+            "uncertainty_radius": 0.02,
+            "reliable": false,
+            "source": "visible_post_occlusion_endpoint",
+            "notes": "Post disappears behind guardrail or verge. No visible ground contact is asserted."
+          },
+          "expected_road_id": "a75-issoire-north-exit13-ramp",
+          "expected_applicability": "ego",
+          "review_confidence": "high",
+          "annotation_notes": "Readable 70 stands beside the separated exit ramp. Camera is actually on that ramp, right of the gore; through motorway departs to the left, making this a real legitimate-sign positive control.",
+          "physical_identity_notes": "No physical identity is asserted across the 2019 and 2024 surveys."
+        }
+      ],
+      "topology": {
+        "motorway": false,
+        "map_limit_kmh": 90,
+        "directed_branch_available": true,
+        "branch_road_ids": [
+          "a75-issoire-north-exit13-ramp"
+        ],
+        "source": "visible_branch_geometry_with_current_OSM_counterfactual_connectivity",
+        "historical_at_capture_verified": false,
+        "native_legacy_context_observed": false,
+        "osm_context": {
+          "path": "inspector/logs/2026-09-28-fr-exit-experiment/osm/issoire.osm",
+          "reviewed_on": "2026-09-28",
+          "mainline_approach_way_id": "546168660",
+          "exit_node_id": "5278217783",
+          "ramp_approach_way_id": "546168667",
+          "ramp_70_way_id": "121582462",
+          "caution": "Current OSM edits postdate the image surveys. These IDs/tags are counterfactual context only, not proof of 2019/2024 map availability or speed policy."
+        },
+        "topology_ref": "shared/tsr/applicability/fixtures/corrected-exit-topology-v1/issoire.json"
+      }
+    }
+  ],
+  "limitations": [
+    "Public host fallback: IGN items were discovered through the Panoramax federation because OSM France storage was unreachable.",
+    "Four non-ego observations cover two physical exit signs; these are not four independent sign encounters.",
+    "One real on-ramp observation is a legitimate-sign positive control; no cross-year physical identity is asserted.",
+    "Cadence is unusable for temporal tracking. Microsecond source timestamps are preserved without fabrication.",
+    "Current OSM topology and lane tags postdate capture; use as explicitly labeled counterfactual context only.",
+    "Legacy native map/fix diagnostics are unavailable for public images, so a native guard baseline is not observed."
+  ],
+  "qualification": "exploratory_external_geographic_evaluation_not_approved_final_holdout",
+  "reviewed_at": "2026-09-28"
+}

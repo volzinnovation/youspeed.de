@@ -1,5 +1,17 @@
 # Speed-limit reference model history
 
+## 1.1.0 — 2026-09-27
+
+Owner-approved disregard-vision button: `camera_dismissed` withdraws ordinary
+and enclosing camera claims and camera-derived last-known memory. Current road
+and explicit voice claims remain intact. Same-track and pending-frame rejection
+are controller responsibilities. No expiry, priority or road-context thresholds
+changed. Published v1.0.0 artifacts remain unchanged.
+
+The producer adapter also emits an unresolved passage's authority withdrawal
+once per physical evidence ID. Re-rendering that same unresolved passage must
+not clear every subsequently verified road-bundle input.
+
 ## 1.0.0 — 2026-09-26
 
 Initial runtime policy explicitly requested by the product owner in the

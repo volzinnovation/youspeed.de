@@ -20,7 +20,7 @@ data class TrafficSignPictogram(
 
 /** Country packs that are physically bundled in both mobile applications. */
 internal object AndroidTrafficSignModelPackSelection {
-    // CH is bundled for evaluation/shadow use; registry rollout remains gated.
+    // CH v9 is owner-accepted for bundled use (shared/tsr/field-acceptance); signed registry rollout is separate.
     val bundledCountryCodes: Set<String> = setOf("DE", "FR", "NL", "BE", "CH")
 
     fun availableCountryCode(raw: String?): String? {

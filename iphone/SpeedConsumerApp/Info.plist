@@ -31,10 +31,12 @@
 	<string>The app needs your location to compare current speed against map speed limits.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>YouSpeed uses one rear-camera session for local Dashcam video, on-device traffic-sign recognition, and Panoramax pictures that you review and upload later.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>YouSpeed uses gravity locally to show camera tilt while stopped.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>YouSpeed nutzt das Mikrofon nur lokal auf dem Geraet, um gesprochene Tempolimits zu erfassen.</string>
+	<string>YouSpeed briefly listens on your device after recognizing a speed limit so you can say Wrong, and captures spoken speed corrections.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>YouSpeed nutzt die Spracherkennung nur lokal auf dem Geraet, um Tempolimits wie 30 oder Fussgaengerzone zu erfassen.</string>
+	<string>YouSpeed recognizes spoken speed corrections and Wrong locally on your device.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

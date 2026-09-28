@@ -138,6 +138,9 @@ class Machine:
                              accepted_distance_m=e["observed_distance_m"] if source == "camera" else s["distance_m"])
         elif action in ("clear_voice", "clear_camera", "clear_camera_context", "clear_bundle"):
             s[action.removeprefix("clear_")] = None
+        elif action == "clear_camera_memory":
+            if s["last_known"] and s["last_known"]["source"] == "camera":
+                s["last_known"] = None
         elif action == "advance_generation":
             s["generation"] += 1
         elif action == "advance_applicability_revision":

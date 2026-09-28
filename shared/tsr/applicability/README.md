@@ -3,6 +3,31 @@
 Implementation for issue #8 and work items #9–#18. The checked-in runtime mode is
 **shadow** on both platforms. There is no field-accuracy or rollout approval.
 
+## France exit investigation and simulations (28 September 2026)
+
+The [recorded failure corpus](fixtures/README.md) preserves four real clips
+(263 frames), their immutable source links and the actual Swift/Kotlin baseline.
+It remains unreviewed road-applicability truth. Separate synthetic tests explore
+sign-to-corridor association, scoped encounters, motion corroboration and genuine
+mainline reductions; their geometry is explicitly supplied, not inferred from
+images. Neither fixture set qualifies a production filter.
+
+See the [simulation and integration design](../../../docs/TSR_EXIT_SIMULATION_DESIGN_2026-09-28.md)
+for reproduction commands and coverage, and the
+[scientific literature review](../../../docs/TSR_ROAD_APPLICABILITY_RESEARCH_2026-09-28.md)
+for methods, primary sources and transfer limitations. These experiments leave
+the runtime policy and schema unchanged.
+
+The subsequent [image geometry experiment](../../../docs/TSR_IMAGE_GEOMETRY_ABLATION_2026-09-28.md)
+adds separate assistant-reviewed labels for four original stills and eight new
+public Panoramax images from A10/A75. With behavior off, support geometry and
+verified-track carry both abstain on all 12 observations, including the ego-road
+control. The [Brouck structural replay](fixtures/corrected-exit-topology-v1/brouck-replay.report.json)
+recovers the interior-node departure in 49/49 recorded selected-way contexts,
+but 46/49 fixes remain stale. Neither result demonstrates field improvement.
+See the [issue reassessment](../../../docs/TSR_ISSUE_8_REASSESSMENT_2026-09-28.md)
+for coverage gaps and the ordered independent ablations.
+
 ## Contract and timing (#9)
 
 `evidence-v1.schema.json` versions candidate batches, track histories, immutable
@@ -170,16 +195,16 @@ Status and conditional investigations:
 
 | Issue | Implementation / outstanding evidence |
 | --- | --- |
-| #9 | Versioned sidecars, golden contracts, legacy behavior and timing documented |
-| #10 | Synthetic/native replay and scorecard implemented; reviewed corpus, actual baseline, full-image lane and empirical statistics pending |
-| #11 | Candidate transport, local metadata, importer and Inspector implemented; real-drive import remains to be exercised |
+| #9 | Engineering-complete: versioned sidecars, golden contracts, legacy behavior and timing documented; enforcement contract does not imply live enablement |
+| #10 | Native golden and four real recorded-candidate baselines reproduced; 12 reviewed stills added. Independent sequence adjudication, complete coverage, full-image pipeline and empirical statistics pending |
+| #11 | Engineering-complete: candidate transport, local metadata, importer and Inspector; real Android logs and four recorded clips imported and replayed |
 | #12 | Bounded native physical tracker and shared regression vectors implemented; sustained device cost pending |
 | #13 | Capture-time V3 snapshots and legacy layout fallback implemented; real-route/provider geometry qualification pending |
 | #14 | Conservative unfitted policy implemented; mount calibration, reviewed decision vectors and ablations pending |
 | #15 | Authority gates and older-assertion regression tests implemented; complete device enforcement qualification pending |
 | #16 | CI and reproducible local checks added; **NO-GO** for rollout pending reviewed holdout, full-image replay, approved device budgets and sustained coexistence testing |
-| #17 | **DEFER**: no reviewed development residuals justify a directed bundle extension. Existing capabilities remain explicit; no map migration or bundle generation. If later justified, Belgium is the pilot region |
-| #18 | **DEFER**: no independent reviewed sequence corpus exists; no reranker training or artifact is justified |
+| #17 | **Targeted investigation justified**: Brouck exposes an interior-node departure missing from endpoint context. Offline OSM counterfactual/prototype exists; no production migration, measured authority benefit, full/delta qualification or publication |
+| #18 | **Completed DEFER decision**: independently adjudicated causal sequence corpus and frozen residual analysis are insufficient; no training/export/device trial. Reopen when those prerequisites and an untouched final evaluation exist |
 
 Parent #8 cannot be closed as field-qualified. These artifacts do not authorize
 a branch merge, bundle publication or production enablement. The user separately

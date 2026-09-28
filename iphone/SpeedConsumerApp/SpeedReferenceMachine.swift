@@ -118,6 +118,7 @@ final class SpeedReferenceMachine {
         if ["clear_voice", "clear_camera", "clear_camera_context", "clear_bundle"].contains(name) { claims.removeValue(forKey: String(name.dropFirst(6))); return }
         switch name {
         case "reset_session": claims = [:]; lastKnown = nil; generation = 0; applicabilityRevision = 0; pending = false; gap = nil; seen = []; origins = [:]; time = 0; distance = 0; session = e["session_id"] as? String; sequence = integer(e["sequence"])!
+        case "clear_camera_memory": if lastKnown?.source == "camera" { lastKnown = nil }
         case "advance_generation": generation += 1
         case "advance_applicability_revision": applicabilityRevision = integer(e["next_revision"])!
         case "mark_pending": pending = true

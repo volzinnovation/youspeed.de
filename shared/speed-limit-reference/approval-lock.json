@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "target_version": "1.0.0",
+  "target_version": "1.1.0",
   "runtime_active": true,
-  "approval_date": "2026-09-26",
-  "approval_basis": "Product-owner request on 2026-09-26: apps use the state-machine configuration at runtime; documentation/visualization are for developers, with no in-app machine display. Explicit parameters: 5 km or five minutes; policy edits only by explicit owner command. Camera candidate selection and applicability remain external, with future conditional restrictions on camera and bundle inputs.",
+  "approval_date": "2026-09-27",
+  "approval_basis": "Product owner requested a disregard-vision action on 2026-09-27 and approved its design and implementation: drop incorrect visual evidence and return to road. Preserve voice corrections, clear rejected camera memory, and keep TSR active. Other priorities, expiry and context thresholds remain unchanged.",
   "artifacts": [
     {
-      "file": "policy-v1.0.0.json",
+      "file": "policy-v1.1.0.json",
       "role": "target",
-      "sha256": "f9137704291b308bfec782b201d8ef5332634a3e1113da10bd7d988309295df9"
+      "sha256": "497e157de2d04ed067897ecc9abde29ecf304a4147c9897b26e71d5c5fc0fcd9"
     },
     {
       "file": "current-v0.1.0.json",
@@ -16,9 +16,9 @@
       "sha256": "0bc9fb4f9a89658bad3674f4d6e0a5d74b62767783f9c4f9c1a8da7272de7b0e"
     },
     {
-      "file": "scenarios-v1.0.0.json",
+      "file": "scenarios-v1.1.0.json",
       "role": "scenarios",
-      "sha256": "4dce2f1f82be7267d5f606cf0079ccb4ed2d12767f0dbad556061ad40a72793d"
+      "sha256": "33873a7d0c6b52927c1ba0212f6ec3faf15d3dfa72b5546a45b5e877d5e6aa50"
     }
   ]
 }

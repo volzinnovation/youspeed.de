@@ -379,3 +379,10 @@
 
 "settings.maps.preparing" = "Download wird vorbereitet…";
 "settings.maps.download_failed" = "Download fehlgeschlagen: %@";
+
+"tsr.disregard_vision" = "Kameraerkennung verwerfen und zur Straße zurückkehren";
+
+"gravity_alignment.title" = "Kameraausrichtung";
+"gravity_alignment.unavailable" = "Schwerkraftausrichtung nicht verfügbar";
+"gravity_alignment.angles" = "Rollwinkel %.0f°, Neigung %.0f°. Schwerkraft kann die Fahrtrichtung nicht bestimmen.";
+"tsr.voice_dismissal.listening" = "„Falsch“ sagen";

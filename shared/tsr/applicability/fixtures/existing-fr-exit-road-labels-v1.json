@@ -1,0 +1,980 @@
+{
+  "schema_version": 1,
+  "corpus_id": "existing-fr-exit-road-labels-v1",
+  "review": {
+    "reviewer": "assistant_visual_review",
+    "reviewed_at": "2026-09-28",
+    "independent_human_ground_truth": false,
+    "scope": "Four original still anchors viewed in full and with orientation-corrected native-pixel inspection crops. Labels describe visible signs only; no whole-clip truth is asserted."
+  },
+  "limitations": [
+    "Manual governing-road labels are assistant judgments; independent human adjudication remains absent.",
+    "Sign-post bases are occluded in all four anchors. Geometry-only inference must abstain rather than substitute sign centres as ground points.",
+    "The 15:43 still does not verify a readable 70 or the physical identity of the prior live detection.",
+    "Still and live-frame captures are separate. Candidate-time links are hypotheses only and never transfer boxes or truth.",
+    "Symbolic directed connections illustrate possible context; they are not OSM corrections or rebuilt bundle topology.",
+    "All four anchors come from the development drive; none is an independent held-out case.",
+    "One isolated view per sign cannot support a physical tracking gain."
+  ],
+  "frames": [
+    {
+      "frame_id": "photo:06f63d2e-9b3d-49b2-9956-37a4b12b62a7",
+      "sequence_id": "b7bab591-9988-40bd-a5c0-07916ca474ab",
+      "route_id": "user-france-drive-20260928",
+      "split": "development",
+      "captured_at": "2026-09-28T14:18:20.337143Z",
+      "image_path": "inspector/logs/2026-09-28-fr-de-review/android/photo-141823.jpg",
+      "image_sha256": "792b84d69fddbac7e5f50c2b17212a3461db817b6ec2a081c919f77f95508224",
+      "width": 4096,
+      "height": 3072,
+      "source": {
+        "kind": "authorized_local_panoramax_still",
+        "capture_id": "06f63d2e-9b3d-49b2-9956-37a4b12b62a7",
+        "capture_session_id": "b7bab591-9988-40bd-a5c0-07916ca474ab",
+        "metadata_path": "inspector/logs/2026-09-28-fr-de-review/android/sample-photos.json",
+        "metadata_sha256": "942b2be4bd6add60f7dd70b805ce3a79534d78c13462e0f85551a5aceb7694a9",
+        "original_exif_orientation": 3,
+        "annotation_coordinates": "EXIF orientation corrected display image; normalized x,y,top-left origin",
+        "reviewer": "assistant_visual_review",
+        "independent_human_review": false,
+        "public_remote_photo_id": null
+      },
+      "geometry": {
+        "reviewed": true,
+        "current_road_id": "image-141823-mainline",
+        "uncertainty_margin": 0.015,
+        "coordinate_system": "normalized_after_EXIF_orientation",
+        "annotation_method": "manual_visible_road_and_shoulder_polygons",
+        "annotation_notes": "Visible asphalt polygons follow the mainline/gore/exit boundaries. Far polygons are approximate due to cars and perspective.",
+        "roads": [
+          {
+            "road_id": "image-141823-mainline",
+            "role": "mainline",
+            "polygon": [
+              [
+                0,
+                0.725
+              ],
+              [
+                0.396,
+                0.625
+              ],
+              [
+                0.444,
+                0.625
+              ],
+              [
+                0.449,
+                0.661
+              ],
+              [
+                0.461,
+                0.683
+              ],
+              [
+                0.537,
+                0.81
+              ],
+              [
+                0.718,
+                1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "direction_compatible": true,
+            "osm_way_id": null
+          },
+          {
+            "road_id": "image-141823-right-road",
+            "role": "branch",
+            "polygon": [
+              [
+                0.473,
+                0.629
+              ],
+              [
+                0.504,
+                0.632
+              ],
+              [
+                0.602,
+                0.682
+              ],
+              [
+                0.819,
+                0.787
+              ],
+              [
+                1,
+                0.876
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                0.755,
+                1
+              ],
+              [
+                0.555,
+                0.801
+              ],
+              [
+                0.485,
+                0.682
+              ],
+              [
+                0.466,
+                0.652
+              ]
+            ],
+            "direction_compatible": true,
+            "osm_way_id": null
+          }
+        ]
+      },
+      "signs": [
+        {
+          "sign_id": "image-sign:06f63d2e-9b3d-49b2-9956-37a4b12b62a7:0",
+          "track_id": null,
+          "track_verified": false,
+          "box": [
+            0.505859375,
+            0.6139322916666666,
+            0.005615234375,
+            0.0087890625
+          ],
+          "box_source": "manual_review_of_this_asset_only",
+          "value_kmh": 70,
+          "ground_anchor": {
+            "x": 0.508544921875,
+            "y": 0.6282552083333334,
+            "uncertainty_radius": 0.02,
+            "reliable": false,
+            "source": "visible_post_occlusion_endpoint",
+            "notes": "Visible post termination at barrier occlusion, not a visible ground contact; no ground projection is supplied."
+          },
+          "expected_road_id": "image-141823-right-road",
+          "expected_applicability": "other",
+          "review_confidence": "medium_high",
+          "annotation_notes": "A hatched gore and continuous separator visibly divide the main motorway from the right-hand exit. The small circular sign stands beside the exit beyond the gore. Its numeral appears 70 but is small; no claim about the earlier accepted 90 is made from this still.",
+          "physical_identity_notes": "Single-still annotation only. No verified live-frame identity or cross-image physical track.",
+          "related_live_candidates": [
+            {
+              "frame_id": "90425e58-6263-4a52-967f-9fc2d4668d9d",
+              "candidate_id": "90425e58-6263-4a52-967f-9fc2d4668d9d:0",
+              "captured_at_ms": 1790605103521.0,
+              "offset_after_still_ms": 3183.856934,
+              "semantic_key": "maximum_speed:70:km/h",
+              "recognition_eligible": false,
+              "association_status": "unverified_near_time_same_class",
+              "verified_same_physical_sign": false,
+              "image_box_transfer_allowed": false,
+              "ground_truth_transfer_allowed": false
+            }
+          ]
+        }
+      ],
+      "topology": {
+        "motorway": true,
+        "map_limit_kmh": 130,
+        "legacy_branch_available": true,
+        "legacy_road_context_fresh": false,
+        "directed_branch_available": true,
+        "branch_road_ids": [
+          "image-141823-right-road"
+        ],
+        "source": "symbolic_image_context_review",
+        "osm_connectivity_verified": false,
+        "annotation_notes": "The diverging right-hand carriageway and gore are visible in the image. Directed symbolic relation only; no OSM-node junction or metric along-way interval is asserted.",
+        "directed_relations": [
+          {
+            "from_road": "image-141823-mainline",
+            "to_road": "image-141823-right-road",
+            "relation": "diverges_right_or_service_access",
+            "confidence": "medium_high",
+            "osm_verified": false
+          }
+        ]
+      },
+      "related_log_context": {
+        "source_fixture": "shared/tsr/applicability/fixtures/fr-exit-failures-20260928-v1.json",
+        "scenario_id": "clip-141810",
+        "note": "Nearest same-class live candidate context, not simultaneous still-image road truth; numeric OSM IDs are log observations only and are not bound to image polygons.",
+        "native_road_snapshot": {
+          "snapshotId": "5d634a0d617a5148d6be3748dd4ac16ac714c8a9653075a80591f62540c7bbbb:29:1.790605100289E12",
+          "capturedAtMs": 1790605100289.0,
+          "wayId": "1420448421",
+          "roadClass": "motorway",
+          "postedSpeedKmh": 130,
+          "headingDeg": null,
+          "matchedStable": true,
+          "branches": [
+            {
+              "distanceM": 4.975957573249485,
+              "endpointLinked": true,
+              "headingDeg": 285.59604178529025,
+              "roadClass": "motorway",
+              "turnAngleDeg": -2.2345090795512306,
+              "wayId": "1420448420"
+            },
+            {
+              "distanceM": 76.25708020424337,
+              "endpointLinked": true,
+              "headingDeg": 120.6959440804502,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": 12.86539321560872,
+              "wayId": "1420448422"
+            }
+          ],
+          "hypotheses": [
+            {
+              "distanceM": 6.2535738383427155,
+              "endpointLinked": false,
+              "headingDeg": 105.59604178529025,
+              "roadClass": "motorway",
+              "turnAngleDeg": null,
+              "wayId": "1420448420"
+            },
+            {
+              "distanceM": 16.55597323280732,
+              "endpointLinked": false,
+              "headingDeg": 287.7249270195719,
+              "roadClass": "motorway",
+              "turnAngleDeg": null,
+              "wayId": "685657904"
+            },
+            {
+              "distanceM": 76.42418727379497,
+              "endpointLinked": false,
+              "headingDeg": 120.6959440804502,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "1420448422"
+            },
+            {
+              "distanceM": 154.67304060361027,
+              "endpointLinked": false,
+              "headingDeg": 277.8548288040359,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "1420448423"
+            },
+            {
+              "distanceM": 177.84672815255703,
+              "endpointLinked": false,
+              "headingDeg": 119.18407444062791,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "63681481"
+            },
+            {
+              "distanceM": 312.3197581954264,
+              "endpointLinked": false,
+              "headingDeg": 283.5612881249373,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "138389983"
+            },
+            {
+              "distanceM": 312.3197581954264,
+              "endpointLinked": false,
+              "headingDeg": 278.14065456325466,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "34696668"
+            }
+          ]
+        }
+      },
+      "legacy_evaluation_eligible": true,
+      "legacy_evaluation_note": "Approximate fixed-x counterfactual only: applies the retained nearby same-class live candidate context flags to this separately captured still box. This is not the native result on this still, and actual capture/fix times are not rewritten."
+    },
+    {
+      "frame_id": "photo:e26287e5-a34e-4e95-a869-c1c4db3b7875",
+      "sequence_id": "b7bab591-9988-40bd-a5c0-07916ca474ab",
+      "route_id": "user-france-drive-20260928",
+      "split": "development",
+      "captured_at": "2026-09-28T14:34:44.361786Z",
+      "image_path": "inspector/logs/2026-09-28-fr-de-review/android/photo-143443.jpg",
+      "image_sha256": "9c378d56920fd86f4f0ea4a8f030da1028f5c5269a750f6f8b011ce8fa895ceb",
+      "width": 4096,
+      "height": 3072,
+      "source": {
+        "kind": "authorized_local_panoramax_still",
+        "capture_id": "e26287e5-a34e-4e95-a869-c1c4db3b7875",
+        "capture_session_id": "b7bab591-9988-40bd-a5c0-07916ca474ab",
+        "metadata_path": "inspector/logs/2026-09-28-fr-de-review/android/sample-photos.json",
+        "metadata_sha256": "942b2be4bd6add60f7dd70b805ce3a79534d78c13462e0f85551a5aceb7694a9",
+        "original_exif_orientation": 3,
+        "annotation_coordinates": "EXIF orientation corrected display image; normalized x,y,top-left origin",
+        "reviewer": "assistant_visual_review",
+        "independent_human_review": false,
+        "public_remote_photo_id": null
+      },
+      "geometry": {
+        "reviewed": true,
+        "current_road_id": "image-143443-mainline",
+        "uncertainty_margin": 0.015,
+        "coordinate_system": "normalized_after_EXIF_orientation",
+        "annotation_method": "manual_visible_road_and_shoulder_polygons",
+        "annotation_notes": "Mainline asphalt is visible. The service-road polygon covers only a narrow visible/inferred pavement strip behind barriers and is low-confidence; it is not expanded to include the target sign.",
+        "roads": [
+          {
+            "road_id": "image-143443-mainline",
+            "role": "mainline",
+            "polygon": [
+              [
+                0,
+                1
+              ],
+              [
+                0.362,
+                0.657
+              ],
+              [
+                0.389,
+                0.636
+              ],
+              [
+                0.458,
+                0.637
+              ],
+              [
+                0.529,
+                0.679
+              ],
+              [
+                0.701,
+                0.749
+              ],
+              [
+                1,
+                0.87
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "direction_compatible": true,
+            "osm_way_id": null
+          },
+          {
+            "road_id": "image-143443-right-road",
+            "role": "service",
+            "polygon": [
+              [
+                0.555,
+                0.646
+              ],
+              [
+                0.593,
+                0.647
+              ],
+              [
+                0.623,
+                0.651
+              ],
+              [
+                0.664,
+                0.659
+              ],
+              [
+                0.709,
+                0.668
+              ],
+              [
+                0.753,
+                0.682
+              ],
+              [
+                0.709,
+                0.681
+              ],
+              [
+                0.661,
+                0.67
+              ],
+              [
+                0.611,
+                0.661
+              ],
+              [
+                0.566,
+                0.653
+              ]
+            ],
+            "direction_compatible": true,
+            "osm_way_id": null
+          }
+        ]
+      },
+      "signs": [
+        {
+          "sign_id": "image-sign:e26287e5-a34e-4e95-a869-c1c4db3b7875:0",
+          "track_id": null,
+          "track_verified": false,
+          "box": [
+            0.747802734375,
+            0.6341145833333334,
+            0.011962890625,
+            0.0166015625
+          ],
+          "box_source": "manual_review_of_this_asset_only",
+          "value_kmh": 30,
+          "ground_anchor": {
+            "x": 0.75390625,
+            "y": 0.6608072916666666,
+            "uncertainty_radius": 0.02,
+            "reliable": false,
+            "source": "visible_post_occlusion_endpoint",
+            "notes": "Visible post termination at barrier occlusion, not a visible ground contact; no ground projection is supplied."
+          },
+          "expected_road_id": "image-143443-right-road",
+          "expected_applicability": "other",
+          "review_confidence": "high",
+          "annotation_notes": "The readable 30 shares the service-area entrance assembly with the blue aire de Brouck sign and pedestrian warning. Two guardrails separate that assembly and the lower service road from the camera motorway. This is strong image-based evidence of service-road governance; the actual post base is hidden.",
+          "physical_identity_notes": "Single-still annotation only. No verified live-frame identity or cross-image physical track.",
+          "related_live_candidates": [
+            {
+              "frame_id": "dabbb355-3d52-460b-a7bf-bff65be27d7d",
+              "candidate_id": "dabbb355-3d52-460b-a7bf-bff65be27d7d:0",
+              "captured_at_ms": 1790606084578.0,
+              "offset_after_still_ms": 216.214111,
+              "semantic_key": "maximum_speed:30:km/h",
+              "recognition_eligible": true,
+              "association_status": "unverified_near_time_same_class",
+              "verified_same_physical_sign": false,
+              "image_box_transfer_allowed": false,
+              "ground_truth_transfer_allowed": false
+            }
+          ]
+        }
+      ],
+      "topology": {
+        "motorway": true,
+        "map_limit_kmh": 130,
+        "legacy_branch_available": false,
+        "legacy_road_context_fresh": false,
+        "directed_branch_available": true,
+        "branch_road_ids": [
+          "image-143443-right-road"
+        ],
+        "source": "symbolic_image_context_review",
+        "osm_connectivity_verified": false,
+        "annotation_notes": "A separate service-access road is visible behind barriers. Its upstream connection to the motorway is inferred from the service-area setting, not visible as a junction in this frame; directed relation is a manually reviewed context hypothesis.",
+        "directed_relations": [
+          {
+            "from_road": "image-143443-mainline",
+            "to_road": "image-143443-right-road",
+            "relation": "diverges_right_or_service_access",
+            "confidence": "high",
+            "osm_verified": false
+          }
+        ]
+      },
+      "related_log_context": {
+        "source_fixture": "shared/tsr/applicability/fixtures/fr-exit-failures-20260928-v1.json",
+        "scenario_id": "clip-143435",
+        "note": "Nearest same-class live candidate context, not simultaneous still-image road truth; numeric OSM IDs are log observations only and are not bound to image polygons.",
+        "native_road_snapshot": {
+          "snapshotId": "5d634a0d617a5148d6be3748dd4ac16ac714c8a9653075a80591f62540c7bbbb:29:1.790606081284E12",
+          "capturedAtMs": 1790606081284.0,
+          "wayId": "216220089",
+          "roadClass": "motorway",
+          "postedSpeedKmh": 130,
+          "headingDeg": null,
+          "matchedStable": true,
+          "branches": [],
+          "hypotheses": [
+            {
+              "distanceM": 10.870358577070888,
+              "endpointLinked": false,
+              "headingDeg": 98.00127781403967,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "4683712"
+            },
+            {
+              "distanceM": 390.04987898889146,
+              "endpointLinked": false,
+              "headingDeg": 74.24911371130696,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "835554667"
+            }
+          ]
+        }
+      },
+      "legacy_evaluation_eligible": true,
+      "legacy_evaluation_note": "Approximate fixed-x counterfactual only: applies the retained nearby same-class live candidate context flags to this separately captured still box. This is not the native result on this still, and actual capture/fix times are not rewritten."
+    },
+    {
+      "frame_id": "photo:5fa2102b-ce36-4ca9-a91b-4160cce26c22",
+      "sequence_id": "b7bab591-9988-40bd-a5c0-07916ca474ab",
+      "route_id": "user-france-drive-20260928",
+      "split": "development",
+      "captured_at": "2026-09-28T15:42:57.336957Z",
+      "image_path": "inspector/logs/2026-09-28-fr-de-review/android/photo-154300.jpg",
+      "image_sha256": "5d2680f9c95049a3b3296e802d16931e1c46e28e2df0f13f24f93a66fb621aca",
+      "width": 4096,
+      "height": 3072,
+      "source": {
+        "kind": "authorized_local_panoramax_still",
+        "capture_id": "5fa2102b-ce36-4ca9-a91b-4160cce26c22",
+        "capture_session_id": "b7bab591-9988-40bd-a5c0-07916ca474ab",
+        "metadata_path": "inspector/logs/2026-09-28-fr-de-review/android/sample-photos.json",
+        "metadata_sha256": "942b2be4bd6add60f7dd70b805ce3a79534d78c13462e0f85551a5aceb7694a9",
+        "original_exif_orientation": 3,
+        "annotation_coordinates": "EXIF orientation corrected display image; normalized x,y,top-left origin",
+        "reviewer": "assistant_visual_review",
+        "independent_human_review": false,
+        "public_remote_photo_id": null
+      },
+      "geometry": {
+        "reviewed": true,
+        "current_road_id": "image-154300-mainline",
+        "uncertainty_margin": 0.015,
+        "coordinate_system": "normalized_after_EXIF_orientation",
+        "annotation_method": "manual_visible_road_and_shoulder_polygons",
+        "annotation_notes": "Elevated roadway is partially occluded by a guardrail; its footprint is a rough visible surface/shoulder strip. A grass embankment separates it from the current motorway.",
+        "roads": [
+          {
+            "road_id": "image-154300-mainline",
+            "role": "mainline",
+            "polygon": [
+              [
+                0,
+                0.79
+              ],
+              [
+                0.403,
+                0.624
+              ],
+              [
+                0.444,
+                0.624
+              ],
+              [
+                0.52,
+                0.676
+              ],
+              [
+                0.773,
+                0.755
+              ],
+              [
+                1,
+                0.82
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "direction_compatible": true,
+            "osm_way_id": null
+          },
+          {
+            "road_id": "image-154300-right-road",
+            "role": "branch",
+            "polygon": [
+              [
+                0.523,
+                0.594
+              ],
+              [
+                0.601,
+                0.594
+              ],
+              [
+                0.79,
+                0.608
+              ],
+              [
+                1,
+                0.62
+              ],
+              [
+                1,
+                0.649
+              ],
+              [
+                0.787,
+                0.631
+              ],
+              [
+                0.6,
+                0.612
+              ],
+              [
+                0.529,
+                0.61
+              ]
+            ],
+            "direction_compatible": false,
+            "osm_way_id": null
+          }
+        ]
+      },
+      "signs": [
+        {
+          "sign_id": "image-sign:5fa2102b-ce36-4ca9-a91b-4160cce26c22:0",
+          "track_id": null,
+          "track_verified": false,
+          "box": [
+            0.652587890625,
+            0.5755208333333334,
+            0.010986328125,
+            0.017578125
+          ],
+          "box_source": "manual_review_of_this_asset_only",
+          "value_kmh": null,
+          "ground_anchor": {
+            "x": 0.65869140625,
+            "y": 0.5986328125,
+            "uncertainty_radius": 0.02,
+            "reliable": false,
+            "source": "visible_post_occlusion_endpoint",
+            "notes": "Visible post termination at barrier occlusion, not a visible ground contact; no ground projection is supplied."
+          },
+          "expected_road_id": null,
+          "expected_applicability": "unknown",
+          "review_confidence": "low",
+          "annotation_notes": "A circular grey sign and its post are visible on the elevated road to the right. The face appears to be the reverse side or is unreadable; no numeral 70 can be verified. Road association of the physical support is to the elevated road, but forward regulatory meaning and identity with the earlier live 70 are unknown.",
+          "physical_identity_notes": "Single-still annotation only. No verified live-frame identity or cross-image physical track.",
+          "related_live_candidates": [
+            {
+              "frame_id": "beeb67b4-7f5d-4bbb-a504-8b5f550059be",
+              "candidate_id": "beeb67b4-7f5d-4bbb-a504-8b5f550059be:0",
+              "captured_at_ms": 1790610176306.0,
+              "offset_after_still_ms": -1030.957031,
+              "semantic_key": "maximum_speed:70:km/h",
+              "recognition_eligible": true,
+              "association_status": "unverified_prior_70_different_or_unreadable_face",
+              "verified_same_physical_sign": false,
+              "image_box_transfer_allowed": false,
+              "ground_truth_transfer_allowed": false
+            }
+          ]
+        }
+      ],
+      "topology": {
+        "motorway": true,
+        "map_limit_kmh": 130,
+        "legacy_branch_available": false,
+        "legacy_road_context_fresh": false,
+        "directed_branch_available": false,
+        "branch_road_ids": [],
+        "source": "symbolic_image_context_review",
+        "osm_connectivity_verified": false,
+        "annotation_notes": "Parallel elevated road is visible, but connection direction, OSM identity and whether this support faces the current travel direction are not established. No directed connection is granted by this still.",
+        "directed_relations": []
+      },
+      "related_log_context": {
+        "source_fixture": "shared/tsr/applicability/fixtures/fr-exit-failures-20260928-v1.json",
+        "scenario_id": "clip-154245",
+        "note": "Nearest same-class live candidate context, not simultaneous still-image road truth; numeric OSM IDs are log observations only and are not bound to image polygons.",
+        "native_road_snapshot": {
+          "snapshotId": "e7eb674e96893e29d394cd159255380fe936903595121a428ac34b35172b78ea:81:1.790610171279E12",
+          "capturedAtMs": 1790610171279.0,
+          "wayId": "88326838",
+          "roadClass": "motorway",
+          "postedSpeedKmh": 130,
+          "headingDeg": null,
+          "matchedStable": true,
+          "branches": [],
+          "hypotheses": [
+            {
+              "distanceM": 13.500388360531696,
+              "endpointLinked": false,
+              "headingDeg": 340.65943602957867,
+              "roadClass": "motorway",
+              "turnAngleDeg": null,
+              "wayId": "1023913387"
+            }
+          ]
+        }
+      },
+      "legacy_evaluation_eligible": true,
+      "legacy_evaluation_note": "Approximate fixed-x counterfactual only: applies the retained nearby same-class live candidate context flags to this separately captured still box. This is not the native result on this still, and actual capture/fix times are not rewritten."
+    },
+    {
+      "frame_id": "photo:11c7559e-c906-4e43-bc3e-46d65a6b105b",
+      "sequence_id": "b7bab591-9988-40bd-a5c0-07916ca474ab",
+      "route_id": "user-france-drive-20260928",
+      "split": "development",
+      "captured_at": "2026-09-28T16:09:29.393430Z",
+      "image_path": "inspector/logs/2026-09-28-fr-de-review/android/photo-160930.jpg",
+      "image_sha256": "633a8ddf82eda877176e09bd86b5f45b6dd2e6c68959fcb9610e28dab5424737",
+      "width": 4096,
+      "height": 3072,
+      "source": {
+        "kind": "authorized_local_panoramax_still",
+        "capture_id": "11c7559e-c906-4e43-bc3e-46d65a6b105b",
+        "capture_session_id": "b7bab591-9988-40bd-a5c0-07916ca474ab",
+        "metadata_path": "inspector/logs/2026-09-28-fr-de-review/android/sample-photos.json",
+        "metadata_sha256": "942b2be4bd6add60f7dd70b805ce3a79534d78c13462e0f85551a5aceb7694a9",
+        "original_exif_orientation": 3,
+        "annotation_coordinates": "EXIF orientation corrected display image; normalized x,y,top-left origin",
+        "reviewer": "assistant_visual_review",
+        "independent_human_review": false,
+        "public_remote_photo_id": null
+      },
+      "geometry": {
+        "reviewed": true,
+        "current_road_id": "image-160930-mainline",
+        "uncertainty_margin": 0.015,
+        "coordinate_system": "normalized_after_EXIF_orientation",
+        "annotation_method": "manual_visible_road_and_shoulder_polygons",
+        "annotation_notes": "Polygons separate through carriageway from the right lane using visible wide separator markings. They do not use the sign centre to define a road. The far-right lane is narrowed by perspective.",
+        "roads": [
+          {
+            "road_id": "image-160930-mainline",
+            "role": "mainline",
+            "polygon": [
+              [
+                0.098,
+                1
+              ],
+              [
+                0.379,
+                0.638
+              ],
+              [
+                0.405,
+                0.624
+              ],
+              [
+                0.443,
+                0.625
+              ],
+              [
+                0.464,
+                0.645
+              ],
+              [
+                0.544,
+                0.685
+              ],
+              [
+                0.723,
+                0.759
+              ],
+              [
+                1,
+                0.86
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "direction_compatible": true,
+            "osm_way_id": null
+          },
+          {
+            "road_id": "image-160930-right-road",
+            "role": "branch",
+            "polygon": [
+              [
+                0.486,
+                0.626
+              ],
+              [
+                0.521,
+                0.63
+              ],
+              [
+                0.605,
+                0.648
+              ],
+              [
+                0.756,
+                0.674
+              ],
+              [
+                1,
+                0.708
+              ],
+              [
+                1,
+                0.822
+              ],
+              [
+                0.756,
+                0.756
+              ],
+              [
+                0.594,
+                0.695
+              ],
+              [
+                0.508,
+                0.65
+              ]
+            ],
+            "direction_compatible": true,
+            "osm_way_id": null
+          }
+        ]
+      },
+      "signs": [
+        {
+          "sign_id": "image-sign:11c7559e-c906-4e43-bc3e-46d65a6b105b:0",
+          "track_id": null,
+          "track_verified": false,
+          "box": [
+            0.515869140625,
+            0.611328125,
+            0.00830078125,
+            0.011393229166666666
+          ],
+          "box_source": "manual_review_of_this_asset_only",
+          "value_kmh": 70,
+          "ground_anchor": {
+            "x": 0.52001953125,
+            "y": 0.62890625,
+            "uncertainty_radius": 0.02,
+            "reliable": false,
+            "source": "visible_post_occlusion_endpoint",
+            "notes": "Visible post termination at barrier occlusion, not a visible ground contact; no ground projection is supplied."
+          },
+          "expected_road_id": "image-160930-right-road",
+          "expected_applicability": "other",
+          "review_confidence": "medium",
+          "annotation_notes": "Readable 70 sits with a right-curve warning alongside the deceleration/exit lane, which is delineated by short wide white separator marks. The vehicle is left of the exit lane. This supports branch governance with medium confidence; the small supplementary text is unreadable and opposite-side roadworks make caution appropriate.",
+          "physical_identity_notes": "Single-still annotation only. No verified live-frame identity or cross-image physical track.",
+          "related_live_candidates": [
+            {
+              "frame_id": "17beb83c-d95e-48d2-a730-b4f005fa3d68",
+              "candidate_id": "17beb83c-d95e-48d2-a730-b4f005fa3d68:0",
+              "captured_at_ms": 1790611769212.0,
+              "offset_after_still_ms": -181.429932,
+              "semantic_key": "maximum_speed:70:km/h",
+              "recognition_eligible": false,
+              "association_status": "unverified_near_time_same_class",
+              "verified_same_physical_sign": false,
+              "image_box_transfer_allowed": false,
+              "ground_truth_transfer_allowed": false
+            }
+          ]
+        }
+      ],
+      "topology": {
+        "motorway": true,
+        "map_limit_kmh": 130,
+        "legacy_branch_available": false,
+        "legacy_road_context_fresh": false,
+        "directed_branch_available": true,
+        "branch_road_ids": [
+          "image-160930-right-road"
+        ],
+        "source": "symbolic_image_context_review",
+        "osm_connectivity_verified": false,
+        "annotation_notes": "Right-hand exit/deceleration lane is visible and directionally continuous with the vehicle approach. The actual outgoing junction is beyond/occluded in this still; connection is a symbolic reviewed hypothesis, not a rebuilt bundle.",
+        "directed_relations": [
+          {
+            "from_road": "image-160930-mainline",
+            "to_road": "image-160930-right-road",
+            "relation": "diverges_right_or_service_access",
+            "confidence": "medium",
+            "osm_verified": false
+          }
+        ]
+      },
+      "related_log_context": {
+        "source_fixture": "shared/tsr/applicability/fixtures/fr-exit-failures-20260928-v1.json",
+        "scenario_id": "clip-160920",
+        "note": "Nearest same-class live candidate context, not simultaneous still-image road truth; numeric OSM IDs are log observations only and are not bound to image polygons.",
+        "native_road_snapshot": {
+          "snapshotId": "e7eb674e96893e29d394cd159255380fe936903595121a428ac34b35172b78ea:83:1.790611766277E12",
+          "capturedAtMs": 1790611766277.0,
+          "wayId": "4751882",
+          "roadClass": "motorway",
+          "postedSpeedKmh": 130,
+          "headingDeg": null,
+          "matchedStable": true,
+          "branches": [],
+          "hypotheses": [
+            {
+              "distanceM": 9.903521207148913,
+              "endpointLinked": false,
+              "headingDeg": 314.0374144890439,
+              "roadClass": "motorway",
+              "turnAngleDeg": null,
+              "wayId": "4065328"
+            },
+            {
+              "distanceM": 196.38049675289741,
+              "endpointLinked": false,
+              "headingDeg": 153.87807532574266,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "495962424"
+            },
+            {
+              "distanceM": 213.38959275045852,
+              "endpointLinked": false,
+              "headingDeg": 135.99662487627097,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "297176783"
+            },
+            {
+              "distanceM": 328.1352013671721,
+              "endpointLinked": false,
+              "headingDeg": 140.66832832037335,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "1521075564"
+            },
+            {
+              "distanceM": 370.1836640604989,
+              "endpointLinked": false,
+              "headingDeg": 304.30669971901034,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "26875480"
+            },
+            {
+              "distanceM": 401.7423786108222,
+              "endpointLinked": false,
+              "headingDeg": 51.02865766571273,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "67479849"
+            },
+            {
+              "distanceM": 418.7260411807603,
+              "endpointLinked": false,
+              "headingDeg": 174.23234822141012,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "67479836"
+            },
+            {
+              "distanceM": 428.66827035820774,
+              "endpointLinked": false,
+              "headingDeg": 301.1202206129185,
+              "roadClass": "motorway_link",
+              "turnAngleDeg": null,
+              "wayId": "202125033"
+            }
+          ]
+        }
+      },
+      "legacy_evaluation_eligible": true,
+      "legacy_evaluation_note": "Approximate fixed-x counterfactual only: applies the retained nearby same-class live candidate context flags to this separately captured still box. This is not the native result on this still, and actual capture/fix times are not rewritten."
+    }
+  ]
+}
