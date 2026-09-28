@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       countries:
-        description: "Optional comma-separated country ids override"
+        description: "Optional comma-separated country ids; full refresh also accepts region ids"
         required: false
         default: ""
         type: string
@@ -38,6 +38,16 @@ on:
         required: false
         default: false
         type: boolean
+      full_refresh:
+        description: "Rebuild and publish all app regions and Karlsruhe from fresh PBFs at this workflow commit"
+        required: false
+        default: false
+        type: boolean
+      bundle_version:
+        description: "Full refresh version override; empty uses UTC date and workflow run id/attempt"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   actions: write
@@ -49,6 +59,7 @@ concurrency:
 
 jobs:
   dispatch:
+    if: ${{ !inputs.full_refresh }}
     runs-on: ubuntu-latest
     timeout-minutes: 480
     env:
@@ -94,3 +105,76 @@ jobs:
           fi
 
           "${cmd[@]}"
+
+  plan-refresh:
+    if: ${{ inputs.full_refresh }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      targets: ${{ steps.plan.outputs.targets }}
+      version: ${{ steps.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Resolve full refresh targets
+        id: plan
+        env:
+          TARGET_OVERRIDE: ${{ inputs.countries }}
+          VERSION_OVERRIDE: ${{ inputs.bundle_version }}
+        run: |
+          python3 scripts/map/plan_full_bundle_refresh.py \
+            --countries "$TARGET_OVERRIDE" \
+            --bundle-version "$VERSION_OVERRIDE" \
+            --github-output "$GITHUB_OUTPUT"
+
+  refresh-region:
+    needs: plan-refresh
+    if: ${{ inputs.full_refresh }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: write
+    concurrency:
+      group: country-incremental-bundle-${{ matrix.target }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        target: ${{ fromJson(needs.plan-refresh.outputs.targets) }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PYTHONUNBUFFERED: "1"
+      TARGET: ${{ matrix.target }}
+      BUNDLE_VERSION: ${{ needs.plan-refresh.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Free runner disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          docker image prune -af >/dev/null 2>&1 || true
+          df -h
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build dependencies
+        run: python3 -m pip install -r scripts/map/requirements-settlement.txt
+      - name: Rebuild, validate and release full bundle
+        run: |
+          python3 scripts/map/rebuild_release_bundle.py \
+            --target "$TARGET" \
+            --bundle-version "$BUNDLE_VERSION" \
+            --source-commit "$GITHUB_SHA" \
+            --repo "$GITHUB_REPOSITORY"
+      - name: Retain refresh validation and provenance
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-refresh-${{ matrix.target }}-${{ github.sha }}
+          path: mapdata/reports/full-refresh/${{ matrix.target }}/
+          if-no-files-found: warn
+          retention-days: 30

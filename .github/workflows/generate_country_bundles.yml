@@ -438,6 +438,9 @@ jobs:
           if [[ "${{ inputs.build_settlement_context }}" == "true" || "${{ steps.plan.outputs.iso2 }}" == "FR" ]]; then
             build_cmd+=(--build-settlement-context --country-code "${{ steps.plan.outputs.iso2 }}")
           fi
+          if [[ "${{ steps.plan.outputs.iso2 }}" == "CH" || "${{ steps.plan.outputs.iso2 }}" == "FR" ]]; then
+            build_cmd+=(--build-way-links --way-links-schema detailed)
+          fi
           "${build_cmd[@]}"
 
       - name: Build New Incremental Delta (If Possible)
@@ -579,6 +582,8 @@ jobs:
 
           if [[ "${{ steps.plan.outputs.iso2 }}" == "FR" ]]; then
             cmd+=(--min-app-version 1.1.1)
+          elif [[ "${{ inputs.build_settlement_context }}" == "true" ]]; then
+            cmd+=(--min-app-version 1.1)
           fi
 
           if [[ -f "${{ steps.plan.outputs.input_poly_path }}" ]]; then

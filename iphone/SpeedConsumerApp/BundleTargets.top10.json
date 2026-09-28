@@ -299,6 +299,10 @@
       "country_id": "switzerland",
       "country_code": "CHE",
       "iso2": "CH",
+      "penalty_rules": {
+        "file": "CHE-rules.json",
+        "source": "shared/Rules/CHE-rules.json"
+      },
       "mode": "single_country",
       "regions": [
         {

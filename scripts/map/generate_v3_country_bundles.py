@@ -591,11 +591,11 @@ def _bundle_commands(
         commands[1].extend(["--build-settlement-context", "--country-code", target.iso2])
         commands[-1].extend(["--min-app-version", "1.1.1" if target.iso2 == "FR" else "1.1"])
 
-    if target.iso2 == "FR":
+    if target.iso2 in {"FR", "CH"}:
         commands[1].extend(["--build-way-links", "--way-links-schema", "detailed"])
         commands[-1].extend([
-            "--penalty-rules", str(repo_root / "shared/Rules/FRA-rules.json"),
-            "--penalty-rules-file-name", "FRA-rules.json",
+            "--penalty-rules", str(repo_root / f"shared/Rules/{iso3}-rules.json"),
+            "--penalty-rules-file-name", f"{iso3}-rules.json",
         ])
 
     if not skip_release_urls:

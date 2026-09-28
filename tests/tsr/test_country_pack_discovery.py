@@ -78,7 +78,7 @@ def test_mobile_catalog_covers_every_configured_bundle_and_pins_targets():
     catalog = load(ROOT / "shared/RegionalCoverage/catalog-v1.json")
     targets = load(targets_path)
     assert targets == load(ROOT / "android/app/src/main/assets/BundleTargets.top10.json")
-    rule_file_codes = {"DE": "DEU", "FR": "FRA", "BE": "BEL", "NL": "NLD"}
+    rule_file_codes = {"DE": "DEU", "FR": "FRA", "BE": "BEL", "NL": "NLD", "CH": "CHE"}
     for country in targets["countries"]:
         code = country["iso2"]
         rules = country.get("penalty_rules")

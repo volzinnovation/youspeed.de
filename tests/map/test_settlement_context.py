@@ -64,6 +64,84 @@ class Fixture:
 
 @unittest.skipUnless(AVAILABLE, "requires pyosmium and Shapely >= 2")
 class SettlementContextTests(unittest.TestCase):
+    def test_swiss_city_sign_pairs_split_geometry_only_in_documented_direction(self):
+        for entry_code, exit_code in (("4.27", "4.28"), ("4.29", "4.30")):
+            for direction_name, direction in (("forward", 1), ("backward", -1)):
+                with self.subTest(entry=entry_code, exit=exit_code, direction=direction_name):
+                    f = Fixture()
+                    before = f.node(8.0, 46.6)
+                    # Reverse-facing signs are encountered from the end of the way.
+                    first_code, second_code = ((entry_code, exit_code) if direction == 1
+                                               else (exit_code, entry_code))
+                    first = f.node(8.001, 46.6, traffic_sign=f"CH:{first_code}", direction=direction_name)
+                    second = f.node(8.002, 46.6, traffic_sign=f"CH:{second_code}", direction=direction_name)
+                    after = f.node(8.003, 46.6)
+                    road = f.way(refs=[before, first, second, after], highway="secondary")
+                    conn, _ = self.build(f, country_code="CH")
+                    expected = []
+                    for segment, inside in enumerate((0, 1, 0)):
+                        for travel_direction in (-1, 1):
+                            context = ((inside, "traffic_sign", "high") if travel_direction == direction
+                                       else (None, "missing", "unknown"))
+                            expected.append((segment, travel_direction, *context))
+                    self.assertEqual(self.rows(conn, road), expected)
+                    self.assertEqual(conn.execute(
+                        "SELECT sign_code,direction,association,way_id FROM settlement_sign ORDER BY lon"
+                    ).fetchall(), [(f"CH:{first_code}", direction, "node_membership", road),
+                                   (f"CH:{second_code}", direction, "node_membership", road)])
+                    geometries = [json.loads(row[0]) for row in conn.execute(
+                        "SELECT points_json FROM settlement_segment WHERE way_id=? AND direction=? ORDER BY segment_index",
+                        (road, direction))]
+                    self.assertEqual(geometries, [
+                        [[46.6, 8.0], [46.6, 8.001]],
+                        [[46.6, 8.001], [46.6, 8.002]],
+                        [[46.6, 8.002], [46.6, 8.003]],
+                    ])
+
+    def test_swiss_typed_urban_rural_tags_and_direction_survive_bundle_build(self):
+        f = Fixture()
+        expected = []
+        for tag, source in (("zone:traffic", "zone_traffic"), ("maxspeed:type", "maxspeed_type"),
+                            ("source:maxspeed", "source_maxspeed"), ("maxspeed", "maxspeed_type")):
+            for locality, inside in (("urban", 1), ("rural", 0)):
+                lat = 46.6 + len(expected) * .01
+                road = f.way([(8.0, lat), (8.003, lat)], highway="secondary", **{tag: f"CH:{locality}"})
+                expected.append((road, inside, source))
+        directed = f.way([(8.0, 46.8), (8.003, 46.8)], highway="secondary",
+                         **{"maxspeed:forward": "CH:urban", "maxspeed:backward": "CH:rural"})
+        conn, _ = self.build(f, country_code="CH")
+        for road, inside, source in expected:
+            self.assertEqual(self.rows(conn, road), [(0, 0, inside, source, "high")])
+        self.assertEqual(self.rows(conn, directed), [
+            (0, -1, 0, "maxspeed_type", "high"), (0, 1, 1, "maxspeed_type", "high")])
+
+    def test_swiss_numeric_limits_and_road_classes_do_not_invent_settlement_context(self):
+        f = Fixture()
+        roads = []
+        for index, (highway, speed) in enumerate((
+                ("residential", "30"), ("residential", "50"), ("secondary", "80"), ("motorway", "120"))):
+            lat = 46.6 + index * .01
+            roads.append(f.way([(8.0, lat), (8.003, lat)], highway=highway, maxspeed=speed))
+        conn, _ = self.build(f, country_code="CH")
+        for road in roads:
+            self.assertEqual(self.rows(conn, road), [(0, 0, None, "missing", "unknown")])
+
+    def test_swiss_bundle_does_not_accept_foreign_sign_or_typed_country_codes(self):
+        f = Fixture()
+        roads = []
+        for index, code in enumerate(("DE:310", "FR:EB10", "DE:4.27", "FR:4.29")):
+            lat = 46.6 + index * .01
+            before = f.node(8.0, lat)
+            sign = f.node(8.001, lat, traffic_sign=code, direction="forward")
+            after = f.node(8.002, lat)
+            roads.append(f.way(refs=[before, sign, after], highway="secondary",
+                               **{"zone:traffic": "DE:urban", "maxspeed:type": "FR:rural",
+                                  "source:maxspeed": "NL:urban", "maxspeed": "BE:rural"}))
+        conn, _ = self.build(f, country_code="CH")
+        self.assertEqual(conn.execute("SELECT COUNT(*) FROM settlement_sign").fetchone(), (0,))
+        for road in roads:
+            self.assertEqual(self.rows(conn, road), [(0, 0, None, "missing", "unknown")])
+
     def test_french_city_signs_split_original_geometry_in_both_directions(self):
         f = Fixture()
         before = f.node(4, 44)
