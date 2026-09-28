@@ -2,7 +2,7 @@
 
 Implemented on iPhone and Android, 2026-09-29.
 
-The landscape dashboard displays a noninteractive gravity indicator at its top center, between the sign and speed panes. Its bounds are 10% of the usable dashboard width and height. It requires a measured zero speed no older than three seconds and disappears on movement, stale position, or tunnel mode. Both landscape mounting orientations are supported. Sensors run at 10 Hz while the indicator is visible and the app is foregrounded.
+The landscape dashboard displays a noninteractive gravity indicator at its top center, between the sign and speed panes. Its bounds are 10% of the usable dashboard width and height. It appears whenever the landscape speed display rounds to zero or the dashboard is searching for a signal. Without the searching state, it disappears for nonzero displayed speed or tunnel mode. This read-only mounting aid is independent of the stricter motion lock used for buttons and microphone permission dialogs. Both landscape mounting orientations are supported. Sensors run at 10 Hz while the indicator is visible and the app is foregrounded.
 
 The indicator shows roll and pitch. It does not establish vehicle heading, demand a perfectly aligned camera, or gate recognition. Green indicates a small roll/pitch deviation; other angles remain usable. Image/model compensation is separate work: gravity can supply roll/pitch, while horizontal mounting offset requires road geometry or motion estimation. This change does not claim to implement that compensation.
 
@@ -16,6 +16,6 @@ No speed-limit-reference policy files are changed by this feature. Dismissal reu
 
 ## Validation
 
-- Android debug APK builds; all 419 JVM unit tests pass, including geometry, stationary freshness, motion lock, language coverage, bounded windows and stale ownership.
-- iPhone simulator build, 16 focused unit tests and 2 UI tests pass, covering geometry, motion lock, voice window behavior, road fallback, both moving dashboard orientations, and stationary settings/mount changes.
-- Physical sensor accuracy, acoustic recognition with road noise, microphone routing with CarPlay, and recording coexistence still require a device trial. No attached device was installed, restarted or terminated; the Android Panoramax upload was left running.
+- Android debug APK builds; all 422 JVM unit tests pass, including geometry, stationary freshness, motion lock, language coverage, bounded windows and stale ownership.
+- iPhone simulator build and focused unit/UI tests pass, covering geometry, motion lock, voice window behavior, road fallback, both moving dashboard orientations, stationary settings/mount changes, and continued level visibility without new GPS fixes.
+- Physical sensor accuracy, acoustic recognition with road noise, microphone routing with CarPlay, and recording coexistence still require a device trial. The first implementation pass left attached devices untouched. Subsequent owner-authorized deployment installed both apps; Android queue metadata and drive logs were backed up first, with no active upload at installation. Native Android Vosk and controller road-fallback checks passed (2 tests).

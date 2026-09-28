@@ -7,6 +7,13 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class GravityAlignmentTests {
+    @Test fun searchingForSignalShowsTheMountingAidWithoutASpeedFix() {
+        for (speed in listOf(null, Double.NaN, 0.0, 80.0)) {
+            assertTrue(GravityAlignmentVisibility.isVisible(true, speed, false, searchingForSignal = true))
+        }
+        assertFalse(GravityAlignmentVisibility.isVisible(false, null, false, searchingForSignal = true))
+    }
+
     @Test fun bothManualLandscapeMountsRemapAndroidGravityToUprightScreen() {
         val lower = GravityAlignmentGeometry.fromAndroidGravity(-9.80665, 0.0, 0.0,
             ManualOrientation.LANDSCAPE_CAMERA_LOWER_RIGHT)!!
@@ -53,13 +60,26 @@ class GravityAlignmentTests {
         assertFalse(GravityAlignmentReading(0.0, -3.01).isLevel)
     }
 
-    @Test fun overlayRequiresFreshVerifiedZeroSpeedInLandscape() {
+    @Test fun overlayShowsStartupZeroWithoutGPSAndMatchesDisplayedZero() {
+        // Startup uses zero until GPS arrives; no observation timestamp is required.
+        for (speed in listOf(0.0, 0.001, 0.49, 0.499999)) {
+            assertTrue(GravityAlignmentVisibility.isVisible(true, speed, false))
+        }
+    }
+
+    @Test fun overlayHidesForMovingSpeedPortraitTunnelAndInvalidSpeed() {
+        assertFalse(GravityAlignmentVisibility.isVisible(false, 0.0, false))
+        assertFalse(GravityAlignmentVisibility.isVisible(true, 0.0, true))
+        for (speed in listOf(null, Double.NaN, Double.POSITIVE_INFINITY, -1.0, 0.5, 1.0, 130.0)) {
+            assertFalse(GravityAlignmentVisibility.isVisible(true, speed, false))
+        }
+    }
+
+    @Test fun permissionGateStillRequiresFreshVerifiedExactZeroSpeed() {
         val now = Instant.parse("2026-09-29T12:00:00Z")
-        assertTrue(GravityAlignmentVisibility.isVisible(true, true, 0.0, now, now, false))
+        assertTrue(GravityAlignmentVisibility.isFreshStationary(0.0, now, now, false))
         assertTrue(GravityAlignmentVisibility.isFreshStationary(0.0, now.minusSeconds(3), now, false))
-        assertFalse(GravityAlignmentVisibility.isVisible(false, true, 0.0, now, now, false))
-        assertFalse(GravityAlignmentVisibility.isVisible(true, false, 0.0, now, now, false))
-        assertFalse(GravityAlignmentVisibility.isVisible(true, true, 0.0, now, now, true))
+        assertFalse(GravityAlignmentVisibility.isFreshStationary(0.0, now, now, true))
         assertFalse(GravityAlignmentVisibility.isFreshStationary(0.0, now.minusSeconds(3).minusNanos(1), now, false))
         assertFalse(GravityAlignmentVisibility.isFreshStationary(0.0, now.plusNanos(1), now, false))
         assertFalse(GravityAlignmentVisibility.isFreshStationary(0.0, null, now, false))

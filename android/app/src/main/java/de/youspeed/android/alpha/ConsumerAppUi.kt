@@ -457,13 +457,6 @@ private fun MainScreen(
     onCapture: () -> Unit,
 ) {
     var previewSelected by rememberSaveable { mutableStateOf(true) }
-    var alignmentNow by remember { mutableStateOf(Instant.now()) }
-    LaunchedEffect(ui.stationarySpeedObservedAt) {
-        while (ui.stationarySpeedObservedAt != null) {
-            alignmentNow = Instant.now()
-            kotlinx.coroutines.delay(1_000)
-        }
-    }
     val recorderVisible = ui.driveRecorderState != DriveRecorderState.DISABLED
     var previousPhotoCaptureAt by remember { mutableStateOf(ui.panoramaxLastCaptureAt) }
     var photoCaptureFeedbackVisible by remember { mutableStateOf(false) }
@@ -758,9 +751,9 @@ private fun MainScreen(
             photoCaptureFeedbackVisible = photoCaptureFeedbackVisible,
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
         )
-        if (GravityAlignmentVisibility.isVisible(landscape = landscape, controlsAllowed = ui.drivingControlsAllowed,
-            speedKmh = ui.currentSpeedKmh, stationaryObservedAt = ui.stationarySpeedObservedAt,
-            now = maxOf(alignmentNow, Instant.now()), inTunnel = ui.tunnelModeState == TunnelModeState.ACTIVE)) {
+        if (GravityAlignmentVisibility.isVisible(landscape = landscape,
+            speedKmh = ui.currentSpeedKmh, inTunnel = ui.tunnelModeState == TunnelModeState.ACTIVE,
+            searchingForSignal = ConsumerMainScreenLogic.isSearchingSignal(ui))) {
             GravityAlignmentOverlay(
                 orientation = ui.manualOrientation,
                 foregroundColor = foreground,

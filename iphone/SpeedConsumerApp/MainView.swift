@@ -337,15 +337,11 @@ struct MainView: View {
                 }
                 .environment(\.layoutDirection, .leftToRight)
                 .allowsHitTesting(viewModel.drivingControlsAllowed)
-                if landscape {
-                    TimelineView(.periodic(from: .now, by: 1)) { _ in
-                        if showsGravityAlignment(at: Date()) {
-                            GravityAlignmentOverlay(orientation: viewModel.screenOrientation, foregroundColor: primaryForegroundColor)
-                                .frame(width: proxy.size.width * 0.1, height: proxy.size.height * 0.1)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                                .allowsHitTesting(false)
-                        }
-                    }
+                if showsGravityAlignment {
+                    GravityAlignmentOverlay(orientation: viewModel.screenOrientation, foregroundColor: primaryForegroundColor)
+                        .frame(width: proxy.size.width * 0.1, height: proxy.size.height * 0.1)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .allowsHitTesting(false)
                 }
                 if viewModel.isVisionDismissalListening {
                     Label(NSLocalizedString("tsr.voice_dismissal.listening", comment: ""), systemImage: "mic.fill")
@@ -468,10 +464,10 @@ struct MainView: View {
             now: now, inTunnel: viewModel.isTunnelModeActive)
     }
 
-    private func showsGravityAlignment(at now: Date) -> Bool {
+    private var showsGravityAlignment: Bool {
         GravityAlignmentVisibility.isVisible(landscape: viewModel.screenOrientation.isLandscape,
-            controlsAllowed: viewModel.drivingControlsAllowed, speedKmh: viewModel.currentSpeedKmh,
-            stationaryObservedAt: viewModel.stationarySpeedObservedAt, now: now, inTunnel: viewModel.isTunnelModeActive)
+            speedKmh: viewModel.currentSpeedKmh, inTunnel: viewModel.isTunnelModeActive,
+            searchingForSignal: isSearchingSignal)
     }
 
     private var showsPedestrianZoneSign: Bool {

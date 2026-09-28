@@ -43,7 +43,8 @@ object GravityAlignmentVisibility {
         return !age.isNegative && age <= Duration.ofSeconds(3)
     }
 
-    fun isVisible(landscape: Boolean, controlsAllowed: Boolean, speedKmh: Double?,
-                  stationaryObservedAt: Instant?, now: Instant, inTunnel: Boolean): Boolean =
-        landscape && controlsAllowed && isFreshStationary(speedKmh, stationaryObservedAt, now, inTunnel)
+    /** Read-only mounting feedback works before GPS; use the dashboard's rounded zero speed. */
+    fun isVisible(landscape: Boolean, speedKmh: Double?, inTunnel: Boolean, searchingForSignal: Boolean = false): Boolean =
+        landscape && (searchingForSignal ||
+            (!inTunnel && speedKmh != null && speedKmh.isFinite() && speedKmh >= 0.0 && speedKmh < 0.5))
 }

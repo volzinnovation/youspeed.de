@@ -42,11 +42,14 @@ enum GravityAlignmentVisibility {
         return age.isFinite && (0...3).contains(age)
     }
 
-    static func isVisible(landscape: Bool, controlsAllowed: Bool, speedKmh: Double?,
-                          stationaryObservedAt: Date?, now: Date, inTunnel: Bool) -> Bool {
-        landscape && controlsAllowed && isFreshStationary(
-            speedKmh: speedKmh, stationaryObservedAt: stationaryObservedAt, now: now, inTunnel: inTunnel
-        )
+    /// A read-only mounting aid is useful before GPS is available. Match the
+    /// displayed zero speed without depending on permission or touch-control gates.
+    static func isVisible(landscape: Bool, speedKmh: Double?, inTunnel: Bool,
+                          searchingForSignal: Bool = false) -> Bool {
+        guard landscape else { return false }
+        if searchingForSignal { return true }
+        guard !inTunnel, let speedKmh, speedKmh.isFinite else { return false }
+        return speedKmh >= 0 && speedKmh < 0.5
     }
 }
 

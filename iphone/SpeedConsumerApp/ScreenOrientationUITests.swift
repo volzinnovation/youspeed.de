@@ -1,6 +1,22 @@
 import XCTest
 
 final class ScreenOrientationUITests: XCTestCase {
+    func testGravityOverlayRemainsVisibleAtDisplayedZeroWithoutNewGpsFix() {
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"
+        app.launchArguments = ["-youspeed.screen_orientation", "landscape_camera_lower_right"]
+        app.launch()
+        let overlay = app.descendants(matching: .any)["dashboard.gravityAlignment"]
+        XCTAssertTrue(overlay.waitForExistence(timeout: 15))
+        // The fixture never supplies another GPS fix. The mounting tool must
+        // outlive the three-second freshness gate used by permission dialogs.
+        Thread.sleep(forTimeInterval: 4)
+        XCTAssertTrue(overlay.exists)
+        XCTAssertLessThan(overlay.frame.width, app.windows.firstMatch.frame.width * 0.12)
+        XCTAssertLessThan(overlay.frame.height, app.windows.firstMatch.frame.height * 0.12)
+        app.terminate()
+    }
+
     func testMovingDashboardHasNoButtonsOrGravityOverlay() {
         let app = XCUIApplication()
         app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "warn-level-0"

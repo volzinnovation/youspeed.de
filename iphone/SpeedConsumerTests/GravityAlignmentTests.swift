@@ -2,6 +2,15 @@ import XCTest
 @testable import SpeedConsumer
 
 final class GravityAlignmentTests: XCTestCase {
+    func testSearchingForSignalShowsTheMountingAidWithoutASpeedFix() {
+        for speed in [nil, .nan, 0, 80] as [Double?] {
+            XCTAssertTrue(GravityAlignmentVisibility.isVisible(landscape: true, speedKmh: speed,
+                inTunnel: false, searchingForSignal: true))
+        }
+        XCTAssertFalse(GravityAlignmentVisibility.isVisible(landscape: false, speedKmh: nil,
+            inTunnel: false, searchingForSignal: true))
+    }
+
     func testBothManualLandscapeMountsRemapGravityToUprightScreen() throws {
         let lower = try XCTUnwrap(GravityAlignmentGeometry.reading(
             x: 1, y: 0, z: 0, orientation: .landscapeCameraLowerRight))
@@ -47,16 +56,29 @@ final class GravityAlignmentTests: XCTestCase {
         XCTAssertFalse(GravityAlignmentReading(rollDegrees: 0, tiltDegrees: -3.01).isLevel)
     }
 
-    func testOverlayRequiresFreshVerifiedZeroSpeedInLandscape() {
+    func testOverlayShowsStartupZeroWithoutGPSAndMatchesDisplayedZero() {
+        // Startup uses zero until GPS arrives; no observation timestamp is required.
+        for speed in [0.0, 0.001, 0.49, 0.499999] {
+            XCTAssertTrue(GravityAlignmentVisibility.isVisible(landscape: true, speedKmh: speed, inTunnel: false))
+        }
+    }
+
+    func testOverlayHidesForMovingSpeedPortraitTunnelAndInvalidSpeed() {
+        XCTAssertFalse(GravityAlignmentVisibility.isVisible(landscape: false, speedKmh: 0, inTunnel: false))
+        XCTAssertFalse(GravityAlignmentVisibility.isVisible(landscape: true, speedKmh: 0, inTunnel: true))
+        for speed in [nil, .nan, .infinity, -1, 0.5, 1, 130] as [Double?] {
+            XCTAssertFalse(GravityAlignmentVisibility.isVisible(landscape: true, speedKmh: speed, inTunnel: false))
+        }
+    }
+
+    func testPermissionGateStillRequiresFreshVerifiedExactZeroSpeed() {
         let now = Date(timeIntervalSince1970: 1_790_683_200)
-        XCTAssertTrue(GravityAlignmentVisibility.isVisible(landscape: true, controlsAllowed: true,
-            speedKmh: 0, stationaryObservedAt: now, now: now, inTunnel: false))
+        XCTAssertTrue(GravityAlignmentVisibility.isFreshStationary(speedKmh: 0,
+            stationaryObservedAt: now, now: now, inTunnel: false))
         XCTAssertTrue(GravityAlignmentVisibility.isFreshStationary(speedKmh: 0,
             stationaryObservedAt: now.addingTimeInterval(-3), now: now, inTunnel: false))
-        for (landscape, controls, tunnel) in [(false, true, false), (true, false, false), (true, true, true)] {
-            XCTAssertFalse(GravityAlignmentVisibility.isVisible(landscape: landscape, controlsAllowed: controls,
-                speedKmh: 0, stationaryObservedAt: now, now: now, inTunnel: tunnel))
-        }
+        XCTAssertFalse(GravityAlignmentVisibility.isFreshStationary(speedKmh: 0,
+            stationaryObservedAt: now, now: now, inTunnel: true))
         for observed in [nil, now.addingTimeInterval(-3.001), now.addingTimeInterval(0.001)] {
             XCTAssertFalse(GravityAlignmentVisibility.isFreshStationary(speedKmh: 0,
                 stationaryObservedAt: observed, now: now, inTunnel: false))
