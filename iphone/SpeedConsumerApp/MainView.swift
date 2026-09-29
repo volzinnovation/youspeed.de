@@ -1009,6 +1009,7 @@ struct MainView: View {
                     session: session,
                     orientation: viewModel.screenOrientation,
                     laneRuntime: viewModel.laneDetectionRuntime,
+                    roadPathSession: viewModel.roadPathSession,
                     showDetectedLanes: viewModel.showDetectedLanes,
                     previewVisible: showingPreview && !showingSettings && !showingLegalInfo
                         && !showingDebug && !showingLocalRecordings && !showingPanoramaxGallery

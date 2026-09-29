@@ -74,7 +74,7 @@
       if (focus) map.setView([event.fix.lat, event.fix.lon], Math.max(16, map.getZoom()));
       markers.get(index)?.openPopup();
     }
-    window.dispatchEvent(new CustomEvent("inspector:tsr-select", {detail: {time: event.time, revealVideo}}));
+    window.dispatchEvent(new CustomEvent("inspector:tsr-select", {detail: {time: event.time, frameId: event.frameId, revealVideo}}));
   }
   function renderStatistics() {
     const sort = el("statistics-sort").value;
@@ -142,6 +142,8 @@
     el("summary").textContent = "TSR-Log wird lokal gelesen …";
     try {
       const text = await file.text();
+      if (version !== importVersion) return;
+      window.dispatchEvent(new CustomEvent("inspector:path-log", {detail: {text, name: file.name}}));
       const next = core.parseLog(text);
       if (!next.frames && !next.events.length) throw new Error("Keine unterstützten TSR-Ereignisse gefunden.");
       await loadResources();
@@ -152,7 +154,10 @@
       parsed = null; selected = null; render(); el("summary").textContent = `Import fehlgeschlagen: ${error.message}`;
     } finally { if (version === importVersion) el("file").value = ""; }
   });
-  el("clear").addEventListener("click", () => { importVersion++; parsed = null; selected = null; render(); });
+  el("clear").addEventListener("click", () => {
+    importVersion++; parsed = null; selected = null; render();
+    window.dispatchEvent(new CustomEvent("inspector:path-log", {detail: {text: "", name: ""}}));
+  });
   for (const id of ["country", "kind", "unknown", "secondary"]) el(id).addEventListener("change", render);
   el("statistics-sort").addEventListener("change", renderStatistics);
   el("list").addEventListener("click", event => {

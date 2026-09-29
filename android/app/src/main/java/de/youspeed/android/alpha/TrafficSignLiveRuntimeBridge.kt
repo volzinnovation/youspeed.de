@@ -17,6 +17,7 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
     onContextMismatch: (Long) -> Unit = controller::onTrafficSignRecognitionContextMismatch,
     onInferenceDiagnostics: (TrafficSignOrchestrationOutput) -> Unit = controller::onTrafficSignInferenceDiagnostics,
     confirmationWindowMsOverride: Long? = null,
+    pathEvaluator: ((F, TSRApplicabilityDiagnostic) -> String?)? = null,
 ) : AutoCloseable {
     private val forwarder = TrafficSignFinalizedPassageForwarder(
         submitFinalizedPassage = controller::submitFinalizedTrafficSignPassage,
@@ -51,6 +52,7 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
             monotonicClockNanos = monotonicClockNanos,
             observer = forwarder,
             confirmationWindowMsOverride = confirmationWindowMsOverride,
+            pathEvaluator = pathEvaluator,
         )
     }
 

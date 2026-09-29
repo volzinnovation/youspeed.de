@@ -10,6 +10,8 @@ This directory contains the public technical documentation for YouSpeed.
 - [`KARLSRUHE_INCREMENTAL_SEED_ROLLOUT.md`](KARLSRUHE_INCREMENTAL_SEED_ROLLOUT.md): incremental seed-bundle design
 - [`VIDEO_TRAFFIC_SIGN_RECOGNITION_YOLO_SPEC.md`](VIDEO_TRAFFIC_SIGN_RECOGNITION_YOLO_SPEC.md): optional traffic-sign recognition design
 - [`LANE_DETECTION.md`](LANE_DETECTION.md): optional dashcam lane overlay, camera integration and validation protocol
+- [`TSR_LANE_TRAJECTORY_IMPLEMENTATION_2026-09-29.md`](TSR_LANE_TRAJECTORY_IMPLEMENTATION_2026-09-29.md): experimental visual path/trajectory fusion, dashcam diagnostics and live/replay overlays
+- [`ROAD_PATH_ANDROID_BENCHMARK.md`](ROAD_PATH_ANDROID_BENCHMARK.md): reproducible Moto g86 component benchmark and limits of its performance claim
 - [`release/STORE_RELEASE_CHECKLIST.md`](release/STORE_RELEASE_CHECKLIST.md): public mobile-store release checks
 
 Platform setup and testing instructions live beside each implementation in [`../android/README.md`](../android/README.md) and [`../iphone/SpeedConsumerApp/README.md`](../iphone/SpeedConsumerApp/README.md).

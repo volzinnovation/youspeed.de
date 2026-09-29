@@ -7,8 +7,14 @@
   let fixes = [];
   const status = text => { el("status").textContent = text; };
   function stopReverse() { clearInterval(reverse); reverse = null; el("reverse").setAttribute("aria-pressed", "false"); }
-  function update() {
-    const time = start == null ? null : start + video.currentTime * 1000;
+  function update(presentedTime) {
+    const seconds = Number.isFinite(presentedTime) ? presentedTime : video.currentTime;
+    const time = start == null ? null : start + seconds * 1000;
+    window.dispatchEvent?.(new CustomEvent("inspector:video-frame", {detail: {
+      timeMs: time, startMs: start, videoTimeSeconds: seconds, videoFile: file?.name ?? null,
+      videoWidth: video.videoWidth, videoHeight: video.videoHeight, seeking: video.seeking,
+      hidden: !file || video.style.visibility === "hidden", version
+    }}));
     el("clock").textContent = "Video " + video.currentTime.toFixed(3) + " s / " + (video.duration || 0).toFixed(1) + " s" +
       (time == null ? " · Zeitabgleich fehlt" : " · " + new Date(time).toISOString());
     let lo = 0, hi = fixes.length;
@@ -30,6 +36,7 @@
       video.style.visibility = "hidden"; cursor?.remove(); cursor = null;
       status(start == null ? "Zeitabgleich fehlt: Videostart mit Zeitzone eingeben." :
         "Ausgewählter Zeitpunkt liegt außerhalb dieses Videos. Kein passendes Videobild.");
+      update();
       return;
     }
     video.style.visibility = "visible";
@@ -51,6 +58,7 @@
     cursor?.remove(); cursor = null;
     el("content").hidden = true; el("clear").disabled = true; if (resetInput) el("file").value = ""; el("start").value = "";
     el("source").textContent = ""; el("fps").value = "30"; el("rate").value = "1";
+    update();
     bridge.invalidateMap();
   }
   el("file").addEventListener("change", async event => {
@@ -120,6 +128,11 @@
   video.addEventListener("play", stopReverse);
   video.addEventListener("timeupdate", update);
   video.addEventListener("seeked", update);
+  video.addEventListener("seeking", update);
+  if (video.requestVideoFrameCallback) {
+    const presented = (_, metadata) => { update(metadata.mediaTime); video.requestVideoFrameCallback(presented); };
+    video.requestVideoFrameCallback(presented);
+  }
   video.addEventListener("loadedmetadata", () => {
     if (!file) return;
     update(); if (pendingTime != null) seekTimestamp(pendingTime);

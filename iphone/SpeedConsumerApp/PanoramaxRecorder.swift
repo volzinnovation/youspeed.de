@@ -1043,6 +1043,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             // and changing it during recording rebuilds the capture pipeline.
             if let connection = videoOutput.connection(with: .video) {
                 if connection.isVideoRotationAngleSupported(0) { connection.videoRotationAngle = 0 }
+                if connection.isCameraIntrinsicMatrixDeliverySupported { connection.isCameraIntrinsicMatrixDeliveryEnabled = true }
                 if connection.isVideoMirroringSupported {
                     connection.automaticallyAdjustsVideoMirroring = false
                     connection.isVideoMirrored = false
@@ -1414,11 +1415,22 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         })
     }
 
+    private func logPathRecording(event: String, url: URL) {
+        let duration = CMTimeGetSeconds(movieOutput.recordedDuration)
+        var value: [String:Any] = ["event":event,"videoFile":url.lastPathComponent,
+            "observedAtSeconds":Date().timeIntervalSince1970,"timingQuality":"callback_anchor_estimated"]
+        if duration.isFinite && duration >= 0 { value["recordedDurationSeconds"] = duration }
+        if let data = try? JSONSerialization.data(withJSONObject:value,options:[.sortedKeys]), let json = String(data:data,encoding:.utf8) {
+            onDiagnostic?("tsr_path_recording_v1=\(json)")
+        }
+    }
+
     private func handleMovieFinished(
         url: URL,
         successful: Bool,
         errorSummary: String?
     ) {
+        logPathRecording(event:"stop",url:url)
         if let errorSummary {
             Self.logger.error(
                 "movie output finished file=\(url.lastPathComponent, privacy: .public) successful=\(successful, privacy: .public) error=\(errorSummary, privacy: .public)"
@@ -1489,6 +1501,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     }
 
     private func handleMovieStarted(url: URL) {
+        logPathRecording(event:"start",url:url)
         defer { stopDashcamForPendingInteraction() }
         guard dashcamFileURL?.standardizedFileURL == url.standardizedFileURL else {
             sessionQueue.async { [weak self] in
@@ -1737,6 +1750,7 @@ struct DriveCameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
     var orientation: ScreenOrientation = .portrait
     var laneRuntime: LaneDetectionRuntime? = nil
+    var roadPathSession: RoadPathSession? = nil
     var showDetectedLanes = false
     var previewVisible = false
 
@@ -1745,7 +1759,7 @@ struct DriveCameraPreview: UIViewRepresentable {
         view.orientation = orientation
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
-        view.setLanePreview(runtime: laneRuntime, enabled: showDetectedLanes, visible: previewVisible)
+        view.setLanePreview(runtime: laneRuntime, pathSession: roadPathSession, enabled: showDetectedLanes, visible: previewVisible)
         view.updateVideoRotation()
         return view
     }
@@ -1755,18 +1769,19 @@ struct DriveCameraPreview: UIViewRepresentable {
         if uiView.videoPreviewLayer.session !== session {
             uiView.videoPreviewLayer.session = session
         }
-        uiView.setLanePreview(runtime: laneRuntime, enabled: showDetectedLanes, visible: previewVisible)
+        uiView.setLanePreview(runtime: laneRuntime, pathSession: roadPathSession, enabled: showDetectedLanes, visible: previewVisible)
         uiView.updateVideoRotation()
     }
 
     static func dismantleUIView(_ uiView: PreviewView, coordinator: Void) {
-        uiView.setLanePreview(runtime: nil, enabled: false, visible: false)
+        uiView.setLanePreview(runtime: nil, pathSession: nil, enabled: false, visible: false)
         uiView.videoPreviewLayer.session = nil
     }
 
     final class PreviewView: UIView {
         var orientation: ScreenOrientation = .portrait
         private var laneRuntime: LaneDetectionRuntime?
+        private var roadPathSession: RoadPathSession?
         private var lanesEnabled = false
         private var previewVisible = false
         private let laneLines = CAShapeLayer()
@@ -1794,9 +1809,10 @@ struct DriveCameraPreview: UIViewRepresentable {
 
         required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-        func setLanePreview(runtime: LaneDetectionRuntime?, enabled: Bool, visible: Bool) {
+        func setLanePreview(runtime: LaneDetectionRuntime?, pathSession: RoadPathSession?, enabled: Bool, visible: Bool) {
             if laneRuntime !== runtime { laneRuntime?.setPreview(visible: false, rotation: 90) }
             laneRuntime = runtime
+            roadPathSession = pathSession
             lanesEnabled = enabled
             previewVisible = visible
             updateLaneActivity()
@@ -1824,6 +1840,27 @@ struct DriveCameraPreview: UIViewRepresentable {
             laneLines.path = nil
             laneFill.path = nil
             laneStatus.isHidden = !lanesEnabled || !previewVisible
+            if lanesEnabled, previewVisible, let path = roadPathSession?.overlay(),
+               path.rotationDegrees == Int(videoPreviewLayer.connection?.videoRotationAngle ?? 90) {
+                let age = Date().timeIntervalSince1970-path.capturedAtSeconds
+                if age >= 0 && age < 0.75 {
+                    let lines = UIBezierPath()
+                    for boundary in path.boundaries {
+                        for (i,p) in boundary.points.enumerated() {
+                            let capture = LaneOverlayPolicy.capturePoint(p, rotation: path.rotationDegrees)
+                            let point = videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: capture)
+                            if i == 0 { lines.move(to:point) } else { lines.addLine(to:point) }
+                        }
+                    }
+                    laneLines.path = lines.cgPath; laneLines.strokeColor = UIColor.systemCyan.cgColor
+                    laneLines.opacity = Float(age <= 0.3 ? 0.85 : (0.75-age)/0.45*0.85)
+                    laneStatus.text = "  " + String(format:NSLocalizedString("drive_recorder.lanes.status",comment:""),
+                        NSLocalizedString("drive_recorder.lanes.experimental",comment:"")) + " (\(path.boundaries.count))  "
+                    laneStatus.sizeToFit(); laneStatus.frame.origin = CGPoint(x:12,y:max(42,bounds.height-65))
+                    accessibilityValue = laneStatus.text
+                    return
+                }
+            }
             guard lanesEnabled, previewVisible, let snapshot = laneRuntime?.snapshot() else {
                 accessibilityValue = nil
                 return

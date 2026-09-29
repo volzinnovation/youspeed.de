@@ -405,3 +405,5 @@
 "drive_recorder.lanes.uncertain" = "Unsicher";
 "drive_recorder.lanes.unavailable" = "Nicht verfügbar";
 "drive_recorder.lanes.paused" = "Pausiert";
+
+"drive_recorder.lanes.experimental" = "Experimentell";

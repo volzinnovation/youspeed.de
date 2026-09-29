@@ -1,0 +1,3179 @@
+{
+  "schemaVersion": 1,
+  "provenance": "synthetic_engineering_only",
+  "description": "Exact idealized pinhole observations and independently supplied polygons test arithmetic and abstention. These are not learned road assignments or field truth.",
+  "boundaryCases": [
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.52
+            ],
+            [
+              0.88,
+              0.96
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        }
+      ],
+      "id": "straight",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false,
+        "minimumBoundaries": 2,
+        "minimumCorridors": 1
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        }
+      ],
+      "id": "single_left",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [],
+      "id": "blank",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false,
+        "maximumBoundaries": 0,
+        "maximumCorridors": 0
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 5,
+          "brightness": 70
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.52
+            ],
+            [
+              0.88,
+              0.96
+            ]
+          ],
+          "width": 5,
+          "brightness": 70
+        }
+      ],
+      "id": "low_contrast",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.3,
+              0.5
+            ],
+            [
+              0.3,
+              0.97
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.7,
+              0.5
+            ],
+            [
+              0.7,
+              0.97
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        }
+      ],
+      "id": "vertical_poles",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.1,
+              0.6
+            ],
+            [
+              0.9,
+              0.6
+            ]
+          ],
+          "width": 8,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.1,
+              0.7
+            ],
+            [
+              0.9,
+              0.7
+            ]
+          ],
+          "width": 8,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.1,
+              0.8
+            ],
+            [
+              0.9,
+              0.8
+            ]
+          ],
+          "width": 8,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.1,
+              0.9
+            ],
+            [
+              0.9,
+              0.9
+            ]
+          ],
+          "width": 8,
+          "brightness": 230
+        }
+      ],
+      "id": "crosswalk",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 110,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 24,
+          "brightness": 20
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.52
+            ],
+            [
+              0.88,
+              0.96
+            ]
+          ],
+          "width": 24,
+          "brightness": 20
+        }
+      ],
+      "id": "broad_dark_shadows",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.4,
+              0.6
+            ],
+            [
+              0.3,
+              0.7
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.6,
+              0.6
+            ],
+            [
+              0.7,
+              0.7
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        }
+      ],
+      "id": "too_short",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.15,
+              0.54
+            ],
+            [
+              0.4,
+              0.94
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.85,
+              0.54
+            ],
+            [
+              0.6,
+              0.94
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        }
+      ],
+      "id": "diverging_geometry",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.32,
+              0.54
+            ],
+            [
+              0.04,
+              0.94
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.44,
+              0.54
+            ],
+            [
+              0.16,
+              0.94
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.56,
+              0.54
+            ],
+            [
+              0.84,
+              0.94
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.68,
+              0.54
+            ],
+            [
+              0.96,
+              0.94
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        }
+      ],
+      "id": "ambiguous_parallel_boundaries",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.54
+            ],
+            [
+              0.22,
+              0.64
+            ],
+            [
+              0.39,
+              0.77
+            ],
+            [
+              0.12,
+              0.94
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.54
+            ],
+            [
+              0.78,
+              0.64
+            ],
+            [
+              0.61,
+              0.77
+            ],
+            [
+              0.88,
+              0.94
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        }
+      ],
+      "id": "strong_curve",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.52
+            ],
+            [
+              0.6481818181818181,
+              0.62
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.6959090909090908,
+              0.69
+            ],
+            [
+              0.764090909090909,
+              0.79
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.8118181818181818,
+              0.86
+            ],
+            [
+              0.8799999999999999,
+              0.96
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        }
+      ],
+      "id": "dashed_right",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.52
+            ],
+            [
+              0.88,
+              0.96
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.04,
+              0.75
+            ],
+            [
+              0.96,
+              0.75
+            ]
+          ],
+          "width": 43,
+          "brightness": 55
+        }
+      ],
+      "id": "partial_occlusion",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.02,
+              0.7
+            ],
+            [
+              0.98,
+              0.7
+            ]
+          ],
+          "width": 18,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.02,
+              0.88
+            ],
+            [
+              0.98,
+              0.88
+            ]
+          ],
+          "width": 30,
+          "brightness": 230
+        }
+      ],
+      "id": "dashboard_horizontal",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.44,
+              0.54
+            ],
+            [
+              0.14,
+              0.75
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.56,
+              0.54
+            ],
+            [
+              0.86,
+              0.75
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0,
+              0.85
+            ],
+            [
+              1,
+              0.85
+            ]
+          ],
+          "width": 38,
+          "brightness": 20
+        }
+      ],
+      "id": "short_visible_road_above_hood",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "width": 122,
+      "height": 216,
+      "background": 55,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.49
+            ],
+            [
+              0.1,
+              0.66
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.49
+            ],
+            [
+              0.9,
+              0.66
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0,
+              0.82
+            ],
+            [
+              1,
+              0.82
+            ]
+          ],
+          "width": 160,
+          "brightness": 20
+        }
+      ],
+      "id": "portrait_road_above_hood",
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "id": "seeded_clutter",
+      "width": 384,
+      "height": 216,
+      "background": 55,
+      "strokes": [],
+      "noiseSeed": 1987,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "id": "operation_deadline",
+      "width": 384,
+      "height": 216,
+      "background": 55,
+      "strokes": [],
+      "maximumOperations": 64,
+      "expected": {
+        "budgetExceeded": true,
+        "maximumBoundaries": 0,
+        "maximumCorridors": 0
+      }
+    }
+  ],
+  "pathCases": [
+    {
+      "id": "right_roadside",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "current_path",
+        "reason": "triangulated_unique_corridor",
+        "eastMeters": 3,
+        "northMeters": 20,
+        "heightMeters": 2
+      }
+    },
+    {
+      "id": "left_roadside",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.3832,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.354,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.30533333333333335,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "current_path",
+        "reason": "triangulated_unique_corridor",
+        "eastMeters": -3,
+        "northMeters": 20,
+        "heightMeters": 2
+      }
+    },
+    {
+      "id": "overhead",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.5032,
+          "imageY": 0.32399999999999995
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.504,
+          "imageY": 0.27999999999999997
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.5053333333333333,
+          "imageY": 0.2066666666666666
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "current_path",
+        "reason": "triangulated_unique_corridor",
+        "eastMeters": 0,
+        "northMeters": 20,
+        "heightMeters": 6
+      }
+    },
+    {
+      "id": "causal_turn",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0.4,
+          "northMeters": 4.0,
+          "courseDegrees": 8,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 1.5,
+          "northMeters": 7.8,
+          "courseDegrees": 16,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.5211242102306956,
+          "imageY": 0.48025439638682116
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.3786982202722201,
+          "imageY": 0.47364269934746284
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "current_path",
+        "reason": "triangulated_unique_corridor"
+      }
+    },
+    {
+      "id": "separated_other_road",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.7154666666666667,
+          "imageY": 0.48933333333333334
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.7486153846153847,
+          "imageY": 0.4876923076923077
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7938181818181818,
+          "imageY": 0.48545454545454547
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        },
+        {
+          "id": "branch",
+          "role": "other_path",
+          "polygon": [
+            {
+              "x": 6,
+              "y": 0
+            },
+            {
+              "x": 10,
+              "y": 0
+            },
+            {
+              "x": 10,
+              "y": 50
+            },
+            {
+              "x": 6,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 1
+        }
+      ],
+      "expected": {
+        "classification": "other_path",
+        "reason": "triangulated_unique_corridor"
+      }
+    },
+    {
+      "id": "overlapping_paths",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        },
+        {
+          "id": "branch",
+          "role": "other_path",
+          "polygon": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 6,
+              "y": 0
+            },
+            {
+              "x": 6,
+              "y": 50
+            },
+            {
+              "x": 0,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "unknown",
+        "reason": "ambiguous_corridors"
+      }
+    },
+    {
+      "id": "unknown_geometry",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [],
+      "expected": {
+        "classification": "unknown",
+        "reason": "current_path_unavailable"
+      }
+    },
+    {
+      "id": "unverified_camera",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": false,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "unknown",
+        "reason": "calibration_unavailable"
+      }
+    },
+    {
+      "id": "missing_camera",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": null,
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "unknown",
+        "reason": "calibration_unavailable"
+      }
+    },
+    {
+      "id": "missing_offset",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": null
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "unknown",
+        "reason": "calibration_unavailable"
+      }
+    },
+    {
+      "id": "zero_offset_control",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": 0
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "current_path",
+        "eastMeters": 3.08,
+        "northMeters": 20
+      }
+    },
+    {
+      "id": "future_observation",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.7,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "unknown",
+        "reason": "future_observation"
+      }
+    },
+    {
+      "id": "stale_observations",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 1.6,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "unknown",
+        "reason": "stale_observations"
+      }
+    },
+    {
+      "id": "future_fix_ignored",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 1,
+          "eastMeters": 999,
+          "northMeters": 10,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "current_path",
+        "reason": "triangulated_unique_corridor"
+      }
+    },
+    {
+      "id": "stale_fix",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "unknown",
+        "reason": "stale_trajectory"
+      }
+    },
+    {
+      "id": "repeated_fix",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "unknown",
+        "reason": "invalid_trajectory"
+      }
+    },
+    {
+      "id": "poor_heading",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 25
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 25
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 25
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "unknown",
+        "reason": "invalid_trajectory"
+      }
+    },
+    {
+      "id": "parallel_bearings",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6,
+          "imageY": 0.5
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.6,
+          "imageY": 0.5
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.6,
+          "imageY": 0.5
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "unknown",
+        "reason": "insufficient_parallax"
+      }
+    },
+    {
+      "id": "bounded_observation_count",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "unknown",
+        "reason": "input_limit"
+      }
+    },
+    {
+      "id": "short_causal_prediction",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.9,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.1,
+          "imageX": 0.6296842105263158,
+          "imageY": 0.4831578947368421
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.5,
+          "imageX": 0.6642666666666667,
+          "imageY": 0.4786666666666667
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.9,
+          "imageX": 0.724,
+          "imageY": 0.4709090909090909
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "current_path",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        }
+      ],
+      "expected": {
+        "classification": "current_path",
+        "reason": "triangulated_unique_corridor",
+        "maximumPoseAgeSeconds": 0.1,
+        "newestPoseTimeSeconds": 0.8,
+        "eastMeters": 3,
+        "northMeters": 20
+      }
+    },
+    {
+      "id": "automatic_corridor_roles",
+      "scope": "synthetic-drive:camera:mount-1",
+      "nowSeconds": 0.8,
+      "calibration": {
+        "revision": "mount-1",
+        "verified": true,
+        "fx": 0.8,
+        "fy": 0.8,
+        "cx": 0.5,
+        "cy": 0.5,
+        "yawDegrees": 0,
+        "pitchDegrees": 0,
+        "rollDegrees": 0,
+        "heightMeters": 1.6,
+        "lateralOffsetMeters": -0.08
+      },
+      "poses": [
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0,
+          "eastMeters": 0,
+          "northMeters": 0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.4,
+          "eastMeters": 0,
+          "northMeters": 4.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        },
+        {
+          "scope": "synthetic-drive:camera:mount-1",
+          "timeSeconds": 0.8,
+          "eastMeters": 0,
+          "northMeters": 8.0,
+          "courseDegrees": 0,
+          "speedMetersPerSecond": 10,
+          "horizontalAccuracyMeters": 0.02,
+          "courseAccuracyDegrees": 0.02
+        }
+      ],
+      "observations": [
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0,
+          "imageX": 0.6232,
+          "imageY": 0.484
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.4,
+          "imageX": 0.654,
+          "imageY": 0.48
+        },
+        {
+          "trackId": "physical-1",
+          "scope": "synthetic-drive:camera:mount-1",
+          "calibrationRevision": "mount-1",
+          "timeSeconds": 0.8,
+          "imageX": 0.7053333333333334,
+          "imageY": 0.47333333333333333
+        }
+      ],
+      "corridors": [
+        {
+          "id": "ego",
+          "role": "unknown",
+          "polygon": [
+            {
+              "x": -2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 2,
+              "y": 50
+            },
+            {
+              "x": -2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 2
+        },
+        {
+          "id": "adjacent",
+          "role": "unknown",
+          "polygon": [
+            {
+              "x": 2,
+              "y": 0
+            },
+            {
+              "x": 6,
+              "y": 0
+            },
+            {
+              "x": 6,
+              "y": 50
+            },
+            {
+              "x": 2,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 0
+        },
+        {
+          "id": "separate",
+          "role": "unknown",
+          "polygon": [
+            {
+              "x": 8,
+              "y": 0
+            },
+            {
+              "x": 12,
+              "y": 0
+            },
+            {
+              "x": 12,
+              "y": 50
+            },
+            {
+              "x": 8,
+              "y": 50
+            }
+          ],
+          "confidence": 1,
+          "independentlySupported": true,
+          "roadsideMarginMeters": 0
+        }
+      ],
+      "expected": {
+        "classification": "unknown",
+        "reason": "ambiguous_corridors"
+      }
+    }
+  ]
+}

@@ -129,6 +129,7 @@ data class TrafficSignOrchestrationOutput(
     val effectiveConfirmationWindowMs: Long? = null,
     val applicabilityDiagnostic: TSRApplicabilityDiagnostic? = null,
     val annotationEvent: TrafficSignRecognitionEvent? = null,
+    val roadPathDiagnostic: String? = null,
 )
 
 interface TrafficSignRecognitionObserver {
@@ -157,6 +158,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
     private val monotonicClockNanos: () -> Long,
     private val observer: TrafficSignRecognitionObserver,
     confirmationWindowMsOverride: Long? = null,
+    private val pathEvaluator: ((F, TSRApplicabilityDiagnostic) -> String?)? = null,
 ) {
     private val lock = Any()
     private val fusionEngine: TrafficSignFusionEngine
@@ -499,10 +501,11 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             }
             activeInference = null
             frameSlot.markAnalysisComplete()
-            active.accepted.frame.releaseSafely()
+            if (closed) active.accepted.frame.releaseSafely()
 
             if (!closed) {
-                val created = createEventLocked(active, backendResult)
+                val created = try { createEventLocked(active, backendResult) }
+                    finally { active.accepted.frame.releaseSafely() }
                 val event = created.event
                 if (created.contextIsCurrent && backendResult is TrafficSignBackendResult.Unavailable) {
                     consecutiveBackendFailures += 1
@@ -598,6 +601,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     effectiveConfirmationWindowMs = fusionEngine.confirmationWindowMs,
                     applicabilityDiagnostic = created.applicabilityDiagnostic,
                     annotationEvent = created.annotationEvent,
+                    roadPathDiagnostic = created.roadPathDiagnostic,
                 )
                 dispatch = takeDispatchLocked()
             }
@@ -669,6 +673,9 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         }
         if (sourceIsCurrent) applicabilityScope = scope
         val applicability = if (sourceIsCurrent) applicabilitySession.evaluate(batch) else null
+        val roadPathDiagnostic = applicability?.takeIf { batch.status == "analyzed" }?.let {
+            runCatching { pathEvaluator?.invoke(active.accepted.frame, it) }.getOrNull()
+        }
         val exitWithheld = if (sourceIsCurrent) TSRMotorwayExitPolicy.withheldCandidates(batch) else emptySet()
         val accessWithheld = if (sourceIsCurrent) applicabilitySession.accessRoadWithheldCandidateIDs else emptySet()
         val exitEligibleDetections = rawDetections.filterIndexed { index, _ ->
@@ -783,6 +790,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             event = event,
             fusedScore = fusion?.fusedScore,
             applicabilityDiagnostic = applicability,
+            roadPathDiagnostic = roadPathDiagnostic,
             annotationEvent = annotationEvent,
             selectedTrackId = selectedTrack?.trackId,
             displayDetections = if (enforcing) listOfNotNull(selectedDetection) else exitEligibleDetections,
@@ -856,6 +864,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         val contextIsCurrent: Boolean,
         val qualifiedAnalyzedFrame: Boolean,
         val applicabilityDiagnostic: TSRApplicabilityDiagnostic?,
+        val roadPathDiagnostic: String?,
         val selectedTrackId: String?,
         val displayDetections: List<TrafficSignDetection>,
         val annotationEvent: TrafficSignRecognitionEvent?,

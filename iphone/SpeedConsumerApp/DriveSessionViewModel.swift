@@ -695,6 +695,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
     let laneDetectionRuntime = LaneDetectionRuntime()
+    let roadPathSession = RoadPathSession()
     @Published var trafficSignRecognitionIndependentEnabled: Bool {
         didSet {
             guard trafficSignRecognitionIndependentEnabled != oldValue else { return }
@@ -2117,8 +2118,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func refreshLaneDetectionActivity() {
+        roadPathSession.configureCamera(clock: driveCaptureCoordinator?.session.synchronizationClock)
         laneDetectionRuntime.configure(
-            enabled: showDetectedLanes,
+            enabled: showDetectedLanes && !trafficSignRecognitionEnabled,
             recording: driveCaptureCoordinator?.state == .recording
                 && driveCaptureCoordinator?.isDashcamModuleActive == true,
             appActive: trafficSignApplicationIsActive,
@@ -2422,6 +2424,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
         let processingGate = trafficSignProcessingGate
+        let roadPathSession = self.roadPathSession
 
         let loadingLog = "lifecycle=loading country=\(countryCode) model_pack=\(directoryURL.lastPathComponent)"
         Self.tsrLogger.notice("timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) \(loadingLog, privacy: .public)")
@@ -2439,7 +2442,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     eventHandler: eventHandler,
                     unavailabilityHandler: unavailableHandler,
                     admissionMismatchHandler: admissionMismatchHandler,
-                    processingGate: processingGate
+                    processingGate: processingGate,
+                    roadPathSession: roadPathSession
                 )
             }.value
 
@@ -3322,6 +3326,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func logTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
+        if let path = emission.roadPathDiagnostic { appendTSRLog("tsr_path_evidence_v1=\(path)", timestamp: emission.event.frameTimestampUtc) }
         if let diagnostic = emission.applicabilityDiagnostic,
            let data = try? JSONEncoder().encode(diagnostic), let json = String(data: data, encoding: .utf8) {
             appendTSRLog("tsr_applicability_v1=\(json)", timestamp: emission.event.frameTimestampUtc)
@@ -8481,6 +8486,9 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
         for location in locations {
             discoverPacks(for: location)
             guard isDriving else { continue }
+            roadPathSession.recordLocation(time: location.timestamp.timeIntervalSince1970,
+                latitude: location.coordinate.latitude, longitude: location.coordinate.longitude, course: location.course,
+                speed: location.speed, accuracy: location.horizontalAccuracy, courseAccuracy: location.courseAccuracy)
             if location.horizontalAccuracy >= 0 && location.horizontalAccuracy <= 50 {
                 if let previous = speedReferenceLastLocation {
                     let elapsed = location.timestamp.timeIntervalSince(previous.timestamp)

@@ -27,6 +27,46 @@ auswählen. Das Video bleibt lokal und wird als Blob-URL abgespielt; auch mehr a
 - Dateien nach einem Reload erneut auswählen. Eine Video-Auswahl ersetzt nur
   das vorherige Video, nicht die geladenen Logs.
 
+### Spur- und Fahrpfad-Diagnose
+
+Unter dem Video kann ein Log mit `tsr_path_evidence_v1` geladen werden; beim
+TSR-Import werden diese Ereignisse automatisch übernommen. Android-NDJSON mit
+`event: "tsr_path_evidence_v1"` und `evidence` (JSON-String; auch verschachtelt unter `details` akzeptiert) sowie
+iPhone-Textzeilen mit `tsr_path_evidence_v1={...}` werden unterstützt.
+
+1. UTC-Videostart unter **Zeitabgleich / Bildrate** prüfen. Optional den
+   **Logversatz (ms)** einstellen; positive Werte wählen spätere Logzeiten.
+2. Die passende **Kamerageometrie** wählen und bestätigen, dass Zeit und
+   Bildausschnitt übereinstimmen. Gleiche Seitenverhältnisse allein beweisen
+   keinen identischen Zuschnitt. Die Bestätigung wird bei Video-, Geometrie-,
+   Startzeit- oder Offsetwechsel zurückgesetzt.
+3. Gelbe Linien zeigen mögliche Markierungen, graue gestrichelte Linien reine
+   Kanten. Konfidenz und unbestimmte Pfadhypothesen bleiben sichtbar. Zeichenboxen
+   tragen die geloggte Zuordnung (`unknown` bleibt unbekannt). Eine vorhandene
+   projizierte Trajektorie wird cyan gestrichelt gezeichnet. Weltkoordinaten
+   werden nicht ohne Projektion in das Kamerabild eingezeichnet.
+4. **Frame, Unsicherheit und Laufzeit** enthält Belichtungszeit, Frame-ID,
+   Kalibrierung, Fahrzeugversatz, Trajektorie, Laufzeiten und Zuordnungsgründe.
+
+Es wird nur ein Frame innerhalb von **80 ms** zur abgeglichenen Videozeit
+gezeigt, ohne Vorhersage oder Übernahme älterer guter Geometrie. Fehlende
+Belichtungsuhr, Deadline, Geometrie-/Formatwechsel, beschädigte Geometrie und
+widersprüchliche Duplikate blenden das Overlay aus. Zwischen seltenen
+Analyseframes bleibt es daher bewusst leer. Browser mit
+`requestVideoFrameCallback` verwenden die tatsächlich präsentierte Medienzeit.
+
+`tsr_path_recording_v1` liefert mit `timingQuality: "callback_anchor_estimated"`
+nur geschätzte Start-/Stop-/Fortschrittsanker. Diese werden niemals als genaue
+Video-PTS behandelt. Eine automatische Zuordnung ist erst für ausdrücklich
+verifizierte, dateigebundene `dashcam`-Daten mit `videoFile`,
+`videoTimeSeconds`, `geometryId` und `timingQuality: "exposure_pts_verified"`
+vorgesehen. Die aktuellen nativen Aufnahme-Callbacks liefern diese Garantie
+nicht; deshalb bleibt der manuelle Zeitabgleich erforderlich.
+
+Die Darstellung verwendet ausschließlich geloggte Evidenz und führt keine
+neue Erkennung aus. Sie belegt keine rechtliche Gültigkeit eines Zeichens.
+Tests: `node --test tests/inspector/*.test.js`.
+
 Eigenständiges Browser-Tool zum visuellen Prüfen von Ways auf OSM-Karte gegen lokale YouSpeed-SQLite.
 
 ## Features

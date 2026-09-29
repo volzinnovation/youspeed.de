@@ -375,7 +375,21 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
         LanePresentationState.UNAVAILABLE -> parityText("Unavailable", "Nicht verfügbar", "Indisponible", "Niet beschikbaar")
         LanePresentationState.PAUSED -> parityText("Paused", "Pausiert", "En pause", "Gepauzeerd")
     }
+    val pathOverlay = controller.roadPathSession.overlay()
+    val pathAge = pathOverlay?.let { System.currentTimeMillis() / 1000.0 - it.capturedAtSeconds }
+    val freshPath = pathOverlay?.takeIf { pathAge != null && pathAge >= 0 && pathAge < 0.75 }
     Canvas(Modifier.fillMaxSize().testTag("detected-lanes-overlay")) {
+        if (freshPath != null && preview != null) {
+            val fade = if (pathAge!! <= 0.3) 1f else ((0.75-pathAge)/0.45).toFloat()
+            freshPath.boundaries.forEach { boundary ->
+                val points = boundary.points.mapNotNull { LaneOverlayGeometry.project(it, freshPath.geometry, preview) }
+                val outline = Path().apply { points.forEachIndexed { i,p ->
+                    if (i == 0) moveTo(p.x.toFloat(),p.y.toFloat()) else lineTo(p.x.toFloat(),p.y.toFloat())
+                } }
+                drawPath(outline, Color(0xFF67E8F9).copy(alpha = fade * boundary.confidence.toFloat()), style = Stroke(width=2.dp.toPx()))
+            }
+            return@Canvas
+        }
         val geometry = snapshot.geometry ?: return@Canvas
         val estimate = snapshot.estimate ?: return@Canvas
         val destination = preview ?: return@Canvas
@@ -403,7 +417,8 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
         }
         if (left.size >= 2 || right.size >= 2) controller.onLaneOverlayPainted(snapshot)
     }
-    Text(parityText("Detected lanes", "Erkannte Fahrspuren", "Voies détectées", "Gedetecteerde rijstroken") + ": " + label,
+    Text(parityText("Detected lanes", "Erkannte Fahrspuren", "Voies détectées", "Gedetecteerde rijstroken") + ": " +
+        (freshPath?.let { parityText("Experimental", "Experimentell", "Expérimental", "Experimenteel") + " (${it.boundaries.size})" } ?: label),
         modifier = Modifier.align(Alignment.BottomStart).padding(10.dp)
             .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(8.dp)).padding(6.dp)
             .testTag("detected-lanes-state"),

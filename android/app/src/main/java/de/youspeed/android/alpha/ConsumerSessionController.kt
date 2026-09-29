@@ -641,6 +641,7 @@ class ConsumerSessionController(
         private set
     private data class LanePaintMetric(val scope: Long, val frameId: Long, val ageMs: Double, val estimated: Boolean)
     private var lanePaintMetric: LanePaintMetric? = null
+    internal val roadPathSession = RoadPathSession()
     private val captureLock = Any()
     private val cameraOrientationLock = Any()
 
@@ -1148,7 +1149,7 @@ class ConsumerSessionController(
             !uiState.panoramaxMaintenanceInProgress)
 
     internal fun laneAdmission(thermallyPaused: Boolean): LaneAdmission = LaneAdmission(
-        enabled = uiState.showDetectedLanes && lanePreviewVisible && lanePreviewGeometry != null &&
+        enabled = !isTrafficSignRecognitionRuntimeEnabled() && uiState.showDetectedLanes && lanePreviewVisible && lanePreviewGeometry != null &&
             isDashcamRecordingEnabled() && uiState.driveRecorderDashcamActive &&
             uiState.driveRecorderState == DriveRecorderState.RECORDING,
         scope = lanePreviewScope,
@@ -1933,8 +1934,18 @@ class ConsumerSessionController(
         )
     }
 
+    internal fun onRoadPathRecording(event: String, file: String, durationSeconds: Double) {
+        val evidence = JSONObject().apply {
+            put("event", event); put("videoFile", java.io.File(file).name)
+            put("observedAtSeconds", clock.millis()/1000.0); put("recordedDurationSeconds", durationSeconds)
+            put("timingQuality", "callback_anchor_estimated")
+        }.toString()
+        appendRuntimeDiagnosticEvent("tsr_path_recording_v1", mapOf("evidence" to evidence))
+    }
+
     /** Writes bounded stage-level evidence for the Android camera lane. */
     fun onTrafficSignInferenceDiagnostics(output: TrafficSignOrchestrationOutput) {
+        output.roadPathDiagnostic?.let { appendRuntimeDiagnosticEvent("tsr_path_evidence_v1", mapOf("evidence" to it)) }
         output.applicabilityDiagnostic?.let {
             appendRuntimeDiagnosticEvent("tsr_applicability_v1", mapOf("evidence" to TSRApplicabilityJson.encodeDiagnostic(it).toString()))
         }
@@ -4271,6 +4282,11 @@ class ConsumerSessionController(
             currentLongitude = location.longitude,
         )
         latestCaptureLocation = Location(location)
+        if (location.hasBearing() && location.hasBearingAccuracy() && location.hasSpeed() && location.hasAccuracy()) {
+            roadPathSession.recordLocation(location.time / 1000.0, location.latitude, location.longitude,
+                location.bearing.toDouble(), location.speed.toDouble(), location.accuracy.toDouble(),
+                location.bearingAccuracyDegrees.toDouble())
+        }
         if (location.hasAccuracy() && location.accuracy in 0f..50f) {
             speedReferenceLastLocation?.let { previous ->
                 val elapsed = (location.elapsedRealtimeNanos - previous.elapsedRealtimeNanos) / 1e9
