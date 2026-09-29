@@ -1746,6 +1746,15 @@ extension DriveCaptureCoordinator: AVCaptureFileOutputRecordingDelegate {
 typealias PanoramaxRecorderState = DriveRecorderState
 typealias PanoramaxRecorder = DriveCaptureCoordinator
 
+@MainActor
+private enum LanePreviewStyle {
+    static let color = UIColor(red: 57 / 255.0, green: 1, blue: 20 / 255.0, alpha: 1)
+    // The camera eye and outer sign ring are about 4–6 points on the dashboard.
+    static let strokeWidth: CGFloat = 5
+    static let dotDiameter: CGFloat = 8
+    static let outlineWidth: CGFloat = 1
+}
+
 struct DriveCameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
     var orientation: ScreenOrientation = .portrait
@@ -1784,7 +1793,10 @@ struct DriveCameraPreview: UIViewRepresentable {
         private var roadPathSession: RoadPathSession?
         private var lanesEnabled = false
         private var previewVisible = false
+        private let laneOutline = CAShapeLayer()
+        private let laneDotOutlines = CAShapeLayer()
         private let laneLines = CAShapeLayer()
+        private let laneDots = CAShapeLayer()
         private let laneFill = CAShapeLayer()
         private let laneStatus = UILabel()
         private var laneTimer: Timer?
@@ -1792,11 +1804,22 @@ struct DriveCameraPreview: UIViewRepresentable {
         override init(frame: CGRect) {
             super.init(frame: frame)
             laneLines.fillColor = UIColor.clear.cgColor
-            laneLines.lineWidth = 2
+            laneLines.strokeColor = LanePreviewStyle.color.cgColor
+            laneLines.lineWidth = LanePreviewStyle.strokeWidth
             laneLines.lineJoin = .round
             laneLines.lineCap = .round
+            laneOutline.fillColor = UIColor.clear.cgColor
+            laneOutline.strokeColor = UIColor.black.withAlphaComponent(0.8).cgColor
+            laneOutline.lineWidth = LanePreviewStyle.strokeWidth + LanePreviewStyle.outlineWidth * 2
+            laneOutline.lineJoin = .round
+            laneOutline.lineCap = .round
+            laneDotOutlines.fillColor = UIColor.black.withAlphaComponent(0.8).cgColor
+            laneDots.fillColor = LanePreviewStyle.color.cgColor
             layer.addSublayer(laneFill)
+            layer.addSublayer(laneOutline)
+            layer.addSublayer(laneDotOutlines)
             layer.addSublayer(laneLines)
+            layer.addSublayer(laneDots)
             laneStatus.font = .preferredFont(forTextStyle: .caption2)
             laneStatus.textColor = .white
             laneStatus.backgroundColor = UIColor.black.withAlphaComponent(0.65)
@@ -1833,11 +1856,31 @@ struct DriveCameraPreview: UIViewRepresentable {
             drawLanes()
         }
 
+        private func showLaneMarkers(lines: UIBezierPath, points: [CGPoint], opacity: Float) {
+            let dots = UIBezierPath(), outlines = UIBezierPath()
+            let radius = LanePreviewStyle.dotDiameter / 2
+            let outlineRadius = radius + LanePreviewStyle.outlineWidth
+            for point in points {
+                dots.append(UIBezierPath(ovalIn: CGRect(x: point.x - radius, y: point.y - radius,
+                    width: radius * 2, height: radius * 2)))
+                outlines.append(UIBezierPath(ovalIn: CGRect(x: point.x - outlineRadius, y: point.y - outlineRadius,
+                    width: outlineRadius * 2, height: outlineRadius * 2)))
+            }
+            laneLines.path = lines.cgPath
+            laneOutline.path = lines.cgPath
+            laneDots.path = dots.cgPath
+            laneDotOutlines.path = outlines.cgPath
+            for marker in [laneLines, laneOutline, laneDots, laneDotOutlines] { marker.opacity = opacity }
+        }
+
         private func drawLanes() {
             CATransaction.begin()
             CATransaction.setDisableActions(true)
             defer { CATransaction.commit() }
             laneLines.path = nil
+            laneOutline.path = nil
+            laneDots.path = nil
+            laneDotOutlines.path = nil
             laneFill.path = nil
             laneStatus.isHidden = !lanesEnabled || !previewVisible
             if lanesEnabled, previewVisible, let path = roadPathSession?.overlay(),
@@ -1845,15 +1888,16 @@ struct DriveCameraPreview: UIViewRepresentable {
                 let age = Date().timeIntervalSince1970-path.capturedAtSeconds
                 if age >= 0 && age < 0.75 {
                     let lines = UIBezierPath()
+                    var points: [CGPoint] = []
                     for boundary in path.boundaries {
                         for (i,p) in boundary.points.enumerated() {
                             let capture = LaneOverlayPolicy.capturePoint(p, rotation: path.rotationDegrees)
                             let point = videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: capture)
+                            points.append(point)
                             if i == 0 { lines.move(to:point) } else { lines.addLine(to:point) }
                         }
                     }
-                    laneLines.path = lines.cgPath; laneLines.strokeColor = UIColor.systemCyan.cgColor
-                    laneLines.opacity = Float(age <= 0.3 ? 0.85 : (0.75-age)/0.45*0.85)
+                    showLaneMarkers(lines: lines, points: points, opacity: Float(age <= 0.3 ? 1 : (0.75-age)/0.45))
                     laneStatus.text = "  " + String(format:NSLocalizedString("drive_recorder.lanes.status",comment:""),
                         NSLocalizedString("drive_recorder.lanes.experimental",comment:"")) + " (\(path.boundaries.count))  "
                     laneStatus.sizeToFit(); laneStatus.frame.origin = CGPoint(x:12,y:max(42,bounds.height-65))
@@ -1875,20 +1919,24 @@ struct DriveCameraPreview: UIViewRepresentable {
                   frame.rotation == Int(videoPreviewLayer.connection?.videoRotationAngle ?? 90) else { return }
             let estimate = frame.estimate
             let ageOpacity = LaneOverlayPolicy.opacity(capturedAt: estimate.timestampSeconds, now: LaneDetectionRuntime.now())
-            let color = estimate.hasReliablePair ? UIColor.systemTeal : UIColor.systemOrange
+            let color = LanePreviewStyle.color
             let lines = UIBezierPath()
+            var points: [CGPoint] = []
             func converted(_ point: LanePoint) -> CGPoint {
                 videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: frame.capturePoint(point))
             }
             for boundary in [estimate.left, estimate.right].compactMap({ $0 }) {
                 guard let first = boundary.points.first else { continue }
                 lines.move(to: converted(first))
-                for point in boundary.points.dropFirst() { lines.addLine(to: converted(point)) }
+                points.append(converted(first))
+                for point in boundary.points.dropFirst() {
+                    let convertedPoint = converted(point)
+                    lines.addLine(to: convertedPoint)
+                    points.append(convertedPoint)
+                }
             }
             let confidence = [estimate.left, estimate.right].compactMap { $0?.confidence }.min() ?? 0
-            laneLines.strokeColor = color.cgColor
-            laneLines.opacity = Float(ageOpacity * confidence)
-            laneLines.path = lines.cgPath
+            showLaneMarkers(lines: lines, points: points, opacity: Float(ageOpacity))
             let corridor = estimate.corridorPoints
             if let first = corridor.first {
                 let fill = UIBezierPath()

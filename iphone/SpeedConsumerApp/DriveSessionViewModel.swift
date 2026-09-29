@@ -691,9 +691,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var showDetectedLanes: Bool {
         didSet {
             UserDefaults.standard.set(showDetectedLanes, forKey: "youspeed.drive_recorder.show_detected_lanes")
-            refreshLaneDetectionActivity()
+            refreshLaneDetectionActivity(reason: "lane_overlay_toggle")
         }
     }
+    private var lastLoggedLaneCaptureConfiguration: String?
     let laneDetectionRuntime = LaneDetectionRuntime()
     let roadPathSession = RoadPathSession()
     @Published var trafficSignRecognitionIndependentEnabled: Bool {
@@ -1018,6 +1019,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var speedCaptureAttemptID = UUID()
     private var lastKnownLimitPresentation = LastKnownSpeedLimitPresentation()
     private var speedReference = SpeedReferenceRuntime()
+    private var lastCameraReferenceOfferDiagnostic: NSDictionary?
     private var visionDismissalGate = VisionDismissalGate()
     private var visionDismissalVoiceWindow = VisionDismissalVoiceWindow()
     private var visionDismissalFreshTrack: String?
@@ -2117,7 +2119,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             && trafficSignApplicationIsActive
     }
 
-    private func refreshLaneDetectionActivity() {
+    private func refreshLaneDetectionActivity(reason: String = "capture_state") {
         roadPathSession.configureCamera(clock: driveCaptureCoordinator?.session.synchronizationClock)
         laneDetectionRuntime.configure(
             enabled: showDetectedLanes && !trafficSignRecognitionEnabled,
@@ -2127,6 +2129,29 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             sessionID: driveCaptureCoordinator?.activeCaptureSessionID,
             sourceClock: driveCaptureCoordinator?.session.synchronizationClock
         )
+        appendCaptureConfigurationDiagnostic(reason: reason)
+    }
+
+    private func appendCaptureConfigurationDiagnostic(reason: String) {
+        guard debugLoggingEnabled else { return }
+        var fields: [String: Any] = [
+            "schemaVersion": 1,
+            "photosSelected": panoramaxCaptureEnabled, "photosEnabled": driveRecorderPanoramaxActive,
+            "dashcamEnabled": driveRecorderDashcamActive, "recognitionEnabled": trafficSignProcessingIsEnabled,
+            "applicationActive": trafficSignApplicationIsActive, "driving": isDriving,
+            "showDetectedLanes": showDetectedLanes,
+            "laneOverlaySource": trafficSignRecognitionEnabled ? "road_path" : "legacy",
+            // Preview visibility is private UI state, not observable from this controller.
+            "previewVisibilityAvailable": false, "previewVisible": NSNull()
+        ]
+        guard let signatureData = try? JSONSerialization.data(withJSONObject: fields, options: [.sortedKeys]),
+              let signature = String(data: signatureData, encoding: .utf8),
+              signature != lastLoggedLaneCaptureConfiguration else { return }
+        lastLoggedLaneCaptureConfiguration = signature
+        fields["reason"] = reason
+        guard let data = try? JSONSerialization.data(withJSONObject: fields, options: [.sortedKeys]),
+              let json = String(data: data, encoding: .utf8) else { return }
+        appendTSRLog("capture_configuration=\(json)", timestamp: Date())
     }
 
     private var trafficSignMutationIsEnabled: Bool {
@@ -2268,7 +2293,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         return TrafficSignCoordinate(latitude: latitude, longitude: longitude)
     }
 
-    private func publishEffectiveSpeedLimitState(_ state: EffectiveSpeedLimitState) {
+    private func publishEffectiveSpeedLimitState(_ state: EffectiveSpeedLimitState, producerEvent: TrafficSignRecognitionEvent? = nil) {
         let presentedState: EffectiveSpeedLimitState
         if state.source == .camera || state.isUserCorrection || state.hasCameraEvidenceMarker {
             presentedState = state
@@ -2298,9 +2323,36 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
             if presentedState.source == .camera, let value = SpeedReferenceValue(presentedState.value) {
                 let passage = trafficSignEffectiveLimitResolver.activePassage
-                if let id = passage?.physicalTrackID ?? trafficSignOverridePolicy.activeOverride?.trackId {
-                    let enclosing = trafficSignEffectiveLimitResolver.hasActiveEnclosingSpeedRule
-                    speedReference.camera(id: id + (enclosing ? ":enclosing" : ""), value: value, enclosing: enclosing)
+                let immediate = trafficSignOverridePolicy.activeOverride
+                if let offer = TrafficSignCameraReferenceOffer.select(
+                    presentationReason: presentedState.presentationReason,
+                    presentedSpeedKmh: value.kind == "numeric" ? value.kmh : nil,
+                    immediateTrackID: immediate?.trackId,
+                    immediateSpeedKmh: immediate?.speedKmh,
+                    passageTrackID: nil,
+                    resolverTrackID: passage?.physicalTrackID,
+                    resolverEnclosing: trafficSignEffectiveLimitResolver.hasActiveEnclosingSpeedRule
+                ), let receipt = speedReference.camera(id: offer.evidenceID, value: value, enclosing: offer.enclosing) {
+                    var fields = receipt.diagnosticFields
+                    fields["provenance"] = offer.provenance
+                    fields["presentationReason"] = presentedState.presentationReason
+                    // Keep only one small snapshot; unchanged reconciles need no duplicate log.
+                    if lastCameraReferenceOfferDiagnostic?.isEqual(to: fields) != true {
+                        lastCameraReferenceOfferDiagnostic = fields as NSDictionary
+                        let producerPassage = offer.provenance != "immediate" && passage?.physicalTrackID == offer.trackID ? passage : nil
+                        let currentEvent = producerEvent ?? trafficSignRecognitionLastEvent
+                        let joinedEvent = offer.provenance == "immediate" && currentEvent?.candidate?.trackId == offer.trackID &&
+                            currentEvent?.frameTimestampUtc == immediate?.detectedAt ? currentEvent : nil
+                        fields["producerCaptureTimestampUTC"] = (offer.provenance == "immediate" ? immediate.map { Self.trafficSignTimestamp($0.detectedAt) } : nil) as Any? ?? NSNull()
+                        fields["producerFrameId"] = joinedEvent?.frameId as Any? ?? NSNull()
+                        fields["producerSemanticKind"] = joinedEvent?.candidate?.semanticKind as Any? ?? NSNull()
+                        fields["producerPassageEventId"] = producerPassage?.finalizedEventID as Any? ?? NSNull()
+                        fields["producerPassageAction"] = producerPassage?.action.stableKey as Any? ?? NSNull()
+                        if let data = try? JSONSerialization.data(withJSONObject: fields, options: [.sortedKeys]),
+                           let json = String(data: data, encoding: .utf8) {
+                            appendTSRLog("speed_reference_camera_offer_v1=\(json)", timestamp: Date())
+                        }
+                    }
                 }
             }
             speedReference.tick()
@@ -3119,7 +3171,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 currentCoordinate: currentCoordinateForTrafficSignEvaluation,
                 timestamp: emission.event.frameTimestampUtc
             )
-            publishEffectiveSpeedLimitState(effective)
+            let currentPreviewSpeed = trafficSignOverridePolicy.cameraSpeedKmh(
+                currentContext: latestTrafficSignDetectionContext
+            )
+            let immediate = trafficSignOverridePolicy.activeOverride
+            let preview = TrafficSignCameraReferenceOffer.presentationForChangedOverride(
+                effective, overrideChanged: immediateOverrideChanged,
+                speedKmh: currentPreviewSpeed, trackID: immediate?.trackId
+            )
+            publishEffectiveSpeedLimitState(preview, producerEvent: emission.event)
             publishLegacyTrafficSignOverride(from: effective)
         }
         logTrafficSignRuntimeEmission(emission)
@@ -5601,11 +5661,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard isScreenshotMode || (onboardingStateLoaded && !shouldPresentOnboarding) else { return }
         mapLookupWorker.cancel()
         if !isDriving {
+            roadPathSession.resetTrajectory()
             cancelVisionDismissalVoice()
             visionDismissalVoiceWindow = VisionDismissalVoiceWindow()
             lastKnownLimitPresentation.reset()
             visionDismissalGate = VisionDismissalGate()
             speedReference.reset()
+            lastCameraReferenceOfferDiagnostic = nil
             speedReferenceLastLocation = nil
         }
         speedReference.onTransition = { [weak self] reference in
@@ -5659,6 +5721,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func stopDriving() {
+        if isDriving { roadPathSession.resetTrajectory() }
         cancelVisionDismissalVoice()
         mapLookupWorker.cancel()
         speedReferenceTickTask?.cancel()

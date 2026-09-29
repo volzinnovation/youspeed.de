@@ -1,5 +1,30 @@
 import Foundation
 
+/// Observation of one offer; never grants authority or retries withheld evidence.
+struct SpeedReferenceCameraReceipt {
+    let offeredID: String
+    let offeredValue: SpeedReferenceValue
+    let offeredKind: String
+    let before: SpeedReferenceOutput
+    let after: SpeedReferenceOutput
+    let pendingContextBefore: Bool
+    let pendingContextAfter: Bool
+
+    var diagnosticFields: [String: Any] {
+        ["offeredId": offeredID, "offeredValue": offeredValue.json, "offeredKind": offeredKind,
+         "before": fields(before), "after": fields(after),
+         "pendingContextBefore": pendingContextBefore, "pendingContextAfter": pendingContextAfter,
+         "gapBefore": NSNull(), "seenBefore": NSNull(), "gateDiagnosticAvailability": "pending_context_only"]
+    }
+    private func fields(_ output: SpeedReferenceOutput) -> [String: Any] {
+        ["state": output.state, "value": output.value?.json as Any? ?? NSNull(),
+         "source": output.source as Any? ?? NSNull(), "evidenceId": output.evidenceID as Any? ?? NSNull(),
+         "current": output.current, "generation": output.generation, "applicabilityRevision": output.applicabilityRevision,
+         "transition": output.transition, "expiryReasons": output.expiryReasons,
+         "rejection": output.rejection as Any? ?? NSNull()]
+    }
+}
+
 /// Adapter for already interpreted inputs; contains no image/lane classification.
 /// Owned by the drive controller's main actor. Clock is monotonic system uptime.
 final class SpeedReferenceRuntime {
@@ -50,13 +75,21 @@ final class SpeedReferenceRuntime {
         if let value { _ = send("bundle", ["id": id, "value": value.json, "verified": true, "applicability": evaluated ?? applicability]) }
         else { _ = send("bundle_missing") }
     }
-    func camera(id: String, value: SpeedReferenceValue, enclosing: Bool = false, applicability evaluated: [String: Any]? = nil) {
+    @discardableResult
+    func camera(id: String, value: SpeedReferenceValue, enclosing: Bool = false, applicability evaluated: [String: Any]? = nil) -> SpeedReferenceCameraReceipt? {
         tick()
         let first = cameraOrigins[id] ?? (machine?.time ?? 0, meters)
         cameraOrigins[id] = first
-        _ = send(enclosing ? "camera_context" : "camera", ["id": id, "value": value.json,
+        // Capture after the existing tick, immediately before the unchanged offer.
+        let before = machine?.project()
+        let pendingBefore = machine?.pendingContext
+        let kind = enclosing ? "camera_context" : "camera"
+        let after = send(kind, ["id": id, "value": value.json,
             "verified": true, "applicability": evaluated ?? applicability, "observed_elapsed_s": first.0,
             "observed_distance_m": first.1, "area_verified": enclosing, "scope_kind": "zone"])
+        guard let before, let after, let pendingBefore, let machine else { return nil }
+        return SpeedReferenceCameraReceipt(offeredID: id, offeredValue: value, offeredKind: kind,
+            before: before, after: after, pendingContextBefore: pendingBefore, pendingContextAfter: machine.pendingContext)
     }
     func applicabilityContextChanged(revision: Int) { _ = send("applicability_context_changed", ["next_revision": revision]) }
     func pipelineAuthorityWithdrawn(evidenceID: String) {

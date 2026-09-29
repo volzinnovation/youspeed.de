@@ -14,6 +14,21 @@ class RoadPathSessionTests {
         TSRFrameCandidateBatch(1, "frame-$time", time*1000, scope, "analyzed", emptyList(), false, 0, "model", "preprocess", null), emptyList(), emptyList())
     private fun frame(time: Double, known: Boolean = true, start: Long = 0) = RoadPathCameraFrame(
         ByteArray(128*72), 128, 72, time, "geometry", null, known, 0.0, start)
+    private val camera = RoadPathCalibration("mount", true, .8, .8, .5, .5, 0.0, 0.0, 0.0, 1.6, -.08)
+    private fun signDiagnostic(time: Double): TSRApplicabilityDiagnostic {
+        val forward = 30 - (time-10)*10
+        val x = .5 + .8*3.08/forward
+        val y = .5 + .8*(1.6-2)/forward
+        val candidate = TSRApplicabilityCandidate("candidate-$time", "maximum_speed:50:",
+            TSRApplicabilityBox(x-.01, y-.01, .02, .02), .99, true, null)
+        val batch = diagnostic(time).batch.copy(candidates=listOf(candidate), rawCandidateCount=1)
+        return TSRApplicabilityDiagnostic(1, batch, listOf(TSRPhysicalTrackSnapshot("physical-sign", scope,
+            listOf(TSRTrackSample(batch.frameId, time*1000, candidate)), "observed", false)), emptyList())
+    }
+    private fun recordFix(session: RoadPathSession, time: Double) = session.recordLocation(time,
+        48.0 + Math.toDegrees((time-10)*10/6_371_000), 8.0, 0.0, 10.0, .02, .02)
+    private fun evaluateSign(session: RoadPathSession, time: Double, sourceTime: Double? = null) = Json.parseToJsonElement(
+        session.evaluate(frame(time).copy(calibration=camera, sourceTimestampSeconds=sourceTime), signDiagnostic(time))).jsonObject
 
     @Test fun futureFixIsNotExposedAsCausalTrajectory() {
         val session = RoadPathSession { 1_000_000 }
@@ -48,11 +63,107 @@ class RoadPathSessionTests {
         assertNull(session.overlay())
     }
 
-    @Test fun duplicateLocationStartsFreshHistoryRatherThanReinforcingMotion() {
+    @Test fun dualProviderDuplicateAndOlderFixesPreserveThreeObservationTriangulation() {
         val session = RoadPathSession { 1_000_000 }
-        repeat(2) { session.recordLocation(10.0, 48.0, 8.0, 0.0, 10.0, .1, .1) }
-        val result = Json.parseToJsonElement(session.evaluate(frame(10.0), diagnostic(10.0))).jsonObject
+        for ((index, time) in listOf(10.0, 11.0, 12.0).withIndex()) {
+            recordFix(session, time)
+            // A fused re-delivery and delayed provider fix must not rewrite the accepted pose.
+            session.recordLocation(time, 49.0, 9.0, 90.0, 20.0, .01, .01)
+            session.recordLocation(time-.2, 49.0, 9.0, 90.0, 20.0, .01, .01)
+            val result = evaluateSign(session, time)
+            assertEquals(index+1, result.getValue("trajectorySamples").jsonPrimitive.int)
+            assertEquals(48.0, result.getValue("localOrigin").jsonObject.getValue("latitude").jsonPrimitive.double, 0.0)
+            val ingestion = result.getValue("locationIngestion").jsonObject
+            assertEquals(index+1, ingestion.getValue("duplicateFixesDropped").jsonPrimitive.int)
+            assertEquals(index+1, ingestion.getValue("outOfOrderFixesDropped").jsonPrimitive.int)
+            assertEquals(0, ingestion.getValue("resetCount").jsonPrimitive.int)
+            val association = result.getValue("associations").jsonArray.single().jsonObject
+            assertEquals(index+1, association.getValue("observations").jsonArray.size)
+            if (index == 2) {
+                assertEquals(3, association.getValue("supportingObservations").jsonPrimitive.int)
+                assertEquals("current_path_unavailable", association.getValue("reason").jsonPrimitive.content)
+                assertEquals(3.0, association.getValue("eastMeters").jsonPrimitive.double, 1e-6)
+                assertEquals(30.0, association.getValue("northMeters").jsonPrimitive.double, 1e-6)
+                assertEquals("unknown", association.getValue("classification").jsonPrimitive.content)
+                assertTrue(association.getValue("shadowOnly").jsonPrimitive.boolean)
+            }
+        }
+    }
+
+    @Test fun explicitResetStartsNewOriginAndObservationHistory() {
+        val session = RoadPathSession { 1_000_000 }
+        recordFix(session, 10.0); evaluateSign(session, 10.0)
+        recordFix(session, 11.0); evaluateSign(session, 11.0)
+        session.resetTrajectory()
+        assertNull(session.overlay())
+        session.recordLocation(11.2, 49.0, 9.0, 0.0, 10.0, .02, .02)
+        val result = evaluateSign(session, 11.2)
         assertEquals(1, result.getValue("trajectorySamples").jsonPrimitive.int)
+        assertEquals(49.0, result.getValue("localOrigin").jsonObject.getValue("latitude").jsonPrimitive.double, 0.0)
+        assertEquals(1, result.getValue("locationIngestion").jsonObject.getValue("resetCount").jsonPrimitive.int)
+        assertEquals(1, result.getValue("associations").jsonArray.single().jsonObject.getValue("observations").jsonArray.size)
+        session.resetTrajectory()
+        recordFix(session, 5.0) // Only the explicit reset permits a new, earlier clock epoch.
+        val next = Json.parseToJsonElement(session.evaluate(frame(5.0), diagnostic(5.0))).jsonObject
+        assertEquals(5.0, next.getValue("trajectory").jsonArray.single().jsonObject.getValue("timeSeconds").jsonPrimitive.double, 0.0)
+        assertEquals(2, next.getValue("locationIngestion").jsonObject.getValue("resetCount").jsonPrimitive.int)
+    }
+
+    @Test fun duplicateAndOlderFramesPublishNoEvidenceAndPreserveTrackHistoryAndOverlay() {
+        val session = RoadPathSession { 1_000_000 }
+        recordFix(session, 10.0); evaluateSign(session, 10.0)
+        recordFix(session, 11.0); evaluateSign(session, 11.0)
+        val overlay = session.overlay()
+        assertNotNull(overlay)
+        for ((time, reason) in listOf(11.0 to "duplicate_frame", 10.5 to "out_of_order_frame")) {
+            val skipped = evaluateSign(session, time)
+            assertEquals(reason, skipped.getValue("reason").jsonPrimitive.content)
+            assertTrue(skipped.getValue("associations").jsonArray.isEmpty())
+            assertFalse(skipped.containsKey("boundaries"))
+            assertSame(overlay, session.overlay())
+        }
+        recordFix(session, 12.0)
+        val result = evaluateSign(session, 12.0)
+        val association = result.getValue("associations").jsonArray.single().jsonObject
+        assertEquals(listOf(10.0, 11.0, 12.0), association.getValue("observations").jsonArray.map {
+            it.jsonObject.getValue("timeSeconds").jsonPrimitive.double })
+        assertEquals(3, association.getValue("supportingObservations").jsonPrimitive.int)
+    }
+
+    @Test fun changedScopeAcceptsEarlierExposureWithoutReusingHistory() {
+        val session = RoadPathSession { 1_000_000 }
+        recordFix(session, 10.0); evaluateSign(session, 10.0)
+        val next = signDiagnostic(9.0)
+        val changed = next.copy(batch=next.batch.copy(scope=scope.copy(generation=2)))
+        val result = Json.parseToJsonElement(session.evaluate(frame(9.0).copy(calibration=camera), changed)).jsonObject
+        assertFalse(result.containsKey("reason"))
+        assertEquals(1, result.getValue("associations").jsonArray.single().jsonObject.getValue("observations").jsonArray.size)
+    }
+
+    @Test fun rawExposureOrderingRejectsRedeliveryDespiteNewerMappedUtc() {
+        val session = RoadPathSession { 1_000_000 }
+        recordFix(session, 10.0); evaluateSign(session, 10.0, 100.0)
+        recordFix(session, 11.0); evaluateSign(session, 11.0, 101.0)
+        val overlay = session.overlay()
+        val duplicate = evaluateSign(session, 11.1, 101.0)
+        val older = evaluateSign(session, 11.2, 100.5)
+        assertEquals("duplicate_frame", duplicate.getValue("reason").jsonPrimitive.content)
+        assertEquals("out_of_order_frame", older.getValue("reason").jsonPrimitive.content)
+        for (skipped in listOf(duplicate, older)) {
+            assertEquals("source_exposure", skipped.getValue("frameOrderingClock").jsonPrimitive.content)
+            assertTrue(skipped.getValue("associations").jsonArray.isEmpty())
+        }
+        assertSame(overlay, session.overlay())
+        recordFix(session, 12.0)
+        val result = evaluateSign(session, 12.0, 102.0)
+        val association = result.getValue("associations").jsonArray.single().jsonObject
+        assertEquals(listOf(10.0, 11.0, 12.0), association.getValue("observations").jsonArray.map {
+            it.jsonObject.getValue("timeSeconds").jsonPrimitive.double })
+        assertEquals(3, association.getValue("supportingObservations").jsonPrimitive.int)
+        session.resetTrajectory(); recordFix(session, 5.0)
+        val reset = evaluateSign(session, 5.0, 1.0)
+        assertFalse(reset.containsKey("reason"))
+        assertEquals(1, reset.getValue("associations").jsonArray.single().jsonObject.getValue("observations").jsonArray.size)
     }
 
     private class PausedClock {
@@ -94,7 +205,32 @@ class RoadPathSessionTests {
         }
     }
 
-    @Test fun locationClockResetDiscardsAnEvaluationAlreadyInFlight() {
+    @Test fun duplicateAndOlderLocationCallbacksDoNotInvalidateAnEvaluationAlreadyInFlight() {
+        val clock = PausedClock()
+        val session = RoadPathSession(clock::now)
+        recordFix(session, 10.0)
+        val evaluator = Executors.newSingleThreadExecutor()
+        val callbacks = Executors.newSingleThreadExecutor()
+        try {
+            val evaluation = evaluator.submit<String> { session.evaluate(frame(10.0), diagnostic(10.0)) }
+            assertTrue(clock.entered.await(2, TimeUnit.SECONDS))
+            callbacks.submit { recordFix(session, 10.0); recordFix(session, 9.0) }.get(2, TimeUnit.SECONDS)
+            clock.resume.countDown()
+            val result = Json.parseToJsonElement(evaluation.get(2, TimeUnit.SECONDS)).jsonObject
+            assertFalse(result.containsKey("reason"))
+            assertEquals(1, result.getValue("trajectorySamples").jsonPrimitive.int)
+            assertNotNull(session.overlay())
+            val next = Json.parseToJsonElement(session.evaluate(frame(10.1), diagnostic(10.1))).jsonObject
+            val ingestion = next.getValue("locationIngestion").jsonObject
+            assertEquals(1, ingestion.getValue("duplicateFixesDropped").jsonPrimitive.int)
+            assertEquals(1, ingestion.getValue("outOfOrderFixesDropped").jsonPrimitive.int)
+            assertEquals(0, ingestion.getValue("resetCount").jsonPrimitive.int)
+        } finally {
+            clock.resume.countDown(); evaluator.shutdownNow(); callbacks.shutdownNow()
+        }
+    }
+
+    @Test fun explicitResetDiscardsAnEvaluationAlreadyInFlight() {
         val clock = PausedClock()
         val session = RoadPathSession(clock::now)
         session.recordLocation(10.0, 48.0, 8.0, 0.0, 10.0, .1, .1)
@@ -103,10 +239,10 @@ class RoadPathSessionTests {
         try {
             val evaluation = evaluator.submit<String> { session.evaluate(frame(10.0), diagnostic(10.0)) }
             assertTrue(clock.entered.await(2, TimeUnit.SECONDS))
-            callbacks.submit { session.recordLocation(9.0, 48.0, 8.0, 0.0, 10.0, .1, .1) }.get(2, TimeUnit.SECONDS)
+            callbacks.submit { session.resetTrajectory() }.get(2, TimeUnit.SECONDS)
             clock.resume.countDown()
             val result = Json.parseToJsonElement(evaluation.get(2, TimeUnit.SECONDS)).jsonObject
-            assertEquals("trajectory_clock_discontinuity", result.getValue("reason").jsonPrimitive.content)
+            assertEquals("trajectory_reset", result.getValue("reason").jsonPrimitive.content)
             assertTrue(result.getValue("associations").jsonArray.isEmpty())
             assertFalse(result.getValue("deadlineExceeded").jsonPrimitive.boolean)
             assertNull(session.overlay())

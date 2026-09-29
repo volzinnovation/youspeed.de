@@ -11,6 +11,80 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrafficSignRecognitionOrchestratorTests {
+    @Test fun unavailableModelInvalidatesOnlyItsCurrentPreparedScope() {
+        for (scopeChanges in listOf(false, true)) {
+            var visible = false
+            var invalidations = 0
+            val harness = Harness(pathPreparer = { _, context -> context.publishIfCurrent { visible = true } },
+                pathInvalidated = { visible = false; invalidations++ })
+            val frame = harness.frame("model-failure", capturedAtNanos = 0)
+            harness.orchestrator.submit(frame)
+            assertTrue(visible)
+            if (scopeChanges) harness.orchestrator.reconcileContext(harness.context, 1)
+            harness.backend.completeNext(TrafficSignBackendResult.Unavailable("test failure"))
+            assertFalse(visible)
+            // A scope reset invalidates once; the old backend failure must not clear again.
+            assertEquals(1, invalidations)
+            assertEquals(1, frame.releaseCount)
+        }
+    }
+
+    @Test fun admittedFramePreparationPrecedesModelAndReleaseAndCarriesExactScope() {
+        val order = mutableListOf<String>()
+        var preparedScope: TSRApplicabilityScope? = null
+        val harness = Harness(pathPreparer = { frame, context ->
+            assertEquals(0, frame.releaseCount)
+            preparedScope = context.scope
+            order += "prepare:${frame.frameId}"
+            assertTrue(context.publishIfCurrent { order += "publish:${frame.frameId}" })
+        }, pathEvaluator = { frame, diagnostic ->
+            assertEquals(preparedScope, diagnostic.batch.scope)
+            order += "associate:${frame.frameId}"
+            "{}"
+        })
+        harness.backend.onModelStart = { order += "model:${it.frameId}" }
+        val first = harness.frame("first", capturedAtNanos = 0)
+        assertTrue(harness.orchestrator.submit(first))
+        assertEquals(listOf("prepare:first", "publish:first", "model:first"), order)
+        assertEquals(0, first.releaseCount)
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        assertEquals(listOf("prepare:first", "publish:first", "model:first", "associate:first"), order)
+        assertEquals(1, first.releaseCount)
+    }
+
+    @Test fun stalePreparationGuardCannotPublishAfterContextChangeOrClose() {
+        for (close in listOf(false, true)) {
+            var guard: (((() -> Unit) -> Boolean))? = null
+            var invalidations = 0
+            val harness = Harness(pathPreparer = { _, context -> guard = context.publishIfCurrent },
+                pathInvalidated = { invalidations++ })
+            val frame = harness.frame("stale", capturedAtNanos = 0)
+            harness.orchestrator.submit(frame)
+            if (close) harness.orchestrator.close() else
+                harness.orchestrator.reconcileContext(harness.context, 1)
+            var published = false
+            assertFalse(requireNotNull(guard) { "preparation must run before model" }.invoke { published = true })
+            assertFalse(published)
+            assertTrue(invalidations > 0)
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+            assertEquals(1, frame.releaseCount)
+        }
+    }
+
+    @Test fun optionalPreparationFailureCannotSkipTsrOrLeakTheFrame() {
+        var invalidations = 0
+        val harness = Harness(pathPreparer = { _, _ -> error("lane preprocessing failed") },
+            pathInvalidated = { invalidations++ })
+        val frame = harness.frame("failed-preparation", capturedAtNanos = 0)
+        assertTrue(harness.orchestrator.submit(frame))
+        assertEquals(listOf("failed-preparation"), harness.backend.activeFrameIds())
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        assertEquals(1, frame.releaseCount)
+        assertEquals(1, harness.observer.outputs.size)
+        assertEquals(1, invalidations)
+        assertNull(harness.observer.outputs.single().backendFailureReason)
+    }
+
     @Test
     fun optionalPathEvaluatorReadsTheOwnedFrameBeforeExactlyOneRelease() {
         val releaseCountsAtEvaluation = mutableListOf<Int>()
@@ -856,6 +930,8 @@ class TrafficSignRecognitionOrchestratorTests {
     private class Harness(
         val pack: TrafficSignModelPack = fixture("de-direct-pack-v1.json").readText().let(TrafficSignModelPackJson::decode),
         pathEvaluator: ((FakeFrame, TSRApplicabilityDiagnostic) -> String?)? = null,
+        pathPreparer: ((FakeFrame, TrafficSignPathPreparationContext) -> Unit)? = null,
+        pathInvalidated: (() -> Unit)? = null,
     ) {
         val backend = FakeBackend()
         val observer = RecordingObserver()
@@ -879,6 +955,8 @@ class TrafficSignRecognitionOrchestratorTests {
             monotonicClockNanos = { clockNanos },
             observer = observer,
             pathEvaluator = pathEvaluator,
+            pathPreparer = pathPreparer,
+            pathInvalidated = pathInvalidated,
         )
 
         fun frame(
@@ -894,9 +972,11 @@ class TrafficSignRecognitionOrchestratorTests {
     }
 
     private class FakeBackend : TrafficSignRecognitionBackend<FakeFrame> {
+        var onModelStart: (FakeFrame) -> Unit = {}
         private val pending = ArrayDeque<Pair<FakeFrame, (TrafficSignBackendResult) -> Unit>>()
 
         override fun recognize(frame: FakeFrame, completion: (TrafficSignBackendResult) -> Unit) {
+            onModelStart(frame)
             pending.addLast(frame to completion)
         }
 

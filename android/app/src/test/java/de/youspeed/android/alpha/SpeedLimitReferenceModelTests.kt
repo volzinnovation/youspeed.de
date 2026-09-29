@@ -99,4 +99,72 @@ class SpeedLimitReferenceModelTests {
         assertEquals(0, ConsumerMainScreenLogic.currentOverspeedKmh(after))
         assertNull(ConsumerMainScreenLogic.currentPenaltyNotice(after))
     }
+
+    @Test fun cameraReceiptReportsAcceptedAndDuplicateOffersWithoutChangingDeduplication() {
+        val runtime = SpeedReferenceRuntime(model()) { 0.0 }
+        runtime.camera("old", SpeedReferenceValue("numeric", 70))
+        val accepted = requireNotNull(runtime.camera("new", SpeedReferenceValue("numeric", 80)))
+        assertEquals("new", accepted.offeredId)
+        assertEquals("camera", accepted.offeredKind)
+        assertEquals(70, accepted.before.value?.kmh)
+        assertEquals("T03", accepted.after.transition)
+        assertEquals(80, accepted.after.value?.kmh)
+        assertEquals("new", accepted.after.evidenceId)
+        val repeated = requireNotNull(runtime.camera("new", SpeedReferenceValue("numeric", 30)))
+        assertEquals(30, repeated.offeredValue.kmh)
+        assertEquals("T11", repeated.after.transition)
+        assertEquals(80, repeated.after.value?.kmh)
+        assertEquals(80, runtime.output()?.baselineKmh)
+    }
+
+    @Test fun cameraReceiptExposesPendingGateAndPreservesWithheldEvidenceBehavior() {
+        var now = 0.0
+        val runtime = SpeedReferenceRuntime(model()) { now }
+        runtime.context("road", "ref:A", emptySet(), "forward", true)
+        runtime.camera("old", SpeedReferenceValue("numeric", 70))
+        now = 1.0
+        runtime.context("ramp", "ref:B", emptySet(), "forward", false)
+        val withheld = requireNotNull(runtime.camera("new", SpeedReferenceValue("numeric", 80)))
+        assertTrue(withheld.pendingContextBefore)
+        assertTrue(withheld.pendingContextAfter)
+        assertEquals("T11", withheld.after.transition)
+        assertEquals(70, withheld.after.value?.kmh)
+        now = 2.0
+        runtime.context("road", "ref:A", emptySet(), "forward", true)
+        val repeated = requireNotNull(runtime.camera("new", SpeedReferenceValue("numeric", 80)))
+        assertFalse(repeated.pendingContextBefore)
+        assertEquals("T11", repeated.after.transition)
+        assertEquals(70, repeated.after.value?.kmh)
+        assertNull(repeated.diagnosticFields["gapBefore"])
+        assertNull(repeated.diagnosticFields["seenBefore"])
+        assertEquals("pending_context_only", repeated.diagnosticFields["gateDiagnosticAvailability"])
+    }
+
+    @Test fun cameraReceiptDistinguishesAcceptedEnclosingOfferFromSelectedOrdinaryValue() {
+        val runtime = SpeedReferenceRuntime(model()) { 0.0 }
+        runtime.camera("posted", SpeedReferenceValue("numeric", 70))
+        val receipt = requireNotNull(runtime.camera("zone", SpeedReferenceValue("numeric", 30), true))
+        assertEquals("camera_context", receipt.offeredKind)
+        assertEquals("T12", receipt.after.transition)
+        assertEquals("posted", receipt.after.evidenceId)
+        assertEquals(70, receipt.after.value?.kmh)
+    }
+
+    @Test fun cameraReceiptKeepsExpiryOriginsAndReportsActualRejection() {
+        var now = 0.0
+        val runtime = SpeedReferenceRuntime(model()) { now }
+        runtime.camera("sign", SpeedReferenceValue("numeric", 70))
+        now = 300.0
+        val expired = requireNotNull(runtime.camera("sign", SpeedReferenceValue("numeric", 70)))
+        assertEquals("LAST_KNOWN", expired.before.state)
+        assertEquals("T11", expired.after.transition)
+        assertFalse(expired.after.current)
+        val rejected = requireNotNull(runtime.camera("invalid", SpeedReferenceValue("numeric", 0)))
+        assertEquals("REJECT", rejected.after.transition)
+        assertEquals("invalid_value", rejected.after.rejection)
+        assertEquals("sign", rejected.after.evidenceId)
+        val fields = rejected.diagnosticFields["after"] as Map<*, *>
+        assertEquals("invalid_value", fields["rejection"])
+        assertNull(SpeedReferenceRuntime(null) { 0.0 }.camera("sign", SpeedReferenceValue("numeric", 70)))
+    }
 }

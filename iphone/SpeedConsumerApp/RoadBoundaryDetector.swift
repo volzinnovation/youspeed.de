@@ -1,5 +1,39 @@
 import Foundation
 
+/// Shared Android/iPhone kernel: horizontal five-pixel opening, then saturated 1.5× top-hat.
+/// Borders repeat the nearest pixel (equivalent to clipped min/max windows). Integer division
+/// rounds down; the original image for TSR is never modified. Cancellation returns no partial image.
+enum RoadBoundaryPreprocessor {
+    static let identifier = "horizontal_top_hat5_gain_1_5_v1"
+    static func topHat5(grayscale: [UInt8], width: Int, height: Int,
+                        shouldContinue: () -> Bool = { true }) -> [UInt8]? {
+        guard (1...384).contains(width), (1...216).contains(height), grayscale.count == width*height,
+              shouldContinue() else { return nil }
+        var eroded = [UInt8](repeating: 0, count: grayscale.count)
+        var output = eroded
+        for y in 0..<height {
+            guard shouldContinue() else { return nil }
+            for x in 0..<width {
+                if x % 32 == 0 && !shouldContinue() { return nil }
+                var value: UInt8 = 255
+                for column in max(0,x-2)...min(width-1,x+2) { value = min(value,grayscale[y*width+column]) }
+                eroded[y*width+x] = value
+            }
+        }
+        for y in 0..<height {
+            guard shouldContinue() else { return nil }
+            for x in 0..<width {
+                if x % 32 == 0 && !shouldContinue() { return nil }
+                var opened: UInt8 = 0
+                for column in max(0,x-2)...min(width-1,x+2) { opened = max(opened,eroded[y*width+column]) }
+                let value = Int(grayscale[y*width+x])
+                output[y*width+x] = UInt8(min(255,value+(value-Int(opened))*3/2))
+            }
+        }
+        return shouldContinue() ? output : nil
+    }
+}
+
 /// Image evidence only: even a paint cue is not a semantic road/lane classification.
 enum RoadBoundaryCue: String, Equatable, Sendable { case paint, edge }
 struct RoadBoundaryEvidence: Equatable, Sendable {

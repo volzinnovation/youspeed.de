@@ -114,7 +114,18 @@ sealed interface TrafficSignBackendResult {
  */
 fun interface TrafficSignRecognitionBackend<F : TrafficSignNormalizedFrameHandle> {
     fun recognize(frame: F, completion: (TrafficSignBackendResult) -> Unit)
+
+    /** Async implementations execute preparation on their model worker, before pixel conversion. */
+    fun recognize(frame: F, beforeInference: () -> Unit, completion: (TrafficSignBackendResult) -> Unit) {
+        beforeInference()
+        recognize(frame, completion)
+    }
 }
+
+data class TrafficSignPathPreparationContext(
+    val scope: TSRApplicabilityScope,
+    val publishIfCurrent: (() -> Unit) -> Boolean,
+)
 
 data class TrafficSignOrchestrationOutput(
     val event: TrafficSignRecognitionEvent,
@@ -159,6 +170,8 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
     private val observer: TrafficSignRecognitionObserver,
     confirmationWindowMsOverride: Long? = null,
     private val pathEvaluator: ((F, TSRApplicabilityDiagnostic) -> String?)? = null,
+    private val pathPreparer: ((F, TrafficSignPathPreparationContext) -> Unit)? = null,
+    private val pathInvalidated: (() -> Unit)? = null,
 ) {
     private val lock = Any()
     private val fusionEngine: TrafficSignFusionEngine
@@ -330,6 +343,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         val clearedOverride = synchronized(lock) {
             if (closed) return@synchronized false
             closed = true
+            pathInvalidated?.invoke()
             frameSlot.clear()
             val hadOverride = currentOverride != null
             currentOverride = null
@@ -378,6 +392,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         }
         if (generationChanged || osmChanged) {
             currentScopeEpoch += 1L
+            pathInvalidated?.invoke()
             currentOverrideEligibleRouteRelationGroupIds = emptySet()
             fusionEngine.reset(); annotationFusion.reset()
             passageFinalizer.reset(contextGeneration)
@@ -396,6 +411,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         if (previousGeneration == contextGeneration && currentRoadContextKey == nextKey) return null
 
         val previousContext = currentRoadContext
+        val previousScopeEpoch = currentScopeEpoch
         val generationChanged = previousGeneration != null && previousGeneration != contextGeneration
         val hadActiveTrack = passageFinalizer.hasActiveTrack()
         val trackReconciliation = if (!generationChanged && hadActiveTrack) {
@@ -468,6 +484,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                 )
             }
         }
+        if (previousScopeEpoch != currentScopeEpoch) pathInvalidated?.invoke()
         return if (previousOverride != currentOverride) OverrideNotification(currentOverride) else null
     }
 
@@ -504,6 +521,12 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             if (closed) active.accepted.frame.releaseSafely()
 
             if (!closed) {
+                // Only this active worker could have published its preparation. A failed model
+                // must not leave that preview behind; stale completions cannot clear a newer scope.
+                if (backendResult is TrafficSignBackendResult.Unavailable &&
+                    active.accepted.contextGeneration == currentContextGeneration &&
+                    active.accepted.scopeEpoch == currentScopeEpoch
+                ) pathInvalidated?.invoke()
                 val created = try { createEventLocked(active, backendResult) }
                     finally { active.accepted.frame.releaseSafely() }
                 val event = created.event
@@ -651,10 +674,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             }
         }
         val rawDetections = (backendResult as? TrafficSignBackendResult.Recognition)?.displayDetections.orEmpty()
-        val scope = TSRApplicabilityScope(active.accepted.driveSessionId ?: "no-session",
-            active.accepted.context.bundleSha256 ?: "unverified",
-            "normalized:${active.accepted.frame.widthPixels}x${active.accepted.frame.heightPixels}",
-            active.accepted.contextGeneration, active.accepted.contextGeneration, active.accepted.context.traversalEpoch)
+        val scope = pathScope(active.accepted)
         val batch = TSRFrameCandidateBatch(1, active.accepted.metadata.frameId,
             active.accepted.metadata.capturedAtUtc.toEpochMilli().toDouble(), scope,
             if (backendResult is TrafficSignBackendResult.Recognition && sourceIsCurrent) "analyzed" else "failed",
@@ -802,13 +822,31 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         )
     }
 
+    private fun pathScope(accepted: AcceptedFrame<F>) = TSRApplicabilityScope(
+        accepted.driveSessionId ?: "no-session", accepted.context.bundleSha256 ?: "unverified",
+        "normalized:${accepted.frame.widthPixels}x${accepted.frame.heightPixels}",
+        accepted.contextGeneration, accepted.contextGeneration, accepted.context.traversalEpoch)
+
     private inner class Dispatch(
         private val active: ActiveInference<F>,
         private val completion: (TrafficSignBackendResult) -> Unit,
     ) {
         fun start() {
             try {
-                backend.recognize(active.accepted.frame, completion)
+                backend.recognize(active.accepted.frame, beforeInference = {
+                    // Only the admitted worker performs bounded lane work. The guard holds this
+                    // lock just for publication, never for filtering, detection or model inference.
+                    val preparationContext = TrafficSignPathPreparationContext(pathScope(active.accepted)) { publication ->
+                        synchronized(lock) {
+                            if (closed || activeInference?.inferenceId != active.inferenceId ||
+                                active.accepted.contextGeneration != currentContextGeneration ||
+                                active.accepted.scopeEpoch != currentScopeEpoch) false
+                            else { publication(); true }
+                        }
+                    }
+                    runCatching { pathPreparer?.invoke(active.accepted.frame, preparationContext) }
+                        .onFailure { pathInvalidated?.invoke() }
+                }, completion = completion)
             } catch (failure: Throwable) {
                 completion(
                     TrafficSignBackendResult.Unavailable(

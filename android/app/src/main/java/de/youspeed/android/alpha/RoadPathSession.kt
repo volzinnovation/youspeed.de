@@ -11,38 +11,75 @@ data class RoadPathCameraFrame(
     val preprocessingMs: Double, val startedAtNanos: Long,
     val rawWidth: Int = width, val rawHeight: Int = height, val rotationDegrees: Int = 0,
     val sensorToBuffer: List<Double> = listOf(1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0),
+    val sourceTimestampSeconds: Double? = null,
 )
 internal data class RoadPathLiveOverlay(val boundaries: List<RoadBoundaryEvidence>, val capturedAtSeconds: Double,
     val geometry: LaneImageGeometry)
 
 
+/** One admitted exposure. Pixel storage is discarded after preparation; geometry is reused exactly once. */
+class RoadPathPreparedFrame internal constructor(
+    internal val owner: RoadPathSession,
+    internal val frame: RoadPathCameraFrame,
+    val frameId: String,
+    internal val scope: TSRApplicabilityScope,
+    internal val key: String,
+    internal val location: RoadPathSession.LocationSnapshot,
+    internal val serial: Long,
+    val geometry: RoadBoundaryFrame,
+    val filterMs: Double,
+    val geometryMs: Double,
+    val preparationAddedMs: Double,
+    val preparationReadyNanos: Long,
+    internal val skipReason: String?,
+    internal val publicationAtSeconds: Double,
+    internal val publicationSuppressionReason: String?,
+) {
+    internal var consumed = false // Accessed only under the owner's serial evaluation lock.
+}
+
+
 class RoadPathSession(private val nowNanos: () -> Long = System::nanoTime) {
-    private data class Fix(val time: Double, val latitude: Double, val longitude: Double,
+    internal data class Fix(val time: Double, val latitude: Double, val longitude: Double,
         val course: Double, val speed: Double, val accuracy: Double, val courseAccuracy: Double)
-    private data class LocationSnapshot(val fixes: List<Fix>, val origin: Fix?, val epoch: Long, val overlayEpoch: Long)
+    internal data class LocationSnapshot(val fixes: List<Fix>, val origin: Fix?, val epoch: Long, val overlayEpoch: Long,
+        val duplicateFixesDropped: Long, val outOfOrderFixesDropped: Long)
     private val lock = Any()
     private val evaluationLock = Any()
     private val fixes = ArrayDeque<Fix>()
     private var origin: Fix? = null
     private var locationEpoch = 0L
+    private var duplicateFixesDropped = 0L
+    private var outOfOrderFixesDropped = 0L
     // Only the serial evaluator owns association history; location callbacks never mutate it.
     private var evaluatedLocationEpoch = -1L
     private var scope: String? = null
     private var lastCapture = Double.NEGATIVE_INFINITY
+    private var lastSourceTimestampSeconds: Double? = null
     private val histories = linkedMapOf<String, List<RoadPathObservation>>()
     private val detector = RoadBoundaryDetector()
     private var liveOverlay: RoadPathLiveOverlay? = null
     private var overlayEpoch = 0L
+    private var preparationSerial = 0L
     internal fun overlay(): RoadPathLiveOverlay? = synchronized(lock) { liveOverlay }
     fun invalidateOverlay() = synchronized(lock) { liveOverlay = null; overlayEpoch++ }
+
+    /** Explicit drive/clock lifecycle boundary. Re-delivered GNSS fixes are not a reset signal. */
+    fun resetTrajectory() = synchronized(lock) {
+        fixes.clear(); origin = null; locationEpoch++; liveOverlay = null; overlayEpoch++
+    }
 
     fun recordLocation(time: Double, latitude: Double, longitude: Double, course: Double,
         speed: Double, accuracy: Double, courseAccuracy: Double) = synchronized(lock) {
         if (!listOf(time, latitude, longitude, course, speed, accuracy, courseAccuracy).all(Double::isFinite)) return@synchronized
         if (latitude !in -90.0..90.0 || longitude !in -180.0..180.0 || course !in 0.0..<360.0 ||
             speed < 0 || accuracy < 0 || courseAccuracy < 0) return@synchronized
-        if (fixes.lastOrNull()?.let { time <= it.time } == true) {
-            fixes.clear(); origin = null; locationEpoch++; liveOverlay = null
+        val latestTime = fixes.lastOrNull()?.time
+        if (latestTime != null && time <= latestTime) {
+            // GPS and fused providers can deliver the same fix, or an older one, serially.
+            // Keep the first accepted trajectory immutable; neither arrival is new motion.
+            if (time == latestTime) duplicateFixesDropped++ else outOfOrderFixesDropped++
+            return@synchronized
         }
         val fix = Fix(time, latitude, longitude, course, speed, accuracy, courseAccuracy)
         if (origin == null) origin = fix
@@ -50,23 +87,110 @@ class RoadPathSession(private val nowNanos: () -> Long = System::nanoTime) {
         while (fixes.size > 32 || (fixes.firstOrNull()?.let { time - it.time > 8 } == true)) fixes.removeFirst()
     }
 
-    fun evaluate(frame: RoadPathCameraFrame, diagnostic: TSRApplicabilityDiagnostic): String = synchronized(evaluationLock) {
-        // Camera work and JSON encoding must not hold the lock polled by the main-thread overlay
-        // or by GNSS updates. Freeze one bounded, coherent location snapshot instead.
-        val location = synchronized(lock) { LocationSnapshot(fixes.toList(), origin, locationEpoch, overlayEpoch) }
-        if (evaluatedLocationEpoch != location.epoch) { histories.clear(); evaluatedLocationEpoch = location.epoch }
-        val batch = diagnostic.batch
-        val key = "${batch.scope.sessionId}:${batch.scope.generation}:${batch.scope.contextGeneration}:${batch.scope.traversalEpoch}:${batch.scope.bundleId}:${frame.geometryId}:${frame.calibration}"
-        if (scope != key || frame.capturedAtSeconds <= lastCapture) { histories.clear(); scope = key }
-        lastCapture = frame.capturedAtSeconds
-        val start = frame.startedAtNanos
-        fun elapsedMs() = (nowNanos() - start) / 1e6
-        val deadline = start + 200_000_000L
-        val geometryDeadline = start + 50_000_000L
-        val geometry = detector.detect(frame.grayscale, frame.width, frame.height, frame.capturedAtSeconds) {
-            nowNanos() < geometryDeadline
+    fun evaluate(frame: RoadPathCameraFrame, diagnostic: TSRApplicabilityDiagnostic): String =
+        evaluate(prepare(frame, diagnostic.batch.frameId, diagnostic.batch.scope), diagnostic)
+
+    /** Runs on the admitted frame's worker before TSR; the guard makes context validation/publication atomic. */
+    fun prepare(frame: RoadPathCameraFrame, frameId: String, scope: TSRApplicabilityScope,
+        publishIfCurrent: (() -> Unit) -> Boolean = { publication -> publication(); true }): RoadPathPreparedFrame = synchronized(evaluationLock) {
+        val location = synchronized(lock) { LocationSnapshot(fixes.toList(), origin, locationEpoch, overlayEpoch,
+            duplicateFixesDropped, outOfOrderFixesDropped) }
+        if (evaluatedLocationEpoch != location.epoch) {
+            histories.clear(); evaluatedLocationEpoch = location.epoch; lastCapture = Double.NEGATIVE_INFINITY
+            lastSourceTimestampSeconds = null
         }
-        val geometryMs = elapsedMs() - frame.preprocessingMs
+        val key = "${scope.sessionId}:${scope.generation}:${scope.contextGeneration}:${scope.traversalEpoch}:${scope.bundleId}:${frame.geometryId}:${frame.calibration}"
+        val sourceTimestamp = frame.sourceTimestampSeconds?.takeIf(Double::isFinite)
+        val previousSourceTimestamp = lastSourceTimestampSeconds
+        val sourceOrdering = sourceTimestamp != null && previousSourceTimestamp != null
+        val orderingTime = if (sourceOrdering) requireNotNull(sourceTimestamp) else frame.capturedAtSeconds
+        val previousOrderingTime = if (sourceOrdering) requireNotNull(previousSourceTimestamp) else lastCapture
+        var skipReason: String? = null
+        if (this.scope != key) { histories.clear(); this.scope = key }
+        else if (orderingTime <= previousOrderingTime) {
+            skipReason = if (orderingTime == previousOrderingTime) "duplicate_frame" else "out_of_order_frame"
+        }
+        if (skipReason == null) {
+            lastCapture = frame.capturedAtSeconds
+            lastSourceTimestampSeconds = sourceTimestamp
+            preparationSerial++
+        }
+        val filterStart = nowNanos()
+        val deadline = frame.startedAtNanos + 50_000_000L
+        val filtered = if (skipReason == null) RoadPathLaneFilter.apply(frame.grayscale, frame.width, frame.height) {
+            nowNanos() < deadline
+        } else null
+        val filteredAt = nowNanos()
+        var geometry = if (skipReason != null) RoadBoundaryFrame(emptyList(), emptyList(), frame.capturedAtSeconds) else
+            if (filtered == null) RoadBoundaryFrame(emptyList(), emptyList(), frame.capturedAtSeconds, budgetExceeded = true) else
+                detector.detect(filtered, frame.width, frame.height, frame.capturedAtSeconds) { nowNanos() < deadline }
+        val ready = nowNanos()
+        val addedMs = (ready - frame.startedAtNanos).coerceAtLeast(0L) / 1e6
+        if (skipReason == null && addedMs >= 50) {
+            geometry = RoadBoundaryFrame(emptyList(), emptyList(), frame.capturedAtSeconds,
+                budgetExceeded = true, operationCount = geometry.operationCount)
+        }
+        var publicationAtSeconds = System.currentTimeMillis() / 1000.0
+        var suppression = skipReason
+        if (skipReason == null) {
+            val current = publishIfCurrent {
+                synchronized(lock) {
+                    publicationAtSeconds = System.currentTimeMillis() / 1000.0
+                    suppression = when {
+                        locationEpoch != location.epoch -> "trajectory_reset"
+                        overlayEpoch != location.overlayEpoch -> "overlay_invalidated"
+                        addedMs >= 200 -> "added_processing_deadline"
+                        geometry.budgetExceeded -> "geometry_budget"
+                        !frame.clockKnown -> "capture_clock_unknown"
+                        else -> null
+                    }
+                    if (locationEpoch == location.epoch && overlayEpoch == location.overlayEpoch) {
+                        liveOverlay = if (suppression != null) null else RoadPathLiveOverlay(geometry.boundaries,
+                            frame.capturedAtSeconds, LaneImageGeometry(frame.rawWidth, frame.rawHeight,
+                                frame.rotationDegrees, frame.sensorToBuffer.toList()))
+                    }
+                }
+            }
+            if (!current) suppression = "context_invalidated"
+        }
+        RoadPathPreparedFrame(this, frame.copy(grayscale = ByteArray(0), sensorToBuffer = frame.sensorToBuffer.toList()),
+            frameId, scope, key, location, preparationSerial, geometry, (filteredAt-filterStart)/1e6,
+            (ready-filteredAt)/1e6, addedMs, ready, skipReason, publicationAtSeconds, suppression)
+    }
+
+    /** Consumes the exact prepared exposure after TSR. The intervening model time is not path processing. */
+    fun evaluate(prepared: RoadPathPreparedFrame, diagnostic: TSRApplicabilityDiagnostic): String = synchronized(evaluationLock) {
+        val frame = prepared.frame
+        val batch = diagnostic.batch
+        val location = prepared.location
+        val sourceTimestamp = frame.sourceTimestampSeconds?.takeIf(Double::isFinite)
+        fun skipped(reason: String) = buildJsonObject {
+            put("schemaVersion", 1); put("mode", "shadow"); put("frameId", batch.frameId)
+            put("capturedAtSeconds", frame.capturedAtSeconds); put("geometryId", frame.geometryId)
+            sourceTimestamp?.let { put("sourceTimestampSeconds", it) }
+            put("frameOrderingClock", if (sourceTimestamp != null) "source_exposure" else "capture_utc_fallback")
+            put("deadlineExceeded", false); put("reason", reason); putJsonArray("associations") {}
+        }.toString()
+        if (prepared.owner !== this || prepared.frameId != batch.frameId || prepared.scope != batch.scope)
+            return@synchronized skipped("prepared_frame_mismatch")
+        prepared.skipReason?.let { return@synchronized skipped(it) }
+        if (prepared.consumed || prepared.serial != preparationSerial) return@synchronized skipped("prepared_frame_already_consumed_or_superseded")
+        prepared.consumed = true
+        if (prepared.publicationSuppressionReason == "context_invalidated") return@synchronized skipped("context_invalidated")
+        val invalidation = synchronized(lock) {
+            when {
+                locationEpoch != location.epoch -> "trajectory_reset"
+                overlayEpoch != location.overlayEpoch -> "overlay_invalidated"
+                else -> null
+            }
+        }
+        if (invalidation != null) return@synchronized skipped(invalidation)
+        val key = prepared.key
+        val associationStart = nowNanos()
+        fun elapsedMs() = prepared.preparationAddedMs + (nowNanos() - associationStart).coerceAtLeast(0L) / 1e6
+        val deadline = associationStart + ((200 - prepared.preparationAddedMs).coerceAtLeast(0.0) * 1e6).toLong()
+        val geometry = prepared.geometry
+        val geometryMs = prepared.geometryMs
         val reference = location.origin
         val poses = if (reference == null) emptyList() else location.fixes.filter {
             it.time <= frame.capturedAtSeconds && frame.capturedAtSeconds - it.time <= 5
@@ -110,12 +234,24 @@ class RoadPathSession(private val nowNanos: () -> Long = System::nanoTime) {
         val encoded = buildJsonObject {
             put("schemaVersion", 1); put("mode", "shadow"); put("frameId", batch.frameId)
             put("capturedAtSeconds", frame.capturedAtSeconds); put("geometryId", frame.geometryId)
+            sourceTimestamp?.let { put("sourceTimestampSeconds", it) }
+            put("frameOrderingClock", if (sourceTimestamp != null) "source_exposure" else "capture_utc_fallback")
             put("imageWidth", if (frame.rotationDegrees % 180 == 0) frame.rawWidth else frame.rawHeight)
             put("imageHeight", if (frame.rotationDegrees % 180 == 0) frame.rawHeight else frame.rawWidth)
             put("captureClockKnown", frame.clockKnown); put("mountProfile", "test-bus-2026-09-29")
             put("cameraHeightMeters", 1.60); put("cameraLateralOffsetMeters", -0.08)
             put("calibrationAvailable", calibration != null); put("trajectorySamples", poses.size)
+            putJsonObject("locationIngestion") {
+                put("duplicateFixesDropped", location.duplicateFixesDropped)
+                put("outOfOrderFixesDropped", location.outOfOrderFixesDropped)
+                put("resetCount", location.epoch)
+            }
             put("preprocessingMs", frame.preprocessingMs); put("geometryMs", geometryMs)
+            put("laneFilter", RoadPathLaneFilter.ID); put("laneFilterMs", prepared.filterMs)
+            put("preparationAddedMs", prepared.preparationAddedMs)
+            put("preparationReadyNanos", prepared.preparationReadyNanos)
+            put("preparationBeforeTSR", true); put("preparedGeometryReused", true)
+            put("associationProcessingMs", (nowNanos() - associationStart).coerceAtLeast(0L) / 1e6)
             put("addedProcessingMs", elapsedMs()); put("deadlineExceeded", exceeded)
             put("geometryDeadlineExceeded", geometry.budgetExceeded)
             putJsonObject("imageMapping") { put("rawWidth", frame.rawWidth); put("rawHeight", frame.rawHeight)
@@ -182,13 +318,17 @@ class RoadPathSession(private val nowNanos: () -> Long = System::nanoTime) {
         }.toString()
         val totalMs = elapsedMs()
         val locationCurrent = synchronized(lock) {
-            if (locationEpoch != location.epoch) false else {
-                if (overlayEpoch == location.overlayEpoch) {
-                    liveOverlay = if (totalMs >= 200 || geometry.budgetExceeded || !frame.clockKnown) null else
-                        RoadPathLiveOverlay(geometry.boundaries, frame.capturedAtSeconds,
-                            LaneImageGeometry(frame.rawWidth, frame.rawHeight, frame.rotationDegrees, frame.sensorToBuffer))
-                }
-                true
+            if (totalMs >= 200 && locationEpoch == location.epoch && overlayEpoch == location.overlayEpoch) liveOverlay = null
+            locationEpoch == location.epoch
+        }
+        // Publication happened before TSR. Completion must never refresh the exposure's overlay TTL.
+        val publicationDetails = buildJsonObject {
+            put("overlayPublicationDecisionAtSeconds", prepared.publicationAtSeconds)
+            put("overlayPublished", prepared.publicationSuppressionReason == null)
+            prepared.publicationSuppressionReason?.let { put("overlayPublicationSuppressionReason", it) }
+            if (prepared.publicationSuppressionReason == null) {
+                put("overlayPublishedAtSeconds", prepared.publicationAtSeconds)
+                put("captureToOverlayPublicationMs", (prepared.publicationAtSeconds - frame.capturedAtSeconds) * 1000)
             }
         }
         if (totalMs >= 200 || !locationCurrent) {
@@ -196,9 +336,10 @@ class RoadPathSession(private val nowNanos: () -> Long = System::nanoTime) {
             return@synchronized buildJsonObject { put("schemaVersion", 1); put("mode", "shadow"); put("frameId", batch.frameId)
                 put("capturedAtSeconds", frame.capturedAtSeconds); put("geometryId", frame.geometryId)
                 put("deadlineExceeded", totalMs >= 200); put("totalAddedProcessingMs", totalMs)
-                put("reason", if (locationCurrent) "added_processing_deadline" else "trajectory_clock_discontinuity")
+                put("reason", if (locationCurrent) "added_processing_deadline" else "trajectory_reset")
+                publicationDetails.forEach { (key, value) -> put(key, value) }
                 putJsonArray("associations") {} }.toString()
         }
-        encoded.dropLast(1) + ",\"totalAddedProcessingMs\":" + totalMs + "}"
+        encoded.dropLast(1) + ",\"totalAddedProcessingMs\":" + totalMs + "," + publicationDetails.toString().drop(1)
     }
 }

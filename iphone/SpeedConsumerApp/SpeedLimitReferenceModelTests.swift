@@ -80,4 +80,73 @@ final class SpeedLimitReferenceModelTests: XCTestCase {
         }
         XCTAssertThrowsError(try SpeedLimitReferenceModel.load { _ in throw CocoaError(.fileNoSuchFile) })
     }
+
+    func testCameraReceiptReportsAcceptedAndDuplicateOffersWithoutChangingDeduplication() throws {
+        let runtime = SpeedReferenceRuntime(model: try SpeedLimitReferenceModel.load(read: read), now: { 0 })
+        runtime.camera(id: "old", value: .init(kind: "numeric", kmh: 70))
+        let accepted = try XCTUnwrap(runtime.camera(id: "new", value: .init(kind: "numeric", kmh: 80)))
+        XCTAssertEqual(accepted.offeredID, "new")
+        XCTAssertEqual(accepted.offeredKind, "camera")
+        XCTAssertEqual(accepted.before.value?.kmh, 70)
+        XCTAssertEqual(accepted.after.transition, "T03")
+        XCTAssertEqual(accepted.after.value?.kmh, 80)
+        XCTAssertEqual(accepted.after.evidenceID, "new")
+        let repeated = try XCTUnwrap(runtime.camera(id: "new", value: .init(kind: "numeric", kmh: 30)))
+        XCTAssertEqual(repeated.offeredValue.kmh, 30)
+        XCTAssertEqual(repeated.after.transition, "T11")
+        XCTAssertEqual(repeated.after.value?.kmh, 80)
+        XCTAssertEqual(runtime.output?.baselineKmh, 80)
+    }
+
+    func testCameraReceiptExposesPendingGateAndPreservesWithheldEvidenceBehavior() throws {
+        var now = 0.0
+        let runtime = SpeedReferenceRuntime(model: try SpeedLimitReferenceModel.load(read: read), now: { now })
+        runtime.context(way: "road", road: "ref:A", relations: [], direction: "forward", stable: true)
+        runtime.camera(id: "old", value: .init(kind: "numeric", kmh: 70))
+        now = 1
+        runtime.context(way: "ramp", road: "ref:B", relations: [], direction: "forward", stable: false)
+        let withheld = try XCTUnwrap(runtime.camera(id: "new", value: .init(kind: "numeric", kmh: 80)))
+        XCTAssertTrue(withheld.pendingContextBefore)
+        XCTAssertTrue(withheld.pendingContextAfter)
+        XCTAssertEqual(withheld.after.transition, "T11")
+        XCTAssertEqual(withheld.after.value?.kmh, 70)
+        now = 2
+        runtime.context(way: "road", road: "ref:A", relations: [], direction: "forward", stable: true)
+        let repeated = try XCTUnwrap(runtime.camera(id: "new", value: .init(kind: "numeric", kmh: 80)))
+        XCTAssertFalse(repeated.pendingContextBefore)
+        XCTAssertEqual(repeated.after.transition, "T11")
+        XCTAssertEqual(repeated.after.value?.kmh, 70)
+        XCTAssertTrue(repeated.diagnosticFields["gapBefore"] is NSNull)
+        XCTAssertTrue(repeated.diagnosticFields["seenBefore"] is NSNull)
+        XCTAssertEqual(repeated.diagnosticFields["gateDiagnosticAvailability"] as? String, "pending_context_only")
+        XCTAssertTrue(JSONSerialization.isValidJSONObject(repeated.diagnosticFields))
+    }
+
+    func testCameraReceiptDistinguishesAcceptedEnclosingOfferFromSelectedOrdinaryValue() throws {
+        let runtime = SpeedReferenceRuntime(model: try SpeedLimitReferenceModel.load(read: read), now: { 0 })
+        runtime.camera(id: "posted", value: .init(kind: "numeric", kmh: 70))
+        let receipt = try XCTUnwrap(runtime.camera(id: "zone", value: .init(kind: "numeric", kmh: 30), enclosing: true))
+        XCTAssertEqual(receipt.offeredKind, "camera_context")
+        XCTAssertEqual(receipt.after.transition, "T12")
+        XCTAssertEqual(receipt.after.evidenceID, "posted")
+        XCTAssertEqual(receipt.after.value?.kmh, 70)
+    }
+
+    func testCameraReceiptKeepsExpiryOriginsAndReportsActualRejection() throws {
+        var now = 0.0
+        let runtime = SpeedReferenceRuntime(model: try SpeedLimitReferenceModel.load(read: read), now: { now })
+        runtime.camera(id: "sign", value: .init(kind: "numeric", kmh: 70))
+        now = 300
+        let expired = try XCTUnwrap(runtime.camera(id: "sign", value: .init(kind: "numeric", kmh: 70)))
+        XCTAssertEqual(expired.before.state, "LAST_KNOWN")
+        XCTAssertEqual(expired.after.transition, "T11")
+        XCTAssertFalse(expired.after.current)
+        let rejected = try XCTUnwrap(runtime.camera(id: "invalid", value: .init(kind: "numeric", kmh: 0)))
+        XCTAssertEqual(rejected.after.transition, "REJECT")
+        XCTAssertEqual(rejected.after.rejection, "invalid_value")
+        XCTAssertEqual(rejected.after.evidenceID, "sign")
+        let fields = try XCTUnwrap(rejected.diagnosticFields["after"] as? [String: Any])
+        XCTAssertEqual(fields["rejection"] as? String, "invalid_value")
+        XCTAssertNil(SpeedReferenceRuntime(model: nil, now: { 0 }).camera(id: "sign", value: .init(kind: "numeric", kmh: 70)))
+    }
 }

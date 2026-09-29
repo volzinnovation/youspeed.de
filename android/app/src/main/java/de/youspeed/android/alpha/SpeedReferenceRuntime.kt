@@ -2,6 +2,29 @@ package de.youspeed.android.alpha
 
 import java.util.UUID
 
+/** Observation of one offer; never grants authority or retries withheld evidence. */
+internal data class SpeedReferenceCameraReceipt(
+    val offeredId: String,
+    val offeredValue: SpeedReferenceValue,
+    val offeredKind: String,
+    val before: SpeedReferenceOutput,
+    val after: SpeedReferenceOutput,
+    val pendingContextBefore: Boolean,
+    val pendingContextAfter: Boolean,
+) {
+    val diagnosticFields: Map<String, Any?> get() = mapOf(
+        "offeredId" to offeredId, "offeredValue" to offeredValue.json, "offeredKind" to offeredKind,
+        "before" to before.diagnosticFields(), "after" to after.diagnosticFields(),
+        "pendingContextBefore" to pendingContextBefore, "pendingContextAfter" to pendingContextAfter,
+        "gapBefore" to null, "seenBefore" to null, "gateDiagnosticAvailability" to "pending_context_only",
+    )
+    private fun SpeedReferenceOutput.diagnosticFields(): Map<String, Any?> = mapOf(
+        "state" to state, "value" to value?.json, "source" to source, "evidenceId" to evidenceId,
+        "current" to current, "generation" to generation, "applicabilityRevision" to applicabilityRevision,
+        "transition" to transition, "expiryReasons" to expiryReasons, "rejection" to rejection,
+    )
+}
+
 /** Thread-safe adapter for already interpreted pipeline/bundle inputs. No image or lane inference. */
 internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private val now: () -> Double = { System.nanoTime() / 1e9 }) {
     private val machine = model?.let(::SpeedReferenceMachine)
@@ -48,12 +71,19 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
     @Synchronized fun bundle(id: String, value: SpeedReferenceValue?, evaluatedApplicability: Map<String, Any?>? = null) {
         if (value == null) send("bundle_missing") else send("bundle", mapOf("id" to id, "value" to value.json, "verified" to true, "applicability" to (evaluatedApplicability ?: applicability())))
     }
-    @Synchronized fun camera(id: String, value: SpeedReferenceValue, enclosing: Boolean = false, evaluatedApplicability: Map<String, Any?>? = null) {
+    @Synchronized fun camera(id: String, value: SpeedReferenceValue, enclosing: Boolean = false, evaluatedApplicability: Map<String, Any?>? = null): SpeedReferenceCameraReceipt? {
         tick()
         val first = cameraOrigins.getOrPut(id) { (machine?.time ?: 0.0) to meters }
-        send(if (enclosing) "camera_context" else "camera", mapOf("id" to id, "value" to value.json, "verified" to true,
+        // Capture after the existing tick, immediately before the unchanged offer.
+        val before = machine?.project()
+        val pendingBefore = machine?.pendingContext
+        val kind = if (enclosing) "camera_context" else "camera"
+        val after = send(kind, mapOf("id" to id, "value" to value.json, "verified" to true,
             "applicability" to (evaluatedApplicability ?: applicability()), "observed_elapsed_s" to first.first, "observed_distance_m" to first.second,
             "area_verified" to enclosing, "scope_kind" to "zone"))
+        return if (before != null && after != null && pendingBefore != null)
+            SpeedReferenceCameraReceipt(id, value, kind, before, after, pendingBefore, machine!!.pendingContext)
+        else null
     }
     @Synchronized fun applicabilityContextChanged(revision: Int) { send("applicability_context_changed", mapOf("next_revision" to revision)) }
     @Synchronized fun pipelineAuthorityWithdrawn(evidenceId: String) {

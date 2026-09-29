@@ -29,6 +29,22 @@ private enum TrafficSignRuntimeLog {
         return formatter.string(from: date)
     }
 
+    static func lanePreparation(_ prepared: RoadPathPreparedFrame, tsrStartedAt: Double) {
+        var fields = prepared.publicationDetails
+        fields["frameId"] = prepared.frameId
+        fields["capturedAtSeconds"] = prepared.frame.capturedAtSeconds
+        fields["geometryId"] = prepared.frame.geometryId
+        fields["lanePreprocessingId"] = RoadBoundaryPreprocessor.identifier
+        fields["lanePreparationReadyUptimeSeconds"] = prepared.readyUptime
+        fields["tsrInferenceStartedUptimeSeconds"] = tsrStartedAt
+        fields["lanePreparedBeforeTsr"] = prepared.readyUptime <= tsrStartedAt
+        fields["preparationAddedMs"] = prepared.preparationMs
+        fields["geometryDeadlineExceeded"] = prepared.geometry.budgetExceeded
+        guard let data = try? JSONSerialization.data(withJSONObject: fields, options: [.sortedKeys]),
+              let json = String(data: data, encoding: .utf8) else { return }
+        logger.notice("timestamp=\(timestamp(), privacy: .public) tsr_path_preparation_v1=\(json, privacy: .public)")
+    }
+
     static func recoveredAuxiliaryFailure(stage: String, error: Error) {
         let nsError = error as NSError
         logger.warning(
@@ -1376,6 +1392,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         schedulingState.latestPendingLive = nil
         schedulingState.latestPendingStill = nil
         lock.unlock()
+        roadPathSession?.invalidateOverlay()
     }
 
     var metrics: TrafficSignRuntimeMetrics {
@@ -1475,7 +1492,36 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     private func perform(_ item: WorkItem) {
         inferenceQueue.async { [weak self] in
             guard let self else { return }
+            let dimensions = Self.orientedDimensions(for: item.image, orientation: item.orientation)
+            let frameScope = TSRApplicabilityScope(sessionId: item.snapshot.captureSessionId ?? "no-session",
+                bundleId: item.snapshot.context?.sourceSignature.bundleSHA256 ?? "unverified",
+                cameraGeometryId: "\(item.orientation.rawValue):\(dimensions.width)x\(dimensions.height)",
+                generation: item.snapshot.sessionGeneration, contextGeneration: item.snapshot.contextGeneration,
+                traversalEpoch: item.snapshot.context?.traversalEpoch ?? 0)
+            var preparedRoadPath: RoadPathPreparedFrame?
+            var preparationUnavailableReason = "frame_input_unavailable"
+            let prepare = { () -> Bool in
+                guard self.canDeliverCallback, self.isWorkItemStillCurrent(item) else { return false }
+                if let session = self.roadPathSession {
+                    let thermal = ProcessInfo.processInfo.thermalState
+                    if thermal == .serious || thermal == .critical {
+                        preparationUnavailableReason = "thermal_paused"; session.invalidateOverlay()
+                    } else if let capture = item.roadPathCapture, case .pixelBuffer(let pixel) = item.image,
+                              let frame = capture.frame(pixel: pixel, orientation: item.orientation) {
+                        preparedRoadPath = session.prepare(frame: frame, frameId: item.frameId, scope: frameScope,
+                            shouldPublish: { self.canDeliverCallback && self.isWorkItemStillCurrent(item) })
+                    } else { session.invalidateOverlay() }
+                }
+                return true
+            }
+            let token = TrafficSignGenerationToken(session: item.snapshot.sessionGeneration, context: item.snapshot.contextGeneration)
+            let admitted: Bool
+            if let gate = self.processingGate { admitted = gate.permit(for: token)?.consume(prepare) ?? false }
+            else { admitted = prepare() }
+            guard admitted else { self.discardStaleWorkItem(); return }
+            // The exact same admitted pixel buffer reaches TSR only after geometry is ready.
             let startedAt = ProcessInfo.processInfo.systemUptime
+            if let preparedRoadPath { TrafficSignRuntimeLog.lanePreparation(preparedRoadPath, tsrStartedAt: startedAt) }
             do {
                 let detections: [TrafficSignDetection]
                 let twoStageResult: TrafficSignTwoStageInferenceResultV2?
@@ -1525,12 +1571,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                         self.fusionSessionGeneration = item.snapshot.sessionGeneration
                         self.fusionContextGeneration = item.snapshot.contextGeneration
                     }
-                    let dimensions = Self.orientedDimensions(for: item.image, orientation: item.orientation)
-                    let scope = TSRApplicabilityScope(sessionId: item.snapshot.captureSessionId ?? "no-session",
-                        bundleId: item.snapshot.context?.sourceSignature.bundleSHA256 ?? "unverified",
-                        cameraGeometryId: "\(item.orientation.rawValue):\(dimensions.width)x\(dimensions.height)",
-                        generation: item.snapshot.sessionGeneration, contextGeneration: item.snapshot.contextGeneration,
-                        traversalEpoch: item.snapshot.context?.traversalEpoch ?? 0)
+                    let scope = frameScope
                     let candidates = detections.prefix(TSRApplicabilityConfiguration.maxCandidates).enumerated().map { index, detection in
                         let score = self.verifiedPack.manifest.calibration.runtimeOutput == .rawScore
                             ? detection.rawScore : detection.calibratedConfidence ?? -.infinity
@@ -1565,14 +1606,11 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                                 "boundaries": [], "associations": []]
                             return (try? JSONSerialization.data(withJSONObject: value)).flatMap { String(data: $0, encoding: .utf8) }
                         }
-                        let thermal = ProcessInfo.processInfo.thermalState
-                        if thermal == .serious || thermal == .critical {
-                            roadPathDiagnostic = skipped("thermal_paused")
-                        } else if let capture = item.roadPathCapture, case .pixelBuffer(let pixel) = item.image,
-                                  let frame = capture.frame(pixel: pixel, orientation: item.orientation) {
-                            roadPathDiagnostic = session.evaluate(frame: frame, diagnostic: applicability)
+                        if let preparedRoadPath {
+                            roadPathDiagnostic = session.evaluate(prepared: preparedRoadPath, diagnostic: applicability,
+                                tsrStartedAtUptime: startedAt)
                                 ?? skipped("path_processing_failed")
-                        } else { roadPathDiagnostic = skipped("frame_input_unavailable") }
+                        } else { roadPathDiagnostic = skipped(preparationUnavailableReason) }
                     } else { roadPathDiagnostic = nil }
                     let exitWithheld = TSRMotorwayExitPolicy.withheldCandidates(batch)
                     let accessWithheld = self.applicabilitySession.accessRoadWithheldCandidateIDs
@@ -1694,6 +1732,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     processed = nil
                 }
                 guard let processed else {
+                    self.roadPathSession?.invalidatePreparedOverlay(frameId: item.frameId)
                     notifyAdmissionMismatch(item, reason: "processing_gate_rejected")
                     self.discardStaleWorkItem()
                     return
@@ -1712,6 +1751,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     annotationEvent: processed.annotationEvent
                 )
             } catch {
+                self.roadPathSession?.invalidatePreparedOverlay(frameId: item.frameId)
                 self.handleInferenceFailure(item: item, error: error)
             }
         }

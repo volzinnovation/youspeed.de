@@ -4,6 +4,30 @@ import XCTest
 final class RoadBoundaryDetectorTests: XCTestCase {
     private let detector = RoadBoundaryDetector()
 
+    func testTopHat5MatchesUnsignedFloorSaturationAndBorderContract() throws {
+        // Five-pixel horizontal opening: isolated peaks open to10; 1.5× gain rounds down.
+        XCTAssertEqual(RoadBoundaryPreprocessor.topHat5(grayscale:[10,10,11,10,10],width:5,height:1),[10,10,12,10,10])
+        XCTAssertEqual(RoadBoundaryPreprocessor.topHat5(grayscale:[101,10,10,10,10],width:5,height:1),[237,10,10,10,10])
+        XCTAssertEqual(RoadBoundaryPreprocessor.topHat5(grayscale:[10,10,10,10,101],width:5,height:1),[10,10,10,10,237])
+        XCTAssertEqual(RoadBoundaryPreprocessor.topHat5(grayscale:[10,10,255,10,10],width:5,height:1),[10,10,255,10,10])
+        XCTAssertEqual(RoadBoundaryPreprocessor.topHat5(grayscale:[128,128,128,128,128],width:5,height:1),[128,128,128,128,128])
+        XCTAssertEqual(RoadBoundaryPreprocessor.topHat5(grayscale:[200,20],width:1,height:2),[200,20])
+    }
+
+    func testTopHat5CancellationAndInvalidBuffersNeverReturnPartialPixels() {
+        XCTAssertNil(RoadBoundaryPreprocessor.topHat5(grayscale:[1],width:0,height:1))
+        XCTAssertNil(RoadBoundaryPreprocessor.topHat5(grayscale:[1],width:2,height:1))
+        var calls = 0
+        XCTAssertNil(RoadBoundaryPreprocessor.topHat5(grayscale:[UInt8](repeating:100,count:384*216),width:384,height:216,
+            shouldContinue:{ calls += 1; return calls<30 }))
+        XCTAssertEqual(calls,30)
+        // Cancel during dilation as well as erosion.
+        calls = 0
+        XCTAssertNil(RoadBoundaryPreprocessor.topHat5(grayscale:[10,10,20,10,10],width:5,height:1,
+            shouldContinue:{ calls += 1; return calls<5 }))
+        XCTAssertEqual(calls,5)
+    }
+
     // Same deterministic fixtures and assertions as RoadBoundaryDetectorTests.kt.
     private func scene(_ kind: String, width: Int = 384, height: Int = 216) -> [UInt8] {
         var image = [UInt8](repeating: 55, count: width * height)

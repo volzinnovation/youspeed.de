@@ -179,6 +179,10 @@ internal class CameraXTrafficSignFrame(
     private val pathCaptureSeconds = capturedAtUtc.toEpochMilli() / 1000.0 -
         if (pathClockKnown) (android.os.SystemClock.elapsedRealtimeNanos() - image.imageInfo.timestamp) / 1e9 else 0.0
 
+    var preparedRoadPath: RoadPathPreparedFrame? = null
+    var roadPathPreparationFailure: String? = null
+    var roadPathInferenceStartedNanos: Long? = null
+
     fun roadPathFrame(): RoadPathCameraFrame? {
         val start = System.nanoTime()
         if (!pathCaptureSeconds.isFinite()) return null
@@ -193,7 +197,8 @@ internal class CameraXTrafficSignFrame(
         return RoadPathCameraFrame(bytes, width, height, pathCaptureSeconds,
             "$pathCameraGeneration:${image.width}x${image.height}:$rotationDegrees:${values.joinToString()}",
             pathIntrinsics?.calibration(image), pathClockKnown, (System.nanoTime() - start) / 1e6, start,
-            image.width, image.height, rotationDegrees, values.map(Float::toDouble))
+            image.width, image.height, rotationDegrees, values.map(Float::toDouble),
+            sourceTimestampSeconds = image.imageInfo.timestamp / 1e9)
     }
 
     fun <T> withOrientedBitmap(rotationBuffer: AndroidTrafficSignBitmapRotation, consume: (Bitmap) -> T): T {
@@ -673,6 +678,12 @@ internal class AndroidLiteRtTrafficSignBackend(
     override fun recognize(
         frame: CameraXTrafficSignFrame,
         completion: (TrafficSignBackendResult) -> Unit,
+    ) = recognize(frame, {}, completion)
+
+    override fun recognize(
+        frame: CameraXTrafficSignFrame,
+        beforeInference: () -> Unit,
+        completion: (TrafficSignBackendResult) -> Unit,
     ) {
         val queuedAtNanos = System.nanoTime()
         if (closed.get()) {
@@ -680,6 +691,9 @@ internal class AndroidLiteRtTrafficSignBackend(
             return
         }
         executor.execute {
+            val workerStartedAtNanos = System.nanoTime()
+            beforeInference()
+            frame.roadPathInferenceStartedNanos = System.nanoTime()
             val conversionStartedAtNanos = System.nanoTime()
             val result = runCatching {
                 frame.withOrientedBitmap(rotationBuffer) { bitmap ->
@@ -712,7 +726,7 @@ internal class AndroidLiteRtTrafficSignBackend(
                             detectorPreprocessingMs = inference.detectorPreprocessingMs,
                             detectorInferenceMs = inference.detectorInferenceMs,
                             classifierInferenceMs = inference.classifierInferenceMs,
-                            backendQueueWaitMs = (conversionStartedAtNanos - queuedAtNanos) / 1_000_000.0,
+                            backendQueueWaitMs = (workerStartedAtNanos - queuedAtNanos) / 1_000_000.0,
                             frameConversionMs = conversionMs,
                             cameraReceiptToResultMs = (System.nanoTime() - frame.receivedAtNanos) / 1_000_000.0,
                         ),
@@ -925,20 +939,38 @@ internal class AndroidTrafficSignCameraRuntime(
                     val pack = AndroidTrafficSignModelPackLoader.load(context, countryCode)
                     val runtimeBackend = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState, context)
                     val runtimeBridge = try { TrafficSignLiveRuntimeBridge(
-                        pathEvaluator = { frame: CameraXTrafficSignFrame, diagnostic ->
+                        pathPreparer = { frame: CameraXTrafficSignFrame, preparation ->
                             val thermal = context.getSystemService(PowerManager::class.java)?.currentThermalStatus ?: PowerManager.THERMAL_STATUS_NONE
-                            fun skipped(reason: String): String {
+                            if (thermal >= PowerManager.THERMAL_STATUS_SEVERE) {
+                                frame.roadPathPreparationFailure = "thermal_paused"
                                 controller.roadPathSession.invalidateOverlay()
-                                return org.json.JSONObject().apply {
+                            } else runCatching {
+                                val input = frame.roadPathFrame()
+                                if (input == null) {
+                                    frame.roadPathPreparationFailure = "frame_input_unavailable"
+                                    controller.roadPathSession.invalidateOverlay()
+                                } else frame.preparedRoadPath = controller.roadPathSession.prepare(input, frame.frameId,
+                                    preparation.scope, preparation.publishIfCurrent)
+                            }.onFailure {
+                                frame.roadPathPreparationFailure = "path_processing_failed"
+                                controller.roadPathSession.invalidateOverlay()
+                            }
+                        },
+                        pathInvalidated = controller.roadPathSession::invalidateOverlay,
+                        pathEvaluator = { frame: CameraXTrafficSignFrame, diagnostic ->
+                            val prepared = frame.preparedRoadPath
+                            val result = if (prepared != null) controller.roadPathSession.evaluate(prepared, diagnostic) else
+                                org.json.JSONObject().apply {
                                     put("schemaVersion", 1); put("mode", "shadow"); put("frameId", frame.frameId)
-                                    put("reason", reason); put("capturedAtSeconds", frame.capturedAtUtc.toEpochMilli() / 1000.0)
+                                    put("reason", frame.roadPathPreparationFailure ?: "frame_not_prepared")
+                                    put("capturedAtSeconds", frame.capturedAtUtc.toEpochMilli() / 1000.0)
                                     put("captureClockKnown", false); put("geometryId", "unavailable:${frame.widthPixels}x${frame.heightPixels}")
                                     put("boundaries", org.json.JSONArray()); put("associations", org.json.JSONArray())
                                 }.toString()
-                            }
-                            if (thermal >= PowerManager.THERMAL_STATUS_SEVERE) skipped("thermal_paused") else
-                                runCatching { frame.roadPathFrame()?.let { controller.roadPathSession.evaluate(it, diagnostic) }
-                                    ?: skipped("frame_input_unavailable") }.getOrElse { skipped("path_processing_failed") }
+                            // Same worker's monotonic values demonstrate ordering; this is not UI render telemetry.
+                            org.json.JSONObject(result).apply {
+                                frame.roadPathInferenceStartedNanos?.let { put("inferenceStartedNanos", it) }
+                            }.toString()
                         },
                         controller = controller,
                         modelPack = pack.modelPack,

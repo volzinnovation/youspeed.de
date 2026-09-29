@@ -43,6 +43,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -356,6 +358,14 @@ internal fun RecorderPreviewWorkspace(
     }
 }
 
+private object LanePreviewStyle {
+    val color = Color(0xFF39FF14)
+    // The camera eye and outer sign ring are about 4–6 dp on the dashboard.
+    val strokeWidth = 5.dp
+    val dotDiameter = 8.dp
+    val outlineWidth = 1.dp
+}
+
 @Composable
 private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
     val snapshot = controller.laneRuntimeSnapshot
@@ -379,14 +389,28 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
     val pathAge = pathOverlay?.let { System.currentTimeMillis() / 1000.0 - it.capturedAtSeconds }
     val freshPath = pathOverlay?.takeIf { pathAge != null && pathAge >= 0 && pathAge < 0.75 }
     Canvas(Modifier.fillMaxSize().testTag("detected-lanes-overlay")) {
+        val strokeWidth = LanePreviewStyle.strokeWidth.toPx()
+        val dotRadius = LanePreviewStyle.dotDiameter.toPx() / 2f
+        val outlineWidth = LanePreviewStyle.outlineWidth.toPx()
+        fun drawBoundary(points: List<LanePoint>, opacity: Float) {
+            if (points.isEmpty()) return
+            val outline = Path().apply { points.forEachIndexed { i, p ->
+                if (i == 0) moveTo(p.x.toFloat(), p.y.toFloat()) else lineTo(p.x.toFloat(), p.y.toFloat())
+            } }
+            val halo = Color.Black.copy(alpha = opacity * 0.8f)
+            val color = LanePreviewStyle.color.copy(alpha = opacity)
+            drawPath(outline, halo, style = Stroke(width = strokeWidth + outlineWidth * 2,
+                cap = StrokeCap.Round, join = StrokeJoin.Round))
+            points.forEach { p -> drawCircle(halo, dotRadius + outlineWidth, Offset(p.x.toFloat(), p.y.toFloat())) }
+            drawPath(outline, color, style = Stroke(width = strokeWidth,
+                cap = StrokeCap.Round, join = StrokeJoin.Round))
+            points.forEach { p -> drawCircle(color, dotRadius, Offset(p.x.toFloat(), p.y.toFloat())) }
+        }
         if (freshPath != null && preview != null) {
             val fade = if (pathAge!! <= 0.3) 1f else ((0.75-pathAge)/0.45).toFloat()
             freshPath.boundaries.forEach { boundary ->
                 val points = boundary.points.mapNotNull { LaneOverlayGeometry.project(it, freshPath.geometry, preview) }
-                val outline = Path().apply { points.forEachIndexed { i,p ->
-                    if (i == 0) moveTo(p.x.toFloat(),p.y.toFloat()) else lineTo(p.x.toFloat(),p.y.toFloat())
-                } }
-                drawPath(outline, Color(0xFF67E8F9).copy(alpha = fade * boundary.confidence.toFloat()), style = Stroke(width=2.dp.toPx()))
+                drawBoundary(points, fade)
             }
             return@Canvas
         }
@@ -404,16 +428,14 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
         }
         val left = points(estimate.left)
         val right = points(estimate.right)
-        val color = if (estimate.hasReliablePair) Color(0xFF5EEAD4) else Color(0xFFFBBF24)
+        val color = LanePreviewStyle.color
         val corridor = estimate.corridorPoints.mapNotNull { LaneOverlayGeometry.project(it, geometry, destination) }
         if (corridor.size >= 4) {
             val area = path(corridor).apply { close() }
             drawPath(area, color.copy(alpha = opacity * 0.10f))
         }
         listOf(left to estimate.left, right to estimate.right).forEach { (points, boundary) ->
-            if (points.size >= 2 && boundary != null) drawPath(path(points),
-                color.copy(alpha = opacity * boundary.confidence.toFloat().coerceIn(0f, 1f)),
-                style = Stroke(width = 2.dp.toPx()))
+            if (points.size >= 2 && boundary != null) drawBoundary(points, opacity)
         }
         if (left.size >= 2 || right.size >= 2) controller.onLaneOverlayPainted(snapshot)
     }

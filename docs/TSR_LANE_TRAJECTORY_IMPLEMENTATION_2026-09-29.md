@@ -8,6 +8,10 @@ source. It cannot grant or remove sign authority, synthesize sign absence, or
 change passage handling. The protected speed-reference policy is unchanged.
 The existing visual TSR output remains the state machine's input.
 
+The first-drive findings, timestamp-ingestion correction, and proposed single
+frame source for dashcam, TSR, lanes and Panoramax are documented in the
+[capture correction proposal](TSR_CAPTURE_CORRECTION_PROPOSAL_2026-09-29.md).
+
 This is an implemented research comparison, not a demonstrated general solution.
 The [NVIDIA description](https://blogs.nvidia.com/blog/drive-labs-ai-based-live-perception/)
 separates sign detection/classification from path perception and sign-to-path
@@ -16,9 +20,13 @@ geometry instead of assuming NVIDIA's models or hardware are available on a phon
 
 ## Implemented stages
 
-1. After a live TSR frame is recognized, read its still-owned luminance plane.
-   Preserve its upright aspect ratio within **384 × 216**; no second full-resolution
-   model, GPU inference, camera session, retained image or network request is added.
+1. On each admitted live TSR frame, read its still-owned luminance plane **before
+   sign inference**. Preserve its upright aspect ratio within **384 × 216**, apply
+   the Moto-tested horizontal top-hat5 enhancement, then extract and publish lane
+   geometry. The filter is `min(255, gray + floor(1.5 × (gray − opening5×1)))`.
+   Immutable prepared geometry remains attached to this exact exposure and scope;
+   later visual sign/path association reuses it without a second detector call.
+   No second full-resolution model, GPU inference or camera session is added.
 2. `RoadBoundaryDetector` samples 24 rows using prefix sums. It retains bounded
    piecewise curves, paint/edge cue provenance and confidence, up to six boundaries
    and two unassigned corridor hypotheses. Edges alone do not establish a corridor.
@@ -44,7 +52,8 @@ geometry instead of assuming NVIDIA's models or hardware are available on a phon
    not calibrated probabilities.
 
 The total added path has a **200 ms** cooperative deadline, including preparation,
-geometry, association and diagnostic serialization. Late outputs clear the live
+geometry, association and diagnostic serialization. The intervening TSR inference
+interval is excluded from this extra-work budget. Late outputs clear the live
 geometry and associations. An operating system can deschedule a thread beyond a
 cooperative deadline; the benchmark reports such misses instead of claiming a
 hard real-time guarantee. The path runs on the existing inference worker and adds
@@ -114,6 +123,22 @@ confirmation, and clears evidence across stale, mismatched or over-budget frames
 See [Inspector instructions](../inspector/README.md). Live overlays fade and expire
 within 750 ms and represent observed boundaries, not a driving instruction.
 
+The dashboard uses bright green (`#39FF14`) rounded 5 dp/pt boundary lines and
+8 dp/pt sample dots with dark outlines. Fresh markers retain full opacity even
+when confidence is low; the uncertainty label and age-based expiry still apply.
+
+`speed_reference_camera_offer_v1` records the offered camera value, evidence ID,
+ordinary/enclosing kind, producer provenance, and reference output immediately
+before and after the offer. Pending-context state and available producer
+frame/capture or finalized-passage joins are included. Consecutive identical
+receipts are suppressed. Android writes structured JSON fields; iPhone writes
+JSON after `speed_reference_camera_offer_v1=`. Missing joins are null, and
+`gateDiagnosticAvailability=pending_context_only` explicitly means that internal
+gap/dedup state was not exposed. This receipt does not grant authority, retry an
+offer or refresh its expiry. Older `displayAccepted` and
+`traffic_sign_speed_state_applied` records describe intermediate stages and must
+not be treated as proof of the final dashboard value.
+
 ## Validation and remaining qualification
 
 On 29 September 2026, the Android suite passed **476 tests**, the iPhone app built,
@@ -143,3 +168,29 @@ qualification must preserve the paired main-road 90 and taken-exit 50 while
 rejecting the reviewed access-road 30, and cover the unmarked Swiss junction,
 curves, left branches, shadows, night, occlusion and same-carriageway signs.
 Ground truth must remain separate from all causal features.
+
+## Build 10017: pre-TSR lane preparation
+
+The owner requested enabling the best phone-tested compatible filter and running
+lane extraction ahead of TSR. Both platforms now prepare top-hat5-enhanced luma
+and geometry from the admitted exposure before the sign backend. The lane
+overlay is published immediately; post-inference association consumes that
+prepared frame and preserves its original exposure age. Session/scope changes,
+duplicate exposures, budget expiration and invalidated work cannot refresh it.
+The sign model still receives the original image.
+
+On the Moto g86, a 25-second section of the fourth recording was replayed with
+the actual bundled detector/classifier and the production path session. All
+50 selected frames prepared lane geometry before TSR; all used the GPU for TSR.
+Added path time (both phases, including luma sampling and path serialization)
+was p95 **43.49 ms**, maximum **66.68 ms**, with zero 200 ms misses. Two geometry
+preparations exceeded 50 ms and returned empty geometry. Boundaries were present
+in the other 48 frames; this is availability, not an accuracy score. All 19
+measured sign/path associations remained unknown under the recovered motion
+and calibration limitations. These results do not qualify general sign rejection.
+
+The test is unpaced decoded-video replay, not live camera/encoder contention or
+a rendered-overlay latency measurement. Captured video is 1280×720 while the
+existing live analysis stream is 1600×1200; a unified encoded-frame source remains
+the separate capture proposal. Build 10017 keeps the state-machine input as
+visual TSR and makes no changes to the protected reference policy.

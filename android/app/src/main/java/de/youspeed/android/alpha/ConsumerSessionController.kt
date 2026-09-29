@@ -621,6 +621,7 @@ class ConsumerSessionController(
     private var activeVoskSpeedCaptureSession: VoskSpeedCaptureSession? = null
     private val visionDismissalWindow = VisionDismissalWindow()
     @Volatile private var offeredVisionDismissalEvidence: VisionDismissalEvidence? = null
+    private var lastCameraReferenceOfferDiagnostic: Map<String, Any?>? = null
     private var activeVisionDismissalSession: VoskSpeedCaptureSession? = null
     private var visionDismissalReconciliationActive = false
     private var visionDismissalPermissionRequested = false
@@ -1161,13 +1162,14 @@ class ConsumerSessionController(
         preferences.edit().putBoolean("youspeed.drive_recorder.show_detected_lanes", enabled).apply()
         updateState { copy(showDetectedLanes = enabled) }
         clearLanePreview()
-        reconcileTrafficSignCamera()
+        reconcileTrafficSignCamera(reason = "lane_overlay_toggle")
     }
 
     internal fun setLanePreviewVisible(visible: Boolean) {
         if (lanePreviewVisible == visible) return
         lanePreviewVisible = visible
         clearLanePreview()
+        appendCaptureConfigurationDiagnostic("lane_preview_visibility")
     }
 
     internal fun setLanePreviewGeometry(geometry: LanePreviewGeometry?) {
@@ -2093,11 +2095,15 @@ class ConsumerSessionController(
             return
         }
         if (!isDriving) {
+            roadPathSession.resetTrajectory()
             cancelVisionDismissalListening()
             visionDismissalWindow.resetForNewDrive()
             lastKnownLimitPresentation.reset()
             speedReference.reset()
-            synchronized(trafficSignStateLock) { visionDismissalGate = VisionDismissalGate() }
+            synchronized(trafficSignStateLock) {
+                visionDismissalGate = VisionDismissalGate()
+                lastCameraReferenceOfferDiagnostic = null
+            }
             speedReferenceLastLocation = null
         }
         speedReference.onTransition = { reference -> appendRuntimeDiagnosticEvent("speed_reference", mapOf(
@@ -2130,6 +2136,7 @@ class ConsumerSessionController(
     }
 
     fun stopDriving() {
+        if (isDriving) roadPathSession.resetTrajectory()
         mainHandler.removeCallbacks(speedReferenceTick)
         speedReference.reset()
         synchronized(trafficSignStateLock) { visionDismissalGate = VisionDismissalGate() }
@@ -2581,12 +2588,21 @@ class ConsumerSessionController(
     fun currentSpeedMetersPerSecondForTrafficSignAnalysis(): Double =
         (uiState.currentSpeedKmh / 3.6).takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
 
-    private fun reconcileTrafficSignCamera() {
-        val shouldRun = !shouldPresentOnboarding() && (isTrafficSignRecognitionRuntimeEnabled() || isDriveRecorderSessionActive() || isPanoramaxCaptureEnabled()) && uiState.appScreenshotState == null
+    private fun appendCaptureConfigurationDiagnostic(reason: String) {
         appendRuntimeDiagnosticEvent("capture_configuration", mapOf(
+            "schemaVersion" to 1, "reason" to reason,
             "photosSelected" to panoramaxCaptureEnabled, "photosEnabled" to isPanoramaxCaptureEnabled(),
             "dashcamEnabled" to isDashcamRecordingEnabled(), "recognitionEnabled" to isTrafficSignRecognitionRuntimeEnabled(),
-            "applicationActive" to applicationActive, "driving" to isDriving))
+            "applicationActive" to applicationActive, "driving" to isDriving,
+            "showDetectedLanes" to uiState.showDetectedLanes,
+            "laneOverlaySource" to if (isTrafficSignRecognitionRuntimeEnabled()) "road_path" else "legacy",
+            "previewVisibilityAvailable" to true, "previewVisible" to lanePreviewVisible,
+            "previewGeometryAvailable" to (lanePreviewGeometry != null)))
+    }
+
+    private fun reconcileTrafficSignCamera(reason: String = "capture_state") {
+        val shouldRun = !shouldPresentOnboarding() && (isTrafficSignRecognitionRuntimeEnabled() || isDriveRecorderSessionActive() || isPanoramaxCaptureEnabled()) && uiState.appScreenshotState == null
+        appendCaptureConfigurationDiagnostic(reason)
         if (!isPanoramaxCaptureEnabled()) endPanoramaxCaptureSession()
         if (!shouldRun) {
             clearLanePreview()
@@ -2980,19 +2996,55 @@ class ConsumerSessionController(
         }
     }
 
-    private fun offerCameraReference(effective: EffectiveSpeedLimit, passage: TrafficSignPassageEvent? = null) {
+    private fun offerCameraReference(
+        effective: EffectiveSpeedLimit,
+        passage: TrafficSignPassageEvent? = null,
+        immediateOverride: TrafficSignSpeedOverride? = synchronized(trafficSignStateLock) { immediateTrafficSignOverride },
+    ) {
         if (effective.cameraEvidence && (effective.resolution == null || effective.resolution.kind == TrafficSignResolvedLimitKind.UNKNOWN)) {
             speedReference.pipelineAuthorityWithdrawn(passage?.physicalTrackId ?: synchronized(trafficSignStateLock) { trafficSignResolver.activeAssertion()?.event?.physicalTrackId } ?: effective.presentationReason)
         }
         if (effective.source != EffectiveSpeedLimitSource.CAMERA) return
         synchronized(trafficSignStateLock) {
             val active = trafficSignResolver.activeAssertion()?.event
-            val id = passage?.physicalTrackId ?: active?.physicalTrackId ?: immediateTrafficSignOverride?.trackId ?: return
-            val enclosing = trafficSignResolver.hasActiveEnclosingSpeedRule()
+            val offer = TrafficSignCameraReferenceOffer.select(
+                presentationReason = effective.presentationReason,
+                presentedSpeedKmh = effective.resolution?.takeIf { it.kind == TrafficSignResolvedLimitKind.NUMERIC }?.speedKmh,
+                immediateTrackId = immediateOverride?.trackId,
+                immediateSpeedKmh = immediateOverride?.speedKmh,
+                passageTrackId = passage?.physicalTrackId,
+                resolverTrackId = active?.physicalTrackId,
+                resolverEnclosing = trafficSignResolver.hasActiveEnclosingSpeedRule(),
+            ) ?: return
             effective.resolution?.referenceValue()?.let {
-                speedReference.camera(id + if (enclosing) ":enclosing" else "", it, enclosing)
+                speedReference.camera(offer.evidenceId, it, offer.enclosing)?.let { receipt ->
+                    val fields = receipt.diagnosticFields + mapOf(
+                        "provenance" to offer.provenance,
+                        "presentationReason" to effective.presentationReason,
+                    )
+                    // Keep only one small snapshot; unchanged reconciles need no duplicate log.
+                    if (fields != lastCameraReferenceOfferDiagnostic) {
+                        lastCameraReferenceOfferDiagnostic = fields
+                        val producerPassage = (passage ?: active)?.takeIf {
+                            offer.provenance != "immediate" && it.physicalTrackId == offer.trackId
+                        }
+                        val producerEvent = uiState.trafficSignLastEvent?.takeIf {
+                            offer.provenance == "immediate" && it.candidate?.trackId == offer.trackId &&
+                                it.frameTimestampUtc == immediateOverride?.detectedAtUtc
+                        }
+                        val joined = fields + mapOf(
+                            "producerCaptureTimestampUTC" to immediateOverride?.detectedAtUtc?.takeIf { offer.provenance == "immediate" }?.toString(),
+                            "producerFrameId" to producerEvent?.frameId,
+                            "producerSemanticKind" to producerEvent?.candidate?.semantic?.kind?.wireValue,
+                            "producerPassageEventId" to producerPassage?.finalizedEventId,
+                            "producerPassageAction" to producerPassage?.action?.kind?.wireValue,
+                        )
+                        // JSONObject.put does not recursively wrap Map values; preserve structured receipts.
+                        appendRuntimeDiagnosticEvent("speed_reference_camera_offer_v1", joined.mapValues { JSONObject.wrap(it.value) })
+                    }
+                }
                 offeredVisionDismissalEvidence = if (it.kind == "numeric" && it.kmh != null)
-                    VisionDismissalEvidence(trafficSignGeneration.get(), id, it.kmh) else null
+                    VisionDismissalEvidence(trafficSignGeneration.get(), offer.trackId, it.kmh) else null
             }
         }
     }
@@ -3004,13 +3056,13 @@ class ConsumerSessionController(
         expectedRevision: Long,
         submittedAtNanos: Long,
     ) {
-        val presented = synchronized(trafficSignStateLock) {
-            if (latestTrafficSignBase.isUserCorrection) return@synchronized latestTrafficSignBase.effective()
+        val (presented, presentedOverride) = synchronized(trafficSignStateLock) {
+            if (latestTrafficSignBase.isUserCorrection) return@synchronized latestTrafficSignBase.effective() to null
             val override = TrafficSignSpeedOverridePolicy.currentForPresentation(
                 immediateTrafficSignOverride, latestTrafficSignContext, clock.instant(),
             )
             immediateTrafficSignOverride = override
-            if (override != null && effective.source != EffectiveSpeedLimitSource.CAMERA &&
+            val selected = if (override != null && effective.source != EffectiveSpeedLimitSource.CAMERA &&
                 !effective.isUserCorrection && !effective.cameraEvidence) {
                 EffectiveSpeedLimit(
                     resolution = TrafficSignResolvedLimit(
@@ -3024,6 +3076,7 @@ class ConsumerSessionController(
             } else {
                 effective
             }
+            selected to override
         }
         val resolution = presented.resolution
         if (passage != null && presented.source == EffectiveSpeedLimitSource.CAMERA && resolution?.kind == TrafficSignResolvedLimitKind.NUMERIC) {
@@ -3055,7 +3108,7 @@ class ConsumerSessionController(
                 trafficSignStateRevision.get() != expectedRevision ||
                 !trafficSignRecognitionEnabled || !this@ConsumerSessionController.isDriving
             ) this else {
-                offerCameraReference(presented, passage)
+                offerCameraReference(presented, passage, presentedOverride)
                 appendRuntimeDiagnosticEvent("traffic_sign_speed_state_applied", mapOf(
                     "eventId" to passage?.finalizedEventId,
                     "deliveryToStateMs" to (System.nanoTime() - submittedAtNanos) / 1_000_000.0,
