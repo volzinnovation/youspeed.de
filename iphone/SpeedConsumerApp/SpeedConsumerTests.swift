@@ -13,6 +13,63 @@ import UIKit
 
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
+final class StartupLogStoreTests: XCTestCase {
+    func testCombinedSizeThresholdAndCheckingPreservesLogs() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let gps = root.appendingPathComponent("gps_fix_log.csv")
+        let archived = root.appendingPathComponent("20260928_120000_drive_match_log.ndjson")
+        for (url, size) in [(gps, UInt64(60_000_000)), (archived, UInt64(39_999_999))] {
+            try Data().write(to: url)
+            let handle = try FileHandle(forWritingTo: url)
+            try handle.truncate(atOffset: size)
+            try handle.close()
+        }
+        XCTAssertFalse(StartupLogStore.requiresReview(bytes: try StartupLogStore.totalBytes(in: root)))
+        let handle = try FileHandle(forWritingTo: archived)
+        defer { try? handle.close() }
+        try handle.truncate(atOffset: 40_000_000)
+        XCTAssertEqual(try StartupLogStore.totalBytes(in: root), 100_000_000)
+        XCTAssertFalse(StartupLogStore.requiresReview(bytes: try StartupLogStore.totalBytes(in: root)))
+        try handle.truncate(atOffset: 40_000_001)
+        XCTAssertTrue(StartupLogStore.requiresReview(bytes: try StartupLogStore.totalBytes(in: root)))
+        XCTAssertEqual(try StartupLogStore.totalBytes(in: root), 100_000_001)
+    }
+
+    func testClearIncludesRetainedSessionsAndPreservesOtherDataAndSymlinks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let names = ["gps_fix_log.csv", "drive_match_log.ndjson", "tsr_log.ndjson",
+                     "20260928_120000_drive_match_log.ndjson", "20260928_120000_tsr_log.ndjson"]
+        for name in names { try Data("saved log".utf8).write(to: root.appendingPathComponent(name)) }
+        let map = root.appendingPathComponent("speeds_v3.sqlite")
+        try Data("map".utf8).write(to: map)
+        let photos = root.appendingPathComponent("photos")
+        try FileManager.default.createDirectory(at: photos, withIntermediateDirectories: true)
+        let photo = photos.appendingPathComponent("photo.jpg")
+        try Data("photo".utf8).write(to: photo)
+        let link = root.appendingPathComponent("linked_tsr_log.ndjson")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: map)
+        XCTAssertEqual(try StartupLogStore.totalBytes(in: root), 45)
+        try StartupLogStore.clear(in: root)
+        XCTAssertEqual(try StartupLogStore.totalBytes(in: root), 0)
+        XCTAssertEqual(try String(contentsOf: map), "map")
+        XCTAssertEqual(try String(contentsOf: photo), "photo")
+        XCTAssertTrue(try link.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink == true)
+    }
+
+    func testMissingDirectoryIsEmptyButInvalidDirectoryReportsFailure() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        XCTAssertEqual(try StartupLogStore.totalBytes(in: root), 0)
+        try Data("file".utf8).write(to: root)
+        defer { try? FileManager.default.removeItem(at: root) }
+        XCTAssertThrowsError(try StartupLogStore.totalBytes(in: root))
+        XCTAssertThrowsError(try StartupLogStore.clear(in: root))
+    }
+}
+
 final class DriveCameraFocusTests: XCTestCase {
     private final class Camera: DriveCameraFocusDevice {
         var supportedModes: [AVCaptureDevice.FocusMode] = [.locked, .autoFocus, .continuousAutoFocus]
@@ -20173,6 +20230,41 @@ final class TrafficSignShadowRuntimeV2Tests: XCTestCase {
             localCorrectionSpeedKmh: 60,
             currentContext: context
         ), 50)
+    }
+
+    func testDebugLoggingOffPreventsQAFilesAndStopsPendingEventWrites() throws {
+        let suite = "qa-logging-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer {
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: root)
+        }
+        let gate = DebugLogPersistence(defaults: defaults)
+        gate.setEnabled(false)
+        let store = try TrafficSignShadowEvidenceStoreV2(rootURL: root,
+            minimumCaptureInterval: 0, debugLogPersistence: gate)
+        let runtime = try makeRuntime(captureSink: store, qaSink: store, calibrationPassed: false)
+        let group = "logging-test"
+        store.stageFrame(eventId: "disabled", captureGroupId: group,
+            diagnosticCaptureEnabled: true, jpegProvider: { Data([1]) })
+        let disabled = try runtime.process(makeFrameInput(eventID: "disabled", readablePlate: false))
+        XCTAssertEqual(disabled.diagnosticCapture.status, .notRequested)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.path))
+
+        gate.setEnabled(true)
+        store.stageFrame(eventId: "enabled", captureGroupId: group,
+            diagnosticCaptureEnabled: true, jpegProvider: { Data([1]) })
+        let enabled = try runtime.process(makeFrameInput(eventID: "enabled", readablePlate: false))
+        XCTAssertEqual(enabled.diagnosticCapture.status, .persisted)
+        let events = try XCTUnwrap(store.eventsURL(captureGroupId: group))
+        let saved = try Data(contentsOf: events)
+        store.stageFrame(eventId: "pending", captureGroupId: group,
+            diagnosticCaptureEnabled: true, jpegProvider: { Data([1]) })
+        gate.setEnabled(false)
+        let pending = try runtime.process(makeFrameInput(eventID: "pending", readablePlate: false))
+        XCTAssertEqual(pending.diagnosticCapture.status, .notRequested)
+        XCTAssertEqual(try Data(contentsOf: events), saved)
     }
 
     func testLocalEvidenceStoreHonorsCaptureGateAndUpdatesSessionMetadata() throws {

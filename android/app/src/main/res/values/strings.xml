@@ -111,4 +111,12 @@
     <string name="ui_video_save_timeout">The recorder did not confirm that the video was saved. The requested action was cancelled.</string>
     <string name="ui_correct_speed_limit">Correct speed limit</string>
     <string name="tsr_disregard_vision">Disregard vision and return to road</string>
+    <string name="startup_logs_title">Clear saved logs?</string>
+    <string name="startup_logs_message">Saved logs take up more than 100 MB. Would you like to clear them before continuing? Keeping them can help with debugging.</string>
+    <string name="startup_logs_clear">Clear logs</string>
+    <string name="startup_logs_keep">Keep logs and continue</string>
+    <string name="startup_logs_checking">Checking saved logs…</string>
+    <string name="startup_logs_clearing">Clearing saved logs…</string>
+    <string name="startup_logs_failed">Could not check or clear logs</string>
+    <string name="settings_debug_logging">Debug logging</string>
 </resources>

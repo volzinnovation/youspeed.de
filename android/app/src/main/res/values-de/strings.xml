@@ -109,4 +109,12 @@
     <string name="ui_video_save_timeout">Die Aufnahme hat das Speichern des Videos nicht bestätigt. Die angeforderte Aktion wurde abgebrochen.</string>
     <string name="ui_correct_speed_limit">Tempolimit korrigieren</string>
     <string name="tsr_disregard_vision">Kameraerkennung verwerfen und zur Straße zurückkehren</string>
+    <string name="startup_logs_title">Gespeicherte Logs löschen?</string>
+    <string name="startup_logs_message">Gespeicherte Logs belegen mehr als 100 MB. Möchtest du sie vor dem Fortfahren löschen? Die Logs können bei der Fehlersuche helfen.</string>
+    <string name="startup_logs_clear">Logs löschen</string>
+    <string name="startup_logs_keep">Logs behalten und fortfahren</string>
+    <string name="startup_logs_checking">Gespeicherte Logs werden geprüft…</string>
+    <string name="startup_logs_clearing">Gespeicherte Logs werden gelöscht…</string>
+    <string name="startup_logs_failed">Logs konnten nicht geprüft oder gelöscht werden</string>
+    <string name="settings_debug_logging">Debug-Protokollierung</string>
 </resources>

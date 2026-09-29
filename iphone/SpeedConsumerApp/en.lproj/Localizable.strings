@@ -386,3 +386,14 @@
 "gravity_alignment.unavailable" = "Gravity alignment unavailable";
 "gravity_alignment.angles" = "Roll %.0f°, tilt %.0f°. Gravity cannot determine heading.";
 "tsr.voice_dismissal.listening" = "Say “Wrong”";
+
+// Startup log storage review
+"startup.logs.title" = "Clear saved logs?";
+"startup.logs.message" = "Saved logs take up more than 100 MB. Would you like to clear them before continuing? Keeping them can help with debugging.";
+"startup.logs.clear" = "Clear logs";
+"startup.logs.keep" = "Keep logs and continue";
+"startup.logs.checking" = "Checking saved logs…";
+"startup.logs.clearing" = "Clearing saved logs…";
+"startup.logs.failed" = "Could not check or clear logs";
+
+"settings.debug.logging" = "Debug logging";

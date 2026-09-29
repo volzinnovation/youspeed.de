@@ -5,8 +5,9 @@ import java.time.Instant
 
 internal data class DrivingInteractionMotion(val controlsAllowed: Boolean, val stationaryObservedAt: Instant?)
 
-/** A missing speed is not a stationary measurement and cannot unlock moving controls. */
+/** Fresh speeds below 4 km/h unlock controls; only a measured zero establishes standstill. */
 internal object DrivingInteractionMotionPolicy {
+    const val CONTROLS_SPEED_THRESHOLD_KMH = 4.0
     fun observe(
         previouslyAllowed: Boolean,
         rawSpeedMetersPerSecond: Double?,
@@ -18,13 +19,14 @@ internal object DrivingInteractionMotionPolicy {
         val validRaw = rawSpeedMetersPerSecond != null && rawSpeedMetersPerSecond.isFinite() &&
             rawSpeedMetersPerSecond >= 0.0 && horizontalAccuracyMeters != null &&
             horizontalAccuracyMeters.isFinite() && horizontalAccuracyMeters >= 0.0
-        if ((filteredSpeedKmh.isFinite() && filteredSpeedKmh > 0.0) ||
-            (rawSpeedMetersPerSecond?.let { it.isFinite() && it > 0.0 } == true)) {
+        if (filteredSpeedKmh >= CONTROLS_SPEED_THRESHOLD_KMH ||
+            (rawSpeedMetersPerSecond?.let { it.isFinite() && it >= CONTROLS_SPEED_THRESHOLD_KMH / 3.6 } == true)) {
             return DrivingInteractionMotion(false, null)
         }
         val ageMs = Duration.between(observedAt, now).toMillis()
-        if (validRaw && rawSpeedMetersPerSecond == 0.0 && filteredSpeedKmh == 0.0 && ageMs in 0..3_000) {
-            return DrivingInteractionMotion(true, observedAt)
+        if (validRaw && filteredSpeedKmh.isFinite() && filteredSpeedKmh >= 0.0 && ageMs in 0..3_000) {
+            val stopped = rawSpeedMetersPerSecond == 0.0 && filteredSpeedKmh == 0.0
+            return DrivingInteractionMotion(true, observedAt.takeIf { stopped })
         }
         return DrivingInteractionMotion(previouslyAllowed, null)
     }

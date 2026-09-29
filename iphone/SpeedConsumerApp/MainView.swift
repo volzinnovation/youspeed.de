@@ -3348,6 +3348,11 @@ private struct SettingsView: View {
             }
 
             Section("Debug") {
+                Toggle("settings.debug.logging", isOn: Binding(
+                    get: { viewModel.debugLoggingEnabled },
+                    set: { viewModel.setDebugLoggingEnabled($0) }
+                ))
+                .accessibilityIdentifier("settings.debug.logging")
                 NavigationLink(NSLocalizedString("settings.debug.open", comment: "")) {
                     DebugInformationView(viewModel: viewModel)
                 }

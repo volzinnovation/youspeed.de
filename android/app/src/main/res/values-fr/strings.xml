@@ -109,4 +109,12 @@
     <string name="ui_video_save_timeout">L’enregistreur n’a pas confirmé la sauvegarde de la vidéo. L’action demandée a été annulée.</string>
     <string name="ui_correct_speed_limit">Corriger la limitation de vitesse</string>
     <string name="tsr_disregard_vision">Ignorer la caméra et revenir à la route</string>
+    <string name="startup_logs_title">Effacer les journaux enregistrés ?</string>
+    <string name="startup_logs_message">Les journaux enregistrés occupent plus de 100 Mo. Souhaitez-vous les effacer avant de continuer ? Les conserver peut aider au débogage.</string>
+    <string name="startup_logs_clear">Effacer les journaux</string>
+    <string name="startup_logs_keep">Conserver et continuer</string>
+    <string name="startup_logs_checking">Vérification des journaux…</string>
+    <string name="startup_logs_clearing">Suppression des journaux…</string>
+    <string name="startup_logs_failed">Impossible de vérifier ou de supprimer les journaux</string>
+    <string name="settings_debug_logging">Journalisation de débogage</string>
 </resources>

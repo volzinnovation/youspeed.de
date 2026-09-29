@@ -14,6 +14,7 @@
 		0A0D6E44B30C0B7BD65F3D08 /* fixtures in Resources */ = {isa = PBXBuildFile; fileRef = 8DA8A50580E5A6ABCFE5BF15 /* fixtures */; };
 		0B40049C2440D677338FE301 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AB92E272687221B6BEE64B1 /* ContentView.swift */; };
 		10ACA8C8418BC0D1F9D11224 /* fr.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 881D085EDE2D348B7DF817C8 /* fr.lproj */; };
+		1211E93B1CB861C6794A1586 /* DebugLogPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EE7FBD20C2C207434E0A6A0 /* DebugLogPersistenceTests.swift */; };
 		12AAEB7F03C75A9818CE11F3 /* DEU-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 15C14A293D1DC2FB976661DF /* DEU-rules.json */; };
 		1828C8976EB0DD8023057E03 /* replay_expected.json in Resources */ = {isa = PBXBuildFile; fileRef = 8DEC815A724E0702C9E8EC7B /* replay_expected.json */; };
 		185DD4DEB201DCA2D9AB13F3 /* TrafficSignApplicabilityIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = D47016AE8D9C7439ECD7E708 /* TrafficSignApplicabilityIntegration.swift */; };
@@ -35,6 +36,7 @@
 		3189ACFB74E79AE546103ABB /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5460B7376654275955039717 /* MainView.swift */; };
 		35CFC19C37CA5FF52FDF506E /* brandenburg.poly in Resources */ = {isa = PBXBuildFile; fileRef = A4F8CBDC0E618FFC06F261B6 /* brandenburg.poly */; };
 		35E914FB03BBE6F83A65936F /* V3BundleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264903C5CD98D68477E8823C /* V3BundleManager.swift */; };
+		366CE0F512304902AEE3C255 /* StartupLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7CE995B17B323A34DE8F7AB /* StartupLogStore.swift */; };
 		39B9F74DD81800D88911F9D0 /* StartupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B22B25E507BC34DEDF1FF173 /* StartupView.swift */; };
 		39F558FC00EF4122DD334E94 /* liechtenstein.poly in Resources */ = {isa = PBXBuildFile; fileRef = 5DC9B412B9EC756FC6B1F6F4 /* liechtenstein.poly */; };
 		3B7AD3BCC9EE84674B352F2E /* karlsruhe_v3_A_geom16.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = F649DB2DD9AFA048F046113B /* karlsruhe_v3_A_geom16.sqlite */; };
@@ -75,6 +77,7 @@
 		828070161944FD011DF0C9BE /* baden-wuerttemberg.poly in Resources */ = {isa = PBXBuildFile; fileRef = 68FFEA14CC3B9A22101A4B5C /* baden-wuerttemberg.poly */; };
 		83CA531B4F53005881C8C3A9 /* RoadSpeedDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1268C073515BF6EA04CAD322 /* RoadSpeedDefaults.swift */; };
 		83D2D9CBFC7A54D8A7C7DC9B /* SpeedDBBenchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 485C60A9FAC79B491934A959 /* SpeedDBBenchTests.swift */; };
+		84AD999C9602B3362B9E6244 /* DebugLogPersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 574B85EC313F779E261CF645 /* DebugLogPersistence.swift */; };
 		87705B3C550857EC8BE703D6 /* karlsruhe_v3_B_waylinks.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = FB2521825812DB4BA5E1D984 /* karlsruhe_v3_B_waylinks.sqlite */; };
 		8937CC343BE22060EF6DAA14 /* BEL-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = B861A0672E9AAF8937C5A085 /* BEL-rules.json */; };
 		8AD0BA1C7889B65F2BEE8BAF /* ScreenOrientationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F279F32CF2B1BE105A935A81 /* ScreenOrientationUITests.swift */; };
@@ -236,6 +239,7 @@
 		54CA070C418623C559123AE2 /* LookupResourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupResourceTests.swift; sourceTree = "<group>"; };
 		55D16BE42ECC5E6CF4A4F7E3 /* speed-limit-reference */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "speed-limit-reference"; path = "../shared/speed-limit-reference"; sourceTree = SOURCE_ROOT; };
 		5749BF3469AD1328573C4223 /* SpeedDBBenchUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedDBBenchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		574B85EC313F779E261CF645 /* DebugLogPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogPersistence.swift; sourceTree = "<group>"; };
 		581358CA08092DBCD57D195B /* SpeedReferenceRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedReferenceRuntime.swift; sourceTree = "<group>"; };
 		58B71350FBD2ED0C58C43D3F /* MatcherCoreModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatcherCoreModels.swift; sourceTree = "<group>"; };
 		5B39A5EEAE9245ED1F6FA257 /* RouteScenarioBenchmarkRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteScenarioBenchmarkRunner.swift; sourceTree = "<group>"; };
@@ -272,6 +276,7 @@
 		9AE19896C9567940AD3237DC /* sign-pictograms */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "sign-pictograms"; path = "../shared/tsr/sign-pictograms"; sourceTree = SOURCE_ROOT; };
 		9C00B7D4BAE2E00537C6B0B6 /* legal.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = legal.txt; sourceTree = "<group>"; };
 		9DBEBD28290F598DC72E8DFB /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		9EE7FBD20C2C207434E0A6A0 /* DebugLogPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogPersistenceTests.swift; sourceTree = "<group>"; };
 		A129C77B2BC1F748E0F0EA74 /* PanoramaxQueueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanoramaxQueueStore.swift; sourceTree = "<group>"; };
 		A1519C4C82CCE22AD1E51AFC /* SpeedDBBenchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedDBBenchUITests.swift; sourceTree = "<group>"; };
 		A4F8CBDC0E618FFC06F261B6 /* brandenburg.poly */ = {isa = PBXFileReference; path = brandenburg.poly; sourceTree = "<group>"; };
@@ -299,6 +304,7 @@
 		CFB95C79A397D9A68CD1CDB5 /* sachsen-anhalt.poly */ = {isa = PBXFileReference; path = "sachsen-anhalt.poly"; sourceTree = "<group>"; };
 		D47016AE8D9C7439ECD7E708 /* TrafficSignApplicabilityIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignApplicabilityIntegration.swift; sourceTree = "<group>"; };
 		D5EFF252BA4CDEC5C67298CB /* LatestPendingLookupWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestPendingLookupWorker.swift; sourceTree = "<group>"; };
+		D7CE995B17B323A34DE8F7AB /* StartupLogStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupLogStore.swift; sourceTree = "<group>"; };
 		D8DFC5BD5228D3BD65AEC1F7 /* BenchmarkModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkModels.swift; sourceTree = "<group>"; };
 		DD9CC95F2104420AF1B222D3 /* thueringen.poly */ = {isa = PBXFileReference; path = thueringen.poly; sourceTree = "<group>"; };
 		E1EF5534FE6EF8015DB05730 /* nl.lproj */ = {isa = PBXFileReference; path = nl.lproj; sourceTree = "<group>"; };
@@ -328,6 +334,7 @@
 				B4180056200225822BF33821 /* BundleTargets.top10.json */,
 				50DFC9695D5BC8CA1E3F2976 /* ConsumerModels.swift */,
 				0DBC61BE4404AA5DD74A305E /* de.lproj */,
+				574B85EC313F779E261CF645 /* DebugLogPersistence.swift */,
 				BCE83EC19C3249E6BEB88E3D /* DriveSessionViewModel.swift */,
 				50617C281760CAD961B25E3D /* DrivingControlAvailability.swift */,
 				5393AC2745A8215F4024E5DF /* en.lproj */,
@@ -357,6 +364,7 @@
 				16BE266A4DD3AE0B606D3F37 /* SpeedPenaltyRules.swift */,
 				636D2CC32CFDDF07624F055C /* SpeedReferenceMachine.swift */,
 				581358CA08092DBCD57D195B /* SpeedReferenceRuntime.swift */,
+				D7CE995B17B323A34DE8F7AB /* StartupLogStore.swift */,
 				B22B25E507BC34DEDF1FF173 /* StartupView.swift */,
 				39703EF2C065320F653FE16A /* TrafficSignApplicability.swift */,
 				D47016AE8D9C7439ECD7E708 /* TrafficSignApplicabilityIntegration.swift */,
@@ -455,6 +463,7 @@
 			isa = PBXGroup;
 			children = (
 				A6A8ADF8A021CE971882EEE6 /* CandidateAdmissionParityTests.swift */,
+				9EE7FBD20C2C207434E0A6A0 /* DebugLogPersistenceTests.swift */,
 				ECF75D496D18133C8CEA6C81 /* DrivingControlAvailabilityTests.swift */,
 				4826C8F9A12638E5A048AE62 /* GravityAlignmentTests.swift */,
 				54CA070C418623C559123AE2 /* LookupResourceTests.swift */,
@@ -858,6 +867,7 @@
 				90E6AA8C6EAA235DF5279794 /* BackgroundDownloadCenter.swift in Sources */,
 				52E0BC41A844D0D41B0DBF86 /* BundleDownloadQueue.swift in Sources */,
 				8F6CA29E60F49D9477F26E88 /* ConsumerModels.swift in Sources */,
+				84AD999C9602B3362B9E6244 /* DebugLogPersistence.swift in Sources */,
 				B5530C9955E710BAEA5A27DD /* DriveSessionViewModel.swift in Sources */,
 				94701BF322C7BDABCF103DDF /* DrivingControlAvailability.swift in Sources */,
 				F4619697F0D218CA52A31C65 /* GravityAlignment.swift in Sources */,
@@ -879,6 +889,7 @@
 				D333E4979D43534B1960C9E7 /* SpeedPenaltyRules.swift in Sources */,
 				B937FEC6BF10CFD1AB8CAA82 /* SpeedReferenceMachine.swift in Sources */,
 				2FD383412B80A94A44666053 /* SpeedReferenceRuntime.swift in Sources */,
+				366CE0F512304902AEE3C255 /* StartupLogStore.swift in Sources */,
 				39B9F74DD81800D88911F9D0 /* StartupView.swift in Sources */,
 				940E0787DE8F2C217D4DAB26 /* TrafficSignApplicability.swift in Sources */,
 				185DD4DEB201DCA2D9AB13F3 /* TrafficSignApplicabilityIntegration.swift in Sources */,
@@ -901,6 +912,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6D21DF47C1B897F79D26AF2C /* CandidateAdmissionParityTests.swift in Sources */,
+				1211E93B1CB861C6794A1586 /* DebugLogPersistenceTests.swift in Sources */,
 				5F8296A6269F7BB82D9BA4FD /* DrivingControlAvailabilityTests.swift in Sources */,
 				0877B38BCBB3A222562BF7DA /* GravityAlignmentTests.swift in Sources */,
 				DA00709FFBC0DD797101912E /* LookupResourceTests.swift in Sources */,

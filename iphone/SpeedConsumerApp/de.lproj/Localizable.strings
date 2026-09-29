@@ -386,3 +386,14 @@
 "gravity_alignment.unavailable" = "Schwerkraftausrichtung nicht verfügbar";
 "gravity_alignment.angles" = "Rollwinkel %.0f°, Neigung %.0f°. Schwerkraft kann die Fahrtrichtung nicht bestimmen.";
 "tsr.voice_dismissal.listening" = "„Falsch“ sagen";
+
+// Startup log storage review
+"startup.logs.title" = "Gespeicherte Logs löschen?";
+"startup.logs.message" = "Gespeicherte Logs belegen mehr als 100 MB. Möchtest du sie vor dem Fortfahren löschen? Die Logs können bei der Fehlersuche helfen.";
+"startup.logs.clear" = "Logs löschen";
+"startup.logs.keep" = "Logs behalten und fortfahren";
+"startup.logs.checking" = "Gespeicherte Logs werden geprüft…";
+"startup.logs.clearing" = "Gespeicherte Logs werden gelöscht…";
+"startup.logs.failed" = "Logs konnten nicht geprüft oder gelöscht werden";
+
+"settings.debug.logging" = "Debug-Protokollierung";

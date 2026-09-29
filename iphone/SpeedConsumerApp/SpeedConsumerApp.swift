@@ -12,7 +12,9 @@ struct SpeedConsumerApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if viewModel.isScreenshotMode || !viewModel.drivingControlsAllowed ||
+                if viewModel.startupLogReviewState != .complete {
+                    StartupLogReviewView(viewModel: viewModel)
+                } else if viewModel.isScreenshotMode || !viewModel.drivingControlsAllowed ||
                     (viewModel.startupDataState == .ready && viewModel.onboardingStateLoaded && !viewModel.shouldPresentOnboarding) {
                     MainView(viewModel: viewModel)
                 } else if viewModel.startupDataState != .ready || !viewModel.onboardingStateLoaded {

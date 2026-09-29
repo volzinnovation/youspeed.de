@@ -204,6 +204,9 @@ private data class PendingStartupData(
 )
 
 data class ConsumerUiState(
+    val startupLogReviewState: StartupLogReviewState = StartupLogReviewState.CHECKING,
+    val startupLogError: String = "",
+    val debugLoggingEnabled: Boolean = true,
     val startupDataState: StartupDataState = StartupDataState.LOADING,
     val startupProgress: Double = 0.0,
     val startupDetail: String = ConsumerRuntimeText.STARTUP_PREPARING.text(),
@@ -440,6 +443,9 @@ class ConsumerSessionController(
     launchScreenshotState: AppScreenshotState?,
     private val countryScreenshotScenario: CountryPenaltyScreenshotScenario? = null,
 ) {
+    private val debugLogPersistence = DebugLogPersistence(
+        preferences.getBoolean(DebugLogPersistence.PREFERENCE_KEY, true),
+    )
     private val appContext = context.applicationContext
     private val mainHandler = Handler(Looper.getMainLooper())
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -652,6 +658,8 @@ class ConsumerSessionController(
     private var panoramaxCaptureSessionId: String? = null
     private var panoramaxLastCaptureSample: PanoramaxLocationSample? = null
     private var panoramaxCaptureInFlight = false
+    private var startupLogRetryClears = false
+    private var startupLogTaskRunning = false
     private var pendingStartupData: PendingStartupData? = null
     private var isStartupWaitingForSpeechModel = false
     private var isGermanSpeechModelCheckInFlight = false
@@ -705,6 +713,7 @@ class ConsumerSessionController(
 
     var uiState by mutableStateOf(
         ConsumerUiState(
+            debugLoggingEnabled = preferences.getBoolean(DebugLogPersistence.PREFERENCE_KEY, true),
             legalText = assetReader.readTextOrEmpty("legal.txt"),
             audioAlertsEnabled = preferences.getBoolean(KEY_AUDIO_ALERTS_ENABLED, true),
             audioAlertThresholdKmh = preferences.getInt(KEY_AUDIO_ALERT_THRESHOLD, 8).coerceIn(0, 80),
@@ -745,7 +754,7 @@ class ConsumerSessionController(
         rootDir.mkdirs()
         ensureRuntimeDiagnosticsLogExists()
         runCatching {
-            prepareDrivingLogFiles(gpsLogFile = gpsLogFile(), matchLogFile = matchLogFile())
+            ensureDrivingLogsExist()
         }.onFailure { error ->
             appendRuntimeDiagnosticEvent(
                 event = "driving_logs_startup_prepare_failed",
@@ -765,9 +774,10 @@ class ConsumerSessionController(
         )
         preparePanoramaxStorage()
         if (launchScreenshotState != null) {
+            updateState { copy(startupLogReviewState = StartupLogReviewState.COMPLETE) }
             configureForScreenshotMode(launchScreenshotState)
         } else {
-            beginStartupDataLoadIfNeeded()
+            checkStartupLogs()
         }
     }
 
@@ -814,7 +824,56 @@ class ConsumerSessionController(
         diagnosticsExecutor.shutdown()
     }
 
+    fun checkStartupLogs(clear: Boolean = false) {
+        if (isDisposed.get() || startupLogTaskRunning ||
+            uiState.startupLogReviewState == StartupLogReviewState.COMPLETE) return
+        startupLogTaskRunning = true
+        startupLogRetryClears = clear
+        updateState { copy(startupLogReviewState = if (clear) StartupLogReviewState.CLEARING
+            else StartupLogReviewState.CHECKING, startupLogError = "") }
+        submitBackgroundTask {
+            val result = runCatching {
+                debugLogPersistence.withLock {
+                    val directory = File(rootDir, "logs")
+                    if (clear) {
+                        StartupLogStore.clear(directory)
+                        ensureDrivingLogsExist()
+                    }
+                    StartupLogStore.totalBytes(directory)
+                }
+            }
+            mainHandler.post {
+                if (isDisposed.get()) return@post
+                startupLogTaskRunning = false
+                result.fold(onSuccess = { bytes ->
+                    if (!clear && StartupLogStore.requiresReview(bytes)) {
+                        updateState { copy(startupLogReviewState = StartupLogReviewState.CHOICE) }
+                    } else {
+                        finishStartupLogReview()
+                    }
+                }, onFailure = { error ->
+                    updateState { copy(startupLogReviewState = StartupLogReviewState.FAILED,
+                        startupLogError = error.message ?: error.javaClass.simpleName) }
+                })
+            }
+        }
+    }
+
+    fun retryStartupLogReview() = checkStartupLogs(clear = startupLogRetryClears)
+
+    fun keepStartupLogs() {
+        if (uiState.startupLogReviewState !in setOf(StartupLogReviewState.CHOICE,
+                StartupLogReviewState.FAILED)) return
+        finishStartupLogReview()
+    }
+
+    private fun finishStartupLogReview() {
+        updateState { copy(startupLogReviewState = StartupLogReviewState.COMPLETE) }
+        beginStartupDataLoadIfNeeded()
+    }
+
     fun beginStartupDataLoadIfNeeded(force: Boolean = false) {
+        if (uiState.startupLogReviewState != StartupLogReviewState.COMPLETE) return
         if (isDisposed.get()) {
             return
         }
@@ -3434,10 +3493,24 @@ class ConsumerSessionController(
         host?.shareFile(path, "video/mp4")
     }
 
+    fun setDebugLoggingEnabled(enabled: Boolean) {
+        debugLogPersistence.setEnabled(enabled)
+        preferences.edit().putBoolean(DebugLogPersistence.PREFERENCE_KEY, enabled).apply()
+        updateState { copy(debugLoggingEnabled = enabled) }
+        if (enabled) submitBackgroundTask { runCatching { ensureDrivingLogsExist() } }
+    }
+
     fun clearDrivingLogs() {
         submitBackgroundTask {
             try {
-                resetDrivingLogFiles(gpsLogFile = gpsLogFile(), matchLogFile = matchLogFile())
+                debugLogPersistence.withLock {
+                    if (debugLogPersistence.ticket() != null) {
+                        resetDrivingLogFiles(gpsLogFile = gpsLogFile(), matchLogFile = matchLogFile())
+                    } else {
+                        java.nio.file.Files.deleteIfExists(gpsLogFile().toPath())
+                        java.nio.file.Files.deleteIfExists(matchLogFile().toPath())
+                    }
+                }
                 postState {
                     copy(
                         gpsLogPath = gpsLogFile().absolutePath,
@@ -3455,8 +3528,14 @@ class ConsumerSessionController(
     fun clearRuntimeDiagnosticsLog() {
         submitBackgroundTask {
             try {
-                ensureRuntimeDiagnosticsLogExists()
-                runtimeDiagnosticsLogFile().writeText("")
+                debugLogPersistence.withLock {
+                    if (debugLogPersistence.ticket() != null) {
+                        ensureRuntimeDiagnosticsLogExists()
+                        runtimeDiagnosticsLogFile().writeText("")
+                    } else {
+                        java.nio.file.Files.deleteIfExists(runtimeDiagnosticsLogFile().toPath())
+                    }
+                }
                 appendRuntimeDiagnosticEvent(
                     event = "runtime_diagnostics_cleared",
                     details = mapOf("pid" to Process.myPid()),
@@ -3734,7 +3813,7 @@ class ConsumerSessionController(
             activeBundleVersion = "screenshot-fixture",
             activeDBPath = "/tmp/screenshot-fixture.sqlite",
             currentSpeedKmh = fixture.currentSpeedKmh,
-            drivingControlsAllowed = fixture.currentSpeedKmh == 0.0,
+            drivingControlsAllowed = fixture.currentSpeedKmh < DrivingInteractionMotionPolicy.CONTROLS_SPEED_THRESHOLD_KMH,
             stationarySpeedObservedAt = null,
             speedLimitKmh = fixture.speedLimitKmh,
             speedLimitDisplayText = fixture.speedLimitDisplayText,
@@ -4157,31 +4236,34 @@ class ConsumerSessionController(
             overrideSpeedKmh: Int? = null,
             errorText: String? = null,
         ) {
+            val logTicket = debugLogPersistence.ticket() ?: return
             val logLocation = Location(location)
             diagnosticsExecutor.execute log@{
                 if (isDisposed.get() || !lookupToken.isCurrent(token) || sessionId != trafficSignDriveSessionId) return@log
                 runCatching {
-                    ensureDrivingLogsExist()
-                    appendGpsFixRow(
-                        fixId = gpsFixCount,
-                        location = logLocation,
-                        speedKmh = filteredSpeedKmh,
-                        status = status,
-                        result = result,
-                        overrideSpeedKmh = overrideSpeedKmh,
-                        errorText = errorText,
-                    )
-                    appendMatchLogEntry(
-                        fixId = gpsFixCount,
-                        location = logLocation,
-                        speedKmh = filteredSpeedKmh,
-                        status = status,
-                        result = result,
-                        matchContext = matchContext,
-                        gpsSignalBars = gpsSignalBars,
-                        overrideSpeedKmh = overrideSpeedKmh,
-                        errorText = errorText,
-                    )
+                    debugLogPersistence.write(logTicket) {
+                        ensureDrivingLogsExist()
+                        appendGpsFixRow(
+                            fixId = gpsFixCount,
+                            location = logLocation,
+                            speedKmh = filteredSpeedKmh,
+                            status = status,
+                            result = result,
+                            overrideSpeedKmh = overrideSpeedKmh,
+                            errorText = errorText,
+                        )
+                        appendMatchLogEntry(
+                            fixId = gpsFixCount,
+                            location = logLocation,
+                            speedKmh = filteredSpeedKmh,
+                            status = status,
+                            result = result,
+                            matchContext = matchContext,
+                            gpsSignalBars = gpsSignalBars,
+                            overrideSpeedKmh = overrideSpeedKmh,
+                            errorText = errorText,
+                        )
+                    }
                 }.onFailure { error ->
                     appendRuntimeDiagnosticEvent("lookup_log_failed", mapOf("error" to (error.message ?: error.javaClass.simpleName)))
                 }
@@ -5583,8 +5665,10 @@ class ConsumerSessionController(
     }
 
     private fun ensureDrivingLogsExist() {
-        prepareDrivingLogFiles(gpsLogFile(), matchLogFile())
-        ensureRuntimeDiagnosticsLogExists()
+        debugLogPersistence.write {
+            prepareDrivingLogFiles(gpsLogFile(), matchLogFile())
+            ensureRuntimeDiagnosticsLogExists()
+        }
     }
 
     private fun gpsLogFile(): File = File(rootDir, "logs/gps_fix_log.csv")
@@ -5594,23 +5678,26 @@ class ConsumerSessionController(
     private fun runtimeDiagnosticsLogFile(): File = File(rootDir, "logs/runtime_diagnostics.ndjson")
 
     private fun ensureRuntimeDiagnosticsLogExists() {
-        runtimeDiagnosticsLogFile().parentFile?.mkdirs()
-        if (!runtimeDiagnosticsLogFile().exists()) {
-            runtimeDiagnosticsLogFile().writeText("")
+        debugLogPersistence.write {
+            runtimeDiagnosticsLogFile().parentFile?.mkdirs()
+            if (!runtimeDiagnosticsLogFile().exists()) {
+                runtimeDiagnosticsLogFile().writeText("")
+            }
         }
     }
 
     private fun installCrashObserverIfNeeded() {
         synchronized(ConsumerSessionController::class.java) {
+            crashLogTarget = CrashLogTarget(runtimeDiagnosticsLogFile(), debugLogPersistence)
             if (crashObserverInstalled) {
                 return
             }
-            val diagnosticsFile = runtimeDiagnosticsLogFile()
             val previousHandler = Thread.getDefaultUncaughtExceptionHandler()
             Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-                appendRuntimeDiagnosticEvent(
-                    file = diagnosticsFile,
-                    timestamp = clock.instant(),
+                crashLogTarget?.let { target -> appendRuntimeDiagnosticEvent(
+                    file = target.file,
+                    persistence = target.persistence,
+                    timestamp = Instant.now(),
                     event = "uncaught_exception",
                     details = mapOf(
                         "pid" to Process.myPid(),
@@ -5620,6 +5707,7 @@ class ConsumerSessionController(
                         "stacktrace" to throwable.stackTraceToString().take(12000),
                     ),
                 )
+                }
                 previousHandler?.uncaughtException(thread, throwable)
             }
             crashObserverInstalled = true
@@ -5630,12 +5718,15 @@ class ConsumerSessionController(
         event: String,
         details: Map<String, Any?> = emptyMap(),
     ) {
+        val ticket = debugLogPersistence.ticket() ?: return
         val timestamp = clock.instant()
         val snapshot = details.toMap()
         // Never make inference, GPS or the UI wait for logging. The bounded
         // queue drops older pending diagnostics if storage cannot keep up.
         diagnosticsExecutor.execute {
-            appendRuntimeDiagnosticEvent(runtimeDiagnosticsLogFile(), timestamp, event, snapshot)
+            debugLogPersistence.write(ticket) {
+                appendRuntimeDiagnosticEvent(runtimeDiagnosticsLogFile(), timestamp, event, snapshot, debugLogPersistence)
+            }
         }
     }
 
@@ -6040,6 +6131,8 @@ class ConsumerSessionController(
     }
 
     companion object {
+        private data class CrashLogTarget(val file: File, val persistence: DebugLogPersistence)
+        @Volatile private var crashLogTarget: CrashLogTarget? = null
         @Volatile private var crashObserverInstalled = false
         private const val KEY_AUDIO_ALERT_THRESHOLD = "youspeed.audio_alert_threshold_kmh"
         private const val KEY_AUDIO_ALERTS_ENABLED = "youspeed.audio_alerts_enabled"
@@ -6081,22 +6174,26 @@ class ConsumerSessionController(
             file: File,
             timestamp: Instant,
             event: String,
-            details: Map<String, Any?> = emptyMap(),
+            details: Map<String, Any?>,
+            persistence: DebugLogPersistence,
         ) {
             runCatching {
-                file.parentFile?.mkdirs()
-                val entry = JSONObject().apply {
-                    put("timestampUTC", timestamp.toString())
-                    put("event", event)
-                    details.forEach { (key, value) ->
-                        if (value != null) {
-                            put(key, value)
+                persistence.write {
+                    file.parentFile?.mkdirs()
+                    val entry = JSONObject().apply {
+                        put("timestampUTC", timestamp.toString())
+                        put("event", event)
+                        details.forEach { (key, value) ->
+                            if (value != null) {
+                                put(key, value)
+                            }
                         }
                     }
+                    file.appendText(entry.toString() + "\n")
                 }
-                file.appendText(entry.toString() + "\n")
             }
         }
+
 
         private fun gpsSignalBars(horizontalAccuracyM: Double?): Int {
             val accuracy = horizontalAccuracyM ?: return 0

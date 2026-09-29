@@ -629,6 +629,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var tsrLogPath: String = ""
     @Published var lastCandidateTraces: [MatchCandidateTrace] = []
     @Published var lastSelectionTrace: [MatchSelectionTrace] = []
+    @Published private(set) var startupLogReviewState: StartupLogReviewState = .checking
+    @Published private(set) var startupLogError = ""
+    private var startupLogTask: Task<Void, Never>?
+    private var startupLogRetryClears = false
+    @Published private(set) var debugLoggingEnabled = DebugLogPersistence.shared.isEnabled
     @Published var startupDataState: StartupDataState = .loading
     @Published var startupProgress: Double = 0
     @Published var startupDetail: String = "Lokale Daten werden vorbereitet"
@@ -1833,6 +1838,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
         }
         if let screenshotState = AppScreenshotState.current() {
+            startupLogReviewState = .complete
             configureForScreenshotMode(screenshotState)
             return
         }
@@ -1843,7 +1849,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.activityType = .automotiveNavigation
         locationManager.distanceFilter = kCLDistanceFilterNone
-        beginStartupDataLoadIfNeeded()
+        checkStartupLogs()
         Task { @MainActor [weak self] in
             await self?.refreshLocalObservations()
             await self?.refreshDownloadedBundleInventory()
@@ -2677,7 +2683,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             // Selecting both local Dashcam recording and on-device TSR is the
             // explicit existing action that enables bounded local QA frames.
             // These files never enter the Panoramax queue.
-            diagnosticCaptureEnabled: driveRecorderState == .recording
+            diagnosticCaptureEnabled: debugLoggingEnabled && driveRecorderState == .recording
                 && driveRecorderDashcamActive
                 && driveRecorderTrafficSignRecognitionActive
         ))
@@ -5103,7 +5109,57 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         beginStartupDataLoadIfNeeded(force: true)
     }
 
+    func checkStartupLogs(clear: Bool = false) {
+        guard startupLogTask == nil, startupLogReviewState != .complete else { return }
+        startupLogRetryClears = clear
+        startupLogError = ""
+        startupLogReviewState = clear ? .clearing : .checking
+        startupLogTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { startupLogTask = nil }
+            do {
+                let directory = try V3BundleManager.applicationSupportDirectory(fileManager: .default)
+                let bytes = try await Task.detached(priority: .utility) {
+                    if clear { try StartupLogStore.clear(in: directory) }
+                    return try StartupLogStore.totalBytes(in: directory)
+                }.value
+                if clear {
+                    hasPreparedGPSLogFile = false
+                    resetPreparedMatchLogFile()
+                    resetPreparedTSRLogFile()
+                    prepareDrivingLogsOnAppLaunch()
+                }
+                if !clear && StartupLogStore.requiresReview(bytes: bytes) {
+                    startupLogReviewState = .choice
+                } else {
+                    finishStartupLogReview()
+                }
+            } catch {
+                startupLogError = error.localizedDescription
+                startupLogReviewState = .failed
+            }
+        }
+    }
+
+    func retryStartupLogReview() {
+        checkStartupLogs(clear: startupLogRetryClears)
+    }
+
+    func keepStartupLogs() {
+        guard startupLogReviewState == .choice || startupLogReviewState == .failed else { return }
+        // A failed cleanup may already have removed the GPS file.
+        hasPreparedGPSLogFile = false
+        prepareDrivingLogsOnAppLaunch()
+        finishStartupLogReview()
+    }
+
+    private func finishStartupLogReview() {
+        startupLogReviewState = .complete
+        beginStartupDataLoadIfNeeded()
+    }
+
     private func beginStartupDataLoadIfNeeded(force: Bool = false) {
+        guard startupLogReviewState == .complete else { return }
         guard force || startupTask == nil else {
             Self.logger.notice("startup begin skipped reason=task_already_running")
             return
@@ -5230,7 +5286,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         activeDBPath = screenshotState.rawValue
         activeBundleDBSHA256 = nil
         currentSpeedKmh = fixture.currentSpeedKmh
-        drivingControlsAllowed = fixture.currentSpeedKmh == 0
+        drivingControlsAllowed = fixture.currentSpeedKmh < DrivingControlAvailability.controlsSpeedThresholdKmh
         stationarySpeedObservedAt = fixture.currentSpeedKmh == 0 ? Date() : nil
         speedLimitKmh = fixture.speedLimitKmh
         speedLimitDisplayText = fixture.speedLimitDisplayText
@@ -5511,6 +5567,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func startDriving() {
+        guard startupLogReviewState == .complete else { return }
         guard isScreenshotMode || (onboardingStateLoaded && !shouldPresentOnboarding) else { return }
         mapLookupWorker.cancel()
         if !isDriving {
@@ -5694,6 +5751,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         } catch {
             lastError = "driving log clear failed: \(error.localizedDescription)"
         }
+    }
+
+    func setDebugLoggingEnabled(_ enabled: Bool) {
+        DebugLogPersistence.shared.setEnabled(enabled)
+        debugLoggingEnabled = enabled
+        if enabled { prepareDrivingLogsOnAppLaunch() }
+        refreshTrafficSignFrameSnapshot()
     }
 
     private func prepareDrivingLogsOnAppLaunch() {
@@ -7780,6 +7844,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func prepareGPSLogFileIfNeeded() -> URL? {
+        guard debugLoggingEnabled else { return nil }
         do {
             let base = try V3BundleManager.applicationSupportDirectory(fileManager: .default)
             if !FileManager.default.fileExists(atPath: base.path) {
@@ -7803,6 +7868,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func prepareMatchLogFileIfNeeded() -> URL? {
+        guard debugLoggingEnabled else { return nil }
         do {
             let base = try V3BundleManager.applicationSupportDirectory(fileManager: .default)
             if !FileManager.default.fileExists(atPath: base.path) {
@@ -7836,6 +7902,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func appendTSRLogLine(_ line: String) {
+        guard startupLogReviewState != .clearing else { return }
         guard let logURL = prepareTSRLogFileIfNeeded() else { return }
         do {
             let handle = try FileHandle(forWritingTo: logURL)
@@ -7848,6 +7915,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func prepareTSRLogFileIfNeeded() -> URL? {
+        guard debugLoggingEnabled else { return nil }
         do {
             let base = try V3BundleManager.applicationSupportDirectory(fileManager: .default)
             if !FileManager.default.fileExists(atPath: base.path) {

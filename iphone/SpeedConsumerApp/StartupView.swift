@@ -456,3 +456,54 @@ private final class OnboardingImageScrollView: UIScrollView, UIScrollViewDelegat
         contentInset = UIEdgeInsets(top: vertical, left: horizontal, bottom: vertical, right: horizontal)
     }
 }
+
+
+/// Holds navigation until the user explicitly keeps or clears oversized logs.
+struct StartupLogReviewView: View {
+    @ObservedObject var viewModel: DriveSessionViewModel
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(spacing: 20) {
+                        Text("YouSpeed").font(.largeTitle.bold())
+                        switch viewModel.startupLogReviewState {
+                        case .checking, .clearing:
+                            ProgressView().tint(.red)
+                            Text(LocalizedStringKey(viewModel.startupLogReviewState == .clearing
+                                 ? "startup.logs.clearing" : "startup.logs.checking"))
+                        case .choice, .failed:
+                            Text(LocalizedStringKey(viewModel.startupLogReviewState == .failed
+                                 ? "startup.logs.failed" : "startup.logs.title"))
+                                .font(.title2.bold())
+                            if viewModel.startupLogReviewState == .failed {
+                                Text(viewModel.startupLogError).font(.callout)
+                                Button("startup.retry") { viewModel.retryStartupLogReview() }
+                                    .buttonStyle(.borderedProminent).tint(.red)
+                            } else {
+                                Text("startup.logs.message")
+                                Button("startup.logs.clear", role: .destructive) {
+                                    viewModel.checkStartupLogs(clear: true)
+                                }
+                                .buttonStyle(.borderedProminent).tint(.red)
+                                .accessibilityIdentifier("startup.logs.clear")
+                            }
+                            Button("startup.logs.keep") { viewModel.keepStartupLogs() }
+                                .buttonStyle(.bordered)
+                                .accessibilityIdentifier("startup.logs.keep")
+                        case .complete:
+                            EmptyView()
+                        }
+                    }
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(24)
+                    .frame(maxWidth: 460)
+                    .frame(maxWidth: .infinity, minHeight: geometry.size.height)
+                }
+            }
+        }
+    }
+}

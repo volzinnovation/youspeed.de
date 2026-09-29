@@ -386,3 +386,14 @@
 "gravity_alignment.unavailable" = "Alignement par gravité indisponible";
 "gravity_alignment.angles" = "Roulis %.0f°, inclinaison %.0f°. La gravité ne détermine pas le cap.";
 "tsr.voice_dismissal.listening" = "Dites « Faux »";
+
+// Startup log storage review
+"startup.logs.title" = "Effacer les journaux enregistrés ?";
+"startup.logs.message" = "Les journaux enregistrés occupent plus de 100 Mo. Souhaitez-vous les effacer avant de continuer ? Les conserver peut aider au débogage.";
+"startup.logs.clear" = "Effacer les journaux";
+"startup.logs.keep" = "Conserver et continuer";
+"startup.logs.checking" = "Vérification des journaux…";
+"startup.logs.clearing" = "Suppression des journaux…";
+"startup.logs.failed" = "Impossible de vérifier ou de supprimer les journaux";
+
+"settings.debug.logging" = "Journalisation de débogage";

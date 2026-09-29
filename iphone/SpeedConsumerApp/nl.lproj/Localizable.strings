@@ -386,3 +386,14 @@
 "gravity_alignment.unavailable" = "Zwaartekrachtuitlijning niet beschikbaar";
 "gravity_alignment.angles" = "Rol %.0f°, kanteling %.0f°. Zwaartekracht bepaalt geen rijrichting.";
 "tsr.voice_dismissal.listening" = "Zeg ‘Fout’";
+
+// Startup log storage review
+"startup.logs.title" = "Opgeslagen logs wissen?";
+"startup.logs.message" = "Opgeslagen logs nemen meer dan 100 MB in beslag. Wil je ze wissen voordat je doorgaat? Ze bewaren kan helpen bij het opsporen van fouten.";
+"startup.logs.clear" = "Logs wissen";
+"startup.logs.keep" = "Logs bewaren en doorgaan";
+"startup.logs.checking" = "Opgeslagen logs controleren…";
+"startup.logs.clearing" = "Opgeslagen logs wissen…";
+"startup.logs.failed" = "Logs konden niet worden gecontroleerd of gewist";
+
+"settings.debug.logging" = "Debuglogboeken";

@@ -76,6 +76,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.TextButton
@@ -261,6 +262,9 @@ fun ConsumerApp(controller: ConsumerSessionController) {
             color = Color.Black,
         ) {
             when {
+                ui.startupLogReviewState != StartupLogReviewState.COMPLETE -> {
+                    StartupLogReviewScreen(ui, controller)
+                }
                 ui.appScreenshotState != null || !ui.drivingControlsAllowed ||
                     (ui.startupDataState == StartupDataState.READY && !showingOnboarding) -> {
                     MainScreen(
@@ -1486,6 +1490,11 @@ private fun SettingsSheet(
             }
             item {
                 SectionCard(stringResource(R.string.ui_diagnostics)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.settings_debug_logging), modifier = Modifier.weight(1f), color = Color.Black)
+                        Switch(checked = ui.debugLoggingEnabled, onCheckedChange = controller::setDebugLoggingEnabled,
+                            modifier = Modifier.testTag("settings.debug.logging"))
+                    }
                     Button(
                         onClick = onOpenDebug,
                         colors = ButtonDefaults.buttonColors(containerColor = SignalGreen),
@@ -2223,5 +2232,41 @@ private fun mainBackgroundColor(ui: ConsumerUiState, pulseFraction: Float): Colo
     return when {
         progress < 0.6 -> lerp(BrightYellow, SoftOrange, (progress / 0.6).toFloat())
         else -> lerp(SoftOrange, SoftRed, ((progress - 0.6) / 0.4).toFloat())
+    }
+}
+
+
+@Composable
+private fun StartupLogReviewScreen(ui: ConsumerUiState, controller: ConsumerSessionController) {
+    Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+        Column(Modifier.widthIn(max = 460.dp).verticalScroll(rememberScrollState()).padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            Text("YouSpeed", color = Color.White, style = MaterialTheme.typography.headlineLarge)
+            when (ui.startupLogReviewState) {
+                StartupLogReviewState.CHECKING, StartupLogReviewState.CLEARING -> {
+                    CircularProgressIndicator(color = Color.Red)
+                    Text(stringResource(if (ui.startupLogReviewState == StartupLogReviewState.CLEARING)
+                        R.string.startup_logs_clearing else R.string.startup_logs_checking), color = Color.White)
+                }
+                StartupLogReviewState.CHOICE, StartupLogReviewState.FAILED -> {
+                    val failed = ui.startupLogReviewState == StartupLogReviewState.FAILED
+                    Text(stringResource(if (failed) R.string.startup_logs_failed else R.string.startup_logs_title),
+                        color = Color.White, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                    Text(if (failed) ui.startupLogError else stringResource(R.string.startup_logs_message),
+                        color = Color.White, textAlign = TextAlign.Center)
+                    Button(onClick = {
+                        if (failed) controller.retryStartupLogReview() else controller.checkStartupLogs(clear = true)
+                    }, modifier = Modifier.testTag("startup.logs.clear")) {
+                        Text(stringResource(if (failed) R.string.startup_retry else R.string.startup_logs_clear))
+                    }
+                    OutlinedButton(onClick = controller::keepStartupLogs,
+                        modifier = Modifier.testTag("startup.logs.keep")) {
+                        Text(stringResource(R.string.startup_logs_keep), color = Color.White)
+                    }
+                }
+                StartupLogReviewState.COMPLETE -> Unit
+            }
+        }
     }
 }
