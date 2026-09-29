@@ -3150,7 +3150,7 @@ private struct SettingsView: View {
                                 .monospacedDigit()
                                 .foregroundStyle(.secondary)
                         }
-                        Slider(value: $viewModel.panoramaxMinimumDistanceMeters, in: 3...100, step: 1)
+                        Slider(value: $viewModel.panoramaxMinimumDistanceMeters, in: 10...90, step: 1)
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -3161,7 +3161,7 @@ private struct SettingsView: View {
                                 .monospacedDigit()
                                 .foregroundStyle(.secondary)
                         }
-                        Slider(value: $viewModel.panoramaxMinimumIntervalSeconds, in: 1...60, step: 1)
+                        Slider(value: $viewModel.panoramaxMinimumIntervalSeconds, in: 5...240, step: 1)
                     }
 
                     if let accuracy = viewModel.panoramaxLastAccuracyMeters {

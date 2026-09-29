@@ -729,8 +729,8 @@ class ConsumerSessionController(
             trafficSignRecognitionIndependentEnabled = preferences.getBoolean("youspeed.drive_recorder.tsr_independent_enabled", false),
             trafficSignFeedbackMode = runCatching { TrafficSignFeedbackMode.valueOf(preferences.getString("youspeed.drive_recorder.tsr_feedback_mode", "SOUND")!!) }.getOrDefault(TrafficSignFeedbackMode.SOUND),
             panoramaxTriggerMode = runCatching { PanoramaxCaptureTriggerMode.valueOf(preferences.getString("youspeed.panoramax.trigger_mode", "DISTANCE")!!) }.getOrDefault(PanoramaxCaptureTriggerMode.DISTANCE),
-            panoramaxMinimumDistanceMeters = preferences.getFloat("youspeed.panoramax.minimum_distance", 25f).toDouble().coerceIn(3.0, 100.0),
-            panoramaxMinimumIntervalSeconds = preferences.getFloat("youspeed.panoramax.minimum_interval", 5f).toDouble().coerceIn(1.0, 60.0),
+            panoramaxMinimumDistanceMeters = preferences.getFloat("youspeed.panoramax.minimum_distance", 25f).toDouble().coerceIn(10.0, 90.0),
+            panoramaxMinimumIntervalSeconds = preferences.getFloat("youspeed.panoramax.minimum_interval", 5f).toDouble().coerceIn(5.0, 240.0),
             panoramaxUnlimitedStorage = preferences.getBoolean("youspeed.panoramax.unlimited_storage", false),
             panoramaxStorageLimitMB = preferences.getFloat("youspeed.panoramax.storage_limit_mb", 1000f).toDouble().coerceIn(100.0, 10000.0),
             panoramaxDeleteUploadedImages = preferences.getBoolean("youspeed.panoramax.delete_uploaded", false),
@@ -1530,12 +1530,12 @@ class ConsumerSessionController(
         updateState { copy(panoramaxTriggerMode = value) }
     }
     fun setPanoramaxMinimumDistanceMeters(value: Double) {
-        val clamped = value.coerceIn(3.0, 100.0)
+        val clamped = value.coerceIn(10.0, 90.0)
         preferences.edit().putFloat("youspeed.panoramax.minimum_distance", clamped.toFloat()).apply()
         updateState { copy(panoramaxMinimumDistanceMeters = clamped) }
     }
     fun setPanoramaxMinimumIntervalSeconds(value: Double) {
-        val clamped = value.coerceIn(1.0, 60.0)
+        val clamped = value.coerceIn(5.0, 240.0)
         preferences.edit().putFloat("youspeed.panoramax.minimum_interval", clamped.toFloat()).apply()
         updateState { copy(panoramaxMinimumIntervalSeconds = clamped) }
     }

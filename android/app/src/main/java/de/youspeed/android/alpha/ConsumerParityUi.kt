@@ -417,9 +417,9 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
                     }
                 }
                 ParitySlider(parityText("Minimum distance", "Mindestabstand", "Distance minimale", "Minimumafstand"), ui.panoramaxMinimumDistanceMeters,
-                    3f..100f, 96, "m", controller::setPanoramaxMinimumDistanceMeters)
+                    10f..90f, 79, "m", controller::setPanoramaxMinimumDistanceMeters)
                 ParitySlider(parityText("Minimum interval", "Mindestintervall", "Intervalle minimal", "Minimuminterval"), ui.panoramaxMinimumIntervalSeconds,
-                    1f..60f, 58, "s", controller::setPanoramaxMinimumIntervalSeconds)
+                    5f..240f, 234, "s", controller::setPanoramaxMinimumIntervalSeconds)
                 Text(parityText("GPS accuracy also limits capture spacing; stationary duplicates are skipped.",
                     "Auch die GPS-Genauigkeit begrenzt den Fotoabstand; doppelte Bilder im Stand werden ausgelassen.",
                     "La précision GPS limite aussi l’espacement ; les doublons à l’arrêt sont ignorés.",

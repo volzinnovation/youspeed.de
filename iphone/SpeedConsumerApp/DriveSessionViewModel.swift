@@ -822,7 +822,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
     @Published var panoramaxMinimumDistanceMeters: Double {
         didSet {
-            let clamped = min(max(panoramaxMinimumDistanceMeters, 3), 100)
+            let clamped = min(max(panoramaxMinimumDistanceMeters, 10), 90)
             if clamped != panoramaxMinimumDistanceMeters { panoramaxMinimumDistanceMeters = clamped; return }
             UserDefaults.standard.set(panoramaxMinimumDistanceMeters, forKey: Self.panoramaxMinimumDistanceDefaultsKey)
             applyPanoramaxConfiguration()
@@ -830,7 +830,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
     @Published var panoramaxMinimumIntervalSeconds: Double {
         didSet {
-            let clamped = min(max(panoramaxMinimumIntervalSeconds, 1), 60)
+            let clamped = min(max(panoramaxMinimumIntervalSeconds, 5), 240)
             if clamped != panoramaxMinimumIntervalSeconds { panoramaxMinimumIntervalSeconds = clamped; return }
             UserDefaults.standard.set(panoramaxMinimumIntervalSeconds, forKey: Self.panoramaxMinimumIntervalDefaultsKey)
             applyPanoramaxConfiguration()
@@ -1791,8 +1791,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignFeedbackMode = storedTSRFeedbackMode ?? .sound
         panoramaxCaptureEnabled = storedPanoramaxEnabled ?? true
         panoramaxTriggerMode = storedTriggerMode
-        panoramaxMinimumDistanceMeters = min(max(storedMinimumDistance ?? 25, 3), 100)
-        panoramaxMinimumIntervalSeconds = min(max(storedMinimumInterval ?? 5, 1), 60)
+        panoramaxMinimumDistanceMeters = min(max(storedMinimumDistance ?? 25, 10), 90)
+        panoramaxMinimumIntervalSeconds = min(max(storedMinimumInterval ?? 5, 5), 240)
         panoramaxUnlimitedStorage = storedUnlimitedStorage ?? false
         panoramaxStorageLimitMB = min(max(storedStorageLimit ?? 1000, 100), 10_000)
         panoramaxDeleteUploadedImages = storedDeleteUploadedImages ?? false
