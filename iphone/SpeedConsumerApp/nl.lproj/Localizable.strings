@@ -397,3 +397,11 @@
 "startup.logs.failed" = "Logs konden niet worden gecontroleerd of gewist";
 
 "settings.debug.logging" = "Debuglogboeken";
+// Live lane visualization
+"drive_recorder.settings.lanes" = "Gedetecteerde rijstroken tonen";
+"drive_recorder.settings.lanes_description" = "Experimentele rijstrookgrenzen in het live dashcambeeld tonen. Onzekere of verouderde lijnen vervagen; ze worden niet in de video opgeslagen.";
+"drive_recorder.lanes.status" = "Gedetecteerde rijstroken: %@";
+"drive_recorder.lanes.reliable" = "Betrouwbaar";
+"drive_recorder.lanes.uncertain" = "Onzeker";
+"drive_recorder.lanes.unavailable" = "Niet beschikbaar";
+"drive_recorder.lanes.paused" = "Gepauzeerd";

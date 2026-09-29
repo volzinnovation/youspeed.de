@@ -10,6 +10,7 @@ import android.graphics.RectF
 import android.graphics.ImageFormat
 import android.hardware.camera2.CaptureRequest
 import android.hardware.HardwareBuffer
+import android.hardware.camera2.CameraCharacteristics
 import android.media.ImageReader
 import android.os.PowerManager
 import android.os.Handler
@@ -20,6 +21,8 @@ import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.ExtendableBuilder
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -752,6 +755,18 @@ internal class AndroidTrafficSignCameraRuntime(
     @Volatile private var bridge: TrafficSignLiveRuntimeBridge<CameraXTrafficSignFrame>? = null
     @Volatile private var requestedModelCountryCode: String = controller.trafficSignModelCountryCode()
     @Volatile private var loadedModelCountryCode: String? = null
+    @Volatile private var laneClockIsRealtime = false
+    private val laneRuntime = AndroidLaneDetectionRuntime(
+        mainExecutor = mainExecutor,
+        admission = {
+            val thermal = context.getSystemService(PowerManager::class.java)?.currentThermalStatus
+                ?: PowerManager.THERMAL_STATUS_NONE
+            controller.laneAdmission(thermal >= PowerManager.THERMAL_STATUS_SEVERE)
+        },
+        clockIsRealtime = { laneClockIsRealtime },
+        onResult = controller::onLaneDetectionResult,
+        onDiagnostics = controller::onLaneDetectionDiagnostics,
+    )
 
     // A hidden preview still supplies a surface. Removing the UI must never
     // suspend analysis or movie recording while CameraX waits for its surface.
@@ -855,7 +870,7 @@ internal class AndroidTrafficSignCameraRuntime(
     /** Suspend delivery while recognition is disabled/loading without interrupting a movie. */
     private fun refreshAnalysisConsumer() {
         val analysis = imageAnalysis ?: return
-        val needed = bridge != null
+        val needed = bridge != null || (controller.uiState.showDetectedLanes && controller.isDriveRecorderSessionActive())
         if (needed == analyzerAttached) return
         analyzerAttached = needed
         if (needed) {
@@ -863,9 +878,13 @@ internal class AndroidTrafficSignCameraRuntime(
             analysis.setAnalyzer(cameraExecutor) { image ->
                 controller.withCameraOrientation {
                     val current = bridge
-                    if (current == null || orientationEpoch != analysisOrientationEpoch ||
+                    if (orientationEpoch != analysisOrientationEpoch ||
                         image.imageInfo.rotationDegrees != expectedAnalysisRotation) image.close()
-                    else current.submit(CameraXTrafficSignFrame(image))
+                    else {
+                        // Copy admitted lane luminance before TSR takes ownership.
+                        laneRuntime.submit(image)
+                        if (current == null) image.close() else current.submit(CameraXTrafficSignFrame(image))
+                    }
                 }
             }
         } else analysis.clearAnalyzer()
@@ -957,6 +976,7 @@ internal class AndroidTrafficSignCameraRuntime(
         controller.onTrafficSignRecognitionUnavailable(detail, recognitionGeneration)
     }
 
+    @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
     private fun bindCamera(startGeneration: Long) {
         val recorderOutputsNeeded = controller.isDriveRecorderSessionActive()
         val photoOutputNeeded = controller.isPanoramaxCaptureEnabled()
@@ -1038,6 +1058,10 @@ internal class AndroidTrafficSignCameraRuntime(
                 val useCases = listOfNotNull(currentPreview, capture, video, analysis)
                 boundCamera = provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
                 expectedAnalysisRotation = boundCamera?.cameraInfo?.getSensorRotationDegrees(rotation)
+                laneClockIsRealtime = runCatching {
+                    Camera2CameraInfo.from(boundCamera!!.cameraInfo).getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE) ==
+                        CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME
+                }.getOrDefault(false)
                 cameraProvider = provider
                 imageAnalysis = analysis
                 imageCapture = capture
@@ -1204,6 +1228,7 @@ internal class AndroidTrafficSignCameraRuntime(
         if (!closed.compareAndSet(false, true)) return
         generation.incrementAndGet()
         videoRequested = false
+        laneRuntime.close()
         bridge?.close()
         bridge = null
         backend?.close()

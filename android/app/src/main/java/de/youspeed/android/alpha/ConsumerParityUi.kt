@@ -6,10 +6,12 @@ import android.graphics.Matrix
 import android.graphics.Outline
 import android.view.View
 import android.view.ViewOutlineProvider
+import android.os.SystemClock
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,6 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.alpha
@@ -295,6 +299,28 @@ internal fun RecorderPreviewWorkspace(
         controller.setDriveRecorderPreviewSurfaceProvider(preview.surfaceProvider)
         onDispose { controller.setDriveRecorderPreviewSurfaceProvider(null) }
     }
+    LaunchedEffect(controller, preview, visible, controller.uiState.showDetectedLanes) {
+        try {
+            while (visible && controller.uiState.showDetectedLanes) {
+                // CameraX already includes rotation, mirroring and crop in this
+                // sensor-to-view transform. Treat view pixels as the destination buffer.
+                val transform = preview.sensorToViewTransform
+                val geometry = if (transform != null && preview.width > 0 && preview.height > 0) {
+                    val values = FloatArray(9).also(transform::getValues)
+                    LanePreviewGeometry(preview.width, preview.height, 0, 0, preview.width, preview.height,
+                        0, false, values.map(Float::toDouble), preview.width, preview.height)
+                } else null
+                controller.setLanePreviewGeometry(geometry)
+                delay(50)
+            }
+        } finally {
+            controller.setLanePreviewGeometry(null)
+        }
+    }
+    DisposableEffect(controller, visible) {
+        controller.setLanePreviewVisible(visible)
+        onDispose { controller.setLanePreviewVisible(false) }
+    }
     Box(
         modifier
             .alpha(if (visible) 1f else 0f)
@@ -322,11 +348,66 @@ internal fun RecorderPreviewWorkspace(
                 }
             },
         )
+        if (visible && controller.uiState.showDetectedLanes) LanePreviewOverlay(controller)
         if (visible && onDismiss != null && controller.uiState.drivingControlsAllowed) TextButton(onClick = { controller.performButtonAction(onDismiss) },
             modifier = Modifier.align(Alignment.TopEnd).testTag("recorder-hide-preview")) {
             Text(doneLabel(), color = Color.White)
         }
     }
+}
+
+@Composable
+private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
+    val snapshot = controller.laneRuntimeSnapshot
+    val preview = controller.lanePreviewGeometry
+    var nowNanos by remember { mutableLongStateOf(SystemClock.elapsedRealtimeNanos()) }
+    LaunchedEffect(Unit) {
+        while (true) { nowNanos = SystemClock.elapsedRealtimeNanos(); delay(50) }
+    }
+    // A new camera result may arrive between the 50 ms fading ticks. Use the
+    // current clock too, avoiding a one-tick false future timestamp/flicker.
+    val opacity = snapshot.opacity(maxOf(nowNanos, SystemClock.elapsedRealtimeNanos()))
+    val state = if (snapshot.state == LanePresentationState.PAUSED) LanePresentationState.PAUSED
+        else if (opacity <= 0f) LanePresentationState.UNAVAILABLE else snapshot.state
+    val label = when (state) {
+        LanePresentationState.RELIABLE -> parityText("Reliable", "Zuverlässig", "Fiable", "Betrouwbaar")
+        LanePresentationState.UNCERTAIN -> parityText("Uncertain", "Unsicher", "Incertain", "Onzeker")
+        LanePresentationState.UNAVAILABLE -> parityText("Unavailable", "Nicht verfügbar", "Indisponible", "Niet beschikbaar")
+        LanePresentationState.PAUSED -> parityText("Paused", "Pausiert", "En pause", "Gepauzeerd")
+    }
+    Canvas(Modifier.fillMaxSize().testTag("detected-lanes-overlay")) {
+        val geometry = snapshot.geometry ?: return@Canvas
+        val estimate = snapshot.estimate ?: return@Canvas
+        val destination = preview ?: return@Canvas
+        if (opacity <= 0f || state == LanePresentationState.PAUSED) return@Canvas
+        fun points(boundary: LaneBoundary?): List<LanePoint> = boundary?.points?.mapNotNull {
+            LaneOverlayGeometry.project(it, geometry, destination)
+        }.orEmpty()
+        fun path(points: List<LanePoint>): Path = Path().apply {
+            points.forEachIndexed { index, point ->
+                if (index == 0) moveTo(point.x.toFloat(), point.y.toFloat()) else lineTo(point.x.toFloat(), point.y.toFloat())
+            }
+        }
+        val left = points(estimate.left)
+        val right = points(estimate.right)
+        val color = if (estimate.hasReliablePair) Color(0xFF5EEAD4) else Color(0xFFFBBF24)
+        val corridor = estimate.corridorPoints.mapNotNull { LaneOverlayGeometry.project(it, geometry, destination) }
+        if (corridor.size >= 4) {
+            val area = path(corridor).apply { close() }
+            drawPath(area, color.copy(alpha = opacity * 0.10f))
+        }
+        listOf(left to estimate.left, right to estimate.right).forEach { (points, boundary) ->
+            if (points.size >= 2 && boundary != null) drawPath(path(points),
+                color.copy(alpha = opacity * boundary.confidence.toFloat().coerceIn(0f, 1f)),
+                style = Stroke(width = 2.dp.toPx()))
+        }
+        if (left.size >= 2 || right.size >= 2) controller.onLaneOverlayPainted(snapshot)
+    }
+    Text(parityText("Detected lanes", "Erkannte Fahrspuren", "Voies détectées", "Gedetecteerde rijstroken") + ": " + label,
+        modifier = Modifier.align(Alignment.BottomStart).padding(10.dp)
+            .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(8.dp)).padding(6.dp)
+            .testTag("detected-lanes-state"),
+        color = Color.White, style = MaterialTheme.typography.labelSmall)
 }
 
 @Composable
@@ -364,6 +445,13 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
     val active = ui.driveRecorderState in setOf(DriveRecorderState.PREPARING, DriveRecorderState.RECORDING, DriveRecorderState.STOPPING)
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         ParitySection(parityText("Drive recorder", "Fahrtaufnahme", "Enregistrement du trajet", "Ritopname")) {
+            ParityToggle(parityText("Show detected lanes", "Erkannte Fahrspuren anzeigen", "Afficher les voies détectées", "Gedetecteerde rijstroken tonen"),
+                ui.showDetectedLanes, tag = "show-detected-lanes-toggle", onChange = controller::setShowDetectedLanes)
+            Text(parityText("Show lane markings in the live dashcam preview. Saved videos stay unchanged.",
+                "Fahrspurmarkierungen in der Live-Dashcam-Vorschau anzeigen. Gespeicherte Videos bleiben unverändert.",
+                "Afficher les voies dans l’aperçu dashcam en direct. Les vidéos enregistrées restent inchangées.",
+                "Toon rijstrookmarkeringen in het live dashcambeeld. Opgeslagen video's blijven ongewijzigd."),
+                style = MaterialTheme.typography.bodySmall)
             ParityToggle(parityText("Traffic-sign recognition", "Verkehrszeichenerkennung", "Reconnaissance des panneaux", "Verkeersbordherkenning"),
                 ui.trafficSignRecognitionEnabled, !active, "traffic-sign-recognition-toggle", controller::setTrafficSignRecognitionEnabled)
             ParityToggle(parityText("Show other traffic signs", "Andere Verkehrszeichen anzeigen", "Afficher les autres panneaux", "Andere verkeersborden tonen"),

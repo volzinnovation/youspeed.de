@@ -22,6 +22,8 @@ targets:
           - "TrafficSignApplicabilityTests.swift"
           - "SpeedLimitReferenceModelTests.swift"
           - "ScreenOrientationUITests.swift"
+          - "LaneDetectionTests.swift"
+          - "LaneDetectionRuntimeTests.swift"
           - "README.md"
       - path: SpeedConsumerApp/Assets.xcassets
         buildPhase: resources
@@ -150,6 +152,8 @@ targets:
         buildPhase: resources
       - path: ../shared/tsr/applicability/paca-exit-topology-v1.sql
         buildPhase: resources
+      - path: SpeedConsumerApp/LaneDetectionTests.swift
+      - path: SpeedConsumerApp/LaneDetectionRuntimeTests.swift
       - path: SpeedConsumerApp/TestFixtures
         buildPhase: resources
     dependencies:

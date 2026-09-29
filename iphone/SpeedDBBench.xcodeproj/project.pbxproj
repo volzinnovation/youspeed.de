@@ -47,6 +47,7 @@
 		401C999BA34C8E1228B07B82 /* TrafficSignRecognition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32933858989CDE151BF55061 /* TrafficSignRecognition.swift */; };
 		48A333119998BC7A7EE86F1B /* V3SpeedLimitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */; };
 		4BB377309057ED673B835A3B /* SpeedLimitReferenceModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4238031D3E04CB1C6758FCAB /* SpeedLimitReferenceModelTests.swift */; };
+		4BE89006C90A4D59F921E5F1 /* LaneDetectionRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACC246DEFF0D2E1BB0EE2AD1 /* LaneDetectionRuntime.swift */; };
 		4E22751463668A7F86A3E491 /* iceland.poly in Resources */ = {isa = PBXBuildFile; fileRef = 3402DBBFAB304CAAFB0D5BAF /* iceland.poly */; };
 		4F0869F2CF922E1DDBAA2D65 /* legal.txt in Resources */ = {isa = PBXBuildFile; fileRef = 9C00B7D4BAE2E00537C6B0B6 /* legal.txt */; };
 		4F74D049C1C2FDBE21F4558D /* tsr-panoramax-49e25e66.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4BC8711F5E9A8499C659EB9A /* tsr-panoramax-49e25e66.jpg */; };
@@ -67,6 +68,7 @@
 		66DB03E75181E18D6D761E6E /* ISL-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 484D8FAC68C38D341939C3C9 /* ISL-rules.json */; };
 		6B3B5E89C4B9320CBA398A01 /* TrafficSignApplicability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39703EF2C065320F653FE16A /* TrafficSignApplicability.swift */; };
 		6D21DF47C1B897F79D26AF2C /* CandidateAdmissionParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6A8ADF8A021CE971882EEE6 /* CandidateAdmissionParityTests.swift */; };
+		6E34DC6950AD6D1F4789029A /* LaneDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1443061001BB609384462B /* LaneDetectionTests.swift */; };
 		7006E9AACC2D0E6939BEB8F9 /* SpeedDBBenchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6714BC0E2B255C7AB5618D /* SpeedDBBenchApp.swift */; };
 		742D763EA2475FF202180A34 /* bremen.poly in Resources */ = {isa = PBXBuildFile; fileRef = 817610973D395000FCEA8AF3 /* bremen.poly */; };
 		7451111A890B7585403A4372 /* TrafficSignShadowRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8508CFB9C9C5E5675C173D23 /* TrafficSignShadowRuntime.swift */; };
@@ -128,10 +130,12 @@
 		D333E4979D43534B1960C9E7 /* SpeedPenaltyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BE266A4DD3AE0B606D3F37 /* SpeedPenaltyRules.swift */; };
 		D4C72035447C5F3BD658AC0A /* TrafficSignApplicabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 382CA3BE7926270EDA4C3180 /* TrafficSignApplicabilityTests.swift */; };
 		D4F2236AB2A34C2B9B460901 /* golden-vectors-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 398708E44785CB6E7940FA43 /* golden-vectors-v1.json */; };
+		D60CF7D362BC29B5DEA0BECF /* LaneDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CEBD6C0203A9D6C46955EF /* LaneDetection.swift */; };
 		D6FFB2D51E09A1FD34FD07B5 /* PanoramaxRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AC054A6BC61AC4CD32E2F38 /* PanoramaxRecorder.swift */; };
 		D70C48E9F6CAEF7621025A83 /* attributions in Resources */ = {isa = PBXBuildFile; fileRef = 8C96B1695E93488607A5558F /* attributions */; };
 		D711F742798EA9D22533DD9A /* TrafficSignRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03C46F5B39F4707AAB46BEE0 /* TrafficSignRuntime.swift */; };
 		D72D63181DDFC971D6385DBD /* MCO-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = FBA1B9CD185BDF7E00FDE66B /* MCO-rules.json */; };
+		D7505C79B7A772FFE3B8ADE3 /* LaneDetectionRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED0EE73EBD62C9AFC470ABD8 /* LaneDetectionRuntimeTests.swift */; };
 		D867BFECAEF4C706323A2AF4 /* sequence-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 12FA352F9941CE18FE1353BA /* sequence-v1.json */; };
 		D88037B4D0A84DBE65C1134C /* RoadSpeedDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1268C073515BF6EA04CAD322 /* RoadSpeedDefaults.swift */; };
 		DA00709FFBC0DD797101912E /* LookupResourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CA070C418623C559123AE2 /* LookupResourceTests.swift */; };
@@ -250,6 +254,7 @@
 		636D2CC32CFDDF07624F055C /* SpeedReferenceMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedReferenceMachine.swift; sourceTree = "<group>"; };
 		68FFEA14CC3B9A22101A4B5C /* baden-wuerttemberg.poly */ = {isa = PBXFileReference; path = "baden-wuerttemberg.poly"; sourceTree = "<group>"; };
 		69FF9109F78E912ED14AD0E5 /* hessen.poly */ = {isa = PBXFileReference; path = hessen.poly; sourceTree = "<group>"; };
+		6C1443061001BB609384462B /* LaneDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneDetectionTests.swift; sourceTree = "<group>"; };
 		6E3C55C0CB5CEEEF45D3AEBA /* SourceAttributions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceAttributions.swift; sourceTree = "<group>"; };
 		734BE1C063C1A673E23AE2B7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7417B3F5E0AF2A8D476C110E /* mecklenburg-vorpommern.poly */ = {isa = PBXFileReference; path = "mecklenburg-vorpommern.poly"; sourceTree = "<group>"; };
@@ -285,6 +290,7 @@
 		A96FDED162AC60D59BE6F74F /* karlsruhe_variants.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = karlsruhe_variants.json; sourceTree = "<group>"; };
 		AA6714BC0E2B255C7AB5618D /* SpeedDBBenchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedDBBenchApp.swift; sourceTree = "<group>"; };
 		AB3B96CF54D1947EC2CE1151 /* NLD-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "NLD-rules.json"; sourceTree = "<group>"; };
+		ACC246DEFF0D2E1BB0EE2AD1 /* LaneDetectionRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneDetectionRuntime.swift; sourceTree = "<group>"; };
 		ACE882500C0D3542FE44BB6C /* paca-exit-topology-v1.sql */ = {isa = PBXFileReference; path = "paca-exit-topology-v1.sql"; sourceTree = "<group>"; };
 		AD0551D5A2A80CF4977A8C71 /* replay_track.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = replay_track.gpx; sourceTree = "<group>"; };
 		AF5567D7F343A109DCFE5AE5 /* PassageParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassageParityTests.swift; sourceTree = "<group>"; };
@@ -299,6 +305,7 @@
 		C30AA5A019882EBB0B4B0DA3 /* SpeedConsumer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SpeedConsumer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C581EF7B8F3025A2F6113FAB /* monaco.poly */ = {isa = PBXFileReference; path = monaco.poly; sourceTree = "<group>"; };
 		C91001BF11D209FCCD04047B /* candidate-admission-v1.sql */ = {isa = PBXFileReference; path = "candidate-admission-v1.sql"; sourceTree = "<group>"; };
+		C9CEBD6C0203A9D6C46955EF /* LaneDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneDetection.swift; sourceTree = "<group>"; };
 		CBBB56D0019B23F961E03090 /* schleswig-holstein.poly */ = {isa = PBXFileReference; path = "schleswig-holstein.poly"; sourceTree = "<group>"; };
 		CE138CD23AE2B4EC6E7F347B /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		CFB95C79A397D9A68CD1CDB5 /* sachsen-anhalt.poly */ = {isa = PBXFileReference; path = "sachsen-anhalt.poly"; sourceTree = "<group>"; };
@@ -312,6 +319,7 @@
 		E7C157E2937D1DAD6038038B /* FRA-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "FRA-rules.json"; sourceTree = "<group>"; };
 		E99625FEFE84861C5DCC7691 /* VisionDismissalVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionDismissalVoice.swift; sourceTree = "<group>"; };
 		ECF75D496D18133C8CEA6C81 /* DrivingControlAvailabilityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingControlAvailabilityTests.swift; sourceTree = "<group>"; };
+		ED0EE73EBD62C9AFC470ABD8 /* LaneDetectionRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneDetectionRuntimeTests.swift; sourceTree = "<group>"; };
 		EDFB024103C6B0D4D850A729 /* SWE-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "SWE-rules.json"; sourceTree = "<group>"; };
 		F0573EE16EFF1B84A789F493 /* SpeedConsumerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedConsumerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F279F32CF2B1BE105A935A81 /* ScreenOrientationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenOrientationUITests.swift; sourceTree = "<group>"; };
@@ -340,6 +348,10 @@
 				5393AC2745A8215F4024E5DF /* en.lproj */,
 				881D085EDE2D348B7DF817C8 /* fr.lproj */,
 				E65A06FABB9BD2F9609312D6 /* GravityAlignment.swift */,
+				C9CEBD6C0203A9D6C46955EF /* LaneDetection.swift */,
+				ACC246DEFF0D2E1BB0EE2AD1 /* LaneDetectionRuntime.swift */,
+				ED0EE73EBD62C9AFC470ABD8 /* LaneDetectionRuntimeTests.swift */,
+				6C1443061001BB609384462B /* LaneDetectionTests.swift */,
 				D5EFF252BA4CDEC5C67298CB /* LatestPendingLookupWorker.swift */,
 				9C00B7D4BAE2E00537C6B0B6 /* legal.txt */,
 				5460B7376654275955039717 /* MainView.swift */,
@@ -871,6 +883,8 @@
 				B5530C9955E710BAEA5A27DD /* DriveSessionViewModel.swift in Sources */,
 				94701BF322C7BDABCF103DDF /* DrivingControlAvailability.swift in Sources */,
 				F4619697F0D218CA52A31C65 /* GravityAlignment.swift in Sources */,
+				D60CF7D362BC29B5DEA0BECF /* LaneDetection.swift in Sources */,
+				4BE89006C90A4D59F921E5F1 /* LaneDetectionRuntime.swift in Sources */,
 				E0C47E1887A900EBE4EEFC4B /* LatestPendingLookupWorker.swift in Sources */,
 				3189ACFB74E79AE546103ABB /* MainView.swift in Sources */,
 				53E2BD717B450B13A347F61F /* MatcherCoreModels.swift in Sources */,
@@ -915,6 +929,8 @@
 				1211E93B1CB861C6794A1586 /* DebugLogPersistenceTests.swift in Sources */,
 				5F8296A6269F7BB82D9BA4FD /* DrivingControlAvailabilityTests.swift in Sources */,
 				0877B38BCBB3A222562BF7DA /* GravityAlignmentTests.swift in Sources */,
+				D7505C79B7A772FFE3B8ADE3 /* LaneDetectionRuntimeTests.swift in Sources */,
+				6E34DC6950AD6D1F4789029A /* LaneDetectionTests.swift in Sources */,
 				DA00709FFBC0DD797101912E /* LookupResourceTests.swift in Sources */,
 				B7A175F48D0CEDF9DA6D8B09 /* LookupSchedulingTests.swift in Sources */,
 				50B6F461896711F643FEE106 /* MatcherSequenceParityTests.swift in Sources */,
