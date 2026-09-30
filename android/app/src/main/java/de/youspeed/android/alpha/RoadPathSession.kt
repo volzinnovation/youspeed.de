@@ -122,15 +122,15 @@ class RoadPathSession(private val nowNanos: () -> Long = System::nanoTime) {
             lastSourceTimestampSeconds = sourceTimestamp
             preparationSerial++
         }
-        val filterStart = nowNanos()
-        val deadline = frame.startedAtNanos + 50_000_000L
-        val filtered = if (skipReason == null) RoadPathLaneFilter.apply(frame.grayscale, frame.width, frame.height) {
-            nowNanos() < deadline
-        } else null
-        val filteredAt = nowNanos()
         val uprightWidth = if(frame.rotationDegrees%180==0) frame.rawWidth else frame.rawHeight
         val uprightHeight = if(frame.rotationDegrees%180==0) frame.rawHeight else frame.rawWidth
         val visual = frame.visualCalibration?.takeIf { it.compatible(uprightWidth,uprightHeight,frame.orientationKey) }
+        val filterStart = nowNanos()
+        val deadline = frame.startedAtNanos + 50_000_000L
+        val filtered = if (skipReason == null) RoadPathLaneFilter.applyForDetector(frame.grayscale, frame.width, frame.height, visual?.horizonY) {
+            nowNanos() < deadline
+        } else null
+        val filteredAt = nowNanos()
         val temporalKey = "${scope.sessionId}:${scope.generation}:${frame.geometryId}:${frame.calibration}:${location.epoch}:${location.overlayEpoch}:visual:${visual?.revision}:orientation:${frame.orientationKey}:rawClock:${sourceTimestamp!=null}:known:${frame.clockKnown}"
         val motionHint = RoadBoundaryMotionHint.from(location.fixes.map { RoadBoundaryMotionSample(
             it.time,it.speed,it.course,it.accuracy,it.courseAccuracy) },frame.capturedAtSeconds,frame.clockKnown)

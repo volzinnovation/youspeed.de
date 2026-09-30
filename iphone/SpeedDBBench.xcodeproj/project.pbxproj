@@ -10,6 +10,7 @@
 		014EE424EC263574AB5B4CBC /* BundleTargets.top10.json in Resources */ = {isa = PBXBuildFile; fileRef = B4180056200225822BF33821 /* BundleTargets.top10.json */; };
 		021C1A2776097C50D00FC6D0 /* TSRModelPacks in Resources */ = {isa = PBXBuildFile; fileRef = 2811A15F038D37D70FFEA60E /* TSRModelPacks */; };
 		02C8C041AE046D1B34185DF7 /* RoadBoundaryTemporalTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3B28DE5916E71A3F35CFD7 /* RoadBoundaryTemporalTrackerTests.swift */; };
+		8A98BC8162231D2ED04EA621 /* LaneBoundaryBezierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3175855B96CCE8B99EEDB77 /* LaneBoundaryBezierTests.swift */; };
 		064190B3F897D77B2A1B97F8 /* de.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 0DBC61BE4404AA5DD74A305E /* de.lproj */; };
 		0877B38BCBB3A222562BF7DA /* GravityAlignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4826C8F9A12638E5A048AE62 /* GravityAlignmentTests.swift */; };
 		0A0D6E44B30C0B7BD65F3D08 /* fixtures in Resources */ = {isa = PBXBuildFile; fileRef = 8DA8A50580E5A6ABCFE5BF15 /* fixtures */; };
@@ -52,6 +53,7 @@
 		4012714C01B21F0AF897E280 /* RoadBoundaryPresentationGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F0F730708C353FE43CCCCF7 /* RoadBoundaryPresentationGateTests.swift */; };
 		401C999BA34C8E1228B07B82 /* TrafficSignRecognition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32933858989CDE151BF55061 /* TrafficSignRecognition.swift */; };
 		424E9C2A02046AF6C7656C25 /* RoadBoundaryTemporalTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56DC8137DA2A511025046A79 /* RoadBoundaryTemporalTracker.swift */; };
+		F93D65B7CCB3650467927753 /* LaneBoundaryBezier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0513DE84862F1BA50AB206D /* LaneBoundaryBezier.swift */; };
 		48A333119998BC7A7EE86F1B /* V3SpeedLimitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */; };
 		4BB377309057ED673B835A3B /* SpeedLimitReferenceModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4238031D3E04CB1C6758FCAB /* SpeedLimitReferenceModelTests.swift */; };
 		4BE89006C90A4D59F921E5F1 /* LaneDetectionRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACC246DEFF0D2E1BB0EE2AD1 /* LaneDetectionRuntime.swift */; };
@@ -259,6 +261,7 @@
 		484D8FAC68C38D341939C3C9 /* ISL-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "ISL-rules.json"; sourceTree = "<group>"; };
 		485C60A9FAC79B491934A959 /* SpeedDBBenchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedDBBenchTests.swift; sourceTree = "<group>"; };
 		4A3B28DE5916E71A3F35CFD7 /* RoadBoundaryTemporalTrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadBoundaryTemporalTrackerTests.swift; sourceTree = "<group>"; };
+		D3175855B96CCE8B99EEDB77 /* LaneBoundaryBezierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneBoundaryBezierTests.swift; sourceTree = "<group>"; };
 		4AC054A6BC61AC4CD32E2F38 /* PanoramaxRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanoramaxRecorder.swift; sourceTree = "<group>"; };
 		4BC8711F5E9A8499C659EB9A /* tsr-panoramax-49e25e66.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "tsr-panoramax-49e25e66.jpg"; sourceTree = "<group>"; };
 		4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerApp.swift; sourceTree = "<group>"; };
@@ -272,6 +275,7 @@
 		54CA070C418623C559123AE2 /* LookupResourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupResourceTests.swift; sourceTree = "<group>"; };
 		55D16BE42ECC5E6CF4A4F7E3 /* speed-limit-reference */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "speed-limit-reference"; path = "../shared/speed-limit-reference"; sourceTree = SOURCE_ROOT; };
 		56DC8137DA2A511025046A79 /* RoadBoundaryTemporalTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadBoundaryTemporalTracker.swift; sourceTree = "<group>"; };
+		E0513DE84862F1BA50AB206D /* LaneBoundaryBezier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneBoundaryBezier.swift; sourceTree = "<group>"; };
 		5749BF3469AD1328573C4223 /* SpeedDBBenchUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedDBBenchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		574B85EC313F779E261CF645 /* DebugLogPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogPersistence.swift; sourceTree = "<group>"; };
 		57FA2AA20FC2B5CC93542B7E /* RoadBoundaryMotionHintTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadBoundaryMotionHintTests.swift; sourceTree = "<group>"; };
@@ -409,6 +413,7 @@
 				38532CE100FF815E74A1BB2F /* RoadBoundaryMotionHint.swift */,
 				1904D5380969497882FEBE30 /* RoadBoundaryPresentationGate.swift */,
 				56DC8137DA2A511025046A79 /* RoadBoundaryTemporalTracker.swift */,
+				E0513DE84862F1BA50AB206D /* LaneBoundaryBezier.swift */,
 				FC99AE36886F7BCCAF89C410 /* RoadPathEvidence.swift */,
 				07CADACCA7BAE0E107F9D5FB /* RoadPathSession.swift */,
 				1268C073515BF6EA04CAD322 /* RoadSpeedDefaults.swift */,
@@ -538,6 +543,7 @@
 				57FA2AA20FC2B5CC93542B7E /* RoadBoundaryMotionHintTests.swift */,
 				5F0F730708C353FE43CCCCF7 /* RoadBoundaryPresentationGateTests.swift */,
 				4A3B28DE5916E71A3F35CFD7 /* RoadBoundaryTemporalTrackerTests.swift */,
+				D3175855B96CCE8B99EEDB77 /* LaneBoundaryBezierTests.swift */,
 				C21A9ACAE299BC122BBC183E /* RoadPathEvidenceTests.swift */,
 				EC71FB24B2C74A9B05675E17 /* RoadPathSessionTests.swift */,
 				414763A09BE57A810C9A1F9A /* TrafficSignCameraReferenceOfferTests.swift */,
@@ -959,6 +965,7 @@
 				E79B104C239ECE5204DB66F2 /* RoadBoundaryMotionHint.swift in Sources */,
 				711671D0A9723C1D92BA93EA /* RoadBoundaryPresentationGate.swift in Sources */,
 				424E9C2A02046AF6C7656C25 /* RoadBoundaryTemporalTracker.swift in Sources */,
+				F93D65B7CCB3650467927753 /* LaneBoundaryBezier.swift in Sources */,
 				4DF7CD81D9D13C4DAC6DCED4 /* RoadPathEvidence.swift in Sources */,
 				722682CDFB6EF40D285B1504 /* RoadPathSession.swift in Sources */,
 				D88037B4D0A84DBE65C1134C /* RoadSpeedDefaults.swift in Sources */,
@@ -1011,6 +1018,7 @@
 				34158303DF7F98DE12A14DAB /* RoadBoundaryMotionHintTests.swift in Sources */,
 				4012714C01B21F0AF897E280 /* RoadBoundaryPresentationGateTests.swift in Sources */,
 				02C8C041AE046D1B34185DF7 /* RoadBoundaryTemporalTrackerTests.swift in Sources */,
+				8A98BC8162231D2ED04EA621 /* LaneBoundaryBezierTests.swift in Sources */,
 				E59DF7E1FC536928DBF4394F /* RoadPathEvidenceTests.swift in Sources */,
 				2C54920BFD153D152CFF0258 /* RoadPathSessionTests.swift in Sources */,
 				197A06403B8311B89F11D4D6 /* SpeedConsumerTests.swift in Sources */,
@@ -1180,7 +1188,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10019;
+				CURRENT_PROJECT_VERSION = 10022;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1320,7 +1328,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10019;
+				CURRENT_PROJECT_VERSION = 10022;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;

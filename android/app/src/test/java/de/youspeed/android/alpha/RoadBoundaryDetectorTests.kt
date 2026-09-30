@@ -68,6 +68,29 @@ class RoadBoundaryDetectorTests {
         }
     }
 
+    @Test fun darkNoiseAndBroadShadowTransitionsCannotBecomePaint() {
+        val width = 384; val height = 216
+        val paint = scene("straight", width, height)
+        val scenes = listOf(
+            ByteArray(width * height) { index -> if ((paint[index].toInt() and 255) > 100) 47 else 32 },
+            ByteArray(width * height) { index -> if ((paint[index].toInt() and 255) > 100) 30 else 0 },
+            ByteArray(width * height) { index -> (40 + ((index % width) * 13 + (index / width) * 7) % 15).toByte() },
+            ByteArray(width * height) { index -> (25 + 50 * (index % width) / width).toByte() },
+            ByteArray(width * height) { index ->
+                val y = (index / width).toDouble() / (height - 1)
+                val x = (index % width).toDouble() / (width - 1)
+                if (x > 0.42 - 0.28 * ((y - 0.50) / 0.44) &&
+                    x < 0.58 + 0.28 * ((y - 0.50) / 0.44)) 75 else 20
+            },
+        )
+        for (image in scenes) {
+            val frame = detector.detect(image, width, height, 2.2)
+            assertFalse(frame.budgetExceeded)
+            assertTrue(frame.boundaries.all { it.cue == RoadBoundaryCue.EDGE && it.confidence <= 0.40 })
+            assertTrue(frame.corridors.isEmpty())
+        }
+    }
+
     @Test fun competingCorridorsRemainSeparateWithoutChoosingEgo() {
         val frame = detector.detect(scene("fork"), 384, 216, 3.0)
         assertEquals(3, frame.boundaries.size)

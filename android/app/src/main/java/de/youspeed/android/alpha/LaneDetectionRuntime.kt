@@ -147,21 +147,46 @@ internal object LaneOverlayGeometry {
 }
 
 internal object LaneLumaSampler {
+    private data class Key(val rawWidth: Int, val rawHeight: Int, val rotation: Int,
+        val rowStride: Int, val pixelStride: Int, val width: Int, val height: Int)
+    private data class Plan(val key: Key, val columns: IntArray, val rows: IntArray)
+    @Volatile private var cached: Plan? = null // One immutable plan; simultaneous readers own their reference.
+
+    private fun plan(key: Key): Plan {
+        cached?.takeIf { it.key == key }?.let { return it }
+        val columns = IntArray(key.width) { x ->
+            val u = (x+0.5)/key.width
+            when(key.rotation) {
+                0 -> (u*key.rawWidth).toInt().coerceIn(0,key.rawWidth-1)*key.pixelStride
+                90 -> ((1-u)*key.rawHeight).toInt().coerceIn(0,key.rawHeight-1)*key.rowStride
+                180 -> ((1-u)*key.rawWidth).toInt().coerceIn(0,key.rawWidth-1)*key.pixelStride
+                270 -> (u*key.rawHeight).toInt().coerceIn(0,key.rawHeight-1)*key.rowStride
+                else -> error("Invalid rotation")
+            }
+        }
+        val rows = IntArray(key.height) { y ->
+            val v = (y+0.5)/key.height
+            when(key.rotation) {
+                0 -> (v*key.rawHeight).toInt().coerceIn(0,key.rawHeight-1)*key.rowStride
+                90 -> (v*key.rawWidth).toInt().coerceIn(0,key.rawWidth-1)*key.pixelStride
+                180 -> ((1-v)*key.rawHeight).toInt().coerceIn(0,key.rawHeight-1)*key.rowStride
+                270 -> ((1-v)*key.rawWidth).toInt().coerceIn(0,key.rawWidth-1)*key.pixelStride
+                else -> error("Invalid rotation")
+            }
+        }
+        return Plan(key,columns,rows).also { cached = it }
+    }
+
     fun copyUpright(source: ByteBuffer, rowStride: Int, pixelStride: Int,
         geometry: LaneImageGeometry, destination: ByteArray, width: Int, height: Int) {
         require(rowStride > 0 && pixelStride > 0 && width > 0 && height > 0)
         require(destination.size >= width * height)
+        val offsets = plan(Key(geometry.width,geometry.height,geometry.rotationDegrees,rowStride,pixelStride,width,height))
         val base = source.position()
-        // Absolute reads preserve the camera plane's position for TSR. Pixel centres
-        // keep all four rotations inside the padded Y plane, including odd dimensions.
-        for (y in 0 until height) for (x in 0 until width) {
-            val u = (x + 0.5) / width
-            val v = (y + 0.5) / height
-            val rawX = when (geometry.rotationDegrees) { 0 -> u; 90 -> v; 180 -> 1 - u; 270 -> 1 - v; else -> error("Invalid rotation") }
-            val rawY = when (geometry.rotationDegrees) { 0 -> v; 90 -> 1 - u; 180 -> 1 - v; 270 -> u; else -> error("Invalid rotation") }
-            val ix = (rawX * geometry.width).toInt().coerceIn(0, geometry.width - 1)
-            val iy = (rawY * geometry.height).toInt().coerceIn(0, geometry.height - 1)
-            destination[y * width + x] = source.get(base + iy * rowStride + ix * pixelStride)
+        for (y in 0 until height) {
+            val sourceRow = base+offsets.rows[y]
+            val destinationRow = y*width
+            for (x in 0 until width) destination[destinationRow+x] = source.get(sourceRow+offsets.columns[x])
         }
     }
 }

@@ -363,7 +363,6 @@ private object LanePreviewStyle {
     val color = Color(0xFF39FF14)
     // The camera eye and outer sign ring are about 4–6 dp on the dashboard.
     val strokeWidth = 5.dp
-    val dotDiameter = 8.dp
     val outlineWidth = 1.dp
 }
 
@@ -403,29 +402,26 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
         controller.onLanePresentationPainted(presentation, source, observedCount)
         if (presentation.mode == LanePreviewPresentationMode.HIDDEN || preview == null || source == null) return@Canvas
         val strokeWidth = LanePreviewStyle.strokeWidth.toPx()
-        val dotRadius = LanePreviewStyle.dotDiameter.toPx() / 2f
         val outlineWidth = LanePreviewStyle.outlineWidth.toPx()
-        fun drawBoundary(points: List<LanePoint>, opacity: Float) {
-            if (points.isEmpty()) return
+        fun drawBoundary(points: List<LanePoint>, opacity: Float, geometry: LaneImageGeometry) {
             val outline = Path().apply {
-                moveTo(points.first().x.toFloat(), points.first().y.toFloat())
-                // Midpoint quadratic joins stay within each pair's observed-point hull.
-                // They change only rendering; evidence points and timestamps remain exact.
-                for (i in 1 until points.lastIndex) {
-                    val p = points[i]; val next = points[i + 1]
-                    quadraticBezierTo(p.x.toFloat(), p.y.toFloat(),
-                        ((p.x + next.x) / 2).toFloat(), ((p.y + next.y) / 2).toFloat())
+                var last: LanePoint? = null
+                for (curve in LaneBoundaryBezier.fit(points)) {
+                    val projected = listOf(curve.start, curve.control1, curve.control2, curve.end)
+                        .map { LaneOverlayGeometry.project(it, geometry, preview) }
+                    if (projected.any { it == null }) { last = null; continue }
+                    val (start, c1, c2, end) = projected.map { requireNotNull(it) }
+                    if (last != curve.start) moveTo(start.x.toFloat(), start.y.toFloat())
+                    cubicTo(c1.x.toFloat(), c1.y.toFloat(), c2.x.toFloat(), c2.y.toFloat(), end.x.toFloat(), end.y.toFloat())
+                    last = curve.end
                 }
-                if (points.size > 1) lineTo(points.last().x.toFloat(), points.last().y.toFloat())
             }
             val halo = Color.Black.copy(alpha = opacity * 0.8f)
             val color = LanePreviewStyle.color.copy(alpha = opacity)
             drawPath(outline, halo, style = Stroke(width = strokeWidth + outlineWidth * 2,
                 cap = StrokeCap.Round, join = StrokeJoin.Round))
-            points.forEach { p -> drawCircle(halo, dotRadius + outlineWidth, Offset(p.x.toFloat(), p.y.toFloat())) }
             drawPath(outline, color, style = Stroke(width = strokeWidth,
                 cap = StrokeCap.Round, join = StrokeJoin.Round))
-            points.forEach { p -> drawCircle(color, dotRadius, Offset(p.x.toFloat(), p.y.toFloat())) }
         }
         if (presentation.mode == LanePreviewPresentationMode.CALIBRATION_REFERENCE) {
             presentation.referenceLines.forEach { line ->
@@ -445,8 +441,7 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
             // update pulse. Keep it bright through a normal interval; expiry stays 750 ms.
             val fade = if (pathAge!! <= 0.6) 1f else ((0.75-pathAge)/0.15).toFloat()
             freshPath.boundaries.forEach { boundary ->
-                val points = boundary.points.mapNotNull { LaneOverlayGeometry.project(it, freshPath.geometry, preview) }
-                drawBoundary(points, fade)
+                drawBoundary(boundary.points, fade, freshPath.geometry)
             }
             return@Canvas
         }
@@ -472,7 +467,7 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
             drawPath(area, color.copy(alpha = opacity * 0.10f))
         }
         listOf(left to estimate.left, right to estimate.right).forEach { (points, boundary) ->
-            if (points.size >= 2 && boundary != null) drawBoundary(points, opacity)
+            if (points.size >= 2 && boundary != null) drawBoundary(boundary.points, opacity, geometry)
         }
         if (left.size >= 2 || right.size >= 2) controller.onLaneOverlayPainted(snapshot)
     }

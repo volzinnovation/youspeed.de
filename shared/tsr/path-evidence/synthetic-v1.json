@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "provenance": "synthetic_engineering_only",
-  "description": "Exact idealized pinhole observations and independently supplied polygons test arithmetic and abstention. These are not learned road assignments or field truth.",
+  "description": "Exact idealized pinhole observations and independently supplied polygons test arithmetic and abstention. These are not learned road assignments or field truth. Photometric cases exercise cross-platform arithmetic and conservative abstention; they do not require successful paint detection under dim illumination.",
   "boundaryCases": [
     {
       "background": 55,
@@ -41,7 +41,9 @@
       "expected": {
         "budgetExceeded": false,
         "minimumBoundaries": 2,
-        "minimumCorridors": 1
+        "minimumCorridors": 1,
+        "boundaryCue": "paint",
+        "minimumSupportRows": 20
       }
     },
     {
@@ -751,6 +753,395 @@
       "expected": {
         "budgetExceeded": true,
         "maximumBoundaries": 0,
+        "maximumCorridors": 0
+      }
+    },
+    {
+      "background": 13,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 5.0,
+          "brightness": 55
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.52
+            ],
+            [
+              0.88,
+              0.96
+            ]
+          ],
+          "width": 5.0,
+          "brightness": 55
+        }
+      ],
+      "id": "dim_paint",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 24,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 5.0,
+          "brightness": 77
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.52
+            ],
+            [
+              0.88,
+              0.96
+            ]
+          ],
+          "width": 5.0,
+          "brightness": 77
+        }
+      ],
+      "id": "dim_paint_offset",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 13,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 3.75,
+          "brightness": 55
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.52
+            ],
+            [
+              0.88,
+              0.96
+            ]
+          ],
+          "width": 3.75,
+          "brightness": 55
+        }
+      ],
+      "id": "dim_paint_288",
+      "width": 288,
+      "height": 162,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 13,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 5.0,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.52
+            ],
+            [
+              0.88,
+              0.96
+            ]
+          ],
+          "width": 5.0,
+          "brightness": 55
+        }
+      ],
+      "id": "uneven_paint_illumination",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 13,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.345,
+              0.63
+            ]
+          ],
+          "width": 5,
+          "brightness": 55
+        },
+        {
+          "points": [
+            [
+              0.345,
+              0.63
+            ],
+            [
+              0.27,
+              0.74
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.27,
+              0.74
+            ],
+            [
+              0.195,
+              0.85
+            ]
+          ],
+          "width": 5,
+          "brightness": 55
+        },
+        {
+          "points": [
+            [
+              0.195,
+              0.85
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.52
+            ],
+            [
+              0.655,
+              0.63
+            ]
+          ],
+          "width": 5,
+          "brightness": 55
+        },
+        {
+          "points": [
+            [
+              0.655,
+              0.63
+            ],
+            [
+              0.73,
+              0.74
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        },
+        {
+          "points": [
+            [
+              0.73,
+              0.74
+            ],
+            [
+              0.8049999999999999,
+              0.85
+            ]
+          ],
+          "width": 5,
+          "brightness": 55
+        },
+        {
+          "points": [
+            [
+              0.8049999999999999,
+              0.85
+            ],
+            [
+              0.88,
+              0.96
+            ]
+          ],
+          "width": 5,
+          "brightness": 230
+        }
+      ],
+      "id": "alternating_paint_illumination",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false
+      }
+    },
+    {
+      "background": 32,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 5.0,
+          "brightness": 47
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.52
+            ],
+            [
+              0.88,
+              0.96
+            ]
+          ],
+          "width": 5.0,
+          "brightness": 47
+        }
+      ],
+      "id": "dark_low_contrast_paint_control",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false,
+        "maximumBoundaries": 0,
+        "maximumCorridors": 0
+      }
+    },
+    {
+      "background": 0,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.42,
+              0.52
+            ],
+            [
+              0.12,
+              0.96
+            ]
+          ],
+          "width": 5.0,
+          "brightness": 30
+        },
+        {
+          "points": [
+            [
+              0.58,
+              0.52
+            ],
+            [
+              0.88,
+              0.96
+            ]
+          ],
+          "width": 5.0,
+          "brightness": 30
+        }
+      ],
+      "id": "black_level_paint_control",
+      "width": 384,
+      "height": 216,
+      "expected": {
+        "budgetExceeded": false,
+        "maximumBoundaries": 0,
+        "maximumCorridors": 0
+      }
+    },
+    {
+      "id": "broad_light_shadow_control",
+      "width": 384,
+      "height": 216,
+      "background": 20,
+      "strokes": [
+        {
+          "points": [
+            [
+              0.5,
+              0.45
+            ],
+            [
+              0.5,
+              1
+            ]
+          ],
+          "width": 120,
+          "brightness": 75
+        }
+      ],
+      "expected": {
+        "budgetExceeded": false,
+        "boundaryCue": "edge",
+        "maximumBoundaryConfidence": 0.4,
         "maximumCorridors": 0
       }
     }

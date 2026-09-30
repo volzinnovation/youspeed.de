@@ -7,14 +7,10 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
-import android.graphics.ImageFormat
 import android.hardware.camera2.CaptureRequest
-import android.hardware.HardwareBuffer
 import android.hardware.camera2.CameraCharacteristics
-import android.media.ImageReader
 import android.os.PowerManager
 import android.os.Handler
-import android.os.HandlerThread
 import android.os.Looper
 import android.util.Size
 import android.util.Log
@@ -788,6 +784,7 @@ internal class AndroidTrafficSignCameraRuntime(
     private var analyzerAttached = false
     private var lastCalibrationPreviewNanos = 0L
     private var lastLaneGeometryNanos = 0L
+    @Volatile private var firstAnalysisFramePending = true
     private val calibrationRotation = AndroidTrafficSignBitmapRotation()
     private var imageCapture: ImageCapture? = null
     private var videoCapture: VideoCapture<Recorder>? = null
@@ -798,8 +795,7 @@ internal class AndroidTrafficSignCameraRuntime(
     private var recognitionUnavailable = false
     private var cameraBound = false
     private var cameraBindingInProgress = false
-    private var graphIncludesRecorderOutputs = false
-    private var graphIncludesPhotoOutput = false
+    private var boundGraphPlan: DriveCameraGraphPlan? = null
     private var videoRequested = false
     private var recordingStopRequested = false
     private var videoTerminallyStopped = false
@@ -825,27 +821,9 @@ internal class AndroidTrafficSignCameraRuntime(
 
     // A hidden preview still supplies a surface. Removing the UI must never
     // suspend analysis or movie recording while CameraX waits for its surface.
-    private val offscreenPreviewProvider = Preview.SurfaceProvider { request ->
-        val drainThread = HandlerThread("YouSpeedPreviewDrain").apply { start() }
-        val reader = try {
-            ImageReader.newInstance(request.resolution.width, request.resolution.height,
-                ImageFormat.PRIVATE, 3, HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE)
-        } catch (failure: Exception) {
-            drainThread.quitSafely()
-            request.willNotProvideSurface()
-            onStateChanged(TrafficSignCameraRuntimeState.UNAVAILABLE,
-                failure.message ?: ConsumerRuntimeText.REAR_CAMERA_UNAVAILABLE.text())
-            return@SurfaceProvider
-        }
-        reader.setOnImageAvailableListener({ source ->
-            // PRIVATE frames are never mapped or retained. Draining the
-            // consumer keeps a hidden preview from blocking the camera graph.
-            runCatching { source.acquireLatestImage()?.close() }
-        }, Handler(drainThread.looper))
-        request.provideSurface(reader.surface, mainExecutor) {
-            reader.close()
-            drainThread.quitSafely()
-        }
+    private val offscreenPreviewProvider = DrainingCameraPreviewProvider(mainExecutor) { failure ->
+        onStateChanged(TrafficSignCameraRuntimeState.UNAVAILABLE,
+            failure.message ?: ConsumerRuntimeText.REAR_CAMERA_UNAVAILABLE.text())
     }
 
     fun start() {
@@ -928,11 +906,22 @@ internal class AndroidTrafficSignCameraRuntime(
         val needed = bridge != null || controller.isVisualCalibrationActive() || (controller.uiState.showDetectedLanes && controller.isDriveRecorderSessionActive())
         if (needed == analyzerAttached) return
         analyzerAttached = needed
+        controller.onTrafficSignCameraAnalysisDiagnostic("consumer_changed", mapOf(
+            "attached" to needed, "recognitionReady" to (bridge != null)))
         if (needed) {
+            firstAnalysisFramePending = true
             val orientationEpoch = analysisOrientationEpoch
             analysis.setAnalyzer(cameraExecutor) { image ->
                 controller.withCameraOrientation {
                     val current = bridge
+                    if (firstAnalysisFramePending) {
+                        firstAnalysisFramePending = false
+                        controller.onTrafficSignCameraAnalysisDiagnostic("first_frame", mapOf(
+                            "width" to image.width, "height" to image.height,
+                            "rotation" to image.imageInfo.rotationDegrees, "expectedRotation" to expectedAnalysisRotation,
+                            "orientationCurrent" to (orientationEpoch == analysisOrientationEpoch),
+                            "recognitionReady" to (current != null)))
+                    }
                     if (orientationEpoch != analysisOrientationEpoch ||
                         image.imageInfo.rotationDegrees != expectedAnalysisRotation) image.close()
                     else {
@@ -1100,11 +1089,9 @@ internal class AndroidTrafficSignCameraRuntime(
 
     @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
     private fun bindCamera(startGeneration: Long) {
-        val recorderOutputsNeeded = controller.isDriveRecorderSessionActive()
-        val photoOutputNeeded = controller.isPanoramaxCaptureEnabled()
-        if (cameraBindingInProgress ||
-            (cameraBound && (!recorderOutputsNeeded || graphIncludesRecorderOutputs) && (!photoOutputNeeded || graphIncludesPhotoOutput))
-        ) return
+        val graphPlan = DriveCameraGraphPlan.resolve(controller.isDriveRecorderSessionActive(),
+            controller.isPanoramaxCaptureEnabled(), boundGraphPlan)
+        if (cameraBindingInProgress || (cameraBound && graphPlan == boundGraphPlan)) return
         cameraBindingInProgress = true
         val providerFuture = ProcessCameraProvider.getInstance(context)
         providerFuture.addListener({
@@ -1137,18 +1124,9 @@ internal class AndroidTrafficSignCameraRuntime(
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
                 }
-                // Standalone TSR only needs image analysis. Some Android
-                // devices reject the four-output graph (Preview, analysis,
-                // stills, and video), so reserving recorder outputs here can
-                // make recognition unavailable before recording is requested.
-                // Once the recorder is active, the graph is kept intact while
-                // its individual consumers are toggled.
-                val includeRecorderOutputs = recorderOutputsNeeded || graphIncludesRecorderOutputs
-                // Once the recorder graph is requested, keep the still use case
-                // attached for the complete graph lifetime. A Panoramax setting
-                // can otherwise race graph activation and leave the preference
-                // enabled with no ImageCapture instance to receive GPS requests.
-                val capture = if (includeRecorderOutputs || photoOutputNeeded || graphIncludesPhotoOutput) imageCapture ?: run {
+                // Keep still/movie outputs optional, and retain them once bound
+                // so consumer toggles do not interrupt independent analysis.
+                val capture = if (graphPlan.photoOutput) imageCapture ?: run {
                     val builder = ImageCapture.Builder()
                     configureInfinityFocus(builder)
                     builder
@@ -1156,19 +1134,24 @@ internal class AndroidTrafficSignCameraRuntime(
                         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                         .build()
                 } else null
-                val video = if (includeRecorderOutputs) videoCapture ?: run {
+                val video = if (graphPlan.movieOutput) videoCapture ?: run {
                     val builder = VideoCapture.Builder(Recorder.Builder().build())
                     configureInfinityFocus(builder)
                     builder.setTargetRotation(rotation).build()
                 } else null
-                val currentPreview = if (includeRecorderOutputs) {
+                // A repeating preview surface must exist even while the model
+                // loads and no analyzer is attached yet. On the Moto G86 the
+                // startup graph produced no recognition until recording added
+                // a preview. The offscreen consumer starts the same stream
+                // without requiring a displayed preview or a saved movie.
+                val currentPreview = run {
                     val builder = Preview.Builder()
                     configureInfinityFocus(builder)
                     preview ?: builder.setTargetRotation(rotation).build().also {
                         it.setSurfaceProvider(mainExecutor, previewSurfaceProvider ?: offscreenPreviewProvider)
                     }
-                } else null
-                currentPreview?.targetRotation = rotation
+                }
+                currentPreview.targetRotation = rotation
                 analysis.targetRotation = rotation
                 capture?.targetRotation = rotation
                 video?.targetRotation = rotation
@@ -1177,7 +1160,7 @@ internal class AndroidTrafficSignCameraRuntime(
                 // Keep the still and movie consumers ahead of analysis in the
                 // binding order so constrained devices reserve recorder outputs
                 // before the optional recognition stream.
-                val useCases = listOfNotNull(currentPreview, capture, video, analysis)
+                val useCases = graphPlan.bindOrder<androidx.camera.core.UseCase>(currentPreview, analysis, capture, video)
                 boundCamera = provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
                 expectedAnalysisRotation = boundCamera?.cameraInfo?.getSensorRotationDegrees(rotation)
                 pathIntrinsics = runCatching {
@@ -1193,8 +1176,10 @@ internal class AndroidTrafficSignCameraRuntime(
                 imageCapture = capture
                 videoCapture = video
                 preview = currentPreview
-                graphIncludesRecorderOutputs = includeRecorderOutputs
-                graphIncludesPhotoOutput = capture != null
+                boundGraphPlan = graphPlan
+                controller.onTrafficSignCameraAnalysisDiagnostic("graph_bound", mapOf(
+                    "preview" to true, "analysis" to true, "photoOutput" to graphPlan.photoOutput,
+                    "movieOutput" to graphPlan.movieOutput, "expectedRotation" to expectedAnalysisRotation))
                 refreshAnalysisConsumer()
             }.onFailure { failure ->
                 cameraBindingInProgress = false

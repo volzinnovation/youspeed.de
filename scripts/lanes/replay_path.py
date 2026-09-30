@@ -100,6 +100,13 @@ def main():
                     assert len(actual[field]) >= expected["minimum" + field.title()], case["id"]
                 if "maximum" + field.title() in expected:
                     assert len(actual[field]) <= expected["maximum" + field.title()], case["id"]
+            for boundary in actual["boundaries"]:
+                if "boundaryCue" in expected:
+                    compare(expected["boundaryCue"], boundary["cue"], f"{case['id']}.boundaryCue")
+                if "maximumBoundaryConfidence" in expected:
+                    assert boundary["confidence"] <= expected["maximumBoundaryConfidence"], case["id"]
+                if "minimumSupportRows" in expected:
+                    assert boundary["supportRows"] >= expected["minimumSupportRows"], case["id"]
         for case, actual in zip(fixture["pathCases"], left["pathCases"]):
             assert actual["id"] == case["id"]
             assert actual["result"]["shadowOnly"] is True

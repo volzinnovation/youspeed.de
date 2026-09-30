@@ -25,6 +25,35 @@ class LaneDetectionRuntimeTests {
         }
     }
 
+    @Test fun cachedSamplerMatchesOriginalPixelCentersAcrossGeometryStrideAndBufferChanges() {
+        for ((rawW,rawH) in listOf(1279 to 721,1920 to 1440,65 to 67)) {
+            for (rotation in listOf(0,90,180,270)) for (pixelStride in listOf(1,2)) {
+                val rowStride=rawW*pixelStride+13
+                val bytes=ByteArray(rowStride*rawH+20) { ((it*31+it/19)%256).toByte() }
+                val buffer=ByteBuffer.wrap(bytes).asReadOnlyBuffer()
+                val geometry=LaneImageGeometry(rawW,rawH,rotation,identity)
+                val scale=minOf(384.0/geometry.uprightWidth,216.0/geometry.uprightHeight,1.0)
+                val w=(geometry.uprightWidth*scale).toInt(); val h=(geometry.uprightHeight*scale).toInt()
+                for (base in listOf(0,7,0)) {
+                    buffer.position(base)
+                    val expected=ByteArray(w*h)
+                    for (y in 0 until h) for (x in 0 until w) {
+                        val u=(x+0.5)/w; val v=(y+0.5)/h
+                        val rx=when(rotation) { 0 -> u; 90 -> v; 180 -> 1-u; else -> 1-v }
+                        val ry=when(rotation) { 0 -> v; 90 -> 1-u; 180 -> 1-v; else -> u }
+                        val ix=(rx*rawW).toInt().coerceIn(0,rawW-1)
+                        val iy=(ry*rawH).toInt().coerceIn(0,rawH-1)
+                        expected[y*w+x]=buffer.get(base+iy*rowStride+ix*pixelStride)
+                    }
+                    val actual=ByteArray(w*h)
+                    LaneLumaSampler.copyUpright(buffer,rowStride,pixelStride,geometry,actual,w,h)
+                    assertArrayEquals(expected,actual)
+                    assertEquals(base,buffer.position())
+                }
+            }
+        }
+    }
+
     @Test fun mapsAnalysisThroughSensorAndDifferentPreviewCropWithRotationAndMirroring() {
         val analysis = LaneImageGeometry(1920, 1080, 0, listOf(.5, 0.0, 0.0, 0.0, .5, 0.0, 0.0, 0.0, 1.0))
         val preview = LanePreviewGeometry(1440, 1080, 0, 0, 1440, 1080, 0, false,

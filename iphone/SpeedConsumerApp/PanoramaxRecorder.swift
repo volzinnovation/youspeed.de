@@ -1802,7 +1802,6 @@ private enum LanePreviewStyle {
     static let color = UIColor(red: 57 / 255.0, green: 1, blue: 20 / 255.0, alpha: 1)
     // The camera eye and outer sign ring are about 4–6 points on the dashboard.
     static let strokeWidth: CGFloat = 5
-    static let dotDiameter: CGFloat = 8
     static let outlineWidth: CGFloat = 1
 }
 
@@ -1862,9 +1861,7 @@ struct DriveCameraPreview: UIViewRepresentable {
         private var legacyLanesAllowed = false
         private var previewVisible = false
         private let laneOutline = CAShapeLayer()
-        private let laneDotOutlines = CAShapeLayer()
         private let laneLines = CAShapeLayer()
-        private let laneDots = CAShapeLayer()
         private let laneFill = CAShapeLayer()
         private let calibrationReferenceLines = CAShapeLayer()
         private let laneStatus = UILabel()
@@ -1886,8 +1883,6 @@ struct DriveCameraPreview: UIViewRepresentable {
             laneOutline.lineWidth = LanePreviewStyle.strokeWidth + LanePreviewStyle.outlineWidth * 2
             laneOutline.lineJoin = .round
             laneOutline.lineCap = .round
-            laneDotOutlines.fillColor = UIColor.black.withAlphaComponent(0.8).cgColor
-            laneDots.fillColor = LanePreviewStyle.color.cgColor
             calibrationReferenceLines.fillColor = UIColor.clear.cgColor
             calibrationReferenceLines.strokeColor = LanePreviewStyle.color.cgColor
             calibrationReferenceLines.lineWidth = LanePreviewStyle.strokeWidth
@@ -1897,9 +1892,7 @@ struct DriveCameraPreview: UIViewRepresentable {
             layer.addSublayer(calibrationReferenceLines)
             layer.addSublayer(laneFill)
             layer.addSublayer(laneOutline)
-            layer.addSublayer(laneDotOutlines)
             layer.addSublayer(laneLines)
-            layer.addSublayer(laneDots)
             laneStatus.font = .preferredFont(forTextStyle: .caption2)
             laneStatus.textColor = .white
             laneStatus.backgroundColor = UIColor.black.withAlphaComponent(0.65)
@@ -1947,40 +1940,20 @@ struct DriveCameraPreview: UIViewRepresentable {
             drawLanes()
         }
 
-        private func showLaneMarkers(lines: UIBezierPath, points: [CGPoint], opacity: Float) {
-            let dots = UIBezierPath(), outlines = UIBezierPath()
-            let radius = LanePreviewStyle.dotDiameter / 2
-            let outlineRadius = radius + LanePreviewStyle.outlineWidth
-            for point in points {
-                dots.append(UIBezierPath(ovalIn: CGRect(x: point.x - radius, y: point.y - radius,
-                    width: radius * 2, height: radius * 2)))
-                outlines.append(UIBezierPath(ovalIn: CGRect(x: point.x - outlineRadius, y: point.y - outlineRadius,
-                    width: outlineRadius * 2, height: outlineRadius * 2)))
-            }
+        private func showLaneCurves(lines: UIBezierPath, opacity: Float) {
             laneLines.path = lines.cgPath
             laneOutline.path = lines.cgPath
-            laneDots.path = dots.cgPath
-            laneDotOutlines.path = outlines.cgPath
-            for marker in [laneLines, laneOutline, laneDots, laneDotOutlines] { marker.opacity = opacity }
+            for marker in [laneLines, laneOutline] { marker.opacity = opacity }
         }
 
-        /// Midpoint quadratics stay within each adjacent observed-point hull;
-        /// they neither extrapolate endpoints nor join separate boundaries.
-        private func appendSmoothBoundary(_ points: [CGPoint], to path: UIBezierPath) {
-            guard let first = points.first else { return }
-            path.move(to: first)
-            guard points.count > 2 else {
-                if let last = points.last, points.count == 2 { path.addLine(to: last) }
-                return
+        private func appendSmoothBoundary(_ points: [LanePoint], to path: UIBezierPath,
+                                          project: (LanePoint) -> CGPoint) {
+            var last: LanePoint?
+            for curve in LaneBoundaryBezier.fit(points) {
+                if last != curve.start { path.move(to: project(curve.start)) }
+                path.addCurve(to: project(curve.end), controlPoint1: project(curve.control1), controlPoint2: project(curve.control2))
+                last = curve.end
             }
-            func midpoint(_ a: CGPoint, _ b: CGPoint) -> CGPoint {
-                CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
-            }
-            path.addLine(to: midpoint(points[0], points[1]))
-            for i in 1..<(points.count - 1) {
-                path.addQuadCurve(to: midpoint(points[i], points[i + 1]), controlPoint: points[i])
-            }
-            path.addLine(to: points[points.count - 1])
         }
 
         private func resetLegacyPresentation() {
@@ -2010,7 +1983,7 @@ struct DriveCameraPreview: UIViewRepresentable {
             CATransaction.begin()
             CATransaction.setDisableActions(true)
             defer { CATransaction.commit() }
-            for shape in [laneLines, laneOutline, laneDots, laneDotOutlines, laneFill, calibrationReferenceLines] { shape.path = nil }
+            for shape in [laneLines, laneOutline, laneFill, calibrationReferenceLines] { shape.path = nil }
             laneStatus.isHidden = true
             accessibilityValue = nil
             let source = sourceGeometryProvider?(), profile = calibrationStore?.snapshot()
@@ -2076,22 +2049,21 @@ struct DriveCameraPreview: UIViewRepresentable {
                 laneStatus.text = "  " + NSLocalizedString("drive_recorder.lanes.reference", comment: "") + "  "
             case .observed:
                 let lines = UIBezierPath()
-                var points: [CGPoint] = []
                 if let path = validPath, !path.boundaries.isEmpty {
                     for boundary in path.boundaries {
-                        let converted = boundary.points.map { p in
+                        appendSmoothBoundary(boundary.points, to: lines) { p in
                             videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: LaneOverlayPolicy.capturePoint(p, rotation: path.rotationDegrees))
                         }
-                        points.append(contentsOf: converted); appendSmoothBoundary(converted, to: lines)
                     }
                     let age = max(0, utc - path.capturedAtSeconds)
-                    showLaneMarkers(lines: lines, points: points, opacity: Float(age <= 0.6 ? 1 : (0.75-age)/0.15))
+                    showLaneCurves(lines: lines, opacity: Float(age <= 0.6 ? 1 : (0.75-age)/0.15))
                 } else if let frame = legacyFrame {
                     for boundary in legacyBoundaries {
-                        let converted = boundary.points.map { videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: frame.capturePoint($0)) }
-                        points.append(contentsOf: converted); appendSmoothBoundary(converted, to: lines)
+                        appendSmoothBoundary(boundary.points, to: lines) {
+                            videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: frame.capturePoint($0))
+                        }
                     }
-                    showLaneMarkers(lines: lines, points: points,
+                    showLaneCurves(lines: lines,
                         opacity: Float(LaneOverlayPolicy.opacity(capturedAt: frame.estimate.timestampSeconds, now: LaneDetectionRuntime.now())))
                     // The legacy corridor fill is eligible only when both current edges matured.
                     if legacyBoundaries.count == 2, let first = frame.estimate.corridorPoints.first {

@@ -54,6 +54,24 @@ class RoadPathPreparationTests {
         assertNull(RoadPathLaneFilter.apply(input, 384, 216))
     }
 
+    @Test fun sparseFilterMatchesFullFilterAndDetectorAcrossCalibratedRows() {
+        for ((w,h) in listOf(64 to 64,288 to 216,384 to 216,161 to 91)) {
+            val input=ByteArray(w*h) { ((it*37+it/7)%256).toByte() }
+            val full=requireNotNull(RoadPathLaneFilter.apply(input,w,h))
+            for (horizon in listOf(null,Double.NaN,-1.0,0.05,0.37,0.8,2.0)) {
+                val sparse=requireNotNull(RoadPathLaneFilter.applyForDetector(input,w,h,horizon))
+                val rows=RoadBoundarySamplingRows.support(h,horizon).toSet()
+                assertTrue(rows.size<=72)
+                for (y in 0 until h) for (x in 0 until w)
+                    assertEquals(if(y in rows) full[y*w+x] else 0.toByte(),sparse[y*w+x])
+                val guidance=RoadBoundarySearchGuidance(horizon)
+                assertEquals(RoadBoundaryDetector().detect(full,w,h,1.0,guidance=guidance),
+                    RoadBoundaryDetector().detect(sparse,w,h,1.0,guidance=guidance))
+            }
+        }
+        assertNull(RoadPathLaneFilter.applyForDetector(ByteArray(64*64),64,64) { false })
+    }
+
     @Test fun preparePublishesBeforeTsrAndReusesGeometryWithoutPixelsOrTsrTime() {
         var clock = 1_000_000L
         val session = RoadPathSession { clock }

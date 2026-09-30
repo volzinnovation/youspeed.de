@@ -110,26 +110,78 @@ struct RoadPathCameraCapture: Sendable {
         let visual = visualCalibration.flatMap { $0.compatible(width:uprightW,height:uprightH,orientationKey:orientationKey) ? $0 : nil }
         let scale = min(384.0/Double(uprightW), 216.0/Double(uprightH), 1.0)
         let width = max(1, Int(Double(uprightW)*scale)), height = max(1, Int(Double(uprightH)*scale))
-        var bytes = [UInt8](repeating: 0, count: width*height)
-        for y in 0..<height {
-            guard (ProcessInfo.processInfo.systemUptime-start)*1000 < 50 else { return nil }
-            for x in 0..<width {
-            let u = (Double(x)+0.5)/Double(width), v = (Double(y)+0.5)/Double(height)
-            let rx: Double, ry: Double
-            switch orientation {
-            case .up: rx=u; ry=v
-            case .right: rx=v; ry=1-u
-            case .down: rx=1-u; ry=1-v
-            case .left: rx=1-v; ry=u
-            default: return nil
-            }
-            bytes[y*width+x] = base[min(rawH-1,Int(ry*Double(rawH)))*stride+min(rawW-1,Int(rx*Double(rawW)))]
-        } }
+        let rotation: Int
+        switch orientation {
+        case .up: rotation = 0
+        case .right: rotation = 90
+        case .down: rotation = 180
+        case .left: rotation = 270
+        default: return nil
+        }
+        guard let bytes = RoadPathLumaSampler.shared.copy(base:base,rawWidth:rawW,rawHeight:rawH,
+            rotation:rotation,rowStride:stride,width:width,height:height,
+            shouldContinue:{ (ProcessInfo.processInfo.systemUptime-start)*1000 < 50 }) else { return nil }
         return RoadPathCameraFrame(grayscale: bytes, width: width, height: height, capturedAtSeconds: capturedAtSeconds,
             geometryId: geometryId+":visual:\(visual?.revision ?? "none")", calibration: calibration, clockKnown: clockKnown,
             preprocessingMs: (ProcessInfo.processInfo.systemUptime-start)*1000, startedAt: start,
             rawWidth: rawW, rawHeight: rawH, rotationDegrees: orientation == .right ? 90 : orientation == .down ? 180 : orientation == .left ? 270 : 0,
             sourceTimestampSeconds: sourceTimestampSeconds,visualCalibration:visual,orientationKey:orientationKey)
+    }
+}
+
+/// Cached separable source offsets. Pixel-center rounding matches the original camera sampler.
+/// The plan never retains a pixel buffer, and stride/rotation/size changes invalidate it.
+final class RoadPathLumaSampler: @unchecked Sendable {
+    static let shared = RoadPathLumaSampler()
+    private struct Key: Equatable {
+        let rawWidth, rawHeight, rotation, rowStride, pixelStride, width, height: Int
+    }
+    private struct Plan { let key: Key; let columns, rows: [Int] }
+    private let lock = NSLock()
+    private var cached: Plan?
+
+    func copy(base: UnsafePointer<UInt8>, rawWidth: Int, rawHeight: Int, rotation: Int,
+              rowStride: Int, pixelStride: Int = 1, width: Int, height: Int,
+              shouldContinue: () -> Bool = { true }) -> [UInt8]? {
+        guard rawWidth > 0, rawHeight > 0, rowStride > 0, pixelStride > 0,
+              (1...384).contains(width), (1...216).contains(height), [0,90,180,270].contains(rotation),
+              shouldContinue() else { return nil }
+        let key = Key(rawWidth:rawWidth,rawHeight:rawHeight,rotation:rotation,rowStride:rowStride,
+            pixelStride:pixelStride,width:width,height:height)
+        lock.lock()
+        let existing = cached
+        lock.unlock()
+        let plan: Plan
+        if let existing, existing.key == key { plan = existing }
+        else {
+            let columns = (0..<width).map { x -> Int in
+                let u = (Double(x)+0.5)/Double(width)
+                switch rotation {
+                case 0: return min(rawWidth-1,Int(u*Double(rawWidth)))*pixelStride
+                case 90: return min(rawHeight-1,Int((1-u)*Double(rawHeight)))*rowStride
+                case 180: return min(rawWidth-1,Int((1-u)*Double(rawWidth)))*pixelStride
+                default: return min(rawHeight-1,Int(u*Double(rawHeight)))*rowStride
+                }
+            }
+            let rows = (0..<height).map { y -> Int in
+                let v = (Double(y)+0.5)/Double(height)
+                switch rotation {
+                case 0: return min(rawHeight-1,Int(v*Double(rawHeight)))*rowStride
+                case 90: return min(rawWidth-1,Int(v*Double(rawWidth)))*pixelStride
+                case 180: return min(rawHeight-1,Int((1-v)*Double(rawHeight)))*rowStride
+                default: return min(rawWidth-1,Int((1-v)*Double(rawWidth)))*pixelStride
+                }
+            }
+            plan = Plan(key:key,columns:columns,rows:rows)
+            lock.lock(); cached = plan; lock.unlock()
+        }
+        var bytes = [UInt8](repeating:0,count:width*height)
+        for y in 0..<height {
+            guard shouldContinue() else { return nil }
+            let sourceRow = plan.rows[y], destinationRow = y*width
+            for x in 0..<width { bytes[destinationRow+x] = base[sourceRow+plan.columns[x]] }
+        }
+        return shouldContinue() ? bytes : nil
     }
 }
 
@@ -207,14 +259,14 @@ final class RoadPathSession: @unchecked Sendable {
         let duplicateOrOlder=previousPreparedScope==key &&
             (compareRaw ? rawSourceTimestamp!<=previousPreparedSource! : frame.capturedAtSeconds<=previousPreparedCapture)
         func elapsedMs() -> Double { max(0,(nowUptime()-frame.startedAt)*1000) }
-        let filterStart = nowUptime()
-        let enhanced = duplicateOrOlder ? nil : RoadBoundaryPreprocessor.topHat5(grayscale: frame.grayscale, width: frame.width, height: frame.height,
-            shouldContinue: { elapsedMs() < 50 })
-        let filterMs = max(0,(nowUptime()-filterStart)*1000)
-        let detectorStart = nowUptime()
         let uprightWidth = frame.rotationDegrees%180==0 ? frame.rawWidth : frame.rawHeight
         let uprightHeight = frame.rotationDegrees%180==0 ? frame.rawHeight : frame.rawWidth
         let visual = frame.visualCalibration.flatMap { $0.compatible(width:uprightWidth,height:uprightHeight,orientationKey:frame.orientationKey) ? $0 : nil }
+        let filterStart = nowUptime()
+        let enhanced = duplicateOrOlder ? nil : RoadBoundaryPreprocessor.topHat5ForDetector(grayscale: frame.grayscale, width: frame.width, height: frame.height, horizonY: visual?.horizonY,
+            shouldContinue: { elapsedMs() < 50 })
+        let filterMs = max(0,(nowUptime()-filterStart)*1000)
+        let detectorStart = nowUptime()
         let temporalKey = "\(scope.sessionId):\(scope.generation):\(frame.geometryId):\(String(describing:frame.calibration)):\(capturedLocationEpoch):\(capturedOverlayEpoch):visual:\(visual?.revision ?? "none"):orientation:\(frame.orientationKey):rawClock:\(rawSourceTimestamp != nil):known:\(frame.clockKnown)"
         let motionHint = RoadBoundaryMotionHint.from(samples:locations.fixes.map { RoadBoundaryMotionSample(
             timeSeconds:$0.time,speedMetersPerSecond:$0.speed,courseDegrees:$0.course,horizontalAccuracyMeters:$0.accuracy,

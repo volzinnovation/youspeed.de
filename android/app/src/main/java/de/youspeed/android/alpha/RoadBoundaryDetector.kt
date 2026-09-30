@@ -31,6 +31,18 @@ data class RoadBoundaryFrame(
 )
 data class RoadBoundarySearchGuidance(val horizonY: Double? = null, val polylines: List<List<LanePoint>> = emptyList())
 
+/** Exact rows shared by detection and sparse horizontal preprocessing. */
+internal object RoadBoundarySamplingRows {
+    fun top(horizonY: Double?) = horizonY?.takeIf(Double::isFinite)?.let { (it+0.03).coerceIn(0.08,0.83) } ?: 0.50
+    fun centers(height: Int, horizonY: Double?): IntArray {
+        val topY = top(horizonY)
+        val count = min(24,((0.94-topY)*(height-1)).roundToInt()+1).coerceAtLeast(8)
+        return IntArray(count) { row -> ((0.94-row*(0.94-topY)/(count-1))*(height-1)).roundToInt() }
+    }
+    fun support(height: Int, horizonY: Double?): IntArray = centers(height,horizonY)
+        .flatMap { listOf(it-1,it,it+1) }.distinct().sorted().toIntArray()
+}
+
 internal fun roadBoundaryXAt(points: List<LanePoint>, y: Double): Double {
     if (y <= points.first().y) return points.first().x
     if (y >= points.last().y) return points.last().x
@@ -97,11 +109,11 @@ class RoadBoundaryDetector {
         val guides = guidance?.polylines.orEmpty().take(8).filter { p -> p.size in 2..12 &&
             p.all { it.x.isFinite() && it.y.isFinite() && it.x in 0.0..1.0 && it.y in 0.0..1.0 } &&
             p.zipWithNext().all { (a,b) -> b.y > a.y } }
-        val topY = guidance?.horizonY?.takeIf(Double::isFinite)?.let { (it+0.03).coerceIn(0.08,0.83) } ?: 0.50
-        val rowCount = min(24,((0.94-topY)*(height-1)).roundToInt()+1).coerceAtLeast(8)
-        for (row in 0 until rowCount) {
+        val topY = RoadBoundarySamplingRows.top(guidance?.horizonY)
+        val rows = RoadBoundarySamplingRows.centers(height,guidance?.horizonY)
+        for (row in rows.indices) {
             if (!budget.check()) return empty(true)
-            val y = ((0.94 - row * (0.94-topY) / (rowCount - 1)) * (height - 1)).roundToInt()
+            val y = rows[row]
             val normalizedY = y.toDouble() / (height - 1)
             prefix[0] = 0
             strengths.fill(0.0)

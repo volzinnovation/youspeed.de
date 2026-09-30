@@ -7,11 +7,22 @@ enum RoadBoundaryPreprocessor {
     static let identifier = "horizontal_top_hat5_gain_1_5_v1"
     static func topHat5(grayscale: [UInt8], width: Int, height: Int,
                         shouldContinue: () -> Bool = { true }) -> [UInt8]? {
+        topHatRows(grayscale:grayscale,width:width,height:height,rows:Array(0..<max(0,min(216,height))),shouldContinue:shouldContinue)
+    }
+    /// Non-support rows are zero; this output is only valid for the detector with the same horizon.
+    static func topHat5ForDetector(grayscale: [UInt8], width: Int, height: Int, horizonY: Double? = nil,
+                                  shouldContinue: () -> Bool = { true }) -> [UInt8]? {
+        guard (64...384).contains(width), (64...216).contains(height), grayscale.count == width*height else { return nil }
+        return topHatRows(grayscale:grayscale,width:width,height:height,
+            rows:RoadBoundarySamplingRows.support(height:height,horizonY:horizonY),shouldContinue:shouldContinue)
+    }
+    private static func topHatRows(grayscale: [UInt8], width: Int, height: Int, rows: [Int],
+                                   shouldContinue: () -> Bool) -> [UInt8]? {
         guard (1...384).contains(width), (1...216).contains(height), grayscale.count == width*height,
               shouldContinue() else { return nil }
         var eroded = [UInt8](repeating: 0, count: grayscale.count)
         var output = eroded
-        for y in 0..<height {
+        for y in rows {
             guard shouldContinue() else { return nil }
             for x in 0..<width {
                 if x % 32 == 0 && !shouldContinue() { return nil }
@@ -20,7 +31,7 @@ enum RoadBoundaryPreprocessor {
                 eroded[y*width+x] = value
             }
         }
-        for y in 0..<height {
+        for y in rows {
             guard shouldContinue() else { return nil }
             for x in 0..<width {
                 if x % 32 == 0 && !shouldContinue() { return nil }
@@ -66,6 +77,21 @@ struct RoadBoundarySearchGuidance {
     var horizonY: Double? = nil
     var polylines: [[LanePoint]] = []
 }
+/// Exact rows shared by detection and sparse horizontal preprocessing.
+enum RoadBoundarySamplingRows {
+    static func top(_ horizonY: Double?) -> Double {
+        horizonY.flatMap { $0.isFinite ? min(0.83,max(0.08,$0+0.03)) : nil } ?? 0.50
+    }
+    static func centers(height: Int, horizonY: Double?) -> [Int] {
+        let topY = top(horizonY)
+        let count = max(8,min(24,Int(((0.94-topY)*Double(height-1)).rounded())+1))
+        return (0..<count).map { row in Int(((0.94-Double(row)*(0.94-topY)/Double(count-1))*Double(height-1)).rounded()) }
+    }
+    static func support(height: Int, horizonY: Double?) -> [Int] {
+        Array(Set(centers(height:height,horizonY:horizonY).flatMap { [$0-1,$0,$0+1] })).sorted()
+    }
+}
+
 func roadBoundaryXAt(_ points: [LanePoint], _ y: Double) -> Double {
     if y <= points[0].y { return points[0].x }
     if y >= points[points.count-1].y { return points[points.count-1].x }
@@ -140,11 +166,11 @@ struct RoadBoundaryDetector {
             (2...12).contains(points.count) && points.allSatisfy { $0.x.isFinite && $0.y.isFinite && (0...1).contains($0.x) && (0...1).contains($0.y) } &&
             zip(points,points.dropFirst()).allSatisfy { $1.y > $0.y }
         }
-        let topY = guidance?.horizonY.flatMap { $0.isFinite ? min(0.83,max(0.08,$0+0.03)) : nil } ?? 0.50
-        let rowCount = max(8,min(24,Int(((0.94-topY)*Double(height-1)).rounded())+1))
-        for row in 0..<rowCount {
+        let topY = RoadBoundarySamplingRows.top(guidance?.horizonY)
+        let rows = RoadBoundarySamplingRows.centers(height:height,horizonY:guidance?.horizonY)
+        for row in rows.indices {
             guard check() else { return empty(true) }
-            let y = Int(((0.94 - Double(row) * (0.94-topY) / Double(rowCount - 1)) * Double(height - 1)).rounded())
+            let y = rows[row]
             let normalizedY = Double(y) / Double(height - 1)
             prefix[0] = 0
             for x in 0..<width {

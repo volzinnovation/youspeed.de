@@ -2610,6 +2610,10 @@ class ConsumerSessionController(
         reconcileTrafficSignCamera()
     }
 
+    internal fun onTrafficSignCameraAnalysisDiagnostic(stage: String, details: Map<String, Any?>) {
+        appendRuntimeDiagnosticEvent("traffic_sign_camera_analysis", details + ("stage" to stage))
+    }
+
     fun onTrafficSignCameraRuntimeStateChanged(
         state: TrafficSignCameraRuntimeState,
         detail: String,

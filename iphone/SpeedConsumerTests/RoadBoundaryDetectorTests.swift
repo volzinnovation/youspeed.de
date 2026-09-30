@@ -28,6 +28,66 @@ final class RoadBoundaryDetectorTests: XCTestCase {
         XCTAssertEqual(calls,5)
     }
 
+    func testSparseFilterPreservesAllDetectorReadsAndGeometryWithCalibration() throws {
+        for (w,h) in [(64,64),(288,216),(384,216),(161,91)] {
+            let input: [UInt8]=(0..<(w*h)).map { (index: Int) -> UInt8 in
+                let value: Int = index*37 + index/7
+                return UInt8(value%256)
+            }
+            let full=try XCTUnwrap(RoadBoundaryPreprocessor.topHat5(grayscale:input,width:w,height:h))
+            for horizon: Double? in [nil,.nan,-1,0.05,0.37,0.8,2] {
+                let sparse=try XCTUnwrap(RoadBoundaryPreprocessor.topHat5ForDetector(grayscale:input,width:w,height:h,horizonY:horizon))
+                let rows=Set(RoadBoundarySamplingRows.support(height:h,horizonY:horizon))
+                XCTAssertLessThanOrEqual(rows.count,72)
+                for y in 0..<h { for x in 0..<w {
+                    XCTAssertEqual(sparse[y*w+x],rows.contains(y) ? full[y*w+x] : 0)
+                } }
+                let guidance=RoadBoundarySearchGuidance(horizonY:horizon)
+                XCTAssertEqual(detector.detect(grayscale:full,width:w,height:h,timestampSeconds:1,guidance:guidance),
+                    detector.detect(grayscale:sparse,width:w,height:h,timestampSeconds:1,guidance:guidance))
+            }
+        }
+        XCTAssertNil(RoadBoundaryPreprocessor.topHat5ForDetector(grayscale:[UInt8](repeating:0,count:64*64),width:64,height:64,shouldContinue:{ false }))
+    }
+
+    func testCachedCameraSamplingPreservesPixelCentersAndStrideChanges() throws {
+        let sampler=RoadPathLumaSampler()
+        for (rawW,rawH) in [(1279,721),(1920,1440),(65,67)] {
+            for rotation in [0,90,180,270] { for pixelStride in [1,2] {
+                let stride=rawW*pixelStride+13
+                let bytes: [UInt8]=(0..<(stride*rawH+20)).map { (index: Int) -> UInt8 in
+                    let value: Int = index*31 + index/19
+                    return UInt8(value%256)
+                }
+                let uprightW=rotation%180==0 ? rawW : rawH, uprightH=rotation%180==0 ? rawH : rawW
+                let scale=min(384.0/Double(uprightW),216.0/Double(uprightH),1)
+                let w=Int(Double(uprightW)*scale), h=Int(Double(uprightH)*scale)
+                for base in [0,7,0] {
+                    var expected=[UInt8](repeating:0,count:w*h)
+                    for y in 0..<h { for x in 0..<w {
+                        let u=(Double(x)+0.5)/Double(w), v=(Double(y)+0.5)/Double(h)
+                        let rx: Double, ry: Double
+                        switch rotation {
+                        case 0: rx=u; ry=v
+                        case 90: rx=v; ry=1-u
+                        case 180: rx=1-u; ry=1-v
+                        default: rx=1-v; ry=u
+                        }
+                        let ix=min(rawW-1,Int(rx*Double(rawW)))
+                        let iy=min(rawH-1,Int(ry*Double(rawH)))
+                        expected[y*w+x]=bytes[base+iy*stride+ix*pixelStride]
+                    } }
+                    let actual=bytes.withUnsafeBufferPointer { sampler.copy(base:$0.baseAddress!+base,rawWidth:rawW,rawHeight:rawH,
+                        rotation:rotation,rowStride:stride,pixelStride:pixelStride,width:w,height:h) }
+                    XCTAssertEqual(actual,expected)
+                }
+            } }
+        }
+        let pixel: [UInt8]=[1]
+        XCTAssertNil(pixel.withUnsafeBufferPointer { sampler.copy(base:$0.baseAddress!,rawWidth:1,rawHeight:1,
+            rotation:0,rowStride:1,width:1,height:1,shouldContinue:{ false }) })
+    }
+
     // Same deterministic fixtures and assertions as RoadBoundaryDetectorTests.kt.
     private func scene(_ kind: String, width: Int = 384, height: Int = 216) -> [UInt8] {
         var image = [UInt8](repeating: 55, count: width * height)
@@ -81,6 +141,27 @@ final class RoadBoundaryDetectorTests: XCTestCase {
                 let expected = (index == 0 ? 0.42 - 0.28 * t : 0.58 + 0.28 * t) + 0.18 * (1 - t) * (1 - t)
                 XCTAssertEqual(point.x, expected, accuracy: 0.009)
             }
+        }
+    }
+
+    func testDarkNoiseAndBroadShadowTransitionsCannotBecomePaint() {
+        let width = 384, height = 216
+        let paint = scene("straight",width:width,height:height)
+        let lowContrast: [UInt8] = paint.map { $0 > 100 ? 47 : 32 }
+        let blackLevel: [UInt8] = paint.map { $0 > 100 ? 30 : 0 }
+        let texture: [UInt8] = (0..<(width*height)).map { index in
+            UInt8(40+((index%width)*13+(index/width)*7)%15)
+        }
+        let gradient: [UInt8] = (0..<(width*height)).map { index in UInt8(25+50*(index%width)/width) }
+        let shadow: [UInt8] = (0..<(width*height)).map { index in
+            let y = Double(index/width)/Double(height-1), x = Double(index%width)/Double(width-1)
+            return x > 0.42-0.28*((y-0.50)/0.44) && x < 0.58+0.28*((y-0.50)/0.44) ? 75 : 20
+        }
+        for image in [lowContrast,blackLevel,texture,gradient,shadow] {
+            let frame = detector.detect(grayscale:image,width:width,height:height,timestampSeconds:2.2)
+            XCTAssertFalse(frame.budgetExceeded)
+            XCTAssertTrue(frame.boundaries.allSatisfy { $0.cue == .edge && $0.confidence <= 0.40 })
+            XCTAssertTrue(frame.corridors.isEmpty)
         }
     }
 
