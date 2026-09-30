@@ -39,6 +39,34 @@ final class RoadPathSessionTests: XCTestCase {
         let json = try XCTUnwrap(json)
         return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String:Any])
     }
+    func testDiagnosticPreservesAllVisualGuidesAndActualUprightPixelCrop() throws {
+        let session = RoadPathSession(nowUptime: { 1.001 })
+        let visual = VisualRoadCalibration(horizonY: 0.37,
+            leftBottom: LanePoint(x: 0.11, y: 0.93), leftTopX: 0.413,
+            rightBottom: LanePoint(x: 0.88, y: 0.91), rightTopX: 0.59,
+            revision: "saved-calibration-test", imageWidth: 1280, imageHeight: 720,
+            orientationKey: "rear:exif:6")
+        var input = frame(10, sourceTime: 100)
+        // Rotated sensor dimensions differ from both upright source and small analysis image.
+        input.rawWidth = 720; input.rawHeight = 1280; input.rotationDegrees = 90
+        input.orientationKey = visual.orientationKey; input.visualCalibration = visual
+        let value = try decoded(session.evaluate(frame: input, diagnostic: diagnostic(10)))
+        let logged = try XCTUnwrap(value["visualCalibration"] as? [String:Any])
+        let recovered = try JSONDecoder().decode(VisualRoadCalibration.self,
+            from: JSONSerialization.data(withJSONObject: logged))
+        XCTAssertEqual(recovered, visual) // All seven coordinates, geometry, schema and revision.
+        XCTAssertEqual(value["visualCalibrationRevision"] as? String, visual.revision)
+        XCTAssertEqual(value["imageWidth"] as? Int, 1280)
+        XCTAssertEqual(value["imageHeight"] as? Int, 720)
+        XCTAssertEqual(value["tsrInputRegion"] as? [String:Int],
+            ["leftPixels": 528, "topPixels": 0, "rightPixels": 1280, "bottomPixels": 720])
+    }
+    func testUncalibratedDiagnosticDoesNotInventSavedGuidesOrCrop() throws {
+        let value = try result(RoadPathSession(nowUptime: { 1.001 }), 10)
+        XCTAssertNil(value["visualCalibration"])
+        XCTAssertNil(value["visualCalibrationRevision"])
+        XCTAssertNil(value["tsrInputRegion"])
+    }
     func testPreparedGeometryPublishesBeforeTsrAndInferenceTimeIsExcludedWithoutRefreshingExposure() throws {
         let clock = MutableClock(), session = RoadPathSession(nowUptime: { clock.now() })
         record(session,10)

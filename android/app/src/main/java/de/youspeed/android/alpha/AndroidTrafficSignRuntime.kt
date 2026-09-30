@@ -164,6 +164,7 @@ internal class CameraXTrafficSignFrame(
     private val pathIntrinsics: RoadPathCameraIntrinsics? = null,
     private val pathClockKnown: Boolean = false,
     private val pathCameraGeneration: Long = 0,
+    savedVisualCalibration: VisualRoadCalibration? = null,
 ) : TrafficSignNormalizedFrameHandle {
     val receivedAtNanos: Long = System.nanoTime()
     private val released = AtomicBoolean(false)
@@ -175,6 +176,8 @@ internal class CameraXTrafficSignFrame(
     override val capturedAtMonotonicNanos: Long = image.imageInfo.timestamp.coerceAtLeast(0L)
     override val widthPixels: Int = if (rotationDegrees == 90 || rotationDegrees == 270) image.height else image.width
     override val heightPixels: Int = if (rotationDegrees == 90 || rotationDegrees == 270) image.width else image.height
+    val orientationKey = "rear:rotation:$rotationDegrees"
+    val visualCalibration = savedVisualCalibration?.takeIf { it.compatible(widthPixels, heightPixels, orientationKey) }
 
     private val pathCaptureSeconds = capturedAtUtc.toEpochMilli() / 1000.0 -
         if (pathClockKnown) (android.os.SystemClock.elapsedRealtimeNanos() - image.imageInfo.timestamp) / 1e9 else 0.0
@@ -198,7 +201,8 @@ internal class CameraXTrafficSignFrame(
             "$pathCameraGeneration:${image.width}x${image.height}:$rotationDegrees:${values.joinToString()}",
             pathIntrinsics?.calibration(image), pathClockKnown, (System.nanoTime() - start) / 1e6, start,
             image.width, image.height, rotationDegrees, values.map(Float::toDouble),
-            sourceTimestampSeconds = image.imageInfo.timestamp / 1e9)
+            sourceTimestampSeconds = image.imageInfo.timestamp / 1e9,
+            visualCalibration = visualCalibration, orientationKey = orientationKey)
     }
 
     fun <T> withOrientedBitmap(rotationBuffer: AndroidTrafficSignBitmapRotation, consume: (Bitmap) -> T): T {
@@ -698,7 +702,17 @@ internal class AndroidLiteRtTrafficSignBackend(
             val result = runCatching {
                 frame.withOrientedBitmap(rotationBuffer) { bitmap ->
                     val conversionMs = (System.nanoTime() - conversionStartedAtNanos) / 1_000_000.0
-                    val inference = engine.recognizeAllWithDiagnostics(bitmap)
+                    val calibration = frame.visualCalibration
+                    val cropLeft = calibration?.cropLeftPixels(bitmap.width) ?: 0
+                    val modelInput = if (cropLeft > 0) Bitmap.createBitmap(bitmap, cropLeft, 0,
+                        bitmap.width - cropLeft, bitmap.height) else bitmap
+                    val croppedInference = try { engine.recognizeAllWithDiagnostics(modelInput) }
+                        finally { if (modelInput !== bitmap) modelInput.recycle() }
+                    val inference = if (calibration != null && cropLeft > 0) croppedInference.copy(
+                        detections = croppedInference.detections.map { detection ->
+                            val box = calibration.fullFrameBox(detection.candidate.boundingBox, bitmap.width)
+                            detection.copy(candidate = detection.candidate.copy(boundingBox = box), cropQuality = box.area)
+                        }, sourceWidthPixels = bitmap.width, sourceHeightPixels = bitmap.height) else croppedInference
                     val detections = inference.detections
                     val primary = primaryDetection(detections)
                     TrafficSignBackendResult.Recognition(
@@ -772,6 +786,8 @@ internal class AndroidTrafficSignCameraRuntime(
     @Volatile private var analysisOrientationEpoch = 0L
     private var imageAnalysis: ImageAnalysis? = null
     private var analyzerAttached = false
+    private var lastCalibrationPreviewNanos = 0L
+    private val calibrationRotation = AndroidTrafficSignBitmapRotation()
     private var imageCapture: ImageCapture? = null
     private var videoCapture: VideoCapture<Recorder>? = null
     private var preview: Preview? = null
@@ -908,7 +924,7 @@ internal class AndroidTrafficSignCameraRuntime(
     /** Suspend delivery while recognition is disabled/loading without interrupting a movie. */
     private fun refreshAnalysisConsumer() {
         val analysis = imageAnalysis ?: return
-        val needed = bridge != null || (controller.uiState.showDetectedLanes && controller.isDriveRecorderSessionActive())
+        val needed = bridge != null || controller.isVisualCalibrationActive() || (controller.uiState.showDetectedLanes && controller.isDriveRecorderSessionActive())
         if (needed == analyzerAttached) return
         analyzerAttached = needed
         if (needed) {
@@ -919,9 +935,27 @@ internal class AndroidTrafficSignCameraRuntime(
                     if (orientationEpoch != analysisOrientationEpoch ||
                         image.imageInfo.rotationDegrees != expectedAnalysisRotation) image.close()
                     else {
+                        if (controller.isVisualCalibrationActive() && System.nanoTime() - lastCalibrationPreviewNanos >= 200_000_000L) {
+                            lastCalibrationPreviewNanos = System.nanoTime()
+                            runCatching {
+                                val raw = image.toBitmap()
+                                try {
+                                    val upright = calibrationRotation.orient(raw, image.imageInfo.rotationDegrees)
+                                    val scale = minOf(960.0 / upright.width, 540.0 / upright.height, 1.0)
+                                    val display = Bitmap.createScaledBitmap(upright, maxOf(1, (upright.width * scale).toInt()),
+                                        maxOf(1, (upright.height * scale).toInt()), true).let {
+                                            if (it === raw || it === upright) it.copy(Bitmap.Config.ARGB_8888, false) else it
+                                        }
+                                    controller.onVisualCalibrationPreview(VisualRoadCalibrationPreview(display,
+                                        upright.width, upright.height, "rear:rotation:${image.imageInfo.rotationDegrees}",
+                                        android.os.SystemClock.elapsedRealtime()))
+                                } finally { raw.recycle() }
+                            }
+                        }
                         // Copy admitted lane luminance before TSR takes ownership.
                         laneRuntime.submit(image)
-                        if (current == null) image.close() else current.submit(CameraXTrafficSignFrame(image, pathIntrinsics, laneClockIsRealtime, generation.get()))
+                        if (current == null) image.close() else current.submit(CameraXTrafficSignFrame(image, pathIntrinsics,
+                            laneClockIsRealtime, generation.get(), controller.visualRoadCalibration))
                     }
                 }
             }
@@ -970,6 +1004,11 @@ internal class AndroidTrafficSignCameraRuntime(
                             // Same worker's monotonic values demonstrate ordering; this is not UI render telemetry.
                             org.json.JSONObject(result).apply {
                                 frame.roadPathInferenceStartedNanos?.let { put("inferenceStartedNanos", it) }
+                                frame.visualCalibration?.let {
+                                    put("visualCalibration", org.json.JSONObject(it.encode()))
+                                    put("tsrInputRegion", org.json.JSONObject().put("leftPixels", it.cropLeftPixels(frame.widthPixels))
+                                        .put("topPixels", 0).put("rightPixels", frame.widthPixels).put("bottomPixels", frame.heightPixels))
+                                }
                             }.toString()
                         },
                         controller = controller,
@@ -1342,6 +1381,7 @@ internal class AndroidTrafficSignCameraRuntime(
         cameraProvider = null
         boundCamera = null
         expectedAnalysisRotation = null
+        cameraExecutor.execute { calibrationRotation.close() }
         cameraExecutor.shutdown()
         controller.onDashcamCameraReleased()
         val completions = cameraReleaseCallbacks.toList()

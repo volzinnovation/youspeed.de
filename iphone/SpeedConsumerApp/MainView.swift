@@ -142,6 +142,7 @@ struct MainView: View {
     @State private var showingLocalRecordings = false
     @State private var showingPanoramaxGallery = false
     @State private var showingTrafficSignDetails = false
+    @State private var showingVisualCalibration = false
     @State private var photoCaptureFeedbackToken: UUID?
     @State private var photoCaptureFeedbackVisible = false
     @AppStorage("youspeed.debug.show_tsr_badge") private var showsTrafficSignRecognitionDebugBadge = false
@@ -369,6 +370,8 @@ struct MainView: View {
             showingLocalRecordings = false
             showingPanoramaxGallery = false
             showingTrafficSignDetails = false
+            showingVisualCalibration = false
+            viewModel.endVisualRoadCalibration()
         }
         .onChange(of: viewModel.stationarySpeedObservedAt) { _, _ in
             viewModel.prepareVisionDismissalVoicePermissionsIfNeeded(isStationary: hasFreshStationarySpeed(at: Date()))
@@ -410,6 +413,9 @@ struct MainView: View {
             DismissibleNavigationSheet {
                 PanoramaxGalleryView(viewModel: viewModel)
             }
+        }
+        .sheet(isPresented: $showingVisualCalibration) {
+            NavigationStack { VisualRoadCalibrationView(viewModel: viewModel) }
         }
         .sheet(isPresented: $showingTrafficSignDetails) {
             DismissibleNavigationSheet {
@@ -588,6 +594,21 @@ struct MainView: View {
             .opacity(galleryControl.opacity)
             .accessibilityLabel(NSLocalizedString("panoramax.gallery.open", comment: ""))
             .disabled(!galleryControl.isEnabled)
+
+            Spacer()
+
+            RecordingSafeButton {
+                guard viewModel.drivingControlsAllowed else { return }
+                showingVisualCalibration = true
+            } label: {
+                Image(systemName: "viewfinder").font(.title3.weight(.semibold))
+                    .frame(width: buttonDiameter, height: buttonDiameter)
+            }
+            .accessibilityLabel(Text("calibration.title"))
+            .accessibilityIdentifier("dashboard.calibrationButton")
+            .buttonStyle(.plain)
+            .background(actionButtonBackgroundColor, in: Circle())
+            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
 
             Spacer()
 

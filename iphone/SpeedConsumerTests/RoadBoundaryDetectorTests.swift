@@ -91,6 +91,35 @@ final class RoadBoundaryDetectorTests: XCTestCase {
         XCTAssertEqual(frame.corridors.map { $0.rightBoundaryIndex }, [1, 2])
     }
 
+    func testStaleCurvedGuideCannotJoinTwoSeparatelyObservedStripes() {
+        // A continuous stripe has two current observations before the old guide bends toward
+        // a nearby stripe appearing farther away. The old unbounded guide joined those stripes.
+        for width in [192,384] {
+            let height = 216
+            var image = [UInt8](repeating:55,count:width*height)
+            for y in 0..<height {
+                let ny = Double(y)/Double(height-1)
+                if !(0.49...0.96).contains(ny) { continue }
+                for x in 0..<width {
+                    let nx = Double(x)/Double(width-1)
+                    if abs(nx-0.35)<0.0065 || (ny<0.91 && abs(nx-0.40)<0.0065) { image[y*width+x]=230 }
+                }
+            }
+            let guide = RoadBoundarySearchGuidance(polylines:[[
+                LanePoint(x:0.45,y:0.50),LanePoint(x:0.45,y:0.903),LanePoint(x:0.35,y:0.920),LanePoint(x:0.35,y:0.94),
+            ]])
+            let frame = detector.detect(grayscale:image,width:width,height:height,timestampSeconds:3.1,guidance:guide)
+            XCTAssertFalse(frame.budgetExceeded)
+            XCTAssertEqual(frame.boundaries.count,2)
+            let continuous = frame.boundaries.filter { $0.supportRows==24 }
+            XCTAssertEqual(continuous.count,1)
+            XCTAssertTrue(continuous.first?.points.allSatisfy { abs($0.x-0.35)<=1/Double(width-1) } ?? false)
+            let distant = frame.boundaries.filter { $0.supportRows==22 }
+            XCTAssertEqual(distant.count,1)
+            XCTAssertTrue(distant.first?.points.allSatisfy { abs($0.x-0.40)<=1/Double(width-1) } ?? false)
+        }
+    }
+
     func testNoPaintAndFacadeEdgesCannotInventDrivableCorridor() {
         let blank = detector.detect(grayscale: [UInt8](repeating: 55, count: 384 * 216), width: 384, height: 216, timestampSeconds: 4)
         XCTAssertTrue(blank.boundaries.isEmpty)

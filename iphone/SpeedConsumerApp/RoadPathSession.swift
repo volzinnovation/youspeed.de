@@ -16,6 +16,8 @@ struct RoadPathCameraFrame {
     var rawHeight: Int = 0
     var rotationDegrees: Int = 0
     var sourceTimestampSeconds: Double? = nil
+    var visualCalibration: VisualRoadCalibration? = nil
+    var orientationKey: String = ""
 }
 struct RoadPathLiveOverlay {
     let boundaries: [RoadBoundaryEvidence]
@@ -87,7 +89,7 @@ struct RoadPathCameraCapture: Sendable {
             sourceTimestampSeconds: sourceTimestamp.isFinite ? sourceTimestamp : nil)
     }
 
-    func frame(pixel: CVPixelBuffer, orientation: CGImagePropertyOrientation) -> RoadPathCameraFrame? {
+    func frame(pixel: CVPixelBuffer, orientation: CGImagePropertyOrientation, visualCalibration: VisualRoadCalibration? = nil) -> RoadPathCameraFrame? {
         let start = ProcessInfo.processInfo.systemUptime
         guard CVPixelBufferGetPlaneCount(pixel) > 0, CVPixelBufferLockBaseAddress(pixel, .readOnly) == kCVReturnSuccess else { return nil }
         defer { CVPixelBufferUnlockBaseAddress(pixel, .readOnly) }
@@ -96,6 +98,8 @@ struct RoadPathCameraCapture: Sendable {
         let stride = CVPixelBufferGetBytesPerRowOfPlane(pixel, 0)
         let rotated = orientation == .right || orientation == .left
         let uprightW = rotated ? rawH : rawW, uprightH = rotated ? rawW : rawH
+        let orientationKey = "rear:exif:\(orientation.rawValue)"
+        let visual = visualCalibration.flatMap { $0.compatible(width:uprightW,height:uprightH,orientationKey:orientationKey) ? $0 : nil }
         let scale = min(384.0/Double(uprightW), 216.0/Double(uprightH), 1.0)
         let width = max(1, Int(Double(uprightW)*scale)), height = max(1, Int(Double(uprightH)*scale))
         var bytes = [UInt8](repeating: 0, count: width*height)
@@ -114,10 +118,10 @@ struct RoadPathCameraCapture: Sendable {
             bytes[y*width+x] = base[min(rawH-1,Int(ry*Double(rawH)))*stride+min(rawW-1,Int(rx*Double(rawW)))]
         } }
         return RoadPathCameraFrame(grayscale: bytes, width: width, height: height, capturedAtSeconds: capturedAtSeconds,
-            geometryId: geometryId, calibration: calibration, clockKnown: clockKnown,
+            geometryId: geometryId+":visual:\(visual?.revision ?? "none")", calibration: calibration, clockKnown: clockKnown,
             preprocessingMs: (ProcessInfo.processInfo.systemUptime-start)*1000, startedAt: start,
             rawWidth: rawW, rawHeight: rawH, rotationDegrees: orientation == .right ? 90 : orientation == .down ? 180 : orientation == .left ? 270 : 0,
-            sourceTimestampSeconds: sourceTimestampSeconds)
+            sourceTimestampSeconds: sourceTimestampSeconds,visualCalibration:visual,orientationKey:orientationKey)
     }
 }
 
@@ -139,6 +143,7 @@ final class RoadPathSession: @unchecked Sendable {
     private var histories: [String:[RoadPathObservation]] = [:]
     private var clock: CMClock?
     private let detector = RoadBoundaryDetector()
+    private let temporal = RoadBoundaryTemporalTracker()
     private var liveOverlay: RoadPathLiveOverlay?
     private var overlayEpoch: UInt64 = 0
     private var publishedScope: String?
@@ -183,24 +188,49 @@ final class RoadPathSession: @unchecked Sendable {
         evaluationLock.lock(); defer { evaluationLock.unlock() }
         lock.lock()
         let capturedLocationEpoch = locationEpoch, capturedOverlayEpoch = overlayEpoch
+        let previousPreparedScope=publishedScope, previousPreparedCapture=publishedCaptureTime, previousPreparedSource=publishedSourceTimestamp
         let locations = RoadPathLocationSnapshot(fixes: fixes, origin: origin,
             duplicateFixesDropped: duplicateFixesDropped, outOfOrderFixesDropped: outOfOrderFixesDropped)
         lock.unlock()
+        let key=scopeKey(scope,frame)
+        let rawSourceTimestamp=frame.sourceTimestampSeconds.flatMap { $0.isFinite ? $0 : nil }
+        let compareRaw=rawSourceTimestamp != nil && previousPreparedSource != nil
+        let duplicateOrOlder=previousPreparedScope==key &&
+            (compareRaw ? rawSourceTimestamp!<=previousPreparedSource! : frame.capturedAtSeconds<=previousPreparedCapture)
         func elapsedMs() -> Double { max(0,(nowUptime()-frame.startedAt)*1000) }
         let filterStart = nowUptime()
-        let enhanced = RoadBoundaryPreprocessor.topHat5(grayscale: frame.grayscale, width: frame.width, height: frame.height,
+        let enhanced = duplicateOrOlder ? nil : RoadBoundaryPreprocessor.topHat5(grayscale: frame.grayscale, width: frame.width, height: frame.height,
             shouldContinue: { elapsedMs() < 50 })
         let filterMs = max(0,(nowUptime()-filterStart)*1000)
         let detectorStart = nowUptime()
-        var geometry = enhanced.map { detector.detect(grayscale: $0, width: frame.width, height: frame.height,
-            timestampSeconds: frame.capturedAtSeconds, shouldContinue: { elapsedMs() < 50 }) } ??
-            RoadBoundaryFrame(boundaries: [], corridors: [], timestampSeconds: frame.capturedAtSeconds, budgetExceeded: true)
+        let uprightWidth = frame.rotationDegrees%180==0 ? frame.rawWidth : frame.rawHeight
+        let uprightHeight = frame.rotationDegrees%180==0 ? frame.rawHeight : frame.rawWidth
+        let visual = frame.visualCalibration.flatMap { $0.compatible(width:uprightWidth,height:uprightHeight,orientationKey:frame.orientationKey) ? $0 : nil }
+        let temporalKey = "\(scope.sessionId):\(scope.generation):\(frame.geometryId):\(String(describing:frame.calibration)):\(capturedLocationEpoch):\(capturedOverlayEpoch):visual:\(visual?.revision ?? "none"):orientation:\(frame.orientationKey):rawClock:\(rawSourceTimestamp != nil):known:\(frame.clockKnown)"
+        var geometry: RoadBoundaryFrame
+        if let enhanced {
+            let prediction = temporal.predict(grayscale:frame.grayscale,width:frame.width,height:frame.height,
+                timestampSeconds:rawSourceTimestamp ?? frame.capturedAtSeconds,key:temporalKey,capturedAtSeconds:frame.capturedAtSeconds,
+                shouldContinue:{ elapsedMs()<50 })
+            var guides = prediction.boundaries.map(\.points)
+            if let visual {
+                guides.append([LanePoint(x:visual.leftTopX,y:visual.horizonY),visual.leftBottom])
+                guides.append([LanePoint(x:visual.rightTopX,y:visual.horizonY),visual.rightBottom])
+            }
+            let fresh = prediction.budgetExceeded ? RoadBoundaryFrame(boundaries:[],corridors:[],timestampSeconds:frame.capturedAtSeconds,budgetExceeded:true) :
+                detector.detect(grayscale:enhanced,width:frame.width,height:frame.height,timestampSeconds:frame.capturedAtSeconds,
+                    guidance:RoadBoundarySearchGuidance(horizonY:visual?.horizonY,polylines:guides),shouldContinue:{ elapsedMs()<50 })
+            geometry = temporal.complete(prediction:prediction,fresh:fresh,grayscale:frame.grayscale,shouldContinue:{ elapsedMs()<50 })
+        } else {
+            if !duplicateOrOlder { temporal.reset() }
+            geometry = RoadBoundaryFrame(boundaries:[],corridors:[],timestampSeconds:frame.capturedAtSeconds,budgetExceeded:!duplicateOrOlder)
+        }
         let ready = nowUptime(), geometryMs = max(0,(ready-detectorStart)*1000)
         let preparationMs = max(0,(ready-frame.startedAt)*1000)
-        if preparationMs >= 50 { geometry = RoadBoundaryFrame(boundaries: [], corridors: [],
+        if !duplicateOrOlder && preparationMs >= 50 { temporal.reset(); geometry = RoadBoundaryFrame(boundaries: [], corridors: [],
             timestampSeconds: frame.capturedAtSeconds, budgetExceeded: true, operationCount: geometry.operationCount) }
         let sourceTimestamp = frame.sourceTimestampSeconds.flatMap { $0.isFinite ? $0 : nil }
-        let key = scopeKey(scope,frame), publicationTime = Date().timeIntervalSince1970
+        let publicationTime = Date().timeIntervalSince1970
         let admissionCurrent = shouldPublish()
         lock.lock()
         let rawClockOrdering = sourceTimestamp != nil && publishedSourceTimestamp != nil
@@ -349,7 +379,10 @@ final class RoadPathSession: @unchecked Sendable {
             "cameraHeightMeters":1.60,"cameraLateralOffsetMeters": -0.08,"calibrationAvailable":frame.calibration != nil,
             "trajectorySamples":poses.count,"preprocessingMs":frame.preprocessingMs+prepared.filterMs,"geometryMs":geometryMs,
             "addedProcessingMs":elapsedMs(),"deadlineExceeded":exceeded,"geometryDeadlineExceeded":geometry.budgetExceeded,
-            "boundaries":geometry.boundaries.map { ["confidence":$0.confidence,"cue":$0.cue.rawValue,"supportRows":$0.supportRows,"points":$0.points.map { [$0.x,$0.y] }] as [String:Any] },
+            "boundaries":geometry.boundaries.map { ["confidence":$0.confidence,"cue":$0.cue.rawValue,"supportRows":$0.supportRows,
+                "provenance":$0.provenance.rawValue,"lastFreshTimestampSeconds":$0.lastFreshTimestampSeconds.map { $0 as Any } ?? NSNull(),
+                "evidenceAgeSeconds":$0.evidenceAgeSeconds,"trackedAnchorCount":$0.trackedAnchorCount,
+                "points":$0.points.map { [$0.x,$0.y] }] as [String:Any] },
             "corridors":corridors.map { ["id":$0.id,"role":$0.role,"confidence":$0.confidence] as [String:Any] }, "associations":associations]
         json["lanePreprocessingId"] = RoadBoundaryPreprocessor.identifier
         json["lumaSamplingMs"] = frame.preprocessingMs; json["laneFilterMs"] = prepared.filterMs
@@ -360,6 +393,18 @@ final class RoadPathSession: @unchecked Sendable {
             json["lanePreparedBeforeTsr"] = prepared.readyUptime <= tsrStartedAtUptime
         }
         json["geometryReusedAfterTsr"] = true
+        json["visualCalibrationRevision"] = frame.visualCalibration?.revision
+        if let visual = frame.visualCalibration,
+           let encoded = try? JSONEncoder().encode(visual),
+           let object = try? JSONSerialization.jsonObject(with: encoded) {
+            let width = frame.rotationDegrees % 180 == 0 ? frame.rawWidth : frame.rawHeight
+            let height = frame.rotationDegrees % 180 == 0 ? frame.rawHeight : frame.rawWidth
+            json["visualCalibration"] = object
+            json["tsrInputRegion"] = ["leftPixels": visual.cropLeftPixels(width: width),
+                "topPixels": 0, "rightPixels": width, "bottomPixels": height]
+        }
+        json["temporalOperationCount"] = geometry.temporalOperationCount
+        json["temporalResetReason"] = geometry.temporalResetReason
         json["imageWidth"] = frame.rotationDegrees % 180 == 0 ? frame.rawWidth : frame.rawHeight
         json["imageHeight"] = frame.rotationDegrees % 180 == 0 ? frame.rawHeight : frame.rawWidth
         json["imageMapping"] = ["rawWidth":frame.rawWidth,"rawHeight":frame.rawHeight,"rotationDegrees":frame.rotationDegrees]
@@ -417,6 +462,7 @@ final class RoadPathSession: @unchecked Sendable {
         }
         if totalMs >= 200 || !locationCurrent {
             histories.removeAll()
+            temporal.reset()
             var rejected: [String:Any] = ["schemaVersion":1,"mode":"shadow","frameId":batch.frameId,"capturedAtSeconds":frame.capturedAtSeconds,
                 "geometryId":frame.geometryId,"deadlineExceeded":totalMs >= 200,"totalAddedProcessingMs":totalMs,
                 "reason":locationCurrent ? "added_processing_deadline" : "trajectory_reset","associations":[]]

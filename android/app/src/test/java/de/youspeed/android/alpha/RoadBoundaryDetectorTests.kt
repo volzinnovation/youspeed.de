@@ -74,6 +74,33 @@ class RoadBoundaryDetectorTests {
         assertEquals(listOf(0 to 1, 1 to 2), frame.corridors.map { it.leftBoundaryIndex to it.rightBoundaryIndex })
     }
 
+    @Test fun staleCurvedGuideCannotJoinTwoSeparatelyObservedStripes() {
+        // A continuous stripe has two current observations before the old guide bends toward
+        // a nearby stripe appearing farther away. The old unbounded guide joined those stripes.
+        for (width in listOf(192, 384)) {
+            val height = 216
+            val image = ByteArray(width * height) { 55 }
+            for (y in 0 until height) {
+                val ny = y.toDouble() / (height - 1)
+                if (ny !in 0.49..0.96) continue
+                for (x in 0 until width) {
+                    val nx = x.toDouble() / (width - 1)
+                    if (abs(nx - 0.35) < 0.0065 || (ny < 0.91 && abs(nx - 0.40) < 0.0065)) image[y * width + x] = 230.toByte()
+                }
+            }
+            val guide = RoadBoundarySearchGuidance(polylines = listOf(listOf(
+                LanePoint(0.45, 0.50), LanePoint(0.45, 0.903), LanePoint(0.35, 0.920), LanePoint(0.35, 0.94),
+            )))
+            val frame = detector.detect(image, width, height, 3.1, guidance = guide)
+            assertFalse(frame.budgetExceeded)
+            assertEquals(2, frame.boundaries.size)
+            val continuous = frame.boundaries.single { it.supportRows == 24 }
+            assertTrue(continuous.points.all { abs(it.x - 0.35) <= 1.0 / (width - 1) })
+            val distant = frame.boundaries.single { it.supportRows == 22 }
+            assertTrue(distant.points.all { abs(it.x - 0.40) <= 1.0 / (width - 1) })
+        }
+    }
+
     @Test fun noPaintAndFacadeEdgesCannotInventDrivableCorridor() {
         val blank = detector.detect(ByteArray(384 * 216) { 55 }, 384, 216, 4.0)
         assertTrue(blank.boundaries.isEmpty())

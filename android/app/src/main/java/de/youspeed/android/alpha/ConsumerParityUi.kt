@@ -394,9 +394,17 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
         val outlineWidth = LanePreviewStyle.outlineWidth.toPx()
         fun drawBoundary(points: List<LanePoint>, opacity: Float) {
             if (points.isEmpty()) return
-            val outline = Path().apply { points.forEachIndexed { i, p ->
-                if (i == 0) moveTo(p.x.toFloat(), p.y.toFloat()) else lineTo(p.x.toFloat(), p.y.toFloat())
-            } }
+            val outline = Path().apply {
+                moveTo(points.first().x.toFloat(), points.first().y.toFloat())
+                // Midpoint quadratic joins stay within each pair's observed-point hull.
+                // They change only rendering; evidence points and timestamps remain exact.
+                for (i in 1 until points.lastIndex) {
+                    val p = points[i]; val next = points[i + 1]
+                    quadraticBezierTo(p.x.toFloat(), p.y.toFloat(),
+                        ((p.x + next.x) / 2).toFloat(), ((p.y + next.y) / 2).toFloat())
+                }
+                if (points.size > 1) lineTo(points.last().x.toFloat(), points.last().y.toFloat())
+            }
             val halo = Color.Black.copy(alpha = opacity * 0.8f)
             val color = LanePreviewStyle.color.copy(alpha = opacity)
             drawPath(outline, halo, style = Stroke(width = strokeWidth + outlineWidth * 2,
@@ -407,7 +415,9 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
             points.forEach { p -> drawCircle(color, dotRadius, Offset(p.x.toFloat(), p.y.toFloat())) }
         }
         if (freshPath != null && preview != null) {
-            val fade = if (pathAge!! <= 0.3) 1f else ((0.75-pathAge)/0.45).toFloat()
+            // At the observed ~2 Hz cadence, fading at 300 ms makes every valid
+            // update pulse. Keep it bright through a normal interval; expiry stays 750 ms.
+            val fade = if (pathAge!! <= 0.6) 1f else ((0.75-pathAge)/0.15).toFloat()
             freshPath.boundaries.forEach { boundary ->
                 val points = boundary.points.mapNotNull { LaneOverlayGeometry.project(it, freshPath.geometry, preview) }
                 drawBoundary(points, fade)

@@ -7,11 +7,16 @@ import kotlin.math.roundToInt
 
 /** Image evidence only: even a PAINT cue is not a semantic road/lane classification. */
 enum class RoadBoundaryCue { PAINT, EDGE }
+enum class RoadBoundaryProvenance { FRESH, TRACKED, FUSED }
 data class RoadBoundaryEvidence(
     val points: List<LanePoint>,
     val confidence: Double,
     val cue: RoadBoundaryCue,
     val supportRows: Int,
+    val provenance: RoadBoundaryProvenance = RoadBoundaryProvenance.FRESH,
+    val lastFreshTimestampSeconds: Double? = null,
+    val evidenceAgeSeconds: Double = 0.0,
+    val trackedAnchorCount: Int = 0,
 )
 /** These pairs are unassigned hypotheses. A calibrated trajectory must identify the ego path. */
 data class RoadCorridorHypothesis(val leftBoundaryIndex: Int, val rightBoundaryIndex: Int, val confidence: Double)
@@ -21,7 +26,18 @@ data class RoadBoundaryFrame(
     val timestampSeconds: Double,
     val budgetExceeded: Boolean = false,
     val operationCount: Int = 0,
+    val temporalOperationCount: Int = 0,
+    val temporalResetReason: String? = null,
 )
+data class RoadBoundarySearchGuidance(val horizonY: Double? = null, val polylines: List<List<LanePoint>> = emptyList())
+
+internal fun roadBoundaryXAt(points: List<LanePoint>, y: Double): Double {
+    if (y <= points.first().y) return points.first().x
+    if (y >= points.last().y) return points.last().x
+    val index = points.indexOfFirst { it.y >= y }.coerceAtLeast(1)
+    val a = points[index-1]; val b = points[index]
+    return a.x + (b.x-a.x)*(y-a.y)/(b.y-a.y)
+}
 
 /**
  * Portable bounded CPU image front end, shared arithmetically with iPhone. The caller provides
@@ -35,13 +51,17 @@ data class RoadBoundaryFrame(
  */
 class RoadBoundaryDetector {
     private data class Sample(val point: LanePoint, val strength: Double, val cue: RoadBoundaryCue, val row: Int)
-    private class Track(val samples: MutableList<Sample>) {
+    private class Track(val samples: MutableList<Sample>, val guide: List<LanePoint>? = null, val guideCorrectionLimit: Double) {
         fun predictedX(y: Double): Double {
             val last = samples.last()
-            if (samples.size == 1) return last.point.x
+            val guided = guide?.let { last.point.x + roadBoundaryXAt(it,y)-roadBoundaryXAt(it,last.point.y) }
+            if (samples.size == 1) return guided ?: last.point.x
             val before = samples[max(0, samples.size - 3)]
             val slope = ((last.point.x - before.point.x) / (last.point.y - before.point.y)).coerceIn(-2.0, 2.0)
-            return last.point.x + slope * (y - last.point.y)
+            val local = last.point.x + slope * (y - last.point.y)
+            // Two current observations outrank an older curve. A prior may only nudge the
+            // next association by one analysis pixel, never bend it onto adjacent paint.
+            return guided?.let { local + (0.4 * (it - local)).coerceIn(-guideCorrectionLimit, guideCorrectionLimit) } ?: local
         }
     }
     private class Budget(val maximum: Int, val shouldContinue: () -> Boolean) {
@@ -59,6 +79,7 @@ class RoadBoundaryDetector {
         height: Int,
         timestampSeconds: Double,
         maximumOperations: Int = 250_000,
+        guidance: RoadBoundarySearchGuidance? = null,
         shouldContinue: () -> Boolean = { true },
     ): RoadBoundaryFrame {
         val budget = Budget(maximumOperations.coerceAtLeast(0), shouldContinue)
@@ -73,10 +94,14 @@ class RoadBoundaryDetector {
         val radii = (1..3).map { max(1, (it * width / 384.0).roundToInt()) }.distinct()
         val margin = 4 * radii.last() + 2
         val suppression = max(3, (width * 0.012).roundToInt())
-        val rowCount = 24
+        val guides = guidance?.polylines.orEmpty().take(8).filter { p -> p.size in 2..12 &&
+            p.all { it.x.isFinite() && it.y.isFinite() && it.x in 0.0..1.0 && it.y in 0.0..1.0 } &&
+            p.zipWithNext().all { (a,b) -> b.y > a.y } }
+        val topY = guidance?.horizonY?.takeIf(Double::isFinite)?.let { (it+0.03).coerceIn(0.08,0.83) } ?: 0.50
+        val rowCount = min(24,((0.94-topY)*(height-1)).roundToInt()+1).coerceAtLeast(8)
         for (row in 0 until rowCount) {
             if (!budget.check()) return empty(true)
-            val y = ((0.94 - row * 0.44 / (rowCount - 1)) * (height - 1)).roundToInt()
+            val y = ((0.94 - row * (0.94-topY) / (rowCount - 1)) * (height - 1)).roundToInt()
             val normalizedY = y.toDouble() / (height - 1)
             prefix[0] = 0
             strengths.fill(0.0)
@@ -113,7 +138,11 @@ class RoadBoundaryDetector {
                 if (winner) candidates.add(Sample(LanePoint(x.toDouble() / (width - 1), normalizedY), strengths[x],
                     if (paints[x]) RoadBoundaryCue.PAINT else RoadBoundaryCue.EDGE, row))
             }
-            val rowCandidates = candidates.sortedWith(compareByDescending<Sample> { it.strength }.thenBy { it.point.x }).take(12)
+            fun guideDistance(sample: Sample) = guides.minOfOrNull { abs(sample.point.x-roadBoundaryXAt(it,sample.point.y)) } ?: 1.0
+            // Priors only rank already observed pixels; they cannot create a candidate or raise its confidence.
+            val rowCandidates = candidates.sortedWith(compareByDescending<Sample> {
+                it.strength*(1+0.15*(1-guideDistance(it)/0.08).coerceIn(0.0,1.0))
+            }.thenBy { it.point.x }).take(12)
             val expired = active.filter { row - it.samples.last().row > 4 }
             completed.addAll(expired)
             active.removeAll(expired.toSet())
@@ -143,7 +172,12 @@ class RoadBoundaryDetector {
                 }
             }
             for (index in rowCandidates.indices) {
-                if (!usedCandidates[index] && active.size < 12) active.add(Track(arrayListOf(rowCandidates[index])))
+                if (!usedCandidates[index] && active.size < 12) {
+                    val sample = rowCandidates[index]
+                    val guide = guides.minByOrNull { abs(sample.point.x-roadBoundaryXAt(it,sample.point.y)) }
+                        ?.takeIf { abs(sample.point.x-roadBoundaryXAt(it,sample.point.y)) <= 0.05 }
+                    active.add(Track(arrayListOf(sample),guide,1.0 / (width - 1)))
+                }
             }
         }
         completed.addAll(active)
@@ -152,7 +186,7 @@ class RoadBoundaryDetector {
             if (!budget.check(track.samples.size + 1)) return empty(true)
             val samples = track.samples
             val span = samples.first().point.y - samples.last().point.y
-            if (samples.size < 8 || span < 0.16) continue
+            if (samples.size < 8 || span < min(0.16,(0.94-topY)*0.6)) continue
             val paintCount = samples.count { it.cue == RoadBoundaryCue.PAINT }
             val cue = if (paintCount >= 6 && paintCount * 5 >= samples.size * 3) RoadBoundaryCue.PAINT else RoadBoundaryCue.EDGE
             val density = samples.size.toDouble() / (samples.last().row - samples.first().row + 1)

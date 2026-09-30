@@ -117,4 +117,25 @@
     <string name="startup_logs_clearing">Gespeicherte Logs werden gelöscht…</string>
     <string name="startup_logs_failed">Logs konnten nicht geprüft oder gelöscht werden</string>
     <string name="settings_debug_logging">Debug-Protokollierung</string>
+    <string name="calibration_title">Kamera kalibrieren</string>
+    <string name="calibration_step">Schritt %1$d von 5</string>
+    <string name="calibration_horizon">Horizont einstellen</string>
+    <string name="calibration_left_lower">Linker Straßenrand · unten</string>
+    <string name="calibration_left_upper">Linker Straßenrand · oben</string>
+    <string name="calibration_right_lower">Rechter Straßenrand · unten</string>
+    <string name="calibration_right_upper">Rechter Straßenrand · oben</string>
+    <string name="calibration_horizon_hint">Auf einer geraden Straße den Horizont nach oben oder unten verschieben. Das Telefon bleibt in seiner Fahrhalterung.</string>
+    <string name="calibration_lower_hint">Den gelben Punkt dorthin verschieben, wo der Straßenrand ins Bild eintritt.</string>
+    <string name="calibration_upper_hint">Den gelben Punkt nach links oder rechts verschieben, bis die Linie dem Straßenrand zum Horizont folgt.</string>
+    <string name="calibration_live_video">Live-Kamerabild</string>
+    <string name="calibration_invalid">Die linke Linie muss links bleiben, die unteren Punkte unter dem Horizont. Zum Speichern ist ein aktuelles Kamerabild nötig.</string>
+    <string name="calibration_back">Zurück</string>
+    <string name="calibration_next">Weiter</string>
+    <string name="calibration_save">Speichern</string>
+    <string name="calibration_cancel">Abbrechen</string>
+    <string name="calibration_left">Nach links</string>
+    <string name="calibration_right">Nach rechts</string>
+    <string name="calibration_up">Nach oben</string>
+    <string name="calibration_down">Nach unten</string>
+    <string name="calibration_defaults">Entwurf zurücksetzen</string>
 </resources>

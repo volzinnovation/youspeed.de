@@ -66,6 +66,7 @@ enum DriveRecorderState: Equatable {
 enum DriveCaptureSessionPurpose: Equatable {
     case driveRecording
     case automaticCapture
+    case calibration
 }
 
 enum TrafficSignRecognitionState: Equatable {
@@ -132,7 +133,7 @@ enum DriveRecorderPolicy {
         if driveStartPending {
             return .preparing
         }
-        if purpose == .automaticCapture {
+        if purpose == .automaticCapture || purpose == .calibration {
             return .disabled
         }
         return captureState
@@ -286,6 +287,12 @@ final class DriveVideoFrameDispatcher: NSObject, AVCaptureVideoDataOutputSampleB
     private var orientation: CGImagePropertyOrientation = .right
     private weak var laneConsumer: (any DriveVideoFrameConsumer)?
     private var lanesEnabled = false
+    private weak var calibrationConsumer: (any DriveVideoFrameConsumer)?
+    private var calibrationEnabled = false
+
+    func setCalibrationConsumer(_ consumer: (any DriveVideoFrameConsumer)?, enabled: Bool) {
+        lock.lock(); calibrationConsumer = consumer; calibrationEnabled = enabled; lock.unlock()
+    }
 
     func setLaneConsumer(_ consumer: (any DriveVideoFrameConsumer)?) {
         lock.lock()
@@ -339,6 +346,7 @@ final class DriveVideoFrameDispatcher: NSObject, AVCaptureVideoDataOutputSampleB
         // old orientation cannot acquire a new context after a mount change.
         let activeConsumer = enabled ? consumer : nil
         let activeLaneConsumer = lanesEnabled ? laneConsumer : nil
+        if calibrationEnabled { calibrationConsumer?.consumeVideoFrame(sampleBuffer, orientation: orientation) }
         activeLaneConsumer?.consumeVideoFrame(sampleBuffer, orientation: orientation)
         activeConsumer?.consumeVideoFrame(sampleBuffer, orientation: orientation)
     }
@@ -402,6 +410,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     private var activeDashcamEnabled = false
     private var activePanoramaxEnabled = false
     private var activeTSREnabled = false
+    private var calibrationPreviewEnabled = false
     private var activeLanesEnabled = false
     private var startTimeoutTask: Task<Void, Never>?
     private var stopTimeoutTask: Task<Void, Never>?
@@ -516,12 +525,18 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         if DriveRecorderPolicy.shouldStopAfterTrafficSignRuntimeLoss(
             for: state,
             dashcamActive: activeDashcamEnabled || dashcamTransitionInFlight,
-            panoramaxActive: activePanoramaxEnabled
+            panoramaxActive: activePanoramaxEnabled || calibrationPreviewEnabled
         ) {
             beginStopping(resultState: .unavailable, detail: lastCaptureDetail)
             return
         }
         notifyChange()
+    }
+
+    func setCalibrationPreviewConsumer(_ consumer: (any DriveVideoFrameConsumer)?) {
+        calibrationPreviewEnabled = consumer != nil
+        frameDispatcher.setCalibrationConsumer(consumer, enabled: calibrationPreviewEnabled)
+        updateVideoAnalysisConnection()
     }
 
     func setLaneFrameConsumer(_ consumer: (any DriveVideoFrameConsumer)?) {
@@ -537,7 +552,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     }
 
     private func updateVideoAnalysisConnection() {
-        let enabled = activeTSREnabled || activeLanesEnabled
+        let enabled = activeTSREnabled || activeLanesEnabled || calibrationPreviewEnabled
         sessionQueue.async { [weak self] in
             self?.videoOutput.connection(with: .video)?.isEnabled = enabled
         }
@@ -589,7 +604,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
 
         let tsrEnabled = trafficSignRecognitionEnabled && frameDispatcher.hasConsumer
-        guard dashcamEnabled || panoramaxEnabled || trafficSignRecognitionEnabled else {
+        guard dashcamEnabled || panoramaxEnabled || trafficSignRecognitionEnabled || calibrationPreviewEnabled else {
             state = .unavailable
             lastCaptureDetail = trafficSignRecognitionEnabled
                 ? "Noch kein Verkehrszeichenmodell installiert"
@@ -641,7 +656,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                     // verified model pack is still loading. The selected video
                     // output must get graph priority even though it cannot
                     // consume frames until the runtime attaches.
-                    trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
+                    trafficSignRecognitionEnabled: trafficSignRecognitionEnabled || calibrationPreviewEnabled,
                     panoramaxEnabled: activePanoramaxEnabled
                 )
                 activeDashcamEnabled = activeDashcamEnabled && movieOutputAvailable
@@ -656,7 +671,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 if activeDashcamEnabled {
                     dashcamFileURL = try Self.makeDashcamFileURL(captureSessionID: captureSessionID)
                 }
-                guard activeDashcamEnabled || activeTSREnabled || activePanoramaxEnabled else {
+                guard activeDashcamEnabled || activeTSREnabled || activePanoramaxEnabled || (calibrationPreviewEnabled && videoOutputAvailable) else {
                     throw RecorderError.noEnabledModuleAvailable
                 }
             } catch let error as RecorderError {
@@ -689,7 +704,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
             let movieURL = dashcamFileURL
             let movieAngle = screenOrientation.captureRotationAngle
-            let trafficSignFramesEnabled = activeTSREnabled
+            let trafficSignFramesEnabled = activeTSREnabled || calibrationPreviewEnabled
             frameDispatcher.setOrientation(screenOrientation.frameOrientation)
             frameDispatcher.setEnabled(activeTSREnabled)
             scheduleStartTimeout(generation: requestedGeneration)
@@ -1333,7 +1348,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 }
             }
         }
-        guard activeDashcamEnabled || activePanoramaxEnabled || activeTSREnabled else {
+        guard activeDashcamEnabled || activePanoramaxEnabled || activeTSREnabled || (calibrationPreviewEnabled && videoOutputAvailable) else {
             beginStopping(
                 resultState: .unavailable,
                 detail: "Kein aktiviertes Kameramodul ist mehr verfuegbar"
@@ -1350,6 +1365,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             lastCaptureDetail = "Dashcam-Aufnahme aktiv"
         } else if activeTSREnabled {
             lastCaptureDetail = "Verkehrszeichenerkennung aktiv"
+        } else if calibrationPreviewEnabled {
+            lastCaptureDetail = NSLocalizedString("calibration.live", comment: "")
         }
         notifyChange()
     }
@@ -1873,6 +1890,25 @@ struct DriveCameraPreview: UIViewRepresentable {
             for marker in [laneLines, laneOutline, laneDots, laneDotOutlines] { marker.opacity = opacity }
         }
 
+        /// Midpoint quadratics stay within each adjacent observed-point hull;
+        /// they neither extrapolate endpoints nor join separate boundaries.
+        private func appendSmoothBoundary(_ points: [CGPoint], to path: UIBezierPath) {
+            guard let first = points.first else { return }
+            path.move(to: first)
+            guard points.count > 2 else {
+                if let last = points.last, points.count == 2 { path.addLine(to: last) }
+                return
+            }
+            func midpoint(_ a: CGPoint, _ b: CGPoint) -> CGPoint {
+                CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+            }
+            path.addLine(to: midpoint(points[0], points[1]))
+            for i in 1..<(points.count - 1) {
+                path.addQuadCurve(to: midpoint(points[i], points[i + 1]), controlPoint: points[i])
+            }
+            path.addLine(to: points[points.count - 1])
+        }
+
         private func drawLanes() {
             CATransaction.begin()
             CATransaction.setDisableActions(true)
@@ -1890,14 +1926,15 @@ struct DriveCameraPreview: UIViewRepresentable {
                     let lines = UIBezierPath()
                     var points: [CGPoint] = []
                     for boundary in path.boundaries {
-                        for (i,p) in boundary.points.enumerated() {
+                        let converted = boundary.points.map { p in
                             let capture = LaneOverlayPolicy.capturePoint(p, rotation: path.rotationDegrees)
-                            let point = videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: capture)
-                            points.append(point)
-                            if i == 0 { lines.move(to:point) } else { lines.addLine(to:point) }
+                            return videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: capture)
                         }
+                        points.append(contentsOf: converted)
+                        appendSmoothBoundary(converted, to: lines)
                     }
-                    showLaneMarkers(lines: lines, points: points, opacity: Float(age <= 0.3 ? 1 : (0.75-age)/0.45))
+                    // Preserve brightness across the observed ~2 Hz updates; expiry remains 750 ms.
+                    showLaneMarkers(lines: lines, points: points, opacity: Float(age <= 0.6 ? 1 : (0.75-age)/0.15))
                     laneStatus.text = "  " + String(format:NSLocalizedString("drive_recorder.lanes.status",comment:""),
                         NSLocalizedString("drive_recorder.lanes.experimental",comment:"")) + " (\(path.boundaries.count))  "
                     laneStatus.sizeToFit(); laneStatus.frame.origin = CGPoint(x:12,y:max(42,bounds.height-65))
@@ -1926,14 +1963,9 @@ struct DriveCameraPreview: UIViewRepresentable {
                 videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: frame.capturePoint(point))
             }
             for boundary in [estimate.left, estimate.right].compactMap({ $0 }) {
-                guard let first = boundary.points.first else { continue }
-                lines.move(to: converted(first))
-                points.append(converted(first))
-                for point in boundary.points.dropFirst() {
-                    let convertedPoint = converted(point)
-                    lines.addLine(to: convertedPoint)
-                    points.append(convertedPoint)
-                }
+                let convertedPoints = boundary.points.map(converted)
+                points.append(contentsOf: convertedPoints)
+                appendSmoothBoundary(convertedPoints, to: lines)
             }
             let confidence = [estimate.left, estimate.right].compactMap { $0?.confidence }.min() ?? 0
             showLaneMarkers(lines: lines, points: points, opacity: Float(ageOpacity))

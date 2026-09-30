@@ -407,3 +407,25 @@
 "drive_recorder.lanes.paused" = "Paused";
 
 "drive_recorder.lanes.experimental" = "Experimental";
+
+/* Live analysis-image road calibration */
+"calibration.title" = "Camera calibration";
+"calibration.cancel" = "Cancel";
+"calibration.waiting" = "Waiting for the live camera image…";
+"calibration.live" = "Calibration camera active";
+"calibration.step" = "Step %d of 5";
+"calibration.horizon" = "Move the horizon up or down";
+"calibration.left_bottom" = "Move the lower-left point";
+"calibration.left_top" = "Move the upper-left point along the horizon";
+"calibration.right_bottom" = "Move the lower-right point";
+"calibration.right_top" = "Move the upper-right point along the horizon";
+"calibration.crop_note" = "Sign detection uses the full height, from the upper-left point to the right image edge.";
+"calibration.invalid" = "Keep the left guide to the left of the right guide.";
+"calibration.previous" = "Previous";
+"calibration.next" = "Next";
+"calibration.save" = "Save";
+"calibration.defaults" = "Reset draft to defaults";
+"calibration.up" = "Move up";
+"calibration.down" = "Move down";
+"calibration.left" = "Move left";
+"calibration.right" = "Move right";

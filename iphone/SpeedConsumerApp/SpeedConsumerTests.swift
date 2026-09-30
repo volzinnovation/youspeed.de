@@ -208,6 +208,22 @@ private final class DeterministicTrafficSignInferenceBackend:
     }
 }
 
+private final class CalibrationInspectingInferenceBackend: TrafficSignInferenceBackend, @unchecked Sendable {
+    private let lock = NSLock()
+    private var received: (Int, Int, CGImagePropertyOrientation)?
+    let output: TrafficSignDetection
+    init(output: TrafficSignDetection) { self.output = output }
+    func dimensions() -> (Int, Int, CGImagePropertyOrientation)? { lock.lock(); defer { lock.unlock() }; return received }
+    func detections(in pixelBuffer: CVPixelBuffer, orientation: CGImagePropertyOrientation) throws -> [TrafficSignDetection] {
+        lock.lock(); received = (CVPixelBufferGetWidth(pixelBuffer), CVPixelBufferGetHeight(pixelBuffer), orientation); lock.unlock()
+        return [output]
+    }
+    func detections(in image: CGImage, orientation: CGImagePropertyOrientation) throws -> [TrafficSignDetection] {
+        lock.lock(); received = (image.width, image.height, orientation); lock.unlock()
+        return [output]
+    }
+}
+
 private final class DeterministicTrafficSignShadowInferenceBackend:
     TrafficSignShadowInferenceBackendV2,
     @unchecked Sendable
@@ -2554,6 +2570,47 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(afterBundleChange.candidate?.evidenceFrames, 1)
         XCTAssertNotEqual(afterBundleChange.candidate?.trackId, afterSourceChange.candidate?.trackId)
         XCTAssertEqual(afterBundleChange.roadContext, nextBundleContext)
+    }
+
+    func testCalibratedRuntimeCropsActualInputAndRemapsForEveryMountOrientation() throws {
+        let manifest = makeTrafficSignModelPackManifest()
+        let artifact = try XCTUnwrap(manifest.detector.artifacts.first)
+        let verified = TrafficSignVerifiedModelPack(directoryURL: URL(fileURLWithPath: NSTemporaryDirectory()),
+            manifest: manifest, detectorArtifact: artifact, detectorArtifactURL: URL(fileURLWithPath: "/unused-test-model"))
+        let canvas = try XCTUnwrap(CGContext(data: nil, width: 10, height: 6, bitsPerComponent: 8, bytesPerRow: 40,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        let image = try XCTUnwrap(canvas.makeImage())
+        let snapshot = TrafficSignFrameSnapshot(context: makeTrafficSignDetectionContext(),
+            conditions: TrafficSignAnalysisConditions(speedKmh: 50, candidateRecentlySeen: false,
+                lowPowerMode: false, thermalState: .nominal, appIsActive: true), captureSessionId: "calibration-test")
+        let detection = makeTrafficSignDetection(score: 0.9,
+            box: TrafficSignNormalizedRect(x: 0.2, y: 0.3, width: 0.1, height: 0.2))
+        for orientation: CGImagePropertyOrientation in [.up, .right, .down, .left] {
+            let rotated = orientation == .right || orientation == .left
+            let width = rotated ? 6 : 10, height = rotated ? 10 : 6
+            var draft = VisualRoadCalibration.defaults(width: width, height: height,
+                orientationKey: "rear:exif:\(orientation.rawValue)")
+            draft.leftTopX = 0.5
+            let calibration = draft
+            let backend = CalibrationInspectingInferenceBackend(output: detection)
+            let emissions = TrafficSignTestEmissionStore(), completed = DispatchSemaphore(value: 0)
+            let runtime = TrafficSignRuntime(verifiedPack: verified, backend: backend, snapshotProvider: { snapshot },
+                callbackQueue: DispatchQueue(label: "calibration-test"), eventHandler: { emissions.append($0); completed.signal() },
+                visualCalibrationProvider: { calibration })
+            defer { runtime.stop() }
+            runtime.analyzeStill(cgImage: image, orientation: orientation, timestampUTC: Date(timeIntervalSince1970: 4000), snapshot: snapshot)
+            XCTAssertEqual(completed.wait(timeout: .now() + 3), .success)
+            let dimensions = try XCTUnwrap(backend.dimensions())
+            XCTAssertEqual(dimensions.0, width / 2); XCTAssertEqual(dimensions.1, height)
+            XCTAssertEqual(dimensions.2, .up)
+            let candidate = try XCTUnwrap(emissions.snapshot().first?.event.candidate)
+            XCTAssertEqual(candidate.boundingBox.x, 0.6, accuracy: 1e-12)
+            XCTAssertEqual(candidate.boundingBox.width, 0.05, accuracy: 1e-12)
+            XCTAssertEqual(candidate.boundingBox.y, 0.3); XCTAssertEqual(candidate.boundingBox.height, 0.2)
+            XCTAssertEqual(candidate.rawScore, detection.rawScore)
+            XCTAssertEqual(candidate.semanticKind, detection.semantic.kind.rawValue)
+            XCTAssertEqual(candidate.value, detection.semantic.value)
+        }
     }
 
     func testTrafficSignRuntimeKeepsLegacyResultWhenShadowObservationIsInvalid() throws {

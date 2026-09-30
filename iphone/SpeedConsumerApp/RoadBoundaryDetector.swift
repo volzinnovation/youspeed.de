@@ -36,11 +36,16 @@ enum RoadBoundaryPreprocessor {
 
 /// Image evidence only: even a paint cue is not a semantic road/lane classification.
 enum RoadBoundaryCue: String, Equatable, Sendable { case paint, edge }
+enum RoadBoundaryProvenance: String, Equatable, Sendable { case fresh, tracked, fused }
 struct RoadBoundaryEvidence: Equatable, Sendable {
     let points: [LanePoint]
     let confidence: Double
     let cue: RoadBoundaryCue
     let supportRows: Int
+    var provenance: RoadBoundaryProvenance = .fresh
+    var lastFreshTimestampSeconds: Double? = nil
+    var evidenceAgeSeconds: Double = 0
+    var trackedAnchorCount: Int = 0
 }
 /// Unassigned hypotheses: a calibrated trajectory must identify the ego path.
 struct RoadCorridorHypothesis: Equatable, Sendable {
@@ -54,6 +59,19 @@ struct RoadBoundaryFrame: Equatable, Sendable {
     let timestampSeconds: Double
     var budgetExceeded = false
     var operationCount = 0
+    var temporalOperationCount = 0
+    var temporalResetReason: String? = nil
+}
+struct RoadBoundarySearchGuidance {
+    var horizonY: Double? = nil
+    var polylines: [[LanePoint]] = []
+}
+func roadBoundaryXAt(_ points: [LanePoint], _ y: Double) -> Double {
+    if y <= points[0].y { return points[0].x }
+    if y >= points[points.count-1].y { return points[points.count-1].x }
+    let index = max(1,points.firstIndex { $0.y >= y } ?? points.count-1)
+    let a = points[index-1], b = points[index]
+    return a.x+(b.x-a.x)*(y-a.y)/(b.y-a.y)
 }
 
 /// Bounded CPU image front end, shared arithmetically with Android. The caller provides upright
@@ -71,18 +89,27 @@ struct RoadBoundaryDetector {
     }
     private final class Track {
         var samples: [Sample]
-        init(_ sample: Sample) { samples = [sample] }
+        let guide: [LanePoint]?
+        let guideCorrectionLimit: Double
+        init(_ sample: Sample, guide: [LanePoint]? = nil, guideCorrectionLimit: Double) {
+            samples = [sample]; self.guide = guide; self.guideCorrectionLimit = guideCorrectionLimit
+        }
         func predictedX(_ y: Double) -> Double {
             let last = samples[samples.count - 1]
-            guard samples.count > 1 else { return last.point.x }
+            let guided = guide.map { last.point.x + roadBoundaryXAt($0,y)-roadBoundaryXAt($0,last.point.y) }
+            guard samples.count > 1 else { return guided ?? last.point.x }
             let before = samples[max(0, samples.count - 3)]
             let slope = max(-2, min(2, (last.point.x - before.point.x) / (last.point.y - before.point.y)))
-            return last.point.x + slope * (y - last.point.y)
+            let local = last.point.x + slope * (y - last.point.y)
+            // Two current observations outrank an older curve. A prior may only nudge the
+            // next association by one analysis pixel, never bend it onto adjacent paint.
+            return guided.map { local + max(-guideCorrectionLimit,min(guideCorrectionLimit,0.4*($0-local))) } ?? local
         }
     }
 
     func detect(grayscale: [UInt8], width: Int, height: Int, timestampSeconds: Double,
-                maximumOperations: Int = 250_000, shouldContinue: () -> Bool = { true }) -> RoadBoundaryFrame {
+                maximumOperations: Int = 250_000, guidance: RoadBoundarySearchGuidance? = nil,
+                shouldContinue: () -> Bool = { true }) -> RoadBoundaryFrame {
         let maximum = max(0, maximumOperations)
         var used = 0
         func check(_ cost: Int = 1) -> Bool {
@@ -109,10 +136,15 @@ struct RoadBoundaryDetector {
         }
         let margin = 4 * radii[radii.count - 1] + 2
         let suppression = max(3, Int((Double(width) * 0.012).rounded()))
-        let rowCount = 24
+        let guides = Array((guidance?.polylines ?? []).prefix(8)).filter { points in
+            (2...12).contains(points.count) && points.allSatisfy { $0.x.isFinite && $0.y.isFinite && (0...1).contains($0.x) && (0...1).contains($0.y) } &&
+            zip(points,points.dropFirst()).allSatisfy { $1.y > $0.y }
+        }
+        let topY = guidance?.horizonY.flatMap { $0.isFinite ? min(0.83,max(0.08,$0+0.03)) : nil } ?? 0.50
+        let rowCount = max(8,min(24,Int(((0.94-topY)*Double(height-1)).rounded())+1))
         for row in 0..<rowCount {
             guard check() else { return empty(true) }
-            let y = Int(((0.94 - Double(row) * 0.44 / Double(rowCount - 1)) * Double(height - 1)).rounded())
+            let y = Int(((0.94 - Double(row) * (0.94-topY) / Double(rowCount - 1)) * Double(height - 1)).rounded())
             let normalizedY = Double(y) / Double(height - 1)
             prefix[0] = 0
             for x in 0..<width {
@@ -154,8 +186,13 @@ struct RoadBoundaryDetector {
                                              strength: strengths[x], cue: paints[x] ? .paint : .edge, row: row))
                 }
             }
+            func rank(_ sample: Sample) -> Double {
+                let distance = guides.map { abs(sample.point.x-roadBoundaryXAt($0,sample.point.y)) }.min() ?? 1
+                return sample.strength*(1+0.15*max(0,min(1,1-distance/0.08)))
+            }
             let rowCandidates = Array(candidates.sorted {
-                $0.strength == $1.strength ? $0.point.x < $1.point.x : $0.strength > $1.strength
+                let a = rank($0), b = rank($1)
+                return a == b ? $0.point.x < $1.point.x : a > b
             }.prefix(12))
             completed.append(contentsOf: active.filter { row - $0.samples[$0.samples.count - 1].row > 4 })
             active.removeAll { row - $0.samples[$0.samples.count - 1].row > 4 }
@@ -185,7 +222,12 @@ struct RoadBoundaryDetector {
                 }
             }
             for index in rowCandidates.indices {
-                if !usedCandidates[index] && active.count < 12 { active.append(Track(rowCandidates[index])) }
+                if !usedCandidates[index] && active.count < 12 {
+                    let sample = rowCandidates[index]
+                    let closest = guides.min { abs(sample.point.x-roadBoundaryXAt($0,sample.point.y)) < abs(sample.point.x-roadBoundaryXAt($1,sample.point.y)) }
+                    let guide = closest.flatMap { abs(sample.point.x-roadBoundaryXAt($0,sample.point.y)) <= 0.05 ? $0 : nil }
+                    active.append(Track(sample,guide:guide,guideCorrectionLimit:1/Double(width-1)))
+                }
             }
         }
         completed.append(contentsOf: active)
@@ -194,7 +236,7 @@ struct RoadBoundaryDetector {
             guard check(track.samples.count + 1) else { return empty(true) }
             let samples = track.samples
             let span = samples[0].point.y - samples[samples.count - 1].point.y
-            if samples.count < 8 || span < 0.16 { continue }
+            if samples.count < 8 || span < min(0.16,(0.94-topY)*0.6) { continue }
             let paintCount = samples.filter { $0.cue == .paint }.count
             let cue: RoadBoundaryCue = paintCount >= 6 && paintCount * 5 >= samples.count * 3 ? .paint : .edge
             let density = Double(samples.count) / Double(samples[samples.count - 1].row - samples[0].row + 1)

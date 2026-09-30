@@ -643,6 +643,55 @@ class ConsumerSessionController(
     private data class LanePaintMetric(val scope: Long, val frameId: Long, val ageMs: Double, val estimated: Boolean)
     private var lanePaintMetric: LanePaintMetric? = null
     internal val roadPathSession = RoadPathSession()
+    @Volatile internal var visualRoadCalibration: VisualRoadCalibration? =
+        VisualRoadCalibration.decode(preferences.getString(VisualRoadCalibration.PREFERENCE_KEY, null))
+        private set
+    @Volatile private var calibrationCameraRequested = false
+    internal var calibrationVisible by mutableStateOf(false)
+        private set
+    internal var calibrationPreview by mutableStateOf<VisualRoadCalibrationPreview?>(null)
+        private set
+
+    internal fun isVisualCalibrationActive(): Boolean = calibrationCameraRequested && applicationActive && uiState.drivingControlsAllowed
+
+    fun beginVisualCalibration() {
+        if (!uiState.drivingControlsAllowed) return
+        calibrationPreview = null
+        calibrationVisible = true
+        calibrationCameraRequested = true
+        clearLanePreview()
+        reconcileTrafficSignCamera("visual_calibration_opened")
+    }
+
+    fun endVisualCalibration() {
+        calibrationCameraRequested = false
+        calibrationVisible = false
+        calibrationPreview = null
+        reconcileTrafficSignCamera("visual_calibration_closed")
+    }
+
+    internal fun onVisualCalibrationPreview(frame: VisualRoadCalibrationPreview) {
+        mainHandler.post {
+            if (isVisualCalibrationActive()) calibrationPreview = frame
+        }
+    }
+
+    internal fun saveVisualCalibration(draft: VisualRoadCalibration): Boolean {
+        val preview = calibrationPreview ?: return false
+        if (!isVisualCalibrationActive() || !draft.isValid ||
+            !draft.compatible(preview.sourceWidth, preview.sourceHeight, preview.orientationKey) ||
+            SystemClock.elapsedRealtime() - preview.receivedAtMs > 1_500) return false
+        val saved = draft.copy(revision = UUID.randomUUID().toString())
+        preferences.edit().putString(VisualRoadCalibration.PREFERENCE_KEY, saved.encode()).apply()
+        visualRoadCalibration = saved
+        clearLanePreview()
+        invalidateTrafficSignGeneration(clearAssertion = false, reason = "visual_calibration_saved",
+            permitWrites = isTrafficSignRecognitionRuntimeEnabled(), preserveDisplay = true)
+        appendRuntimeDiagnosticEvent("visual_road_calibration_saved", mapOf("calibration" to saved.encode(),
+            "tsrCropLeft" to saved.leftTopX, "tsrCropTop" to 0, "tsrCropRight" to 1, "tsrCropBottom" to 1))
+        endVisualCalibration()
+        return true
+    }
     private val captureLock = Any()
     private val cameraOrientationLock = Any()
 
@@ -1243,6 +1292,9 @@ class ConsumerSessionController(
         clearLanePreview()
         invalidateTrafficSignGeneration(clearAssertion = true, reason = "application_lifecycle", permitWrites = active && isTrafficSignRecognitionRuntimeEnabled())
         if (!active) {
+            calibrationCameraRequested = false
+            calibrationVisible = false
+            calibrationPreview = null
             dashcamButtonActionGate.cancel()
             mainHandler.removeCallbacks(dashcamButtonActionTimeout)
             updateState { copy(dashcamButtonActionPending = false) }
@@ -2594,6 +2646,8 @@ class ConsumerSessionController(
             "photosSelected" to panoramaxCaptureEnabled, "photosEnabled" to isPanoramaxCaptureEnabled(),
             "dashcamEnabled" to isDashcamRecordingEnabled(), "recognitionEnabled" to isTrafficSignRecognitionRuntimeEnabled(),
             "applicationActive" to applicationActive, "driving" to isDriving,
+            "visualCalibrationActive" to isVisualCalibrationActive(),
+            "visualCalibrationRevision" to visualRoadCalibration?.revision,
             "showDetectedLanes" to uiState.showDetectedLanes,
             "laneOverlaySource" to if (isTrafficSignRecognitionRuntimeEnabled()) "road_path" else "legacy",
             "previewVisibilityAvailable" to true, "previewVisible" to lanePreviewVisible,
@@ -2601,7 +2655,7 @@ class ConsumerSessionController(
     }
 
     private fun reconcileTrafficSignCamera(reason: String = "capture_state") {
-        val shouldRun = !shouldPresentOnboarding() && (isTrafficSignRecognitionRuntimeEnabled() || isDriveRecorderSessionActive() || isPanoramaxCaptureEnabled()) && uiState.appScreenshotState == null
+        val shouldRun = !shouldPresentOnboarding() && (isTrafficSignRecognitionRuntimeEnabled() || isDriveRecorderSessionActive() || isPanoramaxCaptureEnabled() || isVisualCalibrationActive()) && uiState.appScreenshotState == null
         appendCaptureConfigurationDiagnostic(reason)
         if (!isPanoramaxCaptureEnabled()) endPanoramaxCaptureSession()
         if (!shouldRun) {

@@ -407,3 +407,25 @@
 "drive_recorder.lanes.paused" = "En pause";
 
 "drive_recorder.lanes.experimental" = "Expérimental";
+
+/* Live analysis-image road calibration */
+"calibration.title" = "Calibrer la caméra";
+"calibration.cancel" = "Annuler";
+"calibration.waiting" = "En attente de l’image en direct…";
+"calibration.live" = "Caméra de calibrage active";
+"calibration.step" = "Étape %d sur 5";
+"calibration.horizon" = "Déplacer l’horizon vers le haut ou le bas";
+"calibration.left_bottom" = "Déplacer le point inférieur gauche";
+"calibration.left_top" = "Déplacer le point supérieur gauche sur l’horizon";
+"calibration.right_bottom" = "Déplacer le point inférieur droit";
+"calibration.right_top" = "Déplacer le point supérieur droit sur l’horizon";
+"calibration.crop_note" = "La détection utilise toute la hauteur, du point supérieur gauche au bord droit de l’image.";
+"calibration.invalid" = "Le guide gauche doit rester à gauche du guide droit.";
+"calibration.previous" = "Précédent";
+"calibration.next" = "Suivant";
+"calibration.save" = "Enregistrer";
+"calibration.defaults" = "Réinitialiser le brouillon";
+"calibration.up" = "Monter";
+"calibration.down" = "Descendre";
+"calibration.left" = "Déplacer à gauche";
+"calibration.right" = "Déplacer à droite";

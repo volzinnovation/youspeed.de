@@ -63,6 +63,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -230,6 +231,7 @@ fun ConsumerApp(controller: ConsumerSessionController) {
             openDebug = false
             openLocalRecordings = false
             openPanoramaxGallery = false
+            if (controller.calibrationVisible) controller.endVisualCalibration()
             controller.setSettingsVisible(false)
         }
     }
@@ -271,6 +273,7 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                         controller = controller,
                         ui = ui,
                         onOpenSettings = { controller.performButtonAction(showSettings) },
+                        onOpenCalibration = { controller.performButtonAction(controller::beginVisualCalibration) },
                         onOpenLegal = { controller.performButtonAction { openLegal = true } },
                         onOpenDebug = { controller.performButtonAction { openDebug = true } },
                         onOpenLocalRecordings = { controller.performButtonAction { openLocalRecordings = true } },
@@ -343,6 +346,9 @@ fun ConsumerApp(controller: ConsumerSessionController) {
             }
             if (openPanoramaxGallery && ui.drivingControlsAllowed) {
                 PanoramaxGallerySheet(controller = controller, onDismiss = { openPanoramaxGallery = false })
+            }
+            if (controller.calibrationVisible && ui.drivingControlsAllowed) {
+                VisualRoadCalibrationScreen(controller)
             }
         }
     }
@@ -453,6 +459,7 @@ private fun MainScreen(
     controller: ConsumerSessionController,
     ui: ConsumerUiState,
     onOpenSettings: () -> Unit,
+    onOpenCalibration: () -> Unit,
     onOpenLegal: () -> Unit,
     onOpenDebug: () -> Unit,
     onOpenLocalRecordings: () -> Unit,
@@ -715,7 +722,7 @@ private fun MainScreen(
                     if (landscape && ui.drivingControlsAllowed) BottomCornerButtons(
                         horizontalPadding = screenInset, foreground = foreground,
                         buttonBg = buttonBg, buttonBorder = buttonBorder,
-                        onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings,
+                        onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings, onOpenCalibration = onOpenCalibration,
                         onOpenPanoramaxGallery = onOpenPanoramaxGallery,
                         onToggleDriveRecorder = onToggleDriveRecorder,
                         onOpenLocalRecordings = onOpenLocalRecordings,
@@ -746,7 +753,7 @@ private fun MainScreen(
         if (!landscape && ui.drivingControlsAllowed) BottomCornerButtons(
             horizontalPadding = screenInset, foreground = foreground,
             buttonBg = buttonBg, buttonBorder = buttonBorder,
-            onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings,
+            onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings, onOpenCalibration = onOpenCalibration,
             onOpenPanoramaxGallery = onOpenPanoramaxGallery,
             onToggleDriveRecorder = onToggleDriveRecorder,
             onOpenLocalRecordings = onOpenLocalRecordings,
@@ -837,6 +844,7 @@ private fun BottomCornerButtons(
     buttonBorder: Color,
     onOpenLegal: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenCalibration: () -> Unit,
     onOpenPanoramaxGallery: () -> Unit,
     onToggleDriveRecorder: () -> Unit,
     onOpenLocalRecordings: (() -> Unit)?,
@@ -902,6 +910,10 @@ private fun BottomCornerButtons(
                     )
                 }
             }
+        }
+        PillIconButton(onClick = onOpenCalibration, background = buttonBg, border = buttonBorder,
+            modifier = Modifier.testTag("visual-calibration-button")) {
+            Icon(Icons.Default.CenterFocusStrong, contentDescription = stringResource(R.string.calibration_title), tint = foreground)
         }
         PillIconButton(
             onClick = onOpenLegal,

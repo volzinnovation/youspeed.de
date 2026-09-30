@@ -697,6 +697,60 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var lastLoggedLaneCaptureConfiguration: String?
     let laneDetectionRuntime = LaneDetectionRuntime()
     let roadPathSession = RoadPathSession()
+    let visualCalibrationStore = VisualRoadCalibrationStore()
+    private let visualCalibrationPreviewConsumer = VisualRoadCalibrationPreviewConsumer()
+    @Published private(set) var visualRoadCalibration: VisualRoadCalibration?
+    @Published private(set) var visualCalibrationPreview: VisualRoadCalibrationPreview?
+    @Published private(set) var visualCalibrationActive = false
+    var visualCalibrationStatus: String { driveCaptureCoordinator?.lastCaptureDetail ?? "" }
+
+    func beginVisualRoadCalibration() {
+        guard drivingControlsAllowed else { return }
+        visualCalibrationActive = true
+        visualCalibrationPreview = nil
+        visualCalibrationPreviewConsumer.setEnabled(true)
+        driveCaptureCoordinator?.setCalibrationPreviewConsumer(visualCalibrationPreviewConsumer)
+        ensureVisualCalibrationCamera()
+    }
+
+    private func ensureVisualCalibrationCamera() {
+        guard visualCalibrationActive, drivingControlsAllowed, trafficSignApplicationIsActive, let coordinator = driveCaptureCoordinator else { return }
+        switch coordinator.state {
+        case .disabled, .denied, .unavailable, .failed:
+            coordinator.start(dashcamEnabled: false, trafficSignRecognitionEnabled: false,
+                              panoramaxEnabled: false, purpose: .calibration)
+        default: break
+        }
+    }
+
+    func endVisualRoadCalibration() {
+        guard visualCalibrationActive else { return }
+        visualCalibrationActive = false
+        visualCalibrationPreviewConsumer.setEnabled(false)
+        driveCaptureCoordinator?.setCalibrationPreviewConsumer(nil)
+        visualCalibrationPreview = nil
+        if driveCaptureCoordinator?.sessionPurpose == .calibration { driveCaptureCoordinator?.stop() }
+        else { reconcileAutomaticCapture() }
+    }
+
+    @discardableResult func saveVisualRoadCalibration(_ draft: VisualRoadCalibration) -> Bool {
+        guard drivingControlsAllowed, visualCalibrationActive, let frame = visualCalibrationPreview,
+              Date().timeIntervalSince(frame.capturedAt) <= 2,
+              draft.compatible(width: frame.width, height: frame.height, orientationKey: frame.orientationKey) else { return false }
+        var saved = draft
+        saved.revision = UUID().uuidString
+        saved.imageWidth = frame.width; saved.imageHeight = frame.height
+        guard visualCalibrationStore.save(saved) else { return false }
+        visualRoadCalibration = saved
+        // Only invalidate in-flight visual work whose coordinates predate the saved crop.
+        trafficSignContextGeneration &+= 1
+        roadPathSession.invalidateOverlay()
+        updateTrafficSignWriteGate()
+        refreshTrafficSignFrameSnapshot()
+        appendTSRLog("event=visual_calibration_saved revision=\(saved.revision) width=\(saved.imageWidth) height=\(saved.imageHeight) orientation=\(saved.orientationKey) crop_left=\(saved.leftTopX)")
+        return true
+    }
+
     @Published var trafficSignRecognitionIndependentEnabled: Bool {
         didSet {
             guard trafficSignRecognitionIndependentEnabled != oldValue else { return }
@@ -938,6 +992,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var localObservationRefreshRevision: UInt64 = 0
     private var driveCaptureCoordinator: DriveCaptureCoordinator?
     private var driveRecorderStartPending = false
+    private var previousDriveCapturePurpose: DriveCaptureSessionPurpose?
     private var previousDriveCaptureState: DriveRecorderState = .disabled
     private let trafficSignFrameState = TrafficSignAtomicFrameState()
     private var trafficSignRuntime: TrafficSignRuntime?
@@ -1819,6 +1874,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let endpointCount = manifestEndpoints.count
         Self.logger.notice("sync endpoints configured count=\(endpointCount, privacy: .public)")
         super.init()
+        visualRoadCalibration = visualCalibrationStore.snapshot()
+        visualCalibrationPreviewConsumer.onPreview = { [weak self] preview in
+            Task { @MainActor [weak self] in
+                guard let self, self.visualCalibrationActive, self.drivingControlsAllowed,
+                      self.visualCalibrationPreviewConsumer.isCurrent(preview) else { return }
+                self.visualCalibrationPreview = preview
+            }
+        }
         trafficSignRecognitionState = trafficSignRecognitionEnabled ? .unavailable : .disabled
         driveCaptureCoordinator = DriveCaptureCoordinator(queueStore: nil)
         startPanoramaxQueueMaintenance()
@@ -2107,7 +2170,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     func setTrafficSignApplicationActive(_ isActive: Bool) {
         if trafficSignApplicationIsActive != isActive { trafficSignBundleContextTracker.reset() }
         trafficSignApplicationIsActive = isActive
-        if !isActive { cancelVisionDismissalVoice() }
+        if !isActive { cancelVisionDismissalVoice(); endVisualRoadCalibration() }
         refreshLaneDetectionActivity()
         updateTrafficSignWriteGate()
         refreshTrafficSignFrameSnapshot()
@@ -2194,6 +2257,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func reconcileAutomaticCapture(allowTerminalRetry: Bool = false) {
         guard let driveCaptureCoordinator else { return }
+        if visualCalibrationActive { return }
         let recognition = DriveRecorderPolicy.shouldRunStandaloneTrafficSignRecognition(
             recognitionEnabled: trafficSignRecognitionEnabled,
             independentRecognitionEnabled: trafficSignRecognitionIndependentEnabled,
@@ -2482,6 +2546,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         Self.tsrLogger.notice("timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) \(loadingLog, privacy: .public)")
         appendTSRLog(loadingLog)
         trafficSignRecognitionUnavailableDetail = "Preparing traffic-sign recognition."
+        let calibrationStore = visualCalibrationStore
         trafficSignRuntimeLoadTask = Task { @MainActor [weak self] in
             let result = await Task.detached(priority: .utility) {
                 TrafficSignRuntimeBootstrap.make(
@@ -2495,7 +2560,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     unavailabilityHandler: unavailableHandler,
                     admissionMismatchHandler: admissionMismatchHandler,
                     processingGate: processingGate,
-                    roadPathSession: roadPathSession
+                    roadPathSession: roadPathSession,
+                    visualCalibrationProvider: { calibrationStore.snapshot() }
                 )
             }.value
 
@@ -2526,6 +2592,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 if let driveCaptureCoordinator = self.driveCaptureCoordinator {
                     driveCaptureCoordinator.setVideoFrameConsumer(runtime)
                     if self.trafficSignRecognitionEnabled,
+                       driveCaptureCoordinator.sessionPurpose != .calibration,
                        driveCaptureCoordinator.state == .recording {
                         _ = driveCaptureCoordinator
                             .setTrafficSignRecognitionEnabledDuringRecording(true)
@@ -3684,12 +3751,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private func syncDriveRecorderState() {
         let previousState = driveRecorderState
         let previousCaptureState = previousDriveCaptureState
+        let previousCapturePurpose = previousDriveCapturePurpose
         let previousDashcamURL = dashcamFileURL
         let previousDashcamActive = driveRecorderDashcamActive
         let previousTrafficSignActive = driveRecorderTrafficSignRecognitionActive
         let captureState = driveCaptureCoordinator?.state ?? .failed
         let capturePurpose = driveCaptureCoordinator?.sessionPurpose
         previousDriveCaptureState = captureState
+        previousDriveCapturePurpose = capturePurpose
         driveRecorderState = DriveRecorderPolicy.presentedRecorderState(
             captureState: captureState,
             purpose: capturePurpose,
@@ -3710,6 +3779,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // still in progress. Honor the persisted chip selection as soon as the
         // coordinator reaches recording instead of requiring a second tap.
         if captureState == .recording,
+           capturePurpose != .calibration,
            capturePurpose == .driveRecording || trafficSignRecognitionIndependentEnabled,
            trafficSignRecognitionEnabled,
            trafficSignRuntime != nil,
@@ -3721,7 +3791,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return
         }
         if previousTrafficSignActive != driveRecorderTrafficSignRecognitionActive
-            || (previousCaptureState == .recording) != (captureState == .recording) {
+            || ((previousCaptureState == .recording) != (captureState == .recording)
+                && previousCapturePurpose != .calibration && capturePurpose != .calibration) {
             cancelVisionDismissalVoice()
             resetTrafficSignPictogram()
             trafficSignRecorderGeneration &+= 1
@@ -3761,7 +3832,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             refreshPanoramaxBatches()
         }
         let trafficSignSessionEnded = previousCaptureState == .recording
-            && captureState != .recording
+            && previousCapturePurpose != .calibration && captureState != .recording
         let trafficSignModuleBecameInactive = previousTrafficSignActive
             && !driveRecorderTrafficSignRecognitionActive
         if trafficSignSessionEnded
@@ -3803,7 +3874,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             startDriveRecorder()
             return
         }
-        reconcileAutomaticCapture()
+        if visualCalibrationActive, captureState == .disabled { ensureVisualCalibrationCamera() }
+        else { reconcileAutomaticCapture() }
     }
 
     private func restoreBaseSpeedLimitPresentation() {
@@ -7763,6 +7835,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         stationarySpeedObservedAt = next.stationaryObservedAt
         if !drivingControlsAllowed {
             cancelPendingDriveInteraction()
+            endVisualRoadCalibration()
             if isInSpeedCaptureMode { cancelSpeedCapture(reason: nil) }
             visionDismissalPermissionStationary = false
         }

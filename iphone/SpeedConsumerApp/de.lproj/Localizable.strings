@@ -407,3 +407,25 @@
 "drive_recorder.lanes.paused" = "Pausiert";
 
 "drive_recorder.lanes.experimental" = "Experimentell";
+
+/* Live analysis-image road calibration */
+"calibration.title" = "Kamera kalibrieren";
+"calibration.cancel" = "Abbrechen";
+"calibration.waiting" = "Warte auf das Live-Kamerabild …";
+"calibration.live" = "Kalibrierungskamera aktiv";
+"calibration.step" = "Schritt %d von 5";
+"calibration.horizon" = "Horizont nach oben oder unten verschieben";
+"calibration.left_bottom" = "Unteren linken Punkt verschieben";
+"calibration.left_top" = "Oberen linken Punkt am Horizont verschieben";
+"calibration.right_bottom" = "Unteren rechten Punkt verschieben";
+"calibration.right_top" = "Oberen rechten Punkt am Horizont verschieben";
+"calibration.crop_note" = "Die Zeichenerkennung nutzt die volle Bildhöhe vom oberen linken Punkt bis zum rechten Bildrand.";
+"calibration.invalid" = "Die linke Führung muss links von der rechten liegen.";
+"calibration.previous" = "Zurück";
+"calibration.next" = "Weiter";
+"calibration.save" = "Speichern";
+"calibration.defaults" = "Entwurf auf Standard zurücksetzen";
+"calibration.up" = "Nach oben";
+"calibration.down" = "Nach unten";
+"calibration.left" = "Nach links";
+"calibration.right" = "Nach rechts";

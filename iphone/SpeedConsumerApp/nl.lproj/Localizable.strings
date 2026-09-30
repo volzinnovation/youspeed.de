@@ -407,3 +407,25 @@
 "drive_recorder.lanes.paused" = "Gepauzeerd";
 
 "drive_recorder.lanes.experimental" = "Experimenteel";
+
+/* Live analysis-image road calibration */
+"calibration.title" = "Camera kalibreren";
+"calibration.cancel" = "Annuleren";
+"calibration.waiting" = "Wachten op het live camerabeeld…";
+"calibration.live" = "Kalibratiecamera actief";
+"calibration.step" = "Stap %d van 5";
+"calibration.horizon" = "Verplaats de horizon omhoog of omlaag";
+"calibration.left_bottom" = "Verplaats het punt linksonder";
+"calibration.left_top" = "Verplaats het punt linksboven langs de horizon";
+"calibration.right_bottom" = "Verplaats het punt rechtsonder";
+"calibration.right_top" = "Verplaats het punt rechtsboven langs de horizon";
+"calibration.crop_note" = "Borddetectie gebruikt de volledige hoogte, van het punt linksboven tot de rechter beeldrand.";
+"calibration.invalid" = "De linker geleider moet links van de rechter blijven.";
+"calibration.previous" = "Vorige";
+"calibration.next" = "Volgende";
+"calibration.save" = "Opslaan";
+"calibration.defaults" = "Concept herstellen naar standaard";
+"calibration.up" = "Omhoog";
+"calibration.down" = "Omlaag";
+"calibration.left" = "Naar links";
+"calibration.right" = "Naar rechts";
