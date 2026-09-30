@@ -62,7 +62,8 @@ class RoadPathPreparationTests {
         assertEquals(2, prepared.geometry.boundaries.size)
         val published = session.overlay()
         assertNotNull(published)
-        assertEquals(prepared.geometry.boundaries, published!!.boundaries)
+        assertTrue(published!!.boundaries.isEmpty()) // Raw evidence exists; display awaits a second exposure.
+        assertEquals(2,prepared.presentation.tentativeCount)
         assertEquals(10.0, published.capturedAtSeconds, 0.0)
         // The producer may release/overwrite its pixels while TSR uses its own conversion.
         input.grayscale.fill(0)
@@ -76,6 +77,16 @@ class RoadPathPreparationTests {
         assertSame(published, session.overlay()) // No after-TSR publication or freshness reset.
         assertEquals("prepared_frame_already_consumed_or_superseded",
             Json.parseToJsonElement(session.evaluate(prepared, diagnostic())).jsonObject.getValue("reason").jsonPrimitive.content)
+        val second = session.prepare(paintedFrame().copy(capturedAtSeconds=10.45,sourceTimestampSeconds=123.45,
+            startedAtNanos=clock-1_000_000),"second",scope)
+        assertEquals(2,second.geometry.boundaries.size)
+        assertEquals(second.geometry.boundaries,session.overlay()!!.boundaries)
+        assertEquals(2,second.presentation.confirmedCount)
+        session.invalidateOverlay()
+        val afterReset=session.prepare(paintedFrame().copy(capturedAtSeconds=10.7,sourceTimestampSeconds=123.7,
+            startedAtNanos=clock-1_000_000),"after-reset",scope)
+        assertEquals(2,afterReset.geometry.boundaries.size)
+        assertTrue(session.overlay()!!.boundaries.isEmpty())
     }
 
     @Test fun exactFrameAndScopeAreRequiredAndNewPreparationSupersedesOldToken() {

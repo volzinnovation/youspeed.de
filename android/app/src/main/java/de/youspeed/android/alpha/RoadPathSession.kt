@@ -16,7 +16,8 @@ data class RoadPathCameraFrame(
     val orientationKey: String = "",
 )
 internal data class RoadPathLiveOverlay(val boundaries: List<RoadBoundaryEvidence>, val capturedAtSeconds: Double,
-    val geometry: LaneImageGeometry)
+    val geometry: LaneImageGeometry, val presentation: RoadBoundaryPresentationSnapshot? = null,
+    val captureSessionID: String? = null, val orientationKey: String = "", val visualCalibrationRevision: String? = null)
 
 
 /** One admitted exposure. Pixel storage is discarded after preparation; geometry is reused exactly once. */
@@ -29,6 +30,8 @@ class RoadPathPreparedFrame internal constructor(
     internal val location: RoadPathSession.LocationSnapshot,
     internal val serial: Long,
     val geometry: RoadBoundaryFrame,
+    val presentation: RoadBoundaryPresentationSnapshot,
+    val motionHint: RoadBoundaryMotionHint,
     val filterMs: Double,
     val geometryMs: Double,
     val preparationAddedMs: Double,
@@ -61,6 +64,7 @@ class RoadPathSession(private val nowNanos: () -> Long = System::nanoTime) {
     private val histories = linkedMapOf<String, List<RoadPathObservation>>()
     private val detector = RoadBoundaryDetector()
     private val temporal = RoadBoundaryTemporalTracker()
+    private val presentationGate = RoadBoundaryPresentationGate()
     private var liveOverlay: RoadPathLiveOverlay? = null
     private var overlayEpoch = 0L
     private var preparationSerial = 0L
@@ -128,13 +132,15 @@ class RoadPathSession(private val nowNanos: () -> Long = System::nanoTime) {
         val uprightHeight = if(frame.rotationDegrees%180==0) frame.rawHeight else frame.rawWidth
         val visual = frame.visualCalibration?.takeIf { it.compatible(uprightWidth,uprightHeight,frame.orientationKey) }
         val temporalKey = "${scope.sessionId}:${scope.generation}:${frame.geometryId}:${frame.calibration}:${location.epoch}:${location.overlayEpoch}:visual:${visual?.revision}:orientation:${frame.orientationKey}:rawClock:${sourceTimestamp!=null}:known:${frame.clockKnown}"
+        val motionHint = RoadBoundaryMotionHint.from(location.fixes.map { RoadBoundaryMotionSample(
+            it.time,it.speed,it.course,it.accuracy,it.courseAccuracy) },frame.capturedAtSeconds,frame.clockKnown)
         var geometry: RoadBoundaryFrame
         if (skipReason != null || filtered == null) {
             if(skipReason==null) temporal.reset()
             geometry = RoadBoundaryFrame(emptyList(),emptyList(),frame.capturedAtSeconds,budgetExceeded=skipReason==null)
         } else {
             val prediction = temporal.predict(frame.grayscale,frame.width,frame.height,sourceTimestamp ?: frame.capturedAtSeconds,
-                temporalKey,frame.capturedAtSeconds,shouldContinue={ nowNanos()<deadline })
+                temporalKey,frame.capturedAtSeconds,motionHint=motionHint,shouldContinue={ nowNanos()<deadline })
             val guides = prediction.boundaries.map { it.points } + (visual?.let { listOf(
                 listOf(LanePoint(it.leftTopX,it.horizonY),it.leftBottom),
                 listOf(LanePoint(it.rightTopX,it.horizonY),it.rightBottom)) } ?: emptyList())
@@ -143,10 +149,19 @@ class RoadPathSession(private val nowNanos: () -> Long = System::nanoTime) {
                     guidance=RoadBoundarySearchGuidance(visual?.horizonY,guides)) { nowNanos()<deadline }
             geometry = temporal.complete(prediction,fresh,frame.grayscale) { nowNanos()<deadline }
         }
+        val presentation = when {
+            skipReason != null -> RoadBoundaryPresentationSnapshot.rejected(skipReason,geometry.boundaries.size)
+            geometry.budgetExceeded || !frame.clockKnown -> {
+                presentationGate.reset()
+                RoadBoundaryPresentationSnapshot.rejected(if(geometry.budgetExceeded) "geometry_budget" else "capture_clock_unknown",geometry.boundaries.size)
+            }
+            else -> presentationGate.update(geometry.boundaries,sourceTimestamp ?: frame.capturedAtSeconds,
+                "$temporalKey:${frame.width}x${frame.height}") { nowNanos()<deadline }
+        }
         val ready = nowNanos()
         val addedMs = (ready - frame.startedAtNanos).coerceAtLeast(0L) / 1e6
         if (skipReason == null && addedMs >= 50) {
-            temporal.reset()
+            temporal.reset(); presentationGate.reset()
             geometry = RoadBoundaryFrame(emptyList(), emptyList(), frame.capturedAtSeconds,
                 budgetExceeded = true, operationCount = geometry.operationCount)
         }
@@ -161,21 +176,42 @@ class RoadPathSession(private val nowNanos: () -> Long = System::nanoTime) {
                         overlayEpoch != location.overlayEpoch -> "overlay_invalidated"
                         addedMs >= 200 -> "added_processing_deadline"
                         geometry.budgetExceeded -> "geometry_budget"
+                        !presentation.accepted -> presentation.reason ?: "presentation_rejected"
                         !frame.clockKnown -> "capture_clock_unknown"
                         else -> null
                     }
                     if (locationEpoch == location.epoch && overlayEpoch == location.overlayEpoch) {
-                        liveOverlay = if (suppression != null) null else RoadPathLiveOverlay(geometry.boundaries,
+                        liveOverlay = if (suppression != null) null else RoadPathLiveOverlay(presentation.visibleBoundaryIndices.map { geometry.boundaries[it] },
                             frame.capturedAtSeconds, LaneImageGeometry(frame.rawWidth, frame.rawHeight,
-                                frame.rotationDegrees, frame.sensorToBuffer.toList()))
+                                frame.rotationDegrees, frame.sensorToBuffer.toList()),presentation,scope.sessionId,frame.orientationKey,visual?.revision)
                     }
                 }
             }
             if (!current) suppression = "context_invalidated"
+            if (suppression != null) presentationGate.reset()
         }
         RoadPathPreparedFrame(this, frame.copy(grayscale = ByteArray(0), sensorToBuffer = frame.sensorToBuffer.toList()),
-            frameId, scope, key, location, preparationSerial, geometry, (filteredAt-filterStart)/1e6,
+            frameId, scope, key, location, preparationSerial, geometry, presentation, motionHint, (filteredAt-filterStart)/1e6,
             (ready-filteredAt)/1e6, addedMs, ready, skipReason, publicationAtSeconds, suppression)
+    }
+
+    private fun presentationJson(p: RoadBoundaryPresentationSnapshot) = buildJsonObject {
+        put("accepted",p.accepted); put("reason",p.reason); put("rawCount",p.rawCount)
+        put("visibleCount",p.visibleBoundaryIndices.size); put("confirmedCount",p.confirmedCount)
+        put("tentativeCount",p.tentativeCount); put("missingCount",p.missingCount); put("operationCount",p.operationCount)
+        putJsonArray("visibleBoundaryIndices") { p.visibleBoundaryIndices.forEach { add(it) } }
+        putJsonArray("items") { p.items.forEach { item -> add(buildJsonObject {
+            put("trackId",item.trackId); put("boundaryIndex",item.boundaryIndex); put("state",item.state)
+            put("observationCount",item.observationCount); put("firstObservedSeconds",item.firstObservedSeconds)
+            put("lastObservedSeconds",item.lastObservedSeconds); put("missedExposures",item.missedExposures)
+        }) } }
+    }
+    private fun motionHintJson(h: RoadBoundaryMotionHint) = buildJsonObject {
+        put("used",h.used); put("reason",h.reason); put("sourceAgeSeconds",h.sourceAgeSeconds)
+        put("speedMetersPerSecond",h.speedMetersPerSecond); put("courseAccuracyDegrees",h.courseAccuracyDegrees)
+        put("pairIntervalSeconds",h.pairIntervalSeconds); put("headingDeltaDegrees",h.headingDeltaDegrees)
+        put("headingRateDegreesPerSecond",h.headingRateDegreesPerSecond)
+        put("horizontalSearchRadiusFloor",h.horizontalSearchRadiusFloor)
     }
 
     /** Consumes the exact prepared exposure after TSR. The intervening model time is not path processing. */
@@ -263,6 +299,8 @@ class RoadPathSession(private val nowNanos: () -> Long = System::nanoTime) {
             put("calibrationAvailable", calibration != null); put("trajectorySamples", poses.size)
             put("visualCalibrationRevision",frame.visualCalibration?.revision)
             put("temporalOperationCount",geometry.temporalOperationCount)
+            put("lanePresentation",presentationJson(prepared.presentation))
+            put("laneMotionHint",motionHintJson(prepared.motionHint))
             geometry.temporalResetReason?.let { put("temporalResetReason",it) }
             putJsonObject("locationIngestion") {
                 put("duplicateFixesDropped", location.duplicateFixesDropped)
@@ -360,7 +398,7 @@ class RoadPathSession(private val nowNanos: () -> Long = System::nanoTime) {
         }
         if (totalMs >= 200 || !locationCurrent) {
             histories.clear()
-            temporal.reset()
+            temporal.reset(); presentationGate.reset()
             return@synchronized buildJsonObject { put("schemaVersion", 1); put("mode", "shadow"); put("frameId", batch.frameId)
                 put("capturedAtSeconds", frame.capturedAtSeconds); put("geometryId", frame.geometryId)
                 put("deadlineExceeded", totalMs >= 200); put("totalAddedProcessingMs", totalMs)

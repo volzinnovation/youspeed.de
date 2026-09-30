@@ -787,6 +787,7 @@ internal class AndroidTrafficSignCameraRuntime(
     private var imageAnalysis: ImageAnalysis? = null
     private var analyzerAttached = false
     private var lastCalibrationPreviewNanos = 0L
+    private var lastLaneGeometryNanos = 0L
     private val calibrationRotation = AndroidTrafficSignBitmapRotation()
     private var imageCapture: ImageCapture? = null
     private var videoCapture: VideoCapture<Recorder>? = null
@@ -935,6 +936,17 @@ internal class AndroidTrafficSignCameraRuntime(
                     if (orientationEpoch != analysisOrientationEpoch ||
                         image.imageInfo.rotationDegrees != expectedAnalysisRotation) image.close()
                     else {
+                        val receivedAt = android.os.SystemClock.elapsedRealtimeNanos()
+                        val previewScope = controller.lanePreviewSourceScope()
+                        if (previewScope != null && receivedAt - lastLaneGeometryNanos >= 200_000_000L) {
+                            lastLaneGeometryNanos = receivedAt
+                            val matrix = FloatArray(9).also { image.imageInfo.sensorToBufferTransformMatrix.getValues(it) }
+                            val thermal = context.getSystemService(PowerManager::class.java)?.currentThermalStatus
+                                ?: PowerManager.THERMAL_STATUS_NONE
+                            controller.onLanePreviewSource(LanePreviewSourceGeometry(previewScope,
+                                LaneImageGeometry(image.width, image.height, image.imageInfo.rotationDegrees, matrix.map { it.toDouble() }),
+                                receivedAt, thermal >= PowerManager.THERMAL_STATUS_SEVERE))
+                        }
                         if (controller.isVisualCalibrationActive() && System.nanoTime() - lastCalibrationPreviewNanos >= 200_000_000L) {
                             lastCalibrationPreviewNanos = System.nanoTime()
                             runCatching {

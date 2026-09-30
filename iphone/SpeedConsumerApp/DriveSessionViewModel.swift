@@ -703,6 +703,43 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var visualCalibrationPreview: VisualRoadCalibrationPreview?
     @Published private(set) var visualCalibrationActive = false
     var visualCalibrationStatus: String { driveCaptureCoordinator?.lastCaptureDetail ?? "" }
+    var lanePreviewSourceGeometry: LanePreviewSourceGeometry? { driveCaptureCoordinator?.lanePreviewSourceGeometry }
+    var lanePreviewActivityAllowed: Bool {
+        trafficSignApplicationIsActive && driveCaptureCoordinator?.state == .recording
+    }
+    var lanePreviewContextAvailable: Bool {
+        !trafficSignRecognitionEnabled || (trafficSignFrameContextIsCurrent && latestTrafficSignDetectionContext?.isValid == true)
+    }
+    private var lastLanePresentationSignature: String?
+    private var lastLanePresentationLogUptime = -Double.infinity
+
+    func logLanePreviewPresentation(_ diagnostic: LanePreviewPresentationDiagnostic) {
+        guard debugLoggingEnabled else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        let source = diagnostic.source, profile = diagnostic.calibration
+        let signature = "\(diagnostic.decision.mode.rawValue):\(diagnostic.decision.reason):\(source?.geometryKey ?? "none"):\(profile?.revision ?? "none"):\(diagnostic.matureBoundaryCount)"
+        guard now - lastLanePresentationLogUptime >= 0.5,
+              signature != lastLanePresentationSignature || now - lastLanePresentationLogUptime >= 5 else { return }
+        lastLanePresentationSignature = signature; lastLanePresentationLogUptime = now
+        var fields: [String: Any] = ["schemaVersion": 1, "mode": diagnostic.decision.mode.rawValue,
+            "reason": diagnostic.decision.reason, "displayOnly": true,
+            "matureBoundaryCount": diagnostic.matureBoundaryCount,
+            "referenceLineCount": diagnostic.decision.referenceLines.count,
+            "referenceOpacity": diagnostic.decision.referenceOpacity,
+            "referenceDashed": diagnostic.decision.mode == .calibrationReference]
+        if let source {
+            fields["sourceGeometry"] = ["captureSessionID": source.captureSessionID,
+                "rawWidth": source.rawWidth, "rawHeight": source.rawHeight,
+                "imageWidth": source.imageWidth, "imageHeight": source.imageHeight,
+                "rotationDegrees": source.rotationDegrees, "orientationKey": source.orientationKey,
+                "sourceAgeMs": (now - source.observedAtUptimeSeconds) * 1000]
+        }
+        if let profile, let encoded = try? JSONEncoder().encode(profile),
+           let object = try? JSONSerialization.jsonObject(with: encoded) { fields["visualCalibration"] = object }
+        guard let data = try? JSONSerialization.data(withJSONObject: fields, options: [.sortedKeys]),
+              let json = String(data: data, encoding: .utf8) else { return }
+        appendTSRLog("lane_presentation_v1=\(json)", timestamp: Date())
+    }
 
     func beginVisualRoadCalibration() {
         guard drivingControlsAllowed else { return }

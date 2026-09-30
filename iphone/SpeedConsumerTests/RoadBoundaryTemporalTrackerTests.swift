@@ -2,6 +2,14 @@ import XCTest
 @testable import SpeedConsumer
 
 final class RoadBoundaryTemporalTrackerTests: XCTestCase {
+    func testAbsentGpsHintPreservesExactMotionEvidenceAndWork() {
+        let a=RoadBoundaryTemporalTracker(), b=RoadBoundaryTemporalTracker(); seed(a); seed(b)
+        let image=scene(3)
+        let baseline=a.predict(grayscale:image,width:width,height:height,timestampSeconds:10.2,key:"scope",capturedAtSeconds:100.2)
+        let hinted=b.predict(grayscale:image,width:width,height:height,timestampSeconds:10.2,key:"scope",capturedAtSeconds:100.2,
+            motionHint:RoadBoundaryMotionHint.from(samples:[],capturedAtSeconds:100.2,clockKnown:true))
+        XCTAssertEqual(baseline.boundaries,hinted.boundaries); XCTAssertEqual(baseline.operationCount,hinted.operationCount)
+    }
     private let width=192, height=108
     private func center(_ y: Int) -> Double { 45+0.11*Double(y)+0.0012*Double((y-50)*(y-50)) }
     private func scene(_ dx: Int=0,_ dy: Int=0,_ occlusion: ClosedRange<Int>?=nil) -> [UInt8] {

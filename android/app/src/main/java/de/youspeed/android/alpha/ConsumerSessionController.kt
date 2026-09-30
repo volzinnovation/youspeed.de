@@ -636,6 +636,11 @@ class ConsumerSessionController(
     @Volatile private var applicationActive = true
     @Volatile private var lanePreviewVisible = false
     @Volatile private var lanePreviewScope = 0L
+    @Volatile internal var lanePreviewSource: LanePreviewSourceGeometry? = null
+        private set
+    private val legacyLanePresentation = RoadBoundaryPresentationGate()
+    private var lanePresentationDiagnosticKey: String? = null
+    private var lanePresentationDiagnosticAt = 0L
     internal var lanePreviewGeometry by mutableStateOf<LanePreviewGeometry?>(null)
         private set
     internal var laneRuntimeSnapshot by mutableStateOf(LaneRuntimeSnapshot())
@@ -1229,12 +1234,61 @@ class ConsumerSessionController(
 
     private fun clearLanePreview() {
         lanePreviewScope++
+        lanePreviewSource = null
+        legacyLanePresentation.reset()
+        roadPathSession.invalidateOverlay()
         laneRuntimeSnapshot = LaneRuntimeSnapshot()
         lanePaintMetric = null
     }
 
+    internal fun lanePreviewSourceScope(): Long? = lanePreviewScope.takeIf {
+        applicationActive && lanePreviewVisible && uiState.showDetectedLanes && isDriveRecorderSessionActive()
+    }
+
+    internal fun onLanePreviewSource(source: LanePreviewSourceGeometry) {
+        if (source.scope == lanePreviewSourceScope()) lanePreviewSource = source
+    }
+
+    internal fun lanePresentationDecision(source: LanePreviewSourceGeometry?, matureCount: Int,
+        staleObserved: Boolean, nowNanos: Long): LanePreviewPresentationDecision = LanePreviewPresentationPolicy.decide(
+        uiState.showDetectedLanes, lanePreviewVisible && lanePreviewGeometry != null,
+        applicationActive && isDriveRecorderSessionActive(), lanePreviewScope, source, visualRoadCalibration,
+        matureCount, staleObserved, nowNanos)
+
+    internal fun onLanePresentationPainted(decision: LanePreviewPresentationDecision,
+        source: LanePreviewSourceGeometry?, observedCount: Int) {
+        val now = SystemClock.elapsedRealtimeNanos()
+        val key = "${decision.mode}:${decision.reason}:$lanePreviewScope:${visualRoadCalibration?.revision}"
+        if (now - lanePresentationDiagnosticAt < 500_000_000L ||
+            (key == lanePresentationDiagnosticKey && now - lanePresentationDiagnosticAt < 5_000_000_000L)) return
+        lanePresentationDiagnosticKey = key
+        lanePresentationDiagnosticAt = now
+        appendRuntimeDiagnosticEvent("lane_overlay_presentation", mapOf(
+            "mode" to decision.mode.name.lowercase(), "reason" to decision.reason,
+            "preview_scope" to lanePreviewScope, "calibration_revision" to visualRoadCalibration?.revision,
+            "observed_boundary_count" to observedCount, "reference_line_count" to decision.referenceLines.size,
+            "reference_alpha" to decision.referenceOpacity, "source_width" to source?.geometry?.width,
+            "source_height" to source?.geometry?.height, "source_rotation" to source?.geometry?.rotationDegrees,
+            "source_age_ms" to source?.let { (now - it.observedAtNanos) / 1e6 }))
+    }
+
     internal fun onLaneDetectionResult(snapshot: LaneRuntimeSnapshot) {
-        if (snapshot.scope == lanePreviewScope) laneRuntimeSnapshot = snapshot
+        if (snapshot.scope != lanePreviewScope) return
+        val estimate = snapshot.estimate
+        if (estimate == null) {
+            if (snapshot.state == LanePresentationState.PAUSED) legacyLanePresentation.reset()
+            laneRuntimeSnapshot = snapshot
+            return
+        }
+        val sides = listOfNotNull(estimate.left, estimate.right)
+        val selection = legacyLanePresentation.update(sides.map {
+            RoadBoundaryEvidence(it.points, it.confidence, RoadBoundaryCue.PAINT, it.points.size)
+        }, estimate.timestampSeconds, "${snapshot.scope}:${snapshot.geometry}:${visualRoadCalibration?.revision}")
+        if (!selection.accepted) return
+        val visible = selection.visibleBoundaryIndices.toSet()
+        val left = estimate.left?.takeIf { 0 in visible }
+        val right = estimate.right?.takeIf { (if (estimate.left == null) 0 else 1) in visible }
+        laneRuntimeSnapshot = snapshot.copy(estimate = estimate.copy(left = left, right = right))
     }
 
     /** Called on the first Canvas draw of each result; does not mutate Compose state. */

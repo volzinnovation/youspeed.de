@@ -429,3 +429,5 @@
 "calibration.down" = "Omlaag";
 "calibration.left" = "Naar links";
 "calibration.right" = "Naar rechts";
+
+"drive_recorder.lanes.reference" = "Kalibratiereferentie";

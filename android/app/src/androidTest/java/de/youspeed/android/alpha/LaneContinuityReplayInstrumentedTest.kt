@@ -24,6 +24,8 @@ class LaneContinuityReplayInstrumentedTest {
         val copyMs: Double, val filterMs: Double, val geometryAndTrackingMs: Double,
         val associationAndJsonMs: Double, val totalMs: Double, val reportedAddedMs: Double,
         val deadlineExceeded: Boolean,
+        val presentation: RoadBoundaryPresentationSnapshot? = null,
+        val motionHint: RoadBoundaryMotionHint? = null,
     )
 
     @Test fun sixRecordedSequencesCompareStatelessAndTemporalProductionPaths() {
@@ -48,6 +50,7 @@ class LaneContinuityReplayInstrumentedTest {
         val seenSequences = linkedSetOf<String>()
         var exactFilterMatches = 0
         var evidenceFreshnessViolations = 0
+        var presentationInvariantViolations = 0
         val wallStart = System.nanoTime()
         val output = File(root, "$runId.ndjson")
         require(!output.exists()) { "Use a new run ID; existing reports are preserved" }
@@ -113,7 +116,23 @@ class LaneContinuityReplayInstrumentedTest {
                         sample = Sample(id, sequence, pts, prepared.geometry, copyMs, prepared.filterMs,
                             prepared.geometryMs, (finished - preparationFinished) / 1e6, (finished - started) / 1e6,
                             pathJson.optDouble("totalAddedProcessingMs", (finished - started) / 1e6),
-                            pathJson.optBoolean("deadlineExceeded") || finished - started >= 200_000_000)
+                            pathJson.optBoolean("deadlineExceeded") || finished - started >= 200_000_000,
+                            prepared.presentation, prepared.motionHint)
+                        val presentation = prepared.presentation
+                        if (!prepared.geometry.budgetExceeded && presentation.accepted) {
+                            val visible = presentation.visibleBoundaryIndices
+                            if (visible.distinct().size != visible.size || visible.any { it !in prepared.geometry.boundaries.indices } ||
+                                presentation.items.map { it.trackId }.distinct().size != presentation.items.size) presentationInvariantViolations++
+                            for (item in presentation.items) {
+                                val firstObserved = item.firstObservedSeconds
+                                if (item.state == "confirmed" && (item.boundaryIndex !in visible || item.observationCount < 2 ||
+                                    firstObserved == null || item.lastObservedSeconds - firstObserved < .30 - 1e-9))
+                                    presentationInvariantViolations++
+                                if (item.state != "confirmed" && item.boundaryIndex != null && item.boundaryIndex in visible)
+                                    presentationInvariantViolations++
+                                if (item.state == "missing" && item.boundaryIndex != null) presentationInvariantViolations++
+                            }
+                        }
                         for (boundary in prepared.geometry.boundaries) {
                             val fresh = boundary.lastFreshTimestampSeconds
                             val age = boundary.evidenceAgeSeconds
@@ -137,6 +156,10 @@ class LaneContinuityReplayInstrumentedTest {
                         .put("thermalStatus", power?.currentThermalStatus ?: JSONObject.NULL)
                         .put("replayClock", "encoded_video_pts_relative_seconds")
                     if (pathJson != null) result.put("pathDiagnostic", pathJson)
+                        .put("lanePresentation", pathJson.optJSONObject("lanePresentation") ?: JSONObject.NULL)
+                        .put("laneMotionHint", pathJson.optJSONObject("laneMotionHint") ?: JSONObject.NULL)
+                        .put("confirmedBoundaries", boundariesJson(visibleBoundaries(sample)))
+                        .put("gpsReplay", "disabled: encoded exposure UTC and provider-arrival alignment are not verified")
                     writer.appendLine(result.toString())
                 }
                 // Exact OpenCV parity is checked separately so a valid deadline cancellation retains its timing sample.
@@ -156,13 +179,21 @@ class LaneContinuityReplayInstrumentedTest {
             .put("manifestSha256", sha(manifestBytes)).put("frames", rows.length()).put("sequences", seenSequences.size)
             .put("filterId", RoadPathLaneFilter.ID).put("opencvExactMatches", exactFilterMatches)
             .put("evidenceFreshnessViolations", evidenceFreshnessViolations).put("thermalStart", thermalStart ?: JSONObject.NULL)
+            .put("presentationInvariantViolations", presentationInvariantViolations)
             .put("thermalEnd", power?.currentThermalStatus ?: JSONObject.NULL).put("thermalBySequence", thermalBySequence)
             .put("wallSeconds", (System.nanoTime() - wallStart) / 1e9).put("arms", aggregate)
-            .put("scope", "Headless accelerated component replay, production code and exact encoded PTS; no model, camera, controller, GNSS or calibration. Timings include reduced-luma copying/filter/geometry and temporal-session association/JSON, exclude disk/decode/camera sampling/model/UI. GeometryAndTrackingMs is the combined production stage, not separate optical-flow attribution. Counts and displacement are continuity diagnostics, not accuracy or calibrated road truth. Relative PTS must not be interpreted as wall-clock overlay visibility.")
+            .put("scope", "Headless accelerated component replay, production code and exact encoded PTS; no model, camera, controller, GNSS or calibration. Timings include reduced-luma copying/filter/geometry/presentation and temporal-session association/JSON, exclude disk/decode/camera sampling/model/UI. GeometryAndTrackingMs includes the production presentation gate, not separate optical-flow attribution. Counts and displacement are continuity diagnostics, not accuracy or calibrated road truth. Relative PTS must not be interpreted as wall-clock overlay visibility. Video UTC/provider arrival alignment is unverified, so no reconstructed GPS is ingested. Continuous fixture replay does not reproduce original admission gaps.")
         File(root, "$runId.json").writeText(report.toString(2))
         assertEquals("No stale/future/mislabeled evidence may survive", 0, evidenceFreshnessViolations)
+        assertEquals("Only confirmed, current boundaries may pass the display gate", 0, presentationInvariantViolations)
         assertEquals(rows.length(), exactFilterMatches)
-        assertTrue("Both recordings and all six controls are required", seenSequences.size >= 6)
+        assertTrue("Both recordings and at least six controls are required", seenSequences.size >= 6)
+    }
+
+    private fun visibleBoundaries(sample: Sample): List<RoadBoundaryEvidence> {
+        val presentation = sample.presentation ?: return emptyList()
+        if (!presentation.accepted || sample.geometry.budgetExceeded || sample.deadlineExceeded) return emptyList()
+        return presentation.visibleBoundaryIndices.mapNotNull { sample.geometry.boundaries.getOrNull(it) }
     }
 
     private fun boundariesJson(boundaries: List<RoadBoundaryEvidence>) = JSONArray().apply {
@@ -204,6 +235,41 @@ class LaneContinuityReplayInstrumentedTest {
         RoadBoundaryProvenance.entries.forEach { p -> provenance.put(p.name.lowercase(), boundaries.count { it.provenance == p }) }
         val resets = JSONObject()
         values.groupingBy { it.geometry.temporalResetReason ?: "none" }.eachCount().forEach { (reason, count) -> resets.put(reason, count) }
+        val presentation = JSONObject()
+        val presentSamples = values.filter { it.presentation != null }
+        if (presentSamples.isNotEmpty()) {
+            val items = presentSamples.flatMap { it.presentation!!.items }
+            val visible = presentSamples.map { visibleBoundaries(it).size }
+            val confirmedDelays = mutableListOf<Double>()
+            val seen = mutableSetOf<Pair<String, Long>>()
+            for (sample in presentSamples) for (item in sample.presentation!!.items) {
+                val firstObserved = item.firstObservedSeconds
+                if (item.state == "confirmed" && !sample.geometry.budgetExceeded &&
+                    seen.add(sample.sequence to item.trackId) && firstObserved != null)
+                    confirmedDelays += item.lastObservedSeconds - firstObserved
+            }
+            var changes = 0; var pairs = 0
+            for ((a, b) in presentSamples.zipWithNext()) {
+                if (a.sequence != b.sequence || b.time - a.time !in 0.0.. .8) continue
+                pairs++
+                if (visibleBoundaries(a).size != visibleBoundaries(b).size) changes++
+            }
+            val reasons = JSONObject()
+            presentSamples.groupingBy { it.presentation!!.reason ?: "none" }.eachCount()
+                .forEach { (reason, count) -> reasons.put(reason, count) }
+            val motionReasons = JSONObject()
+            presentSamples.groupingBy { it.motionHint?.reason ?: "unavailable" }.eachCount()
+                .forEach { (reason, count) -> motionReasons.put(reason, count) }
+            presentation.put("framesWithConfirmedBoundaries", visible.count { it > 0 })
+                .put("confirmedBoundaryObservations", visible.sum())
+                .put("tentativeBoundaryObservations", items.count { it.state == "tentative" })
+                .put("missingIdentityObservations", items.count { it.state == "missing" })
+                .put("uniqueConfirmedTrackIdsWithinSequences", seen.size)
+                .put("firstConfirmationDelaySeconds", distribution(confirmedDelays))
+                .put("confirmedCountChanges", changes).put("adjacentPairs", pairs)
+                .put("reasons", reasons).put("motionHintUsedFrames", presentSamples.count { it.motionHint?.used == true })
+                .put("motionHintReasons", motionReasons)
+        }
         return JSONObject().put("frames", values.size).put("boundaryFrames", values.count { it.geometry.boundaries.isNotEmpty() })
             .put("paintFrames", values.count { s -> s.geometry.boundaries.any { it.cue == RoadBoundaryCue.PAINT } })
             .put("twoPaintFrames", values.count { s -> s.geometry.boundaries.count { it.cue == RoadBoundaryCue.PAINT } >= 2 })
@@ -214,6 +280,7 @@ class LaneContinuityReplayInstrumentedTest {
             .put("freshDetectorOperationCount", distribution(values.map { it.geometry.operationCount.toDouble() }))
             .put("temporalOperationCount", distribution(values.map { it.geometry.temporalOperationCount.toDouble() }))
             .put("temporalResetReasons", resets)
+            .put("presentation", presentation)
             .put("geometryBudgetAborts50Ms", values.count { it.geometry.budgetExceeded }).put("deadlineMisses200Ms", values.count { it.deadlineExceeded })
             .put("timingMs", JSONObject().put("lumaCopy", distribution(values.map { it.copyMs }))
                 .put("filter", distribution(values.map { it.filterMs })).put("geometryAndTracking", distribution(values.map { it.geometryAndTrackingMs }))

@@ -27,6 +27,12 @@ final class RoadPathSessionTests: XCTestCase {
         return TSRApplicabilityDiagnostic(schemaVersion: 1, batch: batch, tracks: [TSRPhysicalTrackSnapshot(trackId: "physical-sign",
             scope: scope, samples: [sample], visibility: "observed", associationAmbiguous: false)], decisions: [])
     }
+    private func paintedFrame(_ time:Double,sourceTime:Double,startedAt:Double=1) -> RoadPathCameraFrame {
+        var gray=[UInt8](repeating:55,count:128*72)
+        for y in 0..<72 { for x in [29,30,31,94,95,96] { gray[y*128+x]=230 } }
+        return RoadPathCameraFrame(grayscale:gray,width:128,height:72,capturedAtSeconds:time,geometryId:"geometry",
+            calibration:camera,clockKnown:true,preprocessingMs:0,startedAt:startedAt,rawWidth:128,rawHeight:72,sourceTimestampSeconds:sourceTime)
+    }
     private func record(_ session: RoadPathSession, _ time: Double) {
         session.recordLocation(time: time, latitude: 48+(time-10)*10/6_371_000*180 / .pi,
             longitude: 8, course: 0, speed: 10, accuracy: 0.02, courseAccuracy: 0.02)
@@ -71,7 +77,7 @@ final class RoadPathSessionTests: XCTestCase {
         let clock = MutableClock(), session = RoadPathSession(nowUptime: { clock.now() })
         record(session,10)
         let diagnostic = diagnostic(10)
-        let prepared = session.prepare(frame:frame(10,sourceTime:100),frameId:diagnostic.batch.frameId,scope:scope)
+        let prepared = session.prepare(frame:paintedFrame(10,sourceTime:100),frameId:diagnostic.batch.frameId,scope:scope)
         XCTAssertEqual(session.overlay()?.capturedAtSeconds,10)
         XCTAssertFalse(prepared.geometry.budgetExceeded)
         XCTAssertEqual(prepared.publicationDetails["overlayPublicationPhase"] as? String,"before_tsr")
@@ -83,7 +89,18 @@ final class RoadPathSessionTests: XCTestCase {
         XCTAssertEqual(r["deadlineExceeded"] as? Bool,false)
         XCTAssertEqual(try XCTUnwrap(r["totalAddedProcessingMs"] as? Double),1,accuracy:0.001)
         XCTAssertEqual(session.overlay()?.capturedAtSeconds,10)
-        XCTAssertEqual(session.overlay()?.boundaries,prepared.geometry.boundaries)
+        XCTAssertEqual(prepared.geometry.boundaries.count,2)
+        XCTAssertEqual((r["boundaries"] as? [[String:Any]])?.count,2)
+        XCTAssertTrue(session.overlay()?.boundaries.isEmpty ?? false)
+        XCTAssertEqual(prepared.presentation.tentativeCount,2)
+        let second=session.prepare(frame:paintedFrame(10.45,sourceTime:100.45,startedAt:clock.value-0.001),frameId:"second",scope:scope)
+        XCTAssertEqual(second.geometry.boundaries.count,2)
+        XCTAssertEqual(session.overlay()?.boundaries,second.geometry.boundaries)
+        XCTAssertEqual(second.presentation.confirmedCount,2)
+        session.invalidateOverlay()
+        let afterReset=session.prepare(frame:paintedFrame(10.7,sourceTime:100.7,startedAt:clock.value-0.001),frameId:"after-reset",scope:scope)
+        XCTAssertEqual(afterReset.geometry.boundaries.count,2)
+        XCTAssertTrue(session.overlay()?.boundaries.isEmpty ?? false)
     }
     func testPreparedFrameMismatchAndScopeMismatchCannotEnterAssociationHistory() throws {
         let session = RoadPathSession(nowUptime:{1.001}), diagnostic = diagnostic(10)

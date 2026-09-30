@@ -39,6 +39,7 @@ final class RoadBoundaryTemporalTracker {
 
     func predict(grayscale: [UInt8], width: Int, height: Int, timestampSeconds: Double, key: String,
                  capturedAtSeconds: Double? = nil, maximumOperations: Int = 300_000,
+                 motionHint: RoadBoundaryMotionHint? = nil,
                  shouldContinue: @escaping () -> Bool = { true }) -> RoadBoundaryPrediction {
         let captured = capturedAtSeconds ?? timestampSeconds
         let budget = Budget(max(0,maximumOperations),shouldContinue)
@@ -57,7 +58,7 @@ final class RoadBoundaryTemporalTracker {
         guard old.key==key, old.width==width, old.height==height else { return empty("scope_or_geometry") }
         let dt=timestampSeconds-old.time
         if dt>0.8 { return empty("exposure_gap") }
-        let radius=min(12,max(4,Int(ceil(dt*20))))
+        let radius=max(min(12,max(4,Int(ceil(dt*20)))),motionHint?.used == true ? min(12,max(0,motionHint!.horizontalSearchRadiusFloor)) : 0)
         var tracked: [RoadBoundaryEvidence] = []
         for boundary in old.boundaries.prefix(6) {
             guard budget.check() else { return empty("deadline",exceeded:true) }

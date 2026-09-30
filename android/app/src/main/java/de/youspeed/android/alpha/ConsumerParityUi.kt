@@ -43,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -387,8 +388,20 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
     }
     val pathOverlay = controller.roadPathSession.overlay()
     val pathAge = pathOverlay?.let { System.currentTimeMillis() / 1000.0 - it.capturedAtSeconds }
-    val freshPath = pathOverlay?.takeIf { pathAge != null && pathAge >= 0 && pathAge < 0.75 }
+    val source = controller.lanePreviewSource
+    val compatibleCalibration = controller.visualRoadCalibration?.takeIf { profile -> source != null &&
+        profile.compatible(source.geometry.uprightWidth, source.geometry.uprightHeight, source.orientationKey) }
+    val freshPath = pathOverlay?.takeIf { pathAge != null && pathAge >= 0 && pathAge < 0.75 && it.geometry == source?.geometry &&
+        it.visualCalibrationRevision == compatibleCalibration?.revision }
+    val useRoadPath = controller.isTrafficSignRecognitionRuntimeEnabled()
+    val observedCount = if (useRoadPath) freshPath?.boundaries?.size ?: 0 else
+        if (opacity > 0f && state != LanePresentationState.PAUSED && snapshot.geometry == source?.geometry)
+            listOfNotNull(snapshot.estimate?.left, snapshot.estimate?.right).size else 0
+    val presentation = controller.lanePresentationDecision(source, observedCount,
+        useRoadPath && freshPath == null, maxOf(nowNanos, SystemClock.elapsedRealtimeNanos()))
     Canvas(Modifier.fillMaxSize().testTag("detected-lanes-overlay")) {
+        controller.onLanePresentationPainted(presentation, source, observedCount)
+        if (presentation.mode == LanePreviewPresentationMode.HIDDEN || preview == null || source == null) return@Canvas
         val strokeWidth = LanePreviewStyle.strokeWidth.toPx()
         val dotRadius = LanePreviewStyle.dotDiameter.toPx() / 2f
         val outlineWidth = LanePreviewStyle.outlineWidth.toPx()
@@ -414,7 +427,20 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
                 cap = StrokeCap.Round, join = StrokeJoin.Round))
             points.forEach { p -> drawCircle(color, dotRadius, Offset(p.x.toFloat(), p.y.toFloat())) }
         }
-        if (freshPath != null && preview != null) {
+        if (presentation.mode == LanePreviewPresentationMode.CALIBRATION_REFERENCE) {
+            presentation.referenceLines.forEach { line ->
+                val points = line.mapNotNull { LaneOverlayGeometry.project(it, source.geometry, preview) }
+                if (points.size == 2) {
+                    val guide = Path().apply { moveTo(points[0].x.toFloat(), points[0].y.toFloat())
+                        lineTo(points[1].x.toFloat(), points[1].y.toFloat()) }
+                    drawPath(guide, LanePreviewStyle.color.copy(alpha = presentation.referenceOpacity),
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(14.dp.toPx(), 10.dp.toPx()))))
+                }
+            }
+            return@Canvas
+        }
+        if (useRoadPath && freshPath != null) {
             // At the observed ~2 Hz cadence, fading at 300 ms makes every valid
             // update pulse. Keep it bright through a normal interval; expiry stays 750 ms.
             val fade = if (pathAge!! <= 0.6) 1f else ((0.75-pathAge)/0.15).toFloat()
@@ -424,9 +450,10 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
             }
             return@Canvas
         }
+        if (useRoadPath) return@Canvas
         val geometry = snapshot.geometry ?: return@Canvas
         val estimate = snapshot.estimate ?: return@Canvas
-        val destination = preview ?: return@Canvas
+        val destination = preview
         if (opacity <= 0f || state == LanePresentationState.PAUSED) return@Canvas
         fun points(boundary: LaneBoundary?): List<LanePoint> = boundary?.points?.mapNotNull {
             LaneOverlayGeometry.project(it, geometry, destination)
@@ -450,7 +477,13 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
         if (left.size >= 2 || right.size >= 2) controller.onLaneOverlayPainted(snapshot)
     }
     Text(parityText("Detected lanes", "Erkannte Fahrspuren", "Voies détectées", "Gedetecteerde rijstroken") + ": " +
-        (freshPath?.let { parityText("Experimental", "Experimentell", "Expérimental", "Experimenteel") + " (${it.boundaries.size})" } ?: label),
+        when (presentation.mode) {
+            LanePreviewPresentationMode.CALIBRATION_REFERENCE -> parityText("Calibration reference", "Kalibrierungsreferenz", "Repère de calibration", "Kalibratiereferentie")
+            LanePreviewPresentationMode.OBSERVED -> if (useRoadPath) parityText("Experimental", "Experimentell", "Expérimental", "Experimenteel") + " ($observedCount)" else label
+            LanePreviewPresentationMode.HIDDEN -> if (presentation.reason in listOf("thermal_paused", "activity_paused"))
+                parityText("Paused", "Pausiert", "En pause", "Gepauzeerd") else
+                parityText("Unavailable", "Nicht verfügbar", "Indisponible", "Niet beschikbaar")
+        },
         modifier = Modifier.align(Alignment.BottomStart).padding(10.dp)
             .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(8.dp)).padding(6.dp)
             .testTag("detected-lanes-state"),

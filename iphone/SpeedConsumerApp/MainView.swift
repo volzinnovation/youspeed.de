@@ -1031,10 +1031,16 @@ struct MainView: View {
                     orientation: viewModel.screenOrientation,
                     laneRuntime: viewModel.laneDetectionRuntime,
                     roadPathSession: viewModel.roadPathSession,
+                    calibrationStore: viewModel.visualCalibrationStore,
+                    sourceGeometryProvider: { viewModel.lanePreviewSourceGeometry },
+                    activityAllowedProvider: { viewModel.lanePreviewActivityAllowed },
+                    contextAvailableProvider: { viewModel.lanePreviewContextAvailable },
+                    onLanePresentation: { viewModel.logLanePreviewPresentation($0) },
                     showDetectedLanes: viewModel.showDetectedLanes,
+                    legacyLanesAllowed: !viewModel.trafficSignRecognitionEnabled,
                     previewVisible: showingPreview && !showingSettings && !showingLegalInfo
                         && !showingDebug && !showingLocalRecordings && !showingPanoramaxGallery
-                        && !showingTrafficSignDetails
+                        && !showingTrafficSignDetails && !showingVisualCalibration
                 )
                     .frame(maxWidth: .infinity)
                     .frame(height: availableHeight)

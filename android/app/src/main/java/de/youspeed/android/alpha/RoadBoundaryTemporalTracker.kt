@@ -30,6 +30,7 @@ class RoadBoundaryTemporalTracker {
 
     fun predict(grayscale: ByteArray, width: Int, height: Int, timestampSeconds: Double, key: String,
         capturedAtSeconds: Double = timestampSeconds, maximumOperations: Int = 300_000,
+        motionHint: RoadBoundaryMotionHint? = null,
         shouldContinue: () -> Boolean = { true }): RoadBoundaryPrediction {
         val budget = Budget(maximumOperations.coerceAtLeast(0),shouldContinue)
         fun empty(reason: String?, exceeded: Boolean = false, accept: Boolean = true, preserve: Boolean = false): RoadBoundaryPrediction {
@@ -47,7 +48,8 @@ class RoadBoundaryTemporalTracker {
         if (old.key != key || old.width != width || old.height != height) return empty("scope_or_geometry")
         val dt = timestampSeconds-old.time
         if (dt > 0.8) return empty("exposure_gap")
-        val radius = ceil(dt*20).toInt().coerceIn(4,12)
+        val radius = max(ceil(dt*20).toInt().coerceIn(4,12),
+            if (motionHint?.used == true) motionHint.horizontalSearchRadiusFloor.coerceIn(0,12) else 0)
         val tracked = ArrayList<RoadBoundaryEvidence>()
         for (boundary in old.boundaries.take(6)) {
             if (!budget.check()) return empty("deadline",true)

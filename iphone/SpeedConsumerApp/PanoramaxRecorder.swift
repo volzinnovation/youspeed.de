@@ -287,8 +287,19 @@ final class DriveVideoFrameDispatcher: NSObject, AVCaptureVideoDataOutputSampleB
     private var orientation: CGImagePropertyOrientation = .right
     private weak var laneConsumer: (any DriveVideoFrameConsumer)?
     private var lanesEnabled = false
+        private var legacyLanesAllowed = false
     private weak var calibrationConsumer: (any DriveVideoFrameConsumer)?
     private var calibrationEnabled = false
+    private var captureSessionID: String?
+    private var sourceGeometry: LanePreviewSourceGeometry?
+
+    func setCaptureSessionID(_ value: String?) {
+        lock.lock(); captureSessionID = value; sourceGeometry = nil; lock.unlock()
+    }
+
+    func currentSourceGeometry() -> LanePreviewSourceGeometry? {
+        lock.lock(); defer { lock.unlock() }; return sourceGeometry
+    }
 
     func setCalibrationConsumer(_ consumer: (any DriveVideoFrameConsumer)?, enabled: Bool) {
         lock.lock(); calibrationConsumer = consumer; calibrationEnabled = enabled; lock.unlock()
@@ -326,6 +337,7 @@ final class DriveVideoFrameDispatcher: NSObject, AVCaptureVideoDataOutputSampleB
 
     func setOrientation(_ orientation: CGImagePropertyOrientation) {
         lock.lock()
+        if self.orientation != orientation { sourceGeometry = nil }
         self.orientation = orientation
         lock.unlock()
     }
@@ -344,6 +356,24 @@ final class DriveVideoFrameDispatcher: NSObject, AVCaptureVideoDataOutputSampleB
         // Admission is bounded: the consumer captures its context and schedules
         // inference asynchronously. Keep it atomic with setOrientation so an
         // old orientation cannot acquire a new context after a mount change.
+        let now = ProcessInfo.processInfo.systemUptime
+        if sourceGeometry == nil || now - (sourceGeometry?.observedAtUptimeSeconds ?? -.infinity) >= 0.2,
+           let captureSessionID, CMSampleBufferDataIsReady(sampleBuffer),
+           let pixel = CMSampleBufferGetImageBuffer(sampleBuffer) {
+            let rotation: Int? = switch orientation {
+            case .up: 0
+            case .right: 90
+            case .down: 180
+            case .left: 270
+            default: nil
+            }
+            if let rotation {
+                sourceGeometry = LanePreviewSourceGeometry(captureSessionID: captureSessionID,
+                    rawWidth: CVPixelBufferGetWidth(pixel), rawHeight: CVPixelBufferGetHeight(pixel),
+                    rotationDegrees: rotation, orientationKey: "rear:exif:\(orientation.rawValue)",
+                    observedAtUptimeSeconds: now)
+            } else { sourceGeometry = nil }
+        }
         let activeConsumer = enabled ? consumer : nil
         let activeLaneConsumer = lanesEnabled ? laneConsumer : nil
         if calibrationEnabled { calibrationConsumer?.consumeVideoFrame(sampleBuffer, orientation: orientation) }
@@ -487,6 +517,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     }
     private(set) var requestedPanoramaxEnabled = false
     var activeCaptureSessionID: String? { captureSessionID }
+    var lanePreviewSourceGeometry: LanePreviewSourceGeometry? { frameDispatcher.currentSourceGeometry() }
     var hasTrafficSignRecognitionConsumer: Bool { frameDispatcher.hasConsumer }
     var isDashcamOutputAvailable: Bool { movieOutputAvailable }
     var isLaneAnalysisOutputAvailable: Bool { videoOutputAvailable }
@@ -617,6 +648,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         let requestedGeneration = generation
         let captureSessionID = UUID().uuidString
         self.captureSessionID = captureSessionID
+        frameDispatcher.setCaptureSessionID(captureSessionID)
         sessionPurpose = purpose
         state = .preparing
         startedAt = nil
@@ -836,6 +868,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         dashcamTransition = nil
         dashcamTransitionInFlight = false
         state = .stopping
+        frameDispatcher.setCaptureSessionID(nil)
         frameDispatcher.setEnabled(false)
         activeLanesEnabled = false
         frameDispatcher.setLanesEnabled(false)
@@ -1237,6 +1270,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     }
 
     private func resetActiveModulesAfterFailure() {
+        frameDispatcher.setCaptureSessionID(nil)
         completeInteractionFinalization(.failure(DriveInteractionError.finalizationFailed))
         activeDashcamEnabled = false
         activePanoramaxEnabled = false
@@ -1777,7 +1811,13 @@ struct DriveCameraPreview: UIViewRepresentable {
     var orientation: ScreenOrientation = .portrait
     var laneRuntime: LaneDetectionRuntime? = nil
     var roadPathSession: RoadPathSession? = nil
+    var calibrationStore: VisualRoadCalibrationStore? = nil
+    var sourceGeometryProvider: (() -> LanePreviewSourceGeometry?)? = nil
+    var activityAllowedProvider: (() -> Bool)? = nil
+    var contextAvailableProvider: (() -> Bool)? = nil
+    var onLanePresentation: ((LanePreviewPresentationDiagnostic) -> Void)? = nil
     var showDetectedLanes = false
+    var legacyLanesAllowed = false
     var previewVisible = false
 
     func makeUIView(context: Context) -> PreviewView {
@@ -1785,7 +1825,9 @@ struct DriveCameraPreview: UIViewRepresentable {
         view.orientation = orientation
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
-        view.setLanePreview(runtime: laneRuntime, pathSession: roadPathSession, enabled: showDetectedLanes, visible: previewVisible)
+        view.setLanePresentation(calibrationStore: calibrationStore, source: sourceGeometryProvider,
+            active: activityAllowedProvider, context: contextAvailableProvider, diagnostic: onLanePresentation)
+        view.setLanePreview(runtime: laneRuntime, pathSession: roadPathSession, enabled: showDetectedLanes, visible: previewVisible, legacyAllowed: legacyLanesAllowed)
         view.updateVideoRotation()
         return view
     }
@@ -1795,12 +1837,15 @@ struct DriveCameraPreview: UIViewRepresentable {
         if uiView.videoPreviewLayer.session !== session {
             uiView.videoPreviewLayer.session = session
         }
-        uiView.setLanePreview(runtime: laneRuntime, pathSession: roadPathSession, enabled: showDetectedLanes, visible: previewVisible)
+        uiView.setLanePresentation(calibrationStore: calibrationStore, source: sourceGeometryProvider,
+            active: activityAllowedProvider, context: contextAvailableProvider, diagnostic: onLanePresentation)
+        uiView.setLanePreview(runtime: laneRuntime, pathSession: roadPathSession, enabled: showDetectedLanes, visible: previewVisible, legacyAllowed: legacyLanesAllowed)
         uiView.updateVideoRotation()
     }
 
     static func dismantleUIView(_ uiView: PreviewView, coordinator: Void) {
         uiView.setLanePreview(runtime: nil, pathSession: nil, enabled: false, visible: false)
+        uiView.setLanePresentation(calibrationStore: nil, source: nil, active: nil, context: nil, diagnostic: nil)
         uiView.videoPreviewLayer.session = nil
     }
 
@@ -1808,15 +1853,26 @@ struct DriveCameraPreview: UIViewRepresentable {
         var orientation: ScreenOrientation = .portrait
         private var laneRuntime: LaneDetectionRuntime?
         private var roadPathSession: RoadPathSession?
+        private var calibrationStore: VisualRoadCalibrationStore?
+        private var sourceGeometryProvider: (() -> LanePreviewSourceGeometry?)?
+        private var activityAllowedProvider: (() -> Bool)?
+        private var contextAvailableProvider: (() -> Bool)?
+        private var onLanePresentation: ((LanePreviewPresentationDiagnostic) -> Void)?
         private var lanesEnabled = false
+        private var legacyLanesAllowed = false
         private var previewVisible = false
         private let laneOutline = CAShapeLayer()
         private let laneDotOutlines = CAShapeLayer()
         private let laneLines = CAShapeLayer()
         private let laneDots = CAShapeLayer()
         private let laneFill = CAShapeLayer()
+        private let calibrationReferenceLines = CAShapeLayer()
         private let laneStatus = UILabel()
         private var laneTimer: Timer?
+        private let legacyPresentationGate = RoadBoundaryPresentationGate()
+        private var legacyPresentationKey: String?
+        private var legacyPresentedFrameID: UInt64?
+        private var legacyVisibleIndices: [Int] = []
 
         override init(frame: CGRect) {
             super.init(frame: frame)
@@ -1832,6 +1888,13 @@ struct DriveCameraPreview: UIViewRepresentable {
             laneOutline.lineCap = .round
             laneDotOutlines.fillColor = UIColor.black.withAlphaComponent(0.8).cgColor
             laneDots.fillColor = LanePreviewStyle.color.cgColor
+            calibrationReferenceLines.fillColor = UIColor.clear.cgColor
+            calibrationReferenceLines.strokeColor = LanePreviewStyle.color.cgColor
+            calibrationReferenceLines.lineWidth = LanePreviewStyle.strokeWidth
+            calibrationReferenceLines.lineDashPattern = [14, 10]
+            calibrationReferenceLines.lineCap = .round
+            calibrationReferenceLines.opacity = 0.28
+            layer.addSublayer(calibrationReferenceLines)
             layer.addSublayer(laneFill)
             layer.addSublayer(laneOutline)
             layer.addSublayer(laneDotOutlines)
@@ -1849,24 +1912,35 @@ struct DriveCameraPreview: UIViewRepresentable {
 
         required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-        func setLanePreview(runtime: LaneDetectionRuntime?, pathSession: RoadPathSession?, enabled: Bool, visible: Bool) {
+        func setLanePresentation(calibrationStore: VisualRoadCalibrationStore?, source: (() -> LanePreviewSourceGeometry?)?,
+                                 active: (() -> Bool)?, context: (() -> Bool)?,
+                                 diagnostic: ((LanePreviewPresentationDiagnostic) -> Void)?) {
+            self.calibrationStore = calibrationStore; sourceGeometryProvider = source
+            activityAllowedProvider = active; contextAvailableProvider = context; onLanePresentation = diagnostic
+        }
+
+        func setLanePreview(runtime: LaneDetectionRuntime?, pathSession: RoadPathSession?, enabled: Bool, visible: Bool, legacyAllowed: Bool = false) {
             if laneRuntime !== runtime { laneRuntime?.setPreview(visible: false, rotation: 90) }
             laneRuntime = runtime
             roadPathSession = pathSession
             lanesEnabled = enabled
+            if legacyLanesAllowed != legacyAllowed { resetLegacyPresentation() }
+            legacyLanesAllowed = legacyAllowed
             previewVisible = visible
             updateLaneActivity()
         }
 
         private func updateLaneActivity() {
             let visible = lanesEnabled && previewVisible && window != nil
-            let rotation = Int(videoPreviewLayer.connection?.videoRotationAngle ?? 90)
+            let previewConnection = videoPreviewLayer.connection
+            let rotation = Int(previewConnection?.videoRotationAngle ?? 90)
             laneRuntime?.setPreview(visible: visible, rotation: rotation)
             if visible && laneTimer == nil {
                 let timer = Timer(timeInterval: 1.0 / 15, repeats: true) { [weak self] _ in self?.drawLanes() }
                 RunLoop.main.add(timer, forMode: .common)
                 laneTimer = timer
             } else if !visible {
+                resetLegacyPresentation()
                 laneTimer?.invalidate()
                 laneTimer = nil
             }
@@ -1909,76 +1983,137 @@ struct DriveCameraPreview: UIViewRepresentable {
             path.addLine(to: points[points.count - 1])
         }
 
+        private func resetLegacyPresentation() {
+            legacyPresentationGate.reset(); legacyPresentationKey = nil
+            legacyPresentedFrameID = nil; legacyVisibleIndices = []
+        }
+
+        private func matureLegacyBoundaries(_ frame: LaneOverlayFrame, source: LanePreviewSourceGeometry,
+                                            calibrationRevision: String?) -> [LaneBoundary] {
+            let key = "\(source.geometryKey):\(frame.generation):\(calibrationRevision ?? "none")"
+            if legacyPresentationKey != key {
+                resetLegacyPresentation(); legacyPresentationKey = key
+            }
+            let boundaries = [frame.estimate.left, frame.estimate.right].compactMap { $0 }
+            if legacyPresentedFrameID != frame.frameID {
+                let evidence = boundaries.map { RoadBoundaryEvidence(points: $0.points,
+                    confidence: $0.confidence, cue: .paint, supportRows: $0.points.count) }
+                let snapshot = legacyPresentationGate.update(boundaries: evidence,
+                    exposureSeconds: frame.estimate.timestampSeconds, key: key)
+                legacyVisibleIndices = snapshot.visibleBoundaryIndices
+                legacyPresentedFrameID = frame.frameID
+            }
+            return legacyVisibleIndices.compactMap { boundaries.indices.contains($0) ? boundaries[$0] : nil }
+        }
+
         private func drawLanes() {
             CATransaction.begin()
             CATransaction.setDisableActions(true)
             defer { CATransaction.commit() }
-            laneLines.path = nil
-            laneOutline.path = nil
-            laneDots.path = nil
-            laneDotOutlines.path = nil
-            laneFill.path = nil
-            laneStatus.isHidden = !lanesEnabled || !previewVisible
-            if lanesEnabled, previewVisible, let path = roadPathSession?.overlay(),
-               path.rotationDegrees == Int(videoPreviewLayer.connection?.videoRotationAngle ?? 90) {
-                let age = Date().timeIntervalSince1970-path.capturedAtSeconds
-                if age >= 0 && age < 0.75 {
-                    let lines = UIBezierPath()
-                    var points: [CGPoint] = []
+            for shape in [laneLines, laneOutline, laneDots, laneDotOutlines, laneFill, calibrationReferenceLines] { shape.path = nil }
+            laneStatus.isHidden = true
+            accessibilityValue = nil
+            let source = sourceGeometryProvider?(), profile = calibrationStore?.snapshot()
+            let now = ProcessInfo.processInfo.systemUptime, utc = Date().timeIntervalSince1970
+            let rotation = Int(videoPreviewLayer.connection?.videoRotationAngle ?? 90)
+            let thermal = ProcessInfo.processInfo.thermalState
+            let thermalPaused = thermal == .serious || thermal == .critical
+            let active = activityAllowedProvider?() == true && UIApplication.shared.applicationState == .active
+                && videoPreviewLayer.session?.isRunning == true && videoPreviewLayer.connection?.isEnabled == true
+            let visible = previewVisible && window != nil
+            let compatibleProfile = source.flatMap { source in profile.flatMap {
+                $0.compatible(width: source.imageWidth, height: source.imageHeight, orientationKey: source.orientationKey) ? $0 : nil
+            } }
+            let path = roadPathSession?.overlay()
+            let pathAge = path.map { utc - $0.capturedAtSeconds }
+            let validPath = path.flatMap { path -> RoadPathLiveOverlay? in
+                guard let source, path.captureSessionID == source.captureSessionID,
+                      path.rawWidth == source.rawWidth, path.rawHeight == source.rawHeight,
+                      path.rotationDegrees == source.rotationDegrees, path.orientationKey == source.orientationKey,
+                      path.visualCalibrationRevision == compatibleProfile?.revision,
+                      let pathAge, pathAge >= 0, pathAge < 0.75 else { return nil }
+                return path
+            }
+            let legacy = laneRuntime?.snapshot()
+            let legacyFrame = legacy?.frame.flatMap { frame -> LaneOverlayFrame? in
+                guard LanePreviewPresentationPolicy.legacyFrameIsCurrent(capturedAtSeconds: frame.estimate.timestampSeconds,
+                    nowSeconds: LaneDetectionRuntime.now(), state: legacy?.state ?? "paused", legacyAllowed: legacyLanesAllowed),
+                      let source, frame.sessionID == source.captureSessionID, frame.rotation == source.rotationDegrees,
+                      frame.sourceWidth == source.rawWidth, frame.sourceHeight == source.rawHeight else { return nil }
+                return frame
+            }
+            let runnable = lanesEnabled && visible && active && !thermalPaused
+            if !runnable { resetLegacyPresentation() }
+            let legacyBoundaries: [LaneBoundary]
+            if runnable, validPath?.boundaries.isEmpty != false, let source, let legacyFrame {
+                legacyBoundaries = matureLegacyBoundaries(legacyFrame, source: source, calibrationRevision: compatibleProfile?.revision)
+            } else { legacyBoundaries = [] }
+            let count = validPath?.boundaries.isEmpty == false ? validPath!.boundaries.count : legacyBoundaries.count
+            let decision = LanePreviewPresentationPolicy.decide(enabled: lanesEnabled, visible: visible,
+                active: active, thermalPaused: thermalPaused, previewRotation: rotation, source: source,
+                calibration: profile, matureBoundaryCount: count, contextAvailable: contextAvailableProvider?() ?? false,
+                staleObservedBoundary: pathAge.map { $0 >= 0.75 || $0 < 0 } ?? false, nowUptime: now)
+            onLanePresentation?(LanePreviewPresentationDiagnostic(decision: decision, source: source,
+                calibration: profile, matureBoundaryCount: count))
+            switch decision.mode {
+            case .hidden:
+                guard lanesEnabled && visible else { return }
+                let paused = decision.reason == "thermal_paused" || decision.reason == "activity_paused"
+                laneStatus.text = "  " + NSLocalizedString(paused ? "drive_recorder.lanes.paused" : "drive_recorder.lanes.unavailable", comment: "") + "  "
+            case .calibrationReference:
+                guard let source else { return }
+                let lines = UIBezierPath()
+                for guide in decision.referenceLines {
+                    guard guide.count == 2 else { continue }
+                    let first = LaneOverlayPolicy.capturePoint(guide[0], rotation: source.rotationDegrees)
+                    let second = LaneOverlayPolicy.capturePoint(guide[1], rotation: source.rotationDegrees)
+                    lines.move(to: videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: first))
+                    lines.addLine(to: videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: second))
+                }
+                // A distinct layer guarantees no observed-point dots, fill or horizon can leak into the reference.
+                calibrationReferenceLines.path = lines.cgPath
+                calibrationReferenceLines.opacity = Float(decision.referenceOpacity)
+                laneStatus.text = "  " + NSLocalizedString("drive_recorder.lanes.reference", comment: "") + "  "
+            case .observed:
+                let lines = UIBezierPath()
+                var points: [CGPoint] = []
+                if let path = validPath, !path.boundaries.isEmpty {
                     for boundary in path.boundaries {
                         let converted = boundary.points.map { p in
-                            let capture = LaneOverlayPolicy.capturePoint(p, rotation: path.rotationDegrees)
-                            return videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: capture)
+                            videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: LaneOverlayPolicy.capturePoint(p, rotation: path.rotationDegrees))
                         }
-                        points.append(contentsOf: converted)
-                        appendSmoothBoundary(converted, to: lines)
+                        points.append(contentsOf: converted); appendSmoothBoundary(converted, to: lines)
                     }
-                    // Preserve brightness across the observed ~2 Hz updates; expiry remains 750 ms.
+                    let age = max(0, utc - path.capturedAtSeconds)
                     showLaneMarkers(lines: lines, points: points, opacity: Float(age <= 0.6 ? 1 : (0.75-age)/0.15))
-                    laneStatus.text = "  " + String(format:NSLocalizedString("drive_recorder.lanes.status",comment:""),
-                        NSLocalizedString("drive_recorder.lanes.experimental",comment:"")) + " (\(path.boundaries.count))  "
-                    laneStatus.sizeToFit(); laneStatus.frame.origin = CGPoint(x:12,y:max(42,bounds.height-65))
-                    accessibilityValue = laneStatus.text
-                    return
+                } else if let frame = legacyFrame {
+                    for boundary in legacyBoundaries {
+                        let converted = boundary.points.map { videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: frame.capturePoint($0)) }
+                        points.append(contentsOf: converted); appendSmoothBoundary(converted, to: lines)
+                    }
+                    showLaneMarkers(lines: lines, points: points,
+                        opacity: Float(LaneOverlayPolicy.opacity(capturedAt: frame.estimate.timestampSeconds, now: LaneDetectionRuntime.now())))
+                    // The legacy corridor fill is eligible only when both current edges matured.
+                    if legacyBoundaries.count == 2, let first = frame.estimate.corridorPoints.first {
+                        let fill = UIBezierPath()
+                        func converted(_ p: LanePoint) -> CGPoint {
+                            videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: frame.capturePoint(p))
+                        }
+                        fill.move(to: converted(first))
+                        frame.estimate.corridorPoints.dropFirst().forEach { fill.addLine(to: converted($0)) }
+                        fill.close()
+                        laneFill.fillColor = LanePreviewStyle.color.withAlphaComponent(0.10).cgColor
+                        laneFill.opacity = Float(LaneOverlayPolicy.opacity(capturedAt: frame.estimate.timestampSeconds,
+                            now: LaneDetectionRuntime.now()) * (legacyBoundaries.map(\.confidence).min() ?? 0))
+                        laneFill.path = fill.cgPath
+                    }
                 }
+                laneStatus.text = "  " + String(format: NSLocalizedString("drive_recorder.lanes.status", comment: ""),
+                    NSLocalizedString("drive_recorder.lanes.experimental", comment: "")) + " (\(count))  "
             }
-            guard lanesEnabled, previewVisible, let snapshot = laneRuntime?.snapshot() else {
-                accessibilityValue = nil
-                return
-            }
-            let state = NSLocalizedString("drive_recorder.lanes.\(snapshot.state)", comment: "")
-            let label = String(format: NSLocalizedString("drive_recorder.lanes.status", comment: ""), state)
-            laneStatus.text = "  \(label)  "
-            laneStatus.sizeToFit()
-            laneStatus.frame.origin = CGPoint(x: 12, y: max(42, bounds.height - 65))
-            accessibilityValue = label
-            guard let frame = snapshot.frame,
-                  frame.rotation == Int(videoPreviewLayer.connection?.videoRotationAngle ?? 90) else { return }
-            let estimate = frame.estimate
-            let ageOpacity = LaneOverlayPolicy.opacity(capturedAt: estimate.timestampSeconds, now: LaneDetectionRuntime.now())
-            let color = LanePreviewStyle.color
-            let lines = UIBezierPath()
-            var points: [CGPoint] = []
-            func converted(_ point: LanePoint) -> CGPoint {
-                videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: frame.capturePoint(point))
-            }
-            for boundary in [estimate.left, estimate.right].compactMap({ $0 }) {
-                let convertedPoints = boundary.points.map(converted)
-                points.append(contentsOf: convertedPoints)
-                appendSmoothBoundary(convertedPoints, to: lines)
-            }
-            let confidence = [estimate.left, estimate.right].compactMap { $0?.confidence }.min() ?? 0
-            showLaneMarkers(lines: lines, points: points, opacity: Float(ageOpacity))
-            let corridor = estimate.corridorPoints
-            if let first = corridor.first {
-                let fill = UIBezierPath()
-                fill.move(to: converted(first))
-                corridor.dropFirst().forEach { fill.addLine(to: converted($0)) }
-                fill.close()
-                laneFill.fillColor = color.withAlphaComponent(0.10).cgColor
-                laneFill.opacity = Float(ageOpacity * confidence)
-                laneFill.path = fill.cgPath
-            }
+            laneStatus.isHidden = false
+            laneStatus.sizeToFit(); laneStatus.frame.origin = CGPoint(x: 12, y: max(42, bounds.height - 65))
+            accessibilityValue = laneStatus.text
         }
 
         override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }

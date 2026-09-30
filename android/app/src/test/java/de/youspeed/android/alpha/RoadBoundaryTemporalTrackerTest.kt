@@ -99,4 +99,13 @@ class RoadBoundaryTemporalTrackerTest {
         val result=RoadBoundaryDetector().detect(ByteArray(width*height){55},width,height,100.0,guidance=guidance)
         assertTrue(result.boundaries.isEmpty());assertTrue(result.corridors.isEmpty())
     }
+    @Test fun absentGpsHintPreservesExactMotionEvidenceAndWork() {
+        val a=RoadBoundaryTemporalTracker(); val b=RoadBoundaryTemporalTracker(); seed(a); seed(b)
+        val image=scene(3)
+        val baseline=a.predict(image,width,height,10.2,"scope",100.2)
+        val hinted=b.predict(image,width,height,10.2,"scope",100.2,
+            motionHint=RoadBoundaryMotionHint.from(emptyList(),100.2,true))
+        assertEquals(baseline.boundaries,hinted.boundaries)
+        assertEquals(baseline.operationCount,hinted.operationCount)
+    }
 }

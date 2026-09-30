@@ -429,3 +429,5 @@
 "calibration.down" = "Move down";
 "calibration.left" = "Move left";
 "calibration.right" = "Move right";
+
+"drive_recorder.lanes.reference" = "Calibration reference";
