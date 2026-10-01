@@ -1,158 +1,606 @@
 {
   "format": "youspeed.penalty.rules",
-  "schema_version": 1,
+  "schema_version": 2,
   "country_code": "CHE",
   "country_name": "Switzerland",
   "currency_code": "CHF",
   "default_language": "en",
-  "source_url": "https://www.ch.ch/de/fahrzeuge-und-verkehr/verhalten-im-strassenverkehr/verkehrsregeln/geschwindigkeitsuberschreitung/",
-  "source_checked_at": "2026-07-04",
-  "note": "Indicative warning bands for standard passenger-car speeding violations in Switzerland. Fixed fines come from the federal Ordnungsbussenverordnung SR 314.11 item 303 after ASTRA measurement/safety deduction. The current app schema has urban/rural variants only, so motorway-specific fines and withdrawal thresholds are included in detail text.",
+  "source_url": "https://www.fedlex.admin.ch/eli/cc/2019/93/de",
+  "source_checked_at": "2026-10-01",
+  "note": "Rule content and advisory presentation approved by the product owner on 1 October 2026; this is not governmental app certification. Ordinary passenger-car first-offence warning estimates; no Swiss licence points. Legal bands use excess after the actual enforcement measurement deduction; raw GPS excess is illustrative and is not an assessed offence or a guaranteed fine. Motorway classification uses the matched highway, never the numeric posted limit. Unknown, trunk or motorway-link-only category suppresses exact figures: divided Autostrassen may follow motorway withdrawal thresholds, which a trunk tag alone does not establish. Raser thresholds depend on the posted limit. The normal 24-month minimum can be reduced to at least 12 months only in qualifying statutory cases; repeat/probationary offences and case-specific criminal penalties require separate assessment. See docs/SWISS_PENALTY_CORRECTION_REVIEW_2026-10-01.md.",
   "bands": [
     {
       "min_delta_kmh": 1,
       "max_delta_kmh": 5,
       "severity": "money_only",
-      "title_template": "Fixed fine likely",
-      "detail_template": "After ASTRA deduction: urban 40 {currency}, rural/autostrasse 40 {currency}, motorway 20 {currency}.",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: fixed fine 40 {currency}. Rural / autostrasse: fixed fine 40 {currency}. Motorway: fixed fine 20 {currency}. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ.",
       "locality_variants": {
-        "urban": { "money_fine_eur": 40 },
-        "rural": { "money_fine_eur": 40 }
+        "urban": {
+          "money_fine_eur": 40
+        },
+        "rural": {
+          "money_fine_eur": 40
+        },
+        "motorway": {
+          "money_fine_eur": 20
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: fixed fine 40 {currency}. Rural / autostrasse: fixed fine 40 {currency}. Motorway: fixed fine 20 {currency}. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: Ordnungsbuße 40 {currency}. Außerorts / Autostraße: Ordnungsbuße 40 {currency}. Autobahn: Ordnungsbuße 20 {currency}. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: amende d’ordre 40 {currency}. Hors localité / semi-autoroute: amende d’ordre 40 {currency}. Autoroute: amende d’ordre 20 {currency}. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: vaste boete 40 {currency}. Buiten bebouwde kom / autoweg: vaste boete 40 {currency}. Autosnelweg: vaste boete 20 {currency}. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken."
+        }
       }
     },
     {
       "min_delta_kmh": 6,
       "max_delta_kmh": 10,
       "severity": "money_only",
-      "title_template": "Fixed fine likely",
-      "detail_template": "After ASTRA deduction: urban 120 {currency}, rural/autostrasse 100 {currency}, motorway 60 {currency}.",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: fixed fine 120 {currency}. Rural / autostrasse: fixed fine 100 {currency}. Motorway: fixed fine 60 {currency}. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ.",
       "locality_variants": {
-        "urban": { "money_fine_eur": 120 },
-        "rural": { "money_fine_eur": 100 }
+        "urban": {
+          "money_fine_eur": 120
+        },
+        "rural": {
+          "money_fine_eur": 100
+        },
+        "motorway": {
+          "money_fine_eur": 60
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: fixed fine 120 {currency}. Rural / autostrasse: fixed fine 100 {currency}. Motorway: fixed fine 60 {currency}. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: Ordnungsbuße 120 {currency}. Außerorts / Autostraße: Ordnungsbuße 100 {currency}. Autobahn: Ordnungsbuße 60 {currency}. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: amende d’ordre 120 {currency}. Hors localité / semi-autoroute: amende d’ordre 100 {currency}. Autoroute: amende d’ordre 60 {currency}. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: vaste boete 120 {currency}. Buiten bebouwde kom / autoweg: vaste boete 100 {currency}. Autosnelweg: vaste boete 60 {currency}. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken."
+        }
       }
     },
     {
       "min_delta_kmh": 11,
       "max_delta_kmh": 15,
       "severity": "money_only",
-      "title_template": "Fixed fine likely",
-      "detail_template": "After ASTRA deduction: urban 250 {currency}, rural/autostrasse 160 {currency}, motorway 120 {currency}.",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: fixed fine 250 {currency}. Rural / autostrasse: fixed fine 160 {currency}. Motorway: fixed fine 120 {currency}. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ.",
       "locality_variants": {
-        "urban": { "money_fine_eur": 250 },
-        "rural": { "money_fine_eur": 160 }
+        "urban": {
+          "money_fine_eur": 250
+        },
+        "rural": {
+          "money_fine_eur": 160
+        },
+        "motorway": {
+          "money_fine_eur": 120
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: fixed fine 250 {currency}. Rural / autostrasse: fixed fine 160 {currency}. Motorway: fixed fine 120 {currency}. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: Ordnungsbuße 250 {currency}. Außerorts / Autostraße: Ordnungsbuße 160 {currency}. Autobahn: Ordnungsbuße 120 {currency}. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: amende d’ordre 250 {currency}. Hors localité / semi-autoroute: amende d’ordre 160 {currency}. Autoroute: amende d’ordre 120 {currency}. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: vaste boete 250 {currency}. Buiten bebouwde kom / autoweg: vaste boete 160 {currency}. Autosnelweg: vaste boete 120 {currency}. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken."
+        }
       }
     },
     {
       "min_delta_kmh": 16,
       "max_delta_kmh": 20,
       "severity": "money_only",
-      "title_template": "Report or fixed fine risk",
-      "detail_template": "Urban: report and warning risk from 16 km/h. Rural/autostrasse: fixed fine 240 {currency}. Motorway: fixed fine 180 {currency}.",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: warning / report. Rural / autostrasse: fixed fine 240 {currency}. Motorway: fixed fine 180 {currency}. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds.",
       "locality_variants": {
-        "urban": { "driving_ban_condition": "report_warning" },
-        "rural": { "money_fine_eur": 240 }
+        "urban": {
+          "driving_ban_condition": "first_offence_report_warning"
+        },
+        "rural": {
+          "money_fine_eur": 240
+        },
+        "motorway": {
+          "money_fine_eur": 180
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: warning / report. Rural / autostrasse: fixed fine 240 {currency}. Motorway: fixed fine 180 {currency}. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: Verwarnung / Anzeige. Außerorts / Autostraße: Ordnungsbuße 240 {currency}. Autobahn: Ordnungsbuße 180 {currency}. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen. Richtungsgetrennte Autostrasse: Entzugsschwellen wie auf Autobahnen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: avertissement / dénonciation. Hors localité / semi-autoroute: amende d’ordre 240 {currency}. Autoroute: amende d’ordre 180 {currency}. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer. Semi-autoroute à chaussées séparées: seuils de retrait de l’autoroute."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: waarschuwing / aangifte. Buiten bebouwde kom / autoweg: vaste boete 240 {currency}. Autosnelweg: vaste boete 180 {currency}. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken. Autoweg met gescheiden rijbanen: intrekkingsdrempels zoals op de autosnelweg."
+        }
       }
     },
     {
       "min_delta_kmh": 21,
       "max_delta_kmh": 24,
-      "severity": "points_and_fine",
-      "title_template": "Withdrawal risk",
-      "detail_template": "Urban: report and at least 1 month licence withdrawal. Rural/autostrasse: report and warning risk through 25 km/h. Motorway: fixed fine 260 {currency} through 25 km/h.",
+      "severity": "money_only",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: at least 1 month(s) withdrawal. Rural / autostrasse: warning / report. Motorway: fixed fine 260 {currency}. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds.",
       "locality_variants": {
-        "urban": { "driving_ban_months": 1, "driving_ban_condition": "minimum_withdrawal" },
-        "rural": { "driving_ban_condition": "report_warning" }
+        "urban": {
+          "driving_ban_months": 1,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "rural": {
+          "driving_ban_condition": "first_offence_report_warning"
+        },
+        "motorway": {
+          "money_fine_eur": 260
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: at least 1 month(s) withdrawal. Rural / autostrasse: warning / report. Motorway: fixed fine 260 {currency}. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: mindestens 1 Monat(e) Führerausweisentzug. Außerorts / Autostraße: Verwarnung / Anzeige. Autobahn: Ordnungsbuße 260 {currency}. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen. Richtungsgetrennte Autostrasse: Entzugsschwellen wie auf Autobahnen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: au moins 1 mois de retrait. Hors localité / semi-autoroute: avertissement / dénonciation. Autoroute: amende d’ordre 260 {currency}. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer. Semi-autoroute à chaussées séparées: seuils de retrait de l’autoroute."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: minstens 1 maand(en) rijbewijsintrekking. Buiten bebouwde kom / autoweg: waarschuwing / aangifte. Autosnelweg: vaste boete 260 {currency}. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken. Autoweg met gescheiden rijbanen: intrekkingsdrempels zoals op de autosnelweg."
+        }
       }
     },
     {
       "min_delta_kmh": 25,
       "max_delta_kmh": 25,
-      "severity": "points_and_fine",
-      "title_template": "Withdrawal risk",
-      "detail_template": "Urban: at least 3 months licence withdrawal. Rural/autostrasse: report and warning risk. Motorway: fixed fine 260 {currency}.",
+      "severity": "money_only",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: warning / report. Motorway: fixed fine 260 {currency}. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds.",
       "locality_variants": {
-        "urban": { "driving_ban_months": 3, "driving_ban_condition": "minimum_withdrawal" },
-        "rural": { "driving_ban_condition": "report_warning" }
+        "urban": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "rural": {
+          "driving_ban_condition": "first_offence_report_warning"
+        },
+        "motorway": {
+          "money_fine_eur": 260
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: warning / report. Motorway: fixed fine 260 {currency}. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: mindestens 3 Monat(e) Führerausweisentzug. Außerorts / Autostraße: Verwarnung / Anzeige. Autobahn: Ordnungsbuße 260 {currency}. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen. Richtungsgetrennte Autostrasse: Entzugsschwellen wie auf Autobahnen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: au moins 3 mois de retrait. Hors localité / semi-autoroute: avertissement / dénonciation. Autoroute: amende d’ordre 260 {currency}. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer. Semi-autoroute à chaussées séparées: seuils de retrait de l’autoroute."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: minstens 3 maand(en) rijbewijsintrekking. Buiten bebouwde kom / autoweg: waarschuwing / aangifte. Autosnelweg: vaste boete 260 {currency}. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken. Autoweg met gescheiden rijbanen: intrekkingsdrempels zoals op de autosnelweg."
+        }
       }
     },
     {
       "min_delta_kmh": 26,
       "max_delta_kmh": 29,
-      "severity": "points_and_fine",
-      "title_template": "Withdrawal risk",
-      "detail_template": "Urban: at least 3 months licence withdrawal. Rural/autostrasse: at least 1 month withdrawal. Motorway: report and warning risk through 30 km/h.",
+      "severity": "money_only",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 1 month(s) withdrawal. Motorway: warning / report. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds.",
       "locality_variants": {
-        "urban": { "driving_ban_months": 3, "driving_ban_condition": "minimum_withdrawal" },
-        "rural": { "driving_ban_months": 1, "driving_ban_condition": "minimum_withdrawal" }
+        "urban": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "rural": {
+          "driving_ban_months": 1,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "motorway": {
+          "driving_ban_condition": "first_offence_report_warning"
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 1 month(s) withdrawal. Motorway: warning / report. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: mindestens 3 Monat(e) Führerausweisentzug. Außerorts / Autostraße: mindestens 1 Monat(e) Führerausweisentzug. Autobahn: Verwarnung / Anzeige. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen. Richtungsgetrennte Autostrasse: Entzugsschwellen wie auf Autobahnen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: au moins 3 mois de retrait. Hors localité / semi-autoroute: au moins 1 mois de retrait. Autoroute: avertissement / dénonciation. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer. Semi-autoroute à chaussées séparées: seuils de retrait de l’autoroute."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: minstens 3 maand(en) rijbewijsintrekking. Buiten bebouwde kom / autoweg: minstens 1 maand(en) rijbewijsintrekking. Autosnelweg: waarschuwing / aangifte. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken. Autoweg met gescheiden rijbanen: intrekkingsdrempels zoals op de autosnelweg."
+        }
       }
     },
     {
       "min_delta_kmh": 30,
       "max_delta_kmh": 30,
-      "severity": "points_and_fine",
-      "title_template": "Withdrawal risk",
-      "detail_template": "Urban and rural/autostrasse: at least 3 months licence withdrawal. Motorway: report and warning risk.",
+      "severity": "money_only",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: warning / report. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds.",
       "locality_variants": {
-        "urban": { "driving_ban_months": 3, "driving_ban_condition": "minimum_withdrawal" },
-        "rural": { "driving_ban_months": 3, "driving_ban_condition": "minimum_withdrawal" }
+        "urban": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "rural": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "motorway": {
+          "driving_ban_condition": "first_offence_report_warning"
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: warning / report. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: mindestens 3 Monat(e) Führerausweisentzug. Außerorts / Autostraße: mindestens 3 Monat(e) Führerausweisentzug. Autobahn: Verwarnung / Anzeige. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen. Richtungsgetrennte Autostrasse: Entzugsschwellen wie auf Autobahnen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: au moins 3 mois de retrait. Hors localité / semi-autoroute: au moins 3 mois de retrait. Autoroute: avertissement / dénonciation. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer. Semi-autoroute à chaussées séparées: seuils de retrait de l’autoroute."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: minstens 3 maand(en) rijbewijsintrekking. Buiten bebouwde kom / autoweg: minstens 3 maand(en) rijbewijsintrekking. Autosnelweg: waarschuwing / aangifte. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken. Autoweg met gescheiden rijbanen: intrekkingsdrempels zoals op de autosnelweg."
+        }
       }
     },
     {
       "min_delta_kmh": 31,
       "max_delta_kmh": 34,
-      "severity": "points_and_fine",
-      "title_template": "Withdrawal risk",
-      "detail_template": "Urban and rural/autostrasse: at least 3 months licence withdrawal. Motorway: at least 1 month withdrawal.",
-      "driving_ban_months": 3,
-      "driving_ban_condition": "minimum_withdrawal"
+      "severity": "money_only",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: at least 1 month(s) withdrawal. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds.",
+      "locality_variants": {
+        "urban": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "rural": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "motorway": {
+          "driving_ban_months": 1,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: at least 1 month(s) withdrawal. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: mindestens 3 Monat(e) Führerausweisentzug. Außerorts / Autostraße: mindestens 3 Monat(e) Führerausweisentzug. Autobahn: mindestens 1 Monat(e) Führerausweisentzug. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen. Richtungsgetrennte Autostrasse: Entzugsschwellen wie auf Autobahnen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: au moins 3 mois de retrait. Hors localité / semi-autoroute: au moins 3 mois de retrait. Autoroute: au moins 1 mois de retrait. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer. Semi-autoroute à chaussées séparées: seuils de retrait de l’autoroute."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: minstens 3 maand(en) rijbewijsintrekking. Buiten bebouwde kom / autoweg: minstens 3 maand(en) rijbewijsintrekking. Autosnelweg: minstens 1 maand(en) rijbewijsintrekking. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken. Autoweg met gescheiden rijbanen: intrekkingsdrempels zoals op de autosnelweg."
+        }
+      }
     },
     {
       "min_delta_kmh": 35,
       "max_delta_kmh": 39,
-      "severity": "points_and_fine",
-      "title_template": "Severe overspeed",
-      "detail_template": "At least 3 months licence withdrawal risk. Case may trigger criminal/report handling and high fees.",
-      "driving_ban_months": 3,
-      "driving_ban_condition": "minimum_withdrawal"
+      "severity": "money_only",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: at least 3 month(s) withdrawal. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds.",
+      "locality_variants": {
+        "urban": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "rural": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "motorway": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: at least 3 month(s) withdrawal. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: mindestens 3 Monat(e) Führerausweisentzug. Außerorts / Autostraße: mindestens 3 Monat(e) Führerausweisentzug. Autobahn: mindestens 3 Monat(e) Führerausweisentzug. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen. Richtungsgetrennte Autostrasse: Entzugsschwellen wie auf Autobahnen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: au moins 3 mois de retrait. Hors localité / semi-autoroute: au moins 3 mois de retrait. Autoroute: au moins 3 mois de retrait. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer. Semi-autoroute à chaussées séparées: seuils de retrait de l’autoroute."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: minstens 3 maand(en) rijbewijsintrekking. Buiten bebouwde kom / autoweg: minstens 3 maand(en) rijbewijsintrekking. Autosnelweg: minstens 3 maand(en) rijbewijsintrekking. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken. Autoweg met gescheiden rijbanen: intrekkingsdrempels zoals op de autosnelweg."
+        }
+      }
     },
     {
       "min_delta_kmh": 40,
       "max_delta_kmh": 49,
-      "severity": "points_and_fine",
-      "title_template": "Severe overspeed",
-      "detail_template": "Severe report handling likely. Raser threshold is posted-limit dependent and begins at +40 km/h only where the posted limit is 30 km/h or lower.",
-      "driving_ban_months": 3,
-      "conditional_driving_ban_months": 24,
-      "driving_ban_condition": "posted_limit_dependent_raser_threshold"
+      "severity": "money_only",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: at least 3 month(s) withdrawal. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds.",
+      "locality_variants": {
+        "urban": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "rural": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "motorway": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: at least 3 month(s) withdrawal. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: mindestens 3 Monat(e) Führerausweisentzug. Außerorts / Autostraße: mindestens 3 Monat(e) Führerausweisentzug. Autobahn: mindestens 3 Monat(e) Führerausweisentzug. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen. Richtungsgetrennte Autostrasse: Entzugsschwellen wie auf Autobahnen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: au moins 3 mois de retrait. Hors localité / semi-autoroute: au moins 3 mois de retrait. Autoroute: au moins 3 mois de retrait. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer. Semi-autoroute à chaussées séparées: seuils de retrait de l’autoroute."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: minstens 3 maand(en) rijbewijsintrekking. Buiten bebouwde kom / autoweg: minstens 3 maand(en) rijbewijsintrekking. Autosnelweg: minstens 3 maand(en) rijbewijsintrekking. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken. Autoweg met gescheiden rijbanen: intrekkingsdrempels zoals op de autosnelweg."
+        }
+      }
     },
     {
       "min_delta_kmh": 50,
       "max_delta_kmh": 59,
-      "severity": "points_and_fine",
-      "title_template": "Severe overspeed",
-      "detail_template": "Severe report handling likely. Raser threshold is posted-limit dependent and is reached at +50 km/h where the posted limit is 50 km/h or lower.",
-      "driving_ban_months": 3,
-      "conditional_driving_ban_months": 24,
-      "driving_ban_condition": "posted_limit_dependent_raser_threshold"
+      "severity": "money_only",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: at least 3 month(s) withdrawal. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds.",
+      "locality_variants": {
+        "urban": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "rural": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "motorway": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: at least 3 month(s) withdrawal. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: mindestens 3 Monat(e) Führerausweisentzug. Außerorts / Autostraße: mindestens 3 Monat(e) Führerausweisentzug. Autobahn: mindestens 3 Monat(e) Führerausweisentzug. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen. Richtungsgetrennte Autostrasse: Entzugsschwellen wie auf Autobahnen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: au moins 3 mois de retrait. Hors localité / semi-autoroute: au moins 3 mois de retrait. Autoroute: au moins 3 mois de retrait. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer. Semi-autoroute à chaussées séparées: seuils de retrait de l’autoroute."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: minstens 3 maand(en) rijbewijsintrekking. Buiten bebouwde kom / autoweg: minstens 3 maand(en) rijbewijsintrekking. Autosnelweg: minstens 3 maand(en) rijbewijsintrekking. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken. Autoweg met gescheiden rijbanen: intrekkingsdrempels zoals op de autosnelweg."
+        }
+      }
     },
     {
       "min_delta_kmh": 60,
       "max_delta_kmh": 79,
-      "severity": "points_and_fine",
-      "title_template": "Severe overspeed",
-      "detail_template": "Very severe report handling likely. Raser threshold is posted-limit dependent and is reached at +60 km/h where the posted limit is 80 km/h or lower.",
-      "driving_ban_months": 3,
-      "conditional_driving_ban_months": 24,
-      "driving_ban_condition": "posted_limit_dependent_raser_threshold"
+      "severity": "money_only",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: at least 3 month(s) withdrawal. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds.",
+      "locality_variants": {
+        "urban": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "rural": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "motorway": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: at least 3 month(s) withdrawal. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: mindestens 3 Monat(e) Führerausweisentzug. Außerorts / Autostraße: mindestens 3 Monat(e) Führerausweisentzug. Autobahn: mindestens 3 Monat(e) Führerausweisentzug. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen. Richtungsgetrennte Autostrasse: Entzugsschwellen wie auf Autobahnen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: au moins 3 mois de retrait. Hors localité / semi-autoroute: au moins 3 mois de retrait. Autoroute: au moins 3 mois de retrait. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer. Semi-autoroute à chaussées séparées: seuils de retrait de l’autoroute."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: minstens 3 maand(en) rijbewijsintrekking. Buiten bebouwde kom / autoweg: minstens 3 maand(en) rijbewijsintrekking. Autosnelweg: minstens 3 maand(en) rijbewijsintrekking. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken. Autoweg met gescheiden rijbanen: intrekkingsdrempels zoals op de autosnelweg."
+        }
+      }
     },
     {
       "min_delta_kmh": 80,
       "max_delta_kmh": null,
-      "severity": "points_and_fine",
-      "title_template": "Raser-level overspeed risk",
-      "detail_template": "Raser-level threshold is generally reached at +80 km/h on roads posted above 80 km/h, with criminal, vehicle and long licence-withdrawal risk.",
-      "driving_ban_months": 24,
-      "driving_ban_condition": "raser_threshold"
+      "severity": "money_only",
+      "title_template": "Speeding consequences estimate",
+      "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: at least 3 month(s) withdrawal. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds.",
+      "locality_variants": {
+        "urban": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "rural": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        },
+        "motorway": {
+          "driving_ban_months": 3,
+          "driving_ban_condition": "first_offence_minimum_withdrawal"
+        }
+      },
+      "localized_templates": {
+        "en": {
+          "title_template": "Speeding consequences estimate",
+          "detail_template": "Urban: at least 3 month(s) withdrawal. Rural / autostrasse: at least 3 month(s) withdrawal. Motorway: at least 3 month(s) withdrawal. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ. Divided Autostrasse: motorway withdrawal thresholds."
+        },
+        "de": {
+          "title_template": "Geschätzte Folgen der Überschreitung",
+          "detail_template": "Innerorts: mindestens 3 Monat(e) Führerausweisentzug. Außerorts / Autostraße: mindestens 3 Monat(e) Führerausweisentzug. Autobahn: mindestens 3 Monat(e) Führerausweisentzug. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen. Richtungsgetrennte Autostrasse: Entzugsschwellen wie auf Autobahnen."
+        },
+        "fr": {
+          "title_template": "Conséquences estimées de l’excès",
+          "detail_template": "En localité: au moins 3 mois de retrait. Hors localité / semi-autoroute: au moins 3 mois de retrait. Autoroute: au moins 3 mois de retrait. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer. Semi-autoroute à chaussées séparées: seuils de retrait de l’autoroute."
+        },
+        "nl": {
+          "title_template": "Geschatte gevolgen van te hard rijden",
+          "detail_template": "Binnen bebouwde kom: minstens 3 maand(en) rijbewijsintrekking. Buiten bebouwde kom / autoweg: minstens 3 maand(en) rijbewijsintrekking. Autosnelweg: minstens 3 maand(en) rijbewijsintrekking. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken. Autoweg met gescheiden rijbanen: intrekkingsdrempels zoals op de autosnelweg."
+        }
+      }
     }
-  ]
+  ],
+  "content_revision": 20261001,
+  "review_status": "owner_approved",
+  "requires_road_category": true,
+  "source_urls": [
+    "https://www.sg.ch/sicherheit/kantonspolizei/verkehr/geschwindigkeit---radar.html",
+    "https://www.zh.ch/de/mobilitaet/fuehrerausweis-fahren-lernen/ausweisentzug/zu-schnell-fahren.html",
+    "https://www.fedlex.admin.ch/eli/cc/2019/93/de",
+    "https://www.fedlex.admin.ch/eli/cc/1959/679_705_685/de",
+    "https://www.sg.ch/verkehr/strassenverkehr/fuehrerausweisentzuege/geschwindigkeitsueberschreitung.html"
+  ],
+  "localized_advisory_captions": {
+    "en": "GPS estimate · first offence · assessed excess may differ",
+    "de": "GPS-Schätzung · Erstverstoß · amtliche Überschreitung kann abweichen",
+    "fr": "Estimation GPS · première infraction · excès retenu différent possible",
+    "nl": "GPS-schatting · eerste overtreding · vastgesteld teveel kan afwijken"
+  },
+  "posted_limit_escalation": {
+    "thresholds": [
+      {
+        "max_posted_limit_kmh": 30,
+        "min_delta_kmh": 40
+      },
+      {
+        "max_posted_limit_kmh": 50,
+        "min_delta_kmh": 50
+      },
+      {
+        "max_posted_limit_kmh": 80,
+        "min_delta_kmh": 60
+      },
+      {
+        "max_posted_limit_kmh": null,
+        "min_delta_kmh": 80
+      }
+    ],
+    "driving_ban_months": 24,
+    "conditional_driving_ban_months": 12,
+    "driving_ban_condition": "raser_standard_minimum_with_statutory_exceptions",
+    "localized_templates": {
+      "en": {
+        "title_template": "Raser-level speeding risk",
+        "detail_template": "Posted-limit-dependent Raser threshold reached. Normally at least 24 months licence withdrawal; qualifying statutory exceptions may reduce the minimum to 12 months. Criminal penalties and possible vehicle measures are assessed individually. GPS excess does not establish an offence."
+      },
+      "de": {
+        "title_template": "Risiko eines Raserdelikts",
+        "detail_template": "Die vom Tempolimit abhängige Raserschwelle ist erreicht. Grundsätzlich mindestens 24 Monate Führerausweisentzug; bei gesetzlich qualifizierten Ausnahmen kann die Mindestdauer auf 12 Monate reduziert werden. Straf- und mögliche Fahrzeugmaßnahmen werden individuell beurteilt. GPS-Überschreitung stellt keinen amtlichen Verstoß fest."
+      },
+      "fr": {
+        "title_template": "Risque de délit de chauffard",
+        "detail_template": "Seuil de chauffard dépendant de la limite atteint. Retrait normalement d’au moins 24 mois; des exceptions légales peuvent réduire le minimum à 12 mois. Peine pénale et mesures sur le véhicule sont évaluées individuellement. L’excès GPS n’établit pas une infraction."
+      },
+      "nl": {
+        "title_template": "Risico op een zwaar snelheidsdelict",
+        "detail_template": "De limietafhankelijke Raser-drempel is bereikt. Normaal minstens 24 maanden rijbewijsintrekking; wettelijke uitzonderingen kunnen het minimum tot 12 maanden verlagen. Strafrechtelijke en mogelijke voertuigmaatregelen worden afzonderlijk beoordeeld. GPS-overschrijding stelt geen overtreding vast."
+      }
+    },
+    "localized_captions": {
+      "en": "GPS estimate · normally ≥24 months; qualifying exceptions ≥12",
+      "de": "GPS-Schätzung · in der Regel ≥24 Monate; Ausnahmen ≥12",
+      "fr": "Estimation GPS · normalement ≥24 mois; exceptions ≥12",
+      "nl": "GPS-schatting · normaal ≥24 maanden; uitzonderingen ≥12"
+    }
+  },
+  "approved_at": "2026-10-01",
+  "approved_by": "product_owner"
 }

@@ -30,9 +30,15 @@ enum class PenaltySeverity {
 
 enum class PenaltyRoadArea(val templateToken: String) {
     INNERORTS("innerorts"),
-    AUSSERORTS("ausserorts");
+    AUSSERORTS("ausserorts"),
+    MOTORWAY("autobahn");
 
     companion object {
+        fun matchedMotorway(highway: String?): Boolean? = when (highway) {
+            "motorway" -> true
+            "primary", "secondary", "tertiary", "unclassified", "residential", "living_street", "service", "primary_link", "secondary_link", "tertiary_link" -> false
+            else -> null
+        }
         fun fromInsideCity(insideCity: Boolean?): PenaltyRoadArea? {
             return when (insideCity) {
                 true -> INNERORTS
@@ -70,11 +76,13 @@ data class OverspeedPenaltyBand(
     val above50Variant: LocalityPenaltyVariant? = null,
     val localizedTemplates: Map<String, PenaltyTemplates> = emptyMap(),
     val enforcementClass: String? = null,
+    val motorwayVariant: LocalityPenaltyVariant? = null,
 ) {
     fun variantFor(area: PenaltyRoadArea?): LocalityPenaltyVariant? {
         return when (area) {
             PenaltyRoadArea.INNERORTS -> innerortsVariant
             PenaltyRoadArea.AUSSERORTS -> ausserortsVariant
+            PenaltyRoadArea.MOTORWAY -> motorwayVariant
             null -> null
         }
     }
@@ -88,6 +96,10 @@ data class SpeedPenaltyRuleSet(
     val currencyCode: String,
     val defaultLanguage: String?,
     val bands: List<OverspeedPenaltyBand>,
+    val contentRevision: Int = 0,
+    val requiresRoadCategory: Boolean = false,
+    val localizedAdvisoryCaptions: Map<String, String> = emptyMap(),
+    val postedLimitEscalation: PostedLimitPenaltyEscalation? = null,
 ) {
     companion object {
         fun fallbackDEU(): SpeedPenaltyRuleSet {
@@ -142,6 +154,9 @@ data class SpeedPenaltyRuleSet(
                 ),
             )
         }
+
+        fun prefersDownloaded(downloaded: SpeedPenaltyRuleSet, packaged: SpeedPenaltyRuleSet?): Boolean =
+            packaged == null || downloaded.contentRevision >= packaged.contentRevision
     }
 }
 
@@ -190,7 +205,24 @@ data class SpeedPenaltyNotice(
     val conditionalDrivingBanMonths: Int?,
     val drivingBanCondition: String?,
     val enforcementClass: String? = null,
+    val advisoryCaption: String? = null,
 )
+
+data class PostedLimitPenaltyThreshold(val maxPostedLimitKmh: Int?, val minDeltaKmh: Int)
+data class PostedLimitPenaltyEscalation(
+    val thresholds: List<PostedLimitPenaltyThreshold>,
+    val drivingBanMonths: Int,
+    val conditionalDrivingBanMonths: Int,
+    val drivingBanCondition: String,
+    val localizedTemplates: Map<String, PenaltyTemplates>,
+    val localizedCaptions: Map<String, String>,
+) {
+    fun applies(excess: Int, postedLimit: Int?): Boolean {
+        if (postedLimit == null || postedLimit <= 0) return false
+        val threshold = thresholds.firstOrNull { it.maxPostedLimitKmh == null || postedLimit <= it.maxPostedLimitKmh } ?: return false
+        return excess >= threshold.minDeltaKmh
+    }
+}
 
 object PenaltyRulesParser {
     private val json = Json { ignoreUnknownKeys = true }
@@ -206,6 +238,23 @@ object PenaltyRulesParser {
             currencyCode = root.valueForString("currency_code", "waehrung_code") ?: "EUR",
             defaultLanguage = root.valueForString("default_language", "standardsprache"),
             bands = bands,
+            contentRevision = root.valueForInt("content_revision") ?: 0,
+            requiresRoadCategory = root["requires_road_category"]?.jsonPrimitive?.booleanOrNull ?: false,
+            localizedAdvisoryCaptions = root.valueForObject("localized_advisory_captions")?.mapValues { it.value.jsonPrimitive.content }.orEmpty(),
+            postedLimitEscalation = root.valueForObject("posted_limit_escalation")?.let { risk ->
+                PostedLimitPenaltyEscalation(
+                    thresholds = risk.valueForArray("thresholds").orEmpty().map { it.jsonObject.let { threshold ->
+                        PostedLimitPenaltyThreshold(threshold.valueForInt("max_posted_limit_kmh"), threshold.valueForInt("min_delta_kmh") ?: error("Missing excess threshold"))
+                    } },
+                    drivingBanMonths = risk.valueForInt("driving_ban_months") ?: error("Missing minimum withdrawal"),
+                    conditionalDrivingBanMonths = risk.valueForInt("conditional_driving_ban_months") ?: error("Missing exceptional minimum"),
+                    drivingBanCondition = risk.valueForString("driving_ban_condition") ?: error("Missing withdrawal scope"),
+                    localizedTemplates = risk.valueForObject("localized_templates")?.mapValues { (_, it) ->
+                        PenaltyTemplates(it.jsonObject.valueForString("title_template").orEmpty(), it.jsonObject.valueForString("detail_template").orEmpty())
+                    }.orEmpty(),
+                    localizedCaptions = risk.valueForObject("localized_captions")?.mapValues { it.value.jsonPrimitive.content }.orEmpty(),
+                )
+            },
         )
     }
 
@@ -237,6 +286,7 @@ object PenaltyRulesParser {
             drivingBanCondition = root.valueForString("driving_ban_condition", "fahrverbot_bedingung"),
             innerortsVariant = parseVariant(variantsRoot?.valueForObject("innerorts", "urban")),
             ausserortsVariant = parseVariant(variantsRoot?.valueForObject("ausserorts", "außerorts", "rural")),
+            motorwayVariant = parseVariant(variantsRoot?.valueForObject("motorway")),
             atMost50Variant = parseVariant(postedVariants?.valueForObject("at_most_50")),
             above50Variant = parseVariant(postedVariants?.valueForObject("above_50")),
             localizedTemplates = root.valueForObject("localized_templates")?.mapValues { (_, element) ->
@@ -269,6 +319,7 @@ object SpeedPenaltyRuleEngine {
         insideCity: Boolean? = null,
         postedSpeedLimitKmh: Int? = null,
         locale: Locale = Locale.getDefault(),
+        isMotorway: Boolean? = null,
     ): SpeedPenaltyNotice? {
         if (overspeedKmh <= 0) {
             return null
@@ -280,20 +331,26 @@ object SpeedPenaltyRuleEngine {
             val max = candidate.maxDeltaKmh
             max == null || overspeedKmh <= max
         } ?: return null
-        val area = PenaltyRoadArea.fromInsideCity(insideCity)
+        val area = if (rules.requiresRoadCategory) when (isMotorway) {
+            true -> PenaltyRoadArea.MOTORWAY
+            false -> PenaltyRoadArea.fromInsideCity(insideCity)
+            null -> null
+        } else PenaltyRoadArea.fromInsideCity(insideCity)
         val postedVariant = when {
             postedSpeedLimitKmh == null || postedSpeedLimitKmh <= 0 -> null
             postedSpeedLimitKmh <= 50 -> band.atMost50Variant
             else -> band.above50Variant
         }
         val variant = postedVariant ?: band.variantFor(area)
-        val templates = band.localizedTemplates[locale.language]
+        val escalation = rules.postedLimitEscalation?.takeIf { it.applies(overspeedKmh, postedSpeedLimitKmh) }
+        val templates = escalation?.localizedTemplates?.get(locale.language) ?: escalation?.localizedTemplates?.get("en") ?: band.localizedTemplates[locale.language]
             ?: band.localizedTemplates[rules.defaultLanguage] ?: band.localizedTemplates["en"]
         val points = variant?.penaltyPoints ?: band.penaltyPoints
-        val moneyFine = variant?.moneyFineEUR ?: band.moneyFineEUR
-        val drivingBanMonths = variant?.drivingBanMonths ?: band.drivingBanMonths
-        val conditionalDrivingBanMonths = variant?.conditionalDrivingBanMonths ?: band.conditionalDrivingBanMonths
-        val drivingBanCondition = variant?.drivingBanCondition ?: band.drivingBanCondition
+        val categoryKnown = !rules.requiresRoadCategory || (area != null && (postedSpeedLimitKmh ?: 0) > 0)
+        val moneyFine = if (escalation == null && categoryKnown) variant?.moneyFineEUR ?: band.moneyFineEUR else null
+        val drivingBanMonths = escalation?.drivingBanMonths ?: if (categoryKnown) variant?.drivingBanMonths ?: band.drivingBanMonths else null
+        val conditionalDrivingBanMonths = escalation?.conditionalDrivingBanMonths ?: if (categoryKnown) variant?.conditionalDrivingBanMonths ?: band.conditionalDrivingBanMonths else null
+        val drivingBanCondition = escalation?.drivingBanCondition ?: variant?.drivingBanCondition ?: band.drivingBanCondition
         val severity = if ((points ?: 0) > 0) PenaltySeverity.POINTS_AND_FINE else band.severity
         return SpeedPenaltyNotice(
             severity = severity,
@@ -305,7 +362,9 @@ object SpeedPenaltyRuleEngine {
             drivingBanMonths = drivingBanMonths,
             conditionalDrivingBanMonths = conditionalDrivingBanMonths,
             drivingBanCondition = drivingBanCondition,
-            enforcementClass = band.enforcementClass,
+            enforcementClass = if (escalation == null) band.enforcementClass else "raser",
+            advisoryCaption = escalation?.localizedCaptions?.get(locale.language) ?: escalation?.localizedCaptions?.get("en")
+                ?: rules.localizedAdvisoryCaptions[locale.language] ?: rules.localizedAdvisoryCaptions["en"],
         )
     }
 

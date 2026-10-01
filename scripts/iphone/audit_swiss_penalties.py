@@ -42,6 +42,7 @@ def main():
                        SIMCTL_CHILD_YOUSPEED_SCREENSHOT_COUNTRY="CH",
                        SIMCTL_CHILD_YOUSPEED_SCREENSHOT_DELTA=str(delta),
                        SIMCTL_CHILD_YOUSPEED_SCREENSHOT_LIMIT=str(limit),
+                       SIMCTL_CHILD_YOUSPEED_SCREENSHOT_HIGHWAY=["residential", "primary", "motorway", "motorway", "residential", "primary", "motorway"][index],
                        SIMCTL_CHILD_YOUSPEED_SCREENSHOT_INSIDE_CITY="1" if urban else "0")
             sim("launch", args.device, BUNDLE, "-AppleLanguages", "(en)", env=env)
             deadline = time.monotonic() + 20
@@ -50,6 +51,9 @@ def main():
             report = json.loads(report_path.read_text())
             assert report["country"] == "CHE" and report["country_resolved"], report
             assert report["rules_file"] == "CHE-rules.json" and report["penalty_present"], report
+            assert report["money_fine_eur"] == [40, 100, 60, None, None, None, None][index], report
+            assert report["driving_ban_months"] == [None, None, None, 1, 24, 24, 24][index], report
+            assert report["advisory_caption"], report
             time.sleep(0.8)
             sim("io", args.device, "screenshot", str(args.output / f"case-{index}.png"))
             reports.append(report)

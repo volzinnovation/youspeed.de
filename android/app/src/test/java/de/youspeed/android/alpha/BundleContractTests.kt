@@ -111,21 +111,29 @@ class BundleContractTests {
         val swissUrbanFine = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh = 8,
             rules = switzerland,
+            isMotorway = false,
+            postedSpeedLimitKmh = 50,
             insideCity = true,
         )
         val swissRuralFine = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh = 8,
             rules = switzerland,
+            isMotorway = false,
+            postedSpeedLimitKmh = 80,
             insideCity = false,
         )
         val swissUrbanWithdrawal = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh = 22,
             rules = switzerland,
+            isMotorway = false,
+            postedSpeedLimitKmh = 50,
             insideCity = true,
         )
         val swissRuralWithdrawal = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh = 27,
             rules = switzerland,
+            isMotorway = false,
+            postedSpeedLimitKmh = 80,
             insideCity = false,
         )
 

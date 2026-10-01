@@ -66,7 +66,7 @@ class PenaltyCountrySelection {
 }
 
 /** Reproducible native UI scenario. Supplies GPS/road/speed inputs, never precomputed penalty output. */
-data class CountryPenaltyScreenshotScenario(val countryCode: String, val deltaKmh: Int, val limitKmh: Int = 50, val insideCity: Boolean = true) {
+data class CountryPenaltyScreenshotScenario(val countryCode: String, val deltaKmh: Int, val limitKmh: Int = 50, val insideCity: Boolean = true, val highway: String? = null) {
     init {
         require(countryCode in setOf("FRA", "NLD", "BEL", "CHE"))
         require(deltaKmh in 0..100 && limitKmh in 10..130)

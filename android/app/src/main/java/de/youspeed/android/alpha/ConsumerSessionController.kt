@@ -290,6 +290,7 @@ data class ConsumerUiState(
     val lastExportDirectoryPath: String = "",
     val appScreenshotState: AppScreenshotState? = null,
     val lastLookupInsideCity: Boolean? = null,
+    val lastLookupHighway: String? = null,
     val tunnelModeState: TunnelModeState = TunnelModeState.INACTIVE,
     val isLowSpeedMatchingRuleActive: Boolean = false,
     val matcherDebugProfile: MatcherDebugProfile = MatcherDebugProfile.default,
@@ -3583,7 +3584,7 @@ class ConsumerSessionController(
                 activeDBPath = "", activeBundleVersion = "none", limitWayId = null,
                 limitStreetName = null, limitStreetBaseName = null, limitStreetRef = null,
                 limitCityName = null, limitCityPlaceName = null, limitCityDistrictName = null,
-                lastLookupInsideCity = null, lastLookupCitySource = "n/a",
+                lastLookupInsideCity = null, lastLookupHighway = null, lastLookupCitySource = "n/a",
                 coarseCityName = null, coarseCityPlaceName = null, coarseCityDistrictName = null,
                 coarseCitySource = "n/a",
             )
@@ -4171,6 +4172,7 @@ class ConsumerSessionController(
             hideWelcomeScreen = true,
             appScreenshotState = state,
             lastLookupInsideCity = fixture.insideCity,
+            lastLookupHighway = scenario?.highway,
             lastLookupCitySource = "settlement:maxspeed_type:high",
             effectiveSpeedLimitSource = if (cameraFixture) {
                 EffectiveSpeedLimitSource.CAMERA
@@ -4218,6 +4220,9 @@ class ConsumerSessionController(
     private fun loadPenaltyRules(countryCode: String): ActivePenaltyRules {
         val code = PenaltyCountryCodes.normalize(countryCode) ?: return ActivePenaltyRules.unavailable()
         val assetName = "$code-rules.json"
+        val packagedRules = (assetReader.readTextOrNull("Rules/$assetName") ?: assetReader.readTextOrNull(assetName))?.let { raw ->
+            runCatching { PenaltyRulesParser.parse(raw) }.getOrNull()
+        }?.takeIf { PenaltyCountryCodes.normalize(it.countryCode) == code && it.bands.isNotEmpty() }
         val activeBundle = bootstrapper.activeState()
         val activeBundleCode = PenaltyCountryCodes.normalize(activeBundle?.countryCode)
         if (activeBundleCode == code && activeBundle != null) {
@@ -4236,7 +4241,7 @@ class ConsumerSessionController(
             }?.takeIf { parsed ->
                 PenaltyCountryCodes.normalize(parsed.countryCode) == code && parsed.bands.isNotEmpty()
             }
-            if (parsedBundleRules != null) {
+            if (parsedBundleRules != null && SpeedPenaltyRuleSet.prefersDownloaded(parsedBundleRules, packagedRules)) {
                 val ruleFile = manifestFile?.let { manifestPath ->
                     runCatching {
                         ContractJson.decodeBundleManifest(manifestPath.readText()).penaltyRules?.file
@@ -4245,12 +4250,7 @@ class ConsumerSessionController(
                 return ActivePenaltyRules(fileName = ruleFile, ruleSet = parsedBundleRules)
             }
         }
-        val raw = assetReader.readTextOrNull("Rules/$assetName") ?: assetReader.readTextOrNull(assetName)
-            ?: return ActivePenaltyRules.unavailable(code)
-        val parsed = runCatching { PenaltyRulesParser.parse(raw) }.getOrNull()
-            ?.takeIf { PenaltyCountryCodes.normalize(it.countryCode) == code && it.bands.isNotEmpty() }
-            ?: return ActivePenaltyRules.unavailable(code)
-        return ActivePenaltyRules(fileName = assetName, ruleSet = parsed)
+        return packagedRules?.let { ActivePenaltyRules(fileName = assetName, ruleSet = it) } ?: ActivePenaltyRules.unavailable(code)
     }
 
     private fun tokenize(raw: String): String {
@@ -4823,7 +4823,7 @@ class ConsumerSessionController(
                         limitCityName = null,
                         limitCityPlaceName = null,
                         limitCityDistrictName = null,
-                        lastLookupInsideCity = null,
+                        lastLookupInsideCity = null, lastLookupHighway = null,
                         lastLookupCitySource = "n/a",
                         lastLookupQueryMs = 0.0,
                         lastLookupCandidateCount = 0,
@@ -4945,6 +4945,7 @@ class ConsumerSessionController(
                         limitCityPlaceName = result.cityPlaceName,
                         limitCityDistrictName = result.cityDistrictName,
                         lastLookupInsideCity = result.insideCity,
+                        lastLookupHighway = result.wayId?.let { result.highway },
                         lastLookupCitySource = result.citySource ?: "n/a",
                         lastLookupQueryMs = result.queryTimeMs,
                         lastLookupCandidateCount = result.candidateCount,

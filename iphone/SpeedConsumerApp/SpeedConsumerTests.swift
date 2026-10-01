@@ -13,6 +13,69 @@ import UIKit
 
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
+private struct SwissLegalCaseCorpus: Decodable {
+    struct Row: Decodable {
+        let id: String
+        let highway: String?
+        let insideCity: Bool?
+        let postedLimit: Int?
+        let excess: Int
+        let notice: Bool
+        let fine: Int?
+        let months: Int?
+        let exceptionalMonths: Int?
+        enum CodingKeys: String, CodingKey {
+            case id, highway, excess, notice, fine, months
+            case insideCity = "inside_city"
+            case postedLimit = "posted_limit"
+            case exceptionalMonths = "exceptional_months"
+        }
+    }
+    let cases: [Row]
+}
+
+extension SpeedConsumerTests {
+    func testSwissOfficialBoundariesRoadCategoriesAndExceptions() throws {
+        let rules = try SpeedPenaltyRuleSet.loadBundled(named: "CHE-rules", bundle: Bundle(for: SpeedConsumerAppDelegate.self))
+        let url = try XCTUnwrap(Bundle(for: SpeedConsumerTests.self).url(forResource: "CHE-cases", withExtension: "json"))
+        let corpus = try JSONDecoder().decode(SwissLegalCaseCorpus.self, from: Data(contentsOf: url))
+        XCTAssertEqual(corpus.cases.count, 105)
+        for row in corpus.cases {
+            for language in ["en", "de", "fr", "nl"] {
+                let notice = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: row.excess, rules: rules,
+                    insideCity: row.insideCity, postedLimitKmh: row.postedLimit, languageCode: language,
+                    isMotorway: PenaltyRoadArea.matchedMotorway(highway: row.highway))
+                let label = "\(row.id)/\(language)"
+                XCTAssertEqual(notice != nil, row.notice, label)
+                XCTAssertEqual(notice?.moneyFineEUR, row.fine, label)
+                XCTAssertEqual(notice?.drivingBanMonths, row.months, label)
+                XCTAssertEqual(notice?.conditionalDrivingBanMonths, row.exceptionalMonths, label)
+                XCTAssertNil(notice?.penaltyPoints, label)
+                if let notice {
+                    XCTAssertNotNil(notice.advisoryCaption, label)
+                    XCTAssertFalse(notice.details.isEmpty, label)
+                    XCTAssertEqual(notice.severity, .moneyOnly, label)
+                }
+            }
+        }
+    }
+
+    func testSwissOlderDownloadedContentCannotOverrideNewPackagedRevision() throws {
+        let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
+        let packaged = try SpeedPenaltyRuleSet.loadBundled(named: "CHE-rules", bundle: bundle)
+        let url = try XCTUnwrap(bundle.url(forResource: "CHE-rules", withExtension: "json"))
+        var root = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        root.removeValue(forKey: "content_revision")
+        let legacy = try JSONDecoder().decode(SpeedPenaltyRuleSet.self, from: JSONSerialization.data(withJSONObject: root))
+        XCTAssertFalse(SpeedPenaltyRuleSet.prefersDownloaded(legacy, over: packaged))
+        XCTAssertTrue(SpeedPenaltyRuleSet.prefersDownloaded(packaged, over: packaged))
+        XCTAssertTrue(SpeedPenaltyRuleSet.prefersDownloaded(legacy, over: nil))
+        root["content_revision"] = 20261002
+        let newer = try JSONDecoder().decode(SpeedPenaltyRuleSet.self, from: JSONSerialization.data(withJSONObject: root))
+        XCTAssertTrue(SpeedPenaltyRuleSet.prefersDownloaded(newer, over: packaged))
+    }
+}
+
 final class StartupLogStoreTests: XCTestCase {
     func testCombinedSizeThresholdAndCheckingPreservesLogs() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -6017,22 +6080,22 @@ final class SpeedConsumerTests: XCTestCase {
         let swissUrbanFine = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: 8,
             rules: switzerland,
-            insideCity: true
+            insideCity: true, postedLimitKmh: 50, isMotorway: false
         )
         let swissRuralFine = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: 8,
             rules: switzerland,
-            insideCity: false
+            insideCity: false, postedLimitKmh: 80, isMotorway: false
         )
         let swissUrbanWithdrawal = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: 22,
             rules: switzerland,
-            insideCity: true
+            insideCity: true, postedLimitKmh: 50, isMotorway: false
         )
         let swissRuralWithdrawal = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: 27,
             rules: switzerland,
-            insideCity: false
+            insideCity: false, postedLimitKmh: 80, isMotorway: false
         )
 
         XCTAssertEqual(swissUrbanFine?.moneyFineEUR, 120)

@@ -10,11 +10,11 @@
 		014EE424EC263574AB5B4CBC /* BundleTargets.top10.json in Resources */ = {isa = PBXBuildFile; fileRef = B4180056200225822BF33821 /* BundleTargets.top10.json */; };
 		021C1A2776097C50D00FC6D0 /* TSRModelPacks in Resources */ = {isa = PBXBuildFile; fileRef = 2811A15F038D37D70FFEA60E /* TSRModelPacks */; };
 		02C8C041AE046D1B34185DF7 /* RoadBoundaryTemporalTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3B28DE5916E71A3F35CFD7 /* RoadBoundaryTemporalTrackerTests.swift */; };
-		8A98BC8162231D2ED04EA621 /* LaneBoundaryBezierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3175855B96CCE8B99EEDB77 /* LaneBoundaryBezierTests.swift */; };
 		064190B3F897D77B2A1B97F8 /* de.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 0DBC61BE4404AA5DD74A305E /* de.lproj */; };
 		0877B38BCBB3A222562BF7DA /* GravityAlignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4826C8F9A12638E5A048AE62 /* GravityAlignmentTests.swift */; };
 		0A0D6E44B30C0B7BD65F3D08 /* fixtures in Resources */ = {isa = PBXBuildFile; fileRef = 8DA8A50580E5A6ABCFE5BF15 /* fixtures */; };
 		0B40049C2440D677338FE301 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AB92E272687221B6BEE64B1 /* ContentView.swift */; };
+		0E2EC469069622230A7B0A72 /* LaneBoundaryBezier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50B9F9477677BC3AD0EE7F74 /* LaneBoundaryBezier.swift */; };
 		10ACA8C8418BC0D1F9D11224 /* fr.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 881D085EDE2D348B7DF817C8 /* fr.lproj */; };
 		1211E93B1CB861C6794A1586 /* DebugLogPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EE7FBD20C2C207434E0A6A0 /* DebugLogPersistenceTests.swift */; };
 		12AAEB7F03C75A9818CE11F3 /* DEU-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 15C14A293D1DC2FB976661DF /* DEU-rules.json */; };
@@ -33,6 +33,7 @@
 		252EE9995F351E54A258C171 /* prolix-de-class-catalog-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 243D12B482203C249B54D205 /* prolix-de-class-catalog-v1.json */; };
 		260CAE5EB44878D86FBB618F /* SpeedConsumerAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */; };
 		2ADF071D330B6BD4E18E707D /* PanoramaxAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = B614104428FC9E28C9AE0255 /* PanoramaxAccount.swift */; };
+		2B778F35A62D2C4CA4C3BC42 /* LaneBoundaryBezierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5928B9D5852D9468C69AB42C /* LaneBoundaryBezierTests.swift */; };
 		2C54920BFD153D152CFF0258 /* RoadPathSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC71FB24B2C74A9B05675E17 /* RoadPathSessionTests.swift */; };
 		2F7FECB7D82549A04A62A84D /* MatcherCoreModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58B71350FBD2ED0C58C43D3F /* MatcherCoreModels.swift */; };
 		2FAC8A35F937FFD6B2E72A76 /* paca-exit-topology-v1.sql in Resources */ = {isa = PBXBuildFile; fileRef = ACE882500C0D3542FE44BB6C /* paca-exit-topology-v1.sql */; };
@@ -53,7 +54,6 @@
 		4012714C01B21F0AF897E280 /* RoadBoundaryPresentationGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F0F730708C353FE43CCCCF7 /* RoadBoundaryPresentationGateTests.swift */; };
 		401C999BA34C8E1228B07B82 /* TrafficSignRecognition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32933858989CDE151BF55061 /* TrafficSignRecognition.swift */; };
 		424E9C2A02046AF6C7656C25 /* RoadBoundaryTemporalTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56DC8137DA2A511025046A79 /* RoadBoundaryTemporalTracker.swift */; };
-		F93D65B7CCB3650467927753 /* LaneBoundaryBezier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0513DE84862F1BA50AB206D /* LaneBoundaryBezier.swift */; };
 		48A333119998BC7A7EE86F1B /* V3SpeedLimitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */; };
 		4BB377309057ED673B835A3B /* SpeedLimitReferenceModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4238031D3E04CB1C6758FCAB /* SpeedLimitReferenceModelTests.swift */; };
 		4BE89006C90A4D59F921E5F1 /* LaneDetectionRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACC246DEFF0D2E1BB0EE2AD1 /* LaneDetectionRuntime.swift */; };
@@ -144,6 +144,7 @@
 		CDCB3CDFA1B596B83503174E /* prolix-fr-class-catalog-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 164CEBA57DF27BAEAA389B50 /* prolix-fr-class-catalog-v1.json */; };
 		CE75A6A40CEAED93AF7A54DC /* SWE-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = EDFB024103C6B0D4D850A729 /* SWE-rules.json */; };
 		CEEC3BFC77BC5AB78B80529C /* candidate-admission-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 9316AE70B5E6970D0B7C06A1 /* candidate-admission-v1.json */; };
+		D079602BBCC192528304A508 /* CHE-cases.json in Resources */ = {isa = PBXBuildFile; fileRef = 49A967A3B6B3F3FDCAC8511B /* CHE-cases.json */; };
 		D333E4979D43534B1960C9E7 /* SpeedPenaltyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BE266A4DD3AE0B606D3F37 /* SpeedPenaltyRules.swift */; };
 		D4C72035447C5F3BD658AC0A /* TrafficSignApplicabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 382CA3BE7926270EDA4C3180 /* TrafficSignApplicabilityTests.swift */; };
 		D4F2236AB2A34C2B9B460901 /* golden-vectors-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 398708E44785CB6E7940FA43 /* golden-vectors-v1.json */; };
@@ -260,14 +261,15 @@
 		4826C8F9A12638E5A048AE62 /* GravityAlignmentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GravityAlignmentTests.swift; sourceTree = "<group>"; };
 		484D8FAC68C38D341939C3C9 /* ISL-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "ISL-rules.json"; sourceTree = "<group>"; };
 		485C60A9FAC79B491934A959 /* SpeedDBBenchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedDBBenchTests.swift; sourceTree = "<group>"; };
+		49A967A3B6B3F3FDCAC8511B /* CHE-cases.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CHE-cases.json"; sourceTree = "<group>"; };
 		4A3B28DE5916E71A3F35CFD7 /* RoadBoundaryTemporalTrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadBoundaryTemporalTrackerTests.swift; sourceTree = "<group>"; };
-		D3175855B96CCE8B99EEDB77 /* LaneBoundaryBezierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneBoundaryBezierTests.swift; sourceTree = "<group>"; };
 		4AC054A6BC61AC4CD32E2F38 /* PanoramaxRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanoramaxRecorder.swift; sourceTree = "<group>"; };
 		4BC8711F5E9A8499C659EB9A /* tsr-panoramax-49e25e66.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "tsr-panoramax-49e25e66.jpg"; sourceTree = "<group>"; };
 		4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerApp.swift; sourceTree = "<group>"; };
 		4C1D195FA30679288FABB9AA /* BackgroundDownloadCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundDownloadCenter.swift; sourceTree = "<group>"; };
 		4E59D10489F12AEFC1961E8F /* bayern.poly */ = {isa = PBXFileReference; path = bayern.poly; sourceTree = "<group>"; };
 		50617C281760CAD961B25E3D /* DrivingControlAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrivingControlAvailability.swift; sourceTree = "<group>"; };
+		50B9F9477677BC3AD0EE7F74 /* LaneBoundaryBezier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneBoundaryBezier.swift; sourceTree = "<group>"; };
 		50DFC9695D5BC8CA1E3F2976 /* ConsumerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsumerModels.swift; sourceTree = "<group>"; };
 		5393AC2745A8215F4024E5DF /* en.lproj */ = {isa = PBXFileReference; path = en.lproj; sourceTree = "<group>"; };
 		5460B7376654275955039717 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
@@ -275,12 +277,12 @@
 		54CA070C418623C559123AE2 /* LookupResourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupResourceTests.swift; sourceTree = "<group>"; };
 		55D16BE42ECC5E6CF4A4F7E3 /* speed-limit-reference */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "speed-limit-reference"; path = "../shared/speed-limit-reference"; sourceTree = SOURCE_ROOT; };
 		56DC8137DA2A511025046A79 /* RoadBoundaryTemporalTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadBoundaryTemporalTracker.swift; sourceTree = "<group>"; };
-		E0513DE84862F1BA50AB206D /* LaneBoundaryBezier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneBoundaryBezier.swift; sourceTree = "<group>"; };
 		5749BF3469AD1328573C4223 /* SpeedDBBenchUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedDBBenchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		574B85EC313F779E261CF645 /* DebugLogPersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogPersistence.swift; sourceTree = "<group>"; };
 		57FA2AA20FC2B5CC93542B7E /* RoadBoundaryMotionHintTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadBoundaryMotionHintTests.swift; sourceTree = "<group>"; };
 		581358CA08092DBCD57D195B /* SpeedReferenceRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedReferenceRuntime.swift; sourceTree = "<group>"; };
 		58B71350FBD2ED0C58C43D3F /* MatcherCoreModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatcherCoreModels.swift; sourceTree = "<group>"; };
+		5928B9D5852D9468C69AB42C /* LaneBoundaryBezierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneBoundaryBezierTests.swift; sourceTree = "<group>"; };
 		596FBCF04865A5176FFDE2A3 /* RoadBoundaryDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadBoundaryDetector.swift; sourceTree = "<group>"; };
 		5B39A5EEAE9245ED1F6FA257 /* RouteScenarioBenchmarkRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteScenarioBenchmarkRunner.swift; sourceTree = "<group>"; };
 		5B6C254E9BAEBAB2A011AA73 /* V3LookupResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V3LookupResources.swift; sourceTree = "<group>"; };
@@ -392,6 +394,7 @@
 				5393AC2745A8215F4024E5DF /* en.lproj */,
 				881D085EDE2D348B7DF817C8 /* fr.lproj */,
 				E65A06FABB9BD2F9609312D6 /* GravityAlignment.swift */,
+				50B9F9477677BC3AD0EE7F74 /* LaneBoundaryBezier.swift */,
 				C9CEBD6C0203A9D6C46955EF /* LaneDetection.swift */,
 				ACC246DEFF0D2E1BB0EE2AD1 /* LaneDetectionRuntime.swift */,
 				ED0EE73EBD62C9AFC470ABD8 /* LaneDetectionRuntimeTests.swift */,
@@ -413,7 +416,6 @@
 				38532CE100FF815E74A1BB2F /* RoadBoundaryMotionHint.swift */,
 				1904D5380969497882FEBE30 /* RoadBoundaryPresentationGate.swift */,
 				56DC8137DA2A511025046A79 /* RoadBoundaryTemporalTracker.swift */,
-				E0513DE84862F1BA50AB206D /* LaneBoundaryBezier.swift */,
 				FC99AE36886F7BCCAF89C410 /* RoadPathEvidence.swift */,
 				07CADACCA7BAE0E107F9D5FB /* RoadPathSession.swift */,
 				1268C073515BF6EA04CAD322 /* RoadSpeedDefaults.swift */,
@@ -452,6 +454,14 @@
 				B95260E15C226751CF07F73D /* TestFixtures */,
 			);
 			path = SpeedConsumerApp;
+			sourceTree = "<group>";
+		};
+		3011DA29EC5340A4779FAFB2 /* penalty-rules-tests */ = {
+			isa = PBXGroup;
+			children = (
+				49A967A3B6B3F3FDCAC8511B /* CHE-cases.json */,
+			);
+			path = "penalty-rules-tests";
 			sourceTree = "<group>";
 		};
 		6543D1ADDED4B81D15627E2C /* matcher */ = {
@@ -534,6 +544,7 @@
 				9EE7FBD20C2C207434E0A6A0 /* DebugLogPersistenceTests.swift */,
 				ECF75D496D18133C8CEA6C81 /* DrivingControlAvailabilityTests.swift */,
 				4826C8F9A12638E5A048AE62 /* GravityAlignmentTests.swift */,
+				5928B9D5852D9468C69AB42C /* LaneBoundaryBezierTests.swift */,
 				D28A7BA4A282F936B6EF8BC9 /* LanePreviewPresentationTests.swift */,
 				54CA070C418623C559123AE2 /* LookupResourceTests.swift */,
 				C08181B089D94999D5F6A4DC /* LookupSchedulingTests.swift */,
@@ -543,7 +554,6 @@
 				57FA2AA20FC2B5CC93542B7E /* RoadBoundaryMotionHintTests.swift */,
 				5F0F730708C353FE43CCCCF7 /* RoadBoundaryPresentationGateTests.swift */,
 				4A3B28DE5916E71A3F35CFD7 /* RoadBoundaryTemporalTrackerTests.swift */,
-				D3175855B96CCE8B99EEDB77 /* LaneBoundaryBezierTests.swift */,
 				C21A9ACAE299BC122BBC183E /* RoadPathEvidenceTests.swift */,
 				EC71FB24B2C74A9B05675E17 /* RoadPathSessionTests.swift */,
 				414763A09BE57A810C9A1F9A /* TrafficSignCameraReferenceOfferTests.swift */,
@@ -600,6 +610,7 @@
 				55D16BE42ECC5E6CF4A4F7E3 /* speed-limit-reference */,
 				E3DE576D3103E32F00926759 /* CoveragePolys */,
 				6543D1ADDED4B81D15627E2C /* matcher */,
+				3011DA29EC5340A4779FAFB2 /* penalty-rules-tests */,
 				722154D43495AAB0FE772D35 /* Rules */,
 				B6469DC91FCB8330636EE427 /* tsr */,
 			);
@@ -836,6 +847,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D079602BBCC192528304A508 /* CHE-cases.json in Resources */,
 				CEEC3BFC77BC5AB78B80529C /* candidate-admission-v1.json in Resources */,
 				219944FAA45C0C35CADBEFA5 /* candidate-admission-v1.sql in Resources */,
 				0A0D6E44B30C0B7BD65F3D08 /* fixtures in Resources */,
@@ -949,6 +961,7 @@
 				B5530C9955E710BAEA5A27DD /* DriveSessionViewModel.swift in Sources */,
 				94701BF322C7BDABCF103DDF /* DrivingControlAvailability.swift in Sources */,
 				F4619697F0D218CA52A31C65 /* GravityAlignment.swift in Sources */,
+				0E2EC469069622230A7B0A72 /* LaneBoundaryBezier.swift in Sources */,
 				D60CF7D362BC29B5DEA0BECF /* LaneDetection.swift in Sources */,
 				4BE89006C90A4D59F921E5F1 /* LaneDetectionRuntime.swift in Sources */,
 				9877E92DFAFDB8EE699F6987 /* LanePreviewPresentation.swift in Sources */,
@@ -965,7 +978,6 @@
 				E79B104C239ECE5204DB66F2 /* RoadBoundaryMotionHint.swift in Sources */,
 				711671D0A9723C1D92BA93EA /* RoadBoundaryPresentationGate.swift in Sources */,
 				424E9C2A02046AF6C7656C25 /* RoadBoundaryTemporalTracker.swift in Sources */,
-				F93D65B7CCB3650467927753 /* LaneBoundaryBezier.swift in Sources */,
 				4DF7CD81D9D13C4DAC6DCED4 /* RoadPathEvidence.swift in Sources */,
 				722682CDFB6EF40D285B1504 /* RoadPathSession.swift in Sources */,
 				D88037B4D0A84DBE65C1134C /* RoadSpeedDefaults.swift in Sources */,
@@ -1007,6 +1019,7 @@
 				1211E93B1CB861C6794A1586 /* DebugLogPersistenceTests.swift in Sources */,
 				5F8296A6269F7BB82D9BA4FD /* DrivingControlAvailabilityTests.swift in Sources */,
 				0877B38BCBB3A222562BF7DA /* GravityAlignmentTests.swift in Sources */,
+				2B778F35A62D2C4CA4C3BC42 /* LaneBoundaryBezierTests.swift in Sources */,
 				D7505C79B7A772FFE3B8ADE3 /* LaneDetectionRuntimeTests.swift in Sources */,
 				6E34DC6950AD6D1F4789029A /* LaneDetectionTests.swift in Sources */,
 				67FEE40027F7FF48FCA9E387 /* LanePreviewPresentationTests.swift in Sources */,
@@ -1018,7 +1031,6 @@
 				34158303DF7F98DE12A14DAB /* RoadBoundaryMotionHintTests.swift in Sources */,
 				4012714C01B21F0AF897E280 /* RoadBoundaryPresentationGateTests.swift in Sources */,
 				02C8C041AE046D1B34185DF7 /* RoadBoundaryTemporalTrackerTests.swift in Sources */,
-				8A98BC8162231D2ED04EA621 /* LaneBoundaryBezierTests.swift in Sources */,
 				E59DF7E1FC536928DBF4394F /* RoadPathEvidenceTests.swift in Sources */,
 				2C54920BFD153D152CFF0258 /* RoadPathSessionTests.swift in Sources */,
 				197A06403B8311B89F11D4D6 /* SpeedConsumerTests.swift in Sources */,
@@ -1422,7 +1434,6 @@
 		E793BC15B362D2883A084B3F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"SWIFT_OPTIMIZATION_LEVEL[sdk=iphoneos*]" = "-O";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
@@ -1440,6 +1451,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = de.youspeed.SpeedConsumer;
 				PRODUCT_NAME = SpeedConsumer;
 				SDKROOT = iphoneos;
+				"SWIFT_OPTIMIZATION_LEVEL[sdk=iphoneos*]" = "-O";
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;

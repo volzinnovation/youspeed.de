@@ -1162,6 +1162,12 @@ private fun MetricStatusBlock(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+        ConsumerMainScreenLogic.currentPenaltyNotice(ui)?.advisoryCaption?.let { caption ->
+            Text(caption, color = foreground,
+                style = roundedUiTextStyle(size = secondaryFont * 0.32f, weight = FontWeight.Normal),
+                textAlign = TextAlign.Center, maxLines = 2,
+                modifier = Modifier.testTag("penalty-advisory-caption"))
+        }
     }
 }
 

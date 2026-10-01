@@ -38,6 +38,7 @@ object ConsumerMainScreenLogic {
                 state.lastLookupCitySource.startsWith("settlement:") && state.lastLookupCitySource.endsWith(":high")
             },
             postedSpeedLimitKmh = state.speedLimitKmh,
+            isMotorway = state.limitWayId?.let { PenaltyRoadArea.matchedMotorway(state.lastLookupHighway) },
         )
     }
 
@@ -56,7 +57,8 @@ object ConsumerMainScreenLogic {
         val notice = currentPenaltyNotice(state)
         val drivingBanMonths = notice?.drivingBanMonths ?: 0
         if (drivingBanMonths > 0) {
-            return drivingBanMonths.toString()
+            val minimum = notice?.advisoryCaption != null && notice.enforcementClass != "raser"
+            return (if (minimum) "≥" else "") + drivingBanMonths.toString()
         }
         return when (notice?.severity) {
             PenaltySeverity.MONEY_ONLY -> notice.moneyFineEUR?.toString() ?: "!"

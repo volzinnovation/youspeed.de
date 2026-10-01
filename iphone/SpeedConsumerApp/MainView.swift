@@ -1128,6 +1128,13 @@ struct MainView: View {
                         .minimumScaleFactor(0.45)
                         .padding(.top, -primaryFont * 0.06)
                         .opacity(secondaryMetricText.isEmpty ? 0 : 1)
+                    if let caption = finePresentation?.advisoryCaption {
+                        Text(caption)
+                            .font(.system(size: max(11, secondaryFont * 0.32)))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .accessibilityIdentifier("penalty-advisory-caption")
+                    }
                 }
             }
         }
@@ -1218,7 +1225,8 @@ struct MainView: View {
             return viewModel.speedCapturePrimaryMetricText ?? NSLocalizedString("speed_capture.prompt.primary", comment: "")
         }
         if let drivingBanMonths = finePresentation?.drivingBanMonths, drivingBanMonths > 0 {
-            return "\(drivingBanMonths)"
+            let minimum = finePresentation?.advisoryCaption != nil && finePresentation?.enforcementClass != "raser"
+            return "\(minimum ? "≥" : "")\(drivingBanMonths)"
         }
         switch finePresentation?.severity {
         case .moneyOnly:

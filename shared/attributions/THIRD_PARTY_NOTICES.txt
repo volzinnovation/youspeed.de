@@ -1155,11 +1155,11 @@ Changes: Reference for the app's rule data and summaries. Source checked: 2026-0
 ================================================================================
 
 Traffic-rule reference · Switzerland
-www.ch.ch
+www.fedlex.admin.ch
 Reference citation; original website rights remain with its publisher
-Source: https://www.ch.ch/de/fahrzeuge-und-verkehr/verhalten-im-strassenverkehr/verkehrsregeln/geschwindigkeitsuberschreitung/
-Licence / legal basis: https://www.ch.ch/de/fahrzeuge-und-verkehr/verhalten-im-strassenverkehr/verkehrsregeln/geschwindigkeitsuberschreitung/
-Changes: Reference for the app's rule data and summaries. Source checked: 2026-07-04. The original website is not bundled.
+Source: https://www.fedlex.admin.ch/eli/cc/2019/93/de
+Licence / legal basis: https://www.fedlex.admin.ch/eli/cc/2019/93/de
+Changes: Reference for the app's rule data and summaries. Source checked: 2026-10-01. The original website is not bundled.
 
 ================================================================================
 

@@ -157,6 +157,8 @@ targets:
       - path: SpeedConsumerApp/LaneDetectionRuntimeTests.swift
       - path: SpeedConsumerApp/TestFixtures
         buildPhase: resources
+      - path: ../shared/penalty-rules-tests/CHE-cases.json
+        buildPhase: resources
     dependencies:
       - target: SpeedConsumer
     settings:

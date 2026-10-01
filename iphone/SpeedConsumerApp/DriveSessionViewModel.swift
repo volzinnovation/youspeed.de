@@ -373,12 +373,14 @@ struct CountryPenaltyScreenshotInput {
     let deltaKmh: Int
     let postedLimitKmh: Int
     let insideCity: Bool
+    let highway: String?
 
     static func current(environment: [String: String] = ProcessInfo.processInfo.environment) -> Self {
         Self(countryCode: PenaltyCountryCode.normalized(environment["YOUSPEED_SCREENSHOT_COUNTRY"]) ?? "FRA",
              deltaKmh: min(200, max(0, Int(environment["YOUSPEED_SCREENSHOT_DELTA"] ?? "0") ?? 0)),
              postedLimitKmh: min(200, max(1, Int(environment["YOUSPEED_SCREENSHOT_LIMIT"] ?? "50") ?? 50)),
-             insideCity: environment["YOUSPEED_SCREENSHOT_INSIDE_CITY"] != "0")
+             insideCity: environment["YOUSPEED_SCREENSHOT_INSIDE_CITY"] != "0",
+             highway: environment["YOUSPEED_SCREENSHOT_HIGHWAY"])
     }
 }
 
@@ -626,6 +628,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var lastLookupNearestCandidateM: Double?
     @Published var lastLookupNearestSpeedCandidateM: Double?
     @Published var lastLookupInsideCity: Bool?
+    @Published private(set) var lastLookupHighway: String?
     @Published var lastLookupCitySource: String = "n/a"
     @Published var lastLookupCityResolveMs: Double = 0
     @Published var lastLookupCityCandidateBoundaries: Int = 0
@@ -1807,18 +1810,20 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         bundleRulesCountryCode: String? = nil
     ) {
         let bundledStem = "\(countryCode)-rules"
+        let packagedRules = try? SpeedPenaltyRuleSet.loadBundled(named: bundledStem)
         if let bundleRulesPath,
            PenaltyCountryCode.normalized(bundleRulesCountryCode) == countryCode,
            let rules = try? SpeedPenaltyRuleSet.loadFile(at: URL(fileURLWithPath: bundleRulesPath)),
            PenaltyCountryCode.normalized(rules.countryCode) == countryCode,
-           !rules.bands.isEmpty {
+           !rules.bands.isEmpty,
+           SpeedPenaltyRuleSet.prefersDownloaded(rules, over: packagedRules) {
             activePenaltyRules = rules
             activePenaltyRulesFile = URL(fileURLWithPath: bundleRulesPath).lastPathComponent
             penaltyRulesUseBundledSource = true
             penaltyRulesAreApplicable = true
             return
         }
-        if let rules = try? SpeedPenaltyRuleSet.loadBundled(named: bundledStem) {
+        if let rules = packagedRules {
             activePenaltyRules = rules
             activePenaltyRulesFile = "\(bundledStem).json"
             penaltyRulesUseBundledSource = true
@@ -3049,6 +3054,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         limitCityPlaceName = nil
         limitCityDistrictName = nil
         lastLookupInsideCity = nil
+        lastLookupHighway = nil
         lastLookupCitySource = "n/a"
         lastLookupQueryMs = 0
         lastLookupCandidateCount = 0
@@ -5596,6 +5602,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
         if screenshotState == .countryPenalty {
+            lastLookupHighway = CountryPenaltyScreenshotInput.current().highway
             currentBundledSpeedLimitKmh = fixture.speedLimitKmh
             currentBaseUnlimitedSpeedLimitActive = false
             currentLocalCorrectionValue = nil
@@ -5612,6 +5619,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 "country": activePenaltyRules.countryCode, "requested_country": input.countryCode,
                 "country_resolved": penaltyRulesAreApplicable, "locale": Bundle.main.preferredLocalizations.first ?? "en",
                 "delta_kmh": input.deltaKmh, "posted_limit_kmh": input.postedLimitKmh, "inside_city": input.insideCity,
+                "highway": lastLookupHighway as Any? ?? NSNull(),
+                "advisory_caption": notice?.advisoryCaption as Any? ?? NSNull(),
                 "rules_file": activePenaltyRulesFile, "penalty_present": notice != nil,
                 "title": notice?.title ?? "", "details": notice?.details ?? "",
                 "money_fine_eur": notice?.moneyFineEUR as Any? ?? NSNull(),
@@ -5940,6 +5949,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         lastLookupNearestCandidateM = nil
         lastLookupNearestSpeedCandidateM = nil
         lastLookupInsideCity = nil
+        lastLookupHighway = nil
         lastLookupCitySource = "n/a"
         lastLookupCityResolveMs = 0
         lastLookupCityCandidateBoundaries = 0
@@ -7647,6 +7657,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         nextTrafficSignContext = nil
                     }
                     self.limitWayID = result.wayID
+                    self.lastLookupHighway = result.wayID == nil ? nil : result.highway
                     self.limitStreetName = result.streetName
                     self.limitStreetBaseName = result.streetBaseName
                     self.limitStreetRef = result.streetRef
@@ -8224,7 +8235,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             rules: activePenaltyRules,
             insideCity: lastLookupCitySource.hasPrefix("settlement:") && lastLookupCitySource.hasSuffix(":high")
                 ? lastLookupInsideCity : nil,
-            postedLimitKmh: speedLimitKmh
+            postedLimitKmh: speedLimitKmh,
+            isMotorway: limitWayID == nil ? nil : PenaltyRoadArea.matchedMotorway(highway: lastLookupHighway)
         )
     }
 

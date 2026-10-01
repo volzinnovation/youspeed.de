@@ -34,6 +34,7 @@ class SwissPenaltyAuditInstrumentedTest {
                 putExtra("screenshot_limit", limit)
                 putExtra("screenshot_delta", delta)
                 putExtra("screenshot_inside_city", urban)
+                putExtra("screenshot_highway", listOf("residential", "primary", "motorway", "motorway", "residential", "primary", "motorway")[index])
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             }
             ActivityScenario.launch<MainActivity>(intent).use { scenario ->
@@ -44,6 +45,10 @@ class SwissPenaltyAuditInstrumentedTest {
                     assertEquals("CHF", state.activePenaltyRules.currencyCode)
                     assertEquals(47.3769, state.currentLatitude!!, 0.000001)
                     val notice = ConsumerMainScreenLogic.currentPenaltyNotice(state)!!
+                    val expectedFine = listOf(40, 100, 60, null, null, null, null)[index]
+                    val expectedMonths = listOf(null, null, null, 1, 24, 24, 24)[index]
+                    assertEquals(expectedFine, notice.moneyFineEUR)
+                    assertEquals(expectedMonths, notice.drivingBanMonths)
                     reports.put(JSONObject().apply {
                         put("country", state.activePenaltyRules.countryCode)
                         put("rules_file", state.activePenaltyRules.fileName)
@@ -52,6 +57,8 @@ class SwissPenaltyAuditInstrumentedTest {
                         put("longitude", state.currentLongitude)
                         put("posted_limit_kmh", limit); put("delta_kmh", delta)
                         put("inside_city", urban)
+                        put("highway", state.lastLookupHighway)
+                        put("advisory_caption", notice.advisoryCaption)
                         put("money_fine_eur", notice.moneyFineEUR ?: JSONObject.NULL)
                         put("driving_ban_months", notice.drivingBanMonths ?: JSONObject.NULL)
                         put("conditional_driving_ban_months", notice.conditionalDrivingBanMonths ?: JSONObject.NULL)
