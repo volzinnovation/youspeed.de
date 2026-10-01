@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity(), ConsumerHost {
                 CountryPenaltyScreenshotScenario(
                     PenaltyCountryCodes.normalize(intent.getStringExtra("screenshot_country")) ?: error("Unsupported screenshot country"),
                     intent.getIntExtra("screenshot_delta", 0), intent.getIntExtra("screenshot_limit", 50),
+                    intent.getBooleanExtra("screenshot_inside_city", true),
                 )
             }.getOrNull() else null,
             launchScreenshotState = AppScreenshotState.fromRaw(intent?.getStringExtra("screenshot_state") ?: System.getenv("YOUSPEED_SCREENSHOT_STATE")),

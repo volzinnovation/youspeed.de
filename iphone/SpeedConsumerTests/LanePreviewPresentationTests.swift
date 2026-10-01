@@ -69,4 +69,15 @@ final class LanePreviewPresentationTests: XCTestCase {
             matureBoundaryCount: 0, contextAvailable: false, staleObservedBoundary: true, nowUptime: 10.1)
         XCTAssertEqual(unavailable.mode, .hidden)
     }
+    func testReferenceWaitsAfterObservedLossAndResetsWithCameraScope() {
+        let h=LaneReferenceHysteresis()
+        let reference=LanePreviewPresentationDecision(mode:.calibrationReference,reason:"fixture",referenceLines:[])
+        let observed=LanePreviewPresentationDecision(mode:.observed,reason:"fixture",referenceLines:[])
+        XCTAssertEqual(h.apply(reference,scope:"a",now:10).mode,.hidden)
+        XCTAssertEqual(h.apply(reference,scope:"a",now:11.1).mode,.calibrationReference)
+        XCTAssertEqual(h.apply(observed,scope:"a",now:11.2).mode,.observed)
+        XCTAssertEqual(h.apply(reference,scope:"a",now:12.9).mode,.hidden)
+        XCTAssertEqual(h.apply(reference,scope:"a",now:13.3).mode,.calibrationReference)
+        XCTAssertEqual(h.apply(reference,scope:"b",now:13.4).mode,.hidden)
+    }
 }

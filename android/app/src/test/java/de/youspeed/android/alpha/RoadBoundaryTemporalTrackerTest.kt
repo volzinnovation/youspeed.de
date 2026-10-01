@@ -6,6 +6,44 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class RoadBoundaryTemporalTrackerTest {
+
+    @Test fun fragmentTrackingUsesPaintIntervalsAndKeepsFreshPaintSeparateFromModel() {
+        val tracker=RoadBoundaryTemporalTracker()
+        fun image(dx:Int=0,dy:Int=0):ByteArray {
+            val pixels=scene(dx,dy)
+            for(y in 0..<height) if(y-dy !in 55..65 && y-dy !in 85..100) for(x in 0..<width) pixels[y*width+x]=50
+            return pixels
+        }
+        fun observed(time:Double,dx:Int=0,dy:Int=0):RoadBoundaryFrame {
+            val b=fresh(time,dx,dy).boundaries[0].copy(
+                observedSegments=listOf(listOf(55,60,65),listOf(85,90,95,100)).map { rows -> rows.map {
+                    LanePoint((center(it)+dx)/(width-1),(it+dy).toDouble()/(height-1))
+                } },geometryConfidence=.95,paintOccupancy=.5)
+            return RoadBoundaryFrame(listOf(b),emptyList(),time,rejectionCounts=mapOf("fragment_gap" to 2),detectionVariant="fragments")
+        }
+        val seeded=tracker.complete(tracker.predict(image(),width,height,10.0,"scope",100.0,fragmentAware=true),observed(100.0),image())
+        assertEquals(2,seeded.boundaries.first().observedSegments.size)
+        assertEquals(.95,seeded.boundaries.first().geometryConfidence!!,0.0)
+        assertEquals(mapOf("fragment_gap" to 2),seeded.rejectionCounts); assertEquals("fragments",seeded.detectionVariant)
+        val moved=image(3,1)
+        val prediction=tracker.predict(moved,width,height,10.2,"scope",100.2,fragmentAware=true)
+        assertFalse(prediction.budgetExceeded)
+        val carried=prediction.boundaries.first()
+        assertEquals(RoadBoundaryProvenance.TRACKED,carried.provenance)
+        assertEquals(2,carried.observedSegments.size)
+        assertTrue(carried.observedSegments.flatten().all {
+            val sourceY=it.y*(height-1)-1
+            sourceY in 54.0..66.0 || sourceY in 84.0..101.0
+        })
+        val current=observed(100.2,3,1)
+        val fused=tracker.complete(prediction,current,moved)
+        assertEquals(current.boundaries.first().observedSegments,fused.boundaries.first().observedSegments)
+        assertEquals(.5,fused.boundaries.first().paintOccupancy!!,0.0)
+        assertEquals(100.2,fused.boundaries.first().lastFreshTimestampSeconds!!,0.0)
+        assertTrue(tracker.predict(ByteArray(width*height) { 50 },width,height,10.4,"scope",100.4,fragmentAware=true).boundaries.isEmpty())
+        assertTrue(tracker.predict(moved,width,height,11.1,"scope",101.1,fragmentAware=true).boundaries.isEmpty())
+    }
+
     private val width=192; private val height=108
     private fun center(y: Int)=45+0.11*y+0.0012*(y-50)*(y-50)
     private fun scene(dx: Int=0,dy: Int=0,occlusion: IntRange?=null): ByteArray {
@@ -107,5 +145,14 @@ class RoadBoundaryTemporalTrackerTest {
             motionHint=RoadBoundaryMotionHint.from(emptyList(),100.2,true))
         assertEquals(baseline.boundaries,hinted.boundaries)
         assertEquals(baseline.operationCount,hinted.operationCount)
+    }
+    @Test fun motionPredictionCannotCarryWithoutCurrentImageSupport() {
+        val tracker=RoadBoundaryTemporalTracker(); seed(tracker)
+        val calibration=RoadPathCalibration("fixture",true,1.0,1.0,.5,.5,0.0,0.0,0.0,1.6,0.0)
+        val hint=RoadBoundaryMotionHint(false,"fixture",.1,5.0,5.0,.5,headingRateDegreesPerSecond=0.0)
+        val projection=RoadBoundaryMotionProjection.from(calibration,null,hint)
+        assertNotNull(projection)
+        val predicted=tracker.predict(ByteArray(width*height){50},width,height,10.1,"scope",100.1,motionProjection=projection)
+        assertTrue(predicted.boundaries.isEmpty()); assertFalse(predicted.budgetExceeded)
     }
 }

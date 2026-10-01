@@ -53,6 +53,7 @@ internal data class LaneRuntimeSnapshot(
     val throttledFrames: Long = 0,
     val timestampRejectedFrames: Long = 0,
     val performance: LanePerformanceSummary? = null,
+    val cadence: Map<String,Any> = emptyMap(),
 ) {
     fun opacity(nowNanos: Long): Float = LaneOverlayGeometry.opacity(capturedAtNanos, nowNanos)
 }
@@ -80,6 +81,31 @@ internal class LanePerformanceWindow(private val capacity: Int = 128) {
         val elapsed = (samples.last().at - samples.first().at) / 1e9
         return LanePerformanceSummary(samples.size, if (elapsed > 0) (samples.size - 1) / elapsed else 0.0,
             timing(samples.map { it.preprocess }), timing(samples.map { it.detection }), timing(samples.map { it.age }))
+    }
+}
+
+/** Fixed delivery/admission/publication intervals separate source stalls from compute time. */
+internal class LaneCadenceWindow {
+    private class Stage { var count=0L; var last:Long?=null; val intervals=ArrayDeque<Double>() }
+    private val stages=linkedMapOf("delivery" to Stage(),"admitted" to Stage(),"published" to Stage())
+    fun record(stage: String, now: Long) {
+        val entry=stages.getValue(stage)
+        entry.last?.let { last -> if (now>=last) {
+            if (entry.intervals.size==128) entry.intervals.removeFirst()
+            entry.intervals.addLast((now-last)/1e6)
+        } }
+        entry.last=now; entry.count++
+    }
+    fun resetIntervals() { stages.values.forEach { it.last=null; it.intervals.clear() } }
+    fun diagnostics(): Map<String,Any> = stages.mapValues { (_,entry) ->
+        val sorted=entry.intervals.sorted()
+        val fields=linkedMapOf<String,Any>("count" to entry.count,"intervalSamples" to sorted.size)
+        if (sorted.isNotEmpty()) {
+            fields["intervalP50Ms"]=sorted[kotlin.math.ceil((sorted.size-1)*0.5).toInt()]
+            fields["intervalP95Ms"]=sorted[kotlin.math.ceil((sorted.size-1)*0.95).toInt()]
+            fields["intervalMaxMs"]=sorted.last()
+        }
+        fields
     }
 }
 
@@ -219,7 +245,7 @@ internal class LaneCaptureClock {
 
 internal data class LaneAdmission(val enabled: Boolean, val scope: Long, val thermallyPaused: Boolean)
 internal data class LaneLumaSource(val plane: ByteBuffer, val rowStride: Int, val pixelStride: Int,
-    val geometry: LaneImageGeometry, val capturedAtNanos: Long)
+    val geometry: LaneImageGeometry, val capturedAtNanos: Long, val roadFrame: RoadPathCameraFrame? = null)
 
 /** Single worker, at most one pending downsampled image, and no retained ImageProxy. */
 internal class AndroidLaneDetectionRuntime(
@@ -232,10 +258,13 @@ internal class AndroidLaneDetectionRuntime(
     private val executor: ExecutorService = Executors.newSingleThreadExecutor { task ->
         Thread({ Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND); task.run() }, "YouSpeedLanes")
     },
+    private val previewSession: RoadPathSession? = null,
+    private val roadFrameFactory: ((ImageProxy) -> RoadPathCameraFrame?)? = null,
+    private val onRoadResult: (RoadPathPreparedFrame) -> Unit = {},
 ) : AutoCloseable {
     private data class Frame(val bytes: ByteArray, val width: Int, val height: Int,
         val geometry: LaneImageGeometry, val scope: Long, val epoch: Long, val captureNanos: Long,
-        val frameId: Long, val preprocessingMs: Double, val captureAgeEstimated: Boolean)
+        val frameId: Long, val preprocessingMs: Double, val captureAgeEstimated: Boolean, val roadFrame: RoadPathCameraFrame?)
     private val lock = Any()
     private val detector = LaneDetector()
     private val tracker = LaneTracker()
@@ -259,6 +288,13 @@ internal class AndroidLaneDetectionRuntime(
     private var throttled = 0L
     private var timestampRejected = 0L
     private var lastDiagnosticsNanos = 0L
+    private val cadence = LaneCadenceWindow()
+
+    internal fun cadenceDiagnostics(): Map<String,Any> = synchronized(lock) {
+        cadence.diagnostics()+mapOf("throttled" to throttled,"replaced" to replaced,
+            "timestampRejected" to timestampRejected,"processed" to processed,
+            "admissionIntervalMs" to if (previewSession!=null) 100 else 200)
+    }
 
     /** Called before TSR takes ownership; only admitted frames are copied. */
     fun submit(image: ImageProxy) = submit {
@@ -266,7 +302,7 @@ internal class AndroidLaneDetectionRuntime(
         val plane = image.planes.first()
         LaneLumaSource(plane.buffer, plane.rowStride, plane.pixelStride,
             LaneImageGeometry(image.width, image.height, image.imageInfo.rotationDegrees, values.map(Float::toDouble)),
-            image.imageInfo.timestamp)
+            image.imageInfo.timestamp, roadFrameFactory?.invoke(image))
     }
 
     /** Lazy source access makes off/thermal/rate gates run before camera-plane reads. */
@@ -275,6 +311,7 @@ internal class AndroidLaneDetectionRuntime(
         val condition = admission()
         synchronized(lock) {
             if (closed) return
+            cadence.record("delivery",now)
             val shouldPause = !condition.enabled || condition.thermallyPaused
             if (scope != condition.scope || paused != shouldPause) {
                 invalidateLocked()
@@ -284,7 +321,7 @@ internal class AndroidLaneDetectionRuntime(
                     scope = scope), epoch)
             }
             if (paused) return
-            if (lastAdmissionNanos != Long.MIN_VALUE && now - lastAdmissionNanos < 200_000_000L) {
+            if (lastAdmissionNanos != Long.MIN_VALUE && now - lastAdmissionNanos < if (previewSession != null) 100_000_000L else 200_000_000L) {
                 throttled++
                 return
             }
@@ -313,17 +350,19 @@ internal class AndroidLaneDetectionRuntime(
                     timestampRejected++
                     return
                 }
-                val scale = minOf(384.0 / incoming.uprightWidth, 768.0 / incoming.uprightHeight, 1.0)
-                val width = max(1, (incoming.uprightWidth * scale).roundToInt())
-                val height = max(1, (incoming.uprightHeight * scale).roundToInt())
-                val bytes = buffers.firstOrNull { it.size == width * height }?.also(buffers::remove)
+                val scale = minOf(384.0 / incoming.uprightWidth, (if(previewSession != null) 216.0 else 768.0) / incoming.uprightHeight, 1.0)
+                val width = input.roadFrame?.width ?: max(1, (incoming.uprightWidth * scale).roundToInt())
+                val height = input.roadFrame?.height ?: max(1, (incoming.uprightHeight * scale).roundToInt())
+                val bytes = input.roadFrame?.grayscale ?: buffers.firstOrNull { it.size == width * height }?.also(buffers::remove)
                     ?: ByteArray(width * height)
-                LaneLumaSampler.copyUpright(input.plane, input.rowStride, input.pixelStride, incoming, bytes, width, height)
+                if (previewSession != null && input.roadFrame == null) return
+                if (input.roadFrame == null) LaneLumaSampler.copyUpright(input.plane, input.rowStride, input.pixelStride, incoming, bytes, width, height)
                 val frame = Frame(bytes, width, height, incoming, scope, epoch,
                     capture.nanos, ++frameId,
-                    (nowNanos() - preprocessStart) / 1e6, capture.estimated)
+                    (nowNanos() - preprocessStart) / 1e6, capture.estimated, input.roadFrame)
                 pending?.let { recycleLocked(it.bytes); replaced++ }
                 pending = frame
+                cadence.record("admitted",now)
                 if (!working) {
                     working = true
                     executor.execute(::drain)
@@ -357,13 +396,29 @@ internal class AndroidLaneDetectionRuntime(
             if (!valid) continue
             if (frame.epoch != trackerEpoch) { tracker.reset(); trackerEpoch = frame.epoch }
             val started = nowNanos()
-            val result = runCatching { tracker.update(detector.detect(frame.bytes, frame.width, frame.height,
-                frame.captureNanos / 1e9)) }
+            var roadResult: RoadPathPreparedFrame? = null
+            val result = runCatching {
+                if (previewSession != null && frame.roadFrame != null) {
+                    val cameraScope = TSRApplicabilityScope("lane-preview:${frame.scope}", "camera",
+                        frame.roadFrame.geometryId, frame.epoch, frame.epoch, frame.epoch)
+                    roadResult = previewSession.prepare(frame.roadFrame, "lane-${frame.frameId}", cameraScope) { publish ->
+                        synchronized(lock) {
+                            val current = admission()
+                            if (closed || frame.epoch != epoch || frame.scope != current.scope || !current.enabled || current.thermallyPaused) false
+                            else { publish(); true }
+                        }
+                    }
+                    null
+                } else tracker.update(detector.detect(frame.bytes, frame.width, frame.height, frame.captureNanos / 1e9))
+            }
             val finished = nowNanos()
             synchronized(lock) {
                 recycleLocked(frame.bytes)
                 if (closed || frame.epoch != epoch) return@synchronized
                 processed++
+                // The preview session's immutable geometry is now published. UI paint age
+                // is measured independently by the existing first-overlay-paint metric.
+                cadence.record("published",finished)
                 val estimate = result.getOrNull()
                 val snapshot = LaneRuntimeSnapshot(
                     state = when (estimate?.state) {
@@ -380,10 +435,11 @@ internal class AndroidLaneDetectionRuntime(
                     timestampRejectedFrames = timestampRejected,
                 )
                 publish(snapshot, frame.epoch)
+                roadResult?.let { prepared -> mainExecutor.execute { if(isCurrent(frame.epoch, frame.scope)) onRoadResult(prepared) } }
                 performance.record(finished, snapshot.preprocessingMs, snapshot.detectionMs, snapshot.captureToResultMs)
                 if (finished - lastDiagnosticsNanos >= 5_000_000_000L) {
                     lastDiagnosticsNanos = finished
-                    val diagnostic = snapshot.copy(performance = performance.summary())
+                    val diagnostic = snapshot.copy(performance = performance.summary(), cadence = cadenceDiagnostics())
                     mainExecutor.execute { if (isCurrent(frame.epoch, frame.scope)) onDiagnostics(diagnostic) }
                 }
             }
@@ -408,12 +464,14 @@ internal class AndroidLaneDetectionRuntime(
 
     private fun recycleLocked(bytes: ByteArray) { if (buffers.size < 2) buffers.addLast(bytes) }
     private fun invalidateLocked() {
+        previewSession?.invalidateOverlay()
         epoch++
         pending?.let { recycleLocked(it.bytes) }
         pending = null
         geometry = null
         clock.reset()
         performance.clear()
+        cadence.resetIntervals()
         lastAdmissionNanos = Long.MIN_VALUE
     }
 

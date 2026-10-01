@@ -11,6 +11,69 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrafficSignRecognitionOrchestratorTests {
+    @Test fun cameraBackpressureDropsBusyFramesWithoutRetainingPixelsOrChangingDefaultQueue() {
+        val harness=Harness()
+        val drops=mutableListOf<String>()
+        val first=harness.frame("executing",capturedAtNanos=0)
+        assertTrue(harness.orchestrator.submit(first,retainWhileBusy=false,onBackpressureDrop=drops::add))
+        for (index in 1..30) {
+            harness.clockNanos=index*20_000_000L
+            val busy=harness.frame("busy-$index",capturedAtNanos=harness.clockNanos)
+            assertFalse(harness.orchestrator.submit(busy,retainWhileBusy=false,onBackpressureDrop=drops::add))
+            assertEquals(1,busy.releaseCount)
+            assertEquals(listOf("executing"),harness.backend.activeFrameIds())
+        }
+        assertEquals(List(30) { "inference_busy" },drops)
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        assertEquals(1,first.releaseCount)
+        assertTrue(harness.backend.activeFrameIds().isEmpty())
+        harness.clockNanos=700_000_000L
+        val fresh=harness.frame("fresh-after-inference",capturedAtNanos=harness.clockNanos)
+        assertTrue(harness.orchestrator.submit(fresh,retainWhileBusy=false,onBackpressureDrop=drops::add))
+        assertEquals(listOf("fresh-after-inference"),harness.backend.activeFrameIds())
+        // Non-CameraX sources still retain the latest pending frame.
+        harness.clockNanos=1_300_000_000L
+        val pending=harness.frame("generic-pending",capturedAtNanos=harness.clockNanos)
+        assertTrue(harness.orchestrator.submit(pending))
+        assertEquals(0,pending.releaseCount)
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        assertEquals(listOf("generic-pending"),harness.backend.activeFrameIds())
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        assertEquals(1,pending.releaseCount)
+        harness.orchestrator.close()
+        assertEquals(1,fresh.releaseCount)
+    }
+
+    @Test fun cameraBackpressureStillReconcilesContextAndReleasesThrottlePausedAndClosedFramesOnce() {
+        val harness=Harness()
+        val drops=mutableListOf<String>()
+        val first=harness.frame("executing",capturedAtNanos=0)
+        harness.orchestrator.submit(first,retainWhileBusy=false,onBackpressureDrop=drops::add)
+        harness.contextGeneration=1
+        harness.clockNanos=100_000_000L
+        val changed=harness.frame("new-context-busy",capturedAtNanos=harness.clockNanos)
+        harness.orchestrator.submit(changed,retainWhileBusy=false,onBackpressureDrop=drops::add)
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        assertFalse(harness.observer.outputs.single().contextIsCurrent)
+        assertEquals(1,changed.releaseCount)
+        val throttled=harness.frame("throttled",capturedAtNanos=harness.clockNanos)
+        harness.orchestrator.submit(throttled,retainWhileBusy=false,onBackpressureDrop=drops::add)
+        assertEquals(1,throttled.releaseCount)
+        harness.clockNanos=600_000_000L
+        harness.conditions=TrafficSignAnalysisConditions(thermalPressure=TrafficSignThermalPressure.CRITICAL)
+        val paused=harness.frame("thermal",capturedAtNanos=harness.clockNanos)
+        harness.orchestrator.submit(paused,retainWhileBusy=false,onBackpressureDrop=drops::add)
+        assertEquals(1,paused.releaseCount)
+        assertEquals(listOf("inference_busy","cadence_or_pause","cadence_or_pause"),drops)
+        harness.orchestrator.tick()
+        assertTrue(harness.backend.activeFrameIds().isEmpty())
+        harness.orchestrator.close()
+        val closed=harness.frame("closed",capturedAtNanos=harness.clockNanos)
+        assertFalse(harness.orchestrator.submit(closed,retainWhileBusy=false,onBackpressureDrop=drops::add))
+        assertEquals(1,closed.releaseCount)
+        assertEquals(1,first.releaseCount)
+    }
+
     @Test fun unavailableModelInvalidatesOnlyItsCurrentPreparedScope() {
         for (scopeChanges in listOf(false, true)) {
             var visible = false
@@ -939,6 +1002,7 @@ class TrafficSignRecognitionOrchestratorTests {
         var context = context()
         var contextGeneration = 0L
         var runtimeActivationEligible = true
+        var conditions=TrafficSignAnalysisConditions()
         val orchestrator = TrafficSignRecognitionOrchestrator(
             modelPack = pack,
             runtimeArtifact = requireNotNull(pack.androidArtifact()),
@@ -951,7 +1015,7 @@ class TrafficSignRecognitionOrchestratorTests {
                     driveSessionId = "drive-test",
                 )
             },
-            conditionsSnapshot = { TrafficSignAnalysisConditions() },
+            conditionsSnapshot = { conditions },
             monotonicClockNanos = { clockNanos },
             observer = observer,
             pathEvaluator = pathEvaluator,

@@ -2,6 +2,124 @@ import XCTest
 @testable import SpeedConsumer
 
 final class RoadPathSessionTests: XCTestCase {
+
+    func testPreviewExperimentsCannotChangeTSRPathEvidence() {
+        let baseline=RoadPathSession(nowUptime:{1.001})
+        let requested=RoadPathSession(detectionOptions:RoadBoundaryDetectionOptions(useSearchBands:true,groupFragments:true),
+            fragmentTracking:true,retainTentativeIdentity:true,jointSelection:true,nowUptime:{1.001})
+        for i in 0..<8 {
+            let frame=paintedFrame(10+Double(i)*0.1,sourceTime:100+Double(i)*0.1)
+            let a=baseline.prepare(frame:frame,frameId:"a-\(i)",scope:scope)
+            let b=requested.prepare(frame:frame,frameId:"b-\(i)",scope:scope)
+            XCTAssertEqual(a.geometry.boundaries,b.geometry.boundaries)
+            XCTAssertEqual(a.presentation.visibleBoundaryIndices,b.presentation.visibleBoundaryIndices)
+            XCTAssertFalse(b.diagnostics.fragmentTrackingEnabled)
+            XCTAssertFalse(b.diagnostics.tentativeIdentityEnabled)
+            XCTAssertFalse(b.diagnostics.jointSelectionEnabled)
+            XCTAssertEqual(b.diagnostics.detectionVariant,"baseline")
+        }
+    }
+
+    func testPreparationDiagnosticsIdentifyComponentAndCurrentIntrinsicsWithoutDriftResets() {
+        let session=RoadPathSession(previewMode:true,nowUptime:{1.001})
+        func input(_ i:Int,cx:Double=0.5,geometry:String="geometry") -> RoadPathCameraFrame {
+            let f=paintedFrame(10+Double(i)*0.1,sourceTime:100+Double(i)*0.1)
+            return RoadPathCameraFrame(grayscale:f.grayscale,width:f.width,height:f.height,capturedAtSeconds:f.capturedAtSeconds,
+                geometryId:geometry,calibration:calibration(cx:cx),clockKnown:true,preprocessingMs:0,startedAt:1,
+                rawWidth:128,rawHeight:72,sourceTimestampSeconds:f.sourceTimestampSeconds)
+        }
+        let first=session.prepare(frame:input(0),frameId:"0",scope:scope)
+        XCTAssertEqual(first.diagnostics.resetComponents,["initial"])
+        let drift=session.prepare(frame:input(1,cx:0.50001),frameId:"1",scope:scope)
+        XCTAssertEqual(drift.diagnostics.calibrationGeneration,first.diagnostics.calibrationGeneration)
+        XCTAssertEqual(drift.diagnostics.calibration?.cx,0.50001)
+        XCTAssertTrue(drift.diagnostics.resetComponents.isEmpty)
+        XCTAssertEqual(Set(drift.diagnostics.stageMs.keys),Set(["luma","queueAndAdmission","filter","prediction","detector","fusion","presentation","total"]))
+        let zoom=session.prepare(frame:input(2,cx:0.502),frameId:"2",scope:scope)
+        XCTAssertEqual(zoom.diagnostics.resetComponents,["calibration"])
+        let crop=session.prepare(frame:input(3,cx:0.502,geometry:"crop"),frameId:"3",scope:scope)
+        XCTAssertEqual(crop.diagnostics.resetComponents,["geometry"])
+        session.invalidateOverlay()
+        let lifecycle=session.prepare(frame:input(4,cx:0.502,geometry:"crop"),frameId:"4",scope:scope)
+        XCTAssertEqual(lifecycle.diagnostics.resetComponents,["lifecycle"])
+    }
+    func testWeakSavedGuidesCannotCropAwayObservedPaintOrMutateSavedCalibration() {
+        let session=RoadPathSession(previewMode:true,nowUptime:{1.001})
+        let saved=VisualRoadCalibration(horizonY:0.75,leftBottom:LanePoint(x:0.03,y:1),leftTopX:0.03,
+            rightBottom:LanePoint(x:0.54,y:1),rightTopX:0.54,revision:"shifted",imageWidth:128,imageHeight:72,orientationKey:"test")
+        var input=paintedFrame(10,sourceTime:100); input.visualCalibration=saved; input.orientationKey="test"
+        let result=session.prepare(frame:input,frameId:"weak",scope:scope)
+        XCTAssertEqual(result.diagnostics.guideTrust.state,"weak")
+        XCTAssertEqual(result.diagnostics.guideTrust.reason,"observed_border_conflict")
+        XCTAssertEqual(result.diagnostics.guidePriorUsed,"none_independent_audit")
+        XCTAssertEqual(result.geometry.boundaries.count,2)
+        XCTAssertTrue(result.geometry.boundaries.allSatisfy { $0.points.first!.y < saved.horizonY })
+        XCTAssertEqual(result.frame.visualCalibration,saved)
+    }
+    func testGuideTrustRequiresIndependentBothSideEvidenceAndExpiresOrRejectsConflict() {
+        let validator=RoadVisualGuideValidator()
+        let saved=VisualRoadCalibration(horizonY:0.42,leftBottom:LanePoint(x:0.23,y:1),leftTopX:0.23,
+            rightBottom:LanePoint(x:0.75,y:1),rightTopX:0.75,revision:"saved",imageWidth:128,imageHeight:72,orientationKey:"test")
+        func borders(_ shift:Double=0,provenance:RoadBoundaryProvenance = .fresh) -> [RoadBoundaryEvidence] {
+            [0.23,0.75].map { RoadBoundaryEvidence(points:[LanePoint(x:$0+shift,y:0.55),LanePoint(x:$0+shift,y:0.9)],
+                confidence:0.95,cue:.paint,supportRows:12,provenance:provenance) }
+        }
+        for i in 0..<5 {
+            let t=Double(i)*0.1, plan=validator.begin(saved:saved,compatible:saved,time:t,key:"camera")
+            let state=validator.observe(borders(),visual:saved,time:t,plan:plan)
+            XCTAssertEqual(state.state,i == 4 ? "trusted" : "weak")
+        }
+        let expiry=validator.begin(saved:saved,compatible:saved,time:2,key:"camera")
+        XCTAssertFalse(expiry.trusted)
+        XCTAssertEqual(expiry.reason,"independent_evidence_expired")
+        let conflictPlan=RoadVisualGuidePlan(independentAudit:true,trusted:false,reason:"audit")
+        XCTAssertEqual(validator.observe(borders(0.15),visual:saved,time:2.1,plan:conflictPlan).reason,"observed_border_conflict")
+        for i in 0..<5 {
+            let t=3+Double(i)*0.1, plan=validator.begin(saved:saved,compatible:saved,time:t,key:"new-camera")
+            XCTAssertEqual(validator.observe(borders(provenance:.tracked),visual:saved,time:t,plan:plan).state,"weak")
+        }
+        let onlyLeft=validator.observe(Array(borders().prefix(1)),visual:saved,time:4,plan:conflictPlan)
+        XCTAssertEqual(onlyLeft.matchedSides,1); XCTAssertEqual(onlyLeft.state,"weak")
+    }
+
+    private func calibration(cx: Double = 0.5, fx: Double = 0.8, revision: String = "mount") -> RoadPathCalibration {
+        RoadPathCalibration(revision:revision,verified:true,fx:fx,fy:0.8,cx:cx,cy:0.5,
+            yawDegrees:0,pitchDegrees:0,rollDegrees:0,heightMeters:1.6,lateralOffsetMeters:-0.08)
+    }
+    func testPreviewCalibrationIdentityAnchorsDriftAndResetsRealChanges() {
+        let identity = RoadPreviewCalibrationIdentity()
+        let first = identity.key(calibration())
+        for i in 0..<10 { XCTAssertEqual(identity.key(calibration(cx:0.5+Double(i)*0.00001)),first) }
+        XCTAssertNotEqual(identity.key(calibration(cx:0.5011)),first)
+        let drifted = identity.key(calibration(cx:0.5011))
+        XCTAssertNotEqual(identity.key(calibration(cx:0.5011,fx:0.82)),drifted)
+        let zoomed = identity.key(calibration(cx:0.5011,fx:0.82))
+        XCTAssertNotEqual(identity.key(calibration(cx:0.5011,fx:0.82,revision:"new-mount")),zoomed)
+        let mounted = identity.key(calibration(cx:0.5011,fx:0.82,revision:"new-mount"))
+        XCTAssertNotEqual(identity.key(nil),mounted)
+        let missing = identity.key(nil)
+        XCTAssertNotEqual(identity.key(calibration()),missing)
+    }
+    func testPreviewMaturesWithTinyIntrinsicsDriftAndResetsOnZoomAndCrop() {
+        let session = RoadPathSession(previewMode:true,nowUptime:{1.001})
+        func prepare(_ i:Int, fx:Double=0.8, geometry:String="geometry") -> RoadPathPreparedFrame {
+            let source = paintedFrame(10+Double(i)*0.1,sourceTime:100+Double(i)*0.1)
+            let input = RoadPathCameraFrame(grayscale:source.grayscale,width:128,height:72,
+                capturedAtSeconds:source.capturedAtSeconds,geometryId:geometry,
+                calibration:calibration(cx:0.5+Double(i)*0.00001,fx:fx),clockKnown:true,
+                preprocessingMs:0,startedAt:1,rawWidth:128,rawHeight:72,sourceTimestampSeconds:source.sourceTimestampSeconds)
+            return session.prepare(frame:input,frameId:"drift-\(i)",scope:scope)
+        }
+        for i in 0..<10 {
+            let result = prepare(i)
+            XCTAssertEqual(result.geometry.boundaries.count,2)
+            if i >= 4 { XCTAssertEqual(result.presentation.visibleBoundaryIndices.count,2) }
+        }
+        XCTAssertTrue(prepare(10,fx:0.82).presentation.visibleBoundaryIndices.isEmpty)
+        for i in 11..<16 { _ = prepare(i,fx:0.82) }
+        XCTAssertEqual(prepare(16,fx:0.82).presentation.visibleBoundaryIndices.count,2)
+        XCTAssertTrue(prepare(17,fx:0.82,geometry:"new-crop").presentation.visibleBoundaryIndices.isEmpty)
+    }
     private final class MutableClock {
         var value = 1.001
         var step = 0.0
@@ -142,14 +260,14 @@ final class RoadPathSessionTests: XCTestCase {
         XCTAssertEqual(try decoded(session.evaluate(prepared:prepared,diagnostic:diagnostic))["reason"] as? String,"overlay_invalidated")
         XCTAssertNil(session.overlay())
     }
-    func testGeometryAndCumulativeAddedDeadlinesClearOnlyOwnedOverlay() throws {
+    func testPerformanceTargetDoesNotRejectButCumulativeAssociationDeadlineClearsOwnedOverlay() throws {
         let clock = MutableClock(), session = RoadPathSession(nowUptime:{clock.now()})
         clock.value = 1.051
         let diagnostic = diagnostic(10)
         let expired = session.prepare(frame:frame(10),frameId:diagnostic.batch.frameId,scope:scope)
-        XCTAssertTrue(expired.geometry.budgetExceeded)
-        XCTAssertTrue(expired.geometry.boundaries.isEmpty)
-        XCTAssertNil(session.overlay())
+        XCTAssertFalse(expired.geometry.budgetExceeded)
+        XCTAssertTrue(expired.performanceTargetExceeded)
+        XCTAssertNotNil(session.overlay())
         clock.value = 1.001
         let valid = session.prepare(frame:frame(11),frameId:"frame-11.0",scope:scope)
         XCTAssertNotNil(session.overlay())
@@ -159,6 +277,77 @@ final class RoadPathSessionTests: XCTestCase {
         let r = try decoded(session.evaluate(prepared:valid,diagnostic:self.diagnostic(11)))
         XCTAssertEqual(r["reason"] as? String,"added_processing_deadline")
         XCTAssertNil(session.overlay())
+    }
+    func testSlowPreparationKeepsMatureGeometryAndReportsPerformanceTargetOnly() throws {
+        for preview in [false,true] {
+            let session=RoadPathSession(previewMode:preview,nowUptime:{0.060})
+            for i in 0...10 {
+                let prepared=session.prepare(frame:paintedFrame(10+Double(i)*0.1,sourceTime:100+Double(i)*0.1,startedAt:0),frameId:"slow-\(i)",scope:scope)
+                XCTAssertFalse(prepared.geometry.budgetExceeded)
+                XCTAssertEqual(prepared.geometry.boundaries.count,2)
+                XCTAssertTrue(prepared.performanceTargetExceeded)
+                XCTAssertTrue(prepared.presentation.accepted)
+                if i>=4 { XCTAssertEqual(prepared.presentation.visibleBoundaryIndices.count,2) }
+                XCTAssertNotNil(session.overlay())
+            }
+        }
+        let session=RoadPathSession(nowUptime:{1.060})
+        let value=try result(session,10)
+        XCTAssertEqual(value["geometryDeadlineExceeded"] as? Bool,false)
+        XCTAssertEqual(value["preparationPerformanceTargetExceeded"] as? Bool,true)
+    }
+
+    func testCrossingPerformanceTargetAfterSelectionNeverInvalidatesGeometryOrPresentation() {
+        for preview in [false,true] {
+            var calls=0, crossingAt:Int?=nil
+            var elapsed=0.050
+            let session=RoadPathSession(previewMode:preview,nowUptime:{
+                calls += 1
+                return crossingAt.map { calls >= $0 } == true ? elapsed : 0.001
+            })
+            func prepare(_ i:Int) -> RoadPathPreparedFrame {
+                calls=0
+                return session.prepare(frame:paintedFrame(10+Double(i)*0.1,sourceTime:100+Double(i)*0.1,startedAt:0),frameId:"crossing-\(i)",scope:scope)
+            }
+            for i in 0...10 { _ = prepare(i) }
+            crossingAt=calls // The final preparation clock read, after mature side selection.
+            for (offset,time) in [0.050,0.060].enumerated() {
+                elapsed=time
+                let prepared=prepare(11+offset)
+                XCTAssertEqual(prepared.preparationMs,time*1000,accuracy:0.000001)
+                XCTAssertEqual(prepared.performanceTargetExceeded,time>0.050)
+                XCTAssertFalse(prepared.geometry.budgetExceeded)
+                XCTAssertTrue(prepared.presentation.accepted)
+                XCTAssertEqual(prepared.presentation.visibleBoundaryIndices,[0,1])
+                // The exact formerly trapping diagnostic lookup must also remain safe.
+                XCTAssertEqual(prepared.presentation.visibleBoundaryIndices.map { prepared.geometry.boundaries[$0].points }.count,2)
+                XCTAssertEqual(session.overlay()?.boundaries.count,2)
+            }
+            crossingAt=nil
+            let recovered=prepare(13)
+            XCTAssertEqual(recovered.presentation.visibleBoundaryIndices.count,2)
+            XCTAssertFalse(recovered.performanceTargetExceeded)
+        }
+    }
+
+    func testRealOperationExhaustionStillRejectsGeometryAndPresentationTogether() {
+        for preview in [false,true] {
+            let session=RoadPathSession(previewMode:preview,maximumGeometryOperations:100,nowUptime:{1.060})
+            let prepared=session.prepare(frame:paintedFrame(10,sourceTime:100),frameId:"operation-limit",scope:scope)
+            XCTAssertTrue(prepared.geometry.budgetExceeded)
+            XCTAssertTrue(prepared.geometry.boundaries.isEmpty)
+            XCTAssertFalse(prepared.presentation.accepted)
+            XCTAssertTrue(prepared.presentation.visibleBoundaryIndices.isEmpty)
+            XCTAssertEqual(prepared.presentation.reason,"geometry_budget")
+            XCTAssertEqual(prepared.presentation.rawCount,0)
+            XCTAssertNil(session.overlay())
+        }
+    }
+
+    func testIndependentPreviewDoesNotInheritSignAssociationDeadline() {
+        let session=RoadPathSession(previewMode:true,nowUptime:{1.250})
+        for i in 0...10 { _ = session.prepare(frame:paintedFrame(10+Double(i)*0.1,sourceTime:100+Double(i)*0.1),frameId:"slow-preview-\(i)",scope:scope) }
+        XCTAssertEqual(session.overlay()?.boundaries.count,2)
     }
     func testDualProviderDuplicateAndOlderFixesPreserveThreeObservationTriangulation() throws {
         let session = RoadPathSession(nowUptime: { 1.001 })

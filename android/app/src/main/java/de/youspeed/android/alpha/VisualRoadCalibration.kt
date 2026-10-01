@@ -79,3 +79,73 @@ fun VisualRoadCalibration.adjust(step: VisualRoadCalibrationStep, dx: Int, dy: I
         VisualRoadCalibrationStep.RIGHT_TOP -> copy(rightTopX = (rightTopX + dx * amount).coerceIn(0.0, 1.0))
     }
 }
+
+/** Preview-only guide trust, verified using fresh paint on independent broad audit frames. */
+data class RoadVisualGuideTrustSnapshot(val state: String, val reason: String, val independentAudit: Boolean,
+    val matchedSides: Int, val agreementCount: Int, val leftResidual: Double?, val rightResidual: Double?) {
+    val diagnosticJson get() = buildJsonObject {
+        put("state",state); put("reason",reason); put("independentAudit",independentAudit)
+        put("matchedSides",matchedSides); put("agreementCount",agreementCount)
+        leftResidual?.let { put("leftResidual",it) }; rightResidual?.let { put("rightResidual",it) }
+    }
+}
+data class RoadVisualGuidePlan(val independentAudit: Boolean, val trusted: Boolean, val reason: String)
+class RoadVisualGuideValidator {
+    private var key: String? = null
+    private var count=0; private var agreements=0
+    private var firstAgreement: Double?=null; private var lastAgreement: Double?=null
+    private var trusted=false
+    private var reason="awaiting_independent_paint"
+    var snapshot=RoadVisualGuideTrustSnapshot("unavailable","no_saved_guides",true,0,0,null,null)
+        private set
+    fun begin(saved: VisualRoadCalibration?, compatible: VisualRoadCalibration?, time: Double, key: String): RoadVisualGuidePlan {
+        if(this.key != key) { this.key=key; count=0; agreements=0; firstAgreement=null; lastAgreement=null; trusted=false; reason="awaiting_independent_paint" }
+        count++
+        if(compatible == null) {
+            trusted=false; agreements=0; firstAgreement=null; lastAgreement=null
+            reason=if(saved == null) "no_saved_guides" else "incompatible_geometry"
+        } else if(lastAgreement?.let { time-it > 1.0 } == true) {
+            trusted=false; agreements=0; firstAgreement=null; reason="independent_evidence_expired"
+        }
+        // Weak guides never affect horizon/projection/ego centre. Broad audits avoid self-confirmation.
+        val audit=saved != null && (compatible == null || if(trusted) count%5 == 0 else count%2 == 1)
+        return RoadVisualGuidePlan(audit,trusted,reason)
+    }
+    fun observe(boundaries: List<RoadBoundaryEvidence>, visual: VisualRoadCalibration?, time: Double,
+        plan: RoadVisualGuidePlan): RoadVisualGuideTrustSnapshot {
+        val residuals=arrayOfNulls<Double>(2)
+        var matched=0
+        if(plan.independentAudit && visual != null) {
+            val candidates=boundaries.filter { it.provenance == RoadBoundaryProvenance.FRESH && it.cue == RoadBoundaryCue.PAINT &&
+                it.confidence >= .6 && it.points.size >= 2 && it.points.last().y-it.points.first().y >= .12 }
+            for(side in 0..1) {
+                val observed=candidates.filter { if(side == 0) it.points.last().x < .5 else it.points.last().x > .5 }
+                    .minByOrNull { abs(it.points.last().x-.5) } ?: continue
+                val guide=listOf(LanePoint(if(side == 0) visual.leftTopX else visual.rightTopX,visual.horizonY),
+                    if(side == 0) visual.leftBottom else visual.rightBottom)
+                val low=maxOf(observed.points.first().y,guide[0].y); val high=minOf(observed.points.last().y,guide[1].y)
+                if(high-low < .10) continue
+                val errors=(0..2).map { i ->
+                    val y=low+(high-low)*i/2
+                    abs(roadBoundaryXAt(observed.points,y)-roadBoundaryXAt(guide,y))
+                }.sorted()
+                residuals[side]=errors[1]
+                if(errors[1] <= .055 && errors[2] <= .085) matched++
+            }
+            if(residuals.filterNotNull().any { it > .10 }) {
+                trusted=false; agreements=0; firstAgreement=null; lastAgreement=null; reason="observed_border_conflict"
+            } else if(matched == 2) {
+                if(firstAgreement == null) firstAgreement=time
+                agreements++; lastAgreement=time
+                trusted=agreements >= 3 && time-(firstAgreement ?: time) >= .2
+                reason=if(trusted) "independent_paint_agreement" else "confirming_independent_paint"
+            } else {
+                agreements=0; firstAgreement=null
+                if(!trusted) reason="insufficient_independent_paint"
+            }
+        }
+        snapshot=RoadVisualGuideTrustSnapshot(if(visual == null) "unavailable" else if(trusted) "trusted" else "weak",reason,
+            plan.independentAudit,matched,agreements,residuals[0],residuals[1])
+        return snapshot
+    }
+}

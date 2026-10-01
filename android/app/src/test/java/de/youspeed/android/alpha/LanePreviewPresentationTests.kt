@@ -55,4 +55,15 @@ class LanePreviewPresentationTests {
         assertEquals(688.0,projected.x,1e-9)
         assertEquals(480.0,projected.y,1e-9)
     }
+    @Test fun referenceWaitsAfterObservedLossAndResetsWithCameraScope() {
+        val h=LaneReferenceHysteresis()
+        val reference=LanePreviewPresentationDecision(LanePreviewPresentationMode.CALIBRATION_REFERENCE,"fixture",emptyList())
+        val observed=LanePreviewPresentationDecision(LanePreviewPresentationMode.OBSERVED,"fixture",emptyList())
+        assertEquals(LanePreviewPresentationMode.HIDDEN,h.apply(reference,"a",10.0).mode)
+        assertEquals(LanePreviewPresentationMode.CALIBRATION_REFERENCE,h.apply(reference,"a",11.1).mode)
+        assertEquals(LanePreviewPresentationMode.OBSERVED,h.apply(observed,"a",11.2).mode)
+        assertEquals(LanePreviewPresentationMode.HIDDEN,h.apply(reference,"a",12.9).mode)
+        assertEquals(LanePreviewPresentationMode.CALIBRATION_REFERENCE,h.apply(reference,"a",13.3).mode)
+        assertEquals(LanePreviewPresentationMode.HIDDEN,h.apply(reference,"b",13.4).mode)
+    }
 }

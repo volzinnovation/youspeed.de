@@ -102,3 +102,89 @@ final class VisualRoadCalibrationStore: @unchecked Sendable {
         defaults.set(data, forKey: Self.defaultsKey); value = calibration; return true
     }
 }
+
+/// Preview-only trust in saved image guides. Verification uses fresh paint found on
+/// broad audit frames, never geometry predicted or selected using the saved guides.
+struct RoadVisualGuideTrustSnapshot {
+    let state, reason: String
+    let independentAudit: Bool
+    let matchedSides: Int
+    let agreementCount: Int
+    let leftResidual, rightResidual: Double?
+    var diagnosticFields: [String: Any] {
+        var fields: [String: Any] = ["state":state,"reason":reason,"independentAudit":independentAudit,
+            "matchedSides":matchedSides,"agreementCount":agreementCount]
+        if let leftResidual { fields["leftResidual"] = leftResidual }
+        if let rightResidual { fields["rightResidual"] = rightResidual }
+        return fields
+    }
+}
+struct RoadVisualGuidePlan {
+    let independentAudit: Bool
+    let trusted: Bool
+    let reason: String
+}
+final class RoadVisualGuideValidator {
+    private var key: String?
+    private var count = 0, agreements = 0
+    private var firstAgreement: Double?, lastAgreement: Double?
+    private var trusted = false
+    private var reason = "awaiting_independent_paint"
+    private(set) var snapshot = RoadVisualGuideTrustSnapshot(state:"unavailable",reason:"no_saved_guides",
+        independentAudit:true,matchedSides:0,agreementCount:0,leftResidual:nil,rightResidual:nil)
+
+    func begin(saved: VisualRoadCalibration?, compatible: VisualRoadCalibration?, time: Double, key: String) -> RoadVisualGuidePlan {
+        if self.key != key { self.key=key; count=0; agreements=0; firstAgreement=nil; lastAgreement=nil; trusted=false; reason="awaiting_independent_paint" }
+        count += 1
+        if compatible == nil {
+            trusted=false; agreements=0; firstAgreement=nil; lastAgreement=nil
+            reason=saved == nil ? "no_saved_guides" : "incompatible_geometry"
+        } else if let lastAgreement, time-lastAgreement > 1.0 {
+            trusted=false; agreements=0; firstAgreement=nil; reason="independent_evidence_expired"
+        }
+        // A weak prior never changes the horizon, projection or ego-centre. Every
+        // other exposure ignores it entirely; trusted guides are re-audited at 2 Hz.
+        let audit = saved != nil && (compatible == nil || (trusted ? count % 5 == 0 : count % 2 == 1))
+        return RoadVisualGuidePlan(independentAudit:audit,trusted:trusted,reason:reason)
+    }
+
+    func observe(_ boundaries: [RoadBoundaryEvidence], visual: VisualRoadCalibration?, time: Double,
+                 plan: RoadVisualGuidePlan) -> RoadVisualGuideTrustSnapshot {
+        var residuals: [Double?] = [nil,nil]
+        var matched = 0
+        if plan.independentAudit, let visual {
+            // Choose the nearest observed border on each side of the image centre,
+            // independently of the saved lane centre. Require substantial fresh paint.
+            let candidates = boundaries.filter { $0.provenance == .fresh && $0.cue == .paint && $0.confidence >= 0.6 &&
+                $0.points.count >= 2 && ($0.points.last!.y-$0.points.first!.y) >= 0.12 }
+            for side in 0..<2 {
+                let signed = candidates.filter { side == 0 ? $0.points.last!.x < 0.5 : $0.points.last!.x > 0.5 }
+                guard let observed = signed.min(by: { abs($0.points.last!.x-0.5) < abs($1.points.last!.x-0.5) }) else { continue }
+                let guide = [LanePoint(x:side == 0 ? visual.leftTopX : visual.rightTopX,y:visual.horizonY), side == 0 ? visual.leftBottom : visual.rightBottom]
+                let low=max(observed.points.first!.y,guide[0].y), high=min(observed.points.last!.y,guide[1].y)
+                guard high-low >= 0.10 else { continue }
+                let errors = (0...2).map { i -> Double in
+                    let y=low+(high-low)*Double(i)/2
+                    return abs(roadBoundaryXAt(observed.points,y)-roadBoundaryXAt(guide,y))
+                }.sorted()
+                residuals[side]=errors[1]
+                if errors[1] <= 0.055 && errors[2] <= 0.085 { matched += 1 }
+            }
+            if residuals.compactMap({$0}).contains(where:{$0 > 0.10}) {
+                trusted=false; agreements=0; firstAgreement=nil; lastAgreement=nil; reason="observed_border_conflict"
+            } else if matched == 2 {
+                if firstAgreement == nil { firstAgreement=time }
+                agreements += 1; lastAgreement=time
+                trusted=agreements >= 3 && time-(firstAgreement ?? time) >= 0.2
+                reason=trusted ? "independent_paint_agreement" : "confirming_independent_paint"
+            } else {
+                agreements=0; firstAgreement=nil
+                if !trusted { reason="insufficient_independent_paint" }
+            }
+        }
+        snapshot=RoadVisualGuideTrustSnapshot(state:visual == nil ? "unavailable" : trusted ? "trusted" : "weak",
+            reason:reason,independentAudit:plan.independentAudit,matchedSides:matched,agreementCount:agreements,
+            leftResidual:residuals[0],rightResidual:residuals[1])
+        return snapshot
+    }
+}

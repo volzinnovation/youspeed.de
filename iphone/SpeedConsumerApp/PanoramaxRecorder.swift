@@ -459,6 +459,30 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     private var interactionFinalization: ((Result<Void, Error>) -> Void)?
     private var interactionFinalizationTimeout: Task<Void, Never>?
 
+#if DEBUG
+    private var testDashcamOutputDirectory: URL?
+    // Keep the exemption on the exact created URL, including late callbacks after
+    // the test clears its destination. Normal recordings never enter this set.
+    private var isolatedTestDashcamURLs = Set<URL>()
+
+    func setTestDashcamOutputDirectory(_ directory: URL?) throws {
+        guard let directory else { testDashcamOutputDirectory = nil; return }
+        guard !needsDashcamFinalization, state != .preparing, state != .recording, state != .stopping,
+              let runID = ProcessInfo.processInfo.environment["LANE_FULL_WORKLOAD_RUN_ID"],
+              runID.range(of: "^[A-Za-z0-9_-]+$", options: .regularExpression) != nil else {
+            throw NSError(domain: "LaneFullWorkloadMovieDestinationBusyOrUnauthorized", code: 1)
+        }
+        let root = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("LaneFullWorkload", isDirectory: true).resolvingSymlinksInPath().standardizedFileURL
+        let target = directory.resolvingSymlinksInPath().standardizedFileURL
+        guard target.deletingLastPathComponent() == root, target.lastPathComponent == runID,
+              (try? target.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else {
+            throw NSError(domain: "LaneFullWorkloadMovieDestinationInvalid", code: 1)
+        }
+        testDashcamOutputDirectory = target
+    }
+#endif
+
     var needsDashcamFinalization: Bool {
         activeDashcamEnabled || dashcamTransitionInFlight || activeDashcamRecordingURL != nil
     }
@@ -701,7 +725,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                     guard generation == requestedGeneration, state == .preparing else { return }
                 }
                 if activeDashcamEnabled {
-                    dashcamFileURL = try Self.makeDashcamFileURL(captureSessionID: captureSessionID)
+                    dashcamFileURL = try makeDashcamFileURL(captureSessionID: captureSessionID)
                 }
                 guard activeDashcamEnabled || activeTSREnabled || activePanoramaxEnabled || (calibrationPreviewEnabled && videoOutputAvailable) else {
                     throw RecorderError.noEnabledModuleAvailable
@@ -775,7 +799,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 return false
             }
             do {
-                let fileURL = try Self.makeDashcamFileURL(captureSessionID: captureSessionID)
+                let fileURL = try makeDashcamFileURL(captureSessionID: captureSessionID)
                 let token = UUID()
                 dashcamFileURL = fileURL
                 let movieAngle = screenOrientation.captureRotationAngle
@@ -1490,7 +1514,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         guard dashcamFileURL?.standardizedFileURL == url.standardizedFileURL else {
             if successful {
                 Self.protectRecordedFile(at: url)
-                Self.enforceDashcamStorageLimit(retaining: url)
+                enforceDashcamStorageLimitUnlessIsolatedTest(retaining: url)
             } else {
                 try? FileManager.default.removeItem(at: url)
             }
@@ -1503,7 +1527,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         if successful {
             dashcamFileURL = url
             Self.protectRecordedFile(at: url)
-            Self.enforceDashcamStorageLimit(retaining: url)
+            enforceDashcamStorageLimitUnlessIsolatedTest(retaining: url)
         } else {
             try? FileManager.default.removeItem(at: url)
             dashcamFileURL = nil
@@ -1627,10 +1651,23 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
     }
 
-    private static func makeDashcamFileURL(captureSessionID: String) throws -> URL {
-        try dashcamDirectory().appendingPathComponent(
-            "drive-\(captureSessionID)-\(UUID().uuidString).mov"
-        )
+    private func makeDashcamFileURL(captureSessionID: String) throws -> URL {
+        let filename = "drive-\(captureSessionID)-\(UUID().uuidString).mov"
+#if DEBUG
+        if let directory = testDashcamOutputDirectory {
+            let url = directory.appendingPathComponent(filename).standardizedFileURL
+            isolatedTestDashcamURLs.insert(url)
+            return url
+        }
+#endif
+        return try Self.dashcamDirectory().appendingPathComponent(filename)
+    }
+
+    private func enforceDashcamStorageLimitUnlessIsolatedTest(retaining url: URL) {
+#if DEBUG
+        if isolatedTestDashcamURLs.contains(url.standardizedFileURL) { return }
+#endif
+        Self.enforceDashcamStorageLimit(retaining: url)
     }
 
     static func listDashcamRecordings() -> [DashcamRecording] {
@@ -1860,10 +1897,23 @@ struct DriveCameraPreview: UIViewRepresentable {
         private var lanesEnabled = false
         private var legacyLanesAllowed = false
         private var previewVisible = false
+        #if DEBUG
+        var testIsLanePreviewVisible: Bool { lanesEnabled && testIsCameraPreviewVisible }
+        var testIsCameraPreviewVisible: Bool {
+            guard previewVisible,let window,!bounds.isEmpty else { return false }
+            var ancestor: UIView? = self
+            while let view=ancestor {
+                if view.isHidden || view.alpha<=0.01 || view.layer.opacity<=0.01 { return false }
+                ancestor=view.superview
+            }
+            return window.bounds.intersects(convert(bounds,to:window))
+        }
+        #endif
         private let laneOutline = CAShapeLayer()
         private let laneLines = CAShapeLayer()
         private let laneFill = CAShapeLayer()
         private let calibrationReferenceLines = CAShapeLayer()
+        private let referenceHysteresis = LaneReferenceHysteresis()
         private let laneStatus = UILabel()
         private var laneTimer: Timer?
         private let legacyPresentationGate = RoadBoundaryPresentationGate()
@@ -1886,6 +1936,7 @@ struct DriveCameraPreview: UIViewRepresentable {
             calibrationReferenceLines.fillColor = UIColor.clear.cgColor
             calibrationReferenceLines.strokeColor = LanePreviewStyle.color.cgColor
             calibrationReferenceLines.lineWidth = LanePreviewStyle.strokeWidth
+            calibrationReferenceLines.lineDashPattern = [14,10]
             calibrationReferenceLines.lineDashPattern = [14, 10]
             calibrationReferenceLines.lineCap = .round
             calibrationReferenceLines.opacity = 0.28
@@ -2022,10 +2073,12 @@ struct DriveCameraPreview: UIViewRepresentable {
                 legacyBoundaries = matureLegacyBoundaries(legacyFrame, source: source, calibrationRevision: compatibleProfile?.revision)
             } else { legacyBoundaries = [] }
             let count = validPath?.boundaries.isEmpty == false ? validPath!.boundaries.count : legacyBoundaries.count
-            let decision = LanePreviewPresentationPolicy.decide(enabled: lanesEnabled, visible: visible,
+            let rawDecision = LanePreviewPresentationPolicy.decide(enabled: lanesEnabled, visible: visible,
                 active: active, thermalPaused: thermalPaused, previewRotation: rotation, source: source,
                 calibration: profile, matureBoundaryCount: count, contextAvailable: contextAvailableProvider?() ?? false,
                 staleObservedBoundary: pathAge.map { $0 >= 0.75 || $0 < 0 } ?? false, nowUptime: now)
+            let decision = referenceHysteresis.apply(rawDecision,
+                scope:"\(source?.geometryKey ?? "none"):\(profile?.revision ?? "none")", now:ProcessInfo.processInfo.systemUptime)
             onLanePresentation?(LanePreviewPresentationDiagnostic(decision: decision, source: source,
                 calibration: profile, matureBoundaryCount: count))
             switch decision.mode {
@@ -2051,8 +2104,12 @@ struct DriveCameraPreview: UIViewRepresentable {
                 let lines = UIBezierPath()
                 if let path = validPath, !path.boundaries.isEmpty {
                     for boundary in path.boundaries {
-                        appendSmoothBoundary(boundary.points, to: lines) { p in
-                            videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: LaneOverlayPolicy.capturePoint(p, rotation: path.rotationDegrees))
+                        // Paint support is separate from the fitted model: never bridge a dashed gap.
+                        let segments = boundary.observedSegments.isEmpty ? [boundary.points] : boundary.observedSegments
+                        for segment in segments where segment.count >= 2 {
+                            appendSmoothBoundary(segment, to: lines) { p in
+                                videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: LaneOverlayPolicy.capturePoint(p, rotation: path.rotationDegrees))
+                            }
                         }
                     }
                     let age = max(0, utc - path.capturedAtSeconds)

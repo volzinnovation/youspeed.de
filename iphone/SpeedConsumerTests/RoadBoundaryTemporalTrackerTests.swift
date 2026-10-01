@@ -2,6 +2,53 @@ import XCTest
 @testable import SpeedConsumer
 
 final class RoadBoundaryTemporalTrackerTests: XCTestCase {
+
+    func testFragmentTrackingUsesPaintIntervalsAndKeepsFreshPaintSeparateFromModel() throws {
+        let tracker=RoadBoundaryTemporalTracker()
+        func image(_ dx:Int=0,_ dy:Int=0) -> [UInt8] {
+            var pixels=scene(dx,dy)
+            for y in 0..<height where !(55...65).contains(y-dy) && !(85...100).contains(y-dy) {
+                for x in 0..<width { pixels[y*width+x]=50 }
+            }
+            return pixels
+        }
+        func observed(_ time:Double,_ dx:Int=0,_ dy:Int=0) -> RoadBoundaryFrame {
+            let f=fresh(time,dx,dy)
+            var b=f.boundaries[0]
+            b.observedSegments=[[55,60,65],[85,90,95,100]].map { rows in rows.map {
+                LanePoint(x:(center($0)+Double(dx))/Double(width-1),y:Double($0+dy)/Double(height-1))
+            } }
+            b.geometryConfidence=0.95; b.paintOccupancy=0.5
+            return RoadBoundaryFrame(boundaries:[b],corridors:[],timestampSeconds:time,rejectionCounts:["fragment_gap":2],detectionVariant:"fragments")
+        }
+        let seeded=tracker.complete(prediction:tracker.predict(grayscale:image(),width:width,height:height,
+            timestampSeconds:10,key:"scope",capturedAtSeconds:100,fragmentAware:true),fresh:observed(100),grayscale:image())
+        XCTAssertEqual(seeded.boundaries.first?.observedSegments.count,2)
+        XCTAssertEqual(seeded.boundaries.first?.geometryConfidence,0.95)
+        XCTAssertEqual(seeded.rejectionCounts,["fragment_gap":2]); XCTAssertEqual(seeded.detectionVariant,"fragments")
+        let moved=image(3,1)
+        let prediction=tracker.predict(grayscale:moved,width:width,height:height,timestampSeconds:10.2,key:"scope",
+            capturedAtSeconds:100.2,fragmentAware:true)
+        XCTAssertFalse(prediction.budgetExceeded)
+        let carried=try XCTUnwrap(prediction.boundaries.first)
+        XCTAssertEqual(carried.provenance,.tracked)
+        XCTAssertEqual(carried.observedSegments.count,2)
+        XCTAssertTrue(carried.observedSegments.flatMap {$0}.allSatisfy {
+            let sourceY=$0.y*Double(height-1)-1
+            return (54...66).contains(sourceY) || (84...101).contains(sourceY)
+        })
+        let current=observed(100.2,3,1)
+        let fused=tracker.complete(prediction:prediction,fresh:current,grayscale:moved)
+        XCTAssertEqual(fused.boundaries.first?.observedSegments,current.boundaries.first?.observedSegments)
+        XCTAssertEqual(fused.boundaries.first?.paintOccupancy,0.5)
+        XCTAssertEqual(fused.boundaries.first?.lastFreshTimestampSeconds,100.2)
+        let blank=[UInt8](repeating:50,count:width*height)
+        XCTAssertTrue(tracker.predict(grayscale:blank,width:width,height:height,timestampSeconds:10.4,key:"scope",
+            capturedAtSeconds:100.4,fragmentAware:true).boundaries.isEmpty)
+        XCTAssertTrue(tracker.predict(grayscale:moved,width:width,height:height,timestampSeconds:11.1,key:"scope",
+            capturedAtSeconds:101.1,fragmentAware:true).boundaries.isEmpty)
+    }
+
     func testAbsentGpsHintPreservesExactMotionEvidenceAndWork() {
         let a=RoadBoundaryTemporalTracker(), b=RoadBoundaryTemporalTracker(); seed(a); seed(b)
         let image=scene(3)
@@ -102,5 +149,15 @@ final class RoadBoundaryTemporalTrackerTests: XCTestCase {
             [LanePoint(x:0.54,y:0.42),LanePoint(x:1,y:1)]])
         let result=RoadBoundaryDetector().detect(grayscale:[UInt8](repeating:55,count:width*height),width:width,height:height,timestampSeconds:100,guidance:guidance)
         XCTAssertTrue(result.boundaries.isEmpty);XCTAssertTrue(result.corridors.isEmpty)
+    }
+    func testMotionPredictionCannotCarryWithoutCurrentImageSupport() {
+        let tracker=RoadBoundaryTemporalTracker(); seed(tracker)
+        let calibration=RoadPathCalibration(revision:"fixture",verified:true,fx:1,fy:1,cx:0.5,cy:0.5,yawDegrees:0,pitchDegrees:0,rollDegrees:0,heightMeters:1.6,lateralOffsetMeters:0)
+        let hint=RoadBoundaryMotionHint(used:false,reason:"fixture",sourceAgeSeconds:0.1,speedMetersPerSecond:5,courseAccuracyDegrees:5,pairIntervalSeconds:0.5,headingRateDegreesPerSecond:0)
+        let projection=RoadBoundaryMotionProjection.from(calibration,visual:nil,hint:hint)
+        XCTAssertNotNil(projection)
+        let predicted=tracker.predict(grayscale:[UInt8](repeating:50,count:width*height),width:width,height:height,
+            timestampSeconds:10.1,key:"scope",capturedAtSeconds:100.1,motionProjection:projection)
+        XCTAssertTrue(predicted.boundaries.isEmpty); XCTAssertFalse(predicted.budgetExceeded)
     }
 }

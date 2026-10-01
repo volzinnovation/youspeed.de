@@ -62,6 +62,10 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
 
     fun submit(frame: F): Boolean = orchestrator.submit(frame)
 
+    /** CameraX may retain only the executing input; queued proxies block lane delivery. */
+    fun submitCameraFrame(frame: F, onBackpressureDrop: (String) -> Unit): Boolean =
+        orchestrator.submit(frame, retainWhileBusy = false, onBackpressureDrop = onBackpressureDrop)
+
     override fun close() = orchestrator.close()
 }
 

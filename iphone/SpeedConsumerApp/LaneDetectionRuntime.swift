@@ -79,6 +79,35 @@ struct LaneTimingWindow {
     }
 }
 
+/// Same stage meanings/window cap as Android; stores scalar timings only.
+struct LaneCadenceWindow {
+    private struct Stage { var count=0; var last:Double?; var intervals=[Double]() }
+    private var stages:[String:Stage]=["delivery":Stage(),"admitted":Stage(),"published":Stage()]
+    mutating func record(_ name:String, now:Double) {
+        var stage=stages[name]!
+        if let last=stage.last,now>=last {
+            if stage.intervals.count==128 { stage.intervals.removeFirst() }
+            stage.intervals.append((now-last)*1000)
+        }
+        stage.count+=1; stage.last=now; stages[name]=stage
+    }
+    mutating func resetIntervals() {
+        for name in ["delivery","admitted","published"] { stages[name]?.last=nil; stages[name]?.intervals=[] }
+    }
+    var diagnosticFields:[String:Any] {
+        stages.mapValues { stage in
+            let sorted=stage.intervals.sorted()
+            var fields:[String:Any]=["count":stage.count,"intervalSamples":sorted.count]
+            if !sorted.isEmpty {
+                fields["intervalP50Ms"]=sorted[Int(ceil(Double(sorted.count-1)*0.5))]
+                fields["intervalP95Ms"]=sorted[Int(ceil(Double(sorted.count-1)*0.95))]
+                fields["intervalMaxMs"]=sorted.last!
+            }
+            return fields
+        }
+    }
+}
+
 struct LaneOverlayFrame: Sendable {
     let estimate: LaneDetectionEstimate
     let sessionID: String
@@ -118,6 +147,7 @@ final class LaneDetectionRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         let sourceWidth: Int
         let sourceHeight: Int
         let cleanAperture: CGRect
+        var roadFrame: RoadPathCameraFrame? = nil
     }
 
     private let lock = NSLock()
@@ -143,13 +173,20 @@ final class LaneDetectionRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     private var lastAdmission = -Double.infinity
     private var result: LaneOverlayFrame?
     private var metrics = LaneRuntimeMetrics()
+    private var cadence = LaneCadenceWindow()
+    private var lastCadenceReport = -Double.infinity
     private var preprocessingTimes = LaneTimingWindow()
     private var detectionTimes = LaneTimingWindow()
     private var captureToResultTimes = LaneTimingWindow()
     private var thermalObserver: NSObjectProtocol?
+    @MainActor var onPreviewDiagnostic: ((String) -> Void)?
     @MainActor var onActivityChange: ((Bool) -> Void)?
 
-    init() {
+    private let previewSession: RoadPathSession?
+    private let calibrationStore: VisualRoadCalibrationStore?
+    init(previewSession: RoadPathSession? = nil, calibrationStore: VisualRoadCalibrationStore? = nil) {
+        self.previewSession = previewSession
+        self.calibrationStore = calibrationStore
         thermalObserver = NotificationCenter.default.addObserver(forName: ProcessInfo.thermalStateDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor [weak self] in self?.refreshActivity() }
         }
@@ -197,10 +234,12 @@ final class LaneDetectionRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     }
 
     private func invalidateLocked() {
+        previewSession?.invalidateOverlay()
         generation &+= 1
         result = nil
         geometry = nil
         lastAdmission = -Double.infinity
+        cadence.resetIntervals()
         if let pending { freeBuffers.append(pending.buffer); self.pending = nil }
     }
 
@@ -218,6 +257,7 @@ final class LaneDetectionRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         let started = Self.now()
         lock.lock()
         defer { lock.unlock() }
+        cadence.record("delivery",now:started)
         guard accepting, let sessionID, let sourceClock, let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
               CVPixelBufferGetPlaneCount(pixelBuffer) >= 1 else { return }
         let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
@@ -228,8 +268,30 @@ final class LaneDetectionRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             return
         }
         if timestamp < lastAdmission { invalidateLocked() }
-        guard timestamp - lastAdmission >= LaneOverlayPolicy.sampleInterval else {
+        guard timestamp - lastAdmission >= (previewSession == nil ? LaneOverlayPolicy.sampleInterval : 0.1) else {
             metrics.cadenceSkippedFrames += 1
+            return
+        }
+        if previewSession != nil {
+            guard let capture = RoadPathCameraCapture.capture(sampleBuffer, orientation: orientation, sourceClock: sourceClock),
+                  let road = capture.frame(pixel: pixelBuffer, orientation: orientation, visualCalibration: calibrationStore?.snapshot()) else { return }
+            let key = "\(road.geometryId):\(road.visualCalibration?.revision ?? "none")"
+            if geometry != key { invalidateLocked(); geometry = key }
+            let buffer: Buffer
+            if let pending { buffer = pending.buffer; self.pending = nil; metrics.replacedFrames += 1 }
+            else if let available = freeBuffers.popLast() { buffer = available }
+            else { return }
+            buffer.bytes = road.grayscale
+            metrics.admittedFrames += 1
+            cadence.record("admitted",now:started)
+            metrics.preprocessingMilliseconds = road.preprocessingMs
+            preprocessingTimes.append(road.preprocessingMs)
+            lastAdmission = timestamp; nextFrameID &+= 1
+            pending = Frame(buffer: buffer, width: road.width, height: road.height, timestamp: timestamp,
+                sessionID: sessionID, generation: generation, id: nextFrameID, rotation: road.rotationDegrees,
+                sourceWidth: road.rawWidth, sourceHeight: road.rawHeight,
+                cleanAperture: CGRect(x:0,y:0,width:road.rawWidth,height:road.rawHeight), roadFrame: road)
+            if !workerScheduled { workerScheduled = true; queue.async { [weak self] in self?.processFrames() } }
             return
         }
         let sourceWidth = CVPixelBufferGetWidthOfPlane(pixelBuffer, 0)
@@ -260,6 +322,7 @@ final class LaneDetectionRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         Self.copyLuma(base: base.assumingMemoryBound(to: UInt8.self), rowStride: CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0),
             aperture: aperture, rotation: rotation, width: width, height: height, destination: &buffer.bytes)
         metrics.admittedFrames += 1
+        cadence.record("admitted",now:started)
         metrics.preprocessingMilliseconds = (Self.now() - started) * 1_000
         preprocessingTimes.append(metrics.preprocessingMilliseconds)
         lastAdmission = timestamp
@@ -295,6 +358,69 @@ final class LaneDetectionRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             lock.unlock()
             if trackerGeneration != frame.generation { tracker.reset(); trackerGeneration = frame.generation }
             let started = Self.now()
+            if let previewSession, let road = frame.roadFrame {
+                let scope = TSRApplicabilityScope(sessionId:frame.sessionID,bundleId:"camera",cameraGeometryId:road.geometryId,
+                    generation:frame.generation,contextGeneration:frame.generation,traversalEpoch:frame.generation)
+                let prepared = previewSession.prepare(frame:road,frameId:"lane-\(frame.id)",scope:scope, shouldPublish: { [self] in
+                    lock.lock(); defer { lock.unlock() }
+                    return accepting && generation == frame.generation && sessionID == frame.sessionID
+                })
+                let finished = Self.now()
+                lock.lock()
+                metrics.processedFrames += 1
+                metrics.detectionMilliseconds = (finished-started)*1000
+                metrics.captureToResultMilliseconds = (finished-frame.timestamp)*1000
+                detectionTimes.append(metrics.detectionMilliseconds)
+                captureToResultTimes.append(metrics.captureToResultMilliseconds)
+                metrics.preprocessing = preprocessingTimes.summary
+                metrics.detection = detectionTimes.summary
+                metrics.captureToResult = captureToResultTimes.summary
+                if accepting && generation == frame.generation && sessionID == frame.sessionID {
+                    cadence.record("published",now:finished)
+                }
+                let cadenceFields:[String:Any]?
+                if finished-lastCadenceReport>=5 {
+                    lastCadenceReport=finished
+                    cadenceFields=cadence.diagnosticFields.merging([
+                        "throttled":metrics.cadenceSkippedFrames,"replaced":metrics.replacedFrames,
+                        "timestampRejected":metrics.timestampRejectedFrames,"processed":metrics.processedFrames,
+                        "admissionIntervalMs":100],uniquingKeysWith:{ _,new in new })
+                } else { cadenceFields=nil }
+                freeBuffers.append(frame.buffer)
+                lock.unlock()
+                Self.logger.info("lane_preview_frame id=\(frame.id) source=\(road.sourceTimestampSeconds ?? 0) preparation_ms=\(prepared.preparationMs) budget=\(prepared.geometry.budgetExceeded) visible=\(prepared.presentation.visibleBoundaryIndices.count)")
+                let selected = prepared.presentation.selectedBoundaries(from:prepared.geometry.boundaries)
+                let invalidIndices = prepared.presentation.visibleBoundaryIndices.filter { !prepared.geometry.boundaries.indices.contains($0) }.count
+                let diagnosticPresentation = invalidIndices == 0 ? prepared.presentation :
+                    RoadBoundaryPresentationSnapshot.rejected("geometry_selection_mismatch",rawCount:prepared.geometry.boundaries.count)
+                var fields: [String:Any] = ["frameId":"lane-\(frame.id)","sourceTimestampSeconds":road.sourceTimestampSeconds as Any? ?? NSNull(),
+                    "capturedAtSeconds":road.capturedAtSeconds,"preparationMs":prepared.preparationMs,
+                    "preparationTargetMs":50,"preparationTargetExceeded":prepared.performanceTargetExceeded,
+                    "invalidVisibleBoundaryIndexCount":invalidIndices,
+                    "lumaSamplingMs":road.preprocessingMs,"filterMs":prepared.filterMs,"geometryMs":prepared.geometryMs,
+                    "queueWaitMs":max(0,(started-road.startedAt)*1000-road.preprocessingMs),
+                    "thermalState":ProcessInfo.processInfo.thermalState.rawValue,
+                    "buildNumber":Bundle.main.object(forInfoDictionaryKey:"CFBundleVersion") as? String ?? "unknown",
+                    "geometryBudgetExceeded":prepared.geometry.budgetExceeded,"sourceWidth":road.rawWidth,"sourceHeight":road.rawHeight,
+                    "rotationDegrees":road.rotationDegrees,"visualCalibrationRevision":road.visualCalibration?.revision as Any? ?? NSNull(),
+                    "motionProjectionEligible":prepared.diagnostics.motionProjectionEligible,
+                    "motionHint":prepared.motionHint.diagnosticFields,"presentation":diagnosticPresentation.diagnosticFields,
+                    "lanePreparationDiagnostics":prepared.diagnostics.diagnosticFields,
+                    "paintedSegments":selected.map { boundary in
+                        (boundary.observedSegments.isEmpty ? [boundary.points] : boundary.observedSegments).map { $0.map { [$0.x,$0.y] } }
+                    },
+                    "visibleIds":selected.isEmpty ? [] : prepared.presentation.visibleBoundaryIndices.map { index in
+                        prepared.presentation.items.first { $0.boundaryIndex == index }?.trackId as Any? ?? NSNull()
+                    },
+                    "boundaryProvenance":selected.map { $0.provenance.rawValue },
+                    "boundaryEvidenceAgeSeconds":selected.map { $0.evidenceAgeSeconds },
+                    "boundaries":selected.map { $0.points.map { [$0.x,$0.y] } }]
+                if let cadenceFields { fields["laneCadence"]=cadenceFields }
+                if let data=try? JSONSerialization.data(withJSONObject:fields,options:[.sortedKeys]),let text=String(data:data,encoding:.utf8) {
+                    Task { @MainActor [weak self] in self?.onPreviewDiagnostic?(text) }
+                }
+                continue
+            }
             let estimate = tracker.update(detector.detect(grayscale: frame.buffer.bytes, width: frame.width, height: frame.height, timestampSeconds: frame.timestamp))
             let finished = Self.now()
             lock.lock()
@@ -305,6 +431,7 @@ final class LaneDetectionRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             captureToResultTimes.append(metrics.captureToResultMilliseconds)
             if accepting && generation == frame.generation && sessionID == frame.sessionID
                 && LaneOverlayPolicy.opacity(capturedAt: frame.timestamp, now: finished) > 0 {
+                cadence.record("published",now:finished)
                 result = LaneOverlayFrame(estimate: estimate, sessionID: frame.sessionID, generation: frame.generation,
                     frameID: frame.id, rotation: frame.rotation, sourceWidth: frame.sourceWidth,
                     sourceHeight: frame.sourceHeight, cleanAperture: frame.cleanAperture)

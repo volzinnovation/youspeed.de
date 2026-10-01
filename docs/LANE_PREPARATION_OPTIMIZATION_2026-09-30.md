@@ -1,14 +1,18 @@
 # Lane preparation optimization — 2026-09-30
 
 The sampling and filtering optimizations are implemented for Android and iPhone
-in the working tree. They preserve the tested lane outputs and reduce preparation
-cost in a paired Moto benchmark. **They have not been installed in either app.**
+in both clients. They preserve the tested lane outputs and reduce preparation
+cost in a paired Moto benchmark. They were not installed during this benchmark;
+the owner subsequently requested and received Android build **10022**, commit
+`a0df46d`. The [new drive review](LANE_BUILD10022_DRIVE_REVIEW_2026-09-30.md)
+records the live follow-up and remaining lane instability.
 A separate whole-track paint-verification experiment regressed accuracy and remains
 offline only.
 
 This follows the [lighting evaluation](LANE_LIGHTING_EVALUATION_2026-09-30.md).
-The historical 3.39% preparation-failure rate has **not** been remeasured with the
-optimized live app; the component benchmark cannot establish its new value.
+The component benchmark cannot establish a new live failure rate. The subsequent
+build 10022 recording had 124/2,909 measured frames (4.26%) fail the geometry budget;
+different driving conditions prevent a paired comparison with the historical 3.39%.
 
 ## Retained implementation
 
@@ -140,7 +144,9 @@ The next release/device-installation step needs a paired **full-app** test with
 actual live 4:3 inputs, TSR enabled, movie start/stop, cold starts and a longer
 thermal run. Measure preparation deadline failures and reacquisition, not just
 median component time. The iPhone needs to be connected for equivalent device
-measurements. No installation, publishing, merge or branch deletion occurred.
+measurements. No installation occurred during this benchmark; the later authorized
+Android installation and drive are documented in the linked follow-up. No publishing,
+merge or branch deletion occurred as part of the benchmark.
 
 Further accuracy work should investigate candidate correspondence/grouping or an
 independent learned paint mask. This experiment does not support using the current

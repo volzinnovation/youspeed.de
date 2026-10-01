@@ -57,6 +57,10 @@ struct RoadBoundaryEvidence: Equatable, Sendable {
     var lastFreshTimestampSeconds: Double? = nil
     var evidenceAgeSeconds: Double = 0
     var trackedAnchorCount: Int = 0
+    /// Current exposure's contiguous paint support. Empty retains the legacy full-points contract.
+    var observedSegments: [[LanePoint]] = []
+    var geometryConfidence: Double? = nil
+    var paintOccupancy: Double? = nil
 }
 /// Unassigned hypotheses: a calibrated trajectory must identify the ego path.
 struct RoadCorridorHypothesis: Equatable, Sendable {
@@ -72,6 +76,13 @@ struct RoadBoundaryFrame: Equatable, Sendable {
     var operationCount = 0
     var temporalOperationCount = 0
     var temporalResetReason: String? = nil
+    var rejectionCounts: [String: Int] = [:]
+    var detectionVariant: String = "baseline"
+}
+struct RoadBoundaryDetectionOptions: Equatable, Sendable {
+    var useSearchBands = false
+    var groupFragments = false
+    var identifier: String { useSearchBands ? (groupFragments ? "bands_fragments" : "bands") : (groupFragments ? "fragments" : "baseline") }
 }
 struct RoadBoundarySearchGuidance {
     var horizonY: Double? = nil
@@ -112,6 +123,7 @@ struct RoadBoundaryDetector {
         let strength: Double
         let cue: RoadBoundaryCue
         let row: Int
+        let stripeWidth: Int
     }
     private final class Track {
         var samples: [Sample]
@@ -135,9 +147,12 @@ struct RoadBoundaryDetector {
 
     func detect(grayscale: [UInt8], width: Int, height: Int, timestampSeconds: Double,
                 maximumOperations: Int = 250_000, guidance: RoadBoundarySearchGuidance? = nil,
+                options: RoadBoundaryDetectionOptions = RoadBoundaryDetectionOptions(),
                 shouldContinue: () -> Bool = { true }) -> RoadBoundaryFrame {
         let maximum = max(0, maximumOperations)
         var used = 0
+        var rejections: [String: Int] = [:]
+        func reject(_ reason: String, _ count: Int = 1) { if count > 0 { rejections[reason, default: 0] += count } }
         func check(_ cost: Int = 1) -> Bool {
             guard cost <= maximum - used else { return false }
             used += cost
@@ -145,7 +160,7 @@ struct RoadBoundaryDetector {
         }
         func empty(_ exceeded: Bool = false) -> RoadBoundaryFrame {
             RoadBoundaryFrame(boundaries: [], corridors: [], timestampSeconds: timestampSeconds,
-                              budgetExceeded: exceeded, operationCount: used)
+                              budgetExceeded: exceeded, operationCount: used, rejectionCounts: rejections, detectionVariant: options.identifier)
         }
         guard (64...384).contains(width), (64...216).contains(height),
               grayscale.count == width * height, timestampSeconds.isFinite else { return empty() }
@@ -208,18 +223,52 @@ struct RoadBoundaryDetector {
                     }
                 }
                 if winner {
+                    var stripeWidth = 1
+                    if options.groupFragments && paints[x] {
+                        guard check(26) else { return empty(true) }
+                        var left = x, right = x
+                        while left > margin && paints[left-1] && x-left < 12 { left -= 1 }
+                        while right < width-margin-1 && paints[right+1] && right-x < 12 { right += 1 }
+                        stripeWidth = right-left+1
+                    }
                     candidates.append(Sample(point: LanePoint(x: Double(x) / Double(width - 1), y: normalizedY),
-                                             strength: strengths[x], cue: paints[x] ? .paint : .edge, row: row))
+                                             strength: strengths[x], cue: paints[x] ? .paint : .edge, row: row, stripeWidth: stripeWidth))
                 }
             }
             func rank(_ sample: Sample) -> Double {
                 let distance = guides.map { abs(sample.point.x-roadBoundaryXAt($0,sample.point.y)) }.min() ?? 1
                 return sample.strength*(1+0.15*max(0,min(1,1-distance/0.08)))
             }
-            let rowCandidates = Array(candidates.sorted {
+            let ranked = candidates.sorted {
                 let a = rank($0), b = rank($1)
                 return a == b ? $0.point.x < $1.point.x : a > b
-            }.prefix(12))
+            }
+            var rowCandidates = Array(ranked.prefix(12))
+            if options.useSearchBands {
+                guard check(candidates.count*3+24) else { return empty(true) }
+                // Reserve equal capacity around two curved hypotheses, then fill from the full
+                // image. This never crops a stripe away or manufactures paint from calibration.
+                let t = max(0,min(1,(normalizedY-topY)/max(0.01,0.94-topY)))
+                let ordered = guides.sorted { roadBoundaryXAt($0,0.94) < roadBoundaryXAt($1,0.94) }
+                let centers = ordered.count >= 2 ? [roadBoundaryXAt(ordered[0],normalizedY),roadBoundaryXAt(ordered[ordered.count-1],normalizedY)] : [0.5-0.07-0.29*t,0.5+0.07+0.29*t]
+                let halfWidth = 0.045+0.105*t
+                var selected = Set<Int>()
+                var indices: [Int] = []
+                for center in centers {
+                    var reserved = 0
+                    for index in ranked.indices where reserved < 4 {
+                        if abs(ranked[index].point.x-center) <= halfWidth && !selected.contains(index) {
+                            selected.insert(index); indices.append(index); reserved += 1
+                        }
+                    }
+                }
+                for index in ranked.indices where indices.count < 12 {
+                    if selected.insert(index).inserted { indices.append(index) }
+                }
+                rowCandidates = indices.sorted().map { ranked[$0] }
+                reject("outside_bands_retained",rowCandidates.filter { sample in centers.allSatisfy { abs(sample.point.x-$0)>halfWidth } }.count)
+            }
+            reject("candidate_capacity",candidates.count-rowCandidates.count)
             completed.append(contentsOf: active.filter { row - $0.samples[$0.samples.count - 1].row > 4 })
             active.removeAll { row - $0.samples[$0.samples.count - 1].row > 4 }
             var usedTracks = [Bool](repeating: false, count: active.count)
@@ -257,26 +306,96 @@ struct RoadBoundaryDetector {
             }
         }
         completed.append(contentsOf: active)
+        // Accept the original measured tracks first. Gap fitting is an additive recovery
+        // path: a failed global model must never erase a supported continuous border.
         var evidence: [RoadBoundaryEvidence] = []
+        var fragments: [[Sample]] = []
         for track in completed {
             guard check(track.samples.count + 1) else { return empty(true) }
             let samples = track.samples
             let span = samples[0].point.y - samples[samples.count - 1].point.y
-            if samples.count < 8 || span < min(0.16,(0.94-topY)*0.6) { continue }
+            if samples.count < 8 {
+                reject("track_support")
+                if options.groupFragments { fragments.append(samples) }
+                continue
+            }
+            if span < min(0.16,(0.94-topY)*0.6) {
+                reject("track_span")
+                if options.groupFragments { fragments.append(samples) }
+                continue
+            }
             let paintCount = samples.filter { $0.cue == .paint }.count
             let cue: RoadBoundaryCue = paintCount >= 6 && paintCount * 5 >= samples.count * 3 ? .paint : .edge
             let density = Double(samples.count) / Double(samples[samples.count - 1].row - samples[0].row + 1)
             var confidence = min(1, span / 0.32) * density * min(1, samples.reduce(0) { $0 + $1.strength } / Double(samples.count) / 90)
             if cue == .edge { confidence = min(0.40, confidence) }
-            if confidence < 0.22 { continue }
-            evidence.append(RoadBoundaryEvidence(points: samples.reversed().map { $0.point }, confidence: confidence,
-                                                 cue: cue, supportRows: samples.count))
+            if confidence < 0.22 {
+                reject("confidence")
+                if options.groupFragments { fragments.append(samples) }
+                continue
+            }
+            evidence.append(RoadBoundaryEvidence(points:samples.reversed().map { $0.point },confidence:confidence,cue:cue,
+                supportRows:samples.count,observedSegments:options.groupFragments && cue == .paint ? paintedSegments(samples) : [],
+                paintOccupancy:options.groupFragments && cue == .paint ? density : nil))
+            if options.groupFragments { reject("supported_track_preserved") }
         }
-        let boundaries = Array(evidence.sorted {
-            if $0.confidence != $1.confidence { return $0.confidence > $1.confidence }
-            if $0.supportRows != $1.supportRows { return $0.supportRows > $1.supportRows }
-            return $0.points[$0.points.count - 1].x < $1.points[$1.points.count - 1].x
-        }.prefix(6)).sorted { $0.points[$0.points.count - 1].x < $1.points[$1.points.count - 1].x }
+        func ranked(_ values:[RoadBoundaryEvidence]) -> [RoadBoundaryEvidence] {
+            values.sorted {
+                if $0.confidence != $1.confidence { return $0.confidence > $1.confidence }
+                if $0.supportRows != $1.supportRows { return $0.supportRows > $1.supportRows }
+                return $0.points[$0.points.count-1].x < $1.points[$1.points.count-1].x
+            }
+        }
+        let protected = Array(ranked(evidence).prefix(6))
+        var additions: [RoadBoundaryEvidence] = []
+        if options.groupFragments {
+            // Only rejected short/sparse fragments are eligible; accepted raw tracks cannot
+            // be consumed by a speculative join or displaced by it at the output cap.
+            fragments.sort { $0.count == $1.count ? $0[0].point.x < $1[0].point.x : $0.count > $1.count }
+            reject("fragment_capacity",max(0,fragments.count-32))
+            fragments = Array(fragments.prefix(32))
+            var consumed = Set<Int>()
+            for i in fragments.indices {
+                if consumed.contains(i) { continue }
+                var changed = true
+                while changed {
+                    changed = false
+                    for j in fragments.indices where j != i && !consumed.contains(j) {
+                        let first = fragments[i], second = fragments[j]
+                        guard check((first.count+second.count)*8+30) else { return empty(true) }
+                        if let joined = joinFragments(first,second,width:width,reject:{ reject($0) }) {
+                            fragments[i] = joined; consumed.insert(j); changed = true
+                            reject("fragments_joined")
+                        }
+                    }
+                }
+            }
+            for (index,samples) in fragments.enumerated() where !consumed.contains(index) {
+                guard check(samples.count*8+30) else { return empty(true) }
+                let span = samples[0].point.y-samples[samples.count-1].point.y
+                if samples.count < 6 { reject("fragment_track_support"); continue }
+                if span < min(0.16,(0.94-topY)*0.6) { reject("fragment_track_span"); continue }
+                let paintCount = samples.filter { $0.cue == .paint }.count
+                if paintCount < 6 || paintCount*5 < samples.count*3 { reject("fragment_paint_support"); continue }
+                let segments = paintedSegments(samples)
+                // A fit has a purpose only when there is an actual gap between observed
+                // paint intervals. Continuous measured shape never needs this global test.
+                if segments.filter({ $0.count >= 2 }).count < 2 { reject("fragment_no_supported_gap"); continue }
+                guard let model = validatedModel(samples,residualLimit:max(0.014,2/Double(width-1)),
+                    reject:{ reject($0) }) else { continue }
+                let density = Double(samples.count)/Double(samples[samples.count-1].row-samples[0].row+1)
+                let geometric = max(0,1-model.maximumResidual/max(0.028,4/Double(width-1)))
+                let confidence = min(1,span/0.32)*min(1,Double(paintCount)/10)*geometric *
+                    min(1,samples.reduce(0) { $0+$1.strength }/Double(samples.count)/90)
+                if confidence < 0.22 { reject("fragment_confidence"); continue }
+                additions.append(RoadBoundaryEvidence(points:model.points,confidence:confidence,cue:.paint,supportRows:samples.count,
+                    observedSegments:segments,geometryConfidence:geometric,paintOccupancy:density))
+            }
+        }
+        reject("fragment_output_capacity",max(0,additions.count-(6-protected.count)))
+        let boundaries = (protected+ranked(additions).prefix(6-protected.count)).sorted {
+            $0.points[$0.points.count-1].x < $1.points[$1.points.count-1].x
+        }
         var corridors: [RoadCorridorHypothesis] = []
         for leftIndex in boundaries.indices {
             guard check(32) else { return empty(true) }
@@ -299,7 +418,89 @@ struct RoadBoundaryDetector {
         guard check() else { return empty(true) }
         return RoadBoundaryFrame(boundaries: boundaries, corridors: Array(corridors.sorted {
             $0.confidence == $1.confidence ? $0.leftBoundaryIndex < $1.leftBoundaryIndex : $0.confidence > $1.confidence
-        }.prefix(2)), timestampSeconds: timestampSeconds, budgetExceeded: false, operationCount: used)
+        }.prefix(2)), timestampSeconds: timestampSeconds, budgetExceeded: false, operationCount: used, rejectionCounts: rejections, detectionVariant: options.identifier)
+    }
+
+    private struct Model {
+        let points: [LanePoint]
+        let maximumResidual: Double
+        let maximumSlope: Double
+        let curvature: Double
+    }
+    /// Fit in a centered, scaled row coordinate to keep the 3x3 system conditioned.
+    /// All observations must agree; a bright outlier cannot be silently fitted away.
+    private func fitModel(_ samples: [Sample]) -> Model? {
+        guard samples.count >= 3 else { return nil }
+        let low = samples.map { $0.point.y }.min()!, high = samples.map { $0.point.y }.max()!
+        let scale = high-low, center = (high+low)/2
+        guard scale >= 0.035 else { return nil }
+        var matrix = Array(repeating:Array(repeating:0.0,count:4),count:3)
+        for sample in samples {
+            let t = (sample.point.y-center)/scale, v = [1.0,t,t*t]
+            for r in 0..<3 { for c in 0..<3 { matrix[r][c] += v[r]*v[c] }; matrix[r][3] += v[r]*sample.point.x }
+        }
+        for column in 0..<3 {
+            let pivot = (column..<3).max { abs(matrix[$0][column]) < abs(matrix[$1][column]) }!
+            if abs(matrix[pivot][column]) < 1e-9 { return nil }
+            if pivot != column { matrix.swapAt(pivot,column) }
+            let divisor = matrix[column][column]
+            for c in column..<4 { matrix[column][c] /= divisor }
+            for r in 0..<3 where r != column {
+                let factor = matrix[r][column]
+                for c in column..<4 { matrix[r][c] -= factor*matrix[column][c] }
+            }
+        }
+        let a = matrix[0][3], b = matrix[1][3], c = matrix[2][3]
+        func value(_ y:Double) -> Double { let t=(y-center)/scale; return a+b*t+c*t*t }
+        let residual = samples.map { abs(value($0.point.y)-$0.point.x) }.max() ?? 1
+        let points = (0..<12).map { index -> LanePoint in let y=low+scale*Double(index)/11; return LanePoint(x:value(y),y:y) }
+        guard points.allSatisfy({ $0.x.isFinite && (0...1).contains($0.x) }) else { return nil }
+        return Model(points:points,maximumResidual:residual,maximumSlope:max(abs(b-c),abs(b+c))/scale,curvature:abs(2*c)/(scale*scale))
+    }
+    private func paintedSegments(_ samples: [Sample]) -> [[LanePoint]] {
+        var segments: [[LanePoint]] = [], current: [LanePoint] = []
+        var previousRow: Int? = nil
+        for sample in samples {
+            if sample.cue != .paint || previousRow.map({ sample.row-$0>1 }) == true {
+                if !current.isEmpty { segments.append(current.reversed()); current=[] }
+            }
+            if sample.cue == .paint { current.append(sample.point) }
+            previousRow=sample.row
+        }
+        if !current.isEmpty { segments.append(current.reversed()) }
+        return segments.reversed()
+    }
+    private func joinFragments(_ lhs:[Sample], _ rhs:[Sample], width:Int, reject:(String)->Void) -> [Sample]? {
+        guard lhs.count >= 3, rhs.count >= 3,
+              lhs.filter({ $0.cue == .paint }).count*5 >= lhs.count*4,
+              rhs.filter({ $0.cue == .paint }).count*5 >= rhs.count*4 else { return nil }
+        let near:[Sample], far:[Sample]
+        if lhs.last!.row < rhs.first!.row { near=lhs; far=rhs }
+        else if rhs.last!.row < lhs.first!.row { near=rhs; far=lhs }
+        else { return nil }
+        let gap=far.first!.row-near.last!.row
+        guard gap > 1 && gap <= 9 else { return nil }
+        let a=near[max(0,near.count-3)], b=near.last!, c=far.first!, d=far[min(2,far.count-1)]
+        let slopeNear=(b.point.x-a.point.x)/(b.point.y-a.point.y)
+        let slopeFar=(d.point.x-c.point.x)/(d.point.y-c.point.y)
+        let expected=b.point.x+slopeNear*(c.point.y-b.point.y)
+        let widthNear=Double(near.reduce(0) { $0+$1.stripeWidth })/Double(near.count)
+        let widthFar=Double(far.reduce(0) { $0+$1.stripeWidth })/Double(far.count)
+        guard abs(slopeNear-slopeFar)<=0.65 else { reject("fragment_tangent"); return nil }
+        guard abs(expected-c.point.x)<=0.035 else { reject("fragment_endpoint"); return nil }
+        guard max(widthNear,widthFar)<=min(widthNear,widthFar)*2.5 else { reject("fragment_width"); return nil }
+        let joined=near+far
+        guard validatedModel(joined,residualLimit:max(0.012,2/Double(width-1)),reject:reject) != nil else { return nil }
+        return joined
+    }
+
+    private func validatedModel(_ samples:[Sample], residualLimit:Double, reject:(String)->Void) -> Model? {
+        guard let model=fitModel(samples) else { reject("fragment_fit_invalid"); return nil }
+        var accepted=true
+        if model.maximumResidual>residualLimit { reject("fragment_fit_residual"); accepted=false }
+        if model.maximumSlope>1.8 { reject("fragment_fit_slope"); accepted=false }
+        if model.curvature>7 { reject("fragment_fit_curvature"); accepted=false }
+        return accepted ? model : nil
     }
 
     private func xAt(_ points: [LanePoint], _ y: Double) -> Double {

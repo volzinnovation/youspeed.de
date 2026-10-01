@@ -13,9 +13,14 @@ private struct ExtractionFailure: Error { let reason: String }
 @main struct ExtractRecordedLaneFrames {
     static func main() async throws {
         let args = CommandLine.arguments
-        guard args.count == 5, let step = Double(args[4]), step.isFinite, step >= 0.1,
+        guard [5,7].contains(args.count), let step = Double(args[4]), step.isFinite, step >= 0.1,
               args[3].range(of: "^[a-zA-Z0-9_-]+$", options: .regularExpression) != nil else {
-            throw ExtractionFailure(reason: "usage: extract-lane-frames source.mp4 new-output-directory source-name step-seconds")
+            throw ExtractionFailure(reason: "usage: extract-lane-frames source.mp4 new-output-directory source-name step-seconds [start-seconds end-seconds]")
+        }
+        let rangeStart = args.count == 7 ? Double(args[5]) ?? .nan : 0
+        let requestedEnd = args.count == 7 ? Double(args[6]) ?? .nan : Double.greatestFiniteMagnitude
+        guard rangeStart.isFinite, requestedEnd.isFinite, rangeStart >= 0, requestedEnd > rangeStart else {
+            throw ExtractionFailure(reason: "Invalid extraction interval")
         }
         let source = URL(fileURLWithPath: args[1]).standardizedFileURL
         let folder = URL(fileURLWithPath: args[2], isDirectory: true).standardizedFileURL
@@ -31,7 +36,11 @@ private struct ExtractionFailure: Error { let reason: String }
             throw ExtractionFailure(reason: "Nonidentity video orientation requires explicit mapping")
         }
         let duration = try await asset.load(.duration).seconds
+        let rangeEnd = min(duration, requestedEnd)
+        guard rangeStart < rangeEnd else { throw ExtractionFailure(reason: "Interval outside video") }
         let reader = try AVAssetReader(asset: asset)
+        reader.timeRange = CMTimeRange(start: CMTime(seconds:rangeStart,preferredTimescale:90_000),
+            end:CMTime(seconds:rangeEnd,preferredTimescale:90_000))
         let output = AVAssetReaderTrackOutput(track: track, outputSettings: [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
         ])
@@ -44,7 +53,7 @@ private struct ExtractionFailure: Error { let reason: String }
         var index = 0
         while let sample = output.copyNextSampleBuffer() {
             let pts = CMSampleBufferGetPresentationTimeStamp(sample)
-            guard pts.seconds >= Double(index) * step else { continue }
+            guard pts.seconds >= rangeStart + Double(index) * step, pts.seconds < rangeEnd else { continue }
             try autoreleasepool {
                 guard let pixel = CMSampleBufferGetImageBuffer(sample) else {
                     throw ExtractionFailure(reason: "Missing decoded pixel buffer")
@@ -81,7 +90,7 @@ private struct ExtractionFailure: Error { let reason: String }
                 CGImageDestinationAddImage(writer, rgb, [kCGImageDestinationLossyCompressionQuality: 0.88] as CFDictionary)
                 guard CGImageDestinationFinalize(writer) else { throw ExtractionFailure(reason: "JPEG write failed") }
                 frames.append(["id": id, "sequenceId": args[3], "source": args[3], "time": pts.seconds,
-                    "ptsValue": pts.value, "ptsTimescale": pts.timescale, "requestedTime": Double(index) * step,
+                    "ptsValue": pts.value, "ptsTimescale": pts.timescale, "requestedTime": rangeStart + Double(index) * step,
                     "grayPath": grayName, "rgbPath": rgbName, "width": width, "height": height,
                     "decodedWidth": w, "decodedHeight": h,
                     "graySha256": SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()])
@@ -97,6 +106,7 @@ private struct ExtractionFailure: Error { let reason: String }
         let manifest: [String: Any] = ["schemaVersion": 1, "sourceVideo": source.path,
             "sourceVideoSha256": hash.finalize().map { String(format: "%02x", $0) }.joined(),
             "durationSeconds": duration, "requestedStepSeconds": step,
+            "rangeStartSeconds":rangeStart,"rangeEndSeconds":rangeEnd,
             "sampling": "AVAssetReader limited-range NV12 luma; nearest source pixel centre; upright identity transform; original encoded PTS",
             "qualification": "Offline encoded-video replay; no verified live crop, UTC/GPS or calibration mapping. Decode/sampling excluded from native pipeline timing.",
             "frames": frames]

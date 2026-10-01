@@ -538,6 +538,9 @@ class ConsumerSessionController(
             onChange = { refreshPanoramaxUploadState() })
     }
     private val dashcamDirectory = File(appContext.filesDir, "dashcam").apply { mkdirs() }
+    private var testDashcamOutputDirectory: File? = null
+    // Exact paths retain their exemption across late callbacks after the test clears its directory.
+    private val isolatedTestDashcamPaths = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
     private val wayMatchTracker = WayMatchSessionTracker()
     private val trafficSignResolver = TrafficSignRuntimeSourceResolver()
     private var trafficSignEndOverlayGeneration = 0L
@@ -648,6 +651,7 @@ class ConsumerSessionController(
     private data class LanePaintMetric(val scope: Long, val frameId: Long, val ageMs: Double, val estimated: Boolean)
     private var lanePaintMetric: LanePaintMetric? = null
     internal val roadPathSession = RoadPathSession()
+    internal val lanePreviewSession = RoadPathSession(previewMode = true)
     @Volatile internal var visualRoadCalibration: VisualRoadCalibration? =
         VisualRoadCalibration.decode(preferences.getString(VisualRoadCalibration.PREFERENCE_KEY, null))
         private set
@@ -776,6 +780,16 @@ class ConsumerSessionController(
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
     }
 
+    // Match iPhone: moving this experimental preview into Diagnostics resets it
+    // once, then preserves any later explicit opt-in across launches.
+    private val initialShowDetectedLanes = run {
+        if (!preferences.getBoolean("youspeed.drive_recorder.lane_diagnostics_opt_in_v1", false)) {
+            preferences.edit().putBoolean("youspeed.drive_recorder.show_detected_lanes", false)
+                .putBoolean("youspeed.drive_recorder.lane_diagnostics_opt_in_v1", true).apply()
+        }
+        preferences.getBoolean("youspeed.drive_recorder.show_detected_lanes", false)
+    }
+
     var uiState by mutableStateOf(
         ConsumerUiState(
             debugLoggingEnabled = preferences.getBoolean(DebugLogPersistence.PREFERENCE_KEY, true),
@@ -800,7 +814,7 @@ class ConsumerSessionController(
             matcherDebugProfile = initialMatcherDebugProfile,
             trafficSignRecognitionEnabled = preferences.getBoolean(KEY_TRAFFIC_SIGN_RECOGNITION_ENABLED, false),
             otherTrafficSignDisplayEnabled = preferences.getBoolean(KEY_OTHER_TRAFFIC_SIGN_DISPLAY_ENABLED, false),
-            showDetectedLanes = preferences.getBoolean("youspeed.drive_recorder.show_detected_lanes", false),
+            showDetectedLanes = initialShowDetectedLanes,
             trafficSignRecognitionIndependentEnabled = preferences.getBoolean("youspeed.drive_recorder.tsr_independent_enabled", false),
             trafficSignFeedbackMode = runCatching { TrafficSignFeedbackMode.valueOf(preferences.getString("youspeed.drive_recorder.tsr_feedback_mode", "SOUND")!!) }.getOrDefault(TrafficSignFeedbackMode.SOUND),
             panoramaxTriggerMode = runCatching { PanoramaxCaptureTriggerMode.valueOf(preferences.getString("youspeed.panoramax.trigger_mode", "DISTANCE")!!) }.getOrDefault(PanoramaxCaptureTriggerMode.DISTANCE),
@@ -1204,7 +1218,7 @@ class ConsumerSessionController(
             !uiState.panoramaxMaintenanceInProgress)
 
     internal fun laneAdmission(thermallyPaused: Boolean): LaneAdmission = LaneAdmission(
-        enabled = !isTrafficSignRecognitionRuntimeEnabled() && uiState.showDetectedLanes && lanePreviewVisible && lanePreviewGeometry != null &&
+        enabled = uiState.showDetectedLanes && lanePreviewVisible && lanePreviewGeometry != null &&
             isDashcamRecordingEnabled() && uiState.driveRecorderDashcamActive &&
             uiState.driveRecorderState == DriveRecorderState.RECORDING,
         scope = lanePreviewScope,
@@ -1237,6 +1251,7 @@ class ConsumerSessionController(
         lanePreviewSource = null
         legacyLanePresentation.reset()
         roadPathSession.invalidateOverlay()
+        lanePreviewSession.invalidateOverlay()
         laneRuntimeSnapshot = LaneRuntimeSnapshot()
         lanePaintMetric = null
     }
@@ -1249,11 +1264,12 @@ class ConsumerSessionController(
         if (source.scope == lanePreviewSourceScope()) lanePreviewSource = source
     }
 
+    private val laneReferenceHysteresis = LaneReferenceHysteresis()
     internal fun lanePresentationDecision(source: LanePreviewSourceGeometry?, matureCount: Int,
-        staleObserved: Boolean, nowNanos: Long): LanePreviewPresentationDecision = LanePreviewPresentationPolicy.decide(
+        staleObserved: Boolean, nowNanos: Long): LanePreviewPresentationDecision = laneReferenceHysteresis.apply(LanePreviewPresentationPolicy.decide(
         uiState.showDetectedLanes, lanePreviewVisible && lanePreviewGeometry != null,
         applicationActive && isDriveRecorderSessionActive(), lanePreviewScope, source, visualRoadCalibration,
-        matureCount, staleObserved, nowNanos)
+        matureCount, staleObserved, nowNanos), "$lanePreviewScope:${source?.geometry}:${visualRoadCalibration?.revision}", nowNanos/1e9)
 
     internal fun onLanePresentationPainted(decision: LanePreviewPresentationDecision,
         source: LanePreviewSourceGeometry?, observedCount: Int) {
@@ -1270,6 +1286,33 @@ class ConsumerSessionController(
             "reference_alpha" to decision.referenceOpacity, "source_width" to source?.geometry?.width,
             "source_height" to source?.geometry?.height, "source_rotation" to source?.geometry?.rotationDegrees,
             "source_age_ms" to source?.let { (now - it.observedAtNanos) / 1e6 }))
+    }
+
+    internal fun onLanePreviewPrepared(frame: RoadPathPreparedFrame) {
+        val invalidIndices = frame.presentation.visibleBoundaryIndices.count { it !in frame.geometry.boundaries.indices }
+        val selected = frame.presentation.selectedBoundaries(frame.geometry.boundaries)
+        appendRuntimeDiagnosticEvent("lane_preview_frame", mapOf(
+            "frameId" to frame.frameId, "sourceTimestampSeconds" to frame.frame.sourceTimestampSeconds,
+            "capturedAtSeconds" to frame.frame.capturedAtSeconds, "preparationMs" to frame.preparationAddedMs,
+            "preparationTargetMs" to 50, "preparationTargetExceeded" to frame.performanceTargetExceeded,
+            "invalidVisibleBoundaryIndexCount" to invalidIndices,
+            "geometryBudgetExceeded" to frame.geometry.budgetExceeded,
+            "sourceWidth" to frame.frame.rawWidth, "sourceHeight" to frame.frame.rawHeight,
+            "rotationDegrees" to frame.frame.rotationDegrees, "visualCalibrationRevision" to frame.frame.visualCalibration?.revision,
+            "motionProjectionEligible" to frame.diagnostics.motionProjectionEligible,
+            "motionSourceAgeSeconds" to frame.motionHint.sourceAgeSeconds, "speedMetersPerSecond" to frame.motionHint.speedMetersPerSecond,
+            "headingRateDegreesPerSecond" to frame.motionHint.headingRateDegreesPerSecond,
+            "overlaySuppressionReason" to frame.publicationSuppressionReason,
+            "temporalResetReason" to frame.geometry.temporalResetReason,
+            "visibleIds" to if (selected.isEmpty()) emptyList<Long>() else frame.presentation.visibleBoundaryIndices.map { index -> frame.presentation.items.firstOrNull { it.boundaryIndex == index }?.trackId },
+            "lanePreparationDiagnostics" to JSONObject(frame.diagnostics.diagnosticJson.toString()),
+            "selectionDecisions" to JSONArray(frame.presentation.selectionDecisions.map { JSONObject(it.diagnosticFields) }),
+            "paintedSegments" to selected.map { boundary ->
+                boundary.observedSegments.ifEmpty { listOf(boundary.points) }.map { it.map { p -> listOf(p.x,p.y) } }
+            },
+            "boundaryProvenance" to selected.map { it.provenance.name.lowercase() },
+            "boundaryEvidenceAgeSeconds" to selected.map { it.evidenceAgeSeconds },
+            "boundaries" to selected.map { it.points.map { p -> listOf(p.x,p.y) } }))
     }
 
     internal fun onLaneDetectionResult(snapshot: LaneRuntimeSnapshot) {
@@ -1312,6 +1355,7 @@ class ConsumerSessionController(
             "preview_scope" to snapshot.scope,
             "image_width" to snapshot.geometry?.width, "image_height" to snapshot.geometry?.height,
             "image_rotation_degrees" to snapshot.geometry?.rotationDegrees,
+            "laneCadence" to JSONObject(snapshot.cadence),
             "processed_frames" to snapshot.processedFrames, "replaced_frames" to snapshot.replacedFrames,
             "throttled_frames" to snapshot.throttledFrames,
             "timestamp_rejected_frames" to snapshot.timestampRejectedFrames,
@@ -1410,9 +1454,24 @@ class ConsumerSessionController(
         updateState { copy(dashcamButtonActionError = null) }
     }
 
+    internal fun setTestDashcamOutputDirectory(directory: File?) {
+        check(BuildConfig.DEBUG) { "Test movie destination requires a debug build" }
+        if (directory == null) { testDashcamOutputDirectory = null; return }
+        check(!driveRecorderEnabled && activeDashcamPath == null && !uiState.driveRecorderDashcamTransitioning)
+        val target = directory.canonicalFile
+        val root = File(appContext.filesDir, "lane-evaluation").canonicalFile
+        check(target.name == "movies" && target.parentFile?.parentFile == root &&
+            target.parentFile?.name?.matches(Regex("lane-full-workload-[0-9]+")) == true && target.isDirectory) {
+            "Test movie destination must be an existing isolated lane-evaluation run directory"
+        }
+        testDashcamOutputDirectory = target
+    }
+
     internal fun nextDashcamRecordingFile(): File {
-        dashcamDirectory.mkdirs()
-        return File(dashcamDirectory, "dashcam-${clock.millis()}-${UUID.randomUUID()}.mp4").also {
+        val directory = if (BuildConfig.DEBUG) testDashcamOutputDirectory ?: dashcamDirectory else dashcamDirectory
+        directory.mkdirs()
+        return File(directory, "dashcam-${clock.millis()}-${UUID.randomUUID()}.mp4").also {
+            if (BuildConfig.DEBUG && directory != dashcamDirectory) isolatedTestDashcamPaths.add(it.absolutePath)
             activeDashcamPath = it.absolutePath
             latestDashcamEventPath = it.absolutePath
         }
@@ -2202,6 +2261,7 @@ class ConsumerSessionController(
         }
         if (!isDriving) {
             roadPathSession.resetTrajectory()
+            lanePreviewSession.resetTrajectory()
             cancelVisionDismissalListening()
             visionDismissalWindow.resetForNewDrive()
             lastKnownLimitPresentation.reset()
@@ -2242,7 +2302,7 @@ class ConsumerSessionController(
     }
 
     fun stopDriving() {
-        if (isDriving) roadPathSession.resetTrajectory()
+        if (isDriving) { roadPathSession.resetTrajectory(); lanePreviewSession.resetTrajectory() }
         mainHandler.removeCallbacks(speedReferenceTick)
         speedReference.reset()
         synchronized(trafficSignStateLock) { visionDismissalGate = VisionDismissalGate() }
@@ -2611,7 +2671,10 @@ class ConsumerSessionController(
     }
 
     internal fun onTrafficSignCameraAnalysisDiagnostic(stage: String, details: Map<String, Any?>) {
-        appendRuntimeDiagnosticEvent("traffic_sign_camera_analysis", details + ("stage" to stage))
+        // JSONObject.put treats an arbitrary Map as a string on Android; its Map
+        // constructor recursively preserves nested counters/timings as JSON objects.
+        val structured = details.mapValues { (_, value) -> if (value is Map<*, *>) JSONObject(value) else value }
+        appendRuntimeDiagnosticEvent("traffic_sign_camera_analysis", structured + ("stage" to stage))
     }
 
     fun onTrafficSignCameraRuntimeStateChanged(
@@ -2675,7 +2738,9 @@ class ConsumerSessionController(
 
     fun onDashcamRecordingFinalized(path: String, success: Boolean, detail: String?) {
         if (activeDashcamPath == path) activeDashcamPath = null
-        submitBackgroundTask { cleanupDashcamRecordings() }
+        if (!(BuildConfig.DEBUG && isolatedTestDashcamPaths.contains(path))) {
+            submitBackgroundTask { cleanupDashcamRecordings() }
+        }
         postState {
             if (path != latestDashcamEventPath) copy(dashcamRecordings = listDashcamRecordings()) else
             copy(driveRecorderState = if (driveRecorderEnabled) driveRecorderState else DriveRecorderState.DISABLED,
@@ -2707,7 +2772,7 @@ class ConsumerSessionController(
             "visualCalibrationActive" to isVisualCalibrationActive(),
             "visualCalibrationRevision" to visualRoadCalibration?.revision,
             "showDetectedLanes" to uiState.showDetectedLanes,
-            "laneOverlaySource" to if (isTrafficSignRecognitionRuntimeEnabled()) "road_path" else "legacy",
+            "laneOverlaySource" to "independent_preview",
             "previewVisibilityAvailable" to true, "previewVisible" to lanePreviewVisible,
             "previewGeometryAvailable" to (lanePreviewGeometry != null)))
     }
@@ -4062,7 +4127,7 @@ class ConsumerSessionController(
         val scenario = countryScreenshotScenario
         val fixture = scenario?.let {
             state.fixture.copy(currentSpeedKmh = (it.limitKmh + it.deltaKmh).toDouble(), speedLimitKmh = it.limitKmh,
-                streetName = it.street, cityName = it.city, latitude = it.latitude, longitude = it.longitude, insideCity = true)
+                streetName = it.street, cityName = it.city, latitude = it.latitude, longitude = it.longitude, insideCity = it.insideCity)
         } ?: state.fixture
         val selectedCountry = penaltyCountrySelection.update(regionalPackCatalog, fixture.latitude, fixture.longitude,
             fixture.gpsHorizontalAccuracyM, clock.millis() / 1000.0, clock.millis() / 1000.0)
@@ -4449,6 +4514,9 @@ class ConsumerSessionController(
         latestCaptureLocation = Location(location)
         if (location.hasBearing() && location.hasBearingAccuracy() && location.hasSpeed() && location.hasAccuracy()) {
             roadPathSession.recordLocation(location.time / 1000.0, location.latitude, location.longitude,
+                location.bearing.toDouble(), location.speed.toDouble(), location.accuracy.toDouble(),
+                location.bearingAccuracyDegrees.toDouble())
+            lanePreviewSession.recordLocation(location.time / 1000.0, location.latitude, location.longitude,
                 location.bearing.toDouble(), location.speed.toDouble(), location.accuracy.toDouble(),
                 location.bearingAccuracyDegrees.toDouble())
         }

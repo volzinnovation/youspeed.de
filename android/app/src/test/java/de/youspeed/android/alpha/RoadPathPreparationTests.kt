@@ -131,17 +131,19 @@ class RoadPathPreparationTests {
         }
     }
 
-    @Test fun rejectedContextAndExpiredPreparationNeverPublishPartialGeometry() {
+    @Test fun rejectedContextAndOperationExhaustionNeverPublishPartialGeometry() {
         val session = RoadPathSession { 1_000_000L }
         val prepared = session.prepare(paintedFrame(), "exposure", scope) { false }
         assertNull(session.overlay())
         assertEquals("context_invalidated", Json.parseToJsonElement(session.evaluate(prepared, diagnostic()))
             .jsonObject.getValue("reason").jsonPrimitive.content)
-        val expiredSession = RoadPathSession { 60_000_000L }
-        val expired = expiredSession.prepare(paintedFrame(), "exposure", scope)
-        assertTrue(expired.geometry.budgetExceeded)
-        assertTrue(expired.geometry.boundaries.isEmpty())
-        assertNull(expiredSession.overlay())
+        val exhaustedSession = RoadPathSession(maximumGeometryOperations = 100) { 60_000_000L }
+        val exhausted = exhaustedSession.prepare(paintedFrame(), "exposure", scope)
+        assertTrue(exhausted.geometry.budgetExceeded)
+        assertTrue(exhausted.geometry.boundaries.isEmpty())
+        assertTrue(exhausted.presentation.visibleBoundaryIndices.isEmpty())
+        assertFalse(exhausted.presentation.accepted)
+        assertNull(exhaustedSession.overlay())
     }
 
     @Test fun associationStillHasCumulativeTwoHundredMillisecondDeadline() {

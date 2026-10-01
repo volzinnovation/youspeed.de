@@ -70,3 +70,20 @@ enum LanePreviewPresentationPolicy {
                              [calibration.rightBottom, LanePoint(x: calibration.rightTopX, y: calibration.horizonY)]])
     }
 }
+
+/// Time-based reference fallback only; a lost detection is never redrawn as fresh evidence.
+final class LaneReferenceHysteresis {
+    private var key: String?
+    private var lastTime = -Double.infinity
+    private var referenceAfter = -Double.infinity
+    func apply(_ decision: LanePreviewPresentationDecision, scope: String, now: Double) -> LanePreviewPresentationDecision {
+        guard now.isFinite else { return LanePreviewPresentationDecision(mode:.hidden,reason:"invalid_timestamp",referenceLines:[]) }
+        if scope != key || now < lastTime { key=scope; referenceAfter=now+1 }
+        lastTime=now
+        if decision.mode == .observed { referenceAfter=now+2 }
+        if decision.mode == .calibrationReference && now < referenceAfter {
+            return LanePreviewPresentationDecision(mode:.hidden,reason:"reference_hysteresis",referenceLines:[])
+        }
+        return decision
+    }
+}

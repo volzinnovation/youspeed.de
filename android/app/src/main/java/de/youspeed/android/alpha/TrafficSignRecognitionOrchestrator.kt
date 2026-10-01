@@ -234,11 +234,12 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
      * Accepts live-camera and explicit camera-still frames. Returns false when
      * a closed orchestrator or an out-of-order frame rejects ownership.
      */
-    fun submit(frame: F): Boolean {
+    fun submit(frame: F, retainWhileBusy: Boolean = true, onBackpressureDrop: ((String) -> Unit)? = null): Boolean {
         validateFrame(frame)
         var dispatch: Dispatch? = null
         var overrideNotification: OverrideNotification? = null
         var accepted = false
+        var backpressureDrop: String? = null
 
         synchronized(lock) {
             if (!closed && !terminalBackendFailure) {
@@ -256,6 +257,14 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                         contextGeneration = snapshot.generation,
                     )
                     lastAcceptedTimestampNanos = frame.capturedAtMonotonicNanos
+                    // A CameraX proxy waiting behind inference stalls all analyzer delivery,
+                    // including the independent lane consumer. Reconcile its context above,
+                    // then release it atomically instead of occupying the generic pending slot.
+                    // Other sources retain the existing latest-frame mailbox behavior.
+                    if (!retainWhileBusy && activeInference != null) {
+                        backpressureDrop = "inference_busy"
+                        return@synchronized
+                    }
                     frameSlot.offer(
                         value = AcceptedFrame(
                             frame = frame,
@@ -276,12 +285,14 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                         capturedAtNanos = frame.capturedAtMonotonicNanos,
                     )
                     dispatch = takeDispatchLocked()
+                    if (!retainWhileBusy && dispatch == null) backpressureDrop = "cadence_or_pause"
                     accepted = true
                 }
             }
         }
 
         if (!accepted) frame.releaseSafely()
+        backpressureDrop?.let { onBackpressureDrop?.invoke(it) }
         overrideNotification?.deliver(observer)
         dispatch?.start()
         return accepted

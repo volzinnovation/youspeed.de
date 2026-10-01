@@ -1030,14 +1030,14 @@ struct MainView: View {
                     session: session,
                     orientation: viewModel.screenOrientation,
                     laneRuntime: viewModel.laneDetectionRuntime,
-                    roadPathSession: viewModel.roadPathSession,
+                    roadPathSession: viewModel.lanePreviewSession,
                     calibrationStore: viewModel.visualCalibrationStore,
                     sourceGeometryProvider: { viewModel.lanePreviewSourceGeometry },
                     activityAllowedProvider: { viewModel.lanePreviewActivityAllowed },
-                    contextAvailableProvider: { viewModel.lanePreviewContextAvailable },
+                    contextAvailableProvider: { true },
                     onLanePresentation: { viewModel.logLanePreviewPresentation($0) },
                     showDetectedLanes: viewModel.showDetectedLanes,
-                    legacyLanesAllowed: !viewModel.trafficSignRecognitionEnabled,
+                    legacyLanesAllowed: false,
                     previewVisible: showingPreview && !showingSettings && !showingLegalInfo
                         && !showingDebug && !showingLocalRecordings && !showingPanoramaxGallery
                         && !showingTrafficSignDetails && !showingVisualCalibration
@@ -3115,11 +3115,6 @@ private struct SettingsView: View {
 
                 LabeledContent(NSLocalizedString("drive_recorder.settings.status", comment: ""), value: driveRecorderStatusText)
 
-                Toggle(NSLocalizedString("drive_recorder.settings.lanes", comment: ""), isOn: $viewModel.showDetectedLanes)
-                Text(NSLocalizedString("drive_recorder.settings.lanes_description", comment: ""))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
                 Toggle(NSLocalizedString("drive_recorder.settings.tsr", comment: ""), isOn: $viewModel.trafficSignRecognitionEnabled)
                     .disabled(viewModel.isDriveRecorderActive)
                 Text(NSLocalizedString("drive_recorder.settings.tsr_description", comment: ""))
@@ -3709,6 +3704,13 @@ private struct DebugInformationView: View {
                     Text(viewModel.lastError)
                         .foregroundStyle(.red)
                 }
+            }
+            Section(NSLocalizedString("drive_recorder.settings.lanes", comment: "")) {
+                Toggle(NSLocalizedString("drive_recorder.settings.lanes", comment: ""), isOn: $viewModel.showDetectedLanes)
+                    .accessibilityIdentifier("show-detected-lanes-toggle")
+                Text(NSLocalizedString("drive_recorder.settings.lanes_description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
         .listStyle(.insetGrouped)

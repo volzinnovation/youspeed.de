@@ -1,6 +1,40 @@
 import XCTest
 
 final class ScreenOrientationUITests: XCTestCase {
+    func testLaneOptionIsOffAtBottomOfDiagnostics() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "country-penalty"
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_COUNTRY"] = "CH"
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_LIMIT"] = "1"
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_DELTA"] = "0"
+        app.launchArguments = ["-youspeed.screen_orientation", "portrait", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+        defer { app.terminate() }
+        let settings = app.buttons["dashboard.settingsButton"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 20))
+        settings.tap()
+        let lanes = app.switches["show-detected-lanes-toggle"]
+        let debug = app.buttons["Open debug information"]
+        for _ in 0..<80 {
+            XCTAssertFalse(lanes.exists, "Lane detection must not be in General Settings")
+            if debug.exists && debug.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(debug.isHittable)
+        debug.tap()
+        for _ in 0..<40 {
+            if lanes.exists && lanes.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(lanes.isHittable)
+        XCTAssertEqual(lanes.value as? String, "0")
+        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshot.name = "diagnostics-lanes-off"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     func testGravityOverlayRemainsVisibleAtDisplayedZeroWithoutNewGpsFix() {
         let app = XCUIApplication()
         app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"

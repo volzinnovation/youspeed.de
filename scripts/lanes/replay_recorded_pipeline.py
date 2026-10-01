@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Replay raw-luma manifests through a frozen native production lane pipeline.
 
-Uses macOS Swift/AVFoundation. No camera, device, model inference, GPS or invented
-calibration is used. Each fresh output directory preserves exact source snapshots,
+Uses macOS Swift/AVFoundation. No camera, device, model inference or invented calibration is used. Optional
+calibration/GPS metadata must be explicitly sourced by the input manifest. Each fresh output directory preserves exact source snapshots,
 input hashes, NDJSON geometry/presentation output, and a compact timing summary.
 """
 import argparse
@@ -73,6 +73,16 @@ def normalized_manifest(path, variant):
         frames.append(dict(id=fid, sequenceId=seq, grayPath=str(gray), graySha256=actual_hash,
                            width=width, height=height, decodedWidth=decoded_width, decodedHeight=decoded_height,
                            time=pts, source=frame.get("source"), sourceFrameId=frame.get("sourceFrameId")))
+        for key in ("calibration", "visualCalibration", "orientationKey", "locationFixes", "metadataProvenance", "split", "sceneTags"):
+            if key in frame:
+                # Decode/encode rejects nonfinite nested metadata before the Swift decoder.
+                json.dumps(frame[key], allow_nan=False)
+                frames[-1][key] = frame[key]
+        if any(frame.get(key) for key in ("calibration", "visualCalibration", "locationFixes")) and not frame.get("metadataProvenance"):
+            raise ValueError(f"Optional camera/location metadata requires provenance: {fid}")
+        for fix in frame.get("locationFixes", []):
+            if not isinstance(fix.get("time"), (int,float)) or fix["time"] > pts:
+                raise ValueError(f"Location fixes must be causal and use the same replay clock: {fid}")
     return dict(schemaVersion=1, variant=variant, frames=frames)
 
 
@@ -97,11 +107,27 @@ def main():
     parser.add_argument("--output-dir", type=Path, required=True, help="New directory; existing results are never overwritten")
     parser.add_argument("--source-dir", type=Path, default=ROOT / "iphone/SpeedConsumerApp",
                         help="Production sources or an archived/experimental directory containing all nine Swift files")
+    parser.add_argument("--preview-mode", action="store_true", help="Use the independent preview pipeline; never changes sign evidence")
     parser.add_argument("--variant", default="production", help="Output label; does not alter production preprocessing")
+    parser.add_argument("--use-search-bands", action="store_true")
+    parser.add_argument("--group-fragments", action="store_true")
+    parser.add_argument("--fragment-tracking", action="store_true")
+    parser.add_argument("--retain-tentative-identity", action="store_true")
+    parser.add_argument("--joint-selection", action="store_true")
+    parser.add_argument("--reuse-build-dir", type=Path, help="Reuse a previous replay executable only if every frozen source hash and compiler setting matches")
+    parser.add_argument("--module-cache-path", type=Path, help="Explicit shared Swift module cache; owned/cleaned by the caller")
+    parser.add_argument("--swift-optimization", choices=("-O", "-Onone"), default="-O",
+                        help="Host optimization setting for build-cost ablation; defaults to -O. Pass --swift-optimization=-Onone to reproduce Debug code generation.")
     args = parser.parse_args()
     try:
         manifest_path = args.manifest.resolve(strict=True)
         normalized = normalized_manifest(manifest_path, args.variant)
+        normalized["previewMode"] = args.preview_mode
+        normalized.update(useSearchBands=args.use_search_bands, groupFragments=args.group_fragments,
+                          fragmentTracking=args.fragment_tracking, retainTentativeIdentity=args.retain_tentative_identity,
+                          jointSelection=args.joint_selection)
+        if any((args.use_search_bands,args.group_fragments,args.fragment_tracking,args.retain_tentative_identity,args.joint_selection)) and not args.preview_mode:
+            raise ValueError("Experimental lane options require preview mode")
         source_paths = [(args.source_dir / name).resolve(strict=True) for name in SOURCES]
         if args.output_dir.exists():
             raise ValueError("Output directory already exists; choose a new name")
@@ -121,18 +147,39 @@ def main():
     hashes = {p.name: digest(p) for p in sorted(sources.iterdir())}
     input_file = work / "input.normalized.json"
     input_file.write_text(json.dumps(normalized, indent=2, allow_nan=False) + "\n")
+    supports_fragments = "RoadBoundaryDetectionOptions" in (sources / "RoadBoundaryDetector.swift").read_text() and "fragmentTracking:" in (sources / "RoadPathSession.swift").read_text()
+    if any((args.use_search_bands,args.group_fragments,args.fragment_tracking)) and not supports_fragments:
+        raise ValueError("These frozen sources do not expose the requested preview options")
+    supports_selection = "retainTentativeIdentity:" in (sources / "RoadPathSession.swift").read_text() and "jointSelection:" in (sources / "RoadPathSession.swift").read_text()
+    if (args.retain_tentative_identity or args.joint_selection) and not supports_selection:
+        raise ValueError("These frozen sources do not expose the requested selection options")
     metadata = dict(schemaVersion=1, variant=args.variant, manifest=str(manifest_path),
                     manifestSha256=digest(manifest_path), normalizedManifestSha256=digest(input_file),
-                    sourceHashes=hashes, frameCount=len(normalized["frames"]),
+                    sourceHashes=hashes, frameCount=len(normalized["frames"]), swiftOptimization=args.swift_optimization,
                     swiftVersion=subprocess.check_output(["swiftc", "--version"], text=True).strip(),
                     qualification="Offline encoded-pixel engineering replay, not live camera equivalence or device performance",
-                    gpsSupplied=False, metricCalibrationSupplied=False, visualCalibrationSupplied=False)
+                    gpsSupplied=any(f.get("locationFixes") for f in normalized["frames"]),
+                    metricCalibrationSupplied=any(f.get("calibration") for f in normalized["frames"]),
+                    visualCalibrationSupplied=any(f.get("visualCalibration") for f in normalized["frames"]),
+                    previewMode=args.preview_mode, useSearchBands=args.use_search_bands,
+                    groupFragments=args.group_fragments, fragmentTracking=args.fragment_tracking,
+                    supportsFragments=supports_fragments, supportsSelection=supports_selection,
+                    retainTentativeIdentity=args.retain_tentative_identity, jointSelection=args.joint_selection)
     (work / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
     binary = work / "pipeline-replay"
-    compile_command = ["swiftc", "-O", "-module-cache-path", str(work / "swift-cache"),
+    compile_command = ["swiftc", args.swift_optimization, "-module-cache-path", str((args.module_cache_path or work / "swift-cache").resolve()),
+                       *(["-D", "LANE_FRAGMENT_OPTIONS"] if supports_fragments else []),
+                       *(["-D", "LANE_SELECTION_OPTIONS"] if supports_selection else []),
                        *(str(sources / name) for name in SOURCES), str(sources / runner.name), "-o", str(binary)]
-    with (work / "compile.log").open("w") as log:
-        subprocess.run(compile_command, stdout=log, stderr=subprocess.STDOUT, check=True)
+    if args.reuse_build_dir:
+        previous = json.loads((args.reuse_build_dir / "metadata.json").read_text())
+        if previous["sourceHashes"] != hashes or previous.get("swiftOptimization") != args.swift_optimization or previous.get("supportsFragments") != supports_fragments or bool(previous.get("supportsSelection")) != supports_selection:
+            raise ValueError("Refusing to reuse an executable built from different sources/settings")
+        shutil.copy2(args.reuse_build_dir / "pipeline-replay", binary)
+        (work / "compile.log").write_text(f"Reused verified build: {args.reuse_build_dir.resolve()}\n")
+    else:
+        with (work / "compile.log").open("w") as log:
+            subprocess.run(compile_command, stdout=log, stderr=subprocess.STDOUT, check=True)
     partial = work / "frames.ndjson.part"
     with (work / "run.log").open("w") as log:
         subprocess.run([str(binary), str(input_file), str(partial)], stdout=log, stderr=subprocess.STDOUT, check=True)

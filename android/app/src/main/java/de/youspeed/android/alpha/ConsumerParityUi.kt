@@ -385,14 +385,14 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
         LanePresentationState.UNAVAILABLE -> parityText("Unavailable", "Nicht verfügbar", "Indisponible", "Niet beschikbaar")
         LanePresentationState.PAUSED -> parityText("Paused", "Pausiert", "En pause", "Gepauzeerd")
     }
-    val pathOverlay = controller.roadPathSession.overlay()
+    val pathOverlay = controller.lanePreviewSession.overlay()
     val pathAge = pathOverlay?.let { System.currentTimeMillis() / 1000.0 - it.capturedAtSeconds }
     val source = controller.lanePreviewSource
     val compatibleCalibration = controller.visualRoadCalibration?.takeIf { profile -> source != null &&
         profile.compatible(source.geometry.uprightWidth, source.geometry.uprightHeight, source.orientationKey) }
     val freshPath = pathOverlay?.takeIf { pathAge != null && pathAge >= 0 && pathAge < 0.75 && it.geometry == source?.geometry &&
         it.visualCalibrationRevision == compatibleCalibration?.revision }
-    val useRoadPath = controller.isTrafficSignRecognitionRuntimeEnabled()
+    val useRoadPath = true // Camera preview has its own tracking session, independent of TSR.
     val observedCount = if (useRoadPath) freshPath?.boundaries?.size ?: 0 else
         if (opacity > 0f && state != LanePresentationState.PAUSED && snapshot.geometry == source?.geometry)
             listOfNotNull(snapshot.estimate?.left, snapshot.estimate?.right).size else 0
@@ -441,7 +441,9 @@ private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
             // update pulse. Keep it bright through a normal interval; expiry stays 750 ms.
             val fade = if (pathAge!! <= 0.6) 1f else ((0.75-pathAge)/0.15).toFloat()
             freshPath.boundaries.forEach { boundary ->
-                drawBoundary(boundary.points, fade, freshPath.geometry)
+                // Keep visible paint separate from the fitted border; never bridge a dashed gap.
+                val segments = boundary.observedSegments.ifEmpty { listOf(boundary.points) }
+                segments.filter { it.size >= 2 }.forEach { drawBoundary(it, fade, freshPath.geometry) }
             }
             return@Canvas
         }
@@ -513,13 +515,9 @@ private fun ParitySlider(label: String, value: Double, range: ClosedFloatingPoin
 }
 
 @Composable
-internal fun RecorderParitySettings(controller: ConsumerSessionController) {
+internal fun LaneDetectionDiagnosticsSettings(controller: ConsumerSessionController) {
     val ui = controller.uiState
-    var details by remember { mutableStateOf(false) }
-    var panoramaxServerMenuExpanded by remember { mutableStateOf(false) }
-    val active = ui.driveRecorderState in setOf(DriveRecorderState.PREPARING, DriveRecorderState.RECORDING, DriveRecorderState.STOPPING)
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        ParitySection(parityText("Drive recorder", "Fahrtaufnahme", "Enregistrement du trajet", "Ritopname")) {
+    ParitySection(parityText("Detected lanes", "Erkannte Fahrspuren", "Voies détectées", "Gedetecteerde rijstroken")) {
             ParityToggle(parityText("Show detected lanes", "Erkannte Fahrspuren anzeigen", "Afficher les voies détectées", "Gedetecteerde rijstroken tonen"),
                 ui.showDetectedLanes, tag = "show-detected-lanes-toggle", onChange = controller::setShowDetectedLanes)
             Text(parityText("Show lane markings in the live dashcam preview. Saved videos stay unchanged.",
@@ -527,6 +525,17 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
                 "Afficher les voies dans l’aperçu dashcam en direct. Les vidéos enregistrées restent inchangées.",
                 "Toon rijstrookmarkeringen in het live dashcambeeld. Opgeslagen video's blijven ongewijzigd."),
                 style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+@Composable
+internal fun RecorderParitySettings(controller: ConsumerSessionController) {
+    val ui = controller.uiState
+    var details by remember { mutableStateOf(false) }
+    var panoramaxServerMenuExpanded by remember { mutableStateOf(false) }
+    val active = ui.driveRecorderState in setOf(DriveRecorderState.PREPARING, DriveRecorderState.RECORDING, DriveRecorderState.STOPPING)
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ParitySection(parityText("Drive recorder", "Fahrtaufnahme", "Enregistrement du trajet", "Ritopname")) {
             ParityToggle(parityText("Traffic-sign recognition", "Verkehrszeichenerkennung", "Reconnaissance des panneaux", "Verkeersbordherkenning"),
                 ui.trafficSignRecognitionEnabled, !active, "traffic-sign-recognition-toggle", controller::setTrafficSignRecognitionEnabled)
             ParityToggle(parityText("Show other traffic signs", "Andere Verkehrszeichen anzeigen", "Afficher les autres panneaux", "Andere verkeersborden tonen"),

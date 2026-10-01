@@ -10,6 +10,30 @@ import org.junit.Test
 class LaneDetectionRuntimeTests {
     private val identity = listOf(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
 
+    @Test fun cadenceSeparatesCameraDeliveryAdmissionAndPublicationWithBoundedHistory() {
+        val cadence=LaneCadenceWindow()
+        for (index in 0..200) {
+            cadence.record("delivery",index*30_000_000L)
+            if (index%4==0) {
+                cadence.record("admitted",index*30_000_000L)
+                cadence.record("published",index*30_000_000L+15_000_000L)
+            }
+        }
+        val fields=cadence.diagnostics()
+        val delivered=fields["delivery"] as Map<*,*>
+        val admitted=fields["admitted"] as Map<*,*>
+        assertEquals(201L,delivered["count"])
+        assertEquals(128,delivered["intervalSamples"])
+        assertEquals(30.0,delivered["intervalP95Ms"])
+        assertEquals(51L,admitted["count"])
+        assertEquals(120.0,admitted["intervalP95Ms"])
+        cadence.resetIntervals()
+        cadence.record("delivery",100_000_000_000L)
+        val resumed=cadence.diagnostics()["delivery"] as Map<*,*>
+        assertEquals(202L,resumed["count"])
+        assertEquals(0,resumed["intervalSamples"])
+    }
+
     @Test fun samplesPaddedPixelStridedPlaneInEveryRotationWithoutChangingOwnership() {
         val buffer = ByteBuffer.allocate(20)
         buffer.position(1)
@@ -215,13 +239,36 @@ class LaneDetectionRuntimeTests {
         assertEquals(80.0, summary.detection.maximum, 1e-9)
     }
 
+    @Test fun previewWorkerUsesTenHzLatestFrameAndPublishesWithoutTsrContext() {
+        val f=RuntimeFixture(preview=true)
+        repeat(6) { f.submit(); f.worker.drain(); f.main.drain(); f.now+=100_000_000L }
+        assertEquals(6,f.roadResults.size)
+        assertTrue(f.roadResults.any { it.presentation.visibleBoundaryIndices.isNotEmpty() })
+        assertTrue(f.roadResults.all { it.presentation.visibleBoundaryIndices.size<=2 })
+        f.submit(); f.now+=100_000_000L; f.submit(); f.now+=100_000_000L; f.submit()
+        assertEquals(1,f.worker.pendingCount)
+        f.worker.drain(); f.main.drain()
+        assertEquals(7,f.roadResults.size)
+        assertEquals(f.now/1e9,f.roadResults.last().frame.sourceTimestampSeconds!!,1e-9)
+        f.close()
+    }
+    @Test fun previewPendingWorkCannotSurviveThermalPauseOrScopeChange() {
+        val f=RuntimeFixture(preview=true)
+        f.submit(); f.condition=f.condition.copy(thermallyPaused=true)
+        f.worker.drain(); f.main.drain(); assertTrue(f.roadResults.isEmpty())
+        f.now+=200_000_000L; f.condition=f.condition.copy(thermallyPaused=false)
+        f.submit(); f.condition=f.condition.copy(scope=2)
+        f.worker.drain(); f.main.drain(); assertTrue(f.roadResults.isEmpty())
+        f.close()
+    }
+
     private fun assertPoint(x: Double, y: Double, point: LanePoint?) {
         assertNotNull(point)
         assertEquals(x, point!!.x, 1e-6)
         assertEquals(y, point.y, 1e-6)
     }
 
-    private inner class RuntimeFixture {
+    private inner class RuntimeFixture(preview: Boolean = false) {
         var now = 10_000_000_000L
         var condition = LaneAdmission(true, 1, false)
         var cameraAge = 0L
@@ -238,10 +285,16 @@ class LaneDetectionRuntimeTests {
                     abs(x / 383.0 - (.58 + offset)) < .0065) bytes[y * 384 + x] = 230.toByte()
             }
         }
-        val runtime = AndroidLaneDetectionRuntime(main, { condition }, { true }, results::add, {}, { now }, worker)
+        val roadResults=mutableListOf<RoadPathPreparedFrame>()
+        val previewSession=RoadPathSession(previewMode=true, nowNanos={now})
+        private val previewEnabled=preview
+        val runtime = AndroidLaneDetectionRuntime(main, { condition }, { true }, results::add, {}, { now }, worker,
+            previewSession=if(preview) previewSession else null,onRoadResult=roadResults::add)
         fun submit() = runtime.submit {
             reads++
-            LaneLumaSource(ByteBuffer.wrap(pixels), 384, 1, LaneImageGeometry(384, 216, 0, identity), now - cameraAge)
+            LaneLumaSource(ByteBuffer.wrap(pixels), 384, 1, LaneImageGeometry(384, 216, 0, identity), now - cameraAge,
+                if(previewEnabled) RoadPathCameraFrame(pixels.copyOf(),384,216,(now-cameraAge)/1e9,"camera",null,true,0.0,now,
+                    sourceTimestampSeconds=(now-cameraAge)/1e9) else null)
         }
         fun close() = runtime.close()
     }

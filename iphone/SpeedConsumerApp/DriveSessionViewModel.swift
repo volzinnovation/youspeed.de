@@ -252,6 +252,7 @@ enum AppScreenshotState: String {
             case "FRA": place = ("Avenue de la République", "Paris", 48.8566, 2.3522)
             case "BEL": place = ("Rue de la Loi / Wetstraat", "Bruxelles / Brussel", 50.8466, 4.3528)
             case "NLD": place = ("Damrak", "Amsterdam", 52.3676, 4.9041)
+            case "CHE": place = ("Bahnhofstrasse", "Zürich", 47.3769, 8.5417)
             default: place = ("Durlacher Allee", "Karlsruhe", 49.0102, 8.4266)
             }
             return Fixture(currentSpeedKmh: Double(input.postedLimitKmh + input.deltaKmh), speedLimitKmh: input.postedLimitKmh,
@@ -527,6 +528,14 @@ enum PanoramaxGalleryDeletionPolicy {
 
 @MainActor
 final class DriveSessionViewModel: NSObject, ObservableObject {
+    #if DEBUG
+    /// Opt-in device-test access to the actual app owner, avoiding a second loaded model/camera.
+    private(set) static weak var testActiveInstance: DriveSessionViewModel?
+    var testDriveCaptureCoordinator: DriveCaptureCoordinator? { driveCaptureCoordinator }
+    var testTrafficSignRuntime: TrafficSignRuntime? { trafficSignRuntime }
+    var testIsDriving: Bool { isDriving }
+    var testPanoramaxQueueStore: PanoramaxQueueStore? { panoramaxQueueStore }
+    #endif
     private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "session")
     private nonisolated static let tsrLogger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "tsr")
     enum SpeedCaptureMode: Equatable {
@@ -695,7 +704,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
     private var lastLoggedLaneCaptureConfiguration: String?
-    let laneDetectionRuntime = LaneDetectionRuntime()
+    let lanePreviewSession = RoadPathSession(previewMode: true)
+    lazy var laneDetectionRuntime = LaneDetectionRuntime(previewSession: lanePreviewSession, calibrationStore: visualCalibrationStore)
     let roadPathSession = RoadPathSession()
     let visualCalibrationStore = VisualRoadCalibrationStore()
     private let visualCalibrationPreviewConsumer = VisualRoadCalibrationPreviewConsumer()
@@ -782,6 +792,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // Only invalidate in-flight visual work whose coordinates predate the saved crop.
         trafficSignContextGeneration &+= 1
         roadPathSession.invalidateOverlay()
+        lanePreviewSession.invalidateOverlay()
         updateTrafficSignWriteGate()
         refreshTrafficSignFrameSnapshot()
         appendTSRLog("event=visual_calibration_saved revision=\(saved.revision) width=\(saved.imageWidth) height=\(saved.imageHeight) orientation=\(saved.orientationKey) crop_left=\(saved.leftTopX)")
@@ -1893,6 +1904,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // Keep on-device TSR opt-in; its German bootstrap model ships with the
         // app and is prepared in the background.
         trafficSignRecognitionEnabled = storedTSREnabled ?? false
+        // Moving the experimental preview into Diagnostics requires a fresh opt-in.
+        // Reset once; subsequent launches preserve the user's Diagnostics choice.
+        if !UserDefaults.standard.bool(forKey: "youspeed.drive_recorder.lane_diagnostics_opt_in_v1") {
+            UserDefaults.standard.set(false, forKey: "youspeed.drive_recorder.show_detected_lanes")
+            UserDefaults.standard.set(true, forKey: "youspeed.drive_recorder.lane_diagnostics_opt_in_v1")
+        }
         showDetectedLanes = UserDefaults.standard.bool(forKey: "youspeed.drive_recorder.show_detected_lanes")
         trafficSignRecognitionIndependentEnabled = storedTSRIndependentEnabled ?? false
         trafficSignPictogramEnabled = UserDefaults.standard.bool(forKey: "youspeed.drive_recorder.tsr_pictogram_enabled")
@@ -1911,6 +1928,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let endpointCount = manifestEndpoints.count
         Self.logger.notice("sync endpoints configured count=\(endpointCount, privacy: .public)")
         super.init()
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["LANE_FULL_WORKLOAD_RUN_ID"] != nil { Self.testActiveInstance = self }
+        #endif
         visualRoadCalibration = visualCalibrationStore.snapshot()
         visualCalibrationPreviewConsumer.onPreview = { [weak self] preview in
             Task { @MainActor [weak self] in
@@ -1924,6 +1944,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         startPanoramaxQueueMaintenance()
         driveCaptureCoordinator?.setScreenOrientation(screenOrientation)
         driveCaptureCoordinator?.setLaneFrameConsumer(laneDetectionRuntime)
+        laneDetectionRuntime.onPreviewDiagnostic = { [weak self] text in
+            guard let self, self.debugLoggingEnabled else { return }
+            self.appendTSRLog("lane_preview_frame_v1=\(text)", timestamp:Date())
+        }
         laneDetectionRuntime.onActivityChange = { [weak self] enabled in
             self?.driveCaptureCoordinator?.setLaneAnalysisEnabled(enabled)
         }
@@ -2222,7 +2246,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private func refreshLaneDetectionActivity(reason: String = "capture_state") {
         roadPathSession.configureCamera(clock: driveCaptureCoordinator?.session.synchronizationClock)
         laneDetectionRuntime.configure(
-            enabled: showDetectedLanes && !trafficSignRecognitionEnabled,
+            enabled: showDetectedLanes,
             recording: driveCaptureCoordinator?.state == .recording
                 && driveCaptureCoordinator?.isDashcamModuleActive == true,
             appActive: trafficSignApplicationIsActive,
@@ -2240,7 +2264,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             "dashcamEnabled": driveRecorderDashcamActive, "recognitionEnabled": trafficSignProcessingIsEnabled,
             "applicationActive": trafficSignApplicationIsActive, "driving": isDriving,
             "showDetectedLanes": showDetectedLanes,
-            "laneOverlaySource": trafficSignRecognitionEnabled ? "road_path" : "legacy",
+            "laneOverlaySource": "independent_preview",
             // Preview visibility is private UI state, not observable from this controller.
             "previewVisibilityAvailable": false, "previewVisible": NSNull()
         ]
@@ -5575,6 +5599,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             currentBundledSpeedLimitKmh = fixture.speedLimitKmh
             currentBaseUnlimitedSpeedLimitActive = false
             currentLocalCorrectionValue = nil
+            // Replay the road input through the shared reference runtime too;
+            // publishing alone cannot create a map reference after its reset.
+            speedReference.context(way: fixture.wayID, road: nil, relations: [], direction: "unknown", stable: true)
+            speedReference.bundle(id: "country-review", value: fixture.speedLimitKmh.map { SpeedReferenceValue(kind: "numeric", kmh: $0) })
             publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
             let input = CountryPenaltyScreenshotInput.current()
             let timestamp = Date().timeIntervalSince1970
@@ -5589,6 +5617,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 "money_fine_eur": notice?.moneyFineEUR as Any? ?? NSNull(),
                 "penalty_points": notice?.penaltyPoints as Any? ?? NSNull(),
                 "driving_ban_months": notice?.drivingBanMonths as Any? ?? NSNull(),
+                "conditional_driving_ban_months": notice?.conditionalDrivingBanMonths as Any? ?? NSNull(),
                 "enforcement_class": notice?.enforcementClass as Any? ?? NSNull()
             ]
             if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]),
@@ -5771,6 +5800,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         mapLookupWorker.cancel()
         if !isDriving {
             roadPathSession.resetTrajectory()
+            lanePreviewSession.resetTrajectory()
             cancelVisionDismissalVoice()
             visionDismissalVoiceWindow = VisionDismissalVoiceWindow()
             lastKnownLimitPresentation.reset()
@@ -5830,7 +5860,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func stopDriving() {
-        if isDriving { roadPathSession.resetTrajectory() }
+        if isDriving { roadPathSession.resetTrajectory(); lanePreviewSession.resetTrajectory() }
         cancelVisionDismissalVoice()
         mapLookupWorker.cancel()
         speedReferenceTickTask?.cancel()
@@ -8660,6 +8690,9 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
             discoverPacks(for: location)
             guard isDriving else { continue }
             roadPathSession.recordLocation(time: location.timestamp.timeIntervalSince1970,
+                latitude: location.coordinate.latitude, longitude: location.coordinate.longitude, course: location.course,
+                speed: location.speed, accuracy: location.horizontalAccuracy, courseAccuracy: location.courseAccuracy)
+            lanePreviewSession.recordLocation(time: location.timestamp.timeIntervalSince1970,
                 latitude: location.coordinate.latitude, longitude: location.coordinate.longitude, course: location.course,
                 speed: location.speed, accuracy: location.horizontalAccuracy, courseAccuracy: location.courseAccuracy)
             if location.horizontalAccuracy >= 0 && location.horizontalAccuracy <= 50 {

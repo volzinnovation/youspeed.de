@@ -41,3 +41,19 @@ internal object LanePreviewPresentationPolicy {
             listOf(listOf(calibration.leftBottom, calibration.leftTop), listOf(calibration.rightBottom, calibration.rightTop)))
     }
 }
+
+/** Delay the fixed reference after observed paint disappears. Never retain or invent observed points. */
+internal class LaneReferenceHysteresis {
+    private var key: String? = null
+    private var lastTime = Double.NEGATIVE_INFINITY
+    private var referenceAfter = Double.NEGATIVE_INFINITY
+    fun apply(decision: LanePreviewPresentationDecision, scope: String, now: Double): LanePreviewPresentationDecision {
+        if (!now.isFinite()) return LanePreviewPresentationDecision(LanePreviewPresentationMode.HIDDEN,"invalid_timestamp")
+        if (scope != key || now < lastTime) { key=scope; referenceAfter=now+1.0 }
+        lastTime=now
+        if (decision.mode == LanePreviewPresentationMode.OBSERVED) referenceAfter=now+2.0
+        if (decision.mode == LanePreviewPresentationMode.CALIBRATION_REFERENCE && now < referenceAfter)
+            return LanePreviewPresentationDecision(LanePreviewPresentationMode.HIDDEN,"reference_hysteresis")
+        return decision
+    }
+}

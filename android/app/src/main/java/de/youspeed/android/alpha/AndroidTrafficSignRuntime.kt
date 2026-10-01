@@ -154,16 +154,77 @@ internal object AndroidTrafficSignModelPackLoader {
     private const val CLASSIFIER_SIZE = 224
 }
 
-/** Owns one CameraX image until the orchestrator releases it. */
+/** Release the camera buffer once the independent bitmap exists, before model work.
+ * Kept separate from the frame lifetime: metadata/prepared geometry remain valid until fusion.
+ */
+internal class CameraXImageLease(private val closeImage: () -> Unit, private val onClosed: (String) -> Unit = {}) {
+    private val closed = AtomicBoolean(false)
+    val isClosed: Boolean get() = closed.get()
+    fun close(reason: String) {
+        if (closed.compareAndSet(false, true)) {
+            try { closeImage() } finally { onClosed(reason) }
+        }
+    }
+    fun <T> copyAndClose(copy: () -> T): T {
+        check(!closed.get()) { "Camera image was already closed" }
+        var copied = false
+        try { return copy().also { copied = true } }
+        finally { close(if (copied) "bitmap_copied" else "bitmap_copy_failed") }
+    }
+}
+
+/** Fixed-size timing windows and cumulative counters; no images or per-frame log writes. */
+internal class CameraAnalysisCadenceWindow {
+    private val intervals = ArrayDeque<Double>()
+    private val holds = ArrayDeque<Double>()
+    private val bitmapHolds = ArrayDeque<Double>()
+    private val counts = linkedMapOf<String, Long>()
+    private var lastDelivery: Long? = null
+    private var lastReport: Long? = null
+    private fun append(window: ArrayDeque<Double>, value: Double) {
+        if (window.size == 128) window.removeFirst()
+        window.addLast(value.coerceAtLeast(0.0))
+    }
+    @Synchronized fun delivered(now: Long) {
+        lastDelivery?.let { previous -> if (now >= previous) append(intervals, (now-previous)/1e6) }
+        lastDelivery = now
+        counts["delivered"] = (counts["delivered"] ?: 0)+1
+        if (lastReport == null) lastReport = now
+    }
+    @Synchronized fun event(reason: String) { counts[reason] = (counts[reason] ?: 0)+1 }
+    @Synchronized fun closed(reason: String, heldMs: Double) {
+        event(reason); append(holds,heldMs)
+        if (reason == "bitmap_copied") append(bitmapHolds,heldMs)
+    }
+    @Synchronized fun reportIfDue(now: Long): Map<String,Any>? {
+        if (lastReport == null || now-(lastReport ?: now)<5_000_000_000L) return null
+        lastReport = now
+        fun timing(values: Collection<Double>): Map<String,Any> {
+            if (values.isEmpty()) return mapOf("samples" to 0)
+            val sorted = values.sorted()
+            fun quantile(p: Double) = sorted[kotlin.math.ceil((sorted.size-1)*p).toInt()]
+            return mapOf("samples" to sorted.size,"p50Ms" to quantile(0.5),"p95Ms" to quantile(0.95),"maxMs" to sorted.last())
+        }
+        return mapOf("counts" to counts.toMap(),"deliveryInterval" to timing(intervals),
+            "cameraHold" to timing(holds),"copiedInputCameraHold" to timing(bitmapHolds),
+            "pendingCameraInputsAllowed" to false,"timingWindowCapacity" to 128)
+    }
+}
+
+/** Owns camera pixels only through preparation/copy; frame metadata lives through inference. */
 internal class CameraXTrafficSignFrame(
     private val image: ImageProxy,
     private val pathIntrinsics: RoadPathCameraIntrinsics? = null,
     private val pathClockKnown: Boolean = false,
     private val pathCameraGeneration: Long = 0,
     savedVisualCalibration: VisualRoadCalibration? = null,
+    onCameraReleased: (String, Double) -> Unit = { _, _ -> },
 ) : TrafficSignNormalizedFrameHandle {
     val receivedAtNanos: Long = System.nanoTime()
     private val released = AtomicBoolean(false)
+    private val imageLease = CameraXImageLease(image::close) { reason ->
+        onCameraReleased(reason, (System.nanoTime()-receivedAtNanos)/1e6)
+    }
     private val rotationDegrees = image.imageInfo.rotationDegrees
 
     override val frameId: String = UUID.randomUUID().toString().lowercase(Locale.US)
@@ -183,6 +244,7 @@ internal class CameraXTrafficSignFrame(
     var roadPathInferenceStartedNanos: Long? = null
 
     fun roadPathFrame(): RoadPathCameraFrame? {
+        check(!imageLease.isClosed) { "Road geometry must be copied before closing camera pixels" }
         val start = System.nanoTime()
         if (!pathCaptureSeconds.isFinite()) return null
         val values = FloatArray(9).also(image.imageInfo.sensorToBufferTransformMatrix::getValues)
@@ -203,7 +265,9 @@ internal class CameraXTrafficSignFrame(
 
     fun <T> withOrientedBitmap(rotationBuffer: AndroidTrafficSignBitmapRotation, consume: (Bitmap) -> T): T {
         check(!released.get()) { "Camera frame was already released" }
-        val sourceBitmap = image.toBitmap()
+        // toBitmap makes independent ARGB pixels. CameraX KEEP_ONLY_LATEST cannot
+        // deliver another lane exposure until this proxy closes; inference needs only bitmap.
+        val sourceBitmap = imageLease.copyAndClose { image.toBitmap() }
         try {
             return consume(rotationBuffer.orient(sourceBitmap, rotationDegrees))
         } finally {
@@ -212,7 +276,7 @@ internal class CameraXTrafficSignFrame(
     }
 
     override fun release() {
-        if (released.compareAndSet(false, true)) image.close()
+        if (released.compareAndSet(false, true)) imageLease.close("frame_released")
     }
 }
 
@@ -786,6 +850,7 @@ internal class AndroidTrafficSignCameraRuntime(
     private var lastLaneGeometryNanos = 0L
     @Volatile private var firstAnalysisFramePending = true
     private val calibrationRotation = AndroidTrafficSignBitmapRotation()
+    private val analysisCadence = CameraAnalysisCadenceWindow()
     private var imageCapture: ImageCapture? = null
     private var videoCapture: VideoCapture<Recorder>? = null
     private var preview: Preview? = null
@@ -817,6 +882,10 @@ internal class AndroidTrafficSignCameraRuntime(
         clockIsRealtime = { laneClockIsRealtime },
         onResult = controller::onLaneDetectionResult,
         onDiagnostics = controller::onLaneDetectionDiagnostics,
+        previewSession = controller.lanePreviewSession,
+        roadFrameFactory = { image -> CameraXTrafficSignFrame(image, pathIntrinsics,
+            laneClockIsRealtime, generation.get(), controller.visualRoadCalibration).roadPathFrame() },
+        onRoadResult = controller::onLanePreviewPrepared,
     )
 
     // A hidden preview still supplies a surface. Removing the UI must never
@@ -912,6 +981,8 @@ internal class AndroidTrafficSignCameraRuntime(
             firstAnalysisFramePending = true
             val orientationEpoch = analysisOrientationEpoch
             analysis.setAnalyzer(cameraExecutor) { image ->
+                val deliveredAt = System.nanoTime()
+                analysisCadence.delivered(deliveredAt)
                 controller.withCameraOrientation {
                     val current = bridge
                     if (firstAnalysisFramePending) {
@@ -923,7 +994,9 @@ internal class AndroidTrafficSignCameraRuntime(
                             "recognitionReady" to (current != null)))
                     }
                     if (orientationEpoch != analysisOrientationEpoch ||
-                        image.imageInfo.rotationDegrees != expectedAnalysisRotation) image.close()
+                        image.imageInfo.rotationDegrees != expectedAnalysisRotation) {
+                        image.close(); analysisCadence.closed("orientation_discarded", (System.nanoTime()-deliveredAt)/1e6)
+                    }
                     else {
                         val receivedAt = android.os.SystemClock.elapsedRealtimeNanos()
                         val previewScope = controller.lanePreviewSourceScope()
@@ -955,9 +1028,21 @@ internal class AndroidTrafficSignCameraRuntime(
                         }
                         // Copy admitted lane luminance before TSR takes ownership.
                         laneRuntime.submit(image)
-                        if (current == null) image.close() else current.submit(CameraXTrafficSignFrame(image, pathIntrinsics,
-                            laneClockIsRealtime, generation.get(), controller.visualRoadCalibration))
+                        if (current == null) {
+                            image.close(); analysisCadence.closed("no_tsr_consumer", (System.nanoTime()-deliveredAt)/1e6)
+                        } else {
+                            analysisCadence.event("tsr_submitted")
+                            val frame = CameraXTrafficSignFrame(image, pathIntrinsics, laneClockIsRealtime,
+                                generation.get(), controller.visualRoadCalibration) { reason, _ ->
+                                analysisCadence.closed(reason, (System.nanoTime()-deliveredAt)/1e6)
+                            }
+                            try { current.submitCameraFrame(frame) { reason -> analysisCadence.event("source_drop_$reason") } }
+                            catch (failure: RuntimeException) { frame.release(); throw failure }
+                        }
                     }
+                }
+                analysisCadence.reportIfDue(System.nanoTime())?.let { report ->
+                    controller.onTrafficSignCameraAnalysisDiagnostic("cadence", report + ("lanes" to laneRuntime.cadenceDiagnostics()))
                 }
             }
         } else analysis.clearAnalyzer()
