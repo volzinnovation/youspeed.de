@@ -1,10 +1,15 @@
-YouSpeed zeigt waehrend der Fahrt das erkannte Tempolimit und die aktuelle Geschwindigkeit. Die App arbeitet mit lokalen Offline-Kartendaten und gibt unverbindliche Hinweise, wenn Tempoverstoesse teuer werden koennen.
+YouSpeed zeigt deine aktuelle Geschwindigkeit und das aus Offline-Kartendaten ermittelte Tempolimit. Lade unterstützte Länder und Regionen herunter, verwalte sie im Datenmanager und nutze die Fahrtanzeige ohne laufende Kartenverbindung.
+
+Offline-Karten und länderspezifische Sanktionshinweise umfassen Deutschland, Frankreich, die Schweiz, Belgien und die Niederlande. Die Kameramodelle enthalten zusammen Hunderte länderspezifische Schildklassen, darunter Tempolimits und weitere Verkehrszeichen. Diese Abdeckung ist keine Genauigkeitsgarantie; nur unterstützte Zeichen können angezeigt werden oder den Tempolimit-Bezug beeinflussen.
 
 Funktionen:
-- Live-Anzeige fuer Tempolimit und Geschwindigkeit
-- Offline-Kartendaten fuer unterstuetzte Laender und Regionen
-- Hinweise zu Bussgeld, Punkten und Fahrverbot
-- Lokale Spracherfassung fuer Tempolimits
-- Keine Werbung und kein Tracking
+- Live-Anzeige von Geschwindigkeit und Tempolimit mit Quellenangabe
+- Einstellbare Warntöne und unverbindliche Sanktionshinweise, soweit unterstützt
+- Optionale, lokal gespeicherte Dashcam-Videos mit Wiedergabe, Teilen und Löschen
+- Optionale Verkehrszeichenerkennung auf deinem Gerät mit Ton oder Sprachausgabe
+- Lokale gesprochene Tempolimit-Korrekturen auf unterstützten Geräten und in unterstützten Sprachen
+- Straßenfotos mit Standortdaten zur Prüfung und zum optionalen Panoramax-Upload
 
-YouSpeed ist ein Assistenzsystem. Verkehrszeichen, Verkehrsregeln und amtliche Bescheide bleiben immer massgeblich.
+Richte YouSpeed im Stand ein. Die Kameraerkennung kann Zeichen übersehen oder falsch deuten; ihre Verfügbarkeit hängt vom installierten Ländermodell und Gerät ab. Kartenabdeckung und Sanktionshinweise unterscheiden sich je nach Land. Verkehrszeichen, Verkehrsregeln und amtliche Entscheidungen sind maßgeblich. YouSpeed garantiert weder das geltende Tempolimit noch rechtliche Folgen.
+
+Die Fahrtfunktionen benötigen kein Konto. Kamera und Mikrofon sind optional. Bei eingeschalteter Fotoaufnahme werden während der Bewegung mit geöffneter App automatisch Fotos aufgenommen. Fotos und Dashcam-Videos bleiben auf deinem Gerät, bis du sie bewusst teilst oder hochlädst. Panoramax-Uploads benötigen ein verbundenes Konto, Internet und deine Auswahl; hochgeladene Fotos enthalten Standort- und Aufnahmedaten. Lokale Diagnoseprotokolle sind standardmäßig eingeschaltet und können deaktiviert werden. Keine Werbe- oder Tracking-SDKs.

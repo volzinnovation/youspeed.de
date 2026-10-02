@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-10-02",
+  "asset": "european-road-backdrop.png",
+  "purpose": "Photographic marketing background; not a real drive, recognition result or app screenshot",
+  "prompt": "Use case: ads-marketing. Asset type: photographic background for YouSpeed mobile app store feature graphic, landscape ratio 2.048:1, intended final layout 1024x500. Primary request: realistic European road scene viewed straight forward from a stationary or safely mounted dashcam camera inside a car, open clear two-lane rural road, low green hills and distant modest alpine foothills, soft bright morning light, clean sky. No visible phone, no dashboard display, no visible people, no readable signs, no cars close to camera, no logos, no text, no watermark, no traffic-sign drawings. Restrained natural photographic style. Composition: road receding through right half, darkened smooth charcoal negative space across left half to support separate exact typography. Preserve a credible safe road scene with correct right-hand driving road markings. Photographic backdrop only, no app UI or invented feature claims.",
+  "composition": "Editable SVG with localized copy, existing app icon, and unchanged shared PNG pictograms de-205, de-206 and de-301. No generated traffic-sign artwork.",
+  "generator": "scripts/release/generate_store_graphics.mjs"
+}

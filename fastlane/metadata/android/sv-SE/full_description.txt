@@ -1,10 +1,15 @@
-YouSpeed visar den upptackta hastighetsgransen och din aktuella hastighet medan du kor. Appen anvander lokala offlinekartor och ger vagledande varningar nar en hastighetsovertradelse kan fa konsekvenser.
+YouSpeed visar din hastighet och hastighetsgränsen från offlinekartor. Ladda ner tillgängliga länder och regioner, hantera dem i datahanteraren och använd körvyn utan en ständig kartanslutning.
+
+Offlinekartor och vägledande landsregler omfattar Tyskland, Frankrike, Schweiz, Belgien och Nederländerna. Kameramodellerna innehåller tillsammans hundratals landspecifika skyltklasser, inklusive hastighetsgränser och andra vägskyltar. Täckningen garanterar inte igenkänningsnoggrannhet; endast skyltar som stöds kan visas eller påverka hastighetsreferensen.
 
 Funktioner:
-- Livevisning av hastighetsgrans och hastighet
-- Offlinekartor for lander och regioner som stods
-- Vagledande varningar om boter, punkter och korforbud
-- Lokal rostinmatning av hastighetsgranser
-- Ingen reklam och ingen sparning
+- Hastighet och hastighetsgräns i realtid med källinformation
+- Inställbara ljudvarningar och vägledande information om påföljder där det stöds
+- Valfria dashcamvideor som sparas lokalt, med uppspelning, delning och radering
+- Valfri skyltigenkänning på enheten med ljud eller tal
+- Lokala talade korrigeringar av hastighetsgränser på enheter och språk som stöds
+- Gatufoton med platsdata att granska före valfri uppladdning till Panoramax
 
-YouSpeed ar en assistansapp. Vagmarken, trafikregler och officiella beslut ar alltid avgorande.
+Ställ in YouSpeed när du står parkerad. Igenkänningen kan missa eller misstolka skyltar; tillgängligheten beror på installerad landsmodell och enhet. Karttäckning och information om påföljder varierar mellan länder. Skyltar, trafikregler och officiella beslut gäller alltid. YouSpeed garanterar inte gällande hastighetsgräns eller juridiska följder.
+
+Körfunktionerna kräver inget konto. Kamera och mikrofon är valfria. När fotofunktionen är aktiverad tas foton automatiskt under rörelse med appen öppen. Foton och videor stannar på enheten tills du väljer att dela eller ladda upp dem. Panoramax kräver ett anslutet konto, internet och ditt urval; uppladdade foton innehåller plats- och bildmetadata. Lokala diagnostikloggar är aktiverade som standard och kan stängas av. Inga annons- eller spårnings-SDK:er.

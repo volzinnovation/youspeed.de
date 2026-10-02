@@ -1,1 +1,1 @@
-Initial public release with offline map data, live speed-limit display, and localized app text.
+Version 1.3 brings local dashcam videos, on-device sign recognition with sound or spoken feedback, and geolocated photos you review before optional Panoramax upload. A new Data Manager simplifies offline region downloads and storage. Improved source display, recording controls, onboarding and diagnostics. Recognition and map data can be wrong; always follow road signs.

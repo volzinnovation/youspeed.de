@@ -602,6 +602,13 @@ private fun MainScreen(
             primaryMetricFont.toDp() * 1.05f + secondaryFont.toDp() * 1.2f
         }
         val horizontalPadding = max(12f, workspaceWidth.value * 0.04f).dp
+        // Match the iPhone recorder layout: portrait status controls sit above
+        // the bottom action row, whose overlay needs its own reserved space.
+        val workspaceBottomPadding = if (!landscape && ui.driveRecorderDashcamActive && ui.drivingControlsAllowed) {
+            CONTROL_BUTTON_DIAMETER + 16.dp
+        } else {
+            12.dp
+        }
         val locationHeight = if (landscape) 72.dp else max(LOCATION_SLOT_MIN_HEIGHT.value, minDimension * 0.225f).dp
         val locationBadgeWidth = if (landscape) {
             (workspaceWidth.value * 0.78f).coerceAtLeast(180f).dp
@@ -699,7 +706,7 @@ private fun MainScreen(
 
                 }
                 Column(
-                    Modifier.fillMaxSize().padding(top = if (landscape) screenInset else 0.dp, bottom = 12.dp)
+                    Modifier.fillMaxSize().padding(top = if (landscape) screenInset else 0.dp, bottom = workspaceBottomPadding)
                         .testTag("main-workspace-pane"),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {

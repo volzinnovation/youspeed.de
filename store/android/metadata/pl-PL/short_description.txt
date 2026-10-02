@@ -1,1 +1,1 @@
-Asystent limitow predkosci z mapami offline i ostrzezeniami.
+Limity offline, wideorejestrator i opcjonalne lokalne rozpoznawanie znaków.

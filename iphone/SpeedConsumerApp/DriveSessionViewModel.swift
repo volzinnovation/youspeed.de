@@ -5773,6 +5773,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         currentBundledSpeedLimitKmh = fixture.speedLimitKmh
         currentBaseUnlimitedSpeedLimitActive = fixture.isUnlimitedSpeedLimitActive
         currentLocalCorrectionValue = fixture.speedLimitDisplayText == "Schritt" ? "walk" : nil
+        // Replay fixture inputs through the existing reference runtime so its
+        // startup callbacks retain the demonstrated map, walking or unlimited
+        // value. Publishing a display alone does not establish map authority.
+        speedReference.context(way: fixture.wayID, road: nil, relations: [], direction: "unknown", stable: true)
+        speedReference.bundle(id: "screenshot", value: SpeedReferenceValue(fixture.baseEffectiveSpeedLimitState.value))
         publishEffectiveSpeedLimitState(fixture.baseEffectiveSpeedLimitState)
         if screenshotState == .cameraLimitActive {
             publishEffectiveSpeedLimitState(
@@ -5818,10 +5823,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             currentBundledSpeedLimitKmh = fixture.speedLimitKmh
             currentBaseUnlimitedSpeedLimitActive = false
             currentLocalCorrectionValue = nil
-            // Replay the road input through the shared reference runtime too;
-            // publishing alone cannot create a map reference after its reset.
-            speedReference.context(way: fixture.wayID, road: nil, relations: [], direction: "unknown", stable: true)
-            speedReference.bundle(id: "country-review", value: fixture.speedLimitKmh.map { SpeedReferenceValue(kind: "numeric", kmh: $0) })
             publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
             let input = CountryPenaltyScreenshotInput.current()
             let timestamp = Date().timeIntervalSince1970

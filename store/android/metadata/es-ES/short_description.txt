@@ -1,1 +1,1 @@
-Asistente de limites de velocidad con mapas offline y avisos.
+Límites sin conexión, dashcam y reconocimiento local opcional de señales.

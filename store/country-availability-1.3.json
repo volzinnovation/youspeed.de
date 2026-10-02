@@ -1,0 +1,14 @@
+{
+  "format": "youspeed.store-availability.preparation.v1",
+  "version": "1.3",
+  "date": "2026-10-02",
+  "requested_additions_iso2": ["FR", "CH", "BE", "NL"],
+  "preserve_existing_countries": true,
+  "console_changes_applied": false,
+  "status": "blocked_on_native_browser_access",
+  "apple_app_id": "6787469256",
+  "google_play_package": "de.youspeed.android",
+  "apple_localizations": ["de-DE", "en-US", "fr-FR", "nl-NL"],
+  "google_play_localizations": ["de-DE", "en-US", "fr-FR", "nl-NL", "es-ES", "it-IT", "pl-PL", "pt-BR", "sv-SE"],
+  "note": "Enable France, Switzerland, Belgium and Netherlands in each console while retaining all existing territories. Listing translations do not change storefront availability. Verify the saved country list independently in both consoles. Binary upload and submission remain separate steps."
+}

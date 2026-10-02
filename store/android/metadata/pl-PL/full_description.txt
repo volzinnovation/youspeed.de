@@ -1,10 +1,15 @@
-YouSpeed pokazuje podczas jazdy wykryty limit predkosci i aktualna predkosc. Aplikacja korzysta z lokalnych danych map offline i podaje orientacyjne ostrzezenia, gdy przekroczenie predkosci moze miec konsekwencje.
+YouSpeed pokazuje aktualną prędkość i ograniczenie ustalone na podstawie map offline. Pobierz dostępne kraje i regiony, zarządzaj nimi w menedżerze danych i korzystaj z ekranu jazdy bez stałego połączenia z mapami.
+
+Mapy offline i orientacyjne reguły krajowe obejmują Niemcy, Francję, Szwajcarię, Belgię i Holandię. Modele kamery zawierają łącznie setki krajowych klas znaków, w tym ograniczenia i inne znaki drogowe. Ten zakres nie gwarantuje dokładności rozpoznawania; tylko obsługiwane znaki mogą być wyświetlane lub wpływać na odniesienie ograniczenia.
 
 Funkcje:
-- Podglad limitu predkosci i predkosci na zywo
-- Mapy offline dla obslugiwanych krajow i regionow
-- Orientacyjne ostrzezenia o mandatach, punktach i zakazach prowadzenia
-- Lokalna glosowa rejestracja limitow predkosci
-- Brak reklam i brak sledzenia
+- Prędkość i ograniczenie na żywo z informacją o źródle
+- Regulowane alerty dźwiękowe i orientacyjne informacje o karach, gdzie są dostępne
+- Opcjonalne filmy z wideorejestratora zapisane lokalnie, z odtwarzaniem, udostępnianiem i usuwaniem
+- Opcjonalne rozpoznawanie znaków na urządzeniu z sygnałem lub komunikatem głosowym
+- Lokalne głosowe korekty ograniczeń na obsługiwanych urządzeniach i w obsługiwanych językach
+- Zdjęcia ulic z lokalizacją do sprawdzenia i opcjonalnego przesłania do Panoramax
 
-YouSpeed jest aplikacja wspomagajaca. Znaki drogowe, przepisy ruchu i urzedowe decyzje zawsze pozostaja decydujace.
+Skonfiguruj YouSpeed na postoju. Rozpoznawanie może pominąć lub błędnie odczytać znaki; dostępność zależy od zainstalowanego modelu kraju i urządzenia. Zasięg map i informacje o karach różnią się w zależności od kraju. Znaki, przepisy i oficjalne decyzje są wiążące. YouSpeed nie gwarantuje obowiązującego limitu ani skutków prawnych.
+
+Funkcje jazdy nie wymagają konta. Kamera i mikrofon są opcjonalne. Jeśli robienie zdjęć jest włączone, zdjęcia powstają automatycznie podczas ruchu przy otwartej aplikacji. Zdjęcia i filmy pozostają na urządzeniu, dopóki nie zdecydujesz o ich udostępnieniu lub przesłaniu. Panoramax wymaga połączonego konta, Internetu i wyboru zdjęć; przesłane zdjęcia zawierają lokalizację i metadane wykonania. Lokalne dzienniki diagnostyczne są domyślnie włączone i można je wyłączyć. Brak SDK reklamowych i śledzących.

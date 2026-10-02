@@ -1,1 +1,1 @@
-YouSpeed helps you stay aware of speed limits with offline maps, live display, and clear advisory warnings.
+Offline speed limits, local dashcam and optional on-device sign recognition. Review street photos before choosing a Panoramax upload.

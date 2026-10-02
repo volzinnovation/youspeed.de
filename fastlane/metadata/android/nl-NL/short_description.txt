@@ -1,1 +1,1 @@
-Live snelheidslimietassistent met offline kaarten en waarschuwingen.
+Offline snelheidslimieten, dashcam en optionele lokale verkeersbordherkenning.

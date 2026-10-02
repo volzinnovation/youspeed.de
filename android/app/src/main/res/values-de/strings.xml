@@ -72,7 +72,7 @@
     <string name="onboarding_source_map_title">Heruntergeladene Datenbank</string>
     <string name="onboarding_source_map_body">Die heruntergeladenen Straßendaten liefern bekannte Tempolimits offline. Das normale Tempolimit-Schild hat kein Kamera-Auge. Datenbankdaten können fehlen oder veraltet sein.</string>
     <string name="onboarding_source_correction_title">Deine eigenen Korrekturen</string>
-    <string name="onboarding_source_correction_body">Tippe doppelt auf das Tempolimit-Schild und sprich das gesehene Limit auf Deutsch. Die Erkennung läuft auf diesem Handy und fragt bei erster Nutzung nach Mikrofonzugriff. Deine bestätigte Korrektur bleibt lokal; prüfe sie in den Einstellungen.</string>
+    <string name="onboarding_source_correction_body">Tippe doppelt auf das Tempolimit-Schild und sprich das gesehene Limit je nach App-Sprache auf Deutsch, Englisch, Französisch oder Niederländisch. Die Erkennung läuft auf diesem Handy und fragt bei erster Nutzung nach Mikrofonzugriff. Deine bestätigte Korrektur bleibt lokal; prüfe sie in den Einstellungen.</string>
     <string name="onboarding_source_camera_title">Kameraerkennung und das Auge</string>
     <string name="onboarding_source_camera_body">Die Kamera kann Straßenschilder erkennen. Ein Auge neben dem aktiven Tempolimit-Schild bedeutet, dass das angezeigte Limit gerade aus der Kameraerkennung stammt. Endet dieser Kamerahinweis, verwendet die App wieder die Datenbank oder deine passende Korrektur. Beachte immer die Schilder an der Straße.</string>
     <string name="onboarding_recognition">Schilder mit der Kamera erkennen</string>

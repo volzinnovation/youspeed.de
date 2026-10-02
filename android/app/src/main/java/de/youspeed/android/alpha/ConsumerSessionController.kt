@@ -449,6 +449,7 @@ class ConsumerSessionController(
     private val clock: Clock,
     launchScreenshotState: AppScreenshotState?,
     private val countryScreenshotScenario: CountryPenaltyScreenshotScenario? = null,
+    private val launchScreenshotDashcam: Boolean = false,
 ) {
     private val debugLogPersistence = DebugLogPersistence(
         preferences.getBoolean(DebugLogPersistence.PREFERENCE_KEY, true),
@@ -4321,6 +4322,11 @@ class ConsumerSessionController(
         val cameraFixture = state in setOf(AppScreenshotState.CAMERA_LIMIT_ACTIVE, AppScreenshotState.OTHER_SIGN_GIVE_WAY,
             AppScreenshotState.OTHER_SIGN_STOP, AppScreenshotState.OTHER_SIGN_CLEARED)
         uiState = uiState.copy(
+            // Match the iPhone screenshot fixture: show the real recorder controls
+            // without opening the camera or creating local media.
+            driveRecorderState = if (launchScreenshotDashcam) DriveRecorderState.RECORDING else DriveRecorderState.DISABLED,
+            driveRecorderDashcamActive = launchScreenshotDashcam,
+            driveRecorderStartedAt = if (launchScreenshotDashcam) clock.instant() else null,
             otherTrafficSignDisplayEnabled = cameraFixture,
             trafficSignRecognitionEnabled = cameraFixture,
             lastTrafficSignPictogram = when (state) {

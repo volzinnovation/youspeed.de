@@ -19,12 +19,17 @@ def test_web_mercator_y_is_monotonic_and_symmetric():
 
 
 def test_project_uses_mercator_latitude_scaling():
-    _, y_41 = MODULE.project(0, 41)
-    _, y_50 = MODULE.project(0, 50)
-    _, y_56 = MODULE.project(0, 56)
-    assert y_41 > y_50 > y_56
-    assert y_41 == MODULE.MAP[3]
-    assert y_56 < MODULE.MAP[1] + 20
+    south, north = MODULE.MAIN_VIEW[2:]
+    _, y_south = MODULE.project(0, south)
+    _, y_north = MODULE.project(0, north)
+    assert abs(y_south - MODULE.MAP[3]) < 1e-9
+    assert abs(y_north - MODULE.MAP[1]) < 1e-9
+    # Equal latitude spans grow toward the north in Web Mercator.
+    quarter = (north - south) / 4
+    _, y_lower = MODULE.project(0, south + quarter)
+    _, y_upper = MODULE.project(0, north - quarter)
+    assert y_south > y_lower > y_upper > y_north
+    assert y_upper - y_north > y_south - y_lower
 
 
 def test_official_geometry_covers_every_catalog_bundle():

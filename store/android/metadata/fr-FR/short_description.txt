@@ -1,1 +1,1 @@
-Assistant de limitation de vitesse avec cartes hors ligne et alertes.
+Limitations hors ligne, dashcam et reconnaissance locale des panneaux en option.

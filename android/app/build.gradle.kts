@@ -117,9 +117,16 @@ android {
 }
 
 dependencies {
+    constraints {
+        implementation("androidx.fragment:fragment:1.8.2") {
+            // CameraX/AppCompat and Play review otherwise resolve Fragment 1.1.0,
+            // which predates the Activity Result permission contract support.
+            because("Activity Result contracts require Fragment 1.3.0 or newer")
+        }
+    }
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
-    // CameraX 1.5+ requires AGP 8.6; 1.4.2 remains compatible with this app's
-    // AGP 8.5 / Kotlin 1.9 toolchain.
+    // Keep the camera runtime used by the last device parity validation while
+    // the release toolchain supports API 36. Runtime upgrades need device tests.
     val cameraXVersion = "1.4.2"
 
     implementation("androidx.core:core-ktx:1.13.1")

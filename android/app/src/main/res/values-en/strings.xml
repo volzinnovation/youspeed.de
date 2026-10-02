@@ -72,7 +72,7 @@
     <string name="onboarding_source_map_title">Downloaded map</string>
     <string name="onboarding_source_map_body">The downloaded road data supplies known speed limits offline. A normal speed-limit sign has no camera eye. Map information may be missing or out of date.</string>
     <string name="onboarding_source_correction_title">Your own corrections</string>
-    <string name="onboarding_source_correction_body">Double-tap the speed-limit sign, then say the observed limit in German. Recognition runs on this phone and asks for microphone access when first used. Your confirmed correction stays local; review it in settings.</string>
+    <string name="onboarding_source_correction_body">Double-tap the speed-limit sign, then say the observed limit in German, English, French or Dutch according to the app language. Recognition runs on this phone and asks for microphone access when first used. Your confirmed correction stays local; review it in settings.</string>
     <string name="onboarding_source_camera_title">Camera recognition and the eye</string>
     <string name="onboarding_source_camera_body">The camera can recognize roadside signs. An eye beside the active speed-limit sign means the displayed limit currently comes from camera recognition. When the camera assertion ends, the app returns to map data or your applicable correction. Always follow the signs on the road.</string>
     <string name="onboarding_recognition">Recognize signs with the camera</string>
@@ -137,4 +137,7 @@
     <string name="calibration_up">Move up</string>
     <string name="calibration_down">Move down</string>
     <string name="calibration_defaults">Reset draft</string>
+
+    <!-- Store readiness: complete camera calibration translations. -->
+    <string name="tsr_disregard_vision">Disregard vision and return to road</string>
 </resources>

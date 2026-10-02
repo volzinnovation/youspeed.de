@@ -1,0 +1,383 @@
+{
+  "schema": "youspeed.public-panoramax-privacy-audit.v1",
+  "checked_at_utc": "2026-10-02T13:45:58.669932+00:00",
+  "release_candidate": {
+    "marketing_version": "1.3",
+    "build": "10031",
+    "console_uniqueness_verified": false
+  },
+  "scope": "Anonymous public GET only, both app-allowlisted Panoramax origins and linked identity-provider login pages. No credentials, tokens, uploads, account creation, claim, messages or deletion actions.",
+  "checks": [
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/assets/app-C4I4U_6T.js",
+      "http_status": 200,
+      "response_bytes": 3813662,
+      "response_sha256": "2b16a16748dec5cb68f617d37e240ea3943e826b5ed416e89389d414bbb498c0"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/assets/main-DcwDpYYx.js",
+      "http_status": 200,
+      "response_bytes": 1014257,
+      "response_sha256": "68ae5f44015074f137d60fcd07471748d6c6b6586cab93964c783f20b76c25cf"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.openstreetmap.fr/assets/app-DBd_ejLI.js",
+      "http_status": 200,
+      "response_bytes": 3897620,
+      "response_sha256": "7cdb0f822849ddaadacda03f66b066458165c52df345f19fdb54d5505f1b87b4"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api",
+      "http_status": 200,
+      "response_bytes": 3758,
+      "response_sha256": "8858f1bf08828b692c154a55ffc549e624f691fc7a9080959d7ab5bde2ac45e7"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.openstreetmap.fr/api",
+      "http_status": 200,
+      "response_bytes": 3714,
+      "response_sha256": "b81bf8d307dc4f7417c0a986aa64e0e4130033534eccd645ede4ae585af5f35d"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.openstreetmap.fr/api/auth/login",
+      "http_status": 200,
+      "response_bytes": 21052,
+      "response_sha256": "17284894f6f84549fb9a1873638412c82faea1405a45de0fc4774ee94e747199",
+      "final_login_origin_and_path": "https://www.openstreetmap.org/login",
+      "redirect_query_parameters": "omitted: temporary unauthenticated session state"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api/auth/login",
+      "http_status": 200,
+      "response_bytes": 7275,
+      "response_sha256": "416e3146a381f18118a4851c39f9f6d0f9f35e0c0ca102af673b4678fd574c57",
+      "final_login_origin_and_path": "https://panoramax.woladen.de/auth/realms/panoramax/protocol/openid-connect/auth",
+      "redirect_query_parameters": "omitted: temporary unauthenticated session state"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.fr/mentions-legales",
+      "http_status": 200,
+      "response_bytes": 1361,
+      "response_sha256": "daa21ff1b5cba55e03c7b5bbaf7738efae13ff59bfe7376dbab77e1ccb6972c5"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api/configuration",
+      "http_status": 200,
+      "response_bytes": 1251,
+      "response_sha256": "0ec21d84f94afbe9b0f371fb5320f93b0b6d5d5f01f3854d6db57c3161468b7b"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api/pages",
+      "http_status": 404,
+      "response_bytes": 207,
+      "response_sha256": "e9639e3c4681ce85f852fbac48e2eeee5ba51296dbfec57c200d59b76237ab80"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api/docs/specs.json",
+      "http_status": 200,
+      "response_bytes": 179407,
+      "response_sha256": "80d32b43638816565c16e090666474d14c56961d5b45f42e253333dfe4cfb2c0"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.openstreetmap.fr/api/configuration",
+      "http_status": 200,
+      "response_bytes": 1489,
+      "response_sha256": "f58668318d75b98e23d23a961a972085efcf927784075686ea99f3bd6bc84cb3"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.openstreetmap.fr/api/pages",
+      "http_status": 404,
+      "response_bytes": 207,
+      "response_sha256": "e9639e3c4681ce85f852fbac48e2eeee5ba51296dbfec57c200d59b76237ab80"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.openstreetmap.fr/api/docs/specs.json",
+      "http_status": 200,
+      "response_bytes": 184858,
+      "response_sha256": "e8239c65c16e5f1545edfb3f31472ba8cd7e4f61c369d39366d83bbaca0731b2"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.fr/assets/index.9c7b1cd5.js",
+      "http_status": 200,
+      "response_bytes": 750749,
+      "response_sha256": "ad437ccdfb6c58c604d3059e94a39c96e1e57397eb9253b70113be90da6db12c"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api/pages/end-user-license-agreement",
+      "http_status": 200,
+      "response_bytes": 199,
+      "response_sha256": "f6b2f7c57c6c6a108123b60b34162bf3e575df3696574a7ab6544156e9631880"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api/pages/end-user-license-agreement/en",
+      "http_status": 404,
+      "response_bytes": 66,
+      "response_sha256": "481fbf389290c587d7db4ce60270c2e469439f3397a17689e5e305719fe7dda3"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api/pages/end-user-license-agreement/fr",
+      "http_status": 404,
+      "response_bytes": 66,
+      "response_sha256": "4e46bc211463276df20b6dd20324dca988a255eb1ace12a169faa6856bf76ef2"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api/pages/terms-of-service",
+      "http_status": 200,
+      "response_bytes": 179,
+      "response_sha256": "9e39d586c63b1d85fca563f0345d45be7e22755ea91bd9f70e4f59b1658d0bb1"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api/pages/terms-of-service/en",
+      "http_status": 404,
+      "response_bytes": 66,
+      "response_sha256": "481fbf389290c587d7db4ce60270c2e469439f3397a17689e5e305719fe7dda3"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api/pages/terms-of-service/fr",
+      "http_status": 404,
+      "response_bytes": 66,
+      "response_sha256": "4e46bc211463276df20b6dd20324dca988a255eb1ace12a169faa6856bf76ef2"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.openstreetmap.fr/api/pages/end-user-license-agreement",
+      "http_status": 200,
+      "response_bytes": 363,
+      "response_sha256": "1a141ec7b0acf829c0b1666415d5d6227c1e3bd258b5f4fa0f94613637968816"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.openstreetmap.fr/api/pages/end-user-license-agreement/en",
+      "http_status": 404,
+      "response_bytes": 66,
+      "response_sha256": "481fbf389290c587d7db4ce60270c2e469439f3397a17689e5e305719fe7dda3"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.openstreetmap.fr/api/pages/end-user-license-agreement/fr",
+      "http_status": 200,
+      "response_bytes": 7617,
+      "response_sha256": "ec04e6da5f73193ec3aab6fdd351be6f7822f7f83b9aeae5a592eb06e853710f"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.openstreetmap.fr/api/pages/terms-of-service",
+      "http_status": 200,
+      "response_bytes": 333,
+      "response_sha256": "850d040cd0e8cfb33918ba8d5032e7f62ba3cf8e030b03def8023f5f35bfc719"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.openstreetmap.fr/api/pages/terms-of-service/en",
+      "http_status": 404,
+      "response_bytes": 66,
+      "response_sha256": "481fbf389290c587d7db4ce60270c2e469439f3397a17689e5e305719fe7dda3"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.openstreetmap.fr/api/pages/terms-of-service/fr",
+      "http_status": 200,
+      "response_bytes": 3206,
+      "response_sha256": "13ea85897546d3fc588a830b72bc0c66c9e922e08bfeecf4d179c3e19e618282"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api/pages/end-user-license-agreement/de",
+      "http_status": 200,
+      "response_bytes": 5452,
+      "response_sha256": "ccc7ea7e54704b696ea40415a26dae74539853cbad13d4beca4e5cb18f507fd9"
+    },
+    {
+      "method": "GET",
+      "url": "https://panoramax.youspeed.de/api/pages/terms-of-service/de",
+      "http_status": 200,
+      "response_bytes": 6433,
+      "response_sha256": "8f15ee576d7e9767f8328cc78026263865e442019265fe08a2ad57df8fa5ad1e"
+    }
+  ],
+  "servers": [
+    {
+      "origin": "https://panoramax.youspeed.de",
+      "advertised_name": "Woladen / YouSpeed Panoramax",
+      "version": "2.15.1",
+      "license": {
+        "id": "CC-BY-SA-4.0",
+        "url": "https://spdx.org/licenses/CC-BY-SA-4.0.html"
+      },
+      "default_visibility": "anyone",
+      "auth": {
+        "enabled": true,
+        "enforce_tos_acceptance": true,
+        "registration_is_open": false,
+        "user_profile": {
+          "url": "https://panoramax.woladen.de/auth/realms/panoramax/account/#/personal-info",
+          "use_iframe": false
+        }
+      },
+      "public_contacts": [
+        {
+          "emails": [
+            {
+              "value": "raphael.volz@hs-pforzheim.de"
+            }
+          ],
+          "name": "Woladen / YouSpeed Panoramax"
+        }
+      ],
+      "advertised_legal_pages": [
+        "end-user-license-agreement",
+        "terms-of-service"
+      ],
+      "content_deletion_contracts": [
+        {
+          "route": "/api/collections/{collectionId}",
+          "summary": "Delete a collection and all the associated pictures",
+          "executed": false
+        },
+        {
+          "route": "/api/collections/{collectionId}/items/{itemId}",
+          "summary": "Delete an existing picture",
+          "executed": false
+        },
+        {
+          "route": "/api/collections/{collectionId}/items/{itemId}/annotations/{annotationId}",
+          "summary": "Delete an annotation",
+          "executed": false
+        },
+        {
+          "route": "/api/users/me/tokens/{token_id}",
+          "summary": "Delete a token corresponding to a token id.",
+          "executed": false
+        }
+      ],
+      "account_profile_methods": [
+        "get",
+        "patch"
+      ],
+      "whole_account_delete_in_inspected_openapi": false
+    },
+    {
+      "origin": "https://panoramax.openstreetmap.fr",
+      "advertised_name": "OSM-FR",
+      "version": "2.15.1-22-gf754cc9",
+      "license": {
+        "id": "CC-BY-SA-4.0",
+        "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+      },
+      "default_visibility": "anyone",
+      "auth": {
+        "enabled": true,
+        "enforce_tos_acceptance": true,
+        "registration_is_open": true,
+        "user_profile": {
+          "url": null,
+          "use_iframe": false
+        }
+      },
+      "public_contacts": [
+        {
+          "emails": [
+            {
+              "value": "panoramax@openstreetmap.fr"
+            }
+          ],
+          "name": "OSM-FR"
+        }
+      ],
+      "advertised_legal_pages": [
+        "terms-of-service",
+        "custom-banner",
+        "end-user-license-agreement"
+      ],
+      "content_deletion_contracts": [
+        {
+          "route": "/api/collections/{collectionId}",
+          "summary": "Delete a collection and all the associated pictures",
+          "executed": false
+        },
+        {
+          "route": "/api/collections/{collectionId}/items/{itemId}",
+          "summary": "Delete an existing picture",
+          "executed": false
+        },
+        {
+          "route": "/api/collections/{collectionId}/items/{itemId}/annotations/{annotationId}",
+          "summary": "Delete an annotation",
+          "executed": false
+        },
+        {
+          "route": "/api/users/me/tokens/{token_id}",
+          "summary": "Delete a token corresponding to a token id.",
+          "executed": false
+        }
+      ],
+      "account_profile_methods": [
+        "get",
+        "patch"
+      ],
+      "whole_account_delete_in_inspected_openapi": false
+    }
+  ],
+  "google_account_deletion_assessment": {
+    "recommended_applicability": "yes",
+    "kind": "evidence-based policy interpretation, not a submitted Console answer",
+    "basis": [
+      "OSM France published CGU section 4.1 creates contributor account on first login",
+      "Observed OSM France login route exposes external OpenStreetMap Sign Up",
+      "Google includes app-directed external account creation"
+    ],
+    "current_in_app_whole_account_deletion_verified": false,
+    "disconnect_is_token_revocation_only": true,
+    "source": "https://support.google.com/googleplay/android-developer/answer/13327111?hl=en-EN"
+  },
+  "resolved": [
+    "public default visibility on both instances",
+    "image licensing on both instances",
+    "published publisher/host names",
+    "published pre-publication blur statements",
+    "YouSpeed published rights contact",
+    "OSM France contributor account creation at first login",
+    "OSM France published pseudonym retention period of three years"
+  ],
+  "unresolved": [
+    "exact YouSpeed account/log/image/backup retention and separate privacy policy",
+    "HSPF contractual processor/controller role and research recipient handling",
+    "OSM France access-log/image/backup retention and complete contributor-account deletion procedure",
+    "account-and-content deletion user flow meeting store requirements",
+    "name/email and server diagnostics/research label scope reconciliation",
+    "deployment-specific blur service recipients and raw/blur-part retention",
+    "public reuse/federation removal handling",
+    "global sharing exception and final Console answers"
+  ],
+  "limitations": [
+    "public statements only; no server configuration or storage inspected",
+    "auth provider login GET observed without credentials or completing login",
+    "only advertised language legal content retrieved: YouSpeed de, OSM France fr; en 404 does not imply missing terms",
+    "no token-generated claim link or authenticated account/profile UI tested",
+    "no deletion request, content download, message, upload or policy publication",
+    "generic Panoramax defaults are not proof of deployment-specific blur queues, raw-input retention or backups",
+    "OpenAPI absence of whole-account DELETE is not proof that operators cannot perform manual deletion",
+    "does not assert no server tracking or no sharing merely because app has no tracking SDK"
+  ]
+}

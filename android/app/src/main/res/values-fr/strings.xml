@@ -72,7 +72,7 @@
     <string name="onboarding_source_map_title">Carte téléchargée</string>
     <string name="onboarding_source_map_body">Les données routières téléchargées fournissent les limitations connues hors ligne. Le panneau normal n’a pas d’œil de caméra. Les données peuvent être absentes ou anciennes.</string>
     <string name="onboarding_source_correction_title">Vos propres corrections</string>
-    <string name="onboarding_source_correction_body">Touchez deux fois le panneau de limitation, puis dictez la limite en allemand. La reconnaissance fonctionne sur ce téléphone et demande le microphone à la première utilisation. Votre correction confirmée reste locale ; consultez-la dans les réglages.</string>
+    <string name="onboarding_source_correction_body">Touchez deux fois le panneau de limitation, puis dictez la limite en allemand, anglais, français ou néerlandais selon la langue de l’application. La reconnaissance fonctionne sur ce téléphone et demande le microphone à la première utilisation. Votre correction confirmée reste locale ; consultez-la dans les réglages.</string>
     <string name="onboarding_source_camera_title">Reconnaissance par caméra et œil</string>
     <string name="onboarding_source_camera_body">La caméra peut reconnaître les panneaux. Un œil près du panneau de limitation actif indique que la valeur vient actuellement de la caméra. Quand cette indication prend fin, l’application revient à la carte ou à votre correction applicable. Respectez toujours les panneaux routiers.</string>
     <string name="onboarding_recognition">Reconnaître les panneaux par caméra</string>
@@ -117,4 +117,27 @@
     <string name="startup_logs_clearing">Suppression des journaux…</string>
     <string name="startup_logs_failed">Impossible de vérifier ou de supprimer les journaux</string>
     <string name="settings_debug_logging">Journalisation de débogage</string>
+
+    <!-- Store readiness: complete camera calibration translations. -->
+    <string name="calibration_title">Calibrage de la caméra</string>
+    <string name="calibration_step">Étape %1$d sur 5</string>
+    <string name="calibration_horizon">Définir l’horizon</string>
+    <string name="calibration_left_lower">Bord gauche de la route · point inférieur</string>
+    <string name="calibration_left_upper">Bord gauche de la route · point supérieur</string>
+    <string name="calibration_right_lower">Bord droit de la route · point inférieur</string>
+    <string name="calibration_right_upper">Bord droit de la route · point supérieur</string>
+    <string name="calibration_horizon_hint">Sur une route droite, déplacez l’horizon vers le haut ou le bas. Gardez le téléphone dans son support de conduite.</string>
+    <string name="calibration_lower_hint">Placez le point jaune à l’endroit où le bord de la route entre dans l’image.</string>
+    <string name="calibration_upper_hint">Déplacez le point jaune à gauche ou à droite jusqu’à ce que la ligne suive le bord de la route vers l’horizon.</string>
+    <string name="calibration_live_video">Image de la caméra en direct</string>
+    <string name="calibration_invalid">Gardez les bords gauche et droit dans l’ordre, avec les points inférieurs sous l’horizon. Une image en direct est nécessaire pour enregistrer.</string>
+    <string name="calibration_back">Retour</string>
+    <string name="calibration_next">Suivant</string>
+    <string name="calibration_save">Enregistrer</string>
+    <string name="calibration_cancel">Annuler</string>
+    <string name="calibration_left">Déplacer à gauche</string>
+    <string name="calibration_right">Déplacer à droite</string>
+    <string name="calibration_up">Déplacer vers le haut</string>
+    <string name="calibration_down">Déplacer vers le bas</string>
+    <string name="calibration_defaults">Réinitialiser le brouillon</string>
 </resources>

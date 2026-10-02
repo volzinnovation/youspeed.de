@@ -1,1 +1,1 @@
-Live-Tempolimit-Assistent mit Offline-Karten und Warnhinweisen.
+Offline-Tempolimits, Dashcam und optionale lokale Verkehrszeichenerkennung.

@@ -1,1 +1,1 @@
-Eerste openbare versie met offline kaartgegevens, live snelheidslimietweergave en gelokaliseerde appteksten.
+Versie 1.3 biedt lokale dashcamvideo’s, verkeersbordherkenning op het apparaat met geluid of spraak en straatfoto’s die je controleert vóór een optionele Panoramax-upload. De nieuwe gegevensbeheerder vereenvoudigt offline downloads en opslag. Verbeterde bronweergave, opnamebediening, introductie en diagnostiek. Herkenning en kaarten kunnen fouten bevatten; volg altijd de verkeersborden.

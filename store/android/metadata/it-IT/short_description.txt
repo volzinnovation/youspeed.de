@@ -1,1 +1,1 @@
-Assistenza ai limiti di velocita con mappe offline e avvisi.
+Limiti offline, dashcam e riconoscimento locale facoltativo dei segnali.

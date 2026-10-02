@@ -1,1 +1,1 @@
-speed limit,speed,traffic,offline,maps,driver,car
+speed limit,dashcam,road signs,offline,France,Switzerland,Belgium,Netherlands

@@ -1,10 +1,15 @@
-YouSpeed toont tijdens het rijden de herkende snelheidslimiet en je actuele snelheid. De app werkt met lokale offline kaartgegevens en geeft indicatieve waarschuwingen wanneer een snelheidsovertreding gevolgen kan hebben.
+YouSpeed toont je snelheid en de snelheidslimiet uit offline kaartgegevens. Download beschikbare landen en regio’s, beheer ze in de gegevensbeheerder en gebruik het rijscherm zonder voortdurende kaartverbinding.
+
+Offlinekaarten en landspecifieke sanctie-informatie omvatten Duitsland, Frankrijk, Zwitserland, België en Nederland. De cameramodellen bevatten samen honderden landspecifieke bordklassen, waaronder snelheidslimieten en andere verkeersborden. Deze dekking garandeert geen herkenningsnauwkeurigheid; alleen ondersteunde borden kunnen worden getoond of de snelheidslimietreferentie beïnvloeden.
 
 Functies:
-- Live weergave van snelheidslimiet en snelheid
-- Offline kaartgegevens voor ondersteunde landen en regio's
-- Indicatieve waarschuwingen voor boetes, punten en rijverboden
-- Lokale spraakinvoer voor snelheidslimieten
-- Geen advertenties en geen tracking
+- Live snelheid en snelheidslimiet met broninformatie
+- Instelbare geluidssignalen en indicatieve sanctie-informatie waar beschikbaar
+- Optionele lokaal opgeslagen dashcamvideo’s, met afspelen, delen en verwijderen
+- Optionele verkeersbordherkenning op je apparaat met geluid of gesproken feedback
+- Lokale gesproken correcties van snelheidslimieten op ondersteunde apparaten en in ondersteunde talen
+- Straatfoto’s met locatiegegevens om te bekijken en eventueel naar Panoramax te uploaden
 
-Belangrijk: YouSpeed is een assistentie-app. Verkeersborden, verkeersregels en officiele besluiten blijven altijd bepalend.
+Stel YouSpeed in terwijl je geparkeerd staat. Herkenning kan borden missen of verkeerd interpreteren; beschikbaarheid hangt af van het geïnstalleerde landmodel en apparaat. Kaartdekking en sanctie-informatie verschillen per land. Verkeersborden, verkeersregels en officiële besluiten blijven bepalend. YouSpeed garandeert geen geldende snelheidslimiet of juridische uitkomst.
+
+De rijfuncties vereisen geen account. Camera en microfoon zijn optioneel. Als foto-opname is ingeschakeld, worden automatisch foto’s gemaakt tijdens beweging met de app geopend. Foto’s en dashcamvideo’s blijven op je apparaat totdat je ze zelf deelt of uploadt. Panoramax-uploads vereisen een gekoppeld account, internet en je selectie; geüploade foto’s bevatten locatie- en opnamegegevens. Lokale diagnoselogboeken staan standaard aan en kunnen worden uitgeschakeld. Geen advertentie- of tracking-SDK’s.

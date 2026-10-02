@@ -1,1 +1,1 @@
-tempo,tempolimit,geschwindigkeit,verkehr,offline,karten,auto
+Tempolimit,Dashcam,Verkehrszeichen,offline,Frankreich,Schweiz,Belgien,Niederlande

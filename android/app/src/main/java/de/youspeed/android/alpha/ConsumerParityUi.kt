@@ -60,6 +60,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -146,8 +147,8 @@ internal fun RecorderModuleStrip(
                     Modifier.weight(0.8f).testTag("recorder-elapsed-time"),
                     verticalArrangement = Arrangement.spacedBy(1.dp),
                 ) {
-                    Text(stateLabel, color = foreground, style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1)
+                    Text(stateLabel, color = foreground, fontSize = 9.sp,
+                        style = MaterialTheme.typography.labelSmall, maxLines = 2)
                     Text(elapsed, color = foreground, fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium,
                         maxLines = 1)
@@ -169,13 +170,13 @@ internal fun RecorderModuleStrip(
                     onClick = controller::toggleDriveRecorderTrafficSignRecognition,
                     modifier = Modifier.weight(1f).testTag("recorder-tsr-module"),
                 )
-                Text(
-                    "Panoramax · ${ui.panoramaxCaptureCount}",
-                    modifier = Modifier.weight(0.85f),
-                    color = foreground,
-                    style = MaterialTheme.typography.labelSmall,
-                    maxLines = 1,
-                )
+                Column(Modifier.weight(0.85f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text("Panoramax", color = foreground, fontSize = 9.sp,
+                        style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    Text("${ui.panoramaxCaptureCount} · ${onOff(ui.driveRecorderPanoramaxActive)}",
+                        color = foreground, fontSize = 9.sp,
+                        style = MaterialTheme.typography.labelSmall, maxLines = 2)
+                }
                 if (ui.driveRecorderDashcamActive) IconButton(
                     onClick = { controller.performButtonAction { onPreviewRequested?.invoke() ?: run { previewDialog = true } } },
                     modifier = Modifier.size(36.dp).testTag("recorder-show-preview"),
@@ -332,7 +333,10 @@ internal fun RecorderPreviewWorkspace(
             .background(Color.Black)
             .testTag("recorder-camera-preview"),
     ) {
-        AndroidView(
+        // The debug screenshot fixture intentionally has no camera session.
+        // An unconfigured native preview can obscure adjacent Compose content
+        // on emulators; keep the real preview pane without attaching a surface.
+        if (!BuildConfig.DEBUG || controller.uiState.appScreenshotState == null) AndroidView(
             factory = { preview },
             modifier = Modifier.fillMaxSize(),
             update = { view ->

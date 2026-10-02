@@ -1288,6 +1288,7 @@ internal class AndroidTrafficSignCameraRuntime(
      * on dirt or reflections close to the lens instead of the road ahead.
      * Camera2 expresses infinity as a zero-diopter focus distance.
      */
+    @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
     private fun <T> configureInfinityFocus(builder: ExtendableBuilder<T>) {
         Camera2Interop.Extender(builder)
             .setCaptureRequestOption(

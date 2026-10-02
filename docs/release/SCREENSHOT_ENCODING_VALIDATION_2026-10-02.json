@@ -1,0 +1,642 @@
+[
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/01-safe-speed.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "dea9558c9f85cf2fb357799554c8564ee2fc5cd79477453f0be8e0dc9e099cb6",
+    "decoded_rgb_sha256_after": "dea9558c9f85cf2fb357799554c8564ee2fc5cd79477453f0be8e0dc9e099cb6",
+    "sha256_before": "5e64e136ec26e25f1627f864fc8ba00db79fbd576d2b1fc0c1d6cffd663df5f6",
+    "sha256_after": "a42611f942c703c5d3e0a4ef984246881099c3873456c084173618381d8fcff0",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/02-camera-speed-limit.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "5636f80bdc0d6d3aff86dcd9466ba73877604018932b2ee6aa7737dfa57104f8",
+    "decoded_rgb_sha256_after": "5636f80bdc0d6d3aff86dcd9466ba73877604018932b2ee6aa7737dfa57104f8",
+    "sha256_before": "462aaad4f04ab9f6d2d5b8d1086c4da7291a8693dd13e5e344e945cc40a4f45a",
+    "sha256_after": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/03-secondary-sign.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "05036358ced8575cab0a089adef8061975ea334f7f54e5960fef9405de2e514f",
+    "decoded_rgb_sha256_after": "05036358ced8575cab0a089adef8061975ea334f7f54e5960fef9405de2e514f",
+    "sha256_before": "1cc7d34e1fae0b5e97c8af2189aa4d8b20f78a4b848cce5d39a3c3a725f86ebc",
+    "sha256_after": "f78d5c4768c544850519def612d9335512abd007b2723783019ea79dad584e59",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/04-dashcam.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "0a0c13d3cb31804ede4a96b6c8fb1258a664beaaf7b11fd099cbdfeb9fd00530",
+    "decoded_rgb_sha256_after": "0a0c13d3cb31804ede4a96b6c8fb1258a664beaaf7b11fd099cbdfeb9fd00530",
+    "sha256_before": "0b120e16b22b2bb534f610eb8d1501ccb9f4eefce6c4d0fd653ff64a9ab6bc2f",
+    "sha256_after": "5ced10adf38a5160d008d0af5997d672536ed100c9284fd48c1fd60f3a530a87",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/05-france-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "a04f987d6bbe348f78b696bcda7a1cf901a71c139e5515d3ade6bf22b30cb84d",
+    "decoded_rgb_sha256_after": "a04f987d6bbe348f78b696bcda7a1cf901a71c139e5515d3ade6bf22b30cb84d",
+    "sha256_before": "b165ea36c0d5ee50c120b36978db1b21c6db5945cc4ad369120d03a91fc1ab94",
+    "sha256_after": "f7cd11981180e83f6e1e352764c07b4b633757798abf76d63d3e90baca2407a9",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/06-switzerland-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "e5573a0438fad44cd389a2d41e0c03522ef619cbd40a58c71b3ba72e6aa0a079",
+    "decoded_rgb_sha256_after": "e5573a0438fad44cd389a2d41e0c03522ef619cbd40a58c71b3ba72e6aa0a079",
+    "sha256_before": "38019a855deddfddb765d84c045bf62c7ab54a13de54d4e1a02d1e248a7c6730",
+    "sha256_after": "5470c76a2882c37f59d6a10b132455c3fb2ce08907818f9d73fd0655186cf03b",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/07-belgium-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "9943d250178e49d32e36e28d8c7cd1cc9255c67c30f7ce1c5e8a3cf3782f3e26",
+    "decoded_rgb_sha256_after": "9943d250178e49d32e36e28d8c7cd1cc9255c67c30f7ce1c5e8a3cf3782f3e26",
+    "sha256_before": "2f1b881f20e5c31ea686d458ae473103c7d5c537aed947b3bbfa6902a06241d0",
+    "sha256_after": "d87fb31978a4415fc995491baa0ec7cd6ff391ce005e9bed2b6f02fe67661b16",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/08-netherlands-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "26e8316469c64b6be6c9cf870cfbdfa3b1a69edfd873b23fa1ac19a439767066",
+    "decoded_rgb_sha256_after": "26e8316469c64b6be6c9cf870cfbdfa3b1a69edfd873b23fa1ac19a439767066",
+    "sha256_before": "23f66000ac46aaa7e8c13bec3ff1ff754ed2a1cf005563ee8a88d851a889ee69",
+    "sha256_after": "a998ac95d7eb49325790aed656cea0850125b869d4f1a07aa419cdf16bdc7c10",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/09-pedestrian-zone.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "014c9e9e238514aa803660309247456fbe795b1b4ce5feedfcee0beba9caa915",
+    "decoded_rgb_sha256_after": "014c9e9e238514aa803660309247456fbe795b1b4ce5feedfcee0beba9caa915",
+    "sha256_before": "ede6173a0542c2676c7480535606224be0bd7e8387ba98eb2850821947342885",
+    "sha256_after": "c3eb1aabf8d3111e1001d138e71652161852f584eda45b50dc6cef50cd441e51",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/10-autobahn-unlimited.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "8310d6bed15d2ed0c3185e4403f098ed4654423a5233a9b747a4c21a7112fbce",
+    "decoded_rgb_sha256_after": "8310d6bed15d2ed0c3185e4403f098ed4654423a5233a9b747a4c21a7112fbce",
+    "sha256_before": "4f652818caf937c7f27f32d2f175ea3e47dffa73771c190f82e7f29a1aa33f4d",
+    "sha256_after": "a69e65c552613ee51a747933163d91871a5770a315052553250be3ae7c1d61cc",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/01-safe-speed.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "d55d0e1d0d3ba31907359df17916abb8cce66254c1670f11c8bf19e797412092",
+    "decoded_rgb_sha256_after": "d55d0e1d0d3ba31907359df17916abb8cce66254c1670f11c8bf19e797412092",
+    "sha256_before": "e388689e98ece0a31eec0c8b9ab920124ffe4045005686ecff955c314e829e46",
+    "sha256_after": "601692b64b457bdb6b971ba4587430d153a50c89a960f0bedb1f55f1b5dd85f1",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/02-camera-speed-limit.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "5636f80bdc0d6d3aff86dcd9466ba73877604018932b2ee6aa7737dfa57104f8",
+    "decoded_rgb_sha256_after": "5636f80bdc0d6d3aff86dcd9466ba73877604018932b2ee6aa7737dfa57104f8",
+    "sha256_before": "462aaad4f04ab9f6d2d5b8d1086c4da7291a8693dd13e5e344e945cc40a4f45a",
+    "sha256_after": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/03-secondary-sign.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "05036358ced8575cab0a089adef8061975ea334f7f54e5960fef9405de2e514f",
+    "decoded_rgb_sha256_after": "05036358ced8575cab0a089adef8061975ea334f7f54e5960fef9405de2e514f",
+    "sha256_before": "1cc7d34e1fae0b5e97c8af2189aa4d8b20f78a4b848cce5d39a3c3a725f86ebc",
+    "sha256_after": "f78d5c4768c544850519def612d9335512abd007b2723783019ea79dad584e59",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/04-dashcam.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "9bbd99911efc682f301995dc9333bfd54f803d1769fd0396981c666504e51c9a",
+    "decoded_rgb_sha256_after": "9bbd99911efc682f301995dc9333bfd54f803d1769fd0396981c666504e51c9a",
+    "sha256_before": "0e4788126ce135405c0a41d383c6777d796896b9eb3a4df0865cf87a89b96ee4",
+    "sha256_after": "c1ddbae45b10e848ffa8fa3d3df9423f2af81c7d97d20b36699efb72d3aee411",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/05-france-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "a04f987d6bbe348f78b696bcda7a1cf901a71c139e5515d3ade6bf22b30cb84d",
+    "decoded_rgb_sha256_after": "a04f987d6bbe348f78b696bcda7a1cf901a71c139e5515d3ade6bf22b30cb84d",
+    "sha256_before": "b165ea36c0d5ee50c120b36978db1b21c6db5945cc4ad369120d03a91fc1ab94",
+    "sha256_after": "f7cd11981180e83f6e1e352764c07b4b633757798abf76d63d3e90baca2407a9",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/06-switzerland-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "e5573a0438fad44cd389a2d41e0c03522ef619cbd40a58c71b3ba72e6aa0a079",
+    "decoded_rgb_sha256_after": "e5573a0438fad44cd389a2d41e0c03522ef619cbd40a58c71b3ba72e6aa0a079",
+    "sha256_before": "38019a855deddfddb765d84c045bf62c7ab54a13de54d4e1a02d1e248a7c6730",
+    "sha256_after": "5470c76a2882c37f59d6a10b132455c3fb2ce08907818f9d73fd0655186cf03b",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/07-belgium-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "9943d250178e49d32e36e28d8c7cd1cc9255c67c30f7ce1c5e8a3cf3782f3e26",
+    "decoded_rgb_sha256_after": "9943d250178e49d32e36e28d8c7cd1cc9255c67c30f7ce1c5e8a3cf3782f3e26",
+    "sha256_before": "2f1b881f20e5c31ea686d458ae473103c7d5c537aed947b3bbfa6902a06241d0",
+    "sha256_after": "d87fb31978a4415fc995491baa0ec7cd6ff391ce005e9bed2b6f02fe67661b16",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/08-netherlands-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "bae9d954360ef9e83fbef370f23e2e742b7d26e1fe67f31084033709fffdbffc",
+    "decoded_rgb_sha256_after": "bae9d954360ef9e83fbef370f23e2e742b7d26e1fe67f31084033709fffdbffc",
+    "sha256_before": "9a053b5c2401347475ac5ddba1855d2b6e16adc66830338fbfe6d5cb86d065d8",
+    "sha256_after": "72d2776338f458f42648525df809dd56129dda990079f7d917e0922b7879171b",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/09-pedestrian-zone.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "014c9e9e238514aa803660309247456fbe795b1b4ce5feedfcee0beba9caa915",
+    "decoded_rgb_sha256_after": "014c9e9e238514aa803660309247456fbe795b1b4ce5feedfcee0beba9caa915",
+    "sha256_before": "ede6173a0542c2676c7480535606224be0bd7e8387ba98eb2850821947342885",
+    "sha256_after": "c3eb1aabf8d3111e1001d138e71652161852f584eda45b50dc6cef50cd441e51",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/10-autobahn-unlimited.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "53101af2a6f79bdcbf4796d559d9dae2e9c8de0d82a3dead14b22415e619859d",
+    "decoded_rgb_sha256_after": "53101af2a6f79bdcbf4796d559d9dae2e9c8de0d82a3dead14b22415e619859d",
+    "sha256_before": "744cb7a1f1222f0c24f16981d29cb7fcaeb7420c9f87a4f58e3f0ca91c4245d2",
+    "sha256_after": "aa0156596c0a7e1a5e29993230914a523fc4205590a2963906ba2e28a9e17e18",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/01-safe-speed.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "d55d0e1d0d3ba31907359df17916abb8cce66254c1670f11c8bf19e797412092",
+    "decoded_rgb_sha256_after": "d55d0e1d0d3ba31907359df17916abb8cce66254c1670f11c8bf19e797412092",
+    "sha256_before": "e388689e98ece0a31eec0c8b9ab920124ffe4045005686ecff955c314e829e46",
+    "sha256_after": "601692b64b457bdb6b971ba4587430d153a50c89a960f0bedb1f55f1b5dd85f1",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/02-camera-speed-limit.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "5636f80bdc0d6d3aff86dcd9466ba73877604018932b2ee6aa7737dfa57104f8",
+    "decoded_rgb_sha256_after": "5636f80bdc0d6d3aff86dcd9466ba73877604018932b2ee6aa7737dfa57104f8",
+    "sha256_before": "462aaad4f04ab9f6d2d5b8d1086c4da7291a8693dd13e5e344e945cc40a4f45a",
+    "sha256_after": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/03-secondary-sign.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "205cd7c2ea78da00317c68bafb9fed472a3b6dbcb197ea534d7c8af9157d499c",
+    "decoded_rgb_sha256_after": "205cd7c2ea78da00317c68bafb9fed472a3b6dbcb197ea534d7c8af9157d499c",
+    "sha256_before": "fd0680dbcaa204cdd0bba3fb05e3806aad71735cc45aa689e78258216b34d3fc",
+    "sha256_after": "dc0ffa236e07d22ac7f4e263ea0eaa2c6405cdc19acb2c689f7ece32ab02a8a2",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/04-dashcam.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "f7ea5855fd5279fa007f66546c3c3c28d6f96c38203e39d84742140fe3d0273b",
+    "decoded_rgb_sha256_after": "f7ea5855fd5279fa007f66546c3c3c28d6f96c38203e39d84742140fe3d0273b",
+    "sha256_before": "12a5eecd4771ecc6ffbcb155532a0d8b68bce296e8bc2655c08f9b59273859ca",
+    "sha256_after": "e659eeac40bacc0f202cd86d062ce23ef70f2145d154860948644d095ac434ad",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/05-france-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "a04f987d6bbe348f78b696bcda7a1cf901a71c139e5515d3ade6bf22b30cb84d",
+    "decoded_rgb_sha256_after": "a04f987d6bbe348f78b696bcda7a1cf901a71c139e5515d3ade6bf22b30cb84d",
+    "sha256_before": "b165ea36c0d5ee50c120b36978db1b21c6db5945cc4ad369120d03a91fc1ab94",
+    "sha256_after": "f7cd11981180e83f6e1e352764c07b4b633757798abf76d63d3e90baca2407a9",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/06-switzerland-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "e5573a0438fad44cd389a2d41e0c03522ef619cbd40a58c71b3ba72e6aa0a079",
+    "decoded_rgb_sha256_after": "e5573a0438fad44cd389a2d41e0c03522ef619cbd40a58c71b3ba72e6aa0a079",
+    "sha256_before": "38019a855deddfddb765d84c045bf62c7ab54a13de54d4e1a02d1e248a7c6730",
+    "sha256_after": "5470c76a2882c37f59d6a10b132455c3fb2ce08907818f9d73fd0655186cf03b",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/07-belgium-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "9943d250178e49d32e36e28d8c7cd1cc9255c67c30f7ce1c5e8a3cf3782f3e26",
+    "decoded_rgb_sha256_after": "9943d250178e49d32e36e28d8c7cd1cc9255c67c30f7ce1c5e8a3cf3782f3e26",
+    "sha256_before": "2f1b881f20e5c31ea686d458ae473103c7d5c537aed947b3bbfa6902a06241d0",
+    "sha256_after": "d87fb31978a4415fc995491baa0ec7cd6ff391ce005e9bed2b6f02fe67661b16",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/08-netherlands-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "f7e9cfbaa6530170cca5e2fe295813714a8aca3bf7d919c08abf96caa2253b08",
+    "decoded_rgb_sha256_after": "f7e9cfbaa6530170cca5e2fe295813714a8aca3bf7d919c08abf96caa2253b08",
+    "sha256_before": "a274ab0a99bf0775be3f262c81915ddbddb14ccce8fb0d6d4548bfb5fee0e0e4",
+    "sha256_after": "00ae016a7a5d9612705aef1d527a8623303b5568c6d1ff9336705d75c0b0e127",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/09-pedestrian-zone.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "014c9e9e238514aa803660309247456fbe795b1b4ce5feedfcee0beba9caa915",
+    "decoded_rgb_sha256_after": "014c9e9e238514aa803660309247456fbe795b1b4ce5feedfcee0beba9caa915",
+    "sha256_before": "ede6173a0542c2676c7480535606224be0bd7e8387ba98eb2850821947342885",
+    "sha256_after": "c3eb1aabf8d3111e1001d138e71652161852f584eda45b50dc6cef50cd441e51",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/10-autobahn-unlimited.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "8310d6bed15d2ed0c3185e4403f098ed4654423a5233a9b747a4c21a7112fbce",
+    "decoded_rgb_sha256_after": "8310d6bed15d2ed0c3185e4403f098ed4654423a5233a9b747a4c21a7112fbce",
+    "sha256_before": "4f652818caf937c7f27f32d2f175ea3e47dffa73771c190f82e7f29a1aa33f4d",
+    "sha256_after": "a69e65c552613ee51a747933163d91871a5770a315052553250be3ae7c1d61cc",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/01-safe-speed.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "dea9558c9f85cf2fb357799554c8564ee2fc5cd79477453f0be8e0dc9e099cb6",
+    "decoded_rgb_sha256_after": "dea9558c9f85cf2fb357799554c8564ee2fc5cd79477453f0be8e0dc9e099cb6",
+    "sha256_before": "5e64e136ec26e25f1627f864fc8ba00db79fbd576d2b1fc0c1d6cffd663df5f6",
+    "sha256_after": "a42611f942c703c5d3e0a4ef984246881099c3873456c084173618381d8fcff0",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/02-camera-speed-limit.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "5636f80bdc0d6d3aff86dcd9466ba73877604018932b2ee6aa7737dfa57104f8",
+    "decoded_rgb_sha256_after": "5636f80bdc0d6d3aff86dcd9466ba73877604018932b2ee6aa7737dfa57104f8",
+    "sha256_before": "462aaad4f04ab9f6d2d5b8d1086c4da7291a8693dd13e5e344e945cc40a4f45a",
+    "sha256_after": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/03-secondary-sign.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "05036358ced8575cab0a089adef8061975ea334f7f54e5960fef9405de2e514f",
+    "decoded_rgb_sha256_after": "05036358ced8575cab0a089adef8061975ea334f7f54e5960fef9405de2e514f",
+    "sha256_before": "1cc7d34e1fae0b5e97c8af2189aa4d8b20f78a4b848cce5d39a3c3a725f86ebc",
+    "sha256_after": "f78d5c4768c544850519def612d9335512abd007b2723783019ea79dad584e59",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/04-dashcam.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "c36000e8b4d353668e68f82634921ea10efe11948933afb0c4630052f64909a6",
+    "decoded_rgb_sha256_after": "c36000e8b4d353668e68f82634921ea10efe11948933afb0c4630052f64909a6",
+    "sha256_before": "402dae72b8eec95a35b7374b7eccf1ce443f947ffca59d36fba9860a6137e352",
+    "sha256_after": "e82d65ba1f506caad3a5a9ceea6d5dc651da1f41815a18631f8db34f75f8179c",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/05-france-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "a04f987d6bbe348f78b696bcda7a1cf901a71c139e5515d3ade6bf22b30cb84d",
+    "decoded_rgb_sha256_after": "a04f987d6bbe348f78b696bcda7a1cf901a71c139e5515d3ade6bf22b30cb84d",
+    "sha256_before": "b165ea36c0d5ee50c120b36978db1b21c6db5945cc4ad369120d03a91fc1ab94",
+    "sha256_after": "f7cd11981180e83f6e1e352764c07b4b633757798abf76d63d3e90baca2407a9",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/06-switzerland-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "e5573a0438fad44cd389a2d41e0c03522ef619cbd40a58c71b3ba72e6aa0a079",
+    "decoded_rgb_sha256_after": "e5573a0438fad44cd389a2d41e0c03522ef619cbd40a58c71b3ba72e6aa0a079",
+    "sha256_before": "38019a855deddfddb765d84c045bf62c7ab54a13de54d4e1a02d1e248a7c6730",
+    "sha256_after": "5470c76a2882c37f59d6a10b132455c3fb2ce08907818f9d73fd0655186cf03b",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/07-belgium-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "9943d250178e49d32e36e28d8c7cd1cc9255c67c30f7ce1c5e8a3cf3782f3e26",
+    "decoded_rgb_sha256_after": "9943d250178e49d32e36e28d8c7cd1cc9255c67c30f7ce1c5e8a3cf3782f3e26",
+    "sha256_before": "2f1b881f20e5c31ea686d458ae473103c7d5c537aed947b3bbfa6902a06241d0",
+    "sha256_after": "d87fb31978a4415fc995491baa0ec7cd6ff391ce005e9bed2b6f02fe67661b16",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/08-netherlands-fine.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "4a297d826c57d1b3a3e607ca18149622f1579573291e67ea5fe9581ca0f30140",
+    "decoded_rgb_sha256_after": "4a297d826c57d1b3a3e607ca18149622f1579573291e67ea5fe9581ca0f30140",
+    "sha256_before": "5b0b49a4b8db1f5bcb37de7be3c761a9c31062b6415b940b0aa6e5738a94a53a",
+    "sha256_after": "3b09a42bc4d81266dee2695e4a5985abd3e5f3c8ce5dd81ceb2e8e392a140c23",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/09-pedestrian-zone.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "014c9e9e238514aa803660309247456fbe795b1b4ce5feedfcee0beba9caa915",
+    "decoded_rgb_sha256_after": "014c9e9e238514aa803660309247456fbe795b1b4ce5feedfcee0beba9caa915",
+    "sha256_before": "ede6173a0542c2676c7480535606224be0bd7e8387ba98eb2850821947342885",
+    "sha256_after": "c3eb1aabf8d3111e1001d138e71652161852f584eda45b50dc6cef50cd441e51",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/10-autobahn-unlimited.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGBA",
+    "mode_after": "RGB",
+    "alpha_extrema_before": [
+      255,
+      255
+    ],
+    "decoded_rgb_sha256_before": "8310d6bed15d2ed0c3185e4403f098ed4654423a5233a9b747a4c21a7112fbce",
+    "decoded_rgb_sha256_after": "8310d6bed15d2ed0c3185e4403f098ed4654423a5233a9b747a4c21a7112fbce",
+    "sha256_before": "4f652818caf937c7f27f32d2f175ea3e47dffa73771c190f82e7f29a1aa33f4d",
+    "sha256_after": "a69e65c552613ee51a747933163d91871a5770a315052553250be3ae7c1d61cc",
+    "color_space_and_exif_preserved": true
+  }
+]

@@ -72,7 +72,7 @@
     <string name="onboarding_source_map_title">Gedownloade kaart</string>
     <string name="onboarding_source_map_body">De gedownloade weggegevens leveren bekende limieten offline. Het normale snelheidsbord heeft geen camera-oog. Kaartgegevens kunnen ontbreken of verouderd zijn.</string>
     <string name="onboarding_source_correction_title">Je eigen correcties</string>
-    <string name="onboarding_source_correction_body">Tik dubbel op het snelheidsbord en spreek de waargenomen limiet in het Duits uit. Herkenning werkt op deze telefoon en vraagt bij eerste gebruik om microfoontoegang. Je bevestigde correctie blijft lokaal; bekijk deze in de instellingen.</string>
+    <string name="onboarding_source_correction_body">Tik dubbel op het snelheidsbord en spreek de waargenomen limiet uit in het Duits, Engels, Frans of Nederlands, afhankelijk van de app-taal. Herkenning werkt op deze telefoon en vraagt bij eerste gebruik om microfoontoegang. Je bevestigde correctie blijft lokaal; bekijk deze in de instellingen.</string>
     <string name="onboarding_source_camera_title">Cameraherkenning en het oog</string>
     <string name="onboarding_source_camera_body">De camera kan verkeersborden herkennen. Een oog naast het actieve snelheidsbord betekent dat de getoonde limiet nu uit cameraherkenning komt. Als die aanwijzing vervalt, gebruikt de app weer kaartgegevens of je passende correctie. Volg altijd de borden langs de weg.</string>
     <string name="onboarding_recognition">Borden herkennen met de camera</string>
@@ -117,4 +117,27 @@
     <string name="startup_logs_clearing">Opgeslagen logs wissen…</string>
     <string name="startup_logs_failed">Logs konden niet worden gecontroleerd of gewist</string>
     <string name="settings_debug_logging">Debuglogboeken</string>
+
+    <!-- Store readiness: complete camera calibration translations. -->
+    <string name="calibration_title">Camerakalibratie</string>
+    <string name="calibration_step">Stap %1$d van 5</string>
+    <string name="calibration_horizon">Horizon instellen</string>
+    <string name="calibration_left_lower">Linker wegrand · onderste punt</string>
+    <string name="calibration_left_upper">Linker wegrand · bovenste punt</string>
+    <string name="calibration_right_lower">Rechter wegrand · onderste punt</string>
+    <string name="calibration_right_upper">Rechter wegrand · bovenste punt</string>
+    <string name="calibration_horizon_hint">Verplaats de horizon omhoog of omlaag op een rechte weg. Laat de telefoon in de rijhouder zitten.</string>
+    <string name="calibration_lower_hint">Verplaats het gele punt naar de plek waar de wegrand het beeld binnenkomt.</string>
+    <string name="calibration_upper_hint">Verplaats het gele punt naar links of rechts totdat de lijn de wegrand naar de horizon volgt.</string>
+    <string name="calibration_live_video">Live camerabeeld</string>
+    <string name="calibration_invalid">Houd de linker- en rechterrand in de juiste volgorde, met de onderste punten onder de horizon. Een live camerabeeld is nodig om op te slaan.</string>
+    <string name="calibration_back">Terug</string>
+    <string name="calibration_next">Volgende</string>
+    <string name="calibration_save">Opslaan</string>
+    <string name="calibration_cancel">Annuleren</string>
+    <string name="calibration_left">Naar links</string>
+    <string name="calibration_right">Naar rechts</string>
+    <string name="calibration_up">Omhoog</string>
+    <string name="calibration_down">Omlaag</string>
+    <string name="calibration_defaults">Concept herstellen</string>
 </resources>

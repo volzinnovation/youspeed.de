@@ -1,10 +1,15 @@
-YouSpeed mostra durante a conducao o limite de velocidade detectado e a sua velocidade atual. O app usa dados de mapa locais offline e fornece alertas orientativos quando uma infracao de velocidade pode ter consequencias.
+YouSpeed mostra sua velocidade e o limite obtido dos mapas offline. Baixe os países e regiões disponíveis, gerencie-os no gerenciador de dados e use a tela de direção sem conexão contínua com os mapas.
+
+Os mapas offline e as regras indicativas por país incluem Alemanha, França, Suíça, Bélgica e Países Baixos. Os modelos de câmera contêm, no total, centenas de classes de placas nacionais, incluindo limites e outras placas. Essa cobertura não garante a precisão; somente placas compatíveis podem ser exibidas ou influenciar a referência do limite.
 
 Recursos:
-- Exibicao ao vivo do limite de velocidade e da velocidade
-- Mapas offline para paises e regioes compativeis
-- Alertas orientativos sobre multas, pontos e proibicoes de dirigir
-- Captura local por voz de limites de velocidade
-- Sem anuncios e sem rastreamento
+- Velocidade e limite ao vivo com indicação da fonte
+- Alertas sonoros configuráveis e informações indicativas sobre penalidades onde disponíveis
+- Vídeos opcionais da câmera veicular salvos localmente, com reprodução, compartilhamento e exclusão
+- Reconhecimento opcional de placas no dispositivo, com avisos sonoros ou falados
+- Correções locais de limites por voz em dispositivos e idiomas compatíveis
+- Fotos de ruas com localização para revisar e enviar opcionalmente ao Panoramax
 
-YouSpeed e um app de assistencia. Placas de transito, regras de circulacao e avisos oficiais sempre prevalecem.
+Configure YouSpeed com o veículo estacionado. O reconhecimento pode ignorar ou interpretar placas incorretamente; a disponibilidade depende do modelo do país instalado e do dispositivo. A cobertura e as informações sobre penalidades variam por país. Placas, regras de trânsito e decisões oficiais prevalecem. YouSpeed não garante o limite aplicável ou o resultado jurídico.
+
+Os recursos de direção não exigem uma conta. Câmera e microfone são opcionais. Com a captura ativada, fotos são feitas automaticamente em movimento com o app aberto. Fotos e vídeos ficam no dispositivo até você escolher compartilhá-los ou enviá-los. O envio ao Panoramax exige uma conta conectada, Internet e sua seleção; as fotos enviadas incluem localização e metadados de captura. Os registros locais de diagnóstico ficam ativados por padrão e podem ser desativados. Sem SDKs de publicidade ou rastreamento.

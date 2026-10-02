@@ -1,0 +1,434 @@
+[
+  {
+    "advisory_caption": null,
+    "country": "FRA",
+    "currency": "EUR",
+    "delta_kmh": 3,
+    "details": "Regelbetrag: 135 EUR bei Tempolimit bis 50 km/h, sonst 68 EUR. Kein Punkteabzug im französischen System.",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "de",
+    "money_fine": 135,
+    "penalty_points": 0,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 53,
+    "title": "Geldbuße möglich"
+  },
+  {
+    "advisory_caption": null,
+    "country": "FRA",
+    "currency": "EUR",
+    "delta_kmh": 3,
+    "details": "Standard fine: 135 EUR at limits up to 50 km/h, otherwise 68 EUR. No French licence point deduction.",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "en",
+    "money_fine": 135,
+    "penalty_points": 0,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 53,
+    "title": "Fine possible"
+  },
+  {
+    "advisory_caption": null,
+    "country": "FRA",
+    "currency": "EUR",
+    "delta_kmh": 3,
+    "details": "Amende forfaitaire : 135 EUR si la limite est de 50 km/h ou moins, sinon 68 EUR. Aucun retrait de point au barème français.",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "fr",
+    "money_fine": 135,
+    "penalty_points": 0,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 53,
+    "title": "Amende possible"
+  },
+  {
+    "advisory_caption": null,
+    "country": "FRA",
+    "currency": "EUR",
+    "delta_kmh": 3,
+    "details": "Standaardboete: 135 EUR bij een limiet tot 50 km/u, anders 68 EUR. Geen puntenaftrek in het Franse stelsel.",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "nl",
+    "money_fine": 135,
+    "penalty_points": 0,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 53,
+    "title": "Boete mogelijk"
+  },
+  {
+    "advisory_caption": "GPS-Schätzung · Erstverstoß · amtliche Überschreitung kann abweichen",
+    "country": "CHE",
+    "currency": "CHF",
+    "delta_kmh": 11,
+    "details": "Innerorts: Ordnungsbuße 250 CHF. Außerorts / Autostraße: Ordnungsbuße 160 CHF. Autobahn: Ordnungsbuße 120 CHF. Nur GPS-Schätzung; Beträge gelten für die amtlich festgestellte Überschreitung nach dem vorgeschriebenen Messabzug. Erstverstoß; Wiederholungs- und Probeführerausweisfälle können abweichen.",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "de",
+    "money_fine": 250,
+    "penalty_points": null,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 61,
+    "title": "Geschätzte Folgen der Überschreitung"
+  },
+  {
+    "advisory_caption": "GPS estimate · first offence · assessed excess may differ",
+    "country": "CHE",
+    "currency": "CHF",
+    "delta_kmh": 11,
+    "details": "Urban: fixed fine 250 CHF. Rural / autostrasse: fixed fine 160 CHF. Motorway: fixed fine 120 CHF. GPS estimate only; amounts refer to excess after the applicable enforcement deduction. First offence; repeat/probationary cases differ.",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "en",
+    "money_fine": 250,
+    "penalty_points": null,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 61,
+    "title": "Speeding consequences estimate"
+  },
+  {
+    "advisory_caption": "Estimation GPS · première infraction · excès retenu différent possible",
+    "country": "CHE",
+    "currency": "CHF",
+    "delta_kmh": 11,
+    "details": "En localité: amende d’ordre 250 CHF. Hors localité / semi-autoroute: amende d’ordre 160 CHF. Autoroute: amende d’ordre 120 CHF. Estimation GPS seulement; montants pour l’excès retenu après la déduction de mesure applicable. Première infraction; récidive et permis à l’essai peuvent différer.",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "fr",
+    "money_fine": 250,
+    "penalty_points": null,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 61,
+    "title": "Conséquences estimées de l’excès"
+  },
+  {
+    "advisory_caption": "GPS-schatting · eerste overtreding · vastgesteld teveel kan afwijken",
+    "country": "CHE",
+    "currency": "CHF",
+    "delta_kmh": 11,
+    "details": "Binnen bebouwde kom: vaste boete 250 CHF. Buiten bebouwde kom / autoweg: vaste boete 160 CHF. Autosnelweg: vaste boete 120 CHF. Alleen GPS-schatting; bedragen gelden na de toepasselijke officiële meetcorrectie. Eerste overtreding; herhaling en voorlopig rijbewijs kunnen afwijken.",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "nl",
+    "money_fine": 250,
+    "penalty_points": null,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 61,
+    "title": "Geschatte gevolgen van te hard rijden"
+  },
+  {
+    "advisory_caption": null,
+    "country": "BEL",
+    "currency": "EUR",
+    "delta_kmh": 5,
+    "details": "Regelbetrag im vereinfachten Verfahren: 58 EUR zuzüglich 10,67 EUR Verwaltungsgebühr (2026).",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "de",
+    "money_fine": 58,
+    "penalty_points": null,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 55,
+    "title": "Geldbuße möglich"
+  },
+  {
+    "advisory_caption": null,
+    "country": "BEL",
+    "currency": "EUR",
+    "delta_kmh": 5,
+    "details": "Standard immediate settlement: 58 EUR, plus a 10.67 EUR administrative fee (2026).",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "en",
+    "money_fine": 58,
+    "penalty_points": null,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 55,
+    "title": "Fine possible"
+  },
+  {
+    "advisory_caption": null,
+    "country": "BEL",
+    "currency": "EUR",
+    "delta_kmh": 5,
+    "details": "Perception immédiate ordinaire : 58 EUR, plus 10,67 EUR de redevance administrative (2026).",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "fr",
+    "money_fine": 58,
+    "penalty_points": null,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 55,
+    "title": "Amende possible"
+  },
+  {
+    "advisory_caption": null,
+    "country": "BEL",
+    "currency": "EUR",
+    "delta_kmh": 5,
+    "details": "Gewone onmiddellijke inning: 58 EUR, plus 10,67 EUR administratiekosten (2026).",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "nl",
+    "money_fine": 58,
+    "penalty_points": null,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 55,
+    "title": "Boete mogelijk"
+  },
+  {
+    "advisory_caption": null,
+    "country": "NLD",
+    "currency": "EUR",
+    "delta_kmh": 12,
+    "details": "Der Betrag hängt von der korrigierten Überschreitung, Straßenart und Baustellen ab. Gebühren kommen hinzu; deshalb kein pauschaler Betrag.",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "de",
+    "money_fine": null,
+    "penalty_points": null,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 62,
+    "title": "Geldbuße möglich",
+    "official_reference_example": {
+      "kind": "official_tariff_reference_not_app_output",
+      "language": "de",
+      "title": "Amtliches niederländisches Rechenbeispiel – nicht die App-Anzeige",
+      "description": "Normaler Pkw, innerorts bei Tempo 50, ohne Baustelle. Amtlich korrigierte Überschreitung +12 km/h: 140 EUR Bußgeld + 9 EUR Verwaltungsgebühr = 149 EUR. Misst die Polizei hingegen 62 km/h, ergibt der Messabzug von 3 km/h eine korrigierte Geschwindigkeit von 59 km/h (+9): 84 EUR + 9 EUR = 93 EUR. Die App zieht keine amtliche Messkorrektur ab und zeigt für die Niederlande weiterhin nur den kontextabhängigen Warnhinweis.",
+      "source_checked_at": "2026-10-02",
+      "currency": "EUR",
+      "posted_limit_kmh": 50,
+      "inside_city": true,
+      "vehicle_category": "ordinary_passenger_car_category_1",
+      "roadworks": false,
+      "corrected_excess_example": {
+        "corrected_speed_kmh": 62,
+        "corrected_delta_kmh": 12,
+        "fine_eur": 140,
+        "administrative_fee_eur": 9,
+        "total_eur": 149
+      },
+      "measured_speed_example": {
+        "measured_speed_kmh": 62,
+        "measurement_correction_kmh": 3,
+        "corrected_speed_kmh": 59,
+        "corrected_delta_kmh": 9,
+        "fine_eur": 84,
+        "administrative_fee_eur": 9,
+        "total_eur": 93
+      },
+      "automatically_applied_by_app": false,
+      "shown_in_current_app": false,
+      "sources": [
+        {
+          "title": "OM Feitenboekje 2026, printed A17/A19, VA012/VB012 and VA009/VB009, category 1",
+          "url": "https://www.om.nl/site/binaries/site-content/collections/documents/mulderbundel/map/map/mulderbundel-2026/Feitenboekje%2B2026.pdf"
+        },
+        {
+          "title": "OM Boetebedragen: amounts exclude 9 EUR administrative fee",
+          "url": "https://www.om.nl/onderwerpen/b/boetebase"
+        },
+        {
+          "title": "OM Marges en meetcorrecties",
+          "url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden/marges-en-meetcorrecties"
+        }
+      ]
+    }
+  },
+  {
+    "advisory_caption": null,
+    "country": "NLD",
+    "currency": "EUR",
+    "delta_kmh": 12,
+    "details": "The amount depends on corrected excess, road type and roadworks. Fees are additional; no single amount applies to this whole band.",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "en",
+    "money_fine": null,
+    "penalty_points": null,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 62,
+    "title": "Fine possible",
+    "official_reference_example": {
+      "kind": "official_tariff_reference_not_app_output",
+      "language": "en",
+      "title": "Official Dutch calculation example – separate from the app display",
+      "description": "Ordinary passenger car, normal urban 50 km/h road, no roadworks. Officially corrected excess +12 km/h: 140 EUR fine + 9 EUR administrative fee = 149 EUR. If police instead measure 62 km/h, subtracting the 3 km/h measurement correction gives 59 km/h (+9): 84 EUR + 9 EUR = 93 EUR. The app applies no enforcement measurement correction and still shows only a contextual warning for the Netherlands.",
+      "source_checked_at": "2026-10-02",
+      "currency": "EUR",
+      "posted_limit_kmh": 50,
+      "inside_city": true,
+      "vehicle_category": "ordinary_passenger_car_category_1",
+      "roadworks": false,
+      "corrected_excess_example": {
+        "corrected_speed_kmh": 62,
+        "corrected_delta_kmh": 12,
+        "fine_eur": 140,
+        "administrative_fee_eur": 9,
+        "total_eur": 149
+      },
+      "measured_speed_example": {
+        "measured_speed_kmh": 62,
+        "measurement_correction_kmh": 3,
+        "corrected_speed_kmh": 59,
+        "corrected_delta_kmh": 9,
+        "fine_eur": 84,
+        "administrative_fee_eur": 9,
+        "total_eur": 93
+      },
+      "automatically_applied_by_app": false,
+      "shown_in_current_app": false,
+      "sources": [
+        {
+          "title": "OM Feitenboekje 2026, printed A17/A19, VA012/VB012 and VA009/VB009, category 1",
+          "url": "https://www.om.nl/site/binaries/site-content/collections/documents/mulderbundel/map/map/mulderbundel-2026/Feitenboekje%2B2026.pdf"
+        },
+        {
+          "title": "OM Boetebedragen: amounts exclude 9 EUR administrative fee",
+          "url": "https://www.om.nl/onderwerpen/b/boetebase"
+        },
+        {
+          "title": "OM Marges en meetcorrecties",
+          "url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden/marges-en-meetcorrecties"
+        }
+      ]
+    }
+  },
+  {
+    "advisory_caption": null,
+    "country": "NLD",
+    "currency": "EUR",
+    "delta_kmh": 12,
+    "details": "Le montant dépend de l’excès corrigé, du type de route et des travaux. Des frais s’ajoutent ; aucun montant unique ne couvre cette tranche.",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "fr",
+    "money_fine": null,
+    "penalty_points": null,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 62,
+    "title": "Amende possible",
+    "official_reference_example": {
+      "kind": "official_tariff_reference_not_app_output",
+      "language": "fr",
+      "title": "Exemple officiel de calcul néerlandais – distinct de l’affichage de l’app",
+      "description": "Voiture particulière ordinaire, route normale en agglomération limitée à 50 km/h, sans travaux. Excès officiellement corrigé de +12 km/h : 140 EUR d’amende + 9 EUR de frais administratifs = 149 EUR. Si la police mesure plutôt 62 km/h, la correction de 3 km/h donne 59 km/h (+9) : 84 EUR + 9 EUR = 93 EUR. L’app n’applique aucune correction officielle de mesure et affiche toujours seulement un avertissement contextuel pour les Pays-Bas.",
+      "source_checked_at": "2026-10-02",
+      "currency": "EUR",
+      "posted_limit_kmh": 50,
+      "inside_city": true,
+      "vehicle_category": "ordinary_passenger_car_category_1",
+      "roadworks": false,
+      "corrected_excess_example": {
+        "corrected_speed_kmh": 62,
+        "corrected_delta_kmh": 12,
+        "fine_eur": 140,
+        "administrative_fee_eur": 9,
+        "total_eur": 149
+      },
+      "measured_speed_example": {
+        "measured_speed_kmh": 62,
+        "measurement_correction_kmh": 3,
+        "corrected_speed_kmh": 59,
+        "corrected_delta_kmh": 9,
+        "fine_eur": 84,
+        "administrative_fee_eur": 9,
+        "total_eur": 93
+      },
+      "automatically_applied_by_app": false,
+      "shown_in_current_app": false,
+      "sources": [
+        {
+          "title": "OM Feitenboekje 2026, printed A17/A19, VA012/VB012 and VA009/VB009, category 1",
+          "url": "https://www.om.nl/site/binaries/site-content/collections/documents/mulderbundel/map/map/mulderbundel-2026/Feitenboekje%2B2026.pdf"
+        },
+        {
+          "title": "OM Boetebedragen: amounts exclude 9 EUR administrative fee",
+          "url": "https://www.om.nl/onderwerpen/b/boetebase"
+        },
+        {
+          "title": "OM Marges en meetcorrecties",
+          "url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden/marges-en-meetcorrecties"
+        }
+      ]
+    }
+  },
+  {
+    "advisory_caption": null,
+    "country": "NLD",
+    "currency": "EUR",
+    "delta_kmh": 12,
+    "details": "Het bedrag hangt af van de gecorrigeerde overschrijding, het wegtype en wegwerkzaamheden. Kosten komen erbij; er is geen vast bedrag voor deze hele band.",
+    "driving_ban_months": null,
+    "highway": "residential",
+    "inside_city": true,
+    "language": "nl",
+    "money_fine": null,
+    "penalty_points": null,
+    "posted_limit_kmh": 50,
+    "speed_kmh": 62,
+    "title": "Boete mogelijk",
+    "official_reference_example": {
+      "kind": "official_tariff_reference_not_app_output",
+      "language": "nl",
+      "title": "Officieel Nederlands rekenvoorbeeld – los van de appweergave",
+      "description": "Gewone personenauto, normale weg binnen de bebouwde kom met een limiet van 50 km/u, geen wegwerkzaamheden. Officieel gecorrigeerde overschrijding +12 km/u: 140 EUR boete + 9 EUR administratiekosten = 149 EUR. Meet de politie daarentegen 62 km/u, dan geeft de meetcorrectie van 3 km/u een gecorrigeerde snelheid van 59 km/u (+9): 84 EUR + 9 EUR = 93 EUR. De app past geen officiële meetcorrectie toe en toont voor Nederland nog steeds alleen een contextafhankelijke waarschuwing.",
+      "source_checked_at": "2026-10-02",
+      "currency": "EUR",
+      "posted_limit_kmh": 50,
+      "inside_city": true,
+      "vehicle_category": "ordinary_passenger_car_category_1",
+      "roadworks": false,
+      "corrected_excess_example": {
+        "corrected_speed_kmh": 62,
+        "corrected_delta_kmh": 12,
+        "fine_eur": 140,
+        "administrative_fee_eur": 9,
+        "total_eur": 149
+      },
+      "measured_speed_example": {
+        "measured_speed_kmh": 62,
+        "measurement_correction_kmh": 3,
+        "corrected_speed_kmh": 59,
+        "corrected_delta_kmh": 9,
+        "fine_eur": 84,
+        "administrative_fee_eur": 9,
+        "total_eur": 93
+      },
+      "automatically_applied_by_app": false,
+      "shown_in_current_app": false,
+      "sources": [
+        {
+          "title": "OM Feitenboekje 2026, printed A17/A19, VA012/VB012 and VA009/VB009, category 1",
+          "url": "https://www.om.nl/site/binaries/site-content/collections/documents/mulderbundel/map/map/mulderbundel-2026/Feitenboekje%2B2026.pdf"
+        },
+        {
+          "title": "OM Boetebedragen: amounts exclude 9 EUR administrative fee",
+          "url": "https://www.om.nl/onderwerpen/b/boetebase"
+        },
+        {
+          "title": "OM Marges en meetcorrecties",
+          "url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden/marges-en-meetcorrecties"
+        }
+      ]
+    }
+  }
+]

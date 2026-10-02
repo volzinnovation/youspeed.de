@@ -1,0 +1,1735 @@
+{
+  "format": "youspeed.store-package.validation.v1",
+  "android_version_code": "10031",
+  "apple_locales": [
+    "de-DE",
+    "en-US",
+    "fr-FR",
+    "nl-NL"
+  ],
+  "play_locales": [
+    "de-DE",
+    "en-US",
+    "fr-FR",
+    "nl-NL",
+    "es-ES",
+    "it-IT",
+    "pl-PL",
+    "pt-BR",
+    "sv-SE"
+  ],
+  "status": "passed",
+  "errors": [],
+  "files": [
+    {
+      "path": "store/apple/metadata/de-DE/name.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/apple/metadata/de-DE/subtitle.txt",
+      "bytes": 24,
+      "sha256": "0e6da6fa3842071598c6c4e5793a91a8b15575356ea43322aec5e58819c1aead",
+      "length": 23
+    },
+    {
+      "path": "store/apple/metadata/de-DE/description.txt",
+      "bytes": 2099,
+      "sha256": "bf608b4c1cd0355e7897cb681271b51fecf7442b03a90976957c7a60fb3468f5",
+      "length": 2068
+    },
+    {
+      "path": "store/apple/metadata/de-DE/promotional_text.txt",
+      "bytes": 142,
+      "sha256": "f7709af6f4a0230e4053e88abc5d2369b5c5a2eeaa6f7ad613a9814a5fe4b327",
+      "length": 138
+    },
+    {
+      "path": "store/apple/metadata/de-DE/release_notes.txt",
+      "bytes": 409,
+      "sha256": "1bcd7e99bd4237fb00a9a9de6082ae4fc6648b6647a4d6219313d54ffd86bf15",
+      "length": 403
+    },
+    {
+      "path": "store/apple/metadata/de-DE/keywords.txt",
+      "bytes": 82,
+      "sha256": "146559a1d5ba0a8412cdbb9843b1b8d79425cbc37fdc54c153d54d54a29f6f4b",
+      "length": 81
+    },
+    {
+      "path": "store/apple/metadata/de-DE/support_url.txt",
+      "bytes": 28,
+      "sha256": "66ce9b9f14dc8380c5ecf4a3df7acc94d239dab08c168d6102d517e6c7634c38",
+      "length": 27
+    },
+    {
+      "path": "store/apple/metadata/de-DE/privacy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/apple/metadata/de-DE/review_notes.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/apple/screenshots/de-DE/iphone-6.9/01-safe-speed.png",
+      "bytes": 110615,
+      "sha256": "a42611f942c703c5d3e0a4ef984246881099c3873456c084173618381d8fcff0",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/de-DE/iphone-6.9/02-camera-speed-limit.png",
+      "bytes": 162699,
+      "sha256": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/de-DE/iphone-6.9/03-secondary-sign.png",
+      "bytes": 126063,
+      "sha256": "f78d5c4768c544850519def612d9335512abd007b2723783019ea79dad584e59",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/de-DE/iphone-6.9/04-dashcam.png",
+      "bytes": 175057,
+      "sha256": "5ced10adf38a5160d008d0af5997d672536ed100c9284fd48c1fd60f3a530a87",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/de-DE/iphone-6.9/05-france-fine.png",
+      "bytes": 127629,
+      "sha256": "f7cd11981180e83f6e1e352764c07b4b633757798abf76d63d3e90baca2407a9",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/de-DE/iphone-6.9/06-switzerland-fine.png",
+      "bytes": 126536,
+      "sha256": "5470c76a2882c37f59d6a10b132455c3fb2ce08907818f9d73fd0655186cf03b",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/de-DE/iphone-6.9/07-belgium-fine.png",
+      "bytes": 129854,
+      "sha256": "d87fb31978a4415fc995491baa0ec7cd6ff391ce005e9bed2b6f02fe67661b16",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/de-DE/iphone-6.9/08-netherlands-fine.png",
+      "bytes": 114076,
+      "sha256": "a998ac95d7eb49325790aed656cea0850125b869d4f1a07aa419cdf16bdc7c10",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/de-DE/iphone-6.9/09-pedestrian-zone.png",
+      "bytes": 86428,
+      "sha256": "c3eb1aabf8d3111e1001d138e71652161852f584eda45b50dc6cef50cd441e51",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/de-DE/iphone-6.9/10-autobahn-unlimited.png",
+      "bytes": 106544,
+      "sha256": "a69e65c552613ee51a747933163d91871a5770a315052553250be3ae7c1d61cc",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/metadata/en-US/name.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/apple/metadata/en-US/subtitle.txt",
+      "bytes": 25,
+      "sha256": "c7d6ee726e7e2d3a6f26a3484f80c33f72b0a0600764caebeb05cda3d7060c62",
+      "length": 24
+    },
+    {
+      "path": "store/apple/metadata/en-US/description.txt",
+      "bytes": 1936,
+      "sha256": "c0db3475fc07f5a119c6c0aee262cdcbeabcddb8081fffb9bd1967e49e64c68a",
+      "length": 1935
+    },
+    {
+      "path": "store/apple/metadata/en-US/promotional_text.txt",
+      "bytes": 134,
+      "sha256": "016d9ed1c8aff80d042545cb774a208a4b5351e940bbfaa08e808d8af8f8d68e",
+      "length": 133
+    },
+    {
+      "path": "store/apple/metadata/en-US/release_notes.txt",
+      "bytes": 372,
+      "sha256": "90cdba00b51931189a64d26ee89a70f1f61a587e96ddb130b17797d11ad60677",
+      "length": 371
+    },
+    {
+      "path": "store/apple/metadata/en-US/keywords.txt",
+      "bytes": 78,
+      "sha256": "67188da3653cd2c70c3cac6aaf2289989b09677fedc042c0a30eae90063db950",
+      "length": 77
+    },
+    {
+      "path": "store/apple/metadata/en-US/support_url.txt",
+      "bytes": 28,
+      "sha256": "66ce9b9f14dc8380c5ecf4a3df7acc94d239dab08c168d6102d517e6c7634c38",
+      "length": 27
+    },
+    {
+      "path": "store/apple/metadata/en-US/privacy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/apple/metadata/en-US/review_notes.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/apple/screenshots/en-US/iphone-6.9/01-safe-speed.png",
+      "bytes": 110616,
+      "sha256": "601692b64b457bdb6b971ba4587430d153a50c89a960f0bedb1f55f1b5dd85f1",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/en-US/iphone-6.9/02-camera-speed-limit.png",
+      "bytes": 162699,
+      "sha256": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/en-US/iphone-6.9/03-secondary-sign.png",
+      "bytes": 126063,
+      "sha256": "f78d5c4768c544850519def612d9335512abd007b2723783019ea79dad584e59",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/en-US/iphone-6.9/04-dashcam.png",
+      "bytes": 172536,
+      "sha256": "c1ddbae45b10e848ffa8fa3d3df9423f2af81c7d97d20b36699efb72d3aee411",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/en-US/iphone-6.9/05-france-fine.png",
+      "bytes": 127629,
+      "sha256": "f7cd11981180e83f6e1e352764c07b4b633757798abf76d63d3e90baca2407a9",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/en-US/iphone-6.9/06-switzerland-fine.png",
+      "bytes": 126536,
+      "sha256": "5470c76a2882c37f59d6a10b132455c3fb2ce08907818f9d73fd0655186cf03b",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/en-US/iphone-6.9/07-belgium-fine.png",
+      "bytes": 129854,
+      "sha256": "d87fb31978a4415fc995491baa0ec7cd6ff391ce005e9bed2b6f02fe67661b16",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/en-US/iphone-6.9/08-netherlands-fine.png",
+      "bytes": 115857,
+      "sha256": "72d2776338f458f42648525df809dd56129dda990079f7d917e0922b7879171b",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/en-US/iphone-6.9/09-pedestrian-zone.png",
+      "bytes": 86428,
+      "sha256": "c3eb1aabf8d3111e1001d138e71652161852f584eda45b50dc6cef50cd441e51",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/en-US/iphone-6.9/10-autobahn-unlimited.png",
+      "bytes": 106539,
+      "sha256": "aa0156596c0a7e1a5e29993230914a523fc4205590a2963906ba2e28a9e17e18",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/metadata/fr-FR/name.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/apple/metadata/fr-FR/subtitle.txt",
+      "bytes": 23,
+      "sha256": "9a6c544fd7bfbfca9642f7e4843eac2285416e2478f532f19a8c97fa0c7b8969",
+      "length": 22
+    },
+    {
+      "path": "store/apple/metadata/fr-FR/description.txt",
+      "bytes": 2262,
+      "sha256": "dfb8d9e18cb16b233b4c9c27273c4f482393cc89fe3b08c819e312f538a67e4d",
+      "length": 2192
+    },
+    {
+      "path": "store/apple/metadata/fr-FR/promotional_text.txt",
+      "bytes": 141,
+      "sha256": "458909b6412e0a326190f108dbd0cd299d1ba025a9b8e8a023ca811f9cf58062",
+      "length": 139
+    },
+    {
+      "path": "store/apple/metadata/fr-FR/release_notes.txt",
+      "bytes": 457,
+      "sha256": "53de0c1d3bfb5a9af161b9211230c0b6460eff878c9df1631db7be7b9c7595b8",
+      "length": 444
+    },
+    {
+      "path": "store/apple/metadata/fr-FR/keywords.txt",
+      "bytes": 68,
+      "sha256": "02d117956bf63d6061f3f7a0659e5c064cacd58841f2a29a2b00d990522a9536",
+      "length": 67
+    },
+    {
+      "path": "store/apple/metadata/fr-FR/support_url.txt",
+      "bytes": 28,
+      "sha256": "66ce9b9f14dc8380c5ecf4a3df7acc94d239dab08c168d6102d517e6c7634c38",
+      "length": 27
+    },
+    {
+      "path": "store/apple/metadata/fr-FR/privacy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/apple/metadata/fr-FR/review_notes.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/apple/screenshots/fr-FR/iphone-6.9/01-safe-speed.png",
+      "bytes": 110616,
+      "sha256": "601692b64b457bdb6b971ba4587430d153a50c89a960f0bedb1f55f1b5dd85f1",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/fr-FR/iphone-6.9/02-camera-speed-limit.png",
+      "bytes": 162699,
+      "sha256": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/fr-FR/iphone-6.9/03-secondary-sign.png",
+      "bytes": 126065,
+      "sha256": "dc0ffa236e07d22ac7f4e263ea0eaa2c6405cdc19acb2c689f7ece32ab02a8a2",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/fr-FR/iphone-6.9/04-dashcam.png",
+      "bytes": 172983,
+      "sha256": "e659eeac40bacc0f202cd86d062ce23ef70f2145d154860948644d095ac434ad",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/fr-FR/iphone-6.9/05-france-fine.png",
+      "bytes": 127629,
+      "sha256": "f7cd11981180e83f6e1e352764c07b4b633757798abf76d63d3e90baca2407a9",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/fr-FR/iphone-6.9/06-switzerland-fine.png",
+      "bytes": 126536,
+      "sha256": "5470c76a2882c37f59d6a10b132455c3fb2ce08907818f9d73fd0655186cf03b",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/fr-FR/iphone-6.9/07-belgium-fine.png",
+      "bytes": 129854,
+      "sha256": "d87fb31978a4415fc995491baa0ec7cd6ff391ce005e9bed2b6f02fe67661b16",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/fr-FR/iphone-6.9/08-netherlands-fine.png",
+      "bytes": 116927,
+      "sha256": "00ae016a7a5d9612705aef1d527a8623303b5568c6d1ff9336705d75c0b0e127",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/fr-FR/iphone-6.9/09-pedestrian-zone.png",
+      "bytes": 86428,
+      "sha256": "c3eb1aabf8d3111e1001d138e71652161852f584eda45b50dc6cef50cd441e51",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/fr-FR/iphone-6.9/10-autobahn-unlimited.png",
+      "bytes": 106544,
+      "sha256": "a69e65c552613ee51a747933163d91871a5770a315052553250be3ae7c1d61cc",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/metadata/nl-NL/name.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/apple/metadata/nl-NL/subtitle.txt",
+      "bytes": 29,
+      "sha256": "bd23a4c86825ac4afebd9914eb3bf87b33f7cebd645526a6db75520a3afadf06",
+      "length": 28
+    },
+    {
+      "path": "store/apple/metadata/nl-NL/description.txt",
+      "bytes": 2011,
+      "sha256": "49c484d92e8795d6d0249d63ab14487b6d93c5bd2c1ab9705bde9da68915a8a7",
+      "length": 1989
+    },
+    {
+      "path": "store/apple/metadata/nl-NL/promotional_text.txt",
+      "bytes": 145,
+      "sha256": "81b5aca151afa657e3daf9ae866a799ec6abff5fbaab86f2f73a5a50f16e554a",
+      "length": 142
+    },
+    {
+      "path": "store/apple/metadata/nl-NL/release_notes.txt",
+      "bytes": 396,
+      "sha256": "a48a61e295e584aac18181db852fe4371715c35aa0ae2f1b873655f77968d97d",
+      "length": 389
+    },
+    {
+      "path": "store/apple/metadata/nl-NL/keywords.txt",
+      "bytes": 80,
+      "sha256": "130132ef30b00826964d67d25438195d343c31b865b2546ed8b42af465bf4870",
+      "length": 79
+    },
+    {
+      "path": "store/apple/metadata/nl-NL/support_url.txt",
+      "bytes": 28,
+      "sha256": "66ce9b9f14dc8380c5ecf4a3df7acc94d239dab08c168d6102d517e6c7634c38",
+      "length": 27
+    },
+    {
+      "path": "store/apple/metadata/nl-NL/privacy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/apple/metadata/nl-NL/review_notes.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/apple/screenshots/nl-NL/iphone-6.9/01-safe-speed.png",
+      "bytes": 110615,
+      "sha256": "a42611f942c703c5d3e0a4ef984246881099c3873456c084173618381d8fcff0",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/nl-NL/iphone-6.9/02-camera-speed-limit.png",
+      "bytes": 162699,
+      "sha256": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/nl-NL/iphone-6.9/03-secondary-sign.png",
+      "bytes": 126063,
+      "sha256": "f78d5c4768c544850519def612d9335512abd007b2723783019ea79dad584e59",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/nl-NL/iphone-6.9/04-dashcam.png",
+      "bytes": 171399,
+      "sha256": "e82d65ba1f506caad3a5a9ceea6d5dc651da1f41815a18631f8db34f75f8179c",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/nl-NL/iphone-6.9/05-france-fine.png",
+      "bytes": 127629,
+      "sha256": "f7cd11981180e83f6e1e352764c07b4b633757798abf76d63d3e90baca2407a9",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/nl-NL/iphone-6.9/06-switzerland-fine.png",
+      "bytes": 126536,
+      "sha256": "5470c76a2882c37f59d6a10b132455c3fb2ce08907818f9d73fd0655186cf03b",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/nl-NL/iphone-6.9/07-belgium-fine.png",
+      "bytes": 129854,
+      "sha256": "d87fb31978a4415fc995491baa0ec7cd6ff391ce005e9bed2b6f02fe67661b16",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/nl-NL/iphone-6.9/08-netherlands-fine.png",
+      "bytes": 116689,
+      "sha256": "3b09a42bc4d81266dee2695e4a5985abd3e5f3c8ce5dd81ceb2e8e392a140c23",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/nl-NL/iphone-6.9/09-pedestrian-zone.png",
+      "bytes": 86428,
+      "sha256": "c3eb1aabf8d3111e1001d138e71652161852f584eda45b50dc6cef50cd441e51",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/apple/screenshots/nl-NL/iphone-6.9/10-autobahn-unlimited.png",
+      "bytes": 106544,
+      "sha256": "a69e65c552613ee51a747933163d91871a5770a315052553250be3ae7c1d61cc",
+      "width": 1320,
+      "height": 2868,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/metadata/de-DE/title.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/android/metadata/de-DE/short_description.txt",
+      "bytes": 76,
+      "sha256": "eaab9d629abee2a98e3b5c871a0fd97843203b1d557d17b04901a74a6e655e50",
+      "length": 75
+    },
+    {
+      "path": "store/android/metadata/de-DE/full_description.txt",
+      "bytes": 2099,
+      "sha256": "bf608b4c1cd0355e7897cb681271b51fecf7442b03a90976957c7a60fb3468f5",
+      "length": 2068
+    },
+    {
+      "path": "store/android/metadata/de-DE/release_notes.txt",
+      "bytes": 409,
+      "sha256": "1bcd7e99bd4237fb00a9a9de6082ae4fc6648b6647a4d6219313d54ffd86bf15",
+      "length": 403
+    },
+    {
+      "path": "store/android/metadata/de-DE/review_instructions.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/android/metadata/de-DE/privacy_policy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/android/listing/de-DE/feature-graphic-1024x500.png",
+      "bytes": 526007,
+      "sha256": "6f8c0b1f4d27bdc8fa3ebe0288e327698e85bb2d6f5472f16bf29e808db1dea9",
+      "width": 1024,
+      "height": 500,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/de-DE/icon-512.png",
+      "bytes": 51459,
+      "sha256": "de4e65141fbd091889afaec016b03222f7927214d5d54055b1ac15e0d9e6760d",
+      "width": 512,
+      "height": 512,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/de-DE/phone-screenshots/01-safe-speed.png",
+      "bytes": 83146,
+      "sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/de-DE/phone-screenshots/02-dashcam.png",
+      "bytes": 115708,
+      "sha256": "4ff95800ba98f45af81c187f2cf1058fa0f924cbe24519f16c239fbe8d9e3bb0",
+      "width": 1920,
+      "height": 1080,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/de-DE/phone-screenshots/03-camera-recognition.png",
+      "bytes": 112928,
+      "sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/de-DE/phone-screenshots/04-traffic-signs.png",
+      "bytes": 122305,
+      "sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/de-DE/phone-screenshots/05-france-fine.png",
+      "bytes": 90463,
+      "sha256": "3b8bc264371b72de93cb93913d3fc9a45be2e1c3c7c88de8187a0dac80f7ea99",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/de-DE/phone-screenshots/06-switzerland-fine.png",
+      "bytes": 94161,
+      "sha256": "d41685d126a173389675bdc692251ae8f997e4dbda2ddf49475126dcfd3e89cd",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/de-DE/phone-screenshots/07-belgium-fine.png",
+      "bytes": 97188,
+      "sha256": "61ad7ca52cf9a5d76d06bba82903056f636bb5e0cf3be4d240dae30f70e6966b",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/de-DE/phone-screenshots/08-netherlands-warning.png",
+      "bytes": 87405,
+      "sha256": "ab17007701892d06b6572d013c4ef8792146f8399d9f3266481f68d71badc403",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/metadata/en-US/title.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/android/metadata/en-US/short_description.txt",
+      "bytes": 71,
+      "sha256": "879f77d3a3394e73e3189c482928648689a00c6de9599b98558f61f20fa22e1d",
+      "length": 70
+    },
+    {
+      "path": "store/android/metadata/en-US/full_description.txt",
+      "bytes": 1936,
+      "sha256": "c0db3475fc07f5a119c6c0aee262cdcbeabcddb8081fffb9bd1967e49e64c68a",
+      "length": 1935
+    },
+    {
+      "path": "store/android/metadata/en-US/release_notes.txt",
+      "bytes": 372,
+      "sha256": "90cdba00b51931189a64d26ee89a70f1f61a587e96ddb130b17797d11ad60677",
+      "length": 371
+    },
+    {
+      "path": "store/android/metadata/en-US/review_instructions.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/android/metadata/en-US/privacy_policy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/android/listing/en-US/feature-graphic-1024x500.png",
+      "bytes": 527347,
+      "sha256": "f0246cb5f44ee5767a79a10fac46e8673ba3b16cc77b1fc7adde104ab95ab91a",
+      "width": 1024,
+      "height": 500,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/en-US/icon-512.png",
+      "bytes": 51459,
+      "sha256": "de4e65141fbd091889afaec016b03222f7927214d5d54055b1ac15e0d9e6760d",
+      "width": 512,
+      "height": 512,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/en-US/phone-screenshots/01-safe-speed.png",
+      "bytes": 83146,
+      "sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/en-US/phone-screenshots/02-dashcam.png",
+      "bytes": 115944,
+      "sha256": "195c74313a5667c224dfdfe082dea722bd47187f49a13fb34c9234f1355a00fd",
+      "width": 1920,
+      "height": 1080,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/en-US/phone-screenshots/03-camera-recognition.png",
+      "bytes": 112928,
+      "sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/en-US/phone-screenshots/04-traffic-signs.png",
+      "bytes": 122305,
+      "sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/en-US/phone-screenshots/05-france-fine.png",
+      "bytes": 90471,
+      "sha256": "ad9e454bed011fb9a17be462ec5ee8fc75b95c16e9079a5806ddeb6a61a5d2c3",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/en-US/phone-screenshots/06-switzerland-fine.png",
+      "bytes": 94173,
+      "sha256": "004c80a9c35f58e65c4d62745bb1f491a2f84dc62b078bbb1f0fa8ae5f37b514",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/en-US/phone-screenshots/07-belgium-fine.png",
+      "bytes": 97397,
+      "sha256": "6c84e8459a190fefc88d5acfd56dc00b4b4742aaf6e4b442d011303190c9600b",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/en-US/phone-screenshots/08-netherlands-warning.png",
+      "bytes": 88871,
+      "sha256": "bb22c2d63a565f94e2dcb2f210b8c3c91748b90704c34618c58f19f854e8302a",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/metadata/fr-FR/title.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/android/metadata/fr-FR/short_description.txt",
+      "bytes": 81,
+      "sha256": "5230ff6d7b404ca22b8dd78ffc86ef5809a3000b236b4c40116254bf79236c42",
+      "length": 80
+    },
+    {
+      "path": "store/android/metadata/fr-FR/full_description.txt",
+      "bytes": 2262,
+      "sha256": "dfb8d9e18cb16b233b4c9c27273c4f482393cc89fe3b08c819e312f538a67e4d",
+      "length": 2192
+    },
+    {
+      "path": "store/android/metadata/fr-FR/release_notes.txt",
+      "bytes": 457,
+      "sha256": "53de0c1d3bfb5a9af161b9211230c0b6460eff878c9df1631db7be7b9c7595b8",
+      "length": 444
+    },
+    {
+      "path": "store/android/metadata/fr-FR/review_instructions.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/android/metadata/fr-FR/privacy_policy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/android/listing/fr-FR/feature-graphic-1024x500.png",
+      "bytes": 529229,
+      "sha256": "cdba0e5f57c5ea876cea884502b6c1b698c11aa8c53d288bdd0eb10b703a4384",
+      "width": 1024,
+      "height": 500,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/fr-FR/icon-512.png",
+      "bytes": 51459,
+      "sha256": "de4e65141fbd091889afaec016b03222f7927214d5d54055b1ac15e0d9e6760d",
+      "width": 512,
+      "height": 512,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/fr-FR/phone-screenshots/01-safe-speed.png",
+      "bytes": 83146,
+      "sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/fr-FR/phone-screenshots/02-dashcam.png",
+      "bytes": 120216,
+      "sha256": "e1b87a31ad010de79a90d6aafc7e616d188a34c5f7967cfb8ae029d0485df496",
+      "width": 1920,
+      "height": 1080,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/fr-FR/phone-screenshots/03-camera-recognition.png",
+      "bytes": 112928,
+      "sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/fr-FR/phone-screenshots/04-traffic-signs.png",
+      "bytes": 122305,
+      "sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/fr-FR/phone-screenshots/05-france-fine.png",
+      "bytes": 90653,
+      "sha256": "c33d54cb51448e1d2f46c31d6aba1d1a6ffd4ee456e8fa929bca1516a64d8a89",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/fr-FR/phone-screenshots/06-switzerland-fine.png",
+      "bytes": 60761,
+      "sha256": "78239e43319ab1d86f9603bf8efbf0c0123760e7280bc5b53af0ef2553745036",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/fr-FR/phone-screenshots/07-belgium-fine.png",
+      "bytes": 60775,
+      "sha256": "6cba2de5219b02756bc4896b08fc3841b02f0e34178d595e0cab8edb6b06e135",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/fr-FR/phone-screenshots/08-netherlands-warning.png",
+      "bytes": 89657,
+      "sha256": "a43d42aa9136cf4dcfe58047ff5e0d9fa93b7303f76ff775f18db900879e4c8d",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/metadata/nl-NL/title.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/android/metadata/nl-NL/short_description.txt",
+      "bytes": 79,
+      "sha256": "86e040262d562e32ddd47190507d23ff796e2ef947c76ffce39f798252187ec7",
+      "length": 78
+    },
+    {
+      "path": "store/android/metadata/nl-NL/full_description.txt",
+      "bytes": 2011,
+      "sha256": "49c484d92e8795d6d0249d63ab14487b6d93c5bd2c1ab9705bde9da68915a8a7",
+      "length": 1989
+    },
+    {
+      "path": "store/android/metadata/nl-NL/release_notes.txt",
+      "bytes": 396,
+      "sha256": "a48a61e295e584aac18181db852fe4371715c35aa0ae2f1b873655f77968d97d",
+      "length": 389
+    },
+    {
+      "path": "store/android/metadata/nl-NL/review_instructions.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/android/metadata/nl-NL/privacy_policy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/android/listing/nl-NL/feature-graphic-1024x500.png",
+      "bytes": 525882,
+      "sha256": "30990eab75d0211069aea567740ed3fa62c42155b068834ad23c6facc7cea14e",
+      "width": 1024,
+      "height": 500,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/nl-NL/icon-512.png",
+      "bytes": 51459,
+      "sha256": "de4e65141fbd091889afaec016b03222f7927214d5d54055b1ac15e0d9e6760d",
+      "width": 512,
+      "height": 512,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/nl-NL/phone-screenshots/01-safe-speed.png",
+      "bytes": 83146,
+      "sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/nl-NL/phone-screenshots/02-dashcam.png",
+      "bytes": 116120,
+      "sha256": "942453b8f40f19a84c93ce7b6c167ebf6d76440585f8245b8f5e1eaa4c491238",
+      "width": 1920,
+      "height": 1080,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/nl-NL/phone-screenshots/03-camera-recognition.png",
+      "bytes": 112928,
+      "sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/nl-NL/phone-screenshots/04-traffic-signs.png",
+      "bytes": 122305,
+      "sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/nl-NL/phone-screenshots/05-france-fine.png",
+      "bytes": 90408,
+      "sha256": "9e32fb549af202ae8a25f6c37d2fd5752217b9dfae3e552c816bc050b6dc5d39",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/nl-NL/phone-screenshots/06-switzerland-fine.png",
+      "bytes": 94155,
+      "sha256": "ffe8735495503ebbe2611cba392355de28e22134b8f36aac7e9502bd1122486f",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/nl-NL/phone-screenshots/07-belgium-fine.png",
+      "bytes": 97632,
+      "sha256": "aabf3c3a35a001e5c3bd8392295b4e0e9c07bc479f9e10863734e6015fe1aa00",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/nl-NL/phone-screenshots/08-netherlands-warning.png",
+      "bytes": 89707,
+      "sha256": "2a30ec810a3c356f92bea39f7d01d44aff03b2f863ffb2f092c069a546f50436",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/metadata/es-ES/title.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/android/metadata/es-ES/short_description.txt",
+      "bytes": 77,
+      "sha256": "dbce0187f7cfebf1271993782b9b826a2da3206c81013216733d94ff81b6ede1",
+      "length": 73
+    },
+    {
+      "path": "store/android/metadata/es-ES/full_description.txt",
+      "bytes": 2115,
+      "sha256": "0526825d5abc841481cb88b8da6f90ede9299a802c78dac8c19536384e127313",
+      "length": 2069
+    },
+    {
+      "path": "store/android/metadata/es-ES/release_notes.txt",
+      "bytes": 418,
+      "sha256": "fb9dd4f01c71a5201a5e4cc3c01bec4a87b5873ee57039eadf015ed3643b0f82",
+      "length": 410
+    },
+    {
+      "path": "store/android/metadata/es-ES/review_instructions.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/android/metadata/es-ES/privacy_policy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/android/listing/es-ES/feature-graphic-1024x500.png",
+      "bytes": 526378,
+      "sha256": "4425f23f69a36ca6a6213fe61f86429d0ebf84ea2e26a8b05baeb5fed79295dc",
+      "width": 1024,
+      "height": 500,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/es-ES/icon-512.png",
+      "bytes": 51459,
+      "sha256": "de4e65141fbd091889afaec016b03222f7927214d5d54055b1ac15e0d9e6760d",
+      "width": 512,
+      "height": 512,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/es-ES/phone-screenshots/01-safe-speed.png",
+      "bytes": 83146,
+      "sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/es-ES/phone-screenshots/02-dashcam.png",
+      "bytes": 115923,
+      "sha256": "f51a84a1828961af2752bcb5ec3aa87c47c44d87b76a60156457edaf0a4696a6",
+      "width": 1920,
+      "height": 1080,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/es-ES/phone-screenshots/03-camera-recognition.png",
+      "bytes": 112928,
+      "sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/es-ES/phone-screenshots/04-traffic-signs.png",
+      "bytes": 122305,
+      "sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/es-ES/phone-screenshots/05-france-fine.png",
+      "bytes": 90854,
+      "sha256": "4d3f588e197840bd2f91f7e90e0f931ce7f481803753ce669f1ae31cf02fada7",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/es-ES/phone-screenshots/06-switzerland-fine.png",
+      "bytes": 94602,
+      "sha256": "978d093e3b468550c7552814bac5257c6c504ba89aeabf019211a969f15ca322",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/es-ES/phone-screenshots/07-belgium-fine.png",
+      "bytes": 97625,
+      "sha256": "35ec83f1efb36cded00a0d18126f929ac41f8d3bb9b46ca130e338119068b338",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/es-ES/phone-screenshots/08-netherlands-warning.png",
+      "bytes": 89164,
+      "sha256": "88e93416bb3ef7bd32ec772ebd58c6c240b7f2ae9b2ebf9623a7019f12a489c7",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/metadata/it-IT/title.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/android/metadata/it-IT/short_description.txt",
+      "bytes": 73,
+      "sha256": "0d784a036187f1b782b641a88ae9b47f839215229e7c945b0a363a1afe368a50",
+      "length": 72
+    },
+    {
+      "path": "store/android/metadata/it-IT/full_description.txt",
+      "bytes": 2057,
+      "sha256": "4210407ce1f4c418c8646e148bf5be09d5b23c31e1b938595b6723b32d416027",
+      "length": 2046
+    },
+    {
+      "path": "store/android/metadata/it-IT/release_notes.txt",
+      "bytes": 394,
+      "sha256": "f3027f75134722a4ac07453561010a40ab70727e3611208a9a30e69cea814930",
+      "length": 393
+    },
+    {
+      "path": "store/android/metadata/it-IT/review_instructions.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/android/metadata/it-IT/privacy_policy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/android/listing/it-IT/feature-graphic-1024x500.png",
+      "bytes": 527339,
+      "sha256": "a2fdb1b919bbaa4e1d74df15ca41473c29fd5d742ef29d9a0d92690539875a65",
+      "width": 1024,
+      "height": 500,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/it-IT/icon-512.png",
+      "bytes": 51459,
+      "sha256": "de4e65141fbd091889afaec016b03222f7927214d5d54055b1ac15e0d9e6760d",
+      "width": 512,
+      "height": 512,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/it-IT/phone-screenshots/01-safe-speed.png",
+      "bytes": 83146,
+      "sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/it-IT/phone-screenshots/02-dashcam.png",
+      "bytes": 116255,
+      "sha256": "2917f1b8548b1751671e7de8d162132006c90e09b3b75dc80da8c560560ba5f1",
+      "width": 1920,
+      "height": 1080,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/it-IT/phone-screenshots/03-camera-recognition.png",
+      "bytes": 112928,
+      "sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/it-IT/phone-screenshots/04-traffic-signs.png",
+      "bytes": 122305,
+      "sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/it-IT/phone-screenshots/05-france-fine.png",
+      "bytes": 90799,
+      "sha256": "5f48eae3b23cc5764fe6a7989e0d153cb2d37e0e32669a64cdb7ea0e977396f9",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/it-IT/phone-screenshots/06-switzerland-fine.png",
+      "bytes": 94572,
+      "sha256": "413b1804428a208e70135803514f6a42c73e910e03b2b77b35795fe3ab08b5c8",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/it-IT/phone-screenshots/07-belgium-fine.png",
+      "bytes": 97522,
+      "sha256": "c6891e6d7d2fabaaeef4e244157ba70997c85a7dc7d95011b65e24a364437384",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/it-IT/phone-screenshots/08-netherlands-warning.png",
+      "bytes": 89042,
+      "sha256": "a5d6162c3ecce46c8d43f14fea24d1c0d48f87b8b53f64705072cc33547e3bcd",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/metadata/pl-PL/title.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/android/metadata/pl-PL/short_description.txt",
+      "bytes": 77,
+      "sha256": "079a4c02577631fe011b6dc5e54bbf0ef92317d7d05264e9bcf98e7cad336a11",
+      "length": 75
+    },
+    {
+      "path": "store/android/metadata/pl-PL/full_description.txt",
+      "bytes": 2024,
+      "sha256": "bf0d81d5acca9a602deb25bc6776b782a724fd7f131f92999fdc4f129aa2160b",
+      "length": 1912
+    },
+    {
+      "path": "store/android/metadata/pl-PL/release_notes.txt",
+      "bytes": 412,
+      "sha256": "a3d863b01588c9d3b0b2fcff8abed6aa39ee9149133b50607fa3b176cbdf56cc",
+      "length": 389
+    },
+    {
+      "path": "store/android/metadata/pl-PL/review_instructions.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/android/metadata/pl-PL/privacy_policy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/android/listing/pl-PL/feature-graphic-1024x500.png",
+      "bytes": 529231,
+      "sha256": "f97a310a066cfc36fdb5a88a676c9a64239dd15993a7c880e7bf547d1fe85b8b",
+      "width": 1024,
+      "height": 500,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/pl-PL/icon-512.png",
+      "bytes": 51459,
+      "sha256": "de4e65141fbd091889afaec016b03222f7927214d5d54055b1ac15e0d9e6760d",
+      "width": 512,
+      "height": 512,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/pl-PL/phone-screenshots/01-safe-speed.png",
+      "bytes": 83146,
+      "sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pl-PL/phone-screenshots/02-dashcam.png",
+      "bytes": 115944,
+      "sha256": "76e2b424420cdf660d8874a44cd8bc086f3b954c4de7105cc496a825fc476018",
+      "width": 1920,
+      "height": 1080,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pl-PL/phone-screenshots/03-camera-recognition.png",
+      "bytes": 112928,
+      "sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pl-PL/phone-screenshots/04-traffic-signs.png",
+      "bytes": 122305,
+      "sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pl-PL/phone-screenshots/05-france-fine.png",
+      "bytes": 90732,
+      "sha256": "a307e82fa0514d4876a12dd7afd750f0d9abc6720eb37b6201e977159fedd5f0",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pl-PL/phone-screenshots/06-switzerland-fine.png",
+      "bytes": 94498,
+      "sha256": "d9bb350f2e6625796d4e35d34eb5c387403839677df1ce895cb8e886659a72c4",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pl-PL/phone-screenshots/07-belgium-fine.png",
+      "bytes": 97522,
+      "sha256": "c6891e6d7d2fabaaeef4e244157ba70997c85a7dc7d95011b65e24a364437384",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pl-PL/phone-screenshots/08-netherlands-warning.png",
+      "bytes": 89042,
+      "sha256": "a5d6162c3ecce46c8d43f14fea24d1c0d48f87b8b53f64705072cc33547e3bcd",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/metadata/pt-BR/title.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/android/metadata/pt-BR/short_description.txt",
+      "bytes": 77,
+      "sha256": "2d0b8f31b21ae47950c7305f3feb1b57109136961fb8746147a31a8a55901574",
+      "length": 75
+    },
+    {
+      "path": "store/android/metadata/pt-BR/full_description.txt",
+      "bytes": 1996,
+      "sha256": "f4e58641d19468aab2d8c751f419e97cf21621137b5203a60771956da912fe89",
+      "length": 1933
+    },
+    {
+      "path": "store/android/metadata/pt-BR/release_notes.txt",
+      "bytes": 379,
+      "sha256": "7ea6354cca5698a7f2986c35075933fefa8c9427c843909cbabfaf182bbe4882",
+      "length": 370
+    },
+    {
+      "path": "store/android/metadata/pt-BR/review_instructions.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/android/metadata/pt-BR/privacy_policy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/android/listing/pt-BR/feature-graphic-1024x500.png",
+      "bytes": 528228,
+      "sha256": "ba00b276a3f68394fb478b923c570e734009c6351842e4a7655515ce2dee5999",
+      "width": 1024,
+      "height": 500,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/pt-BR/icon-512.png",
+      "bytes": 51459,
+      "sha256": "de4e65141fbd091889afaec016b03222f7927214d5d54055b1ac15e0d9e6760d",
+      "width": 512,
+      "height": 512,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/pt-BR/phone-screenshots/01-safe-speed.png",
+      "bytes": 83146,
+      "sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pt-BR/phone-screenshots/02-dashcam.png",
+      "bytes": 116274,
+      "sha256": "50fb16b8e3cb6ba9c865fcd95dde2e617fb4c662c81c68a828f37d458d8a227f",
+      "width": 1920,
+      "height": 1080,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pt-BR/phone-screenshots/03-camera-recognition.png",
+      "bytes": 112928,
+      "sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pt-BR/phone-screenshots/04-traffic-signs.png",
+      "bytes": 122305,
+      "sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pt-BR/phone-screenshots/05-france-fine.png",
+      "bytes": 90915,
+      "sha256": "78363edade768c781ffae482864bdebd7d0cb410b7af4c517bf69d9b6610ebcb",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pt-BR/phone-screenshots/06-switzerland-fine.png",
+      "bytes": 94751,
+      "sha256": "018e63b759041f47486e7ba37a1e3ac07bb4b7588670417ad8f73f3b8d2ffa6b",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pt-BR/phone-screenshots/07-belgium-fine.png",
+      "bytes": 97782,
+      "sha256": "93d121f160c52e6154fe2c444f6bfc51c72d74a70169a75d293d7daec86dac2e",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/pt-BR/phone-screenshots/08-netherlands-warning.png",
+      "bytes": 89297,
+      "sha256": "2d51139b6fe8072f8d3543d8a42f3e015291014f4043bbacb37d32816ce21be8",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/metadata/sv-SE/title.txt",
+      "bytes": 9,
+      "sha256": "adaa4553973571aef9a0aaaf9dfb48b7d6b03884efc94ee4099ef1997243442b",
+      "length": 8
+    },
+    {
+      "path": "store/android/metadata/sv-SE/short_description.txt",
+      "bytes": 72,
+      "sha256": "77add5e9ce3e7b696465eac1040f214c24adfed1a4c5e72c475942398b5f9968",
+      "length": 69
+    },
+    {
+      "path": "store/android/metadata/sv-SE/full_description.txt",
+      "bytes": 1876,
+      "sha256": "03d507abbb38c916b6d38f5785dd5e4ce78219e1e708451d11adda43a2670c37",
+      "length": 1816
+    },
+    {
+      "path": "store/android/metadata/sv-SE/release_notes.txt",
+      "bytes": 366,
+      "sha256": "eaaaa86af1359184e949ac7368b666779a4f4c24b65f03a38a7ae6aac2c0d415",
+      "length": 355
+    },
+    {
+      "path": "store/android/metadata/sv-SE/review_instructions.md",
+      "bytes": 3456,
+      "sha256": "94333af47c4b3a3a27e864638da6af223fd64525014c59c764e0f0039ce5813e",
+      "length": 3451
+    },
+    {
+      "path": "store/android/metadata/sv-SE/privacy_policy_url.txt",
+      "bytes": 37,
+      "sha256": "111b62929cbe9b30964cb9417ef2c81e4e125313f1353c2835272d8ae16310c3",
+      "length": 36
+    },
+    {
+      "path": "store/android/listing/sv-SE/feature-graphic-1024x500.png",
+      "bytes": 523404,
+      "sha256": "36c28515207e996457adcd8a4eab4b82587c9a9d08df89597ab218153a848daa",
+      "width": 1024,
+      "height": 500,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/sv-SE/icon-512.png",
+      "bytes": 51459,
+      "sha256": "de4e65141fbd091889afaec016b03222f7927214d5d54055b1ac15e0d9e6760d",
+      "width": 512,
+      "height": 512,
+      "png_bit_depth": 8,
+      "alpha": false
+    },
+    {
+      "path": "store/android/listing/sv-SE/phone-screenshots/01-safe-speed.png",
+      "bytes": 83146,
+      "sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/sv-SE/phone-screenshots/02-dashcam.png",
+      "bytes": 116271,
+      "sha256": "5f4775a9bc52aeaa516aea0d7ba52e78d95706358f10d7bd186b509ed4b7be37",
+      "width": 1920,
+      "height": 1080,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/sv-SE/phone-screenshots/03-camera-recognition.png",
+      "bytes": 112928,
+      "sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/sv-SE/phone-screenshots/04-traffic-signs.png",
+      "bytes": 122305,
+      "sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/sv-SE/phone-screenshots/05-france-fine.png",
+      "bytes": 90991,
+      "sha256": "48e65f068d3896458ef8d7bd2c039682dcbbcad88310d36c1448ef4b66e657bb",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/sv-SE/phone-screenshots/06-switzerland-fine.png",
+      "bytes": 94751,
+      "sha256": "018e63b759041f47486e7ba37a1e3ac07bb4b7588670417ad8f73f3b8d2ffa6b",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/sv-SE/phone-screenshots/07-belgium-fine.png",
+      "bytes": 97789,
+      "sha256": "aacb227f9634c59d7359c4ea3f7bfb745e8c665383e6c6ad3b8d14b16953a766",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    },
+    {
+      "path": "store/android/listing/sv-SE/phone-screenshots/08-netherlands-warning.png",
+      "bytes": 89308,
+      "sha256": "943a367841b7aa875a7282ea26d78ad3d68343ba487b1c530f90df522bf4f9c8",
+      "width": 1080,
+      "height": 1920,
+      "png_bit_depth": 8,
+      "alpha": true
+    }
+  ]
+}

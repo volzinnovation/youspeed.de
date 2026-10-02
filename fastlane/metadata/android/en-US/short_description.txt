@@ -1,1 +1,1 @@
-Live speed-limit assistance with offline maps and advisory alerts.
+Offline speed limits, dashcam and optional on-device sign recognition.

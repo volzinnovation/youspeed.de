@@ -1,10 +1,15 @@
-YouSpeed affiche pendant la conduite la limitation detectee et votre vitesse actuelle. L'app utilise des donnees cartographiques locales hors ligne et fournit des alertes indicatives lorsqu'un exces de vitesse peut avoir des consequences.
+YouSpeed affiche votre vitesse et la limitation issue des cartes hors ligne. Téléchargez les pays et régions disponibles, gérez-les dans le gestionnaire de données et utilisez l’écran de conduite sans connexion permanente aux cartes.
+
+Les cartes hors ligne et les règles indicatives par pays comprennent l’Allemagne, la France, la Suisse, la Belgique et les Pays-Bas. Les modèles de caméra contiennent au total des centaines de classes de panneaux nationaux, dont les limitations et d’autres panneaux routiers. Cette couverture ne garantit pas la précision ; seuls les panneaux pris en charge peuvent être affichés ou influer sur la référence de limitation.
 
 Fonctions :
-- Affichage en direct de la limitation et de la vitesse
-- Cartes hors ligne pour les pays et regions pris en charge
-- Alertes indicatives pour amendes, points et interdictions de conduire
-- Saisie vocale locale des limitations
-- Pas de publicite et pas de suivi
+- Vitesse et limitation en direct avec indication de la source
+- Alertes sonores réglables et informations indicatives sur les sanctions, selon disponibilité
+- Vidéos dashcam facultatives, enregistrées localement, avec lecture, partage et suppression
+- Reconnaissance facultative des panneaux sur l’appareil, avec retour sonore ou vocal
+- Corrections vocales locales des limitations sur les appareils et dans les langues compatibles
+- Photos de rue géolocalisées à vérifier avant un envoi facultatif vers Panoramax
 
-Important : YouSpeed est une app d'assistance. Les panneaux, le code de la route et les avis officiels font toujours foi.
+Configurez YouSpeed à l’arrêt. La reconnaissance peut manquer ou mal interpréter des panneaux ; sa disponibilité dépend du modèle national installé et de l’appareil. La couverture cartographique et les informations sur les sanctions varient selon le pays. Les panneaux, règles de circulation et décisions officielles font foi. YouSpeed ne garantit ni la limitation applicable ni les conséquences juridiques.
+
+Les fonctions de conduite ne nécessitent pas de compte. L’accès à la caméra et au microphone est facultatif. Si la capture est activée, des photos sont prises automatiquement en mouvement lorsque l’app est ouverte. Photos et vidéos restent sur votre appareil jusqu’à votre décision de les partager ou de les envoyer. Les envois Panoramax nécessitent un compte connecté, Internet et votre sélection ; les photos envoyées contiennent la position et les métadonnées de capture. Les journaux de diagnostic locaux sont activés par défaut et peuvent être désactivés. Aucun SDK publicitaire ou de suivi.
