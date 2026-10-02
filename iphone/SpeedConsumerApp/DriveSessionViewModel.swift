@@ -600,6 +600,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var onboardingHasPreciseLocation = false
     deinit {
         penaltyCountryExpiryTask?.cancel()
+        bundleMetadataTask?.cancel()
     }
     @Published var driveStatus: String = "stopped"
     @Published var activeBundleVersion: String = "none"
@@ -679,10 +680,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func startNextBundleDownload() {
-        guard let request = bundleDownloadQueue.next(isBusy: isSyncingNow) else { return }
+        guard let request = bundleDownloadQueue.next(isBusy: isManagingBundles) else { return }
         startBundleDownload(request.option, firstLocationSetup: request.firstLocationSetup)
     }
 
+    @Published private(set) var bundleMetadataByRegion: [String: BundleDisplayMetadata] = [:]
+    @Published private(set) var bundleMetadataStateByRegion: [String: BundleMetadataLoadState] = [:]
+    @Published private(set) var installedBundleMetadataByRegion: [String: BundleDisplayMetadata] = [:]
+    @Published private(set) var installedBundleTotalBytesByRegion: [String: Int64] = [:]
+    @Published private(set) var bundleInventoryError = false
+    @Published private(set) var isDeletingBundle = false
+    @Published var dataManagerSelectedOptionID: String?
+    @Published var dataManagerMapViewport = RegionMapViewport.overview
+    let dataManagerMapCatalog = OfficialRegionMapCatalog.bundled()
+    private var bundleMetadataTask: Task<Void, Never>?
+    private var bundleMetadataTaskRegion: String?
+    private var bundleMetadataPriorState = BundleMetadataLoadState.unknown
     @Published var dashcamRecordingEnabled: Bool {
         didSet {
             guard dashcamRecordingEnabled != oldValue else { return }
@@ -1558,6 +1571,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             let downloaded = try await bundleManager.listDownloadedBundles()
             var countByRegion: [String: Int] = [:]
             var latestByRegion: [String: String] = [:]
+            var metadataByRegion: [String: BundleDisplayMetadata] = [:]
             for bundle in downloaded {
                 let key = bundle.region.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
                 countByRegion[key, default: 0] += 1
@@ -1568,13 +1582,25 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 } else {
                     latestByRegion[key] = bundle.bundleVersion
                 }
+                if metadataByRegion[key] == nil || bundle.bundleVersion > metadataByRegion[key]!.version {
+                    metadataByRegion[key] = BundleDisplayMetadata(version: bundle.bundleVersion,
+                        createdAtUTC: bundle.createdAtUTC, bytes: bundle.installedBytes)
+                }
             }
+            let groups = Dictionary(grouping: downloaded) {
+                $0.region.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            }
+            installedBundleTotalBytesByRegion = groups.compactMapValues {
+                BundleInventorySelection.totalBytes($0.map(\.installedBytes))
+            }
+            installedBundleMetadataByRegion = metadataByRegion
+            bundleInventoryError = false
             downloadedBundleCountByRegion = countByRegion
             downloadedBundleLatestVersionByRegion = latestByRegion
         } catch {
             Self.logger.warning("bundle inventory refresh failed: \(error.localizedDescription, privacy: .public)")
-            downloadedBundleCountByRegion = [:]
-            downloadedBundleLatestVersionByRegion = [:]
+            // Keep the last successful inventory rather than claiming maps were deleted.
+            bundleInventoryError = true
         }
     }
 
@@ -1618,34 +1644,155 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func refreshExpectedBundleSizes() async {
-        var sizes: [String: Int64] = [:]
-        for section in bundleDownloadSections {
-            for option in section.options {
-                let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
-                if sizes[primaryRegion] == nil,
-                   let bytes = await fetchExpectedBundleBytes(from: option.endpoint.manifestURL) {
-                    sizes[primaryRegion] = bytes
-                }
-            }
+    func refreshDataManagerMetadata(for option: BundleDownloadOption) {
+        guard !isScreenshotMode else { return }
+        requestDataManagerMetadata(for: option, force: true)
+        Task { @MainActor [weak self] in
+            await self?.refreshDownloadedBundleInventory()
         }
-        expectedBundleBytesByRegion = sizes
     }
 
-    private func fetchExpectedBundleBytes(from manifestURL: URL) async -> Int64? {
-        do {
-            var request = URLRequest(url: manifestURL)
-            request.timeoutInterval = 15
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-                return nil
+    private func requestDataManagerMetadata(for option: BundleDownloadOption, force: Bool = false) {
+        guard !isScreenshotMode else { return }
+        let region = normalizedManifestRegion(option.endpoint.manifestRegion)
+        let state = bundleMetadataStateByRegion[region] ?? .unknown
+        guard region != bundleMetadataTaskRegion || state != .loading else { return }
+        // Selection has one metadata request at a time. It never owns the
+        // independent map-download task, which continues after navigation.
+        bundleMetadataTask?.cancel()
+        if let previous = bundleMetadataTaskRegion, bundleMetadataStateByRegion[previous] == .loading {
+            bundleMetadataStateByRegion[previous] = bundleMetadataPriorState
+        }
+        bundleMetadataTask = nil
+        bundleMetadataTaskRegion = nil
+        guard force || state == .unknown else { return }
+        bundleMetadataPriorState = state
+        bundleMetadataStateByRegion[region] = .loading
+        bundleMetadataTaskRegion = region
+        bundleMetadataTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await loadDataManagerMetadata(for: option)
+            if !Task.isCancelled, bundleMetadataTaskRegion == region {
+                bundleMetadataTask = nil
+                bundleMetadataTaskRegion = nil
             }
-            let manifest = try JSONDecoder().decode(V3BundleManifest.self, from: data)
-            return manifest.db.bytes > 0 ? manifest.db.bytes : nil
-        } catch {
-            return nil
         }
     }
+
+    func prepareDataManager() {
+        guard !isScreenshotMode else { return }
+        if dataManagerSelectedOptionID == nil {
+            dataManagerSelectedOptionID = recommendedBundleOptionID
+        }
+        if let option = bundleDownloadSections.flatMap(\.options).first(where: { $0.id == dataManagerSelectedOptionID }) {
+            requestDataManagerMetadata(for: option)
+        }
+        Task { @MainActor [weak self] in
+            await self?.refreshDownloadedBundleInventory()
+        }
+    }
+
+    func selectDataManagerRegion(_ option: BundleDownloadOption, focus: Bool = false) {
+        dataManagerSelectedOptionID = option.id
+        if focus, let region = dataManagerMapCatalog?.regions.first(where: { $0.id == option.id }) {
+            dataManagerMapViewport = RegionMapViewport(bbox: region.bbox).zoomed(by: 0.8)
+        }
+        requestDataManagerMetadata(for: option)
+    }
+
+    private func loadDataManagerMetadata(for option: BundleDownloadOption) async {
+        let region = normalizedManifestRegion(option.endpoint.manifestRegion)
+        guard !Task.isCancelled else { return }
+        bundleMetadataStateByRegion[region] = .loading
+        do {
+            var request = URLRequest(url: option.endpoint.manifestURL)
+            request.timeoutInterval = 15
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.timeoutIntervalForRequest = 15
+            configuration.timeoutIntervalForResource = 20
+            let metadataSession = URLSession(configuration: configuration)
+            defer { metadataSession.invalidateAndCancel() }
+            let (bytes, response) = try await metadataSession.bytes(for: request)
+            try Task.checkCancellation()
+            guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+            if http.statusCode == 404 || http.statusCode == 410 {
+                bundleMetadataStateByRegion[region] = .unavailable
+                return
+            }
+            guard (200...299).contains(http.statusCode), response.expectedContentLength <= 2_000_000 else {
+                throw URLError(.badServerResponse)
+            }
+            var data = Data()
+            for try await byte in bytes {
+                guard data.count < 2_000_000 else { throw URLError(.dataLengthExceedsMaximum) }
+                data.append(byte)
+            }
+            try Task.checkCancellation()
+            let manifest = try JSONDecoder().decode(V3BundleManifest.self, from: data)
+            try BundleCompatibility.validate(manifest,
+                appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String)
+            guard normalizedManifestRegion(manifest.region) == region else {
+                throw ConsumerAppError.invalidManifest("Manifest region does not match selected region")
+            }
+            let metadata = BundleDisplayMetadata(manifest: manifest)
+            bundleMetadataByRegion[region] = metadata
+            expectedBundleBytesByRegion[region] = metadata.bytes
+            bundleMetadataStateByRegion[region] = .available
+        } catch {
+            guard !Task.isCancelled else { return }
+            // A network error says nothing about whether a release exists.
+            // Keep any previously fetched metadata explicitly marked as cached.
+            bundleMetadataStateByRegion[region] = .failed
+        }
+    }
+
+    func dataManagerDownloadState(for option: BundleDownloadOption) -> DataManagerDownloadState {
+        DataManagerDownloadState.resolve(optionID: option.id,
+            activeID: hasActiveBundleDownload ? activeDownloadOptionID : nil,
+            queuedIDs: queuedBundleDownloadIDs, failures: bundleDownloadErrors)
+    }
+
+    func canRequestDataManagerDownload(_ option: BundleDownloadOption) -> Bool {
+        // A different region's active transfer and startup work may hold the
+        // FIFO, but must not block adding an independent request to that FIFO.
+        !isDeletingBundle && dataManagerMetadataState(for: option) != .unavailable
+            && dataManagerDownloadState(for: option).acceptsDownloadRequest
+    }
+
+    func canDeleteDataManagerBundle(_ option: BundleDownloadOption) -> Bool {
+        !isManagingBundles && !bundleInventoryError && !queuedBundleDownloadIDs.contains(option.id)
+    }
+
+    func dataManagerDisplayState(for option: BundleDownloadOption) -> BundleMapDisplayState {
+        BundleMapDisplayState.resolve(installed: isBundleDownloaded(option), metadataState: dataManagerMetadataState(for: option))
+    }
+
+    func dataManagerMetadataState(for option: BundleDownloadOption) -> BundleMetadataLoadState {
+        bundleMetadataStateByRegion[normalizedManifestRegion(option.endpoint.manifestRegion)] ?? .unknown
+    }
+
+    func dataManagerMetadata(for option: BundleDownloadOption) -> BundleDisplayMetadata? {
+        bundleMetadataByRegion[normalizedManifestRegion(option.endpoint.manifestRegion)]
+    }
+
+    func installedBundleRegion(for option: BundleDownloadOption) -> String? {
+        BundleInventorySelection.regionKey(primary: normalizedManifestRegion(option.endpoint.manifestRegion),
+            country: countryManifestRegionToken(for: option), counts: downloadedBundleCountByRegion)
+    }
+
+    func installedBundleScopeName(for option: BundleDownloadOption) -> String? {
+        guard let region = installedBundleRegion(for: option) else { return nil }
+        return region == normalizedManifestRegion(option.endpoint.manifestRegion) ? option.displayName : option.countryName
+    }
+
+    func installedBundleMetadata(for option: BundleDownloadOption) -> BundleDisplayMetadata? {
+        guard let region = installedBundleRegion(for: option) else { return nil }
+        guard let metadata = installedBundleMetadataByRegion[region] else { return nil }
+        return BundleDisplayMetadata(version: metadata.version, createdAtUTC: metadata.createdAtUTC,
+                                     bytes: installedBundleTotalBytesByRegion[region])
+    }
+
+    var isManagingBundles: Bool { isSyncingNow || isDeletingBundle }
 
     private func formatBytes(_ bytes: Int64) -> String {
         guard bytes > 0 else {
@@ -1997,7 +2144,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         Task { @MainActor [weak self] in
             await self?.refreshLocalObservations()
             await self?.refreshDownloadedBundleInventory()
-            await self?.refreshExpectedBundleSizes()
         }
     }
 
@@ -4789,16 +4935,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func isBundleDownloaded(_ option: BundleDownloadOption) -> Bool {
-        let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
-        if downloadedBundleCountByRegion[primaryRegion, default: 0] > 0 {
-            return true
-        }
-        let countryRegion = countryManifestRegionToken(for: option)
-        if countryRegion != primaryRegion,
-           downloadedBundleCountByRegion[countryRegion, default: 0] > 0 {
-            return true
-        }
-        return false
+        installedBundleRegion(for: option) != nil
     }
 
     func downloadedBundleStatusText(_ option: BundleDownloadOption) -> String {
@@ -4985,7 +5122,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
-    func deleteSelectedBundle(_ option: BundleDownloadOption) {
+    func deleteSelectedBundle(_ option: BundleDownloadOption, expectedManifestRegion: String? = nil) {
+        guard !isDeletingBundle, !bundleInventoryError,
+              !queuedBundleDownloadIDs.contains(option.id) else { return }
+        if let expectedManifestRegion, installedBundleRegion(for: option) != expectedManifestRegion {
+            maintenanceMessage = NSLocalizedString("data_manager.delete_changed", comment: "")
+            return
+        }
         guard startupTask == nil else {
             maintenanceMessage = "Startup-Datenvorbereitung laeuft noch."
             return
@@ -4996,6 +5139,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         mapLookupPauseState.beginBundleRemoval()
         refreshMapLookupPause()
+        let deletionScopeName = installedBundleScopeName(for: option) ?? option.displayName
+        isDeletingBundle = true
         Task { @MainActor [weak self] in
             guard let self else {
                 return
@@ -5003,12 +5148,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             defer {
                 mapLookupPauseState.finishBundleRemoval()
                 refreshMapLookupPause()
+                isDeletingBundle = false
+                startNextBundleDownload()
             }
             do {
                 let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
                 let countryRegion = countryManifestRegionToken(for: option)
-                var removed = try await bundleManager.removeDownloadedBundles(forManifestRegion: primaryRegion)
-                if removed == 0, countryRegion != primaryRegion {
+                var removed = try await bundleManager.removeDownloadedBundles(forManifestRegion: expectedManifestRegion ?? primaryRegion)
+                if expectedManifestRegion == nil, removed == 0, countryRegion != primaryRegion {
                     removed = try await bundleManager.removeDownloadedBundles(forManifestRegion: countryRegion)
                 }
                 if removed > 0 {
@@ -5032,7 +5179,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         speedLimitService = bootstrap.dbPath.isEmpty ? nil : makeSpeedLimitService(dbPath: bootstrap.dbPath)
                         syncStatus = "ready_\(bootstrap.mode.rawValue)"
                     }
-                    maintenanceMessage = "Bundle geloescht: \(option.displayName)"
+                    maintenanceMessage = String(format: NSLocalizedString("data_manager.deleted", comment: ""), deletionScopeName)
                 } else {
                     maintenanceMessage = "Kein heruntergeladenes Bundle gefunden: \(option.displayName)"
                 }
@@ -5273,6 +5420,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func deleteDownloadedBundlesKeepingSeed() {
+        guard !isDeletingBundle, !bundleInventoryError, queuedBundleDownloadIDs.isEmpty else { return }
         guard startupTask == nil else {
             maintenanceMessage = "Startup-Datenvorbereitung laeuft noch."
             return
@@ -5284,6 +5432,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
         mapLookupPauseState.beginBundleRemoval()
         refreshMapLookupPause()
+        isDeletingBundle = true
         Task { @MainActor [weak self] in
             guard let self else {
                 return
@@ -5291,6 +5440,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             defer {
                 mapLookupPauseState.finishBundleRemoval()
                 refreshMapLookupPause()
+                isDeletingBundle = false
+                startNextBundleDownload()
             }
             do {
                 let removed = try await bundleManager.removeDownloadedBundlesKeepingSeed()

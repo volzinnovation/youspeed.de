@@ -104,6 +104,32 @@ class ConsumerSmokeTest {
         waitAnyByRes(listOf("startup-root", "onboarding-root", "main-root"), 120_000)
     }
 
+    @Test
+    fun dataManagerIsSeparateFromSettingsAndHasTwoUsableTabs() {
+        // Current navigation intentionally hides Settings while moving.
+        launchApp(screenshotState = "camera-limit-active")
+        waitByRes("main-root", 20_000)
+        clickByRes("settings-button")
+        var found = false
+        for (attempt in 0 until 12) {
+            if (selectorsForTag("settings-data-manager-button").any(device::hasObject)) { found = true; break }
+            device.swipe(device.displayWidth / 2, device.displayHeight * 3 / 4,
+                device.displayWidth / 2, device.displayHeight / 3, 24)
+            device.waitForIdle()
+        }
+        assertTrue("Settings links to the separate Data Manager", found)
+        clickByRes("settings-data-manager-button")
+        waitByRes("data-manager-sheet", 10_000)
+        clickByRes("data-manager-list-tab")
+        waitByRes("data-manager-search", 10_000)
+        waitByRes("data-manager-region-list", 10_000)
+        clickByRes("data-manager-map-tab")
+        device.pressBack()
+        waitByRes("settings-sheet", 10_000)
+        device.pressBack()
+        waitByRes("main-root", 10_000)
+    }
+
     private fun launchApp(screenshotState: String?) {
         val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
         device.pressHome()
