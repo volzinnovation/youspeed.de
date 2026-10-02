@@ -224,6 +224,131 @@ private final class TrafficSignTestEmissionStore: @unchecked Sendable {
 }
 
 final class SpeedConsumerTests: XCTestCase {
+
+    func testDataManagerMapAndListShareTruthfulAvailabilityStates() {
+        for phase in [BundleMetadataLoadState.unknown, .loading, .available, .unavailable, .failed] {
+            XCTAssertEqual(BundleMapDisplayState.resolve(installed: true, metadataState: phase), .installed)
+        }
+        XCTAssertEqual(BundleMapDisplayState.resolve(installed: false, metadataState: .available), .available)
+        XCTAssertEqual(BundleMapDisplayState.resolve(installed: false, metadataState: .unavailable), .unavailable)
+        for phase in [BundleMetadataLoadState.unknown, .loading, .failed] {
+            XCTAssertEqual(BundleMapDisplayState.resolve(installed: false, metadataState: phase), .unknown)
+        }
+        XCTAssertNotEqual(BundleMapDisplayState.unknown.localizationKey, BundleMapDisplayState.unavailable.localizationKey)
+        XCTAssertNotEqual(BundleMapDisplayState.unknown.symbol, BundleMapDisplayState.unavailable.symbol)
+        XCTAssertEqual(DataManagerTab.allCases.first, .map)
+    }
+
+    func testDataManagerOfficialCatalogMatchesEveryConfiguredOption() throws {
+        let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
+        let catalog = try XCTUnwrap(OfficialRegionMapCatalog.bundled(bundle))
+        let targets = try V3BundleTargetsConfig.loadBundled(bundle: bundle)
+        let ids = Set(targets.manifestEndpoints(preferredCountryCode: "DEU").map { "\($0.countryID)|\($0.manifestRegion)" })
+        XCTAssertEqual(Set(catalog.regions.map(\.id)), ids)
+        XCTAssertEqual(catalog.regions.count, 51)
+        XCTAssertTrue(catalog.attribution.contains("EuroGeographics"))
+        let berlin = try XCTUnwrap(catalog.region(atLongitude: 13.405, latitude: 52.52, allowedIDs: ids))
+        XCTAssertEqual(berlin.id, "germany|berlin")
+        XCTAssertNil(catalog.region(atLongitude: 13.405, latitude: 52.52, allowedIDs: []))
+    }
+
+    func testDataManagerOfficialSelectionRespectsHolesAndIslands() {
+        let outer = [[0.0, 0], [4, 0], [4, 4], [4, 4], [0, 4], [0, 0]]
+        let hole = [[1.0, 1], [2, 1], [2, 2], [1, 2], [1, 1]]
+        let island = [[6.0, 6], [7, 6], [7, 7], [6, 7], [6, 6]]
+        let region = OfficialRegionMapCatalog.Region(id: "test", name: "Test", bbox: [0, 0, 7, 7],
+                                                     polygons: [[outer, hole], [island]])
+        XCTAssertTrue(region.contains(longitude: 3, latitude: 3))
+        XCTAssertFalse(region.contains(longitude: 1.5, latitude: 1.5))
+        XCTAssertFalse(region.contains(longitude: 5, latitude: 5))
+        XCTAssertTrue(region.contains(longitude: 6.5, latitude: 6.5))
+        XCTAssertFalse(region.contains(longitude: .nan, latitude: 3))
+    }
+
+    func testDataManagerRejectsRoutingGeometryAsAdministrativeArtwork() throws {
+        let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
+        let url = try XCTUnwrap(bundle.url(forResource: "catalog-v1", withExtension: "json", subdirectory: "RegionalCoverage"))
+        XCTAssertThrowsError(try OfficialRegionMapCatalog.decode(Data(contentsOf: url)))
+    }
+
+    func testDataManagerInitialViewportFocusesGermanyWithoutLosingOtherRegions() throws {
+        let catalog = try XCTUnwrap(OfficialRegionMapCatalog.bundled(Bundle(for: SpeedConsumerAppDelegate.self)))
+        let initial = RegionMapViewport.overview
+        XCTAssertEqual(initial, .germany)
+        XCTAssertEqual(initial.minX, 5.5, accuracy: 0.000001)
+        XCTAssertEqual(initial.maxX, 15.8, accuracy: 0.000001)
+        XCTAssertEqual(RegionMapViewport.latitude(fromProjected: initial.maxY), 47.0, accuracy: 0.000001)
+        XCTAssertEqual(RegionMapViewport.latitude(fromProjected: initial.minY), 55.6, accuracy: 0.000001)
+        XCTAssertLessThan(initial.width, RegionMapViewport.europe.width)
+        XCTAssertLessThan(initial.height, RegionMapViewport.europe.height)
+        let germanRegions = catalog.regions.filter { $0.id.hasPrefix("germany|") }
+        XCTAssertEqual(germanRegions.count, 16)
+        for region in germanRegions {
+            XCTAssertLessThanOrEqual(initial.minX, region.bbox[0], region.id)
+            XCTAssertGreaterThanOrEqual(initial.maxX, region.bbox[2], region.id)
+            XCTAssertLessThanOrEqual(initial.minY, RegionMapViewport.projectLatitude(region.bbox[3]), region.id)
+            XCTAssertGreaterThanOrEqual(initial.maxY, RegionMapViewport.projectLatitude(region.bbox[1]), region.id)
+        }
+        XCTAssertEqual(catalog.regions.count, 51)
+        let reunion = try XCTUnwrap(catalog.regions.first { $0.id == "france|reunion" })
+        let focused = RegionMapViewport(bbox: reunion.bbox).zoomed(by: 0.8)
+        XCTAssertGreaterThan(focused.minX, initial.maxX)
+        XCTAssertLessThan(focused.minX, reunion.bbox[0])
+        XCTAssertGreaterThan(focused.maxX, reunion.bbox[2])
+        XCTAssertLessThan(focused.minY, RegionMapViewport.projectLatitude(reunion.bbox[3]))
+        XCTAssertGreaterThan(focused.maxY, RegionMapViewport.projectLatitude(reunion.bbox[1]))
+    }
+
+    func testDataManagerViewportRoundTripsEuropeAndOverseas() {
+        for latitude in [-55.0, -21.1, 16.2, 52.52, 65.0] {
+            XCTAssertEqual(RegionMapViewport.latitude(fromProjected: RegionMapViewport.projectLatitude(latitude)), latitude, accuracy: 0.000001)
+        }
+        let initial = RegionMapViewport.overview.fitted(aspectRatio: 1.8)
+        XCTAssertEqual(initial.width / initial.height, 1.8, accuracy: 0.000001)
+        let restored = initial.zoomed(by: 2).zoomed(by: 0.5)
+        XCTAssertEqual(restored.minX, initial.minX, accuracy: 0.000001)
+        XCTAssertEqual(restored.maxY, initial.maxY, accuracy: 0.000001)
+        let panned = initial.panned(xFraction: 0.2, yFraction: -0.1)
+        XCTAssertEqual(panned.minX, initial.minX - initial.width * 0.2, accuracy: 0.000001)
+        XCTAssertEqual(initial.zoomed(by: .nan), initial)
+        let reunion = RegionMapViewport(bbox: [55.2, -21.4, 55.9, -20.8]).zoomed(by: 0.8)
+        XCTAssertLessThan(reunion.minX, 55.2)
+        XCTAssertGreaterThan(reunion.maxX, 55.9)
+    }
+
+    func testDataManagerInstalledScopeAndAllVersionSizeAreExplicit() {
+        XCTAssertEqual(BundleInventorySelection.regionKey(primary: "berlin", country: "germany", counts: ["germany": 2]), "germany")
+        XCTAssertEqual(BundleInventorySelection.regionKey(primary: "berlin", country: "germany", counts: ["germany": 2, "berlin": 1]), "berlin")
+        XCTAssertNil(BundleInventorySelection.regionKey(primary: "berlin", country: "germany", counts: [:]))
+        XCTAssertEqual(BundleInventorySelection.totalBytes([100, 200]), 300)
+        XCTAssertNil(BundleInventorySelection.totalBytes([100, nil]))
+        XCTAssertNil(BundleInventorySelection.totalBytes([100, 0]))
+        XCTAssertNil(BundleInventorySelection.totalBytes([Int64.max, 1]))
+        let legacy = DownloadedBundleInfo(region: "berlin", bundleVersion: "v1", countryCode: "DEU", dbFileName: "db", dbPath: "/db")
+        XCTAssertNil(legacy.installedBytes)
+        XCTAssertEqual(legacy.createdAtUTC, "")
+    }
+
+    func testDataManagerMetadataUsesTransportBytesAndHonestUnknowns() {
+        func artifact(_ bytes: Int64) -> BundleArtifact {
+            BundleArtifact(file: "part", bytes: bytes, sha256: "test", url: nil)
+        }
+        func manifest(_ parts: [BundleArtifact]?) -> V3BundleManifest {
+            V3BundleManifest(format: "youspeed.v3.bundle.manifest", schemaVersion: 1, variant: "v3", region: "berlin",
+                bundleVersion: "v1", createdAtUTC: "2026-10-01T10:00:00Z", minAppVersion: "1.0",
+                db: artifact(1000), dbParts: parts, deltaIndex: nil)
+        }
+        XCTAssertEqual(BundleDisplayMetadata(manifest: manifest(nil)).bytes, 1000)
+        XCTAssertEqual(BundleDisplayMetadata(manifest: manifest([artifact(100), artifact(200)])).bytes, 300)
+        XCTAssertNil(BundleDisplayMetadata(manifest: manifest([artifact(100), artifact(0)])).bytes)
+        XCTAssertNil(BundleDisplayMetadata(manifest: manifest([artifact(Int64.max), artifact(1)])).bytes)
+        XCTAssertNotNil(BundleDisplayMetadata(manifest: manifest(nil)).packageDate)
+        let unknown = BundleDisplayMetadata(version: "v1", createdAtUTC: "not a date", bytes: nil)
+        XCTAssertNil(unknown.packageDate)
+        XCTAssertNil(unknown.bytes)
+        XCTAssertNotNil(BundleDisplayMetadata(version: "v1", createdAtUTC: "2026-10-01T10:00:00.123Z", bytes: 1).packageDate)
+    }
+
     func testOnboardingRequiresAValidatedNonSeedMap() {
         for version in ["", "none", "seed", " SEED "] {
             XCTAssertFalse(FirstRunOnboardingPolicy.hasUsableMap(databaseReady: true, bundleVersion: version))

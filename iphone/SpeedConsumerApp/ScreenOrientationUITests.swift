@@ -1,6 +1,53 @@
 import XCTest
 
 final class ScreenOrientationUITests: XCTestCase {
+    func testDataManagerNavigationSelectionAndBackPreserveSelectedRegion() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"
+        app.launchArguments = ["-youspeed.screen_orientation", "portrait", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+        let settings = app.buttons["dashboard.settingsButton"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 15))
+        settings.tap()
+        let managerLink = app.descendants(matching: .any).matching(identifier: "settings.dataManager").firstMatch
+        for _ in 0..<12 where !managerLink.isHittable { app.swipeUp() }
+        XCTAssertTrue(managerLink.isHittable)
+        managerLink.tap()
+        let tabs = app.segmentedControls.firstMatch
+        XCTAssertTrue(tabs.waitForExistence(timeout: 5))
+        XCTAssertTrue(tabs.buttons["Map"].isSelected)
+        tabs.buttons["List"].tap()
+        let search = app.textFields["dataManager.search"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.tap()
+        search.typeText("Berlin")
+        let berlin = app.buttons["dataManager.region.germany|berlin"]
+        XCTAssertTrue(berlin.waitForExistence(timeout: 5))
+        berlin.tap()
+        let download = app.buttons["dataManager.download"]
+        for _ in 0..<5 where !download.isHittable { app.swipeUp() }
+        XCTAssertTrue(download.isHittable)
+        XCTAssertTrue(app.staticTexts.matching(identifier: "Not installed").firstMatch.exists)
+        XCTAssertFalse(app.buttons["dataManager.delete"].exists)
+        tabs.buttons["Map"].tap()
+        XCTAssertTrue(app.staticTexts["Berlin"].waitForExistence(timeout: 5))
+        tabs.buttons["List"].tap()
+        XCTAssertTrue(app.buttons["dataManager.region.germany|berlin"].waitForExistence(timeout: 5))
+        // Selecting never starts a download. Back returns to Settings and
+        // reopening retains the selected ID on the long-lived view model.
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(managerLink.waitForExistence(timeout: 5))
+        managerLink.tap()
+        XCTAssertTrue(tabs.buttons["Map"].isSelected)
+        XCTAssertTrue(app.staticTexts["Berlin"].waitForExistence(timeout: 5))
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "data-manager-berlin-selected"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        app.terminate()
+    }
+
     func testSettingsCanChangeManualMountWithSheetOpen() {
         let app = XCUIApplication()
         app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"

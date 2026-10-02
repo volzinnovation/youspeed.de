@@ -479,6 +479,19 @@ struct DownloadedBundleInfo: Sendable, Hashable, Identifiable {
     let countryCode: String?
     let dbFileName: String
     let dbPath: String
+    let createdAtUTC: String
+    let installedBytes: Int64?
+
+    init(region: String, bundleVersion: String, countryCode: String?, dbFileName: String,
+         dbPath: String, createdAtUTC: String = "", installedBytes: Int64? = nil) {
+        self.region = region
+        self.bundleVersion = bundleVersion
+        self.countryCode = countryCode
+        self.dbFileName = dbFileName
+        self.dbPath = dbPath
+        self.createdAtUTC = createdAtUTC
+        self.installedBytes = installedBytes
+    }
 }
 
 struct LocalBundleRoute: Sendable, Equatable {
@@ -3847,5 +3860,98 @@ actor LocalObservationStore {
             return nil
         }
         return value
+    }
+}
+
+enum BundleMetadataLoadState: Equatable {
+    case unknown, loading, available, unavailable, failed
+}
+
+struct BundleDisplayMetadata: Equatable, Sendable {
+    let version: String
+    let createdAtUTC: String
+    let bytes: Int64?
+
+    init(version: String, createdAtUTC: String, bytes: Int64?) {
+        self.version = version
+        self.createdAtUTC = createdAtUTC
+        self.bytes = bytes.flatMap { $0 > 0 ? $0 : nil }
+    }
+
+    init(manifest: V3BundleManifest) {
+        let parts = manifest.dbParts ?? []
+        var total: Int64 = 0
+        var validParts = !parts.isEmpty
+        for part in parts {
+            let addition = total.addingReportingOverflow(part.bytes)
+            if part.bytes <= 0 || addition.overflow { validParts = false; break }
+            total = addition.partialValue
+        }
+        self.init(version: manifest.bundleVersion, createdAtUTC: manifest.createdAtUTC,
+                  bytes: parts.isEmpty ? manifest.db.bytes : (validParts ? total : nil))
+    }
+
+    var packageDate: Date? {
+        let formatter = ISO8601DateFormatter()
+        if let date = formatter.date(from: createdAtUTC) { return date }
+        formatter.formatOptions.insert(.withFractionalSeconds)
+        return formatter.date(from: createdAtUTC)
+    }
+}
+
+enum BundleInventorySelection {
+    static func totalBytes(_ values: [Int64?]) -> Int64? {
+        guard !values.isEmpty else { return nil }
+        var total: Int64 = 0
+        for value in values {
+            guard let value, value > 0 else { return nil }
+            let addition = total.addingReportingOverflow(value)
+            guard !addition.overflow else { return nil }
+            total = addition.partialValue
+        }
+        return total
+    }
+
+    /// A legacy country-wide installation satisfies its regional options.
+    static func regionKey(primary: String, country: String, counts: [String: Int]) -> String? {
+        if counts[primary, default: 0] > 0 { return primary }
+        if country != primary, counts[country, default: 0] > 0 { return country }
+        return nil
+    }
+}
+
+
+enum DataManagerTab: String, CaseIterable, Hashable {
+    case map, list
+}
+
+enum BundleMapDisplayState: Equatable {
+    case installed, available, unavailable, unknown
+
+    static func resolve(installed: Bool, metadataState: BundleMetadataLoadState) -> Self {
+        if installed { return .installed }
+        switch metadataState {
+        case .available: return .available
+        case .unavailable: return .unavailable
+        case .unknown, .loading, .failed: return .unknown
+        }
+    }
+
+    var localizationKey: String {
+        switch self {
+        case .installed: return "installed"
+        case .available: return "available"
+        case .unavailable: return "unavailable"
+        case .unknown: return "availability_unknown"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .installed: return "checkmark.circle.fill"
+        case .available: return "arrow.down.circle.fill"
+        case .unavailable: return "minus.circle.fill"
+        case .unknown: return "questionmark.circle"
+        }
     }
 }
