@@ -101,6 +101,7 @@ data class SpeedPenaltyRuleSet(
     val localizedAdvisoryCaptions: Map<String, String> = emptyMap(),
     val postedLimitEscalation: PostedLimitPenaltyEscalation? = null,
     val speedingTariffs: SpeedingTariffTable? = null,
+    val documentationJSON: String? = null,
 ) {
     companion object {
         fun fallbackDEU(): SpeedPenaltyRuleSet {
@@ -271,6 +272,7 @@ object PenaltyRulesParser {
             currencyCode = root.valueForString("currency_code", "waehrung_code") ?: "EUR",
             defaultLanguage = root.valueForString("default_language", "standardsprache"),
             bands = bands,
+            documentationJSON = raw,
             contentRevision = root.valueForInt("content_revision") ?: 0,
             speedingTariffs = root.valueForObject("speeding_tariffs")?.let { table ->
                 fun templates(key: String) = table.valueForObject(key)!!.mapValues { (_, value) ->

@@ -480,3 +480,37 @@ final class ScreenOrientationUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 }
+
+
+extension ScreenOrientationUITests {
+    func testPenaltyLookupBehindInfoInEveryIphoneLanguage() {
+        continueAfterFailure = false
+        for (language, disclaimer) in [
+            ("en", "For information only. This is not legal advice."),
+            ("de", "Nur zur Information. Dies ist keine Rechtsberatung."),
+            ("fr", "À titre informatif uniquement. Ceci ne constitue pas un conseil juridique."),
+            ("nl", "Alleen ter informatie. Dit is geen juridisch advies.")
+        ] {
+            let app = XCUIApplication()
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "country-penalty"
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_COUNTRY"] = "NL"
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_LIMIT"] = "1"
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_DELTA"] = "0"
+            app.launchArguments = ["-youspeed.screen_orientation", "portrait", "-AppleLanguages", "(\(language))", "-AppleLocale", "\(language)_NL"]
+            app.launch()
+            let info = app.buttons["dashboard.infoButton"]
+            XCTAssertTrue(info.waitForExistence(timeout: 20))
+            info.tap()
+            let lookup = app.buttons["penalty-documentation-button"]
+            XCTAssertTrue(lookup.waitForExistence(timeout: 10))
+            lookup.tap()
+            let webView = app.webViews.firstMatch
+            XCTAssertTrue(webView.waitForExistence(timeout: 15))
+            XCTAssertTrue(webView.staticTexts[disclaimer].waitForExistence(timeout: 15))
+            XCTAssertTrue(webView.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "37")).firstMatch.waitForExistence(timeout: 10), "The Dutch table must load from its JSON")
+            let image = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            image.name = "penalty-documentation-\(language)"; image.lifetime = .keepAlways; add(image)
+            app.terminate()
+        }
+    }
+}

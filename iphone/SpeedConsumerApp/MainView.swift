@@ -417,7 +417,7 @@ struct MainView: View {
         }
         .sheet(isPresented: $showingLegalInfo) {
             DismissibleNavigationSheet {
-                LegalInformationView()
+                LegalInformationView(activePenaltyRules: viewModel.activePenaltyRules)
             }
         }
         .sheet(isPresented: $showingDebug) {
@@ -651,6 +651,8 @@ struct MainView: View {
                     .font(.title3.weight(.semibold))
                     .frame(width: buttonDiameter, height: buttonDiameter)
             }
+            .accessibilityLabel(Text("legal.title"))
+            .accessibilityIdentifier("dashboard.infoButton")
             .buttonStyle(.plain)
             .background(actionButtonBackgroundColor, in: Circle())
             .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
@@ -1950,12 +1952,23 @@ private func trafficSignNumberFont(size: CGFloat) -> Font {
 }
 
 private struct LegalInformationView: View {
+    let activePenaltyRules: SpeedPenaltyRuleSet
     @State private var legalText: String = LegalTextLoader.load()
     @State private var trafficSignNoticesText: String = TrafficSignThirdPartyNoticesLoader.load()
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                NavigationLink {
+                    PenaltyDocumentationView(activeRules: activePenaltyRules)
+                } label: {
+                    Label(NSLocalizedString("penalty.documentation.title", comment: ""), systemImage: "tablecells")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                }
+                .accessibilityIdentifier("penalty-documentation-button")
+
                 NavigationLink {
                     SourceAttributionsView()
                 } label: {

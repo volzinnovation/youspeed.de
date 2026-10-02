@@ -39,6 +39,9 @@ targets:
         buildPhase: resources
       - path: ../shared/Rules
         buildPhase: resources
+      - path: ../shared/penalty-documentation
+        type: folder
+        buildPhase: resources
       - path: SpeedConsumerApp/TSRModelPacks
         type: folder
         buildPhase: resources

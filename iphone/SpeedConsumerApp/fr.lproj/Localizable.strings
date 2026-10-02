@@ -487,3 +487,5 @@
 "data_manager.clear_search" = "Effacer la recherche";
 "data_manager.size" = "Taille";
 "data_manager.date" = "Date du paquet";
+
+"penalty.documentation.title" = "Tableaux des amendes";

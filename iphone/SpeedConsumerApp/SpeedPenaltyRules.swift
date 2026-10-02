@@ -316,6 +316,7 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
     let localizedAdvisoryCaptions: [String: String]
     let postedLimitEscalation: PostedLimitPenaltyEscalation?
     let speedingTariffs: SpeedingTariffTable?
+    var documentationJSON: Data? = nil
 
     enum CodingKeys: String, CodingKey {
         case format
@@ -379,11 +380,15 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
     static func loadBundled(named fileStem: String, bundle: Bundle = .main) throws -> SpeedPenaltyRuleSet {
         if let url = bundle.url(forResource: fileStem, withExtension: "json", subdirectory: "Rules") {
             let data = try Data(contentsOf: url)
-            return try JSONDecoder().decode(SpeedPenaltyRuleSet.self, from: data)
+            var rules = try JSONDecoder().decode(SpeedPenaltyRuleSet.self, from: data)
+            rules.documentationJSON = data
+            return rules
         }
         if let url = bundle.url(forResource: fileStem, withExtension: "json") {
             let data = try Data(contentsOf: url)
-            return try JSONDecoder().decode(SpeedPenaltyRuleSet.self, from: data)
+            var rules = try JSONDecoder().decode(SpeedPenaltyRuleSet.self, from: data)
+            rules.documentationJSON = data
+            return rules
         }
         throw ConsumerAppError.io("Missing bundled rules file \(fileStem).json")
     }
@@ -395,7 +400,9 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
 
     static func loadFile(at fileURL: URL) throws -> SpeedPenaltyRuleSet {
         let data = try Data(contentsOf: fileURL)
-        return try JSONDecoder().decode(SpeedPenaltyRuleSet.self, from: data)
+        var rules = try JSONDecoder().decode(SpeedPenaltyRuleSet.self, from: data)
+        rules.documentationJSON = data
+        return rules
     }
 
     static func fallbackDEU() -> SpeedPenaltyRuleSet {

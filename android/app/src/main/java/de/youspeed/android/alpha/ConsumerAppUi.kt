@@ -1810,6 +1810,7 @@ private fun LegalSheet(
     onDismiss: () -> Unit,
 ) {
     var openAttributions by rememberSaveable { mutableStateOf(false) }
+    var openPenaltyDocumentation by rememberSaveable { mutableStateOf(false) }
     SheetScaffold(title = stringResource(R.string.ui_legal_title), onDismiss = onDismiss, testTag = "legal-sheet") {
         Column(
             modifier = Modifier
@@ -1817,6 +1818,9 @@ private fun LegalSheet(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            OutlinedButton(onClick = { openPenaltyDocumentation = true }, modifier = Modifier.fillMaxWidth().testTag("penalty-documentation-button")) {
+                Text(stringResource(R.string.penalty_documentation_title))
+            }
             OutlinedButton(onClick = { openAttributions = true }, modifier = Modifier.fillMaxWidth().testTag("attribution-button")) {
                 Text(stringResource(R.string.credits_title))
             }
@@ -1827,6 +1831,7 @@ private fun LegalSheet(
         }
     }
     if (openAttributions) AttributionSheet(onDismiss = { openAttributions = false })
+    if (openPenaltyDocumentation) PenaltyDocumentationSheet(ui.activePenaltyRules.ruleSet, onDismiss = { openPenaltyDocumentation = false })
 }
 
 private data class RuntimeBanner(

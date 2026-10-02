@@ -487,3 +487,5 @@
 "data_manager.clear_search" = "Suche löschen";
 "data_manager.size" = "Größe";
 "data_manager.date" = "Paketdatum";
+
+"penalty.documentation.title" = "Bußgeldtabellen";

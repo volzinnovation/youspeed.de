@@ -487,3 +487,5 @@
 "data_manager.clear_search" = "Zoekopdracht wissen";
 "data_manager.size" = "Grootte";
 "data_manager.date" = "Pakketdatum";
+
+"penalty.documentation.title" = "Boetetabellen";

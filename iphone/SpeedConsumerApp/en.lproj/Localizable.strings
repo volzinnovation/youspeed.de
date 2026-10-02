@@ -487,3 +487,5 @@
 "data_manager.clear_search" = "Clear search";
 "data_manager.size" = "Size";
 "data_manager.date" = "Package date";
+
+"penalty.documentation.title" = "Penalty tables";
