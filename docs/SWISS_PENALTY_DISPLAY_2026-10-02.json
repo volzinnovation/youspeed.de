@@ -1,0 +1,693 @@
+{
+  "date": "2026-10-02",
+  "base_commit": "366132efd566da0e46833738f13e8ddf255bf199",
+  "branch": "codex/swiss-penalty-display",
+  "rule_sha256": "bc004831ab90542d6e073fad5143453745f008dc5c9bb94d5dbbedb3216219ed",
+  "languages": [
+    "de",
+    "fr",
+    "en",
+    "nl"
+  ],
+  "dashboard": {
+    "penalty_lines": 2,
+    "caption_rendered": false,
+    "primary_value_size": "unchanged",
+    "secondary_message_size": "unchanged",
+    "ordinary_minimum_prefix": "≥",
+    "raser_primary": "24",
+    "metadata_captions_retained": true
+  },
+  "native_ui": {
+    "ios": {
+      "device": "iPhone 16e iOS 18.6 simulator",
+      "test": "ScreenOrientationUITests.testSwissPenaltyUsesTwoLargeLocalizedLines",
+      "presentations": 16,
+      "passed": true,
+      "assertions": [
+        "displayed value",
+        "translated label",
+        "caption absent"
+      ]
+    },
+    "android": {
+      "device": "API 36 arm64 emulator-5560",
+      "test": "SwissPenaltyAuditInstrumentedTest",
+      "presentations": 32,
+      "passed": true,
+      "assertions": [
+        "process locale matches app locale",
+        "displayed value",
+        "translated label",
+        "caption absent"
+      ]
+    }
+  },
+  "rule_evaluation": {
+    "cases_per_client": 105,
+    "languages_per_case": 4,
+    "evaluations_both_clients": 840,
+    "passed": true,
+    "localized_fields_checked": [
+      "title",
+      "details",
+      "metadata caption"
+    ]
+  },
+  "android_unit_tests": [
+    {
+      "suite": "CountryPenaltyTests",
+      "tests": 14,
+      "failures": 0
+    },
+    {
+      "suite": "SwissPenaltyCorrectionTests",
+      "tests": 3,
+      "failures": 0
+    }
+  ],
+  "swift_detector_tests": {
+    "tests": 19,
+    "passed": true
+  },
+  "actual_native_notice_parity": [
+    {
+      "language": "de",
+      "case": 0,
+      "country": "CHE",
+      "fine_chf": 40,
+      "months": null,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "de",
+      "case": 1,
+      "country": "CHE",
+      "fine_chf": 100,
+      "months": null,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "de",
+      "case": 2,
+      "country": "CHE",
+      "fine_chf": 60,
+      "months": null,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "de",
+      "case": 3,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 1,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "de",
+      "case": 4,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 24,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "de",
+      "case": 5,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 24,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "de",
+      "case": 6,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 24,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "fr",
+      "case": 0,
+      "country": "CHE",
+      "fine_chf": 40,
+      "months": null,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "fr",
+      "case": 1,
+      "country": "CHE",
+      "fine_chf": 100,
+      "months": null,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "fr",
+      "case": 2,
+      "country": "CHE",
+      "fine_chf": 60,
+      "months": null,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "fr",
+      "case": 3,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 1,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "fr",
+      "case": 4,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 24,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "fr",
+      "case": 5,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 24,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "fr",
+      "case": 6,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 24,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "en",
+      "case": 0,
+      "country": "CHE",
+      "fine_chf": 40,
+      "months": null,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "en",
+      "case": 1,
+      "country": "CHE",
+      "fine_chf": 100,
+      "months": null,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "en",
+      "case": 2,
+      "country": "CHE",
+      "fine_chf": 60,
+      "months": null,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "en",
+      "case": 3,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 1,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "en",
+      "case": 4,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 24,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "en",
+      "case": 5,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 24,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "en",
+      "case": 6,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 24,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "nl",
+      "case": 0,
+      "country": "CHE",
+      "fine_chf": 40,
+      "months": null,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "nl",
+      "case": 1,
+      "country": "CHE",
+      "fine_chf": 100,
+      "months": null,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "nl",
+      "case": 2,
+      "country": "CHE",
+      "fine_chf": 60,
+      "months": null,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "nl",
+      "case": 3,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 1,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "nl",
+      "case": 4,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 24,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "nl",
+      "case": 5,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 24,
+      "localized_notice_matches": true
+    },
+    {
+      "language": "nl",
+      "case": 6,
+      "country": "CHE",
+      "fine_chf": null,
+      "months": 24,
+      "localized_notice_matches": true
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/de/case-0.png",
+      "bytes": 80628,
+      "sha256": "d8400c2a4a97606043d427d0081d879a2307ae36447bd784b3968db63b5f31d3"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/de/case-1.png",
+      "bytes": 80019,
+      "sha256": "4032ce4089064ff4dca66bd2fc032218d15be0098b0592d2af97fefce6fb8d1c"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/de/case-2.png",
+      "bytes": 88759,
+      "sha256": "add1ba1ca6e8c237b8fcd92cdcbc4ef25b483fe73d29f3b5fb885f84bd9edb46"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/de/case-3.png",
+      "bytes": 94374,
+      "sha256": "32e55253b74db6c952641cf34a2f46674901e1195da65eca82507b3da93605c9"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/de/case-4.png",
+      "bytes": 90981,
+      "sha256": "8661bde9c0d182105179389d049f7cc0f2c67d90f245a3b58ec39b530f6ac3ab"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/de/case-5.png",
+      "bytes": 89192,
+      "sha256": "af793ba88890e3d3d3d630b828f6f70543043176ac1c5516603bb0858397d41f"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/de/case-6.png",
+      "bytes": 96304,
+      "sha256": "2c0ed7bc03d0c39f3f9f4b50dc84d2aca421e1534f9dd235a471ac7fd9018e69"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/de/case-7.png",
+      "bytes": 87107,
+      "sha256": "d14643c6f14a8a3aff78d9bec8abd328dd833bf868fae37f9877a602b0ee9fa6"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/en/case-0.png",
+      "bytes": 81142,
+      "sha256": "cf3fb0a1223a8e9af21677723b2e9b51f87ef71403cb88cc8a2ea94ebe2a11b7"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/en/case-1.png",
+      "bytes": 80551,
+      "sha256": "331f56af3db10b632846b99ab9f61aaa5a170eadfa95412a5b3cdedb052812d9"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/en/case-2.png",
+      "bytes": 89296,
+      "sha256": "37309bc134dd0694ed485860259bbd628e793611937d51b58ee573dec63f9a69"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/en/case-3.png",
+      "bytes": 94874,
+      "sha256": "77d210cdaaabc3bd1e20c5ecf301bfd99211736604b2710da292e05fb64871a5"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/en/case-4.png",
+      "bytes": 93337,
+      "sha256": "c109d1f519587c631000664e26dcb837287456c8c473ceed120db99ee0222155"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/en/case-5.png",
+      "bytes": 91612,
+      "sha256": "b4685a82fc6e63663b1abf296a9b29da2701910297b8118f17d9c66273b96908"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/en/case-6.png",
+      "bytes": 98289,
+      "sha256": "2e82d39faeaec972efc9d04786ad1456b7195af4ae85889f0a3159ee2084f290"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/en/case-7.png",
+      "bytes": 89075,
+      "sha256": "5489d03adc5fb557c4fb341e2c5edda2e841f9d2741c2899d631e23256de3fa9"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/fr/case-0.png",
+      "bytes": 81223,
+      "sha256": "f307248f842a2deefc31fd6bbf0fa7035d771c9fbfd698c3254aa1ae80b7eefa"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/fr/case-1.png",
+      "bytes": 80628,
+      "sha256": "be2fb2148b06e06226357cd5dd6e91ea1aebdb5cb85f1155c495539b90d924c2"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/fr/case-2.png",
+      "bytes": 89376,
+      "sha256": "c6b485255479f6f9b1f85539afd9bbdd5a2ce2d43c253596d5c9108ab5f7d1a4"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/fr/case-3.png",
+      "bytes": 94336,
+      "sha256": "561d4c762298f28b9f08d19ff4e88e403177d3c51df525b0107d58433db97681"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/fr/case-4.png",
+      "bytes": 90787,
+      "sha256": "855d6700a4f90030dd0b356e08730da1a3be908866337d42ae5df9a85590f735"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/fr/case-5.png",
+      "bytes": 88933,
+      "sha256": "7e918c78d30369b249d41135af5bb01dcbf3ca23f43d51314c6c3dd0879c0184"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/fr/case-6.png",
+      "bytes": 95985,
+      "sha256": "0792b39ac71f94833d66bd01fb5ee9a6229fcc6bde15ec8d46ead778e872776d"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/fr/case-7.png",
+      "bytes": 89444,
+      "sha256": "353cc245a04df9514a8e73ea8270c8057253377909b8662396232957a0c5d476"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/nl/case-0.png",
+      "bytes": 81142,
+      "sha256": "cf3fb0a1223a8e9af21677723b2e9b51f87ef71403cb88cc8a2ea94ebe2a11b7"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/nl/case-1.png",
+      "bytes": 80551,
+      "sha256": "331f56af3db10b632846b99ab9f61aaa5a170eadfa95412a5b3cdedb052812d9"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/nl/case-2.png",
+      "bytes": 89296,
+      "sha256": "37309bc134dd0694ed485860259bbd628e793611937d51b58ee573dec63f9a69"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/nl/case-3.png",
+      "bytes": 94607,
+      "sha256": "6e22bac355a2b1b73489bd25648ee7a3f147a32a045b429ca1195b01743c0e78"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/nl/case-4.png",
+      "bytes": 91486,
+      "sha256": "d0fc0475a90a622aaef165320e9781eae86e99107a498872dfafd1fad702ba11"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/nl/case-5.png",
+      "bytes": 89552,
+      "sha256": "9a781dba8b564d5126df292f7b5982010d119fd8cdeeaba98123cab1360832ed"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/nl/case-6.png",
+      "bytes": 96425,
+      "sha256": "cee2c5a6e28f746b2883701846a33b4c8181b9e400ffbffad1e96129f5b72b9a"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/android/nl/case-7.png",
+      "bytes": 89422,
+      "sha256": "40accca65f13593f007a2f2bedb46cd738952e05635f472fdc2666500267cb4a"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/de/case-0.png",
+      "bytes": 141233,
+      "sha256": "9c16d1b5f5141046e302f9a6c7e801c5a5f884411186ed73e5203f914e32cc3f"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/de/case-1.png",
+      "bytes": 142836,
+      "sha256": "fcc4502dcd022f9d1d10105e79b48786ea1b7ad8a705980d19d1509d6d64ea80"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/de/case-2.png",
+      "bytes": 153242,
+      "sha256": "5ba72896dc87608a764208376ee5402b8f4c7839d481e383dedf5428fb10cc98"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/de/case-3.png",
+      "bytes": 133285,
+      "sha256": "abe78861dac3631b1a4ca3a394b571431240c1688249e5ec1766ae52c97ab248"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/en/case-0.png",
+      "bytes": 141351,
+      "sha256": "ff2d8859ec3ef1a18c0f41cb8913bc9cf1408f9a49e4190d5dceb07f44201768"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/en/case-1.png",
+      "bytes": 144351,
+      "sha256": "423a1f7d08c9a90331fe95222a6524ec4e36e73d3fc6fc6eec92177b16d26c37"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/en/case-2.png",
+      "bytes": 156019,
+      "sha256": "7838c9cb26ede35da172cb77349a840d8bd70f175c9f8070d1174a14a4491b4e"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/en/case-3.png",
+      "bytes": 134972,
+      "sha256": "5908de6fe78d057ff4e0d857a65529b6261cdcd92fdc2c54cec86d08b2e119d1"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/fr/case-0.png",
+      "bytes": 141233,
+      "sha256": "9c16d1b5f5141046e302f9a6c7e801c5a5f884411186ed73e5203f914e32cc3f"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/fr/case-1.png",
+      "bytes": 143185,
+      "sha256": "7bb5d03092ede593c0568c1d05cbe741f10a76b59d74e1fb6cd389ab11296102"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/fr/case-2.png",
+      "bytes": 153436,
+      "sha256": "ce414b4a2fc8b7e11333f7e45e9ab53e40fdcb5e481f6f5ab85af3ab17daf2ab"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/fr/case-3.png",
+      "bytes": 135937,
+      "sha256": "837e86a7e257d22680eced6d487aa4c03d8caa6d727b237b411e90ecb3dc0252"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/nl/case-0.png",
+      "bytes": 141351,
+      "sha256": "ff2d8859ec3ef1a18c0f41cb8913bc9cf1408f9a49e4190d5dceb07f44201768"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/nl/case-1.png",
+      "bytes": 143669,
+      "sha256": "3d04bf5c23319bd6a66150a79053e8f4bfea35f4edce358a59b314a7a8eb5b9d"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/nl/case-2.png",
+      "bytes": 154296,
+      "sha256": "57f1b407b8db60706d5254d5d7d1d277f23074fcd597a06d5ec04b99edd4de7c"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios/nl/case-3.png",
+      "bytes": 135572,
+      "sha256": "44ecd247c9c4746e057169a8cff20947275885996accf51f7997f94b8c085ff3"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/de/case-0.png",
+      "bytes": 158462,
+      "sha256": "6282dc01c0a1d8482dda55016d308199e88f678310c462111255fc3c07bf5f47"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/de/case-1.png",
+      "bytes": 155321,
+      "sha256": "9ac155872467c8f761dae04f227649e7fe90dd223c3f0bd1dc25d91225f0faee"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/de/case-2.png",
+      "bytes": 158246,
+      "sha256": "1dc3618e5b772a46ac16b079f010b14ca08d727488618dda064458febb891842"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/de/case-3.png",
+      "bytes": 160653,
+      "sha256": "ec64b803acd49a92f0df814b0b04d5a9827d0f299022ba9008ec3aee44c33f8d"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/de/case-4.png",
+      "bytes": 172077,
+      "sha256": "88df70787a07e041e2bb22a71af443e146554caf5be4e8a304cdf701e3246053"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/de/case-5.png",
+      "bytes": 168826,
+      "sha256": "eafeb81718b0273b0af2fce5e23dbfbfcfb12cf01ff716cb73325da2b2403fea"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/de/case-6.png",
+      "bytes": 166319,
+      "sha256": "76a867fd82b65ad9752552995152c82c257846a0913a9e0546b8503fc19de1c1"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/en/case-0.png",
+      "bytes": 158462,
+      "sha256": "6282dc01c0a1d8482dda55016d308199e88f678310c462111255fc3c07bf5f47"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/en/case-1.png",
+      "bytes": 155321,
+      "sha256": "9ac155872467c8f761dae04f227649e7fe90dd223c3f0bd1dc25d91225f0faee"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/en/case-2.png",
+      "bytes": 159168,
+      "sha256": "5261ccd88c09ef2c6b8ac81666b61691453d2443fc21cd40a969b97f1338c672"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/en/case-3.png",
+      "bytes": 162536,
+      "sha256": "b02a9a379a40297b11129713f5ab1cf1592132eadd0ecf3afef13d2eb9e5ec27"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/en/case-4.png",
+      "bytes": 175810,
+      "sha256": "285dd3750926344a6c86d20752b54d0e548d42566b2a41ed3bfc002474863263"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/en/case-5.png",
+      "bytes": 172443,
+      "sha256": "dd8b7ce075ff74ceebd15780c7a4c500364fc13530f9143850a02a8229564ca5"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/en/case-6.png",
+      "bytes": 170186,
+      "sha256": "babbe6ffb848277a6e4ec17e70f60686896ced502d5120aeb46f0f5a72b5a15a"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/fr/case-0.png",
+      "bytes": 158462,
+      "sha256": "6282dc01c0a1d8482dda55016d308199e88f678310c462111255fc3c07bf5f47"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/fr/case-1.png",
+      "bytes": 155321,
+      "sha256": "9ac155872467c8f761dae04f227649e7fe90dd223c3f0bd1dc25d91225f0faee"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/fr/case-2.png",
+      "bytes": 158246,
+      "sha256": "1dc3618e5b772a46ac16b079f010b14ca08d727488618dda064458febb891842"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/fr/case-3.png",
+      "bytes": 161006,
+      "sha256": "d07996b38c35a2dd8f0744ed3442d5475fbf65ca158d92088334133e8645a615"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/fr/case-4.png",
+      "bytes": 172118,
+      "sha256": "9b2d70a81298b17ebd56a589127a4b31d009659dd7709dc480da60037bbd5870"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/fr/case-5.png",
+      "bytes": 168912,
+      "sha256": "7852642eda65f84c62307807aafd56ca6aa8fa8094ab28578459c137b0002228"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/fr/case-6.png",
+      "bytes": 166431,
+      "sha256": "72a2cf97a87643ebeb90515d9f1b29d5a3ba9a15918b4e0d01203494bdc60a6d"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/nl/case-0.png",
+      "bytes": 159232,
+      "sha256": "6f3115796fb54f78efb7905aa5a53ce422fc0e589ae972183bd5df9ed055e3d6"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/nl/case-1.png",
+      "bytes": 156109,
+      "sha256": "eacb9d5b2068d1ba006ef9a080e436a32cfaeb05bbcbb71b2d44ee0f9f9459d6"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/nl/case-2.png",
+      "bytes": 159168,
+      "sha256": "5261ccd88c09ef2c6b8ac81666b61691453d2443fc21cd40a969b97f1338c672"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/nl/case-3.png",
+      "bytes": 162131,
+      "sha256": "026d8529ac5ef50a36d0b062879eacab516a9a21a06e71960229bc8f27f4b2c8"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/nl/case-4.png",
+      "bytes": 173898,
+      "sha256": "2b2ebec0fb30d322590b370a432399dcaf296f3c8809fb4683c78dd4dce0b1c9"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/nl/case-5.png",
+      "bytes": 170561,
+      "sha256": "bdb2a4674087146c9d4d3233d7d5e36a6f4a16fd34e4ed36cd50c622bcb6f5d0"
+    },
+    {
+      "path": "/Users/raphaelvolz/YouSpeedDeviceBackups/2026-10-02/swiss-penalty-two-line/ios-replay/nl/case-6.png",
+      "bytes": 168218,
+      "sha256": "c3d8a51412e5038297cf7bb582131a9650d7125cae34beef1787b997df608bd7"
+    }
+  ],
+  "ci": {
+    "merge_run": "https://github.com/volzinnovation/youspeed.de/actions/runs/36992246733",
+    "original_failure": "Xcode 16.4 type-check timeout in RoadBoundarySamplingRows.centers",
+    "local_fix": "split expression into typed intermediates, same operation order",
+    "local_build_and_detector_tests": "passed",
+    "older_ci_toolchain_recheck": "pending push"
+  },
+  "delivery": {
+    "committed": false,
+    "pushed": false,
+    "physical_device_installed": false
+  }
+}
