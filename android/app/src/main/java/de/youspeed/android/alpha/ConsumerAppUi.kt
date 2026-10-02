@@ -2,6 +2,9 @@
 
 package de.youspeed.android.alpha
 
+import androidx.activity.ComponentActivity
+import androidx.lifecycle.Lifecycle
+import kotlinx.coroutines.delay
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Checkbox
 
@@ -219,7 +222,7 @@ internal object CameraSpeedLimitUsePresentation {
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun ConsumerApp(controller: ConsumerSessionController) {
+internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: AppReviewPrompt? = null) {
     val ui = controller.uiState
     var openSettings by rememberSaveable { mutableStateOf(false) }
     var openDataManager by rememberSaveable { mutableStateOf(false) }
@@ -228,6 +231,35 @@ fun ConsumerApp(controller: ConsumerSessionController) {
     var openDebug by rememberSaveable { mutableStateOf(false) }
     var openLocalRecordings by rememberSaveable { mutableStateOf(false) }
     var openPanoramaxGallery by rememberSaveable { mutableStateOf(false) }
+
+    val reviewActivity = LocalContext.current as? ComponentActivity
+    val reviewIsSafe by rememberUpdatedState(newValue = {
+        val latest = controller.uiState
+        AppReviewPolicy.isSafeToRequest(latest.currentSpeedKmh, latest.stationarySpeedObservedAt, Instant.now(),
+            latest.tunnelModeState == TunnelModeState.ACTIVE, latest.drivingControlsAllowed,
+            latest.appScreenshotState == null && latest.startupLogReviewState == StartupLogReviewState.COMPLETE &&
+                latest.startupDataState == StartupDataState.READY && !controller.shouldPresentOnboarding() &&
+                ConsumerMainScreenLogic.hasUsableGpsFix(latest),
+            reviewActivity?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED) == true,
+            openSettings || openDataManager || openLegal || openDebug || openLocalRecordings || openPanoramaxGallery ||
+                controller.calibrationVisible || ConsumerMainScreenLogic.isInSpeedCaptureMode(latest) ||
+                latest.dashcamButtonActionPending || latest.dashcamButtonActionError != null)
+    })
+    LaunchedEffect(reviewPrompt, reviewActivity) {
+        if (reviewPrompt == null || reviewActivity == null) return@LaunchedEffect
+        var safeSince: Instant? = null
+        while (true) {
+            val now = Instant.now()
+            if (reviewPrompt.isEligible(now) && reviewIsSafe()) {
+                val since = safeSince ?: now.also { safeSince = it }
+                if (!now.isBefore(since.plusSeconds(5))) {
+                    reviewPrompt.request(reviewActivity) { reviewIsSafe() }
+                    return@LaunchedEffect
+                }
+            } else { safeSince = null }
+            delay(1_000)
+        }
+    }
 
     LaunchedEffect(ui.drivingControlsAllowed) {
         if (!ui.drivingControlsAllowed) {

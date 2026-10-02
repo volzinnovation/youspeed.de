@@ -7,6 +7,7 @@ import UIKit
 struct SpeedConsumerApp: App {
     @UIApplicationDelegateAdaptor(SpeedConsumerAppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
+    private let reviewPrompt = AppReviewPrompt.shared
     @StateObject private var viewModel = DriveSessionViewModel()
 
     var body: some Scene {

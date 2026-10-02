@@ -138,6 +138,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("com.google.android.play:review:2.0.2")
     implementation("com.alphacephei:vosk-android:0.3.75")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     // 1.4.2 is the newest LiteRT line compatible with this module's Kotlin 1.9 ABI.

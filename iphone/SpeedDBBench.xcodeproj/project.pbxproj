@@ -109,6 +109,7 @@
 		9637F6C8ECD7B3AC9946BBA2 /* V3LookupResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6C254E9BAEBAB2A011AA73 /* V3LookupResources.swift */; };
 		97E8DC9223F766FD4AC67959 /* TrafficSignPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2824F7189DACBF88B7F6C31A /* TrafficSignPresentation.swift */; };
 		9877E92DFAFDB8EE699F6987 /* LanePreviewPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F148E00A8B31EF97F1738DAF /* LanePreviewPresentation.swift */; };
+		993E99E3D22FDC60BEAD3863 /* AppReviewPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = D90286AF9D5D3E5CE8B04DA9 /* AppReviewPrompt.swift */; };
 		9B0956EBD9D07FE1E8EAE96F /* suppression-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 1D004DADB30F5DB4D4111FC8 /* suppression-v1.json */; };
 		9B41B04685CA7CB763B41453 /* netherlands.poly in Resources */ = {isa = PBXBuildFile; fileRef = 12B7F7EA0C73DB02413070D3 /* netherlands.poly */; };
 		9C51C7D96113128012CC2134 /* mecklenburg-vorpommern.poly in Resources */ = {isa = PBXBuildFile; fileRef = 7417B3F5E0AF2A8D476C110E /* mecklenburg-vorpommern.poly */; };
@@ -119,6 +120,7 @@
 		A1603A09C28279C2E9825652 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0FA7950BF984ADA10C90CC8B /* PrivacyInfo.xcprivacy */; };
 		A65EE1B5A52B3FAF53EBE779 /* bayern.poly in Resources */ = {isa = PBXBuildFile; fileRef = 4E59D10489F12AEFC1961E8F /* bayern.poly */; };
 		A75797D06DDA6313931524D2 /* romania.poly in Resources */ = {isa = PBXBuildFile; fileRef = 04E3DFEEB128C612F8014906 /* romania.poly */; };
+		A90F43FF340CEE032B22D5AF /* AppReviewPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C7EC41B2369882B24D01C21 /* AppReviewPromptTests.swift */; };
 		AB96706A91C2DACD8D9B1098 /* speed-limit-reference in Resources */ = {isa = PBXBuildFile; fileRef = 55D16BE42ECC5E6CF4A4F7E3 /* speed-limit-reference */; };
 		ADE1B941F54FE210EB4C73FB /* TrafficSignPassageEvaluation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07397DB47DB917288A4ABBD8 /* TrafficSignPassageEvaluation.swift */; };
 		B0F7FB9AB928E5D1815E50A5 /* thueringen.poly in Resources */ = {isa = PBXBuildFile; fileRef = DD9CC95F2104420AF1B222D3 /* thueringen.poly */; };
@@ -319,6 +321,7 @@
 		9A2F4102E4235FC0D1C10EE1 /* PanoramaxUploadClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanoramaxUploadClient.swift; sourceTree = "<group>"; };
 		9AE19896C9567940AD3237DC /* sign-pictograms */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "sign-pictograms"; path = "../shared/tsr/sign-pictograms"; sourceTree = SOURCE_ROOT; };
 		9C00B7D4BAE2E00537C6B0B6 /* legal.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = legal.txt; sourceTree = "<group>"; };
+		9C7EC41B2369882B24D01C21 /* AppReviewPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppReviewPromptTests.swift; sourceTree = "<group>"; };
 		9DBEBD28290F598DC72E8DFB /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		9EE7FBD20C2C207434E0A6A0 /* DebugLogPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogPersistenceTests.swift; sourceTree = "<group>"; };
 		A129C77B2BC1F748E0F0EA74 /* PanoramaxQueueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanoramaxQueueStore.swift; sourceTree = "<group>"; };
@@ -356,6 +359,7 @@
 		D5EFF252BA4CDEC5C67298CB /* LatestPendingLookupWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestPendingLookupWorker.swift; sourceTree = "<group>"; };
 		D7CE995B17B323A34DE8F7AB /* StartupLogStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupLogStore.swift; sourceTree = "<group>"; };
 		D8DFC5BD5228D3BD65AEC1F7 /* BenchmarkModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkModels.swift; sourceTree = "<group>"; };
+		D90286AF9D5D3E5CE8B04DA9 /* AppReviewPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppReviewPrompt.swift; sourceTree = "<group>"; };
 		DD9CC95F2104420AF1B222D3 /* thueringen.poly */ = {isa = PBXFileReference; path = thueringen.poly; sourceTree = "<group>"; };
 		E1EF5534FE6EF8015DB05730 /* nl.lproj */ = {isa = PBXFileReference; path = nl.lproj; sourceTree = "<group>"; };
 		E65A06FABB9BD2F9609312D6 /* GravityAlignment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GravityAlignment.swift; sourceTree = "<group>"; };
@@ -382,6 +386,7 @@
 		014723ABB9088B389ACA00C0 /* SpeedConsumerApp */ = {
 			isa = PBXGroup;
 			children = (
+				D90286AF9D5D3E5CE8B04DA9 /* AppReviewPrompt.swift */,
 				734BE1C063C1A673E23AE2B7 /* Assets.xcassets */,
 				4C1D195FA30679288FABB9AA /* BackgroundDownloadCenter.swift */,
 				0C37DB03A3AAA79ED104121D /* BundleDownloadQueue.swift */,
@@ -540,6 +545,7 @@
 		A7CB22E93C70002B927746FB /* SpeedConsumerTests */ = {
 			isa = PBXGroup;
 			children = (
+				9C7EC41B2369882B24D01C21 /* AppReviewPromptTests.swift */,
 				A6A8ADF8A021CE971882EEE6 /* CandidateAdmissionParityTests.swift */,
 				9EE7FBD20C2C207434E0A6A0 /* DebugLogPersistenceTests.swift */,
 				ECF75D496D18133C8CEA6C81 /* DrivingControlAvailabilityTests.swift */,
@@ -954,6 +960,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				993E99E3D22FDC60BEAD3863 /* AppReviewPrompt.swift in Sources */,
 				90E6AA8C6EAA235DF5279794 /* BackgroundDownloadCenter.swift in Sources */,
 				52E0BC41A844D0D41B0DBF86 /* BundleDownloadQueue.swift in Sources */,
 				8F6CA29E60F49D9477F26E88 /* ConsumerModels.swift in Sources */,
@@ -1015,6 +1022,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A90F43FF340CEE032B22D5AF /* AppReviewPromptTests.swift in Sources */,
 				6D21DF47C1B897F79D26AF2C /* CandidateAdmissionParityTests.swift in Sources */,
 				1211E93B1CB861C6794A1586 /* DebugLogPersistenceTests.swift in Sources */,
 				5F8296A6269F7BB82D9BA4FD /* DrivingControlAvailabilityTests.swift in Sources */,

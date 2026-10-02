@@ -1,3 +1,4 @@
+import StoreKit
 import SafariServices
 import SwiftUI
 #if canImport(UIKit)
@@ -131,6 +132,8 @@ enum LegalDisclaimerText {
 
 struct MainView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+    @Environment(\.requestReview) private var requestReview
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @Environment(\.layoutDirection) private var textLayoutDirection
     var openSettingsOnAppear: Bool = false
@@ -362,6 +365,24 @@ struct MainView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            var safeSince: Date?
+            let prompt = AppReviewPrompt.shared
+            let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+            while !Task.isCancelled && !prompt.attemptedThisLaunch {
+                let now = Date()
+                if prompt.isEligible(version: version, now: now) && reviewRequestIsSafe(at: now) {
+                    if safeSince == nil { safeSince = now }
+                    if let safeSince, now.timeIntervalSince(safeSince) >= 5,
+                       prompt.recordRequest(version: version, now: now) {
+                        requestReview()
+                        return
+                    }
+                } else { safeSince = nil }
+                do { try await Task.sleep(for: .seconds(1)) } catch { return }
+            }
+        }
         .onChange(of: viewModel.drivingControlsAllowed) { _, allowed in
             guard !allowed else { return }
             settingsPresentation.wrappedValue = false
@@ -462,6 +483,19 @@ struct MainView: View {
                 showingSettings = allowed
             }
         )
+    }
+
+    private func reviewRequestIsSafe(at now: Date) -> Bool {
+        AppReviewPrompt.isSafeToRequest(speedKmh: viewModel.currentSpeedKmh,
+            stationaryObservedAt: viewModel.stationarySpeedObservedAt, now: now,
+            inTunnel: viewModel.isTunnelModeActive, buttonsVisible: viewModel.drivingControlsAllowed,
+            dashboardReady: !viewModel.isScreenshotMode && viewModel.startupLogReviewState == .complete &&
+                viewModel.startupDataState == .ready && viewModel.onboardingStateLoaded &&
+                !viewModel.shouldPresentOnboarding && viewModel.gpsSignalBars > 0,
+            active: scenePhase == .active,
+            interrupted: showingSettings || showingLegalInfo || showingDebug || showingLocalRecordings ||
+                showingPanoramaxGallery || showingTrafficSignDetails || showingVisualCalibration ||
+                viewModel.isInSpeedCaptureMode || viewModel.driveInteractionPending || viewModel.driveInteractionError != nil)
     }
 
     private func hasFreshStationarySpeed(at now: Date) -> Bool {

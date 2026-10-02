@@ -132,3 +132,35 @@ The **Debug logging** toggle at the bottom of Settings, above the debug-info
 link, defaults to on and is saved across launches. Turning it off stops new
 app log files and log writes, including queued diagnostics and crash logs.
 Existing logs remain available until explicitly cleared.
+
+## Native app-store review requests
+
+Both clients count normal cold app launches and become eligible from launch ten.
+Requests use StoreKit on iPhone and Google Play In-App Review on Android, with
+no custom pre-prompt or automatic store-link fallback. Startup, bundle loading,
+onboarding, screenshot fixtures and foreground resumes never trigger a request.
+
+After at least 60 seconds in the session, the dashboard must remain unobstructed
+and safe for five continuous seconds. Buttons must be visible, the app must be
+foregrounded, GPS must confirm exactly zero speed with a stationary observation
+no older than three seconds, and tunnel mode must be inactive. Settings, galleries,
+calibration, speed capture, save progress/errors and other panels defer the request.
+Losing any condition resets the quiet-period timer. Android rechecks all conditions
+again after asynchronous Play review preparation, immediately before presentation.
+Once a native prompt is presented, the store owns its UI and dismissal.
+
+Requests are limited to once per app version, once per launch and no more often
+than every 180 days across versions. Native dismissal does not cause a prompt at
+the next launch. Attempt metadata persists across updates; clearing data or
+reinstalling may reset it. The stores decide whether to show the prompt and do
+not reveal whether a user rated or dismissed it, so completion never marks a
+user as rated. The old explicit rated opt-out is honored if already saved.
+Google Play preparation failures are silent, with no retry during the same launch;
+without a working Play Store, the Android app continues normally.
+
+Preferences: `youspeed.review.launch_count`,
+`youspeed.review.user_confirmed_rated`, `youspeed.review.last_requested_version`,
+and `youspeed.review.last_requested_at`. The store localizes the native UI.
+
+References: [Apple review guidance](https://developer.apple.com/documentation/storekit/requesting-app-store-reviews)
+and [Google Play review guidance](https://developer.android.com/guide/playcore/in-app-review).

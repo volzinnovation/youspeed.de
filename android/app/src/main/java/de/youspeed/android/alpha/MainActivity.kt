@@ -62,12 +62,16 @@ class MainActivity : ComponentActivity(), ConsumerHost {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
         hideNavigationBar()
+        val screenshotMode = BuildConfig.DEBUG && (intent?.hasExtra("screenshot_state") == true ||
+            intent?.hasExtra("screenshot_country") == true || System.getenv("YOUSPEED_SCREENSHOT_STATE") != null)
+        val reviewPrompt = if (screenshotMode) null else
+            AppReviewPrompt.forLaunch(getSharedPreferences("youspeed", Context.MODE_PRIVATE))
         sessionController.bindHost(this)
         onBackPressedDispatcher.addCallback(this) {
             sessionController.performButtonAction { finish() }
         }
         setContent {
-            ConsumerApp(sessionController)
+            ConsumerApp(sessionController, reviewPrompt)
         }
     }
 
