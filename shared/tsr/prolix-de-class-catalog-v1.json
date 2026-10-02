@@ -537,7 +537,7 @@
         "nl": "Daling of stijging"
       },
       "display_eligible": false,
-      "notes": "Closest German sign family is DE:108 (Gefälle); the classifier omits direction and percentage, so no pictogram is displayed."
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "hazard:intersection",
@@ -849,7 +849,7 @@
         "nl": "Maximumaslast"
       },
       "display_eligible": false,
-      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "maxheight",
@@ -862,7 +862,7 @@
         "nl": "Maximumhoogte"
       },
       "display_eligible": false,
-      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "maxlength",
@@ -875,7 +875,7 @@
         "nl": "Maximumlengte"
       },
       "display_eligible": false,
-      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "maxspeed:10",
@@ -1045,7 +1045,7 @@
         "nl": "Einde maximumsnelheid"
       },
       "display_eligible": false,
-      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "maxweight",
@@ -1058,7 +1058,7 @@
         "nl": "Maximumgewicht"
       },
       "display_eligible": false,
-      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "maxwidth",
@@ -1071,7 +1071,7 @@
         "nl": "Maximumbreedte"
       },
       "display_eligible": false,
-      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "min_distance",
@@ -1084,7 +1084,7 @@
         "nl": "Minimumafstand"
       },
       "display_eligible": false,
-      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
     },
     {
       "class_id": "motorway:end",

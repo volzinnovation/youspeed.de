@@ -193,6 +193,27 @@ class TrafficSignSpeedOverridePolicyTests {
         assertNull(override)
     }
 
+    @Test
+    fun enforcementPreservesOlderAssertionForUnknownBranchAndEndSigns() {
+        val context = context("map-v1").copy(bundleSha256 = "b".repeat(64))
+        val scope = TSRApplicabilityScope("test-drive", "b".repeat(64), "mount-1", 1, 1, 0)
+        val decision = TSRApplicabilityDecision(1, TSRApplicabilityConfiguration.policyVersion, TSRApplicabilityConfiguration.configHash,
+            "frame-50", "track-50", scope, "road-1", "LIKELY_EGO_CORRIDOR", listOf("fixture"), emptyList(), 1.0, true, true, true)
+        val valid = event(50, t0, context).copy(frameId = "frame-50", driveSessionId = "test-drive", applicabilityDecision = decision)
+        val current = requireNotNull(TrafficSignSpeedOverridePolicy.applyRecognition(null, valid, context.sourceSignature, "enforce"))
+        assertEquals(50, current.speedKmh)
+        for (kind in listOf(TrafficSignSemanticKind.MAXIMUM_SPEED, TrafficSignSemanticKind.ZONE_START,
+            TrafficSignSemanticKind.CITY_ENTRY, TrafficSignSemanticKind.MAXIMUM_SPEED_END, TrafficSignSemanticKind.ZONE_END)) {
+            for (classification in listOf("UNKNOWN", "LIKELY_BRANCH", "LIKELY_OTHER_LANE", "LIKELY_OPPOSITE_DIRECTION")) {
+                val rejected = event(30, t0.plusSeconds(1), context, kind).copy(frameId = "frame-30", driveSessionId = "test-drive",
+                    applicabilityDecision = decision.copy(frameId = "frame-30", trackId = "track-30", classification = classification,
+                        displayEligible = false, immediateEligible = false, passageEligible = false))
+                assertSame(current, TrafficSignSpeedOverridePolicy.applyRecognition(current, rejected, context.sourceSignature, "enforce"))
+            }
+        }
+        assertSame(current, TrafficSignSpeedOverridePolicy.applyRecognition(current, valid.copy(applicabilityDecision = null), context.sourceSignature, "enforce"))
+    }
+
     private fun context(
         sourceID: String,
         wayId: String = "123",

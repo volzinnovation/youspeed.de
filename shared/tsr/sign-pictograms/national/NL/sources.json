@@ -887,11 +887,12 @@
     {
       "asset_id": "nl-b01",
       "sign_code": "B01",
-      "semantic_id": "pedestrian:start",
+      "semantic_id": "priority:start",
       "model_class_label": "pedestrian:start",
       "commons_title": "File:Nederlands verkeersbord B1.svg",
       "mapping_status": "reviewed_model_code",
-      "mapping_basis": "Panoramax road_signs_mapping.csv class pedestrian:start maps to national sign code B01; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+      "mapping_basis": "National regulation code review 2026-09-23: priority:start. Upstream label is retained as evidence, not used as semantic authority.",
+      "upstream_semantic_id": "pedestrian:start"
     },
     {
       "asset_id": "nl-f05",

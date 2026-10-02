@@ -12,6 +12,7 @@ private const val VOSK_SAMPLE_RATE = 16_000f
 class VoskSpeedCaptureSession(
     private val model: Model,
     private val grammarJson: String,
+    private val acceptUtterance: ((List<String>) -> Boolean)? = null,
 ) : AutoCloseable {
     interface Listener {
         fun onPartialTranscript(transcript: String)
@@ -53,7 +54,7 @@ class VoskSpeedCaptureSession(
                 override fun onResult(hypothesis: String) {
                     if (completed) return
                     val candidates = parseCandidateTranscripts(hypothesis)
-                    if (candidates.isNotEmpty()) {
+                    if (candidates.isNotEmpty() && acceptUtterance?.invoke(candidates) != false) {
                         // Vosk's onResult is an endpointed utterance. A partial
                         // hypothesis may still be revised and must not save a correction.
                         completeOnce(listener, transcripts.acceptCompleted(candidates), "utterance_result")

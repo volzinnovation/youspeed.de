@@ -65,6 +65,15 @@ enum PenaltySeverity: String, Codable, Sendable {
 enum PenaltyRoadArea: Sendable {
     case innerorts
     case ausserorts
+    case motorway
+
+    static func matchedMotorway(highway: String?) -> Bool? {
+        guard let highway else { return nil }
+        if highway == "motorway" { return true }
+        if ["primary", "secondary", "tertiary", "unclassified", "residential", "living_street", "service", "primary_link", "secondary_link", "tertiary_link"].contains(highway) { return false }
+        // Trunk does not establish whether an Autostrasse is divided; links are also uncertain.
+        return nil
+    }
 
     init?(insideCity: Bool?) {
         guard let insideCity else {
@@ -79,6 +88,8 @@ enum PenaltyRoadArea: Sendable {
             return "innerorts"
         case .ausserorts:
             return "ausserorts"
+        case .motorway:
+            return "autobahn"
         }
     }
 }
@@ -122,6 +133,7 @@ struct LocalityPenaltyVariant: Decodable, Sendable {
 private struct LocalityPenaltyVariants: Decodable, Sendable {
     let innerorts: LocalityPenaltyVariant?
     let ausserorts: LocalityPenaltyVariant?
+    let motorway: LocalityPenaltyVariant?
 
     enum CodingKeys: String, CodingKey {
         case innerorts
@@ -129,6 +141,7 @@ private struct LocalityPenaltyVariants: Decodable, Sendable {
         case ausserortsUmlaut = "außerorts"
         case urban
         case rural
+        case motorway
     }
 
     init(from decoder: Decoder) throws {
@@ -141,6 +154,7 @@ private struct LocalityPenaltyVariants: Decodable, Sendable {
             LocalityPenaltyVariant.self,
             for: [.ausserorts, .ausserortsUmlaut, .rural]
         )
+        motorway = try container.decodeIfPresent(LocalityPenaltyVariant.self, forKey: .motorway)
     }
 
     func forArea(_ area: PenaltyRoadArea) -> LocalityPenaltyVariant? {
@@ -149,6 +163,8 @@ private struct LocalityPenaltyVariants: Decodable, Sendable {
             return innerorts
         case .ausserorts:
             return ausserorts
+        case .motorway:
+            return motorway
         }
     }
 }
@@ -295,6 +311,10 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
     let currencyCode: String
     let defaultLanguage: String?
     let bands: [OverspeedPenaltyBand]
+    let contentRevision: Int
+    let requiresRoadCategory: Bool
+    let localizedAdvisoryCaptions: [String: String]
+    let postedLimitEscalation: PostedLimitPenaltyEscalation?
 
     enum CodingKeys: String, CodingKey {
         case format
@@ -309,6 +329,10 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
         case defaultLanguageDE = "standardsprache"
         case bands
         case bandsDE = "stufen"
+        case contentRevision = "content_revision"
+        case requiresRoadCategory = "requires_road_category"
+        case localizedAdvisoryCaptions = "localized_advisory_captions"
+        case postedLimitEscalation = "posted_limit_escalation"
     }
 
     init(
@@ -327,6 +351,10 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
         self.currencyCode = currencyCode
         self.defaultLanguage = defaultLanguage
         self.bands = bands
+        self.contentRevision = 0
+        self.requiresRoadCategory = false
+        self.localizedAdvisoryCaptions = [:]
+        self.postedLimitEscalation = nil
     }
 
     init(from decoder: Decoder) throws {
@@ -338,6 +366,10 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
         currencyCode = try container.decodeFirst(String.self, for: [.currencyCode, .currencyCodeDE]) ?? "EUR"
         defaultLanguage = try container.decodeFirst(String.self, for: [.defaultLanguage, .defaultLanguageDE])
         bands = try container.decodeFirst([OverspeedPenaltyBand].self, for: [.bands, .bandsDE]) ?? []
+        contentRevision = try container.decodeIfPresent(Int.self, forKey: .contentRevision) ?? 0
+        requiresRoadCategory = try container.decodeIfPresent(Bool.self, forKey: .requiresRoadCategory) ?? false
+        localizedAdvisoryCaptions = try container.decodeIfPresent([String: String].self, forKey: .localizedAdvisoryCaptions) ?? [:]
+        postedLimitEscalation = try container.decodeIfPresent(PostedLimitPenaltyEscalation.self, forKey: .postedLimitEscalation)
     }
 
     static func loadBundled(named fileStem: String, bundle: Bundle = .main) throws -> SpeedPenaltyRuleSet {
@@ -350,6 +382,11 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
             return try JSONDecoder().decode(SpeedPenaltyRuleSet.self, from: data)
         }
         throw ConsumerAppError.io("Missing bundled rules file \(fileStem).json")
+    }
+
+    static func prefersDownloaded(_ downloaded: SpeedPenaltyRuleSet, over packaged: SpeedPenaltyRuleSet?) -> Bool {
+        guard let packaged else { return true }
+        return downloaded.contentRevision >= packaged.contentRevision
     }
 
     static func loadFile(at fileURL: URL) throws -> SpeedPenaltyRuleSet {
@@ -411,6 +448,36 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
     }
 }
 
+struct PostedLimitPenaltyEscalation: Decodable, Sendable {
+    struct Threshold: Decodable, Sendable {
+        let maxPostedLimitKmh: Int?
+        let minDeltaKmh: Int
+        enum CodingKeys: String, CodingKey {
+            case maxPostedLimitKmh = "max_posted_limit_kmh"
+            case minDeltaKmh = "min_delta_kmh"
+        }
+    }
+    let thresholds: [Threshold]
+    let drivingBanMonths: Int
+    let conditionalDrivingBanMonths: Int
+    let drivingBanCondition: String
+    let localizedTemplates: [String: OverspeedPenaltyBand.LocalizedTemplates]
+    let localizedCaptions: [String: String]
+    enum CodingKeys: String, CodingKey {
+        case thresholds
+        case drivingBanMonths = "driving_ban_months"
+        case conditionalDrivingBanMonths = "conditional_driving_ban_months"
+        case drivingBanCondition = "driving_ban_condition"
+        case localizedTemplates = "localized_templates"
+        case localizedCaptions = "localized_captions"
+    }
+    func applies(excess: Int, postedLimit: Int?) -> Bool {
+        guard let postedLimit, postedLimit > 0,
+              let threshold = thresholds.first(where: { $0.maxPostedLimitKmh == nil || postedLimit <= $0.maxPostedLimitKmh! }) else { return false }
+        return excess >= threshold.minDeltaKmh
+    }
+}
+
 struct SpeedPenaltyNotice: Sendable {
     let severity: PenaltySeverity
     let title: String
@@ -422,11 +489,12 @@ struct SpeedPenaltyNotice: Sendable {
     let conditionalDrivingBanMonths: Int?
     let drivingBanCondition: String?
     let enforcementClass: String?
+    var advisoryCaption: String? = nil
 }
 
 enum SpeedPenaltyRuleEngine {
     static func resolveNotice(overspeedKmh: Int, rules: SpeedPenaltyRuleSet, insideCity: Bool? = nil,
-                              postedLimitKmh: Int? = nil, languageCode: String? = nil) -> SpeedPenaltyNotice? {
+                              postedLimitKmh: Int? = nil, languageCode: String? = nil, isMotorway: Bool? = nil) -> SpeedPenaltyNotice? {
         guard overspeedKmh > 0 else {
             return nil
         }
@@ -441,15 +509,20 @@ enum SpeedPenaltyRuleEngine {
         }) else {
             return nil
         }
-        let area = PenaltyRoadArea(insideCity: insideCity)
+        let area: PenaltyRoadArea? = rules.requiresRoadCategory
+            ? (isMotorway == true ? .motorway : isMotorway == false ? PenaltyRoadArea(insideCity: insideCity) : nil)
+            : PenaltyRoadArea(insideCity: insideCity)
         let variant = band.variant(for: area, postedLimitKmh: postedLimitKmh)
         let language = (languageCode ?? Bundle.main.preferredLocalizations.first ?? "en").split(separator: "-").first.map(String.init) ?? "en"
-        let templates = band.localizedTemplates?[language] ?? band.localizedTemplates?["en"]
-        let moneyFine = variant?.moneyFineEUR ?? band.moneyFineEUR
+        let escalation = rules.postedLimitEscalation.flatMap { $0.applies(excess: overspeedKmh, postedLimit: postedLimitKmh) ? $0 : nil }
+        let templates = escalation?.localizedTemplates[language] ?? escalation?.localizedTemplates["en"] ?? band.localizedTemplates?[language] ?? band.localizedTemplates?["en"]
+        let categoryKnown = !rules.requiresRoadCategory || (area != nil && (postedLimitKmh ?? 0) > 0)
+        let moneyFine = escalation == nil && categoryKnown ? (variant?.moneyFineEUR ?? band.moneyFineEUR) : nil
         let points = variant?.penaltyPoints ?? band.penaltyPoints
-        let drivingBanMonths = variant?.drivingBanMonths ?? band.drivingBanMonths
-        let conditionalDrivingBanMonths = variant?.conditionalDrivingBanMonths ?? band.conditionalDrivingBanMonths
-        let drivingBanCondition = variant?.drivingBanCondition ?? band.drivingBanCondition
+        let drivingBanMonths = escalation?.drivingBanMonths ?? (categoryKnown ? variant?.drivingBanMonths ?? band.drivingBanMonths : nil)
+        let conditionalDrivingBanMonths = escalation?.conditionalDrivingBanMonths ?? (categoryKnown ? variant?.conditionalDrivingBanMonths ?? band.conditionalDrivingBanMonths : nil)
+        let drivingBanCondition = escalation?.drivingBanCondition ?? variant?.drivingBanCondition ?? band.drivingBanCondition
+        let caption = escalation?.localizedCaptions[language] ?? escalation?.localizedCaptions["en"] ?? rules.localizedAdvisoryCaptions[language] ?? rules.localizedAdvisoryCaptions["en"]
         let severity = ((points ?? 0) > 0) ? PenaltySeverity.pointsAndFine : .moneyOnly
 
         return SpeedPenaltyNotice(
@@ -472,7 +545,8 @@ enum SpeedPenaltyRuleEngine {
             drivingBanMonths: drivingBanMonths,
             conditionalDrivingBanMonths: conditionalDrivingBanMonths,
             drivingBanCondition: drivingBanCondition,
-            enforcementClass: band.enforcementClass
+            enforcementClass: escalation == nil ? band.enforcementClass : "raser",
+            advisoryCaption: caption
         )
     }
 

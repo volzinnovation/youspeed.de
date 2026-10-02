@@ -1837,3 +1837,84 @@ a:focus-visible,
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Paired drive/recognition review; colors describe logged actions, not correctness. */
+.track-tsr-panel { border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin: 16px 0; }
+.track-tsr-panel h2 { margin-top: 0; }
+.track-tsr-panel > label { display: block; margin: 8px 0; }
+.track-tsr-panel input[type=file] { width: 100%; }
+.track-tsr-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.track-tsr-filters label { font-size: 12px; color: var(--muted); }
+.track-tsr-filters select { display: block; width: 100%; margin-top: 5px; padding: 8px; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px; }
+.track-tsr-check { font-size: 13px; }
+.track-tsr-check input { width: auto; }
+.track-tsr-list { max-height: 320px; overflow: auto; display: grid; gap: 5px; }
+.track-tsr-row { display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px; border-left: 3px solid var(--warning); width: 100%; }
+.track-tsr-row.applied { border-left-color: var(--success); }
+.track-tsr-row.rejected { border-left-color: var(--danger); }
+.track-tsr-row.active { background: #263c54; outline: 1px solid var(--accent); }
+.track-tsr-row img, .track-tsr-detail-title img { width: 40px; height: 40px; object-fit: contain; }
+.track-tsr-row small { display: block; color: var(--muted); margin-top: 4px; }
+.track-tsr-marker { border: 0; background: none; filter: drop-shadow(0 1px 2px #222); }
+.track-tsr-marker img { width: 42px; height: 42px; object-fit: contain; }
+.track-tsr-marker b { position: absolute; right: -5px; bottom: 0; min-width: 19px; text-align: center; border-radius: 8px; color: #111; background: #ffb454; font-size: 11px; padding: 1px 4px; }
+.track-tsr-marker.applied b { background: #7fda8b; }
+.track-tsr-marker.rejected b { background: #ff6a6a; }
+.track-tsr-placeholder { display: inline-grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; background: #263345; color: #fff; border: 1px dashed #b5c6df; border-radius: 4px; font-size: 16px; }
+.track-tsr-detail { overflow-wrap: anywhere; }
+.track-tsr-detail-title { display: flex; gap: 12px; align-items: center; margin-top: 16px; }
+.track-tsr-detail dl { display: grid; grid-template-columns: minmax(95px, 1fr) minmax(0, 2fr); gap: 7px 12px; font-size: 12px; }
+.track-tsr-detail dt { color: var(--muted); }
+.track-tsr-detail dd { margin: 0; }
+.track-tsr-statistics { margin: 14px 0; padding: 10px 0; border-block: 1px solid var(--border); }
+.track-tsr-statistics summary { cursor: pointer; font-size: 14px; font-weight: 650; margin-bottom: 10px; }
+.track-tsr-statistics label { display: block; color: var(--muted); font-size: 12px; margin: 8px 0 4px; }
+.track-tsr-statistics select { width: 100%; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 7px; }
+.track-tsr-statistics-scroll { max-height: 380px; overflow: auto; }
+.track-tsr-statistics-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; }
+.track-tsr-statistics-table caption { text-align: left; padding: 6px 0; }
+.track-tsr-statistics-table th, .track-tsr-statistics-table td { padding: 8px 3px; border-bottom: 1px solid var(--border); }
+.track-tsr-statistics-table thead th { font-weight: 600; text-align: right; overflow-wrap: anywhere; vertical-align: bottom; position: sticky; top: 0; background: var(--panel); }
+.track-tsr-statistics-table thead th:first-child { width: 52%; text-align: left; }
+.track-tsr-statistics-table td { text-align: right; font-variant-numeric: tabular-nums; }
+.track-tsr-statistics-table [aria-sort=descending]::after { content: ' ↓'; color: var(--accent); }
+.track-tsr-statistics-sign { display: flex; align-items: center; gap: 6px; text-align: left; overflow-wrap: anywhere; font-weight: normal; }
+.track-tsr-statistics-sign img, .track-tsr-statistics-sign .track-tsr-placeholder { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
+.track-tsr-statistics-sign small { display: block; color: var(--muted); margin-top: 3px; }
+
+.track-media-workspace { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.track-video-panel { padding: .55rem .75rem; border-top: 1px solid var(--border); background: var(--panel); max-height: 65vh; overflow: auto; }
+.track-video-toolbar { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.track-video-toolbar button, .track-video-toolbar input, .track-video-toolbar select { padding: .35rem .45rem; font-size: .8rem; }
+.track-video-toolbar label { display: flex; gap: .4rem; align-items: center; font-size: .8rem; }
+.track-video-file { flex: 1; min-width: 0; }
+.track-video-file input { min-width: 0; max-width: 100%; }
+#track-video { display: block; width: 100%; height: min(34vh, 340px); background: #000; margin: .4rem 0; }
+#track-video-clock { display: block; font: .8rem ui-monospace, monospace; margin: .4rem 0; }
+.track-video-alignment { font-size: .8rem; }
+.track-video-alignment label { display: flex; gap: .5rem; margin: .3rem 0; align-items: center; }
+.track-video-alignment input { padding: .3rem; min-width: 0; flex: 1; }
+#track-video-reverse[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.track-video-stage { position: relative; }
+.track-video-stage #track-video { margin: .4rem 0; object-fit: contain; }
+#track-path-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.track-path-panel { border: 1px solid var(--border); border-radius: 6px; padding: .5rem; margin: .4rem 0; font-size: .8rem; }
+.track-path-panel summary { cursor: pointer; }
+.track-path-panel label { display: flex; gap: .4rem; align-items: center; margin: .4rem 0; }
+.track-path-panel input[type=file] { min-width: 0; max-width: 100%; }
+.track-path-alignment { display: flex; flex-wrap: wrap; gap: .6rem; }
+.track-path-alignment select { max-width: 20rem; }
+.track-path-alignment input { width: 7rem; }
+#track-path-detail { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 15rem; overflow: auto; font-size: .75rem; }
+
+/* Keep map overlays inside their row when a video is open. */
+.track-media-workspace .map-wrap { min-height: 0; overflow: hidden; }
+.track-media-workspace .map-legend { max-height: calc(100% - 2rem); overflow: auto; }
+@media (min-width: 721px) and (max-width: 980px) {
+  .track-video-panel { max-height: 34vh; }
+  #track-video { height: 18vh; }
+}
+@media (max-width: 720px) {
+  .track-media-workspace { grid-template-rows: minmax(240px, 40vh) auto; }
+  .layout { grid-template-rows: minmax(22rem, 46svh) auto; }
+}

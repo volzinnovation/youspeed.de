@@ -14,6 +14,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  speed-reference-model:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify frozen policy and executable scenarios
+        run: python3 scripts/speed_limit_reference/check.py
+      - name: Verify shared mobile rule sources
+        run: python3 scripts/check_mobile_rules.py
+
   android-tests:
     runs-on: ubuntu-latest
     steps:
@@ -33,7 +45,49 @@ jobs:
       # deterministic without touching application or test code.
       - name: Run Android unit tests
         working-directory: android
-        run: ./gradlew :app:testDebugUnitTest -Duser.language=de -Duser.country=DE
+        env:
+          TSR_APPLICABILITY_PARITY_OUTPUT: ${{ github.workspace }}/applicability-kotlin.json
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug -Duser.language=de -Duser.country=DE
+
+      - name: Verify packaged Android country rules
+        run: python3 scripts/check_mobile_rules.py --android-apk android/app/build/outputs/apk/debug/app-debug.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: applicability-kotlin
+          path: applicability-kotlin.json
+
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # These tests need Android SQLite, filesystem, EXIF and Keystore implementations.
+      # The real-Rtree fixture also checks the production fallback when the image lacks Rtree.
+      - name: Run Android native conformance tests
+        uses: reactivecircus/android-emulator-runner@b530d96654c385303d652368551fb075bc2f0b6b # v2.35.0
+        timeout-minutes: 20
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          working-directory: android
+          disable-animations: true
+          script: >-
+            ./gradlew :app:connectedDebugAndroidTest
+            -Pandroid.testInstrumentationRunnerArguments.class=de.youspeed.android.alpha.CandidateAdmissionParityInstrumentedTest,de.youspeed.android.alpha.MatcherSequenceParityInstrumentedTest,de.youspeed.android.alpha.MatcherParityInstrumentedTest,de.youspeed.android.alpha.LookupResourcesInstrumentedTest,de.youspeed.android.alpha.NativeRtreeFallbackInstrumentedTest,de.youspeed.android.alpha.V3SpeedLimitLookupInstrumentedTest,de.youspeed.android.alpha.PanoramaxMetadataInstrumentedTest
+
+      - name: Upload Android native test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-native-conformance
+          path: |
+            android/app/build/reports/androidTests/connected/
+            android/app/build/outputs/androidTest-results/connected/
+          if-no-files-found: warn
+          retention-days: 14
 
   ios-tests:
     runs-on: macos-15
@@ -44,9 +98,46 @@ jobs:
       - name: Build consumer app
         run: ./scripts/iphone/build_consumer_app.sh --skip-project-gen
 
+      - name: Verify packaged iPhone country rules
+        run: python3 scripts/check_mobile_rules.py --iphone-app iphone/.derived/SpeedConsumerBuild/Build/Products/Debug-iphonesimulator/SpeedConsumer.app
+
       - name: Run iOS simulator tests
         run: |
           xcodebuild test \
             -project iphone/SpeedDBBench.xcodeproj \
             -scheme SpeedConsumer \
             -destination 'platform=iOS Simulator,name=iPhone 16'
+
+      - name: Export Swift applicability replay
+        run: |
+          swiftc iphone/SpeedConsumerApp/TrafficSignApplicability.swift scripts/tsr/applicability/Replay.swift -o /tmp/applicability-replay
+          /tmp/applicability-replay shared/tsr/applicability/golden-vectors-v1.json > applicability-swift.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: applicability-swift
+          path: applicability-swift.json
+
+  applicability-contracts:
+    needs: [android-tests, ios-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: python -m pip install pytest jsonschema
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: applicability-*
+          merge-multiple: true
+          path: parity
+      - name: Validate contracts and Inspector
+        run: |
+          python -m pytest tests/tsr/test_applicability.py tests/tsr/test_contract_schemas.py tests/tsr/test_v2_contracts.py tests/tsr/test_passage_contracts.py -q
+          node --test tests/inspector/tsr_qa_core.test.js
+      - name: Compare native associations, state, decisions and reasons
+        run: python scripts/tsr/applicability/compare_outputs.py parity/applicability-swift.json parity/applicability-kotlin.json

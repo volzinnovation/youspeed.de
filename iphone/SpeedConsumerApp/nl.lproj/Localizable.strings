@@ -57,7 +57,7 @@
 "drive_recorder.settings.tsr_feedback_silent" = "Stil";
 "tsr.feedback.spoken_speed_format" = "Snelheidslimiet %d kilometer per uur.";
 "drive_recorder.settings.panoramax" = "Foto’s maken";
-"drive_recorder.settings.panoramax_description" = "Slaat volledige straatbeelden met locatie lokaal op om later te beoordelen.";
+"drive_recorder.settings.panoramax_description" = "Als dit is ingeschakeld, worden tijdens het bewegen met de app geopend automatisch foto’s gemaakt volgens de gekozen afstand of tijd. Dashcamvideo staat hier los van. Foto’s blijven op dit apparaat om vóór het uploaden te bekijken.";
 "drive_recorder.settings.shared_camera" = "Modules delen één achtercamerasessie; dashcam en bordherkenning kunnen tijdens de opname worden geschakeld.";
 "drive_recorder.settings.upload_later" = "Panoramax-beoordeling, goedkeuring en upload gebeuren na de rit.";
 "drive_recorder.library.title" = "Dashcamvideo’s";
@@ -128,6 +128,7 @@
 "panoramax.gallery.delete_message" = "%d geselecteerde foto’s worden permanent verwijderd.";
 "panoramax.gallery.delete_confirm" = "Verwijderen";
 "panoramax.gallery.upload" = "Uploaden";
+"panoramax.upload.originals_missing" = "%d geselecteerde foto's ontbreken op dit apparaat en kunnen niet worden geüpload. Deselecteer ze en upload de overige foto's.";
 "panoramax.gallery.upload_requires_account" = "Verbind eerst een Panoramax-account in Instellingen.";
 "panoramax.gallery.account_required_title" = "Panoramax-account vereist";
 "panoramax.gallery.stop_upload" = "Upload stoppen";
@@ -157,7 +158,7 @@
 "drive_recorder.library.delete_title" = "Geselecteerde video’s verwijderen?";
 "drive_recorder.library.delete_message" = "%d geselecteerde video’s worden permanent verwijderd.";
 "panoramax.settings.section" = "Ritrecorder";
-"panoramax.settings.description" = "Start de opname met de rode knop linksonder. Foto’s blijven eerst op deze iPhone en kunnen later worden gecontroleerd en geüpload.";
+"panoramax.settings.description" = "Als dit is ingeschakeld, worden tijdens het bewegen met de app geopend automatisch foto’s gemaakt volgens de gekozen afstand of tijd. Dashcamvideo staat hier los van. Foto’s blijven op dit apparaat om vóór het uploaden te bekijken.";
 "panoramax.settings.status" = "Status";
 "panoramax.settings.saved_images" = "Opgeslagen foto’s";
 "panoramax.settings.trigger" = "Trigger";
@@ -177,7 +178,7 @@
 "panoramax.review.title" = "Panoramax-foto’s";
 "panoramax.review.local_count" = "%d lokale foto’s controleren";
 "panoramax.review.empty_title" = "Geen Panoramax-foto’s";
-"panoramax.review.empty_description" = "Schakel de ritrecorder tijdens een rit in.";
+"panoramax.review.empty_description" = "Schakel Panoramax-foto’s in via de instellingen en beweeg met de app geopend.";
 "panoramax.review.approve" = "Batch goedkeuren voor upload";
 "panoramax.review.upload_via_gallery" = "Upload vanuit de galerij starten";
 "panoramax.review.selected_count" = "%d foto’s geselecteerd";
@@ -336,7 +337,7 @@
 "onboarding.sources.independent" = "Onafhankelijke herkenning gebruikt de camera op het actieve rijscherm, zonder video of Panoramax-foto’s. Uitgeschakeld werkt herkenning alleen met de recorder.";
 "onboarding.panoramax.title" = "Draag straatbeelden bij";
 "onboarding.panoramax.body" = "Draag straatfoto’s met locatie bij aan Panoramax. Kies de beelden en start na controle de upload.";
-"onboarding.panoramax.capture" = "Ingeschakeld worden foto’s opgeslagen terwijl de recorder actief is. Je kunt dashcamvideo uitschakelen en foto’s blijven maken.";
+"onboarding.panoramax.capture" = "Als dit is ingeschakeld, worden tijdens het bewegen met de app geopend automatisch foto’s gemaakt volgens de gekozen afstand of tijd. Dashcamvideo staat hier los van. Foto’s blijven op dit apparaat om vóór het uploaden te bekijken.";
 "onboarding.panoramax.review" = "Stop de recorder, open de fotogalerij en controleer of sluit beelden uit voordat je een upload voorbereidt.";
 "onboarding.panoramax.upload" = "Verbind een Panoramax-account in Instellingen. Geselecteerde beelden uploaden is een aparte actie die internet gebruikt.";
 "onboarding.panoramax.later" = "Je kunt alle opties in Instellingen wijzigen en deze uitleg opnieuw openen als de recorder gestopt is.";
@@ -368,3 +369,65 @@
 "drive_recorder.action.saving" = "Dashcam-video opslaan…";
 "drive_recorder.action.failed_title" = "Dashcam-video kon niet worden opgeslagen";
 "drive_recorder.action.failed" = "De actie is geannuleerd omdat de Dashcam-video niet kon worden afgerond. Probeer het opnieuw.";
+
+"common.close" = "Sluiten";
+"settings.maps.queued" = "In wachtrij";
+"settings.maps.cancel_queued" = "Download uit wachtrij verwijderen";
+"settings.maps.download" = "Downloaden";
+"metric.download_data" = "Gegevens downloaden";
+"metric.downloading_data" = "Downloaden…";
+
+"settings.maps.preparing" = "Download voorbereiden…";
+"settings.maps.download_failed" = "Download mislukt: %@";
+
+"tsr.disregard_vision" = "Camera negeren en terugkeren naar de weg";
+
+"gravity_alignment.title" = "Cameraniveau";
+"gravity_alignment.unavailable" = "Zwaartekrachtuitlijning niet beschikbaar";
+"gravity_alignment.angles" = "Rol %.0f°, kanteling %.0f°. Zwaartekracht bepaalt geen rijrichting.";
+"tsr.voice_dismissal.listening" = "Zeg ‘Fout’";
+
+// Startup log storage review
+"startup.logs.title" = "Opgeslagen logs wissen?";
+"startup.logs.message" = "Opgeslagen logs nemen meer dan 100 MB in beslag. Wil je ze wissen voordat je doorgaat? Ze bewaren kan helpen bij het opsporen van fouten.";
+"startup.logs.clear" = "Logs wissen";
+"startup.logs.keep" = "Logs bewaren en doorgaan";
+"startup.logs.checking" = "Opgeslagen logs controleren…";
+"startup.logs.clearing" = "Opgeslagen logs wissen…";
+"startup.logs.failed" = "Logs konden niet worden gecontroleerd of gewist";
+
+"settings.debug.logging" = "Debuglogboeken";
+// Live lane visualization
+"drive_recorder.settings.lanes" = "Gedetecteerde rijstroken tonen";
+"drive_recorder.settings.lanes_description" = "Experimentele rijstrookgrenzen in het live dashcambeeld tonen. Onzekere of verouderde lijnen vervagen; ze worden niet in de video opgeslagen.";
+"drive_recorder.lanes.status" = "Gedetecteerde rijstroken: %@";
+"drive_recorder.lanes.reliable" = "Betrouwbaar";
+"drive_recorder.lanes.uncertain" = "Onzeker";
+"drive_recorder.lanes.unavailable" = "Niet beschikbaar";
+"drive_recorder.lanes.paused" = "Gepauzeerd";
+
+"drive_recorder.lanes.experimental" = "Experimenteel";
+
+/* Live analysis-image road calibration */
+"calibration.title" = "Camera kalibreren";
+"calibration.cancel" = "Annuleren";
+"calibration.waiting" = "Wachten op het live camerabeeld…";
+"calibration.live" = "Kalibratiecamera actief";
+"calibration.step" = "Stap %d van 5";
+"calibration.horizon" = "Verplaats de horizon omhoog of omlaag";
+"calibration.left_bottom" = "Verplaats het punt linksonder";
+"calibration.left_top" = "Verplaats het punt linksboven langs de horizon";
+"calibration.right_bottom" = "Verplaats het punt rechtsonder";
+"calibration.right_top" = "Verplaats het punt rechtsboven langs de horizon";
+"calibration.crop_note" = "Borddetectie gebruikt de volledige hoogte, van het punt linksboven tot de rechter beeldrand.";
+"calibration.invalid" = "De linker geleider moet links van de rechter blijven.";
+"calibration.previous" = "Vorige";
+"calibration.next" = "Volgende";
+"calibration.save" = "Opslaan";
+"calibration.defaults" = "Concept herstellen naar standaard";
+"calibration.up" = "Omhoog";
+"calibration.down" = "Omlaag";
+"calibration.left" = "Naar links";
+"calibration.right" = "Naar rechts";
+
+"drive_recorder.lanes.reference" = "Kalibratiereferentie";

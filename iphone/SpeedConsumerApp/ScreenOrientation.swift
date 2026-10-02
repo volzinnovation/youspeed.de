@@ -193,3 +193,53 @@ extension RecordingSafeButton where Label == SwiftUI.Label<Text, Image> {
         self.init(action: action) { SwiftUI.Label(title, systemImage: systemImage) }
     }
 }
+
+/// Keep the sheet dismissal separate from a pushed page's Back action.
+private struct SubscreenDismissKey: EnvironmentKey {
+    static let defaultValue: (() -> Void)? = nil
+}
+
+extension EnvironmentValues {
+    var dismissSubscreen: (() -> Void)? {
+        get { self[SubscreenDismissKey.self] }
+        set { self[SubscreenDismissKey.self] = newValue }
+    }
+}
+
+struct DismissibleNavigationSheet<Content: View>: View {
+    @Environment(\.dismiss) private var dismiss
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) { self.content = content() }
+
+    var body: some View {
+        NavigationStack { content }
+            .environment(\.dismissSubscreen, { dismiss() })
+    }
+}
+
+private struct SubscreenCloseButton: ViewModifier {
+    @Environment(\.dismissSubscreen) private var close
+
+    func body(content: Content) -> some View {
+        content.toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if let close {
+                    RecordingSafeButton(action: close) {
+                        Image(systemName: "xmark")
+                            .font(.body.weight(.semibold))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("common.close"))
+                    .accessibilityIdentifier("subscreen.close")
+                }
+            }
+        }
+    }
+}
+
+extension View {
+    func subscreenCloseButton() -> some View { modifier(SubscreenCloseButton()) }
+}

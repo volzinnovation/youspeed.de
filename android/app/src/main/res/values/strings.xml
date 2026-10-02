@@ -81,8 +81,8 @@
     <string name="onboarding_independent" tools:ignore="MissingTranslation">Recognize without starting the recorder</string>
     <string name="onboarding_independent_body" tools:ignore="MissingTranslation">With recognition enabled, this option uses the camera on the driving screen without saving a dashcam video. You can also turn video off during a recorder session and keep recognition on.</string>
     <string name="onboarding_panoramax_title" tools:ignore="MissingTranslation">Capture for Panoramax</string>
-    <string name="onboarding_panoramax_body" tools:ignore="MissingTranslation">Capture street-level photos with GPS while the recorder runs, even with video off. Photos stay on your phone until you choose to publish them on Panoramax.</string>
-    <string name="onboarding_panoramax_capture" tools:ignore="MissingTranslation">Capture photos with the recorder</string>
+    <string name="onboarding_panoramax_body" tools:ignore="MissingTranslation">When enabled, photos are captured automatically while you move with the app open, using the selected distance or time interval. Dashcam video is independent. Photos stay on this device for review before upload.</string>
+    <string name="onboarding_panoramax_capture" tools:ignore="MissingTranslation">Capture photos automatically</string>
     <string name="onboarding_panoramax_review_title" tools:ignore="MissingTranslation">Stop, inspect and select</string>
     <string name="onboarding_panoramax_review_body" tools:ignore="MissingTranslation">Photos are captured at intervals during the recorder session. Stop the recorder, then open the photo gallery. Open a photo full-size and zoom to inspect it. Mark favorites to protect them from automatic cleanup. Select individual photos or all, clear the selection, or delete unwanted local photos.</string>
     <string name="onboarding_panoramax_upload_title" tools:ignore="MissingTranslation">Connect, confirm and upload</string>
@@ -110,4 +110,34 @@
     <string name="ui_video_save_failed">Video could not be saved</string>
     <string name="ui_video_save_timeout">The recorder did not confirm that the video was saved. The requested action was cancelled.</string>
     <string name="ui_correct_speed_limit">Correct speed limit</string>
+    <string name="tsr_disregard_vision">Disregard vision and return to road</string>
+    <string name="startup_logs_title">Clear saved logs?</string>
+    <string name="startup_logs_message">Saved logs take up more than 100 MB. Would you like to clear them before continuing? Keeping them can help with debugging.</string>
+    <string name="startup_logs_clear">Clear logs</string>
+    <string name="startup_logs_keep">Keep logs and continue</string>
+    <string name="startup_logs_checking">Checking saved logs…</string>
+    <string name="startup_logs_clearing">Clearing saved logs…</string>
+    <string name="startup_logs_failed">Could not check or clear logs</string>
+    <string name="settings_debug_logging">Debug logging</string>
+    <string name="calibration_title">Camera calibration</string>
+    <string name="calibration_step">Step %1$d of 5</string>
+    <string name="calibration_horizon">Set the horizon</string>
+    <string name="calibration_left_lower">Left road edge · lower point</string>
+    <string name="calibration_left_upper">Left road edge · upper point</string>
+    <string name="calibration_right_lower">Right road edge · lower point</string>
+    <string name="calibration_right_upper">Right road edge · upper point</string>
+    <string name="calibration_horizon_hint">On a straight road, move the horizon up or down. Keep the phone in its driving mount.</string>
+    <string name="calibration_lower_hint">Move the yellow point to where the road edge enters the image.</string>
+    <string name="calibration_upper_hint">Move the yellow point left or right until the line follows the road edge toward the horizon.</string>
+    <string name="calibration_live_video">Live camera image</string>
+    <string name="calibration_invalid">Keep left and right edges in order, with lower points below the horizon. A live camera image is required to save.</string>
+    <string name="calibration_back">Back</string>
+    <string name="calibration_next">Next</string>
+    <string name="calibration_save">Save</string>
+    <string name="calibration_cancel">Cancel</string>
+    <string name="calibration_left">Move left</string>
+    <string name="calibration_right">Move right</string>
+    <string name="calibration_up">Move up</string>
+    <string name="calibration_down">Move down</string>
+    <string name="calibration_defaults">Reset draft</string>
 </resources>

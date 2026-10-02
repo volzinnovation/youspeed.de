@@ -38,3 +38,18 @@ license links, and modification notes for data, sign artwork, models, software,
 and references. The full offline notices viewer includes both the shared notices
 and the bundled model-pack notices. XcodeGen packages the `attributions` folder
 directly; edit the shared source files rather than copies inside build products.
+
+## Startup log retention
+
+Startup preserves diagnostic logs. Before preparing the main screen, the app
+checks the combined size of its saved logs, including retained sessions. Above
+100 MB (100,000,000 bytes), the user chooses whether to clear the logs or keep
+them and continue. Checking and cleanup run off the UI thread. Failures offer a
+retry or continuing with the remaining logs. Maps, observations, photos and
+videos are outside this cleanup.
+
+The **Debug logging** toggle at the bottom of Settings, above the debug-info
+link, defaults to on and is saved across launches. Turning it off stops new
+app log files and log writes, including background diagnostics. Existing logs
+remain available until explicitly cleared. On iPhone, recognition QA events,
+metadata and diagnostic images also honor the toggle.

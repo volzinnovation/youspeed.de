@@ -1,0 +1,13 @@
+{
+  "reviewed_at": "2026-09-24T22:44:50.959288+00:00",
+  "method": "Assistant visual inspection of the decoded original validation crop",
+  "dataset_revision": "ea75988e381f16e4677c5f42aa5fedea005f23d6",
+  "split_inventory_sha256": "72385f999e60e6d57fea3a3861dbc6445e0d0f76de582e31549aaabbc8e91802",
+  "image": "val/B33-30/025658-c8e99f20d041dea9.jpg",
+  "image_sha256": "c8e99f20d041dea9a806ee9d78102aed487bc47a18bc78b8c13f564b214d61bf",
+  "published_label": "B33-30",
+  "visually_observed_label": "B33-90",
+  "observation": "Numerals visibly read 90 beneath a rising diagonal end-of-limit stripe. The original classifier predicts B33-90 at confidence 0.9502616.",
+  "action": "Flagged for label correction in a versioned follow-up audit. Running dataset and metrics remain unchanged.",
+  "limitation": "One crop inspected; does not audit the remaining labels or establish independent road performance."
+}

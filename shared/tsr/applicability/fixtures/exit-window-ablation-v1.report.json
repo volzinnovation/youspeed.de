@@ -1,0 +1,156 @@
+{
+  "role": "offline_window_geometry_only",
+  "isAsDrivenBundle": false,
+  "behavior": "off",
+  "learnedGeometry": "not_run",
+  "mobileEnabled": false,
+  "cases": [
+    {
+      "site": "brouck",
+      "departureNode": "10532395",
+      "rampWayId": "4683712",
+      "beforeM": 100,
+      "afterM": 100,
+      "coveredM": 200.0,
+      "intervalCount": 3,
+      "mainlineWayIds": [
+        "216220089"
+      ],
+      "coverageGaps": []
+    },
+    {
+      "site": "brouck",
+      "departureNode": "10532395",
+      "rampWayId": "4683712",
+      "beforeM": 100,
+      "afterM": 200,
+      "coveredM": 300.0,
+      "intervalCount": 3,
+      "mainlineWayIds": [
+        "216220089"
+      ],
+      "coverageGaps": []
+    },
+    {
+      "site": "brouck",
+      "departureNode": "10532395",
+      "rampWayId": "4683712",
+      "beforeM": 350,
+      "afterM": 100,
+      "coveredM": 450.0,
+      "intervalCount": 5,
+      "mainlineWayIds": [
+        "216220089"
+      ],
+      "coverageGaps": []
+    },
+    {
+      "site": "issoire",
+      "departureNode": "5278217783",
+      "rampWayId": "546168667",
+      "beforeM": 100,
+      "afterM": 100,
+      "coveredM": 200.0,
+      "intervalCount": 8,
+      "mainlineWayIds": [
+        "36500248",
+        "546168660",
+        "546168664"
+      ],
+      "coverageGaps": []
+    },
+    {
+      "site": "issoire",
+      "departureNode": "5278217783",
+      "rampWayId": "546168667",
+      "beforeM": 100,
+      "afterM": 200,
+      "coveredM": 300.0,
+      "intervalCount": 10,
+      "mainlineWayIds": [
+        "36500248",
+        "546168660",
+        "546168664"
+      ],
+      "coverageGaps": []
+    },
+    {
+      "site": "issoire",
+      "departureNode": "5278217783",
+      "rampWayId": "546168667",
+      "beforeM": 350,
+      "afterM": 100,
+      "coveredM": 450.0,
+      "intervalCount": 11,
+      "mainlineWayIds": [
+        "36500248",
+        "546168660",
+        "546168664"
+      ],
+      "coverageGaps": []
+    },
+    {
+      "site": "issoire",
+      "departureNode": "637042785",
+      "rampWayId": "493957359",
+      "beforeM": 100,
+      "afterM": 100,
+      "coveredM": 160.74259613159634,
+      "intervalCount": 3,
+      "mainlineWayIds": [
+        "26715276",
+        "467446546",
+        "467446565"
+      ],
+      "coverageGaps": [
+        {
+          "side": "before",
+          "coveredM": 60.74259613159634,
+          "reason": "extract_or_mainline_boundary"
+        }
+      ]
+    },
+    {
+      "site": "issoire",
+      "departureNode": "637042785",
+      "rampWayId": "493957359",
+      "beforeM": 100,
+      "afterM": 200,
+      "coveredM": 260.7425961315963,
+      "intervalCount": 3,
+      "mainlineWayIds": [
+        "26715276",
+        "467446546",
+        "467446565"
+      ],
+      "coverageGaps": [
+        {
+          "side": "before",
+          "coveredM": 60.74259613159634,
+          "reason": "extract_or_mainline_boundary"
+        }
+      ]
+    },
+    {
+      "site": "issoire",
+      "departureNode": "637042785",
+      "rampWayId": "493957359",
+      "beforeM": 350,
+      "afterM": 100,
+      "coveredM": 160.74259613159634,
+      "intervalCount": 3,
+      "mainlineWayIds": [
+        "26715276",
+        "467446546",
+        "467446565"
+      ],
+      "coverageGaps": [
+        {
+          "side": "before",
+          "coveredM": 60.74259613159634,
+          "reason": "extract_or_mainline_boundary"
+        }
+      ]
+    }
+  ]
+}

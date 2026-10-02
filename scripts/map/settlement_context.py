@@ -23,7 +23,14 @@ from settlement_geometry import simplify_polygon
 
 VERSION = "1"
 LANDUSES = {"residential", "commercial", "retail", "industrial"}
-SIGN_CODE_RE = re.compile(r"(?:^|[;,|\s])([A-Z]{2}):(310|311)(?=[^0-9]|$)", re.I)
+CITY_CODES = {
+    "DE": {"310": "inside", "311": "outside"},
+    "FR": {"EB10": "inside", "EB20": "outside"},
+    "BE": {"F1": "inside", "F1A": "inside", "F1B": "inside", "F3": "outside", "F3A": "outside", "F3B": "outside"},
+    "NL": {"H1": "inside", "H2": "outside"},
+    "CH": {"4.27": "inside", "4.28": "outside", "4.29": "inside", "4.30": "outside"},
+}
+SIGN_CODE_RE = re.compile(r"(?:^|[;,|\s])([A-Z]{2}):([A-Z0-9.]+)(?=$|[;,|\s])", re.I)
 SCHEMA = """
 CREATE TABLE settlement_area (
  area_id TEXT PRIMARY KEY, osm_type TEXT NOT NULL, osm_id INTEGER NOT NULL,
@@ -108,8 +115,9 @@ def _signs(tags, country_code="DE"):
         directional.append(("main", raw, direction))
     out = []
     for suffix, raw, direction in directional:
-        codes = sorted({match.group(2) for match in SIGN_CODE_RE.finditer(raw)
-                        if match.group(1).upper() == str(country_code).upper()})
+        codes = sorted({match.group(2).upper() for match in SIGN_CODE_RE.finditer(raw)
+                        if match.group(1).upper() == str(country_code).upper()
+                        and match.group(2).upper() in CITY_CODES.get(country_code, {})})
         if not codes:
             if raw.strip().lower() == "city_limit":
                 kind = tags.get("city_limit", "both").strip().lower()
@@ -122,7 +130,7 @@ def _signs(tags, country_code="DE"):
                 else:
                     out.append((suffix, "city_limit", "unknown", 0))
             continue
-        states = {"inside" if code == "310" else "outside" for code in codes}
+        states = {CITY_CODES[country_code][code] for code in codes}
         state = next(iter(states)) if len(states) == 1 else "unknown"
         out.append((suffix, ";".join(f"{str(country_code).upper()}:{c}" for c in codes), state, direction))
     return out
@@ -148,8 +156,9 @@ def resolve(evidence):
         priorities = {"zone_traffic": 0, "maxspeed_type": 1, "source_maxspeed": 2, "traffic_sign": 3, "urban_polygon": 4}
         chosen = min(high, key=lambda item: priorities.get(item["source"], 9))
         return chosen["state"], chosen["source"], "high"
-    if any(item["source"] == "landuse" for item in evidence):
-        return "inside", "landuse", "low"
+    landuse = [item for item in evidence if item["source"] == "landuse"]
+    if landuse:
+        return ("inside" if any(item["state"] == "inside" for item in landuse) else "outside"), "landuse", "low"
     return "unknown", "missing", "unknown"
 
 
@@ -385,6 +394,12 @@ def build_settlement_context(conn: sqlite3.Connection, input_pbf, country_code="
             midpoint = (start + end) / 2
             point = line.interpolate(midpoint)
             area_evidence = [extractor.area_evidence[index] for index in candidates if extractor.area_geometries[index].contains(point)]
+            # French pilots expose a geographic estimate for the statutory
+            # fallback, separately from confirmed legal town boundaries. Never
+            # promote absence of mapped buildings to high-confidence evidence.
+            if country_code == "FR" and not area_evidence:
+                area_evidence = [{"source": "landuse", "state": "outside", "confidence": "low",
+                                  "reason": "outside_mapped_built_up_areas"}]
             outcomes = []
             for direction in (1, -1):
                 evidence = typed_evidence(tags, direction, country_code) + _sign_evidence(signs, midpoint, direction) + area_evidence

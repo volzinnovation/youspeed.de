@@ -57,6 +57,15 @@ struct TrafficSignPresentationCatalog: Decodable, Sendable {
 
     func canRecognize(_ classID: String) -> Bool { classLabels.contains(classID) }
     func sign(for classID: String) -> Sign? { signs.first { $0.classID == classID } }
+
+    func endSign(for classID: String) -> Sign? {
+        // Use the recognized national artwork when available; numeric classes
+        // without an artwork use that country's official end-restrictions sign.
+        if let sign = sign(for: classID), sign.displayEligible, sign.imagePath != nil { return sign }
+        // A round end-restrictions sign must never stand in for a zone end.
+        guard classID == "maxspeed:end" || classID.hasPrefix("B33-") else { return nil }
+        return sign(for: country == "FR" ? "B31" : "no:end")
+    }
 }
 
 /// Selects only model packs that are actually bundled in the app. The map

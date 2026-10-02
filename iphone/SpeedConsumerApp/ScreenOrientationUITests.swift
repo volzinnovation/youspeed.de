@@ -1,6 +1,166 @@
 import XCTest
 
 final class ScreenOrientationUITests: XCTestCase {
+    func testLaneOptionIsOffAtBottomOfDiagnostics() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "country-penalty"
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_COUNTRY"] = "CH"
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_LIMIT"] = "1"
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_DELTA"] = "0"
+        app.launchArguments = ["-youspeed.screen_orientation", "portrait", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+        defer { app.terminate() }
+        let settings = app.buttons["dashboard.settingsButton"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 20))
+        settings.tap()
+        let lanes = app.switches["show-detected-lanes-toggle"]
+        let debug = app.buttons["Open debug information"]
+        for _ in 0..<80 {
+            XCTAssertFalse(lanes.exists, "Lane detection must not be in General Settings")
+            if debug.exists && debug.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(debug.isHittable)
+        debug.tap()
+        for _ in 0..<40 {
+            if lanes.exists && lanes.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(lanes.isHittable)
+        XCTAssertEqual(lanes.value as? String, "0")
+        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshot.name = "diagnostics-lanes-off"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
+    func testGravityOverlayRemainsVisibleAtDisplayedZeroWithoutNewGpsFix() {
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"
+        app.launchArguments = ["-youspeed.screen_orientation", "landscape_camera_lower_right"]
+        app.launch()
+        let overlay = app.descendants(matching: .any)["dashboard.gravityAlignment"]
+        XCTAssertTrue(overlay.waitForExistence(timeout: 15))
+        // The fixture never supplies another GPS fix. The mounting tool must
+        // outlive the three-second freshness gate used by permission dialogs.
+        Thread.sleep(forTimeInterval: 4)
+        XCTAssertTrue(overlay.exists)
+        XCTAssertLessThan(overlay.frame.width, app.windows.firstMatch.frame.width * 0.12)
+        XCTAssertLessThan(overlay.frame.height, app.windows.firstMatch.frame.height * 0.12)
+        app.terminate()
+    }
+
+    func testMovingDashboardHasNoButtonsOrGravityOverlay() {
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "warn-level-0"
+        for mount in ["portrait", "landscape_camera_lower_right"] {
+            app.launchArguments = ["-youspeed.screen_orientation", mount]
+            app.launch()
+            XCTAssertTrue(app.otherElements["dashboard.limitPane"].waitForExistence(timeout: 15))
+            XCTAssertFalse(app.buttons["dashboard.settingsButton"].exists)
+            XCTAssertFalse(app.buttons["dashboard.disregardVision"].exists)
+            XCTAssertTrue(app.buttons.allElementsBoundByIndex.filter { $0.isHittable }.isEmpty)
+            XCTAssertFalse(app.descendants(matching: .any)["dashboard.gravityAlignment"].exists)
+            app.terminate()
+        }
+    }
+
+    func testLiveSettingsDismissalReopenAndNestedDebugNavigation() throws {
+#if targetEnvironment(simulator)
+        throw XCTSkip("The live Settings smoke test requires an installed map on a physical iPhone.")
+#else
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        // Exercise the installed bundle and normal runtime. Do not enable the
+        // screenshot fixture or seed/delete maps. Restore the driver's mount
+        // after exercising all three orientation choices.
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+        defer { app.terminate() }
+
+        let settings = app.buttons["dashboard.settingsButton"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 60),
+                      "The live dashboard requires an installed map and completed onboarding.")
+        let close = app.buttons["subscreen.close"]
+        let settingsTitle = app.navigationBars["Settings"]
+        let waitForDashboard = {
+            let dismissed = NSPredicate { _, _ in settings.isHittable && !close.exists }
+            self.expectation(for: dismissed, evaluatedWith: nil)
+            self.waitForExpectations(timeout: 10)
+        }
+
+        // Repeated presentation must recover a usable dashboard each time.
+        for pass in 0..<2 {
+            settings.tap()
+            XCTAssertTrue(settingsTitle.waitForExistence(timeout: 10))
+            XCTAssertTrue(close.isHittable)
+            if pass == 0 {
+                let mounts = ["Portrait", "Landscape · camera lower right", "Landscape · camera upper left"]
+                guard let originalMount = mounts.first(where: {
+                    let button = app.buttons[$0]
+                    return button.isSelected || (button.value as? String) == "1"
+                }) else {
+                    XCTFail("Cannot preserve the original mount: \(app.debugDescription)")
+                    return
+                }
+                defer {
+                    let original = app.buttons[originalMount]
+                    if original.isHittable { original.tap() }
+                }
+                for mount in mounts {
+                    let option = app.buttons[mount]
+                    XCTAssertTrue(option.isHittable)
+                    option.tap()
+                    let settled = NSPredicate { _, _ in
+                        let window = app.windows.firstMatch.frame
+                        return mount == "Portrait"
+                            ? window.height > window.width
+                            : window.width > window.height
+                    }
+                    expectation(for: settled, evaluatedWith: nil)
+                    waitForExpectations(timeout: 10)
+                    XCTAssertTrue(close.isHittable)
+                }
+            }
+            if pass == 1 {
+                XCUIDevice.shared.press(.home)
+                app.activate()
+                XCTAssertTrue(settingsTitle.waitForExistence(timeout: 10))
+                XCTAssertTrue(close.isHittable)
+            }
+            close.tap()
+            waitForDashboard()
+        }
+
+        // Debug is pushed inside the Settings sheet. Its close control must
+        // dismiss the entire sheet and permit another Settings presentation.
+        settings.tap()
+        XCTAssertTrue(settingsTitle.waitForExistence(timeout: 10))
+        let debug = app.buttons["Open debug information"]
+        for _ in 0..<24 {
+            if debug.exists && debug.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(debug.isHittable, "The Debug navigation entry must remain reachable.")
+        debug.tap()
+        XCTAssertTrue(app.navigationBars["Debug"].waitForExistence(timeout: 10))
+        XCTAssertTrue(close.isHittable)
+        let debugScreen = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        debugScreen.name = "live-settings-nested-debug"
+        debugScreen.lifetime = .keepAlways
+        add(debugScreen)
+        close.tap()
+        waitForDashboard()
+
+        settings.tap()
+        XCTAssertTrue(settingsTitle.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.navigationBars["Debug"].exists)
+        close.tap()
+        waitForDashboard()
+#endif
+    }
+
     func testSettingsCanChangeManualMountWithSheetOpen() {
         let app = XCUIApplication()
         app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"
@@ -25,12 +185,18 @@ final class ScreenOrientationUITests: XCTestCase {
         settingsScreenshot.name = "settings-landscape-camera-upper-left"
         settingsScreenshot.lifetime = .keepAlways
         add(settingsScreenshot)
+        XCTAssertTrue(app.buttons["subscreen.close"].isHittable)
         let portrait = app.buttons["Portrait"]
         XCTAssertTrue(portrait.isHittable)
         portrait.tap()
         let tallWindow = NSPredicate { _, _ in app.windows.firstMatch.frame.height > app.windows.firstMatch.frame.width }
         expectation(for: tallWindow, evaluatedWith: nil)
         waitForExpectations(timeout: 10)
+        let close = app.buttons["subscreen.close"]
+        XCTAssertTrue(close.isHittable)
+        close.tap()
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        XCTAssertFalse(close.exists)
         app.terminate()
     }
 

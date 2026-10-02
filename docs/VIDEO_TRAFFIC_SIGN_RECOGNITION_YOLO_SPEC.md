@@ -1,5 +1,16 @@
 # Video Traffic Sign Recognition
 
+> Applicability update (issue #8): the current native implementation has two
+> authority boundaries. An admitted **confirmed live frame** may change the
+> immediate camera preview; qualified passage finalization remains necessary
+> for durable assertions and persistence. Earlier passage-only presentation
+> wording below describes the older design and does not remove that preview.
+> [The additive applicability contract](../shared/tsr/applicability/README.md)
+> specifies physical tracking, immutable capture-time context, decision sidecars,
+> all-sink enforcement and the initial shadow-only qualification status. Frozen
+> recognition-v2 bytes and its shadow restriction remain unchanged.
+
+
 Date: `2026-09-05`
 
 Status: draft implementation spec

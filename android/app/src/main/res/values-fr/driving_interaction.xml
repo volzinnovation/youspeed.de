@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gravity_alignment_title">Niveau de la caméra</string>
+    <string name="gravity_alignment_unavailable">Alignement par gravité indisponible</string>
+    <string name="gravity_alignment_angles">Roulis %1$.0f°, inclinaison %2$.0f°. La gravité ne détermine pas le cap.</string>
+    <string name="tsr_voice_dismissal_listening">Dites « Faux »</string>
+</resources>

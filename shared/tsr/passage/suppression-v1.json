@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 1,
+  "prefixes": {
+    "committed_at_origin": [
+      {
+        "atMs": 0,
+        "track": "track-30",
+        "position": [
+          0.0,
+          0.0
+        ],
+        "expectActive": true
+      },
+      {
+        "atMs": 100,
+        "track": "track-30",
+        "position": [
+          0.0,
+          0.0
+        ],
+        "expectActive": true
+      },
+      {
+        "atMs": 200,
+        "track": null,
+        "position": [
+          0.0,
+          0.0
+        ],
+        "expectActive": true
+      },
+      {
+        "atMs": 300,
+        "track": null,
+        "position": [
+          0.0,
+          0.0
+        ],
+        "expectActive": false,
+        "expectCommit": 30
+      }
+    ],
+    "last_known_position": [
+      {
+        "atMs": 0,
+        "track": "track-30",
+        "position": [
+          0.0,
+          0.0
+        ],
+        "expectActive": true
+      },
+      {
+        "atMs": 100,
+        "track": "track-30",
+        "position": [
+          0.0005395929635512383,
+          0.0
+        ],
+        "expectActive": true
+      },
+      {
+        "atMs": 200,
+        "track": "track-30",
+        "position": null,
+        "expectActive": true
+      },
+      {
+        "atMs": 300,
+        "track": null,
+        "position": [
+          0.0005395929635512383,
+          0.0
+        ],
+        "expectActive": true
+      },
+      {
+        "atMs": 400,
+        "track": null,
+        "position": [
+          0.0005395929635512383,
+          0.0
+        ],
+        "expectActive": false,
+        "expectCommit": 30
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "time-4999ms",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 5299,
+          "track": "track-30",
+          "position": [
+            0.0,
+            0.0
+          ],
+          "expectActive": false
+        }
+      ]
+    },
+    {
+      "id": "time-5000ms",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 5300,
+          "track": "track-30",
+          "position": [
+            0.0,
+            0.0
+          ],
+          "expectActive": false
+        }
+      ]
+    },
+    {
+      "id": "time-5001ms",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 5301,
+          "track": "track-30",
+          "position": [
+            0.0,
+            0.0
+          ],
+          "expectActive": true
+        }
+      ]
+    },
+    {
+      "id": "distance-0m-track-30",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 400,
+          "track": "track-30",
+          "position": [
+            0.0,
+            0.0
+          ],
+          "expectActive": false
+        }
+      ]
+    },
+    {
+      "id": "distance-29.999m-track-30",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 400,
+          "track": "track-30",
+          "position": [
+            0.00026978748855955995,
+            0.0
+          ],
+          "expectActive": false
+        }
+      ]
+    },
+    {
+      "id": "distance-30.001m-track-30",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 400,
+          "track": "track-30",
+          "position": [
+            0.0002698054749916784,
+            0.0
+          ],
+          "expectActive": true
+        }
+      ]
+    },
+    {
+      "id": "distance-40m-track-30",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 400,
+          "track": "track-30",
+          "position": [
+            0.00035972864236749223,
+            0.0
+          ],
+          "expectActive": true
+        }
+      ]
+    },
+    {
+      "id": "current-missing-track-30",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 400,
+          "track": "track-30",
+          "position": null,
+          "expectActive": false
+        }
+      ]
+    },
+    {
+      "id": "distance-0m-new-track",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 400,
+          "track": "new-track",
+          "position": [
+            0.0,
+            0.0
+          ],
+          "expectActive": false
+        }
+      ]
+    },
+    {
+      "id": "distance-29.999m-new-track",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 400,
+          "track": "new-track",
+          "position": [
+            0.00026978748855955995,
+            0.0
+          ],
+          "expectActive": false
+        }
+      ]
+    },
+    {
+      "id": "distance-30.001m-new-track",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 400,
+          "track": "new-track",
+          "position": [
+            0.0002698054749916784,
+            0.0
+          ],
+          "expectActive": true
+        }
+      ]
+    },
+    {
+      "id": "distance-40m-new-track",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 400,
+          "track": "new-track",
+          "position": [
+            0.00035972864236749223,
+            0.0
+          ],
+          "expectActive": true
+        }
+      ]
+    },
+    {
+      "id": "current-missing-new-track",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 400,
+          "track": "new-track",
+          "position": null,
+          "expectActive": true
+        }
+      ]
+    },
+    {
+      "id": "clock-rollback-clears-suppression",
+      "prefix": "committed_at_origin",
+      "frames": [
+        {
+          "atMs": 250,
+          "track": null,
+          "position": null,
+          "expectActive": false
+        },
+        {
+          "atMs": 400,
+          "track": "track-30",
+          "position": [
+            0.0,
+            0.0
+          ],
+          "expectActive": true
+        }
+      ]
+    },
+    {
+      "id": "last-known-position-near-new-track",
+      "prefix": "last_known_position",
+      "frames": [
+        {
+          "atMs": 500,
+          "track": "new-track",
+          "position": [
+            0.0005395929635512383,
+            0.0
+          ],
+          "expectActive": false
+        }
+      ]
+    },
+    {
+      "id": "last-known-position-far-reused-track",
+      "prefix": "last_known_position",
+      "frames": [
+        {
+          "atMs": 500,
+          "track": "track-30",
+          "position": [
+            0.0,
+            0.0
+          ],
+          "expectActive": true
+        }
+      ]
+    }
+  ],
+  "scope": "Duplicate suppression after a passage with valid recognition origin and boundary context. Null position also means no map context. Entirely unmatched visible tracks are covered by native activation tests, because Android emits raw passage evidence before its resolver while iPhone validates origin before committing."
+}

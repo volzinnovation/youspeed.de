@@ -6,10 +6,12 @@ import android.graphics.Matrix
 import android.graphics.Outline
 import android.view.View
 import android.view.ViewOutlineProvider
+import android.os.SystemClock
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,6 +42,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.alpha
@@ -89,6 +96,12 @@ internal fun RecorderModuleStrip(
     val ui = controller.uiState
     var previewDialog by remember { mutableStateOf(false) }
     var details by remember { mutableStateOf(false) }
+    LaunchedEffect(ui.drivingControlsAllowed) {
+        if (!ui.drivingControlsAllowed) {
+            previewDialog = false
+            details = false
+        }
+    }
     var now by remember { mutableStateOf(Instant.now()) }
     LaunchedEffect(ui.driveRecorderStartedAt) {
         while (ui.driveRecorderStartedAt != null) { now = Instant.now(); delay(1_000) }
@@ -115,7 +128,15 @@ internal fun RecorderModuleStrip(
         contentColor = foreground,
         border = BorderStroke(1.dp, Color(0xFF74777B)),
     ) {
-        if (compact) {
+        if (!ui.drivingControlsAllowed) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 7.dp),
+                horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("$stateLabel · $elapsed", style = MaterialTheme.typography.labelSmall)
+                Text("Dashcam · ${onOff(ui.driveRecorderDashcamActive)}", style = MaterialTheme.typography.labelSmall)
+                Text("TSR · ${onOff(ui.trafficSignRecognitionEnabled)}", style = MaterialTheme.typography.labelSmall)
+                Text("Panoramax · ${ui.panoramaxCaptureCount}", style = MaterialTheme.typography.labelSmall)
+            }
+        } else if (compact) {
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -215,11 +236,11 @@ internal fun RecorderModuleStrip(
             }
         }
     }
-    if (previewDialog) SheetScaffold(parityText("Camera preview", "Kameravorschau", "Aperçu caméra", "Cameravoorbeeld"),
+    if (previewDialog && ui.drivingControlsAllowed) SheetScaffold(parityText("Camera preview", "Kameravorschau", "Aperçu caméra", "Cameravoorbeeld"),
         { previewDialog = false }, "recorder-preview-sheet") {
         RecorderPreviewWorkspace(controller, Modifier.fillMaxSize(), true)
     }
-    if (details) SheetScaffold(parityText("Recognition details", "Erkennungsdetails", "Détails de reconnaissance", "Herkenningsdetails"),
+    if (details && ui.drivingControlsAllowed) SheetScaffold(parityText("Recognition details", "Erkennungsdetails", "Détails de reconnaissance", "Herkenningsdetails"),
         { details = false }, "traffic-sign-details-sheet") { TrafficSignDetailsContent(controller) }
 }
 
@@ -281,6 +302,28 @@ internal fun RecorderPreviewWorkspace(
         controller.setDriveRecorderPreviewSurfaceProvider(preview.surfaceProvider)
         onDispose { controller.setDriveRecorderPreviewSurfaceProvider(null) }
     }
+    LaunchedEffect(controller, preview, visible, controller.uiState.showDetectedLanes) {
+        try {
+            while (visible && controller.uiState.showDetectedLanes) {
+                // CameraX already includes rotation, mirroring and crop in this
+                // sensor-to-view transform. Treat view pixels as the destination buffer.
+                val transform = preview.sensorToViewTransform
+                val geometry = if (transform != null && preview.width > 0 && preview.height > 0) {
+                    val values = FloatArray(9).also(transform::getValues)
+                    LanePreviewGeometry(preview.width, preview.height, 0, 0, preview.width, preview.height,
+                        0, false, values.map(Float::toDouble), preview.width, preview.height)
+                } else null
+                controller.setLanePreviewGeometry(geometry)
+                delay(50)
+            }
+        } finally {
+            controller.setLanePreviewGeometry(null)
+        }
+    }
+    DisposableEffect(controller, visible) {
+        controller.setLanePreviewVisible(visible)
+        onDispose { controller.setLanePreviewVisible(false) }
+    }
     Box(
         modifier
             .alpha(if (visible) 1f else 0f)
@@ -308,11 +351,140 @@ internal fun RecorderPreviewWorkspace(
                 }
             },
         )
-        if (visible && onDismiss != null) TextButton(onClick = { controller.performButtonAction(onDismiss) },
+        if (visible && controller.uiState.showDetectedLanes) LanePreviewOverlay(controller)
+        if (visible && onDismiss != null && controller.uiState.drivingControlsAllowed) TextButton(onClick = { controller.performButtonAction(onDismiss) },
             modifier = Modifier.align(Alignment.TopEnd).testTag("recorder-hide-preview")) {
             Text(doneLabel(), color = Color.White)
         }
     }
+}
+
+private object LanePreviewStyle {
+    val color = Color(0xFF39FF14)
+    // The camera eye and outer sign ring are about 4–6 dp on the dashboard.
+    val strokeWidth = 5.dp
+    val outlineWidth = 1.dp
+}
+
+@Composable
+private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
+    val snapshot = controller.laneRuntimeSnapshot
+    val preview = controller.lanePreviewGeometry
+    var nowNanos by remember { mutableLongStateOf(SystemClock.elapsedRealtimeNanos()) }
+    LaunchedEffect(Unit) {
+        while (true) { nowNanos = SystemClock.elapsedRealtimeNanos(); delay(50) }
+    }
+    // A new camera result may arrive between the 50 ms fading ticks. Use the
+    // current clock too, avoiding a one-tick false future timestamp/flicker.
+    val opacity = snapshot.opacity(maxOf(nowNanos, SystemClock.elapsedRealtimeNanos()))
+    val state = if (snapshot.state == LanePresentationState.PAUSED) LanePresentationState.PAUSED
+        else if (opacity <= 0f) LanePresentationState.UNAVAILABLE else snapshot.state
+    val label = when (state) {
+        LanePresentationState.RELIABLE -> parityText("Reliable", "Zuverlässig", "Fiable", "Betrouwbaar")
+        LanePresentationState.UNCERTAIN -> parityText("Uncertain", "Unsicher", "Incertain", "Onzeker")
+        LanePresentationState.UNAVAILABLE -> parityText("Unavailable", "Nicht verfügbar", "Indisponible", "Niet beschikbaar")
+        LanePresentationState.PAUSED -> parityText("Paused", "Pausiert", "En pause", "Gepauzeerd")
+    }
+    val pathOverlay = controller.lanePreviewSession.overlay()
+    val pathAge = pathOverlay?.let { System.currentTimeMillis() / 1000.0 - it.capturedAtSeconds }
+    val source = controller.lanePreviewSource
+    val compatibleCalibration = controller.visualRoadCalibration?.takeIf { profile -> source != null &&
+        profile.compatible(source.geometry.uprightWidth, source.geometry.uprightHeight, source.orientationKey) }
+    val freshPath = pathOverlay?.takeIf { pathAge != null && pathAge >= 0 && pathAge < 0.75 && it.geometry == source?.geometry &&
+        it.visualCalibrationRevision == compatibleCalibration?.revision }
+    val useRoadPath = true // Camera preview has its own tracking session, independent of TSR.
+    val observedCount = if (useRoadPath) freshPath?.boundaries?.size ?: 0 else
+        if (opacity > 0f && state != LanePresentationState.PAUSED && snapshot.geometry == source?.geometry)
+            listOfNotNull(snapshot.estimate?.left, snapshot.estimate?.right).size else 0
+    val presentation = controller.lanePresentationDecision(source, observedCount,
+        useRoadPath && freshPath == null, maxOf(nowNanos, SystemClock.elapsedRealtimeNanos()))
+    Canvas(Modifier.fillMaxSize().testTag("detected-lanes-overlay")) {
+        controller.onLanePresentationPainted(presentation, source, observedCount)
+        if (presentation.mode == LanePreviewPresentationMode.HIDDEN || preview == null || source == null) return@Canvas
+        val strokeWidth = LanePreviewStyle.strokeWidth.toPx()
+        val outlineWidth = LanePreviewStyle.outlineWidth.toPx()
+        fun drawBoundary(points: List<LanePoint>, opacity: Float, geometry: LaneImageGeometry) {
+            val outline = Path().apply {
+                var last: LanePoint? = null
+                for (curve in LaneBoundaryBezier.fit(points)) {
+                    val projected = listOf(curve.start, curve.control1, curve.control2, curve.end)
+                        .map { LaneOverlayGeometry.project(it, geometry, preview) }
+                    if (projected.any { it == null }) { last = null; continue }
+                    val (start, c1, c2, end) = projected.map { requireNotNull(it) }
+                    if (last != curve.start) moveTo(start.x.toFloat(), start.y.toFloat())
+                    cubicTo(c1.x.toFloat(), c1.y.toFloat(), c2.x.toFloat(), c2.y.toFloat(), end.x.toFloat(), end.y.toFloat())
+                    last = curve.end
+                }
+            }
+            val halo = Color.Black.copy(alpha = opacity * 0.8f)
+            val color = LanePreviewStyle.color.copy(alpha = opacity)
+            drawPath(outline, halo, style = Stroke(width = strokeWidth + outlineWidth * 2,
+                cap = StrokeCap.Round, join = StrokeJoin.Round))
+            drawPath(outline, color, style = Stroke(width = strokeWidth,
+                cap = StrokeCap.Round, join = StrokeJoin.Round))
+        }
+        if (presentation.mode == LanePreviewPresentationMode.CALIBRATION_REFERENCE) {
+            presentation.referenceLines.forEach { line ->
+                val points = line.mapNotNull { LaneOverlayGeometry.project(it, source.geometry, preview) }
+                if (points.size == 2) {
+                    val guide = Path().apply { moveTo(points[0].x.toFloat(), points[0].y.toFloat())
+                        lineTo(points[1].x.toFloat(), points[1].y.toFloat()) }
+                    drawPath(guide, LanePreviewStyle.color.copy(alpha = presentation.referenceOpacity),
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(14.dp.toPx(), 10.dp.toPx()))))
+                }
+            }
+            return@Canvas
+        }
+        if (useRoadPath && freshPath != null) {
+            // At the observed ~2 Hz cadence, fading at 300 ms makes every valid
+            // update pulse. Keep it bright through a normal interval; expiry stays 750 ms.
+            val fade = if (pathAge!! <= 0.6) 1f else ((0.75-pathAge)/0.15).toFloat()
+            freshPath.boundaries.forEach { boundary ->
+                // Keep visible paint separate from the fitted border; never bridge a dashed gap.
+                val segments = boundary.observedSegments.ifEmpty { listOf(boundary.points) }
+                segments.filter { it.size >= 2 }.forEach { drawBoundary(it, fade, freshPath.geometry) }
+            }
+            return@Canvas
+        }
+        if (useRoadPath) return@Canvas
+        val geometry = snapshot.geometry ?: return@Canvas
+        val estimate = snapshot.estimate ?: return@Canvas
+        val destination = preview
+        if (opacity <= 0f || state == LanePresentationState.PAUSED) return@Canvas
+        fun points(boundary: LaneBoundary?): List<LanePoint> = boundary?.points?.mapNotNull {
+            LaneOverlayGeometry.project(it, geometry, destination)
+        }.orEmpty()
+        fun path(points: List<LanePoint>): Path = Path().apply {
+            points.forEachIndexed { index, point ->
+                if (index == 0) moveTo(point.x.toFloat(), point.y.toFloat()) else lineTo(point.x.toFloat(), point.y.toFloat())
+            }
+        }
+        val left = points(estimate.left)
+        val right = points(estimate.right)
+        val color = LanePreviewStyle.color
+        val corridor = estimate.corridorPoints.mapNotNull { LaneOverlayGeometry.project(it, geometry, destination) }
+        if (corridor.size >= 4) {
+            val area = path(corridor).apply { close() }
+            drawPath(area, color.copy(alpha = opacity * 0.10f))
+        }
+        listOf(left to estimate.left, right to estimate.right).forEach { (points, boundary) ->
+            if (points.size >= 2 && boundary != null) drawBoundary(boundary.points, opacity, geometry)
+        }
+        if (left.size >= 2 || right.size >= 2) controller.onLaneOverlayPainted(snapshot)
+    }
+    Text(parityText("Detected lanes", "Erkannte Fahrspuren", "Voies détectées", "Gedetecteerde rijstroken") + ": " +
+        when (presentation.mode) {
+            LanePreviewPresentationMode.CALIBRATION_REFERENCE -> parityText("Calibration reference", "Kalibrierungsreferenz", "Repère de calibration", "Kalibratiereferentie")
+            LanePreviewPresentationMode.OBSERVED -> if (useRoadPath) parityText("Experimental", "Experimentell", "Expérimental", "Experimenteel") + " ($observedCount)" else label
+            LanePreviewPresentationMode.HIDDEN -> if (presentation.reason in listOf("thermal_paused", "activity_paused"))
+                parityText("Paused", "Pausiert", "En pause", "Gepauzeerd") else
+                parityText("Unavailable", "Nicht verfügbar", "Indisponible", "Niet beschikbaar")
+        },
+        modifier = Modifier.align(Alignment.BottomStart).padding(10.dp)
+            .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(8.dp)).padding(6.dp)
+            .testTag("detected-lanes-state"),
+        color = Color.White, style = MaterialTheme.typography.labelSmall)
 }
 
 @Composable
@@ -339,6 +511,20 @@ private fun ParitySlider(label: String, value: Double, range: ClosedFloatingPoin
     Column {
         Text("$label · ${value.roundToInt()} $unit", color = Color.Black)
         Slider(value.toFloat().coerceIn(range), { onChange(it.toDouble()) }, valueRange = range, steps = steps)
+    }
+}
+
+@Composable
+internal fun LaneDetectionDiagnosticsSettings(controller: ConsumerSessionController) {
+    val ui = controller.uiState
+    ParitySection(parityText("Detected lanes", "Erkannte Fahrspuren", "Voies détectées", "Gedetecteerde rijstroken")) {
+            ParityToggle(parityText("Show detected lanes", "Erkannte Fahrspuren anzeigen", "Afficher les voies détectées", "Gedetecteerde rijstroken tonen"),
+                ui.showDetectedLanes, tag = "show-detected-lanes-toggle", onChange = controller::setShowDetectedLanes)
+            Text(parityText("Show lane markings in the live dashcam preview. Saved videos stay unchanged.",
+                "Fahrspurmarkierungen in der Live-Dashcam-Vorschau anzeigen. Gespeicherte Videos bleiben unverändert.",
+                "Afficher les voies dans l’aperçu dashcam en direct. Les vidéos enregistrées restent inchangées.",
+                "Toon rijstrookmarkeringen in het live dashcambeeld. Opgeslagen video's blijven ongewijzigd."),
+                style = MaterialTheme.typography.bodySmall)
     }
 }
 
@@ -384,6 +570,7 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
             }
             ParityToggle(parityText("Capture Panoramax photos", "Panoramax-Fotos aufnehmen", "Prendre des photos Panoramax", "Panoramax-foto’s maken"),
                 ui.panoramaxCaptureEnabled, !active, "panoramax-settings-toggle", controller::setPanoramaxCaptureEnabled)
+            Text(parityText("When enabled, photos are captured automatically while you move with the app open, using the selected distance or time interval. Dashcam video is independent. Photos stay on this device for review before upload.", "Wenn aktiviert, werden bei geöffneter App während der Bewegung automatisch Fotos im gewählten Abstand oder Zeitintervall aufgenommen. Dashcam-Videos sind unabhängig davon. Fotos bleiben bis zur Prüfung und zum Upload auf diesem Gerät.", "Lorsque cette option est activée, des photos sont prises automatiquement pendant vos déplacements avec l’application ouverte, selon la distance ou l’intervalle choisi. La vidéo dashcam est indépendante. Les photos restent sur cet appareil pour vérification avant envoi.", "Als dit is ingeschakeld, worden tijdens het bewegen met de app geopend automatisch foto’s gemaakt volgens de gekozen afstand of tijd. Dashcamvideo staat hier los van. Foto’s blijven op dit apparaat om vóór het uploaden te bekijken."), style = MaterialTheme.typography.bodySmall)
             Text(parityText("Camera modules share one camera. Photos remain local until you review and upload them after recording.",
                 "Die Module nutzen eine Kamera. Fotos bleiben lokal, bis du sie nach der Aufnahme prüfst und hochlädst.",
                 "Les modules partagent une caméra. Les photos restent locales jusqu’à leur vérification et envoi après l’enregistrement.",
@@ -402,9 +589,9 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
                     }
                 }
                 ParitySlider(parityText("Minimum distance", "Mindestabstand", "Distance minimale", "Minimumafstand"), ui.panoramaxMinimumDistanceMeters,
-                    3f..100f, 96, "m", controller::setPanoramaxMinimumDistanceMeters)
+                    10f..90f, 79, "m", controller::setPanoramaxMinimumDistanceMeters)
                 ParitySlider(parityText("Minimum interval", "Mindestintervall", "Intervalle minimal", "Minimuminterval"), ui.panoramaxMinimumIntervalSeconds,
-                    1f..60f, 58, "s", controller::setPanoramaxMinimumIntervalSeconds)
+                    5f..240f, 234, "s", controller::setPanoramaxMinimumIntervalSeconds)
                 Text(parityText("GPS accuracy also limits capture spacing; stationary duplicates are skipped.",
                     "Auch die GPS-Genauigkeit begrenzt den Fotoabstand; doppelte Bilder im Stand werden ausgelassen.",
                     "La précision GPS limite aussi l’espacement ; les doublons à l’arrêt sont ignorés.",
@@ -469,13 +656,22 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-private fun GalleryActionBar(content: @Composable FlowRowScope.() -> Unit) {
+private fun GalleryActionBar(compact: Boolean = false, content: @Composable (Modifier) -> Unit) {
     Surface(tonalElevation = 3.dp) {
         BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
+            val spacing = 4.dp
+            if (compact) {
+                // FlowRow can wrap weighted actions based on the localized
+                // labels' intrinsic widths. Reserve equal columns so larger
+                // text wraps within each action, leaving room for the photos.
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(spacing)) {
+                    content(Modifier.weight(1f))
+                }
+                return@BoxWithConstraints
+            }
             // Wrap whole actions on narrow phones. Larger system text gets
             // at most two columns; labels can grow without being clipped.
             val minimumActionWidth = 112.dp
-            val spacing = 4.dp
             val maximumColumns = if (LocalDensity.current.fontScale > 1.3f) 2 else 4
             val columns = ((maxWidth + spacing) / (minimumActionWidth + spacing)).toInt().coerceIn(1, maximumColumns)
             FlowRow(
@@ -483,30 +679,37 @@ private fun GalleryActionBar(content: @Composable FlowRowScope.() -> Unit) {
                 maxItemsInEachRow = columns,
                 horizontalArrangement = Arrangement.spacedBy(spacing),
                 verticalArrangement = Arrangement.spacedBy(spacing),
-                content = content,
-            )
+            ) { content(Modifier.weight(1f)) }
         }
     }
 }
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-private fun FlowRowScope.GalleryAction(
+private fun GalleryAction(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     enabled: Boolean,
     onClick: () -> Unit,
+    compact: Boolean = false,
+    modifier: Modifier,
 ) {
-    Column(
-        Modifier.weight(1f).heightIn(min = 64.dp).testTag("gallery-action")
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+    val actionModifier = modifier.heightIn(min = if (compact) 48.dp else 64.dp).testTag("gallery-action")
+        .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+        .padding(horizontal = 6.dp, vertical = 6.dp)
+    val color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    if (compact) Row(actionModifier, verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = color)
+    } else Column(
+        actionModifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(icon, contentDescription = null, tint = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+        Icon(icon, contentDescription = null, tint = color)
         Text(label, style = MaterialTheme.typography.labelSmall, minLines = 2, textAlign = TextAlign.Center,
-            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+            color = color)
     }
 }
 
@@ -545,20 +748,23 @@ internal fun DashcamLibraryContent(controller: ConsumerSessionController) {
             }
         }
         if (recordings.isNotEmpty()) {
-            GalleryActionBar {
+            GalleryActionBar { actionModifier ->
                 GalleryAction(
+                    modifier = actionModifier,
                     icon = Icons.Default.CheckCircle,
                     label = parityText("Select all", "Alle auswählen", "Tout sélectionner", "Alles selecteren"),
                     enabled = selected.size != recordings.size,
                     onClick = { selected = recordings.map { it.path }.toSet() },
                 )
                 GalleryAction(
+                    modifier = actionModifier,
                     icon = Icons.Default.RadioButtonUnchecked,
                     label = parityText("Select none", "Auswahl aufheben", "Tout désélectionner", "Niets selecteren"),
                     enabled = selected.isNotEmpty(),
                     onClick = { selected = emptySet() },
                 )
                 GalleryAction(
+                    modifier = actionModifier,
                     icon = Icons.Default.Delete,
                     label = "${deleteLabel()} (${selected.size})",
                     enabled = selected.isNotEmpty() && controller.uiState.driveRecorderState !in
@@ -592,7 +798,7 @@ private fun ParityDeleteConfirmation(count: Int, onDismiss: () -> Unit, onDelete
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
+internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, compact: Boolean = false) {
     val ui = controller.uiState
     var selected by remember { mutableStateOf(emptyMap<String, Set<String>>()) }
     var deleteConfirmation by remember { mutableStateOf(false) }
@@ -611,20 +817,24 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
         selected = if (updated.isEmpty()) selected - batch else selected + (batch to updated)
     }
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(parityText("Review photos before upload. Open a photo to inspect it; protect favorites from automatic cleanup.",
-            "Fotos vor dem Hochladen prüfen. Ein Foto zum Prüfen öffnen; Favoriten vor automatischer Bereinigung schützen.",
-            "Vérifiez les photos avant l’envoi. Ouvrez-les pour les inspecter ; les favoris sont protégés du nettoyage automatique.",
-            "Controleer foto’s vóór het uploaden. Open een foto om die te bekijken; favorieten zijn beschermd tegen automatisch opruimen."))
-        if (!controller.canProcessPanoramaxUploads()) Text(parityText("Uploads are available after recording has finished.",
-            "Uploads sind nach Abschluss der Aufnahme verfügbar.", "Les envois sont disponibles après la fin de l’enregistrement.",
-            "Uploaden kan nadat de opname is voltooid."), style = MaterialTheme.typography.bodySmall)
-        if (ui.panoramaxActiveUploadBatchIds.isNotEmpty()) OutlinedButton(onClick = controller::stopPanoramaxUploads) {
-            Text(parityText("Stop uploads", "Uploads stoppen", "Arrêter les envois", "Uploads stoppen"))
-        }
-        if (ui.panoramaxMaintenanceInProgress) LinearProgressIndicator(Modifier.fillMaxWidth())
-        ui.panoramaxMaintenanceIssue?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        if (ui.panoramaxBatches.all { it.items.isEmpty() }) Text(parityText("No photos yet.", "Noch keine Fotos.", "Aucune photo.", "Nog geen foto’s."))
-        LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("panoramax-photo-list"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            item(key = "gallery-introduction") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(parityText("Review photos before upload. Open a photo to inspect it; protect favorites from automatic cleanup.",
+                        "Fotos vor dem Hochladen prüfen. Ein Foto zum Prüfen öffnen; Favoriten vor automatischer Bereinigung schützen.",
+                        "Vérifiez les photos avant l’envoi. Ouvrez-les pour les inspecter ; les favoris sont protégés du nettoyage automatique.",
+                        "Controleer foto’s vóór het uploaden. Open een foto om die te bekijken; favorieten zijn beschermd tegen automatisch opruimen."))
+                    if (!controller.canProcessPanoramaxUploads()) Text(parityText("Uploads are available after recording has finished.",
+                        "Uploads sind nach Abschluss der Aufnahme verfügbar.", "Les envois sont disponibles après la fin de l’enregistrement.",
+                        "Uploaden kan nadat de opname is voltooid."), style = MaterialTheme.typography.bodySmall)
+                    if (ui.panoramaxActiveUploadBatchIds.isNotEmpty()) OutlinedButton(onClick = controller::stopPanoramaxUploads) {
+                        Text(parityText("Stop uploads", "Uploads stoppen", "Arrêter les envois", "Uploads stoppen"))
+                    }
+                    if (ui.panoramaxMaintenanceInProgress) LinearProgressIndicator(Modifier.fillMaxWidth())
+                    ui.panoramaxMaintenanceIssue?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    if (ui.panoramaxBatches.all { it.items.isEmpty() }) Text(parityText("No photos yet.", "Noch keine Fotos.", "Aucune photo.", "Nog geen foto’s."))
+                }
+            }
             ui.panoramaxBatches.forEach { batch ->
                 item(key = "header-${batch.batchId}") {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -647,7 +857,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
                         Column(Modifier.fillMaxWidth().padding(10.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Checkbox(item.itemId in selected[batch.batchId].orEmpty(), { select(batch.batchId, item.itemId, it) }, enabled = editable)
-                                LocalPhoto(controller.panoramaxThumbnailFile(item), Modifier.size(92.dp).clip(RoundedCornerShape(8.dp)).clickable { focused = batch.batchId to item.itemId }, 256,
+                                LocalPhoto(controller.panoramaxThumbnailFile(item), Modifier.size(92.dp).testTag("panoramax-thumbnail-${item.itemId}").clip(RoundedCornerShape(8.dp)).clickable { focused = batch.batchId to item.itemId }, 256,
                                     fallbackFile = controller.panoramaxOriginalFile(item))
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Text(dateText(item.metadata.capturedAt), style = MaterialTheme.typography.bodySmall)
@@ -683,9 +893,11 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
                 }
             }
         }
-        GalleryActionBar {
+        GalleryActionBar(compact = compact) { actionModifier ->
             GalleryAction(
+                modifier = actionModifier,
                 icon = Icons.Default.CheckCircle,
+                compact = compact,
                 label = parityText("Select all", "Alle auswählen", "Tout sélectionner", "Alles selecteren"),
                 enabled = ui.panoramaxBatches.any { it.batchId !in ui.panoramaxActiveUploadBatchIds && it.state != PanoramaxBatchState.CAPTURING },
                 onClick = {
@@ -694,13 +906,17 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
                 },
             )
             GalleryAction(
+                modifier = actionModifier,
                 icon = Icons.Default.RadioButtonUnchecked,
+                compact = compact,
                 label = parityText("Select none", "Auswahl aufheben", "Tout désélectionner", "Niets selecteren"),
                 enabled = count > 0,
                 onClick = { selected = emptyMap() },
             )
             GalleryAction(
+                modifier = actionModifier,
                 icon = Icons.Default.Delete,
+                compact = compact,
                 label = "${deleteLabel()} ($count)",
                 enabled = count > 0 && controller.canProcessPanoramaxUploads() &&
                     selected.keys.none { it in ui.panoramaxActiveUploadBatchIds },
@@ -708,14 +924,18 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
             )
             if (ui.panoramaxActiveUploadBatchIds.isEmpty()) {
                 GalleryAction(
+                    modifier = actionModifier,
                     icon = Icons.Default.Upload,
+                    compact = compact,
                     label = "${parityText("Upload", "Hochladen", "Envoyer", "Uploaden")} ($count)",
                     enabled = count > 0 && controller.canProcessPanoramaxUploads() && ui.panoramaxAccountConnected,
                     onClick = { uploadConfirmation = true },
                 )
             } else {
                 GalleryAction(
+                    modifier = actionModifier,
                     icon = Icons.Default.Stop,
+                    compact = compact,
                     label = parityText("Stop", "Stopp", "Arrêter", "Stoppen"),
                     enabled = true,
                     onClick = controller::stopPanoramaxUploads,

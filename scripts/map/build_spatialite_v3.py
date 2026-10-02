@@ -1421,6 +1421,7 @@ def main() -> int:
     geom_batch: List[Tuple] = []
     endpoints_batch: List[Tuple] = []
     way_rows = 0
+    source_geometry_rows = 0
 
     with ways_meta.open("r", encoding="utf-8") as fm, ways_geom.open("r", encoding="utf-8") as fg:
         while True:
@@ -1446,6 +1447,7 @@ def main() -> int:
                 return 1
 
             way_rows += 1
+            source_geometry_rows += geom.get("geometry_policy") == "source_vertices_v1"
             way_id = int(meta["way_id"])
             points = geom.get("points")
             if not isinstance(points, list):
@@ -1654,6 +1656,14 @@ def main() -> int:
         file=sys.stderr,
     )
 
+    conn.executemany("INSERT OR REPLACE INTO metadata(key,value) VALUES(?,?)", [
+        ("road_geometry_policy", "source_vertices_v1" if source_geometry_rows == way_rows else "legacy_or_mixed"),
+        ("road_geometry_source_way_count", str(source_geometry_rows)),
+        ("road_geometry_max_error_m", "0" if source_geometry_rows == way_rows else "unknown"),
+        ("country_code", args.country_code.upper()),
+    ])
+    conn.commit()
+
     if args.build_way_links:
         conn.executescript(
             """
@@ -1757,6 +1767,10 @@ def main() -> int:
                 f"Corridor progress done: components={corridor_count} rows={corridor_progress_count} pairs={corridor_pair_count}",
                 file=sys.stderr,
             )
+
+    from motorway_exit_context import build_motorway_exit_context
+    exit_count = build_motorway_exit_context(conn, ways_meta)
+    print(f"Directed motorway exit approaches: {exit_count}", file=sys.stderr)
 
     areas_payload = json.loads(areas_idx.read_text(encoding="utf-8"))
     areas = areas_payload.get("areas", [])

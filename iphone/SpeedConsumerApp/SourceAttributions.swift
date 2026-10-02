@@ -97,6 +97,7 @@ struct SourceAttributionsView: View {
         .searchable(text: $query, prompt: Text(NSLocalizedString("about.sources.search", comment: "")))
         .navigationTitle(NSLocalizedString("about.sources.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
+        .subscreenCloseButton()
     }
 
     private func matchesSearch(_ entry: SourceAttribution) -> Bool {

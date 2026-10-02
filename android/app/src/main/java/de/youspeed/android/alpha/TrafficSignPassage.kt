@@ -215,6 +215,7 @@ data class TrafficSignPassageEvent(
     val lossReason: String,
     val negativeFramesToCommit: Int,
     val overrideEligible: Boolean,
+    val applicabilityDecision: TSRApplicabilityDecision? = null,
 ) {
     init {
         require(schemaVersion == 1) { "Unsupported traffic-sign passage schema" }
@@ -256,10 +257,10 @@ data class TrafficSignPassageFinalizerConfiguration(
     val repeatedTrackNegativeFrames: Int = 2,
     val strongPassGeometryNegativeFrames: Int = 1,
     val singleFrameNegativeFrames: Int = 3,
-    val singleFrameArmThreshold: Double = 0.94,
+    val singleFrameArmThreshold: Double = 0.97,
     val maximumEvidenceFrames: Int = 16,
-    val physicalTrackSuppressionWindow: Duration = Duration.ofSeconds(12),
-    val physicalTrackSuppressionDistanceM: Double = 45.0,
+    val physicalTrackSuppressionWindow: Duration = Duration.ofSeconds(5),
+    val physicalTrackSuppressionDistanceM: Double = 30.0,
 ) {
     init {
         require(repeatedTrackNegativeFrames > 0)
@@ -341,6 +342,7 @@ class TrafficSignPassageFinalizer(
     }
 
     fun hasActiveTrack(): Boolean = track != null
+    fun activePhysicalTrackId(): String? = track?.id
 
     /** Immutable route scope owned by the currently active physical sign. */
     internal fun activeTrackRouteScope(): TrafficSignActiveTrackRouteScope? = track?.let { current ->
@@ -459,6 +461,10 @@ class TrafficSignPassageFinalizer(
             current.sourceRelationIds = current.sourceRelationIds.intersect(nextContext.sourceRelationIds)
         }
         current.lastSeenContext = nextContext
+        if (nextContext != null) {
+            current.lastSeenLatitude = nextContext.latitude
+            current.lastSeenLongitude = nextContext.longitude
+        }
         if (nextContext != null && !nextContext.wayId.isNullOrBlank() && nextContext.matchedWayStable) {
             current.routeContext = nextContext
         }
@@ -498,9 +504,14 @@ class TrafficSignPassageFinalizer(
             assemblyConfidence = candidate.assemblyConfidence ?: candidate.calibratedConfidence,
         )
         while (current.evidence.size > configuration.maximumEvidenceFrames) current.evidence.removeFirst()
+        val action = candidate.toAction(event.roadContext?.countryCode)
+        val structuralReset = !action.isConditional && event.roadContext?.matchedWayStable == true && action.kind in setOf(
+            TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.CITY_EXIT,
+            TrafficSignActionKind.MAXIMUM_SPEED_END, TrafficSignActionKind.ALL_RESTRICTIONS_END,
+        )
         current.armed = when {
-            current.framesSeen == 1 -> confidence >= configuration.singleFrameArmThreshold
-            event.state == TrafficSignRecognitionState.CONFIRMED -> true
+            current.framesSeen == 1 -> confidence >= if (structuralReset) 0.75 else configuration.singleFrameArmThreshold
+            event.state == TrafficSignRecognitionState.CONFIRMED || current.accumulatedSupport >= 0.72 -> true
             else -> current.armed
         }
         return current
@@ -539,16 +550,17 @@ class TrafficSignPassageFinalizer(
             boundary.timestampUtc.toEpochMilli().toString(),
             action.kind.wireValue,
         ).joinToString(":")
-        if (isRecentlyCommittedPhysicalSign(current.candidate, current.lastSeenContext, boundary.timestampUtc)) {
+        if (isRecentlyCommittedPhysicalSign(current.candidate, current.lastSeenContext, boundary.timestampUtc,
+                current.lastSeenLatitude, current.lastSeenLongitude)) {
             track = null
             return null
         }
         lastCommittedPhysicalSign = CommittedPhysicalSign(
             trackId = current.id,
             actionKey = current.candidate.normalizedActionKey(current.lastSeenContext?.countryCode),
-            committedAtUtc = boundary.timestampUtc,
-            latitude = current.lastSeenContext?.latitude,
-            longitude = current.lastSeenContext?.longitude,
+            committedAtUtc = event.frameTimestampUtc,
+            latitude = current.lastSeenLatitude,
+            longitude = current.lastSeenLongitude,
         )
         track = null
         return TrafficSignPassageEvent(
@@ -589,7 +601,8 @@ class TrafficSignPassageFinalizer(
 
     private fun expireSuppression(now: Instant) {
         lastCommittedPhysicalSign = lastCommittedPhysicalSign?.takeUnless { committed ->
-            Duration.between(committed.committedAtUtc, now) > configuration.physicalTrackSuppressionWindow
+            val elapsed = Duration.between(committed.committedAtUtc, now)
+            elapsed.isNegative || elapsed > configuration.physicalTrackSuppressionWindow
         }
     }
 
@@ -597,22 +610,24 @@ class TrafficSignPassageFinalizer(
         candidate: TrafficSignCandidate,
         context: TrafficSignDetectionContext?,
         observedAtUtc: Instant,
+        latitude: Double? = context?.latitude,
+        longitude: Double? = context?.longitude,
     ): Boolean {
         val committed = lastCommittedPhysicalSign ?: return false
         val elapsed = Duration.between(committed.committedAtUtc, observedAtUtc)
         if (elapsed.isNegative || elapsed > configuration.physicalTrackSuppressionWindow) return false
         if (committed.actionKey != candidate.normalizedActionKey(context?.countryCode)) return false
-        if (committed.trackId == candidate.trackId) return true
-        val latitude = context?.latitude ?: return false
-        val longitude = context.longitude
-        val committedLatitude = committed.latitude ?: return false
-        val committedLongitude = committed.longitude ?: return false
-        return distanceMeters(
-            committedLatitude,
-            committedLongitude,
-            latitude,
-            longitude,
-        ) <= configuration.physicalTrackSuppressionDistanceM
+        if (latitude != null && longitude != null && committed.latitude != null && committed.longitude != null) {
+            return distanceMeters(
+                committed.latitude,
+                committed.longitude,
+                latitude,
+                longitude,
+            ) <= configuration.physicalTrackSuppressionDistanceM
+        }
+        // As on iPhone, known coordinates take precedence over a reused track ID.
+        // Identity is only the fallback when one side has no coordinates.
+        return committed.trackId == candidate.trackId
     }
 
     private data class CommittedPhysicalSign(
@@ -643,6 +658,9 @@ class TrafficSignPassageFinalizer(
         var routeContext: TrafficSignDetectionContext?,
         var accumulatedSupport: Double,
         var overrideEligible: Boolean,
+        // A missing map context must not erase the last valid camera position.
+        var lastSeenLatitude: Double? = lastSeenContext?.latitude,
+        var lastSeenLongitude: Double? = lastSeenContext?.longitude,
         val assemblyIds: LinkedHashSet<String> = linkedSetOf(),
         val evidence: ArrayDeque<TrafficSignPassageFrameEvidence> = ArrayDeque(),
         val lossEvidence: ArrayDeque<TrafficSignPassageLossEvidence> = ArrayDeque(),
@@ -677,6 +695,12 @@ class TrafficSignPassageFinalizer(
                 } else {
                     next
                 }
+                return true
+            }
+            if (next.continuesSignedRoad(previous)) {
+                eligibleRouteRelationGroupIds = eligibleRouteRelationGroupIds.intersect(next.routeRelationGroupIds)
+                sourceRelationIds = sourceRelationIds.intersect(next.sourceRelationIds)
+                routeContext = next
                 return true
             }
             if (!previous.continuityCapable || !next.continuityCapable) return false
@@ -723,7 +747,8 @@ private fun TrafficSignCandidate.normalizedActionKey(countryCode: String?): Stri
     return listOf(
         action.kind.wireValue,
         action.valueKmh?.toString().orEmpty(),
-        action.countryCode?.trim()?.uppercase().orEmpty(),
+        // Only city entry has a country-specific structural identity on iPhone.
+        if (action.kind == TrafficSignActionKind.CITY_ENTRY) action.countryCode?.trim()?.uppercase().orEmpty() else "",
         action.conditionState.wireValue,
         action.restrictions
             .map { "${it.kind.wireValue}:${it.normalizedValue.trim()}" }
@@ -776,7 +801,7 @@ fun resolveDirectAction(action: TrafficSignAction): TrafficSignResolvedLimit = w
     TrafficSignActionKind.ZONE_START -> action.valueKmh?.let {
         TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, it)
     } ?: TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNKNOWN)
-    TrafficSignActionKind.CITY_ENTRY -> if (action.countryCode.equals("DE", true) || action.countryCode.equals("DEU", true)) {
+    TrafficSignActionKind.CITY_ENTRY -> if (PenaltyCountryCodes.alpha2(action.countryCode) in setOf("DE", "FR", "NL")) {
         TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 50)
     } else {
         TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNKNOWN)
@@ -790,7 +815,25 @@ enum class EffectiveSpeedLimitSource(val wireValue: String) {
     LOCAL_CORRECTION("local_correction"),
     BUNDLE("bundle"),
     STALE_BUNDLE("stale_bundle"),
+    LAST_KNOWN("last_known"),
     NONE("none"),
+}
+
+val EffectiveSpeedLimitSource.isStale: Boolean
+    get() = this == EffectiveSpeedLimitSource.STALE_BUNDLE || this == EffectiveSpeedLimitSource.LAST_KNOWN
+
+class LastKnownSpeedLimitPresentation {
+    private var lastResolution: TrafficSignResolvedLimit? = null
+    fun reset() { lastResolution = null }
+    fun present(state: EffectiveSpeedLimit): EffectiveSpeedLimit {
+        if (state.resolution != null && state.resolution.kind != TrafficSignResolvedLimitKind.UNKNOWN && !state.source.isStale) {
+            lastResolution = state.resolution
+            return state
+        }
+        val previous = lastResolution ?: return state
+        return EffectiveSpeedLimit(previous, EffectiveSpeedLimitSource.LAST_KNOWN,
+            "last_known_display_only", cameraEvidence = false)
+    }
 }
 
 data class EffectiveSpeedLimit(
@@ -798,6 +841,7 @@ data class EffectiveSpeedLimit(
     val source: EffectiveSpeedLimitSource,
     val presentationReason: String,
     val cameraEvidence: Boolean = source == EffectiveSpeedLimitSource.CAMERA,
+    val isUserCorrection: Boolean = false,
 )
 
 data class TrafficSignBaseLimit(
@@ -805,12 +849,13 @@ data class TrafficSignBaseLimit(
     val source: EffectiveSpeedLimitSource,
     val reason: String,
     val structurallyVerifiedForEnd: Boolean = false,
+    val isUserCorrection: Boolean = false,
 ) {
     init {
         require(source != EffectiveSpeedLimitSource.CAMERA)
     }
 
-    fun effective() = EffectiveSpeedLimit(resolution, source, reason)
+    fun effective() = EffectiveSpeedLimit(resolution, source, reason, isUserCorrection = isUserCorrection)
 }
 
 data class TrafficSignApplicabilityScope(
@@ -826,6 +871,7 @@ data class TrafficSignApplicabilityScope(
     val lastMatchedAtUtc: Instant,
     val gapStartedAtUtc: Instant? = null,
     val gapDistanceM: Double = 0.0,
+    val roadIdentity: String? = null,
 )
 
 data class TrafficSignRuleLayer(
@@ -851,8 +897,8 @@ data class TrafficSignRoadMatch(
 )
 
 data class TrafficSignSourceResolverConfiguration(
-    val maximumNoMatchDuration: Duration = Duration.ofSeconds(5),
-    val maximumNoMatchDistanceM: Double = 120.0,
+    val maximumNoMatchDuration: Duration = Duration.ofSeconds(8),
+    val maximumNoMatchDistanceM: Double = 160.0,
 )
 
 /** Stateful camera layer above the ordinary local-correction/bundle base. */
@@ -865,6 +911,10 @@ class TrafficSignRuntimeSourceResolver(
     private var newlyPersistableEvent: TrafficSignPassageEvent? = null
 
     fun activeAssertion(): TrafficSignCameraAssertion? = active
+
+    fun hasActiveEnclosingSpeedRule(): Boolean = active?.layers?.lastOrNull()?.kind in setOf(
+        TrafficSignActionKind.ZONE_START, TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.PEDESTRIAN_ZONE_START,
+    )
 
     fun clear() {
         active = null
@@ -886,7 +936,8 @@ class TrafficSignRuntimeSourceResolver(
         base: TrafficSignBaseLimit,
         fallbackSpeedLimitAfterEnd: TrafficSignResolvedLimit? = null,
     ): EffectiveSpeedLimit {
-        if (!event.overrideEligible) return effective(base)
+        if (base.isUserCorrection) { clear(); return base.effective() }
+        if (!event.permitsApplicability() || !event.overrideEligible) return effective(base)
         val context = event.activationContext
         if (context == null || context.wayId.isNullOrBlank()) {
             val lastSeen = event.lastSeenContext
@@ -921,7 +972,7 @@ class TrafficSignRuntimeSourceResolver(
             }
         }
         val activationRelationGroups = event.eligibleRouteRelationGroupIds.intersect(context.routeRelationGroupIds)
-        if (wayId != firstSeenWayId && activationRelationGroups.isEmpty()) {
+        if (wayId != firstSeenWayId && activationRelationGroups.isEmpty() && event.firstSeenContext?.let { context.continuesSignedRoad(it) } != true) {
             return if (event.action.kind in SPEED_END_ACTION_KINDS) {
                 maskOrPreserveUnsafeEnd(event, base, "camera_end_recognition_scope_lost", fallbackSpeedLimitAfterEnd)
             } else {
@@ -946,6 +997,7 @@ class TrafficSignRuntimeSourceResolver(
             sourceRelationIds = event.sourceRelationIds.intersect(context.sourceRelationIds),
             continuityCapable = context.continuityCapable,
             lastMatchedAtUtc = event.passageBoundary.timestampUtc,
+            roadIdentity = context.roadIdentity,
         )
         active = TrafficSignCameraAssertion(
             event = event,
@@ -990,8 +1042,16 @@ class TrafficSignRuntimeSourceResolver(
     }
 
     fun reconcile(match: TrafficSignRoadMatch, base: TrafficSignBaseLimit): EffectiveSpeedLimit {
+        if (base.isUserCorrection) { clear(); return base.effective() }
         reconcilePending(match, base)?.let { return it }
-        val assertion = active ?: return base.effective()
+        var assertion = active ?: return base.effective()
+        if (assertion.layers.any { it.kind == TrafficSignActionKind.POSTED_MAXIMUM } &&
+            Duration.between(assertion.event.activationAtUtc, match.matchedAtUtc).seconds >= DrivingRoadIdentity.MAXIMUM_ASSERTION_AGE_SECONDS) {
+            val enclosing = assertion.layers.filterNot { it.kind == TrafficSignActionKind.POSTED_MAXIMUM }
+            if (enclosing.isEmpty()) { clear(); return base.effective() }
+            assertion = assertion.copy(layers = enclosing, resolution = enclosing.last().resolution, presentationReason = "camera_posted_timeout_enclosing")
+            active = assertion
+        }
         if (match.traversalReversed) {
             active = null
             return base.effective()
@@ -1011,6 +1071,10 @@ class TrafficSignRuntimeSourceResolver(
         }
         if (!match.stabilized) return effective(base)
         val wayId = context.wayId
+        if (assertion.scope.roadIdentity != null && context.roadIdentity != null && assertion.scope.roadIdentity != context.roadIdentity) {
+            clear()
+            return base.effective()
+        }
         if (context.traversalEpoch != assertion.scope.traversalEpoch) {
             active = null
             return base.effective()
@@ -1041,7 +1105,8 @@ class TrafficSignRuntimeSourceResolver(
             return effective(base)
         }
         val sharedGroups = assertion.scope.eligibleRouteRelationGroupIds.intersect(context.routeRelationGroupIds)
-        if (!context.continuityCapable || sharedGroups.isEmpty()) {
+        val sameRoad = assertion.scope.roadIdentity != null && assertion.scope.roadIdentity == context.roadIdentity
+        if (!sameRoad && (!context.continuityCapable || sharedGroups.isEmpty())) {
             active = null
             return base.effective()
         }
@@ -1086,7 +1151,7 @@ class TrafficSignRuntimeSourceResolver(
         val sameScope = context.traversalEpoch == lastSeen.traversalEpoch &&
             context.sourceSignature.bundleRevision == lastSeen.sourceSignature.bundleRevision &&
             context.bundleSha256 == lastSeen.bundleSha256 &&
-            (sameWay || (context.continuityCapable && sharedGroups.isNotEmpty()))
+            (sameWay || context.continuesSignedRoad(lastSeen) || (context.continuityCapable && sharedGroups.isNotEmpty()))
         pending = null
         if (!sameScope) {
             return null
@@ -1100,6 +1165,7 @@ class TrafficSignRuntimeSourceResolver(
     }
 
     fun effective(base: TrafficSignBaseLimit): EffectiveSpeedLimit {
+        if (base.isUserCorrection) return base.effective()
         val assertion = active ?: return base.effective()
         return if (assertion.resolution.kind == TrafficSignResolvedLimitKind.UNKNOWN) {
             EffectiveSpeedLimit(
@@ -1144,10 +1210,15 @@ class TrafficSignRuntimeSourceResolver(
                 return ReducedLayers(layers, resolved, "camera_zone_start")
             }
             TrafficSignActionKind.CITY_ENTRY -> {
-                val resolved = resolveDirectAction(action)
-                if (resolved.kind == TrafficSignResolvedLimitKind.UNKNOWN) return unresolved(layers, "camera_city_entry_unresolved")
-                add(action.kind, resolved, setOf(TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.POSTED_MAXIMUM))
-                return ReducedLayers(layers, resolved, "camera_city_entry")
+                val resolved = fallbackSpeedLimitAfterEnd ?: resolveDirectAction(action)
+                if (resolved.kind == TrafficSignResolvedLimitKind.UNKNOWN) {
+                    layers.removeAll { it.kind in setOf(TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.POSTED_MAXIMUM) }
+                    return layers.lastOrNull()?.let { ReducedLayers(layers, it.resolution, "camera_city_entry_preserved_zone") }
+                        ?: unresolved(layers, "camera_city_entry_unresolved")
+                }
+                layers.removeAll { it.kind in setOf(TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.POSTED_MAXIMUM) }
+                layers.add(0, TrafficSignRuleLayer(action.kind, resolved, eventId))
+                return ReducedLayers(layers, layers.last().resolution, "camera_city_entry")
             }
             TrafficSignActionKind.PEDESTRIAN_ZONE_START -> {
                 val resolved = resolveDirectAction(action)
@@ -1182,7 +1253,7 @@ class TrafficSignRuntimeSourceResolver(
             }
             TrafficSignActionKind.ALL_RESTRICTIONS_END -> {
                 layers.removeAll { it.kind in setOf(TrafficSignActionKind.POSTED_MAXIMUM, TrafficSignActionKind.TEMPORARY_MAXIMUM) }
-                return restored(layers, base, "camera_all_restrictions_end", null)
+                return restored(layers, base, "camera_all_restrictions_end", fallbackSpeedLimitAfterEnd)
             }
             TrafficSignActionKind.ZONE_END -> {
                 val zoneIndex = layers.indexOfLast { it.kind == TrafficSignActionKind.ZONE_START }
@@ -1207,7 +1278,7 @@ class TrafficSignRuntimeSourceResolver(
             }
             TrafficSignActionKind.CITY_EXIT -> {
                 layers.removeAll { it.kind in setOf(TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.POSTED_MAXIMUM) }
-                return restored(layers, base, "camera_city_exit", null)
+                return restored(layers, base, "camera_city_exit", fallbackSpeedLimitAfterEnd)
             }
             TrafficSignActionKind.PEDESTRIAN_ZONE_END -> {
                 layers.removeAll {
@@ -1290,6 +1361,18 @@ internal fun distanceMeters(
     return 2.0 * 6_371_000.0 * asin(sqrt(a.coerceIn(0.0, 1.0)))
 }
 
+/** Frozen ref continuity across nearby way splits, never inferred from a name alone. */
+internal fun TrafficSignDetectionContext.continuesSignedRoad(original: TrafficSignDetectionContext): Boolean {
+    if (wayId.isNullOrBlank() || original.wayId.isNullOrBlank() ||
+        !matchedWayStable || !original.matchedWayStable || roadIdentity?.startsWith("ref:") != true ||
+        roadIdentity != original.roadIdentity || traversalEpoch != original.traversalEpoch ||
+        sourceSignature.bundleRevision != original.sourceSignature.bundleRevision ||
+        bundleSha256 == null || bundleSha256 != original.bundleSha256) return false
+    if (!headingDegrees.isFinite() || !original.headingDegrees.isFinite() ||
+        kotlin.math.abs(TSRApplicabilityPolicy.signedAngle(headingDegrees-original.headingDegrees)) > 45) return false
+    return distanceMeters(latitude, longitude, original.latitude, original.longitude) <= 160
+}
+
 /** Admission guard for a delayed finalized result before it may mutate/persist. */
 internal fun trafficSignPassageContextIsCurrent(
     event: TrafficSignPassageEvent,
@@ -1311,6 +1394,14 @@ internal fun trafficSignPassageContextIsCurrent(
             currentContext.travelDirection == TrafficSignTravelDirection.UNKNOWN ||
             anchor.travelDirection == currentContext.travelDirection
     }
+    if (currentContext.continuesSignedRoad(event.firstSeenContext ?: anchor)) return true
     return anchor.continuityCapable && currentContext.continuityCapable &&
         event.eligibleRouteRelationGroupIds.intersect(currentContext.routeRelationGroupIds).isNotEmpty()
+}
+
+/** Passenger-car defaults; an old posted map limit is not evidence after an end sign. */
+object TrafficSignRoadDefaultPolicy {
+    fun speedKmh(country: String?, region: String?, highway: String?, insideCity: Boolean?): Int? {
+        return RoadSpeedDefaults.speedKmh(country, region, highway, insideCity)
+    }
 }

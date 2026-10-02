@@ -793,6 +793,7 @@ final class TrafficSignShadowEvidenceStoreV2: TrafficSignDiagnosticCaptureSinkV2
         let redactionStatus: String
     }
 
+    private let debugLogPersistence: DebugLogPersistence
     private let rootURL: URL
     private let fileManager: FileManager
     private let minimumCaptureInterval: TimeInterval
@@ -808,8 +809,10 @@ final class TrafficSignShadowEvidenceStoreV2: TrafficSignDiagnosticCaptureSinkV2
         rootURL: URL? = nil,
         fileManager: FileManager = .default,
         minimumCaptureInterval: TimeInterval = 2,
-        maximumCapturesPerSession: Int = 120
+        maximumCapturesPerSession: Int = 120,
+        debugLogPersistence: DebugLogPersistence = .shared
     ) throws {
+        self.debugLogPersistence = debugLogPersistence
         self.fileManager = fileManager
         self.minimumCaptureInterval = max(0, minimumCaptureInterval)
         self.maximumCapturesPerSession = max(1, maximumCapturesPerSession)
@@ -827,7 +830,7 @@ final class TrafficSignShadowEvidenceStoreV2: TrafficSignDiagnosticCaptureSinkV2
                 .appendingPathComponent("TrafficSignQA", isDirectory: true)
                 .appendingPathComponent("v2", isDirectory: true)
         }
-        try prepareDirectory(self.rootURL)
+        try debugLogPersistence.write { try prepareDirectory(self.rootURL) }
     }
 
     func stageFrame(
@@ -836,22 +839,24 @@ final class TrafficSignShadowEvidenceStoreV2: TrafficSignDiagnosticCaptureSinkV2
         diagnosticCaptureEnabled: Bool,
         jpegProvider: @escaping JPEGProvider
     ) {
-        guard Self.isSafeIdentifier(eventId), Self.isSafeIdentifier(captureGroupId) else { return }
-        lock.lock()
-        defer { lock.unlock() }
-        guard !deletedGroups.contains(captureGroupId) else { return }
-        pendingByEventId[eventId] = PendingFrame(
-            captureGroupId: captureGroupId,
-            diagnosticCaptureEnabled: diagnosticCaptureEnabled,
-            jpegProvider: jpegProvider
-        )
-        do {
-            try prepareSessionIfNeeded(
+        debugLogPersistence.write {
+            guard Self.isSafeIdentifier(eventId), Self.isSafeIdentifier(captureGroupId) else { return }
+            lock.lock()
+            defer { lock.unlock() }
+            guard !deletedGroups.contains(captureGroupId) else { return }
+            pendingByEventId[eventId] = PendingFrame(
                 captureGroupId: captureGroupId,
-                diagnosticCaptureEnabled: diagnosticCaptureEnabled
+                diagnosticCaptureEnabled: diagnosticCaptureEnabled,
+                jpegProvider: jpegProvider
             )
-        } catch {
-            lastPersistenceError = error.localizedDescription
+            do {
+                try prepareSessionIfNeeded(
+                    captureGroupId: captureGroupId,
+                    diagnosticCaptureEnabled: diagnosticCaptureEnabled
+                )
+            } catch {
+                lastPersistenceError = error.localizedDescription
+            }
         }
     }
 
@@ -864,6 +869,11 @@ final class TrafficSignShadowEvidenceStoreV2: TrafficSignDiagnosticCaptureSinkV2
     func requestCapture(
         _ request: TrafficSignDiagnosticCaptureRequestV2
     ) throws -> TrafficSignDiagnosticCaptureOutcomeV2 {
+        try debugLogPersistence.write { try persistCapture(request) }
+            ?? TrafficSignDiagnosticCaptureOutcomeV2(status: .notRequested)
+    }
+
+    private func persistCapture(_ request: TrafficSignDiagnosticCaptureRequestV2) throws -> TrafficSignDiagnosticCaptureOutcomeV2 {
         lock.lock()
         guard let pending = pendingByEventId[request.eventId],
               !deletedGroups.contains(pending.captureGroupId) else {
@@ -922,40 +932,42 @@ final class TrafficSignShadowEvidenceStoreV2: TrafficSignDiagnosticCaptureSinkV2
     }
 
     func emit(_ event: TrafficSignRecognitionEventV2) {
-        lock.lock()
-        defer { lock.unlock() }
-        guard let pending = pendingByEventId[event.eventId],
-              !deletedGroups.contains(pending.captureGroupId) else { return }
-        do {
-            let session = sessionURL(pending.captureGroupId)
-            try prepareSessionIfNeeded(
-                captureGroupId: pending.captureGroupId,
-                diagnosticCaptureEnabled: pending.diagnosticCaptureEnabled
-            )
-            let eventURL = session.appendingPathComponent("events.ndjson", isDirectory: false)
-            var data = try Self.eventEncoder().encode(event)
-            data.append(0x0A)
-            if !fileManager.fileExists(atPath: eventURL.path) {
-                try Data().write(
-                    to: eventURL,
-                    options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
+        debugLogPersistence.write {
+            lock.lock()
+            defer { lock.unlock() }
+            guard let pending = pendingByEventId[event.eventId],
+                  !deletedGroups.contains(pending.captureGroupId) else { return }
+            do {
+                let session = sessionURL(pending.captureGroupId)
+                try prepareSessionIfNeeded(
+                    captureGroupId: pending.captureGroupId,
+                    diagnosticCaptureEnabled: pending.diagnosticCaptureEnabled
                 )
+                let eventURL = session.appendingPathComponent("events.ndjson", isDirectory: false)
+                var data = try Self.eventEncoder().encode(event)
+                data.append(0x0A)
+                if !fileManager.fileExists(atPath: eventURL.path) {
+                    try Data().write(
+                        to: eventURL,
+                        options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
+                    )
+                }
+                let handle = try FileHandle(forWritingTo: eventURL)
+                defer { try? handle.close() }
+                try handle.seekToEnd()
+                try handle.write(contentsOf: data)
+                try handle.synchronize()
+                lastPersistenceError = nil
+            } catch {
+                if let captureId = event.diagnosticCapture.captureId,
+                   Self.isSafeIdentifier(captureId) {
+                    let captureURL = sessionURL(pending.captureGroupId)
+                        .appendingPathComponent("captures", isDirectory: true)
+                        .appendingPathComponent("\(captureId).jpg", isDirectory: false)
+                    try? fileManager.removeItem(at: captureURL)
+                }
+                lastPersistenceError = error.localizedDescription
             }
-            let handle = try FileHandle(forWritingTo: eventURL)
-            defer { try? handle.close() }
-            try handle.seekToEnd()
-            try handle.write(contentsOf: data)
-            try handle.synchronize()
-            lastPersistenceError = nil
-        } catch {
-            if let captureId = event.diagnosticCapture.captureId,
-               Self.isSafeIdentifier(captureId) {
-                let captureURL = sessionURL(pending.captureGroupId)
-                    .appendingPathComponent("captures", isDirectory: true)
-                    .appendingPathComponent("\(captureId).jpg", isDirectory: false)
-                try? fileManager.removeItem(at: captureURL)
-            }
-            lastPersistenceError = error.localizedDescription
         }
     }
 

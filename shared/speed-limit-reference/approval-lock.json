@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "target_version": "1.1.0",
+  "runtime_active": true,
+  "approval_date": "2026-09-27",
+  "approval_basis": "Product owner requested a disregard-vision action on 2026-09-27 and approved its design and implementation: drop incorrect visual evidence and return to road. Preserve voice corrections, clear rejected camera memory, and keep TSR active. Other priorities, expiry and context thresholds remain unchanged.",
+  "artifacts": [
+    {
+      "file": "policy-v1.1.0.json",
+      "role": "target",
+      "sha256": "497e157de2d04ed067897ecc9abde29ecf304a4147c9897b26e71d5c5fc0fcd9"
+    },
+    {
+      "file": "current-v0.1.0.json",
+      "role": "current",
+      "sha256": "0bc9fb4f9a89658bad3674f4d6e0a5d74b62767783f9c4f9c1a8da7272de7b0e"
+    },
+    {
+      "file": "scenarios-v1.1.0.json",
+      "role": "scenarios",
+      "sha256": "33873a7d0c6b52927c1ba0212f6ec3faf15d3dfa72b5546a45b5e877d5e6aa50"
+    }
+  ]
+}

@@ -1276,11 +1276,11 @@
       "id": "rules-CHE-rules",
       "title": "Traffic-rule reference · Switzerland",
       "category": "reference",
-      "attribution": "www.ch.ch",
+      "attribution": "www.fedlex.admin.ch",
       "license": "Reference citation; original website rights remain with its publisher",
-      "source_url": "https://www.ch.ch/de/fahrzeuge-und-verkehr/verhalten-im-strassenverkehr/verkehrsregeln/geschwindigkeitsuberschreitung/",
-      "license_url": "https://www.ch.ch/de/fahrzeuge-und-verkehr/verhalten-im-strassenverkehr/verkehrsregeln/geschwindigkeitsuberschreitung/",
-      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-07-04. The original website is not bundled."
+      "source_url": "https://www.fedlex.admin.ch/eli/cc/2019/93/de",
+      "license_url": "https://www.fedlex.admin.ch/eli/cc/2019/93/de",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-10-01. The original website is not bundled."
     },
     {
       "id": "rules-DEU-rules",

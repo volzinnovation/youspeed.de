@@ -221,6 +221,89 @@ class PanoramaxParityTests {
         assertTrue(store.originalFile(batch.items.single()).exists())
     }
 
+    @Test fun missingSelectedOriginalPreventsRemoteCreationAndPreservesAllRecords() = withQueue { root, store ->
+        val batch = addBatch(root, store, "missing-original", 2)
+        store.transitionBatch(batch.batchId, PanoramaxBatchState.AWAITING_REVIEW)
+        assertTrue(store.originalFile(batch.items.last()).delete())
+        val requests = AtomicInteger()
+        coordinator(store, PanoramaxUploadTransport { _, _ ->
+            requests.incrementAndGet()
+            error("Missing originals must stop before any upload-set request")
+        }).use { coordinator ->
+            coordinator.uploadSelections(mapOf(batch.batchId to batch.items.map { it.itemId }.toSet()))
+            awaitIdle(coordinator)
+            val status = requireNotNull(coordinator.statusByBatch[batch.batchId])
+            assertTrue("The status identifies the unavailable-picture count: $status", status.startsWith("1 "))
+        }
+        assertEquals(0, requests.get())
+        val retained = requireNotNull(store.getBatch(batch.batchId))
+        assertEquals(PanoramaxBatchState.APPROVED, retained.state)
+        assertNull(retained.remoteUploadSetId)
+        assertEquals(batch.items.map { it.itemId }, retained.items.map { it.itemId })
+        assertTrue(retained.items.all { it.state == PanoramaxItemState.QUEUED })
+        assertTrue(store.originalFile(batch.items.first()).exists())
+        assertTrue(batch.items.all { store.thumbnailFile(it).exists() })
+    }
+
+    @Test fun missingPendingOriginalOnExistingSetDoesNotSendOtherwiseValidPictures() = withQueue { root, store ->
+        val batch = addBatch(root, store, "missing-on-resume", 3)
+        store.updateBatch(batch.copy(state = PanoramaxBatchState.PARTIAL, remoteUploadSetId = "existing",
+            items = batch.items.mapIndexed { index, item ->
+                item.copy(state = if (index == 0) PanoramaxItemState.UPLOADED else PanoramaxItemState.QUEUED)
+            }))
+        assertTrue(store.originalFile(batch.items.last()).delete())
+        val requests = AtomicInteger()
+        coordinator(store, PanoramaxUploadTransport { _, _ ->
+            requests.incrementAndGet()
+            error("Preflight must check the complete pending selection")
+        }).use { coordinator -> coordinator.uploadBatch(batch.batchId); awaitIdle(coordinator) }
+        assertEquals(0, requests.get())
+        val retained = requireNotNull(store.getBatch(batch.batchId))
+        assertEquals(PanoramaxBatchState.PARTIAL, retained.state)
+        assertEquals("existing", retained.remoteUploadSetId)
+        assertEquals(listOf(PanoramaxItemState.UPLOADED, PanoramaxItemState.QUEUED, PanoramaxItemState.QUEUED), retained.items.map { it.state })
+    }
+
+    @Test fun missingAcceptedAndDeselectedOriginalsDoNotBlockRemainingUpload() = withQueue { root, store ->
+        val batch = addBatch(root, store, "missing-unselected", 3)
+        store.updateBatch(batch.copy(state = PanoramaxBatchState.PARTIAL, remoteUploadSetId = "existing",
+            items = batch.items.mapIndexed { index, item ->
+                item.copy(state = listOf(PanoramaxItemState.UPLOADED, PanoramaxItemState.QUEUED, PanoramaxItemState.EXCLUDED)[index])
+            }))
+        assertTrue(store.originalFile(batch.items.first()).delete())
+        assertTrue(store.originalFile(batch.items.last()).delete())
+        val requests = mutableListOf<String>()
+        coordinator(store, PanoramaxUploadTransport { request, _ ->
+            requests += request.path
+            if (request.path.endsWith("/files")) PanoramaxHttpResponse(201)
+            else response("""{"id":"existing","ready":true}""")
+        }).use { coordinator ->
+            coordinator.uploadBatch(batch.batchId)
+            awaitIdle(coordinator)
+            assertEquals("Upload complete", coordinator.statusByBatch[batch.batchId])
+        }
+        assertEquals(listOf("/api/upload_sets/existing/files", "/api/upload_sets/existing/complete", "/api/upload_sets/existing"), requests)
+        assertEquals(3, store.getBatch(batch.batchId)?.items?.size)
+    }
+
+    @Test fun processingOnlyResumeDoesNotRequireAnyLocalOriginals() = withQueue { root, store ->
+        val batch = addBatch(root, store, "missing-processing", 1)
+        store.updateBatch(batch.copy(state = PanoramaxBatchState.PROCESSING, remoteUploadSetId = "existing",
+            items = batch.items.map { it.copy(state = PanoramaxItemState.UPLOADED) }))
+        assertTrue(store.originalFile(batch.items.single()).delete())
+        val requests = mutableListOf<String>()
+        coordinator(store, PanoramaxUploadTransport { request, _ ->
+            requests += request.path
+            response("""{"id":"existing","ready":true}""")
+        }).use { coordinator ->
+            coordinator.uploadBatch(batch.batchId)
+            awaitIdle(coordinator)
+            assertEquals("Upload complete", coordinator.statusByBatch[batch.batchId])
+        }
+        assertEquals(listOf("/api/upload_sets/existing"), requests)
+        assertEquals(PanoramaxBatchState.COMPLETE, store.getBatch(batch.batchId)?.state)
+    }
+
     @Test fun failureClassificationOnlyRetriesKnownResponses() {
         assertEquals(PanoramaxItemState.ABANDONED, PanoramaxUploadClient.durableItemStateAfterUploadFailure(IOException(), false))
         assertEquals(PanoramaxItemState.RETRYABLE_ERROR, PanoramaxUploadClient.durableItemStateAfterUploadFailure(PanoramaxHttpException(503), false))
@@ -283,6 +366,72 @@ class PanoramaxParityTests {
         assertEquals(listOf(batch.items.last().itemId), current.items.map { it.itemId })
         assertEquals(PanoramaxItemState.QUEUED, current.items.single().state)
         assertFalse(store.originalFile(batch.items.first()).exists())
+    }
+
+    @Test fun acceptedResponseSurvivesStopWithWorkerInterruptFlagStillSet() = withQueue { root, store ->
+        val batch = addBatch(root, store, "accepted-stop", 2)
+        store.approveSelectionAfterClosing(batch)
+        lateinit var upload: PanoramaxUploadCoordinator
+        val requests = mutableListOf<String>()
+        val transport = PanoramaxUploadTransport { request, _ ->
+            requests += request.path
+            if (request.path.endsWith("/files")) {
+                upload.stopBatch(batch.batchId)
+                assertTrue(Thread.currentThread().isInterrupted)
+                PanoramaxHttpResponse(201)
+            } else response("""{"id":"remote"}""")
+        }
+        upload = coordinator(store, transport)
+        upload.use {
+            upload.uploadBatch(batch.batchId)
+            awaitIdle(upload)
+        }
+        val reopened = PanoramaxQueueStore(File(root, "private"))
+        val recovered = requireNotNull(reopened.getBatch(batch.batchId))
+        assertEquals(listOf(PanoramaxItemState.UPLOADED, PanoramaxItemState.QUEUED), recovered.items.map { it.state })
+        assertEquals(PanoramaxBatchState.PARTIAL, recovered.state)
+        assertEquals(listOf("/api/upload_sets", "/api/upload_sets/remote/files"), requests)
+    }
+
+    @Test fun stopDoesNotWaitForPreparationHoldingTheStoreLock() = withQueue { root, store ->
+        val batch = addBatch(root, store, "blocked-preparation", 1)
+        store.approveSelectionAfterClosing(batch)
+        val preparing = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val stopped = CountDownLatch(1)
+        val fileRequests = AtomicInteger()
+        val coordinator = PanoramaxUploadCoordinator(store, object : PanoramaxAccountAccess {
+            override fun validateConnection() = true
+            override fun tokenForUpload() = "test-token"
+        }, { true }, { false }, {}, PanoramaxUploadTransport { request, _ ->
+            if (request.path.endsWith("/files")) fileRequests.incrementAndGet()
+            response("""{"id":"remote"}""")
+        }, { batchId, _ ->
+            store.mutateBatch(batchId) { current ->
+                preparing.countDown()
+                // JPEG work is not interruptible. Hold the actual store lock,
+                // and ignore interrupt exactly until this fixture releases it.
+                while (release.count > 0) {
+                    try { release.await(50, TimeUnit.MILLISECONDS) } catch (_: InterruptedException) { }
+                }
+                current
+            }
+            store.originalFile(batch.items.single())
+        }, pollingIntervalMillis = 0, pollingAttempts = 1)
+        try {
+            coordinator.uploadBatch(batch.batchId)
+            assertTrue(preparing.await(5, TimeUnit.SECONDS))
+            val caller = Thread { coordinator.stopBatch(batch.batchId); stopped.countDown() }.apply { start() }
+            assertTrue("Stop must return while the queue lock remains owned by preparation", stopped.await(1, TimeUnit.SECONDS))
+            assertTrue(coordinator.activeBatchIds.contains(batch.batchId))
+            assertEquals(PanoramaxUploadPhase.STOPPING, coordinator.progressByBatch[batch.batchId]?.phase)
+            release.countDown()
+            caller.join(5000)
+            awaitIdle(coordinator)
+            assertEquals(0, fileRequests.get())
+            assertEquals(PanoramaxItemState.QUEUED, store.getBatch(batch.batchId)?.items?.single()?.state)
+            assertEquals(PanoramaxBatchState.PARTIAL, store.getBatch(batch.batchId)?.state)
+        } finally { release.countDown(); coordinator.close() }
     }
 
     private fun coordinator(store: PanoramaxQueueStore, transport: PanoramaxUploadTransport, deleteUploaded: Boolean = false, allowed: () -> Boolean = { true }) =

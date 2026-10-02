@@ -8,6 +8,23 @@ import java.util.Locale
 
 class SpeedCaptureSpeechTests {
     @Test
+    fun backgroundLimitsCannotReplaceVoiceCapturePresentation() {
+        val listening = ConsumerUiState(speedCaptureMode = SpeedCaptureModeState.LISTENING)
+        val prompt = ConsumerMainScreenLogic.primaryMetricText(listening)
+        val instruction = ConsumerMainScreenLogic.secondaryMetricText(listening)
+        val updatedLimits = listOf(
+            listening.copy(speedLimitKmh = 50, effectiveSpeedLimitSource = EffectiveSpeedLimitSource.BUNDLE),
+            listening.copy(speedLimitKmh = 30, effectiveSpeedLimitSource = EffectiveSpeedLimitSource.CAMERA),
+            listening.copy(speedLimitKmh = 40, effectiveSpeedLimitSource = EffectiveSpeedLimitSource.LOCAL_CORRECTION),
+        )
+        for (state in updatedLimits) {
+            assertEquals("?", ConsumerMainScreenLogic.limitText(state))
+            assertEquals(prompt, ConsumerMainScreenLogic.primaryMetricText(state))
+            assertEquals(instruction, ConsumerMainScreenLogic.secondaryMetricText(state))
+        }
+    }
+
+    @Test
     fun timeoutOrEmptyFinalResultNeverPromotesAProvisionalHypothesis() {
         val buffer = SpeedCaptureTranscriptBuffer()
         buffer.updatePartial("hundert")

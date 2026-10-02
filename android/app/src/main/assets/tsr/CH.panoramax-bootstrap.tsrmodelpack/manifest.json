@@ -114,7 +114,7 @@
       "class_id": "bicycle:end",
       "label": "bicycle:end",
       "semantic": {
-        "kind": "restriction_end"
+        "kind": "unknown"
       },
       "threshold": 0.7
     },
@@ -146,7 +146,7 @@
       "class_id": "chains:end",
       "label": "chains:end",
       "semantic": {
-        "kind": "restriction_end"
+        "kind": "unknown"
       },
       "threshold": 0.7
     },
@@ -580,7 +580,7 @@
       "class_id": "min_speed:end",
       "label": "min_speed:end",
       "semantic": {
-        "kind": "restriction_end"
+        "kind": "unknown"
       },
       "threshold": 0.7
     },
@@ -732,7 +732,7 @@
       "class_id": "no_overtaking:end",
       "label": "no_overtaking:end",
       "semantic": {
-        "kind": "restriction_end"
+        "kind": "unknown"
       },
       "threshold": 0.7
     },
@@ -948,7 +948,7 @@
       "class_id": "priority:end",
       "label": "priority:end",
       "semantic": {
-        "kind": "restriction_end"
+        "kind": "unknown"
       },
       "threshold": 0.7
     },
@@ -1022,7 +1022,9 @@
       "class_id": "zone:calm",
       "label": "zone:calm",
       "semantic": {
-        "kind": "unknown"
+        "kind": "zone_start",
+        "value": 20,
+        "unit": "km/h"
       },
       "threshold": 0.7
     },
@@ -1030,7 +1032,8 @@
       "class_id": "zone:calm:end",
       "label": "zone:calm:end",
       "semantic": {
-        "kind": "zone_end"
+        "kind": "zone_end",
+        "value": 20
       },
       "threshold": 0.7
     },
@@ -1046,7 +1049,7 @@
       "class_id": "zone:no_parking:end",
       "label": "zone:no_parking:end",
       "semantic": {
-        "kind": "zone_end"
+        "kind": "unknown"
       },
       "threshold": 0.7
     },
@@ -1054,7 +1057,7 @@
       "class_id": "zone:pedestrian",
       "label": "zone:pedestrian",
       "semantic": {
-        "kind": "unknown"
+        "kind": "pedestrian_zone_start"
       },
       "threshold": 0.7
     },
@@ -1062,7 +1065,7 @@
       "class_id": "zone:pedestrian:end",
       "label": "zone:pedestrian:end",
       "semantic": {
-        "kind": "zone_end"
+        "kind": "pedestrian_zone_end"
       },
       "threshold": 0.7
     }
@@ -1107,7 +1110,8 @@
   "lineage": {
     "source_manifest_sha256": "a7bad6dfd1c221125cc47e19b89203d6065287fa49094be9c6cfe93735c37a6b",
     "dataset_inventory_sha256s": [
-      "b671bce17ab6b4e27c98b0d45e3e03e985de835687f4f4e114143a0d53bd1cdc"
+      "b671bce17ab6b4e27c98b0d45e3e03e985de835687f4f4e114143a0d53bd1cdc",
+      "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853"
     ],
     "training_run_id": "ch-classifier-bootstrap-v9",
     "training_run_sha256": "c129716ded2957397d7190c2e43276bd78f072dc4625e620f2eb9eba1c869b52",

@@ -5513,10 +5513,10 @@
     {
       "asset_id": "fr-c107",
       "sign_code": "C107",
-      "semantic_id": "motorway_start",
+      "semantic_id": "trunk_start",
       "commons_title": "File:France road sign C107.svg",
       "mapping_status": "reviewed",
-      "mapping_basis": "C107 is the French motorway-start sign in the official plate reference.",
+      "mapping_basis": "National regulation code review 2026-09-23: trunk_start. Upstream label is retained as evidence, not used as semantic authority.",
       "commons_page_id": 10849292,
       "commons_page_revision": null,
       "commons_page_revision_timestamp": "2010-07-10T07:55:36Z",
@@ -5556,15 +5556,16 @@
       "artist": "Gigillo83",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
       "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "png_source_kind": "original_svg",
+      "upstream_semantic_id": "motorway_start"
     },
     {
       "asset_id": "fr-c207",
       "sign_code": "C207",
-      "semantic_id": "motorway_end",
+      "semantic_id": "motorway_start",
       "commons_title": "File:France road sign C207.svg",
       "mapping_status": "reviewed",
-      "mapping_basis": "C207 is the French motorway-end sign in the official plate reference.",
+      "mapping_basis": "National regulation code review 2026-09-23: motorway_start. Upstream label is retained as evidence, not used as semantic authority.",
       "commons_page_id": 16015624,
       "commons_page_revision": null,
       "commons_page_revision_timestamp": "2024-10-04T04:29:43Z",
@@ -5604,7 +5605,8 @@
       "artist": "Roulex 45 self-made from source above",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
       "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "png_source_kind": "original_svg",
+      "upstream_semantic_id": "motorway_end"
     }
   ],
   "coverage_evidence": {

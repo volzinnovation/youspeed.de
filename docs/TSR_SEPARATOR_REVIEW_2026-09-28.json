@@ -1,0 +1,230 @@
+{
+  "review_id": "separator-cues-20260928-v1",
+  "reviewer": "OpenAI assistant visual inspection",
+  "independent_human_ground_truth": false,
+  "purpose": "Identify visible features and failure controls before designing a cheap applicability cue extractor. These are manual observations, not predictions or a measured improvement.",
+  "label_separation": "No expected governing-road labels or prior replay decisions were copied into feature fields. Prose and manually observed road relationships must not be passed as automatic model inputs or scored as detected cues.",
+  "observed_image_count": 12,
+  "frames": [
+    {
+      "frame_id": "photo:06f63d2e-9b3d-49b2-9956-37a4b12b62a7",
+      "image_path": "inspector/logs/2026-09-28-fr-de-review/android/photo-141823.jpg",
+      "image_sha256": "792b84d69fddbac7e5f50c2b17212a3461db817b6ec2a081c919f77f95508224",
+      "projection": "perspective",
+      "observed_cues": {
+        "gore_visible": "clear_hatched_gore_right_of_camera_path",
+        "camera_side_of_gore": "left",
+        "sign_side_of_gore": "right",
+        "branch_pavement_visible": true,
+        "post_base_visible": false,
+        "supplementary_arrow": "not_visible",
+        "notes": "The 70 is beyond the right branch pavement; a white car on that pavement and a continuous gore distinguish it from the through lane. The number occupies nearly the horizontal centre of the full phone image. A fixed rightmost-image cut would retain it."
+      }
+    },
+    {
+      "frame_id": "photo:e26287e5-a34e-4e95-a869-c1c4db3b7875",
+      "image_path": "inspector/logs/2026-09-28-fr-de-review/android/photo-143443.jpg",
+      "image_sha256": "9c378d56920fd86f4f0ea4a8f030da1028f5c5269a750f6f8b011ce8fa895ceb",
+      "projection": "perspective",
+      "observed_cues": {
+        "gore_visible": "not_in_view",
+        "camera_side_of_gore": "unknown",
+        "sign_side_of_gore": "unknown",
+        "branch_pavement_visible": "partly_occluded",
+        "post_base_visible": false,
+        "barriers_between_camera_and_sign": "two visually distinct guardrails",
+        "supplementary_arrow": "not_visible",
+        "context_text": "aire de Brouck",
+        "notes": "The 30 shares a cluster with a pedestrian warning and the service-area name beyond the foreground motorway shoulder. Guardrail alone is insufficient: a normal road sign may also stand behind the roadside barrier."
+      }
+    },
+    {
+      "frame_id": "photo:5fa2102b-ce36-4ca9-a91b-4160cce26c22",
+      "image_path": "inspector/logs/2026-09-28-fr-de-review/android/photo-154300.jpg",
+      "image_sha256": "5d2680f9c95049a3b3296e802d16931e1c46e28e2df0f13f24f93a66fb621aca",
+      "projection": "perspective",
+      "observed_cues": {
+        "gore_visible": "not_in_view",
+        "camera_side_of_gore": "unknown",
+        "sign_side_of_gore": "unknown",
+        "branch_pavement_visible": true,
+        "post_base_visible": false,
+        "barriers_between_camera_and_sign": "foreground motorway barrier, grass embankment, upper-road guardrail",
+        "supplementary_arrow": "not_visible",
+        "readable_sign_front": false,
+        "notes": "The nearest circular plate is a sign back. An upper parallel roadway is visually separated by a broad grass embankment. This still does not establish the identity or value of a prior live 70."
+      }
+    },
+    {
+      "frame_id": "photo:11c7559e-c906-4e43-bc3e-46d65a6b105b",
+      "image_path": "inspector/logs/2026-09-28-fr-de-review/android/photo-160930.jpg",
+      "image_sha256": "633a8ddf82eda877176e09bd86b5f45b6dd2e6c68959fcb9610e28dab5424737",
+      "projection": "perspective",
+      "observed_cues": {
+        "gore_visible": "broad_exit_dashes_visible_split_occluded",
+        "camera_side_of_gore": "left_of_broad_exit_dashes",
+        "sign_side_of_gore": "right_of_broad_exit_dashes",
+        "branch_pavement_visible": true,
+        "post_base_visible": false,
+        "supplementary_arrow": "not_visible",
+        "notes": "The 70 is beside a bend warning, beyond a lane separated by short broad dashes. A truck occludes the actual fork and a continuous gore cannot be traced confidently. A lane-marking result here needs uncertainty rather than copying the clear-gore decision."
+      }
+    },
+    {
+      "frame_id": "0e5cce14-f369-4006-8613-fea65146f7f9",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/0e5cce14-f369-4006-8613-fea65146f7f9-hd.jpg",
+      "image_sha256": "f69d2ce6c69146402f348c98217c3c3f20fd14f3bb5184cb75a34efab53bc595",
+      "projection": "equirectangular",
+      "observed_cues": {
+        "gore_visible": "not_in_inspection_crop",
+        "camera_side_of_gore": "unknown",
+        "sign_side_of_gore": "unknown",
+        "branch_pavement_visible": "partly_occluded_by_concrete",
+        "post_base_visible": true,
+        "barriers_between_camera_and_sign": "continuous_concrete_separator",
+        "supplementary_arrow": "not_visible",
+        "notes": "The 50 and its visible slim support stand on the far side of a concrete separator. A separate service approach and facilities are visible farther along the same side. The source is equirectangular; perspective lane or x-threshold algorithms require calibrated reprojection first."
+      }
+    },
+    {
+      "frame_id": "971b8de0-feac-43ce-bd60-fca6d6de5089",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/971b8de0-feac-43ce-bd60-fca6d6de5089-hd.jpg",
+      "image_sha256": "fa65c6b0cf9117b5320e948cb8672999ae3b3f173c0757b9b105de45fa6bc8e9",
+      "projection": "equirectangular",
+      "observed_cues": {
+        "gore_visible": "service_entrance_in_distance",
+        "camera_side_of_gore": "unknown",
+        "sign_side_of_gore": "unknown",
+        "branch_pavement_visible": "partly_occluded_by_concrete",
+        "post_base_visible": false,
+        "barriers_between_camera_and_sign": "continuous_concrete_separator",
+        "supplementary_arrow": "not_visible",
+        "context_signs": "yield sign facing the separated approach",
+        "notes": "The 30 lies beyond the concrete separator. A yield sign and service entrance add separate-road evidence. A single road-edge line would identify the concrete boundary but cannot infer sign applicability on its own. Source is equirectangular."
+      }
+    },
+    {
+      "frame_id": "b9deefce-ef95-40c0-abf1-6773f8aefac6",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/b9deefce-ef95-40c0-abf1-6773f8aefac6-hd.jpg",
+      "image_sha256": "942eaa4f351a9f523b1e85921d9bd55a88f6ca350814fef7ab7c8fb675a4e41c",
+      "projection": "equirectangular",
+      "observed_cues": {
+        "gore_visible": "service_entrance_visible",
+        "camera_side_of_gore": "unknown",
+        "sign_side_of_gore": "unknown",
+        "branch_pavement_visible": true,
+        "post_base_visible": false,
+        "barriers_between_camera_and_sign": "continuous_concrete_separator",
+        "supplementary_arrow": "not_visible",
+        "notes": "The 30 is strongly oblique, beyond the concrete separator; separate service pavement, an island and vehicles are visible. Sign obliquity is a corroborating cue, not a standalone rejection criterion. Source is equirectangular."
+      }
+    },
+    {
+      "frame_id": "14c2c576-518e-4a80-a586-efff3e8cb0f6",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/14c2c576-518e-4a80-a586-efff3e8cb0f6.jpg",
+      "image_sha256": "91816968ccd0d9a6e6e69e76425a1a861a1106e3fcac6545cc812dd0db93ef26",
+      "projection": "rectilinear",
+      "observed_cues": {
+        "gore_visible": "clear_hatched_gore_right_of_camera_path",
+        "camera_side_of_gore": "left",
+        "sign_side_of_gore": "right",
+        "branch_pavement_visible": true,
+        "post_base_visible": false,
+        "barriers_between_camera_and_sign": "sign behind branch roadside guardrail",
+        "supplementary_arrow": "not_visible",
+        "notes": "The road bifurcates visibly, with a green-white gore marker. The sign is beside the right branch; the camera is in the left through corridor. Sign support base is concealed by guardrail."
+      }
+    },
+    {
+      "frame_id": "a6dcdd5b-d4fc-4a1c-b597-4809910d3116",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/a6dcdd5b-d4fc-4a1c-b597-4809910d3116.jpg",
+      "image_sha256": "8f3cd93390d742a178e7c705161b73c32fa692032d586634eb65bf82cacd890e",
+      "projection": "rectilinear",
+      "observed_cues": {
+        "gore_visible": "clear_hatched_gore_right_of_camera_path",
+        "camera_side_of_gore": "left",
+        "sign_side_of_gore": "right",
+        "branch_pavement_visible": true,
+        "post_base_visible": false,
+        "barriers_between_camera_and_sign": "sign behind branch roadside guardrail",
+        "supplementary_arrow": "not_visible",
+        "notes": "A closer view of the same split has a wide clear hatched gore, grass median between branches and a right-side 70. The sign is substantially farther right in the image than in the preceding view."
+      }
+    },
+    {
+      "frame_id": "b7838d58-f8b4-4a42-b6bf-ec25b9e59f95",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/b7838d58-f8b4-4a42-b6bf-ec25b9e59f95.jpg",
+      "image_sha256": "00a078dcb2d33dd02ebf26b6cc512fdbad14a59a5532f3fd155716588ac6631f",
+      "projection": "rectilinear",
+      "observed_cues": {
+        "gore_visible": "clear_hatched_gore_right_of_camera_path",
+        "camera_side_of_gore": "left",
+        "sign_side_of_gore": "right",
+        "branch_pavement_visible": true,
+        "post_base_visible": false,
+        "supplementary_arrow": "down_right_plaque_visible",
+        "notes": "The 70 has a down-right supplementary plaque. Both the plaque and the upward-curving right branch are visible; the through corridor continues under the overpass. Plaque detection can provide a second cue without a visible post foot."
+      }
+    },
+    {
+      "frame_id": "fc216837-096f-4691-b3dd-8809d5738e7c",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/fc216837-096f-4691-b3dd-8809d5738e7c.jpg",
+      "image_sha256": "2c4863da5637341d189fa0360b70736a43f2e217469ba0c3a8cbff37d56270f8",
+      "projection": "rectilinear",
+      "observed_cues": {
+        "gore_visible": "clear_hatched_gore_right_of_camera_path",
+        "camera_side_of_gore": "left",
+        "sign_side_of_gore": "right",
+        "branch_pavement_visible": true,
+        "post_base_visible": false,
+        "supplementary_arrow": "down_right_plaque_clearly_visible",
+        "notes": "Closer view of the same post. The down-right arrow plaque is large and clear. The chevron-painted separator continues between the camera corridor and the right branch. The arrow points down-right in image coordinates; semantic road association still requires corridor context."
+      }
+    },
+    {
+      "frame_id": "673ed502-6ef0-4f17-999c-297cb465f80a",
+      "image_path": "inspector/logs/2026-09-28-fr-exit-experiment/public-images/673ed502-6ef0-4f17-999c-297cb465f80a.jpg",
+      "image_sha256": "d7b0a1229b63762df993806d46475262415494b9524057226e64515049fc18bd",
+      "projection": "rectilinear",
+      "observed_cues": {
+        "gore_visible": "clear_hatched_gore_left_of_camera_path",
+        "camera_side_of_gore": "right",
+        "sign_side_of_gore": "right",
+        "branch_pavement_visible": true,
+        "post_base_visible": false,
+        "barriers_between_camera_and_sign": "sign behind camera-corridor roadside guardrail",
+        "supplementary_arrow": "not_visible",
+        "notes": "The camera now follows the right fork. The gore and continuing motorway are to its left, and the 70 is next to the right edge of the camera corridor. This is the indispensable control against rejecting every sign near an exit or behind guardrail. This 2019 photo must not be given the same physical-post identity as the 2024 views."
+      }
+    }
+  ],
+  "conclusions": [
+    "An image-wide right-edge crop is not a road assignment rule: unrelated signs can be near the image centre, while a sign governing the camera corridor can be far right.",
+    "The useful feature is the separating gore relative to the camera corridor and sign, not the mere presence of lane markings, a fork, or a barrier.",
+    "The lane containing the camera is only one lane of the ego carriageway; retain signs for the entire carriageway, shoulder, median and overhead space.",
+    "A sign beyond guardrail is normal even for the camera road. Suppression requires additional evidence of a separate drivable corridor or directed branch, with bounded image/map uncertainty.",
+    "Supplementary arrow classification on an expanded small sign crop is worth isolating as an additional experiment; it is visually available in two A75 views but not in most failing anchors.",
+    "Three A10 panoramas cannot be used to benchmark a perspective lane detector or fixed normalized-x policy without true perspective reprojection.",
+    "A75 synthetic timestamp cadence precludes temporal performance claims even when consecutive images visibly show the same post."
+  ],
+  "proposed_experiment": {
+    "first": "Retain current sign detection, then apply a topology-scoped suspicion gate to right-side candidates near a verified diverging branch. Log as withheld/uncertain rather than assigning every sign to the branch. Re-enable promptly when the matched camera corridor follows the branch.",
+    "second": "Extract low-resolution white lane/gore boundaries, retain multiple curve hypotheses with camera-side continuity, and estimate a shoulder/sign-support uncertainty region. Use candidate-centred expanded crops only when a branch is plausible. A confirmed separating gore can support a branch relation even when a post base is hidden; ambiguous support geometry must remain unknown.",
+    "separate_optional_features": [
+      "Supplementary directional plaque in expanded sign crop",
+      "Multi-frame bearing triangulation with relative ego motion and camera calibration, using bounded pose uncertainty rather than a guessed post foot",
+      "Normalized bearing/apparent sign-size interval as a weak lateral-offset feature; account for sign size, facing angle, curves and camera yaw"
+    ],
+    "budget": "A bounded line fit and a few candidate geometry tests are compatible with a cheap framework in principle, but no Android execution time has been measured here. Do not quote a sub-200-ms result from manual annotation.",
+    "required_controls": [
+      "Camera takes exit with valid right-side 70",
+      "Valid motorway restriction beside exit",
+      "Roadworks and temporary signs within any map exclusion corridor",
+      "Valid overhead and median/left paired signs",
+      "Worn lane paint, night, rain and truck occlusion",
+      "Map-matched road changes or stale GPS at fork",
+      "Parallel road or emergency access without motorway departure",
+      "Horizontal curve with legitimate right sign far from image centre"
+    ]
+  }
+}

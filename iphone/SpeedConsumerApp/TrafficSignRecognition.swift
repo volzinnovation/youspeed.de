@@ -431,7 +431,8 @@ enum TrafficSignModelPackValidator {
 
         let components = [manifest.detector] + [manifest.classifier].compactMap { $0 }
         for component in components {
-            try validate(component: component, calibration: manifest.calibration)
+            try validate(component: component, calibration: manifest.calibration,
+                         uncalibratedLineage: manifest.calibration.calibrated ? [] : manifest.lineage.datasetInventorySha256s)
         }
         try validate(lineage: manifest.lineage)
 
@@ -601,7 +602,12 @@ enum TrafficSignModelPackValidator {
                         "Speed TSR semantic requires a 5...200 value and unit"
                     )
                 }
-            case .zoneEnd, .restrictionEnd, .cityEntry, .cityExit,
+            case .zoneEnd, .restrictionEnd:
+                guard semantic.value.map({ (5...200).contains($0) }) ?? true,
+                      semantic.unit == nil else {
+                    throw TrafficSignPackValidationError.invalid("End TSR semantic requires an optional 5...200 ended value and no unit")
+                }
+            case .cityEntry, .cityExit,
                     .pedestrianZoneStart, .pedestrianZoneEnd, .unknown:
                 guard semantic.value == nil, semantic.unit == nil else {
                     throw TrafficSignPackValidationError.invalid(
@@ -614,7 +620,8 @@ enum TrafficSignModelPackValidator {
 
     private static func validate(
         component: TrafficSignModelPackManifest.Component,
-        calibration: TrafficSignModelPackManifest.Calibration
+        calibration: TrafficSignModelPackManifest.Calibration,
+        uncalibratedLineage: [String]
     ) throws {
         guard !component.componentId.isEmpty,
               !component.sourceCheckpoint.uri.isEmpty,
@@ -632,7 +639,8 @@ enum TrafficSignModelPackValidator {
                   isSHA256(artifact.sourceCheckpointSha256),
                   artifact.sourceCheckpointSha256 == component.sourceCheckpoint.sha256,
                   isSHA256(artifact.calibrationDatasetSha256),
-                  artifact.calibrationDatasetSha256 == calibration.datasetSha256,
+                  (artifact.calibrationDatasetSha256 == calibration.datasetSha256
+                    || uncalibratedLineage.contains(artifact.calibrationDatasetSha256)),
                   artifact.inputShape.count == 3 || artifact.inputShape.count == 4,
                   artifact.inputShape.allSatisfy({ $0 > 0 }),
                   !artifact.outputSchema.isEmpty,
@@ -808,6 +816,34 @@ struct TrafficSignDetection: Equatable, Sendable {
         self.assemblyId = assemblyId
         self.conditionState = conditionState
         self.restrictions = restrictions
+    }
+}
+
+/// Observation admission is distinct from confirmation. End-sign crops may be
+/// well classified before the generic detector becomes confident. Preserve those
+/// approach frames, but leave fused scores and confirmation thresholds unchanged.
+enum TrafficSignObservationQualification {
+    static func isEligible(kind: TrafficSignSemanticKind, score: Double?,
+                           detectorScore: Double?, classifierScore: Double?,
+                           unknownThreshold: Double, classThreshold: Double) -> Bool {
+        guard let score, score.isFinite, (0...1).contains(score) else { return false }
+        let threshold = max(unknownThreshold, classThreshold)
+        if score >= threshold { return true }
+        guard kind == .restrictionEnd, score >= unknownThreshold,
+              let detectorScore, detectorScore.isFinite, (unknownThreshold...1).contains(detectorScore),
+              let classifierScore, classifierScore.isFinite, (threshold...1).contains(classifierScore) else { return false }
+        return true
+    }
+}
+
+extension TrafficSignDetection {
+    func isQualifiedObservation(runtimeOutput: TrafficSignModelPackManifest.Calibration.RuntimeOutput,
+                                unknownThreshold: Double) -> Bool {
+        TrafficSignObservationQualification.isEligible(kind: semantic.kind,
+            score: runtimeOutput == .rawScore ? rawScore : calibratedConfidence,
+            detectorScore: runtimeOutput == .rawScore ? detectorRawScore : detectorCalibratedConfidence,
+            classifierScore: runtimeOutput == .rawScore ? classifierRawScore : classifierCalibratedConfidence,
+            unknownThreshold: unknownThreshold, classThreshold: classThreshold)
     }
 }
 
@@ -1070,6 +1106,26 @@ struct TrafficSignRecognitionEvent: Codable, Equatable, Sendable {
     let latencyMs: Double
     let thermalState: String?
 
+    // In-memory envelope only. Wire v1 remains frozen; persisted evidence uses a versioned sidecar.
+    var applicabilityDecision: TSRApplicabilityDecision? = nil
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion
+        case packId
+        case artifactSha256
+        case preprocessingVersion
+        case modelComponents
+        case frameId
+        case driveSessionId
+        case analysisEligible
+        case source
+        case frameTimestampUtc
+        case state
+        case candidate
+        case roadContext
+        case latencyMs
+        case thermalState
+    }
+
     init(
         schemaVersion: Int,
         packId: String,
@@ -1182,6 +1238,7 @@ struct TrafficSignDetectionContext: Codable, Equatable, Sendable {
     let routeRelationMemberships: [TrafficSignRouteRelationMembership]
     let traversalEpoch: UInt64
     let matchedWayStable: Bool
+    let roadIdentity: String?
 
     init(
         wayId: String,
@@ -1193,7 +1250,8 @@ struct TrafficSignDetectionContext: Codable, Equatable, Sendable {
         routeContinuityAvailable: Bool = false,
         routeRelationMemberships: [TrafficSignRouteRelationMembership] = [],
         traversalEpoch: UInt64 = 0,
-        matchedWayStable: Bool = false
+        matchedWayStable: Bool = false,
+        roadIdentity: String? = nil
     ) {
         self.wayId = wayId
         self.latitude = latitude
@@ -1205,6 +1263,7 @@ struct TrafficSignDetectionContext: Codable, Equatable, Sendable {
         self.routeRelationMemberships = routeRelationMemberships
         self.traversalEpoch = traversalEpoch
         self.matchedWayStable = matchedWayStable
+        self.roadIdentity = roadIdentity
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -1218,6 +1277,7 @@ struct TrafficSignDetectionContext: Codable, Equatable, Sendable {
         case routeRelationMemberships
         case traversalEpoch
         case matchedWayStable
+        case roadIdentity
     }
 
     init(from decoder: Decoder) throws {
@@ -1235,6 +1295,7 @@ struct TrafficSignDetectionContext: Codable, Equatable, Sendable {
         ) ?? []
         traversalEpoch = try container.decodeIfPresent(UInt64.self, forKey: .traversalEpoch) ?? 0
         matchedWayStable = try container.decodeIfPresent(Bool.self, forKey: .matchedWayStable) ?? false
+        roadIdentity = try container.decodeIfPresent(String.self, forKey: .roadIdentity)
     }
 
     var isValid: Bool {
@@ -1270,10 +1331,12 @@ struct TrafficSignTransientOverridePolicy: Sendable {
     /// to `resolvedSpeedKmh`; passage finalization may later replace it with a
     /// durable assertion.
     mutating func cameraSpeedKmh(
-        currentContext: TrafficSignDetectionContext?
+        currentContext: TrafficSignDetectionContext?,
+        timestamp: Date = Date()
     ) -> Int? {
         guard let activeOverride else { return nil }
-        guard let currentContext,
+        guard timestamp.timeIntervalSince(activeOverride.detectedAt) < DrivingRoadIdentity.maximumAssertionAge,
+              let currentContext,
               currentContext.isValid,
               activeOverride.context.wayId == currentContext.wayId,
               activeOverride.context.travelDirection == currentContext.travelDirection,
@@ -1300,9 +1363,10 @@ struct TrafficSignTransientOverridePolicy: Sendable {
     @discardableResult
     mutating func ingestConfirmedDetection(
         _ event: TrafficSignRecognitionEvent,
-        currentSourceSignature: TrafficSignRuntimeSourceSignature
+        currentSourceSignature: TrafficSignRuntimeSourceSignature,
+        applicabilityMode: String = TSRApplicabilityConfiguration.defaultMode
     ) -> Bool {
-        guard event.state == .confirmed,
+        guard event.permitsApplicability("immediate", mode: applicabilityMode), event.state == .confirmed,
               event.source != .diagnosticImport,
               let context = event.roadContext,
               context.isValid,
@@ -1490,7 +1554,10 @@ struct TrafficSignFusionEngine: Sendable {
         latencyMs: Double,
         thermalState: TrafficSignThermalState?,
         frameID: String? = nil,
-        driveSessionID: String? = nil
+        driveSessionID: String? = nil,
+        physicalTrackID: String? = nil,
+        physicalEvidenceFrames: Int? = nil,
+        physicalHasConfirmedEvidence: Bool? = nil
     ) -> TrafficSignRecognitionEvent {
         let window = TimeInterval(thresholds.confirmationWindowMs) / 1_000
         let oldestAllowed = timestamp.addingTimeInterval(-window)
@@ -1504,9 +1571,7 @@ struct TrafficSignFusionEngine: Sendable {
             .map(Self.livePrimaryOnlyDetection)
             .filter { detection in
                 detection.boundingBox.isValid
-                    && effectiveScore(for: detection).map {
-                        $0 >= max(thresholds.unknown, detection.classThreshold)
-                    } == true
+                    && detection.isQualifiedObservation(runtimeOutput: runtimeOutput, unknownThreshold: thresholds.unknown)
             }
             .sorted { lhs, rhs in
                 let lhsScore = effectiveScore(for: lhs) ?? -.infinity
@@ -1557,7 +1622,8 @@ struct TrafficSignFusionEngine: Sendable {
         // is evidence geometry, not physical identity.
         let matchingIndex = tracks.indices
             .filter { index in
-                tracks[index].semanticKey == detection.semantic.stableKey
+                (physicalTrackID == nil || tracks[index].id == physicalTrackID)
+                    && tracks[index].semanticKey == detection.semantic.stableKey
                     && (tracks[index].roadKey == nil
                         || roadKey == nil
                         || tracks[index].roadKey == roadKey)
@@ -1576,7 +1642,7 @@ struct TrafficSignFusionEngine: Sendable {
         } else {
             tracks.append(
                 Track(
-                    id: UUID().uuidString.lowercased(),
+                    id: physicalTrackID ?? UUID().uuidString.lowercased(),
                     semanticKey: detection.semantic.stableKey,
                     roadKey: roadKey,
                     evidence: [StampedDetection(timestamp: timestamp, detection: detection)]
@@ -1586,9 +1652,9 @@ struct TrafficSignFusionEngine: Sendable {
         }
 
         let track = tracks[index]
-        let evidenceFrames = track.evidence.count
+        let evidenceFrames = physicalEvidenceFrames ?? track.evidence.count
         let score = effectiveScore(for: detection) ?? -.infinity
-        let hasConfirmedEvidence = track.evidence.contains {
+        let hasConfirmedEvidence = physicalHasConfirmedEvidence ?? track.evidence.contains {
             (effectiveScore(for: $0.detection) ?? -.infinity) >= thresholds.confirmed
         }
         let state: TrafficSignRecognitionResultState = evidenceFrames >= thresholds.confirmationFrames

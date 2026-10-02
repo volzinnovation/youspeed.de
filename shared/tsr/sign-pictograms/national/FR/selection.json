@@ -1013,22 +1013,24 @@
       "runtime_model_class": "AB4"
     },
     {
-      "semantic_id": "motorway_start",
+      "semantic_id": "trunk_start",
       "sign_code": "C107",
       "artwork_id": "fr-c107",
       "mapping_status": "reviewed",
-      "mapping_basis": "C107 is the French motorway-start sign in the official plate reference.",
+      "mapping_basis": "Corrected against national regulation in the 2026-09-23 five-country mapping review; original upstream semantic retained separately.",
       "source_model_class": null,
-      "runtime_model_class": "C107"
+      "runtime_model_class": "C107",
+      "upstream_semantic_id": "motorway_start"
     },
     {
-      "semantic_id": "motorway_end",
+      "semantic_id": "motorway_start",
       "sign_code": "C207",
       "artwork_id": "fr-c207",
       "mapping_status": "reviewed",
-      "mapping_basis": "C207 is the French motorway-end sign in the official plate reference.",
+      "mapping_basis": "Corrected against national regulation in the 2026-09-23 five-country mapping review; original upstream semantic retained separately.",
       "source_model_class": null,
-      "runtime_model_class": "C207"
+      "runtime_model_class": "C207",
+      "upstream_semantic_id": "motorway_end"
     }
   ]
 }

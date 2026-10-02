@@ -5,6 +5,35 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class TrafficSignDisplayTests {
+    @Test fun allFiveCountryManifestsUseActualVocabularyAndReviewedActions() {
+        val root = listOf(File("../.."), File(".."), File(".")).first { File(it, "shared/tsr").isDirectory }
+        val expected = mapOf(
+            "FR" to mapOf("B31" to TrafficSignActionKind.ALL_RESTRICTIONS_END, "B33-70" to TrafficSignActionKind.MAXIMUM_SPEED_END,
+                "EB10" to TrafficSignActionKind.CITY_ENTRY, "EB20" to TrafficSignActionKind.CITY_EXIT,
+                "C208" to TrafficSignActionKind.MOTORWAY_EXIT, "C108" to TrafficSignActionKind.MOTORROAD_EXIT,
+                "B54" to TrafficSignActionKind.PEDESTRIAN_ZONE_START, "B55" to TrafficSignActionKind.PEDESTRIAN_ZONE_END),
+            "BE" to mapOf("city:start" to TrafficSignActionKind.CITY_ENTRY, "city:end" to TrafficSignActionKind.CITY_EXIT),
+            "CH" to mapOf("zone:calm" to TrafficSignActionKind.ZONE_START, "zone:calm:end" to TrafficSignActionKind.ZONE_END,
+                "zone:pedestrian" to TrafficSignActionKind.PEDESTRIAN_ZONE_START, "zone:pedestrian:end" to TrafficSignActionKind.PEDESTRIAN_ZONE_END),
+        )
+        for (country in listOf("DE", "BE", "FR", "NL", "CH")) {
+            val pack = TrafficSignModelPackJson.decode(File(root, "android/app/src/main/assets/tsr/$country.panoramax-bootstrap.tsrmodelpack/manifest.json").readText())
+            val national = TrafficSignDisplayCatalog.decode(File(root, "shared/tsr/prolix-${country.lowercase()}-class-catalog-v1.json").readText(), country)
+            assertEquals(national.classLabels, pack.classMapping.map { it.classId })
+            for (mapping in pack.classMapping) {
+                val action = candidate(mapping.classId, mapping.semantic).toAction(country)
+                expected[country]?.get(mapping.classId)?.let { assertEquals("$country:${mapping.classId}", it, action.kind) }
+                if (mapping.semantic.kind == TrafficSignSemanticKind.UNKNOWN) {
+                    assertTrue("$country:${mapping.classId}", action.kind in setOf(TrafficSignActionKind.UNKNOWN, TrafficSignActionKind.NON_SPEED_RESTRICTION_END))
+                }
+                if (mapping.semantic.kind == TrafficSignSemanticKind.ZONE_END) assertEquals(mapping.semantic.value, action.valueKmh)
+            }
+            assertNotNull(national.pictogram(if (country == "FR") "B31" else "no:end"))
+            assertNull(national.pictogram("maxheight"))
+            assertNull(national.pictogram("maxspeed:end"))
+        }
+    }
+
     private val catalog = listOf(File("../../shared"), File("../shared"), File("shared"))
         .map { File(it, TrafficSignDisplayCatalog.ASSET_PATH) }.first(File::isFile)
         .readText().let(TrafficSignDisplayCatalog::decode)

@@ -376,10 +376,9 @@ private struct OnboardingScreenshotSelection: Identifiable {
 
 private struct OnboardingScreenshotViewer: View {
     let selection: OnboardingScreenshotSelection
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        DismissibleNavigationSheet {
             VStack(spacing: 12) {
                 if let image = UIImage(named: selection.name) {
                     OnboardingZoomableScreenshot(image: image, accessibilityCaption: NSLocalizedString(selection.caption, comment: ""))
@@ -392,11 +391,7 @@ private struct OnboardingScreenshotViewer: View {
             .background(.black)
             .navigationTitle("onboarding.screenshot.title")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    RecordingSafeButton("onboarding.screenshot.close") { dismiss() }
-                }
-            }
+            .subscreenCloseButton()
         }
         .preferredColorScheme(.dark)
     }
@@ -459,5 +454,56 @@ private final class OnboardingImageScrollView: UIScrollView, UIScrollViewDelegat
         let horizontal = max(0, (bounds.width - contentSize.width) / 2)
         let vertical = max(0, (bounds.height - contentSize.height) / 2)
         contentInset = UIEdgeInsets(top: vertical, left: horizontal, bottom: vertical, right: horizontal)
+    }
+}
+
+
+/// Holds navigation until the user explicitly keeps or clears oversized logs.
+struct StartupLogReviewView: View {
+    @ObservedObject var viewModel: DriveSessionViewModel
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(spacing: 20) {
+                        Text("YouSpeed").font(.largeTitle.bold())
+                        switch viewModel.startupLogReviewState {
+                        case .checking, .clearing:
+                            ProgressView().tint(.red)
+                            Text(LocalizedStringKey(viewModel.startupLogReviewState == .clearing
+                                 ? "startup.logs.clearing" : "startup.logs.checking"))
+                        case .choice, .failed:
+                            Text(LocalizedStringKey(viewModel.startupLogReviewState == .failed
+                                 ? "startup.logs.failed" : "startup.logs.title"))
+                                .font(.title2.bold())
+                            if viewModel.startupLogReviewState == .failed {
+                                Text(viewModel.startupLogError).font(.callout)
+                                Button("startup.retry") { viewModel.retryStartupLogReview() }
+                                    .buttonStyle(.borderedProminent).tint(.red)
+                            } else {
+                                Text("startup.logs.message")
+                                Button("startup.logs.clear", role: .destructive) {
+                                    viewModel.checkStartupLogs(clear: true)
+                                }
+                                .buttonStyle(.borderedProminent).tint(.red)
+                                .accessibilityIdentifier("startup.logs.clear")
+                            }
+                            Button("startup.logs.keep") { viewModel.keepStartupLogs() }
+                                .buttonStyle(.bordered)
+                                .accessibilityIdentifier("startup.logs.keep")
+                        case .complete:
+                            EmptyView()
+                        }
+                    }
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(24)
+                    .frame(maxWidth: 460)
+                    .frame(maxWidth: .infinity, minHeight: geometry.size.height)
+                }
+            }
+        }
     }
 }

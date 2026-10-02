@@ -53,6 +53,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -61,10 +63,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -73,8 +77,10 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -92,6 +98,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -130,6 +137,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -216,9 +224,32 @@ fun ConsumerApp(controller: ConsumerSessionController) {
     var openLocalRecordings by rememberSaveable { mutableStateOf(false) }
     var openPanoramaxGallery by rememberSaveable { mutableStateOf(false) }
 
+    LaunchedEffect(ui.drivingControlsAllowed) {
+        if (!ui.drivingControlsAllowed) {
+            openSettings = false
+            openLegal = false
+            openDebug = false
+            openLocalRecordings = false
+            openPanoramaxGallery = false
+            if (controller.calibrationVisible) controller.endVisualCalibration()
+            controller.setSettingsVisible(false)
+        }
+    }
+    LaunchedEffect(ui.stationarySpeedObservedAt, ui.trafficSignRecognitionEnabled) {
+        controller.prepareVisionDismissalPermissionIfNeeded()
+    }
+    SideEffect { controller.setSettingsVisible(openSettings && ui.drivingControlsAllowed) }
+    DisposableEffect(controller) {
+        onDispose { controller.setSettingsVisible(false) }
+    }
+    val showSettings = {
+        controller.setSettingsVisible(true)
+        openSettings = true
+    }
+
     val showingOnboarding = controller.shouldPresentOnboarding()
-    LaunchedEffect(ui.startupDataState, ui.appScreenshotState, showingOnboarding) {
-        if (showingOnboarding) {
+    LaunchedEffect(ui.startupDataState, ui.appScreenshotState, showingOnboarding, ui.drivingControlsAllowed) {
+        if (showingOnboarding && ui.drivingControlsAllowed) {
             controller.pauseDrivingForOnboarding()
         } else if (ui.appScreenshotState == null && ui.startupDataState == StartupDataState.READY && ui.driveStatus == "stopped") {
             controller.startDriving()
@@ -233,11 +264,16 @@ fun ConsumerApp(controller: ConsumerSessionController) {
             color = Color.Black,
         ) {
             when {
-                ui.appScreenshotState != null -> {
+                ui.startupLogReviewState != StartupLogReviewState.COMPLETE -> {
+                    StartupLogReviewScreen(ui, controller)
+                }
+                ui.appScreenshotState != null || !ui.drivingControlsAllowed ||
+                    (ui.startupDataState == StartupDataState.READY && !showingOnboarding) -> {
                     MainScreen(
                         controller = controller,
                         ui = ui,
-                        onOpenSettings = { controller.performButtonAction { openSettings = true } },
+                        onOpenSettings = { controller.performButtonAction(showSettings) },
+                        onOpenCalibration = { controller.performButtonAction(controller::beginVisualCalibration) },
                         onOpenLegal = { controller.performButtonAction { openLegal = true } },
                         onOpenDebug = { controller.performButtonAction { openDebug = true } },
                         onOpenLocalRecordings = { controller.performButtonAction { openLocalRecordings = true } },
@@ -269,19 +305,6 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                     )
                 }
 
-                ui.startupDataState == StartupDataState.READY -> {
-                    MainScreen(
-                        controller = controller,
-                        ui = ui,
-                        onOpenSettings = { controller.performButtonAction { openSettings = true } },
-                        onOpenLegal = { controller.performButtonAction { openLegal = true } },
-                        onOpenDebug = { controller.performButtonAction { openDebug = true } },
-                        onOpenLocalRecordings = { controller.performButtonAction { openLocalRecordings = true } },
-                        onOpenPanoramaxGallery = { controller.performButtonAction { openPanoramaxGallery = true } },
-                        onToggleDriveRecorder = controller::toggleDriveRecorder,
-                        onCapture = { controller.performButtonAction(controller::beginSpeedCapture) },
-                    )
-                }
 
                 else -> {
                     StartupScreen(
@@ -296,7 +319,7 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                     title = { Text(stringResource(R.string.ui_video_saving)) },
                     text = { LinearProgressIndicator(Modifier.fillMaxWidth()) })
             }
-            ui.dashcamButtonActionError?.let { error ->
+            ui.dashcamButtonActionError?.takeIf { ui.drivingControlsAllowed }?.let { error ->
                 AlertDialog(onDismissRequest = controller::dismissDashcamButtonActionError,
                     title = { Text(stringResource(R.string.ui_video_save_failed)) },
                     text = { Text(error) },
@@ -305,24 +328,27 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                     } })
             }
 
-            if (openSettings) {
+            if (openSettings && ui.drivingControlsAllowed) {
                 SettingsSheet(
                     controller = controller,
-                    onDismiss = { openSettings = false },
+                    onDismiss = { controller.setSettingsVisible(false); openSettings = false },
                     onOpenDebug = { controller.performButtonAction { openDebug = true } },
                 )
             }
-            if (openLegal) {
+            if (openLegal && ui.drivingControlsAllowed) {
                 LegalSheet(ui = ui, onDismiss = { openLegal = false })
             }
-            if (openDebug) {
+            if (openDebug && ui.drivingControlsAllowed) {
                 DebugSheet(controller = controller, onDismiss = { openDebug = false })
             }
-            if (openLocalRecordings) {
+            if (openLocalRecordings && ui.drivingControlsAllowed) {
                 LocalRecordingsSheet(controller = controller, onDismiss = { openLocalRecordings = false })
             }
-            if (openPanoramaxGallery) {
+            if (openPanoramaxGallery && ui.drivingControlsAllowed) {
                 PanoramaxGallerySheet(controller = controller, onDismiss = { openPanoramaxGallery = false })
+            }
+            if (controller.calibrationVisible && ui.drivingControlsAllowed) {
+                VisualRoadCalibrationScreen(controller)
             }
         }
     }
@@ -433,6 +459,7 @@ private fun MainScreen(
     controller: ConsumerSessionController,
     ui: ConsumerUiState,
     onOpenSettings: () -> Unit,
+    onOpenCalibration: () -> Unit,
     onOpenLegal: () -> Unit,
     onOpenDebug: () -> Unit,
     onOpenLocalRecordings: () -> Unit,
@@ -442,6 +469,18 @@ private fun MainScreen(
 ) {
     var previewSelected by rememberSaveable { mutableStateOf(true) }
     val recorderVisible = ui.driveRecorderState != DriveRecorderState.DISABLED
+    var previousPhotoCaptureAt by remember { mutableStateOf(ui.panoramaxLastCaptureAt) }
+    var photoCaptureFeedbackVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(ui.panoramaxLastCaptureAt) {
+        val capturedAt = ui.panoramaxLastCaptureAt
+        val newCapture = capturedAt != null && capturedAt != previousPhotoCaptureAt
+        previousPhotoCaptureAt = capturedAt
+        photoCaptureFeedbackVisible = newCapture
+        if (newCapture) {
+            try { kotlinx.coroutines.delay(1_000) }
+            finally { photoCaptureFeedbackVisible = false }
+        }
+    }
     LaunchedEffect(ui.driveRecorderState, ui.driveRecorderDashcamActive) {
         if (ui.driveRecorderDashcamActive) previewSelected = true
     }
@@ -551,13 +590,7 @@ private fun MainScreen(
                 Box(
                     Modifier.fillMaxSize().padding(top = screenInset, bottom = 8.dp).testTag("main-sign-pane"),
                 ) {
-                    TopCornerButtons(
-                        screenInset, foreground, buttonBg, buttonBorder,
-                        trafficSignBugButtonTint(ui, foreground),
-                        showLocalRecordings = false,
-                        onOpenLocalRecordings = onOpenLocalRecordings,
-                        modifier = Modifier.align(Alignment.TopStart),
-                    )
+
                     val showsActiveCameraLimitIndicator = CameraSpeedLimitUsePresentation.isVisible(
                         ConsumerMainScreenLogic.isInSpeedCaptureMode(ui), ui.effectiveSpeedLimitSource,
                         ui.speedLimitKmh != null || ui.speedLimitDisplayText != null || ui.isUnlimitedSpeedLimitActive,
@@ -577,24 +610,25 @@ private fun MainScreen(
                             screenInset = screenInset,
                             landscape = landscape,
                         )
-                        SpeedLimitSign(
+                        if (ui.isTrafficSignEndOverlayVisible && ui.trafficSignEndPictogram != null &&
+                            !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
+                            RecognizedTrafficSignPictogram(ui.trafficSignEndPictogram,
+                                modifier = Modifier.testTag("speed-limit-end-sign"), signSize = signSize)
+                        } else SpeedLimitSign(
                             limitText = limitText, signSize = signSize, numberFontSize = primaryMetricFont,
                             showsUnlimitedIcon = !showsPedestrianZoneSign && ui.isUnlimitedSpeedLimitActive &&
                                 !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
                             showsPedestrianZoneIcon = showsPedestrianZoneSign,
                             showsActiveCameraLimitIndicator = showsActiveCameraLimitIndicator,
-                            showsStaleBundleLimitIndicator = ui.effectiveSpeedLimitSource == EffectiveSpeedLimitSource.STALE_BUNDLE,
+                            showsStaleBundleLimitIndicator = ui.effectiveSpeedLimitSource.isStale,
                             cameraSourceStateDescription = when {
                                 ui.isUnlimitedSpeedLimitActive -> stringResource(R.string.ui_camera_unlimited)
                                 ui.speedLimitDisplayText == "Schritt" -> stringResource(R.string.ui_camera_walking)
                                 ui.speedLimitKmh != null -> stringResource(R.string.ui_camera_speed_limit, ui.speedLimitKmh.toString())
                                 else -> stringResource(R.string.ui_camera_sign)
                             },
+                            touchEnabled = ui.drivingControlsAllowed,
                             onDoubleTap = onCapture,
-                        )
-                        if (ui.isTrafficSignEndOverlayVisible) EndOfSpeedLimitSign(
-                            modifier = Modifier.offset(y = -(signSize * 0.42f)).testTag("speed-limit-end-overlay"),
-                            signSize = signSize * 0.34f,
                         )
                         // Draw the recognized secondary sign after the speed
                         // sign. This is intentionally the same z-order as the
@@ -616,13 +650,14 @@ private fun MainScreen(
                             }
                         }
                     }
+
                 }
                 Column(
                     Modifier.fillMaxSize().padding(top = if (landscape) screenInset else 0.dp, bottom = 12.dp)
                         .testTag("main-workspace-pane"),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    if (recorderVisible && landscape) RecorderModuleStrip(
+                    if (ui.driveRecorderDashcamActive && landscape) RecorderModuleStrip(
                         controller,
                         Modifier.padding(horizontal = horizontalPadding, vertical = 6.dp)
                             .testTag("drive-recorder-status"),
@@ -652,7 +687,7 @@ private fun MainScreen(
                                 LocationStatusBlock(
                                     ui, foreground, debugFont, max(2f, minDimension * 0.004f).dp,
                                     max(12f, minDimension * 0.024f).dp, locationHeight, horizontalPadding,
-                                    locationBadgeWidth, banner, onOpenDebug, compact = true,
+                                    locationBadgeWidth, banner, onOpenDebug, controller::downloadRecommendedData, compact = true,
                                     alignContentToBottom = true,
                                 )
                             }
@@ -670,29 +705,30 @@ private fun MainScreen(
                                 Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                                     LocationStatusBlock(ui, foreground, debugFont, max(2f, minDimension * 0.004f).dp,
                                         max(12f, minDimension * 0.024f).dp, fittedLocationHeight, horizontalPadding,
-                                        locationBadgeWidth, banner, onOpenDebug, compact = false)
+                                        locationBadgeWidth, banner, onOpenDebug, controller::downloadRecommendedData, compact = false)
                                 }
                             }
                         }
                         if (previewPresentation.isAttached) RecorderPreviewWorkspace(
                             controller, Modifier.fillMaxSize().padding(horizontal = horizontalPadding),
                             visible = previewVisible,
-                            onDismiss = { previewSelected = false },
+                            onDismiss = if (ui.drivingControlsAllowed) ({ previewSelected = false }) else null,
                         )
                     }
-                    if (recorderVisible && !landscape) RecorderModuleStrip(
+                    if (ui.driveRecorderDashcamActive && !landscape) RecorderModuleStrip(
                         controller, Modifier.padding(top = 6.dp).testTag("drive-recorder-status"),
                         onPreviewRequested = { previewSelected = true },
                     )
-                    if (landscape) BottomCornerButtons(
+                    if (landscape && ui.drivingControlsAllowed) BottomCornerButtons(
                         horizontalPadding = screenInset, foreground = foreground,
                         buttonBg = buttonBg, buttonBorder = buttonBorder,
-                        onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings,
+                        onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings, onOpenCalibration = onOpenCalibration,
                         onOpenPanoramaxGallery = onOpenPanoramaxGallery,
                         onToggleDriveRecorder = onToggleDriveRecorder,
                         onOpenLocalRecordings = onOpenLocalRecordings,
                         localRecordingsTint = trafficSignBugButtonTint(ui, foreground),
                         driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
+            photoCaptureFeedbackVisible = photoCaptureFeedbackVisible,
                         modifier = Modifier.padding(top = if (recorderVisible) 8.dp else 16.dp),
                     )
                 }
@@ -714,17 +750,33 @@ private fun MainScreen(
                 lower.place(if (landscape) upperWidth else 0, if (landscape) 0 else upperHeight)
             }
         }
-        if (!landscape) BottomCornerButtons(
+        if (!landscape && ui.drivingControlsAllowed) BottomCornerButtons(
             horizontalPadding = screenInset, foreground = foreground,
             buttonBg = buttonBg, buttonBorder = buttonBorder,
-            onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings,
+            onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings, onOpenCalibration = onOpenCalibration,
             onOpenPanoramaxGallery = onOpenPanoramaxGallery,
             onToggleDriveRecorder = onToggleDriveRecorder,
             onOpenLocalRecordings = onOpenLocalRecordings,
             localRecordingsTint = trafficSignBugButtonTint(ui, foreground),
             driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
+            photoCaptureFeedbackVisible = photoCaptureFeedbackVisible,
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
         )
+        if (GravityAlignmentVisibility.isVisible(landscape = landscape,
+            speedKmh = ui.currentSpeedKmh, inTunnel = ui.tunnelModeState == TunnelModeState.ACTIVE,
+            searchingForSignal = ConsumerMainScreenLogic.isSearchingSignal(ui))) {
+            GravityAlignmentOverlay(
+                orientation = ui.manualOrientation,
+                foregroundColor = foreground,
+                modifier = Modifier.align(Alignment.TopCenter).size(maxWidth * 0.1f, maxHeight * 0.1f),
+            )
+        }
+        if (ui.visionDismissalListening) {
+            Text(stringResource(R.string.tsr_voice_dismissal_listening), color = Color.White,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.align(Alignment.BottomCenter).background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 10.dp, vertical = 4.dp).testTag("vision-dismissal-listening"))
+        }
     }
 }
 
@@ -763,9 +815,10 @@ private fun TopCornerButtons(
 private fun RecognizedTrafficSignPictogram(
     pictogram: TrafficSignPictogram,
     modifier: Modifier = Modifier,
+    signSize: androidx.compose.ui.unit.Dp = 72.dp,
 ) {
     val pictogramModifier = modifier
-        .size(72.dp)
+        .size(signSize)
         .padding(5.dp)
         .testTag("last-traffic-sign-pictogram")
     val context = LocalContext.current
@@ -784,34 +837,6 @@ private fun RecognizedTrafficSignPictogram(
 }
 
 @Composable
-private fun EndOfSpeedLimitSign(modifier: Modifier = Modifier, signSize: androidx.compose.ui.unit.Dp) {
-    val description = stringResource(R.string.ui_camera_speed_limit_end)
-    Canvas(
-        modifier = modifier
-            .size(signSize)
-            .semantics { contentDescription = description },
-    ) {
-        val borderWidth = size.minDimension * 0.028f
-        drawCircle(Color.White)
-        clipPath(Path().apply { addOval(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height)) }) {
-            repeat(5) { index ->
-                rotate(degrees = -51f, pivot = center) {
-                    val stripeWidth = size.minDimension * 0.035f
-                    val stripeHeight = size.minDimension * 1.7f
-                    val offsetX = (index - 2) * size.minDimension * 0.12f
-                    drawRect(
-                        color = Color.Black.copy(alpha = 0.42f),
-                        topLeft = Offset(center.x + offsetX - stripeWidth / 2f, center.y - stripeHeight / 2f),
-                        size = Size(stripeWidth, stripeHeight),
-                    )
-                }
-            }
-        }
-        drawCircle(Color.Black.copy(alpha = 0.82f), radius = (size.minDimension - borderWidth) / 2f, style = Stroke(width = borderWidth))
-    }
-}
-
-@Composable
 private fun BottomCornerButtons(
     horizontalPadding: androidx.compose.ui.unit.Dp,
     foreground: Color,
@@ -819,12 +844,14 @@ private fun BottomCornerButtons(
     buttonBorder: Color,
     onOpenLegal: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenCalibration: () -> Unit,
     onOpenPanoramaxGallery: () -> Unit,
     onToggleDriveRecorder: () -> Unit,
     onOpenLocalRecordings: (() -> Unit)?,
     localRecordingsTint: Color,
     driveRecorderState: DriveRecorderState,
     panoramaxCaptureCount: Int,
+    photoCaptureFeedbackVisible: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -868,7 +895,7 @@ private fun BottomCornerButtons(
                 Icon(
                     Icons.Default.PhotoLibrary,
                     contentDescription = stringResource(R.string.ui_panoramax_gallery),
-                    tint = foreground,
+                    tint = if (photoCaptureFeedbackVisible) Color(0xFF22C55E) else foreground,
                 )
                 if (panoramaxCaptureCount > 0) {
                     Text(
@@ -883,6 +910,10 @@ private fun BottomCornerButtons(
                     )
                 }
             }
+        }
+        PillIconButton(onClick = onOpenCalibration, background = buttonBg, border = buttonBorder,
+            modifier = Modifier.testTag("visual-calibration-button")) {
+            Icon(Icons.Default.CenterFocusStrong, contentDescription = stringResource(R.string.calibration_title), tint = foreground)
         }
         PillIconButton(
             onClick = onOpenLegal,
@@ -953,6 +984,7 @@ private fun SpeedLimitSign(
     showsActiveCameraLimitIndicator: Boolean,
     showsStaleBundleLimitIndicator: Boolean,
     cameraSourceStateDescription: String?,
+    touchEnabled: Boolean = true,
     onDoubleTap: () -> Unit,
 ) {
     val currentCaptureAction by rememberUpdatedState(onDoubleTap)
@@ -969,10 +1001,10 @@ private fun SpeedLimitSign(
         modifier = Modifier
             .then(modifier)
             .size(signSize)
-            .pointerInput(Unit) { detectTapGestures(onDoubleTap = { currentCaptureAction() }) }
+            .then(if (touchEnabled) Modifier.pointerInput(Unit) { detectTapGestures(onDoubleTap = { currentCaptureAction() }) } else Modifier)
             .semantics {
                 contentDescription = signDescription
-                onClick(label = captureLabel) { currentCaptureAction(); true }
+                if (touchEnabled) onClick(label = captureLabel) { currentCaptureAction(); true }
             }
             .testTag("speed-sign"),
         contentAlignment = Alignment.Center,
@@ -1130,6 +1162,12 @@ private fun MetricStatusBlock(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+        ConsumerMainScreenLogic.currentPenaltyNotice(ui)?.advisoryCaption?.let { caption ->
+            Text(caption, color = foreground,
+                style = roundedUiTextStyle(size = secondaryFont * 0.32f, weight = FontWeight.Normal),
+                textAlign = TextAlign.Center, maxLines = 2,
+                modifier = Modifier.testTag("penalty-advisory-caption"))
+        }
     }
 }
 
@@ -1145,6 +1183,7 @@ private fun LocationStatusBlock(
     locationBadgeWidth: androidx.compose.ui.unit.Dp,
     runtimeBanner: RuntimeBanner?,
     onOpenDebug: () -> Unit,
+    onDownloadData: () -> Unit,
     compact: Boolean = false,
     alignContentToBottom: Boolean = false,
     modifier: Modifier = Modifier,
@@ -1162,7 +1201,21 @@ private fun LocationStatusBlock(
                 .heightIn(min = locationSlotMinHeight),
             contentAlignment = if (alignContentToBottom) Alignment.BottomCenter else Alignment.Center,
         ) {
-            if (ConsumerMainScreenLogic.shouldShowCityBadge(ui)) {
+            if (ui.missingCoverageDownloadOptionId != null) {
+                val active = ui.activeDownloadOptionId == ui.missingCoverageDownloadOptionId
+                val queued = ui.missingCoverageDownloadOptionId in ui.queuedBundleDownloadIds
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(ConsumerMainScreenLogic.debugCoordinateText(ui.copy(limitStreetName = null)),
+                        color = foreground, fontSize = debugFont, fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace)
+                    if (ui.drivingControlsAllowed) TextButton(onClick = onDownloadData, enabled = !active && !queued,
+                        modifier = Modifier.heightIn(min = 48.dp).testTag("dashboard-download-data")) {
+                        Text(stringResource(if (active) R.string.ui_downloading_data else if (queued) R.string.ui_download_queued else if (ui.bundleDownloadErrors[ui.missingCoverageDownloadOptionId] != null) R.string.onboarding_retry_download else R.string.ui_download_data),
+                            color = foreground, fontWeight = FontWeight.Bold, fontSize = 20.sp,
+                            textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline)
+                    }
+                }
+            } else if (ConsumerMainScreenLogic.shouldShowCityBadge(ui)) {
                 CityBadge(
                     streetName = ConsumerMainScreenLogic.cityBadgeStreetText(ui).orEmpty(),
                     placeName = ConsumerMainScreenLogic.cityBadgePlaceText(ui).orEmpty(),
@@ -1170,7 +1223,8 @@ private fun LocationStatusBlock(
                     highlighted = ConsumerMainScreenLogic.shouldHighlightCityBadge(ui),
                 badgeWidth = locationBadgeWidth,
                 foreground = foreground,
-                onOpenDebug = onOpenDebug,
+                onOpenDebug = { if (ui.drivingControlsAllowed) onOpenDebug() },
+                interactionEnabled = ui.drivingControlsAllowed,
                 compact = compact,
             )
             } else {
@@ -1240,11 +1294,12 @@ private fun CityBadge(
     foreground: Color,
     onOpenDebug: () -> Unit,
     compact: Boolean = false,
+    interactionEnabled: Boolean = true,
 ) {
     Card(
         modifier = Modifier
             .width(badgeWidth)
-            .clickable { onOpenDebug() }
+            .then(if (interactionEnabled) Modifier.clickable { onOpenDebug() } else Modifier)
             .testTag("city-badge"),
         colors = CardDefaults.cardColors(
             containerColor = if (highlighted) BrightYellow else Color.Transparent,
@@ -1400,39 +1455,25 @@ private fun SettingsSheet(
                             color = Color(0xFF555555),
                             fontSize = 13.sp,
                         )
-                    } else {
-                        ui.bundleDownloadSections.forEach { section: BundleDownloadCountrySection ->
-                            if (section.options.size == 1) {
-                                BundleDownloadOptionRow(
-                                    title = section.countryName,
-                                    option = section.options.first(),
-                                    controller = controller,
-                                    ui = ui,
-                                )
-                            } else {
-                                Column(
-                                    modifier = Modifier.padding(vertical = 2.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    Text(
-                                        section.countryName,
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                    section.options.forEach { option: BundleDownloadOption ->
-                                        BundleDownloadOptionRow(
-                                            title = option.displayName,
-                                            option = option,
-                                            controller = controller,
-                                            ui = ui,
-                                        )
-                                    }
-                                }
-                            }
-                        }
                     }
+                }
+            }
+            ui.bundleDownloadSections.forEach { section ->
+                item(key = "bundle-country-${section.id}") {
+                    Text(section.countryName, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+                items(section.options, key = { "bundle-${it.id}" }) { option ->
+                    BundleDownloadOptionRow(
+                        title = if (section.options.size == 1) section.countryName else option.displayName,
+                        option = option, controller = controller, ui = ui,
+                    )
+                }
+            }
+            item(key = "bundle-maintenance") {
+                Column {
                     OutlinedButton(
                         onClick = { confirmDeleteDownloaded = true },
+                        enabled = !controller.isSyncingNow(),
                         modifier = Modifier.testTag("settings-delete-bundles-button"),
                     ) {
                         Text(stringResource(R.string.ui_delete_downloaded_maps))
@@ -1467,6 +1508,11 @@ private fun SettingsSheet(
             }
             item {
                 SectionCard(stringResource(R.string.ui_diagnostics)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.settings_debug_logging), modifier = Modifier.weight(1f), color = Color.Black)
+                        Switch(checked = ui.debugLoggingEnabled, onCheckedChange = controller::setDebugLoggingEnabled,
+                            modifier = Modifier.testTag("settings.debug.logging"))
+                    }
                     Button(
                         onClick = onOpenDebug,
                         colors = ButtonDefaults.buttonColors(containerColor = SignalGreen),
@@ -1617,6 +1663,7 @@ private fun DebugSheet(
                     }
                 }
             }
+            item { LaneDetectionDiagnosticsSettings(controller) }
             item { Spacer(modifier = Modifier.height(24.dp)) }
         }
     }
@@ -1918,13 +1965,13 @@ internal fun SheetScaffold(
                         .padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).testTag("$testTag-close")) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_done), tint = Color.Black)
-                    }
-                    Spacer(Modifier.width(8.dp))
                     Text(title, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.Black,
                         maxLines = 2, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f).testTag("$testTag-title"))
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).testTag("$testTag-close")) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_close), tint = Color.Black)
+                    }
                 }
                 HorizontalDivider()
                 Box(
@@ -1993,120 +2040,101 @@ private fun BundleDownloadOptionRow(
 ) {
     val context = LocalContext.current
     val downloaded = controller.isBundleDownloaded(option)
-    val isActiveDownload = controller.isActiveBundleDownload(option)
-    val progress = controller.activeBundleDownloadProgress(option)
-    val statusText = controller.downloadedBundleStatusText(option)
-    val progressText = if (isActiveDownload) {
-        progressBytesText(
-            context = context,
-            completedBytes = ui.syncProgressCompletedBytes,
-            totalBytes = ui.syncProgressTotalBytes,
-        )
-    } else {
-        ""
+    val active = controller.isActiveBundleDownload(option)
+    val queued = option.id in ui.queuedBundleDownloadIds
+    val failure = ui.bundleDownloadErrors[option.id]
+    val preparing = stringResource(R.string.ui_download_preparing)
+    val status = when {
+        active -> progressBytesText(context, ui.syncProgressCompletedBytes, ui.syncProgressTotalBytes).ifBlank { preparing }
+        queued -> stringResource(R.string.ui_download_queued)
+        failure != null -> stringResource(R.string.ui_bundle_download_failed, failure)
+        else -> controller.downloadedBundleStatusText(option)
     }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 42.dp)
-            .padding(vertical = 1.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = title,
-                color = Color.Black,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            if (statusText.isNotBlank()) {
-                Text(
-                    text = statusText,
-                    color = if (downloaded) SignalGreen else Color(0xFF666666),
-                    fontSize = 12.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+    Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).testTag("bundle-row-${option.id}"),
+        verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, color = Color.Black, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(status.ifBlank { " " }, color = if (failure != null) SignalRed else if (downloaded) SignalGreen else Color(0xFF666666),
+                fontSize = 12.sp, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            // Constant space prevents completed downloads moving the remaining rows.
+            Box(Modifier.fillMaxWidth().height(4.dp)) {
+                if (active) LinearProgressIndicator(
+                    progress = (controller.activeBundleDownloadProgress(option) ?: 0.0).toFloat(),
+                    modifier = Modifier.fillMaxSize(),
                 )
-            }
-
-            if (isActiveDownload) {
-                if (progress != null) {
-                    LinearProgress(progress)
-                } else {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                }
-                if (progressText.isNotBlank()) {
-                    Text(
-                        text = progressText,
-                        color = Color(0xFF666666),
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
             }
         }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        when {
-            downloaded -> {
-                IconButton(
-                    onClick = { controller.deleteSelectedBundle(option) },
-                    enabled = !controller.isSyncingNow(),
-                    modifier = Modifier.size(30.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.ui_delete_bundle),
-                        tint = SignalRed,
-                    )
-                }
-            }
-            isActiveDownload -> {
-                DownloadActionIcon(
-                    tint = Color(0xFF777777),
-                    enabled = false,
-                    onClick = null,
-                )
-            }
-            else -> {
-                DownloadActionIcon(
-                    tint = Color.Black,
-                    enabled = !controller.isSyncingNow() && !controller.hasActiveBundleDownload(),
-                    onClick = { controller.downloadSelectedBundle(option) },
-                )
-            }
+        Spacer(Modifier.width(8.dp))
+        IconButton(
+            onClick = {
+                if (queued) controller.cancelQueuedBundleDownload(option)
+                else if (downloaded) controller.deleteSelectedBundle(option)
+                else controller.downloadSelectedBundle(option)
+            },
+            enabled = !active && !(downloaded && controller.isSyncingNow()),
+            modifier = Modifier.size(48.dp).testTag("bundle-action-${option.id}"),
+        ) {
+            Icon(if (queued) Icons.Default.Close else if (downloaded) Icons.Default.Delete else if (failure != null) Icons.Default.Refresh else Icons.Default.Download,
+                contentDescription = stringResource(if (queued) R.string.ui_cancel_queued_download else if (downloaded) R.string.ui_delete_bundle else if (failure != null) R.string.onboarding_retry_download else R.string.ui_download_bundle),
+                tint = if (downloaded) SignalRed else Color.Black)
         }
     }
 }
 
 @Composable
 private fun PanoramaxGallerySheet(controller: ConsumerSessionController, onDismiss: () -> Unit) {
-    var videos by rememberSaveable { mutableStateOf(false) }
     SheetScaffold(title = stringResource(R.string.ui_panoramax_gallery), onDismiss = onDismiss, testTag = "panoramax-gallery-sheet") {
+        PanoramaxGalleryPane(controller)
+    }
+}
+
+@Composable
+internal fun PanoramaxGalleryPane(controller: ConsumerSessionController) {
+    var videos by rememberSaveable { mutableStateOf(false) }
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        // A mounted phone has much less vertical space after the sheet header.
+        // Keep labels and touch targets while giving photos room to scroll.
+        val compact = maxHeight < 360.dp
         Column(Modifier.fillMaxSize()) {
             Box(Modifier.weight(1f)) {
-                if (videos) DashcamLibraryContent(controller) else PanoramaxGalleryContent(controller)
+                if (videos) DashcamLibraryContent(controller) else PanoramaxGalleryContent(controller, compact = compact)
             }
-            NavigationBar {
+            if (compact) Surface(tonalElevation = 3.dp) {
+                Row(Modifier.fillMaxWidth().selectableGroup()) {
+                    listOf(false, true).forEach { videoTab ->
+                        val selected = videos == videoTab
+                        Row(
+                            Modifier.weight(1f).heightIn(min = 48.dp)
+                                .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                                .selectable(selected = selected, role = Role.Tab, onClick = { videos = videoTab })
+                                .testTag(if (videoTab) "gallery-tab-videos" else "gallery-tab-pictures")
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            Icon(if (videoTab) Icons.Default.VideoLibrary else Icons.Default.PhotoLibrary,
+                                contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(if (videoTab) ConsumerUiStrings.text("Videos", "Videos", "Vidéos", "Video’s")
+                                else ConsumerUiStrings.text("Pictures", "Bilder", "Photos", "Foto’s"),
+                                style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+            } else NavigationBar(windowInsets = WindowInsets(0, 0, 0, 0)) {
                 NavigationBarItem(
                     selected = !videos,
                     onClick = { videos = false },
                     icon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },
                     label = { Text(ConsumerUiStrings.text("Pictures", "Bilder", "Photos", "Foto’s")) },
+                    modifier = Modifier.testTag("gallery-tab-pictures"),
                 )
                 NavigationBarItem(
                     selected = videos,
                     onClick = { videos = true },
                     icon = { Icon(Icons.Default.VideoLibrary, contentDescription = null) },
                     label = { Text(ConsumerUiStrings.text("Videos", "Videos", "Vidéos", "Video’s")) },
+                    modifier = Modifier.testTag("gallery-tab-videos"),
                 )
             }
         }
@@ -2216,9 +2244,6 @@ private fun mainBackgroundColor(ui: ConsumerUiState, pulseFraction: Float): Colo
     if (ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
         return Paper
     }
-    if (ui.isUnlimitedSpeedLimitActive) {
-        return HighwayBlue
-    }
     if (ConsumerMainScreenLogic.isDrivingBanWarningActive(ui)) {
         return lerp(NightRed, NightRedDark, 0.25f + (pulseFraction * 0.75f))
     }
@@ -2226,5 +2251,41 @@ private fun mainBackgroundColor(ui: ConsumerUiState, pulseFraction: Float): Colo
     return when {
         progress < 0.6 -> lerp(BrightYellow, SoftOrange, (progress / 0.6).toFloat())
         else -> lerp(SoftOrange, SoftRed, ((progress - 0.6) / 0.4).toFloat())
+    }
+}
+
+
+@Composable
+private fun StartupLogReviewScreen(ui: ConsumerUiState, controller: ConsumerSessionController) {
+    Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+        Column(Modifier.widthIn(max = 460.dp).verticalScroll(rememberScrollState()).padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            Text("YouSpeed", color = Color.White, style = MaterialTheme.typography.headlineLarge)
+            when (ui.startupLogReviewState) {
+                StartupLogReviewState.CHECKING, StartupLogReviewState.CLEARING -> {
+                    CircularProgressIndicator(color = Color.Red)
+                    Text(stringResource(if (ui.startupLogReviewState == StartupLogReviewState.CLEARING)
+                        R.string.startup_logs_clearing else R.string.startup_logs_checking), color = Color.White)
+                }
+                StartupLogReviewState.CHOICE, StartupLogReviewState.FAILED -> {
+                    val failed = ui.startupLogReviewState == StartupLogReviewState.FAILED
+                    Text(stringResource(if (failed) R.string.startup_logs_failed else R.string.startup_logs_title),
+                        color = Color.White, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                    Text(if (failed) ui.startupLogError else stringResource(R.string.startup_logs_message),
+                        color = Color.White, textAlign = TextAlign.Center)
+                    Button(onClick = {
+                        if (failed) controller.retryStartupLogReview() else controller.checkStartupLogs(clear = true)
+                    }, modifier = Modifier.testTag("startup.logs.clear")) {
+                        Text(stringResource(if (failed) R.string.startup_retry else R.string.startup_logs_clear))
+                    }
+                    OutlinedButton(onClick = controller::keepStartupLogs,
+                        modifier = Modifier.testTag("startup.logs.keep")) {
+                        Text(stringResource(R.string.startup_logs_keep), color = Color.White)
+                    }
+                }
+                StartupLogReviewState.COMPLETE -> Unit
+            }
+        }
     }
 }

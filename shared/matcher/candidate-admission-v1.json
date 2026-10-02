@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "variants": ["bounds", "general_rtree", "network_rtree"],
+  "scenarios": [
+    {"id": "nearest-survives-cap", "latitude": 0, "longitude": 0, "radiusM": 200, "maxCandidates": 1, "wayIDs": ["9007199254740993"]},
+    {"id": "distance-before-id", "latitude": 0, "longitude": 0, "radiusM": 200, "maxCandidates": 2, "wayIDs": ["9007199254740993", "10"]},
+    {"id": "stable-text-id-tie", "latitude": 0.0004, "longitude": 0, "radiusM": 200, "maxCandidates": 2, "wayIDs": ["10", "2"]},
+    {"id": "uncapped-admission", "latitude": 0, "longitude": 0, "radiusM": 200, "maxCandidates": 16, "wayIDs": ["9007199254740993", "10", "2", "1"]},
+    {"id": "empty-query", "latitude": 5, "longitude": 5, "radiusM": 200, "maxCandidates": 2, "wayIDs": []}
+  ],
+  "lookup": {"latitude": 0, "longitude": 0, "wayID": "9007199254740993", "speedLimitKmh": 30}
+}

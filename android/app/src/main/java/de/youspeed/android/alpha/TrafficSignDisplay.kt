@@ -20,7 +20,7 @@ data class TrafficSignPictogram(
 
 /** Country packs that are physically bundled in both mobile applications. */
 internal object AndroidTrafficSignModelPackSelection {
-    // CH is bundled for evaluation/shadow use; registry rollout remains gated.
+    // CH v9 is owner-accepted for bundled use (shared/tsr/field-acceptance); signed registry rollout is separate.
     val bundledCountryCodes: Set<String> = setOf("DE", "FR", "NL", "BE", "CH")
 
     fun availableCountryCode(raw: String?): String? {
@@ -89,9 +89,11 @@ data class TrafficSignDisplayObservation(
     val candidate: TrafficSignCandidate,
     val generation: Long,
     val driveSessionId: String,
+    val applicabilityDecision: TSRApplicabilityDecision? = null,
     val isSpeedLimitEnd: Boolean = candidate.normalizedPrimarySemantic().kind in setOf(
         TrafficSignSemanticKind.MAXIMUM_SPEED_END,
         TrafficSignSemanticKind.ZONE_END,
+        TrafficSignSemanticKind.ALL_RESTRICTIONS_END,
     ),
 )
 
@@ -123,8 +125,17 @@ internal fun TrafficSignCandidate.normalizedPrimarySemantic(): TrafficSignSemant
     val token = rawClassId.trim().lowercase(Locale.ROOT)
     val numericEnd = Regex("^(?:de:)?278(?:-([0-9]{1,3}))?$").matchEntire(token)
     return when {
+        Regex("^b33-[0-9]+$").matches(token) -> token.substringAfter('-').toIntOrNull()
+            ?.takeIf(::isSharedTrafficSignSpeedKmh)
+            ?.let { TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED_END, it) }
+            ?: TrafficSignSemantic(TrafficSignSemanticKind.UNKNOWN)
+        Regex("^maxspeed:[0-9]+:end$").matches(token) -> token.split(':')[1].toIntOrNull()
+            ?.takeIf(::isSharedTrafficSignSpeedKmh)
+            ?.let { TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED_END, it) }
+            ?: TrafficSignSemantic(TrafficSignSemanticKind.UNKNOWN)
         token == "maxspeed:end" -> TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED_END)
-        token in setOf("zone:end", "zone:30:end") -> TrafficSignSemantic(TrafficSignSemanticKind.ZONE_END)
+        token == "zone:end" -> TrafficSignSemantic(TrafficSignSemanticKind.ZONE_END, semantic.value)
+        token == "zone:30:end" -> TrafficSignSemantic(TrafficSignSemanticKind.ZONE_END, 30)
         Regex("^(?:de:)?28[01](?:-[0-9]+)?$").matches(token) ||
             token in setOf("no_overtaking:end", "no_overtaking:end:hgv", "no_overtaking:hgv:end") -> TrafficSignSemantic(TrafficSignSemanticKind.NON_SPEED_RESTRICTION_END)
         numericEnd != null -> {
@@ -135,9 +146,9 @@ internal fun TrafficSignCandidate.normalizedPrimarySemantic(): TrafficSignSemant
         (token.startsWith("de:278") || token.startsWith("278")) -> TrafficSignSemantic(TrafficSignSemanticKind.UNKNOWN)
         token in setOf("310", "de:310", "city:start", "city_limit:start") -> TrafficSignSemantic(TrafficSignSemanticKind.CITY_ENTRY)
         token in setOf("311", "de:311", "city:end", "city_limit:end") -> TrafficSignSemantic(TrafficSignSemanticKind.CITY_EXIT)
-        token in setOf("282", "de:282", "no:end") -> TrafficSignSemantic(TrafficSignSemanticKind.ALL_RESTRICTIONS_END)
-        token == "motorway:end" -> TrafficSignSemantic(TrafficSignSemanticKind.MOTORWAY_EXIT)
-        token == "trunk:end" -> TrafficSignSemantic(TrafficSignSemanticKind.MOTORROAD_EXIT)
+        token in setOf("282", "de:282", "no:end", "b31") -> TrafficSignSemantic(TrafficSignSemanticKind.ALL_RESTRICTIONS_END)
+        token in setOf("motorway:end", "c208") -> TrafficSignSemantic(TrafficSignSemanticKind.MOTORWAY_EXIT)
+        token in setOf("trunk:end", "c108") -> TrafficSignSemantic(TrafficSignSemanticKind.MOTORROAD_EXIT)
         else -> semantic
     }
 }

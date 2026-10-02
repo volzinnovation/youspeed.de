@@ -1,0 +1,4821 @@
+{
+  "schemaVersion": 1,
+  "status": "historical_characterization_not_target_behavior",
+  "reviewStatus": "unreviewed",
+  "fieldQualified": false,
+  "nativeReplayReport": {
+    "schemaVersion": 1,
+    "lane": "recorded_candidate",
+    "origins": [
+      "unreviewed_real"
+    ],
+    "fieldQualified": false,
+    "parity": "passed",
+    "numericTolerance": 1e-09,
+    "corpusSha256": "ac6b7dfc26ed982b61dc67cb8dccaac76e36b519c32b197ba6ea8c3d89b13d4b",
+    "configSha256": "de643abbfd8e53976fca01551d33b143e0781c38e63ed49a0d315a36f39b4949",
+    "sourceHashes": {
+      "iphone/SpeedConsumerApp/TrafficSignApplicability.swift": "919bb0f4a707ee915c350d18efa1761707771fe7a0109b68f13e50f41cdf2419",
+      "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignApplicability.kt": "931fbf44c3141171cdfb6edf731fcaadbf4b1571848e3fdc4937dade68301ee4",
+      "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignApplicabilityJson.kt": "5f47fbee25f69871e316bfce9fd17ccd500359fd3b9323c36b90ded16c7dd396"
+    },
+    "scenarios": [
+      {
+        "scenario": "clip-141810",
+        "frames": 61,
+        "finalDecisions": [
+          {
+            "trackId": "track-4",
+            "classification": "UNKNOWN",
+            "reasons": [
+              "unqualified_observation"
+            ]
+          }
+        ]
+      },
+      {
+        "scenario": "clip-143435",
+        "frames": 49,
+        "finalDecisions": []
+      },
+      {
+        "scenario": "clip-154245",
+        "frames": 45,
+        "finalDecisions": [
+          {
+            "trackId": "track-1",
+            "classification": "UNKNOWN",
+            "reasons": [
+              "unqualified_observation"
+            ]
+          }
+        ]
+      },
+      {
+        "scenario": "clip-160920",
+        "frames": 108,
+        "finalDecisions": [
+          {
+            "trackId": "track-18",
+            "classification": "UNKNOWN",
+            "reasons": [
+              "unqualified_observation"
+            ]
+          }
+        ]
+      }
+    ],
+    "processWallTimeIncludingStartupMs": {
+      "swift": 327.8502499451861,
+      "kotlin": 207.62579201254994
+    },
+    "pending": [
+      "Reviewed real sequence corpus and baseline",
+      "Full-image inference replay",
+      "Independent holdout and frozen empirical gates",
+      "Minimum-device sustained performance, battery and thermal evidence",
+      "Explicit paired-platform rollout approval"
+    ]
+  },
+  "fullPredictionsSha256": "2ff881d2bbc151412b1f440baa5e53f8fe79baa755a7e78bd4e859cc1db6062c",
+  "summary": [
+    {
+      "id": "clip-141810",
+      "frames": 61,
+      "nonemptyFrames": 23,
+      "candidates": 26,
+      "semanticCounts": {
+        "unknown:null:null": 9,
+        "maximum_speed:90:km/h": 9,
+        "city_entry:null:null": 1,
+        "maximum_speed:70:km/h": 7
+      },
+      "decisionClassCounts": {
+        "UNKNOWN": 58
+      },
+      "decisionReasonCounts": {
+        "unqualified_observation": 44,
+        "stale_road_context": 13,
+        "camera_calibration_unavailable": 1
+      },
+      "staleRoadFrames": 52,
+      "roadFrames": 61,
+      "maxRoadAgeMs": 4079.0,
+      "displayEligible": 0,
+      "immediateEligible": 0,
+      "passageEligible": 0
+    },
+    {
+      "id": "clip-143435",
+      "frames": 49,
+      "nonemptyFrames": 19,
+      "candidates": 29,
+      "semanticCounts": {
+        "unknown:null:null": 9,
+        "maximum_speed:30:km/h": 5,
+        "maximum_speed:90:km/h": 5,
+        "maximum_speed:70:km/h": 5,
+        "restriction_end:null:null": 1,
+        "maximum_speed:50:km/h": 4
+      },
+      "decisionClassCounts": {
+        "UNKNOWN": 58
+      },
+      "decisionReasonCounts": {
+        "unqualified_observation": 44,
+        "stale_road_context": 14
+      },
+      "staleRoadFrames": 46,
+      "roadFrames": 49,
+      "maxRoadAgeMs": 4370.0,
+      "displayEligible": 0,
+      "immediateEligible": 0,
+      "passageEligible": 0
+    },
+    {
+      "id": "clip-154245",
+      "frames": 45,
+      "nonemptyFrames": 13,
+      "candidates": 23,
+      "semanticCounts": {
+        "unknown:null:null": 16,
+        "maximum_speed:50:km/h": 1,
+        "maximum_speed:30:km/h": 1,
+        "maximum_speed:90:km/h": 2,
+        "maximum_speed:70:km/h": 3
+      },
+      "decisionClassCounts": {
+        "UNKNOWN": 30
+      },
+      "decisionReasonCounts": {
+        "unqualified_observation": 22,
+        "stale_road_context": 8
+      },
+      "staleRoadFrames": 45,
+      "roadFrames": 45,
+      "maxRoadAgeMs": 5958.0,
+      "displayEligible": 0,
+      "immediateEligible": 0,
+      "passageEligible": 0
+    },
+    {
+      "id": "clip-160920",
+      "frames": 108,
+      "nonemptyFrames": 54,
+      "candidates": 74,
+      "semanticCounts": {
+        "unknown:null:null": 50,
+        "maximum_speed:30:km/h": 2,
+        "maximum_speed:70:km/h": 6,
+        "maximum_speed:90:km/h": 3,
+        "maximum_speed:50:km/h": 4,
+        "maximum_speed:110:km/h": 8,
+        "maximum_speed:130:km/h": 1
+      },
+      "decisionClassCounts": {
+        "UNKNOWN": 165
+      },
+      "decisionReasonCounts": {
+        "stale_road_context": 31,
+        "camera_calibration_unavailable": 7,
+        "unqualified_observation": 126,
+        "unreliable_road_context": 1
+      },
+      "staleRoadFrames": 86,
+      "roadFrames": 108,
+      "maxRoadAgeMs": 3969.0,
+      "displayEligible": 0,
+      "immediateEligible": 0,
+      "passageEligible": 0
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "clip-141810",
+      "frames": [
+        {
+          "frameId": "1bf6d41a-8582-41de-850f-6cea18d6f8d3",
+          "capturedAtMs": 1790605085025,
+          "decisions": []
+        },
+        {
+          "frameId": "a59e9be5-848f-486a-a849-b6d30ab2388f",
+          "capturedAtMs": 1790605085367,
+          "decisions": []
+        },
+        {
+          "frameId": "21ca4e2f-c120-4828-8044-9454daa4712d",
+          "capturedAtMs": 1790605085750,
+          "decisions": []
+        },
+        {
+          "frameId": "399b3276-830b-4e45-b8b9-96ed0bc51e50",
+          "capturedAtMs": 1790605086110,
+          "decisions": []
+        },
+        {
+          "frameId": "a37da307-90a5-493a-b851-b80b1d302334",
+          "capturedAtMs": 1790605086459,
+          "decisions": []
+        },
+        {
+          "frameId": "6edd1ed7-eaea-40a7-a840-6d08ce740358",
+          "capturedAtMs": 1790605086799,
+          "decisions": []
+        },
+        {
+          "frameId": "6a6f9603-ab13-43bc-b0a6-2640b475d205",
+          "capturedAtMs": 1790605087133,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "95bc53d5-033a-4e91-b836-fddba916b8ad",
+          "capturedAtMs": 1790605087606,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "9bb635cd-4f8f-457f-8a85-d1aff39253df",
+          "capturedAtMs": 1790605087927,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "6df964b1-73f4-4806-9aaa-8c62bed08819",
+          "capturedAtMs": 1790605088257,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "91aa42a8-740e-4a8d-b63e-1e54087d47d0",
+          "capturedAtMs": 1790605088600,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "23067298-15c7-456b-98ff-64b492a36ae5",
+          "capturedAtMs": 1790605089016,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "6b76171d-21ce-4fba-b803-0145111fbe07",
+          "capturedAtMs": 1790605089356,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "381972c4-7cce-44e2-a09b-d41dad73e8f8",
+          "capturedAtMs": 1790605089707,
+          "decisions": []
+        },
+        {
+          "frameId": "d31f12ba-4896-4fa7-86e2-3487f8f1c5ce",
+          "capturedAtMs": 1790605090082,
+          "decisions": []
+        },
+        {
+          "frameId": "0955477d-28f4-4e52-ba33-e48b0f73998b",
+          "capturedAtMs": 1790605090418,
+          "decisions": []
+        },
+        {
+          "frameId": "48acdabd-318f-4ce3-be12-7794aeafce26",
+          "capturedAtMs": 1790605090768,
+          "decisions": []
+        },
+        {
+          "frameId": "a9111a70-7942-4b4b-8f2e-be64c33df148",
+          "capturedAtMs": 1790605091108,
+          "decisions": []
+        },
+        {
+          "frameId": "ae3c6eff-7f13-4572-b022-17f0bc0580fa",
+          "capturedAtMs": 1790605091476,
+          "decisions": []
+        },
+        {
+          "frameId": "04b2e9c5-e214-4865-97a8-46c09f861b19",
+          "capturedAtMs": 1790605091828,
+          "decisions": []
+        },
+        {
+          "frameId": "21644ea5-5817-4c32-9c2c-3f6e9e69595b",
+          "capturedAtMs": 1790605092189,
+          "decisions": []
+        },
+        {
+          "frameId": "f80a99c1-b814-441f-b5f2-4595a415dd71",
+          "capturedAtMs": 1790605092541,
+          "decisions": []
+        },
+        {
+          "frameId": "fc8dc255-e7ff-485e-a11d-270e30f4f17c",
+          "capturedAtMs": 1790605092894,
+          "decisions": []
+        },
+        {
+          "frameId": "6ea1c64c-ac6e-4414-a56a-505a53fa9d06",
+          "capturedAtMs": 1790605093232,
+          "decisions": []
+        },
+        {
+          "frameId": "60131eef-8f74-4804-bf8b-c586981601b4",
+          "capturedAtMs": 1790605093625,
+          "decisions": []
+        },
+        {
+          "frameId": "eb31795f-d9ad-45c5-ace5-15e32a6def45",
+          "capturedAtMs": 1790605093969,
+          "decisions": []
+        },
+        {
+          "frameId": "d142e1e5-aa5e-4246-9718-95087491a3b9",
+          "capturedAtMs": 1790605094359,
+          "decisions": []
+        },
+        {
+          "frameId": "9164bb2f-cc1c-49b6-9de1-4d5331e200cb",
+          "capturedAtMs": 1790605094711,
+          "decisions": []
+        },
+        {
+          "frameId": "5d43de30-eaee-4534-be3a-8bfb7b2bc11b",
+          "capturedAtMs": 1790605095060,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "1cb8f2df-600e-42ce-9258-d36d771bccb3",
+          "capturedAtMs": 1790605095548,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "2cbe2c5e-2a2f-4abf-8867-756059d65402",
+          "capturedAtMs": 1790605096005,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "8df8d7bd-0d5f-4095-9ba8-1533f5d1da01",
+          "capturedAtMs": 1790605096477,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "0aade958-9205-426f-8fbd-3b6b62dec8cb",
+          "capturedAtMs": 1790605096955,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "f080c0ff-ae7f-4537-9fa2-dcf6923ec21a",
+          "capturedAtMs": 1790605097391,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "4d9c939a-bff6-49e2-b730-a33ef4ffcec1",
+          "capturedAtMs": 1790605097877,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "96f96079-c0df-4804-842f-4913bce5b27d",
+          "capturedAtMs": 1790605098356,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "1b685ab4-77ca-40d0-a4f2-677d4ab7c455",
+          "capturedAtMs": 1790605098792,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "5ecbe482-01e4-4ab0-af54-a3a426ff72f7",
+          "capturedAtMs": 1790605099413,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "3b8c0020-e7e9-4942-a84e-3f03f93d9e09",
+          "capturedAtMs": 1790605099744,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "72d6a33c-4860-4bc3-b6e3-ea7b69df1e53",
+          "capturedAtMs": 1790605100078,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "837dc5f1-25ab-4874-a728-d383d9f8b238",
+          "capturedAtMs": 1790605100456,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "547b477c-f783-42ef-bd1e-3acd5d36831f",
+          "capturedAtMs": 1790605100894,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "e31a8458-dbaa-4218-92b3-b4ca241979f7",
+          "capturedAtMs": 1790605101322,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "c3ee928a-4144-41e1-9372-ec41aadee838",
+          "capturedAtMs": 1790605101811,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "9a530b3c-ae85-4a3a-8d00-5373d909052e",
+          "capturedAtMs": 1790605102165,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "db302705-8162-40c8-bc81-b543f12a4368",
+          "capturedAtMs": 1790605102689,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "3776f1c6-5879-4ea5-bb16-5b2213e90e91",
+          "capturedAtMs": 1790605103168,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "90425e58-6263-4a52-967f-9fc2d4668d9d",
+          "capturedAtMs": 1790605103521,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "e6180811-35ff-4201-b593-b0e94313d95b",
+          "capturedAtMs": 1790605104170,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "66a36d2e-dc4a-4641-a6b2-98c220883dc7",
+          "capturedAtMs": 1790605104665,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "camera_calibration_unavailable"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "d74e2543-23f2-48f3-880f-31b795c19942",
+          "capturedAtMs": 1790605105116,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "ce687912-4f16-4b21-ae8e-685b988606fd",
+          "capturedAtMs": 1790605105700,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "15a6a39d-24c2-4962-8f7d-27e11e40d0c1",
+          "capturedAtMs": 1790605106159,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "3c4527a2-6fee-41e7-b2c7-8eb9b4e2d417",
+          "capturedAtMs": 1790605106688,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "f742f0c4-8510-4de1-837c-4b9303d00ae0",
+          "capturedAtMs": 1790605107160,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "6b77cfe7-679e-40ec-8202-4f697a9474e2",
+          "capturedAtMs": 1790605107658,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "64c6f3fc-118f-4b1c-a32d-7589213e518c",
+          "capturedAtMs": 1790605107985,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "ed1cd16d-cfd2-4536-b5ec-764427764475",
+          "capturedAtMs": 1790605108348,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "0c50d167-6469-4ccb-a4d5-5ca36dd58217",
+          "capturedAtMs": 1790605108814,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "05ff29a2-a26b-452d-9da7-e0cc41d0fb9f",
+          "capturedAtMs": 1790605109206,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "ea5f1f8e-13ae-478e-9c92-5a204935d8e6",
+          "capturedAtMs": 1790605109692,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clip-143435",
+      "frames": [
+        {
+          "frameId": "bb36f08d-8d2e-4bec-95b6-e8d8c534bfa1",
+          "capturedAtMs": 1790606070259,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "b2a65c18-af52-41d4-9244-9bb603fe7a04",
+          "capturedAtMs": 1790606070749,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "9275c211-665e-47d7-b121-05c67ba29131",
+          "capturedAtMs": 1790606071108,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "998a059b-4588-40c0-a1f1-4edbc1331a38",
+          "capturedAtMs": 1790606071488,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "88ad9048-757f-4ba6-9587-a390fc0c1f60",
+          "capturedAtMs": 1790606071838,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "9cd2756c-0ee0-4c1c-add0-ecbe4257ce70",
+          "capturedAtMs": 1790606072183,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "8c7e0f64-d3a5-43d0-a6fc-663014d790c8",
+          "capturedAtMs": 1790606072537,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "2ce2f139-f27f-4395-b202-391d68399229",
+          "capturedAtMs": 1790606072917,
+          "decisions": []
+        },
+        {
+          "frameId": "b83f4d1f-d723-408d-bb67-4052a316faed",
+          "capturedAtMs": 1790606073281,
+          "decisions": []
+        },
+        {
+          "frameId": "e9d83ce1-6201-4185-ad5f-7f8bb15c9c87",
+          "capturedAtMs": 1790606073673,
+          "decisions": []
+        },
+        {
+          "frameId": "0835dd32-8150-498c-8f85-96517eb0e319",
+          "capturedAtMs": 1790606074037,
+          "decisions": []
+        },
+        {
+          "frameId": "6ca640a8-b35b-4565-a9e4-e42f00535180",
+          "capturedAtMs": 1790606074386,
+          "decisions": []
+        },
+        {
+          "frameId": "757876fc-72f9-4fc7-a1fb-4a31aa43bb53",
+          "capturedAtMs": 1790606074738,
+          "decisions": []
+        },
+        {
+          "frameId": "7a8b5376-d51f-4708-988d-b660303dbfca",
+          "capturedAtMs": 1790606075075,
+          "decisions": []
+        },
+        {
+          "frameId": "bc252494-59f2-4eb4-b944-479ec78383b8",
+          "capturedAtMs": 1790606075470,
+          "decisions": []
+        },
+        {
+          "frameId": "9ffb0ad1-90bf-4cb5-9ef4-fa3f7f51efda",
+          "capturedAtMs": 1790606075824,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "97e3808c-a563-4d49-8732-6dda11e5e38a",
+          "capturedAtMs": 1790606076317,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "656a2e7f-fc1c-4ddf-b87d-b68a59cdc1f0",
+          "capturedAtMs": 1790606076794,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "d7bd5d21-ba06-4ab7-b235-76523c2403ef",
+          "capturedAtMs": 1790606077283,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "0e860b0d-e965-4b5d-8005-fd1e60a3bb11",
+          "capturedAtMs": 1790606077861,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "3ac36e19-7ea4-439c-8d1c-2a2b1172ca85",
+          "capturedAtMs": 1790606078452,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "05e750f0-bd1a-423a-b39c-ec975f48a2b3",
+          "capturedAtMs": 1790606078921,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "ba7fe13f-1ad1-484f-8abf-37f8b56451ea",
+          "capturedAtMs": 1790606079410,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "8ba2d240-7e3f-4892-aa4b-a984c1f87147",
+          "capturedAtMs": 1790606079938,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "e358ec1e-da24-48d5-a319-521e469aa3a0",
+          "capturedAtMs": 1790606080442,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "d8260da8-286e-40e6-a451-411025446096",
+          "capturedAtMs": 1790606081046,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "adbe16f1-64e1-464b-87b9-ac57a633d2cd",
+          "capturedAtMs": 1790606081753,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "723ca3bc-2256-4756-baa9-4cff75620b2a",
+          "capturedAtMs": 1790606082352,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "9d52c8ca-8264-45c5-ae59-da1cdf80616c",
+          "capturedAtMs": 1790606082946,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "624fc37b-6e4e-4676-8252-59b44d4a24e1",
+          "capturedAtMs": 1790606083524,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "0a76b010-2f64-417e-a992-37ef9f7acca0",
+          "capturedAtMs": 1790606084068,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "dabbb355-3d52-460b-a7bf-bff65be27d7d",
+          "capturedAtMs": 1790606084578,
+          "decisions": [
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "1e390b64-c028-4b53-8146-7bc64cd4e977",
+          "capturedAtMs": 1790606085325,
+          "decisions": [
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "f2ef69fb-e39a-4c4a-aaa7-cec71456114a",
+          "capturedAtMs": 1790606086054,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "74e420ab-e357-41bf-a167-7a427fd04225",
+          "capturedAtMs": 1790606086409,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "c7b25162-9567-49e1-8049-c5e0f5a8622a",
+          "capturedAtMs": 1790606086753,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "4b83de42-6e67-4ce0-a089-ae99e804a150",
+          "capturedAtMs": 1790606087122,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "18e82323-02c8-4efa-912e-c262c20cc9b1",
+          "capturedAtMs": 1790606087530,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "a18fb515-f9fc-4c4a-8a50-b3323e722877",
+          "capturedAtMs": 1790606087885,
+          "decisions": []
+        },
+        {
+          "frameId": "1b3bc8be-d968-425e-b0c4-99fd408700ad",
+          "capturedAtMs": 1790606088279,
+          "decisions": []
+        },
+        {
+          "frameId": "01cf4fb8-39e2-4c57-afaf-118075ebd6d6",
+          "capturedAtMs": 1790606088652,
+          "decisions": []
+        },
+        {
+          "frameId": "cd3f9746-1180-4b00-8521-36d1c87c9378",
+          "capturedAtMs": 1790606089006,
+          "decisions": []
+        },
+        {
+          "frameId": "785eea3d-40f7-4962-b624-6e549636570f",
+          "capturedAtMs": 1790606089360,
+          "decisions": []
+        },
+        {
+          "frameId": "31a548af-42b7-4ba4-9db4-c27c6266c865",
+          "capturedAtMs": 1790606089734,
+          "decisions": []
+        },
+        {
+          "frameId": "5eef317b-c1a2-49cb-b3b9-44e2b9429505",
+          "capturedAtMs": 1790606090080,
+          "decisions": []
+        },
+        {
+          "frameId": "b79935a7-138a-4802-85f9-043de0f0f08a",
+          "capturedAtMs": 1790606090448,
+          "decisions": []
+        },
+        {
+          "frameId": "2a69062a-9632-4e67-ae70-63d490bc3368",
+          "capturedAtMs": 1790606090856,
+          "decisions": []
+        },
+        {
+          "frameId": "f1f56b0f-2021-4595-a57a-80c564da016e",
+          "capturedAtMs": 1790606091227,
+          "decisions": []
+        },
+        {
+          "frameId": "e46126c2-ff3f-4848-b025-6a7746630262",
+          "capturedAtMs": 1790606091659,
+          "decisions": []
+        }
+      ]
+    },
+    {
+      "id": "clip-154245",
+      "frames": [
+        {
+          "frameId": "057f3551-d2bc-4c17-8a58-ce2600d46b9d",
+          "capturedAtMs": 1790610160176,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "47d025d2-3563-48cf-84c9-742f62bfb3c2",
+          "capturedAtMs": 1790610160671,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "39d9309f-2ac1-41fd-af39-ad5e9b5efd59",
+          "capturedAtMs": 1790610161332,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "c29ac6e7-b37b-49f2-a08b-0cf8d9bb530a",
+          "capturedAtMs": 1790610162004,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "6aec72db-4c84-4997-9e6a-ac3d1b332d55",
+          "capturedAtMs": 1790610162810,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "ee721b09-8061-4fc8-8719-a1b44792b5ce",
+          "capturedAtMs": 1790610163557,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "3ebb1ca9-e42f-43c7-89a4-7d062206fc7c",
+          "capturedAtMs": 1790610164390,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "dde1c961-d499-42e6-a474-ab7f8deb57d5",
+          "capturedAtMs": 1790610164769,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "d1b96eba-7e21-46cd-90e9-d5570c2419a2",
+          "capturedAtMs": 1790610165156,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "884667ea-4dd2-4d1c-95b9-2d521b68f83b",
+          "capturedAtMs": 1790610165528,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "4badb65d-b390-4867-a250-efed37c066e8",
+          "capturedAtMs": 1790610165933,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "04059fc1-9f8b-4051-8340-cde2eb43e6a1",
+          "capturedAtMs": 1790610166292,
+          "decisions": []
+        },
+        {
+          "frameId": "1d6099c7-80ed-4393-8257-ab3b1e1b7bdd",
+          "capturedAtMs": 1790610166699,
+          "decisions": []
+        },
+        {
+          "frameId": "99c38691-8d5d-4851-978d-1b33942255c2",
+          "capturedAtMs": 1790610167066,
+          "decisions": []
+        },
+        {
+          "frameId": "59c944c0-6c7a-41d1-acac-06032b8a512b",
+          "capturedAtMs": 1790610167433,
+          "decisions": []
+        },
+        {
+          "frameId": "632f128e-e331-4e4f-9e7f-a9ecbfb872d1",
+          "capturedAtMs": 1790610167792,
+          "decisions": []
+        },
+        {
+          "frameId": "7596d66d-ca0a-499d-b237-a581046ae618",
+          "capturedAtMs": 1790610168154,
+          "decisions": []
+        },
+        {
+          "frameId": "bbf78d48-1af3-4977-b55d-a68d4ea14247",
+          "capturedAtMs": 1790610168524,
+          "decisions": []
+        },
+        {
+          "frameId": "982b6631-8f73-4278-a14f-0e6d27e1e026",
+          "capturedAtMs": 1790610168904,
+          "decisions": []
+        },
+        {
+          "frameId": "6ed553c7-054d-450d-a69d-70856633b726",
+          "capturedAtMs": 1790610169270,
+          "decisions": []
+        },
+        {
+          "frameId": "6cf3efbe-ca6a-433e-9114-95af27d6aa32",
+          "capturedAtMs": 1790610169635,
+          "decisions": []
+        },
+        {
+          "frameId": "5613f4cf-befe-4e65-992f-fff4b18346d6",
+          "capturedAtMs": 1790610169991,
+          "decisions": []
+        },
+        {
+          "frameId": "3c0787e5-f4db-4a21-a198-98e05c8b0f93",
+          "capturedAtMs": 1790610170367,
+          "decisions": []
+        },
+        {
+          "frameId": "0dac1d68-804b-4821-8ac9-3ad5bd32a4e9",
+          "capturedAtMs": 1790610170720,
+          "decisions": []
+        },
+        {
+          "frameId": "d50477e1-5cc3-479d-ac92-f00cf862b8c9",
+          "capturedAtMs": 1790610171112,
+          "decisions": []
+        },
+        {
+          "frameId": "3ae0ed69-19bb-47e1-8826-275ad60205dc",
+          "capturedAtMs": 1790610171493,
+          "decisions": []
+        },
+        {
+          "frameId": "cbdcb02b-703f-4321-bc70-83f9024f3ec0",
+          "capturedAtMs": 1790610171864,
+          "decisions": []
+        },
+        {
+          "frameId": "3ddcf89c-3b79-41ef-ac09-55d52b3a8d4f",
+          "capturedAtMs": 1790610172233,
+          "decisions": []
+        },
+        {
+          "frameId": "5b9d35cd-10d2-4601-b74b-65186007e41d",
+          "capturedAtMs": 1790610172594,
+          "decisions": []
+        },
+        {
+          "frameId": "9bec4590-60ed-46e4-98f7-593725c089a1",
+          "capturedAtMs": 1790610172950,
+          "decisions": []
+        },
+        {
+          "frameId": "7b2f0b04-546d-45d5-a1fc-3067b7c5ed99",
+          "capturedAtMs": 1790610173336,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "87af2fa7-e0b5-4f1f-8ece-d3e446650ebc",
+          "capturedAtMs": 1790610173855,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "b6cb0b0f-681a-4f70-a748-a99cc714924e",
+          "capturedAtMs": 1790610174336,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "389614a9-2a4e-4c39-9179-249d50238b0b",
+          "capturedAtMs": 1790610174946,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "92ccec46-3074-4e0c-a635-0e162825f0fb",
+          "capturedAtMs": 1790610175631,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "beeb67b4-7f5d-4bbb-a504-8b5f550059be",
+          "capturedAtMs": 1790610176306,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "1d938d64-efeb-464a-9477-ae2f71699adf",
+          "capturedAtMs": 1790610178295,
+          "decisions": []
+        },
+        {
+          "frameId": "9677812d-dd6d-4199-8568-316a047a51ab",
+          "capturedAtMs": 1790610178662,
+          "decisions": []
+        },
+        {
+          "frameId": "1b8253df-87d1-4057-9c52-5181395db82c",
+          "capturedAtMs": 1790610179065,
+          "decisions": []
+        },
+        {
+          "frameId": "f04c9c96-29ed-406a-972a-214b0949a692",
+          "capturedAtMs": 1790610179420,
+          "decisions": []
+        },
+        {
+          "frameId": "6b3a8cad-a315-4cdf-9717-c8e4407c6788",
+          "capturedAtMs": 1790610179842,
+          "decisions": []
+        },
+        {
+          "frameId": "cd83ffc6-887e-4abd-896f-3d462f518ea1",
+          "capturedAtMs": 1790610180239,
+          "decisions": []
+        },
+        {
+          "frameId": "5717035e-1b88-4595-a15e-7cc3127f2b20",
+          "capturedAtMs": 1790610182193,
+          "decisions": []
+        },
+        {
+          "frameId": "6fc9df11-a36c-4d28-9cb7-c736b373e54e",
+          "capturedAtMs": 1790610182626,
+          "decisions": []
+        },
+        {
+          "frameId": "121ba99a-1a2b-42c9-bd22-5373d150558b",
+          "capturedAtMs": 1790610182983,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clip-160920",
+      "frames": [
+        {
+          "frameId": "b9c6310f-8c5a-499c-9d36-46b15d18ac6c",
+          "capturedAtMs": 1790611755087,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "796f16d4-28cb-4f63-9ec4-f9fca37a3a9a",
+          "capturedAtMs": 1790611755596,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "camera_calibration_unavailable"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "3dd89d63-d771-4f44-9e28-6e60a0af60e3",
+          "capturedAtMs": 1790611756068,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "b9fe0af2-8d08-4ab0-adf4-108a395a892e",
+          "capturedAtMs": 1790611756579,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "89dd9aa6-8e3c-4a26-858a-ac55b1602543",
+          "capturedAtMs": 1790611756928,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "cd66d809-8731-4ba5-8d4d-660dac160e1c",
+          "capturedAtMs": 1790611757359,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "707a71dd-1442-4234-9c83-3dbd78f778ca",
+          "capturedAtMs": 1790611757737,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "f2ca9516-78f9-4688-9fb3-f017d52cd6c0",
+          "capturedAtMs": 1790611758165,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "9fd0ed16-2a4c-460b-9d36-277ca568158a",
+          "capturedAtMs": 1790611758513,
+          "decisions": [
+            {
+              "trackId": "track-1",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "077328af-c946-4cab-9b46-18ce444c4e83",
+          "capturedAtMs": 1790611758879,
+          "decisions": []
+        },
+        {
+          "frameId": "b66c6e6b-62c3-4a98-9d9d-621f09966e9d",
+          "capturedAtMs": 1790611759238,
+          "decisions": []
+        },
+        {
+          "frameId": "4d45440e-c909-410d-9b7d-82f5807bc98b",
+          "capturedAtMs": 1790611759613,
+          "decisions": []
+        },
+        {
+          "frameId": "800ee8f8-7136-480b-9e8e-40b5fe821f48",
+          "capturedAtMs": 1790611759989,
+          "decisions": []
+        },
+        {
+          "frameId": "86d0db6b-d440-4f64-8954-3e443ae0aad7",
+          "capturedAtMs": 1790611760352,
+          "decisions": []
+        },
+        {
+          "frameId": "34de6dec-8db3-443b-8762-372aec6316f1",
+          "capturedAtMs": 1790611760724,
+          "decisions": []
+        },
+        {
+          "frameId": "71eb12f4-d8ed-4014-982b-2a16bba38b53",
+          "capturedAtMs": 1790611761112,
+          "decisions": []
+        },
+        {
+          "frameId": "a4f39c1c-2b39-4c22-9a1c-a2bfb2b80abc",
+          "capturedAtMs": 1790611761464,
+          "decisions": []
+        },
+        {
+          "frameId": "b23d9606-0690-4d8c-a593-f1d6a499dbaa",
+          "capturedAtMs": 1790611761819,
+          "decisions": []
+        },
+        {
+          "frameId": "e8fff0bb-0e4f-4e4e-b9bb-2c36b677aad8",
+          "capturedAtMs": 1790611762162,
+          "decisions": []
+        },
+        {
+          "frameId": "5424d7c0-0f23-4544-a93a-60d7671adb8a",
+          "capturedAtMs": 1790611762505,
+          "decisions": []
+        },
+        {
+          "frameId": "bc5da406-a9c2-4f28-b255-a32d721c6365",
+          "capturedAtMs": 1790611762863,
+          "decisions": []
+        },
+        {
+          "frameId": "11be7cec-7ee1-4db1-a834-93887e879df5",
+          "capturedAtMs": 1790611763218,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "9f02d2ec-3a65-465e-b52f-249d57b52d21",
+          "capturedAtMs": 1790611764141,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "camera_calibration_unavailable"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "a6842f47-7b96-46ab-91bb-07f0eab0482b",
+          "capturedAtMs": 1790611764728,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "camera_calibration_unavailable"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "ca30eca3-9e36-4531-a219-c6f877deca67",
+          "capturedAtMs": 1790611765320,
+          "decisions": [
+            {
+              "trackId": "track-2",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-3",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "e6073159-434c-4698-bcdb-c29f19b1c09e",
+          "capturedAtMs": 1790611765777,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "73887bb7-b57c-44dd-ab2d-06b16b6ab1fb",
+          "capturedAtMs": 1790611766253,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "2513fd10-2d10-4b1c-9b73-d7e8e2e41e2b",
+          "capturedAtMs": 1790611766766,
+          "decisions": [
+            {
+              "trackId": "track-4",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "d9bdda95-9cdf-47d4-a912-1ff0c960c731",
+          "capturedAtMs": 1790611767252,
+          "decisions": [
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "4980e29a-efe5-48b4-b873-561d6d945d35",
+          "capturedAtMs": 1790611767643,
+          "decisions": [
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "25d4f7c9-5794-4bfc-8cb0-1f9ee7f75c1c",
+          "capturedAtMs": 1790611767998,
+          "decisions": [
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "fe572c90-05e3-4403-a15f-3c293d8ebba0",
+          "capturedAtMs": 1790611768349,
+          "decisions": [
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "b67fcb0b-a827-47dc-b07e-fbfd83e1f4c0",
+          "capturedAtMs": 1790611768705,
+          "decisions": [
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "17beb83c-d95e-48d2-a730-b4f005fa3d68",
+          "capturedAtMs": 1790611769212,
+          "decisions": [
+            {
+              "trackId": "track-5",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "8ab3680a-aad5-4745-af38-c79fcd629f43",
+          "capturedAtMs": 1790611769707,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "0b88b289-91e7-4dbf-8240-3893b55d238d",
+          "capturedAtMs": 1790611770176,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "614a41a7-306a-490d-bf6a-95f8cea9c654",
+          "capturedAtMs": 1790611770763,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unreliable_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "3f6596bf-581b-40ad-a233-634613f8ccfb",
+          "capturedAtMs": 1790611771385,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "3cdc1435-7b65-4bd6-8e67-b00328f79a2b",
+          "capturedAtMs": 1790611772081,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "433fcbc3-0334-441a-84c9-b9d0daa76a51",
+          "capturedAtMs": 1790611772711,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "714e32b9-0309-43bf-8df6-7300180a26ae",
+          "capturedAtMs": 1790611773229,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "ed72bfe7-6e47-4bf1-9af2-a1648622aaa4",
+          "capturedAtMs": 1790611773871,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "e8dd7325-70f0-4c14-9467-6867679041a5",
+          "capturedAtMs": 1790611774351,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "508516b1-60e1-472b-9bd3-1a808c1ce1d4",
+          "capturedAtMs": 1790611774824,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-8",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "3aedd2af-1041-4d38-8a63-62a2425e4b9b",
+          "capturedAtMs": 1790611775493,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-7",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-8",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "7acb7351-944c-444b-a6a7-f9da7a182310",
+          "capturedAtMs": 1790611775981,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-8",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-9",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-10",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "ee00fb9f-5e1a-47d3-85d0-c0c489322d08",
+          "capturedAtMs": 1790611776824,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-8",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-9",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-10",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "0c2a9185-d1d3-4d7d-ae94-b11de441adc1",
+          "capturedAtMs": 1790611777407,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-8",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-9",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-10",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "44d2e30c-8552-4723-a7b3-02bca6bceca7",
+          "capturedAtMs": 1790611777747,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-8",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-9",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-10",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "3583b2bf-7700-48ad-b91e-f4d855fc85cd",
+          "capturedAtMs": 1790611778113,
+          "decisions": [
+            {
+              "trackId": "track-6",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-8",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-9",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-10",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "b82a975e-360c-4d13-811e-6cf36b418a6a",
+          "capturedAtMs": 1790611778486,
+          "decisions": [
+            {
+              "trackId": "track-8",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-10",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "c4dd63af-2cd0-4f6f-8c25-a030393a9bfa",
+          "capturedAtMs": 1790611778882,
+          "decisions": [
+            {
+              "trackId": "track-8",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-10",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "55703915-9123-4c0e-99c6-dca8fef5932d",
+          "capturedAtMs": 1790611779245,
+          "decisions": [
+            {
+              "trackId": "track-8",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-10",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "e148929f-7b6e-4e81-99f6-a33fc080b7e5",
+          "capturedAtMs": 1790611779659,
+          "decisions": []
+        },
+        {
+          "frameId": "e2513001-8400-4547-ab30-f0c6f4aa1ca8",
+          "capturedAtMs": 1790611780015,
+          "decisions": []
+        },
+        {
+          "frameId": "a04d8383-8aee-4b81-b4b1-f5c4039e1bb6",
+          "capturedAtMs": 1790611780376,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "fc9e1db7-6e66-4546-8733-3cbcd8cec276",
+          "capturedAtMs": 1790611780877,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "3702a80e-ae2a-42bb-81bc-8d181a4a13e6",
+          "capturedAtMs": 1790611781231,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "580c96d2-b689-4605-a27a-a57a5e841cd2",
+          "capturedAtMs": 1790611781715,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "99511027-cd56-428e-858d-5368ca696eff",
+          "capturedAtMs": 1790611782183,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "81bddf48-4d75-49a6-ae8a-3ce14f14b72a",
+          "capturedAtMs": 1790611782661,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "8ec12d8f-38ff-4938-a982-c1db559bc4a8",
+          "capturedAtMs": 1790611783146,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "b62a4fb3-42f9-4bea-9030-0527468dd011",
+          "capturedAtMs": 1790611783626,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "7f947061-84d3-43ae-8479-5975fa3bfe66",
+          "capturedAtMs": 1790611784165,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "870d6977-ce09-42f2-b438-ec568df638e9",
+          "capturedAtMs": 1790611784690,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "e2cf7654-89eb-486a-8a8e-37de05b543e5",
+          "capturedAtMs": 1790611785249,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "58495b02-2d65-4019-87a1-4140b467c90f",
+          "capturedAtMs": 1790611785608,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "aa39c74d-b1f9-4e01-a921-c1893ed88563",
+          "capturedAtMs": 1790611785961,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "d1d09a6f-3bc9-4698-91f4-d070913b68fa",
+          "capturedAtMs": 1790611786329,
+          "decisions": [
+            {
+              "trackId": "track-11",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "44a6d462-d13a-464e-b7fe-1493419b3ec8",
+          "capturedAtMs": 1790611786678,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "ceffb004-a7da-4a0a-bfbf-6ccaa5a11018",
+          "capturedAtMs": 1790611787044,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "0e4fa244-e702-44e5-880f-ce4003424995",
+          "capturedAtMs": 1790611787528,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "322248a4-c40a-4504-b3b0-9faa3f9cb5bb",
+          "capturedAtMs": 1790611788057,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "b755a3aa-b3db-4f08-a1e0-b71f3ab7d662",
+          "capturedAtMs": 1790611788593,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "camera_calibration_unavailable"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "d5fcb649-c38a-4ade-b612-29890c891eb4",
+          "capturedAtMs": 1790611789174,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "e75789fe-e02d-4658-9851-ad4c3deaa812",
+          "capturedAtMs": 1790611789711,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "1656ae13-0e7d-4f03-addb-b5b994d3f5e9",
+          "capturedAtMs": 1790611790193,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "48083960-3f2b-4770-85a8-e98496ae1d19",
+          "capturedAtMs": 1790611790583,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "210174c4-242b-44fb-b612-3e2345e7d6b5",
+          "capturedAtMs": 1790611790951,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "7155c1ed-5097-4acc-a68e-fa364a0b4222",
+          "capturedAtMs": 1790611791335,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "f6f040a4-1bff-4d0e-84e3-fdd9fe176b65",
+          "capturedAtMs": 1790611791690,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "1b9f28da-c712-48ff-96c3-3716edce7202",
+          "capturedAtMs": 1790611792060,
+          "decisions": [
+            {
+              "trackId": "track-12",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "ed1462b2-0c0f-467d-9745-79a598e18b74",
+          "capturedAtMs": 1790611792441,
+          "decisions": [
+            {
+              "trackId": "track-13",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "be94d866-23d4-437d-b9c2-09e6281c5684",
+          "capturedAtMs": 1790611792916,
+          "decisions": [
+            {
+              "trackId": "track-13",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-14",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "601734a7-33bb-4352-8087-b447149a62f1",
+          "capturedAtMs": 1790611793530,
+          "decisions": [
+            {
+              "trackId": "track-13",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-14",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "4fbe38f8-c30b-4700-ab83-ee67445a50da",
+          "capturedAtMs": 1790611794261,
+          "decisions": [
+            {
+              "trackId": "track-13",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "camera_calibration_unavailable"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-14",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "camera_calibration_unavailable"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "c5aa7a0b-f6f3-4427-b910-696af42755b6",
+          "capturedAtMs": 1790611794868,
+          "decisions": [
+            {
+              "trackId": "track-13",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-14",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "f61f7d7d-f6da-4db7-be0a-aa30e22f3959",
+          "capturedAtMs": 1790611795477,
+          "decisions": [
+            {
+              "trackId": "track-13",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-14",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "2e48228f-03a6-4236-a863-1b9bee123215",
+          "capturedAtMs": 1790611796086,
+          "decisions": [
+            {
+              "trackId": "track-13",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-14",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "62ec639c-20fc-432f-93ee-d6562836e507",
+          "capturedAtMs": 1790611796521,
+          "decisions": [
+            {
+              "trackId": "track-13",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-14",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-15",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "8baeaa5d-67e2-42d9-8f03-85836285f7d8",
+          "capturedAtMs": 1790611797025,
+          "decisions": [
+            {
+              "trackId": "track-13",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-14",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-15",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "67affb96-d7a6-4427-a01b-eef0cd9cb1e0",
+          "capturedAtMs": 1790611797364,
+          "decisions": [
+            {
+              "trackId": "track-13",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-14",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-15",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "002c054a-4f55-429f-a7a3-2360f29de918",
+          "capturedAtMs": 1790611797703,
+          "decisions": [
+            {
+              "trackId": "track-13",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-14",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-15",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "18bb3ef5-0613-4312-8091-d185c192e995",
+          "capturedAtMs": 1790611798051,
+          "decisions": [
+            {
+              "trackId": "track-15",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "49cdfc58-f07e-4f85-891f-c0d95e0a7026",
+          "capturedAtMs": 1790611798401,
+          "decisions": [
+            {
+              "trackId": "track-15",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-16",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-17",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "c6db9157-2477-4626-b4c0-4373d3516f82",
+          "capturedAtMs": 1790611799023,
+          "decisions": [
+            {
+              "trackId": "track-16",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-17",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "8aac1582-3822-457e-a072-c3f3810e4bde",
+          "capturedAtMs": 1790611799511,
+          "decisions": [
+            {
+              "trackId": "track-16",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-17",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "74a0b6e2-1894-4b57-bbca-547101e2a6e4",
+          "capturedAtMs": 1790611800034,
+          "decisions": [
+            {
+              "trackId": "track-16",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-17",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "29e0dba8-6c86-4b03-8ff4-f75f64ea19c9",
+          "capturedAtMs": 1790611800551,
+          "decisions": [
+            {
+              "trackId": "track-16",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-17",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            },
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "camera_calibration_unavailable"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "557d8f32-289d-421a-873e-afae7298809b",
+          "capturedAtMs": 1790611801032,
+          "decisions": [
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "242980b6-d74d-437e-adf3-3d1c33971be6",
+          "capturedAtMs": 1790611801519,
+          "decisions": [
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "d55235e4-adfd-42d7-aea5-eaff84a4eaf7",
+          "capturedAtMs": 1790611802007,
+          "decisions": [
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "027947ff-55b8-47d4-96e1-bf136f53c1e7",
+          "capturedAtMs": 1790611802519,
+          "decisions": [
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "96369505-e202-4fbd-836a-9686a1330a15",
+          "capturedAtMs": 1790611802990,
+          "decisions": [
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "stale_road_context"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "61a0d3d8-eb74-4d03-aa84-0c6ceaa20848",
+          "capturedAtMs": 1790611803469,
+          "decisions": [
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "124bd57b-3a94-47d6-919a-3dd1cbe36693",
+          "capturedAtMs": 1790611803833,
+          "decisions": [
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "bd0edfd7-ed15-43bc-a33b-dfb15a9a4392",
+          "capturedAtMs": 1790611804224,
+          "decisions": [
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        },
+        {
+          "frameId": "ef24d7e9-b321-452a-9d52-e68b1e59a461",
+          "capturedAtMs": 1790611804661,
+          "decisions": [
+            {
+              "trackId": "track-18",
+              "classification": "UNKNOWN",
+              "reasons": [
+                "unqualified_observation"
+              ],
+              "displayEligible": false,
+              "immediateEligible": false,
+              "passageEligible": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

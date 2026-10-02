@@ -1,5 +1,72 @@
 # YouSpeed Web Inspector
 
+## Dashcam zum Drive-Log
+
+In **Karte & TSR** Drive-Log und TSR-Log laden, dann unter der Karte **Dashcam**
+auswählen. Das Video bleibt lokal und wird als Blob-URL abgespielt; auch mehr als
+4 GB werden nicht vollständig in JavaScript eingelesen.
+
+- Klick auf Zeichen (Karte oder Liste) bzw. GPS-Fix springt zur Aufnahmezeit.
+  Bei geladenem Video bringt ein Zeichenklick den passenden Frame in Sicht
+  und setzt den Tastaturfokus auf das Video. Filteränderungen scrollen nicht.
+  Der blaue Punkt folgt dem nächsten GPS-Fix innerhalb von zwei Sekunden.
+- Kleine Tasten bieten ±5 Sekunden, ±1 Bild, Play/Pause und schrittweisen
+  Rücklauf ohne Ton; Tempo ist zwischen 0,25× und 2× wählbar.
+- Unter **Zeitabgleich / Bildrate** den UTC-Start kontrollieren. Die automatisch
+  gelesene QuickTime-Erstellungszeit hat nur Sekundengenauigkeit und kann bei
+  exportierten Videos ungeeignet sein. Manuelle ISO-Zeitstempel brauchen eine
+  Zeitzone, etwa `2026-09-24T11:53:07Z`. Die Bildrate ist zunächst 30; Schritte
+  sind nominelle 1/fps-Zeitsprünge, keine Garantie auf exakt einen dekodierten
+  Frame bei variabler Bildrate.
+- Alternative Zeitdatei: `{"schema":"youspeed-dashcam-alignment-v1","videoFile":"drive.mov","startUTC":"2026-09-24T11:53:07Z","frameRate":30,"source":"Geprüfter Aufnahmebeginn"}`.
+  Der Dateiname muss zum ausgewählten Video passen.
+- Außerhalb der Laufzeit wird das alte Bild ausgeblendet und die fehlende
+  Abdeckung angezeigt. Keine Zuordnung zum ersten/letzten Frame durch Clamping.
+- HEVC/MOV benötigt Decoder-Unterstützung des Browsers. Bei lokaler
+  H.264-Konvertierung den ursprünglichen Zeitabgleich manuell übernehmen.
+- Dateien nach einem Reload erneut auswählen. Eine Video-Auswahl ersetzt nur
+  das vorherige Video, nicht die geladenen Logs.
+
+### Spur- und Fahrpfad-Diagnose
+
+Unter dem Video kann ein Log mit `tsr_path_evidence_v1` geladen werden; beim
+TSR-Import werden diese Ereignisse automatisch übernommen. Android-NDJSON mit
+`event: "tsr_path_evidence_v1"` und `evidence` (JSON-String; auch verschachtelt unter `details` akzeptiert) sowie
+iPhone-Textzeilen mit `tsr_path_evidence_v1={...}` werden unterstützt.
+
+1. UTC-Videostart unter **Zeitabgleich / Bildrate** prüfen. Optional den
+   **Logversatz (ms)** einstellen; positive Werte wählen spätere Logzeiten.
+2. Die passende **Kamerageometrie** wählen und bestätigen, dass Zeit und
+   Bildausschnitt übereinstimmen. Gleiche Seitenverhältnisse allein beweisen
+   keinen identischen Zuschnitt. Die Bestätigung wird bei Video-, Geometrie-,
+   Startzeit- oder Offsetwechsel zurückgesetzt.
+3. Gelbe Linien zeigen mögliche Markierungen, graue gestrichelte Linien reine
+   Kanten. Konfidenz und unbestimmte Pfadhypothesen bleiben sichtbar. Zeichenboxen
+   tragen die geloggte Zuordnung (`unknown` bleibt unbekannt). Eine vorhandene
+   projizierte Trajektorie wird cyan gestrichelt gezeichnet. Weltkoordinaten
+   werden nicht ohne Projektion in das Kamerabild eingezeichnet.
+4. **Frame, Unsicherheit und Laufzeit** enthält Belichtungszeit, Frame-ID,
+   Kalibrierung, Fahrzeugversatz, Trajektorie, Laufzeiten und Zuordnungsgründe.
+
+Es wird nur ein Frame innerhalb von **80 ms** zur abgeglichenen Videozeit
+gezeigt, ohne Vorhersage oder Übernahme älterer guter Geometrie. Fehlende
+Belichtungsuhr, Deadline, Geometrie-/Formatwechsel, beschädigte Geometrie und
+widersprüchliche Duplikate blenden das Overlay aus. Zwischen seltenen
+Analyseframes bleibt es daher bewusst leer. Browser mit
+`requestVideoFrameCallback` verwenden die tatsächlich präsentierte Medienzeit.
+
+`tsr_path_recording_v1` liefert mit `timingQuality: "callback_anchor_estimated"`
+nur geschätzte Start-/Stop-/Fortschrittsanker. Diese werden niemals als genaue
+Video-PTS behandelt. Eine automatische Zuordnung ist erst für ausdrücklich
+verifizierte, dateigebundene `dashcam`-Daten mit `videoFile`,
+`videoTimeSeconds`, `geometryId` und `timingQuality: "exposure_pts_verified"`
+vorgesehen. Die aktuellen nativen Aufnahme-Callbacks liefern diese Garantie
+nicht; deshalb bleibt der manuelle Zeitabgleich erforderlich.
+
+Die Darstellung verwendet ausschließlich geloggte Evidenz und führt keine
+neue Erkennung aus. Sie belegt keine rechtliche Gültigkeit eines Zeichens.
+Tests: `node --test tests/inspector/*.test.js`.
+
 Eigenständiges Browser-Tool zum visuellen Prüfen von Ways auf OSM-Karte gegen lokale YouSpeed-SQLite.
 
 ## Features
@@ -80,3 +147,111 @@ Dann im Browser öffnen:
 `http://localhost:8080/inspector/`
 
 Hinweis: Geolocation benötigt einen sicheren Kontext (`https://` oder `localhost`).
+
+## Verkehrszeichen entlang einer aufgezeichneten Fahrt
+
+`http://localhost:8080/inspector/#track` öffnet **Karte & TSR**, ohne ein
+SQLite-Bundle oder den Beispiel-Drive automatisch zu laden. Den Server wie oben
+vom Repository-Root starten; die nationalen Piktogramme und Modell-Manifeste
+werden von dort gelesen.
+
+1. Unter **Drive-Log** die `*_drive_match_log.ndjson` der Fahrt öffnen.
+2. Unter **Verkehrszeichen auf der Fahrt** die zugehörige
+   `*_tsr_log.ndjson` öffnen. Beide Importe dürfen in beliebiger Reihenfolge
+   erfolgen und können unabhängig ersetzt werden.
+3. Auf ein Piktogramm oder einen Eintrag in der chronologischen Liste klicken.
+   Die Karte zeigt die Fahrzeugposition; die Detailansicht zeigt Zeit, Land,
+   Erkennungsscore, Kartenlimit, wirksames Limit, Drive-Status und Quellzeile.
+   Gleichzeitig wird der entsprechende GPS-Fix im bestehenden Matcher ausgewählt.
+4. Mit **Ereignisse** zwischen Detektionen, angewendeten Änderungen und
+   abgelehnten Änderungen filtern. **Fahrt anzeigen** stellt die Übersicht wieder
+   her; **TSR entfernen** entfernt die Zeichen, ohne den Drive zu löschen.
+
+Orange Marker sind beobachtete Kandidaten (auch unterhalb der Erkennungsschwelle),
+grüne Marker explizit protokollierte `passage_activation=applied`-Ereignisse,
+rote Marker abgelehnte Aktivierungen. Aktivierungen sind separate Ereignisse:
+Sie werden nicht anhand ähnlicher Zeiten einem vermeintlich identischen
+physischen Schild zugeschrieben. `UNKNOWN` in der Applicability-Diagnose ist
+kein Beleg für eine tatsächliche Ablehnung durch den aktiven Resolver.
+
+Unterstützt werden die gemischten iPhone-Textlogs mit eingebetteten
+`tsr_applicability_v1`-JSON-Frames, reine Diagnose-JSON/NDJSON-Dateien bzw.
+`frames`-Arrays und Android-`tsr_applicability_v1`-Evidence-Envelopes. Ältere
+Textlogs ohne Diagnose-Frames können ihre protokollierten numerischen
+provisional/confirmed-Zustände darstellen; ein bestätigter Zustand gilt dabei
+nicht automatisch als angewendet. Fehlerhafte Zeilen werden mit Zeilennummer
+gezählt; identische doppelte Frames nur einmal verarbeitet.
+
+Die Zuordnung verwendet den zeitlich nächsten gültigen GPS-Fix mit maximal
+**2 Sekunden** Abstand, ohne interpolierte Koordinaten. Ereignisse ohne solchen
+Fix bleiben in der Liste. Wiederholungen derselben Semantik werden innerhalb
+von **3 Sekunden** je Land, Modell, Track und vollständigem Laufzeit-Scope zu
+Sichtungsgruppen zusammengefasst. Diese Gruppierung behauptet keine physische
+Schildidentität über Track-/Scope-Wechsel hinweg. Der Marker liegt beim ersten
+Auftreten; der höchste Score und die Anzahl der Sichtungen stehen im Detail.
+
+Das Land stammt aus dem Log bzw. der protokollierten Modell-Auswahl; ohne diese
+Information kann es manuell ergänzt werden. Alle fünf Kataloge (DE, FR, BE, NL,
+CH) verwenden die vorhandenen gemeinsamen PNG-Dateien unverändert. Ohne genaue
+Klassen-ID wird nur eine eindeutige semantische Katalog-Zuordnung verwendet und
+als **Symbol aus Semantik** gekennzeichnet. Fehlende/nicht eindeutige oder nicht
+anzeigbare Klassen erhalten einen Platzhalter. Für Streckenlimit-Enden wird bei
+fehlender Variante das nationale Endsymbol mit entsprechendem Hinweis gezeigt;
+Zonenenden erhalten niemals ersatzweise dieses Symbol. Illustrative Ortsnamen
+in den Piktogrammen sind keine aus dem Log erkannten Ortsnamen. Ältere Logs mit
+`unknown::` ohne Klassen-ID können keine konkreten Warn-/Gebotszeichen belegen;
+**Auch nicht identifizierbare Kandidaten** macht diese Einträge sichtbar.
+
+Dateien bleiben im Browser und werden nicht hochgeladen oder gespeichert.
+Die Kartenansicht lädt wie bisher OSM-Kacheln (sichtbarer Kartenausschnitt wird
+an OSM übermittelt); `#tsr` bleibt ohne Kacheln, bis zur Karte gewechselt wird.
+Private Fahrdaten gehören nicht in das Repository. Kein neuer Bundle-Build und
+keine Änderung an der mobilen Erkennungs- oder Geschwindigkeitslogik ist nötig.
+
+Tests: `node --test tests/inspector/*test.js`
+
+### Sekundäre Verkehrszeichen
+
+**Auch sekundäre Zeichen (z. B. Vorfahrt, Warnungen)** blendet zusätzlich
+Kandidaten mit einer konkreten nationalen Klassen-ID und freigegebenem
+Piktogramm in Karte und Liste ein. Die Option ist zunächst aus und unabhängig
+von **Auch nicht identifizierbare Kandidaten**. Filter wie **Angewendet** gelten
+weiterhin: Ein sekundärer Kandidat wird nicht als angewendetes Tempolimit
+behandelt. Bezeichnungen stammen aus dem jeweiligen Länderkatalog.
+
+Die optionalen `rawClassId`-Felder in neuen iPhone- und Android-
+Applicability-Aufzeichnungen erhalten die Originalklasse auch bei
+`semanticKey=unknown::` (keine Geschwindigkeitsemantik). Es handelt sich um
+Detektionen, nicht um den Nachweis, dass das Zeichen im sekundären Feld der App
+angezeigt wurde. Das Additivfeld ändert keine Erkennungs- oder Geschwindigkeits-
+Entscheidung und benötigt keinen neuen Karten-Bundle.
+
+Ältere Logs ohne diese Klassen-IDs können nicht rückwirkend konkrete sekundäre
+Zeichen liefern. Der Inspector nennt die Anzahl solcher nicht identifizierbaren
+Gruppen ausdrücklich; der Schalter erfindet dafür keine Piktogramme.
+
+Neue Frames enthalten außerdem `batch.country` aus dem verwendeten Modell-Pack.
+Damit funktioniert die nationale Zuordnung auch in Android-
+`runtime_diagnostics.ndjson` und in Log-Ausschnitten ohne Lifecycle-Zeilen.
+Das Feld hat Vorrang vor einem vorher protokollierten Modellwechsel.
+
+### Häufigkeiten pro Zeichenklasse
+
+**Zeichenstatistik · gesamtes TSR-Log** zählt pro Land und protokollierter
+YOLO-/Klassifikator-Klasse. Das zugehörige Piktogramm stammt aus dem gemeinsamen
+Länderkatalog. Die Tabelle ist standardmäßig nach **Vorkommen** absteigend
+sortiert; **Einzeldetektionen** kann alternativ als Sortiermaß gewählt werden.
+
+- **Vorkommen**: Anzahl der bereits gebildeten Sichtungsgruppen (gleiche Klasse,
+  Land, Modell, Semantik und Track/Scope, höchstens 3 Sekunden zwischen Frames).
+  Das ist keine garantierte Zahl physisch unterschiedlicher Schilder.
+- **Einzeldetektionen**: Summe der Kandidaten in diesen Gruppen. Identische
+  doppelte Frames werden bereits beim Import entfernt.
+- Alle Detektionsgruppen zählen, auch unterhalb der Erkennungsschwelle, ohne
+  GPS und bei ausgeschalteten sekundären Zeichen. Kartenfilter beeinflussen die
+  Statistik nicht; angewendete/abgelehnte Aktivierungen zählen nicht zusätzlich.
+- Alte Logs ohne Klassen-ID bekommen separat nach Land/Semantik gezählte
+  **Klasse fehlt**-Zeilen. Eine Klasse wird nicht aus einem Piktogramm oder
+  Tempowert abgeleitet. Auch diese Zeilen fließen in die ausgewiesene Summe ein.
+
+Die Statistik benötigt nur das TSR-Log, keinen Drive-Log oder Karten-Bundle.

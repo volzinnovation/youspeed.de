@@ -11,6 +11,76 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AndroidTrafficSignRuntimeTests {
+    @Test fun cameraLeaseClosesBeforeIndependentInputConsumptionAndOnlyOnce() {
+        var closes=0; val reasons=mutableListOf<String>()
+        val pixels=byteArrayOf(1,2,3)
+        val lease=CameraXImageLease({ closes++; pixels.fill(0) },reasons::add)
+        val independent=lease.copyAndClose {
+            assertEquals(0,closes)
+            pixels.copyOf()
+        }
+        assertTrue(lease.isClosed)
+        assertEquals(1,closes)
+        assertEquals(listOf<Byte>(1,2,3),independent.toList())
+        lease.close("frame_released")
+        assertEquals(1,closes)
+        assertEquals(listOf("bitmap_copied"),reasons)
+        assertTrue(runCatching { lease.copyAndClose { error("must not access released pixels") } }.isFailure)
+        assertEquals(1,closes)
+    }
+
+    @Test fun cameraLeaseClosesFailedCopiesAndDiscardedFramesExactlyOnce() {
+        for (copy in listOf(false,true)) {
+            var closes=0; val reasons=mutableListOf<String>()
+            val lease=CameraXImageLease({ closes++ },reasons::add)
+            if (copy) assertTrue(runCatching { lease.copyAndClose<ByteArray> { error("conversion failure") } }.isFailure)
+            else lease.close("frame_released")
+            lease.close("frame_released")
+            assertEquals(1,closes)
+            assertEquals(listOf(if (copy) "bitmap_copy_failed" else "frame_released"),reasons)
+        }
+    }
+
+    @Test fun cameraCadenceReportsAreBoundedAndDistinguishInferenceHoldFromDrops() {
+        val cadence=CameraAnalysisCadenceWindow()
+        for (index in 0..200) {
+            cadence.delivered(index*30_000_000L)
+            cadence.closed(if (index%10==0) "bitmap_copied" else "frame_released",if (index%10==0) 25.0 else 0.1)
+            if (index%10!=0) cadence.event("source_drop_inference_busy")
+        }
+        assertEquals(null,cadence.reportIfDue(4_000_000_000L))
+        val report=requireNotNull(cadence.reportIfDue(6_000_000_000L))
+        val intervals=report["deliveryInterval"] as Map<*,*>
+        assertEquals(128,intervals["samples"])
+        assertEquals(30.0,intervals["p95Ms"])
+        val holds=report["copiedInputCameraHold"] as Map<*,*>
+        assertEquals(25.0,holds["p95Ms"])
+        assertEquals(201L,(report["counts"] as Map<*,*>)["delivered"])
+        assertEquals(180L,(report["counts"] as Map<*,*>)["source_drop_inference_busy"])
+        assertEquals(null,cadence.reportIfDue(6_000_000_001L))
+    }
+
+    @Test
+    fun belgiumPackTurnsSpeedZoneClassificationsIntoConfirmedSpeedEvents() {
+        val root = File(assetPackRoot().parentFile, "BE.panoramax-bootstrap.tsrmodelpack")
+        val pack = TrafficSignModelPackJson.decode(File(root, "manifest.json").readText())
+        for (speed in listOf(30, 50)) {
+            val mapping = pack.classMapping.single { it.classId == "zone:$speed" }
+            val detection = TrafficSignDetection(TrafficSignCandidate(
+                rawClassId = mapping.classId, rawLabel = mapping.label, semantic = mapping.semantic,
+                rawScore = 0.95, calibratedConfidence = null,
+                boundingBox = NormalizedTrafficSignBoundingBox(0.6, 0.4, 0.05, 0.1),
+            ))
+            val fusion = TrafficSignFusionEngine(pack.thresholds, TrafficSignCalibrationOutput.RAW_SCORE,
+                pack.classMapping.associate { it.classId to it.threshold })
+            fusion.observe(detection, observedAtMs = 0)
+            val confirmed = fusion.observe(detection, observedAtMs = 200)
+            assertEquals(TrafficSignRecognitionState.CONFIRMED, confirmed.state)
+            assertEquals(TrafficSignSemantic(TrafficSignSemanticKind.ZONE_START, speed, "km/h"),
+                confirmed.candidate?.semantic)
+        }
+    }
+
     @Test
     fun bundledModelSelectionNormalizesNationalCodes() {
         assertEquals("DE", AndroidTrafficSignModelPackSelection.availableCountryCode("DEU"))

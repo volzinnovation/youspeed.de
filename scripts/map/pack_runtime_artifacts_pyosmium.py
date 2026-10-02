@@ -82,25 +82,13 @@ def _bbox_from_coords(coords: List[Tuple[float, float]]) -> Tuple[float, float, 
 
 
 def _downsample_coords(coords: List[Tuple[float, float]], max_points: int) -> List[Tuple[float, float]]:
-    if max_points < 2:
-        max_points = 2
-    n = len(coords)
-    if n <= max_points:
-        return coords
+    """Preserve source vertices, including interior junctions and sharp bends.
 
-    step = (n - 1) / (max_points - 1)
-    selected: List[Tuple[float, float]] = []
-    last_idx = -1
-    for i in range(max_points):
-        idx = int(round(i * step))
-        idx = min(max(idx, 0), n - 1)
-        if idx == last_idx:
-            continue
-        selected.append(coords[idx])
-        last_idx = idx
-    if selected[-1] != coords[-1]:
-        selected[-1] = coords[-1]
-    return selected
+    The legacy count argument remains accepted for build-script compatibility.
+    Uniform index sampling had no metric error bound and could move the road
+    outside the GPS search radius. A size target must never discard geometry.
+    """
+    return coords
 
 
 def _downsample_closed_ring(points: List[Tuple[float, float]], max_points: int) -> List[Tuple[float, float]]:
@@ -313,7 +301,7 @@ class ArtifactHandler(osmium.SimpleHandler):
                     self.ways_cells[f"{x}:{y}"].append(way_id)
 
             sampled = _downsample_coords(coords, self.max_geom_points)
-            geom_row = {"way_id": way_id, "points": [[lat, lon] for lon, lat in sampled]}
+            geom_row = {"way_id": way_id, "geometry_policy": "source_vertices_v1", "points": [[lat, lon] for lon, lat in sampled]}
             self.ways_geom_lookup[way_id] = self.ways_geom_file.tell()
             self.ways_geom_file.write(json.dumps(geom_row, sort_keys=True, separators=(",", ":")))
             self.ways_geom_file.write("\n")
@@ -436,7 +424,7 @@ def main() -> int:
         "--max-geom-points",
         type=int,
         default=MAX_GEOM_POINTS_DEFAULT,
-        help="Max sampled points per way geometry (default: 24)",
+        help="Deprecated compatibility argument; source road vertices are retained",
     )
     args = parser.parse_args()
 
@@ -510,7 +498,7 @@ def main() -> int:
     print(f"- {args.ways_idx_out} ({len(ways_cells)} grid cells)")
     print(f"- {args.areas_idx_out} ({len(areas)} areas, {len(areas_cells)} grid cells)")
     print(f"- {args.ways_lookup_out} ({len(handler.ways_lookup)} offsets)")
-    print(f"- {args.ways_geom_out} ({handler.ways_count} ways, max_points={args.max_geom_points})")
+    print(f"- {args.ways_geom_out} ({handler.ways_count} ways, geometry=source_vertices_v1)")
     print(f"- {args.ways_geom_lookup_out} ({len(handler.ways_geom_lookup)} offsets)")
     return 0
 

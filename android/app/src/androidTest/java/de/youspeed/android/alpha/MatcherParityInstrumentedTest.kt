@@ -148,7 +148,7 @@ class MatcherParityInstrumentedTest {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val file = File(instrumentation.targetContext.cacheDir, "matcher-parity-${UUID.randomUUID()}.sqlite")
         try {
-            val sql = instrumentation.context.assets.open("matcher-parity/$name").bufferedReader().use { it.readText() }
+            val sql = instrumentation.targetContext.assets.open("matcher/fixtures/$name").bufferedReader().use { it.readText() }
             SQLiteDatabase.openOrCreateDatabase(file, null).use { db -> DeltaUpdatePolicy.sqlStatements(sql).forEach(db::execSQL) }
             body(file)
         } finally { SQLiteDatabase.deleteDatabase(file) }

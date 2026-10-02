@@ -7,8 +7,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.10"
-    CURRENT_PROJECT_VERSION: 10009
-    MARKETING_VERSION: "1.1"
+    CURRENT_PROJECT_VERSION: 10029
+    MARKETING_VERSION: "1.3"
 targets:
   SpeedConsumer:
     type: application
@@ -19,7 +19,11 @@ targets:
           - "*.swift"
         excludes:
           - "SpeedConsumerTests.swift"
+          - "TrafficSignApplicabilityTests.swift"
+          - "SpeedLimitReferenceModelTests.swift"
           - "ScreenOrientationUITests.swift"
+          - "LaneDetectionTests.swift"
+          - "LaneDetectionRuntimeTests.swift"
           - "README.md"
       - path: SpeedConsumerApp/Assets.xcassets
         buildPhase: resources
@@ -33,7 +37,7 @@ targets:
         buildPhase: resources
       - path: SpeedConsumerApp/PrivacyInfo.xcprivacy
         buildPhase: resources
-      - path: SpeedConsumerApp/Rules
+      - path: ../shared/Rules
         buildPhase: resources
       - path: SpeedConsumerApp/TSRModelPacks
         type: folder
@@ -57,14 +61,20 @@ targets:
         buildPhase: resources
       - path: ../shared/tsr/prolix-be-class-catalog-v1.json
         buildPhase: resources
+      - path: ../shared/tsr/prolix-ch-class-catalog-v1.json
+        buildPhase: resources
       - path: ../shared/tsr/sign-pictograms
         type: folder
         buildPhase: resources
       - path: ../shared/attributions
         type: folder
         buildPhase: resources
+      - path: ../shared/speed-limit-reference
+        type: folder
+        buildPhase: resources
     settings:
       base:
+        "SWIFT_OPTIMIZATION_LEVEL[sdk=iphoneos*]": "-O"
         PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumer
         PRODUCT_NAME: SpeedConsumer
         INFOPLIST_FILE: SpeedConsumerApp/Info.plist
@@ -93,6 +103,10 @@ targets:
           - "SpeedDBBenchTests.swift"
           - "README.md"
       - path: SpeedConsumerApp/V3SpeedLimitService.swift
+      - path: SpeedConsumerApp/V3LookupResources.swift
+      - path: SpeedConsumerApp/MatcherCoreModels.swift
+      - path: SpeedConsumerApp/TrafficSignApplicability.swift
+      - path: SpeedConsumerApp/RoadSpeedDefaults.swift
       - path: SpeedDBBenchSketch/BenchmarkAssets
         buildPhase: resources
     settings:
@@ -121,7 +135,29 @@ targets:
     platform: iOS
     sources:
       - path: SpeedConsumerApp/SpeedConsumerTests.swift
+      - path: SpeedConsumerApp/TrafficSignApplicabilityTests.swift
+      - path: SpeedConsumerApp/SpeedLimitReferenceModelTests.swift
+      - path: SpeedConsumerTests
+      - path: ../shared/tsr/passage/suppression-v1.json
+        buildPhase: resources
+      - path: ../shared/matcher/candidate-admission-v1.json
+        buildPhase: resources
+      - path: ../shared/matcher/candidate-admission-v1.sql
+        buildPhase: resources
+      - path: ../shared/matcher/sequence-v1.json
+        buildPhase: resources
+      - path: ../shared/matcher/fixtures
+        type: folder
+        buildPhase: resources
+      - path: ../shared/tsr/applicability/golden-vectors-v1.json
+        buildPhase: resources
+      - path: ../shared/tsr/applicability/paca-exit-topology-v1.sql
+        buildPhase: resources
+      - path: SpeedConsumerApp/LaneDetectionTests.swift
+      - path: SpeedConsumerApp/LaneDetectionRuntimeTests.swift
       - path: SpeedConsumerApp/TestFixtures
+        buildPhase: resources
+      - path: ../shared/penalty-rules-tests/CHE-cases.json
         buildPhase: resources
     dependencies:
       - target: SpeedConsumer

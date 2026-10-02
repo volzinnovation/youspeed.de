@@ -1,0 +1,44 @@
+{
+  "bundle_version": "2026-09-22-fr-pilot-1",
+  "country_code": "FRA",
+  "coverage": {
+    "bbox": {
+      "max_lat": 44.97821,
+      "max_lon": 4.847979,
+      "min_lat": 42.32755,
+      "min_lon": 1.686256
+    },
+    "poly": {
+      "bytes": 23265,
+      "file": "languedoc-roussillon.poly",
+      "sha256": "0daa6b9b3288837844a33e60932846fd33e7da206aba4363e4b3734dda35898e",
+      "url": "https://github.com/volzinnovation/youspeed.de/releases/download/languedoc-roussillon/languedoc-roussillon.poly"
+    }
+  },
+  "created_at_utc": "2026-09-23T20:41:25Z",
+  "db": {
+    "bytes": 174996441,
+    "compression": "gzip",
+    "file": "languedoc-roussillon_2026-09-22-fr-pilot-1_speeds.sqlite",
+    "sha256": "12a160ab913656f285441c22f88d9ecb2ac3852b027ba5f6d3554e822c0310e8",
+    "uncompressed_bytes": 566538240,
+    "uncompressed_sha256": "fca4e9d6d2ada360604500cebd10db441aea4a93d66e8ae3b8e900f6ff8152c6",
+    "url": "https://github.com/volzinnovation/youspeed.de/releases/download/languedoc-roussillon/languedoc-roussillon_2026-09-22-fr-pilot-1_speeds.sqlite.gz"
+  },
+  "delta_index": null,
+  "format": "youspeed.v3.bundle.manifest",
+  "min_app_version": "1.1.1",
+  "penalty_rules": {
+    "bytes": 9366,
+    "file": "FRA-rules.json",
+    "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6",
+    "url": "https://github.com/volzinnovation/youspeed.de/releases/download/languedoc-roussillon/FRA-rules.json"
+  },
+  "region": "languedoc-roussillon",
+  "schema_version": 1,
+  "self": {
+    "file": "languedoc-roussillon_manifest.json",
+    "url": "https://github.com/volzinnovation/youspeed.de/releases/download/languedoc-roussillon/languedoc-roussillon_manifest.json"
+  },
+  "variant": "v3"
+}

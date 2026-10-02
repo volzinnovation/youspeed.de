@@ -5,14 +5,24 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.SharedPreferences
 import android.database.sqlite.SQLiteDatabase
+import android.location.Location
+import android.location.LocationManager
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
+import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import java.io.File
 import java.time.Clock
 import java.time.Instant
+import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -25,6 +35,55 @@ class ManualOrientationInstrumentedTest {
         Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION,
         Manifest.permission.ACCESS_COARSE_LOCATION,
     )
+
+    @Test fun settingsPauseKeepsRawFixesAndWaitsForQueuedBundleRemovalAfterDismissal() = withController { test ->
+        test.act { it.startDriving() }
+        test.injectFix()
+        test.awaitLookupWork()
+        val warm = test.lookupStats()
+        assertTrue("An actual native SQLite reader was opened", warm.liveConnections > 0)
+        repeat(3) { test.injectFix(); test.awaitLookupWork() }
+        assertEquals("Repeated fixes retain the reader", warm.opens, test.lookupStats().opens)
+        val used = test.lookupStats()
+        assertTrue(test.state().limitWayId != null)
+        val before = test.state().gpsFixCount
+        test.act { it.setSettingsVisible(true) }
+        val pausedToken = test.lookupGate().snapshot()
+        repeat(3) { test.injectFix() }
+        test.awaitLookupWork()
+        assertEquals(before + 3, test.state().gpsFixCount)
+        assertEquals("Paused fixes do not touch SQLite", used, test.lookupStats())
+        assertFalse(test.lookupGate().isCurrent(pausedToken))
+        val held = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        test.backgroundExecutor().submit {
+            held.countDown()
+            check(release.await(15, TimeUnit.SECONDS))
+        }
+        try {
+            assertTrue(held.await(3, TimeUnit.SECONDS))
+            test.act {
+                it.deleteDownloadedBundlesKeepingSeed()
+                it.setSettingsVisible(false)
+            }
+            assertTrue("Closing Settings cannot resume a queued deletion", test.lookupGate().isPaused())
+            test.injectFix()
+            assertEquals(before + 4, test.state().gpsFixCount)
+            assertEquals(used, test.lookupStats())
+        } finally { release.countDown() }
+        test.awaitBackgroundWork()
+        assertFalse("Deletion completion resumes admission", test.lookupGate().isPaused())
+        assertFalse(test.lookupGate().isCurrent(pausedToken))
+        assertFalse("The isolated downloaded fixture was deleted", File(test.bundleRoot, "bundles/orientation-fixture/orientation-fixture.sqlite").exists())
+        assertNull("Removed source cannot retain the previous matched road", test.state().limitWayId)
+        val resumed = test.lookupStats()
+        test.idle()
+        assertEquals("Resume does not replay a fix captured in Settings", resumed, test.lookupStats())
+        test.injectFix()
+        test.awaitLookupWork()
+        assertFalse(test.lookupGate().isPaused())
+        Log.i("Phase1DeviceTest", "Settings lookup reuse: warm=$warm repeated=$used resumed=$resumed; rawFixesBefore=$before rawFixesAfter=${test.state().gpsFixCount}; queued deletion held pause; fresh fix resumed")
+    }
 
     @Test fun successfulFinalizationRunsOneActionAndPreservesPhotoAndRecognitionSession() = withController { test ->
         val path = test.beginMovie()
@@ -58,6 +117,61 @@ class ManualOrientationInstrumentedTest {
         assertNull(test.state().dashcamButtonActionError)
         test.assertOtherConsumersPreserved(before, batchesBefore, cameraStopsBefore)
         assertEquals(before.trafficSignGeneration, test.state().trafficSignGeneration)
+    }
+
+    @Test fun disablingRecognitionKeepsSharedCameraAndPhotoSessionActive() = withController { test ->
+        test.beginMovie()
+        val batches = test.captureSessionIds()
+        val cameraStops = test.host.cameraStops
+        test.act { it.setTrafficSignRecognitionEnabled(false) }
+        test.awaitBackgroundWork()
+        assertFalse(test.state().trafficSignRecognitionEnabled)
+        assertEquals(TrafficSignCameraRuntimeState.ACTIVE, test.state().trafficSignCameraRuntimeState)
+        assertTrue(test.state().driveRecorderPanoramaxActive)
+        assertEquals(DriveRecorderState.RECORDING, test.state().driveRecorderState)
+        assertEquals(batches, test.captureSessionIds())
+        assertEquals(cameraStops, test.host.cameraStops)
+    }
+
+    @Test fun disablingRecognitionStopsCameraWhenNoOtherConsumerNeedsIt() = withController { test ->
+        test.act {
+            it.setPanoramaxCaptureEnabled(false)
+            it.setTrafficSignRecognitionEnabled(true)
+            it.setTrafficSignRecognitionIndependentEnabled(true)
+            it.startDriving()
+            it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Standalone recognition")
+        }
+        test.idle()
+        val cameraStops = test.host.cameraStops
+        test.act { it.setTrafficSignRecognitionEnabled(false) }
+        assertEquals(TrafficSignCameraRuntimeState.DISABLED, test.state().trafficSignCameraRuntimeState)
+        assertFalse(test.state().driveRecorderPanoramaxActive)
+        assertTrue(test.host.cameraStops > cameraStops)
+    }
+
+    @Test fun terminalRecognitionFailureRetainsAutomaticPhotosButReleasesUnusedCamera() {
+        for (photosEnabled in listOf(true, false)) withController { test ->
+            test.act {
+                it.setPanoramaxCaptureEnabled(photosEnabled)
+                it.setTrafficSignRecognitionEnabled(true)
+                it.setTrafficSignRecognitionIndependentEnabled(true)
+                it.startDriving()
+                it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Standalone camera")
+            }
+            test.awaitBackgroundWork()
+            val cameraStops = test.host.cameraStops
+            val batches = test.captureSessionIds()
+            test.act { it.onTrafficSignRecognitionUnavailable("Test model failure", it.uiState.trafficSignGeneration) }
+            test.idle()
+            assertTrue(test.state().trafficSignRecognitionUnavailable)
+            assertEquals("Test model failure", test.state().trafficSignCameraRuntimeDetail)
+            if (photosEnabled) {
+                assertEquals(cameraStops, test.host.cameraStops)
+                assertEquals(TrafficSignCameraRuntimeState.ACTIVE, test.state().trafficSignCameraRuntimeState)
+                assertTrue(test.state().driveRecorderPanoramaxActive)
+                assertEquals(batches, test.captureSessionIds())
+            } else assertTrue(test.host.cameraStops > cameraStops)
+        }
     }
 
     @Test fun failedFinalizationDropsActionWithoutStoppingPhotoOrRecognition() = withController { test ->
@@ -136,6 +250,77 @@ class ManualOrientationInstrumentedTest {
         assertFalse(test.state().dashcamRecordingEnabled)
     }
 
+    @Test fun queueMaintenanceCannotBlockCameraCallbacksGalleryActionsOrDriveStop() = withController { test ->
+        var galleryActions = 0
+        test.withStorageWorkerBlocked {
+            test.actResponsive {
+                it.startDriving()
+                it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Test camera active")
+                it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Repeated active callback")
+                repeat(1_000) { _ -> it.refreshPanoramaxBatches() }
+                it.performButtonAction { galleryActions++ }
+            }
+            assertEquals("Gallery button responds while maintenance holds the queue lock", 1, galleryActions)
+        }
+        test.awaitBackgroundWork()
+        assertEquals("Repeated ACTIVE callbacks reserve a single capture session", 1, test.captureSessionIds().size)
+        test.withStorageWorkerBlocked {
+            test.actResponsive {
+                it.refreshPanoramaxBatches()
+                it.stopDriving()
+                it.performButtonAction { galleryActions++ }
+            }
+            assertEquals(2, galleryActions)
+        }
+        test.awaitBackgroundWork()
+        assertTrue(test.captureSessionIds().isEmpty())
+        assertEquals(PanoramaxBatchState.AWAITING_REVIEW, test.queueBatches().single().state)
+    }
+
+    @Test fun cancelledQueuedCaptureStartCannotFinalizeTheNextDriveSession() = withController { test ->
+        test.withStorageWorkerBlocked {
+            test.actResponsive {
+                it.startDriving()
+                it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "First drive")
+                it.stopDriving()
+                it.startDriving()
+                it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Next drive")
+                it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Repeated active callback")
+            }
+        }
+        test.awaitBackgroundWork()
+        val batches = test.queueBatches()
+        assertEquals("Only the latest drive remains capturing", 1, batches.count { it.state == PanoramaxBatchState.CAPTURING })
+        assertTrue("A cancelled start may either be skipped or finalized", batches.size in 1..2)
+        assertTrue(batches.filter { it.state != PanoramaxBatchState.CAPTURING }.all {
+            it.state == PanoramaxBatchState.AWAITING_REVIEW
+        })
+    }
+
+    @Test fun disposalSealsCapturesAfterQueueContentionWithoutBlockingMain() = withController { test ->
+        test.act {
+            it.startDriving()
+            it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Test camera active")
+        }
+        test.awaitBackgroundWork()
+        assertEquals(1, test.captureSessionIds().size)
+        val executor = test.storageExecutor()
+        test.withStorageWorkerBlocked {
+            test.actResponsive { it.dispose() }
+            assertTrue(executor.isShutdown)
+            assertFalse("Final sealing waits for maintenance on the worker", executor.isTerminated)
+            // Another controller can create a session while this controller
+            // waits for its accepted storage work to drain.
+            PanoramaxQueueStore(test.context).createBatch("replacement-controller-session")
+        }
+        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS))
+        val batches = test.queueBatches()
+        assertEquals(PanoramaxBatchState.AWAITING_REVIEW,
+            batches.single { it.captureSessionId != "replacement-controller-session" }.state)
+        assertEquals("Disposal only finalizes sessions owned by this controller", PanoramaxBatchState.CAPTURING,
+            batches.single { it.captureSessionId == "replacement-controller-session" }.state)
+    }
+
     private class RecordingHost : ConsumerHost {
         var cameraStarts = 0
         var cameraStops = 0
@@ -177,7 +362,82 @@ class ManualOrientationInstrumentedTest {
         fun act(action: (ConsumerSessionController) -> Unit) =
             instrumentation.runOnMainSync { action(requireNotNull(controller)) }
 
+        fun actResponsive(action: (ConsumerSessionController) -> Unit) {
+            val completed = CountDownLatch(1)
+            val failure = AtomicReference<Throwable?>()
+            Handler(Looper.getMainLooper()).post {
+                try { action(requireNotNull(controller)) }
+                catch (error: Throwable) { failure.set(error) }
+                finally { completed.countDown() }
+            }
+            assertTrue("UI callbacks must not wait for the queue lock", completed.await(3, TimeUnit.SECONDS))
+            failure.get()?.let { throw it }
+        }
+
+        fun withStorageWorkerBlocked(block: () -> Unit) {
+            val held = CountDownLatch(1)
+            val release = CountDownLatch(1)
+            // Photo work now has a dedicated worker and shared-root locking.
+            // Blocking the former per-store monitor no longer creates contention.
+            val worker = storageExecutor().submit {
+                held.countDown()
+                check(release.await(15, TimeUnit.SECONDS))
+            }
+            try {
+                assertTrue(held.await(3, TimeUnit.SECONDS))
+                block()
+            } finally {
+                release.countDown()
+                worker.get(5, TimeUnit.SECONDS)
+                idle()
+            }
+        }
+
+        fun awaitBackgroundWork() {
+            // A mutation may enqueue a coalesced refresh at the tail.
+            repeat(2) {
+                backgroundExecutor().submit {}.get(10, TimeUnit.SECONDS)
+                storageExecutor().submit {}.get(10, TimeUnit.SECONDS)
+                idle()
+            }
+        }
+
+        fun storageExecutor(): ExecutorService = PanoramaxStorageWorker::class.java.getDeclaredField("executor")
+            .apply { isAccessible = true }.get(field("panoramaxStorageWorker")) as ExecutorService
+
+        fun backgroundExecutor(): ExecutorService {
+            val field = ConsumerSessionController::class.java.getDeclaredField("executor").apply { isAccessible = true }
+            return field.get(requireNotNull(controller)) as ExecutorService
+        }
+
         fun idle() = instrumentation.waitForIdleSync()
+
+        fun lookupGate(): TrafficSignLookupMutationGate = field("lookupToken") as TrafficSignLookupMutationGate
+
+        fun lookupStats(): LookupPoolStats = (field("lookupResources") as LookupSessionResources<*>).stats()
+
+        private fun field(name: String): Any = requireNotNull(ConsumerSessionController::class.java.getDeclaredField(name)
+            .apply { isAccessible = true }.get(requireNotNull(controller)))
+
+        fun awaitLookupWork() {
+            val worker = field("lookupWorker") as LatestPendingLookupWorker
+            val executor = LatestPendingLookupWorker::class.java.getDeclaredField("executor")
+                .apply { isAccessible = true }.get(worker) as ExecutorService
+            executor.submit {}.get(10, TimeUnit.SECONDS)
+            idle()
+        }
+
+        fun injectFix() {
+            val location = Location(LocationManager.GPS_PROVIDER).apply {
+                latitude = 52.06000; longitude = 13.00392
+                accuracy = 5f; speed = 8f; bearing = 90f
+                time = System.currentTimeMillis(); elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
+            }
+            act { controller ->
+                ConsumerSessionController::class.java.getDeclaredMethod("consumeLocation", Location::class.java)
+                    .apply { isAccessible = true }.invoke(controller, location)
+            }
+        }
 
         fun state(): ConsumerUiState {
             lateinit var state: ConsumerUiState
@@ -198,7 +458,7 @@ class ManualOrientationInstrumentedTest {
                     it.toggleDriveRecorderDashcam()
                 }
             }
-            idle()
+            awaitBackgroundWork()
             lateinit var path: String
             act {
                 assertTrue(it.isDriveRecorderSessionActive())
@@ -223,7 +483,9 @@ class ManualOrientationInstrumentedTest {
             idle()
         }
 
-        fun captureSessionIds(): Set<String> = PanoramaxQueueStore(context).listBatches()
+        fun queueBatches(): List<PanoramaxBatchRecord> = PanoramaxQueueStore(context).listBatches()
+
+        fun captureSessionIds(): Set<String> = queueBatches()
             .filter { it.state == PanoramaxBatchState.CAPTURING }.map { it.captureSessionId }.toSet()
 
         fun assertOtherConsumersPreserved(before: ConsumerUiState, batchIds: Set<String>, cameraStops: Int) {
@@ -249,10 +511,12 @@ class ManualOrientationInstrumentedTest {
         }
 
         fun dispose() {
+            val executors = controller?.let { listOf(backgroundExecutor(), storageExecutor()) }.orEmpty()
             instrumentation.runOnMainSync {
                 controller?.dispose()
                 controller = null
             }
+            executors.forEach { assertTrue(it.awaitTermination(15, TimeUnit.SECONDS)) }
             idle()
         }
     }
@@ -273,9 +537,14 @@ class ManualOrientationInstrumentedTest {
         val preferences = isolated.getSharedPreferences("youspeed", Context.MODE_PRIVATE)
         val bundleRoot = File(isolated.filesDir, "bundle").apply { mkdirs() }
         val harness = ControllerHarness(isolated, preferences, bundleRoot)
+        val previousLocale = Locale.getDefault()
         try {
-            val databaseFile = File(bundleRoot, "orientation-fixture.sqlite")
-            val sql = instrumentation.context.assets.open("matcher-parity/straight-linked.sql").bufferedReader().use { it.readText() }
+            // This fixture exercises the German setup used by the attached
+            // phones, independent of the emulator's default speech language.
+            Locale.setDefault(Locale.GERMANY)
+            val databaseFile = File(bundleRoot, "bundles/orientation-fixture/orientation-fixture.sqlite")
+            assertTrue(databaseFile.parentFile!!.mkdirs())
+            val sql = instrumentation.targetContext.assets.open("matcher/fixtures/straight-linked.sql").bufferedReader().use { it.readText() }
             SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { database ->
                 DeltaUpdatePolicy.sqlStatements(sql).forEach(database::execSQL)
             }
@@ -283,7 +552,7 @@ class ManualOrientationInstrumentedTest {
                 region = "orientation-test-region", countryCode = "DEU", bundleVersion = "2026-09-14-orientation-fixture",
                 dbFileName = databaseFile.name, dbPath = databaseFile.absolutePath,
                 dbSha256 = PanoramaxQueueStore.sha256(databaseFile), dbBytes = databaseFile.length(),
-                manifestUrl = "asset://androidTest/matcher-parity/straight-linked.sql", activatedAtUTC = Instant.now().toString(),
+                manifestUrl = "asset://shared/matcher/fixtures/straight-linked.sql", activatedAtUTC = Instant.now().toString(),
             )
             File(bundleRoot, "active_bundle.json").writeText(ContractJson.encodeActiveBundleState(active))
             assertTrue(preferences.edit().putBoolean(OnboardingPolicy.COMPLETED_KEY, true).commit())
@@ -293,6 +562,7 @@ class ManualOrientationInstrumentedTest {
             harness.dispose()
             base.deleteSharedPreferences("$id-youspeed")
             directory.deleteRecursively()
+            Locale.setDefault(previousLocale)
         }
     }
 }

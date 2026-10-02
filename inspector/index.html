@@ -31,7 +31,7 @@
           aria-selected="true"
           aria-controls="matcher-workspace"
         >
-          Map Matcher
+          Karte &amp; TSR
         </button>
         <button
           id="tsr-mode-btn"
@@ -95,6 +95,62 @@
         </div>
         <p id="status" class="status">Bereit.</p>
 
+        <section class="track-tsr-panel" aria-labelledby="track-tsr-title">
+          <h2 id="track-tsr-title">Verkehrszeichen auf der Fahrt</h2>
+          <p class="hint">Drive-Log oben und zugehöriges TSR-Log hier öffnen. Kein SQLite-Bundle nötig.
+            Dateien bleiben lokal; die Hintergrundkarte lädt Kartenkacheln von OpenStreetMap.</p>
+          <label for="track-tsr-file">TSR-Log (.ndjson / .json / .log)</label>
+          <input id="track-tsr-file" type="file" accept=".ndjson,.jsonl,.json,.log,.txt" />
+          <div class="track-tsr-filters">
+            <label>Land, falls im Log unbekannt
+              <select id="track-tsr-country">
+                <option value="">Unbekannt</option>
+                <option>FR</option><option>BE</option><option>DE</option><option>NL</option><option>CH</option>
+              </select>
+            </label>
+            <label>Ereignisse
+              <select id="track-tsr-kind">
+                <option value="all">Alle</option><option value="detection">Detektionen</option>
+                <option value="applied">Angewendet</option><option value="rejected">Abgelehnt</option>
+              </select>
+            </label>
+          </div>
+          <label class="track-tsr-check"><input id="track-tsr-secondary" type="checkbox" /> Auch sekundäre Zeichen (z. B. Vorfahrt, Warnungen)</label>
+          <p id="track-tsr-secondary-status" class="hint compact" role="status"></p>
+          <label class="track-tsr-check"><input id="track-tsr-unknown" type="checkbox" /> Auch nicht identifizierbare Kandidaten</label>
+          <div class="way-row">
+            <button id="track-tsr-fit" type="button">Fahrt anzeigen</button>
+            <button id="track-tsr-clear" type="button">TSR entfernen</button>
+          </div>
+          <p id="track-tsr-summary" class="hint" role="status">Noch kein TSR-Log geladen.</p>
+          <details id="track-tsr-statistics" class="track-tsr-statistics" open>
+            <summary>Zeichenstatistik · gesamtes TSR-Log</summary>
+            <label for="track-tsr-statistics-sort">Absteigend sortieren nach</label>
+            <select id="track-tsr-statistics-sort">
+              <option value="occurrences">Vorkommen (Sichtungsgruppen)</option>
+              <option value="detections">Einzeldetektionen</option>
+            </select>
+            <p class="hint compact">Je Land und YOLO-/Klassifikator-Klasse. Vorkommen = gruppierte Sichtungen;
+              Einzeldetektionen = alle Kandidaten in diesen Gruppen. Kein Zähler physisch unterschiedlicher Schilder.
+              Enthält auch sekundäre Zeichen und Ereignisse ohne GPS, unabhängig von den Kartenfiltern.
+              Aktivierungen werden nicht nochmals gezählt.</p>
+            <p id="track-tsr-statistics-summary" class="hint compact" role="status">Noch kein TSR-Log geladen.</p>
+            <div class="track-tsr-statistics-scroll">
+              <table class="track-tsr-statistics-table">
+                <caption class="hint">Häufigkeit der erkannten Klassen</caption>
+                <thead><tr><th scope="col">Zeichen / Klasse</th><th id="track-tsr-occurrences-heading" scope="col" aria-sort="descending" title="Vorkommen (Sichtungsgruppen)">Anzahl</th><th id="track-tsr-detections-heading" scope="col" aria-sort="none" title="Einzeldetektionen" aria-label="Einzeldetektionen">Detekt.</th></tr></thead>
+                <tbody id="track-tsr-statistics-body"></tbody>
+              </table>
+            </div>
+          </details>
+          <p class="hint compact">Orange: detektiert · Grün: angewendet · Rot: abgelehnt.
+            Marker = Fahrzeugposition beim ersten Auftreten (GPS-Abstand höchstens 2 s), kein vermessener Schildstandort.
+            Wiederholungen innerhalb von 3 s werden je Track/Semantik zusammengefasst.</p>
+          <div id="track-tsr-list" class="track-tsr-list" aria-label="TSR-Ereignisse"></div>
+          <div id="track-tsr-detail" class="track-tsr-detail" aria-live="polite"></div>
+          <p class="hint compact"><a href="../shared/tsr/sign-pictograms/THIRD_PARTY_NOTICES.txt" target="_blank" rel="noopener">Piktogramm-Quellen &amp; Lizenzen</a></p>
+        </section>
+
         <section class="portal-panel">
           <h2>Tunnel / Motorway Portals</h2>
           <div id="portal-summary" class="hint">Noch kein Way gewählt.</div>
@@ -119,11 +175,56 @@
           <pre id="raw-entry" class="raw-block"></pre>
         </section>
       </section>
+      <div class="track-media-workspace">
       <section class="map-wrap" aria-label="Karte">
         <div id="map" class="map"></div>
         <aside id="admin-boundary-legend" class="map-legend" aria-label="Legende Admin-Grenzen"></aside>
         <div class="crosshair" aria-hidden="true"></div>
       </section>
+      <section id="track-video-panel" class="track-video-panel" aria-label="Dashcam">
+        <div class="track-video-toolbar">
+          <label class="track-video-file">Dashcam <input id="track-video-file" type="file" accept="video/*,.mov,.mp4" /></label>
+          <button id="track-video-clear" type="button" disabled>Video entfernen</button>
+        </div>
+        <div id="track-video-content" hidden>
+          <div class="track-video-stage">
+            <video id="track-video" controls playsinline preload="metadata" muted tabindex="0" aria-label="Dashcam-Video"></video>
+            <canvas id="track-path-overlay" aria-hidden="true" hidden></canvas>
+          </div>
+          <details class="track-path-panel" open>
+            <summary>Spur- und Fahrpfad-Diagnose</summary>
+            <label><input id="track-path-enabled" type="checkbox" checked /> Geloggte Geometrie überlagern</label>
+            <label>Pfad-/TSR-Log <input id="track-path-file" type="file" accept=".ndjson,.jsonl,.json,.log,.txt" /></label>
+            <div class="track-path-alignment">
+              <label>Kamerageometrie <select id="track-path-geometry"><option value="">Bitte auswählen</option></select></label>
+              <label>Logversatz (ms) <input id="track-path-offset" type="number" step="1" value="0" /></label>
+            </div>
+            <label><input id="track-path-confirmed" type="checkbox" /> Zeitabgleich und identischen Bildausschnitt geprüft</label>
+            <p id="track-path-summary" class="hint compact">Pfad-Ereignisse werden auch aus dem TSR-Log übernommen.</p>
+            <p id="track-path-status" class="hint compact" role="status">Kein Pfad-Log geladen.</p>
+            <details><summary>Frame, Unsicherheit und Laufzeit</summary><pre id="track-path-detail"></pre></details>
+          </details>
+          <div class="track-video-toolbar" aria-label="Videosteuerung">
+            <button id="track-video-back" type="button" aria-label="5 Sekunden zurück">−5 s</button>
+            <button id="track-video-prev-frame" type="button" aria-label="Ein Bild zurück">‹ Bild</button>
+            <button id="track-video-reverse" type="button" aria-pressed="false">◀ Rücklauf</button>
+            <button id="track-video-play" type="button">▶ / Pause</button>
+            <button id="track-video-next-frame" type="button" aria-label="Ein Bild vor">Bild ›</button>
+            <button id="track-video-forward" type="button" aria-label="5 Sekunden vor">+5 s</button>
+            <label>Tempo <select id="track-video-rate"><option>0.25</option><option>0.5</option><option selected>1</option><option>2</option></select></label>
+          </div>
+          <output id="track-video-clock"></output>
+          <details class="track-video-alignment">
+            <summary>Zeitabgleich / Bildrate</summary>
+            <label>Videostart (ISO mit Zeitzone) <input id="track-video-start" type="text" placeholder="2026-09-24T11:51:15.000Z" /></label>
+            <label>Bilder/s <input id="track-video-fps" type="number" min="1" max="240" step="any" value="30" /></label>
+            <label>Zeitdatei (.json) <input id="track-video-alignment" type="file" accept=".json" /></label>
+            <p id="track-video-source" class="hint compact"></p>
+          </details>
+        </div>
+        <p id="track-video-status" class="hint compact" role="status" tabindex="-1">Lokales Video öffnen. Klick auf Zeichen oder GPS-Fix springt zur passenden Videozeit.</p>
+      </section>
+      </div>
     </main>
 
     <main
@@ -367,6 +468,12 @@
       crossorigin=""
     ></script>
     <script src="./app.js"></script>
+    <script src="./track-tsr-core.js"></script>
+    <script src="./track-tsr.js"></script>
+    <script src="./track-video-core.js"></script>
+    <script src="./track-video.js"></script>
+    <script src="./track-path-core.js"></script>
+    <script src="./track-path.js"></script>
     <script src="./tsr-qa-core.js"></script>
     <script src="./tsr-qa.js"></script>
   </body>

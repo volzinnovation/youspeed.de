@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import CryptoKit
 import ImageIO
 
@@ -62,38 +63,92 @@ struct PanoramaxDeletionReport: Equatable, Sendable {
     var hasFailures: Bool { !failedRelativePaths.isEmpty }
 }
 
+struct PanoramaxQueueIOStatistics: Sendable {
+    var metadataBytesWritten: Int64 = 0
+    var checkpointWrites = 0
+    var journalWrites = 0
+    var snapshotReads = 0
+}
+
 /// Transactional, app-private queue. The root is excluded from iCloud/device backup.
 final class PanoramaxQueueStore: @unchecked Sendable {
     private let root: URL
     private let batchesDirectory: URL
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
-    private let lock = NSRecursiveLock()
+    private final class SharedRoot: @unchecked Sendable {
+        let lock = NSRecursiveLock()
+        var revisions: [String: UInt64] = [:]
+        var deletedItemIDs: [String: Set<String>] = [:]
+    }
+    private static let rootsLock = NSLock()
+    private static var roots: [String: SharedRoot] = [:]
+    private let sharedRoot: SharedRoot
+    private var lock: NSRecursiveLock { sharedRoot.lock }
     /// Process-local tombstones prevent an upload task holding an older batch
     /// snapshot from re-inserting an item after the user deleted it. Upload
     /// tasks cannot survive process restart, so durable item removal is enough
     /// once a new store instance is created.
-    private var locallyDeletedItemIDsByBatch: [String: Set<String>] = [:]
     private(set) var startupCleanupReport = PanoramaxQueueCleanupReport()
+    private(set) var unreadableRelativePaths: [String] = []
+    private struct JournalRecord: Codable {
+        let version: Int
+        let sequence: Int64
+        let header: PanoramaxBatchRecord
+        let upserts: [PanoramaxItemRecord]
+        let removed: [String]
+        let order: [String]?
+    }
+    private struct CachedBatch {
+        var batch: PanoramaxBatchRecord
+        var sequence: Int64
+        var journalCount: Int
+        var journalBytes: Int64
+        var checkpointItems: Int
+        var checkpointBytes: Int64
+        var revision: UInt64 = 0
+    }
+    private var cachedBatches: [String: CachedBatch] = [:]
+    private var cacheOrder: [String] = []
+    private var ioStatistics = PanoramaxQueueIOStatistics()
+    private var journalMaintenanceFailures: Set<String> = []
+    private let maximumCachedBatches = 4
+
+    var persistenceStatistics: PanoramaxQueueIOStatistics { lock.withLock { ioStatistics } }
 
     init(root: URL? = nil, performStartupMaintenance: Bool = true) throws {
         let base = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("YouSpeed", isDirectory: true)
         let configuredRoot = base.appendingPathComponent("Panoramax", isDirectory: true)
-        self.root = configuredRoot
-        self.batchesDirectory = configuredRoot.appendingPathComponent("batches", isDirectory: true)
+        // Foundation does not resolve an ancestor symlink when the final path
+        // does not exist. Create the queue first so its first and later stores
+        // share one lock/revision/tombstone registry, including /var aliases on
+        // physical iPhones and custom roots reached through a symbolic link.
+        try FileManager.default.createDirectory(
+            at: configuredRoot.appendingPathComponent("batches", isDirectory: true),
+            withIntermediateDirectories: true
+        )
+        let canonicalRoot = configuredRoot.resolvingSymlinksInPath().standardizedFileURL
+        self.root = canonicalRoot
+        self.sharedRoot = Self.rootsLock.withLock {
+            let key = canonicalRoot.path
+            if let shared = Self.roots[key] { return shared }
+            let shared = SharedRoot()
+            Self.roots[key] = shared
+            return shared
+        }
+        self.batchesDirectory = canonicalRoot.appendingPathComponent("batches", isDirectory: true)
         self.encoder = JSONEncoder()
         self.decoder = JSONDecoder()
         self.encoder.dateEncodingStrategy = .iso8601
         self.decoder.dateDecodingStrategy = .iso8601
         var values = URLResourceValues()
         values.isExcludedFromBackup = true
-        try FileManager.default.createDirectory(at: batchesDirectory, withIntermediateDirectories: true)
-        var excludedRoot = configuredRoot
+        var excludedRoot = canonicalRoot
         try? excludedRoot.setResourceValues(values)
         var excludedBatches = batchesDirectory
         try? excludedBatches.setResourceValues(values)
-        protect(configuredRoot)
+        protect(canonicalRoot)
         protect(batchesDirectory)
         if performStartupMaintenance {
             startupCleanupReport = performStartupMaintenanceNow()
@@ -128,14 +183,19 @@ final class PanoramaxQueueStore: @unchecked Sendable {
         try lock.withLock {
             let files = try FileManager.default.contentsOfDirectory(at: batchesDirectory, includingPropertiesForKeys: nil)
                 .filter { $0.pathExtension == "json" }
-            return files.compactMap { file in
+            var failures: [String] = []
+            let batches = files.compactMap { file -> PanoramaxBatchRecord? in
                 let fileBatchID = file.deletingPathExtension().lastPathComponent
                 guard Self.isValidBatchID(fileBatchID),
-                      let batch = try? decoder.decode(PanoramaxBatchRecord.self, from: Data(contentsOf: file)),
-                      batch.batchID == fileBatchID else { return nil }
+                      let batch = try? read(fileBatchID, cacheResult: false),
+                      batch.batchID == fileBatchID else {
+                    failures.append(relativePath(file))
+                    return nil
+                }
                 return batch
             }
-                .sorted { $0.createdAt > $1.createdAt }
+            unreadableRelativePaths = failures.sorted()
+            return batches.sorted { $0.createdAt > $1.createdAt }
         }
     }
 
@@ -167,7 +227,7 @@ final class PanoramaxQueueStore: @unchecked Sendable {
             var repairedCount = 0
 
             for file in files {
-                guard let batch = try? decoder.decode(PanoramaxBatchRecord.self, from: Data(contentsOf: file)) else {
+                guard let batch = try? read(file.deletingPathExtension().lastPathComponent) else {
                     continue
                 }
                 for item in batch.items {
@@ -345,10 +405,22 @@ final class PanoramaxQueueStore: @unchecked Sendable {
             // already removed.
             guard try read(batch.batchID) != nil else { throw QueueError.unknownBatch }
             var filtered = batch
-            if let deletedItemIDs = locallyDeletedItemIDsByBatch[batch.batchID] {
+            if let deletedItemIDs = sharedRoot.deletedItemIDs[batch.batchID] {
                 filtered.items.removeAll { deletedItemIDs.contains($0.itemID) }
             }
             try commit(filtered)
+        }
+    }
+
+    /// Mutates the latest snapshot under the same root lock as capture and deletion.
+    /// Callers must not split a read/modify/write transaction across actor suspension.
+    @discardableResult
+    func mutateBatch(_ batchID: String, _ change: (inout PanoramaxBatchRecord) throws -> Void) throws -> PanoramaxBatchRecord {
+        try lock.withLock {
+            guard var batch = try read(batchID) else { throw QueueError.unknownBatch }
+            try change(&batch)
+            try commit(batch)
+            return batch
         }
     }
 
@@ -420,7 +492,7 @@ final class PanoramaxQueueStore: @unchecked Sendable {
         return try lock.withLock {
             let files = try FileManager.default.contentsOfDirectory(at: batchesDirectory, includingPropertiesForKeys: nil)
                 .filter { $0.pathExtension == "json" }
-            let batches = files.compactMap { try? decoder.decode(PanoramaxBatchRecord.self, from: Data(contentsOf: $0)) }
+            let batches = files.compactMap { try? read($0.deletingPathExtension().lastPathComponent) }
             struct Candidate { let batchID: String; let id: String; let bytes: Int64; let capturedAt: Date }
             var candidates: [Candidate] = []
             var total: Int64 = 0
@@ -478,7 +550,7 @@ final class PanoramaxQueueStore: @unchecked Sendable {
             guard !removedItems.isEmpty else { return PanoramaxDeletionReport() }
             batch.items.removeAll { itemIDs.contains($0.itemID) }
             try commit(batch)
-            locallyDeletedItemIDsByBatch[batchID, default: []]
+            sharedRoot.deletedItemIDs[batchID, default: []]
                 .formUnion(removedItems.map(\.itemID))
 
             var report = PanoramaxDeletionReport(deletedItemIDs: removedItems.map(\.itemID))
@@ -600,7 +672,7 @@ final class PanoramaxQueueStore: @unchecked Sendable {
             for file in files {
                 let fileBatchID = file.deletingPathExtension().lastPathComponent
                 guard Self.isValidBatchID(fileBatchID),
-                      var batch = try? decoder.decode(PanoramaxBatchRecord.self, from: Data(contentsOf: file)),
+                      var batch = try? read(fileBatchID),
                       batch.batchID == fileBatchID else {
                     report.failedRelativePaths.append(relativePath(file))
                     continue
@@ -627,9 +699,12 @@ final class PanoramaxQueueStore: @unchecked Sendable {
                 decodedBatches.append(batch)
             }
 
-            let referencedPaths = Set(decodedBatches.flatMap { batch in
+            // Enumeration may return /private/var URLs for a store rooted at
+            // /var. Compare normalized file locations so an alias never makes
+            // a referenced original or thumbnail look like a legacy orphan.
+            let referencedFiles = Set(decodedBatches.flatMap { batch in
                 batch.items.flatMap { [$0.originalPath, $0.thumbnailPath] }
-            })
+            }.compactMap { safeFileURL(forRelativePath: $0)?.resolvingSymlinksInPath().standardizedFileURL })
             for batch in decodedBatches {
                 let batchDirectory = batchesDirectory.appendingPathComponent(batch.batchID, isDirectory: true)
                 let batchValues = try? batchDirectory.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
@@ -647,7 +722,7 @@ final class PanoramaxQueueStore: @unchecked Sendable {
                           isLegacyItemJPEG(candidate, directlyUnder: batchDirectory) else { continue }
                     legacyItemDirectories.insert(candidate.deletingLastPathComponent())
                     let relative = relativePath(candidate)
-                    guard !referencedPaths.contains(relative) else { continue }
+                    guard !referencedFiles.contains(candidate.resolvingSymlinksInPath().standardizedFileURL) else { continue }
                     do {
                         try FileManager.default.removeItem(at: candidate)
                         report.removedOrphanFileCount += 1
@@ -672,6 +747,7 @@ final class PanoramaxQueueStore: @unchecked Sendable {
                 report.removedEmptyBatchCount += 1
             }
             report.recoveredBatchIDs.sort()
+            report.failedRelativePaths.append(contentsOf: journalMaintenanceFailures)
             report.failedRelativePaths.sort()
             return report
         }
@@ -694,12 +770,93 @@ final class PanoramaxQueueStore: @unchecked Sendable {
             || candidate.lastPathComponent == "\(itemID).thumb.jpg"
     }
 
-    private func read(_ batchID: String) throws -> PanoramaxBatchRecord? {
+    private func read(_ batchID: String, cacheResult: Bool = true) throws -> PanoramaxBatchRecord? {
         let file = try batchRecordURL(for: batchID)
-        guard FileManager.default.fileExists(atPath: file.path) else { return nil }
-        let batch = try decoder.decode(PanoramaxBatchRecord.self, from: Data(contentsOf: file))
+        guard FileManager.default.fileExists(atPath: file.path) else {
+            cachedBatches[batchID] = nil
+            return nil
+        }
+        if let cached = cachedBatches[batchID], cached.revision == sharedRoot.revisions[batchID, default: 0] { touchCache(batchID); return cached.batch }
+        let data = try Data(contentsOf: file)
+        ioStatistics.snapshotReads += 1
+        var batch = try decoder.decode(PanoramaxBatchRecord.self, from: data)
         guard batch.batchID == batchID else { throw QueueError.invalidBatchID }
+        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        var sequence = (object?["_queue_checkpoint"] as? NSNumber)?.int64Value ?? 0
+        guard sequence >= 0, sequence < Int64.max else { throw QueueError.invalidMetadata }
+        var itemsByID: [String: PanoramaxItemRecord] = [:]
+        var itemOrder: [String?] = []
+        var itemIndices: [String: Int] = [:]
+        for item in batch.items {
+            guard itemsByID.updateValue(item, forKey: item.itemID) == nil else { throw QueueError.invalidMetadata }
+            itemIndices[item.itemID] = itemOrder.count
+            itemOrder.append(item.itemID)
+        }
+        let checkpointItems = batch.items.count
+        var count = 0
+        var bytes: Int64 = 0
+        let directory = journalDirectory(batchID)
+        if FileManager.default.fileExists(atPath: directory.path) {
+            let records = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+                .filter { $0.pathExtension == "json" }.sorted { $0.lastPathComponent < $1.lastPathComponent }
+            for recordURL in records {
+                guard let recordSequence = Int64(recordURL.deletingPathExtension().lastPathComponent) else {
+                    throw QueueError.invalidMetadata
+                }
+                if recordSequence <= sequence { continue } // Already included in an atomic checkpoint.
+                let recordData = try Data(contentsOf: recordURL)
+                let record = try decoder.decode(JournalRecord.self, from: recordData)
+                guard record.version == 1, record.sequence == sequence + 1,
+                      record.sequence == recordSequence, record.header.batchID == batchID,
+                      record.header.captureSessionID == batch.captureSessionID,
+                      record.header.items.isEmpty else { throw QueueError.invalidMetadata }
+                for id in record.removed {
+                    itemsByID[id] = nil
+                    if let index = itemIndices.removeValue(forKey: id) { itemOrder[index] = nil }
+                }
+                for item in record.upserts {
+                    if itemsByID.updateValue(item, forKey: item.itemID) == nil {
+                        itemIndices[item.itemID] = itemOrder.count
+                        itemOrder.append(item.itemID)
+                    }
+                }
+                if let order = record.order {
+                    guard order.count == itemsByID.count, Set(order).count == order.count,
+                          order.allSatisfy({ itemsByID[$0] != nil }) else { throw QueueError.invalidMetadata }
+                    itemOrder = order
+                    itemIndices = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($0.element, $0.offset) })
+                }
+                batch = record.header
+                sequence = record.sequence
+                count += 1
+                bytes += Int64(recordData.count)
+            }
+        }
+        batch.items = itemOrder.compactMap { $0.flatMap { itemsByID[$0] } }
+        // Gallery scans must not evict hot capture/upload batches from the
+        // bounded cache just because the user has many archived batches.
+        if cacheResult {
+            cache(batchID, CachedBatch(batch: batch, sequence: sequence, journalCount: count, journalBytes: bytes,
+                                      checkpointItems: checkpointItems, checkpointBytes: Int64(data.count)))
+        }
         return batch
+    }
+
+    private func journalDirectory(_ batchID: String) -> URL {
+        batchesDirectory.appendingPathComponent("\(batchID).journal", isDirectory: true)
+    }
+
+    private func touchCache(_ batchID: String) {
+        cacheOrder.removeAll { $0 == batchID }
+        cacheOrder.append(batchID)
+    }
+
+    private func cache(_ batchID: String, _ value: CachedBatch) {
+        var value = value
+        value.revision = sharedRoot.revisions[batchID, default: 0]
+        cachedBatches[batchID] = value
+        touchCache(batchID)
+        while cacheOrder.count > maximumCachedBatches { cachedBatches[cacheOrder.removeFirst()] = nil }
     }
 
     private static func isValidBatchID(_ batchID: String) -> Bool {
@@ -780,10 +937,21 @@ final class PanoramaxQueueStore: @unchecked Sendable {
         if FileManager.default.fileExists(atPath: record.path) {
             do {
                 try FileManager.default.removeItem(at: record)
+                // Make checkpoint removal durable before deleting the log that
+                // prevents an old checkpoint from resurrecting deleted items.
+                try synchronizeDirectory(batchesDirectory)
             } catch {
                 failures.append(relativePath(record))
                 return false
             }
+        }
+        sharedRoot.revisions[batch.batchID, default: 0] &+= 1
+        cachedBatches[batch.batchID] = nil
+        cacheOrder.removeAll { $0 == batch.batchID }
+        let journal = journalDirectory(batch.batchID)
+        if FileManager.default.fileExists(atPath: journal.path) {
+            do { try FileManager.default.removeItem(at: journal) }
+            catch { failures.append(relativePath(journal)) }
         }
         if (try? FileManager.default.contentsOfDirectory(atPath: directory.path).isEmpty) == true {
             do {
@@ -798,17 +966,128 @@ final class PanoramaxQueueStore: @unchecked Sendable {
     private func commit(_ batch: PanoramaxBatchRecord) throws {
         try lock.withLock {
             let destination = try batchRecordURL(for: batch.batchID)
-            let temporary = destination.appendingPathExtension("tmp")
-            try encoder.encode(batch).write(to: temporary, options: .atomic)
-            if FileManager.default.fileExists(atPath: destination.path) {
-                _ = try FileManager.default.replaceItemAt(destination, withItemAt: temporary)
-            } else {
-                try FileManager.default.moveItem(at: temporary, to: destination)
+            guard let previous = try read(batch.batchID), var entry = cachedBatches[batch.batchID] else {
+                let data = try checkpointData(batch, sequence: 0)
+                try atomicWrite(data, to: destination)
+                sharedRoot.revisions[batch.batchID, default: 0] &+= 1
+                ioStatistics.checkpointWrites += 1
+                cache(batch.batchID, CachedBatch(batch: batch, sequence: 0, journalCount: 0, journalBytes: 0,
+                                                checkpointItems: batch.items.count, checkpointBytes: Int64(data.count)))
+                return
+            }
+            guard batch != previous else { return }
+            var oldItems: [String: PanoramaxItemRecord] = [:]
+            for item in previous.items { oldItems[item.itemID] = item }
+            let currentIDs = Set(batch.items.map(\.itemID))
+            guard currentIDs.count == batch.items.count else { throw QueueError.invalidMetadata }
+            let removed = previous.items.map(\.itemID).filter { !currentIDs.contains($0) }
+            let upserts = batch.items.filter { oldItems[$0.itemID] != $0 }
+            let replayOrder = previous.items.map(\.itemID).filter { currentIDs.contains($0) }
+                + batch.items.map(\.itemID).filter { oldItems[$0] == nil }
+            var header = batch
+            header.items = []
+            let record = JournalRecord(version: 1, sequence: entry.sequence + 1, header: header,
+                                       upserts: upserts, removed: removed,
+                                       order: replayOrder == batch.items.map(\.itemID) ? nil : batch.items.map(\.itemID))
+            let data = try encoder.encode(record)
+            let directory = journalDirectory(batch.batchID)
+            let directoryExisted = FileManager.default.fileExists(atPath: directory.path)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            if !directoryExisted { try synchronizeDirectory(batchesDirectory) }
+            let recordURL = directory.appendingPathComponent(String(format: "%020lld.json", record.sequence))
+            try atomicWrite(data, to: recordURL)
+            protect(directory)
+            sharedRoot.revisions[batch.batchID, default: 0] &+= 1
+            ioStatistics.journalWrites += 1
+            entry.batch = batch
+            entry.sequence = record.sequence
+            entry.journalCount += 1
+            entry.journalBytes += Int64(data.count)
+            cache(batch.batchID, entry)
+            if entry.journalCount >= max(128, entry.checkpointItems)
+                || entry.journalBytes >= max(256 * 1024, entry.checkpointBytes * 2) {
+                // The mutation is already durable. A failed checkpoint must not
+                // turn a known accepted upload into an ambiguous failed write.
+                do { try checkpoint(batchID: batch.batchID) }
+                catch { journalMaintenanceFailures.insert(relativePath(directory)) }
             }
         }
     }
 
-    private func relativePath(_ url: URL) -> String { url.path.replacingOccurrences(of: root.path + "/", with: "") }
+    /// Materializes the existing JSON format, with an ignored internal replay
+    /// watermark. Atomic replacement precedes journal cleanup, so a crash at
+    /// either boundary cannot replay old states over a newer checkpoint.
+    func checkpoint(batchID: String) throws {
+        try lock.withLock {
+            guard let batch = try read(batchID), var entry = cachedBatches[batchID] else { return }
+            let data = try checkpointData(batch, sequence: entry.sequence)
+            try atomicWrite(data, to: batchRecordURL(for: batchID))
+            sharedRoot.revisions[batch.batchID, default: 0] &+= 1
+            ioStatistics.checkpointWrites += 1
+            entry.checkpointItems = batch.items.count
+            entry.checkpointBytes = Int64(data.count)
+            entry.journalBytes = 0
+            entry.journalCount = 0
+            cache(batchID, entry)
+            let directory = journalDirectory(batchID)
+            if FileManager.default.fileExists(atPath: directory.path) {
+                for file in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) {
+                    guard file.pathExtension == "json",
+                          let sequence = Int64(file.deletingPathExtension().lastPathComponent), sequence <= entry.sequence else { continue }
+                    try FileManager.default.removeItem(at: file)
+                }
+            }
+            journalMaintenanceFailures.remove(relativePath(directory))
+        }
+    }
+
+    private func checkpointData(_ batch: PanoramaxBatchRecord, sequence: Int64) throws -> Data {
+        let data = try encoder.encode(batch)
+        var object = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        object["_queue_checkpoint"] = sequence
+        return try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+    }
+
+    private func atomicWrite(_ data: Data, to destination: URL) throws {
+        let temporary = destination.appendingPathExtension("tmp")
+        try data.write(to: temporary, options: .atomic)
+        let handle = try FileHandle(forWritingTo: temporary)
+        defer { try? handle.close() }
+        try handle.synchronize()
+        if FileManager.default.fileExists(atPath: destination.path) {
+            _ = try FileManager.default.replaceItemAt(destination, withItemAt: temporary)
+        } else {
+            try FileManager.default.moveItem(at: temporary, to: destination)
+        }
+        // Invalidate peers before the post-rename barrier: even if fsync fails,
+        // the visible file may have changed and must never be overwritten from
+        // an older cached sequence on the next operation.
+        let parent = destination.deletingLastPathComponent()
+        let batchID = parent.pathExtension == "journal"
+            ? parent.deletingPathExtension().lastPathComponent
+            : destination.deletingPathExtension().lastPathComponent
+        sharedRoot.revisions[batchID, default: 0] &+= 1
+        cachedBatches[batchID] = nil
+        try synchronizeDirectory(parent)
+        protect(destination)
+        ioStatistics.metadataBytesWritten += Int64(data.count)
+    }
+
+    /// A synced file does not make its rename durable. Persist directory
+    /// entries before returning a journal commit or pruning its checkpointed log.
+    private func synchronizeDirectory(_ directory: URL) throws {
+        let descriptor = Darwin.open(directory.path, O_RDONLY)
+        guard descriptor >= 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+        defer { Darwin.close(descriptor) }
+        guard Darwin.fsync(descriptor) == 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+    }
+
+    private func relativePath(_ url: URL) -> String {
+        let rootComponents = root.resolvingSymlinksInPath().standardizedFileURL.pathComponents
+        let fileComponents = url.resolvingSymlinksInPath().standardizedFileURL.pathComponents
+        guard fileComponents.starts(with: rootComponents) else { return url.path }
+        return fileComponents.dropFirst(rootComponents.count).joined(separator: "/")
+    }
 
     private func protect(_ url: URL) {
         var values = URLResourceValues()
@@ -829,11 +1108,55 @@ struct PanoramaxQueueMaintenanceResult: @unchecked Sendable {
     let batchLoadSucceeded: Bool
 }
 
-/// Serializes gallery scans and retention deletion away from the main actor.
+/// Serializes gallery scans, upload preparation and retention deletion away from the main actor.
 /// QueueStore's lock still protects capture/upload mutations, while this actor
 /// prevents multiple maintenance sweeps from competing for disk bandwidth.
 actor PanoramaxQueueMaintenanceExecutor {
     static let shared = PanoramaxQueueMaintenanceExecutor()
+    private let prepareUploadOriginal: @Sendable (PanoramaxQueueStore, String, String) throws -> URL
+
+    init(
+        prepareUploadOriginal: @escaping @Sendable (PanoramaxQueueStore, String, String) throws -> URL = {
+            try $0.prepareOriginalForUpload(batchID: $1, itemID: $2)
+        }
+    ) {
+        self.prepareUploadOriginal = prepareUploadOriginal
+    }
+
+    /// Runs queue operations on a serial non-main executor. Successful network
+    /// responses use this even after cancellation so their durable evidence wins.
+    func perform<T>(store: PanoramaxQueueStore, _ operation: @Sendable (PanoramaxQueueStore) throws -> T) rethrows -> T {
+        try operation(store)
+    }
+
+    func makeStore() throws -> PanoramaxQueueStore {
+        try PanoramaxQueueStore(performStartupMaintenance: false)
+    }
+
+    func prepareOriginalForUpload(
+        store: PanoramaxQueueStore,
+        batchID: String,
+        itemID: String,
+        localDeletionIntents: PanoramaxLocalDeletionIntentRegistry
+    ) throws -> URL? {
+        try Task.checkCancellation()
+        guard !localDeletionIntents.contains(batchID: batchID, itemID: itemID),
+              let item = try store.getBatch(batchID)?.items.first(where: { $0.itemID == itemID }),
+              item.state == .queued || item.state == .included || item.state == .retryableError else {
+            return nil
+        }
+        let original = try prepareUploadOriginal(store, batchID, itemID)
+        // Synchronous disk/EXIF work cannot be interrupted. A stop that arrives
+        // during preparation must still prevent the following network request.
+        try Task.checkCancellation()
+        guard !localDeletionIntents.contains(batchID: batchID, itemID: itemID) else { return nil }
+        return original
+    }
+
+    func abandonInFlightItems(store: PanoramaxQueueStore, batchID: String) throws {
+        // Durable cleanup must finish even when the upload task was cancelled.
+        _ = try store.abandonInFlightItems(batchID: batchID)
+    }
 
     func loadBatches(store: PanoramaxQueueStore) -> PanoramaxQueueMaintenanceResult {
         result(store: store, startup: nil, deletion: PanoramaxDeletionReport())
@@ -938,11 +1261,12 @@ actor PanoramaxQueueMaintenanceExecutor {
         deletion: PanoramaxDeletionReport
     ) -> PanoramaxQueueMaintenanceResult {
         do {
+            let batches = try store.listBatches()
+            var report = deletion
+            report.failedRelativePaths += store.unreadableRelativePaths
             return PanoramaxQueueMaintenanceResult(
-                startupCleanup: startup,
-                deletion: deletion,
-                batches: try store.listBatches(),
-                batchLoadSucceeded: true
+                startupCleanup: startup, deletion: report, batches: batches,
+                batchLoadSucceeded: store.unreadableRelativePaths.isEmpty
             )
         } catch {
             var failedDeletion = deletion

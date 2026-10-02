@@ -53,6 +53,7 @@ internal data class SpeedLookupResult(
     val sourceRelationIds: Set<Long> = emptySet(),
     val routeRelationContinuityAvailable: Boolean = false,
     val matchedWayStable: Boolean = true,
+    val applicabilityGeometry: TSRMapGeometry? = null,
 )
 
 internal data class CityContextLookupResult(
@@ -67,11 +68,13 @@ internal class V3SpeedLimitLookup(
     private val dbPath: String,
     countryCode: String? = null,
     private val matchingModel: LookupMatchingModel = LookupMatchingModel.CORRIDOR_HMM,
+    private val regulationRegion: ((Double, Double) -> String?)? = null,
 ) : Closeable {
     private enum class CandidateNetwork(val wireName: String) {
         SURFACE("surface"),
         TUNNEL("tunnel"),
-        MOTORWAY("motorway");
+        MOTORWAY("motorway"),
+        MOTORWAY_LINK("motorway_link");
 
         val rtreeTableName: String
             get() = "${wireName}_way_network_rtree"
@@ -79,6 +82,14 @@ internal class V3SpeedLimitLookup(
 
     private val countryCode = normalizedCountryCode(countryCode) ?: inferCountryCodeFromDbPath(dbPath)
     private val db: SQLiteDatabase = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READONLY)
+    private val tablePresence = mutableMapOf<String, Boolean>()
+    private val tableColumns = mutableMapOf<String, Set<String>>()
+    private val wayGeometry = DecodedGeometryCache<String, LatLonPoint>(2048, 32_768)
+    private val ringGeometry = DecodedGeometryCache<String, LonLatPoint>(256, 16_384)
+    private var schemaQueryCount = 0L
+    private data class WayQueryShape(val network: CandidateNetwork, val networkRtree: Boolean,
+        val generalRtree: Boolean, val tilePrefilter: Boolean)
+    private val wayCandidateSql = mutableMapOf<WayQueryShape, String>()
     private val settlementContextResolver = SettlementContextResolver(db)
     private val hasWaysTable = tableExists("ways")
     private val hasAreasTable = tableExists("areas")
@@ -281,14 +292,18 @@ internal class V3SpeedLimitLookup(
             heading = SettlementContextPolicy.reliableHeading(headingDeg, speedKmh, headingAccuracyDeg),
             residentialInside = residential.insideCity,
         )
+        val region = if (RoadSpeedDefaults.country(countryCode) == "BE") regulationRegion?.invoke(lat, lon) else null
         val effectiveSpeed = when {
             best == null || best.isUnlimitedSpeedLimit -> null
             best.speedSource == DerivedSpeedSource.EXPLICIT_TAG -> best.speedLimitKmh
             best.highway?.lowercase() == "living_street" -> best.speedLimitKmh
             !allowsResidentialAreaFallback(best.highway) -> best.speedLimitKmh
-            settlement.isHighConfidence -> if (settlement.insideCity == true) 50 else 100
+            settlement.source == "conflict" -> null
+            best.speedSource == DerivedSpeedSource.INHERITED_TAG -> best.speedLimitKmh.takeIf { RoadSpeedDefaults.country(countryCode ?: "DE") != "DE" || settlement.isHighConfidence }
+            settlement.isHighConfidence || (RoadSpeedDefaults.country(countryCode) == "FR" && settlement.confidence == "low") ->
+                RoadSpeedDefaults.speedKmh(countryCode ?: "DE", region, best.highway, settlement.insideCity)
             best.speedSource == DerivedSpeedSource.HIGHWAY_CLASS &&
-                best.highway?.trim()?.lowercase() in setOf("residential", "service") -> 50
+                best.highway?.trim()?.lowercase() in setOf("residential", "service") -> RoadSpeedDefaults.speedKmh(countryCode ?: "DE", region, best.highway, true)
             else -> null
         }
 
@@ -336,6 +351,7 @@ internal class V3SpeedLimitLookup(
             sourceRelationIds = routeMembership.values.filterNotNull().toSet(),
             routeRelationContinuityAvailable = routeRelationContinuityAvailable,
             matchedWayStable = matchedWayStable,
+            applicabilityGeometry = applicabilityGeometry(best, candidates, wayLinks),
         )
     }
 
@@ -456,10 +472,22 @@ internal class V3SpeedLimitLookup(
     }
 
     override fun close() {
+        wayGeometry.clear()
+        ringGeometry.clear()
+        wayCandidateSql.clear()
         if (db.isOpen) {
             db.close()
         }
     }
+
+    internal data class CacheStats(val ways: GeometryCacheStats, val rings: GeometryCacheStats,
+        val schemaQueries: Long, val queryShapes: Int)
+
+    internal fun cacheStats() = CacheStats(wayGeometry.stats(), ringGeometry.stats(), schemaQueryCount, wayCandidateSql.size)
+
+    /** Uses the production SQL before matcher scoring, for the shared dense-candidate fixture. */
+    internal fun admittedWayIdsForTesting(lat: Double, lon: Double, radiusM: Double, maxCandidates: Int): List<String> =
+        queryWayCandidatesForNetwork(lat, lon, radiusM, maxCandidates, null, CandidateNetwork.SURFACE).mapNotNull { it.wayId }
 
     private fun selectCandidate(
         candidates: List<WayCandidate>,
@@ -1215,6 +1243,55 @@ internal class V3SpeedLimitLookup(
         )
     }
 
+    private fun applicabilityGeometry(selected: WayCandidate?, candidates: List<WayCandidate>, links: WayLinksContext): TSRMapGeometry {
+        val nearby = if (selected?.highway == "motorway") runCatching {
+            queryWayCandidatesForNetwork(selected.queryPoint.lat, selected.queryPoint.lon, 400.0, 64, null, CandidateNetwork.MOTORWAY_LINK)
+        }.getOrDefault(emptyList()) else emptyList()
+        val alternatives = (candidates + nearby).distinctBy { it.wayId }.filter { it.wayId != selected?.wayId }
+            .sortedWith(compareBy<WayCandidate> { it.distanceM }.thenBy { it.wayId ?: "" })
+        val directBranches = if (selected == null) emptyList() else alternatives.filter {
+            it.wayId in links.linkedByFrom[selected.wayId].orEmpty() ||
+                listOfNotNull(selected.points.firstOrNull(), selected.points.lastOrNull()).any { point ->
+                    point in listOfNotNull(it.points.firstOrNull(), it.points.lastOrNull())
+                }
+        }.mapNotNull { candidate ->
+            val point = sharedJunctionPoint(selected, candidate) ?: return@mapNotNull null
+            val incoming = junctionNodeHeadingDeg(selected, point, true)
+            val outgoing = junctionNodeHeadingDeg(candidate, point, false)
+            val startDistance = selected.points.firstOrNull()?.let { haversineM(it.lat, it.lon, point.lat, point.lon) } ?: Double.POSITIVE_INFINITY
+            val endDistance = selected.points.lastOrNull()?.let { haversineM(it.lat, it.lon, point.lat, point.lon) } ?: Double.POSITIVE_INFINITY
+            val junctionDistance = if (startDistance <= endDistance) selected.distanceToStartM else selected.distanceToEndM
+            TSRApplicabilityCorridor(candidate.wayId ?: "unknown", outgoing,
+                junctionDistance?.takeIf { it.isFinite() },
+                candidate.highway, true, if (incoming != null && outgoing != null) TSRApplicabilityPolicy.signedAngle(outgoing - incoming) else null)
+        }
+        val exitApproaches = directedExitApproaches(selected)
+        val directedIds = exitApproaches.map { it.wayId }.toSet()
+        val branches = exitApproaches + directBranches.filter { it.wayId !in directedIds }
+        val capabilities = mutableListOf("endpoint_topology_only", "no_legal_direction", "no_lane_metadata", "interior_junctions_unavailable")
+        if (exitApproaches.isNotEmpty()) capabilities += "directed_motorway_exit_lookahead_v1"
+        if (links.available) capabilities += "endpoint_links"
+        if (selected?.localHeadingDeg != null) capabilities += "local_tangent"
+        if (alternatives.size > 8 || branches.size > 8) capabilities += "context_truncated"
+        return TSRMapGeometry(selected?.wayId, selected?.localHeadingDeg, selected?.highway,
+            alternatives.take(8).map { TSRApplicabilityCorridor(it.wayId ?: "unknown", it.localHeadingDeg, it.distanceM.takeIf { d -> d.isFinite() }, it.highway, false, null) },
+            branches.take(8), capabilities.toList(), selected?.speedLimitKmh?.takeIf { selected.highway == "motorway" })
+    }
+
+    private fun directedExitApproaches(selected: WayCandidate?): List<TSRApplicabilityCorridor> {
+        if (selected?.highway != "motorway" || selected.wayId == null || !tableExists("motorway_exit_approach")) return emptyList()
+        val result = mutableListOf<TSRApplicabilityCorridor>()
+        db.rawQuery("SELECT endpoint_side,exit_way_id,path_distance_m,branch_heading_deg FROM motorway_exit_approach WHERE way_id=?", arrayOf(selected.wayId)).use { cursor ->
+            while (cursor.moveToNext()) {
+                val remaining = (if (cursor.getString(0) == "start") selected.distanceToStartM else selected.distanceToEndM) ?: continue
+                val distance = remaining + cursor.getDouble(2)
+                if (!distance.isFinite() || distance !in 0.0..350.0) continue
+                result += TSRApplicabilityCorridor(cursor.getString(1), cursor.getDouble(3), distance, "motorway_link", true, null)
+            }
+        }
+        return result.sortedBy { it.distanceM }
+    }
+
     private fun loadWayLinksContext(
         matchContext: WayMatchContext,
         candidates: List<WayCandidate>,
@@ -1234,10 +1311,11 @@ internal class V3SpeedLimitLookup(
         val linkedByFrom = linkedMapOf<String, MutableSet<String>>()
         val sharedRefByFrom = linkedMapOf<String, MutableSet<String>>()
         val sharedNodeKeysByPair = linkedMapOf<Pair<String, String>, MutableSet<String>>()
+        val sharedRefSelect = if (columnExists("way_links", "shared_ref")) "shared_ref" else "0"
         val sharedNodeSelect = if (columnExists("way_links", "shared_node_key")) "shared_node_key" else "NULL"
         db.rawQuery(
             """
-            SELECT way_id, linked_way_id, shared_ref, $sharedNodeSelect
+            SELECT way_id, linked_way_id, $sharedRefSelect, $sharedNodeSelect
             FROM way_links
             WHERE way_id IN ($placeholders) OR linked_way_id IN ($placeholders)
             """.trimIndent(),
@@ -2726,7 +2804,7 @@ internal class V3SpeedLimitLookup(
             }
         }
         val continuityIdentity: Pair<Set<String>, SimpleContinuityIdentitySource>
-        val previousContinuityCandidate: WayCandidate?
+        val unboundedContinuityCandidate: WayCandidate?
         if (useGuardedStreetNameFallbackContinuity) {
             val guardedContinuity = preferredGuardedStreetNameContinuityCandidate(
                 rankedCandidates = rankedCandidates,
@@ -2736,7 +2814,7 @@ internal class V3SpeedLimitLookup(
             )
             if (guardedContinuity != null) {
                 continuityIdentity = guardedContinuity.tokens to SimpleContinuityIdentitySource.STREET_NAME
-                previousContinuityCandidate = guardedContinuity.candidate
+                unboundedContinuityCandidate = guardedContinuity.candidate
                 selectionTrace += guardedContinuity.trace
             } else {
                 continuityIdentity = preferredSimpleContinuityIdentity(
@@ -2744,7 +2822,7 @@ internal class V3SpeedLimitLookup(
                     useStreetNameFallbackContinuity = useStreetNameFallbackContinuity,
                     ageOutStaleRefContinuity = true,
                 )
-                previousContinuityCandidate = rankedCandidates.filter { candidate ->
+                unboundedContinuityCandidate = rankedCandidates.filter { candidate ->
                     val candidateTokens = continuityTokens(
                         candidate = candidate,
                         source = continuityIdentity.second,
@@ -2760,7 +2838,7 @@ internal class V3SpeedLimitLookup(
                 useStreetNameFallbackContinuity = useStreetNameFallbackContinuity,
                 ageOutStaleRefContinuity = false,
             )
-            previousContinuityCandidate = rankedCandidates.filter { candidate ->
+            unboundedContinuityCandidate = rankedCandidates.filter { candidate ->
                 val candidateTokens = continuityTokens(
                     candidate = candidate,
                     source = continuityIdentity.second,
@@ -2771,6 +2849,14 @@ internal class V3SpeedLimitLookup(
                 .thenComparator { lhs, rhs -> if (isBetterDistanceCandidate(lhs, rhs)) -1 else if (isBetterDistanceCandidate(rhs, lhs)) 1 else 0 })
         }
 
+        val continuationRadius = max(25.0, 3 * max(0.0, horizontalAccuracyM ?: 10.0))
+        val previousContinuityCandidate = unboundedContinuityCandidate?.takeUnless {
+            !matchContext.isInTunnelMode && it.distanceM > continuationRadius &&
+                it.distanceM > bestCandidate.distanceM + max(10.0, horizontalAccuracyM ?: 10.0)
+        }
+        if (unboundedContinuityCandidate != null && previousContinuityCandidate == null) {
+            selectionTrace += MatchSelectionTrace("continuity_geometry_release", "previous road lies outside GPS continuity radius")
+        }
         val urbanReleasePressureActive = if (
             urbanSameRefReleaseEnabled &&
             speedKmh != null &&
@@ -2818,6 +2904,13 @@ internal class V3SpeedLimitLookup(
                 detail = "kept preferred ${preferredWayCandidate.wayId ?: "nil"} over nearest ${bestCandidate.wayId ?: "nil"} at speed_kmh=${formatMetric(speedKmh)} preferred_m=${formatMetric(preferredWayCandidate.distanceM)} nearest_m=${formatMetric(bestCandidate.distanceM)}",
             )
             preferredWayCandidate
+        } else if (previousContinuityCandidate != null && observedHeadingDeg != null &&
+            previousContinuityCandidate.localHeadingDeg != null &&
+            previousContinuityCandidate.distanceM <= bestCandidate.distanceM + max(3.0, horizontalAccuracyM ?: 3.0) &&
+            previousContinuityCandidate.distanceM <= continuationRadius &&
+            headingMismatchDeg(observedHeadingDeg, previousContinuityCandidate.localHeadingDeg) <= 25.0) {
+            selectionTrace += MatchSelectionTrace("continuity_within_gps_uncertainty", "preserved aligned road while distance advantage is within GPS uncertainty")
+            previousContinuityCandidate
         } else if (speedKmh != null && speedKmh >= lowSpeedThresholdKmh && previousContinuityCandidate != null) {
             if (
                 urbanSameRefReleaseEnabled &&
@@ -3244,26 +3337,6 @@ internal class V3SpeedLimitLookup(
         return SequenceSelection(best.value.candidate,
             sorted.mapIndexed { index, state -> TraceRankedCandidate(state.value.candidate, continuityClass(state.value.candidate, context, links), false, null, true, true, state.value.cost, index + 1) },
             sorted.take(6).mapNotNull { wayMatchHypothesis(it.value.candidate, it.value.cost, it.value.emission) }, trace)
-    }
-
-    private fun polylineEndpointDistances(lat: Double, lon: Double, points: List<LatLonPoint>): Pair<Double, Double>? {
-        if (points.isEmpty()) return null
-        if (points.size == 1) return 0.0 to 0.0
-        val lengths = points.zipWithNext().map { (a, b) -> haversineM(a.lat, a.lon, b.lat, b.lon) }
-        var bestDistance = Double.POSITIVE_INFINITY
-        var bestAlong = 0.0
-        var travelled = 0.0
-        for (index in 0 until points.lastIndex) {
-            val a = toXYMeters(points[index].lat, points[index].lon, lat, lon)
-            val b = toXYMeters(points[index+1].lat, points[index+1].lon, lat, lon)
-            val dx = b.x-a.x; val dy = b.y-a.y
-            val lengthSquared = dx*dx+dy*dy
-            val fraction = if (lengthSquared > 0.0) (-(a.x*dx+a.y*dy)/lengthSquared).coerceIn(0.0, 1.0) else 0.0
-            val distance = hypot(a.x+fraction*dx, a.y+fraction*dy)
-            if (distance < bestDistance) { bestDistance = distance; bestAlong = travelled + fraction*lengths[index] }
-            travelled += lengths[index]
-        }
-        return bestAlong to max(0.0, travelled-bestAlong)
     }
 
     private fun candidateLookupRadiusM(radius: Double, accuracy: Double?): Double =
@@ -5312,6 +5385,7 @@ internal class V3SpeedLimitLookup(
             CandidateNetwork.SURFACE -> "NOT ($tunnelCondition) AND $highwayExpr != 'motorway'"
             CandidateNetwork.TUNNEL -> tunnelCondition
             CandidateNetwork.MOTORWAY -> "NOT ($tunnelCondition) AND $highwayExpr = 'motorway'"
+            CandidateNetwork.MOTORWAY_LINK -> "NOT ($tunnelCondition) AND $highwayExpr = 'motorway_link'"
         }
     }
 
@@ -5320,6 +5394,7 @@ internal class V3SpeedLimitLookup(
             CandidateNetwork.SURFACE -> hasSurfaceWayNetworkRtreeTable
             CandidateNetwork.TUNNEL -> hasTunnelWayNetworkRtreeTable
             CandidateNetwork.MOTORWAY -> hasMotorwayWayNetworkRtreeTable
+            CandidateNetwork.MOTORWAY_LINK -> false // Read bounded links from ways_rtree; no dedicated bundle table.
         }
 
     private fun normalizedWayId(raw: String?): String? = raw?.trim()?.ifBlank { null }
@@ -5411,12 +5486,6 @@ internal class V3SpeedLimitLookup(
             return emptyList()
         }
         val bounds = queryBounds(lat = lat, lon = lon, radiusM = radiusM)
-        val streetNameSelect = if (hasStreetNameColumn) "w.street_name" else "NULL"
-        val refSelect = if (hasRefColumn) "w.ref" else "NULL"
-        val serviceSelect = if (hasServiceColumn) "w.service" else "NULL"
-        val tunnelSelect = if (hasTunnelColumn) "w.tunnel" else "NULL"
-        val wayGeomJoin = if (hasWayGeomTable) "LEFT JOIN way_geom g ON g.way_id = w.way_id" else ""
-        val wayGeomSelect = if (hasWayGeomTable) "g.points_json" else "NULL"
         val useNetworkRtree = allowWaysRtreeQueries && hasNetworkRtreeTable(network)
         val useGeneralRtree = allowWaysRtreeQueries && hasWaysRtreeTable
         val tileRange = if (bundleSchemaVersion >= 2 && hasWayTileTable && wayTileSizeM != null) {
@@ -5425,82 +5494,90 @@ internal class V3SpeedLimitLookup(
             null
         }
         val useTilePrefilter = tileRange != null
-        val tileCte = if (useTilePrefilter) {
+        val sql = wayCandidateSql.getOrPut(WayQueryShape(network, useNetworkRtree, useGeneralRtree, useTilePrefilter)) {
+            val streetNameSelect = if (hasStreetNameColumn) "w.street_name" else "NULL"
+            val refSelect = if (hasRefColumn) "w.ref" else "NULL"
+            val serviceSelect = if (hasServiceColumn) "w.service" else "NULL"
+            val tunnelSelect = if (hasTunnelColumn) "w.tunnel" else "NULL"
+            val wayGeomJoin = if (hasWayGeomTable) "LEFT JOIN way_geom g ON g.way_id = w.way_id" else ""
+            val wayGeomSelect = if (hasWayGeomTable) "g.points_json" else "NULL"
+            val tileCte = if (useTilePrefilter) {
+                """
+                WITH tile_rows AS (
+                  SELECT DISTINCT way_id
+                  FROM way_tile
+                  WHERE tile_x BETWEEN ? AND ?
+                    AND tile_y BETWEEN ? AND ?
+                )
+                """.trimIndent()
+            } else {
+                ""
+            }
+            val fromClause = when {
+                useNetworkRtree && useTilePrefilter ->
+                    "FROM tile_rows t JOIN ${network.rtreeTableName} r ON r.way_id = t.way_id JOIN ways w ON w.way_id = t.way_id"
+                useGeneralRtree && useTilePrefilter ->
+                    "FROM tile_rows t JOIN ways_rtree r ON r.way_id = t.way_id JOIN ways w ON w.way_id = t.way_id"
+                useNetworkRtree -> "FROM ${network.rtreeTableName} r JOIN ways w ON w.way_id = r.way_id"
+                useGeneralRtree -> "FROM ways_rtree r JOIN ways w ON w.way_id = r.way_id"
+                useTilePrefilter -> "FROM tile_rows t JOIN ways w ON w.way_id = t.way_id"
+                else -> "FROM ways w"
+            }
+            val boundsSource = if (useNetworkRtree || useGeneralRtree) "r" else "w"
+            val extraWhereClause = if (useNetworkRtree) "" else "AND ${candidateNetworkFilterSql(network)}"
             """
-            WITH tile_rows AS (
-              SELECT DISTINCT way_id
-              FROM way_tile
-              WHERE tile_x BETWEEN ? AND ?
-                AND tile_y BETWEEN ? AND ?
-            )
+                $tileCte
+                SELECT
+                  w.way_id,
+                  w.highway,
+                  $streetNameSelect AS street_name,
+                  $refSelect AS ref,
+                  w.maxspeed,
+                  w.maxspeed_type,
+                  w.source_maxspeed,
+                  w.approx_heading_deg,
+                  $serviceSelect AS service,
+                  $tunnelSelect AS tunnel,
+                  w.min_lon,
+                  w.min_lat,
+                  w.max_lon,
+                  w.max_lat,
+                  $wayGeomSelect AS points_json
+                $fromClause
+                $wayGeomJoin
+                WHERE $boundsSource.min_lon <= ? AND $boundsSource.max_lon >= ?
+                  AND $boundsSource.min_lat <= ? AND $boundsSource.max_lat >= ?
+                  $extraWhereClause
+                ORDER BY
+                  (
+                    CASE
+                      WHEN ? < w.min_lon THEN (w.min_lon - ?)
+                      WHEN ? > w.max_lon THEN (? - w.max_lon)
+                      ELSE 0
+                    END
+                  ) * (
+                    CASE
+                      WHEN ? < w.min_lon THEN (w.min_lon - ?)
+                      WHEN ? > w.max_lon THEN (? - w.max_lon)
+                      ELSE 0
+                    END
+                  ) +
+                  (
+                    CASE
+                      WHEN ? < w.min_lat THEN (w.min_lat - ?)
+                      WHEN ? > w.max_lat THEN (? - w.max_lat)
+                      ELSE 0
+                    END
+                  ) * (
+                    CASE
+                      WHEN ? < w.min_lat THEN (w.min_lat - ?)
+                      WHEN ? > w.max_lat THEN (? - w.max_lat)
+                      ELSE 0
+                    END
+                  ), CAST(w.way_id AS TEXT) COLLATE BINARY ASC
+                LIMIT ?
             """.trimIndent()
-        } else {
-            ""
         }
-        val fromClause = when {
-            useNetworkRtree && useTilePrefilter ->
-                "FROM tile_rows t JOIN ${network.rtreeTableName} r ON r.way_id = t.way_id JOIN ways w ON w.way_id = t.way_id"
-            useGeneralRtree && useTilePrefilter ->
-                "FROM tile_rows t JOIN ways_rtree r ON r.way_id = t.way_id JOIN ways w ON w.way_id = t.way_id"
-            useNetworkRtree -> "FROM ${network.rtreeTableName} r JOIN ways w ON w.way_id = r.way_id"
-            useGeneralRtree -> "FROM ways_rtree r JOIN ways w ON w.way_id = r.way_id"
-            useTilePrefilter -> "FROM tile_rows t JOIN ways w ON w.way_id = t.way_id"
-            else -> "FROM ways w"
-        }
-        val boundsSource = if (useNetworkRtree || useGeneralRtree) "r" else "w"
-        val extraWhereClause = if (useNetworkRtree) "" else "AND ${candidateNetworkFilterSql(network)}"
-        val sql = """
-            $tileCte
-            SELECT
-              w.way_id,
-              w.highway,
-              $streetNameSelect AS street_name,
-              $refSelect AS ref,
-              w.maxspeed,
-              w.maxspeed_type,
-              w.source_maxspeed,
-              w.approx_heading_deg,
-              $serviceSelect AS service,
-              $tunnelSelect AS tunnel,
-              w.min_lon,
-              w.min_lat,
-              w.max_lon,
-              w.max_lat,
-              $wayGeomSelect AS points_json
-            $fromClause
-            $wayGeomJoin
-            WHERE $boundsSource.min_lon <= ? AND $boundsSource.max_lon >= ?
-              AND $boundsSource.min_lat <= ? AND $boundsSource.max_lat >= ?
-              $extraWhereClause
-            ORDER BY
-              (
-                CASE
-                  WHEN ? < w.min_lon THEN (w.min_lon - ?)
-                  WHEN ? > w.max_lon THEN (? - w.max_lon)
-                  ELSE 0
-                END
-              ) * (
-                CASE
-                  WHEN ? < w.min_lon THEN (w.min_lon - ?)
-                  WHEN ? > w.max_lon THEN (? - w.max_lon)
-                  ELSE 0
-                END
-              ) +
-              (
-                CASE
-                  WHEN ? < w.min_lat THEN (w.min_lat - ?)
-                  WHEN ? > w.max_lat THEN (? - w.max_lat)
-                  ELSE 0
-                END
-              ) * (
-                CASE
-                  WHEN ? < w.min_lat THEN (w.min_lat - ?)
-                  WHEN ? > w.max_lat THEN (? - w.max_lat)
-                  ELSE 0
-                END
-              )
-            LIMIT ?
-        """.trimIndent()
         val params = buildList {
             tileRange?.let {
                 add(it.minX.toString())
@@ -5544,6 +5621,7 @@ internal class V3SpeedLimitLookup(
                         maxspeedType = cursor.stringOrNull(5),
                         sourceMaxspeed = cursor.stringOrNull(6),
                         highway = highway,
+                        country = countryCode ?: "DE",
                     )
                     val approxHeading = cursor.doubleOrNull(7)
                     val service = cursor.stringOrNull(8)
@@ -5552,7 +5630,8 @@ internal class V3SpeedLimitLookup(
                     val minLat = cursor.getDouble(11)
                     val maxLon = cursor.getDouble(12)
                     val maxLat = cursor.getDouble(13)
-                    val points = parseWayPoints(cursor.stringOrNull(14))
+                    val points = if (wayId == null) parseWayPoints(cursor.stringOrNull(14)) else
+                        wayGeometry.getOrDecode(wayId) { parseWayPoints(cursor.stringOrNull(14)) }
                     val bboxDistance = distanceToBBoxM(
                         lat = lat,
                         lon = lon,
@@ -5561,13 +5640,12 @@ internal class V3SpeedLimitLookup(
                         maxLon = maxLon,
                         maxLat = maxLat,
                     )
-                    val polylineDistance = polylineDistanceM(lat = lat, lon = lon, points = points)
-                    val alongDistances = polylineEndpointDistances(lat, lon, points)
-                    val distanceToStartM = alongDistances?.first
-                    val distanceToEndM = alongDistances?.second
+                    val metrics = polylineMetrics(lat = lat, lon = lon, points = points)
+                    val distanceToStartM = metrics?.distanceToStartM
+                    val distanceToEndM = metrics?.distanceToEndM
                     val endpointProximityM = min(distanceToStartM ?: Double.POSITIVE_INFINITY, distanceToEndM ?: Double.POSITIVE_INFINITY)
-                    val distance = polylineDistance ?: bboxDistance
-                    val localHeading = polylineHeadingDeg(lat = lat, lon = lon, points = points)
+                    val distance = metrics?.distanceM ?: bboxDistance
+                    val localHeading = metrics?.localHeadingDeg
                     val headingPenalty = if (headingDeg != null) {
                         val candidateHeading = localHeading ?: approxHeading
                         if (candidateHeading != null) {
@@ -5684,7 +5762,9 @@ internal class V3SpeedLimitLookup(
                         maxLon = cursor.getDouble(8),
                         maxLat = cursor.getDouble(9),
                         residential = cursor.stringOrNull(10),
-                        points = parseRingPoints(cursor.stringOrNull(11)),
+                        points = cursor.stringOrNull(0)?.let { id ->
+                            ringGeometry.getOrDecode("area:$id") { parseRingPoints(cursor.stringOrNull(11)) }
+                        } ?: parseRingPoints(cursor.stringOrNull(11)),
                     )
                 }
             }
@@ -5892,7 +5972,7 @@ internal class V3SpeedLimitLookup(
     ): Boolean {
         val ringsByOuter = linkedMapOf<Int, MutableList<List<LonLatPoint>>>()
         val sql = """
-            SELECT outer_index, is_hole, points_json
+            SELECT outer_index, is_hole, points_json, ring_index
             FROM city_ring
             WHERE boundary_row_id = ?
             ORDER BY outer_index, is_hole, ring_index
@@ -5901,7 +5981,9 @@ internal class V3SpeedLimitLookup(
             while (cursor.moveToNext()) {
                 val outerIndex = cursor.getInt(0)
                 val isHole = cursor.getInt(1) != 0
-                val ring = parseRingPoints(cursor.stringOrNull(2))
+                val ring = ringGeometry.getOrDecode("boundary:$boundaryRowId:$outerIndex:$isHole:${cursor.getInt(3)}") {
+                    parseRingPoints(cursor.stringOrNull(2))
+                }
                 if (ring.size < 4) {
                     continue
                 }
@@ -6101,12 +6183,13 @@ internal class V3SpeedLimitLookup(
         return baseScore + cityNameBonus + districtBonus
     }
 
-    private fun tableExists(name: String): Boolean {
+    private fun tableExists(name: String): Boolean = tablePresence.getOrPut(name) {
+        schemaQueryCount++
         db.rawQuery(
             "SELECT 1 FROM sqlite_master WHERE type='table' AND name = ? LIMIT 1",
             arrayOf(name),
         ).use { cursor ->
-            return cursor.moveToFirst()
+            cursor.moveToFirst()
         }
     }
 
@@ -6131,14 +6214,17 @@ internal class V3SpeedLimitLookup(
         if (!tableExists(table)) {
             return false
         }
-        db.rawQuery("PRAGMA table_info($table)", null).use { cursor ->
-            while (cursor.moveToNext()) {
-                if (cursor.stringOrNull(1) == column) {
-                    return true
+        val columns = tableColumns.getOrPut(table) {
+            schemaQueryCount++
+            db.rawQuery("PRAGMA table_info($table)", null).use { cursor ->
+                buildSet {
+                    while (cursor.moveToNext()) {
+                        cursor.stringOrNull(1)?.let(::add)
+                    }
                 }
             }
         }
-        return false
+        return column in columns
     }
 
     companion object {
@@ -6257,8 +6343,9 @@ internal class V3SpeedLimitLookup(
             maxspeedType: String?,
             sourceMaxspeed: String?,
             highway: String?,
+            country: String? = "DE",
         ): Int? {
-            return deriveSpeedLimitWithSource(maxspeed, maxspeedType, sourceMaxspeed, highway).speed
+            return deriveSpeedLimitWithSource(maxspeed, maxspeedType, sourceMaxspeed, highway, country).speed
         }
 
         internal fun deriveSpeedLimitWithSource(
@@ -6266,6 +6353,7 @@ internal class V3SpeedLimitLookup(
             maxspeedType: String?,
             sourceMaxspeed: String?,
             highway: String?,
+            country: String? = "DE",
         ): DerivedSpeedResult {
             if (isUnlimitedSpeedTag(maxspeed)) {
                 return DerivedSpeedResult(speed = null, source = DerivedSpeedSource.EXPLICIT_UNLIMITED_TAG, isUnlimited = true)
@@ -6274,15 +6362,13 @@ internal class V3SpeedLimitLookup(
                 return DerivedSpeedResult(speed = explicit, source = DerivedSpeedSource.EXPLICIT_TAG, isUnlimited = false)
             }
 
-            val inherited = listOfNotNull(maxspeedType, sourceMaxspeed).joinToString(" ").lowercase()
-            if ("urban" in inherited) {
-                return DerivedSpeedResult(speed = 50, source = DerivedSpeedSource.INHERITED_TAG, isUnlimited = false)
+            for (tag in listOf(maxspeed, maxspeedType, sourceMaxspeed)) {
+                RoadSpeedDefaults.symbolicSpeed(tag, country)?.let {
+                    return DerivedSpeedResult(it, DerivedSpeedSource.INHERITED_TAG, false)
+                }
             }
-            if ("rural" in inherited) {
-                return DerivedSpeedResult(speed = 100, source = DerivedSpeedSource.INHERITED_TAG, isUnlimited = false)
-            }
-            if ("motorway" in inherited) {
-                return DerivedSpeedResult(speed = null, source = DerivedSpeedSource.INHERITED_TAG, isUnlimited = false)
+            if (RoadSpeedDefaults.country(country) != "DE") {
+                return DerivedSpeedResult(RoadSpeedDefaults.speedKmh(country, null, highway, null), DerivedSpeedSource.HIGHWAY_CLASS, false)
             }
 
             return when (highway?.trim()?.lowercase()) {
@@ -6299,9 +6385,7 @@ internal class V3SpeedLimitLookup(
         }
 
         internal fun parseExplicitSpeed(raw: String?): Int? {
-            val digits = raw?.filter(Char::isDigit).orEmpty()
-            val value = digits.toIntOrNull() ?: return null
-            return value.takeIf { it > 0 }
+            return RoadSpeedDefaults.explicitSpeed(raw)
         }
 
         internal fun isUnlimitedSpeedTag(raw: String?): Boolean {
@@ -6310,7 +6394,7 @@ internal class V3SpeedLimitLookup(
 
         private fun normalizedCountryCode(raw: String?): String? {
             val code = raw?.trim()?.uppercase(Locale.US) ?: return null
-            return code.takeIf { it.length == 3 }
+            return (mapOf("DE" to "DEU", "FR" to "FRA", "BE" to "BEL", "NL" to "NLD", "CH" to "CHE")[code] ?: code).takeIf { it.length == 3 }
         }
 
         private fun inferCountryCodeFromDbPath(dbPath: String): String? {
@@ -6319,7 +6403,7 @@ internal class V3SpeedLimitLookup(
                 return null
             }
             val prefix = fileName.take(3)
-            return prefix.takeIf { it.all(Char::isLetter) }
+            return prefix.takeIf { it in setOf("DEU", "FRA", "BEL", "NLD", "CHE") }
         }
 
         private fun allowsResidentialAreaFallback(highway: String?): Boolean {
@@ -6499,86 +6583,66 @@ internal class V3SpeedLimitLookup(
             return haversineM(lat1 = lat, lon1 = lon, lat2 = clampedLat, lon2 = clampedLon)
         }
 
-        private fun polylineDistanceM(
+        internal fun polylineMetrics(
             lat: Double,
             lon: Double,
             points: List<LatLonPoint>,
-        ): Double? {
+        ): PolylineMetrics? {
             if (points.isEmpty()) {
                 return null
             }
             if (points.size == 1) {
-                return haversineM(lat1 = lat, lon1 = lon, lat2 = points.first().lat, lon2 = points.first().lon)
-            }
-            var best = Double.POSITIVE_INFINITY
-            for (index in 0 until points.lastIndex) {
-                val start = points[index]
-                val end = points[index + 1]
-                val projection = pointToSegmentProjection(
-                    lat = lat,
-                    lon = lon,
-                    lat1 = start.lat,
-                    lon1 = start.lon,
-                    lat2 = end.lat,
-                    lon2 = end.lon,
+                return PolylineMetrics(
+                    distanceM = haversineM(lat1 = lat, lon1 = lon, lat2 = points.first().lat, lon2 = points.first().lon),
+                    distanceToStartM = 0.0,
+                    distanceToEndM = 0.0,
+                    localHeadingDeg = null,
                 )
-                if (projection.distanceM < best) {
-                    best = projection.distanceM
-                }
-            }
-            return best.takeIf { it.isFinite() }
-        }
-
-        private fun polylineHeadingDeg(
-            lat: Double,
-            lon: Double,
-            points: List<LatLonPoint>,
-        ): Double? {
-            if (points.size < 2) {
-                return null
             }
             var bestDistance = Double.POSITIVE_INFINITY
             var bestHeading: Double? = null
+            var bestEndpointDistance = Double.POSITIVE_INFINITY
+            var bestAlong = 0.0
+            var travelled = 0.0
             for (index in 0 until points.lastIndex) {
-                val start = points[index]
-                val end = points[index + 1]
-                val projection = pointToSegmentProjection(
-                    lat = lat,
-                    lon = lon,
-                    lat1 = start.lat,
-                    lon1 = start.lon,
-                    lat2 = end.lat,
-                    lon2 = end.lon,
-                )
-                if (projection.distanceM < bestDistance) {
-                    bestDistance = projection.distanceM
-                    bestHeading = computeAxisHeadingDeg(start.lat, start.lon, end.lat, end.lon)
+                val first = points[index]
+                val second = points[index + 1]
+                val start = toXYMeters(first.lat, first.lon, lat, lon)
+                val end = toXYMeters(second.lat, second.lon, lat, lon)
+                val dx = end.x - start.x
+                val dy = end.y - start.y
+                val lengthSquared = (dx * dx) + (dy * dy)
+                val distance = if (dx == 0.0 && dy == 0.0) {
+                    hypot(start.x, start.y)
+                } else {
+                    val numerator = ((0.0 - start.x) * dx) + ((0.0 - start.y) * dy)
+                    val fraction = (numerator / lengthSquared).coerceIn(0.0, 1.0)
+                    hypot(start.x + (fraction * dx), start.y + (fraction * dy))
                 }
-            }
-            return bestHeading
-        }
+                if (distance < bestDistance) {
+                    bestDistance = distance
+                    bestHeading = computeAxisHeadingDeg(first.lat, first.lon, second.lat, second.lon)
+                }
 
-        private fun pointToSegmentProjection(
-            lat: Double,
-            lon: Double,
-            lat1: Double,
-            lon1: Double,
-            lat2: Double,
-            lon2: Double,
-        ): ProjectionResult {
-            val start = toXYMeters(lat = lat1, lon = lon1, originLat = lat, originLon = lon)
-            val end = toXYMeters(lat = lat2, lon = lon2, originLat = lat, originLon = lon)
-            val dx = end.x - start.x
-            val dy = end.y - start.y
-            if (dx == 0.0 && dy == 0.0) {
-                return ProjectionResult(distanceM = hypot(start.x, start.y))
+                // Preserve the endpoint-progress arithmetic and strict first-segment
+                // tie rule, including degenerate/invalid geometry, in this same pass.
+                val fraction = if (lengthSquared > 0.0) {
+                    (-(start.x * dx + start.y * dy) / lengthSquared).coerceIn(0.0, 1.0)
+                } else 0.0
+                val endpointDistance = hypot(start.x + fraction * dx, start.y + fraction * dy)
+                val length = haversineM(first.lat, first.lon, second.lat, second.lon)
+                if (endpointDistance < bestEndpointDistance) {
+                    bestEndpointDistance = endpointDistance
+                    bestAlong = travelled + fraction * length
+                }
+                travelled += length
             }
-            val tNumerator = ((0.0 - start.x) * dx) + ((0.0 - start.y) * dy)
-            val tDenominator = (dx * dx) + (dy * dy)
-            val t = (tNumerator / tDenominator).coerceIn(0.0, 1.0)
-            val projectionX = start.x + (t * dx)
-            val projectionY = start.y + (t * dy)
-            return ProjectionResult(distanceM = hypot(projectionX, projectionY))
+            return PolylineMetrics(
+                distanceM = bestDistance.takeIf { it.isFinite() },
+                distanceToStartM = bestAlong,
+                distanceToEndM = max(0.0, travelled - bestAlong),
+                localHeadingDeg = bestHeading,
+            )
         }
 
         private fun toXYMeters(
@@ -6922,11 +6986,14 @@ private data class XYPoint(
     val y: Double,
 )
 
-private data class ProjectionResult(
-    val distanceM: Double,
+internal data class PolylineMetrics(
+    val distanceM: Double?,
+    val distanceToStartM: Double,
+    val distanceToEndM: Double,
+    val localHeadingDeg: Double?,
 )
 
-private data class LatLonPoint(
+internal data class LatLonPoint(
     val lat: Double,
     val lon: Double,
 )

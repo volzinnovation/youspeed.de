@@ -1,3 +1,8 @@
+## Road/sign applicability pilot
+
+See [the versioned applicability implementation and qualification status](applicability/README.md)
+and [the Belgium pilot collection guide](../../docs/TSR_APPLICABILITY_BELGIUM_PILOT.md).
+
 # YouSpeed traffic-sign recognition contracts
 
 The [2026-09-10 Prolix alignment review](../../docs/TSR_PROLIX_ALIGNMENT_2026-09-10.md)
@@ -31,10 +36,11 @@ The runtime rules are deliberately strict:
   proposal/classification shadow target and binds detector and classifier
   artifact, preprocessing, and calibration identities independently.
 - Every live per-frame event carries its capture-time road context and TSR
-  generation as immutable evidence. A visible or armed sign never changes the
-  main speed. Only a generation-current `traffic-sign-passage-event-v1`,
-  finalized after qualified visual loss, may reach the runtime resolver or
-  observation store.
+  generation as immutable evidence. An admitted confirmed frame may update the
+  immediate camera preview; a generation-current `traffic-sign-passage-event-v1`,
+  finalized after qualified visual loss, is required for the durable resolver
+  assertion and observation store. The additive [applicability contract](applicability/README.md)
+  gates both boundaries in enforcement; its initial runtime mode is shadow.
 - A finalized applicable passage has precedence
   `TSR > local correction > bundled OSM`. It survives repeated fixes on its
   original way and continuous way-ID changes only within the narrowing
@@ -60,7 +66,7 @@ The runtime rules are deliberately strict:
   validation/orchestration boundary. iOS uses Core ML and Android uses LiteRT
   with CameraX; both request the accelerated path (Core ML `all` and LiteRT
   GPU) with the documented fallback. The optional other-sign pictogram stream is presentation only;
-  it does not bypass finalized-passage requirements for speed changes.
+  it does not bypass the immediate-preview or finalized-passage authority gates.
 
 Swiss Panoramax acquisition and artwork/model readiness are tracked in
 [`panoramax-ch-readiness-v1.json`](panoramax-ch-readiness-v1.json) and
@@ -291,3 +297,11 @@ attestations also bind the benchmark run and physical device identity.
 Its result is an internal engineering model scorecard only. It cannot approve
 privacy handling, legal obligations, signed distribution, app-level override
 lifecycle, or production release; those remain independent fail-closed reviews.
+
+## Swiss classifier acceptance
+
+On 27 September 2026 the product owner accepted the bundled CH v9 classifier
+on the basis of successful driving experience. The [acceptance record](field-acceptance/CH-v9-2026-09-27.json)
+pins both platform exports and their manifests. Both apps already select this
+pack for CH; no classifier replacement is needed. Field acceptance is separate
+from score calibration and signed registry publication.

@@ -1,0 +1,4 @@
+# Isolated offline experiment runtime; not a mobile app dependency.
+opencv-contrib-python-headless==4.14.0.94
+numpy==2.5.3
+Pillow==12.3.0

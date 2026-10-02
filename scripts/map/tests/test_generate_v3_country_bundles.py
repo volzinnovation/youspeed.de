@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -44,6 +45,103 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
         self.assertEqual(commands[1][commands[1].index("--country-code") + 1], "DE")
         self.assertEqual(commands[2][commands[2].index("--bundle-dir-name") + 1], "2026-09-14-settlement-pilot")
         self.assertNotIn("--github-release-tag", commands[2])
+
+    def test_french_settlement_bundle_includes_rules_and_supported_app_version(self):
+        commands = MODULE._bundle_commands(
+            repo_root=REPO_ROOT, target=self._target("corse", "France", "FR", "FRA"),
+            bundle_version="2026-09-24-review", max_geom_points=24,
+            db_compression="gzip", release_tag="corse", skip_release_urls=False,
+            build_settlement_context=True,
+        )
+        self.assertEqual(commands[2][commands[2].index("--min-app-version") + 1], "1.1.1")
+        self.assertEqual(commands[2][commands[2].index("--penalty-rules-file-name") + 1], "FRA-rules.json")
+        self.assertIn(str(REPO_ROOT / "shared/Rules/FRA-rules.json"), commands[2])
+        self.assertEqual(commands[1][commands[1].index("--country-code") + 1], "FR")
+        self.assertIn("--build-way-links", commands[1])
+        self.assertEqual(commands[1][commands[1].index("--way-links-schema") + 1], "detailed")
+
+    def test_swiss_bundle_includes_detailed_links_and_rules_with_settlement_opt_in(self):
+        for settlement in (False, True):
+            with self.subTest(settlement=settlement):
+                commands = MODULE._bundle_commands(
+                    repo_root=REPO_ROOT,
+                    target=self._target("switzerland", "Switzerland", "CH", "CHE"),
+                    bundle_version="2026-09-27-swiss-test", max_geom_points=24,
+                    db_compression="gzip", release_tag="switzerland",
+                    skip_release_urls=True, build_settlement_context=settlement,
+                )
+                build, publish = commands[1:]
+                self.assertIn("--build-way-links", build)
+                self.assertEqual(build[build.index("--way-links-schema") + 1], "detailed")
+                self.assertEqual("--build-settlement-context" in build, settlement)
+                self.assertEqual(
+                    publish[publish.index("--penalty-rules") + 1],
+                    str(REPO_ROOT / "shared/Rules/CHE-rules.json"),
+                )
+                self.assertEqual(publish[publish.index("--penalty-rules-file-name") + 1], "CHE-rules.json")
+                self.assertEqual(publish[publish.index("--country-code") + 1], "CHE")
+                self.assertEqual(
+                    publish[publish.index("--bundle-dir-name") + 1],
+                    "2026-09-27-swiss-test" if settlement else "latest",
+                )
+                self.assertNotIn("--github-release-tag", publish)
+                if settlement:
+                    self.assertEqual(build[build.index("--country-code") + 1], "CH")
+                    self.assertEqual(publish[publish.index("--min-app-version") + 1], "1.1")
+
+    def test_swiss_mobile_targets_map_the_shared_penalty_rules(self):
+        configs = [
+            REPO_ROOT / "iphone/SpeedConsumerApp/BundleTargets.top10.json",
+            REPO_ROOT / "android/app/src/main/assets/BundleTargets.top10.json",
+        ]
+        self.assertEqual(configs[0].read_bytes(), configs[1].read_bytes())
+        for path in configs:
+            with self.subTest(config=path):
+                country = next(
+                    row for row in MODULE._load_bundle_target_config(path)
+                    if row.country_id == "switzerland"
+                )
+                self.assertEqual(country.iso2, "CH")
+                self.assertEqual(country.country_code, "CHE")
+                self.assertEqual(country.penalty_rules_file, "CHE-rules.json")
+                self.assertEqual(country.penalty_rules_source, "shared/Rules/CHE-rules.json")
+                rules = json.loads((REPO_ROOT / country.penalty_rules_source).read_text())
+                self.assertEqual(rules["country_code"], country.country_code)
+
+    def test_workflow_builds_swiss_detailed_links_without_enabling_settlement(self):
+        workflow = (REPO_ROOT / ".github/workflows/generate_country_bundles.yml").read_text()
+        build_script = workflow.split("          build_cmd=(", 1)[1].split(
+            '\n          "${build_cmd[@]}"', 1
+        )[0]
+        build_script = 'build_cmd=(' + build_script + '\n"${build_cmd[@]}"\n'
+        for iso2, settlement, expected_settlement, expected_links in (
+            ("CH", False, False, True),
+            ("CH", True, True, True),
+            ("FR", False, True, True),
+            ("NL", False, False, False),
+        ):
+            with self.subTest(iso2=iso2, settlement=settlement):
+                script = build_script
+                replacements = {
+                    "steps.plan.outputs.region_slug": "test-region",
+                    "steps.plan.outputs.input_pbf_path": "/tmp/test.osm.pbf",
+                    "steps.plan.outputs.iso2": iso2,
+                    "inputs.build_settlement_context": str(settlement).lower(),
+                }
+                for expression, value in replacements.items():
+                    script = script.replace("${{ " + expression + " }}", value)
+                self.assertNotIn("${{", script)
+                # Intercept the actual workflow argv; do not build or publish data.
+                result = subprocess.run(
+                    ["bash", "-c", 'python3() { printf "%s\\n" "$@"; };\n' + script],
+                    check=True, capture_output=True, text=True,
+                )
+                command = result.stdout.splitlines()
+                self.assertEqual("--build-settlement-context" in command, expected_settlement)
+                self.assertEqual("--build-way-links" in command, expected_links)
+                self.assertEqual(command[command.index("--country-code") + 1], iso2)
+                if expected_links:
+                    self.assertEqual(command[command.index("--way-links-schema") + 1], "detailed")
 
     def test_settlement_context_accepts_multiple_regions_and_countries(self):
         targets = [

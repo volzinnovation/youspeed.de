@@ -7,11 +7,14 @@ import argparse
 import hashlib
 import json
 import shutil
+import sys
 from pathlib import Path
 from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from scripts.tsr.mapping_review import semantic as reviewed_semantic, reconcile_catalog
 
 
 def sha256(path: Path) -> str:
@@ -40,20 +43,13 @@ def load(path: Path) -> Any:
 
 def write(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.name == "prolix-ch-class-catalog-v1.json":
+        payload = reconcile_catalog(payload)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def semantic(label: str) -> dict[str, Any]:
-    token = label.lower()
-    if token.startswith("maxspeed:") and token.removeprefix("maxspeed:").isdigit():
-        return {"kind": "maximum_speed", "value": int(token.removeprefix("maxspeed:")), "unit": "km/h"}
-    if token.startswith("zone:") and token.removeprefix("zone:").isdigit():
-        return {"kind": "zone_start", "value": int(token.removeprefix("zone:")), "unit": "km/h"}
-    if token.startswith("zone:") and token.endswith(":end"):
-        return {"kind": "zone_end"}
-    if token.endswith(":end") or token in {"no:end", "motorway:end", "trunk:end"}:
-        return {"kind": "restriction_end"}
-    return {"kind": "unknown"}
+    return reviewed_semantic(label, "CH")
 
 
 def class_mapping(labels: list[str]) -> list[dict[str, Any]]:
@@ -215,6 +211,9 @@ def build(args: argparse.Namespace) -> None:
     }
     detector_source = load(ROOT / "android/app/src/main/assets/tsr/DE.panoramax-bootstrap.tsrmodelpack/manifest.json")["detector"]
     common["detector"] = json.loads(json.dumps(detector_source))
+    common["lineage"]["dataset_inventory_sha256s"] = list(dict.fromkeys([
+        dataset_sha, *[a["calibration_dataset_sha256"] for a in detector_source["artifacts"]],
+    ]))
     common["detector"]["artifacts"] = [common["detector"]["artifacts"][0]]
     common["detector"]["artifacts"][0]["path"] = "yolo11n_panoramax_float16.tflite"
     common["detector"]["artifacts"][0]["platform"] = "android"

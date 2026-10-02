@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "country": "CH",
+  "decision": "accepted_for_bundled_app_use",
+  "date": "2026-09-27",
+  "approved_by": "product_owner",
+  "basis": "User decision to accept the CH classifier, since user confirms that it worked great.",
+  "pack_id": "ch-panoramax-bootstrap-evaluation-v1",
+  "classifier_component_id": "panoramax-classify-ch-road-signs-ch-classifier-bootstrap-v9",
+  "source_checkpoint_sha256": "984c63ecb7dda0a4faf4e49ea3461e5cdf0ffb820dbb90fd2f57efdd87ac5dbc",
+  "artifacts": [
+    {
+      "platform": "ios",
+      "classifier_sha256": "7ac5f120f208fa824b26f4ece9e7cfb268ca34b7d1680046d8071eb55749c1f7",
+      "manifest_sha256": "93993b609d8296fe9d61ade79d31dbaed39b659d061370532e2fa89be09f83dd"
+    },
+    {
+      "platform": "android",
+      "classifier_sha256": "eb59c48a0dc5ff1adb1b488b1f3bddfda7324a152ed51e7d7df7c99b43f5b72e",
+      "manifest_sha256": "2b6046cecc365a99177823e9b2f4d4e772849a82cb199c1ef841237c6a5d3bd7"
+    }
+  ],
+  "evidence_note": "Owner-reported successful Swiss driving experience. Installed Android APK verified against this classifier; retained iPhone logs do not cover the earlier Swiss session. This decision does not relabel scores as calibrated probabilities or authorize publishing a downloadable pack."
+}

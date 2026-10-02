@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gravity_alignment_title">Kameraausrichtung</string>
+    <string name="gravity_alignment_unavailable">Schwerkraftausrichtung nicht verfügbar</string>
+    <string name="gravity_alignment_angles">Rollwinkel %1$.0f°, Neigung %2$.0f°. Schwerkraft kann die Fahrtrichtung nicht bestimmen.</string>
+    <string name="tsr_voice_dismissal_listening">„Falsch“ sagen</string>
+</resources>

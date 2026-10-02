@@ -1,5 +1,6 @@
 "CFBundleDisplayName" = "YouSpeed";
 "NSLocationWhenInUseUsageDescription" = "YouSpeed uses your location to compare your current speed with local speed-limit data.";
 "NSCameraUsageDescription" = "YouSpeed uses one rear-camera session for local dashcam video, on-device traffic-sign recognition, and Panoramax pictures that you review and upload later.";
-"NSMicrophoneUsageDescription" = "YouSpeed uses the microphone only on your device to capture spoken speed limits.";
-"NSSpeechRecognitionUsageDescription" = "YouSpeed uses speech recognition only on your device to capture speed limits such as 30 or pedestrian zone.";
+"NSMicrophoneUsageDescription" = "YouSpeed briefly listens on your device after recognizing a speed limit so you can say Wrong, and captures spoken speed corrections.";
+"NSSpeechRecognitionUsageDescription" = "YouSpeed recognizes spoken speed corrections and Wrong locally on your device.";
+"NSMotionUsageDescription" = "YouSpeed uses gravity locally to show camera tilt while stopped.";

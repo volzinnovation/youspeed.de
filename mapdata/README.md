@@ -12,6 +12,7 @@ Current pipeline entrypoint:
   - `../scripts/map/pack_runtime_artifacts_pyosmium.py`
 
 Validation scripts:
+- `../scripts/map/validate_v3_testing_bundle.py --db <speeds.sqlite> --manifest <bundle_manifest.json> --require-settlement --out-json <report.json>`: read-only structural readiness gate for current iPhone/Android field-test bundles, including topology, source geometry, settlement, directed motorway exits, integrity, and materialized artifact checksums. This is stricter than minimum app installation compatibility and does not measure driving accuracy or source-data freshness.
 - `../scripts/map/check_artifacts.sh <dist_region_dir>`
 - `../scripts/map/check_determinism.sh --region <name> --input <raw_pbf>`
 - `../scripts/map/query_speed_limit.py --dist-dir <dist_region_dir> --lat <lat> --lon <lon> [--heading <deg>]`

@@ -7,19 +7,18 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
-import android.graphics.ImageFormat
 import android.hardware.camera2.CaptureRequest
-import android.hardware.HardwareBuffer
-import android.media.ImageReader
+import android.hardware.camera2.CameraCharacteristics
 import android.os.PowerManager
 import android.os.Handler
-import android.os.HandlerThread
 import android.os.Looper
 import android.util.Size
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.ExtendableBuilder
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -155,12 +154,77 @@ internal object AndroidTrafficSignModelPackLoader {
     private const val CLASSIFIER_SIZE = 224
 }
 
-/** Owns one CameraX image until the orchestrator releases it. */
+/** Release the camera buffer once the independent bitmap exists, before model work.
+ * Kept separate from the frame lifetime: metadata/prepared geometry remain valid until fusion.
+ */
+internal class CameraXImageLease(private val closeImage: () -> Unit, private val onClosed: (String) -> Unit = {}) {
+    private val closed = AtomicBoolean(false)
+    val isClosed: Boolean get() = closed.get()
+    fun close(reason: String) {
+        if (closed.compareAndSet(false, true)) {
+            try { closeImage() } finally { onClosed(reason) }
+        }
+    }
+    fun <T> copyAndClose(copy: () -> T): T {
+        check(!closed.get()) { "Camera image was already closed" }
+        var copied = false
+        try { return copy().also { copied = true } }
+        finally { close(if (copied) "bitmap_copied" else "bitmap_copy_failed") }
+    }
+}
+
+/** Fixed-size timing windows and cumulative counters; no images or per-frame log writes. */
+internal class CameraAnalysisCadenceWindow {
+    private val intervals = ArrayDeque<Double>()
+    private val holds = ArrayDeque<Double>()
+    private val bitmapHolds = ArrayDeque<Double>()
+    private val counts = linkedMapOf<String, Long>()
+    private var lastDelivery: Long? = null
+    private var lastReport: Long? = null
+    private fun append(window: ArrayDeque<Double>, value: Double) {
+        if (window.size == 128) window.removeFirst()
+        window.addLast(value.coerceAtLeast(0.0))
+    }
+    @Synchronized fun delivered(now: Long) {
+        lastDelivery?.let { previous -> if (now >= previous) append(intervals, (now-previous)/1e6) }
+        lastDelivery = now
+        counts["delivered"] = (counts["delivered"] ?: 0)+1
+        if (lastReport == null) lastReport = now
+    }
+    @Synchronized fun event(reason: String) { counts[reason] = (counts[reason] ?: 0)+1 }
+    @Synchronized fun closed(reason: String, heldMs: Double) {
+        event(reason); append(holds,heldMs)
+        if (reason == "bitmap_copied") append(bitmapHolds,heldMs)
+    }
+    @Synchronized fun reportIfDue(now: Long): Map<String,Any>? {
+        if (lastReport == null || now-(lastReport ?: now)<5_000_000_000L) return null
+        lastReport = now
+        fun timing(values: Collection<Double>): Map<String,Any> {
+            if (values.isEmpty()) return mapOf("samples" to 0)
+            val sorted = values.sorted()
+            fun quantile(p: Double) = sorted[kotlin.math.ceil((sorted.size-1)*p).toInt()]
+            return mapOf("samples" to sorted.size,"p50Ms" to quantile(0.5),"p95Ms" to quantile(0.95),"maxMs" to sorted.last())
+        }
+        return mapOf("counts" to counts.toMap(),"deliveryInterval" to timing(intervals),
+            "cameraHold" to timing(holds),"copiedInputCameraHold" to timing(bitmapHolds),
+            "pendingCameraInputsAllowed" to false,"timingWindowCapacity" to 128)
+    }
+}
+
+/** Owns camera pixels only through preparation/copy; frame metadata lives through inference. */
 internal class CameraXTrafficSignFrame(
     private val image: ImageProxy,
+    private val pathIntrinsics: RoadPathCameraIntrinsics? = null,
+    private val pathClockKnown: Boolean = false,
+    private val pathCameraGeneration: Long = 0,
+    savedVisualCalibration: VisualRoadCalibration? = null,
+    onCameraReleased: (String, Double) -> Unit = { _, _ -> },
 ) : TrafficSignNormalizedFrameHandle {
     val receivedAtNanos: Long = System.nanoTime()
     private val released = AtomicBoolean(false)
+    private val imageLease = CameraXImageLease(image::close) { reason ->
+        onCameraReleased(reason, (System.nanoTime()-receivedAtNanos)/1e6)
+    }
     private val rotationDegrees = image.imageInfo.rotationDegrees
 
     override val frameId: String = UUID.randomUUID().toString().lowercase(Locale.US)
@@ -169,10 +233,41 @@ internal class CameraXTrafficSignFrame(
     override val capturedAtMonotonicNanos: Long = image.imageInfo.timestamp.coerceAtLeast(0L)
     override val widthPixels: Int = if (rotationDegrees == 90 || rotationDegrees == 270) image.height else image.width
     override val heightPixels: Int = if (rotationDegrees == 90 || rotationDegrees == 270) image.width else image.height
+    val orientationKey = "rear:rotation:$rotationDegrees"
+    val visualCalibration = savedVisualCalibration?.takeIf { it.compatible(widthPixels, heightPixels, orientationKey) }
+
+    private val pathCaptureSeconds = capturedAtUtc.toEpochMilli() / 1000.0 -
+        if (pathClockKnown) (android.os.SystemClock.elapsedRealtimeNanos() - image.imageInfo.timestamp) / 1e9 else 0.0
+
+    var preparedRoadPath: RoadPathPreparedFrame? = null
+    var roadPathPreparationFailure: String? = null
+    var roadPathInferenceStartedNanos: Long? = null
+
+    fun roadPathFrame(): RoadPathCameraFrame? {
+        check(!imageLease.isClosed) { "Road geometry must be copied before closing camera pixels" }
+        val start = System.nanoTime()
+        if (!pathCaptureSeconds.isFinite()) return null
+        val values = FloatArray(9).also(image.imageInfo.sensorToBufferTransformMatrix::getValues)
+        val geometry = LaneImageGeometry(image.width, image.height, rotationDegrees, values.map(Float::toDouble))
+        val scale = minOf(384.0 / geometry.uprightWidth, 216.0 / geometry.uprightHeight, 1.0)
+        val width = (geometry.uprightWidth * scale).toInt().coerceAtLeast(1)
+        val height = (geometry.uprightHeight * scale).toInt().coerceAtLeast(1)
+        val bytes = ByteArray(width * height)
+        val plane = image.planes.firstOrNull() ?: return null
+        LaneLumaSampler.copyUpright(plane.buffer, plane.rowStride, plane.pixelStride, geometry, bytes, width, height)
+        return RoadPathCameraFrame(bytes, width, height, pathCaptureSeconds,
+            "$pathCameraGeneration:${image.width}x${image.height}:$rotationDegrees:${values.joinToString()}",
+            pathIntrinsics?.calibration(image), pathClockKnown, (System.nanoTime() - start) / 1e6, start,
+            image.width, image.height, rotationDegrees, values.map(Float::toDouble),
+            sourceTimestampSeconds = image.imageInfo.timestamp / 1e9,
+            visualCalibration = visualCalibration, orientationKey = orientationKey)
+    }
 
     fun <T> withOrientedBitmap(rotationBuffer: AndroidTrafficSignBitmapRotation, consume: (Bitmap) -> T): T {
         check(!released.get()) { "Camera frame was already released" }
-        val sourceBitmap = image.toBitmap()
+        // toBitmap makes independent ARGB pixels. CameraX KEEP_ONLY_LATEST cannot
+        // deliver another lane exposure until this proxy closes; inference needs only bitmap.
+        val sourceBitmap = imageLease.copyAndClose { image.toBitmap() }
         try {
             return consume(rotationBuffer.orient(sourceBitmap, rotationDegrees))
         } finally {
@@ -181,7 +276,7 @@ internal class CameraXTrafficSignFrame(
     }
 
     override fun release() {
-        if (released.compareAndSet(false, true)) image.close()
+        if (released.compareAndSet(false, true)) imageLease.close("frame_released")
     }
 }
 
@@ -647,6 +742,12 @@ internal class AndroidLiteRtTrafficSignBackend(
     override fun recognize(
         frame: CameraXTrafficSignFrame,
         completion: (TrafficSignBackendResult) -> Unit,
+    ) = recognize(frame, {}, completion)
+
+    override fun recognize(
+        frame: CameraXTrafficSignFrame,
+        beforeInference: () -> Unit,
+        completion: (TrafficSignBackendResult) -> Unit,
     ) {
         val queuedAtNanos = System.nanoTime()
         if (closed.get()) {
@@ -654,11 +755,24 @@ internal class AndroidLiteRtTrafficSignBackend(
             return
         }
         executor.execute {
+            val workerStartedAtNanos = System.nanoTime()
+            beforeInference()
+            frame.roadPathInferenceStartedNanos = System.nanoTime()
             val conversionStartedAtNanos = System.nanoTime()
             val result = runCatching {
                 frame.withOrientedBitmap(rotationBuffer) { bitmap ->
                     val conversionMs = (System.nanoTime() - conversionStartedAtNanos) / 1_000_000.0
-                    val inference = engine.recognizeAllWithDiagnostics(bitmap)
+                    val calibration = frame.visualCalibration
+                    val cropLeft = calibration?.cropLeftPixels(bitmap.width) ?: 0
+                    val modelInput = if (cropLeft > 0) Bitmap.createBitmap(bitmap, cropLeft, 0,
+                        bitmap.width - cropLeft, bitmap.height) else bitmap
+                    val croppedInference = try { engine.recognizeAllWithDiagnostics(modelInput) }
+                        finally { if (modelInput !== bitmap) modelInput.recycle() }
+                    val inference = if (calibration != null && cropLeft > 0) croppedInference.copy(
+                        detections = croppedInference.detections.map { detection ->
+                            val box = calibration.fullFrameBox(detection.candidate.boundingBox, bitmap.width)
+                            detection.copy(candidate = detection.candidate.copy(boundingBox = box), cropQuality = box.area)
+                        }, sourceWidthPixels = bitmap.width, sourceHeightPixels = bitmap.height) else croppedInference
                     val detections = inference.detections
                     val primary = primaryDetection(detections)
                     TrafficSignBackendResult.Recognition(
@@ -686,7 +800,7 @@ internal class AndroidLiteRtTrafficSignBackend(
                             detectorPreprocessingMs = inference.detectorPreprocessingMs,
                             detectorInferenceMs = inference.detectorInferenceMs,
                             classifierInferenceMs = inference.classifierInferenceMs,
-                            backendQueueWaitMs = (conversionStartedAtNanos - queuedAtNanos) / 1_000_000.0,
+                            backendQueueWaitMs = (workerStartedAtNanos - queuedAtNanos) / 1_000_000.0,
                             frameConversionMs = conversionMs,
                             cameraReceiptToResultMs = (System.nanoTime() - frame.receivedAtNanos) / 1_000_000.0,
                         ),
@@ -732,6 +846,11 @@ internal class AndroidTrafficSignCameraRuntime(
     @Volatile private var analysisOrientationEpoch = 0L
     private var imageAnalysis: ImageAnalysis? = null
     private var analyzerAttached = false
+    private var lastCalibrationPreviewNanos = 0L
+    private var lastLaneGeometryNanos = 0L
+    @Volatile private var firstAnalysisFramePending = true
+    private val calibrationRotation = AndroidTrafficSignBitmapRotation()
+    private val analysisCadence = CameraAnalysisCadenceWindow()
     private var imageCapture: ImageCapture? = null
     private var videoCapture: VideoCapture<Recorder>? = null
     private var preview: Preview? = null
@@ -741,7 +860,7 @@ internal class AndroidTrafficSignCameraRuntime(
     private var recognitionUnavailable = false
     private var cameraBound = false
     private var cameraBindingInProgress = false
-    private var graphIncludesRecorderOutputs = false
+    private var boundGraphPlan: DriveCameraGraphPlan? = null
     private var videoRequested = false
     private var recordingStopRequested = false
     private var videoTerminallyStopped = false
@@ -751,30 +870,29 @@ internal class AndroidTrafficSignCameraRuntime(
     @Volatile private var bridge: TrafficSignLiveRuntimeBridge<CameraXTrafficSignFrame>? = null
     @Volatile private var requestedModelCountryCode: String = controller.trafficSignModelCountryCode()
     @Volatile private var loadedModelCountryCode: String? = null
+    @Volatile private var laneClockIsRealtime = false
+    @Volatile private var pathIntrinsics: RoadPathCameraIntrinsics? = null
+    private val laneRuntime = AndroidLaneDetectionRuntime(
+        mainExecutor = mainExecutor,
+        admission = {
+            val thermal = context.getSystemService(PowerManager::class.java)?.currentThermalStatus
+                ?: PowerManager.THERMAL_STATUS_NONE
+            controller.laneAdmission(thermal >= PowerManager.THERMAL_STATUS_SEVERE)
+        },
+        clockIsRealtime = { laneClockIsRealtime },
+        onResult = controller::onLaneDetectionResult,
+        onDiagnostics = controller::onLaneDetectionDiagnostics,
+        previewSession = controller.lanePreviewSession,
+        roadFrameFactory = { image -> CameraXTrafficSignFrame(image, pathIntrinsics,
+            laneClockIsRealtime, generation.get(), controller.visualRoadCalibration).roadPathFrame() },
+        onRoadResult = controller::onLanePreviewPrepared,
+    )
 
     // A hidden preview still supplies a surface. Removing the UI must never
     // suspend analysis or movie recording while CameraX waits for its surface.
-    private val offscreenPreviewProvider = Preview.SurfaceProvider { request ->
-        val drainThread = HandlerThread("YouSpeedPreviewDrain").apply { start() }
-        val reader = try {
-            ImageReader.newInstance(request.resolution.width, request.resolution.height,
-                ImageFormat.PRIVATE, 3, HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE)
-        } catch (failure: Exception) {
-            drainThread.quitSafely()
-            request.willNotProvideSurface()
-            onStateChanged(TrafficSignCameraRuntimeState.UNAVAILABLE,
-                failure.message ?: ConsumerRuntimeText.REAR_CAMERA_UNAVAILABLE.text())
-            return@SurfaceProvider
-        }
-        reader.setOnImageAvailableListener({ source ->
-            // PRIVATE frames are never mapped or retained. Draining the
-            // consumer keeps a hidden preview from blocking the camera graph.
-            runCatching { source.acquireLatestImage()?.close() }
-        }, Handler(drainThread.looper))
-        request.provideSurface(reader.surface, mainExecutor) {
-            reader.close()
-            drainThread.quitSafely()
-        }
+    private val offscreenPreviewProvider = DrainingCameraPreviewProvider(mainExecutor) { failure ->
+        onStateChanged(TrafficSignCameraRuntimeState.UNAVAILABLE,
+            failure.message ?: ConsumerRuntimeText.REAR_CAMERA_UNAVAILABLE.text())
     }
 
     fun start() {
@@ -854,17 +972,77 @@ internal class AndroidTrafficSignCameraRuntime(
     /** Suspend delivery while recognition is disabled/loading without interrupting a movie. */
     private fun refreshAnalysisConsumer() {
         val analysis = imageAnalysis ?: return
-        val needed = bridge != null
+        val needed = bridge != null || controller.isVisualCalibrationActive() || (controller.uiState.showDetectedLanes && controller.isDriveRecorderSessionActive())
         if (needed == analyzerAttached) return
         analyzerAttached = needed
+        controller.onTrafficSignCameraAnalysisDiagnostic("consumer_changed", mapOf(
+            "attached" to needed, "recognitionReady" to (bridge != null)))
         if (needed) {
+            firstAnalysisFramePending = true
             val orientationEpoch = analysisOrientationEpoch
             analysis.setAnalyzer(cameraExecutor) { image ->
+                val deliveredAt = System.nanoTime()
+                analysisCadence.delivered(deliveredAt)
                 controller.withCameraOrientation {
                     val current = bridge
-                    if (current == null || orientationEpoch != analysisOrientationEpoch ||
-                        image.imageInfo.rotationDegrees != expectedAnalysisRotation) image.close()
-                    else current.submit(CameraXTrafficSignFrame(image))
+                    if (firstAnalysisFramePending) {
+                        firstAnalysisFramePending = false
+                        controller.onTrafficSignCameraAnalysisDiagnostic("first_frame", mapOf(
+                            "width" to image.width, "height" to image.height,
+                            "rotation" to image.imageInfo.rotationDegrees, "expectedRotation" to expectedAnalysisRotation,
+                            "orientationCurrent" to (orientationEpoch == analysisOrientationEpoch),
+                            "recognitionReady" to (current != null)))
+                    }
+                    if (orientationEpoch != analysisOrientationEpoch ||
+                        image.imageInfo.rotationDegrees != expectedAnalysisRotation) {
+                        image.close(); analysisCadence.closed("orientation_discarded", (System.nanoTime()-deliveredAt)/1e6)
+                    }
+                    else {
+                        val receivedAt = android.os.SystemClock.elapsedRealtimeNanos()
+                        val previewScope = controller.lanePreviewSourceScope()
+                        if (previewScope != null && receivedAt - lastLaneGeometryNanos >= 200_000_000L) {
+                            lastLaneGeometryNanos = receivedAt
+                            val matrix = FloatArray(9).also { image.imageInfo.sensorToBufferTransformMatrix.getValues(it) }
+                            val thermal = context.getSystemService(PowerManager::class.java)?.currentThermalStatus
+                                ?: PowerManager.THERMAL_STATUS_NONE
+                            controller.onLanePreviewSource(LanePreviewSourceGeometry(previewScope,
+                                LaneImageGeometry(image.width, image.height, image.imageInfo.rotationDegrees, matrix.map { it.toDouble() }),
+                                receivedAt, thermal >= PowerManager.THERMAL_STATUS_SEVERE))
+                        }
+                        if (controller.isVisualCalibrationActive() && System.nanoTime() - lastCalibrationPreviewNanos >= 200_000_000L) {
+                            lastCalibrationPreviewNanos = System.nanoTime()
+                            runCatching {
+                                val raw = image.toBitmap()
+                                try {
+                                    val upright = calibrationRotation.orient(raw, image.imageInfo.rotationDegrees)
+                                    val scale = minOf(960.0 / upright.width, 540.0 / upright.height, 1.0)
+                                    val display = Bitmap.createScaledBitmap(upright, maxOf(1, (upright.width * scale).toInt()),
+                                        maxOf(1, (upright.height * scale).toInt()), true).let {
+                                            if (it === raw || it === upright) it.copy(Bitmap.Config.ARGB_8888, false) else it
+                                        }
+                                    controller.onVisualCalibrationPreview(VisualRoadCalibrationPreview(display,
+                                        upright.width, upright.height, "rear:rotation:${image.imageInfo.rotationDegrees}",
+                                        android.os.SystemClock.elapsedRealtime()))
+                                } finally { raw.recycle() }
+                            }
+                        }
+                        // Copy admitted lane luminance before TSR takes ownership.
+                        laneRuntime.submit(image)
+                        if (current == null) {
+                            image.close(); analysisCadence.closed("no_tsr_consumer", (System.nanoTime()-deliveredAt)/1e6)
+                        } else {
+                            analysisCadence.event("tsr_submitted")
+                            val frame = CameraXTrafficSignFrame(image, pathIntrinsics, laneClockIsRealtime,
+                                generation.get(), controller.visualRoadCalibration) { reason, _ ->
+                                analysisCadence.closed(reason, (System.nanoTime()-deliveredAt)/1e6)
+                            }
+                            try { current.submitCameraFrame(frame) { reason -> analysisCadence.event("source_drop_$reason") } }
+                            catch (failure: RuntimeException) { frame.release(); throw failure }
+                        }
+                    }
+                }
+                analysisCadence.reportIfDue(System.nanoTime())?.let { report ->
+                    controller.onTrafficSignCameraAnalysisDiagnostic("cadence", report + ("lanes" to laneRuntime.cadenceDiagnostics()))
                 }
             }
         } else analysis.clearAnalyzer()
@@ -881,6 +1059,44 @@ internal class AndroidTrafficSignCameraRuntime(
                     val pack = AndroidTrafficSignModelPackLoader.load(context, countryCode)
                     val runtimeBackend = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState, context)
                     val runtimeBridge = try { TrafficSignLiveRuntimeBridge(
+                        pathPreparer = { frame: CameraXTrafficSignFrame, preparation ->
+                            val thermal = context.getSystemService(PowerManager::class.java)?.currentThermalStatus ?: PowerManager.THERMAL_STATUS_NONE
+                            if (thermal >= PowerManager.THERMAL_STATUS_SEVERE) {
+                                frame.roadPathPreparationFailure = "thermal_paused"
+                                controller.roadPathSession.invalidateOverlay()
+                            } else runCatching {
+                                val input = frame.roadPathFrame()
+                                if (input == null) {
+                                    frame.roadPathPreparationFailure = "frame_input_unavailable"
+                                    controller.roadPathSession.invalidateOverlay()
+                                } else frame.preparedRoadPath = controller.roadPathSession.prepare(input, frame.frameId,
+                                    preparation.scope, preparation.publishIfCurrent)
+                            }.onFailure {
+                                frame.roadPathPreparationFailure = "path_processing_failed"
+                                controller.roadPathSession.invalidateOverlay()
+                            }
+                        },
+                        pathInvalidated = controller.roadPathSession::invalidateOverlay,
+                        pathEvaluator = { frame: CameraXTrafficSignFrame, diagnostic ->
+                            val prepared = frame.preparedRoadPath
+                            val result = if (prepared != null) controller.roadPathSession.evaluate(prepared, diagnostic) else
+                                org.json.JSONObject().apply {
+                                    put("schemaVersion", 1); put("mode", "shadow"); put("frameId", frame.frameId)
+                                    put("reason", frame.roadPathPreparationFailure ?: "frame_not_prepared")
+                                    put("capturedAtSeconds", frame.capturedAtUtc.toEpochMilli() / 1000.0)
+                                    put("captureClockKnown", false); put("geometryId", "unavailable:${frame.widthPixels}x${frame.heightPixels}")
+                                    put("boundaries", org.json.JSONArray()); put("associations", org.json.JSONArray())
+                                }.toString()
+                            // Same worker's monotonic values demonstrate ordering; this is not UI render telemetry.
+                            org.json.JSONObject(result).apply {
+                                frame.roadPathInferenceStartedNanos?.let { put("inferenceStartedNanos", it) }
+                                frame.visualCalibration?.let {
+                                    put("visualCalibration", org.json.JSONObject(it.encode()))
+                                    put("tsrInputRegion", org.json.JSONObject().put("leftPixels", it.cropLeftPixels(frame.widthPixels))
+                                        .put("topPixels", 0).put("rightPixels", frame.widthPixels).put("bottomPixels", frame.heightPixels))
+                                }
+                            }.toString()
+                        },
                         controller = controller,
                         modelPack = pack.modelPack,
                         runtimeArtifact = pack.detectorArtifact,
@@ -956,11 +1172,11 @@ internal class AndroidTrafficSignCameraRuntime(
         controller.onTrafficSignRecognitionUnavailable(detail, recognitionGeneration)
     }
 
+    @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
     private fun bindCamera(startGeneration: Long) {
-        val recorderOutputsNeeded = controller.isDriveRecorderSessionActive()
-        if (cameraBindingInProgress ||
-            (cameraBound && (!recorderOutputsNeeded || graphIncludesRecorderOutputs))
-        ) return
+        val graphPlan = DriveCameraGraphPlan.resolve(controller.isDriveRecorderSessionActive(),
+            controller.isPanoramaxCaptureEnabled(), boundGraphPlan)
+        if (cameraBindingInProgress || (cameraBound && graphPlan == boundGraphPlan)) return
         cameraBindingInProgress = true
         val providerFuture = ProcessCameraProvider.getInstance(context)
         providerFuture.addListener({
@@ -993,18 +1209,9 @@ internal class AndroidTrafficSignCameraRuntime(
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
                 }
-                // Standalone TSR only needs image analysis. Some Android
-                // devices reject the four-output graph (Preview, analysis,
-                // stills, and video), so reserving recorder outputs here can
-                // make recognition unavailable before recording is requested.
-                // Once the recorder is active, the graph is kept intact while
-                // its individual consumers are toggled.
-                val includeRecorderOutputs = recorderOutputsNeeded || graphIncludesRecorderOutputs
-                // Once the recorder graph is requested, keep the still use case
-                // attached for the complete graph lifetime. A Panoramax setting
-                // can otherwise race graph activation and leave the preference
-                // enabled with no ImageCapture instance to receive GPS requests.
-                val capture = if (includeRecorderOutputs) imageCapture ?: run {
+                // Keep still/movie outputs optional, and retain them once bound
+                // so consumer toggles do not interrupt independent analysis.
+                val capture = if (graphPlan.photoOutput) imageCapture ?: run {
                     val builder = ImageCapture.Builder()
                     configureInfinityFocus(builder)
                     builder
@@ -1012,19 +1219,24 @@ internal class AndroidTrafficSignCameraRuntime(
                         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                         .build()
                 } else null
-                val video = if (includeRecorderOutputs) videoCapture ?: run {
+                val video = if (graphPlan.movieOutput) videoCapture ?: run {
                     val builder = VideoCapture.Builder(Recorder.Builder().build())
                     configureInfinityFocus(builder)
                     builder.setTargetRotation(rotation).build()
                 } else null
-                val currentPreview = if (includeRecorderOutputs) {
+                // A repeating preview surface must exist even while the model
+                // loads and no analyzer is attached yet. On the Moto G86 the
+                // startup graph produced no recognition until recording added
+                // a preview. The offscreen consumer starts the same stream
+                // without requiring a displayed preview or a saved movie.
+                val currentPreview = run {
                     val builder = Preview.Builder()
                     configureInfinityFocus(builder)
                     preview ?: builder.setTargetRotation(rotation).build().also {
                         it.setSurfaceProvider(mainExecutor, previewSurfaceProvider ?: offscreenPreviewProvider)
                     }
-                } else null
-                currentPreview?.targetRotation = rotation
+                }
+                currentPreview.targetRotation = rotation
                 analysis.targetRotation = rotation
                 capture?.targetRotation = rotation
                 video?.targetRotation = rotation
@@ -1033,15 +1245,26 @@ internal class AndroidTrafficSignCameraRuntime(
                 // Keep the still and movie consumers ahead of analysis in the
                 // binding order so constrained devices reserve recorder outputs
                 // before the optional recognition stream.
-                val useCases = listOfNotNull(currentPreview, capture, video, analysis)
+                val useCases = graphPlan.bindOrder<androidx.camera.core.UseCase>(currentPreview, analysis, capture, video)
                 boundCamera = provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
                 expectedAnalysisRotation = boundCamera?.cameraInfo?.getSensorRotationDegrees(rotation)
+                pathIntrinsics = runCatching {
+                    val info = Camera2CameraInfo.from(boundCamera!!.cameraInfo)
+                    RoadPathCameraIntrinsics.from { key -> info.getCameraCharacteristic(key) }
+                }.getOrNull()
+                laneClockIsRealtime = runCatching {
+                    Camera2CameraInfo.from(boundCamera!!.cameraInfo).getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE) ==
+                        CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME
+                }.getOrDefault(false)
                 cameraProvider = provider
                 imageAnalysis = analysis
                 imageCapture = capture
                 videoCapture = video
                 preview = currentPreview
-                graphIncludesRecorderOutputs = includeRecorderOutputs
+                boundGraphPlan = graphPlan
+                controller.onTrafficSignCameraAnalysisDiagnostic("graph_bound", mapOf(
+                    "preview" to true, "analysis" to true, "photoOutput" to graphPlan.photoOutput,
+                    "movieOutput" to graphPlan.movieOutput, "expectedRotation" to expectedAnalysisRotation))
                 refreshAnalysisConsumer()
             }.onFailure { failure ->
                 cameraBindingInProgress = false
@@ -1090,6 +1313,7 @@ internal class AndroidTrafficSignCameraRuntime(
         }
     }
 
+    private var lastPathRecordingAnchorNanos = 0L
     private fun startDashcamRecording(video: VideoCapture<Recorder>) {
         if (closed.get() || activeRecording != null || videoTerminallyStopped || !videoRequested ||
             !controller.isDashcamRecordingEnabled()) return
@@ -1102,9 +1326,19 @@ internal class AndroidTrafficSignCameraRuntime(
             .prepareRecording(context, output)
             .start(mainExecutor) { event ->
                 when (event) {
-                    is VideoRecordEvent.Start -> if (!closed.get()) controller.onDashcamRecordingStateChanged(active = true, path = file.absolutePath)
-                    is VideoRecordEvent.Status -> Unit
+                    is VideoRecordEvent.Start -> if (!closed.get()) {
+                        controller.onDashcamRecordingStateChanged(active = true, path = file.absolutePath)
+                        controller.onRoadPathRecording("start", file.absolutePath, event.recordingStats.recordedDurationNanos / 1e9)
+                    }
+                    is VideoRecordEvent.Status -> {
+                        val now = System.nanoTime()
+                        if (now-lastPathRecordingAnchorNanos >= 5_000_000_000L) {
+                            lastPathRecordingAnchorNanos = now
+                            controller.onRoadPathRecording("progress", file.absolutePath, event.recordingStats.recordedDurationNanos / 1e9)
+                        }
+                    }
                     is VideoRecordEvent.Finalize -> {
+                        controller.onRoadPathRecording("stop", file.absolutePath, event.recordingStats.recordedDurationNanos / 1e9)
                         val resumeAfterStop = recordingStopRequested && videoRequested
                         val stoppedByUser = recordingStopRequested
                         recordingStopRequested = false
@@ -1201,6 +1435,7 @@ internal class AndroidTrafficSignCameraRuntime(
         if (!closed.compareAndSet(false, true)) return
         generation.incrementAndGet()
         videoRequested = false
+        laneRuntime.close()
         bridge?.close()
         bridge = null
         backend?.close()
@@ -1228,6 +1463,7 @@ internal class AndroidTrafficSignCameraRuntime(
         cameraProvider = null
         boundCamera = null
         expectedAnalysisRotation = null
+        cameraExecutor.execute { calibrationRotation.close() }
         cameraExecutor.shutdown()
         controller.onDashcamCameraReleased()
         val completions = cameraReleaseCallbacks.toList()

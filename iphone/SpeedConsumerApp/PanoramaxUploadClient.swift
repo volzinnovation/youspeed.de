@@ -94,6 +94,27 @@ struct PanoramaxUploadProgress: Equatable, Sendable {
     }
 }
 
+struct PanoramaxGalleryUploadStatus: Identifiable, Equatable {
+    let id: String
+    let createdAt: Date
+    let message: String
+
+    /// Progress disappears when an upload task ends. Keep its final outcome
+    /// visible in the gallery, including while another batch is still active.
+    static func visibleStatuses(
+        batches: [PanoramaxBatchRecord],
+        statusByBatch: [String: String],
+        activeBatchIDs: Set<String>
+    ) -> [Self] {
+        batches.compactMap { batch in
+            guard !activeBatchIDs.contains(batch.batchID),
+                  let message = statusByBatch[batch.batchID],
+                  !message.isEmpty else { return nil }
+            return Self(id: batch.batchID, createdAt: batch.createdAt, message: message)
+        }
+    }
+}
+
 struct PanoramaxUploadSetStatus: Decodable {
     let id: String
     let status: String?
@@ -131,6 +152,7 @@ struct PanoramaxUploadClient {
         case invalidResponse
         case httpStatus(Int)
         case missingUploadSetID
+        case missingOriginals(Int)
         case timedOut
 
         var errorDescription: String? {
@@ -138,6 +160,8 @@ struct PanoramaxUploadClient {
             case .invalidResponse: return "Ungueltige Antwort der Panoramax-Instanz"
             case .httpStatus(let status): return "HTTP \(status)"
             case .missingUploadSetID: return "Panoramax hat keine Upload-ID geliefert"
+            case .missingOriginals(let count):
+                return String(format: NSLocalizedString("panoramax.upload.originals_missing", comment: ""), count)
             case .timedOut: return "Panoramax verarbeitet den Upload noch"
             }
         }
@@ -175,11 +199,50 @@ struct PanoramaxUploadClient {
             switch uploadError {
             case .invalidResponse, .timedOut:
                 return .abandoned
-            case .httpStatus, .missingUploadSetID:
+            case .httpStatus, .missingUploadSetID, .missingOriginals:
                 return .retryableError
             }
         }
         return .retryableError
+    }
+
+    /// Reject unavailable local inputs before creating an empty remote set or
+    /// transferring part of a selection. Accepted items only need remote
+    /// completion, and authoritative local deletions must not block other items.
+    static func validateLocalOriginals(
+        store: PanoramaxQueueStore,
+        batchID: String,
+        selectedItemIDs: Set<String>,
+        localDeletionIntents: PanoramaxLocalDeletionIntentRegistry
+    ) async throws {
+        guard !selectedItemIDs.isEmpty else { return }
+        let validation = Task.detached(priority: .utility) {
+            try Task.checkCancellation()
+            guard let batch = try store.getBatch(batchID) else { return }
+            var missingCount = 0
+            for item in batch.items where selectedItemIDs.contains(item.itemID)
+                && (item.state == .queued || item.state == .included || item.state == .retryableError) {
+                try Task.checkCancellation()
+                if localDeletionIntents.contains(batchID: batchID, itemID: item.itemID) { continue }
+                let isAvailable: Bool
+                if let file = store.originalURL(for: item) {
+                    isAvailable = (try? file.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
+                        && FileManager.default.isReadableFile(atPath: file.path)
+                } else {
+                    isAvailable = false
+                }
+                if !isAvailable && !localDeletionIntents.contains(batchID: batchID, itemID: item.itemID) {
+                    missingCount += 1
+                }
+            }
+            if missingCount > 0 { throw UploadError.missingOriginals(missingCount) }
+        }
+        try await withTaskCancellationHandler {
+            try await validation.value
+            try Task.checkCancellation()
+        } onCancel: {
+            validation.cancel()
+        }
     }
 
     func createUploadSet(title: String, estimatedFileCount: Int) async throws -> PanoramaxUploadSetStatus {

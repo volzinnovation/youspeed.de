@@ -1612,7 +1612,83 @@
     };
   }
 
+  // Applicability is an additive sidecar. Source bytes/truth remain separate from predictions.
+  function parseApplicabilityEvidence(rawText) {
+    const text = String(rawText ?? "").trim();
+    let records;
+    try {
+      const value = JSON.parse(text);
+      records = Array.isArray(value) ? value : [value];
+      records = records.flatMap(value => Array.isArray(value.frames) ? value.frames : [value]);
+    } catch (_) {
+      records = [];
+      for (const line of text.split(/\r?\n/)) {
+        if (line.includes("tsr_applicability_v1=")) {
+          records.push(JSON.parse(line.slice(line.indexOf("tsr_applicability_v1=") + "tsr_applicability_v1=".length)));
+        } else {
+          let entry;
+          try { entry = JSON.parse(line); } catch (_) { continue; }
+          if (entry.event === "tsr_applicability_v1") {
+            const evidence = entry.details?.evidence ?? entry.evidence;
+            records.push(typeof evidence === "string" ? JSON.parse(evidence) : evidence);
+          } else if (entry.batch) records.push(entry);
+        }
+      }
+    }
+    const frames = new Map();
+    for (const rawRecord of records) {
+      const encoded = rawRecord?.event === "tsr_applicability_v1" ? (rawRecord.details?.evidence ?? rawRecord.evidence) : null;
+      const record = encoded == null ? rawRecord : (typeof encoded === "string" ? JSON.parse(encoded) : encoded);
+      if (!record?.batch) continue; // Legacy files remain readable as not evaluated.
+      validateApplicabilityEvidence(record);
+      const key = JSON.stringify([record.batch.scope, record.batch.frameId]);
+      if (frames.has(key) && JSON.stringify(frames.get(key)) !== JSON.stringify(record)) {
+        throw new Error("Conflicting applicability evidence for the same frame");
+      }
+      frames.set(key, record);
+    }
+    return Array.from(frames.values());
+  }
+
+  function validateApplicabilityEvidence(record) {
+    const fail = message => { throw new Error("Applicability: " + message); };
+    const batch = record?.batch;
+    if (record?.schemaVersion !== 1 || batch?.schemaVersion !== 1 || !nonEmptyString(batch.frameId) ||
+        !Array.isArray(batch.candidates) || batch.candidates.length > 32 ||
+        !Array.isArray(record.tracks) || record.tracks.length > 24 ||
+        !Array.isArray(record.decisions) || record.decisions.length > 24) fail("unsupported or unbounded envelope");
+    const scopeKey = value => JSON.stringify([value?.sessionId,value?.generation,value?.contextGeneration,value?.traversalEpoch,value?.bundleId,value?.cameraGeometryId]);
+    const scope = scopeKey(batch.scope);
+    const candidates = new Map(batch.candidates.map(c => [c.candidateId,c]));
+    if (candidates.size !== batch.candidates.length) fail("duplicate candidate identity");
+    for (const c of batch.candidates) {
+      const b=c.box;
+      if (!b || ![b.x,b.y,b.width,b.height,c.rawScore].every(v => typeof v === "number" && Number.isFinite(v)) ||
+          b.x < 0 || b.y < 0 || b.width <= 0 || b.height <= 0 || b.x+b.width > 1.000001 || b.y+b.height > 1.000001) fail("invalid normalized box/score");
+    }
+    const tracks = new Map();
+    for (const track of record.tracks) {
+      if (tracks.has(track.trackId) || scopeKey(track.scope) !== scope || !Array.isArray(track.samples) || track.samples.length > 12) fail("invalid track identity/history");
+      tracks.set(track.trackId,track);
+      for (const sample of track.samples) {
+        if (sample.frameId === batch.frameId && !candidates.has(sample.candidate?.candidateId)) fail("unmatched candidate link");
+      }
+    }
+    const decisions = new Set();
+    const classes = new Set(["LIKELY_EGO_CORRIDOR","LIKELY_OTHER_LANE","LIKELY_BRANCH","LIKELY_OPPOSITE_DIRECTION","UNKNOWN"]);
+    for (const d of record.decisions) {
+      if (decisions.has(d.trackId) || !tracks.has(d.trackId) || d.frameId !== batch.frameId || scopeKey(d.scope) !== scope ||
+          !classes.has(d.classification) || !/^[a-f0-9]{64}$/.test(d.configHash) ||
+          (d.roadSnapshotId ?? null) !== (batch.road?.snapshotId ?? null)) fail("unmatched decision identity/context");
+      decisions.add(d.trackId);
+      if (d.classification !== "LIKELY_EGO_CORRIDOR" && (d.displayEligible || d.immediateEligible || d.passageEligible)) fail("non-ego authority");
+    }
+    return true;
+  }
+
   return Object.freeze({
+    parseApplicabilityEvidence,
+    validateApplicabilityEvidence,
     actionableSemantics,
     assetPathIsSafe,
     bundleGateAssessment,

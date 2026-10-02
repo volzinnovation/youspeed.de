@@ -43,13 +43,21 @@ object BundleRouteSelection {
         routeChanged: Boolean,
     ): Boolean = routeChanged || activeCountryCode != selectedCountryCode
 
-    fun choose(probes: List<BundleRouteProbe>, currentDBPath: String?): LocalBundleRoute? {
-        if (probes.isEmpty()) return null
-        val best = probes.sortedWith(
+    fun choose(
+        probes: List<BundleRouteProbe>,
+        currentDBPath: String?,
+        coveringRoutes: List<LocalBundleRoute>,
+    ): LocalBundleRoute? {
+        // Geographic eligibility comes before road evidence or hysteresis.
+        // An active database is never a coverage-gap fallback.
+        val coveringPaths = coveringRoutes.map { it.dbPath }.toSet()
+        val eligible = probes.filter { it.route.dbPath in coveringPaths }
+        if (eligible.isEmpty()) return null
+        val best = eligible.sortedWith(
             compareByDescending<BundleRouteProbe> { it.score }
                 .thenBy { it.route.region },
         ).first()
-        val current = currentDBPath?.let { path -> probes.firstOrNull { it.route.dbPath == path } }
+        val current = currentDBPath?.let { path -> eligible.firstOrNull { it.route.dbPath == path } }
             ?: return best.route
         if (best.route.dbPath == current.route.dbPath) return current.route
         if ((!current.hasWayMatch && best.hasWayMatch) ||

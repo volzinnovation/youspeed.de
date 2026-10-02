@@ -12,14 +12,15 @@ struct SpeedConsumerApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if viewModel.isScreenshotMode {
+                if viewModel.startupLogReviewState != .complete {
+                    StartupLogReviewView(viewModel: viewModel)
+                } else if viewModel.isScreenshotMode || !viewModel.drivingControlsAllowed ||
+                    (viewModel.startupDataState == .ready && viewModel.onboardingStateLoaded && !viewModel.shouldPresentOnboarding) {
                     MainView(viewModel: viewModel)
                 } else if viewModel.startupDataState != .ready || !viewModel.onboardingStateLoaded {
                     StartupView(viewModel: viewModel)
-                } else if viewModel.shouldPresentOnboarding {
-                    FirstUserWelcomeView(viewModel: viewModel)
                 } else {
-                    MainView(viewModel: viewModel)
+                    FirstUserWelcomeView(viewModel: viewModel)
                 }
             }
             .environment(\.driveInteraction, DriveInteraction(perform: viewModel.performDriveInteraction))
@@ -37,7 +38,7 @@ struct SpeedConsumerApp: App {
                 }
             }
             .alert(NSLocalizedString("drive_recorder.action.failed_title", comment: ""), isPresented: Binding(
-                get: { viewModel.driveInteractionError != nil },
+                get: { viewModel.driveInteractionError != nil && viewModel.drivingControlsAllowed },
                 set: { if !$0 { viewModel.driveInteractionError = nil } }
             )) {
                 Button(NSLocalizedString("common.done", comment: ""), role: .cancel) {}

@@ -1,0 +1,576 @@
+{
+  "schemaVersion": 1,
+  "lane": "recorded_candidate",
+  "origins": [
+    "synthetic"
+  ],
+  "fieldQualified": false,
+  "parity": "passed",
+  "numericTolerance": 1e-09,
+  "corpusSha256": "99af996489517307febec528f5fb89304d183a015fb3233cf0e7c49f8cd331fd",
+  "configSha256": "6278259f59578238acabe7df1abe53f8cd580115b20c6036ef3f89657e97ca11",
+  "sourceHashes": {
+    "iphone/SpeedConsumerApp/TrafficSignApplicability.swift": "d8e7234e039aa0bc183a65c52800855aa89ba6258bec9a1d66c34e543beb4b01",
+    "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignApplicability.kt": "f65832a43ae84610fe1a1388d3195c67308195e7c907ada434559c85b67c257d",
+    "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignApplicabilityJson.kt": "acf274adcf4d4c5d4023482c850de086ddb6024cd50f4e7e7b6f790995691cac"
+  },
+  "scenarios": [
+    {
+      "scenario": "ego_right",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "valid_left",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "median",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "overhead",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "ego_yield",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "curve",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "actual_turn",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "exit_lane",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_BRANCH",
+          "reasons": [
+            "branch_bearing_better_supported"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "side_road_yield",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_BRANCH",
+          "reasons": [
+            "branch_bearing_better_supported"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "parallel_road",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "competing_corridors"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "junction_future_turn",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "competing_corridors"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "legitimate_lane_split",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "competing_corridors"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "opposite_direction_unavailable",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "poor_gps",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "unreliable_road_context"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "missing_map",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "missing_road_context"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "stale_capture_context",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "stale_road_context"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "missing_links",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "missing_topology_capability"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "unreviewed_mount",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "stopped_traffic",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "insufficient_coherent_approach"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "semantic_flicker",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "semantic_disagreement"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "simultaneous_equal_signs",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        },
+        {
+          "trackId": "track-2",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "weak_ego_strong_branch",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        },
+        {
+          "trackId": "track-2",
+          "classification": "LIKELY_BRANCH",
+          "reasons": [
+            "branch_bearing_better_supported"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "camera_remount",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "missing_road_context"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "failed_frame",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "unqualified_observation"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "proposal_cap",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "unqualified_observation"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "detector_dropout",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "unqualified_observation"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "negative_driving",
+      "frames": 3,
+      "finalDecisions": []
+    },
+    {
+      "scenario": "sparse_samples",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "duplicate_frame",
+      "frames": 4,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "occlusion_reappearance",
+      "frames": 4,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "sequential_same_value",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-2",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "insufficient_independent_observations"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "motorway_exit_90",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "motorway_exit_ambiguous_speed"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "motorway_exit_70",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "motorway_exit_ambiguous_speed"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "motorway_exit_50",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "motorway_exit_ambiguous_speed"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "exit_taken",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "mainline_limit_already_90",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "unconnected_parallel",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "on_ramp_merge",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "stale_motorway",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "stale_road_context"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "poor_gps_motorway",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "unreliable_road_context"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "paired_mainline_repeat",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        },
+        {
+          "trackId": "track-2",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    }
+  ],
+  "processWallTimeIncludingStartupMs": {
+    "swift": 368.7779999454506,
+    "kotlin": 208.7917919852771
+  },
+  "pending": [
+    "Reviewed real sequence corpus and baseline",
+    "Full-image inference replay",
+    "Independent holdout and frozen empirical gates",
+    "Minimum-device sustained performance, battery and thermal evidence",
+    "Explicit paired-platform rollout approval"
+  ]
+}

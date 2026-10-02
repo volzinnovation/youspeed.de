@@ -1,0 +1,3491 @@
+{
+  "schema_version": 1,
+  "policy_version": "1.0.0",
+  "scenarios": [
+    {
+      "id": "source-priority",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 1,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 90
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 1,
+            "observed_distance_m": 0
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 90,
+            "penalty_reference_kmh": 90
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 2,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 3
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 3,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-2",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 4,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 3,
+            "observed_distance_m": 0
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "transition_id": "T11"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 4,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-2",
+            "value": {
+              "kind": "numeric",
+              "kmh": 110
+            },
+            "verified": true,
+            "sequence": 5,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        }
+      ]
+    },
+    {
+      "id": "voice-ramp-excursion",
+      "description": "Synthetic normalized control for the Android A8 → A57 ramp → A8 excursion, about 6.45 seconds. Distances are test inputs, not reconstructed device distances.",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "context_pending",
+            "session_id": "drive",
+            "elapsed_s": 137.302,
+            "distance_m": 1000,
+            "generation": 0,
+            "sequence": 3
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 137.903,
+            "distance_m": 1015,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 4,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 137.903,
+            "observed_distance_m": 1015
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "context_restored",
+            "session_id": "drive",
+            "elapsed_s": 143.751,
+            "distance_m": 1120,
+            "generation": 0,
+            "verified": true,
+            "sequence": 5
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 144,
+            "distance_m": 1125,
+            "generation": 0,
+            "id": "bundle-2",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 6,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        }
+      ]
+    },
+    {
+      "id": "distance-boundary",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 90
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 90,
+            "penalty_reference_kmh": 90
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 200,
+            "distance_m": 4999.999,
+            "sequence": 3
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 90,
+            "penalty_reference_kmh": 90
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 200,
+            "distance_m": 5000,
+            "sequence": 4
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "expiry_reasons": [
+              "camera:ordinary_distance"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "voice-distance-boundary",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 200,
+            "distance_m": 5000,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "display_stale": true,
+            "expiry_reasons": [
+              "voice:ordinary_distance"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "stationary-time-boundary",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 70,
+            "penalty_reference_kmh": 70
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 299.999,
+            "distance_m": 0,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 70,
+            "penalty_reference_kmh": 70
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 300,
+            "distance_m": 0,
+            "sequence": 3
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "display_stale": true,
+            "expiry_reasons": [
+              "camera:ordinary_age"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "same-track-does-not-renew",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 70,
+            "penalty_reference_kmh": 70
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 299,
+            "distance_m": 4990,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 70,
+            "penalty_reference_kmh": 70,
+            "transition_id": "T11"
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 300,
+            "distance_m": 4999,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 3,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "new-sign-restarts-origin",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 70,
+            "penalty_reference_kmh": 70
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 290,
+            "distance_m": 4900,
+            "generation": 0,
+            "id": "new-sign",
+            "value": {
+              "kind": "numeric",
+              "kmh": 90
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 290,
+            "observed_distance_m": 4900
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 90,
+            "penalty_reference_kmh": 90
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 300,
+            "distance_m": 5000,
+            "sequence": 3
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 90,
+            "penalty_reference_kmh": 90
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 590,
+            "distance_m": 9800,
+            "sequence": 4
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "suppressed-camera-never-resurrects",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 290,
+            "distance_m": 1000,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 3,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 290,
+            "observed_distance_m": 1000
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 300,
+            "distance_m": 1001,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 4,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 290,
+            "observed_distance_m": 1000
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "boundary-city_entry",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "context_confirmed",
+            "session_id": "drive",
+            "elapsed_s": 10,
+            "distance_m": 100,
+            "generation": 0,
+            "id": "boundary-1",
+            "reason": "city_entry",
+            "confirmed": true,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "generation": 1
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 11,
+            "distance_m": 120,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 3,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 11,
+            "observed_distance_m": 120
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "transition_id": "T11"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 12,
+            "distance_m": 130,
+            "generation": 1,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 50
+            },
+            "verified": true,
+            "sequence": 4,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 50,
+            "penalty_reference_kmh": 50
+          }
+        },
+        {
+          "event": {
+            "kind": "context_confirmed",
+            "session_id": "drive",
+            "elapsed_s": 13,
+            "distance_m": 150,
+            "generation": 1,
+            "id": "boundary-1",
+            "reason": "city_entry",
+            "confirmed": true,
+            "sequence": 5
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 50,
+            "penalty_reference_kmh": 50,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "boundary-city_exit",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "context_confirmed",
+            "session_id": "drive",
+            "elapsed_s": 10,
+            "distance_m": 100,
+            "generation": 0,
+            "id": "boundary-1",
+            "reason": "city_exit",
+            "confirmed": true,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "generation": 1
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 11,
+            "distance_m": 120,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 3,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 11,
+            "observed_distance_m": 120
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "transition_id": "T11"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 12,
+            "distance_m": 130,
+            "generation": 1,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 50
+            },
+            "verified": true,
+            "sequence": 4,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 50,
+            "penalty_reference_kmh": 50
+          }
+        },
+        {
+          "event": {
+            "kind": "context_confirmed",
+            "session_id": "drive",
+            "elapsed_s": 13,
+            "distance_m": 150,
+            "generation": 1,
+            "id": "boundary-1",
+            "reason": "city_exit",
+            "confirmed": true,
+            "sequence": 5
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 50,
+            "penalty_reference_kmh": 50,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "boundary-road_relation_exit",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "context_confirmed",
+            "session_id": "drive",
+            "elapsed_s": 10,
+            "distance_m": 100,
+            "generation": 0,
+            "id": "boundary-1",
+            "reason": "road_relation_exit",
+            "confirmed": true,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "generation": 1
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 11,
+            "distance_m": 120,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 3,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 11,
+            "observed_distance_m": 120
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "transition_id": "T11"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 12,
+            "distance_m": 130,
+            "generation": 1,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 50
+            },
+            "verified": true,
+            "sequence": 4,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 50,
+            "penalty_reference_kmh": 50
+          }
+        },
+        {
+          "event": {
+            "kind": "context_confirmed",
+            "session_id": "drive",
+            "elapsed_s": 13,
+            "distance_m": 150,
+            "generation": 1,
+            "id": "boundary-1",
+            "reason": "road_relation_exit",
+            "confirmed": true,
+            "sequence": 5
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 50,
+            "penalty_reference_kmh": 50,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "boundary-direction_reversal",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "context_confirmed",
+            "session_id": "drive",
+            "elapsed_s": 10,
+            "distance_m": 100,
+            "generation": 0,
+            "id": "boundary-1",
+            "reason": "direction_reversal",
+            "confirmed": true,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "generation": 1
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 11,
+            "distance_m": 120,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 3,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 11,
+            "observed_distance_m": 120
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "transition_id": "T11"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 12,
+            "distance_m": 130,
+            "generation": 1,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 50
+            },
+            "verified": true,
+            "sequence": 4,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 50,
+            "penalty_reference_kmh": 50
+          }
+        },
+        {
+          "event": {
+            "kind": "context_confirmed",
+            "session_id": "drive",
+            "elapsed_s": 13,
+            "distance_m": 150,
+            "generation": 1,
+            "id": "boundary-1",
+            "reason": "direction_reversal",
+            "confirmed": true,
+            "sequence": 5
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 50,
+            "penalty_reference_kmh": 50,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "boundary-applicable_end",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "context_confirmed",
+            "session_id": "drive",
+            "elapsed_s": 10,
+            "distance_m": 100,
+            "generation": 0,
+            "id": "boundary-1",
+            "reason": "applicable_end",
+            "confirmed": true,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "generation": 1
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 11,
+            "distance_m": 120,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 3,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 11,
+            "observed_distance_m": 120
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "transition_id": "T11"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 12,
+            "distance_m": 130,
+            "generation": 1,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 50
+            },
+            "verified": true,
+            "sequence": 4,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 50,
+            "penalty_reference_kmh": 50
+          }
+        },
+        {
+          "event": {
+            "kind": "context_confirmed",
+            "session_id": "drive",
+            "elapsed_s": 13,
+            "distance_m": 150,
+            "generation": 1,
+            "id": "boundary-1",
+            "reason": "applicable_end",
+            "confirmed": true,
+            "sequence": 5
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 50,
+            "penalty_reference_kmh": 50,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "unconfirmed-boundary",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "context_confirmed",
+            "session_id": "drive",
+            "elapsed_s": 10,
+            "distance_m": 100,
+            "generation": 0,
+            "id": "false-end",
+            "reason": "applicable_end",
+            "confirmed": false,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "camera-withhold-exit_ambiguity",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 1,
+            "distance_m": 10,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "unresolved",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 1,
+            "observed_distance_m": 10
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "camera-withhold-lane_assignment_verified",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 1,
+            "distance_m": 10,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "inapplicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 1,
+            "observed_distance_m": 10
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "camera-withhold-map_context_fresh",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 1,
+            "distance_m": 10,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "inapplicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 1,
+            "observed_distance_m": 10
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "camera-withhold-conditional_unresolved",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 1,
+            "distance_m": 10,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "unresolved",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 1,
+            "observed_distance_m": 10
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "camera-withhold-scope_verified",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 1,
+            "distance_m": 10,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "inapplicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 1,
+            "observed_distance_m": 10
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "camera-unknown-is-not-clear",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 1,
+            "distance_m": 10,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "unresolved",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 1,
+            "observed_distance_m": 10
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing-bundle-fallback",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 90
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 90,
+            "penalty_reference_kmh": 90
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle_missing",
+            "session_id": "drive",
+            "elapsed_s": 1,
+            "distance_m": 10,
+            "generation": 0,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "display_stale": true
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 2,
+            "distance_m": 20,
+            "generation": 0,
+            "id": "next-road",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 3,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        }
+      ]
+    },
+    {
+      "id": "gap-duration-not-renewed",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "context_missing",
+            "session_id": "drive",
+            "elapsed_s": 1,
+            "distance_m": 10,
+            "generation": 0,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "context_missing",
+            "session_id": "drive",
+            "elapsed_s": 8.999,
+            "distance_m": 50,
+            "generation": 0,
+            "sequence": 3
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 9,
+            "distance_m": 51,
+            "sequence": 4
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "expiry_reasons": [
+              "voice:context_gap"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "gap-distance",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 90
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 90,
+            "penalty_reference_kmh": 90
+          }
+        },
+        {
+          "event": {
+            "kind": "context_missing",
+            "session_id": "drive",
+            "elapsed_s": 1,
+            "distance_m": 10,
+            "generation": 0,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 90,
+            "penalty_reference_kmh": 90
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 2,
+            "distance_m": 169.999,
+            "sequence": 3
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 90,
+            "penalty_reference_kmh": 90
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 3,
+            "distance_m": 170,
+            "sequence": 4
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "expiry_reasons": [
+              "camera:context_gap"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "ordinary-expires-enclosing-survives",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "camera_context",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera_context-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 30
+            },
+            "verified": true,
+            "scope_kind": "zone",
+            "area_verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 30,
+            "penalty_reference_kmh": 30
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 1,
+            "distance_m": 10,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 20
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 1,
+            "observed_distance_m": 10
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 20,
+            "penalty_reference_kmh": 20
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 301,
+            "distance_m": 100,
+            "sequence": 3
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 30,
+            "penalty_reference_kmh": 30,
+            "expiry_reasons": [
+              "camera:ordinary_age"
+            ]
+          }
+        },
+        {
+          "event": {
+            "kind": "camera_context_missing",
+            "session_id": "drive",
+            "elapsed_s": 302,
+            "distance_m": 110,
+            "generation": 0,
+            "sequence": 4
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "unverified-zone-no-timer-bypass",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "camera_context",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera_context-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 30
+            },
+            "verified": true,
+            "scope_kind": "ordinary",
+            "area_verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            }
+          },
+          "expect": {
+            "state": "UNKNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "typed-walk",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "walk"
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "value": {
+              "kind": "walk"
+            }
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 300,
+            "distance_m": 0,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "value": {
+              "kind": "walk"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "typed-unlimited",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "unlimited"
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "value": {
+              "kind": "unlimited"
+            }
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 300,
+            "distance_m": 0,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "value": {
+              "kind": "unlimited"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "out-of-order-and-wrong-session",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 10,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 11,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 70
+            },
+            "verified": true,
+            "sequence": 1,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 11,
+            "observed_distance_m": 0
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "rejection": "out_of_order"
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "old-drive",
+            "elapsed_s": 12,
+            "distance_m": 0,
+            "sequence": 3
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "rejection": "wrong_session"
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 9,
+            "distance_m": 0,
+            "sequence": 4
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "rejection": "non_monotonic_progress"
+          }
+        }
+      ]
+    },
+    {
+      "id": "invalid-value",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 0
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "UNKNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "rejection": "invalid_value"
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": true
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0
+          },
+          "expect": {
+            "state": "UNKNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "rejection": "invalid_value"
+          }
+        }
+      ]
+    },
+    {
+      "id": "drive-reset-clears-memory",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "second-drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "UNKNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "expiry-before-new-evidence",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "voice-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 300,
+            "distance_m": 100,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 90
+            },
+            "verified": true,
+            "sequence": 2,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "observed_elapsed_s": 300,
+            "observed_distance_m": 100
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 90,
+            "penalty_reference_kmh": 90,
+            "expiry_reasons": [
+              "voice:ordinary_age"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "restriction-context-re-evaluation",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": {
+                "kind": "vehicle_class",
+                "parameters": [
+                  "heavy_goods"
+                ],
+                "evaluation": "applicable"
+              }
+            },
+            "sequence": 1
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 80
+            },
+            "verified": true,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": {
+                "kind": "vehicle_class",
+                "parameters": [
+                  "heavy_goods"
+                ],
+                "evaluation": "applicable"
+              }
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 80,
+            "penalty_reference_kmh": 80
+          }
+        },
+        {
+          "event": {
+            "kind": "applicability_context_changed",
+            "session_id": "drive",
+            "elapsed_s": 100,
+            "distance_m": 0,
+            "generation": 0,
+            "next_revision": 1,
+            "sequence": 3
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "applicability_revision": 1
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 100,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-2",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 1,
+              "conditions": {
+                "kind": "vehicle_class",
+                "parameters": [
+                  "heavy_goods"
+                ],
+                "evaluation": "applicable"
+              }
+            },
+            "sequence": 4
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 101,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 80
+            },
+            "verified": true,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": {
+                "kind": "vehicle_class",
+                "parameters": [
+                  "heavy_goods"
+                ],
+                "evaluation": "applicable"
+              }
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0,
+            "sequence": 5
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "transition_id": "T11"
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 102,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 80
+            },
+            "verified": true,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 1,
+              "conditions": {
+                "kind": "vehicle_class",
+                "parameters": [
+                  "heavy_goods"
+                ],
+                "evaluation": "applicable"
+              }
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0,
+            "sequence": 6
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 80,
+            "penalty_reference_kmh": 80
+          }
+        },
+        {
+          "event": {
+            "kind": "tick",
+            "session_id": "drive",
+            "elapsed_s": 300,
+            "distance_m": 0,
+            "sequence": 7
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130,
+            "expiry_reasons": [
+              "camera:ordinary_age"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "unknown-rain-condition",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "bundle-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": {
+                "kind": "vehicle_class",
+                "parameters": [
+                  "heavy_goods"
+                ],
+                "evaluation": "applicable"
+              }
+            },
+            "sequence": 1
+          },
+          "expect": {
+            "state": "BUNDLE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "applicability_context_changed",
+            "session_id": "drive",
+            "elapsed_s": 10,
+            "distance_m": 0,
+            "generation": 0,
+            "next_revision": 1,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null
+          }
+        },
+        {
+          "event": {
+            "kind": "bundle",
+            "session_id": "drive",
+            "elapsed_s": 11,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "wet-road",
+            "value": {
+              "kind": "numeric",
+              "kmh": 110
+            },
+            "verified": true,
+            "applicability": {
+              "status": "unresolved",
+              "context_revision": 1,
+              "conditions": {
+                "kind": "vehicle_class",
+                "parameters": [
+                  "heavy_goods"
+                ],
+                "evaluation": "unresolved"
+              }
+            },
+            "sequence": 3
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "transition_id": "T11"
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 12,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "conditional-sign",
+            "value": {
+              "kind": "numeric",
+              "kmh": 90
+            },
+            "verified": true,
+            "applicability": {
+              "status": "unresolved",
+              "context_revision": 1,
+              "conditions": {
+                "kind": "vehicle_class",
+                "parameters": [
+                  "heavy_goods"
+                ],
+                "evaluation": "unresolved"
+              }
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0,
+            "sequence": 4
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "expired-sign-cannot-renew-on-context-change",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 80
+            },
+            "verified": true,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": {
+                "kind": "vehicle_class",
+                "parameters": [
+                  "heavy_goods"
+                ],
+                "evaluation": "applicable"
+              }
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 80,
+            "penalty_reference_kmh": 80
+          }
+        },
+        {
+          "event": {
+            "kind": "applicability_context_changed",
+            "session_id": "drive",
+            "elapsed_s": 300,
+            "distance_m": 0,
+            "generation": 0,
+            "next_revision": 1,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 301,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 80
+            },
+            "verified": true,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 1,
+              "conditions": {
+                "kind": "vehicle_class",
+                "parameters": [
+                  "heavy_goods"
+                ],
+                "evaluation": "applicable"
+              }
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0,
+            "sequence": 3
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null,
+            "transition_id": "T11"
+          }
+        }
+      ]
+    },
+    {
+      "id": "changed-evidence-origin-rejected",
+      "description": "",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "sequence": 0
+          },
+          "expect": {
+            "state": "UNKNOWN"
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 0,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 80
+            },
+            "verified": true,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": {
+                "kind": "vehicle_class",
+                "parameters": [
+                  "heavy_goods"
+                ],
+                "evaluation": "applicable"
+              }
+            },
+            "observed_elapsed_s": 0,
+            "observed_distance_m": 0,
+            "sequence": 1
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 80,
+            "penalty_reference_kmh": 80
+          }
+        },
+        {
+          "event": {
+            "kind": "camera",
+            "session_id": "drive",
+            "elapsed_s": 100,
+            "distance_m": 0,
+            "generation": 0,
+            "id": "camera-1",
+            "value": {
+              "kind": "numeric",
+              "kmh": 80
+            },
+            "verified": true,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": {
+                "kind": "vehicle_class",
+                "parameters": [
+                  "heavy_goods"
+                ],
+                "evaluation": "applicable"
+              }
+            },
+            "observed_elapsed_s": 100,
+            "observed_distance_m": 0,
+            "sequence": 2
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 80,
+            "penalty_reference_kmh": 80,
+            "rejection": "changed_evidence_origin"
+          }
+        }
+      ]
+    },
+    {
+      "id": "pipeline-withdrawal-clears-enclosing-but-not-voice",
+      "description": "An unrelated rejected candidate does not emit this explicit active-authority withdrawal event.",
+      "steps": [
+        {
+          "event": {
+            "kind": "reset",
+            "session_id": "drive",
+            "sequence": 0,
+            "elapsed_s": 0,
+            "distance_m": 0
+          },
+          "expect": {
+            "state": "UNKNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null
+          }
+        },
+        {
+          "event": {
+            "kind": "camera_context",
+            "generation": 0,
+            "id": "zone",
+            "value": {
+              "kind": "numeric",
+              "kmh": 30
+            },
+            "verified": true,
+            "scope_kind": "zone",
+            "area_verified": true,
+            "applicability": {
+              "status": "applicable",
+              "context_revision": 0,
+              "conditions": []
+            },
+            "session_id": "drive",
+            "sequence": 1,
+            "elapsed_s": 1,
+            "distance_m": 0
+          },
+          "expect": {
+            "state": "CAMERA",
+            "violation_reference_kmh": 30,
+            "penalty_reference_kmh": 30
+          }
+        },
+        {
+          "event": {
+            "kind": "camera_scope_invalidated",
+            "generation": 0,
+            "session_id": "drive",
+            "sequence": 2,
+            "elapsed_s": 2,
+            "distance_m": 0
+          },
+          "expect": {
+            "state": "LAST_KNOWN",
+            "violation_reference_kmh": null,
+            "penalty_reference_kmh": null
+          }
+        },
+        {
+          "event": {
+            "kind": "voice",
+            "generation": 0,
+            "id": "voice",
+            "value": {
+              "kind": "numeric",
+              "kmh": 130
+            },
+            "verified": true,
+            "session_id": "drive",
+            "sequence": 3,
+            "elapsed_s": 3,
+            "distance_m": 0
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        },
+        {
+          "event": {
+            "kind": "camera_scope_invalidated",
+            "generation": 0,
+            "session_id": "drive",
+            "sequence": 4,
+            "elapsed_s": 4,
+            "distance_m": 0
+          },
+          "expect": {
+            "state": "VOICE",
+            "violation_reference_kmh": 130,
+            "penalty_reference_kmh": 130
+          }
+        }
+      ]
+    }
+  ]
+}

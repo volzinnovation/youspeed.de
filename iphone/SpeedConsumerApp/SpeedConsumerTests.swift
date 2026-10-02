@@ -13,6 +13,239 @@ import UIKit
 
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
+private struct SwissLegalCaseCorpus: Decodable {
+    struct Row: Decodable {
+        let id: String
+        let highway: String?
+        let insideCity: Bool?
+        let postedLimit: Int?
+        let excess: Int
+        let notice: Bool
+        let fine: Int?
+        let months: Int?
+        let exceptionalMonths: Int?
+        enum CodingKeys: String, CodingKey {
+            case id, highway, excess, notice, fine, months
+            case insideCity = "inside_city"
+            case postedLimit = "posted_limit"
+            case exceptionalMonths = "exceptional_months"
+        }
+    }
+    let cases: [Row]
+}
+
+extension SpeedConsumerTests {
+    func testSwissOfficialBoundariesRoadCategoriesAndExceptions() throws {
+        let rules = try SpeedPenaltyRuleSet.loadBundled(named: "CHE-rules", bundle: Bundle(for: SpeedConsumerAppDelegate.self))
+        let url = try XCTUnwrap(Bundle(for: SpeedConsumerTests.self).url(forResource: "CHE-cases", withExtension: "json"))
+        let corpus = try JSONDecoder().decode(SwissLegalCaseCorpus.self, from: Data(contentsOf: url))
+        XCTAssertEqual(corpus.cases.count, 105)
+        for row in corpus.cases {
+            for language in ["en", "de", "fr", "nl"] {
+                let notice = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: row.excess, rules: rules,
+                    insideCity: row.insideCity, postedLimitKmh: row.postedLimit, languageCode: language,
+                    isMotorway: PenaltyRoadArea.matchedMotorway(highway: row.highway))
+                let label = "\(row.id)/\(language)"
+                XCTAssertEqual(notice != nil, row.notice, label)
+                XCTAssertEqual(notice?.moneyFineEUR, row.fine, label)
+                XCTAssertEqual(notice?.drivingBanMonths, row.months, label)
+                XCTAssertEqual(notice?.conditionalDrivingBanMonths, row.exceptionalMonths, label)
+                XCTAssertNil(notice?.penaltyPoints, label)
+                if let notice {
+                    XCTAssertNotNil(notice.advisoryCaption, label)
+                    XCTAssertFalse(notice.details.isEmpty, label)
+                    XCTAssertEqual(notice.severity, .moneyOnly, label)
+                }
+            }
+        }
+    }
+
+    func testSwissOlderDownloadedContentCannotOverrideNewPackagedRevision() throws {
+        let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
+        let packaged = try SpeedPenaltyRuleSet.loadBundled(named: "CHE-rules", bundle: bundle)
+        let url = try XCTUnwrap(bundle.url(forResource: "CHE-rules", withExtension: "json"))
+        var root = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        root.removeValue(forKey: "content_revision")
+        let legacy = try JSONDecoder().decode(SpeedPenaltyRuleSet.self, from: JSONSerialization.data(withJSONObject: root))
+        XCTAssertFalse(SpeedPenaltyRuleSet.prefersDownloaded(legacy, over: packaged))
+        XCTAssertTrue(SpeedPenaltyRuleSet.prefersDownloaded(packaged, over: packaged))
+        XCTAssertTrue(SpeedPenaltyRuleSet.prefersDownloaded(legacy, over: nil))
+        root["content_revision"] = 20261002
+        let newer = try JSONDecoder().decode(SpeedPenaltyRuleSet.self, from: JSONSerialization.data(withJSONObject: root))
+        XCTAssertTrue(SpeedPenaltyRuleSet.prefersDownloaded(newer, over: packaged))
+    }
+}
+
+final class StartupLogStoreTests: XCTestCase {
+    func testCombinedSizeThresholdAndCheckingPreservesLogs() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let gps = root.appendingPathComponent("gps_fix_log.csv")
+        let archived = root.appendingPathComponent("20260928_120000_drive_match_log.ndjson")
+        for (url, size) in [(gps, UInt64(60_000_000)), (archived, UInt64(39_999_999))] {
+            try Data().write(to: url)
+            let handle = try FileHandle(forWritingTo: url)
+            try handle.truncate(atOffset: size)
+            try handle.close()
+        }
+        XCTAssertFalse(StartupLogStore.requiresReview(bytes: try StartupLogStore.totalBytes(in: root)))
+        let handle = try FileHandle(forWritingTo: archived)
+        defer { try? handle.close() }
+        try handle.truncate(atOffset: 40_000_000)
+        XCTAssertEqual(try StartupLogStore.totalBytes(in: root), 100_000_000)
+        XCTAssertFalse(StartupLogStore.requiresReview(bytes: try StartupLogStore.totalBytes(in: root)))
+        try handle.truncate(atOffset: 40_000_001)
+        XCTAssertTrue(StartupLogStore.requiresReview(bytes: try StartupLogStore.totalBytes(in: root)))
+        XCTAssertEqual(try StartupLogStore.totalBytes(in: root), 100_000_001)
+    }
+
+    func testClearIncludesRetainedSessionsAndPreservesOtherDataAndSymlinks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let names = ["gps_fix_log.csv", "drive_match_log.ndjson", "tsr_log.ndjson",
+                     "20260928_120000_drive_match_log.ndjson", "20260928_120000_tsr_log.ndjson"]
+        for name in names { try Data("saved log".utf8).write(to: root.appendingPathComponent(name)) }
+        let map = root.appendingPathComponent("speeds_v3.sqlite")
+        try Data("map".utf8).write(to: map)
+        let photos = root.appendingPathComponent("photos")
+        try FileManager.default.createDirectory(at: photos, withIntermediateDirectories: true)
+        let photo = photos.appendingPathComponent("photo.jpg")
+        try Data("photo".utf8).write(to: photo)
+        let link = root.appendingPathComponent("linked_tsr_log.ndjson")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: map)
+        XCTAssertEqual(try StartupLogStore.totalBytes(in: root), 45)
+        try StartupLogStore.clear(in: root)
+        XCTAssertEqual(try StartupLogStore.totalBytes(in: root), 0)
+        XCTAssertEqual(try String(contentsOf: map), "map")
+        XCTAssertEqual(try String(contentsOf: photo), "photo")
+        XCTAssertTrue(try link.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink == true)
+    }
+
+    func testMissingDirectoryIsEmptyButInvalidDirectoryReportsFailure() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        XCTAssertEqual(try StartupLogStore.totalBytes(in: root), 0)
+        try Data("file".utf8).write(to: root)
+        defer { try? FileManager.default.removeItem(at: root) }
+        XCTAssertThrowsError(try StartupLogStore.totalBytes(in: root))
+        XCTAssertThrowsError(try StartupLogStore.clear(in: root))
+    }
+}
+
+final class DriveCameraFocusTests: XCTestCase {
+    private final class Camera: DriveCameraFocusDevice {
+        var supportedModes: [AVCaptureDevice.FocusMode] = [.locked, .autoFocus, .continuousAutoFocus]
+        var isFocusPointOfInterestSupported = true
+        var isAutoFocusRangeRestrictionSupported = true
+        var failsToLock = false
+        private(set) var locked = false
+        private(set) var lockCount = 0
+        private(set) var unlockCount = 0
+        private(set) var writes = 0
+        var focusMode: AVCaptureDevice.FocusMode = .locked {
+            didSet {
+                recordWrite()
+                XCTAssertTrue(isFocusModeSupported(focusMode))
+                // The mode setter initiates focusing using these preferences.
+                XCTAssertFalse(automaticallyAdjustsFaceDrivenAutoFocusEnabled)
+                XCTAssertFalse(isFaceDrivenAutoFocusEnabled)
+                if isFocusPointOfInterestSupported {
+                    XCTAssertEqual(focusPointOfInterest, CGPoint(x: 0.5, y: 0.5))
+                }
+                if isAutoFocusRangeRestrictionSupported {
+                    XCTAssertEqual(autoFocusRangeRestriction, .far)
+                }
+            }
+        }
+        var focusPointOfInterest = CGPoint(x: 0.1, y: 0.9) {
+            didSet { recordWrite(); XCTAssertTrue(isFocusPointOfInterestSupported) }
+        }
+        var autoFocusRangeRestriction: AVCaptureDevice.AutoFocusRangeRestriction = .near {
+            didSet { recordWrite(); XCTAssertTrue(isAutoFocusRangeRestrictionSupported) }
+        }
+        var automaticallyAdjustsFaceDrivenAutoFocusEnabled = true {
+            didSet { recordWrite(); XCTAssertTrue(supportsAutofocus) }
+        }
+        var isFaceDrivenAutoFocusEnabled = true {
+            didSet {
+                recordWrite()
+                XCTAssertTrue(supportsAutofocus)
+                XCTAssertFalse(automaticallyAdjustsFaceDrivenAutoFocusEnabled)
+            }
+        }
+        private var supportsAutofocus: Bool {
+            supportedModes.contains(.autoFocus) || supportedModes.contains(.continuousAutoFocus)
+        }
+        private func recordWrite() {
+            XCTAssertTrue(locked, "AVFoundation requires exclusive configuration access")
+            writes += 1
+        }
+        func isFocusModeSupported(_ focusMode: AVCaptureDevice.FocusMode) -> Bool {
+            supportedModes.contains(focusMode)
+        }
+        func lockForConfiguration() throws {
+            lockCount += 1
+            if failsToLock { throw NSError(domain: "FocusTest", code: 1) }
+            locked = true
+        }
+        func unlockForConfiguration() {
+            XCTAssertTrue(locked)
+            locked = false
+            unlockCount += 1
+        }
+    }
+
+    func testLockedCameraReacquiresRoadFocusWithPreferencesAppliedBeforeFocusing() throws {
+        let camera = Camera()
+        try DriveCameraFocusConfiguration.apply(to: camera)
+        XCTAssertEqual(camera.focusMode, .continuousAutoFocus)
+        XCTAssertEqual(camera.autoFocusRangeRestriction, .far)
+        XCTAssertEqual(camera.lockCount, 1)
+        XCTAssertEqual(camera.unlockCount, 1)
+        XCTAssertFalse(camera.locked)
+    }
+
+    func testCameraWithoutRangeOrPointControlsStillRecoversFromLockedFocus() throws {
+        let camera = Camera()
+        camera.isAutoFocusRangeRestrictionSupported = false
+        camera.isFocusPointOfInterestSupported = false
+        try DriveCameraFocusConfiguration.apply(to: camera)
+        XCTAssertEqual(camera.focusMode, .continuousAutoFocus)
+        XCTAssertEqual(camera.autoFocusRangeRestriction, .near, "Unsupported control must not be written")
+        XCTAssertEqual(camera.focusPointOfInterest, CGPoint(x: 0.1, y: 0.9))
+        XCTAssertEqual(camera.unlockCount, 1)
+    }
+
+    func testSingleAutofocusFallbackAcquiresFocusInsteadOfKeepingStaleLock() throws {
+        let camera = Camera()
+        camera.supportedModes = [.locked, .autoFocus]
+        try DriveCameraFocusConfiguration.apply(to: camera)
+        XCTAssertEqual(camera.focusMode, .autoFocus)
+        XCTAssertEqual(camera.autoFocusRangeRestriction, .far)
+        XCTAssertEqual(camera.unlockCount, 1)
+    }
+
+    func testFixedFocusCameraDoesNotReceiveUnsupportedAutofocusSettings() throws {
+        let camera = Camera()
+        camera.supportedModes = [.locked]
+        try DriveCameraFocusConfiguration.apply(to: camera)
+        XCTAssertEqual(camera.focusMode, .locked)
+        XCTAssertEqual(camera.writes, 0)
+        XCTAssertEqual(camera.lockCount, 0)
+        XCTAssertEqual(camera.unlockCount, 0)
+    }
+
+    func testConfigurationLockFailureLeavesCameraUntouched() {
+        let camera = Camera()
+        camera.failsToLock = true
+        XCTAssertThrowsError(try DriveCameraFocusConfiguration.apply(to: camera))
+        XCTAssertEqual(camera.writes, 0)
+        XCTAssertEqual(camera.lockCount, 1)
+        XCTAssertEqual(camera.unlockCount, 0)
+    }
+}
+
 private final class DeterministicTrafficSignInferenceBackend:
     TrafficSignInferenceBackend,
     @unchecked Sendable
@@ -35,6 +268,22 @@ private final class DeterministicTrafficSignInferenceBackend:
         orientation: CGImagePropertyOrientation
     ) throws -> [TrafficSignDetection] {
         output
+    }
+}
+
+private final class CalibrationInspectingInferenceBackend: TrafficSignInferenceBackend, @unchecked Sendable {
+    private let lock = NSLock()
+    private var received: (Int, Int, CGImagePropertyOrientation)?
+    let output: TrafficSignDetection
+    init(output: TrafficSignDetection) { self.output = output }
+    func dimensions() -> (Int, Int, CGImagePropertyOrientation)? { lock.lock(); defer { lock.unlock() }; return received }
+    func detections(in pixelBuffer: CVPixelBuffer, orientation: CGImagePropertyOrientation) throws -> [TrafficSignDetection] {
+        lock.lock(); received = (CVPixelBufferGetWidth(pixelBuffer), CVPixelBufferGetHeight(pixelBuffer), orientation); lock.unlock()
+        return [output]
+    }
+    func detections(in image: CGImage, orientation: CGImagePropertyOrientation) throws -> [TrafficSignDetection] {
+        lock.lock(); received = (image.width, image.height, orientation); lock.unlock()
+        return [output]
     }
 }
 
@@ -224,6 +473,122 @@ private final class TrafficSignTestEmissionStore: @unchecked Sendable {
 }
 
 final class SpeedConsumerTests: XCTestCase {
+    @MainActor
+    func testGPSRoutingLeavesCoverageAndReusesReadersWhenReturning() async throws {
+        let fm = FileManager.default
+        let root = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: root.path) { try fm.removeItem(at: root) }
+        defer { try? fm.removeItem(at: root) }
+        func fixture(region: String, country: String, lat: Double, lon: Double, city: String) throws -> URL {
+            let directory = root.appendingPathComponent("bundles/\(country)-gps-route-test")
+            try fm.createDirectory(at: directory, withIntermediateDirectories: true)
+            let database = directory.appendingPathComponent("roads.sqlite")
+            try createCityPolygonFixtureDB(at: database, fixLat: lat, fixLon: lon, adminLevel8Name: city)
+            try executeSQL(at: database, sql: "UPDATE ways SET maxspeed='50';")
+            let data = try Data(contentsOf: database)
+            let manifest = V3BundleManifest(format: "youspeed.v3.bundle.manifest", schemaVersion: 1,
+                variant: "v3", region: region, countryCode: country, bundleVersion: "gps-route-test",
+                createdAtUTC: "2026-09-27T00:00:00Z", minAppVersion: "1.0.0",
+                db: BundleArtifact(file: database.lastPathComponent, bytes: Int64(data.count), sha256: sha256Hex(data), url: nil),
+                dbParts: nil, deltaIndex: nil,
+                coverage: BundleCoverage(bbox: BundleCoverageBBox(minLon: lon - 0.05, minLat: lat - 0.05,
+                    maxLon: lon + 0.05, maxLat: lat + 0.05), poly: nil))
+            try JSONEncoder().encode(manifest).write(to: directory.appendingPathComponent("bundle-manifest.v3.json"))
+            return database
+        }
+        let france = try fixture(region: "france/rhone-alpes", country: "FRA", lat: 45.7204, lon: 5.078, city: "French Test City")
+        let swiss = try fixture(region: "switzerland", country: "CHE", lat: 47, lon: 8, city: "Swiss Test City")
+        let active = ActiveBundleState(region: "switzerland", bundleVersion: "gps-route-test",
+            dbFileName: swiss.lastPathComponent, activatedAtUTC: "2026-09-27T00:00:00Z",
+            dbPath: swiss.path, dbSHA256: sha256Hex(try Data(contentsOf: swiss)))
+        try JSONEncoder().encode(active).write(to: root.appendingPathComponent("active_bundle.json"))
+        let model = DriveSessionViewModel()
+        defer { model.stopDriving() }
+        try await model.testWaitForStartupDataLoad()
+        await model.testRefreshBundleInventory()
+        model.matcherDebugProfile = .m7
+        // Persisted Switzerland must yield to France even 44 m off its nearest road.
+        await model.testRunGPSLookup(latitude: 45.720, longitude: 5.078)
+        XCTAssertEqual(model.activeDBPath, france.path)
+        XCTAssertEqual(model.testMapCountryCode, "FRA")
+        XCTAssertNil(model.limitWayID)
+        XCTAssertEqual(model.limitCityName, "French Test City")
+        let franceReader = try XCTUnwrap(model.testLookupServiceIdentity)
+        await model.testRunGPSLookup(latitude: 45.7204, longitude: 5.078)
+        let opens = try XCTUnwrap(model.testLookupResourceStatistics?.opens)
+        let prepares = try XCTUnwrap(model.testLookupResourceStatistics?.prepares)
+        await model.testRunGPSLookup(latitude: 45.7204, longitude: 5.078)
+        XCTAssertEqual(model.testLookupServiceIdentity, franceReader)
+        XCTAssertEqual(model.testLookupResourceStatistics?.opens, opens)
+        XCTAssertEqual(model.testLookupResourceStatistics?.prepares, prepares)
+        await model.testRunGPSLookup(latitude: 43.2965, longitude: 5.3698)
+        XCTAssertTrue(model.activeDBPath.isEmpty)
+        XCTAssertNil(model.testLookupServiceIdentity)
+        XCTAssertNil(model.limitCityName)
+        XCTAssertNil(model.limitWayID)
+        // Losing map coverage withdraws map evidence. The approved reference
+        // policy may still retain its last known value; do not reset that policy.
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown)
+        XCTAssertEqual(model.missingCoverageDownloadOptionID, "france|provence-alpes-cote-d-azur")
+        XCTAssertTrue(model.hasOnboardingMap)
+        let generation = model.testMapContextGeneration
+        await model.testRunGPSLookup(latitude: 43.2965, longitude: 5.3698)
+        XCTAssertEqual(model.testMapContextGeneration, generation)
+        await model.testRunGPSLookup(latitude: 45.7204, longitude: 5.078)
+        XCTAssertEqual(model.activeDBPath, france.path)
+        XCTAssertEqual(model.testLookupServiceIdentity, franceReader)
+        XCTAssertEqual(model.testLookupResourceStatistics?.opens, opens)
+        await model.testRunGPSLookup(latitude: 47, longitude: 8)
+        XCTAssertEqual(model.activeDBPath, swiss.path)
+        XCTAssertEqual(model.testMapCountryCode, "CHE")
+        await model.testRunGPSLookup(latitude: 45.7204, longitude: 5.078)
+        XCTAssertEqual(model.activeDBPath, france.path)
+        XCTAssertEqual(model.testMapCountryCode, "FRA")
+        XCTAssertEqual(model.testLookupServiceIdentity, franceReader)
+        XCTAssertEqual(model.testLookupResourceStatistics?.opens, opens)
+        XCTAssertNil(model.missingCoverageDownloadOptionID)
+    }
+
+    func testMissingCoverageRecommendationUsesAvailableRegionalDownload() throws {
+        let catalog = try XCTUnwrap(RegionalPackCatalog.bundled(Bundle(for: SpeedConsumerAppDelegate.self)))
+        let ids = Set(catalog.regions.map(\.id))
+        XCTAssertEqual(catalog.recommendedDownloadID(longitude: 5.3698, latitude: 43.2965,
+            hasInstalledCoverage: false, availableDownloadIDs: ids), "france|provence-alpes-cote-d-azur")
+        XCTAssertNil(catalog.recommendedDownloadID(longitude: 5.3698, latitude: 43.2965,
+            hasInstalledCoverage: true, availableDownloadIDs: ids))
+        XCTAssertNil(catalog.recommendedDownloadID(longitude: 5.3698, latitude: 43.2965,
+            hasInstalledCoverage: false, availableDownloadIDs: ["belgium|belgium"]))
+        XCTAssertNil(catalog.recommendedDownloadID(longitude: -74.0, latitude: 40.7,
+            hasInstalledCoverage: false, availableDownloadIDs: ids))
+    }
+
+    func testBundleDownloadQueueKeepsOrderWithoutDuplicateRequests() {
+        struct Request: Identifiable { let id: String }
+        var queue = BundleDownloadQueue<Request>()
+        for id in ["active", "belgium", "provence-alpes-cote-d-azur", "belgium"] {
+            queue.enqueue(Request(id: id), activeID: "active")
+        }
+        XCTAssertNil(queue.next(isBusy: true))
+        XCTAssertEqual(queue.ids, ["belgium", "provence-alpes-cote-d-azur"])
+        XCTAssertEqual(queue.next(isBusy: false)?.id, "belgium")
+        // Once the worker finishes (success or failure), the next request remains available.
+        XCTAssertEqual(queue.next(isBusy: false)?.id, "provence-alpes-cote-d-azur")
+        XCTAssertNil(queue.next(isBusy: false))
+    }
+
+    func testCancellingQueuedBundleKeepsRemainingRequests() {
+        struct Request: Identifiable { let id: String }
+        var queue = BundleDownloadQueue<Request>()
+        for id in ["belgium", "netherlands", "switzerland"] {
+            queue.enqueue(Request(id: id), activeID: nil)
+        }
+        queue.remove(id: "netherlands")
+        queue.remove(id: "not-queued")
+        XCTAssertEqual(queue.ids, ["belgium", "switzerland"])
+        XCTAssertEqual(queue.next(isBusy: false)?.id, "belgium")
+        XCTAssertEqual(queue.next(isBusy: false)?.id, "switzerland")
+    }
+
     func testOnboardingRequiresAValidatedNonSeedMap() {
         for version in ["", "none", "seed", " SEED "] {
             XCTAssertFalse(FirstRunOnboardingPolicy.hasUsableMap(databaseReady: true, bundleVersion: version))
@@ -347,11 +712,23 @@ final class SpeedConsumerTests: XCTestCase {
         ))
     }
 
+    func testAutomaticPhotosFollowSelectionAndLifecycleWithoutDashcamOrTSR() {
+        XCTAssertTrue(DriveRecorderPolicy.shouldRunAutomaticPhotos(enabled: true, driving: true, applicationActive: true, storageReady: true))
+        XCTAssertFalse(DriveRecorderPolicy.shouldRunAutomaticPhotos(enabled: false, driving: true, applicationActive: true, storageReady: true))
+        XCTAssertFalse(DriveRecorderPolicy.shouldRunAutomaticPhotos(enabled: true, driving: false, applicationActive: true, storageReady: true))
+        XCTAssertFalse(DriveRecorderPolicy.shouldRunAutomaticPhotos(enabled: true, driving: true, applicationActive: false, storageReady: true))
+        XCTAssertFalse(DriveRecorderPolicy.shouldRunAutomaticPhotos(enabled: true, driving: true, applicationActive: true, storageReady: false))
+        XCTAssertFalse(PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: 0))
+        XCTAssertFalse(PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: -1))
+        XCTAssertFalse(PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: .nan))
+        XCTAssertTrue(PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: 0.5))
+    }
+
     func testStandaloneTSRCaptureDoesNotPresentAsDriveRecording() {
         XCTAssertEqual(
             DriveRecorderPolicy.presentedRecorderState(
                 captureState: .recording,
-                purpose: .standaloneTrafficSignRecognition,
+                purpose: .automaticCapture,
                 driveStartPending: false
             ),
             .disabled
@@ -359,7 +736,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(
             DriveRecorderPolicy.presentedRecorderState(
                 captureState: .recording,
-                purpose: .standaloneTrafficSignRecognition,
+                purpose: .automaticCapture,
                 driveStartPending: true
             ),
             .preparing
@@ -425,7 +802,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .failed))
         XCTAssertTrue(DriveRecorderPolicy.canProcessPanoramaxUploads(
             for: .recording,
-            purpose: .standaloneTrafficSignRecognition
+            purpose: .automaticCapture
         ))
         XCTAssertFalse(DriveRecorderPolicy.canProcessPanoramaxUploads(
             for: .recording,
@@ -1042,6 +1419,171 @@ final class SpeedConsumerTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testAllFiveNationalMappingsReachTheCorrectRuntimeActionsAndArtwork() throws {
+        let cases: [String: [String: TrafficSignStructuralAction]] = [
+            "DE": ["no:end": .allRestrictionsEnd, "maxspeed:end": .maximumSpeedEnd(nil), "zone:30:end": .zoneEnd(30)],
+            "BE": ["no:end": .allRestrictionsEnd, "city:start": .cityEntry("BE"), "city:end": .cityExit, "zone:50:end": .zoneEnd(50)],
+            "FR": ["B31": .allRestrictionsEnd, "B33-70": .maximumSpeedEnd(70), "B14-45": .postedMaximum(45), "B30": .zoneStart(30), "B51": .zoneEnd(30), "B52": .zoneStart(20), "B53": .zoneEnd(20), "B54": .pedestrianZoneStart, "B55": .pedestrianZoneEnd, "EB10": .cityEntry("FR"), "EB20": .cityExit, "C208": .motorwayExit, "C108": .motorroadExit],
+            "NL": ["no:end": .allRestrictionsEnd, "maxspeed:100": .postedMaximum(100), "zone:60:end": .zoneEnd(60), "zone:pedestrian": .pedestrianZoneStart],
+            "CH": ["no:end": .allRestrictionsEnd, "maxspeed:end": .maximumSpeedEnd(nil), "zone:calm": .zoneStart(20), "zone:calm:end": .zoneEnd(20), "zone:pedestrian:end": .pedestrianZoneEnd],
+        ]
+        for country in ["DE", "BE", "FR", "NL", "CH"] {
+            let directory = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(countryCode: country)
+            let decoder = JSONDecoder(); decoder.keyDecodingStrategy = .convertFromSnakeCase
+            let pack = try decoder.decode(TrafficSignModelPackManifest.self, from: Data(contentsOf: directory.appendingPathComponent("manifest.json")))
+            let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled(countryCode: country))
+            XCTAssertEqual(pack.classMapping.map(\.classId), catalog.classLabels)
+            for mapping in pack.classMapping {
+                let candidate = TrafficSignRecognitionCandidate(rawClassId: mapping.classId, rawLabel: mapping.label,
+                    semanticKind: mapping.semantic.kind.rawValue, value: mapping.semantic.value, unit: mapping.semantic.unit,
+                    rawScore: 0.99, calibratedConfidence: nil, boundingBox: .init(x: 0.6, y: 0.3, width: 0.1, height: 0.1), trackId: nil, evidenceFrames: 2)
+                let action = TrafficSignStructuralAction.normalized(from: candidate, countryCode: country)
+                if let expected = cases[country]?[mapping.classId] { XCTAssertEqual(action, expected, country + ":" + mapping.classId) }
+                if mapping.semantic.kind == .unknown { XCTAssertFalse(action.passageEventEligible, country + ":" + mapping.classId) }
+            }
+            let end = try XCTUnwrap(catalog.endSign(for: country == "FR" ? "B31" : "no:end"))
+            XCTAssertNotNil(end.imageURL())
+            XCTAssertEqual(catalog.endSign(for: "maxspeed:end")?.imagePath, end.imagePath)
+            XCTAssertNil(catalog.endSign(for: "zone:unknown:end"))
+            XCTAssertFalse(catalog.sign(for: "maxheight")?.displayEligible ?? false)
+        }
+    }
+
+    func testPacaBundleFindsExitTopologyOutsideTightMatchRadiusWithoutWayLinks() throws {
+        let sqlURL = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "paca-exit-topology-v1", withExtension: "sql"))
+        let dbURL = FileManager.default.temporaryDirectory.appendingPathComponent("paca-exit-\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: dbURL) }
+        var db: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(dbURL.path, &db), SQLITE_OK)
+        XCTAssertEqual(sqlite3_exec(db, try String(contentsOf: sqlURL), nil, nil, nil), SQLITE_OK)
+        sqlite3_close(db)
+        let service = V3SpeedLimitService(dbPath: dbURL.path, countryCode: "FR",
+            matchingModel: MatcherDebugProfile.defaultProfile.matchingModel)
+        for (lat, lon, way, road) in [(43.8928129, 4.9207605, "135439915", "motorway"),
+            (43.8948728, 4.9188749, "4355708", "motorway"), (43.8974263, 4.9177386, "4077706", "motorway_link")] {
+            let result = try service.lookupSpeedLimit(lat: lat, lon: lon, radiusM: 15, maxCandidates: 32,
+                headingDeg: 335, headingAccuracyDeg: 5, speedKmh: 80, horizontalAccuracyM: 5, gpsSignalBars: 4)
+            XCTAssertEqual(result.wayID, way)
+            let geometry = try XCTUnwrap(result.applicabilityGeometry)
+            XCTAssertEqual(geometry.roadClass, road)
+            if road == "motorway" {
+                XCTAssertEqual(geometry.postedSpeedKmh, 130)
+                XCTAssertTrue(geometry.branches.contains { $0.wayId == "4077706" && $0.endpointLinked && $0.roadClass == "motorway_link" })
+            }
+        }
+    }
+
+    @MainActor
+    func testStartupRestoresBelgiumTrafficSignModelWithoutLocationOrBundleSwitch() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) { try fm.removeItem(at: supportDir) }
+        defer { try? fm.removeItem(at: supportDir) }
+        let bundleDir = supportDir.appendingPathComponent("bundles/field-country-regression", isDirectory: true)
+        try fm.createDirectory(at: bundleDir, withIntermediateDirectories: true)
+        // Use a country-neutral filename so selection must read the manifest.
+        let dbURL = bundleDir.appendingPathComponent("roads.sqlite")
+        try createFixtureV3DB(at: dbURL)
+        let data = try Data(contentsOf: dbURL)
+        let manifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest", schemaVersion: 1, variant: "v3",
+            region: "belgium", countryCode: "BE", bundleVersion: "field-country-regression",
+            createdAtUTC: "2026-09-21T00:00:00Z", minAppVersion: "1.0.0",
+            db: BundleArtifact(file: dbURL.lastPathComponent, bytes: Int64(data.count),
+                sha256: sha256Hex(data), url: nil), dbParts: nil, deltaIndex: nil
+        )
+        try JSONEncoder().encode(manifest).write(to: bundleDir.appendingPathComponent("bundle-manifest.v3.json"))
+        let state = ActiveBundleState(
+            region: "belgium", bundleVersion: manifest.bundleVersion,
+            dbFileName: dbURL.lastPathComponent, activatedAtUTC: "2026-09-21T00:00:00Z",
+            dbPath: dbURL.path, dbSHA256: sha256Hex(data)
+        )
+        try JSONEncoder().encode(state).write(to: supportDir.appendingPathComponent("active_bundle.json"))
+
+        let model = DriveSessionViewModel()
+        try await model.testWaitForStartupDataLoad()
+        XCTAssertEqual(model.testRequestedTrafficSignModelCountryCode, "BE")
+        XCTAssertEqual(model.testTrafficSignCatalogCountryCode, "BE")
+        try await model.testWaitForTrafficSignModelLoad()
+        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "be-panoramax-bootstrap-evaluation-v1")
+
+        let runtimeID = try XCTUnwrap(model.testTrafficSignRuntimeIdentity)
+        await model.testRefreshActiveBundleCountry()
+        await model.testRefreshActiveBundleCountry(preferredCountryCode: "BEL")
+        XCTAssertEqual(model.testTrafficSignRuntimeIdentity, runtimeID,
+            "Refreshing the same map country must preserve the loaded model and its tracks")
+
+        // Returning to a country while its cancelled initial load is still
+        // finishing must not clear the replacement load's bookkeeping.
+        await model.testRefreshActiveBundleCountry(preferredCountryCode: "DEU")
+        await model.testRefreshActiveBundleCountry(preferredCountryCode: "BEL")
+        await model.testRefreshActiveBundleCountry(preferredCountryCode: "DEU")
+        try await model.testWaitForTrafficSignModelLoad()
+        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "de-panoramax-bootstrap-live-v1")
+        await model.testRefreshActiveBundleCountry(preferredCountryCode: "BEL")
+        try await model.testWaitForTrafficSignModelLoad()
+        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "be-panoramax-bootstrap-evaluation-v1")
+        XCTAssertEqual(model.testTrafficSignCatalogCountryCode, "BE")
+
+        let now = Date()
+        let coordinate = CLLocationCoordinate2D(latitude: 43.95, longitude: 4.80)
+        model.testDiscoverPacks(for: CLLocation(coordinate: coordinate, altitude: 0, horizontalAccuracy: 624, verticalAccuracy: -1, timestamp: now))
+        XCTAssertEqual(model.testRequestedTrafficSignModelCountryCode, "BE", "A poor indoor fix must not switch models")
+        model.testDiscoverPacks(for: CLLocation(coordinate: coordinate, altitude: 0, horizontalAccuracy: 5, verticalAccuracy: -1, timestamp: now.addingTimeInterval(-120)))
+        XCTAssertEqual(model.testRequestedTrafficSignModelCountryCode, "BE", "A stale location must not switch models")
+        model.testDiscoverPacks(for: CLLocation(coordinate: coordinate, altitude: 0, horizontalAccuracy: 5, verticalAccuracy: -1, timestamp: now))
+        try await model.testWaitForTrafficSignModelLoad()
+        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "fr-panoramax-bootstrap-evaluation-v1")
+        XCTAssertEqual(model.testTrafficSignCatalogCountryCode, "FR")
+        await model.testRefreshActiveBundleCountry(preferredCountryCode: "BEL")
+        XCTAssertEqual(model.testRequestedTrafficSignModelCountryCode, "FR", "The installed Belgium map cannot revert a confirmed French position")
+    }
+
+    @MainActor
+    func testStartupWithoutMapKeepsDefaultTrafficSignModel() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) { try fm.removeItem(at: supportDir) }
+        defer { try? fm.removeItem(at: supportDir) }
+        let model = DriveSessionViewModel()
+        try await model.testWaitForStartupDataLoad()
+        try await model.testWaitForTrafficSignModelLoad()
+        XCTAssertTrue(model.activeDBPath.isEmpty)
+        XCTAssertEqual(model.testRequestedTrafficSignModelCountryCode, "DE")
+        XCTAssertEqual(model.testTrafficSignCatalogCountryCode, "DE")
+        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "de-panoramax-bootstrap-live-v1")
+    }
+
+    @MainActor
+    func testBelgiumPackTurnsSpeedZoneClassificationsIntoConfirmedSpeedEvents() throws {
+        let directory = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(countryCode: "BE")
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let pack = try decoder.decode(TrafficSignModelPackManifest.self,
+            from: Data(contentsOf: directory.appendingPathComponent("manifest.json")))
+        for speed in [30, 50] {
+            let mapping = try XCTUnwrap(pack.classMapping.first { $0.classId == "zone:\(speed)" })
+            let detection = TrafficSignDetection(rawClassId: mapping.classId, rawLabel: mapping.label,
+                semantic: mapping.semantic, rawScore: 0.95, calibratedConfidence: nil,
+                boundingBox: .init(x: 0.6, y: 0.4, width: 0.05, height: 0.1), classThreshold: mapping.threshold)
+            var fusion = TrafficSignFusionEngine(packId: pack.packId,
+                artifactSha256: pack.detector.artifacts[0].sha256,
+                preprocessingVersion: pack.preprocessing.version, thresholds: pack.thresholds)
+            let now = Date(timeIntervalSince1970: 1_500)
+            _ = fusion.ingest(detections: [detection], source: .liveFrame, timestamp: now,
+                roadContext: makeTrafficSignDetectionContext(), latencyMs: 10, thermalState: .nominal)
+            let confirmed = fusion.ingest(detections: [detection], source: .liveFrame,
+                timestamp: now.addingTimeInterval(0.2), roadContext: makeTrafficSignDetectionContext(),
+                latencyMs: 10, thermalState: .nominal)
+            XCTAssertEqual(confirmed.state, .confirmed)
+            XCTAssertEqual(confirmed.candidate?.semanticKind, "zone_start")
+            XCTAssertEqual(confirmed.candidate?.value, speed)
+            XCTAssertEqual(TrafficSignStructuralAction.normalized(from: try XCTUnwrap(confirmed.candidate)),
+                .zoneStart(speed))
+        }
+    }
+
     func testAdditionalSignDisplayUsesClassifierThresholdWithoutReplacingSpeedFusion() throws {
         let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
         let now = Date(timeIntervalSince1970: 1_500)
@@ -1275,12 +1817,9 @@ final class SpeedConsumerTests: XCTestCase {
         let backend = try TrafficSignVisionTwoStageCoreMLBackend(verifiedPack: pack)
         let testBundle = Bundle(for: SpeedConsumerTests.self)
 
-        for fixture in [
-            (name: "tsr-panoramax-49e25e66", expectedExtent: nil as String?),
-            (name: "tsr-panoramax-0906fc23", expectedExtent: "2 km"),
-        ] {
+        for fixtureName in ["tsr-panoramax-49e25e66", "tsr-panoramax-0906fc23"] {
             let imageURL = try XCTUnwrap(testBundle.url(
-                forResource: fixture.name,
+                forResource: fixtureName,
                 withExtension: "jpg"
             ))
             let imageData = try Data(contentsOf: imageURL)
@@ -1290,23 +1829,20 @@ final class SpeedConsumerTests: XCTestCase {
                 $0.semantic.kind == .maximumSpeed && $0.semantic.value == 70
             }
 
-            XCTAssertNotNil(speed70, "Expected a 70 km/h sign in \(fixture.name)")
+            XCTAssertNotNil(speed70, "Expected a 70 km/h sign in \(fixtureName)")
             XCTAssertNil(speed70?.calibratedConfidence)
             XCTAssertNil(speed70?.detectorCalibratedConfidence)
             XCTAssertNil(speed70?.classifierCalibratedConfidence)
             XCTAssertGreaterThanOrEqual(
                 speed70?.rawScore ?? 0,
                 0.70,
-                "Expected a usable two-stage score in \(fixture.name)"
+                "Expected a usable two-stage score in \(fixtureName)"
             )
-            if let expectedExtent = fixture.expectedExtent {
-                let extent = speed70?.restrictions.first { $0.kind == .extent }
-                XCTAssertEqual(extent?.normalizedValue, expectedExtent)
-                XCTAssertEqual(speed70?.conditionState, .resolved)
-            } else {
-                XCTAssertEqual(speed70?.conditionState, .unresolved)
-                XCTAssertTrue(speed70?.restrictions.contains { $0.kind == .unknown } == true)
-            }
+            // Since the primary-sign-only runtime change (2abb2568), live
+            // inference deliberately leaves supplementary plates to offline
+            // review. Keep the physical model test aligned with that contract.
+            XCTAssertEqual(speed70?.conditionState, TrafficSignConditionState.none)
+            XCTAssertEqual(speed70?.restrictions, [])
         }
 #endif
     }
@@ -1653,6 +2189,63 @@ final class SpeedConsumerTests: XCTestCase {
         let result = try XCTUnwrap(assembled.first)
         XCTAssertEqual(result.conditionState, .unresolved)
         XCTAssertTrue(result.restrictions.isEmpty)
+    }
+
+    func testEndSignsContributeQualifiedApproachFramesButStillNeedStrongConfirmation() throws {
+        for classID in ["B31", "B33-50", "C46", "282", "F08", "2.58"] {
+            var engine = TrafficSignFusionEngine(packId: "end-fixture", artifactSha256: String(repeating: "a", count: 64),
+                preprocessingVersion: "fixture", thresholds: .init(provisional: 0.45, confirmed: 0.7,
+                    unknown: 0.25, confirmationFrames: 3, confirmationWindowMs: 1500, minimumTrackIou: 0.2))
+            for (index, score) in [0.30, 0.36, 0.85].enumerated() {
+                let detection = TrafficSignDetection(rawClassId: classID, rawLabel: classID,
+                    semantic: .init(kind: .restrictionEnd, value: nil, unit: nil), rawScore: score,
+                    calibratedConfidence: nil, detectorRawScore: score, classifierRawScore: 0.99,
+                    boundingBox: .init(x: 0.6, y: 0.3, width: 0.1, height: 0.1), classThreshold: 0.7)
+                XCTAssertTrue(detection.isQualifiedObservation(runtimeOutput: .rawScore, unknownThreshold: 0.25))
+                let event = engine.ingest(detections: [detection], source: .liveFrame,
+                    timestamp: Date(timeIntervalSince1970: 1000 + Double(index) * 0.4),
+                    roadContext: makeTrafficSignDetectionContext(), latencyMs: 20, thermalState: .nominal)
+                XCTAssertEqual(event.state, index == 2 ? .confirmed : .provisional, classID)
+                XCTAssertEqual(event.candidate?.evidenceFrames, index + 1)
+                XCTAssertEqual(event.candidate?.rawScore, score) // Never promote classifier confidence to detector confidence.
+            }
+        }
+    }
+
+    func testEndObservationRejectsWeakMissingNonfiniteAndUncalibratedEvidence() {
+        for (kind, score, detector, classifier) in [
+            (TrafficSignSemanticKind.maximumSpeed, 0.3, 0.3, 0.99),
+            (.restrictionEnd, 0.24, 0.24, 0.99),
+            (.restrictionEnd, 0.3, 0.3, 0.69),
+            (.restrictionEnd, 0.3, Double.nan, 0.99),
+            (.restrictionEnd, 0.3, 0.3, Double.infinity)
+        ] {
+            XCTAssertFalse(TrafficSignObservationQualification.isEligible(kind: kind, score: score,
+                detectorScore: detector, classifierScore: classifier, unknownThreshold: 0.25, classThreshold: 0.7))
+        }
+        let detection = TrafficSignDetection(rawClassId: "B31", rawLabel: "end",
+            semantic: .init(kind: .restrictionEnd, value: nil, unit: nil), rawScore: 0.3,
+            calibratedConfidence: 0.3, detectorRawScore: 0.3, classifierRawScore: 0.99,
+            boundingBox: .init(x: 0.6, y: 0.3, width: 0.1, height: 0.1), classThreshold: 0.7)
+        XCTAssertFalse(detection.isQualifiedObservation(runtimeOutput: .calibratedConfidence, unknownThreshold: 0.25))
+        XCTAssertFalse(TrafficSignObservationQualification.isEligible(kind: .restrictionEnd, score: 0.3,
+            detectorScore: nil, classifierScore: nil, unknownThreshold: 0.25, classThreshold: 0.7))
+    }
+
+    func testWeakEndObservationsNeverConfirmByRepetitionAlone() {
+        var engine = TrafficSignFusionEngine(packId: "end-fixture", artifactSha256: String(repeating: "a", count: 64),
+            preprocessingVersion: "fixture", thresholds: .init(provisional: 0.45, confirmed: 0.7,
+                unknown: 0.25, confirmationFrames: 3, confirmationWindowMs: 1500, minimumTrackIou: 0.2))
+        let detection = TrafficSignDetection(rawClassId: "B31", rawLabel: "end",
+            semantic: .init(kind: .restrictionEnd, value: nil, unit: nil), rawScore: 0.36,
+            calibratedConfidence: nil, detectorRawScore: 0.36, classifierRawScore: 0.99,
+            boundingBox: .init(x: 0.6, y: 0.3, width: 0.1, height: 0.1), classThreshold: 0.7)
+        for index in 0..<10 {
+            let event = engine.ingest(detections: [detection], source: .liveFrame,
+                timestamp: Date(timeIntervalSince1970: 1000 + Double(index) * 0.1),
+                roadContext: makeTrafficSignDetectionContext(), latencyMs: 20, thermalState: .nominal)
+            XCTAssertEqual(event.state, .provisional)
+        }
     }
 
     func testTrafficSignFusionKeepsOneTrackWhileSignMovesAcrossFrame() throws {
@@ -2040,6 +2633,47 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(afterBundleChange.candidate?.evidenceFrames, 1)
         XCTAssertNotEqual(afterBundleChange.candidate?.trackId, afterSourceChange.candidate?.trackId)
         XCTAssertEqual(afterBundleChange.roadContext, nextBundleContext)
+    }
+
+    func testCalibratedRuntimeCropsActualInputAndRemapsForEveryMountOrientation() throws {
+        let manifest = makeTrafficSignModelPackManifest()
+        let artifact = try XCTUnwrap(manifest.detector.artifacts.first)
+        let verified = TrafficSignVerifiedModelPack(directoryURL: URL(fileURLWithPath: NSTemporaryDirectory()),
+            manifest: manifest, detectorArtifact: artifact, detectorArtifactURL: URL(fileURLWithPath: "/unused-test-model"))
+        let canvas = try XCTUnwrap(CGContext(data: nil, width: 10, height: 6, bitsPerComponent: 8, bytesPerRow: 40,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        let image = try XCTUnwrap(canvas.makeImage())
+        let snapshot = TrafficSignFrameSnapshot(context: makeTrafficSignDetectionContext(),
+            conditions: TrafficSignAnalysisConditions(speedKmh: 50, candidateRecentlySeen: false,
+                lowPowerMode: false, thermalState: .nominal, appIsActive: true), captureSessionId: "calibration-test")
+        let detection = makeTrafficSignDetection(score: 0.9,
+            box: TrafficSignNormalizedRect(x: 0.2, y: 0.3, width: 0.1, height: 0.2))
+        for orientation: CGImagePropertyOrientation in [.up, .right, .down, .left] {
+            let rotated = orientation == .right || orientation == .left
+            let width = rotated ? 6 : 10, height = rotated ? 10 : 6
+            var draft = VisualRoadCalibration.defaults(width: width, height: height,
+                orientationKey: "rear:exif:\(orientation.rawValue)")
+            draft.leftTopX = 0.5
+            let calibration = draft
+            let backend = CalibrationInspectingInferenceBackend(output: detection)
+            let emissions = TrafficSignTestEmissionStore(), completed = DispatchSemaphore(value: 0)
+            let runtime = TrafficSignRuntime(verifiedPack: verified, backend: backend, snapshotProvider: { snapshot },
+                callbackQueue: DispatchQueue(label: "calibration-test"), eventHandler: { emissions.append($0); completed.signal() },
+                visualCalibrationProvider: { calibration })
+            defer { runtime.stop() }
+            runtime.analyzeStill(cgImage: image, orientation: orientation, timestampUTC: Date(timeIntervalSince1970: 4000), snapshot: snapshot)
+            XCTAssertEqual(completed.wait(timeout: .now() + 3), .success)
+            let dimensions = try XCTUnwrap(backend.dimensions())
+            XCTAssertEqual(dimensions.0, width / 2); XCTAssertEqual(dimensions.1, height)
+            XCTAssertEqual(dimensions.2, .up)
+            let candidate = try XCTUnwrap(emissions.snapshot().first?.event.candidate)
+            XCTAssertEqual(candidate.boundingBox.x, 0.6, accuracy: 1e-12)
+            XCTAssertEqual(candidate.boundingBox.width, 0.05, accuracy: 1e-12)
+            XCTAssertEqual(candidate.boundingBox.y, 0.3); XCTAssertEqual(candidate.boundingBox.height, 0.2)
+            XCTAssertEqual(candidate.rawScore, detection.rawScore)
+            XCTAssertEqual(candidate.semanticKind, detection.semantic.kind.rawValue)
+            XCTAssertEqual(candidate.value, detection.semantic.value)
+        }
     }
 
     func testTrafficSignRuntimeKeepsLegacyResultWhenShadowObservationIsInvalid() throws {
@@ -2600,6 +3234,20 @@ final class SpeedConsumerTests: XCTestCase {
             final.event.candidate?.trackId
         )
         XCTAssertEqual(runtime.metrics.completedInferences, 6)
+    }
+
+    func testTrafficSignFramePreviewCannotReturnAfterFiveMinuteExpiry() {
+        let context = makeTrafficSignDetectionContext()
+        let start = Date(timeIntervalSince1970: 2_000)
+        var policy = TrafficSignTransientOverridePolicy()
+        XCTAssertTrue(policy.ingestConfirmedDetection(
+            makeConfirmedTrafficSignEvent(value: 90, timestamp: start, context: context),
+            currentSourceSignature: context.sourceSignature
+        ))
+        XCTAssertEqual(policy.cameraSpeedKmh(currentContext: context, timestamp: start.addingTimeInterval(299)), 90)
+        XCTAssertNil(policy.cameraSpeedKmh(currentContext: context, timestamp: start.addingTimeInterval(300)))
+        XCTAssertNil(policy.activeOverride)
+        XCTAssertNil(policy.cameraSpeedKmh(currentContext: context, timestamp: start.addingTimeInterval(301)))
     }
 
     func testTrafficSignTransientOverrideOutranksLocalAndOSMUntilSourceChanges() throws {
@@ -3700,6 +4348,60 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(reopened.originalURL(for: repaired.items[0])).path))
     }
 
+    func testPanoramaxStartupPreservesReferencedImagesWhenRootUsesPathAlias() throws {
+        let parent = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: parent) }
+        try FileManager.default.createDirectory(
+            at: parent.appendingPathComponent("alias-parent"),
+            withIntermediateDirectories: true
+        )
+        // Directory enumeration returns normalized URLs. This recreates the
+        // same mismatch as iPhone's /var and /private/var container aliases
+        // without requiring access outside the test application's sandbox.
+        let root = parent.appendingPathComponent("alias-parent/../queue", isDirectory: true)
+        var store: PanoramaxQueueStore? = try PanoramaxQueueStore(root: root)
+        var batches: [PanoramaxBatchRecord] = []
+        var items: [PanoramaxItemRecord] = []
+        for (index, state) in [PanoramaxBatchState.capturing, .partial, .complete].enumerated() {
+            let batch = try XCTUnwrap(store).createBatch(captureSessionID: "aliased-\(index)")
+            let item = try addPanoramaxTestItem(
+                store: try XCTUnwrap(store),
+                batch: batch,
+                itemID: "referenced-\(index)",
+                state: state == .partial ? .queued : state == .complete ? .uploaded : .captured
+            )
+            var persisted = try XCTUnwrap(try XCTUnwrap(store).getBatch(batch.batchID))
+            persisted.state = state
+            persisted.remoteUploadSetID = state == .capturing ? nil : "remote-\(index)"
+            try XCTUnwrap(store).updateBatch(persisted)
+            batches.append(persisted)
+            items.append(item)
+        }
+        let orphanDirectory = root.appendingPathComponent(
+            "Panoramax/batches/\(batches[0].batchID)/orphan",
+            isDirectory: true
+        )
+        try FileManager.default.createDirectory(at: orphanDirectory, withIntermediateDirectories: true)
+        let orphan = orphanDirectory.appendingPathComponent("orphan.jpg")
+        try Data([0xff, 0xd8, 0xff, 0xd9]).write(to: orphan)
+        store = nil
+
+        let reopened = try PanoramaxQueueStore(root: root)
+
+        XCTAssertFalse(reopened.startupCleanupReport.hasFailures)
+        XCTAssertEqual(reopened.startupCleanupReport.removedOrphanFileCount, 1)
+        XCTAssertEqual(reopened.startupCleanupReport.removedOrphanByteCount, 4)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: orphan.path))
+        for (batch, item) in zip(batches, items) {
+            let persisted = try XCTUnwrap(reopened.getBatch(batch.batchID))
+            XCTAssertEqual(persisted.items.map(\.itemID), [item.itemID])
+            XCTAssertEqual(persisted.items.map(\.state), [item.state])
+            XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(reopened.originalURL(for: item)).path))
+            XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(reopened.thumbnailURL(for: item)).path))
+            XCTAssertEqual(item.originalPath, "batches/\(batch.batchID)/\(item.itemID)/\(item.itemID).jpg")
+        }
+    }
+
     func testPanoramaxMaintenanceExecutorRunsStartupRecoveryOffTheCaller() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -4062,6 +4764,211 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(report.hasFailures)
     }
 
+    func testPanoramaxGalleryKeepsUploadOutcomeAfterProgressEnds() {
+        let batch = PanoramaxBatchRecord(
+            batchID: "failed-batch",
+            captureSessionID: "drive",
+            createdAt: Date(timeIntervalSince1970: 1_000),
+            state: .partial,
+            items: []
+        )
+        let statuses = [batch.batchID: "Upload fehlgeschlagen: HTTP 413"]
+
+        XCTAssertTrue(PanoramaxGalleryUploadStatus.visibleStatuses(
+            batches: [batch], statusByBatch: statuses, activeBatchIDs: [batch.batchID]
+        ).isEmpty)
+        XCTAssertEqual(PanoramaxGalleryUploadStatus.visibleStatuses(
+            batches: [batch], statusByBatch: statuses, activeBatchIDs: []
+        ), [PanoramaxGalleryUploadStatus(
+            id: batch.batchID,
+            createdAt: batch.createdAt,
+            message: "Upload fehlgeschlagen: HTTP 413"
+        )])
+    }
+
+    func testPanoramaxGalleryShowsFinishedBatchWhileAnotherUploadContinues() {
+        let batches = ["failed", "processing", "active"].map { id in
+            PanoramaxBatchRecord(
+                batchID: id, captureSessionID: id, createdAt: Date(), state: .partial, items: []
+            )
+        }
+        let visible = PanoramaxGalleryUploadStatus.visibleStatuses(
+            batches: batches,
+            statusByBatch: [
+                "failed": "Upload fehlgeschlagen: HTTP 503",
+                "processing": "Upload uebertragen – Verarbeitung laeuft weiter",
+                "active": "2/10 Bilder uebertragen",
+                "deleted": "Upload abgeschlossen"
+            ],
+            activeBatchIDs: ["active"]
+        )
+
+        XCTAssertEqual(visible.map(\.id), ["failed", "processing"])
+        XCTAssertEqual(visible.last?.message, "Upload uebertragen – Verarbeitung laeuft weiter")
+    }
+
+    @MainActor
+    func testPanoramaxUploadPreparationRunsOffMainAndHonorsCancellation() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "preparation-cancellation")
+        let first = try addPanoramaxTestItem(store: store, batch: batch, itemID: "first", state: .queued)
+        let second = try addPanoramaxTestItem(store: store, batch: batch, itemID: "second", state: .queued)
+        _ = try store.transitionBatch(batch.batchID, to: .uploading)
+        let started = expectation(description: "Disk preparation started")
+        let release = DispatchSemaphore(value: 0)
+        defer { release.signal() }
+        let worker = PanoramaxQueueMaintenanceExecutor { store, batchID, itemID in
+            XCTAssertFalse(Thread.isMainThread, "JPEG/EXIF/hash work must not occupy the UI thread")
+            XCTAssertEqual(itemID, first.itemID, "Cancelled queued work must not begin disk preparation")
+            started.fulfill()
+            guard release.wait(timeout: .now() + 10) == .success else {
+                throw PanoramaxTransportTestError.timedOut
+            }
+            return try store.prepareOriginalForUpload(batchID: batchID, itemID: itemID)
+        }
+        let intents = PanoramaxLocalDeletionIntentRegistry()
+        let firstTask = Task {
+            do {
+                return try await worker.prepareOriginalForUpload(
+                    store: store, batchID: batch.batchID, itemID: first.itemID, localDeletionIntents: intents
+                )
+            } catch {
+                try await worker.abandonInFlightItems(store: store, batchID: batch.batchID)
+                throw error
+            }
+        }
+        await fulfillment(of: [started], timeout: 5)
+        // This MainActor continuation must run while the storage worker is
+        // blocked, so Stop can be handled before preparation returns.
+        let queuedTask = Task {
+            try await worker.prepareOriginalForUpload(
+                store: store, batchID: batch.batchID, itemID: second.itemID, localDeletionIntents: intents
+            )
+        }
+        firstTask.cancel()
+        queuedTask.cancel()
+        release.signal()
+        for task in [firstTask, queuedTask] {
+            do {
+                _ = try await task.value
+                XCTFail("Cancelled preparation must not return a file for transport")
+            } catch is CancellationError {
+                // Both in-progress and queued preparations retain their pending state.
+            }
+        }
+        XCTAssertEqual(try store.getBatch(batch.batchID)?.items.map(\.state), [.queued, .queued])
+        XCTAssertEqual(try store.getBatch(batch.batchID)?.state, .partial,
+                       "Cancelled tasks must still persist recovery before they finish")
+    }
+
+    @MainActor
+    func testPanoramaxUploadPreparationRespectsDeletionDuringDiskWork() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "preparation-deletion")
+        let item = try addPanoramaxTestItem(store: store, batch: batch, itemID: "pending", state: .queued)
+        let started = expectation(description: "Disk preparation started")
+        let release = DispatchSemaphore(value: 0)
+        defer { release.signal() }
+        let worker = PanoramaxQueueMaintenanceExecutor { store, batchID, itemID in
+            started.fulfill()
+            guard release.wait(timeout: .now() + 10) == .success else {
+                throw PanoramaxTransportTestError.timedOut
+            }
+            return try store.prepareOriginalForUpload(batchID: batchID, itemID: itemID)
+        }
+        let intents = PanoramaxLocalDeletionIntentRegistry()
+        let task = Task {
+            try await worker.prepareOriginalForUpload(
+                store: store, batchID: batch.batchID, itemID: item.itemID, localDeletionIntents: intents
+            )
+        }
+        await fulfillment(of: [started], timeout: 5)
+        intents.mark(batchID: batch.batchID, itemIDs: [item.itemID])
+        release.signal()
+        let prepared = try await task.value
+        XCTAssertNil(prepared, "Pending local deletion must win before a file reaches transport")
+        XCTAssertEqual(try store.getBatch(batch.batchID)?.items.first?.state, .queued)
+
+        intents.clear(batchID: batch.batchID, itemIDs: [item.itemID])
+        let available = try await PanoramaxQueueMaintenanceExecutor.shared.prepareOriginalForUpload(
+            store: store, batchID: batch.batchID, itemID: item.itemID, localDeletionIntents: intents
+        )
+        XCTAssertEqual(available, store.originalURL(for: item))
+    }
+
+    func testPanoramaxUploadPreflightReportsMissingOriginalsAndPreservesSelection() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "missing-originals")
+        let missing = try addPanoramaxTestItem(store: store, batch: batch, itemID: "missing", state: .queued)
+        let available = try addPanoramaxTestItem(store: store, batch: batch, itemID: "available", state: .included)
+        try FileManager.default.removeItem(at: XCTUnwrap(store.originalURL(for: missing)))
+        let before = try XCTUnwrap(store.getBatch(batch.batchID))
+
+        do {
+            try await PanoramaxUploadClient.validateLocalOriginals(
+                store: store, batchID: batch.batchID,
+                selectedItemIDs: [missing.itemID, available.itemID],
+                localDeletionIntents: PanoramaxLocalDeletionIntentRegistry()
+            )
+            XCTFail("A selection with a missing original must stop before remote upload work")
+        } catch PanoramaxUploadClient.UploadError.missingOriginals(let count) {
+            XCTAssertEqual(count, 1)
+        }
+
+        XCTAssertEqual(try store.getBatch(batch.batchID), before)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(store.originalURL(for: available)).path))
+    }
+
+    func testPanoramaxUploadPreflightDoesNotRequireAcceptedOrUnselectedOriginals() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "resume-without-originals")
+        let accepted = try addPanoramaxTestItem(store: store, batch: batch, itemID: "accepted", state: .uploaded)
+        let unselected = try addPanoramaxTestItem(store: store, batch: batch, itemID: "unselected", state: .queued)
+        let available = try addPanoramaxTestItem(store: store, batch: batch, itemID: "available", state: .queued)
+        for item in [accepted, unselected] {
+            try FileManager.default.removeItem(at: XCTUnwrap(store.originalURL(for: item)))
+        }
+
+        try await PanoramaxUploadClient.validateLocalOriginals(
+            store: store, batchID: batch.batchID,
+            selectedItemIDs: [accepted.itemID, available.itemID],
+            localDeletionIntents: PanoramaxLocalDeletionIntentRegistry()
+        )
+        try await PanoramaxUploadClient.validateLocalOriginals(
+            store: store, batchID: batch.batchID, selectedItemIDs: [],
+            localDeletionIntents: PanoramaxLocalDeletionIntentRegistry()
+        )
+    }
+
+    func testPanoramaxUploadPreflightRespectsAuthoritativeLocalDeletion() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "preflight-deletion")
+        let pending = try addPanoramaxTestItem(store: store, batch: batch, itemID: "pending-delete", state: .queued)
+        let deleted = try addPanoramaxTestItem(store: store, batch: batch, itemID: "deleted", state: .queued)
+        let available = try addPanoramaxTestItem(store: store, batch: batch, itemID: "available", state: .queued)
+        let intents = PanoramaxLocalDeletionIntentRegistry()
+        intents.mark(batchID: batch.batchID, itemIDs: [pending.itemID])
+        try FileManager.default.removeItem(at: XCTUnwrap(store.originalURL(for: pending)))
+        _ = try store.deleteItem(batchID: batch.batchID, itemID: deleted.itemID)
+
+        try await PanoramaxUploadClient.validateLocalOriginals(
+            store: store, batchID: batch.batchID,
+            selectedItemIDs: [pending.itemID, deleted.itemID, available.itemID],
+            localDeletionIntents: intents
+        )
+        XCTAssertEqual(try store.getBatch(batch.batchID)?.items.map(\.itemID), [pending.itemID, available.itemID])
+    }
+
     func testPanoramaxUploadProgressUsesItemCounts() {
         XCTAssertEqual(
             PanoramaxUploadProgress(completedItems: 2, totalItems: 5, phase: .uploading).fractionCompleted,
@@ -4269,7 +5176,8 @@ final class SpeedConsumerTests: XCTestCase {
             .uploading
         )
 
-        let stopped = try store.abandonInFlightItems(batchID: batch.batchID)
+        try await PanoramaxQueueMaintenanceExecutor.shared.abandonInFlightItems(store: store, batchID: batch.batchID)
+        let stopped = try XCTUnwrap(store.getBatch(batch.batchID))
         XCTAssertEqual(stopped.items.first?.state, .abandoned)
         let resumedAcceptedUpload = await transport.resumeNextUpload()
         XCTAssertTrue(resumedAcceptedUpload)
@@ -4620,6 +5528,217 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
     @discardableResult
+    func testPanoramaxJournalMakesGrowingCaptureAndStatusWritesLinear() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "linear")
+        let legacyEncoder = JSONEncoder()
+        legacyEncoder.dateEncodingStrategy = .iso8601
+        var legacyBytes: Int64 = Int64(try legacyEncoder.encode(batch).count)
+        for index in 0..<512 {
+            _ = try addPanoramaxTestItem(store: store, batch: batch, itemID: "photo-\(index)")
+            legacyBytes += Int64(try legacyEncoder.encode(XCTUnwrap(store.getBatch(batch.batchID))).count)
+        }
+        let capture = store.persistenceStatistics
+        let captured = try XCTUnwrap(store.getBatch(batch.batchID))
+        for item in captured.items {
+            let snapshot = try store.updateItem(batchID: batch.batchID, itemID: item.itemID, state: .uploaded)
+            legacyBytes += Int64(try legacyEncoder.encode(snapshot).count)
+        }
+        let complete = store.persistenceStatistics
+        // Full JSON rewrites would exceed 80 MB for this fixture. Persisting
+        // only item changes with geometric checkpoints keeps both phases small.
+        XCTAssertLessThan(complete.metadataBytesWritten, 4_000_000)
+        XCTAssertLessThan(complete.metadataBytesWritten * 20, legacyBytes)
+        XCTAssertEqual(complete.journalWrites, 1_024)
+        XCTAssertLessThan(complete.checkpointWrites, 20)
+        XCTAssertEqual(complete.snapshotReads, 0)
+        let reopened = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let restored = try XCTUnwrap(reopened.getBatch(batch.batchID))
+        XCTAssertEqual(restored.items.count, 512)
+        XCTAssertTrue(restored.items.allSatisfy { $0.state == .uploaded })
+        print("Panoramax journal IO: capture512=\(capture); capture512+status512=\(complete); legacyFullRewrites=\(legacyBytes)")
+    }
+
+    func testPanoramaxGalleryScanDoesNotEvictHotCaptureBatch() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        for index in 0..<6 { _ = try store.createBatch(captureSessionID: "archived-\(index)") }
+        let hot = try store.createBatch(captureSessionID: "hot")
+        _ = try addPanoramaxTestItem(store: store, batch: hot, itemID: "first")
+        XCTAssertEqual(try store.listBatches().count, 7)
+        let reads = store.persistenceStatistics.snapshotReads
+        _ = try addPanoramaxTestItem(store: store, batch: hot, itemID: "second")
+        XCTAssertEqual(store.persistenceStatistics.snapshotReads, reads)
+        XCTAssertEqual(try store.getBatch(hot.batchID)?.items.count, 2)
+    }
+
+    func testPanoramaxJournalCheckpointSurvivesInterruptedPruning() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "watermark")
+        let item = try addPanoramaxTestItem(store: store, batch: batch, itemID: "original", state: .uploading)
+        let directory = root.appendingPathComponent("Panoramax/batches/\(batch.batchID).journal")
+        let obsolete = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" }.map { ($0, try Data(contentsOf: $0)) }
+        _ = try store.updateItem(batchID: batch.batchID, itemID: item.itemID, state: .uploaded)
+        try store.checkpoint(batchID: batch.batchID)
+        // Simulate process exit after replacing the checkpoint but before
+        // pruning older pending/in-flight records. Known acceptance must win.
+        for (url, bytes) in obsolete { try bytes.write(to: url) }
+        try Data("unfinished".utf8).write(to: directory.appendingPathComponent("00000000000000099999.json.tmp"))
+        let reopened = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        XCTAssertEqual(try reopened.getBatch(batch.batchID)?.items.first?.state, .uploaded)
+        _ = try reopened.updateItemFavorite(batchID: batch.batchID, itemID: item.itemID, isFavorite: true)
+        XCTAssertEqual(try PanoramaxQueueStore(root: root, performStartupMaintenance: false).getBatch(batch.batchID)?.items.first?.isFavorite, true)
+    }
+
+    func testPanoramaxJournalLegacyUpgradeAndMalformedRecordPreserveAssets() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "legacy", createdAt: Date(timeIntervalSince1970: 1_000))
+        let item = try addPanoramaxTestItem(store: store, batch: batch, itemID: "original")
+        try store.checkpoint(batchID: batch.batchID)
+        let file = root.appendingPathComponent("Panoramax/batches/\(batch.batchID).json")
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        object.removeValue(forKey: "_queue_checkpoint")
+        try JSONSerialization.data(withJSONObject: object).write(to: file, options: .atomic)
+        let legacy = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        XCTAssertEqual(try legacy.getBatch(batch.batchID)?.items.first, item)
+        _ = try legacy.updateItem(batchID: batch.batchID, itemID: item.itemID, state: .accepted)
+        let directory = root.appendingPathComponent("Panoramax/batches/\(batch.batchID).journal")
+        let record = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil).first { $0.pathExtension == "json" })
+        try Data("{broken".utf8).write(to: record)
+        let reopened = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        XCTAssertThrowsError(try reopened.getBatch(batch.batchID))
+        let cleanup = reopened.performStartupMaintenanceNow()
+        XCTAssertTrue(cleanup.hasFailures)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(store.originalURL(for: item)).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(store.thumbnailURL(for: item)).path))
+        XCTAssertEqual(cleanup.removedOrphanFileCount, 0)
+    }
+
+    func testPanoramaxJournalPeerStoresSerializeMutationsAndDeletionTombstones() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "concurrent")
+        for index in 0..<64 { _ = try addPanoramaxTestItem(store: store, batch: batch, itemID: "photo-\(index)") }
+        let stale = try XCTUnwrap(store.getBatch(batch.batchID))
+        let peer = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        _ = try peer.getBatch(batch.batchID)
+        DispatchQueue.concurrentPerform(iterations: 64) { index in
+            do {
+                if index % 2 == 0 {
+                    _ = try store.updateItem(batchID: batch.batchID, itemID: "photo-\(index)", state: .accepted)
+                } else {
+                    _ = try peer.updateItemFavorite(batchID: batch.batchID, itemID: "photo-\(index)", isFavorite: true)
+                }
+            } catch { XCTFail("Concurrent queue mutation failed: \(error)") }
+        }
+        let result = try XCTUnwrap(store.getBatch(batch.batchID))
+        for (index, item) in result.items.enumerated() {
+            if index % 2 == 0 { XCTAssertEqual(item.state, .accepted) }
+            else { XCTAssertTrue(item.isFavorite) }
+        }
+        XCTAssertEqual(try peer.getBatch(batch.batchID), result)
+        _ = try peer.deleteItems(batchID: batch.batchID, itemIDs: ["photo-1"])
+        try store.updateBatch(stale)
+        XCTAssertFalse(try XCTUnwrap(PanoramaxQueueStore(root: root, performStartupMaintenance: false).getBatch(batch.batchID)).items.contains { $0.itemID == "photo-1" })
+    }
+
+    func testPanoramaxJournalFirstStoreThroughMissingAliasSharesPeerMutationsAndTombstones() throws {
+        let fileManager = FileManager.default
+        let directory = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? fileManager.removeItem(at: directory) }
+        let target = directory.appendingPathComponent("target", isDirectory: true)
+        try fileManager.createDirectory(at: target, withIntermediateDirectories: true)
+        let alias = directory.appendingPathComponent("alias", isDirectory: true)
+        try fileManager.createSymbolicLink(at: alias, withDestinationURL: target)
+        let missingRoot = alias.appendingPathComponent("new-queue", isDirectory: true)
+        XCTAssertFalse(fileManager.fileExists(atPath: missingRoot.path))
+
+        // The first store creates a missing queue through an ancestor symlink;
+        // subsequent stores encounter an existing directory. These must share
+        // coordination even though Foundation resolves the two paths differently
+        // before creation. This also reproduces physical iPhone /var aliases.
+        let first = try PanoramaxQueueStore(root: missingRoot, performStartupMaintenance: false)
+        let batch = try first.createBatch(captureSessionID: "aliased-root")
+        let item = try addPanoramaxTestItem(store: first, batch: batch, itemID: "photo")
+        let stale = try XCTUnwrap(first.getBatch(batch.batchID))
+        let peer = try PanoramaxQueueStore(
+            root: target.appendingPathComponent("new-queue", isDirectory: true),
+            performStartupMaintenance: false
+        )
+        _ = try peer.getBatch(batch.batchID)
+        _ = try first.updateItem(batchID: batch.batchID, itemID: item.itemID, state: .accepted)
+        _ = try peer.updateItemFavorite(batchID: batch.batchID, itemID: item.itemID, isFavorite: true)
+        let result = try XCTUnwrap(first.getBatch(batch.batchID))
+        XCTAssertEqual(result.items.first?.state, .accepted)
+        XCTAssertEqual(result.items.first?.isFavorite, true)
+        XCTAssertEqual(try peer.getBatch(batch.batchID), result)
+
+        _ = try peer.deleteItems(batchID: batch.batchID, itemIDs: [item.itemID])
+        try first.updateBatch(stale)
+        let reopened = try PanoramaxQueueStore(root: missingRoot, performStartupMaintenance: false)
+        XCTAssertTrue(try XCTUnwrap(reopened.getBatch(batch.batchID)).items.isEmpty,
+                      "An older aliased store must not resurrect a peer's deleted photo.")
+    }
+
+    func testPanoramaxFailedCheckpointKeepsDurableAcceptance() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "checkpoint-failure")
+        let item = try addPanoramaxTestItem(store: store, batch: batch, itemID: "original")
+        let blocked = root.appendingPathComponent("Panoramax/batches/\(batch.batchID).json.tmp")
+        try FileManager.default.createDirectory(at: blocked, withIntermediateDirectories: true)
+        try Data("blocked".utf8).write(to: blocked.appendingPathComponent("blocked"))
+        for index in 0..<128 { _ = try store.updateItemFavorite(batchID: batch.batchID, itemID: item.itemID, isFavorite: index % 2 == 0) }
+        _ = try store.updateItem(batchID: batch.batchID, itemID: item.itemID, state: .accepted)
+        XCTAssertEqual(try PanoramaxQueueStore(root: root, performStartupMaintenance: false).getBatch(batch.batchID)?.items.first?.state, .accepted)
+    }
+
+    @MainActor
+    func testPanoramaxStorageActorSuspendsUIWhileAnotherOperationOwnsQueueLock() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "blocked-lock")
+        let item = try addPanoramaxTestItem(store: store, batch: batch, itemID: "original", state: .uploading)
+        let worker = PanoramaxQueueMaintenanceExecutor()
+        let started = expectation(description: "A background operation owns the store lock")
+        let release = DispatchSemaphore(value: 0)
+        defer { release.signal() }
+        let blocked = Task.detached {
+            try store.mutateBatch(batch.batchID) { _ in
+                started.fulfill()
+                XCTAssertEqual(release.wait(timeout: .now() + 10), .success)
+            }
+        }
+        await fulfillment(of: [started], timeout: 5)
+        let accepted = Task {
+            try await worker.perform(store: store) { store in
+                XCTAssertFalse(Thread.isMainThread)
+                return try store.updateItem(batchID: batch.batchID, itemID: item.itemID, state: .uploaded)
+            }
+        }
+        // Give the actor time to enter the lock. MainActor must still be able
+        // to handle Stop; acceptance persistence deliberately ignores cancel.
+        try await Task.sleep(nanoseconds: 20_000_000)
+        accepted.cancel()
+        release.signal()
+        _ = try await blocked.value
+        _ = try await accepted.value
+        try await worker.abandonInFlightItems(store: store, batchID: batch.batchID)
+        let snapshot = try await worker.perform(store: store) { try $0.getBatch(batch.batchID) }
+        XCTAssertEqual(snapshot?.items.first?.state, .uploaded)
+    }
+
     private func addPanoramaxTestItem(
         store: PanoramaxQueueStore,
         batch: PanoramaxBatchRecord,
@@ -4961,22 +6080,22 @@ final class SpeedConsumerTests: XCTestCase {
         let swissUrbanFine = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: 8,
             rules: switzerland,
-            insideCity: true
+            insideCity: true, postedLimitKmh: 50, isMotorway: false
         )
         let swissRuralFine = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: 8,
             rules: switzerland,
-            insideCity: false
+            insideCity: false, postedLimitKmh: 80, isMotorway: false
         )
         let swissUrbanWithdrawal = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: 22,
             rules: switzerland,
-            insideCity: true
+            insideCity: true, postedLimitKmh: 50, isMotorway: false
         )
         let swissRuralWithdrawal = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: 27,
             rules: switzerland,
-            insideCity: false
+            insideCity: false, postedLimitKmh: 80, isMotorway: false
         )
 
         XCTAssertEqual(swissUrbanFine?.moneyFineEUR, 120)
@@ -5191,6 +6310,89 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(MatcherDebugProfile.m11.matchingModel, .simpleSequenceParticleHeuristic)
         XCTAssertEqual(MatcherDebugProfile.m12.debugLabel, "M12 M11 + 10-fix HMM/Viterbi")
         XCTAssertEqual(MatcherDebugProfile.m12.matchingModel, .simpleSequenceViterbiHeuristic)
+    }
+
+    func testBundleQuickCheckRejectsIntegrityErrorsReturnedAsRows() async throws {
+        let database = FileManager.default.temporaryDirectory.appendingPathComponent("quick-check-\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: database) }
+        try createFixtureV3DB(at: database)
+        let manager = V3BundleManager()
+        try await manager.quickValidateDB(at: database)
+
+        // Corrupt a persisted schema declaration without changing its byte
+        // length. This bypasses iOS SQLite's defensive SQL settings only in the
+        // fixture and leaves a NULL in a column now declared NOT NULL.
+        try executeSQL(at: database, sql: """
+        CREATE TABLE integrity_fixture (value INTEGER         );
+        INSERT INTO integrity_fixture VALUES (NULL);
+        """)
+        var bytes = try Data(contentsOf: database)
+        let declaration = Data("value INTEGER         ".utf8)
+        let corruptedDeclaration = Data("value INTEGER NOT NULL".utf8)
+        XCTAssertEqual(declaration.count, corruptedDeclaration.count)
+        let range = try XCTUnwrap(bytes.range(of: declaration))
+        bytes.replaceSubrange(range, with: corruptedDeclaration)
+        try bytes.write(to: database, options: .atomic)
+        do {
+            try await manager.quickValidateDB(at: database)
+            XCTFail("A successful PRAGMA execution is not evidence of database integrity")
+        } catch ConsumerAppError.sqlite(let detail) {
+            XCTAssertTrue(detail.contains("NULL value in integrity_fixture.value"), detail)
+        }
+        // The explicit fast path for an already verified installed bundle
+        // continues to validate capabilities/schema without repeating integrity work.
+        try await manager.quickValidateDB(at: database, runQuickCheck: false)
+    }
+
+    func testSwitchingRegionsWithSharedReleaseDatesDownloadsTheSelectedDatabase() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        try? fm.removeItem(at: supportDir)
+        let sourceDB = fm.temporaryDirectory.appendingPathComponent("region-switch-\(UUID().uuidString).sqlite")
+        defer {
+            try? fm.removeItem(at: supportDir)
+            try? fm.removeItem(at: sourceDB)
+            MockURLProtocol.responses = [:]
+        }
+        try createFixtureV3DB(at: sourceDB)
+        let initialData = try Data(contentsOf: sourceDB)
+        try executeSQL(at: sourceDB, sql: "CREATE TABLE selected_region_marker (name TEXT); INSERT INTO selected_region_marker VALUES ('PACA');")
+        let selectedData = try Data(contentsOf: sourceDB)
+        XCTAssertNotEqual(initialData.count, selectedData.count)
+        let indexData = Data(#"{"format":"youspeed.v3.delta.index","schema_version":1,"count":0,"entries":[]}"#.utf8)
+        let indexURL = "https://speedconsumer.test/target-index.json"
+        func manifest(region: String, version: String, data: Data, hasDelta: Bool) -> V3BundleManifest {
+            V3BundleManifest(format: "youspeed.v3.bundle.manifest", schemaVersion: 1, variant: "v3",
+                region: region, countryCode: "FRA", bundleVersion: version,
+                createdAtUTC: "2026-07-03T00:00:00Z", minAppVersion: "1.0",
+                db: BundleArtifact(file: "\(region).sqlite", bytes: Int64(data.count), sha256: sha256Hex(data),
+                    url: "https://speedconsumer.test/\(region).sqlite"), dbParts: nil,
+                deltaIndex: hasDelta ? BundleArtifact(file: "target-index.json", bytes: Int64(indexData.count),
+                    sha256: sha256Hex(indexData), url: indexURL) : nil)
+        }
+        let initialURL = URL(string: "https://speedconsumer.test/initial.json")!
+        let selectedURL = URL(string: "https://speedconsumer.test/selected.json")!
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let manager = V3BundleManager(session: URLSession(configuration: config))
+        for version in ["2026-07-03", "2026-07-04"] {
+            MockURLProtocol.responses = [
+                initialURL.absoluteString: (200, try JSONEncoder().encode(manifest(region: "languedoc-roussillon", version: "2026-07-03", data: initialData, hasDelta: false))),
+                "https://speedconsumer.test/languedoc-roussillon.sqlite": (200, initialData),
+                selectedURL.absoluteString: (200, try JSONEncoder().encode(manifest(region: "provence-alpes-cote-d-azur", version: version, data: selectedData, hasDelta: true))),
+                "https://speedconsumer.test/provence-alpes-cote-d-azur.sqlite": (200, selectedData),
+                // Match the observed zero-hop delta on equal dates. A different
+                // region must also work when its delta endpoint is unavailable.
+                indexURL: version == "2026-07-03" ? (200, indexData) : (500, Data()),
+            ]
+            let original = try await manager.syncFromManifestURL(initialURL)
+            let selected = try await manager.syncFromManifestURL(selectedURL)
+            XCTAssertEqual(selected.mode, .fullDownload)
+            XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: selected.dbPath)), selectedData)
+            XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: original.dbPath)), initialData)
+            let active = try await manager.activeState()
+            XCTAssertEqual(active?.region, "provence-alpes-cote-d-azur")
+        }
     }
 
     func testAllConfiguredBundlesSyncAndDeleteViaMockTransport() async throws {
@@ -5631,6 +6833,11 @@ final class SpeedConsumerTests: XCTestCase {
 
         let fallbackRoute = try await manager.resolveLocalBundleRoute(lat: 47.0, lon: 7.0, fallbackDBPath: bwDB.path)
         assertPathEqual(fallbackRoute?.dbPath, bwDB.path)
+        XCTAssertEqual(fallbackRoute?.region, "unknown", "The active DB must not imply local coverage")
+        let outside = try await manager.resolveLocalBundleRoutes(lat: 47.0, lon: 7.0, fallbackDBPath: nil)
+        XCTAssertTrue(outside.isEmpty)
+        let coveredByInactiveBundle = try await manager.resolveLocalBundleRoutes(lat: 48.5, lon: 11.5, fallbackDBPath: bwDB.path)
+        XCTAssertEqual(coveredByInactiveBundle.map(\.region), ["deu-by"])
     }
 
     func testResolveLocalBundleRouteUsesEmbeddedCoveragePolysWhenDownloadedPolyMissing() async throws {
@@ -5881,6 +7088,98 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(Set(candidates.map(\.region)), Set(["broad", "narrow"]))
     }
 
+    func testRepairedBundleVersionReplacesOlderCoverageEvenWhenOldBBoxIsSmaller() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let bundlesRoot = supportDir.appendingPathComponent("bundles", isDirectory: true)
+        let broadDir = bundlesRoot.appendingPathComponent("broad", isDirectory: true)
+        let narrowDir = bundlesRoot.appendingPathComponent("narrow", isDirectory: true)
+        try fm.createDirectory(at: broadDir, withIntermediateDirectories: true)
+        try fm.createDirectory(at: narrowDir, withIntermediateDirectories: true)
+
+        let broadDB = broadDir.appendingPathComponent("broad.sqlite")
+        let narrowDB = narrowDir.appendingPathComponent("narrow.sqlite")
+        try createFixtureV3DB(at: broadDB)
+        try createFixtureV3DB(at: narrowDB)
+
+        let broadManifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "pilot-region",
+            countryCode: "DEU",
+            bundleVersion: "2026-09-22-fr-pilot-1",
+            createdAtUTC: "2026-03-17T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: broadDB.lastPathComponent,
+                bytes: try fileSize(broadDB),
+                sha256: sha256Hex(try Data(contentsOf: broadDB)),
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: BundleCoverage(
+                bbox: BundleCoverageBBox(minLon: 7.0, minLat: 47.0, maxLon: 10.0, maxLat: 50.0),
+                poly: nil
+            )
+        )
+        let narrowManifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "pilot-region",
+            countryCode: "DEU",
+            bundleVersion: "2026-03-17",
+            createdAtUTC: "2026-03-17T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: narrowDB.lastPathComponent,
+                bytes: try fileSize(narrowDB),
+                sha256: sha256Hex(try Data(contentsOf: narrowDB)),
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: BundleCoverage(
+                bbox: BundleCoverageBBox(minLon: 8.2, minLat: 48.6, maxLon: 8.7, maxLat: 49.0),
+                poly: nil
+            )
+        )
+
+        try JSONEncoder().encode(broadManifest).write(
+            to: broadDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+        try JSONEncoder().encode(narrowManifest).write(
+            to: narrowDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let route = try await manager.resolveLocalBundleRoute(
+            lat: 48.80117,
+            lon: 8.44278,
+            fallbackDBPath: broadDB.path
+        )
+        XCTAssertEqual(route?.region, "pilot-region")
+        assertPathEqual(route?.dbPath, broadDB.path)
+        let candidates = try await manager.resolveLocalBundleRoutes(
+            lat: 48.80117,
+            lon: 8.44278,
+            fallbackDBPath: broadDB.path
+        )
+        XCTAssertEqual(candidates.count, 1)
+        XCTAssertEqual(Set(candidates.map(\.region)), Set(["pilot-region"]))
+    }
+
     func testResolvePenaltyRuleContextUsesManifestCountryAndRulesFile() async throws {
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
@@ -6042,7 +7341,7 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
     @MainActor
-    func testViewModelInitClearsExistingDrivingLogs() throws {
+    func testViewModelInitPreservesExistingDrivingLogs() throws {
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
         if fm.fileExists(atPath: supportDir.path) {
@@ -6060,18 +7359,26 @@ final class SpeedConsumerTests: XCTestCase {
         try Data("{\"stale\":true}\n".utf8).write(to: staleMatchLogURL)
         try Data("{\"stale\":true}\n".utf8).write(to: anotherStaleMatchLogURL)
 
+        let oldTSRLogURL = supportDir.appendingPathComponent("20260312_000427_801_tsr_log.ndjson")
+        try Data("previous TSR evidence\n".utf8).write(to: oldTSRLogURL)
         let viewModel = DriveSessionViewModel()
 
-        XCTAssertEqual(try String(contentsOf: gpsLogURL, encoding: .utf8).components(separatedBy: "\n").first, "fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m,vacc_m,course_deg,status,way_id,street_name,city_name,inside_city,city_source,city_resolve_ms,city_candidate_boundaries,city_containing_boundaries,city_place_candidates,speed_limit_kmh,query_ms,candidate_count,speed_candidate_count,nearest_candidate_m,nearest_speed_candidate_m,error")
-        XCTAssertFalse(fm.fileExists(atPath: staleMatchLogURL.path))
-        XCTAssertFalse(fm.fileExists(atPath: anotherStaleMatchLogURL.path))
+        XCTAssertEqual(try String(contentsOf: gpsLogURL, encoding: .utf8), "stale gps")
+        XCTAssertEqual(try String(contentsOf: staleMatchLogURL, encoding: .utf8), "{\"stale\":true}\n")
+        XCTAssertEqual(try String(contentsOf: anotherStaleMatchLogURL, encoding: .utf8), "{\"stale\":true}\n")
+        XCTAssertEqual(try String(contentsOf: oldTSRLogURL, encoding: .utf8), "previous TSR evidence\n")
 
         let currentMatchLogURL = URL(fileURLWithPath: try XCTUnwrap(
             viewModel.matchLogPath.isEmpty ? nil : viewModel.matchLogPath,
-            "Expected current matcher log path after launch reset"
+            "Expected current matcher log path after launch preparation"
         ))
         XCTAssertTrue(fm.fileExists(atPath: currentMatchLogURL.path))
         XCTAssertEqual(try String(contentsOf: currentMatchLogURL, encoding: .utf8), "")
+        let nextLaunch = DriveSessionViewModel()
+        XCTAssertNotEqual(nextLaunch.matchLogPath, viewModel.matchLogPath)
+        XCTAssertNotEqual(nextLaunch.tsrLogPath, viewModel.tsrLogPath)
+        XCTAssertTrue(fm.fileExists(atPath: currentMatchLogURL.path))
+        XCTAssertEqual(try String(contentsOf: gpsLogURL, encoding: .utf8), "stale gps")
     }
 
     func testFlushLocalContributionStateRemovesLocalCorrectionArtifacts() async throws {
@@ -6501,6 +7808,69 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
     @MainActor
+    func testSecondSpeedCaptureIgnoresPreviousRecognizerCallbacksAndTimeout() async throws {
+        let model = DriveSessionViewModel()
+        try await model.testResetLocalObservationStore()
+        model.speedLimitKmh = 50
+        model.limitWayID = "17721265"
+        model.currentLatitude = 48.797626
+        model.currentLongitude = 8.437309
+        model.activeBundleVersion = "seed"
+
+        let first = model.testBeginSpeedCaptureListening()
+        model.testDeliverSpeedCaptureRecognition(attemptID: first, transcript: "30", isFinal: true)
+        XCTAssertEqual(model.speedCaptureMode, .saving)
+        // Cancelling the native recognizer after a final result emits another callback.
+        model.testDeliverSpeedCaptureRecognition(attemptID: first, error: "Recognition cancelled")
+        model.testDeliverSpeedCaptureRecognition(attemptID: first, transcript: "90", isFinal: true)
+        XCTAssertEqual(model.speedCaptureMode, .saving)
+        try await model.waitForTestSpeedCaptureToBecomeIdle()
+
+        let second = model.testBeginSpeedCaptureListening()
+        XCTAssertEqual(model.testActiveLocalSpeedCorrectionWayID, "17721265")
+        model.testDeliverSpeedCaptureRecognition(attemptID: first, error: "Recognition cancelled")
+        model.testDeliverSpeedCaptureRecognition(attemptID: first, transcript: "90", isFinal: true)
+        model.testDeliverSpeedCaptureTimeout(attemptID: first)
+        XCTAssertEqual(model.speedCaptureMode, .listening)
+        XCTAssertEqual(model.speedCaptureSignText, "?")
+        XCTAssertEqual(model.testSpeedCaptureLatestTranscript, "")
+        // A new partial result also survives a late timeout from the old attempt.
+        model.testDeliverSpeedCaptureRecognition(attemptID: second, transcript: "40")
+        model.testDeliverSpeedCaptureTimeout(attemptID: first)
+        XCTAssertEqual(model.speedCaptureMode, .listening)
+        XCTAssertEqual(model.testSpeedCaptureLatestTranscript, "40")
+        model.testDeliverSpeedCaptureRecognition(attemptID: second, transcript: "40", isFinal: true)
+        try await model.waitForTestSpeedCaptureToBecomeIdle()
+        let saved = try await model.testStoredLocalObservations()
+        XCTAssertEqual(saved.map(\.value), ["40", "30"])
+        XCTAssertEqual(model.speedLimitKmh, 40)
+        try await model.testResetLocalObservationStore()
+    }
+
+    @MainActor
+    func testCancelledSpeedCaptureCannotEndRetryOrDiscardPreviousCorrection() async throws {
+        let model = DriveSessionViewModel()
+        try await model.testResetLocalObservationStore()
+        model.testSetActiveLocalSpeedCorrection(wayID: "17721265", value: "30", numericSpeedKmh: 30)
+        let cancelled = model.testBeginSpeedCaptureListening()
+        model.testCancelSpeedCapture()
+        let retry = model.testBeginSpeedCaptureListening()
+        model.testDeliverSpeedCaptureRecognition(attemptID: cancelled, error: "Recognition cancelled")
+        model.testDeliverSpeedCaptureRecognition(attemptID: cancelled, transcript: "90", isFinal: true)
+        model.testDeliverSpeedCaptureTimeout(attemptID: cancelled)
+        XCTAssertEqual(model.speedCaptureMode, .listening)
+        XCTAssertEqual(model.testActiveLocalSpeedCorrectionWayID, "17721265")
+        // Only the current attempt may time out; an unsuccessful replacement keeps the old limit.
+        model.testDeliverSpeedCaptureTimeout(attemptID: retry)
+        XCTAssertEqual(model.speedCaptureMode, .idle)
+        XCTAssertEqual(model.testActiveLocalSpeedCorrectionWayID, "17721265")
+        model.testDeliverSpeedCaptureRecognition(attemptID: retry, transcript: "90", isFinal: true)
+        let saved = try await model.testStoredLocalObservations()
+        XCTAssertTrue(saved.isEmpty)
+        try await model.testResetLocalObservationStore()
+    }
+
+    @MainActor
     func testSpeedCaptureWalkShowsWalkingPaceLabel() async throws {
         let viewModel = DriveSessionViewModel()
         try await viewModel.testResetLocalObservationStore()
@@ -6525,21 +7895,33 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
     @MainActor
-    func testActiveLocalSpeedCorrectionExpiresOnNextWayID() async throws {
+    func testActiveLocalSpeedCorrectionWaitsForConfirmedRoadDeparture() async throws {
         let viewModel = DriveSessionViewModel()
         try await viewModel.testResetLocalObservationStore()
-
-        viewModel.testSetActiveLocalSpeedCorrection(wayID: "17721265", value: "30", numericSpeedKmh: 30)
-
-        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: nil))
+        let start = Date()
+        viewModel.testSetActiveLocalSpeedCorrection(wayID: "17721265", value: "30", numericSpeedKmh: 30, startedAt: start)
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: nil, timestamp: start), "30")
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721265", timestamp: start.addingTimeInterval(1)), "30")
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721266", timestamp: start.addingTimeInterval(2)), "30")
         XCTAssertEqual(viewModel.testActiveLocalSpeedCorrectionWayID, "17721265")
-
-        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721265"), "30")
-        XCTAssertEqual(viewModel.testActiveLocalSpeedCorrectionWayID, "17721265")
-
-        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721266"))
+        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721266", timestamp: start.addingTimeInterval(10)))
         XCTAssertNil(viewModel.testActiveLocalSpeedCorrectionWayID)
+        try await viewModel.testResetLocalObservationStore()
+    }
 
+    @MainActor
+    func testVoiceCorrectionFollowsRoadReferenceAndExpiresWithoutRefreshingItsAge() async throws {
+        let viewModel = DriveSessionViewModel()
+        try await viewModel.testResetLocalObservationStore()
+        let start = Date()
+        viewModel.testSetActiveLocalSpeedCorrection(wayID: "1", value: "130", numericSpeedKmh: 130, roadIdentity: "ref:A9", startedAt: start)
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "2", ref: "A 9", timestamp: start.addingTimeInterval(30)), "130")
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "3", ref: "A9", timestamp: start.addingTimeInterval(299)), "130")
+        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "3", ref: "A9", timestamp: start.addingTimeInterval(300)))
+        XCTAssertNil(viewModel.testActiveLocalSpeedCorrectionWayID)
+        viewModel.testSetActiveLocalSpeedCorrection(wayID: "1", value: "130", numericSpeedKmh: 130, roadIdentity: "ref:A9", startedAt: start)
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "2", ref: "D19", timestamp: start.addingTimeInterval(1)), "130")
+        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "2", ref: "D19", timestamp: start.addingTimeInterval(9)))
         try await viewModel.testResetLocalObservationStore()
     }
 
@@ -10197,7 +11579,8 @@ final class SpeedConsumerTests: XCTestCase {
             speedKmh: 33.0,
             horizontalAccuracyM: 4.0
         )
-        XCTAssertEqual(baselineResult.wayID, "100")
+        XCTAssertEqual(baselineResult.wayID, "300", "Even the baseline must release a stale reference outside the GPS continuity radius")
+        XCTAssertTrue(baselineResult.selectionTrace.contains { $0.step == "continuity_geometry_release" })
 
         let fallbackResult = try m8.lookupSpeedLimit(
             lat: 52.0000,
@@ -15464,6 +16847,88 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
     private let baseTime = Date(timeIntervalSince1970: 1_788_279_200)
     private let verifiedSHA = String(repeating: "a", count: 64)
 
+
+    func testConfirmedPassageSurvivesNearbySplitOfSameNumberedRoad() throws {
+        let first = makeContext(wayID: "1", groups: [], continuity: false, roadIdentity: "ref:D1555")
+        let next = makeContext(wayID: "2", groups: [], continuity: false, latitude: 48.0001, roadIdentity: "ref:D1555")
+        var finalizer = TrafficSignPassageFinalizer()
+        _ = finalizer.ingest(makeSeen(offset: 0, context: first, confidence: 0.90), sessionGeneration: 1, contextGeneration: 2, calibratedActivationEligible: true)
+        _ = finalizer.ingest(makeSeen(offset: 0.5, context: first, confidence: 0.93, state: .confirmed), sessionGeneration: 1, contextGeneration: 2, calibratedActivationEligible: true)
+        _ = finalizer.ingest(makeMissing(offset: 1, context: next), sessionGeneration: 1, contextGeneration: 2, calibratedActivationEligible: true)
+        let result = finalizer.ingest(makeMissing(offset: 1.5, context: next), sessionGeneration: 1, contextGeneration: 2, calibratedActivationEligible: true)
+        guard case .committed(let passage) = result else { return XCTFail("Confirmed sign must survive an OSM way split: " + String(describing: result)) }
+        XCTAssertTrue(passage.recognitionRouteRelationMemberships.isEmpty, "Do not invent route membership")
+        XCTAssertTrue(passage.isCompatibleWithLatestRoadScope(next, coordinate: nil, timestamp: baseTime.addingTimeInterval(1.5)))
+        var resolver = TrafficSignEffectiveLimitResolver()
+        XCTAssertTrue(resolver.commit(passage, base: makeBase(90)).applied)
+    }
+
+    func testNumberedRoadContinuityRejectsChangedScopeTurnsAndUnverifiedBundles() {
+        let first = makeContext(wayID: "1", groups: [], continuity: false, roadIdentity: "ref:D1555")
+        let invalid = [
+            makeContext(wayID: "2", roadIdentity: "ref:D19"),
+            makeContext(wayID: "2", epoch: 8, roadIdentity: "ref:D1555"),
+            makeContext(wayID: "2", stable: false, roadIdentity: "ref:D1555"),
+            makeContext(wayID: "2", latitude: 48.01, roadIdentity: "ref:D1555"),
+            makeContext(wayID: "2", bundleSHA: String(repeating: "b", count: 64), roadIdentity: "ref:D1555"),
+            makeContext(wayID: "2", useDefaultSHA: false, roadIdentity: "ref:D1555"),
+            makeContext(wayID: "2", roadIdentity: "ref:D1555", heading: 180)
+        ]
+        for next in invalid { XCTAssertFalse(next.continuesSignedRoad(from: first)) }
+        let named = makeContext(wayID: "1", roadIdentity: "name:Main Street")
+        XCTAssertFalse(makeContext(wayID: "2", roadIdentity: "name:Main Street").continuesSignedRoad(from: named))
+    }
+
+    func testUserRecordingPrecedesEveryCameraActionAndReconciliation() {
+        let context = makeContext()
+        let manual = EffectiveSpeedLimitState.base(localValue: "90", bundledSpeedKmh: 130, bundledUnlimited: false)
+        for action in [TrafficSignStructuralAction.postedMaximum(50), .allRestrictionsEnd, .cityEntry("FR"), .cityExit] {
+            var resolver = TrafficSignEffectiveLimitResolver()
+            let outcome = resolver.commit(makePassage(action: action, context: context), base: manual, fallbackSpeedLimitAfterEnd: .numeric(80))
+            XCTAssertFalse(outcome.applied)
+            XCTAssertEqual(outcome.effectiveState.value, .numeric(90))
+            XCTAssertTrue(outcome.effectiveState.isUserCorrection)
+            XCTAssertEqual(resolver.resolve(base: manual, currentContext: context, currentCoordinate: nil, timestamp: baseTime).value, .numeric(90))
+        }
+        var resolver = TrafficSignEffectiveLimitResolver()
+        _ = resolver.commit(makePassage(action: .postedMaximum(50), context: context), base: makeBase(130))
+        XCTAssertEqual(resolver.resolve(base: manual, currentContext: context, currentCoordinate: nil, timestamp: baseTime).value, .numeric(90))
+        XCTAssertNil(resolver.activePassage)
+    }
+
+    func testNationalEndAndCityTransitionsDiscardPreviousPostedLimits() {
+        let context = makeContext()
+        for action in [TrafficSignStructuralAction.maximumSpeedEnd(70), .allRestrictionsEnd, .cityExit] {
+            var resolver = TrafficSignEffectiveLimitResolver()
+            _ = resolver.commit(makePassage(action: .postedMaximum(70), context: context), base: makeBase(70))
+            let ended = resolver.commit(makePassage(action: action, context: context, eventID: "end"), base: makeBase(70), fallbackSpeedLimitAfterEnd: .numeric(130))
+            XCTAssertEqual(ended.effectiveState.value, .numeric(130))
+            XCTAssertEqual(resolver.resolve(base: makeBase(70), currentContext: context, currentCoordinate: nil, timestamp: baseTime).value, .numeric(130))
+        }
+        for country in ["FR", "BE"] {
+            var resolver = TrafficSignEffectiveLimitResolver()
+            _ = resolver.commit(makePassage(action: .postedMaximum(90), context: context), base: makeBase(90))
+            let entered = resolver.commit(makePassage(action: .cityEntry(country), context: context, eventID: "city"), base: makeBase(90), fallbackSpeedLimitAfterEnd: .numeric(50))
+            XCTAssertEqual(entered.effectiveState.value, .numeric(50))
+        }
+    }
+
+    func testRoadDefaultsUseCountryRegionAndKnownRoadContext() throws {
+        XCTAssertEqual(TrafficSignRoadDefaultPolicy.speedKmh(country: "FR", region: nil, highway: "motorway", insideCity: nil), 130)
+        XCTAssertEqual(TrafficSignRoadDefaultPolicy.speedKmh(country: "CH", region: nil, highway: "motorway", insideCity: nil), 120)
+        XCTAssertEqual(TrafficSignRoadDefaultPolicy.speedKmh(country: "CH", region: nil, highway: "trunk", insideCity: false), 100)
+        XCTAssertEqual(TrafficSignRoadDefaultPolicy.speedKmh(country: "BE", region: "BE-VLG", highway: "secondary", insideCity: false), 70)
+        XCTAssertEqual(TrafficSignRoadDefaultPolicy.speedKmh(country: "BE", region: "BE-WAL", highway: "secondary", insideCity: false), 90)
+        XCTAssertEqual(TrafficSignRoadDefaultPolicy.speedKmh(country: "BE", region: "BE-BRU", highway: "residential", insideCity: true), 30)
+        XCTAssertNil(TrafficSignRoadDefaultPolicy.speedKmh(country: "NL", region: nil, highway: "motorway", insideCity: nil))
+        XCTAssertNil(TrafficSignRoadDefaultPolicy.speedKmh(country: "BE", region: nil, highway: "secondary", insideCity: false))
+        let regions = try XCTUnwrap(SpeedRegulationRegions.bundled)
+        XCTAssertEqual(regions.region(latitude: 51.1212, longitude: 5.6473), "BE-VLG")
+        XCTAssertEqual(regions.region(latitude: 49.55, longitude: 5.50), "BE-WAL")
+        XCTAssertEqual(regions.region(latitude: 50.85, longitude: 4.35), "BE-BRU")
+        XCTAssertNil(regions.region(latitude: 43.95, longitude: 4.80))
+    }
+
     func testRepeatedTrackCommitsOnSecondMissingFrameAndFreezesFirstBoundary() throws {
         var finalizer = TrafficSignPassageFinalizer()
         let context = makeContext()
@@ -16242,6 +17707,120 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             timestamp: baseTime.addingTimeInterval(6), coordinate: coordinate))
     }
 
+    func testLastKnownPresentationPreservesLatestValueAcrossMissingRoadAndEnd() {
+        var cache = LastKnownSpeedLimitPresentation()
+        XCTAssertEqual(cache.present(.none), .none)
+        let voice = EffectiveSpeedLimitState.base(localValue: "70", bundledSpeedKmh: 50, bundledUnlimited: false)
+        XCTAssertEqual(cache.present(voice), voice)
+        for _ in 0..<1000 {
+            let stale = cache.present(.none)
+            XCTAssertEqual(stale.value, .numeric(70))
+            XCTAssertEqual(stale.source, .lastKnown)
+            XCTAssertFalse(stale.isUserCorrection)
+            XCTAssertFalse(stale.hasCameraEvidenceMarker)
+        }
+        let camera = EffectiveSpeedLimitState(value: .numeric(30), source: .camera,
+            presentationReason: "camera", hasCameraEvidenceMarker: true)
+        XCTAssertEqual(cache.present(camera), camera)
+        let end = EffectiveSpeedLimitState(value: .unknown, source: .none,
+            presentationReason: "end_unknown", hasCameraEvidenceMarker: true)
+        XCTAssertEqual(cache.present(end).value, .numeric(30))
+        for value in [EffectiveSpeedLimitValue.walk, .unlimited] {
+            _ = cache.present(EffectiveSpeedLimitState(value: value, source: .bundle,
+                presentationReason: "map", hasCameraEvidenceMarker: false))
+            XCTAssertEqual(cache.present(.none).value, value)
+        }
+        cache.reset()
+        XCTAssertEqual(cache.present(.none), .none)
+    }
+
+    @MainActor
+    func testUnknownMapRetainsCameraLimitInGreyWithoutWarnings() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .postedMaximum(30), context: context))
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: nil)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .camera, "Missing bundle data cannot override a current camera assertion")
+        model.testAdvanceSpeedReferenceDistance(5_000)
+        XCTAssertEqual(model.speedLimitKmh, 30)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown)
+        XCTAssertFalse(model.effectiveSpeedLimitState.hasCameraEvidenceMarker)
+        model.currentSpeedKmh = 80
+        XCTAssertEqual(model.currentOverspeedKmh, 0)
+        XCTAssertNil(model.currentPenaltyNotice)
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 70)
+        XCTAssertEqual(model.speedLimitKmh, 70)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+    }
+
+    @MainActor
+    func testAppliedZoneEndCannotLeaveTheEnclosingCameraRuleAuthoritative() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .zoneStart(30), context: context))
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .camera)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .zoneEnd(30), context: context))
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown)
+        model.currentSpeedKmh = 80
+        XCTAssertEqual(model.currentOverspeedKmh, 0)
+        XCTAssertNil(model.currentPenaltyNotice)
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+        XCTAssertEqual(model.speedLimitKmh, 50)
+    }
+
+    @MainActor
+    func testUnresolvedEndCannotRepeatedlyClearSuccessfulRoadMatches() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 80)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .maximumSpeedEnd(30), context: context))
+        for _ in 0..<10 {
+            model.testRefreshRoadPreservingTrafficSignAssertion()
+            XCTAssertEqual(model.speedLimitKmh, 80)
+            XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+        }
+    }
+
+    @MainActor
+    func testDisregardVisionReturnsToRoadAndClearsCameraMemory() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 80)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .postedMaximum(30), context: context))
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .camera)
+        model.disregardVision()
+        XCTAssertEqual(model.speedLimitKmh, 80)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: nil)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .postedMaximum(30), context: context, eventID: "new"))
+        model.disregardVision()
+        XCTAssertNotEqual(model.speedLimitKmh, 30)
+        XCTAssertFalse(model.effectiveSpeedLimitState.hasCameraEvidenceMarker)
+    }
+
+    @MainActor
+    func testMapAndCameraUpdatesCannotReplaceActiveVoiceCapturePresentation() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        let attempt = model.testBeginSpeedCaptureListening()
+        let prompt = model.speedCapturePrimaryMetricText
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        XCTAssertEqual(model.speedCaptureMode, .listening)
+        XCTAssertEqual(model.speedCaptureSignText, "?")
+        XCTAssertEqual(model.speedCapturePrimaryMetricText, prompt)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .postedMaximum(30), context: context))
+        XCTAssertEqual(model.effectiveSpeedLimitState.value, .numeric(30))
+        XCTAssertEqual(model.speedCaptureMode, .listening)
+        XCTAssertEqual(model.speedCaptureSignText, "?")
+        XCTAssertEqual(model.speedCapturePrimaryMetricText, prompt)
+        model.testDeliverSpeedCaptureRecognition(attemptID: attempt, transcript: "40")
+        XCTAssertEqual(model.testSpeedCaptureLatestTranscript, "40")
+        model.testCancelSpeedCapture()
+    }
+
     @MainActor
     func testSettlementCameraThirtySurvivesShortUnknownAndLowConfidenceGaps() {
         let model = DriveSessionViewModel()
@@ -16271,8 +17850,11 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             timestamp: baseTime.addingTimeInterval(9), coordinate: coordinate))
         XCTAssertFalse(model.testHasActiveTrafficSignPassage,
             "A confirmed city exit must clear the camera assertion")
-        XCTAssertEqual(model.effectiveSpeedLimitState.value, .numeric(50),
-            "A city exit must expose the current database/base limit")
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown,
+            "Old-scope database evidence must await a fresh lookup after the city boundary")
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        XCTAssertEqual(model.effectiveSpeedLimitState.value, .numeric(50))
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
         XCTAssertFalse(model.testApplySettlementContext(insideCity: true, source: "settlement:landuse:low",
             timestamp: baseTime.addingTimeInterval(10), coordinate: coordinate))
         XCTAssertTrue(model.testApplySettlementContext(insideCity: true, source: high,
@@ -16656,8 +18238,8 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             base: makeBase(80)
         )
         XCTAssertEqual(matchingSpeedEnd.effectiveState.value, .numeric(50), "City entry survives the end of a posted speed")
-        XCTAssertFalse(resolver.commit(
-            makePassage(action: .cityEntry("FR"), context: verified, eventID: "unsupported-city-default"),
+        XCTAssertTrue(resolver.commit(
+            makePassage(action: .cityEntry("FR"), context: verified, eventID: "french-city-default"),
             base: makeBase(80)
         ).applied)
         XCTAssertEqual(
@@ -16948,7 +18530,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             wayID: "91002",
             direction: .backward
         )
-        XCTAssertEqual(latestBackward?.value, "70")
+        XCTAssertEqual(latestBackward?.value, "40", "An older user recording outranks a newer camera observation")
     }
 
     func testBulkExportRetainsManualLocalOnlyCompatibilityButRequiresCameraApproval() async throws {
@@ -17311,7 +18893,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
     }
 
     @MainActor
-    func testPersistedDirectionalCameraCorrectionBecomesBaseWithoutDisplacingCamera() async throws {
+    func testPersistedDirectionalCameraEvidenceCannotReviveExpiredRuntimeLimit() async throws {
         let viewModel = DriveSessionViewModel()
         try await viewModel.testWaitForStartupDataLoad()
         try await viewModel.testResetLocalObservationStore()
@@ -17346,16 +18928,15 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             "70",
             "Stored row was rejected: \(stored); evidence=\(evidenceDiagnostic)"
         )
-        // Refreshing the durable base must not displace the higher-priority
-        // active camera assertion.
+        // Saving evidence must not displace the active camera assertion.
         XCTAssertEqual(viewModel.effectiveSpeedLimitState.source, .camera)
         XCTAssertEqual(viewModel.effectiveSpeedLimitState.value, .numeric(70))
 
-        // Disabling TSR clears only the transient assertion. The just-written
-        // directional local correction is already installed underneath it.
+        // Once the runtime assertion is cleared, archived camera evidence must
+        // not reinstall the expired sign as an indefinite local correction.
         viewModel.testClearTrafficSignAssertionKeepingCurrentBase()
-        XCTAssertEqual(viewModel.effectiveSpeedLimitState.source, .localCorrection)
-        XCTAssertEqual(viewModel.effectiveSpeedLimitState.value, .numeric(70))
+        XCTAssertEqual(viewModel.effectiveSpeedLimitState.source, .bundle)
+        XCTAssertEqual(viewModel.effectiveSpeedLimitState.value, .numeric(50))
         try await viewModel.testResetLocalObservationStore()
     }
 
@@ -17468,6 +19049,33 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         )
     }
 
+    func testCoveringBundleExcludesForeignActiveRouteBeforeRoadEvidence() {
+        let covering = LocalBundleRoute(region: "france/rhone-alpes", bundleVersion: "v1",
+            countryCode: "FRA", dbPath: "/ra.sqlite")
+        let active = LocalBundleRoute(region: "switzerland", bundleVersion: "v2",
+            countryCode: "CHE", dbPath: "/ch.sqlite")
+        // The Lyon fix can have no road within the selected matcher's radius.
+        // An outside incumbent must never compete, even if it reports a road.
+        for outsideHasRoad in [false, true] {
+            let probes = [
+                BundleRouteProbe(route: covering, hasWayMatch: false, hasSpeedMatch: false,
+                    nearestCandidateDistanceM: nil, nearestSpeedCandidateDistanceM: nil),
+                BundleRouteProbe(route: active, hasWayMatch: outsideHasRoad, hasSpeedMatch: outsideHasRoad,
+                    nearestCandidateDistanceM: nil, nearestSpeedCandidateDistanceM: nil)
+            ]
+            XCTAssertEqual(BundleRouteSelection.choose(probes: probes, currentDBPath: active.dbPath, coveringRoutes: [covering]), covering)
+        }
+    }
+
+    func testBundleRouteCoverageGapNeverUsesActiveDatabase() {
+        let active = LocalBundleRoute(region: "switzerland", bundleVersion: "v2",
+            countryCode: "CHE", dbPath: "/ch.sqlite", dbSHA256: String(repeating: "a", count: 64))
+        let probe = BundleRouteProbe(route: active, hasWayMatch: true, hasSpeedMatch: true,
+            nearestCandidateDistanceM: 0, nearestSpeedCandidateDistanceM: 0)
+        XCTAssertNil(BundleRouteSelection.choose(probes: [probe], currentDBPath: active.dbPath, coveringRoutes: []))
+        XCTAssertNil(BundleRouteSelection.choose(probes: [], currentDBPath: nil, coveringRoutes: []))
+    }
+
     func testOverlappingBundleRouteKeepsCurrentOnTieAndSwitchesToOnlyRoadMatch() {
         let current = LocalBundleRoute(
             region: "germany/rheinland-pfalz",
@@ -17496,7 +19104,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             nearestSpeedCandidateDistanceM: 20
         )
         XCTAssertEqual(
-            BundleRouteSelection.choose(probes: [currentProbe, tiedAlternate], currentDBPath: current.dbPath),
+            BundleRouteSelection.choose(probes: [currentProbe, tiedAlternate], currentDBPath: current.dbPath, coveringRoutes: [current, alternate]),
             current
         )
         let noWayCurrent = BundleRouteProbe(
@@ -17507,7 +19115,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             nearestSpeedCandidateDistanceM: nil
         )
         XCTAssertEqual(
-            BundleRouteSelection.choose(probes: [noWayCurrent, tiedAlternate], currentDBPath: current.dbPath),
+            BundleRouteSelection.choose(probes: [noWayCurrent, tiedAlternate], currentDBPath: current.dbPath, coveringRoutes: [current, alternate]),
             alternate
         )
     }
@@ -17576,6 +19184,66 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         )
     }
 
+    func testFrenchDefaultsAndStrictSpeedTags() {
+        XCTAssertEqual(RoadSpeedDefaults.symbolicSpeed("FR:rural", country: "FRA"), 80)
+        XCTAssertEqual(RoadSpeedDefaults.symbolicSpeed("FR:urban", country: "FR"), 50)
+        XCTAssertEqual(RoadSpeedDefaults.speedKmh(country: "FR", region: nil, highway: "secondary", insideCity: false), 80)
+        XCTAssertEqual(RoadSpeedDefaults.speedKmh(country: "FR", region: nil, highway: "secondary", insideCity: true), 50)
+        XCTAssertNil(RoadSpeedDefaults.speedKmh(country: "FR", region: nil, highway: "trunk", insideCity: false))
+        XCTAssertNil(RoadSpeedDefaults.speedKmh(country: "FR", region: nil, highway: "motorway_link", insideCity: false))
+        for value in ["50;70", "50 @ (wet)", "signals", "50/80", "none", "0", "999"] { XCTAssertNil(RoadSpeedDefaults.explicitSpeed(value), value) }
+        XCTAssertEqual(RoadSpeedDefaults.explicitSpeed("50 km/h"), 50)
+        XCTAssertEqual(RoadSpeedDefaults.explicitSpeed("30 mph"), 48)
+        XCTAssertEqual(DrivingRoadIdentity.key(ref: " A 9 ", name: nil, highway: "motorway"), "ref:A9")
+        XCTAssertNotEqual(DrivingRoadIdentity.key(ref: "A9", name: nil, highway: "motorway"), DrivingRoadIdentity.key(ref: "A9", name: nil, highway: "motorway_link"))
+    }
+
+    func testCameraLimitSurvivesWaySplitsButExpiresAfterFiveMinutes() {
+        var resolver = TrafficSignEffectiveLimitResolver()
+        let base = EffectiveSpeedLimitState.base(localValue: nil, bundledSpeedKmh: 130, bundledUnlimited: false)
+        let first = makeContext(wayID: "1", groups: [], continuity: false, roadIdentity: "ref:A9")
+        let next = makeContext(wayID: "2", groups: [], continuity: false, roadIdentity: "ref:A9")
+        let passage = makePassage(action: .postedMaximum(90), context: first)
+        XCTAssertTrue(resolver.commit(passage, base: base).applied)
+        XCTAssertEqual(resolver.resolve(base: base, currentContext: next, currentCoordinate: nil, timestamp: passage.activationTimestampUTC.addingTimeInterval(299)).value, .numeric(90))
+        XCTAssertEqual(resolver.resolve(base: base, currentContext: next, currentCoordinate: nil, timestamp: passage.activationTimestampUTC.addingTimeInterval(300)).value, .numeric(130))
+        XCTAssertNil(resolver.activePassage)
+    }
+
+    func testRoadReferenceChangeClearsCameraEvenWithinSameRouteRelation() {
+        var resolver = TrafficSignEffectiveLimitResolver()
+        let base = EffectiveSpeedLimitState.base(localValue: nil, bundledSpeedKmh: 80, bundledUnlimited: false)
+        let first = makeContext(roadIdentity: "ref:D19")
+        let next = makeContext(wayID: "124", roadIdentity: "ref:D228")
+        _ = resolver.commit(makePassage(action: .postedMaximum(30), context: first), base: base)
+        XCTAssertEqual(resolver.resolve(base: base, currentContext: next, currentCoordinate: nil, timestamp: baseTime.addingTimeInterval(1)), base)
+    }
+
+    func testPostedTimeoutRetainsEnclosingZone() {
+        var resolver = TrafficSignEffectiveLimitResolver()
+        let base = EffectiveSpeedLimitState.base(localValue: nil, bundledSpeedKmh: 80, bundledUnlimited: false)
+        let context = makeContext()
+        _ = resolver.commit(makePassage(action: .zoneStart(30), context: context), base: base)
+        let sign = makePassage(action: .postedMaximum(20), context: context, eventID: "posted", timeOffset: 1)
+        _ = resolver.commit(sign, base: base)
+        XCTAssertEqual(resolver.resolve(base: base, currentContext: context, currentCoordinate: nil, timestamp: sign.activationTimestampUTC.addingTimeInterval(300)).value, .numeric(30))
+    }
+
+    func testSingleStructuralSignRequiresStableContextAndThreeNegativeFrames() {
+        for stable in [true, false] {
+            var finalizer = TrafficSignPassageFinalizer()
+            let context = makeContext(stable: stable)
+            let event = makeEvent(offset: 0, state: .provisional, candidate: makeCandidate(value: nil, confidence: 0.777, semanticKind: TrafficSignSemanticKind.restrictionEnd.rawValue, rawClassID: "b31"), context: context)
+            _ = finalizer.ingest(event, sessionGeneration: 1, contextGeneration: 1, calibratedActivationEligible: true)
+            for index in 1...2 {
+                let early = finalizer.ingest(makeMissing(offset: Double(index) * 0.2, context: context), sessionGeneration: 1, contextGeneration: 1, calibratedActivationEligible: true)
+                if case .committed = early { XCTFail("Structural end committed before three analyzed negative frames") }
+            }
+            let final = finalizer.ingest(makeMissing(offset: 0.6, context: context), sessionGeneration: 1, contextGeneration: 1, calibratedActivationEligible: true)
+            if case .committed = final { XCTAssertTrue(stable) } else { XCTAssertFalse(stable) }
+        }
+    }
+
     private func makeContext(
         wayID: String = "123",
         direction: TrafficSignTravelDirection = .forward,
@@ -17586,14 +19254,16 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         latitude: Double = 48,
         longitude: Double = 8,
         bundleSHA: String? = nil,
-        useDefaultSHA: Bool = true
+        useDefaultSHA: Bool = true,
+        roadIdentity: String? = nil,
+        heading: Double = 90
     ) -> TrafficSignDetectionContext {
         let sha = useDefaultSHA ? (bundleSHA ?? verifiedSHA) : bundleSHA
         return TrafficSignDetectionContext(
             wayId: wayID,
             latitude: latitude,
             longitude: longitude,
-            headingDegrees: 90,
+            headingDegrees: heading,
             travelDirection: direction,
             sourceSignature: TrafficSignRuntimeSourceSignature(
                 osmRevision: "bundle:test|way:\(wayID)",
@@ -17605,7 +19275,8 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
                 TrafficSignRouteRelationMembership(groupID: $0, sourceRelationID: Int64($0 + 1_000))
             },
             traversalEpoch: epoch,
-            matchedWayStable: stable
+            matchedWayStable: stable,
+            roadIdentity: roadIdentity
         )
     }
 
@@ -18679,6 +20350,41 @@ final class TrafficSignShadowRuntimeV2Tests: XCTestCase {
             localCorrectionSpeedKmh: 60,
             currentContext: context
         ), 50)
+    }
+
+    func testDebugLoggingOffPreventsQAFilesAndStopsPendingEventWrites() throws {
+        let suite = "qa-logging-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer {
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: root)
+        }
+        let gate = DebugLogPersistence(defaults: defaults)
+        gate.setEnabled(false)
+        let store = try TrafficSignShadowEvidenceStoreV2(rootURL: root,
+            minimumCaptureInterval: 0, debugLogPersistence: gate)
+        let runtime = try makeRuntime(captureSink: store, qaSink: store, calibrationPassed: false)
+        let group = "logging-test"
+        store.stageFrame(eventId: "disabled", captureGroupId: group,
+            diagnosticCaptureEnabled: true, jpegProvider: { Data([1]) })
+        let disabled = try runtime.process(makeFrameInput(eventID: "disabled", readablePlate: false))
+        XCTAssertEqual(disabled.diagnosticCapture.status, .notRequested)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.path))
+
+        gate.setEnabled(true)
+        store.stageFrame(eventId: "enabled", captureGroupId: group,
+            diagnosticCaptureEnabled: true, jpegProvider: { Data([1]) })
+        let enabled = try runtime.process(makeFrameInput(eventID: "enabled", readablePlate: false))
+        XCTAssertEqual(enabled.diagnosticCapture.status, .persisted)
+        let events = try XCTUnwrap(store.eventsURL(captureGroupId: group))
+        let saved = try Data(contentsOf: events)
+        store.stageFrame(eventId: "pending", captureGroupId: group,
+            diagnosticCaptureEnabled: true, jpegProvider: { Data([1]) })
+        gate.setEnabled(false)
+        let pending = try runtime.process(makeFrameInput(eventID: "pending", readablePlate: false))
+        XCTAssertEqual(pending.diagnosticCapture.status, .notRequested)
+        XCTAssertEqual(try Data(contentsOf: events), saved)
     }
 
     func testLocalEvidenceStoreHonorsCaptureGateAndUpdatesSessionMetadata() throws {
@@ -19790,5 +21496,188 @@ extension SpeedConsumerTests {
             source: "settlement:landuse:low"), "The old confirmed locality must not trigger a warning for the new weak context")
         XCTAssertNil(model.currentPenaltyNotice?.drivingBanMonths)
         XCTAssertEqual(model.lastLookupInsideCity, true)
+    }
+}
+
+/// Real AVFoundation stills in an isolated queue. Movement is synthetic because
+/// an attached stationary phone cannot satisfy Panoramax's GPS-distance rule.
+@MainActor
+final class PhysicalCameraSettingsContinuityTests: XCTestCase {
+    func testRealPhotosContinueAcrossSettingsMapPauseWithIsolatedStorage() async throws {
+#if targetEnvironment(simulator)
+        throw XCTSkip("Requires the physical iPhone camera and an authorized GPS fix")
+#else
+        guard ProcessInfo.processInfo.environment["YOUSPEED_RUN_PHYSICAL_CAMERA_TEST"] == "1" else {
+            throw XCTSkip("Explicit physical-camera test opt-in is required")
+        }
+        guard let restoreAudio = ProcessInfo.processInfo.environment["YOUSPEED_TEST_RESTORE_AUDIO_ALERTS"],
+              ["true", "false", "absent"].contains(restoreAudio) else {
+            throw XCTSkip("A pre-launch audio preference snapshot (true, false, or absent) is required")
+        }
+        addTeardownBlock {
+            let defaults = UserDefaults.standard
+            let key = "youspeed.audio_alerts_enabled"
+            if restoreAudio == "absent" {
+                defaults.removeObject(forKey: key)
+            } else {
+                defaults.set(restoreAudio == "true", forKey: key)
+            }
+            XCTAssertTrue(defaults.synchronize(), "Persist the exact pre-launch audio preference")
+            let domain = try XCTUnwrap(Bundle.main.bundleIdentifier)
+            let restored = defaults.persistentDomain(forName: domain)?[key]
+            if restoreAudio == "absent" {
+                XCTAssertNil(restored)
+            } else {
+                XCTAssertEqual(restored as? Bool, restoreAudio == "true")
+            }
+        }
+        guard AppScreenshotState.current() == .cameraLimitActive else {
+            throw XCTSkip("Requires the camera-limit-active host fixture to isolate the real camera session")
+        }
+        guard AVCaptureDevice.authorizationStatus(for: .video) == .authorized else {
+            throw XCTSkip("Camera permission must already be granted; this test does not change permissions")
+        }
+        guard CLLocationManager.locationServicesEnabled() else {
+            throw XCTSkip("Location services are unavailable")
+        }
+        let manager = CLLocationManager()
+        guard manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways else {
+            throw XCTSkip("Location permission must already be granted")
+        }
+        let locationDelegate = OneShotLocationDelegate()
+        manager.delegate = locationDelegate
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        let locationReceived = expectation(description: "Receive device Core Location anchor")
+        var locationResult: Result<CLLocation, Error>?
+        locationDelegate.onResult = {
+            locationResult = $0
+            locationReceived.fulfill()
+        }
+        manager.requestLocation()
+        await fulfillment(of: [locationReceived], timeout: 20)
+        manager.delegate = nil
+        let anchor = try XCTUnwrap(locationResult, "No Core Location anchor was received").get()
+        XCTAssertTrue(CLLocationCoordinate2DIsValid(anchor.coordinate))
+        XCTAssertGreaterThanOrEqual(anchor.horizontalAccuracy, 0)
+        XCTAssertLessThanOrEqual(abs(anchor.timestamp.timeIntervalSinceNow), 30,
+            "The device GPS anchor must be current, not a cached historical fix")
+
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("physical-camera-settings-\(UUID().uuidString)", isDirectory: true)
+        let store = try PanoramaxQueueStore(root: root)
+        let capture = DriveCaptureCoordinator(queueStore: store)
+        // No movie output: movie completion uses the user's global retention
+        // directory. This test only owns JPEGs under its unique temporary root.
+        capture.updatePanoramaxConfiguration(
+            PanoramaxCadenceConfiguration(distanceMeters: 25, fallbackInterval: 0,
+                maxLocationAge: 10, maxAccuracyMeters: 50, triggerMode: .distance),
+            storageLimitBytes: nil
+        )
+        addTeardownBlock { @MainActor in
+            capture.stop()
+            let deadline = Date().addingTimeInterval(18)
+            while Date() < deadline {
+                let batches = try? store.listBatches()
+                let queueClosed = batches?.allSatisfy { $0.state != .capturing } ?? false
+                if capture.state != .preparing && capture.state != .recording && capture.state != .stopping && queueClosed {
+                    try? FileManager.default.removeItem(at: root)
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+            XCTFail("Isolated camera session did not stop; retained only its temporary test directory")
+        }
+        capture.start(dashcamEnabled: false, trafficSignRecognitionEnabled: false, panoramaxEnabled: true)
+        try await waitForPhysicalCameraCondition("Camera recording state: \(capture.lastCaptureDetail)") {
+            capture.state == .recording
+        }
+        let sessionID = try XCTUnwrap(capture.activeCaptureSessionID)
+        let startedAt = try XCTUnwrap(capture.startedAt)
+        XCTAssertTrue(capture.isPanoramaxModuleActive)
+        XCTAssertNil(capture.dashcamFileURL)
+
+        let worker = LatestPendingLookupWorker()
+        var pause = MapLookupPauseState()
+        let mapStarted = expectation(description: "A pre-Settings map query is blocked")
+        var releaseMap: CheckedContinuation<Void, Never>?
+        var publishedMapResults: [Int] = []
+        worker.submit { token in
+            mapStarted.fulfill()
+            await withCheckedContinuation { releaseMap = $0 }
+            if token.isCurrent { publishedMapResults.append(0) }
+        }
+        await fulfillment(of: [mapStarted], timeout: 2)
+        defer { releaseMap?.resume(); releaseMap = nil; worker.cancel() }
+
+        for phase in 0...2 {
+            if phase == 1 {
+                pause.settingsPresented = true
+                worker.setPaused(pause.isPaused)
+                worker.submit { _ in XCTFail("A map fix ran while Settings was open") }
+            } else if phase == 2 {
+                releaseMap?.resume()
+                releaseMap = nil
+                await worker.waitUntilIdle()
+                XCTAssertTrue(publishedMapResults.isEmpty, "A pre-Settings result must stay invalid")
+                pause.settingsPresented = false
+                worker.setPaused(pause.isPaused)
+                worker.submit { token in
+                    if token.isCurrent { publishedMapResults.append(2) }
+                }
+                await worker.waitUntilIdle()
+            }
+            // Core Location supplies the anchor. Explicit synthetic motion and speed
+            // exercise production cadence while the connected phone stays still.
+            let coordinate = CLLocationCoordinate2D(
+                latitude: anchor.coordinate.latitude + Double(phase) * 0.002,
+                longitude: anchor.coordinate.longitude
+            )
+            let fix = CLLocation(coordinate: coordinate, altitude: anchor.altitude,
+                horizontalAccuracy: 5, verticalAccuracy: 5, course: 0,
+                speed: 8, timestamp: Date())
+            capture.ingest(location: fix, speedMetersPerSecond: 8)
+            try await waitForPhysicalCameraCondition("Persist real JPEG for phase \(phase)") {
+                capture.capturedImageCount == phase + 1
+            }
+            XCTAssertEqual(capture.state, .recording)
+            XCTAssertEqual(capture.activeCaptureSessionID, sessionID)
+            XCTAssertEqual(capture.startedAt, startedAt, "Settings must not restart the camera")
+            let batch = try XCTUnwrap(store.listBatches().first)
+            XCTAssertEqual(batch.items.count, phase + 1)
+            let item = try XCTUnwrap(batch.items.last)
+            XCTAssertEqual(item.metadata.captureSessionID, sessionID)
+            XCTAssertEqual(item.metadata.location.latitude, coordinate.latitude, accuracy: 0.000001)
+            XCTAssertEqual(item.metadata.location.longitude, coordinate.longitude, accuracy: 0.000001)
+            let original = try XCTUnwrap(store.originalURL(for: item))
+            XCTAssertTrue(original.resolvingSymlinksInPath().standardizedFileURL.path.hasPrefix(
+                root.resolvingSymlinksInPath().standardizedFileURL.path + "/"))
+            let source = try XCTUnwrap(CGImageSourceCreateWithURL(original as CFURL, nil))
+            let decoded = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
+            XCTAssertGreaterThan(decoded.width, 0)
+            XCTAssertGreaterThan(decoded.height, 0)
+        }
+        XCTAssertEqual(publishedMapResults, [2])
+        let anchorSource = anchor.sourceInformation.map {
+            "simulated_by_software=\($0.isSimulatedBySoftware) produced_by_accessory=\($0.isProducedByAccessory)"
+        } ?? "source_information=unavailable"
+        let evidence = XCTAttachment(string: "Host isolation: existing camera-limit-active screenshot fixture; live Settings UI is tested separately without that fixture. Independent real AVFoundation camera: 3 decoded JPEGs; same capture session before/during/after production Settings map pause. Core Location anchor: \(anchorSource); explicit synthetic movement and speed. Isolated temporary Panoramax queue; no movie recording or upload. Teardown restores the host fixture's audio preference to the exact pre-launch snapshot.")
+        evidence.name = "physical-camera-settings-continuity.txt"
+        evidence.lifetime = .keepAlways
+        add(evidence)
+#endif
+    }
+
+    private func waitForPhysicalCameraCondition(
+        _ detail: String,
+        condition: @MainActor () -> Bool
+    ) async throws {
+        let deadline = Date().addingTimeInterval(18)
+        while !condition(), Date() < deadline {
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        guard condition() else {
+            throw NSError(domain: "PhysicalCameraSettingsContinuityTests", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: detail])
+        }
     }
 }

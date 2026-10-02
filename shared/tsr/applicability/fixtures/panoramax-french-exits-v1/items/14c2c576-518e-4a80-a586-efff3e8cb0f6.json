@@ -1,0 +1,325 @@
+{
+  "id": "14c2c576-518e-4a80-a586-efff3e8cb0f6",
+  "bbox": [
+    3.264909,
+    45.539589,
+    3.264909,
+    45.539589
+  ],
+  "type": "Feature",
+  "links": [
+    {
+      "rel": "license",
+      "href": "https://alliance.numerique.gouv.fr/licence-ouverte-open-licence/",
+      "title": "License for this object (etalab-2.0)"
+    },
+    {
+      "rel": "self",
+      "href": "https://api.panoramax.xyz/api/collections/574c2057-55b1-4947-a96d-a5d568712cda/items/14c2c576-518e-4a80-a586-efff3e8cb0f6",
+      "type": "application/geo+json"
+    },
+    {
+      "rel": "collection",
+      "href": "https://api.panoramax.xyz/api/collections/574c2057-55b1-4947-a96d-a5d568712cda",
+      "type": "application/json"
+    },
+    {
+      "rel": "parent",
+      "href": "https://api.panoramax.xyz/api/collections/574c2057-55b1-4947-a96d-a5d568712cda",
+      "type": "application/json"
+    },
+    {
+      "rel": "root",
+      "href": "https://api.panoramax.xyz/api",
+      "type": "application/json",
+      "title": "Instance catalog"
+    },
+    {
+      "rel": "prev",
+      "href": "https://api.panoramax.xyz/api/collections/574c2057-55b1-4947-a96d-a5d568712cda/items/2c507c16-7627-4ec0-a739-6cba642beb2e",
+      "type": "application/geo+json",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.264866,
+          45.539556
+        ]
+      },
+      "id": "2c507c16-7627-4ec0-a739-6cba642beb2e"
+    },
+    {
+      "rel": "next",
+      "href": "https://api.panoramax.xyz/api/collections/574c2057-55b1-4947-a96d-a5d568712cda/items/ffa80d79-0a14-4cb4-99b7-fcdc9a29a173",
+      "type": "application/geo+json",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.264952,
+          45.539623
+        ]
+      },
+      "id": "ffa80d79-0a14-4cb4-99b7-fcdc9a29a173"
+    },
+    {
+      "rel": "via",
+      "href": "https://panoramax.ign.fr",
+      "type": "application/json",
+      "title": "Link to the original instance",
+      "instance_name": "ign"
+    }
+  ],
+  "assets": {
+    "hd": {
+      "href": "https://panoramax.ign.fr/api/pictures/14c2c576-518e-4a80-a586-efff3e8cb0f6/hd.jpg",
+      "type": "image/jpeg",
+      "roles": [
+        "data"
+      ],
+      "title": "HD picture",
+      "description": "Highest resolution available of this picture"
+    },
+    "sd": {
+      "href": "https://panoramax.ign.fr/api/pictures/14c2c576-518e-4a80-a586-efff3e8cb0f6/sd.jpg",
+      "type": "image/jpeg",
+      "roles": [
+        "visual"
+      ],
+      "title": "SD picture",
+      "description": "Picture in standard definition (fixed width of 2048px)"
+    },
+    "thumb": {
+      "href": "https://panoramax.ign.fr/api/pictures/14c2c576-518e-4a80-a586-efff3e8cb0f6/thumb.jpg",
+      "type": "image/jpeg",
+      "roles": [
+        "thumbnail"
+      ],
+      "title": "Thumbnail",
+      "description": "Picture in low definition (fixed width of 500px)"
+    }
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [
+      3.264909,
+      45.539589
+    ]
+  },
+  "providers": [
+    {
+      "id": "301a1b94-2009-464d-8fa1-ffde07f0be24",
+      "name": "dir-mc",
+      "roles": [
+        "producer"
+      ]
+    },
+    {
+      "name": "DIR-MC",
+      "roles": [
+        "producer"
+      ]
+    }
+  ],
+  "collection": "574c2057-55b1-4947-a96d-a5d568712cda",
+  "properties": {
+    "exif": {
+      "Exif.Image.Model": "AVT Stingray F504C",
+      "Exif.Image.Artist": "DIR-MC",
+      "Exif.Image.GPSTag": "232",
+      "Exif.Image.ExifTag": "126",
+      "Xmp.xmp.CreateDate": "2024-08-22T00:00:00",
+      "Exif.Image.Software": "Ireve stereo processor",
+      "Xmp.xmp.CreatorTool": "Ireve stereo processor",
+      "Xmp.xmpMM.InstanceID": "uuid:faf5bdd5-ba3d-11da-ad31-d33d75182f1b",
+      "Exif.GPSInfo.GPSLatitude": "45539589/1000000 0/1 0/1",
+      "Exif.GPSInfo.GPSLongitude": "3264909/1000000 0/1 0/1",
+      "Exif.Thumbnail.Compression": "6",
+      "Exif.Thumbnail.XResolution": "192/1",
+      "Exif.Thumbnail.YResolution": "192/1",
+      "Exif.GPSInfo.GPSLatitudeRef": "N",
+      "Exif.Photo.DateTimeOriginal": "2024:08:22 00:00:00",
+      "Exif.GPSInfo.GPSLongitudeRef": "E",
+      "Exif.Photo.DateTimeDigitized": "2024:08:22 00:00:00",
+      "Exif.Photo.SubSecTimeOriginal": "39511",
+      "Exif.Thumbnail.ResolutionUnit": "2",
+      "Exif.Photo.SubSecTimeDigitized": "39511",
+      "Exif.Thumbnail.JPEGInterchangeFormat": "428",
+      "Exif.Thumbnail.JPEGInterchangeFormatLength": "8095"
+    },
+    "created": "2026-01-11T15:11:23.746417+00:00",
+    "license": "etalab-2.0",
+    "updated": "2026-01-11T16:29:01.539054+00:00",
+    "datetime": "2024-08-21T22:00:00.395110+00:00",
+    "semantics": [],
+    "collection": {
+      "semantics": []
+    },
+    "datetimetz": "2024-08-22T00:00:00.395110+02:00",
+    "annotations": [
+      {
+        "id": "5e3b2ca0-61ef-490f-bcc2-a736a230be7e",
+        "shape": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                845,
+                303
+              ],
+              [
+                897,
+                303
+              ],
+              [
+                897,
+                354
+              ],
+              [
+                845,
+                354
+              ],
+              [
+                845,
+                303
+              ]
+            ]
+          ]
+        },
+        "semantics": [
+          {
+            "key": "detection_confidence[osm|traffic_sign=yes]",
+            "value": "0.745"
+          },
+          {
+            "key": "detection_model[osm|traffic_sign=yes]",
+            "value": "SGBlur-yolo11s/0.1.0"
+          },
+          {
+            "key": "osm|traffic_sign",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "id": "5f375344-2b83-4861-9a42-ecac384c5133",
+        "shape": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                1233,
+                336
+              ],
+              [
+                1259,
+                336
+              ],
+              [
+                1259,
+                362
+              ],
+              [
+                1233,
+                362
+              ],
+              [
+                1233,
+                336
+              ]
+            ]
+          ]
+        },
+        "semantics": [
+          {
+            "key": "detection_confidence[osm|traffic_sign=yes]",
+            "value": "0.74"
+          },
+          {
+            "key": "detection_model[osm|traffic_sign=yes]",
+            "value": "SGBlur-yolo11s/0.1.0"
+          },
+          {
+            "key": "osm|traffic_sign",
+            "value": "yes"
+          }
+        ]
+      },
+      {
+        "id": "ff557fda-16cc-498a-9a2e-df5611286614",
+        "shape": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [
+                356,
+                364
+              ],
+              [
+                390,
+                364
+              ],
+              [
+                390,
+                399
+              ],
+              [
+                356,
+                399
+              ],
+              [
+                356,
+                364
+              ]
+            ]
+          ]
+        },
+        "semantics": [
+          {
+            "key": "classification_confidence[osm|traffic_sign=FR:B1]",
+            "value": "1.0"
+          },
+          {
+            "key": "classification_model[osm|traffic_sign=FR:B1]",
+            "value": "classify_fr_road_signs/0.13"
+          },
+          {
+            "key": "detection_confidence[osm|traffic_sign=yes]",
+            "value": "0.766"
+          },
+          {
+            "key": "detection_model[osm|traffic_sign=yes]",
+            "value": "SGBlur-yolo11s/0.1.0"
+          },
+          {
+            "key": "osm|traffic_sign",
+            "value": "FR:B1"
+          },
+          {
+            "key": "osm|traffic_sign",
+            "value": "no_entry"
+          }
+        ]
+      }
+    ],
+    "view:azimuth": 51,
+    "geovisio:image": "https://panoramax.ign.fr/api/pictures/14c2c576-518e-4a80-a586-efff3e8cb0f6/hd.jpg",
+    "geovisio:status": "ready",
+    "geovisio:producer": "dir-mc",
+    "geovisio:thumbnail": "https://panoramax.ign.fr/api/pictures/14c2c576-518e-4a80-a586-efff3e8cb0f6/thumb.jpg",
+    "original_file:name": "029511.jpg",
+    "original_file:size": 200114,
+    "geovisio:visibility": "anyone",
+    "pers:interior_orientation": {
+      "camera_model": "AVT Stingray F504C",
+      "sensor_array_dimensions": [
+        1928,
+        1081
+      ]
+    },
+    "geovisio:rank_in_collection": 29510
+  },
+  "stac_version": "1.0.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/view/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/perspective-imagery/v1.0.0/schema.json"
+  ]
+}

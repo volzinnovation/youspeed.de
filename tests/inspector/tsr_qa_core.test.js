@@ -749,3 +749,19 @@ test("override assessment sets unconditional speed and clears on newer condition
     "events[0].road_context is structurally invalid"
   ));
 });
+
+test("applicability sidecars preserve raw candidates and reject broken links", () => {
+  const fixture = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../../shared/tsr/applicability/golden-vectors-v1.json"), "utf8"));
+  const batch = fixture.scenarios[0].batches[0];
+  const record = {schemaVersion:1,batch,tracks:[],decisions:[]};
+  const before = JSON.stringify(record);
+  assert.equal(core.parseApplicabilityEvidence(`timestamp=now tsr_applicability_v1=${before}`).length, 1);
+  assert.equal(core.parseApplicabilityEvidence(JSON.stringify({event:"tsr_applicability_v1",details:{evidence:before}})).length, 1);
+  assert.equal(core.parseApplicabilityEvidence(JSON.stringify({event:"tsr_applicability_v1",details:{evidence:before}})+"\n{}").length, 1);
+  assert.equal(JSON.stringify(record), before);
+  assert.deepEqual(core.parseApplicabilityEvidence(JSON.stringify(recognitionEvents)), []);
+  const bad=clone(record);bad.batch.candidates.push(bad.batch.candidates[0]);
+  assert.throws(()=>core.validateApplicabilityEvidence(bad), /duplicate candidate/);
+  bad.batch.candidates.pop();bad.decisions=[{trackId:"missing"}];
+  assert.throws(()=>core.validateApplicabilityEvidence(bad), /unmatched decision/);
+});

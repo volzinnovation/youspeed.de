@@ -1,0 +1,379 @@
+{
+  "schema_version": 1,
+  "model_id": "youspeed.speed-limit-reference",
+  "version": "1.1.0",
+  "status": "runtime_policy",
+  "title": "Applicable speed-limit reference",
+  "change_control": "Explicit product-owner command only; no bundle, recognition-model, remote-config or automatic policy updates.",
+  "initial_state": "UNKNOWN",
+  "states": [
+    "VOICE",
+    "CAMERA",
+    "BUNDLE",
+    "LAST_KNOWN",
+    "UNKNOWN"
+  ],
+  "priority": [
+    "voice",
+    "camera",
+    "bundle"
+  ],
+  "value_domain": {
+    "kinds": [
+      "numeric",
+      "walk",
+      "unlimited"
+    ],
+    "numeric_min_kmh": 1,
+    "numeric_max_kmh": 300,
+    "missing": null
+  },
+  "registers": {
+    "voice": "Optional ordinary correction claim: id, value, generation, accepted_elapsed_s, accepted_distance_m.",
+    "camera": "Optional ordinary applicable camera claim with the same fields; committed physical passage ID, not a per-frame ID.",
+    "bundle": "Optional current road/context value with verified bundle provenance. Includes independently resolved enclosing zone/town/statutory rules.",
+    "last_known": "Last selected current claim, copied for display continuity only; never competes in priority selection.",
+    "generation": "Integer scope epoch; starts at zero and increases after each confirmed boundary.",
+    "pending_context": "Possible road/city change; retains current ordinary claims without moving their origins, prevents camera admission. The road adapter confirms a stable different relation/direction after road_departure_confirmation_s, or restores the original context.",
+    "gap_origin": "Optional monotonic elapsed_s and distance_m when road context first becomes missing.",
+    "seen_ids": "Processed voice/boundary IDs for the drive; camera IDs are deduplicated per applicability revision, allowing explicit condition re-evaluation without renewing evidence origins.",
+    "elapsed_s": "Monotonic drive clock in seconds, including stops; wall-clock corrections cannot extend lifetime.",
+    "distance_m": "Cumulative validated traveled path distance, not displacement from the sign; never decreases or resets within the drive.",
+    "session_id": "Drive session identity; asynchronous events from another session are rejected.",
+    "sequence": "Strictly increasing normalized event order within the session.",
+    "camera_context": "Optional independently verified enclosing camera zone/town rule, resolved by the structural-rule adapter; separate from the ordinary camera claim and its timer.",
+    "applicability_revision": "Monotonic vehicle/time/weather evaluation-context revision, initially zero; distinct from road/city scope generation.",
+    "evidence_origins": "First observed ordinary camera time/distance keyed by physical evidence ID; immutable within the drive, including after re-evaluation."
+  },
+  "limits": {
+    "ordinary_max_age_s": 300,
+    "ordinary_max_distance_m": 5000,
+    "context_gap_max_age_s": 8,
+    "context_gap_max_distance_m": 160,
+    "road_departure_confirmation_s": 8
+  },
+  "expiry": [
+    {
+      "id": "ordinary_age",
+      "sources": [
+        "voice",
+        "camera"
+      ],
+      "metric": "elapsed_s",
+      "origin": "accepted_elapsed_s",
+      "limit": "ordinary_max_age_s",
+      "comparison": ">="
+    },
+    {
+      "id": "ordinary_distance",
+      "sources": [
+        "voice",
+        "camera"
+      ],
+      "metric": "distance_m",
+      "origin": "accepted_distance_m",
+      "limit": "ordinary_max_distance_m",
+      "comparison": ">="
+    }
+  ],
+  "events": {
+    "reset": "Start a new drive session; clear all claims, display memory, counters and processed IDs.",
+    "voice": "Successfully saved, parsed explicit correction for this scope; value and unique observation ID required.",
+    "camera": "Applicable typed ordinary limit output from the external visual pipeline; original evidence time/distance and applicability envelope required.",
+    "bundle": "Current verified road-bundle/context value with an affirmative applicability envelope, including future vehicle/time/weather restrictions.",
+    "bundle_missing": "No applicable current bundle value; previous bundle value loses current authority immediately.",
+    "context_pending": "Possible scope change, including a brief competing ramp match; not proof of a departure.",
+    "context_restored": "Verified continuation of the original road/context; clear uncertainty without renewing claim origins.",
+    "context_confirmed": "Validated structural boundary with confirmed=true, a unique ID and a permitted reason. Invalidates the old scope once.",
+    "context_missing": "Missing/unusable road context; clear bundle and start the bounded context gap.",
+    "tick": "Advance validated clock/distance and apply expiry even without a new sign, match or camera frame.",
+    "camera_context": "Applicable typed enclosing zone/town rule from the external pipeline/structural adapter; explicit area proof and applicability envelope required, independent of ordinary expiry.",
+    "camera_context_missing": "No independently applicable enclosing camera rule remains.",
+    "applicability_context_changed": "Advance vehicle/time/weather context revision; clear camera, enclosing camera and bundle authority pending fresh producer verdicts. Does not itself cancel an ordinary explicit voice correction.",
+    "camera_scope_invalidated": "The external pipeline explicitly withdraws its active authority (for example an unresolved applicable end). Clear camera/enclosing/bundle authority pending fresh evidence, preserving an active voice correction. This is not emitted for an unrelated rejected candidate.",
+    "camera_dismissed": "Explicit user dismissal: remove camera and enclosing camera claims and camera-derived display memory; preserve current bundle and voice. Producer must suppress dismissed tracks and pending pre-dismissal frames."
+  },
+  "boundary_reasons": [
+    "city_entry",
+    "city_exit",
+    "road_relation_exit",
+    "direction_reversal",
+    "applicable_end"
+  ],
+  "transition_order": [
+    "validate envelope and payload without mutation",
+    "advance monotonic clock and traveled distance",
+    "expire ordinary claims and exceeded context gap",
+    "take the first matching transition for the event",
+    "remember processed evidence identity even when withheld",
+    "select highest-priority current claim or display-only memory",
+    "emit one immutable reference and an audit record"
+  ],
+  "transitions": [
+    {
+      "id": "T01",
+      "on": "reset",
+      "guard": "new_session",
+      "actions": [
+        "reset_session"
+      ],
+      "reason": "session_started"
+    },
+    {
+      "id": "T02",
+      "on": "voice",
+      "guard": "fresh_scoped_evidence",
+      "actions": [
+        "accept_voice",
+        "clear_camera",
+        "clear_camera_context"
+      ],
+      "reason": "user_correction"
+    },
+    {
+      "id": "T03",
+      "on": "camera",
+      "guard": "fresh_applicable_pipeline_output",
+      "actions": [
+        "accept_camera"
+      ],
+      "reason": "applicable_camera_passage"
+    },
+    {
+      "id": "T04",
+      "on": "bundle",
+      "guard": "current_verified_bundle",
+      "actions": [
+        "accept_bundle"
+      ],
+      "reason": "current_bundle"
+    },
+    {
+      "id": "T05",
+      "on": "bundle_missing",
+      "guard": "current_generation",
+      "actions": [
+        "clear_bundle"
+      ],
+      "reason": "bundle_limit_missing"
+    },
+    {
+      "id": "T06",
+      "on": "context_pending",
+      "guard": "current_generation",
+      "actions": [
+        "mark_pending",
+        "clear_bundle"
+      ],
+      "reason": "possible_scope_change"
+    },
+    {
+      "id": "T07",
+      "on": "context_restored",
+      "guard": "verified_current_generation",
+      "actions": [
+        "clear_pending",
+        "clear_gap"
+      ],
+      "reason": "original_scope_confirmed"
+    },
+    {
+      "id": "T08",
+      "on": "context_confirmed",
+      "guard": "fresh_confirmed_boundary",
+      "actions": [
+        "clear_voice",
+        "clear_camera",
+        "clear_camera_context",
+        "clear_bundle",
+        "advance_generation",
+        "clear_pending",
+        "clear_gap"
+      ],
+      "reason": "confirmed_boundary"
+    },
+    {
+      "id": "T09",
+      "on": "context_missing",
+      "guard": "current_generation",
+      "actions": [
+        "start_gap_once",
+        "clear_bundle"
+      ],
+      "reason": "road_context_missing"
+    },
+    {
+      "id": "T10",
+      "on": "tick",
+      "guard": "always",
+      "actions": [],
+      "reason": "clock_or_distance_advanced"
+    },
+    {
+      "id": "T12",
+      "on": "camera_context",
+      "guard": "verified_enclosing_camera",
+      "actions": [
+        "accept_camera_context"
+      ],
+      "reason": "verified_enclosing_camera_rule"
+    },
+    {
+      "id": "T13",
+      "on": "camera_context_missing",
+      "guard": "current_generation",
+      "actions": [
+        "clear_camera_context"
+      ],
+      "reason": "enclosing_rule_missing"
+    },
+    {
+      "id": "T14",
+      "on": "applicability_context_changed",
+      "guard": "new_applicability_revision",
+      "actions": [
+        "clear_camera",
+        "clear_camera_context",
+        "clear_bundle",
+        "advance_applicability_revision"
+      ],
+      "reason": "conditions_need_re_evaluation"
+    },
+    {
+      "id": "T15",
+      "on": "camera_scope_invalidated",
+      "guard": "current_generation",
+      "actions": [
+        "clear_camera",
+        "clear_camera_context",
+        "clear_bundle"
+      ],
+      "reason": "pipeline_authority_withdrawn"
+    },
+    {
+      "id": "T16",
+      "on": "camera_dismissed",
+      "guard": "current_generation",
+      "actions": [
+        "clear_camera",
+        "clear_camera_context",
+        "clear_camera_memory"
+      ],
+      "reason": "user_disregarded_vision"
+    },
+    {
+      "id": "T11",
+      "on": "*",
+      "guard": "always",
+      "actions": [],
+      "reason": "evidence_withheld"
+    }
+  ],
+  "selection": [
+    {
+      "register": "voice",
+      "state": "VOICE",
+      "current": true
+    },
+    {
+      "register": "camera",
+      "state": "CAMERA",
+      "current": true
+    },
+    {
+      "register": "camera_context",
+      "state": "CAMERA",
+      "current": true
+    },
+    {
+      "register": "bundle",
+      "state": "BUNDLE",
+      "current": true
+    },
+    {
+      "register": "last_known",
+      "state": "LAST_KNOWN",
+      "current": false
+    },
+    {
+      "register": null,
+      "state": "UNKNOWN",
+      "current": false
+    }
+  ],
+  "outputs": {
+    "single_reference": [
+      "policy_version",
+      "state",
+      "value",
+      "source",
+      "evidence_id",
+      "generation",
+      "applicability_revision",
+      "current",
+      "display_stale",
+      "violation_reference_kmh",
+      "penalty_reference_kmh",
+      "transition_id",
+      "expiry_reasons"
+    ],
+    "display": "Always render this reference's value and source; LAST_KNOWN is visibly stale, UNKNOWN has no value.",
+    "violation": "Only a current numeric reference yields violation_reference_kmh. Overspeed uses the app's existing speed measurement/tolerance rules with this single baseline.",
+    "penalty": "penalty_reference_kmh equals violation_reference_kmh; then apply validated country/context/tolerance rules. No numeric baseline means no numeric penalty estimate. Never perform another source lookup.",
+    "walk_and_unlimited": "Render the typed value. Do not invent a numeric walking-speed threshold or a penalty baseline for unlimited.",
+    "fallback": "Expiry removes evidence authority, not last-known display memory. Never revive expired/withheld camera or voice records from local storage. Memory resets with the drive.",
+    "enclosing_rules": "The structural adapter retains typed zone/town layers and explicitly re-evaluates them. Ordinary expiry removes only ordinary claims. Enclosing claims require independently verified area scope; a road split alone is not proof of leaving a zone. A confirmed boundary clears the old claims atomically before any newly verified enclosing value is admitted."
+  },
+  "invariants": [
+    "I1: VOICE > CAMERA > BUNDLE; a lower-priority numeric observation cannot cancel a current higher-priority claim.",
+    "I2: A duplicate passage, frame, repeated lookup or UI render cannot move an assertion's time/distance origin.",
+    "I3: An ordinary claim is not current at age >= 300 s or distance >= 5000 m.",
+    "I4: LAST_KNOWN/UNKNOWN never supply a violation or penalty baseline.",
+    "I5: One immutable reference revision supplies display, violation and penalty consumers atomically.",
+    "I6: Only confirmed structural events invalidate scope. Tentative matcher excursions do not.",
+    "I7: Old-session, old-generation, duplicate and out-of-order evidence cannot regain authority.",
+    "I8: The machine consumes the external visual pipeline output; only an affirmative applicable verdict for the current context may establish camera/bundle authority. It never classifies signs or judges lane geometry.",
+    "I9: Bundle/model downloads and observations cannot modify the policy or approval lock.",
+    "I10: Confidence expiry is not a legal cancellation; independently verified enclosing rules are re-evaluated after a boundary or expiry.",
+    "I11: Unknown or unsupported vehicle/time/weather restrictions remain unresolved; re-evaluation cannot renew ordinary evidence lifetime."
+  ],
+  "input_contracts": {
+    "camera": {
+      "producer": "External visual pipeline: camera-specific embedded neural network candidate selection, then road-network applicability filtering.",
+      "machine_receives": "Only a typed candidate and its applicability verdict, stable physical evidence ID, scope generation, decision context revision and original evidence time/distance. No image boxes or raw network scores.",
+      "pipeline_responsibilities": [
+        "Choose the traffic-sign candidate using the neural network for the specific camera.",
+        "Judge lane/road applicability using road-network bundle information; filter highly confident signs belonging to another exit lane or road.",
+        "Retain sign-level ambiguity across map gaps and changing image position.",
+        "Interpret available restrictions and report unresolved when required information is missing."
+      ],
+      "machine_responsibilities": [
+        "Check the producer verdict and current scope/context revision.",
+        "Deduplicate evidence without renewing its original lifetime.",
+        "Apply source priority, lifecycle expiry and output projection."
+      ]
+    },
+    "applicability": {
+      "sources": [
+        "camera",
+        "camera_context",
+        "bundle"
+      ],
+      "required_fields": [
+        "status",
+        "context_revision",
+        "conditions"
+      ],
+      "statuses": [
+        "applicable",
+        "inapplicable",
+        "unresolved"
+      ],
+      "selection_requires": "applicable",
+      "conditions": "Opaque versioned restriction expression; leaves may identify vehicle_class, time_window, weather/rain or future types, with parameters and evaluator result. AND/OR combinations are resolved by the producer, not this machine.",
+      "unknown_handling": "The producer must return unresolved for unsupported restrictions or missing required context. Absence of detected restrictions is not proof that no restriction exists. Only an affirmative applicable verdict may establish current authority.",
+      "future_changes": "A vehicle/time/weather context change invalidates camera and bundle claims via applicability_context_changed. Producers re-evaluate retained evidence and submit a verdict for the new revision. Original ordinary-evidence time/distance is preserved; re-evaluation never renews it."
+    }
+  },
+  "camera_pipeline_boundary": "Visual candidate selection and road/lane applicability are external. The EFSM only consumes their typed, evaluated output."
+}

@@ -17,11 +17,15 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
     onContextMismatch: (Long) -> Unit = controller::onTrafficSignRecognitionContextMismatch,
     onInferenceDiagnostics: (TrafficSignOrchestrationOutput) -> Unit = controller::onTrafficSignInferenceDiagnostics,
     confirmationWindowMsOverride: Long? = null,
+    pathEvaluator: ((F, TSRApplicabilityDiagnostic) -> String?)? = null,
+    pathPreparer: ((F, TrafficSignPathPreparationContext) -> Unit)? = null,
+    pathInvalidated: (() -> Unit)? = null,
 ) : AutoCloseable {
     private val forwarder = TrafficSignFinalizedPassageForwarder(
         submitFinalizedPassage = controller::submitFinalizedTrafficSignPassage,
         submitDisplayObservation = controller::submitTrafficSignDisplayObservation,
         submitRecognitionEvent = controller::onTrafficSignRecognitionEvent,
+        submitAnnotationEvent = controller::onTrafficSignAnnotationEvent,
         onRuntimeUnavailable = onRuntimeUnavailable,
         onContextMismatch = onContextMismatch,
         onInferenceDiagnostics = onInferenceDiagnostics,
@@ -50,10 +54,17 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
             monotonicClockNanos = monotonicClockNanos,
             observer = forwarder,
             confirmationWindowMsOverride = confirmationWindowMsOverride,
+            pathEvaluator = pathEvaluator,
+            pathPreparer = pathPreparer,
+            pathInvalidated = pathInvalidated,
         )
     }
 
     fun submit(frame: F): Boolean = orchestrator.submit(frame)
+
+    /** CameraX may retain only the executing input; queued proxies block lane delivery. */
+    fun submitCameraFrame(frame: F, onBackpressureDrop: (String) -> Unit): Boolean =
+        orchestrator.submit(frame, retainWhileBusy = false, onBackpressureDrop = onBackpressureDrop)
 
     override fun close() = orchestrator.close()
 }
@@ -61,6 +72,7 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
 internal class TrafficSignFinalizedPassageForwarder(
     private val submitDisplayObservation: (TrafficSignDisplayObservation) -> Unit = {},
     private val submitRecognitionEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
+    private val submitAnnotationEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
     private val onRuntimeUnavailable: (String, Long) -> Unit = { _, _ -> },
     private val onContextMismatch: (Long) -> Unit = {},
     private val onInferenceDiagnostics: (TrafficSignOrchestrationOutput) -> Unit = {},
@@ -79,6 +91,7 @@ internal class TrafficSignFinalizedPassageForwarder(
         output.passageEvent?.let(submitFinalizedPassage)
         if (!output.terminalBackendFailure && output.backendFailureReason == null) {
             submitRecognitionEvent(output.event, output.contextGeneration)
+            submitAnnotationEvent(output.annotationEvent ?: output.event, output.contextGeneration)
         }
         output.displayObservation?.let(submitDisplayObservation)
         onInferenceDiagnostics(output)

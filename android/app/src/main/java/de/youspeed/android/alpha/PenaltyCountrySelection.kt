@@ -66,13 +66,13 @@ class PenaltyCountrySelection {
 }
 
 /** Reproducible native UI scenario. Supplies GPS/road/speed inputs, never precomputed penalty output. */
-data class CountryPenaltyScreenshotScenario(val countryCode: String, val deltaKmh: Int, val limitKmh: Int = 50) {
+data class CountryPenaltyScreenshotScenario(val countryCode: String, val deltaKmh: Int, val limitKmh: Int = 50, val insideCity: Boolean = true, val highway: String? = null) {
     init {
-        require(countryCode in setOf("FRA", "NLD", "BEL"))
+        require(countryCode in setOf("FRA", "NLD", "BEL", "CHE"))
         require(deltaKmh in 0..100 && limitKmh in 10..130)
     }
-    val latitude: Double get() = when (countryCode) { "FRA" -> 48.8566; "NLD" -> 52.3676; else -> 50.8503 }
-    val longitude: Double get() = when (countryCode) { "FRA" -> 2.3522; "NLD" -> 4.9041; else -> 4.3517 }
-    val city: String get() = when (countryCode) { "FRA" -> "Paris"; "NLD" -> "Amsterdam"; else -> "Bruxelles / Brussel" }
-    val street: String get() = when (countryCode) { "FRA" -> "Rue de Rivoli"; "NLD" -> "Stadhouderskade"; else -> "Rue de la Loi / Wetstraat" }
+    val latitude: Double get() = when (countryCode) { "FRA" -> 48.8566; "NLD" -> 52.3676; "CHE" -> 47.3769; else -> 50.8503 }
+    val longitude: Double get() = when (countryCode) { "FRA" -> 2.3522; "NLD" -> 4.9041; "CHE" -> 8.5417; else -> 4.3517 }
+    val city: String get() = when (countryCode) { "FRA" -> "Paris"; "NLD" -> "Amsterdam"; "CHE" -> "Zürich"; else -> "Bruxelles / Brussel" }
+    val street: String get() = when (countryCode) { "FRA" -> "Rue de Rivoli"; "NLD" -> "Stadhouderskade"; "CHE" -> "Bahnhofstrasse"; else -> "Rue de la Loi / Wetstraat" }
 }

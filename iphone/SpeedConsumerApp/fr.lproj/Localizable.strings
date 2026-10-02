@@ -57,7 +57,7 @@
 "drive_recorder.settings.tsr_feedback_silent" = "Silencieux";
 "tsr.feedback.spoken_speed_format" = "Limitation de vitesse : %d kilomètres par heure.";
 "drive_recorder.settings.panoramax" = "Prendre des photos";
-"drive_recorder.settings.panoramax_description" = "Enregistre localement des scènes de rue géolocalisées pour un examen ultérieur.";
+"drive_recorder.settings.panoramax_description" = "Lorsque cette option est activée, des photos sont prises automatiquement pendant vos déplacements avec l’application ouverte, selon la distance ou l’intervalle choisi. La vidéo dashcam est indépendante. Les photos restent sur cet appareil pour vérification avant envoi.";
 "drive_recorder.settings.shared_camera" = "Les modules partagent une caméra arrière ; la dashcam et la reconnaissance des panneaux peuvent être activées pendant l’enregistrement.";
 "drive_recorder.settings.upload_later" = "L’examen, l’approbation et l’envoi Panoramax ont lieu après le trajet.";
 "drive_recorder.library.title" = "Vidéos dashcam";
@@ -128,6 +128,7 @@
 "panoramax.gallery.delete_message" = "%d images sélectionnées seront supprimées définitivement.";
 "panoramax.gallery.delete_confirm" = "Supprimer";
 "panoramax.gallery.upload" = "Téléverser";
+"panoramax.upload.originals_missing" = "%d photos sélectionnées sont absentes de cet appareil et ne peuvent pas être téléversées. Désélectionnez-les et téléversez les autres photos.";
 "panoramax.gallery.upload_requires_account" = "Connectez d’abord un compte Panoramax dans les réglages.";
 "panoramax.gallery.account_required_title" = "Compte Panoramax requis";
 "panoramax.gallery.stop_upload" = "Arrêter le téléversement";
@@ -157,7 +158,7 @@
 "drive_recorder.library.delete_title" = "Supprimer les vidéos sélectionnées ?";
 "drive_recorder.library.delete_message" = "%d vidéos sélectionnées seront supprimées définitivement.";
 "panoramax.settings.section" = "Enregistreur de trajet";
-"panoramax.settings.description" = "Démarrez l’enregistrement avec le bouton rouge en bas à gauche. Les images restent d’abord sur cet iPhone et peuvent ensuite être vérifiées et téléversées.";
+"panoramax.settings.description" = "Lorsque cette option est activée, des photos sont prises automatiquement pendant vos déplacements avec l’application ouverte, selon la distance ou l’intervalle choisi. La vidéo dashcam est indépendante. Les photos restent sur cet appareil pour vérification avant envoi.";
 "panoramax.settings.status" = "État";
 "panoramax.settings.saved_images" = "Images enregistrées";
 "panoramax.settings.trigger" = "Déclencheur";
@@ -177,7 +178,7 @@
 "panoramax.review.title" = "Images Panoramax";
 "panoramax.review.local_count" = "%d images locales à vérifier";
 "panoramax.review.empty_title" = "Aucune image Panoramax";
-"panoramax.review.empty_description" = "Activez l’enregistreur de trajet pendant un déplacement.";
+"panoramax.review.empty_description" = "Activez les photos Panoramax dans les réglages et déplacez-vous avec l’application ouverte.";
 "panoramax.review.approve" = "Valider le lot pour téléversement";
 "panoramax.review.upload_via_gallery" = "Démarrer le téléversement depuis la galerie";
 "panoramax.review.selected_count" = "%d images sélectionnées";
@@ -336,7 +337,7 @@
 "onboarding.sources.independent" = "La reconnaissance indépendante utilise la caméra sur l’écran de conduite, sans vidéo ni photos Panoramax. Désactivée, elle reste liée à l’enregistreur.";
 "onboarding.panoramax.title" = "Contribuez des photos de rue";
 "onboarding.panoramax.body" = "Contribuez des photos de rue géolocalisées à Panoramax. Choisissez les images et lancez l’envoi après vérification.";
-"onboarding.panoramax.capture" = "Activées, les photos sont enregistrées lorsque l’enregistreur fonctionne. Vous pouvez couper la vidéo et continuer les photos.";
+"onboarding.panoramax.capture" = "Lorsque cette option est activée, des photos sont prises automatiquement pendant vos déplacements avec l’application ouverte, selon la distance ou l’intervalle choisi. La vidéo dashcam est indépendante. Les photos restent sur cet appareil pour vérification avant envoi.";
 "onboarding.panoramax.review" = "Arrêtez l’enregistreur, ouvrez la galerie et vérifiez ou excluez des images avant de préparer l’envoi.";
 "onboarding.panoramax.upload" = "Connectez un compte Panoramax dans les réglages. L’envoi des images sélectionnées est une action distincte qui utilise Internet.";
 "onboarding.panoramax.later" = "Vous pouvez modifier ces options dans les réglages et revoir ce guide après l’arrêt de l’enregistreur.";
@@ -368,3 +369,65 @@
 "drive_recorder.action.saving" = "Enregistrement de la vidéo Dashcam…";
 "drive_recorder.action.failed_title" = "Impossible d’enregistrer la vidéo Dashcam";
 "drive_recorder.action.failed" = "L’action a été annulée car la vidéo Dashcam n’a pas pu être finalisée. Veuillez réessayer.";
+
+"common.close" = "Fermer";
+"settings.maps.queued" = "En attente";
+"settings.maps.cancel_queued" = "Annuler le téléchargement en attente";
+"settings.maps.download" = "Télécharger";
+"metric.download_data" = "Télécharger les données";
+"metric.downloading_data" = "Téléchargement…";
+
+"settings.maps.preparing" = "Préparation du téléchargement…";
+"settings.maps.download_failed" = "Échec du téléchargement : %@";
+
+"tsr.disregard_vision" = "Ignorer la caméra et revenir à la route";
+
+"gravity_alignment.title" = "Niveau de la caméra";
+"gravity_alignment.unavailable" = "Alignement par gravité indisponible";
+"gravity_alignment.angles" = "Roulis %.0f°, inclinaison %.0f°. La gravité ne détermine pas le cap.";
+"tsr.voice_dismissal.listening" = "Dites « Faux »";
+
+// Startup log storage review
+"startup.logs.title" = "Effacer les journaux enregistrés ?";
+"startup.logs.message" = "Les journaux enregistrés occupent plus de 100 Mo. Souhaitez-vous les effacer avant de continuer ? Les conserver peut aider au débogage.";
+"startup.logs.clear" = "Effacer les journaux";
+"startup.logs.keep" = "Conserver et continuer";
+"startup.logs.checking" = "Vérification des journaux…";
+"startup.logs.clearing" = "Suppression des journaux…";
+"startup.logs.failed" = "Impossible de vérifier ou de supprimer les journaux";
+
+"settings.debug.logging" = "Journalisation de débogage";
+// Live lane visualization
+"drive_recorder.settings.lanes" = "Afficher les voies détectées";
+"drive_recorder.settings.lanes_description" = "Afficher les limites de voie expérimentales dans l’aperçu en direct. Les lignes incertaines ou anciennes s’estompent ; elles ne sont pas enregistrées dans la vidéo.";
+"drive_recorder.lanes.status" = "Voies détectées : %@";
+"drive_recorder.lanes.reliable" = "Fiables";
+"drive_recorder.lanes.uncertain" = "Incertaines";
+"drive_recorder.lanes.unavailable" = "Indisponibles";
+"drive_recorder.lanes.paused" = "En pause";
+
+"drive_recorder.lanes.experimental" = "Expérimental";
+
+/* Live analysis-image road calibration */
+"calibration.title" = "Calibrer la caméra";
+"calibration.cancel" = "Annuler";
+"calibration.waiting" = "En attente de l’image en direct…";
+"calibration.live" = "Caméra de calibrage active";
+"calibration.step" = "Étape %d sur 5";
+"calibration.horizon" = "Déplacer l’horizon vers le haut ou le bas";
+"calibration.left_bottom" = "Déplacer le point inférieur gauche";
+"calibration.left_top" = "Déplacer le point supérieur gauche sur l’horizon";
+"calibration.right_bottom" = "Déplacer le point inférieur droit";
+"calibration.right_top" = "Déplacer le point supérieur droit sur l’horizon";
+"calibration.crop_note" = "La détection utilise toute la hauteur, du point supérieur gauche au bord droit de l’image.";
+"calibration.invalid" = "Le guide gauche doit rester à gauche du guide droit.";
+"calibration.previous" = "Précédent";
+"calibration.next" = "Suivant";
+"calibration.save" = "Enregistrer";
+"calibration.defaults" = "Réinitialiser le brouillon";
+"calibration.up" = "Monter";
+"calibration.down" = "Descendre";
+"calibration.left" = "Déplacer à gauche";
+"calibration.right" = "Déplacer à droite";
+
+"drive_recorder.lanes.reference" = "Repère de calibrage";

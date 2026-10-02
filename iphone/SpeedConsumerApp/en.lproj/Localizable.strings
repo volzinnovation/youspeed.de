@@ -57,7 +57,7 @@
 "drive_recorder.settings.tsr_feedback_silent" = "Silent";
 "tsr.feedback.spoken_speed_format" = "Speed limit %d kilometers per hour.";
 "drive_recorder.settings.panoramax" = "Capture pictures";
-"drive_recorder.settings.panoramax_description" = "Saves geotagged full street-scene pictures locally for later review.";
+"drive_recorder.settings.panoramax_description" = "When enabled, photos are captured automatically while you move with the app open, using the selected distance or time interval. Dashcam video is independent. Photos stay on this device for review before upload.";
 "drive_recorder.settings.shared_camera" = "Modules share one rear-camera session; Dashcam and sign recognition can be switched while recording.";
 "drive_recorder.settings.upload_later" = "Panoramax review, approval, and upload happen after the drive.";
 "drive_recorder.library.title" = "Dashcam videos";
@@ -128,6 +128,7 @@
 "panoramax.gallery.delete_message" = "%d selected pictures will be permanently deleted.";
 "panoramax.gallery.delete_confirm" = "Delete";
 "panoramax.gallery.upload" = "Upload";
+"panoramax.upload.originals_missing" = "%d selected pictures are missing on this device and cannot be uploaded. Deselect them and upload the remaining pictures.";
 "panoramax.gallery.upload_requires_account" = "Connect a Panoramax account in Settings first.";
 "panoramax.gallery.account_required_title" = "Panoramax account required";
 "panoramax.gallery.stop_upload" = "Stop upload";
@@ -157,7 +158,7 @@
 "drive_recorder.library.delete_title" = "Delete selected videos?";
 "drive_recorder.library.delete_message" = "%d selected videos will be permanently deleted.";
 "panoramax.settings.section" = "Drive Recorder";
-"panoramax.settings.description" = "Start recording with the red button at the bottom left. Pictures stay on this iPhone first and can be reviewed and uploaded later.";
+"panoramax.settings.description" = "When enabled, photos are captured automatically while you move with the app open, using the selected distance or time interval. Dashcam video is independent. Photos stay on this device for review before upload.";
 "panoramax.settings.status" = "Status";
 "panoramax.settings.saved_images" = "Saved pictures";
 "panoramax.settings.trigger" = "Trigger";
@@ -177,7 +178,7 @@
 "panoramax.review.title" = "Panoramax pictures";
 "panoramax.review.local_count" = "%d local pictures to review";
 "panoramax.review.empty_title" = "No Panoramax pictures";
-"panoramax.review.empty_description" = "Enable Drive Recorder during a trip.";
+"panoramax.review.empty_description" = "Enable Panoramax photos in settings and move with the app open.";
 "panoramax.review.approve" = "Approve batch for upload";
 "panoramax.review.upload_via_gallery" = "Start upload from the gallery";
 "panoramax.review.selected_count" = "%d pictures selected";
@@ -336,7 +337,7 @@
 "onboarding.sources.independent" = "Independent recognition uses the camera when the driving screen is active, without starting video or Panoramax photos. Leaving it off keeps recognition tied to the recorder.";
 "onboarding.panoramax.title" = "Contribute street-level photos";
 "onboarding.panoramax.body" = "Contribute geolocated street photos to Panoramax. You choose the pictures and start their upload after reviewing them.";
-"onboarding.panoramax.capture" = "When enabled, photos are saved while the recorder is active. You can turn dashcam video off and keep taking photos.";
+"onboarding.panoramax.capture" = "When enabled, photos are captured automatically while you move with the app open, using the selected distance or time interval. Dashcam video is independent. Photos stay on this device for review before upload.";
 "onboarding.panoramax.review" = "Stop the recorder, open the picture gallery, and review or exclude images before preparing an upload.";
 "onboarding.panoramax.upload" = "Connect a Panoramax account in Settings. Uploading selected images is a separate action and uses an internet connection.";
 "onboarding.panoramax.later" = "You can change all these options in Settings and revisit this guide after stopping the recorder.";
@@ -368,3 +369,65 @@
 "drive_recorder.action.saving" = "Saving Dashcam video…";
 "drive_recorder.action.failed_title" = "Dashcam video could not be saved";
 "drive_recorder.action.failed" = "The action was cancelled because Dashcam video could not be finalized. Please try again.";
+
+"common.close" = "Close";
+"settings.maps.queued" = "Queued";
+"settings.maps.cancel_queued" = "Cancel queued download";
+"settings.maps.download" = "Download";
+"metric.download_data" = "Download data";
+"metric.downloading_data" = "Downloading…";
+
+"settings.maps.preparing" = "Preparing download…";
+"settings.maps.download_failed" = "Download failed: %@";
+
+"tsr.disregard_vision" = "Disregard vision and return to road";
+
+"gravity_alignment.title" = "Camera level";
+"gravity_alignment.unavailable" = "Gravity alignment unavailable";
+"gravity_alignment.angles" = "Roll %.0f°, tilt %.0f°. Gravity cannot determine heading.";
+"tsr.voice_dismissal.listening" = "Say “Wrong”";
+
+// Startup log storage review
+"startup.logs.title" = "Clear saved logs?";
+"startup.logs.message" = "Saved logs take up more than 100 MB. Would you like to clear them before continuing? Keeping them can help with debugging.";
+"startup.logs.clear" = "Clear logs";
+"startup.logs.keep" = "Keep logs and continue";
+"startup.logs.checking" = "Checking saved logs…";
+"startup.logs.clearing" = "Clearing saved logs…";
+"startup.logs.failed" = "Could not check or clear logs";
+
+"settings.debug.logging" = "Debug logging";
+// Live lane visualization
+"drive_recorder.settings.lanes" = "Show detected lanes";
+"drive_recorder.settings.lanes_description" = "Show experimental lane boundaries in the live dashcam preview. Lines fade when uncertain or outdated; they are not saved in the video.";
+"drive_recorder.lanes.status" = "Detected lanes: %@";
+"drive_recorder.lanes.reliable" = "Reliable";
+"drive_recorder.lanes.uncertain" = "Uncertain";
+"drive_recorder.lanes.unavailable" = "Unavailable";
+"drive_recorder.lanes.paused" = "Paused";
+
+"drive_recorder.lanes.experimental" = "Experimental";
+
+/* Live analysis-image road calibration */
+"calibration.title" = "Camera calibration";
+"calibration.cancel" = "Cancel";
+"calibration.waiting" = "Waiting for the live camera image…";
+"calibration.live" = "Calibration camera active";
+"calibration.step" = "Step %d of 5";
+"calibration.horizon" = "Move the horizon up or down";
+"calibration.left_bottom" = "Move the lower-left point";
+"calibration.left_top" = "Move the upper-left point along the horizon";
+"calibration.right_bottom" = "Move the lower-right point";
+"calibration.right_top" = "Move the upper-right point along the horizon";
+"calibration.crop_note" = "Sign detection uses the full height, from the upper-left point to the right image edge.";
+"calibration.invalid" = "Keep the left guide to the left of the right guide.";
+"calibration.previous" = "Previous";
+"calibration.next" = "Next";
+"calibration.save" = "Save";
+"calibration.defaults" = "Reset draft to defaults";
+"calibration.up" = "Move up";
+"calibration.down" = "Move down";
+"calibration.left" = "Move left";
+"calibration.right" = "Move right";
+
+"drive_recorder.lanes.reference" = "Calibration reference";

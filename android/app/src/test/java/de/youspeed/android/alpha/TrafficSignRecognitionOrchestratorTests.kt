@@ -11,6 +11,222 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrafficSignRecognitionOrchestratorTests {
+    @Test fun cameraBackpressureDropsBusyFramesWithoutRetainingPixelsOrChangingDefaultQueue() {
+        val harness=Harness()
+        val drops=mutableListOf<String>()
+        val first=harness.frame("executing",capturedAtNanos=0)
+        assertTrue(harness.orchestrator.submit(first,retainWhileBusy=false,onBackpressureDrop=drops::add))
+        for (index in 1..30) {
+            harness.clockNanos=index*20_000_000L
+            val busy=harness.frame("busy-$index",capturedAtNanos=harness.clockNanos)
+            assertFalse(harness.orchestrator.submit(busy,retainWhileBusy=false,onBackpressureDrop=drops::add))
+            assertEquals(1,busy.releaseCount)
+            assertEquals(listOf("executing"),harness.backend.activeFrameIds())
+        }
+        assertEquals(List(30) { "inference_busy" },drops)
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        assertEquals(1,first.releaseCount)
+        assertTrue(harness.backend.activeFrameIds().isEmpty())
+        harness.clockNanos=700_000_000L
+        val fresh=harness.frame("fresh-after-inference",capturedAtNanos=harness.clockNanos)
+        assertTrue(harness.orchestrator.submit(fresh,retainWhileBusy=false,onBackpressureDrop=drops::add))
+        assertEquals(listOf("fresh-after-inference"),harness.backend.activeFrameIds())
+        // Non-CameraX sources still retain the latest pending frame.
+        harness.clockNanos=1_300_000_000L
+        val pending=harness.frame("generic-pending",capturedAtNanos=harness.clockNanos)
+        assertTrue(harness.orchestrator.submit(pending))
+        assertEquals(0,pending.releaseCount)
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        assertEquals(listOf("generic-pending"),harness.backend.activeFrameIds())
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        assertEquals(1,pending.releaseCount)
+        harness.orchestrator.close()
+        assertEquals(1,fresh.releaseCount)
+    }
+
+    @Test fun cameraBackpressureStillReconcilesContextAndReleasesThrottlePausedAndClosedFramesOnce() {
+        val harness=Harness()
+        val drops=mutableListOf<String>()
+        val first=harness.frame("executing",capturedAtNanos=0)
+        harness.orchestrator.submit(first,retainWhileBusy=false,onBackpressureDrop=drops::add)
+        harness.contextGeneration=1
+        harness.clockNanos=100_000_000L
+        val changed=harness.frame("new-context-busy",capturedAtNanos=harness.clockNanos)
+        harness.orchestrator.submit(changed,retainWhileBusy=false,onBackpressureDrop=drops::add)
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        assertFalse(harness.observer.outputs.single().contextIsCurrent)
+        assertEquals(1,changed.releaseCount)
+        val throttled=harness.frame("throttled",capturedAtNanos=harness.clockNanos)
+        harness.orchestrator.submit(throttled,retainWhileBusy=false,onBackpressureDrop=drops::add)
+        assertEquals(1,throttled.releaseCount)
+        harness.clockNanos=600_000_000L
+        harness.conditions=TrafficSignAnalysisConditions(thermalPressure=TrafficSignThermalPressure.CRITICAL)
+        val paused=harness.frame("thermal",capturedAtNanos=harness.clockNanos)
+        harness.orchestrator.submit(paused,retainWhileBusy=false,onBackpressureDrop=drops::add)
+        assertEquals(1,paused.releaseCount)
+        assertEquals(listOf("inference_busy","cadence_or_pause","cadence_or_pause"),drops)
+        harness.orchestrator.tick()
+        assertTrue(harness.backend.activeFrameIds().isEmpty())
+        harness.orchestrator.close()
+        val closed=harness.frame("closed",capturedAtNanos=harness.clockNanos)
+        assertFalse(harness.orchestrator.submit(closed,retainWhileBusy=false,onBackpressureDrop=drops::add))
+        assertEquals(1,closed.releaseCount)
+        assertEquals(1,first.releaseCount)
+    }
+
+    @Test fun unavailableModelInvalidatesOnlyItsCurrentPreparedScope() {
+        for (scopeChanges in listOf(false, true)) {
+            var visible = false
+            var invalidations = 0
+            val harness = Harness(pathPreparer = { _, context -> context.publishIfCurrent { visible = true } },
+                pathInvalidated = { visible = false; invalidations++ })
+            val frame = harness.frame("model-failure", capturedAtNanos = 0)
+            harness.orchestrator.submit(frame)
+            assertTrue(visible)
+            if (scopeChanges) harness.orchestrator.reconcileContext(harness.context, 1)
+            harness.backend.completeNext(TrafficSignBackendResult.Unavailable("test failure"))
+            assertFalse(visible)
+            // A scope reset invalidates once; the old backend failure must not clear again.
+            assertEquals(1, invalidations)
+            assertEquals(1, frame.releaseCount)
+        }
+    }
+
+    @Test fun admittedFramePreparationPrecedesModelAndReleaseAndCarriesExactScope() {
+        val order = mutableListOf<String>()
+        var preparedScope: TSRApplicabilityScope? = null
+        val harness = Harness(pathPreparer = { frame, context ->
+            assertEquals(0, frame.releaseCount)
+            preparedScope = context.scope
+            order += "prepare:${frame.frameId}"
+            assertTrue(context.publishIfCurrent { order += "publish:${frame.frameId}" })
+        }, pathEvaluator = { frame, diagnostic ->
+            assertEquals(preparedScope, diagnostic.batch.scope)
+            order += "associate:${frame.frameId}"
+            "{}"
+        })
+        harness.backend.onModelStart = { order += "model:${it.frameId}" }
+        val first = harness.frame("first", capturedAtNanos = 0)
+        assertTrue(harness.orchestrator.submit(first))
+        assertEquals(listOf("prepare:first", "publish:first", "model:first"), order)
+        assertEquals(0, first.releaseCount)
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        assertEquals(listOf("prepare:first", "publish:first", "model:first", "associate:first"), order)
+        assertEquals(1, first.releaseCount)
+    }
+
+    @Test fun stalePreparationGuardCannotPublishAfterContextChangeOrClose() {
+        for (close in listOf(false, true)) {
+            var guard: (((() -> Unit) -> Boolean))? = null
+            var invalidations = 0
+            val harness = Harness(pathPreparer = { _, context -> guard = context.publishIfCurrent },
+                pathInvalidated = { invalidations++ })
+            val frame = harness.frame("stale", capturedAtNanos = 0)
+            harness.orchestrator.submit(frame)
+            if (close) harness.orchestrator.close() else
+                harness.orchestrator.reconcileContext(harness.context, 1)
+            var published = false
+            assertFalse(requireNotNull(guard) { "preparation must run before model" }.invoke { published = true })
+            assertFalse(published)
+            assertTrue(invalidations > 0)
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+            assertEquals(1, frame.releaseCount)
+        }
+    }
+
+    @Test fun optionalPreparationFailureCannotSkipTsrOrLeakTheFrame() {
+        var invalidations = 0
+        val harness = Harness(pathPreparer = { _, _ -> error("lane preprocessing failed") },
+            pathInvalidated = { invalidations++ })
+        val frame = harness.frame("failed-preparation", capturedAtNanos = 0)
+        assertTrue(harness.orchestrator.submit(frame))
+        assertEquals(listOf("failed-preparation"), harness.backend.activeFrameIds())
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        assertEquals(1, frame.releaseCount)
+        assertEquals(1, harness.observer.outputs.size)
+        assertEquals(1, invalidations)
+        assertNull(harness.observer.outputs.single().backendFailureReason)
+    }
+
+    @Test
+    fun optionalPathEvaluatorReadsTheOwnedFrameBeforeExactlyOneRelease() {
+        val releaseCountsAtEvaluation = mutableListOf<Int>()
+        val evaluatedIds = mutableListOf<String>()
+        val shadow = "{\"mode\":\"shadow\",\"classification\":\"other_path\"}"
+        val harness = Harness(pathEvaluator = { frame, diagnostic ->
+            releaseCountsAtEvaluation += frame.releaseCount
+            evaluatedIds += diagnostic.batch.frameId
+            shadow
+        })
+        val frame = harness.frame("path-owned", capturedAtNanos = 0)
+        assertTrue(harness.orchestrator.submit(frame))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+
+        assertEquals(listOf(0), releaseCountsAtEvaluation)
+        assertEquals(listOf("path-owned"), evaluatedIds)
+        assertEquals(1, frame.releaseCount)
+        assertEquals(shadow, harness.observer.outputs.single().roadPathDiagnostic)
+        harness.orchestrator.close()
+        assertEquals(1, frame.releaseCount)
+    }
+
+    @Test
+    fun optionalPathFailurePreservesVisualOutputReleasesFrameAndContinuesInference() {
+        val baseline = Harness()
+        val releaseCountsAtEvaluation = mutableListOf<Int>()
+        val failing = Harness(pathEvaluator = { frame, _ ->
+            releaseCountsAtEvaluation += frame.releaseCount
+            throw IllegalStateException("experimental path failure")
+        })
+        for (harness in listOf(baseline, failing)) {
+            repeat(2) { index ->
+                harness.clockNanos = index * 500_000_000L
+                val frame = harness.frame("path-failure-$index", capturedAtNanos = harness.clockNanos)
+                assertTrue(harness.orchestrator.submit(frame))
+                harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+                assertEquals(1, frame.releaseCount)
+            }
+        }
+        assertEquals(listOf(0, 0), releaseCountsAtEvaluation)
+        // Independent fusion instances intentionally generate different UUID track identities.
+        // Compare every other field, and require stable non-null identity within each run.
+        for (harness in listOf(baseline, failing)) {
+            val ids = harness.observer.outputs.mapNotNull { it.event.candidate?.trackId }
+            assertEquals(2, ids.size); assertEquals(1, ids.distinct().size)
+        }
+        assertEquals(baseline.observer.outputs.map { it.copy(event = withoutRandomFusionIdentity(it.event)) },
+            failing.observer.outputs.map { it.copy(event = withoutRandomFusionIdentity(it.event)) })
+        assertTrue(failing.observer.outputs.all { it.roadPathDiagnostic == null })
+        assertTrue(failing.backend.activeFrameIds().isEmpty())
+    }
+
+    @Test
+    fun shadowOtherPathDiagnosticCannotSuppressVisualConfirmationOrPassageAuthority() {
+        val baseline = Harness()
+        val shadow = Harness(pathEvaluator = { _, _ ->
+            "{\"mode\":\"shadow\",\"classification\":\"other_path\",\"displayEligible\":false,\"passageEligible\":false}"
+        })
+        for (harness in listOf(baseline, shadow)) {
+            repeat(5) { index ->
+                harness.clockNanos = index * 500_000_000L
+                val frame = harness.frame("shadow-control-$index", capturedAtNanos = harness.clockNanos)
+                assertTrue(harness.orchestrator.submit(frame))
+                harness.backend.completeNext(TrafficSignBackendResult.Recognition(if (index < 3) detection() else null))
+                assertEquals(1, frame.releaseCount)
+            }
+        }
+        for (harness in listOf(baseline, shadow)) {
+            val ids = harness.observer.outputs.mapNotNull { it.event.candidate?.trackId }
+            assertEquals(3, ids.size); assertEquals(1, ids.distinct().size)
+        }
+        assertEquals(baseline.observer.outputs.map { withoutRandomFusionIdentity(it.event) },
+            shadow.observer.outputs.map { withoutRandomFusionIdentity(it.event) })
+        assertEquals(baseline.observer.outputs.map { it.displayObservation }, shadow.observer.outputs.map { it.displayObservation })
+        assertEquals(30, shadow.observer.outputs.last().passageEvent?.resolution?.speedKmh)
+        assertEquals(baseline.orchestrator.speedOverride()?.speedKmh, shadow.orchestrator.speedOverride()?.speedKmh)
+        assertTrue(shadow.observer.outputs.all { it.roadPathDiagnostic != null })
+    }
+
     @Test
     fun frameTimeRoadContextSurvivesAsynchronousLiveAndStillInference() {
         val harness = Harness()
@@ -776,6 +992,9 @@ class TrafficSignRecognitionOrchestratorTests {
 
     private class Harness(
         val pack: TrafficSignModelPack = fixture("de-direct-pack-v1.json").readText().let(TrafficSignModelPackJson::decode),
+        pathEvaluator: ((FakeFrame, TSRApplicabilityDiagnostic) -> String?)? = null,
+        pathPreparer: ((FakeFrame, TrafficSignPathPreparationContext) -> Unit)? = null,
+        pathInvalidated: (() -> Unit)? = null,
     ) {
         val backend = FakeBackend()
         val observer = RecordingObserver()
@@ -783,6 +1002,7 @@ class TrafficSignRecognitionOrchestratorTests {
         var context = context()
         var contextGeneration = 0L
         var runtimeActivationEligible = true
+        var conditions=TrafficSignAnalysisConditions()
         val orchestrator = TrafficSignRecognitionOrchestrator(
             modelPack = pack,
             runtimeArtifact = requireNotNull(pack.androidArtifact()),
@@ -795,9 +1015,12 @@ class TrafficSignRecognitionOrchestratorTests {
                     driveSessionId = "drive-test",
                 )
             },
-            conditionsSnapshot = { TrafficSignAnalysisConditions() },
+            conditionsSnapshot = { conditions },
             monotonicClockNanos = { clockNanos },
             observer = observer,
+            pathEvaluator = pathEvaluator,
+            pathPreparer = pathPreparer,
+            pathInvalidated = pathInvalidated,
         )
 
         fun frame(
@@ -813,9 +1036,11 @@ class TrafficSignRecognitionOrchestratorTests {
     }
 
     private class FakeBackend : TrafficSignRecognitionBackend<FakeFrame> {
+        var onModelStart: (FakeFrame) -> Unit = {}
         private val pending = ArrayDeque<Pair<FakeFrame, (TrafficSignBackendResult) -> Unit>>()
 
         override fun recognize(frame: FakeFrame, completion: (TrafficSignBackendResult) -> Unit) {
+            onModelStart(frame)
             pending.addLast(frame to completion)
         }
 
@@ -857,6 +1082,9 @@ class TrafficSignRecognitionOrchestratorTests {
     }
 
     private companion object {
+        fun withoutRandomFusionIdentity(event: TrafficSignRecognitionEvent) =
+            event.copy(candidate = event.candidate?.copy(trackId = null))
+
         fun detection() = TrafficSignDetection(
             candidate = TrafficSignCandidate(
                 rawClassId = "speed_limit_30",

@@ -2691,8 +2691,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/9/98/Nederlands_verkeersbord_C20.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "8c612376fe557981d2749350706780f98b0dd5375dbf88bb42ae8c8f44087722",
       "png_path": "national/NL/png/nl-c20.png",
-      "png_sha256": "a992ecd4dd380914548ea513f8397345b1e0c189fa9ed4265aba07db4bb24521",
-      "png_bytes": 18526,
+      "png_sha256": "377a24e49b288257e78053dfcaee961dbb124ae34647cbc41d05b4d7e657968e",
+      "png_bytes": 19590,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -2715,8 +2715,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "a992ecd4dd380914548ea513f8397345b1e0c189fa9ed4265aba07db4bb24521",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-c19",
@@ -2740,8 +2742,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/d/dc/Nederlands_verkeersbord_C19.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "640a5a491ebe096489b07a2e09701623da7cd87c992a264a56a1fada39207e5a",
       "png_path": "national/NL/png/nl-c19.png",
-      "png_sha256": "0d9beef5b459863ababc47eae947b4b3d3308c913b1d124666cfa1f29d68abc5",
-      "png_bytes": 17390,
+      "png_sha256": "0e339b5c9d5ee31949999878fa3882a1c11667097a6be612dd3516d2748b60b7",
+      "png_bytes": 18627,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -2764,8 +2766,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "0d9beef5b459863ababc47eae947b4b3d3308c913b1d124666cfa1f29d68abc5",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-c17",
@@ -2789,8 +2793,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/7/7c/Nederlands_verkeersbord_C17.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "857ef1d3722a1761d26ae86f3ccc551f5167a3b3a7133c081ad9e8f8db1ffd32",
       "png_path": "national/NL/png/nl-c17.png",
-      "png_sha256": "8a1f88f33700ed388a842e08d1010aa4ec572087c5c1faed3990f8e516120536",
-      "png_bytes": 16293,
+      "png_sha256": "7b1c1f02f5631ac610f8de0aa0ac13c01cf9b8e0962c6b1bd8caf60e08e652a4",
+      "png_bytes": 17336,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -2813,8 +2817,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "8a1f88f33700ed388a842e08d1010aa4ec572087c5c1faed3990f8e516120536",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-a01-130",
@@ -2985,8 +2991,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Nederlands_verkeersbord_C21.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "f7031fce95c044e1d029527bec7eaf0e664b6a0249b3056f21463b5916bb1bfe",
       "png_path": "national/NL/png/nl-c21.png",
-      "png_sha256": "2e74c2730443913cd6502f5cb1d8fb800aaebec2f174da570ea07f12a8083190",
-      "png_bytes": 14932,
+      "png_sha256": "a16d50c1ba989ea3e92bfb796440769eabb3771d7ea63db6bd1b176e00d05d21",
+      "png_bytes": 15956,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -3009,8 +3015,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "2e74c2730443913cd6502f5cb1d8fb800aaebec2f174da570ea07f12a8083190",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-c18",
@@ -3034,8 +3042,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Nederlands_verkeersbord_C18.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "3532fce17fc0605b928e74036b3b6b18637de128e7409b300d8e33f28e186fd4",
       "png_path": "national/NL/png/nl-c18.png",
-      "png_sha256": "51c84d342e568d3dbecc9265d8be978359883635b9263adc1884b933a430aff7",
-      "png_bytes": 19355,
+      "png_sha256": "b32c776dc6888a9bfc859907a357e097ea3e450f5768c5c39b3ccdbfd0d3b8b0",
+      "png_bytes": 20495,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -3058,8 +3066,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "51c84d342e568d3dbecc9265d8be978359883635b9263adc1884b933a430aff7",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-g02",
@@ -3181,8 +3191,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/0/09/Nederlands_verkeersbord_C8.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "dc2fbf3de9cb269eede7ae13e814c0a45892717a3a3d3620d2bae9f27fd4da56",
       "png_path": "national/NL/png/nl-c08.png",
-      "png_sha256": "50d751ecc8d46c5e7a1bcfcbae56ac17f0b7de1dc6cab3715369f12616917c70",
-      "png_bytes": 17278,
+      "png_sha256": "b9caa105d1d4d0f05730e664c1d94a7fa9ed1236aafe441ffb770fd9e8f0724b",
+      "png_bytes": 18327,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -3205,8 +3215,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "50d751ecc8d46c5e7a1bcfcbae56ac17f0b7de1dc6cab3715369f12616917c70",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-c14",
@@ -3230,8 +3242,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/d/df/Nederlands_verkeersbord_C14.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "a2c7083722b3a3540c3e6467ef5b8d0962da8386ed24a52bc6ebf9a4f72f0320",
       "png_path": "national/NL/png/nl-c14.png",
-      "png_sha256": "85b68b34f43299477ffdab056e881ff7ac6d6b2550f6528f993c2d694261037b",
-      "png_bytes": 21119,
+      "png_sha256": "902ae2494c8caa3678c7eae36464189c1c5868964bd2e23999334c87c5356152",
+      "png_bytes": 22399,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -3254,8 +3266,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "85b68b34f43299477ffdab056e881ff7ac6d6b2550f6528f993c2d694261037b",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-c07-a",
@@ -3279,8 +3293,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d5/Nederlands_verkeersbord_C7a.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "9cb049cd109848d3e691d6898e0a9f8ecfd2d718645162fd591c02ee064af058",
       "png_path": "national/NL/png/nl-c07-a.png",
-      "png_sha256": "c544da29dae61e84a0bbf54ee582a19824875d89e0c6fe5cded16db211fdcdf4",
-      "png_bytes": 12917,
+      "png_sha256": "f958a7ef3cdabe96cb151369fa120aaa51b8377f3735937dc9844a9d2f1ed1b6",
+      "png_bytes": 14039,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -3303,8 +3317,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "c544da29dae61e84a0bbf54ee582a19824875d89e0c6fe5cded16db211fdcdf4",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-c12",
@@ -3328,8 +3344,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/5/5f/Nederlands_verkeersbord_C12.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "3aad16392e168e83dc35b4d3245669c223f34f65587eaf517bada60572088ff4",
       "png_path": "national/NL/png/nl-c12.png",
-      "png_sha256": "33a06ad66d53b639e9828f38d7454879fea01faffd991b4b4e78b19a68f3c6c0",
-      "png_bytes": 19064,
+      "png_sha256": "d6d93f1b6f472214ff607f06e1a755a71a2a5ee8a49248801dafa4246ecb828a",
+      "png_bytes": 20362,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -3352,8 +3368,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "33a06ad66d53b639e9828f38d7454879fea01faffd991b4b4e78b19a68f3c6c0",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-c06",
@@ -3377,8 +3395,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/9/96/Nederlands_verkeersbord_C6.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "6c96aaae6c6e19aaf162fbe054c7b9bda79afc4830c344622aab144803a3ee33",
       "png_path": "national/NL/png/nl-c06.png",
-      "png_sha256": "52f56a41b007398a794f776399f2d4d4d054248727f811a86db93ee428525c20",
-      "png_bytes": 13113,
+      "png_sha256": "280914296450489767ac365586c7455743e1748c0c33c7d5a50552619a0a7e8c",
+      "png_bytes": 14179,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -3401,8 +3419,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "52f56a41b007398a794f776399f2d4d4d054248727f811a86db93ee428525c20",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-c22",
@@ -3426,8 +3446,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Nederlands_verkeersbord_C22.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "066f8418bff6fb71609435a77a493ac9e16a15e81d810ce6a6e05edf8458dcd2",
       "png_path": "national/NL/png/nl-c22.png",
-      "png_sha256": "887b499b91f7710be25606b6a5544b7f807f6d5d84fb7b2d99009342935beb19",
-      "png_bytes": 10903,
+      "png_sha256": "25706bbf95d18f287a4801868670453babd195b0110dc581e5db01627e40b572",
+      "png_bytes": 12159,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -3450,8 +3470,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "887b499b91f7710be25606b6a5544b7f807f6d5d84fb7b2d99009342935beb19",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-c02",
@@ -3573,8 +3595,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f9/Nederlands_verkeersbord_C7.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "43fb370e2701d94ea7b0c9cac8b37a9e08e23f5bbc1542d09b95d901585c4cfb",
       "png_path": "national/NL/png/nl-c07.png",
-      "png_sha256": "bbd270aa149040eaf01b7f983d754ab1f39eae91b63bfc2b44fb404e768afc8d",
-      "png_bytes": 12333,
+      "png_sha256": "d88baffdb5ff1c5ad2b5a9f38de8994e53d1acefc2c460163dbb9130a4737715",
+      "png_bytes": 13474,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -3597,8 +3619,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "bbd270aa149040eaf01b7f983d754ab1f39eae91b63bfc2b44fb404e768afc8d",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-c13",
@@ -3622,8 +3646,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/1/14/Nederlands_verkeersbord_C13.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "aefac09b8dcb3d8f97e106b34b4225313a040fe2ce2b357543beaa37a1e80509",
       "png_path": "national/NL/png/nl-c13.png",
-      "png_sha256": "b664137f80cc84536ac295f4c67bb79c2120ec0d90cb5aad66d24251d78fa95e",
-      "png_bytes": 18953,
+      "png_sha256": "761dc0d467d7afdb12aa2c606b44760914a2f6d43fb038eb744c1798a964d84c",
+      "png_bytes": 20155,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -3646,8 +3670,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "b664137f80cc84536ac295f4c67bb79c2120ec0d90cb5aad66d24251d78fa95e",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-c11",
@@ -3671,8 +3697,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/6/6b/Nederlands_verkeersbord_C11.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "cbfded4dd96c31130be29b12491acd9a33a8b145e67dc5645e8473fb7f644e23",
       "png_path": "national/NL/png/nl-c11.png",
-      "png_sha256": "1d4b1f6dc151785485961f18f0b2084e4b859f8e906aa3c1348acdb2e15b6894",
-      "png_bytes": 19638,
+      "png_sha256": "64b025fee2998ff390a9ef6fbf4ef1db7d5c6f25454fda3d25d8d47c554cac4a",
+      "png_bytes": 21059,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -3695,8 +3721,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "1d4b1f6dc151785485961f18f0b2084e4b859f8e906aa3c1348acdb2e15b6894",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-f01",
@@ -3965,8 +3993,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ed/Nederlands_verkeersbord_C16.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "0f18cd6cb69aaab998f5b01469ca40465a1c0f17cbb51e3f6560a1e56918ff73",
       "png_path": "national/NL/png/nl-c16.png",
-      "png_sha256": "5582f5798d03cab104d9ca0f774a5f639e2caa83c391ab9e1458dd7751d88d75",
-      "png_bytes": 16039,
+      "png_sha256": "4252cb94f2cba275af0ba6e24b5553380d39e7254614a18463db1405f7cd7865",
+      "png_bytes": 17101,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -3989,8 +4017,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "5582f5798d03cab104d9ca0f774a5f639e2caa83c391ab9e1458dd7751d88d75",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-c10",
@@ -4014,8 +4044,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ed/Nederlands_verkeersbord_C10.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "1e280eecab4c23003376a4e0bcda815fce8727e579779865452369c11e78e42d",
       "png_path": "national/NL/png/nl-c10.png",
-      "png_sha256": "b1eded3a1662f0a0fc7859153183963c96bf28707e609fbd79037deeeab76c90",
-      "png_bytes": 8176,
+      "png_sha256": "2949a9ec9cdfff40e5b7cdf9c5f1946ca8d4962192facbd3c5c5261825ee49a0",
+      "png_bytes": 9266,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -4038,8 +4068,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "b1eded3a1662f0a0fc7859153183963c96bf28707e609fbd79037deeeab76c90",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-f07",
@@ -4112,8 +4144,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/3/31/Nederlands_verkeersbord_C1.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "fe025e3191befdab342b5274c4e27d811e6852d35ad5a0ace8488880705526e7",
       "png_path": "national/NL/png/nl-c01.png",
-      "png_sha256": "53b68ab7b1c1e1512ef7bacd80512d31147b5ad723365d7faba69aa064d10860",
-      "png_bytes": 4528,
+      "png_sha256": "12ecd1a1967d3d61c8da8e05aa0dba2e0450c434f33cb9ebfd9cc92f3e065311",
+      "png_bytes": 3713,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -4136,8 +4168,10 @@
       "attribution_required": false,
       "artist": "Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "53b68ab7b1c1e1512ef7bacd80512d31147b5ad723365d7faba69aa064d10860",
+      "rendition_correction_commit": "c1e7050263cbb503739ecac4a5439eeee2bedae8"
     },
     {
       "asset_id": "nl-f08",
@@ -4730,11 +4764,11 @@
     {
       "asset_id": "nl-b01",
       "sign_code": "B01",
-      "semantic_id": "pedestrian:start",
+      "semantic_id": "priority:start",
       "model_class_label": "pedestrian:start",
       "commons_title": "File:Nederlands verkeersbord B1.svg",
       "mapping_status": "reviewed_model_code",
-      "mapping_basis": "Panoramax road_signs_mapping.csv class pedestrian:start maps to national sign code B01; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning.",
+      "mapping_basis": "National regulation code review 2026-09-23: priority:start. Upstream label is retained as evidence, not used as semantic authority.",
       "commons_page_id": 2514153,
       "commons_page_revision": null,
       "commons_page_revision_timestamp": "2012-11-12T19:08:18Z",
@@ -4774,7 +4808,8 @@
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
       "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "png_source_kind": "original_svg",
+      "upstream_semantic_id": "pedestrian:start"
     },
     {
       "asset_id": "nl-f05",
@@ -4945,8 +4980,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/0/05/Nederlands_verkeersbord_L14.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "90f8d13e0be780ae695c5f07e942544b028031f7ffb260ace90e7f9913cf3526",
       "png_path": "national/NL/png/nl-l14.png",
-      "png_sha256": "01f1410777f91da5a3af4f6bbbb3333502aeafc862290023cd0a39af4e8386a8",
-      "png_bytes": 1050,
+      "png_sha256": "235ebf5eaf4378791dfcad6508db2a7884bf33167c8082e4f1f688bde8b6f687",
+      "png_bytes": 3721,
       "png_width": 256,
       "png_height": 256,
       "license": "Public domain",
@@ -4969,8 +5004,10 @@
       "attribution_required": false,
       "artist": "SVG version by Bouwe Brouwer",
       "source_credit": "Official national road-sign regulation; Commons vector rendition",
-      "changes": "Original SVG retained; SVG rasterized locally to a transparent 256 × 256 PNG with metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Original SVG unchanged. PNG rendition corrected in referenced repository commit; inventory reconciled during 2026-09-23 mapping review.",
+      "png_source_kind": "original_svg",
+      "previous_png_sha256": "01f1410777f91da5a3af4f6bbbb3333502aeafc862290023cd0a39af4e8386a8",
+      "rendition_correction_commit": "888c6250dc01d4e0775014e345752dcb6f73fcbb"
     },
     {
       "asset_id": "nl-d01",

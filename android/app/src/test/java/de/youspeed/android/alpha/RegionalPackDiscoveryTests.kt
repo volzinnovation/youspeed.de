@@ -10,6 +10,15 @@ class RegionalPackDiscoveryTests {
         .first { it.isFile }
     private val scenarios get() = Json.parseToJsonElement(shared("tsr/fixtures/country-discovery-scenarios-v1.json").readText()).jsonObject
 
+    @Test fun missingCoverageRecommendsOnlyAvailableRegionalDownloads() {
+        val catalog = RegionalPackCatalog.decode(shared("RegionalCoverage/catalog-v1.json").readBytes())
+        val ids = catalog.regions.map { it.id }.toSet()
+        assertEquals("france|provence-alpes-cote-d-azur", catalog.recommendedDownloadId(5.3698, 43.2965, false, ids))
+        assertNull(catalog.recommendedDownloadId(5.3698, 43.2965, true, ids))
+        assertNull(catalog.recommendedDownloadId(5.3698, 43.2965, false, setOf("belgium|belgium")))
+        assertNull(catalog.recommendedDownloadId(-74.0, 40.7, false, ids))
+    }
+
     @Test fun sharedRegionalAndBorderScenarios() {
         val catalog = RegionalPackCatalog.decode(shared("RegionalCoverage/catalog-v1.json").readBytes())
         scenarios.getValue("regions").jsonArray.forEach { element ->

@@ -41,7 +41,7 @@ def main():
     manifest = []
     try:
         for country, code, language, locale in MATRIX:
-            rules_path = ROOT / f"iphone/SpeedConsumerApp/Rules/{code}-rules.json"
+            rules_path = ROOT / f"shared/Rules/{code}-rules.json"
             rules_bytes = rules_path.read_bytes()
             rules = json.loads(rules_bytes)
             scenarios = [("00-safe", 0, 50, True, None)]

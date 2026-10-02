@@ -6,12 +6,187 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrafficSignPassageTests {
     private val t0 = Instant.parse("2026-09-04T08:00:00Z")
+
+
+    @Test fun lastKnownPresentationSurvivesUnknownRoadAndEndUntilFreshInformation() {
+        val cache = LastKnownSpeedLimitPresentation()
+        val unknown = EffectiveSpeedLimit(null, EffectiveSpeedLimitSource.NONE, "no_limit")
+        assertNull(cache.present(unknown).resolution)
+        val voice = EffectiveSpeedLimit(TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 70),
+            EffectiveSpeedLimitSource.LOCAL_CORRECTION, "voice", isUserCorrection = true)
+        assertEquals(voice, cache.present(voice))
+        repeat(1000) {
+            val stale = cache.present(unknown)
+            assertEquals(70, stale.resolution?.speedKmh)
+            assertEquals(EffectiveSpeedLimitSource.LAST_KNOWN, stale.source)
+            assertFalse(stale.isUserCorrection)
+            assertFalse(stale.cameraEvidence)
+        }
+        val camera = EffectiveSpeedLimit(TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 30),
+            EffectiveSpeedLimitSource.CAMERA, "camera")
+        assertEquals(camera, cache.present(camera))
+        val end = unknown.copy(resolution = TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNKNOWN),
+            presentationReason = "end_unknown")
+        assertEquals(30, cache.present(end).resolution?.speedKmh)
+        val state = ConsumerUiState(speedLimitKmh = 30, currentSpeedKmh = 80.0,
+            effectiveSpeedLimitSource = EffectiveSpeedLimitSource.LAST_KNOWN)
+        assertEquals(0, ConsumerMainScreenLogic.currentOverspeedKmh(state))
+        assertNull(ConsumerMainScreenLogic.currentPenaltyNotice(state))
+        cache.reset()
+        assertNull(cache.present(unknown).resolution)
+    }
+
+    @Test fun lastKnownPresentationKeepsUnlimitedAndWalkingValues() {
+        val cache = LastKnownSpeedLimitPresentation()
+        for (kind in listOf(TrafficSignResolvedLimitKind.UNLIMITED, TrafficSignResolvedLimitKind.WALK)) {
+            val current = EffectiveSpeedLimit(TrafficSignResolvedLimit(kind), EffectiveSpeedLimitSource.BUNDLE, "map")
+            assertEquals(current, cache.present(current))
+            val stale = cache.present(EffectiveSpeedLimit(null, EffectiveSpeedLimitSource.NONE, "missing"))
+            assertEquals(kind, stale.resolution?.kind)
+            assertEquals(EffectiveSpeedLimitSource.LAST_KNOWN, stale.source)
+        }
+    }
+
+    @Test fun confirmedPassageSurvivesNearbyNumberedRoadSplit() {
+        val first = context("1", emptySet()).copy(continuityCapable = false, roadIdentity = "ref:D1555")
+        val next = context("2", emptySet()).copy(continuityCapable = false, roadIdentity = "ref:D1555", latitude = 49.0001)
+        val finalizer = TrafficSignPassageFinalizer()
+        finalizer.observe(recognition(t0, confidence = 0.90).copy(roadContext = first), 0.90, 1, true, true)
+        finalizer.observe(recognition(t0.plusMillis(500), confidence = 0.93).copy(roadContext = first), 0.93, 1, true, true)
+        assertNull(finalizer.observe(missing(t0.plusSeconds(1)).copy(roadContext = next), null, 1, true, true))
+        val event = requireNotNull(finalizer.observe(missing(t0.plusMillis(1500)).copy(roadContext = next), null, 1, true, true))
+        assertTrue(event.eligibleRouteRelationGroupIds.isEmpty())
+        assertTrue(trafficSignPassageContextIsCurrent(event, next))
+        val resolver = TrafficSignRuntimeSourceResolver()
+        val result = resolver.commit(event, base(90, EffectiveSpeedLimitSource.BUNDLE))
+        assertEquals(event.resolution.speedKmh, result.resolution?.speedKmh)
+        assertNotNull(resolver.activeAssertion())
+    }
+
+    @Test fun numberedRoadContinuityRejectsTurnsChangedScopesAndUnverifiedBundles() {
+        val first = context("1", emptySet()).copy(roadIdentity = "ref:D1555")
+        val next = first.copy(wayId = "2")
+        assertTrue(next.continuesSignedRoad(first))
+        for (invalid in listOf(next.copy(roadIdentity = "ref:D19"),
+            next.copy(traversalEpoch = 2), next.copy(matchedWayStable = false),
+            next.copy(latitude = 49.01), next.copy(bundleSha256 = "b".repeat(64)),
+            next.copy(bundleSha256 = null), next.copy(headingDegrees = 180.0))) {
+            assertFalse(invalid.continuesSignedRoad(first))
+        }
+        assertFalse(next.copy(roadIdentity = "name:Main Street").continuesSignedRoad(first.copy(roadIdentity = "name:Main Street")))
+    }
+
+    @Test fun framePreviewCannotReturnAfterFiveMinuteExpiry() {
+        val context = context("1", emptySet())
+        val preview = TrafficSignSpeedOverride(90, t0, "preview", context)
+        assertEquals(preview, TrafficSignSpeedOverridePolicy.currentForPresentation(preview, context, t0.plusSeconds(299)))
+        assertNull(TrafficSignSpeedOverridePolicy.currentForPresentation(preview, context, t0.plusSeconds(300)))
+        assertNull(TrafficSignSpeedOverridePolicy.currentForPresentation(preview, context.copy(wayId = "2"), t0.plusSeconds(1)))
+    }
+
+    @Test fun frenchDefaultsAndStrictSpeedTags() {
+        assertEquals(80, RoadSpeedDefaults.symbolicSpeed("FR:rural", "FRA"))
+        assertEquals(50, RoadSpeedDefaults.symbolicSpeed("FR:urban", "FR"))
+        assertEquals(80, RoadSpeedDefaults.speedKmh("FR", null, "secondary", false))
+        assertEquals(50, RoadSpeedDefaults.speedKmh("FR", null, "secondary", true))
+        assertNull(RoadSpeedDefaults.speedKmh("FR", null, "trunk", false))
+        assertNull(RoadSpeedDefaults.speedKmh("FR", null, "motorway_link", false))
+        for (value in listOf("50;70", "50 @ (wet)", "signals", "50/80", "none", "0", "999")) assertNull(value, RoadSpeedDefaults.explicitSpeed(value))
+        assertEquals(50, RoadSpeedDefaults.explicitSpeed("50 km/h"))
+        assertEquals(48, RoadSpeedDefaults.explicitSpeed("30 mph"))
+        assertEquals("ref:A9", DrivingRoadIdentity.key(" A 9 ", null, "motorway"))
+        assertFalse(DrivingRoadIdentity.key("A9", null, "motorway") == DrivingRoadIdentity.key("A9", null, "motorway_link"))
+    }
+
+    @Test fun cameraLimitSurvivesWaySplitsButExpiresAfterFiveMinutes() {
+        val resolver = TrafficSignRuntimeSourceResolver()
+        val bundle = base(130, EffectiveSpeedLimitSource.BUNDLE)
+        val first = context("1", emptySet()).copy(continuityCapable = false, roadIdentity = "ref:A9")
+        val next = context("2", emptySet()).copy(continuityCapable = false, roadIdentity = "ref:A9")
+        resolver.commit(passage(TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 90), first), bundle)
+        assertEquals(90, resolver.reconcile(TrafficSignRoadMatch(next, t0.plusSeconds(299)), bundle).resolution?.speedKmh)
+        assertEquals(130, resolver.reconcile(TrafficSignRoadMatch(next, t0.plusSeconds(300)), bundle).resolution?.speedKmh)
+        assertNull(resolver.activeAssertion())
+    }
+
+    @Test fun roadReferenceChangeClearsCameraEvenWithinSameRouteRelation() {
+        val resolver = TrafficSignRuntimeSourceResolver()
+        val bundle = base(80, EffectiveSpeedLimitSource.BUNDLE)
+        resolver.commit(passage(context = context("100", setOf(1)).copy(roadIdentity = "ref:D19")), bundle)
+        assertEquals(80, resolver.reconcile(TrafficSignRoadMatch(context("101", setOf(1)).copy(roadIdentity = "ref:D228"), t0.plusSeconds(1)), bundle).resolution?.speedKmh)
+    }
+
+    @Test fun postedTimeoutRetainsEnclosingZone() {
+        val resolver = TrafficSignRuntimeSourceResolver()
+        val bundle = base(80, EffectiveSpeedLimitSource.BUNDLE)
+        resolver.commit(passage(TrafficSignAction(TrafficSignActionKind.ZONE_START, 30)), bundle)
+        resolver.commit(passage(TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 20), at = t0.plusSeconds(1)), bundle)
+        assertEquals(30, resolver.reconcile(TrafficSignRoadMatch(context("100", setOf(1)), t0.plusSeconds(301)), bundle).resolution?.speedKmh)
+    }
+
+    @Test fun singleStructuralSignRequiresStableContextAndThreeNegativeFrames() {
+        for (stable in listOf(true, false)) {
+            val finalizer = TrafficSignPassageFinalizer()
+            val context = context("100", setOf(1)).copy(matchedWayStable = stable)
+            val seen = recognition(t0, confidence = 0.777).let { it.copy(roadContext = context, candidate = it.candidate?.copy(
+                rawClassId = "maxspeed:end", semantic = TrafficSignSemantic(TrafficSignSemanticKind.RESTRICTION_END))) }
+            finalizer.observe(seen, 0.777, 1, true, true)
+            for (index in 1..2) assertNull(finalizer.observe(missing(t0.plusMillis(index * 200L)).copy(roadContext = context), null, 1, true, true))
+            assertEquals(stable, finalizer.observe(missing(t0.plusMillis(600)).copy(roadContext = context), null, 1, true, true) != null)
+        }
+    }
+
+    @Test fun userRecordingPrecedesCameraStartsEndsAndReconciliation() {
+        val manual = base(90, EffectiveSpeedLimitSource.LOCAL_CORRECTION).copy(isUserCorrection = true)
+        for (action in listOf(TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 50),
+            TrafficSignAction(TrafficSignActionKind.ALL_RESTRICTIONS_END),
+            TrafficSignAction(TrafficSignActionKind.CITY_ENTRY, countryCode = "FR"))) {
+            val resolver = TrafficSignRuntimeSourceResolver()
+            resolver.commit(passage(), base(130, EffectiveSpeedLimitSource.BUNDLE))
+            val result = resolver.commit(passage(action = action), manual)
+            assertEquals(90, result.resolution?.speedKmh)
+            assertTrue(result.isUserCorrection)
+            assertNull(resolver.activeAssertion())
+            assertEquals(90, resolver.effective(manual).resolution?.speedKmh)
+        }
+    }
+
+    @Test fun nationalEndAndCityTransitionsDiscardOldPostedLimits() {
+        val bundle = base(70, EffectiveSpeedLimitSource.BUNDLE)
+        for (action in listOf(TrafficSignAction(TrafficSignActionKind.MAXIMUM_SPEED_END, 70),
+            TrafficSignAction(TrafficSignActionKind.ALL_RESTRICTIONS_END), TrafficSignAction(TrafficSignActionKind.CITY_EXIT))) {
+            val resolver = TrafficSignRuntimeSourceResolver()
+            resolver.commit(passage(action = TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 70)), bundle)
+            val ended = resolver.commit(passage(action = action, at = t0.plusSeconds(2)), bundle,
+                TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 130))
+            assertEquals(130, ended.resolution?.speedKmh)
+            assertEquals(130, resolver.effective(bundle).resolution?.speedKmh)
+        }
+        for (country in listOf("FR", "BE")) {
+            val resolver = TrafficSignRuntimeSourceResolver()
+            resolver.commit(passage(), bundle)
+            assertEquals(50, resolver.commit(passage(action = TrafficSignAction(TrafficSignActionKind.CITY_ENTRY, countryCode = country),
+                at = t0.plusSeconds(2)), bundle, TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 50)).resolution?.speedKmh)
+        }
+    }
+
+    @Test fun roadDefaultsRequireCountryRegionAndRoadContext() {
+        assertEquals(130, TrafficSignRoadDefaultPolicy.speedKmh("FR", null, "motorway", null))
+        assertEquals(120, TrafficSignRoadDefaultPolicy.speedKmh("CH", null, "motorway", null))
+        assertEquals(100, TrafficSignRoadDefaultPolicy.speedKmh("CH", null, "trunk", false))
+        assertEquals(70, TrafficSignRoadDefaultPolicy.speedKmh("BE", "BE-VLG", "secondary", false))
+        assertEquals(90, TrafficSignRoadDefaultPolicy.speedKmh("BE", "BE-WAL", "secondary", false))
+        assertEquals(30, TrafficSignRoadDefaultPolicy.speedKmh("BE", "BE-BRU", "residential", true))
+        assertNull(TrafficSignRoadDefaultPolicy.speedKmh("NL", null, "motorway", null))
+        assertNull(TrafficSignRoadDefaultPolicy.speedKmh("BE", null, "secondary", false))
+    }
 
     @Test
     fun visibleFramesNeverActivateAndOnlyQualifiedLiveLossFinalizes() {
@@ -151,7 +326,7 @@ class TrafficSignPassageTests {
         assertFalse(finalizer.hasActiveTrack())
 
         // Roughly 73 m east at this latitude: a separate, same-valued sign is
-        // outside the 45 m split-suppression radius even inside the time bound.
+        // outside the 30 m split-suppression radius even inside the time bound.
         finalizer.observe(seen(t0.plusMillis(1_000), "track-c", 8.4010), 0.96, 1, true, true)
         finalizer.observe(seen(t0.plusMillis(1_100), "track-c", 8.4010), 0.97, 1, true, true)
         assertNull(finalizer.observe(missing(t0.plusMillis(1_200)), null, 1, true, true))
@@ -159,6 +334,77 @@ class TrafficSignPassageTests {
             "track-c",
             finalizer.observe(missing(t0.plusMillis(1_300)), null, 1, true, true)?.physicalTrackId,
         )
+    }
+
+    @Test
+    fun duplicateSuppressionEndsFiveSecondsAfterCommitRatherThanFirstMissingFrame() {
+        for ((elapsedMs, suppressed) in listOf(4_999L to true, 5_000L to true, 5_001L to false)) {
+            val finalizer = committedSuppressionFinalizer()
+            // The first missing frame was at 200 ms; the passage committed at 300 ms.
+            finalizer.observe(recognition(t0.plusMillis(300L + elapsedMs)), 0.95, 1, true, true)
+            assertEquals("elapsed since commit: $elapsedMs ms", !suppressed, finalizer.hasActiveTrack())
+        }
+    }
+
+    @Test
+    fun duplicateSuppressionUsesThirtyMetreRadiusEvenWhenTrackerReusesAnId() {
+        val origin = context("100", setOf(1)).copy(latitude = 0.0, longitude = 0.0)
+        for (trackId in listOf("physical-1", "new-physical-id")) {
+            for ((distanceM, suppressed) in listOf(29.999 to true, 30.001 to false, 40.0 to false)) {
+                val finalizer = committedSuppressionFinalizer(origin)
+                val next = origin.copy(latitude = Math.toDegrees(distanceM / 6_371_000.0))
+                finalizer.observe(
+                    recognition(t0.plusMillis(400), trackId = trackId).copy(roadContext = next),
+                    0.95, 1, true, true,
+                )
+                assertEquals("$trackId at $distanceM m", !suppressed, finalizer.hasActiveTrack())
+            }
+        }
+    }
+
+    @Test
+    fun duplicateSuppressionFallsBackToTrackIdentityWhenEitherCoordinateIsMissing() {
+        val known = context("100", setOf(1))
+        for ((previousContext, nextContext) in listOf(known to null, null to known, null to null)) {
+            for (trackId in listOf("physical-1", "new-physical-id")) {
+                val finalizer = committedSuppressionFinalizer(previousContext)
+                finalizer.observe(
+                    recognition(t0.plusMillis(400), trackId = trackId).copy(roadContext = nextContext),
+                    0.95, 1, true, true,
+                )
+                assertEquals("$previousContext -> $nextContext, $trackId", trackId != "physical-1", finalizer.hasActiveTrack())
+            }
+        }
+    }
+
+    @Test
+    fun duplicateSuppressionRetainsLastKnownPositionThroughMissingVisibleContext() {
+        val first = context("100", setOf(1)).copy(latitude = 0.0, longitude = 0.0)
+        val latest = first.copy(latitude = Math.toDegrees(60.0 / 6_371_000.0))
+        for ((nextContext, trackId, suppressed) in listOf(
+            Triple(latest, "new-physical-id", true),
+            Triple(first, "physical-1", false),
+        )) {
+            val finalizer = TrafficSignPassageFinalizer()
+            for ((offset, frameContext) in listOf(0L to first, 100L to latest, 200L to null)) {
+                finalizer.observe(recognition(t0.plusMillis(offset)).copy(roadContext = frameContext),
+                    0.95, 1, true, true)
+            }
+            assertNull(finalizer.observe(missing(t0.plusMillis(300)), null, 1, true, true))
+            val committed = requireNotNull(finalizer.observe(missing(t0.plusMillis(400)), null, 1, true, true))
+            assertNull("Retaining a coordinate must not replace the event's missing context", committed.lastSeenContext)
+            finalizer.observe(recognition(t0.plusMillis(500), trackId = trackId).copy(roadContext = nextContext),
+                0.95, 1, true, true)
+            assertEquals("retained latest position, $trackId", !suppressed, finalizer.hasActiveTrack())
+        }
+    }
+
+    @Test
+    fun timestampRollbackClearsDuplicateSuppressionLikeIphone() {
+        val finalizer = committedSuppressionFinalizer()
+        finalizer.observe(missing(t0.plusMillis(250)), null, 1, false, true)
+        finalizer.observe(recognition(t0.plusMillis(400)), 0.95, 1, true, true)
+        assertTrue(finalizer.hasActiveTrack())
     }
 
     @Test
@@ -567,42 +813,14 @@ class TrafficSignPassageTests {
         assertEquals(listOf(oldEvent.finalizedEventId to 70), persisted)
     }
 
-    @Test
-    fun persistedDirectionalCorrectionBecomesBaseBeneathCameraAndSurvivesDisable() {
-        val resolver = TrafficSignRuntimeSourceResolver()
-        val road = context("5001", setOf(7))
-        val bundle = base(50, EffectiveSpeedLimitSource.BUNDLE)
-        val cameraEvent = passage(
-            action = TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 70),
-            context = road,
-        )
-        assertEquals(EffectiveSpeedLimitSource.CAMERA, resolver.commit(cameraEvent, bundle).source)
-        val persistedBase = requireNotNull(
-            trafficSignBaseForPersistedCorrection(
-                currentContext = road,
-                correction = LocalRuntimeCorrection(
-                    observationId = "cv-forward-70",
-                    wayId = "5001",
-                    tagKey = "maxspeed:forward",
-                    canonicalValue = "70",
-                    numericSpeedKmh = 70,
-                    directionScope = TrafficSignTravelDirection.FORWARD,
-                    effectiveAtUtc = t0.toString(),
-                ),
-            ),
-        )
-
-        val whileCameraActive = resolver.reconcile(
-            TrafficSignRoadMatch(road, t0.plusSeconds(1)),
-            persistedBase,
-        )
-        assertEquals(70, whileCameraActive.resolution?.speedKmh)
-        assertEquals(EffectiveSpeedLimitSource.CAMERA, whileCameraActive.source)
-
-        resolver.clear() // Mirrors TSR disable clearing only the camera assertion.
-        val afterDisable = persistedBase.effective()
-        assertEquals(70, afterDisable.resolution?.speedKmh)
-        assertEquals(EffectiveSpeedLimitSource.LOCAL_CORRECTION, afterDisable.source)
+    @Test fun voiceCorrectionFollowsRoadReferenceAndExpiresWithoutRefreshingItsAge() {
+        var correction = ActiveLocalSpeedCorrection("1", "130", 130, roadIdentity = "ref:A9", startedAt = t0)
+        assertEquals(LocalSpeedCorrectionDecision.APPLY, LocalSpeedCorrectionPolicy.decide(correction, "2", "ref:A9", TrafficSignTravelDirection.FORWARD, t0.plusSeconds(30)))
+        correction = correction.copy(lastMatchedAt = t0.plusSeconds(299))
+        assertEquals(LocalSpeedCorrectionDecision.APPLY, LocalSpeedCorrectionPolicy.decide(correction, "3", "ref:A9", TrafficSignTravelDirection.FORWARD, t0.plusSeconds(299)))
+        assertEquals(LocalSpeedCorrectionDecision.EXPIRE, LocalSpeedCorrectionPolicy.decide(correction, "3", "ref:A9", TrafficSignTravelDirection.FORWARD, t0.plusSeconds(300)))
+        assertEquals(LocalSpeedCorrectionDecision.EXPIRE, LocalSpeedCorrectionPolicy.decide(correction, "2", "ref:D19", TrafficSignTravelDirection.FORWARD, t0.plusSeconds(1)))
+        assertEquals(LocalSpeedCorrectionDecision.EXPIRE, LocalSpeedCorrectionPolicy.decide(correction.copy(direction = TrafficSignTravelDirection.FORWARD), "1", "ref:A9", TrafficSignTravelDirection.REVERSE, t0.plusSeconds(1)))
     }
 
     @Test
@@ -759,6 +977,26 @@ class TrafficSignPassageTests {
         val passage = passage()
         forwarder.onRecognition(TrafficSignOrchestrationOutput(recognition, null, passage))
         assertEquals(listOf(passage), forwarded)
+    }
+
+    @Test
+    fun rawAnnotationCannotReachAuthorityCallbacks() {
+        val raw = recognition(t0)
+        val withheld = raw.copy(state = TrafficSignRecognitionState.NO_RECOGNITION, candidate = null)
+        val authority = mutableListOf<TrafficSignRecognitionEvent>()
+        val annotations = mutableListOf<TrafficSignRecognitionEvent>()
+        val passages = mutableListOf<TrafficSignPassageEvent>()
+        val forwarder = TrafficSignFinalizedPassageForwarder(
+            submitRecognitionEvent = { event, _ -> authority += event },
+            submitAnnotationEvent = { event, _ -> annotations += event },
+            submitFinalizedPassage = { passages += it; true },
+        )
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(withheld, null, annotationEvent = raw))
+        assertEquals(listOf(withheld), authority)
+        assertEquals(listOf(raw), annotations)
+        assertTrue(passages.isEmpty())
+        assertNotNull(PanoramaxTrafficSignAnnotationDraft.from(annotations.single()))
+        assertNull(PanoramaxTrafficSignAnnotationDraft.from(authority.single()))
     }
 
     @Test
@@ -1224,6 +1462,20 @@ class TrafficSignPassageTests {
         assertEquals(EffectiveSpeedLimitSource.CAMERA, zoneMismatch.source)
         assertNull(zoneResolver.takeNewlyActivatedEvent())
         assertEquals(zoneMismatchEvent.finalizedEventId, zoneResolver.takeNewlyPersistableEvent()?.finalizedEventId)
+    }
+
+    private fun committedSuppressionFinalizer(
+        recognitionContext: TrafficSignDetectionContext? = context("100", setOf(1)),
+    ): TrafficSignPassageFinalizer = TrafficSignPassageFinalizer().also { finalizer ->
+        for (offset in listOf(0L, 100L)) {
+            finalizer.observe(
+                recognition(t0.plusMillis(offset)).copy(roadContext = recognitionContext),
+                0.95, 1, true, true,
+            )
+        }
+        assertNull(finalizer.observe(missing(t0.plusMillis(200)), null, 1, true, true))
+        assertNotNull(finalizer.observe(missing(t0.plusMillis(300)), null, 1, true, true))
+        assertFalse(finalizer.hasActiveTrack())
     }
 
     private fun recognition(

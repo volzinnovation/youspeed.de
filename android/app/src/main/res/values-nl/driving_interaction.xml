@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gravity_alignment_title">Cameraniveau</string>
+    <string name="gravity_alignment_unavailable">Zwaartekrachtuitlijning niet beschikbaar</string>
+    <string name="gravity_alignment_angles">Rol %1$.0f°, kanteling %2$.0f°. Zwaartekracht bepaalt geen rijrichting.</string>
+    <string name="tsr_voice_dismissal_listening">Zeg ‘Fout’</string>
+</resources>
