@@ -32,6 +32,7 @@
 		2417AB13F220931F9FC2BE73 /* FRA-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = E7C157E2937D1DAD6038038B /* FRA-rules.json */; };
 		252EE9995F351E54A258C171 /* prolix-de-class-catalog-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 243D12B482203C249B54D205 /* prolix-de-class-catalog-v1.json */; };
 		260CAE5EB44878D86FBB618F /* SpeedConsumerAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */; };
+		28E7939D06D135A0B5B8181B /* DutchPenaltyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF46F67BBD2972678514913 /* DutchPenaltyTests.swift */; };
 		2ADF071D330B6BD4E18E707D /* PanoramaxAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = B614104428FC9E28C9AE0255 /* PanoramaxAccount.swift */; };
 		2B778F35A62D2C4CA4C3BC42 /* LaneBoundaryBezierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5928B9D5852D9468C69AB42C /* LaneBoundaryBezierTests.swift */; };
 		2C54920BFD153D152CFF0258 /* RoadPathSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC71FB24B2C74A9B05675E17 /* RoadPathSessionTests.swift */; };
@@ -39,6 +40,7 @@
 		2FAC8A35F937FFD6B2E72A76 /* paca-exit-topology-v1.sql in Resources */ = {isa = PBXBuildFile; fileRef = ACE882500C0D3542FE44BB6C /* paca-exit-topology-v1.sql */; };
 		2FD383412B80A94A44666053 /* SpeedReferenceRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 581358CA08092DBCD57D195B /* SpeedReferenceRuntime.swift */; };
 		3189ACFB74E79AE546103ABB /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5460B7376654275955039717 /* MainView.swift */; };
+		32B48593532676958DA45749 /* NLD-cases.json in Resources */ = {isa = PBXBuildFile; fileRef = 716B0EA88F3D19E3D067FA84 /* NLD-cases.json */; };
 		34158303DF7F98DE12A14DAB /* RoadBoundaryMotionHintTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57FA2AA20FC2B5CC93542B7E /* RoadBoundaryMotionHintTests.swift */; };
 		35CFC19C37CA5FF52FDF506E /* brandenburg.poly in Resources */ = {isa = PBXBuildFile; fileRef = A4F8CBDC0E618FFC06F261B6 /* brandenburg.poly */; };
 		35E914FB03BBE6F83A65936F /* V3BundleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264903C5CD98D68477E8823C /* V3BundleManager.swift */; };
@@ -297,6 +299,7 @@
 		69FF9109F78E912ED14AD0E5 /* hessen.poly */ = {isa = PBXFileReference; path = hessen.poly; sourceTree = "<group>"; };
 		6C1443061001BB609384462B /* LaneDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneDetectionTests.swift; sourceTree = "<group>"; };
 		6E3C55C0CB5CEEEF45D3AEBA /* SourceAttributions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceAttributions.swift; sourceTree = "<group>"; };
+		716B0EA88F3D19E3D067FA84 /* NLD-cases.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "NLD-cases.json"; sourceTree = "<group>"; };
 		734BE1C063C1A673E23AE2B7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7417B3F5E0AF2A8D476C110E /* mecklenburg-vorpommern.poly */ = {isa = PBXFileReference; path = "mecklenburg-vorpommern.poly"; sourceTree = "<group>"; };
 		7AFD1E3971781FBA2D203E7C /* SpeedConsumerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerTests.swift; sourceTree = "<group>"; };
@@ -351,6 +354,7 @@
 		C91001BF11D209FCCD04047B /* candidate-admission-v1.sql */ = {isa = PBXFileReference; path = "candidate-admission-v1.sql"; sourceTree = "<group>"; };
 		C9CEBD6C0203A9D6C46955EF /* LaneDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneDetection.swift; sourceTree = "<group>"; };
 		CBBB56D0019B23F961E03090 /* schleswig-holstein.poly */ = {isa = PBXFileReference; path = "schleswig-holstein.poly"; sourceTree = "<group>"; };
+		CCF46F67BBD2972678514913 /* DutchPenaltyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DutchPenaltyTests.swift; sourceTree = "<group>"; };
 		CD9F614E4A6B119690935E9F /* TrafficSignCameraReferenceOffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignCameraReferenceOffer.swift; sourceTree = "<group>"; };
 		CE138CD23AE2B4EC6E7F347B /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		CFB95C79A397D9A68CD1CDB5 /* sachsen-anhalt.poly */ = {isa = PBXFileReference; path = "sachsen-anhalt.poly"; sourceTree = "<group>"; };
@@ -465,6 +469,7 @@
 			isa = PBXGroup;
 			children = (
 				49A967A3B6B3F3FDCAC8511B /* CHE-cases.json */,
+				716B0EA88F3D19E3D067FA84 /* NLD-cases.json */,
 			);
 			path = "penalty-rules-tests";
 			sourceTree = "<group>";
@@ -549,6 +554,7 @@
 				A6A8ADF8A021CE971882EEE6 /* CandidateAdmissionParityTests.swift */,
 				9EE7FBD20C2C207434E0A6A0 /* DebugLogPersistenceTests.swift */,
 				ECF75D496D18133C8CEA6C81 /* DrivingControlAvailabilityTests.swift */,
+				CCF46F67BBD2972678514913 /* DutchPenaltyTests.swift */,
 				4826C8F9A12638E5A048AE62 /* GravityAlignmentTests.swift */,
 				5928B9D5852D9468C69AB42C /* LaneBoundaryBezierTests.swift */,
 				D28A7BA4A282F936B6EF8BC9 /* LanePreviewPresentationTests.swift */,
@@ -854,6 +860,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D079602BBCC192528304A508 /* CHE-cases.json in Resources */,
+				32B48593532676958DA45749 /* NLD-cases.json in Resources */,
 				CEEC3BFC77BC5AB78B80529C /* candidate-admission-v1.json in Resources */,
 				219944FAA45C0C35CADBEFA5 /* candidate-admission-v1.sql in Resources */,
 				0A0D6E44B30C0B7BD65F3D08 /* fixtures in Resources */,
@@ -1026,6 +1033,7 @@
 				6D21DF47C1B897F79D26AF2C /* CandidateAdmissionParityTests.swift in Sources */,
 				1211E93B1CB861C6794A1586 /* DebugLogPersistenceTests.swift in Sources */,
 				5F8296A6269F7BB82D9BA4FD /* DrivingControlAvailabilityTests.swift in Sources */,
+				28E7939D06D135A0B5B8181B /* DutchPenaltyTests.swift in Sources */,
 				0877B38BCBB3A222562BF7DA /* GravityAlignmentTests.swift in Sources */,
 				2B778F35A62D2C4CA4C3BC42 /* LaneBoundaryBezierTests.swift in Sources */,
 				D7505C79B7A772FFE3B8ADE3 /* LaneDetectionRuntimeTests.swift in Sources */,

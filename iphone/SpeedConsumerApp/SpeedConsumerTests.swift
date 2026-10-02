@@ -6270,7 +6270,10 @@ final class SpeedConsumerTests: XCTestCase {
             for band in rules.bands {
                 for language in ["de", "en", "fr", "nl"] {
                     let notice = try XCTUnwrap(SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: band.minDeltaKmh, rules: rules, insideCity: true, postedLimitKmh: 50, languageCode: language))
-                    XCTAssertEqual(notice.title, band.localizedTemplates?[language]?.titleTemplate)
+                    let expected = rules.speedingTariffs != nil && notice.enforcementClass == "criminal" && band.minDeltaKmh < 50
+                        ? rules.speedingTariffs?.localizedCriminalTemplates[language]?.titleTemplate
+                        : band.localizedTemplates?[language]?.titleTemplate
+                    XCTAssertEqual(notice.title, expected)
                     XCTAssertFalse(notice.details.isEmpty)
                     if country != "FRA" {
                         XCTAssertNil(notice.penaltyPoints)

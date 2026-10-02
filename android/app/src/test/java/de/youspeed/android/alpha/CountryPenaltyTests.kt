@@ -195,8 +195,11 @@ class CountryPenaltyTests {
                     assertTrue(notice!!.title.isNotBlank() && notice.details.isNotBlank())
                     assertFalse(notice.title.contains("{"))
                     assertFalse(notice.details.contains("{"))
-                    assertEquals(rules.bands.single { delta >= it.minDeltaKmh && delta <= (it.maxDeltaKmh ?: Int.MAX_VALUE) }
-                        .localizedTemplates[language]!!.titleTemplate.replace("{delta}", "$delta"), notice.title)
+                    val expectedTitle = if (rules.speedingTariffs != null && notice.enforcementClass == "criminal" && delta < 50)
+                        rules.speedingTariffs!!.localizedCriminalTemplates.getValue(language).titleTemplate
+                    else rules.bands.single { delta >= it.minDeltaKmh && delta <= (it.maxDeltaKmh ?: Int.MAX_VALUE) }
+                        .localizedTemplates[language]!!.titleTemplate
+                    assertEquals(expectedTitle.replace("{delta}", "$delta"), notice.title)
                     if (country != "FRA") {
                         assertNull(notice.penaltyPoints)
                         assertNull(notice.drivingBanMonths)

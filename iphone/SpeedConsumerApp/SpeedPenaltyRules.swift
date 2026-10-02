@@ -315,6 +315,7 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
     let requiresRoadCategory: Bool
     let localizedAdvisoryCaptions: [String: String]
     let postedLimitEscalation: PostedLimitPenaltyEscalation?
+    let speedingTariffs: SpeedingTariffTable?
 
     enum CodingKeys: String, CodingKey {
         case format
@@ -333,6 +334,7 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
         case requiresRoadCategory = "requires_road_category"
         case localizedAdvisoryCaptions = "localized_advisory_captions"
         case postedLimitEscalation = "posted_limit_escalation"
+        case speedingTariffs = "speeding_tariffs"
     }
 
     init(
@@ -355,6 +357,7 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
         self.requiresRoadCategory = false
         self.localizedAdvisoryCaptions = [:]
         self.postedLimitEscalation = nil
+        self.speedingTariffs = nil
     }
 
     init(from decoder: Decoder) throws {
@@ -370,6 +373,7 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
         requiresRoadCategory = try container.decodeIfPresent(Bool.self, forKey: .requiresRoadCategory) ?? false
         localizedAdvisoryCaptions = try container.decodeIfPresent([String: String].self, forKey: .localizedAdvisoryCaptions) ?? [:]
         postedLimitEscalation = try container.decodeIfPresent(PostedLimitPenaltyEscalation.self, forKey: .postedLimitEscalation)
+        speedingTariffs = try container.decodeIfPresent(SpeedingTariffTable.self, forKey: .speedingTariffs)
     }
 
     static func loadBundled(named fileStem: String, bundle: Bundle = .main) throws -> SpeedPenaltyRuleSet {
@@ -448,6 +452,58 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
     }
 }
 
+/// Per-km/h tariffs for ordinary passenger cars; roadworks are not assumed.
+struct SpeedingTariffTable: Decodable, Sendable {
+    struct RoadCategory: Decodable, Sendable {
+        let finesEUR: [String: Int]
+        let criminalFromDeltaKmh: Int
+        enum CodingKeys: String, CodingKey {
+            case finesEUR = "fines_eur"
+            case criminalFromDeltaKmh = "criminal_from_delta_kmh"
+        }
+    }
+    let administrativeFeeEUR: Int
+    let minimumDeltaKmh: Int
+    let motorway130MinimumDeltaKmh: Int
+    let roadCategories: [String: RoadCategory]
+    let localizedTemplates: [String: OverspeedPenaltyBand.LocalizedTemplates]
+    let localizedBelowThresholdTemplates: [String: OverspeedPenaltyBand.LocalizedTemplates]
+    let localizedCriminalTemplates: [String: OverspeedPenaltyBand.LocalizedTemplates]
+    let localizedCriminalCaptions: [String: String]
+    let localizedUnknownCategoryCaptions: [String: String]
+    enum CodingKeys: String, CodingKey {
+        case administrativeFeeEUR = "administrative_fee_eur"
+        case minimumDeltaKmh = "minimum_delta_kmh"
+        case motorway130MinimumDeltaKmh = "motorway_130_minimum_delta_kmh"
+        case roadCategories = "road_categories"
+        case localizedTemplates = "localized_templates"
+        case localizedBelowThresholdTemplates = "localized_below_threshold_templates"
+        case localizedCriminalTemplates = "localized_criminal_templates"
+        case localizedCriminalCaptions = "localized_criminal_captions"
+        case localizedUnknownCategoryCaptions = "localized_unknown_category_captions"
+    }
+    func category(area: PenaltyRoadArea?, postedLimit: Int?) -> RoadCategory? {
+        guard let area, let postedLimit, postedLimit > 0 else { return nil }
+        let key: String
+        switch area {
+        case .motorway: key = "motorway"
+        case .ausserorts: key = "rural"
+        case .innerorts: key = postedLimit == 30 ? "urban_30" : postedLimit == 15 ? "urban_15" : "urban"
+        }
+        return roadCategories[key]
+    }
+    func fine(excess: Int, area: PenaltyRoadArea?, postedLimit: Int?) -> Int? {
+        guard let category = category(area: area, postedLimit: postedLimit),
+              let postedLimit else { return nil }
+        // A police correction is not applied to live GPS speed.
+        let minimum = area == .motorway && postedLimit == 130 ? motorway130MinimumDeltaKmh : minimumDeltaKmh
+        if excess < minimum && postedLimit <= 120 { return 0 }
+        // Do not treat a non-motorway or unknown 130 km/h context as the exception.
+        if excess < minimum { return nil }
+        return category.finesEUR[String(excess)]
+    }
+}
+
 struct PostedLimitPenaltyEscalation: Decodable, Sendable {
     struct Threshold: Decodable, Sendable {
         let maxPostedLimitKmh: Int?
@@ -515,14 +571,24 @@ enum SpeedPenaltyRuleEngine {
         let variant = band.variant(for: area, postedLimitKmh: postedLimitKmh)
         let language = (languageCode ?? Bundle.main.preferredLocalizations.first ?? "en").split(separator: "-").first.map(String.init) ?? "en"
         let escalation = rules.postedLimitEscalation.flatMap { $0.applies(excess: overspeedKmh, postedLimit: postedLimitKmh) ? $0 : nil }
-        let templates = escalation?.localizedTemplates[language] ?? escalation?.localizedTemplates["en"] ?? band.localizedTemplates?[language] ?? band.localizedTemplates?["en"]
+        let tariff = rules.speedingTariffs
+        let tariffFine = tariff?.fine(excess: overspeedKmh, area: area, postedLimit: postedLimitKmh)
+        let tariffCategory = tariff?.category(area: area, postedLimit: postedLimitKmh)
+        let tariffCriminal = tariff.map { _ in
+            tariffCategory.map { overspeedKmh >= $0.criminalFromDeltaKmh } ?? (overspeedKmh >= 40)
+        } ?? false
+        let tariffTemplates = tariffFine != nil
+            ? (tariffFine == 0 ? tariff?.localizedBelowThresholdTemplates : tariff?.localizedTemplates)
+            : (tariffCriminal && overspeedKmh < 50 ? tariff?.localizedCriminalTemplates : nil)
+        let templates = tariffTemplates?[language] ?? tariffTemplates?["en"] ?? escalation?.localizedTemplates[language] ?? escalation?.localizedTemplates["en"] ?? band.localizedTemplates?[language] ?? band.localizedTemplates?["en"]
         let categoryKnown = !rules.requiresRoadCategory || (area != nil && (postedLimitKmh ?? 0) > 0)
-        let moneyFine = escalation == nil && categoryKnown ? (variant?.moneyFineEUR ?? band.moneyFineEUR) : nil
+        let moneyFine = tariff != nil ? tariffFine : (escalation == nil && categoryKnown ? (variant?.moneyFineEUR ?? band.moneyFineEUR) : nil)
         let points = variant?.penaltyPoints ?? band.penaltyPoints
         let drivingBanMonths = escalation?.drivingBanMonths ?? (categoryKnown ? variant?.drivingBanMonths ?? band.drivingBanMonths : nil)
         let conditionalDrivingBanMonths = escalation?.conditionalDrivingBanMonths ?? (categoryKnown ? variant?.conditionalDrivingBanMonths ?? band.conditionalDrivingBanMonths : nil)
         let drivingBanCondition = escalation?.drivingBanCondition ?? variant?.drivingBanCondition ?? band.drivingBanCondition
-        let caption = escalation?.localizedCaptions[language] ?? escalation?.localizedCaptions["en"] ?? rules.localizedAdvisoryCaptions[language] ?? rules.localizedAdvisoryCaptions["en"]
+        let tariffCaptions = tariffCriminal ? tariff?.localizedCriminalCaptions : tariff?.localizedUnknownCategoryCaptions
+        let caption = (tariff != nil && tariffFine == nil ? tariffCaptions?[language] ?? tariffCaptions?["en"] : nil) ?? escalation?.localizedCaptions[language] ?? escalation?.localizedCaptions["en"] ?? rules.localizedAdvisoryCaptions[language] ?? rules.localizedAdvisoryCaptions["en"]
         let severity = ((points ?? 0) > 0) ? PenaltySeverity.pointsAndFine : .moneyOnly
 
         return SpeedPenaltyNotice(
@@ -534,7 +600,9 @@ enum SpeedPenaltyRuleEngine {
                 area: area
             ),
             details: applyTemplate(
-                templates?.detailTemplate ?? band.detailTemplate,
+                (templates?.detailTemplate ?? band.detailTemplate)
+                    .replacingOccurrences(of: "{fine}", with: tariffFine.map(String.init) ?? "")
+                    .replacingOccurrences(of: "{fee}", with: tariff.map { String($0.administrativeFeeEUR) } ?? ""),
                 deltaKmh: overspeedKmh,
                 rules: rules,
                 area: area
@@ -545,7 +613,7 @@ enum SpeedPenaltyRuleEngine {
             drivingBanMonths: drivingBanMonths,
             conditionalDrivingBanMonths: conditionalDrivingBanMonths,
             drivingBanCondition: drivingBanCondition,
-            enforcementClass: escalation == nil ? band.enforcementClass : "raser",
+            enforcementClass: tariff != nil ? (tariffCriminal ? "criminal" : tariffFine != nil ? "administrative" : "context_dependent") : escalation == nil ? band.enforcementClass : "raser",
             advisoryCaption: caption
         )
     }

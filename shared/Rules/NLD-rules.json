@@ -1,13 +1,13 @@
 {
   "format": "youspeed.penalty.rules",
-  "schema_version": 1,
+  "schema_version": 2,
   "country_code": "NLD",
   "country_name": "Netherlands",
   "currency_code": "EUR",
   "default_language": "en",
-  "source_url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden",
-  "source_checked_at": "2026-09-16",
-  "note": "Reviewed 2026-09-09 for ordinary passenger-car speeding using OM guidance and Feitenboekje 2026. Legal bands use officially corrected excess, not raw GPS excess; no enforcement correction is automatically applied by these rules. At limits up to 120 km/h the ordinary threshold is corrected +4; at 130 km/h it is +1. Criminal handling generally starts above +30 off motorways and at +40 on motorways; works and vehicle-specific contexts can differ. Precise tariffs require more road context than this warning provides. No general penalty-point score or fixed driving-ban duration is inferred. Sources and scope: docs/COUNTRY_RULE_REVIEW_2026-09-09.md.",
+  "source_url": "https://www.om.nl/documenten/mulderbundel/map/map/mulderbundel-2026",
+  "source_checked_at": "2026-10-02",
+  "note": "Reviewed anew at the product owner’s request on 2 October 2026. OM Feitenboekje 2026 (effective 1 January 2026), category C1, and all three published errata checked. Exact per-km/h ordinary passenger-car tariffs: urban, urban 30-km/h zone, urban 15-km/h woonerf, rural and motorway. No trailer, roadworks or repeat-offence adjustment is inferred. Displayed GPS excess is used illustratively as corrected excess; no police measurement deduction is applied. Below corrected +4 no ordinary fine is estimated at limits up to 120; at 130, the motorway threshold is +1. Fines exclude the 9 EUR administrative fee. Unknown road category/limit suppresses exact amounts. Case-dependent criminal penalties are explicitly labelled, not assigned fictitious points, a licence-ban duration or a fixed monetary amount. Downloaded older revisions cannot supersede this packaged revision. See docs/DUTCH_PENALTY_REVIEW_2026-10-02.md.",
   "bands": [
     {
       "min_delta_kmh": 1,
@@ -137,5 +137,250 @@
       },
       "enforcement_class": "criminal"
     }
-  ]
+  ],
+  "content_revision": 20261002,
+  "requires_road_category": true,
+  "speeding_tariffs": {
+    "administrative_fee_eur": 9,
+    "minimum_delta_kmh": 4,
+    "motorway_130_minimum_delta_kmh": 1,
+    "road_categories": {
+      "urban": {
+        "fines_eur": {
+          "4": 37,
+          "5": 46,
+          "6": 56,
+          "7": 65,
+          "8": 73,
+          "9": 84,
+          "10": 95,
+          "11": 129,
+          "12": 140,
+          "13": 155,
+          "14": 166,
+          "15": 179,
+          "16": 192,
+          "17": 207,
+          "18": 223,
+          "19": 237,
+          "20": 255,
+          "21": 272,
+          "22": 289,
+          "23": 308,
+          "24": 324,
+          "25": 345,
+          "26": 363,
+          "27": 387,
+          "28": 405,
+          "29": 426,
+          "30": 446
+        },
+        "criminal_from_delta_kmh": 31
+      },
+      "urban_30": {
+        "fines_eur": {
+          "4": 62,
+          "5": 73,
+          "6": 85,
+          "7": 98,
+          "8": 113,
+          "9": 126,
+          "10": 142,
+          "11": 179,
+          "12": 194,
+          "13": 210,
+          "14": 229,
+          "15": 246,
+          "16": 263,
+          "17": 282,
+          "18": 301,
+          "19": 321,
+          "20": 342,
+          "21": 363,
+          "22": 388,
+          "23": 410,
+          "24": 434,
+          "25": 456,
+          "26": 481,
+          "27": 505,
+          "28": 524,
+          "29": 524
+        },
+        "criminal_from_delta_kmh": 30
+      },
+      "rural": {
+        "fines_eur": {
+          "4": 33,
+          "5": 42,
+          "6": 50,
+          "7": 59,
+          "8": 68,
+          "9": 79,
+          "10": 89,
+          "11": 121,
+          "12": 134,
+          "13": 147,
+          "14": 159,
+          "15": 172,
+          "16": 184,
+          "17": 197,
+          "18": 210,
+          "19": 227,
+          "20": 243,
+          "21": 258,
+          "22": 273,
+          "23": 289,
+          "24": 308,
+          "25": 326,
+          "26": 345,
+          "27": 362,
+          "28": 381,
+          "29": 404,
+          "30": 424
+        },
+        "criminal_from_delta_kmh": 31
+      },
+      "motorway": {
+        "fines_eur": {
+          "4": 28,
+          "5": 34,
+          "6": 41,
+          "7": 49,
+          "8": 56,
+          "9": 64,
+          "10": 84,
+          "11": 115,
+          "12": 126,
+          "13": 136,
+          "14": 147,
+          "15": 159,
+          "16": 171,
+          "17": 185,
+          "18": 200,
+          "19": 213,
+          "20": 229,
+          "21": 244,
+          "22": 258,
+          "23": 273,
+          "24": 289,
+          "25": 304,
+          "26": 321,
+          "27": 337,
+          "28": 350,
+          "29": 369,
+          "30": 389,
+          "31": 408,
+          "32": 427,
+          "33": 446,
+          "34": 468,
+          "35": 488,
+          "36": 508,
+          "37": 524,
+          "38": 524,
+          "39": 524,
+          "1": 12,
+          "2": 16,
+          "3": 22
+        },
+        "criminal_from_delta_kmh": 40
+      },
+      "urban_15": {
+        "fines_eur": {
+          "4": 62,
+          "5": 73,
+          "6": 85,
+          "7": 98,
+          "8": 113,
+          "9": 126,
+          "10": 142,
+          "11": 179,
+          "12": 194,
+          "13": 210,
+          "14": 229,
+          "15": 246,
+          "16": 263,
+          "17": 282,
+          "18": 301,
+          "19": 321,
+          "20": 342,
+          "21": 363,
+          "22": 388,
+          "23": 410,
+          "24": 434,
+          "25": 456,
+          "26": 481,
+          "27": 505,
+          "28": 524,
+          "29": 524
+        },
+        "criminal_from_delta_kmh": 30
+      }
+    },
+    "localized_templates": {
+      "en": {
+        "title_template": "Fine estimate",
+        "detail_template": "Ordinary passenger car without trailer, no roadworks: {fine} EUR fine + {fee} EUR administrative costs. Estimate uses the displayed +{delta} km/h as corrected excess; an official police measurement correction can change the amount. Urban 30-km/h zones and 15-km/h woonerven use their higher tariff."
+      },
+      "de": {
+        "title_template": "Bußgeldschätzung",
+        "detail_template": "Normaler Pkw ohne Anhänger, keine Baustelle: {fine} EUR Bußgeld + {fee} EUR Verwaltungsgebühr. Die angezeigten +{delta} km/h dienen als korrigierte Überschreitung; eine amtliche Messkorrektur kann den Betrag ändern. Innerörtliche 30-km/h-Zonen und 15-km/h-Wohnverkehrsbereiche haben einen höheren Tarif."
+      },
+      "fr": {
+        "title_template": "Estimation de l’amende",
+        "detail_template": "Voiture ordinaire sans remorque, sans travaux : {fine} EUR d’amende + {fee} EUR de frais administratifs. Les +{delta} km/h affichés sont utilisés comme excès corrigé ; la correction officielle de mesure peut modifier le montant. Les zones urbaines à 30 km/h et les woonerven à 15 km/h ont un tarif plus élevé."
+      },
+      "nl": {
+        "title_template": "Boeteraming",
+        "detail_template": "Gewone personenauto zonder aanhanger, geen wegwerkzaamheden: {fine} EUR boete + {fee} EUR administratiekosten. De getoonde +{delta} km/u wordt als gecorrigeerde overschrijding gebruikt; de officiële meetcorrectie kan het bedrag veranderen. Een 30-km/u-zone binnen de bebouwde kom en een woonerf met 15 km/u hebben een hoger tarief."
+      }
+    },
+    "localized_below_threshold_templates": {
+      "en": {
+        "title_template": "Below the ordinary fine threshold",
+        "detail_template": "No ordinary speeding fine below corrected +4 km/h at limits up to 120 km/h. GPS estimate only; this is not permission to exceed the limit. At 130 km/h, the motorway threshold is +1."
+      },
+      "de": {
+        "title_template": "Unter der üblichen Bußgeldschwelle",
+        "detail_template": "Bei Tempolimits bis 120 km/h wird unter korrigierten +4 km/h kein reguläres Bußgeld geschätzt. Nur GPS-Schätzung; keine Erlaubnis, das Limit zu überschreiten. Bei Tempo 130 gilt auf Autobahnen die Schwelle +1."
+      },
+      "fr": {
+        "title_template": "Sous le seuil habituel de verbalisation",
+        "detail_template": "Pas d’amende ordinaire sous +4 km/h corrigés pour les limites jusqu’à 120 km/h. Estimation GPS uniquement ; ce n’est pas une autorisation de dépasser la limite. À 130 km/h, le seuil sur autoroute est de +1."
+      },
+      "nl": {
+        "title_template": "Onder de gewone boetegrens",
+        "detail_template": "Bij limieten tot en met 120 km/u wordt onder gecorrigeerde +4 km/u geen gewone snelheidsboete geraamd. Alleen een GPS-raming; geen toestemming om de limiet te overschrijden. Bij 130 km/u geldt op de autosnelweg de grens +1."
+      }
+    },
+    "localized_criminal_captions": {
+      "en": "Criminal",
+      "de": "Strafrecht",
+      "fr": "Pénal",
+      "nl": "Strafrecht"
+    },
+    "localized_unknown_category_captions": {
+      "en": "Road type",
+      "de": "Straßenart",
+      "fr": "Type de route",
+      "nl": "Wegtype"
+    },
+    "localized_criminal_templates": {
+      "en": {
+        "title_template": "Criminal penalty assessment",
+        "detail_template": "The excess is outside the ordinary administrative tariff for this road category. The prosecutor or court assesses the monetary penalty and any licence sanctions case by case. GPS estimate; official measurement correction may change the classification."
+      },
+      "de": {
+        "title_template": "Strafrechtliche Bewertung",
+        "detail_template": "Die Überschreitung liegt außerhalb des regulären Verwaltungstarifs für diese Straßenart. Staatsanwaltschaft oder Gericht bestimmen Geldstrafe und mögliche Führerscheinsanktionen im Einzelfall. GPS-Schätzung; die amtliche Messkorrektur kann die Einstufung ändern."
+      },
+      "fr": {
+        "title_template": "Évaluation de la sanction pénale",
+        "detail_template": "L’excès dépasse le barème administratif ordinaire pour ce type de route. Le parquet ou le juge détermine l’amende et les éventuelles sanctions sur le permis selon le dossier. Estimation GPS ; la correction officielle peut modifier la qualification."
+      },
+      "nl": {
+        "title_template": "Strafrechtelijke beoordeling",
+        "detail_template": "De overschrijding valt buiten het gewone administratieve tarief voor dit wegtype. Het OM of de rechter bepaalt de geldboete en eventuele rijbewijssancties per zaak. GPS-raming; de officiële meetcorrectie kan de kwalificatie veranderen."
+      }
+    }
+  }
 }

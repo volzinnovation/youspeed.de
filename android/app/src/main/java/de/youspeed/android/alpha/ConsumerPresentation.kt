@@ -61,7 +61,7 @@ object ConsumerMainScreenLogic {
             return (if (minimum) "≥" else "") + drivingBanMonths.toString()
         }
         return when (notice?.severity) {
-            PenaltySeverity.MONEY_ONLY -> notice.moneyFineEUR?.toString() ?: "!"
+            PenaltySeverity.MONEY_ONLY -> notice.moneyFineEUR?.toString() ?: if (state.activePenaltyRules.ruleSet.speedingTariffs != null && notice.enforcementClass == "criminal") "⚖" else "!"
             PenaltySeverity.POINTS_AND_FINE -> notice.penaltyPoints?.takeIf { it > 0 }?.toString() ?: "!"
             null -> if (isSearchingSignal(state)) " " else state.currentSpeedKmh.roundToInt().toString()
         }
@@ -85,7 +85,7 @@ object ConsumerMainScreenLogic {
             return localizedDrivingBanLabel(drivingBanMonths)
         }
         if (notice != null && notice.moneyFineEUR == null && (notice.penaltyPoints ?: 0) == 0) {
-            return ConsumerUiStrings.text("Review", "Prüfen", "À vérifier", "Controleren")
+            return (if (state.activePenaltyRules.ruleSet.speedingTariffs != null) notice.advisoryCaption else null) ?: ConsumerUiStrings.text("Review", "Prüfen", "À vérifier", "Controleren")
         }
         return when (notice?.severity) {
             PenaltySeverity.MONEY_ONLY -> state.activePenaltyRules.currencyCode

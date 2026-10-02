@@ -1261,7 +1261,7 @@ struct MainView: View {
         switch finePresentation?.severity {
         case .moneyOnly:
             guard let fineEUR = finePresentation?.moneyFineEUR else {
-                return "!"
+                return viewModel.activePenaltyRules.speedingTariffs != nil && finePresentation?.enforcementClass == "criminal" ? "⚖" : "!"
             }
             return "\(fineEUR)"
         case .pointsAndFine:
@@ -1287,7 +1287,7 @@ struct MainView: View {
         switch finePresentation?.severity {
         case .moneyOnly:
             if finePresentation?.moneyFineEUR == nil {
-                return NSLocalizedString("penalty.review", comment: "")
+                return (viewModel.activePenaltyRules.speedingTariffs != nil ? finePresentation?.advisoryCaption : nil) ?? NSLocalizedString("penalty.review", comment: "")
             }
             return viewModel.activePenaltyRules.currencyCode
         case .pointsAndFine:

@@ -100,6 +100,7 @@ data class SpeedPenaltyRuleSet(
     val requiresRoadCategory: Boolean = false,
     val localizedAdvisoryCaptions: Map<String, String> = emptyMap(),
     val postedLimitEscalation: PostedLimitPenaltyEscalation? = null,
+    val speedingTariffs: SpeedingTariffTable? = null,
 ) {
     companion object {
         fun fallbackDEU(): SpeedPenaltyRuleSet {
@@ -208,6 +209,38 @@ data class SpeedPenaltyNotice(
     val advisoryCaption: String? = null,
 )
 
+data class SpeedingTariffCategory(val finesEUR: Map<String, Int>, val criminalFromDeltaKmh: Int)
+data class SpeedingTariffTable(
+    val administrativeFeeEUR: Int,
+    val minimumDeltaKmh: Int,
+    val motorway130MinimumDeltaKmh: Int,
+    val roadCategories: Map<String, SpeedingTariffCategory>,
+    val localizedTemplates: Map<String, PenaltyTemplates>,
+    val localizedBelowThresholdTemplates: Map<String, PenaltyTemplates>,
+    val localizedCriminalTemplates: Map<String, PenaltyTemplates>,
+    val localizedCriminalCaptions: Map<String, String>,
+    val localizedUnknownCategoryCaptions: Map<String, String>,
+) {
+    fun category(area: PenaltyRoadArea?, postedLimit: Int?): SpeedingTariffCategory? {
+        if (area == null || postedLimit == null || postedLimit <= 0) return null
+        val key = when (area) {
+            PenaltyRoadArea.MOTORWAY -> "motorway"
+            PenaltyRoadArea.AUSSERORTS -> "rural"
+            PenaltyRoadArea.INNERORTS -> when (postedLimit) { 30 -> "urban_30"; 15 -> "urban_15"; else -> "urban" }
+        }
+        return roadCategories[key]
+    }
+    fun fine(excess: Int, area: PenaltyRoadArea?, postedLimit: Int?): Int? {
+        val category = category(area, postedLimit) ?: return null
+        postedLimit ?: return null
+        // Do not deduct a police measurement margin from live GPS speed.
+        val minimum = if (area == PenaltyRoadArea.MOTORWAY && postedLimit == 130) motorway130MinimumDeltaKmh else minimumDeltaKmh
+        if (excess < minimum && postedLimit <= 120) return 0
+        if (excess < minimum) return null
+        return category.finesEUR[excess.toString()]
+    }
+}
+
 data class PostedLimitPenaltyThreshold(val maxPostedLimitKmh: Int?, val minDeltaKmh: Int)
 data class PostedLimitPenaltyEscalation(
     val thresholds: List<PostedLimitPenaltyThreshold>,
@@ -239,6 +272,28 @@ object PenaltyRulesParser {
             defaultLanguage = root.valueForString("default_language", "standardsprache"),
             bands = bands,
             contentRevision = root.valueForInt("content_revision") ?: 0,
+            speedingTariffs = root.valueForObject("speeding_tariffs")?.let { table ->
+                fun templates(key: String) = table.valueForObject(key)!!.mapValues { (_, value) ->
+                    val row = value.jsonObject
+                    PenaltyTemplates(row.valueForString("title_template")!!, row.valueForString("detail_template")!!)
+                }
+                fun captions(key: String) = table.valueForObject(key)!!.mapValues { it.value.jsonPrimitive.content }
+                SpeedingTariffTable(
+                    administrativeFeeEUR = table.valueForInt("administrative_fee_eur")!!,
+                    minimumDeltaKmh = table.valueForInt("minimum_delta_kmh")!!,
+                    motorway130MinimumDeltaKmh = table.valueForInt("motorway_130_minimum_delta_kmh")!!,
+                    roadCategories = table.valueForObject("road_categories")!!.mapValues { (_, value) ->
+                        val row = value.jsonObject
+                        SpeedingTariffCategory(row.valueForObject("fines_eur")!!.mapValues { it.value.jsonPrimitive.intOrNull!! },
+                            row.valueForInt("criminal_from_delta_kmh")!!)
+                    },
+                    localizedTemplates = templates("localized_templates"),
+                    localizedBelowThresholdTemplates = templates("localized_below_threshold_templates"),
+                    localizedCriminalTemplates = templates("localized_criminal_templates"),
+                    localizedCriminalCaptions = captions("localized_criminal_captions"),
+                    localizedUnknownCategoryCaptions = captions("localized_unknown_category_captions"),
+                )
+            },
             requiresRoadCategory = root["requires_road_category"]?.jsonPrimitive?.booleanOrNull ?: false,
             localizedAdvisoryCaptions = root.valueForObject("localized_advisory_captions")?.mapValues { it.value.jsonPrimitive.content }.orEmpty(),
             postedLimitEscalation = root.valueForObject("posted_limit_escalation")?.let { risk ->
@@ -343,11 +398,18 @@ object SpeedPenaltyRuleEngine {
         }
         val variant = postedVariant ?: band.variantFor(area)
         val escalation = rules.postedLimitEscalation?.takeIf { it.applies(overspeedKmh, postedSpeedLimitKmh) }
-        val templates = escalation?.localizedTemplates?.get(locale.language) ?: escalation?.localizedTemplates?.get("en") ?: band.localizedTemplates[locale.language]
+        val tariff = rules.speedingTariffs
+        val tariffFine = tariff?.fine(overspeedKmh, area, postedSpeedLimitKmh)
+        val tariffCategory = tariff?.category(area, postedSpeedLimitKmh)
+        val tariffCriminal = tariff != null && (tariffCategory?.let { overspeedKmh >= it.criminalFromDeltaKmh } ?: (overspeedKmh >= 40))
+        val tariffTemplates = if (tariffFine != null) {
+            if (tariffFine == 0) tariff!!.localizedBelowThresholdTemplates else tariff!!.localizedTemplates
+        } else if (tariffCriminal && overspeedKmh < 50) tariff!!.localizedCriminalTemplates else null
+        val templates = tariffTemplates?.get(locale.language) ?: tariffTemplates?.get("en") ?: escalation?.localizedTemplates?.get(locale.language) ?: escalation?.localizedTemplates?.get("en") ?: band.localizedTemplates[locale.language]
             ?: band.localizedTemplates[rules.defaultLanguage] ?: band.localizedTemplates["en"]
         val points = variant?.penaltyPoints ?: band.penaltyPoints
         val categoryKnown = !rules.requiresRoadCategory || (area != null && (postedSpeedLimitKmh ?: 0) > 0)
-        val moneyFine = if (escalation == null && categoryKnown) variant?.moneyFineEUR ?: band.moneyFineEUR else null
+        val moneyFine = if (tariff != null) tariffFine else if (escalation == null && categoryKnown) variant?.moneyFineEUR ?: band.moneyFineEUR else null
         val drivingBanMonths = escalation?.drivingBanMonths ?: if (categoryKnown) variant?.drivingBanMonths ?: band.drivingBanMonths else null
         val conditionalDrivingBanMonths = escalation?.conditionalDrivingBanMonths ?: if (categoryKnown) variant?.conditionalDrivingBanMonths ?: band.conditionalDrivingBanMonths else null
         val drivingBanCondition = escalation?.drivingBanCondition ?: variant?.drivingBanCondition ?: band.drivingBanCondition
@@ -355,15 +417,22 @@ object SpeedPenaltyRuleEngine {
         return SpeedPenaltyNotice(
             severity = severity,
             title = applyTemplate(templates?.titleTemplate ?: band.titleTemplate, overspeedKmh, rules, area),
-            details = applyTemplate(templates?.detailTemplate ?: band.detailTemplate, overspeedKmh, rules, area),
+            details = applyTemplate((templates?.detailTemplate ?: band.detailTemplate)
+                .replace("{fine}", tariffFine?.toString().orEmpty())
+                .replace("{fee}", tariff?.administrativeFeeEUR?.toString().orEmpty()), overspeedKmh, rules, area),
             deltaKmh = overspeedKmh,
             moneyFineEUR = moneyFine,
             penaltyPoints = points,
             drivingBanMonths = drivingBanMonths,
             conditionalDrivingBanMonths = conditionalDrivingBanMonths,
             drivingBanCondition = drivingBanCondition,
-            enforcementClass = if (escalation == null) band.enforcementClass else "raser",
-            advisoryCaption = escalation?.localizedCaptions?.get(locale.language) ?: escalation?.localizedCaptions?.get("en")
+            enforcementClass = if (tariff != null) {
+                if (tariffCriminal) "criminal" else if (tariffFine != null) "administrative" else "context_dependent"
+            } else if (escalation == null) band.enforcementClass else "raser",
+            advisoryCaption = (if (tariff != null && tariffFine == null) {
+                val captions = if (tariffCriminal) tariff.localizedCriminalCaptions else tariff.localizedUnknownCategoryCaptions
+                captions[locale.language] ?: captions["en"]
+            } else null) ?: escalation?.localizedCaptions?.get(locale.language) ?: escalation?.localizedCaptions?.get("en")
                 ?: rules.localizedAdvisoryCaptions[locale.language] ?: rules.localizedAdvisoryCaptions["en"],
         )
     }

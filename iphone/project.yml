@@ -159,6 +159,8 @@ targets:
         buildPhase: resources
       - path: ../shared/penalty-rules-tests/CHE-cases.json
         buildPhase: resources
+      - path: ../shared/penalty-rules-tests/NLD-cases.json
+        buildPhase: resources
     dependencies:
       - target: SpeedConsumer
     settings:

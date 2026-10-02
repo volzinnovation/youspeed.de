@@ -1,0 +1,1581 @@
+{
+  "reviewed_at": "2026-10-02",
+  "source": "OM Feitenboekje 2026 category C1, VA/VS/VV/VF/VL, with 130 km/h +1..3 verified in the live OM calculator. Fines exclude 9 EUR fee. Inputs model corrected excess; no GPS correction.",
+  "cases": [
+    {
+      "id": "VA-004",
+      "excess": 4,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 37,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-005",
+      "excess": 5,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 46,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-006",
+      "excess": 6,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 56,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-007",
+      "excess": 7,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 65,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-008",
+      "excess": 8,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 73,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-009",
+      "excess": 9,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 84,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-010",
+      "excess": 10,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 95,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-011",
+      "excess": 11,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 129,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-012",
+      "excess": 12,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 140,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-013",
+      "excess": 13,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 155,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-014",
+      "excess": 14,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 166,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-015",
+      "excess": 15,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 179,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-016",
+      "excess": 16,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 192,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-017",
+      "excess": 17,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 207,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-018",
+      "excess": 18,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 223,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-019",
+      "excess": 19,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 237,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-020",
+      "excess": 20,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 255,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-021",
+      "excess": 21,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 272,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-022",
+      "excess": 22,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 289,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-023",
+      "excess": 23,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 308,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-024",
+      "excess": 24,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 324,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-025",
+      "excess": 25,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 345,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-026",
+      "excess": 26,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 363,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-027",
+      "excess": 27,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 387,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-028",
+      "excess": 28,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 405,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-029",
+      "excess": 29,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 426,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-030",
+      "excess": 30,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 446,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-boundary-1",
+      "excess": 1,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 0,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-boundary-3",
+      "excess": 3,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 0,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VA-boundary-31",
+      "excess": 31,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": null,
+      "enforcement": "criminal"
+    },
+    {
+      "id": "VA-boundary-50",
+      "excess": 50,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": null,
+      "enforcement": "criminal"
+    },
+    {
+      "id": "VS-004",
+      "excess": 4,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 62,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-005",
+      "excess": 5,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 73,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-006",
+      "excess": 6,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 85,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-007",
+      "excess": 7,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 98,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-008",
+      "excess": 8,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 113,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-009",
+      "excess": 9,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 126,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-010",
+      "excess": 10,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 142,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-011",
+      "excess": 11,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 179,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-012",
+      "excess": 12,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 194,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-013",
+      "excess": 13,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 210,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-014",
+      "excess": 14,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 229,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-015",
+      "excess": 15,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 246,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-016",
+      "excess": 16,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 263,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-017",
+      "excess": 17,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 282,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-018",
+      "excess": 18,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 301,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-019",
+      "excess": 19,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 321,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-020",
+      "excess": 20,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 342,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-021",
+      "excess": 21,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 363,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-022",
+      "excess": 22,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 388,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-023",
+      "excess": 23,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 410,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-024",
+      "excess": 24,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 434,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-025",
+      "excess": 25,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 456,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-026",
+      "excess": 26,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 481,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-027",
+      "excess": 27,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 505,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-028",
+      "excess": 28,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 524,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-029",
+      "excess": 29,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 524,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-boundary-1",
+      "excess": 1,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 0,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-boundary-3",
+      "excess": 3,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": 0,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VS-boundary-30",
+      "excess": 30,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": null,
+      "enforcement": "criminal"
+    },
+    {
+      "id": "VS-boundary-50",
+      "excess": 50,
+      "posted_limit": 30,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": null,
+      "enforcement": "criminal"
+    },
+    {
+      "id": "VV-004",
+      "excess": 4,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 62,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-005",
+      "excess": 5,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 73,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-006",
+      "excess": 6,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 85,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-007",
+      "excess": 7,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 98,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-008",
+      "excess": 8,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 113,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-009",
+      "excess": 9,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 126,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-010",
+      "excess": 10,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 142,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-011",
+      "excess": 11,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 179,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-012",
+      "excess": 12,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 194,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-013",
+      "excess": 13,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 210,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-014",
+      "excess": 14,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 229,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-015",
+      "excess": 15,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 246,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-016",
+      "excess": 16,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 263,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-017",
+      "excess": 17,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 282,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-018",
+      "excess": 18,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 301,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-019",
+      "excess": 19,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 321,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-020",
+      "excess": 20,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 342,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-021",
+      "excess": 21,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 363,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-022",
+      "excess": 22,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 388,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-023",
+      "excess": 23,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 410,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-024",
+      "excess": 24,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 434,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-025",
+      "excess": 25,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 456,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-026",
+      "excess": 26,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 481,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-027",
+      "excess": 27,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 505,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-028",
+      "excess": 28,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 524,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-029",
+      "excess": 29,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 524,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-boundary-1",
+      "excess": 1,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 0,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-boundary-3",
+      "excess": 3,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": 0,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VV-boundary-30",
+      "excess": 30,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": null,
+      "enforcement": "criminal"
+    },
+    {
+      "id": "VV-boundary-50",
+      "excess": 50,
+      "posted_limit": 15,
+      "inside_city": true,
+      "highway": "living_street",
+      "fine": null,
+      "enforcement": "criminal"
+    },
+    {
+      "id": "VF-004",
+      "excess": 4,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 33,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-005",
+      "excess": 5,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 42,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-006",
+      "excess": 6,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 50,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-007",
+      "excess": 7,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 59,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-008",
+      "excess": 8,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 68,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-009",
+      "excess": 9,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 79,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-010",
+      "excess": 10,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 89,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-011",
+      "excess": 11,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 121,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-012",
+      "excess": 12,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 134,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-013",
+      "excess": 13,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 147,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-014",
+      "excess": 14,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 159,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-015",
+      "excess": 15,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 172,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-016",
+      "excess": 16,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 184,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-017",
+      "excess": 17,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 197,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-018",
+      "excess": 18,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 210,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-019",
+      "excess": 19,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 227,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-020",
+      "excess": 20,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 243,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-021",
+      "excess": 21,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 258,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-022",
+      "excess": 22,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 273,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-023",
+      "excess": 23,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 289,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-024",
+      "excess": 24,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 308,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-025",
+      "excess": 25,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 326,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-026",
+      "excess": 26,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 345,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-027",
+      "excess": 27,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 362,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-028",
+      "excess": 28,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 381,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-029",
+      "excess": 29,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 404,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-030",
+      "excess": 30,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 424,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-boundary-1",
+      "excess": 1,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 0,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-boundary-3",
+      "excess": 3,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": 0,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VF-boundary-31",
+      "excess": 31,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": null,
+      "enforcement": "criminal"
+    },
+    {
+      "id": "VF-boundary-50",
+      "excess": 50,
+      "posted_limit": 80,
+      "inside_city": false,
+      "highway": "primary",
+      "fine": null,
+      "enforcement": "criminal"
+    },
+    {
+      "id": "VL-004",
+      "excess": 4,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 28,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-005",
+      "excess": 5,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 34,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-006",
+      "excess": 6,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 41,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-007",
+      "excess": 7,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 49,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-008",
+      "excess": 8,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 56,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-009",
+      "excess": 9,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 64,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-010",
+      "excess": 10,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 84,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-011",
+      "excess": 11,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 115,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-012",
+      "excess": 12,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 126,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-013",
+      "excess": 13,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 136,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-014",
+      "excess": 14,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 147,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-015",
+      "excess": 15,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 159,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-016",
+      "excess": 16,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 171,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-017",
+      "excess": 17,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 185,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-018",
+      "excess": 18,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 200,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-019",
+      "excess": 19,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 213,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-020",
+      "excess": 20,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 229,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-021",
+      "excess": 21,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 244,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-022",
+      "excess": 22,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 258,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-023",
+      "excess": 23,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 273,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-024",
+      "excess": 24,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 289,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-025",
+      "excess": 25,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 304,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-026",
+      "excess": 26,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 321,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-027",
+      "excess": 27,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 337,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-028",
+      "excess": 28,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 350,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-029",
+      "excess": 29,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 369,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-030",
+      "excess": 30,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 389,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-031",
+      "excess": 31,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 408,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-032",
+      "excess": 32,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 427,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-033",
+      "excess": 33,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 446,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-034",
+      "excess": 34,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 468,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-035",
+      "excess": 35,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 488,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-036",
+      "excess": 36,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 508,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-037",
+      "excess": 37,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 524,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-038",
+      "excess": 38,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 524,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-039",
+      "excess": 39,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 524,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-boundary-1",
+      "excess": 1,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 0,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-boundary-3",
+      "excess": 3,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": 0,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "VL-boundary-40",
+      "excess": 40,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": null,
+      "enforcement": "criminal"
+    },
+    {
+      "id": "VL-boundary-50",
+      "excess": 50,
+      "posted_limit": 100,
+      "inside_city": false,
+      "highway": "motorway",
+      "fine": null,
+      "enforcement": "criminal"
+    },
+    {
+      "id": "motorway-130-1",
+      "excess": 1,
+      "posted_limit": 130,
+      "inside_city": true,
+      "highway": "motorway",
+      "fine": 12,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "motorway-130-2",
+      "excess": 2,
+      "posted_limit": 130,
+      "inside_city": true,
+      "highway": "motorway",
+      "fine": 16,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "motorway-130-3",
+      "excess": 3,
+      "posted_limit": 130,
+      "inside_city": true,
+      "highway": "motorway",
+      "fine": 22,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "motorway-130-4",
+      "excess": 4,
+      "posted_limit": 130,
+      "inside_city": true,
+      "highway": "motorway",
+      "fine": 28,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "motorway-130-12",
+      "excess": 12,
+      "posted_limit": 130,
+      "inside_city": true,
+      "highway": "motorway",
+      "fine": 126,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "motorway-130-39",
+      "excess": 39,
+      "posted_limit": 130,
+      "inside_city": true,
+      "highway": "motorway",
+      "fine": 524,
+      "enforcement": "administrative"
+    },
+    {
+      "id": "motorway-130-40",
+      "excess": 40,
+      "posted_limit": 130,
+      "inside_city": true,
+      "highway": "motorway",
+      "fine": null,
+      "enforcement": "criminal"
+    },
+    {
+      "id": "unknown-road-None",
+      "excess": 12,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": null,
+      "fine": null,
+      "enforcement": "context_dependent"
+    },
+    {
+      "id": "unknown-road-trunk",
+      "excess": 12,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "trunk",
+      "fine": null,
+      "enforcement": "context_dependent"
+    },
+    {
+      "id": "unknown-road-motorway_link",
+      "excess": 12,
+      "posted_limit": 50,
+      "inside_city": true,
+      "highway": "motorway_link",
+      "fine": null,
+      "enforcement": "context_dependent"
+    },
+    {
+      "id": "unknown-input-None-True",
+      "excess": 12,
+      "posted_limit": null,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": null,
+      "enforcement": "context_dependent"
+    },
+    {
+      "id": "unknown-input-0-True",
+      "excess": 12,
+      "posted_limit": 0,
+      "inside_city": true,
+      "highway": "residential",
+      "fine": null,
+      "enforcement": "context_dependent"
+    },
+    {
+      "id": "unknown-input-50-None",
+      "excess": 12,
+      "posted_limit": 50,
+      "inside_city": null,
+      "highway": "residential",
+      "fine": null,
+      "enforcement": "context_dependent"
+    }
+  ]
+}
