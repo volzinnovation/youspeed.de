@@ -1,0 +1,29 @@
+- iframe [ref=f1e2]:
+  - generic [ref=f2e2]:
+    - heading "Camera alignment · simulated angles" [level=3] [ref=f2e3]
+    - generic [ref=f2e5]:
+      - text: Available reference
+      - combobox "Available reference" [ref=f2e6]:
+        - option "Gravity only" [selected]
+        - option "Gravity + verified vehicle direction"
+    - img "A camera aiming reticle, gravity horizon and forward-direction target" [ref=f2e7]:
+      - generic [ref=f2e12]: Gravity horizon
+      - generic [ref=f2e13]: Camera axis
+    - generic [ref=f2e14]:
+      - generic [ref=f2e15]: Roll 8°
+      - generic [ref=f2e16]: Pitch 5°
+      - generic [ref=f2e17]: "Forward offset: unverified"
+    - generic [ref=f2e18]:
+      - generic [ref=f2e19]:
+        - text: Side tilt · roll
+        - status [ref=f2e20]: +8°
+        - slider "Side tilt · roll" [ref=f2e21]: "8"
+      - generic [ref=f2e22]:
+        - text: Up/down · pitch
+        - status [ref=f2e23]: +5°
+        - slider "Up/down · pitch" [ref=f2e24]: "5"
+      - generic [ref=f2e25]:
+        - text: Simulated turn · yaw
+        - status [ref=f2e26]: +12°
+        - slider "Simulated turn · yaw" [ref=f2e27]: "12"
+    - generic [ref=f2e28]: Changing yaw leaves gravity unchanged. Level does not mean forward-aligned.
