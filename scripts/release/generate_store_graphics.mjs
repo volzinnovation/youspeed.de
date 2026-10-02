@@ -25,9 +25,9 @@ const signImages = signs.map((image, index) => {
 const locales = JSON.parse(fs.readFileSync(path.join(root, 'store/artwork/marketing-copy.json'), 'utf8'));
 
 for (const [locale, copy] of Object.entries(locales)) {
-  const [line1, line2] = copy.hero;
+  const [line1, line2, line3] = copy.hero;
   const features = copy.feature_line;
-  const headlineSize = Math.min(66, Math.floor(660 / (Math.max(line1.length, line2.length) * 0.55)));
+  const headlineSize = Math.min(66, Math.floor(660 / (Math.max(...copy.hero.map(line => line.length)) * 0.55)));
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
 <defs>
   <linearGradient id="shade"><stop stop-color="#090d12" stop-opacity="0.98"/><stop offset="0.57" stop-color="#090d12" stop-opacity="0.76"/><stop offset="1" stop-color="#090d12" stop-opacity="0.08"/></linearGradient>
@@ -40,8 +40,9 @@ for (const [locale, copy] of Object.entries(locales)) {
   <text x="121" y="75" font-size="39" font-weight="700">YouSpeed</text>
   <text x="48" y="190" font-size="${headlineSize}" font-weight="700" letter-spacing="-2">${escape(line1)}</text>
   <text x="48" y="266" font-size="${headlineSize}" font-weight="700" letter-spacing="-2" fill="#fae14f">${escape(line2)}</text>
-  <text x="48" y="323" font-size="21">${escape(features)}</text>
-  <text x="48" y="410" font-size="20" fill="#eef0f2">${escape(copy.tagline)}</text>
+  <text x="48" y="342" font-size="${headlineSize}" font-weight="700" letter-spacing="-2">${escape(line3)}</text>
+  <text x="48" y="394" font-size="21">${escape(features)}</text>
+  <text x="48" y="455" font-size="20" fill="#eef0f2">${escape(copy.tagline)}</text>
 </g>
 <g filter="url(#shadow)">
   ${signImages}
