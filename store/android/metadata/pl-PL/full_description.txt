@@ -1,14 +1,21 @@
-YouSpeed pokazuje aktualną prędkość i ograniczenie ustalone na podstawie map offline. Pobierz dostępne kraje i regiony, zarządzaj nimi w menedżerze danych i korzystaj z ekranu jazdy bez stałego połączenia z mapami.
+Jedź bezpiecznie. Towarzysz dla Twojego auta.
 
-Mapy offline i orientacyjne reguły krajowe obejmują Niemcy, Francję, Szwajcarię, Belgię i Holandię. Modele kamery zawierają łącznie setki krajowych klas znaków, w tym ograniczenia i inne znaki drogowe. Ten zakres nie gwarantuje dokładności rozpoznawania; tylko obsługiwane znaki mogą być wyświetlane lub wpływać na odniesienie ograniczenia.
+YouSpeed zmienia smartfon w asystenta jazdy dla każdego auta, niezależnie od jego wieku. Obserwuj ograniczenia, słuchaj ostrzeżeń i nagrywaj przejazdy. Bez systemu wbudowanego w samochód.
 
-Funkcje:
-- Prędkość i ograniczenie na żywo z informacją o źródle
-- Regulowane alerty dźwiękowe i orientacyjne informacje o karach, gdzie są dostępne
-- Opcjonalne filmy z wideorejestratora zapisane lokalnie, z odtwarzaniem, udostępnianiem i usuwaniem
-- Opcjonalne rozpoznawanie znaków na urządzeniu z sygnałem lub komunikatem głosowym
-- Lokalne głosowe korekty ograniczeń na obsługiwanych urządzeniach i w obsługiwanych językach
-- Zdjęcia ulic z lokalizacją do sprawdzenia i opcjonalnego przesłania do Panoramax
+ROZPOZNAWAJ ZNAKI. ZACHOWAJ UWAGĘ NA DRODZE.
+Automatyczne rozpoznawanie używa kamery telefonu i działa na urządzeniu. Modele krajowe obejmują łącznie setki klas znaków, w tym ograniczenia prędkości. Wybierz dźwięk lub komunikaty głosowe. Obsługiwane znaki i dostępność zależą od kraju i zainstalowanego modelu.
+
+ZNAJ PRĘDKOŚĆ I KONSEKWENCJE.
+Zobacz prędkość obok limitu odniesienia. Ustaw alerty dźwiękowe i sprawdź szacowane kary właściwe dla kraju tam, gdzie są obsługiwane.
+
+NAGRAJ PRZEJAZD. ZACHOWAJ FILM.
+Wbudowana kamera samochodowa zapisuje filmy lokalnie. Odtwarzaj, udostępniaj lub usuwaj je na postoju. Ty wybierasz, co zachować i udostępnić.
+
+MAPY BEZ STAŁEGO POŁĄCZENIA.
+Pobierz mapy przed wyjazdem. Mapy i informacje krajowe obejmują Niemcy, Francję, Szwajcarię, Belgię i Holandię.
+
+TWOJE AUTO. TWOJA PRYWATNOŚĆ.
+Funkcje jazdy nie wymagają konta. Bez reklamowych i śledzących SDK. Koryguj limity głosem na obsługiwanych urządzeniach i w obsługiwanych językach. Sprawdź zdjęcia ulic przed opcjonalnym przesłaniem do Panoramax.
 
 Skonfiguruj YouSpeed na postoju. Rozpoznawanie może pominąć lub błędnie odczytać znaki; dostępność zależy od zainstalowanego modelu kraju i urządzenia. Zasięg map i informacje o karach różnią się w zależności od kraju. Znaki, przepisy i oficjalne decyzje są wiążące. YouSpeed nie gwarantuje obowiązującego limitu ani skutków prawnych.
 

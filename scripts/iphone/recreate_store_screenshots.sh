@@ -147,4 +147,6 @@ done
 xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID" >/dev/null 2>&1 || true
 xcrun simctl status_bar "$DEVICE_ID" clear >/dev/null 2>&1 || true
 
+"${STORE_SCREENSHOT_NODE:-node}" "$ROOT_DIR/scripts/release/generate_store_screenshot_layouts.mjs" apple --capture-source
+
 echo "Store screenshots written to $ROOT_DIR/store/apple/screenshots"

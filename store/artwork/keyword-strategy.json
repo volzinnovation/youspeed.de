@@ -1,0 +1,189 @@
+{
+  "date": "2026-10-02",
+  "method": "Editorial priorities inferred from implemented features, user intent, developer-owned store listings and official store guidance. Search volume, competition and conversion are not measured.",
+  "clusters": [
+    {
+      "priority": 1,
+      "intent": "Recognize road signs with a phone camera",
+      "en": [
+        "traffic sign recognition",
+        "road sign recognition",
+        "traffic sign detection",
+        "speed limit recognition"
+      ],
+      "de": [
+        "Verkehrszeichenerkennung",
+        "Verkehrsschilderkennung",
+        "Schilderkennung",
+        "Tempolimiterkennung"
+      ],
+      "placement": "Exact core phrase in Apple keyword field, Play short description, full descriptions and recognition screenshot caption."
+    },
+    {
+      "priority": 1,
+      "intent": "Know the speed limit and receive warnings",
+      "en": [
+        "speed limit",
+        "speed limit warning",
+        "speed alert",
+        "speedometer",
+        "GPS speedometer"
+      ],
+      "de": [
+        "Tempolimit",
+        "Geschwindigkeitsbegrenzung",
+        "Tempowarnung",
+        "Geschwindigkeitswarnung",
+        "Tacho",
+        "GPS Tacho"
+      ],
+      "placement": "Apple keywords; natural descriptions and speed screenshot."
+    },
+    {
+      "priority": 1,
+      "intent": "Record drives with a smartphone",
+      "en": [
+        "dashcam",
+        "dash cam",
+        "car camera",
+        "driving recorder"
+      ],
+      "de": [
+        "Dashcam",
+        "Autokamera",
+        "Fahrtaufzeichnung",
+        "Dashcam App"
+      ],
+      "placement": "Apple keywords; Play short description; dashcam description and screenshot."
+    },
+    {
+      "priority": 2,
+      "intent": "Add assistance to an existing car",
+      "en": [
+        "driver assistance",
+        "driving assistant",
+        "driver assistance system",
+        "ADAS"
+      ],
+      "de": [
+        "Fahrassistenz",
+        "Fahrassistent",
+        "Fahrerassistenzsystem",
+        "Assistenzsystem"
+      ],
+      "placement": "Apple subtitle; opening description; any-car hero. Expand ADAS as informational assistance; no automatic steering or braking claim."
+    },
+    {
+      "priority": 2,
+      "intent": "Understand speeding consequences",
+      "en": [
+        "speeding fine",
+        "penalty estimate",
+        "speeding penalty"
+      ],
+      "de": [
+        "Bußgeld",
+        "Bußgeldrechner",
+        "Bußgeldschätzung",
+        "Geschwindigkeitsüberschreitung"
+      ],
+      "placement": "Apple keywords; country-supported penalty section. Always describe estimates."
+    },
+    {
+      "priority": 3,
+      "intent": "Use downloaded maps when driving",
+      "en": [
+        "offline maps",
+        "offline speed limits"
+      ],
+      "de": [
+        "Offlinekarten",
+        "Tempolimit offline"
+      ],
+      "placement": "Apple keywords; offline description. Country names in coverage text rather than using most of the Apple keyword budget."
+    },
+    {
+      "priority": "campaign",
+      "intent": "Safety benefit and vehicle-independent positioning",
+      "en": [
+        "drive safely",
+        "road safety",
+        "safe driving",
+        "driver assistance for any car"
+      ],
+      "de": [
+        "Fahr sicher",
+        "Verkehrssicherheit",
+        "sicher fahren",
+        "Fahrassistenz für jedes Auto"
+      ],
+      "placement": "App title, hero, advertising and opening copy. These express the safety purpose; conversion and query demand need measurement."
+    }
+  ],
+  "long_tail_candidates": {
+    "en": [
+      "traffic sign recognition app",
+      "dashcam with traffic sign recognition",
+      "speed limit warning app",
+      "driver assistance for older cars"
+    ],
+    "de": [
+      "Verkehrszeichenerkennung App",
+      "Dashcam mit Verkehrszeichenerkennung",
+      "Tempowarnung App",
+      "Fahrassistenz für ältere Autos"
+    ]
+  },
+  "store_rules": {
+    "apple": "Use the separate keyword field, at most 100 characters (repository validator also conservatively limits UTF-8 bytes); comma delimiters, no spaces after commas, no unnecessary duplicates or competitor names. Promotional text does not affect search ranking. Avoid keyword stuffing in description.",
+    "play": "Use relevant phrases naturally in title, short and full descriptions. No comma-separated keyword block or unsupported features. Keep safety benefit prominent."
+  },
+  "out_of_scope_terms": [
+    {
+      "terms": [
+        "Blitzer",
+        "speed camera detector",
+        "radar detector"
+      ],
+      "reason": "Camera recognition of roadside signs is not speed-camera detection."
+    },
+    {
+      "terms": [
+        "autopilot",
+        "autonomous driving",
+        "automatic braking",
+        "collision avoidance",
+        "Spurhalteassistent"
+      ],
+      "reason": "These promise control or safety functionality not established by this marketing work."
+    },
+    {
+      "terms": [
+        "navigation",
+        "route planner",
+        "CarPlay",
+        "Android Auto"
+      ],
+      "reason": "Do not target these searches unless the shipped functionality is separately verified."
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://developer.apple.com/app-store/product-page/",
+      "supports": "Apple keyword, title, subtitle, screenshot and promotional-text guidance."
+    },
+    {
+      "url": "https://support.google.com/googleplay/android-developer/answer/13393723?hl=en",
+      "supports": "Natural feature-focused description; no excessive keyword blocks or misleading features."
+    },
+    {
+      "url": "https://play.google.com/store/apps/details?hl=de-CH&id=com.sygic.aura",
+      "supports": "Developer-owned listing uses Verkehrszeichenerkennung, Tempolimits and Dashcam; terminology evidence only."
+    },
+    {
+      "url": "https://apps.apple.com/lv/app/roadly-smart-dashcam/id1012927089",
+      "supports": "Developer-owned listing uses dash cam, car camera, smart assistant, traffic signs and speed limit; terminology evidence only."
+    }
+  ],
+  "next_measurement": "After publication is separately approved, compare search impressions, product-page views and install conversion by locale. Test safety-led versus feature-led creative; revise priority using actual query and conversion data."
+}

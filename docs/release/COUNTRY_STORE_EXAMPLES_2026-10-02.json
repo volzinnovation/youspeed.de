@@ -196,16 +196,16 @@
     "country": "NLD",
     "currency": "EUR",
     "delta_kmh": 12,
-    "details": "Der Betrag hängt von der korrigierten Überschreitung, Straßenart und Baustellen ab. Gebühren kommen hinzu; deshalb kein pauschaler Betrag.",
+    "details": "Normaler Pkw ohne Anhänger, keine Baustelle: 140 EUR Bußgeld + 9 EUR Verwaltungsgebühr. Die angezeigten +12 km/h dienen als korrigierte Überschreitung; eine amtliche Messkorrektur kann den Betrag ändern. Innerörtliche 30-km/h-Zonen und 15-km/h-Wohnverkehrsbereiche haben einen höheren Tarif.",
     "driving_ban_months": null,
     "highway": "residential",
     "inside_city": true,
     "language": "de",
-    "money_fine": null,
+    "money_fine": 140,
     "penalty_points": null,
     "posted_limit_kmh": 50,
     "speed_kmh": 62,
-    "title": "Geldbuße möglich",
+    "title": "Bußgeldschätzung",
     "official_reference_example": {
       "kind": "official_tariff_reference_not_app_output",
       "language": "de",
@@ -248,7 +248,8 @@
           "title": "OM Marges en meetcorrecties",
           "url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden/marges-en-meetcorrecties"
         }
-      ]
+      ],
+      "runtime_note": "The apps now show 140 EUR for the displayed +12 km/h on this ordinary urban road; the 9 EUR fee is separate in details. No police measurement correction is applied to GPS speed."
     }
   },
   {
@@ -256,16 +257,16 @@
     "country": "NLD",
     "currency": "EUR",
     "delta_kmh": 12,
-    "details": "The amount depends on corrected excess, road type and roadworks. Fees are additional; no single amount applies to this whole band.",
+    "details": "Ordinary passenger car without trailer, no roadworks: 140 EUR fine + 9 EUR administrative costs. Estimate uses the displayed +12 km/h as corrected excess; an official police measurement correction can change the amount. Urban 30-km/h zones and 15-km/h woonerven use their higher tariff.",
     "driving_ban_months": null,
     "highway": "residential",
     "inside_city": true,
     "language": "en",
-    "money_fine": null,
+    "money_fine": 140,
     "penalty_points": null,
     "posted_limit_kmh": 50,
     "speed_kmh": 62,
-    "title": "Fine possible",
+    "title": "Fine estimate",
     "official_reference_example": {
       "kind": "official_tariff_reference_not_app_output",
       "language": "en",
@@ -308,7 +309,8 @@
           "title": "OM Marges en meetcorrecties",
           "url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden/marges-en-meetcorrecties"
         }
-      ]
+      ],
+      "runtime_note": "The apps now show 140 EUR for the displayed +12 km/h on this ordinary urban road; the 9 EUR fee is separate in details. No police measurement correction is applied to GPS speed."
     }
   },
   {
@@ -316,16 +318,16 @@
     "country": "NLD",
     "currency": "EUR",
     "delta_kmh": 12,
-    "details": "Le montant dépend de l’excès corrigé, du type de route et des travaux. Des frais s’ajoutent ; aucun montant unique ne couvre cette tranche.",
+    "details": "Voiture ordinaire sans remorque, sans travaux : 140 EUR d’amende + 9 EUR de frais administratifs. Les +12 km/h affichés sont utilisés comme excès corrigé ; la correction officielle de mesure peut modifier le montant. Les zones urbaines à 30 km/h et les woonerven à 15 km/h ont un tarif plus élevé.",
     "driving_ban_months": null,
     "highway": "residential",
     "inside_city": true,
     "language": "fr",
-    "money_fine": null,
+    "money_fine": 140,
     "penalty_points": null,
     "posted_limit_kmh": 50,
     "speed_kmh": 62,
-    "title": "Amende possible",
+    "title": "Estimation de l’amende",
     "official_reference_example": {
       "kind": "official_tariff_reference_not_app_output",
       "language": "fr",
@@ -368,7 +370,8 @@
           "title": "OM Marges en meetcorrecties",
           "url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden/marges-en-meetcorrecties"
         }
-      ]
+      ],
+      "runtime_note": "The apps now show 140 EUR for the displayed +12 km/h on this ordinary urban road; the 9 EUR fee is separate in details. No police measurement correction is applied to GPS speed."
     }
   },
   {
@@ -376,16 +379,16 @@
     "country": "NLD",
     "currency": "EUR",
     "delta_kmh": 12,
-    "details": "Het bedrag hangt af van de gecorrigeerde overschrijding, het wegtype en wegwerkzaamheden. Kosten komen erbij; er is geen vast bedrag voor deze hele band.",
+    "details": "Gewone personenauto zonder aanhanger, geen wegwerkzaamheden: 140 EUR boete + 9 EUR administratiekosten. De getoonde +12 km/u wordt als gecorrigeerde overschrijding gebruikt; de officiële meetcorrectie kan het bedrag veranderen. Een 30-km/u-zone binnen de bebouwde kom en een woonerf met 15 km/u hebben een hoger tarief.",
     "driving_ban_months": null,
     "highway": "residential",
     "inside_city": true,
     "language": "nl",
-    "money_fine": null,
+    "money_fine": 140,
     "penalty_points": null,
     "posted_limit_kmh": 50,
     "speed_kmh": 62,
-    "title": "Boete mogelijk",
+    "title": "Boeteraming",
     "official_reference_example": {
       "kind": "official_tariff_reference_not_app_output",
       "language": "nl",
@@ -428,7 +431,8 @@
           "title": "OM Marges en meetcorrecties",
           "url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden/marges-en-meetcorrecties"
         }
-      ]
+      ],
+      "runtime_note": "The apps now show 140 EUR for the displayed +12 km/h on this ordinary urban road; the 9 EUR fee is separate in details. No police measurement correction is applied to GPS speed."
     }
   }
 ]

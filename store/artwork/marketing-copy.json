@@ -1,0 +1,536 @@
+{
+  "en-US": {
+    "title": "YouSpeed: Drive safely",
+    "subtitle": "Driver assistance for any car",
+    "short": "Drive safely. Traffic sign recognition, speed alerts and dashcam for any car.",
+    "promo": "You don't need a new car to add driver assistance. Drive safely with automatic traffic sign recognition, speed alerts, penalty estimates and a dashcam.",
+    "intro": "Drive safely. Give your car a driving companion.\n\nYouSpeed turns your smartphone into a driver assistance system for any car, whatever its age. Keep speed limits in view, hear alerts and record your drives. No built-in vehicle system required.",
+    "features": "SEE THE SIGNS. KEEP YOUR ATTENTION ON THE ROAD.\nAutomatic traffic sign recognition uses your phone's camera and runs on your device. Country models cover hundreds of traffic sign classes, including speed limits and additional road signs. Choose sound or spoken feedback. Supported signs and recognition availability depend on the country and installed model.\n\nKNOW YOUR SPEED. UNDERSTAND THE CONSEQUENCES.\nSee your current speed alongside the speed-limit reference. Configure sound alerts and get country-specific penalty estimates where supported, so you can understand what speeding could cost.\n\nRECORD THE DRIVE. KEEP THE VIDEO.\nUse the built-in dashcam to record drives locally. Play back, share or delete your videos when parked. You choose what to keep and share.\n\nREADY BEYOND MOBILE COVERAGE.\nDownload maps before you go and use the speed display without an ongoing map connection. Maps and country advisory rules include Germany, France, Switzerland, Belgium and the Netherlands.\n\nMADE FOR YOUR CAR. BUILT AROUND YOUR PRIVACY.\nCore driving features need no account. No advertising or tracking SDKs. On supported devices and languages, correct speed limits by voice. Capture street photos and review them before choosing an optional Panoramax upload.",
+    "hero": [
+      "Drive safely.",
+      "In any car."
+    ],
+    "tagline": "Your smartphone. Your driving companion.",
+    "feature_line": "Sign recognition · Speed alerts · Dashcam",
+    "gallery": [
+      [
+        "Drive safely.",
+        "In any car.",
+        "Driver assistance, whatever your car's age."
+      ],
+      [
+        "See the limit.",
+        "Know your speed.",
+        "Automatic sign recognition. Clear speed display."
+      ],
+      [
+        "More signs.",
+        "More awareness.",
+        "Traffic sign recognition with sound or spoken feedback."
+      ],
+      [
+        "Your drive.",
+        "On record.",
+        "Record locally. Replay and share when parked."
+      ],
+      [
+        "Know what",
+        "speeding could cost.",
+        "Country-specific penalty estimates · France"
+      ],
+      [
+        "Know what",
+        "speeding could cost.",
+        "Country-specific penalty estimates · Switzerland"
+      ],
+      [
+        "Know what",
+        "speeding could cost.",
+        "Country-specific penalty estimates · Belgium"
+      ],
+      [
+        "Stay aware.",
+        "Across borders.",
+        "Country-specific penalty estimates · Netherlands"
+      ],
+      [
+        "Stay aware.",
+        "In the city.",
+        "A clear view of your speed-limit reference."
+      ],
+      [
+        "Stay aware.",
+        "On the motorway.",
+        "Your speed and its reference, at a glance."
+      ]
+    ]
+  },
+  "de-DE": {
+    "title": "YouSpeed: Fahr sicher",
+    "subtitle": "Fahrassistenz für jedes Auto",
+    "short": "Fahr sicher. Verkehrszeichenerkennung, Tempowarnung und Dashcam für jedes Auto.",
+    "promo": "Du brauchst kein neues Auto für Fahrassistenz. Fahr sicher mit automatischer Verkehrszeichenerkennung, Tempohinweisen, Bußgeldschätzung und Dashcam.",
+    "intro": "Fahr sicher. Gib deinem Auto einen Begleiter.\n\nYouSpeed macht dein Smartphone zum Fahrassistenzsystem für jedes Auto, unabhängig vom Baujahr. Behalte Tempolimits im Blick, höre Hinweise und zeichne deine Fahrten auf. Ohne fest eingebautes Assistenzsystem.",
+    "features": "ZEICHEN ERKENNEN. AUFMERKSAM BLEIBEN.\nDie automatische Verkehrszeichenerkennung nutzt deine Smartphone-Kamera und arbeitet auf deinem Gerät. Die Ländermodelle umfassen insgesamt Hunderte Verkehrszeichenklassen, darunter Tempolimits und weitere Straßenschilder. Wähle Tonhinweise oder Sprachausgabe. Unterstützte Zeichen und Verfügbarkeit hängen von Land und installiertem Modell ab.\n\nTEMPO KENNEN. FOLGEN EINSCHÄTZEN.\nSieh deine aktuelle Geschwindigkeit neben dem Referenz-Tempolimit. Stelle Tempowarnungen ein und erfahre, welches Bußgeld bei einer Überschreitung drohen könnte. Die länderspezifischen Schätzungen sind dort verfügbar, wo sie unterstützt werden.\n\nFAHRT AUFZEICHNEN. VIDEO BEHALTEN.\nMit der integrierten Dashcam speicherst du Fahrten lokal. Videos im Stand ansehen, teilen oder löschen. Du entscheidest, was du behältst und teilst.\n\nAUCH OHNE LAUFENDE KARTENVERBINDUNG.\nLade Karten vor der Fahrt herunter und nutze die Tempoanzeige offline. Karten und länderspezifische Hinweise umfassen Deutschland, Frankreich, die Schweiz, Belgien und die Niederlande.\n\nFÜR DEIN AUTO. MIT DEINER PRIVATSPHÄRE IM BLICK.\nDie Fahrtfunktionen benötigen kein Konto. Keine Werbe- oder Tracking-SDKs. Korrigiere Tempolimits per Sprache auf unterstützten Geräten und in unterstützten Sprachen. Erfasse Straßenfotos und prüfe sie vor einem optionalen Panoramax-Upload.",
+    "hero": [
+      "Fahr sicher.",
+      "In jedem Auto."
+    ],
+    "tagline": "Dein Smartphone. Dein Begleiter unterwegs.",
+    "feature_line": "Schilderkennung · Tempohinweise · Dashcam",
+    "gallery": [
+      [
+        "Fahr sicher.",
+        "In jedem Auto.",
+        "Fahrassistenz, unabhängig vom Baujahr."
+      ],
+      [
+        "Tempolimit sehen.",
+        "Tempo kennen.",
+        "Automatische Schilderkennung. Klare Tempoanzeige."
+      ],
+      [
+        "Mehr Zeichen.",
+        "Mehr Überblick.",
+        "Verkehrszeichenerkennung mit Ton oder Sprache."
+      ],
+      [
+        "Deine Fahrt.",
+        "Aufgenommen.",
+        "Lokal aufnehmen. Im Stand ansehen und teilen."
+      ],
+      [
+        "Wissen, was",
+        "zu schnell kostet.",
+        "Länderspezifische Bußgeldschätzung · Frankreich"
+      ],
+      [
+        "Wissen, was",
+        "zu schnell kostet.",
+        "Länderspezifische Bußgeldschätzung · Schweiz"
+      ],
+      [
+        "Wissen, was",
+        "zu schnell kostet.",
+        "Länderspezifische Bußgeldschätzung · Belgien"
+      ],
+      [
+        "Aufmerksam.",
+        "Über Grenzen.",
+        "Länderspezifische Bußgeldschätzung · Niederlande"
+      ],
+      [
+        "Aufmerksam.",
+        "In der Stadt.",
+        "Dein Referenz-Tempolimit klar im Blick."
+      ],
+      [
+        "Aufmerksam.",
+        "Auf der Autobahn.",
+        "Tempo und Referenz auf einen Blick."
+      ]
+    ]
+  },
+  "fr-FR": {
+    "title": "YouSpeed : Roulez prudemment",
+    "subtitle": "L'aide à la conduite pour tous",
+    "short": "Roulez prudemment. Panneaux, alertes de vitesse et dashcam pour toute voiture.",
+    "promo": "Pas besoin d'une voiture neuve : reconnaissance automatique des panneaux, alertes de vitesse, estimation des amendes et dashcam. Roulez prudemment avec YouSpeed.",
+    "intro": "Roulez prudemment. Un compagnon pour votre voiture.\n\nYouSpeed transforme votre smartphone en assistant de conduite pour toute voiture, quel que soit son âge. Gardez les limitations en vue, écoutez les alertes et enregistrez vos trajets. Aucun système intégré au véhicule n'est nécessaire.",
+    "features": "VOYEZ LES PANNEAUX. RESTEZ ATTENTIF À LA ROUTE.\nLa reconnaissance automatique utilise la caméra du téléphone et fonctionne sur l'appareil. Les modèles nationaux couvrent au total des centaines de classes de panneaux, dont les limitations de vitesse. Choisissez des alertes sonores ou vocales. Les panneaux pris en charge et la disponibilité dépendent du pays et du modèle installé.\n\nCONNAISSEZ VOTRE VITESSE ET LES CONSÉQUENCES.\nConsultez votre vitesse et la limitation de référence. Configurez les alertes sonores et obtenez une estimation des sanctions propres au pays lorsque cette fonction est prise en charge.\n\nENREGISTREZ LE TRAJET. GARDEZ LA VIDÉO.\nLa dashcam intégrée sauvegarde les trajets localement. À l'arrêt, regardez, partagez ou supprimez vos vidéos. Vous choisissez ce que vous conservez et partagez.\n\nDES CARTES MÊME SANS CONNEXION CONTINUE.\nTéléchargez les cartes avant de partir. Les cartes et règles indicatives couvrent l'Allemagne, la France, la Suisse, la Belgique et les Pays-Bas.\n\nVOTRE VOITURE. VOTRE VIE PRIVÉE.\nLes fonctions de conduite ne nécessitent pas de compte. Aucun SDK publicitaire ou de suivi. Corrigez les limitations par la voix sur les appareils et dans les langues pris en charge. Vérifiez vos photos de rue avant un éventuel envoi à Panoramax.",
+    "hero": [
+      "Roulez prudemment.",
+      "Dans toute voiture."
+    ],
+    "tagline": "Votre smartphone. Votre compagnon de route.",
+    "feature_line": "Panneaux · Alertes de vitesse · Dashcam",
+    "gallery": [
+      [
+        "Roulez prudemment.",
+        "Dans toute voiture.",
+        "L'aide à la conduite, quel que soit l'âge du véhicule."
+      ],
+      [
+        "Voyez la limite.",
+        "Suivez votre vitesse.",
+        "Reconnaissance automatique. Affichage clair."
+      ],
+      [
+        "Plus de panneaux.",
+        "Plus d'attention.",
+        "Reconnaissance avec alertes sonores ou vocales."
+      ],
+      [
+        "Vos trajets.",
+        "Enregistrés.",
+        "Vidéos locales. Lecture et partage à l'arrêt."
+      ],
+      [
+        "Comprenez le coût",
+        "d'un excès de vitesse.",
+        "Estimation des sanctions · France"
+      ],
+      [
+        "Comprenez le coût",
+        "d'un excès de vitesse.",
+        "Estimation des sanctions · Suisse"
+      ],
+      [
+        "Comprenez le coût",
+        "d'un excès de vitesse.",
+        "Estimation des sanctions · Belgique"
+      ],
+      [
+        "Restez attentif.",
+        "Au-delà des frontières.",
+        "Estimation des sanctions · Pays-Bas"
+      ],
+      [
+        "Restez attentif.",
+        "En ville.",
+        "La limitation de référence bien en vue."
+      ],
+      [
+        "Restez attentif.",
+        "Sur l'autoroute.",
+        "Vitesse et référence en un coup d'œil."
+      ]
+    ]
+  },
+  "nl-NL": {
+    "title": "YouSpeed: Rijd veilig",
+    "subtitle": "Rijassistentie voor elke auto",
+    "short": "Rijd veilig. Bordherkenning, snelheidsmeldingen en dashcam voor elke auto.",
+    "promo": "Je hebt geen nieuwe auto nodig voor rijassistentie. Rijd veilig met automatische bordherkenning, snelheidsmeldingen, boeteschattingen en een dashcam.",
+    "intro": "Rijd veilig. Een reisgenoot voor je auto.\n\nYouSpeed maakt van je smartphone een rijassistent voor elke auto, ongeacht de leeftijd. Houd snelheidslimieten in beeld, hoor meldingen en neem je ritten op. Geen ingebouwd assistentiesysteem nodig.",
+    "features": "HERKEN BORDEN. BLIJF ALERT OP DE WEG.\nAutomatische verkeersbordherkenning gebruikt de camera van je telefoon en werkt op je apparaat. De landenmodellen omvatten samen honderden bordklassen, waaronder snelheidslimieten en andere verkeersborden. Kies geluid of gesproken meldingen. Ondersteunde borden en beschikbaarheid hangen af van het land en geïnstalleerde model.\n\nKEN JE SNELHEID EN DE GEVOLGEN.\nBekijk je snelheid naast de referentielimiet. Stel geluidsmeldingen in en bekijk landspecifieke boeteschattingen waar ondersteund.\n\nNEEM JE RIT OP. BEWAAR DE VIDEO.\nDe ingebouwde dashcam slaat ritten lokaal op. Bekijk, deel of verwijder video's wanneer je geparkeerd staat. Jij kiest wat je bewaart en deelt.\n\nKAARTEN ZONDER DOORLOPENDE VERBINDING.\nDownload kaarten voor vertrek en gebruik de snelheidsweergave offline. Kaarten en landspecifieke informatie omvatten Duitsland, Frankrijk, Zwitserland, België en Nederland.\n\nJOUW AUTO. JOUW PRIVACY.\nDe rijfuncties vereisen geen account. Geen advertentie- of tracking-SDK's. Corrigeer limieten met je stem op ondersteunde apparaten en in ondersteunde talen. Controleer straatfoto's voordat je kiest voor een optionele Panoramax-upload.",
+    "hero": [
+      "Rijd veilig.",
+      "In elke auto."
+    ],
+    "tagline": "Je smartphone. Je reisgenoot.",
+    "feature_line": "Bordherkenning · Snelheidsmeldingen · Dashcam",
+    "gallery": [
+      [
+        "Rijd veilig.",
+        "In elke auto.",
+        "Rijassistentie, ongeacht de leeftijd van je auto."
+      ],
+      [
+        "Zie de limiet.",
+        "Ken je snelheid.",
+        "Automatische bordherkenning. Duidelijke weergave."
+      ],
+      [
+        "Meer borden.",
+        "Meer overzicht.",
+        "Bordherkenning met geluid of gesproken meldingen."
+      ],
+      [
+        "Je rit.",
+        "Vastgelegd.",
+        "Lokaal opnemen. Bekijken en delen als je stilstaat."
+      ],
+      [
+        "Weet wat",
+        "te hard rijden kost.",
+        "Landspecifieke boeteschattingen · Frankrijk"
+      ],
+      [
+        "Weet wat",
+        "te hard rijden kost.",
+        "Landspecifieke boeteschattingen · Zwitserland"
+      ],
+      [
+        "Weet wat",
+        "te hard rijden kost.",
+        "Landspecifieke boeteschattingen · België"
+      ],
+      [
+        "Blijf alert.",
+        "Over de grens.",
+        "Landspecifieke boeteschattingen · Nederland"
+      ],
+      [
+        "Blijf alert.",
+        "In de stad.",
+        "Je referentielimiet duidelijk in beeld."
+      ],
+      [
+        "Blijf alert.",
+        "Op de snelweg.",
+        "Snelheid en referentie in één oogopslag."
+      ]
+    ]
+  },
+  "es-ES": {
+    "title": "YouSpeed: Conduce con cuidado",
+    "short": "Conduce con cuidado. Señales, avisos de velocidad y dashcam para todo coche.",
+    "intro": "Conduce con cuidado. Un compañero para tu coche.\n\nYouSpeed convierte tu smartphone en un asistente de conducción para cualquier coche, sea cual sea su edad. Consulta los límites, escucha avisos y graba tus trayectos. No necesitas un sistema integrado en el vehículo.",
+    "features": "RECONOCE SEÑALES. PRESTA ATENCIÓN A LA CARRETERA.\nEl reconocimiento automático utiliza la cámara y funciona en tu dispositivo. Los modelos por país incluyen en total cientos de clases de señales, incluidos límites de velocidad. Elige avisos sonoros o hablados. Las señales compatibles y la disponibilidad dependen del país y del modelo instalado.\n\nCONOCE TU VELOCIDAD Y LAS CONSECUENCIAS.\nConsulta tu velocidad junto al límite de referencia. Configura avisos sonoros y consulta estimaciones de sanciones por país donde estén disponibles.\n\nGRABA EL TRAYECTO. CONSERVA EL VÍDEO.\nLa dashcam integrada guarda vídeos localmente. Reprodúcelos, compártelos o bórralos cuando estés estacionado. Tú eliges qué conservar y compartir.\n\nMAPAS SIN CONEXIÓN CONTINUA.\nDescarga mapas antes de salir. Los mapas y las reglas orientativas incluyen Alemania, Francia, Suiza, Bélgica y los Países Bajos.\n\nTU COCHE. TU PRIVACIDAD.\nLas funciones de conducción no requieren cuenta. Sin SDK de publicidad ni seguimiento. Corrige límites por voz en dispositivos e idiomas compatibles. Revisa tus fotos de calles antes de elegir una subida opcional a Panoramax.",
+    "hero": [
+      "Conduce con cuidado.",
+      "En cualquier coche."
+    ],
+    "tagline": "Tu smartphone. Tu compañero de viaje.",
+    "feature_line": "Señales · Avisos de velocidad · Dashcam",
+    "gallery": [
+      [
+        "Conduce con cuidado.",
+        "En cualquier coche.",
+        "Asistencia, sea cual sea la edad de tu coche."
+      ],
+      [
+        "Ve el límite.",
+        "Conoce tu velocidad.",
+        "Reconocimiento automático. Una pantalla clara."
+      ],
+      [
+        "Más señales.",
+        "Más atención.",
+        "Reconocimiento con avisos sonoros o hablados."
+      ],
+      [
+        "Tu viaje.",
+        "Grabado.",
+        "Vídeos locales. Revisa y comparte al estacionar."
+      ],
+      [
+        "Conoce el coste",
+        "de ir demasiado rápido.",
+        "Estimaciones de sanciones · Francia"
+      ],
+      [
+        "Conoce el coste",
+        "de ir demasiado rápido.",
+        "Estimaciones de sanciones · Suiza"
+      ],
+      [
+        "Conoce el coste",
+        "de ir demasiado rápido.",
+        "Estimaciones de sanciones · Bélgica"
+      ],
+      [
+        "Mantente atento.",
+        "Más allá de fronteras.",
+        "Estimaciones de sanciones · Países Bajos"
+      ]
+    ]
+  },
+  "it-IT": {
+    "title": "YouSpeed: Guida con prudenza",
+    "short": "Guida con prudenza. Segnali, avvisi di velocità e dashcam per ogni auto.",
+    "intro": "Guida con prudenza. Un compagno per la tua auto.\n\nYouSpeed trasforma lo smartphone in un assistente alla guida per ogni auto, qualunque sia la sua età. Tieni d'occhio i limiti, ascolta gli avvisi e registra i viaggi. Nessun sistema integrato nell'auto necessario.",
+    "features": "RICONOSCI I SEGNALI. RESTA ATTENTO ALLA STRADA.\nIl riconoscimento automatico usa la fotocamera e funziona sul dispositivo. I modelli nazionali comprendono complessivamente centinaia di classi di segnali, inclusi i limiti di velocità. Scegli avvisi sonori o vocali. Segnali supportati e disponibilità dipendono dal paese e dal modello installato.\n\nCONOSCI VELOCITÀ E CONSEGUENZE.\nVedi la tua velocità accanto al limite di riferimento. Configura gli avvisi sonori e consulta le stime delle sanzioni per paese dove supportate.\n\nREGISTRA IL VIAGGIO. CONSERVA IL VIDEO.\nLa dashcam integrata salva i viaggi localmente. Riproduci, condividi o elimina i video a veicolo fermo. Scegli tu cosa conservare e condividere.\n\nMAPPE SENZA CONNESSIONE CONTINUA.\nScarica le mappe prima di partire. Mappe e regole indicative comprendono Germania, Francia, Svizzera, Belgio e Paesi Bassi.\n\nLA TUA AUTO. LA TUA PRIVACY.\nLe funzioni di guida non richiedono un account. Nessun SDK pubblicitario o di tracciamento. Correggi i limiti con la voce sui dispositivi e nelle lingue supportati. Controlla le foto stradali prima di un caricamento facoltativo su Panoramax.",
+    "hero": [
+      "Guida con prudenza.",
+      "In ogni auto."
+    ],
+    "tagline": "Il tuo smartphone. Il tuo compagno di viaggio.",
+    "feature_line": "Segnali · Avvisi di velocità · Dashcam",
+    "gallery": [
+      [
+        "Guida con prudenza.",
+        "In ogni auto.",
+        "Assistenza alla guida, qualunque sia l'età dell'auto."
+      ],
+      [
+        "Vedi il limite.",
+        "Conosci la velocità.",
+        "Riconoscimento automatico. Visualizzazione chiara."
+      ],
+      [
+        "Più segnali.",
+        "Più attenzione.",
+        "Riconoscimento con avvisi sonori o vocali."
+      ],
+      [
+        "Il tuo viaggio.",
+        "Registrato.",
+        "Video locali. Rivedi e condividi a veicolo fermo."
+      ],
+      [
+        "Scopri il costo",
+        "della velocità eccessiva.",
+        "Stime delle sanzioni · Francia"
+      ],
+      [
+        "Scopri il costo",
+        "della velocità eccessiva.",
+        "Stime delle sanzioni · Svizzera"
+      ],
+      [
+        "Scopri il costo",
+        "della velocità eccessiva.",
+        "Stime delle sanzioni · Belgio"
+      ],
+      [
+        "Resta attento.",
+        "Oltre i confini.",
+        "Stime delle sanzioni · Paesi Bassi"
+      ]
+    ]
+  },
+  "pl-PL": {
+    "title": "YouSpeed: Jedź bezpiecznie",
+    "short": "Jedź bezpiecznie. Znaki, alerty prędkości i kamera dla każdego auta.",
+    "intro": "Jedź bezpiecznie. Towarzysz dla Twojego auta.\n\nYouSpeed zmienia smartfon w asystenta jazdy dla każdego auta, niezależnie od jego wieku. Obserwuj ograniczenia, słuchaj ostrzeżeń i nagrywaj przejazdy. Bez systemu wbudowanego w samochód.",
+    "features": "ROZPOZNAWAJ ZNAKI. ZACHOWAJ UWAGĘ NA DRODZE.\nAutomatyczne rozpoznawanie używa kamery telefonu i działa na urządzeniu. Modele krajowe obejmują łącznie setki klas znaków, w tym ograniczenia prędkości. Wybierz dźwięk lub komunikaty głosowe. Obsługiwane znaki i dostępność zależą od kraju i zainstalowanego modelu.\n\nZNAJ PRĘDKOŚĆ I KONSEKWENCJE.\nZobacz prędkość obok limitu odniesienia. Ustaw alerty dźwiękowe i sprawdź szacowane kary właściwe dla kraju tam, gdzie są obsługiwane.\n\nNAGRAJ PRZEJAZD. ZACHOWAJ FILM.\nWbudowana kamera samochodowa zapisuje filmy lokalnie. Odtwarzaj, udostępniaj lub usuwaj je na postoju. Ty wybierasz, co zachować i udostępnić.\n\nMAPY BEZ STAŁEGO POŁĄCZENIA.\nPobierz mapy przed wyjazdem. Mapy i informacje krajowe obejmują Niemcy, Francję, Szwajcarię, Belgię i Holandię.\n\nTWOJE AUTO. TWOJA PRYWATNOŚĆ.\nFunkcje jazdy nie wymagają konta. Bez reklamowych i śledzących SDK. Koryguj limity głosem na obsługiwanych urządzeniach i w obsługiwanych językach. Sprawdź zdjęcia ulic przed opcjonalnym przesłaniem do Panoramax.",
+    "hero": [
+      "Jedź bezpiecznie.",
+      "W każdym aucie."
+    ],
+    "tagline": "Twój smartfon. Twój towarzysz podróży.",
+    "feature_line": "Znaki · Alerty prędkości · Kamera samochodowa",
+    "gallery": [
+      [
+        "Jedź bezpiecznie.",
+        "W każdym aucie.",
+        "Asystent jazdy, niezależnie od wieku auta."
+      ],
+      [
+        "Zobacz limit.",
+        "Znaj prędkość.",
+        "Automatyczne rozpoznawanie. Czytelny ekran."
+      ],
+      [
+        "Więcej znaków.",
+        "Większa uwaga.",
+        "Rozpoznawanie z dźwiękiem lub komunikatami."
+      ],
+      [
+        "Twoja podróż.",
+        "Nagrana.",
+        "Filmy lokalne. Oglądaj i udostępniaj na postoju."
+      ],
+      [
+        "Sprawdź koszt",
+        "zbyt szybkiej jazdy.",
+        "Szacowane kary · Francja"
+      ],
+      [
+        "Sprawdź koszt",
+        "zbyt szybkiej jazdy.",
+        "Szacowane kary · Szwajcaria"
+      ],
+      [
+        "Sprawdź koszt",
+        "zbyt szybkiej jazdy.",
+        "Szacowane kary · Belgia"
+      ],
+      [
+        "Zachowaj uwagę.",
+        "Za granicą.",
+        "Szacowane kary · Holandia"
+      ]
+    ]
+  },
+  "pt-BR": {
+    "title": "YouSpeed: Dirija com cuidado",
+    "short": "Dirija com cuidado. Placas, alertas de velocidade e dashcam para qualquer carro.",
+    "intro": "Dirija com cuidado. Um companheiro para seu carro.\n\nYouSpeed transforma seu smartphone em um assistente de direção para qualquer carro, independentemente da idade. Veja os limites, ouça alertas e grave seus trajetos. Não precisa de um sistema integrado ao veículo.",
+    "features": "RECONHEÇA PLACAS. MANTENHA A ATENÇÃO NA VIA.\nO reconhecimento automático usa a câmera e funciona no dispositivo. Os modelos por país abrangem, no total, centenas de classes de placas, incluindo limites de velocidade. Escolha alertas sonoros ou falados. As placas compatíveis e a disponibilidade dependem do país e do modelo instalado.\n\nSAIBA SUA VELOCIDADE E AS CONSEQUÊNCIAS.\nVeja sua velocidade junto ao limite de referência. Configure alertas sonoros e consulte estimativas de penalidades por país onde houver suporte.\n\nGRAVE O TRAJETO. GUARDE O VÍDEO.\nA dashcam integrada salva os trajetos localmente. Reproduza, compartilhe ou apague os vídeos com o carro estacionado. Você escolhe o que guardar e compartilhar.\n\nMAPAS SEM CONEXÃO CONTÍNUA.\nBaixe mapas antes de sair. Mapas e regras orientativas abrangem Alemanha, França, Suíça, Bélgica e Países Baixos.\n\nSEU CARRO. SUA PRIVACIDADE.\nOs recursos de direção não exigem conta. Sem SDKs de publicidade ou rastreamento. Corrija limites por voz nos dispositivos e idiomas compatíveis. Revise fotos das vias antes de um envio opcional ao Panoramax.",
+    "hero": [
+      "Dirija com cuidado.",
+      "Em qualquer carro."
+    ],
+    "tagline": "Seu smartphone. Seu companheiro de viagem.",
+    "feature_line": "Placas · Alertas de velocidade · Dashcam",
+    "gallery": [
+      [
+        "Dirija com cuidado.",
+        "Em qualquer carro.",
+        "Assistência, independentemente da idade do carro."
+      ],
+      [
+        "Veja o limite.",
+        "Saiba sua velocidade.",
+        "Reconhecimento automático. Tela clara."
+      ],
+      [
+        "Mais placas.",
+        "Mais atenção.",
+        "Reconhecimento com alertas sonoros ou falados."
+      ],
+      [
+        "Sua viagem.",
+        "Gravada.",
+        "Vídeos locais. Revise e compartilhe ao estacionar."
+      ],
+      [
+        "Saiba o custo",
+        "de correr demais.",
+        "Estimativas de penalidades · França"
+      ],
+      [
+        "Saiba o custo",
+        "de correr demais.",
+        "Estimativas de penalidades · Suíça"
+      ],
+      [
+        "Saiba o custo",
+        "de correr demais.",
+        "Estimativas de penalidades · Bélgica"
+      ],
+      [
+        "Mantenha a atenção.",
+        "Além das fronteiras.",
+        "Estimativas de penalidades · Países Baixos"
+      ]
+    ]
+  },
+  "sv-SE": {
+    "title": "YouSpeed: Kör säkert",
+    "short": "Kör säkert. Skyltigenkänning, hastighetsvarningar och dashcam för varje bil.",
+    "intro": "Kör säkert. En följeslagare för din bil.\n\nYouSpeed gör din smartphone till en förarassistent för varje bil, oavsett ålder. Håll koll på hastighetsgränser, hör varningar och spela in dina resor. Inget inbyggt bilsystem behövs.",
+    "features": "KÄNN IGEN SKYLTAR. VAR UPPMÄRKSAM PÅ VÄGEN.\nAutomatisk skyltigenkänning använder telefonens kamera och körs på enheten. Landsmodellerna omfattar totalt hundratals skyltklasser, inklusive hastighetsgränser. Välj ljud eller talade meddelanden. Skyltar som stöds och tillgänglighet beror på land och installerad modell.\n\nKÄNN DIN HASTIGHET OCH KONSEKVENSERNA.\nSe din hastighet bredvid referensgränsen. Ställ in ljudvarningar och se landsspecifika uppskattningar av påföljder där det stöds.\n\nSPELA IN RESAN. SPARA VIDEON.\nDen inbyggda dashcamen sparar resor lokalt. Spela upp, dela eller radera videor när du står parkerad. Du väljer vad du sparar och delar.\n\nKARTOR UTAN LÖPANDE ANSLUTNING.\nLadda ner kartor före avfärd. Kartor och rådgivande landsregler omfattar Tyskland, Frankrike, Schweiz, Belgien och Nederländerna.\n\nDIN BIL. DIN INTEGRITET.\nKörfunktionerna kräver inget konto. Inga SDK:er för reklam eller spårning. Korrigera gränser med rösten på enheter och språk som stöds. Granska gatufoton innan du väljer en frivillig uppladdning till Panoramax.",
+    "hero": [
+      "Kör säkert.",
+      "I varje bil."
+    ],
+    "tagline": "Din smartphone. Din följeslagare på vägen.",
+    "feature_line": "Skyltigenkänning · Hastighetsvarningar · Dashcam",
+    "gallery": [
+      [
+        "Kör säkert.",
+        "I varje bil.",
+        "Förarassistans, oavsett bilens ålder."
+      ],
+      [
+        "Se gränsen.",
+        "Känn hastigheten.",
+        "Automatisk skyltigenkänning. Tydlig visning."
+      ],
+      [
+        "Fler skyltar.",
+        "Mer uppmärksamhet.",
+        "Igenkänning med ljud eller talade meddelanden."
+      ],
+      [
+        "Din resa.",
+        "Inspelad.",
+        "Lokala videor. Granska och dela när du parkerat."
+      ],
+      [
+        "Se vad",
+        "fortkörning kan kosta.",
+        "Uppskattade påföljder · Frankrike"
+      ],
+      [
+        "Se vad",
+        "fortkörning kan kosta.",
+        "Uppskattade påföljder · Schweiz"
+      ],
+      [
+        "Se vad",
+        "fortkörning kan kosta.",
+        "Uppskattade påföljder · Belgien"
+      ],
+      [
+        "Var uppmärksam.",
+        "Över gränserna.",
+        "Uppskattade påföljder · Nederländerna"
+      ]
+    ]
+  }
+}

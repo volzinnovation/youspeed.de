@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-02",
+  "positioning": "Drive safely. Driver assistance for every car.",
+  "store_claim": "Hundreds of country-specific traffic-sign classes. Availability and supported signs vary by country and installed model.",
+  "country_counts": [
+    {
+      "country": "DE",
+      "classifier_classes": 134,
+      "display_eligible_model_classes": 97,
+      "catalog_path": "shared/tsr/prolix-de-class-catalog-v1.json",
+      "catalog_sha256": "0a527828308b9e33aae8e8cfb42e3f97c43855cf2c78b498c612a106f1f71e7e",
+      "mobile_class_mapping_parity": true
+    },
+    {
+      "country": "FR",
+      "classifier_classes": 256,
+      "display_eligible_model_classes": 98,
+      "catalog_path": "shared/tsr/prolix-fr-class-catalog-v1.json",
+      "catalog_sha256": "ffd888b126fd5a45bfda7cb09ef6b0d906a3d4999e3a10433f640f6ea46557e4",
+      "mobile_class_mapping_parity": true
+    },
+    {
+      "country": "NL",
+      "classifier_classes": 160,
+      "display_eligible_model_classes": 84,
+      "catalog_path": "shared/tsr/prolix-nl-class-catalog-v1.json",
+      "catalog_sha256": "e9993e63e90f1ee6455dba29b4207e250761cd5fc80444f5995c53f241ce003b",
+      "mobile_class_mapping_parity": true
+    },
+    {
+      "country": "BE",
+      "classifier_classes": 143,
+      "display_eligible_model_classes": 88,
+      "catalog_path": "shared/tsr/prolix-be-class-catalog-v1.json",
+      "catalog_sha256": "5cc793f987bb1a5b9d20872927416109c39f47edcbecc4541f823c517bae7635",
+      "mobile_class_mapping_parity": true
+    },
+    {
+      "country": "CH",
+      "classifier_classes": 127,
+      "display_eligible_model_classes": 102,
+      "catalog_path": "shared/tsr/prolix-ch-class-catalog-v1.json",
+      "catalog_sha256": "49fc3c9bb626ea512fb12b74a7378f2b397e1f90de5ffed7c128c898253a0a2d",
+      "mobile_class_mapping_parity": true
+    }
+  ],
+  "total_country_specific_classes": 820,
+  "display_eligible_model_classes": 469,
+  "count_scope": "Country-specific model outputs, not unique signs, validated accuracy, or universal live recognition availability. Includes evaluation packs and the Swiss pack, whose rights/readiness gates remain separate.",
+  "comparison_claim": "Better than most built-in systems is not used: no comparative field benchmark was found.",
+  "vehicle_scope": "Any car means no vehicle integration required; a supported phone and safely mounted camera are still needed. No steering, braking or autonomous driving is claimed.",
+  "sources": [
+    "https://developer.apple.com/app-store/product-page/",
+    "https://developer.apple.com/app-store/review/guidelines/",
+    "https://support.google.com/googleplay/android-developer/answer/9898842?hl=en"
+  ],
+  "visual_review": {
+    "contact_sheets": 13,
+    "selected_screenshots": 112,
+    "result": "All locale galleries visually reviewed. Splash captures found in French Swiss/Belgian and Dutch Belgian examples; French and Dutch country groups recaptured with expected-currency UI readiness checks and reviewed again.",
+    "preview_directory": "tmp/store-marketing-review",
+    "native_device_scope": "Android emulator only; no physical-device deployment."
+  }
+}

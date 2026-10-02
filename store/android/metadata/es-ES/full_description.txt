@@ -1,14 +1,21 @@
-YouSpeed muestra tu velocidad y el límite obtenido de mapas sin conexión. Descarga los países y regiones disponibles, gestiónalos en el gestor de datos y usa la pantalla de conducción sin una conexión permanente a los mapas.
+Conduce con cuidado. Un compañero para tu coche.
 
-Los mapas sin conexión y las reglas orientativas por país incluyen Alemania, Francia, Suiza, Bélgica y los Países Bajos. Los modelos de cámara contienen en total cientos de clases de señales nacionales, incluidos límites y otras señales. Esta cobertura no garantiza la precisión; solo las señales compatibles pueden mostrarse o influir en la referencia del límite.
+YouSpeed convierte tu smartphone en un asistente de conducción para cualquier coche, sea cual sea su edad. Consulta los límites, escucha avisos y graba tus trayectos. No necesitas un sistema integrado en el vehículo.
 
-Funciones:
-- Velocidad y límite en directo con información de la fuente
-- Alertas sonoras configurables e información orientativa sobre sanciones donde esté disponible
-- Vídeos dashcam opcionales guardados localmente, con reproducción, uso compartido y eliminación
-- Reconocimiento opcional de señales en el dispositivo, con avisos sonoros o de voz
-- Correcciones habladas locales de límites en dispositivos e idiomas compatibles
-- Fotos de calles geolocalizadas para revisar y subir opcionalmente a Panoramax
+RECONOCE SEÑALES. PRESTA ATENCIÓN A LA CARRETERA.
+El reconocimiento automático utiliza la cámara y funciona en tu dispositivo. Los modelos por país incluyen en total cientos de clases de señales, incluidos límites de velocidad. Elige avisos sonoros o hablados. Las señales compatibles y la disponibilidad dependen del país y del modelo instalado.
+
+CONOCE TU VELOCIDAD Y LAS CONSECUENCIAS.
+Consulta tu velocidad junto al límite de referencia. Configura avisos sonoros y consulta estimaciones de sanciones por país donde estén disponibles.
+
+GRABA EL TRAYECTO. CONSERVA EL VÍDEO.
+La dashcam integrada guarda vídeos localmente. Reprodúcelos, compártelos o bórralos cuando estés estacionado. Tú eliges qué conservar y compartir.
+
+MAPAS SIN CONEXIÓN CONTINUA.
+Descarga mapas antes de salir. Los mapas y las reglas orientativas incluyen Alemania, Francia, Suiza, Bélgica y los Países Bajos.
+
+TU COCHE. TU PRIVACIDAD.
+Las funciones de conducción no requieren cuenta. Sin SDK de publicidad ni seguimiento. Corrige límites por voz en dispositivos e idiomas compatibles. Revisa tus fotos de calles antes de elegir una subida opcional a Panoramax.
 
 Configura YouSpeed con el vehículo estacionado. El reconocimiento puede omitir o interpretar mal las señales; su disponibilidad depende del modelo nacional instalado y del dispositivo. La cobertura y la información sobre sanciones varían según el país. Las señales, las normas y las decisiones oficiales prevalecen. YouSpeed no garantiza el límite aplicable ni un resultado jurídico.
 

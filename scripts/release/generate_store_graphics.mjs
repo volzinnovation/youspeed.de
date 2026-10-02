@@ -14,20 +14,20 @@ const embed = relative => `data:image/png;base64,${fs.readFileSync(path.join(roo
 const escape = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 const backdrop = embed('store/artwork/source/european-road-backdrop.png');
 const appIcon = embed('store/android/listing/en-US/icon-512.png');
-const signs = ['de-205', 'de-206', 'de-301'].map(id => embed(`shared/tsr/sign-pictograms/png/${id}.png`));
-const locales = {
-  'de-DE': ['Deine Fahrt.', 'Aufgenommen.', 'Dashcam · Offline-Karten · Schilderkennung', 'Karten & Hinweise: DE · FR · CH · BE · NL', 'Videos lokal speichern. Bewusst teilen.'],
-  'en-US': ['Your drive.', 'Recorded.', 'Dashcam · Offline maps · Sign recognition', 'Maps & advisories: DE · FR · CH · BE · NL', 'Record locally. Share when you choose.'],
-  'fr-FR': ['Vos trajets.', 'Enregistrés.', 'Dashcam · Cartes hors ligne · Reconnaissance', 'Cartes et alertes : DE · FR · CH · BE · NL', 'Vidéos locales. Partage à votre choix.'],
-  'nl-NL': ['Je rit.', 'Vastgelegd.', 'Dashcam · Offline kaarten · Bordherkenning', 'Kaarten en advies: DE · FR · CH · BE · NL', 'Lokaal opnemen. Delen wanneer jij kiest.'],
-  'es-ES': ['Tu viaje.', 'Grabado.', 'Dashcam · Mapas sin conexión · Señales', 'Mapas y avisos: DE · FR · CH · BE · NL', 'Graba localmente. Comparte cuando quieras.'],
-  'it-IT': ['Il tuo viaggio.', 'Registrato.', 'Dashcam · Mappe offline · Riconoscimento', 'Mappe e avvisi: DE · FR · CH · BE · NL', 'Video locali. Condividi quando vuoi.'],
-  'pl-PL': ['Twoja podróż.', 'Nagrana.', 'Kamera samochodowa · Mapy offline · Znaki', 'Mapy i ostrzeżenia: DE · FR · CH · BE · NL', 'Nagrywaj lokalnie. Udostępniaj, gdy zechcesz.'],
-  'pt-BR': ['Sua viagem.', 'Gravada.', 'Dashcam · Mapas offline · Placas', 'Mapas e avisos: DE · FR · CH · BE · NL', 'Grave localmente. Compartilhe quando quiser.'],
-  'sv-SE': ['Din resa.', 'Inspelad.', 'Dashcam · Offlinekartor · Vägmärken', 'Kartor och information: DE · FR · CH · BE · NL', 'Spela in lokalt. Dela när du vill.'],
-};
+// Equal spacing around a circle, clockwise from the speed limit at the top.
+const signs = ['de-274-50', 'de-206', 'de-283', 'de-301', 'de-205'].map(id => embed(`shared/tsr/sign-pictograms/png/${id}.png`));
+const signImages = signs.map((image, index) => {
+  const angle = (-90 + index * 72) * Math.PI / 180;
+  const x = (840 + 126 * Math.cos(angle) - 54).toFixed(2);
+  const y = (250 + 126 * Math.sin(angle) - 54).toFixed(2);
+  return `<image href="${image}" x="${x}" y="${y}" width="108" height="108" preserveAspectRatio="xMidYMid meet"/>`;
+}).join('\n');
+const locales = JSON.parse(fs.readFileSync(path.join(root, 'store/artwork/marketing-copy.json'), 'utf8'));
 
-for (const [locale, [line1, line2, features, countries, qualifier]] of Object.entries(locales)) {
+for (const [locale, copy] of Object.entries(locales)) {
+  const [line1, line2] = copy.hero;
+  const features = copy.feature_line;
+  const headlineSize = Math.min(66, Math.floor(660 / (Math.max(line1.length, line2.length) * 0.55)));
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
 <defs>
   <linearGradient id="shade"><stop stop-color="#090d12" stop-opacity="0.98"/><stop offset="0.57" stop-color="#090d12" stop-opacity="0.76"/><stop offset="1" stop-color="#090d12" stop-opacity="0.08"/></linearGradient>
@@ -38,16 +38,13 @@ for (const [locale, [line1, line2, features, countries, qualifier]] of Object.en
 <image href="${appIcon}" x="48" y="35" width="55" height="55"/>
 <g font-family="Arial, sans-serif" fill="#ffffff">
   <text x="121" y="75" font-size="39" font-weight="700">YouSpeed</text>
-  <text x="48" y="190" font-size="66" font-weight="700" letter-spacing="-2">${escape(line1)}</text>
-  <text x="48" y="266" font-size="66" font-weight="700" letter-spacing="-2" fill="#fae14f">${escape(line2)}</text>
+  <text x="48" y="190" font-size="${headlineSize}" font-weight="700" letter-spacing="-2">${escape(line1)}</text>
+  <text x="48" y="266" font-size="${headlineSize}" font-weight="700" letter-spacing="-2" fill="#fae14f">${escape(line2)}</text>
   <text x="48" y="323" font-size="21">${escape(features)}</text>
-  <text x="48" y="410" font-size="18" fill="#eef0f2">${escape(countries)}</text>
-  <text x="48" y="456" font-size="14" fill="#d2d7dc">${escape(qualifier)}</text>
+  <text x="48" y="410" font-size="20" fill="#eef0f2">${escape(copy.tagline)}</text>
 </g>
 <g filter="url(#shadow)">
-  <image href="${signs[0]}" x="725" y="72" width="143" height="143" preserveAspectRatio="xMidYMid meet"/>
-  <image href="${signs[1]}" x="858" y="211" width="115" height="115" preserveAspectRatio="xMidYMid meet"/>
-  <image href="${signs[2]}" x="721" y="324" width="111" height="111" preserveAspectRatio="xMidYMid meet"/>
+  ${signImages}
 </g>
 </svg>`;
   const svgPath = path.join(source, `feature-graphic-${locale}.svg`);

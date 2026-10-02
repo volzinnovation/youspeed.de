@@ -1,14 +1,21 @@
-YouSpeed affiche votre vitesse et la limitation issue des cartes hors ligne. Téléchargez les pays et régions disponibles, gérez-les dans le gestionnaire de données et utilisez l’écran de conduite sans connexion permanente aux cartes.
+Roulez prudemment. Un compagnon pour votre voiture.
 
-Les cartes hors ligne et les règles indicatives par pays comprennent l’Allemagne, la France, la Suisse, la Belgique et les Pays-Bas. Les modèles de caméra contiennent au total des centaines de classes de panneaux nationaux, dont les limitations et d’autres panneaux routiers. Cette couverture ne garantit pas la précision ; seuls les panneaux pris en charge peuvent être affichés ou influer sur la référence de limitation.
+YouSpeed transforme votre smartphone en assistant de conduite pour toute voiture, quel que soit son âge. Gardez les limitations en vue, écoutez les alertes et enregistrez vos trajets. Aucun système intégré au véhicule n'est nécessaire.
 
-Fonctions :
-- Vitesse et limitation en direct avec indication de la source
-- Alertes sonores réglables et informations indicatives sur les sanctions, selon disponibilité
-- Vidéos dashcam facultatives, enregistrées localement, avec lecture, partage et suppression
-- Reconnaissance facultative des panneaux sur l’appareil, avec retour sonore ou vocal
-- Corrections vocales locales des limitations sur les appareils et dans les langues compatibles
-- Photos de rue géolocalisées à vérifier avant un envoi facultatif vers Panoramax
+VOYEZ LES PANNEAUX. RESTEZ ATTENTIF À LA ROUTE.
+La reconnaissance automatique utilise la caméra du téléphone et fonctionne sur l'appareil. Les modèles nationaux couvrent au total des centaines de classes de panneaux, dont les limitations de vitesse. Choisissez des alertes sonores ou vocales. Les panneaux pris en charge et la disponibilité dépendent du pays et du modèle installé.
+
+CONNAISSEZ VOTRE VITESSE ET LES CONSÉQUENCES.
+Consultez votre vitesse et la limitation de référence. Configurez les alertes sonores et obtenez une estimation des sanctions propres au pays lorsque cette fonction est prise en charge.
+
+ENREGISTREZ LE TRAJET. GARDEZ LA VIDÉO.
+La dashcam intégrée sauvegarde les trajets localement. À l'arrêt, regardez, partagez ou supprimez vos vidéos. Vous choisissez ce que vous conservez et partagez.
+
+DES CARTES MÊME SANS CONNEXION CONTINUE.
+Téléchargez les cartes avant de partir. Les cartes et règles indicatives couvrent l'Allemagne, la France, la Suisse, la Belgique et les Pays-Bas.
+
+VOTRE VOITURE. VOTRE VIE PRIVÉE.
+Les fonctions de conduite ne nécessitent pas de compte. Aucun SDK publicitaire ou de suivi. Corrigez les limitations par la voix sur les appareils et dans les langues pris en charge. Vérifiez vos photos de rue avant un éventuel envoi à Panoramax.
 
 Configurez YouSpeed à l’arrêt. La reconnaissance peut manquer ou mal interpréter des panneaux ; sa disponibilité dépend du modèle national installé et de l’appareil. La couverture cartographique et les informations sur les sanctions varient selon le pays. Les panneaux, règles de circulation et décisions officielles font foi. YouSpeed ne garantit ni la limitation applicable ni les conséquences juridiques.
 

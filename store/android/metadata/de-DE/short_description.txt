@@ -1,1 +1,1 @@
-Offline-Tempolimits, Dashcam und optionale lokale Verkehrszeichenerkennung.
+Fahr sicher. Verkehrszeichenerkennung, Tempowarnung und Dashcam für jedes Auto.
