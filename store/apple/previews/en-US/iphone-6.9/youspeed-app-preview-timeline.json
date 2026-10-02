@@ -1,0 +1,65 @@
+{
+  "project": "app-preview",
+  "width": 1920,
+  "height": 886,
+  "output": "/Users/raphaelvolz/Github/youspeed.de/store/apple/previews/en-US/iphone-6.9/youspeed-app-preview.mp4",
+  "title": "YouSpeed \u2014 Camera features",
+  "transition": 0.3,
+  "poster_time": 26.5,
+  "scenes": [
+    {
+      "id": "mounting",
+      "source": "/Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/setup-session.mp4",
+      "kind": "video",
+      "start": 134,
+      "duration": 5.3,
+      "transpose": "clock",
+      "title": "Choose your camera mounting position"
+    },
+    {
+      "id": "recognition",
+      "source": "/Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/setup-session.mp4",
+      "kind": "video",
+      "start": 157,
+      "duration": 6.3,
+      "transpose": "clock",
+      "title": "Enable recognition \u00b7 regional model required"
+    },
+    {
+      "id": "record",
+      "source": "/Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/main-session.mp4",
+      "kind": "freeze",
+      "start": 0,
+      "duration": 5.3,
+      "transpose": "clock",
+      "title": "Red recorder starts Dashcam + enabled features"
+    },
+    {
+      "id": "pictures",
+      "source": "/Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/setup-session.mp4",
+      "kind": "video",
+      "start": 223,
+      "duration": 5.3,
+      "transpose": "clock",
+      "title": "Capture pictures by distance or time"
+    },
+    {
+      "id": "camera-result",
+      "source": "/Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/main-session.mp4",
+      "kind": "freeze",
+      "start": 0,
+      "duration": 4.0,
+      "transpose": "clock",
+      "title": "Camera-based speed limit \u00b7 example result"
+    },
+    {
+      "id": "other-signs",
+      "source": "/Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/sign-session.mp4",
+      "kind": "freeze",
+      "start": 0,
+      "duration": 5.3,
+      "transpose": "clock",
+      "title": "Additional sign recognition \u00b7 example result"
+    }
+  ]
+}

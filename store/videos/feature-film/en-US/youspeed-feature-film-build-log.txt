@@ -1,0 +1,21 @@
+YouSpeed feature-film
+14 scenes; 76.000000 seconds; 1920×1080; 30 fps.
+H.264 High level 4.0, yuv420p; AAC stereo 48 kHz; MP4 faststart.
+Rendered in 89.81 seconds.
+Original synthesized ambient instrumental; no third-party samples or music.
+Technical format checks passed. This is not an Apple review or approval.
+Source details and demonstration-frame labels are preserved in the timeline JSON.
+welcome: image, start 0s, duration 5.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/review/visibility-audit/IMG_4700_phone_crop.png
+mount: image, start 0s, duration 6.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/review/visibility-audit/IMG_4701_phone_crop.png
+orientation: video, start 134s, duration 5.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/setup-session.mp4
+calibration: freeze, start 0s, duration 6.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/main-session.mp4
+recognition: video, start 157s, duration 6.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/setup-session.mp4
+record: freeze, start 0s, duration 5.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/main-session.mp4
+road: video, start 0s, duration 5.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/sources/drive/clean-road-early-0.5-to-7.5.mp4
+save-play: video, start 0s, duration 5.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/sources/drive/clean-road-late-25-to-30.mp4
+photo-cadence: video, start 224s, duration 6.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/setup-session.mp4
+review-pictures: image, start 0s, duration 7.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/sources/panoramax/976ae770-f064-405d-8c8b-58e8629f80c8.jpg
+share-pictures: image, start 0s, duration 6.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/sources/panoramax/976ae770-f064-405d-8c8b-58e8629f80c8.jpg
+camera-limit-example: freeze, start 0s, duration 5.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/main-session.mp4
+secondary-sign-example: freeze, start 0s, duration 4.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/sign-session.mp4
+closing: image, start 0s, duration 5.0s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/review/visibility-audit/IMG_4701_phone_crop.png

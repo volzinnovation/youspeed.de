@@ -1,0 +1,13 @@
+YouSpeed app-preview
+6 scenes; 30.000000 seconds; 1920×886; 30 fps.
+H.264 High level 4.0, yuv420p; AAC stereo 48 kHz; MP4 faststart.
+Rendered in 32.58 seconds.
+Original synthesized ambient instrumental; no third-party samples or music.
+Technical format checks passed. This is not an Apple review or approval.
+Source details and demonstration-frame labels are preserved in the timeline JSON.
+mounting: video, start 134s, duration 5.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/setup-session.mp4
+recognition: video, start 157s, duration 6.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/setup-session.mp4
+record: freeze, start 0s, duration 5.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/main-session.mp4
+pictures: video, start 223s, duration 5.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/setup-session.mp4
+camera-result: freeze, start 0s, duration 4.0s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/main-session.mp4
+other-signs: freeze, start 0s, duration 5.3s; /Users/raphaelvolz/YouSpeedVideoWork/2026-10-02/captures/sign-session.mp4
