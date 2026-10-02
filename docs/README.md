@@ -9,6 +9,7 @@ This directory contains the public technical documentation for YouSpeed.
 - [`TILE_ASSET_MIGRATION_PLAN.md`](TILE_ASSET_MIGRATION_PLAN.md): migration notes for the tile format
 - [`KARLSRUHE_INCREMENTAL_SEED_ROLLOUT.md`](KARLSRUHE_INCREMENTAL_SEED_ROLLOUT.md): incremental seed-bundle design
 - [`VIDEO_TRAFFIC_SIGN_RECOGNITION_YOLO_SPEC.md`](VIDEO_TRAFFIC_SIGN_RECOGNITION_YOLO_SPEC.md): optional traffic-sign recognition design
+- [`YOUSPEED_1_4_SPEC.md`](YOUSPEED_1_4_SPEC.md): version 1.4 traffic-sign collection scope and canonical backend specification in `Woladen.de-analytics`
 - [`LANE_DETECTION.md`](LANE_DETECTION.md): optional dashcam lane overlay, camera integration and validation protocol
 - [`TSR_LANE_TRAJECTORY_IMPLEMENTATION_2026-09-29.md`](TSR_LANE_TRAJECTORY_IMPLEMENTATION_2026-09-29.md): experimental visual path/trajectory fusion, dashcam diagnostics and live/replay overlays
 - [`ROAD_PATH_ANDROID_BENCHMARK.md`](ROAD_PATH_ANDROID_BENCHMARK.md): reproducible Moto g86 component benchmark and limits of its performance claim
