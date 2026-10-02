@@ -11,6 +11,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.BySelector
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.Until
 import org.junit.Before
 import org.junit.Test
@@ -104,6 +105,26 @@ class ConsumerSmokeTest {
         waitAnyByRes(listOf("startup-root", "onboarding-root", "main-root"), 120_000)
     }
 
+    @Test
+    fun dataManagerIsSeparateFromSettingsAndHasTwoUsableTabs() {
+        // Main hides Settings while moving; use a stationary fixture for navigation.
+        launchApp(screenshotState = "other-sign-give-way")
+        waitByRes("main-root", 20_000)
+        clickByRes("settings-button")
+        waitByRes("settings-sheet", 10_000)
+        waitByRes("settings-data-manager-button", 10_000)
+        clickByRes("settings-data-manager-button")
+        waitByRes("data-manager-sheet", 10_000)
+        clickByRes("data-manager-list-tab")
+        waitByRes("data-manager-search", 10_000)
+        waitByRes("data-manager-region-list", 10_000)
+        clickByRes("data-manager-map-tab")
+        device.pressBack()
+        waitByRes("settings-sheet", 10_000)
+        device.pressBack()
+        waitByRes("main-root", 10_000)
+    }
+
     private fun launchApp(screenshotState: String?) {
         val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
         device.pressHome()
@@ -133,8 +154,18 @@ class ConsumerSmokeTest {
     }
 
     private fun clickByRes(tag: String) {
-        waitByRes(tag, 10_000).click()
-        device.waitForIdle()
+        val deadline = SystemClock.uptimeMillis() + 10_000
+        do {
+            try {
+                waitByRes(tag, 10_000).click()
+                device.waitForIdle()
+                return
+            } catch (_: StaleObjectException) {
+                // Compose can replace a node between locating it and clicking it.
+                device.waitForIdle()
+            }
+        } while (SystemClock.uptimeMillis() < deadline)
+        throw AssertionError("UI element remained stale for tag=$tag")
     }
 
     private fun doubleTapByRes(tag: String) {

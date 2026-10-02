@@ -8,9 +8,11 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.By
 import java.io.File
+import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,11 +24,19 @@ class SwissPenaltyAuditInstrumentedTest {
     @Test fun swissLocationLoadsSharedRulesAndRecordsCurrentPresentation() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        val output = File(context.filesDir, "swiss-penalty-audit").apply { mkdirs() }
+        val language = InstrumentationRegistry.getArguments().getString("language") ?: "en"
+        assertEquals(language, Locale.getDefault().language)
+        val singular = mapOf("de" to "Monat Fahrverbot", "fr" to "mois d'interdiction",
+            "en" to "month driving ban", "nl" to "maand rijverbod").getValue(language)
+        val plural = mapOf("de" to "Monate Fahrverbot", "fr" to "mois d'interdiction",
+            "en" to "months driving ban", "nl" to "maanden rijverbod").getValue(language)
+        val review = mapOf("de" to "Prüfen", "fr" to "À vérifier",
+            "en" to "Review", "nl" to "Controleren").getValue(language)
+        val output = File(context.filesDir, "swiss-penalty-audit/$language").apply { mkdirs() }
         val reports = JSONArray()
         val cases = listOf(Triple(50, 5, true), Triple(80, 10, false),
             Triple(120, 10, false), Triple(120, 32, false), Triple(30, 40, true),
-            Triple(80, 60, false), Triple(120, 80, false))
+            Triple(80, 60, false), Triple(120, 80, false), Triple(120, 32, false))
         cases.forEachIndexed { index, (limit, delta, urban) ->
             val intent = Intent(context, MainActivity::class.java).apply {
                 putExtra("screenshot_state", "warn-level-1")
@@ -34,7 +44,7 @@ class SwissPenaltyAuditInstrumentedTest {
                 putExtra("screenshot_limit", limit)
                 putExtra("screenshot_delta", delta)
                 putExtra("screenshot_inside_city", urban)
-                putExtra("screenshot_highway", listOf("residential", "primary", "motorway", "motorway", "residential", "primary", "motorway")[index])
+                putExtra("screenshot_highway", listOf("residential", "primary", "motorway", "motorway", "residential", "primary", "motorway", "trunk")[index])
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             }
             ActivityScenario.launch<MainActivity>(intent).use { scenario ->
@@ -45,11 +55,12 @@ class SwissPenaltyAuditInstrumentedTest {
                     assertEquals("CHF", state.activePenaltyRules.currencyCode)
                     assertEquals(47.3769, state.currentLatitude!!, 0.000001)
                     val notice = ConsumerMainScreenLogic.currentPenaltyNotice(state)!!
-                    val expectedFine = listOf(40, 100, 60, null, null, null, null)[index]
-                    val expectedMonths = listOf(null, null, null, 1, 24, 24, 24)[index]
+                    val expectedFine = listOf(40, 100, 60, null, null, null, null, null)[index]
+                    val expectedMonths = listOf(null, null, null, 1, 24, 24, 24, null)[index]
                     assertEquals(expectedFine, notice.moneyFineEUR)
                     assertEquals(expectedMonths, notice.drivingBanMonths)
                     reports.put(JSONObject().apply {
+                        put("locale", language)
                         put("country", state.activePenaltyRules.countryCode)
                         put("rules_file", state.activePenaltyRules.fileName)
                         put("currency", state.activePenaltyRules.currencyCode)
@@ -66,8 +77,15 @@ class SwissPenaltyAuditInstrumentedTest {
                     })
                 }
                 device.waitForIdle()
-                device.findObject(By.text("Got it"))?.click()
+                for (label in listOf("Got it", "Verstanden", "Compris", "Begrepen")) {
+                    device.findObject(By.text(label))?.click()
+                }
                 SystemClock.sleep(500)
+                val expectedPrimary = listOf("40", "100", "60", "≥1", "24", "24", "24", "!")[index]
+                val expectedSecondary = listOf("CHF", "CHF", "CHF", singular, plural, plural, plural, review)[index]
+                assertEquals(expectedPrimary, device.findObject(By.res("primary-metric"))?.text)
+                assertEquals(expectedSecondary, device.findObject(By.res("secondary-metric"))?.text)
+                assertFalse(device.hasObject(By.res("penalty-advisory-caption")))
                 assertTrue(device.takeScreenshot(File(output, "case-$index.png")))
             }
         }

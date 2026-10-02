@@ -20,6 +20,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -110,12 +111,69 @@ class SheetBoundsInstrumentedTest {
         compose.onNodeWithTag("panoramax-gallery-sheet-close").performClick()
     }
 
+    @Test fun dataManagerTabsSelectionAndBackSurviveRotation() = withDashboard { scenario ->
+        waitFor("visual-calibration-button")
+        clickDashboard("settings-button")
+        compose.onNodeWithTag("settings-data-manager-button").assertIsDisplayed()
+        compose.onNodeWithTag("settings-data-manager-button").performClick()
+        assertSheetBounds("data-manager-sheet")
+        compose.onNodeWithTag("data-manager-list-tab").performClick()
+        compose.onNodeWithTag("data-manager-region-list")
+            .performScrollToNode(hasTestTag("data-manager-region-france|reunion"))
+        compose.onNodeWithTag("data-manager-region-france|reunion").performClick()
+        scenario.onActivity {
+            assertEquals("france|reunion", it.sessionController.uiState.dataManagerSelectedRegionId)
+            assertNull("Selection does not start a download", it.sessionController.uiState.activeDownloadOptionId)
+            assertNull("Selection does not delete data", it.sessionController.uiState.activeBundleDeletionOptionId)
+        }
+        compose.onNodeWithTag("data-manager-region-list")
+            .performScrollToNode(hasTestTag("data-manager-show-on-map"))
+        compose.onNodeWithTag("data-manager-show-on-map").performClick()
+        compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("data-manager-sheet-content")))
+            .performScrollToNode(hasTestTag("data-manager-germany"))
+        compose.onNodeWithTag("data-manager-germany").performClick()
+        val germanyReset = compose.onNodeWithTag("data-manager-germany").fetchSemanticsNode()
+        val minimumResetTarget = 48 * context.resources.displayMetrics.density - 1
+        assertTrue("Germany reset retains its 48dp touch target", germanyReset.size.width >= minimumResetTarget &&
+            germanyReset.size.height >= minimumResetTarget)
+        assertTrue(germanyReset.config[SemanticsProperties.ContentDescription].contains(context.getString(R.string.data_manager_germany)))
+        scenario.onActivity {
+            assertEquals("Viewport reset preserves selection", "france|reunion", it.sessionController.uiState.dataManagerSelectedRegionId)
+            assertNull("Viewport reset does not download", it.sessionController.uiState.activeDownloadOptionId)
+        }
+        compose.onNodeWithTag("data-manager-list-tab").performClick()
+        for (mount in listOf(ManualOrientation.LANDSCAPE_CAMERA_LOWER_RIGHT,
+            ManualOrientation.LANDSCAPE_CAMERA_UPPER_LEFT, ManualOrientation.PORTRAIT)) {
+            scenario.onActivity { it.sessionController.setManualOrientation(mount) }
+            waitForRotation(mount)
+            assertSheetBounds("data-manager-sheet")
+            scenario.onActivity { assertEquals("france|reunion", it.sessionController.uiState.dataManagerSelectedRegionId) }
+        }
+        device.pressBack()
+        waitFor("settings-sheet")
+        compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("settings-sheet-content")))
+            .performScrollToNode(hasTestTag("settings-data-manager-button"))
+        compose.onNodeWithTag("settings-data-manager-button").performClick()
+        waitFor("data-manager-list-tab")
+        scenario.onActivity { assertEquals("france|reunion", it.sessionController.uiState.dataManagerSelectedRegionId) }
+        compose.onNodeWithTag("data-manager-sheet-close").performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("data-manager-sheet").fetchSemanticsNodes().isEmpty() }
+        clickDashboard("settings-button")
+        compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("settings-sheet-content")))
+            .performScrollToNode(hasTestTag("open-debug-button"))
+        compose.onNodeWithTag("open-debug-button").performClick()
+        compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("debug-sheet-content")))
+            .performScrollToNode(hasTestTag("show-detected-lanes-toggle"))
+        waitFor("show-detected-lanes-toggle")
+    }
+
     private fun withDashboard(block: (ActivityScenario<MainActivity>) -> Unit) {
         val preferences = context.getSharedPreferences("youspeed", Context.MODE_PRIVATE)
-        val keys = listOf("youspeed.manual_orientation", "youspeed.audio_alerts_enabled")
+        val keys = listOf("youspeed.manual_orientation", "youspeed.audio_alerts_enabled", "youspeed.data_manager.selected_region")
         val previous = preferences.all.filterKeys { it in keys }
         try {
-            assertTrue(preferences.edit().putString(keys.first(), ManualOrientation.PORTRAIT.storageValue).commit())
+            assertTrue(preferences.edit().putString(keys.first(), ManualOrientation.PORTRAIT.storageValue)
+                .remove("youspeed.data_manager.selected_region").commit())
             ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)
                 .putExtra("screenshot_state", "other-sign-give-way")).use { scenario ->
                 waitForRotation(ManualOrientation.PORTRAIT)
@@ -184,7 +242,12 @@ class SheetBoundsInstrumentedTest {
         assertTagsInsideSafeWindow(listOf(tag, "$tag-header", "$tag-close", "$tag-title", "$tag-content"))
         val close = compose.onNodeWithTag("$tag-close").fetchSemanticsNode()
         val title = compose.onNodeWithTag("$tag-title").fetchSemanticsNode()
-        assertTrue("Close is left of the title", close.positionInWindow.x + close.size.width <= title.positionInWindow.x)
+        val back = compose.onAllNodesWithTag("$tag-back").fetchSemanticsNodes().firstOrNull()
+        if (back == null) assertTrue("Close is left of the title", close.positionInWindow.x + close.size.width <= title.positionInWindow.x)
+        else {
+            assertTrue("Back is left of the title", back.positionInWindow.x + back.size.width <= title.positionInWindow.x)
+            assertTrue("Close is right of the title", title.positionInWindow.x + title.size.width <= close.positionInWindow.x)
+        }
         val minimum = 48 * context.resources.displayMetrics.density - 1
         assertTrue("Close has a 48dp touch target", close.size.width >= minimum && close.size.height >= minimum)
     }

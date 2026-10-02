@@ -180,3 +180,130 @@ struct SpeedRegulationRegions {
         return region.id
     }
 }
+
+/// Administrative artwork for manual selection only. Never use this catalog
+/// for driving coverage, penalty-country inference, or TSR authorization.
+struct OfficialRegionMapCatalog: Decodable, Sendable {
+    struct Region: Decodable, Sendable, Identifiable {
+        let id: String
+        let name: String
+        let bbox: [Double]
+        let polygons: [[[[Double]]]]
+
+        func contains(longitude: Double, latitude: Double) -> Bool {
+            RegionalPackCatalog.Region(id: id, country: "", region: name,
+                bbox: bbox, polygons: polygons).contains(longitude: longitude, latitude: latitude)
+        }
+
+        var area: Double { (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]) }
+    }
+
+    let schemaVersion: Int
+    let boundaryKind: String
+    let attribution: String
+    let regions: [Region]
+
+    static func decode(_ data: Data) throws -> Self {
+        guard data.count <= 8_000_000 else { throw DiscoveryError.invalidCatalog }
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let result = try decoder.decode(Self.self, from: data)
+        guard result.schemaVersion == 1,
+              result.boundaryKind == "official_administrative_and_statistical_boundaries",
+              !result.regions.isEmpty, result.regions.count <= 1000,
+              Set(result.regions.map(\.id)).count == result.regions.count else {
+            throw DiscoveryError.invalidCatalog
+        }
+        for region in result.regions {
+            guard !region.id.isEmpty, region.bbox.count == 4,
+                  region.bbox.allSatisfy(\.isFinite),
+                  region.bbox[0] < region.bbox[2], region.bbox[1] < region.bbox[3],
+                  !region.polygons.isEmpty else { throw DiscoveryError.invalidCatalog }
+            for polygon in region.polygons {
+                guard !polygon.isEmpty else { throw DiscoveryError.invalidCatalog }
+                for ring in polygon {
+                    guard ring.count >= 4, ring.first == ring.last else { throw DiscoveryError.invalidCatalog }
+                    for point in ring {
+                        guard point.count == 2, point.allSatisfy(\.isFinite),
+                              (-180...180).contains(point[0]), (-90...90).contains(point[1]),
+                              point[0] >= region.bbox[0], point[0] <= region.bbox[2],
+                              point[1] >= region.bbox[1], point[1] <= region.bbox[3] else {
+                            throw DiscoveryError.invalidCatalog
+                        }
+                    }
+                }
+            }
+        }
+        return result
+    }
+
+    static func bundled(_ bundle: Bundle = .main) -> Self? {
+        guard let url = bundle.url(forResource: "official-regions-v1", withExtension: "json",
+                                   subdirectory: "RegionalCoverage"),
+              let data = try? Data(contentsOf: url) else { return nil }
+        return try? decode(data)
+    }
+
+    func region(atLongitude longitude: Double, latitude: Double, allowedIDs: Set<String>) -> Region? {
+        regions.filter { allowedIDs.contains($0.id) && $0.contains(longitude: longitude, latitude: latitude) }
+            .sorted { $0.area == $1.area ? $0.id < $1.id : $0.area < $1.area }.first
+    }
+}
+
+/// Offline Mercator canvas coordinates. Rendering and hit testing share the
+/// same aspect-fitted viewport, including after pan, zoom, and overseas jumps.
+struct RegionMapViewport: Equatable, Sendable {
+    var minX: Double
+    var minY: Double
+    var maxX: Double
+    var maxY: Double
+
+    static let germany = Self(bbox: [5.5, 47.0, 15.8, 55.6])
+    static let overview = germany
+    static let europe = Self(bbox: [-25, 34, 36, 72])
+
+    init(bbox: [Double]) {
+        minX = bbox[0]
+        maxX = bbox[2]
+        minY = Self.projectLatitude(bbox[3])
+        maxY = Self.projectLatitude(bbox[1])
+    }
+
+    init(minX: Double, minY: Double, maxX: Double, maxY: Double) {
+        self.minX = minX; self.minY = minY; self.maxX = maxX; self.maxY = maxY
+    }
+
+    static func projectLatitude(_ latitude: Double) -> Double {
+        let clamped = min(85, max(-85, latitude))
+        return -log(tan(.pi / 4 + clamped * .pi / 360)) * 180 / .pi
+    }
+
+    static func latitude(fromProjected y: Double) -> Double {
+        (2 * atan(exp(-y * .pi / 180)) - .pi / 2) * 180 / .pi
+    }
+
+    var width: Double { maxX - minX }
+    var height: Double { maxY - minY }
+
+    func fitted(aspectRatio: Double) -> Self {
+        guard aspectRatio.isFinite, aspectRatio > 0 else { return self }
+        let w = max(width, height * aspectRatio)
+        let h = max(height, width / aspectRatio)
+        return Self(minX: (minX + maxX - w) / 2, minY: (minY + maxY - h) / 2,
+                    maxX: (minX + maxX + w) / 2, maxY: (minY + maxY + h) / 2)
+    }
+
+    func zoomed(by factor: Double) -> Self {
+        guard factor.isFinite, factor > 0 else { return self }
+        let scale = min(max(factor, width / 360), width / 0.04)
+        let w = width / scale, h = height / scale
+        return Self(minX: (minX + maxX - w) / 2, minY: (minY + maxY - h) / 2,
+                    maxX: (minX + maxX + w) / 2, maxY: (minY + maxY + h) / 2)
+    }
+
+    func panned(xFraction: Double, yFraction: Double) -> Self {
+        guard xFraction.isFinite, yFraction.isFinite else { return self }
+        let dx = xFraction * width, dy = yFraction * height
+        return Self(minX: minX - dx, minY: minY - dy, maxX: maxX - dx, maxY: maxY - dy)
+    }
+}

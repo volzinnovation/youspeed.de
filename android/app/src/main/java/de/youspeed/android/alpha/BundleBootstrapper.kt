@@ -59,6 +59,8 @@ data class DownloadedBundleInfo(
     val countryCode: String?,
     val dbFileName: String,
     val dbPath: String,
+    val createdAtUTC: String? = null,
+    val dbBytes: Long? = null,
 )
 
 data class LocalBundleRoute(
@@ -147,6 +149,8 @@ class BundleBootstrapper(
                     countryCode = manifest.countryCode,
                     dbFileName = manifest.db.file,
                     dbPath = dbFile.absolutePath,
+                    createdAtUTC = manifest.createdAtUTC,
+                    dbBytes = dbFile.length(),
                 )
             }
         }.sortedWith(compareBy<DownloadedBundleInfo> { it.region }.thenByDescending { it.bundleVersion }.thenBy { it.dbFileName })

@@ -61,6 +61,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CenterFocusStrong
@@ -106,6 +107,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -115,6 +117,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -219,6 +222,8 @@ internal object CameraSpeedLimitUsePresentation {
 fun ConsumerApp(controller: ConsumerSessionController) {
     val ui = controller.uiState
     var openSettings by rememberSaveable { mutableStateOf(false) }
+    var openDataManager by rememberSaveable { mutableStateOf(false) }
+    val dataManagerSavedState = rememberSaveableStateHolder()
     var openLegal by rememberSaveable { mutableStateOf(false) }
     var openDebug by rememberSaveable { mutableStateOf(false) }
     var openLocalRecordings by rememberSaveable { mutableStateOf(false) }
@@ -329,11 +334,20 @@ fun ConsumerApp(controller: ConsumerSessionController) {
             }
 
             if (openSettings && ui.drivingControlsAllowed) {
-                SettingsSheet(
-                    controller = controller,
-                    onDismiss = { controller.setSettingsVisible(false); openSettings = false },
-                    onOpenDebug = { controller.performButtonAction { openDebug = true } },
-                )
+                if (openDataManager) {
+                    dataManagerSavedState.SaveableStateProvider("data-manager") {
+                        DataManagerSheet(controller = controller,
+                            onBack = { openDataManager = false },
+                            onDismiss = { controller.setSettingsVisible(false); openDataManager = false; openSettings = false })
+                    }
+                } else {
+                    SettingsSheet(
+                        controller = controller,
+                        onDismiss = { controller.setSettingsVisible(false); openSettings = false },
+                        onOpenDebug = { controller.performButtonAction { openDebug = true } },
+                        onOpenDataManager = { controller.performButtonAction { openDataManager = true } },
+                    )
+                }
             }
             if (openLegal && ui.drivingControlsAllowed) {
                 LegalSheet(ui = ui, onDismiss = { openLegal = false })
@@ -1162,12 +1176,6 @@ private fun MetricStatusBlock(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        ConsumerMainScreenLogic.currentPenaltyNotice(ui)?.advisoryCaption?.let { caption ->
-            Text(caption, color = foreground,
-                style = roundedUiTextStyle(size = secondaryFont * 0.32f, weight = FontWeight.Normal),
-                textAlign = TextAlign.Center, maxLines = 2,
-                modifier = Modifier.testTag("penalty-advisory-caption"))
-        }
     }
 }
 
@@ -1367,14 +1375,23 @@ private fun SettingsSheet(
     controller: ConsumerSessionController,
     onDismiss: () -> Unit,
     onOpenDebug: () -> Unit,
+    onOpenDataManager: () -> Unit,
 ) {
     val ui = controller.uiState
     val thresholdInputState = remember(ui.audioAlertThresholdKmh) {
         mutableStateOf(ui.audioAlertThresholdKmh.toString())
     }
-    var confirmDeleteDownloaded by rememberSaveable { mutableStateOf(false) }
     SheetScaffold(title = stringResource(R.string.ui_settings_title), onDismiss = onDismiss, testTag = "settings-sheet") {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize()) {
+            item {
+                SectionCard(stringResource(R.string.data_manager_title)) {
+                    Text(stringResource(R.string.data_manager_entry_help), color = Color(0xFF555555), fontSize = 13.sp)
+                    OutlinedButton(onClick = onOpenDataManager,
+                        modifier = Modifier.fillMaxWidth().testTag("settings-data-manager-button")) {
+                        Text(stringResource(R.string.data_manager_open))
+                    }
+                }
+            }
             item {
                 SectionCard(stringResource(R.string.ui_screen_orientation)) {
                     Text(stringResource(R.string.ui_screen_orientation_help), color = Color(0xFF555555), fontSize = 13.sp)
@@ -1435,61 +1452,6 @@ private fun SettingsSheet(
                 }
             }
             item {
-                SectionCard(stringResource(R.string.ui_map_downloads)) {
-                    Text(ui.firstLocationPackStatus, fontSize = 13.sp)
-                    Text(ui.countryModelPackStatus, fontSize = 13.sp)
-                    OutlinedButton(onClick = controller::retryFirstLocationSetup) { Text(stringResource(R.string.ui_retry_location_selection)) }
-                    DebugLabel(stringResource(R.string.ui_status), controller.formattedSyncStatus())
-                    DebugLabel(stringResource(R.string.ui_map_bundle), ui.activeBundleVersion)
-                    syncMessageLine(ui)?.let { (text, color) ->
-                        Text(text, color = color, fontSize = 13.sp)
-                    }
-                    Text(
-                        stringResource(R.string.ui_map_downloads_help),
-                        color = Color(0xFF555555),
-                        fontSize = 13.sp,
-                    )
-                    if (ui.bundleDownloadSections.isEmpty()) {
-                        Text(
-                            stringResource(R.string.ui_downloads_unavailable),
-                            color = Color(0xFF555555),
-                            fontSize = 13.sp,
-                        )
-                    }
-                }
-            }
-            ui.bundleDownloadSections.forEach { section ->
-                item(key = "bundle-country-${section.id}") {
-                    Text(section.countryName, fontWeight = FontWeight.Bold, color = Color.Black)
-                }
-                items(section.options, key = { "bundle-${it.id}" }) { option ->
-                    BundleDownloadOptionRow(
-                        title = if (section.options.size == 1) section.countryName else option.displayName,
-                        option = option, controller = controller, ui = ui,
-                    )
-                }
-            }
-            item(key = "bundle-maintenance") {
-                Column {
-                    OutlinedButton(
-                        onClick = { confirmDeleteDownloaded = true },
-                        enabled = !controller.isSyncingNow(),
-                        modifier = Modifier.testTag("settings-delete-bundles-button"),
-                    ) {
-                        Text(stringResource(R.string.ui_delete_downloaded_maps))
-                    }
-                    if (ui.maintenanceMessage.isNotBlank()) {
-                        Text(ui.maintenanceMessage, color = Color(0xFF555555), fontSize = 13.sp)
-                    }
-                    if (ui.lastError.isNotBlank()) {
-                        Text(ui.lastError, color = SignalRed, fontSize = 13.sp)
-                    }
-                    if (controller.isSyncingNow() && ui.activeDownloadOptionId == null) {
-                        BundleSyncProgressBlock(ui = ui)
-                    }
-                }
-            }
-            item {
                 SectionCard(stringResource(R.string.ui_penalty_rules)) {
                     DebugLabel(stringResource(R.string.ui_active_file), ui.activePenaltyRules.fileName)
                     DebugLabel(stringResource(R.string.ui_country), "${ui.activePenaltyRules.countryName} (${ui.activePenaltyRules.countryCode})")
@@ -1524,24 +1486,7 @@ private fun SettingsSheet(
             }
             item { Spacer(modifier = Modifier.height(24.dp)) }
         }
-        if (confirmDeleteDownloaded) {
-            AlertDialog(
-                onDismissRequest = { confirmDeleteDownloaded = false },
-                confirmButton = {
-                    Button(onClick = {
-                        controller.deleteDownloadedBundlesKeepingSeed()
-                        confirmDeleteDownloaded = false
-                    }) {
-                        Text(stringResource(R.string.ui_delete))
-                    }
-                },
-                dismissButton = {
-                    OutlinedButton(onClick = { confirmDeleteDownloaded = false }) { Text(stringResource(R.string.ui_cancel)) }
-                },
-                title = { Text(stringResource(R.string.ui_delete_maps_title)) },
-                text = { Text(stringResource(R.string.ui_delete_maps_message)) },
-            )
-        }
+
     }
 }
 
@@ -1931,10 +1876,12 @@ internal fun SheetScaffold(
     title: String,
     onDismiss: () -> Unit,
     testTag: String,
+    onBack: (() -> Unit)? = null,
+    contentPadding: Dp = 16.dp,
     content: @Composable BoxScope.() -> Unit,
 ) {
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = onBack ?: onDismiss,
         // Compose 1.6's non-default width mode ignores the window's measure limits
         // and fixes its size from a retained themed context. Let WindowManager
         // resize the dialog instead, including when this open sheet rotates.
@@ -1965,12 +1912,19 @@ internal fun SheetScaffold(
                         .padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    IconButton(onClick = onBack ?: onDismiss,
+                        modifier = Modifier.size(48.dp).testTag(if (onBack != null) "$testTag-back" else "$testTag-close")) {
+                        Icon(if (onBack != null) Icons.AutoMirrored.Filled.ArrowBack else Icons.Default.Close,
+                            contentDescription = stringResource(if (onBack != null) R.string.data_manager_back else R.string.ui_done), tint = Color.Black)
+                    }
+                    Spacer(Modifier.width(8.dp))
                     Text(title, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.Black,
                         maxLines = 2, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f).testTag("$testTag-title"))
-                    Spacer(Modifier.width(8.dp))
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).testTag("$testTag-close")) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_close), tint = Color.Black)
+                    if (onBack != null) {
+                        IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).testTag("$testTag-close")) {
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_done), tint = Color.Black)
+                        }
                     }
                 }
                 HorizontalDivider()
@@ -1978,7 +1932,7 @@ internal fun SheetScaffold(
                     modifier = Modifier
                         .fillMaxSize()
                         .testTag("$testTag-content")
-                        .padding(16.dp),
+                        .padding(contentPadding),
                     content = content,
                 )
             }

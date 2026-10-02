@@ -277,6 +277,11 @@ data class ConsumerUiState(
     val countryModelPackStatus: String = ConsumerRuntimeText.MODEL_COUNTRY_PENDING.text(),
     val downloadedBundleCountByRegion: Map<String, Int> = emptyMap(),
     val downloadedBundleLatestVersionByRegion: Map<String, String> = emptyMap(),
+    val dataManagerSelectedRegionId: String? = null,
+    val dataManagerMetadataByRegion: Map<String, DataManagerMetadataState> = emptyMap(),
+    val dataManagerInstalledRegions: Map<String, DataManagerInstalledRegion> = emptyMap(),
+    val activeBundleDeletionOptionId: String? = null,
+    val dataManagerInventoryAvailable: Boolean = false,
     val configuredManifestEndpointCount: Int = 0,
     val configuredManifestCountryCodes: String = "n/a",
     val activePenaltyRules: ActivePenaltyRules = ActivePenaltyRules.unavailable(),
@@ -452,6 +457,9 @@ class ConsumerSessionController(
     private val mainHandler = Handler(Looper.getMainLooper())
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
     private val panoramaxStorageWorker = PanoramaxStorageWorker()
+    private val dataManagerMetadataExecutor = Executors.newSingleThreadExecutor { task -> Thread(task, "region-metadata") }
+    private var dataManagerMetadataInFlight: String? = null
+    private var pendingDataManagerMetadata: BundleDownloadOption? = null
     private val trafficSignDeliveryExecutor = Executors.newSingleThreadExecutor { task ->
         Thread(task, "traffic-sign-delivery")
     }
@@ -808,6 +816,7 @@ class ConsumerSessionController(
             matchLogPath = matchLogFile().absolutePath,
             runtimeDiagnosticsLogPath = runtimeDiagnosticsLogFile().absolutePath,
             bundleDownloadSections = buildBundleDownloadSections(),
+            dataManagerSelectedRegionId = preferences.getString("youspeed.data_manager.selected_region", null),
             configuredManifestEndpointCount = manifestEndpoints.size,
             configuredManifestCountryCodes = manifestCountryCodes(),
             activePenaltyRules = ActivePenaltyRules.unavailable(),
@@ -901,6 +910,7 @@ class ConsumerSessionController(
         // still run after an in-flight JPEG, without making the UI wait.
         executor.shutdown()
         panoramaxStorageWorker.close()
+        dataManagerMetadataExecutor.shutdownNow()
         trafficSignDeliveryExecutor.shutdownNow()
         diagnosticsExecutor.shutdown()
     }
@@ -3383,7 +3393,9 @@ class ConsumerSessionController(
     }
 
     fun deleteDownloadedBundlesKeepingSeed() {
-        submitBundleRemovalTask {
+        if (isBundleMaintenanceBusy() || !uiState.dataManagerInventoryAvailable) return
+        updateState { copy(activeBundleDeletionOptionId = "*", lastError = "") }
+        val submitted = submitBundleRemovalTask {
             try {
                 clearRemovedActiveBundleSource()
                 val removed = bootstrapper.removeDownloadedBundlesKeepingSeed()
@@ -3415,8 +3427,11 @@ class ConsumerSessionController(
             } catch (error: Exception) {
                 runCatching { lookupResources.invalidateAll() }.onFailure { error.addSuppressed(it) }
                 setError(ConsumerRuntimeText.MAPS_DELETE_FAILED.text(error.message ?: error.javaClass.simpleName))
+            } finally {
+                postState { copy(activeBundleDeletionOptionId = null) }
             }
         }
+        if (!submitted) updateState { copy(activeBundleDeletionOptionId = null) }
     }
 
     fun cancelQueuedBundleDownload(option: BundleDownloadOption) {
@@ -3450,7 +3465,7 @@ class ConsumerSessionController(
             mainHandler.post { downloadSelectedBundle(option, initialDownloader, firstLocationSetup) }
             return
         }
-        if (isDisposed.get()) return
+        if (isDisposed.get() || uiState.activeBundleDeletionOptionId != null) return
         bundleDownloadQueue.enqueue(BundleDownloadRequest(option, initialDownloader, firstLocationSetup), uiState.activeDownloadOptionId)
         updateState { copy(queuedBundleDownloadIds = bundleDownloadQueue.ids, bundleDownloadErrors = bundleDownloadErrors - option.id) }
         startNextBundleDownload()
@@ -3458,7 +3473,7 @@ class ConsumerSessionController(
 
     private fun startBundleDownload(option: BundleDownloadOption, initialDownloader: BundleBootstrapper?, firstLocationSetup: Boolean) {
         if (isSyncingNow()) {
-            setError(ConsumerRuntimeText.DOWNLOAD_BUSY.text())
+            updateState { copy(maintenanceMessage = ConsumerRuntimeText.DOWNLOAD_BUSY.text()) }
             return
         }
         bundleDownloadWorkerRunning = true
@@ -3524,11 +3539,19 @@ class ConsumerSessionController(
         }
     }
 
-    fun deleteSelectedBundle(option: BundleDownloadOption) {
-        submitBundleRemovalTask {
+    fun deleteSelectedBundle(option: BundleDownloadOption, confirmedRegionKey: String = tokenize(option.endpoint.manifestRegion)) {
+        if (isBundleMaintenanceBusy() || !uiState.dataManagerInventoryAvailable) return
+        // The confirmed package is pinned; never widen from a disappeared shard to its country here.
+        if (dataManagerInstalledScope(option)?.regionKey != confirmedRegionKey) {
+            updateState { copy(maintenanceMessage = appContext.getString(R.string.data_manager_inventory_changed)) }
+            return
+        }
+        val removedPackageName = if (confirmedRegionKey == tokenize(option.endpoint.countryId)) option.countryName else option.displayName
+        updateState { copy(activeBundleDeletionOptionId = option.id, lastError = "") }
+        val submitted = submitBundleRemovalTask {
             try {
-                clearRemovedActiveBundleSource(option.endpoint.manifestRegion)
-                val removed = bootstrapper.removeDownloadedBundles(option.endpoint.manifestRegion)
+                clearRemovedActiveBundleSource(confirmedRegionKey)
+                val removed = bootstrapper.removeDownloadedBundles(confirmedRegionKey)
                 refreshDownloadedBundleInventory()
                 val active = bootstrapper.activeState()
                 // A non-active deletion must not switch away from a surviving
@@ -3553,15 +3576,18 @@ class ConsumerSessionController(
                     copy(
                         activeBundleVersion = nextVersion,
                         activeDBPath = nextPath ?: "",
-                        maintenanceMessage = if (removed > 0) ConsumerRuntimeText.MAP_DELETED.text(option.displayName) else ConsumerRuntimeText.MAP_NOT_DELETED.text(option.displayName),
+                        maintenanceMessage = if (removed > 0) ConsumerRuntimeText.MAP_DELETED.text(removedPackageName) else ConsumerRuntimeText.MAP_NOT_DELETED.text(removedPackageName),
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
                 runCatching { lookupResources.invalidateAll() }.onFailure { error.addSuppressed(it) }
                 setError(ConsumerRuntimeText.MAP_DELETE_FAILED.text(error.message ?: error.javaClass.simpleName))
+            } finally {
+                postState { copy(activeBundleDeletionOptionId = null) }
             }
         }
+        if (!submitted) updateState { copy(activeBundleDeletionOptionId = null) }
     }
 
     private fun clearRemovedActiveBundleSource(region: String? = null) {
@@ -3607,7 +3633,7 @@ class ConsumerSessionController(
         else resetLookupHistoryOnResume = true
     }
 
-    private fun submitBundleRemovalTask(task: () -> Unit) {
+    private fun submitBundleRemovalTask(task: () -> Unit): Boolean {
         // Count requests before enqueueing: dismissing Settings cannot resume map
         // reads while a removal is still waiting behind another maintenance task.
         lookupPauseChanged(lookupToken.beginBundleRemoval())
@@ -3617,14 +3643,18 @@ class ConsumerSessionController(
         }
         if (isDisposed.get() || executor.isShutdown || executor.isTerminated) {
             completed()
-            return
+            return false
         }
         try {
             executor.execute {
                 try { if (!isDisposed.get()) task() }
                 finally { completed() }
             }
-        } catch (_: RejectedExecutionException) { completed() }
+        } catch (_: RejectedExecutionException) {
+            completed()
+            return false
+        }
+        return true
     }
 
     private fun persistSpeedCaptureSelection(selection: SpeedCaptureSelection) {
@@ -3975,6 +4005,71 @@ class ConsumerSessionController(
         return bundleDownloadWorkerRunning || uiState.syncStatus == "syncing" || uiState.syncStatus == "bootstrapping"
     }
 
+    fun isBundleMaintenanceBusy(): Boolean = isSyncingNow() || hasActiveBundleDownload() ||
+        uiState.activeBundleDeletionOptionId != null
+
+    fun selectDataManagerRegion(id: String) {
+        val option = uiState.bundleDownloadSections.flatMap { it.options }.firstOrNull { it.id == id } ?: return
+        preferences.edit().putString("youspeed.data_manager.selected_region", id).apply()
+        updateState { copy(dataManagerSelectedRegionId = id) }
+        requestDataManagerMetadata(option)
+    }
+
+    fun installedDataManagerRegion(option: BundleDownloadOption): DataManagerInstalledRegion? =
+        dataManagerInstalledScope(option)?.let { uiState.dataManagerInstalledRegions[it.regionKey] }
+
+    fun dataManagerInstalledScope(option: BundleDownloadOption): DataManagerPackageScope? =
+        DataManagerScopeResolver.resolve(option.endpoint.manifestRegion, option.endpoint.countryId,
+            uiState.downloadedBundleCountByRegion.filterValues { it > 0 }.keys)
+
+    fun refreshDataManagerInventory() {
+        if (!isBundleMaintenanceBusy()) submitBackgroundTask { refreshDownloadedBundleInventory() }
+    }
+
+    /** One in-flight metadata request and one latest selection, never a queue of every map tap. */
+    fun requestDataManagerMetadata(option: BundleDownloadOption, force: Boolean = false) {
+        if (isDisposed.get() || dataManagerMetadataExecutor.isShutdown) return
+        if (uiState.bundleDownloadSections.flatMap { it.options }.none { it.id == option.id }) return
+        val previous = uiState.dataManagerMetadataByRegion[option.id]
+        val age = previous?.let { clock.millis() - it.checkedAtMillis }
+        val lifetime = if (force) 10_000L else if (previous?.status == DataManagerMetadataStatus.ERROR) 60_000L else 900_000L
+        if (previous?.status == DataManagerMetadataStatus.LOADING || (age != null && age in 0 until lifetime)) return
+        if (dataManagerMetadataInFlight != null) {
+            pendingDataManagerMetadata = option
+            return
+        }
+        dataManagerMetadataInFlight = option.id
+        updateState { copy(dataManagerMetadataByRegion = dataManagerMetadataByRegion +
+            (option.id to DataManagerMetadataState(DataManagerMetadataStatus.LOADING, previous?.metadata))) }
+        try {
+            dataManagerMetadataExecutor.execute {
+                val result = runCatching { DataManagerManifestReader().read(option.endpoint) }
+                mainHandler.post {
+                    if (!isDisposed.get()) {
+                        val next = DataManagerMetadataState(
+                            status = when {
+                                result.isSuccess -> DataManagerMetadataStatus.READY
+                                result.exceptionOrNull() is DataManagerPackageUnavailable -> DataManagerMetadataStatus.UNAVAILABLE
+                                else -> DataManagerMetadataStatus.ERROR
+                            },
+                            metadata = result.getOrNull(),
+                            checkedAtMillis = clock.millis(),
+                        )
+                        updateState { copy(dataManagerMetadataByRegion = dataManagerMetadataByRegion + (option.id to next)) }
+                        dataManagerMetadataInFlight = null
+                        val pending = pendingDataManagerMetadata
+                        pendingDataManagerMetadata = null
+                        if (pending != null && pending.id == uiState.dataManagerSelectedRegionId) requestDataManagerMetadata(pending)
+                    }
+                }
+            }
+        } catch (_: RejectedExecutionException) {
+            dataManagerMetadataInFlight = null
+            updateState { copy(dataManagerMetadataByRegion = dataManagerMetadataByRegion +
+                (option.id to DataManagerMetadataState(DataManagerMetadataStatus.ERROR, previous?.metadata, clock.millis()))) }
+        }
+    }
+
     fun hasActiveBundleDownload(): Boolean {
         return !uiState.activeDownloadOptionId.isNullOrBlank()
     }
@@ -3996,11 +4091,11 @@ class ConsumerSessionController(
     }
 
     fun isBundleDownloaded(option: BundleDownloadOption): Boolean {
-        return uiState.downloadedBundleCountByRegion[tokenize(option.endpoint.manifestRegion)] ?: 0 > 0
+        return dataManagerInstalledScope(option) != null
     }
 
     fun downloadedBundleStatusText(option: BundleDownloadOption): String {
-        val key = tokenize(option.endpoint.manifestRegion)
+        val key = dataManagerInstalledScope(option)?.regionKey ?: return ""
         val count = uiState.downloadedBundleCountByRegion[key] ?: 0
         if (count <= 0) {
             return ""
@@ -4071,7 +4166,10 @@ class ConsumerSessionController(
     }
 
     private fun refreshDownloadedBundleInventory() {
-        val bundles = bootstrapper.listDownloadedBundles()
+        val bundles = runCatching { bootstrapper.listDownloadedBundles() }.getOrElse {
+            postState { copy(dataManagerInventoryAvailable = false) }
+            return
+        }
         val countByRegion = linkedMapOf<String, Int>()
         val latestByRegion = linkedMapOf<String, String>()
         bundles.forEach { bundle ->
@@ -4082,10 +4180,21 @@ class ConsumerSessionController(
                 latestByRegion[key] = bundle.bundleVersion
             }
         }
+        val installed = bundles.groupBy { tokenize(it.region) }.mapValues { (_, versions) ->
+            val newest = versions.maxByOrNull { it.bundleVersion }!!
+            DataManagerInstalledRegion(
+                versionCount = versions.size,
+                totalDatabaseBytes = versions.sumOf { it.dbBytes?.coerceAtLeast(0L) ?: 0L },
+                newestPackage = DataManagerPackageMetadata(newest.bundleVersion,
+                    newest.createdAtUTC?.takeIf { runCatching { Instant.parse(it) }.isSuccess }, newest.dbBytes),
+            )
+        }
         postState {
             copy(
                 downloadedBundleCountByRegion = countByRegion,
                 downloadedBundleLatestVersionByRegion = latestByRegion,
+                dataManagerInstalledRegions = installed,
+                dataManagerInventoryAvailable = true,
             )
         }
     }

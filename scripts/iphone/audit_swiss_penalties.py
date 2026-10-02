@@ -27,6 +27,7 @@ def main():
     parser.add_argument("--device", required=True)
     parser.add_argument("--app", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--language", choices=["de", "fr", "en", "nl"], default="en")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     sim("install", args.device, str(args.app))
@@ -44,7 +45,8 @@ def main():
                        SIMCTL_CHILD_YOUSPEED_SCREENSHOT_LIMIT=str(limit),
                        SIMCTL_CHILD_YOUSPEED_SCREENSHOT_HIGHWAY=["residential", "primary", "motorway", "motorway", "residential", "primary", "motorway"][index],
                        SIMCTL_CHILD_YOUSPEED_SCREENSHOT_INSIDE_CITY="1" if urban else "0")
-            sim("launch", args.device, BUNDLE, "-AppleLanguages", "(en)", env=env)
+            sim("launch", args.device, BUNDLE, "-AppleLanguages", f"({args.language})",
+                "-AppleLocale", f"{args.language}_CH", env=env)
             deadline = time.monotonic() + 20
             while not report_path.exists() and time.monotonic() < deadline:
                 time.sleep(0.1)
@@ -53,7 +55,8 @@ def main():
             assert report["rules_file"] == "CHE-rules.json" and report["penalty_present"], report
             assert report["money_fine_eur"] == [40, 100, 60, None, None, None, None][index], report
             assert report["driving_ban_months"] == [None, None, None, 1, 24, 24, 24][index], report
-            assert report["advisory_caption"], report
+            assert report["advisory_caption"], report  # Retained as metadata, not dashboard text.
+            assert report["locale"] == args.language, report
             time.sleep(0.8)
             sim("io", args.device, "screenshot", str(args.output / f"case-{index}.png"))
             reports.append(report)

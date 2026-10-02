@@ -1119,22 +1119,18 @@ struct MainView: View {
                         .font(.system(size: secondaryFont, weight: .bold, design: .default))
                 } else {
                     Text(primaryMetricText)
+                        .accessibilityIdentifier("primary-metric")
                         .font(primaryMetricFont(size: primaryFont))
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.45)
                         .lineLimit(viewModel.isInSpeedCaptureMode ? 2 : 1)
                     Text(secondaryMetricText.isEmpty ? " " : secondaryMetricText)
+                        .accessibilityIdentifier("secondary-metric")
+                        .lineLimit(1)
                         .font(.system(size: secondaryFont, weight: .bold, design: .default))
                         .minimumScaleFactor(0.45)
                         .padding(.top, -primaryFont * 0.06)
                         .opacity(secondaryMetricText.isEmpty ? 0 : 1)
-                    if let caption = finePresentation?.advisoryCaption {
-                        Text(caption)
-                            .font(.system(size: max(11, secondaryFont * 0.32)))
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                            .accessibilityIdentifier("penalty-advisory-caption")
-                    }
                 }
             }
         }
@@ -3066,10 +3062,18 @@ private struct ShareSheet: UIViewControllerRepresentable {
 private struct SettingsView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
     @ObservedObject var account: PanoramaxAccountModel
-    @State private var showingDeleteDownloadedBundlesConfirm = false
 
     var body: some View {
         Form {
+            Section(NSLocalizedString("settings.maps.section", comment: "")) {
+                NavigationLink {
+                    DataManagerView(viewModel: viewModel)
+                } label: {
+                    Label(dataManagerText("title"), systemImage: "map")
+                }
+                .accessibilityIdentifier("settings.dataManager")
+            }
+
             Section(NSLocalizedString("settings.orientation.section", comment: "")) {
                 Picker(NSLocalizedString("settings.orientation.title", comment: ""), selection: Binding(
                     get: { viewModel.screenOrientation },
@@ -3278,103 +3282,6 @@ private struct SettingsView: View {
                 }
             }
 
-            Section(NSLocalizedString("settings.maps.section", comment: "")) {
-                LabeledContent(NSLocalizedString("settings.maps.status", comment: ""), value: syncStatusLabel)
-                LabeledContent(NSLocalizedString("settings.maps.bundle", comment: ""), value: viewModel.activeBundleVersion)
-
-                Text(syncMessageLine?.text ?? " ")
-                    .font(.footnote)
-                    .foregroundStyle(syncMessageLine?.color ?? .secondary)
-                    .lineLimit(2, reservesSpace: true)
-
-                Text(NSLocalizedString("settings.maps.description", comment: ""))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                if viewModel.bundleDownloadSections.isEmpty {
-                    Text(NSLocalizedString("settings.maps.no_downloads", comment: ""))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text(viewModel.firstLocationPackStatus).font(.footnote).lineLimit(2, reservesSpace: true)
-                    Text(viewModel.countryModelPackStatus).font(.footnote).foregroundStyle(.secondary).lineLimit(2, reservesSpace: true)
-                    RecordingSafeButton(NSLocalizedString("first_location.retry", comment: "")) { viewModel.retryFirstLocationSetup() }
-                }
-            }
-
-            ForEach(viewModel.bundleDownloadSections) { country in
-                Section(country.countryName) {
-                    ForEach(country.options) { option in
-                        bundleOptionRow(option, title: country.options.count == 1 ? country.countryName : option.displayName)
-                            .id(option.id)
-                    }
-                }
-            }
-
-            Section {
-                RecordingSafeButton(role: .destructive) {
-                    showingDeleteDownloadedBundlesConfirm = true
-                } label: {
-                    Text(NSLocalizedString("settings.maps.delete_downloads", comment: ""))
-                }
-                .disabled(viewModel.isSyncingNow)
-
-                if !viewModel.maintenanceMessage.isEmpty {
-                    Text(viewModel.maintenanceMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
-                if !viewModel.lastError.isEmpty {
-                    Text(viewModel.lastError)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                }
-
-                if (viewModel.syncStatus == "syncing" || viewModel.syncStatus == "bootstrapping"),
-                   viewModel.activeDownloadOptionID == nil {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(viewModel.syncProgressDetail)
-                            .font(.caption)
-
-                        if let progressValue = syncProgressValue {
-                            ProgressView(value: progressValue)
-                            Text(syncProgressBytesText)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                            if !syncProgressMetaText.isEmpty {
-                                Text(syncProgressMetaText)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        } else {
-                            ProgressView()
-                            if !syncProgressBytesText.isEmpty {
-                                Text(syncProgressBytesText)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-
-                        ForEach(viewModel.syncPartDownloads) { part in
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(part.detail)
-                                    .font(.caption2)
-                                ProgressView(
-                                    value: part.totalBytes > 0
-                                    ? Double(min(max(part.completedBytes, 0), part.totalBytes)) / Double(part.totalBytes)
-                                    : 0
-                                )
-                                Text(partProgressBytesText(part))
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-
             Section(NSLocalizedString("settings.penalty.section", comment: "")) {
                 LabeledContent(NSLocalizedString("settings.penalty.file", comment: ""), value: viewModel.activePenaltyRulesFile)
                 LabeledContent(NSLocalizedString("settings.penalty.country", comment: ""), value: viewModel.penaltyCountryDisplayName)
@@ -3405,14 +3312,6 @@ private struct SettingsView: View {
         .navigationTitle(NSLocalizedString("settings.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .subscreenCloseButton()
-        .alert(NSLocalizedString("settings.maps.delete_title", comment: ""), isPresented: $showingDeleteDownloadedBundlesConfirm) {
-            RecordingSafeButton(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
-            RecordingSafeButton(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
-                viewModel.deleteDownloadedBundlesKeepingSeed()
-            }
-        } message: {
-            Text(NSLocalizedString("settings.maps.delete_confirm", comment: ""))
-        }
     }
 
     private var audioHintText: String {
@@ -3426,19 +3325,6 @@ private struct SettingsView: View {
             format: NSLocalizedString("settings.audio.threshold_description", comment: ""),
             viewModel.audioAlertThresholdKmh
         )
-    }
-
-    private var syncStatusLabel: String {
-        switch viewModel.syncStatus {
-        case "not_synced":
-            return "Nicht synchronisiert"
-        case "syncing":
-            return "Synchronisiert..."
-        case "sync_failed":
-            return "Synchronisierung fehlgeschlagen"
-        default:
-            return viewModel.syncStatus.replacingOccurrences(of: "_", with: " ")
-        }
     }
 
     private var driveRecorderStatusText: String {
@@ -3460,126 +3346,554 @@ private struct SettingsView: View {
         }
     }
 
-    private var syncMessageLine: (text: String, color: Color)? {
-        switch viewModel.syncStatus {
-        case "ready_upToDate":
-            return ("Daten sind verfuegbar und aktuell.", .green)
-        case "ready_fullDownload", "ready_deltaPatch":
-            return ("Datensynchronisierung abgeschlossen. Lokale Daten sind aktuell.", .green)
-        case "ready_bootstrap":
-            return ("Seed-Daten sind lokal verfuegbar.", .orange)
-        case "sync_failed" where !viewModel.activeDBPath.isEmpty:
-            return ("Synchronisierung fehlgeschlagen, lokale Daten sind aber weiterhin verfuegbar.", .orange)
-        case "sync_failed":
-            return ("Synchronisierung fehlgeschlagen. Kein aktives Daten-Bundle verfuegbar.", .red)
-        default:
-            return nil
+}
+
+private func dataManagerText(_ key: String) -> String {
+    NSLocalizedString("data_manager.\(key)", comment: "")
+}
+
+private struct DataManagerView: View {
+    @ObservedObject var viewModel: DriveSessionViewModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var selectedTab = DataManagerTab.map
+    @State private var searchText = ""
+    @FocusState private var searchFocused: Bool
+    @State private var pendingDeletion: DeletionSelection?
+    @State private var showingDeleteAllConfirmation = false
+
+    private struct DeletionSelection {
+        let option: DriveSessionViewModel.BundleDownloadOption
+        let region: String
+        let name: String
+        let count: Int
+    }
+
+    private var options: [DriveSessionViewModel.BundleDownloadOption] {
+        viewModel.bundleDownloadSections.flatMap(\.options)
+    }
+
+    private var selectedOption: DriveSessionViewModel.BundleDownloadOption? {
+        options.first { $0.id == viewModel.dataManagerSelectedOptionID }
+    }
+
+    private var filteredOptions: [DriveSessionViewModel.BundleDownloadOption] {
+        guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return options }
+        return options.filter {
+            "\($0.countryName) \($0.displayName)".localizedStandardContains(searchText)
         }
     }
 
-    private var syncProgressValue: Double? {
-        let total = viewModel.syncProgressTotalBytes
-        guard total > 0 else {
-            return nil
-        }
-        let completed = min(max(viewModel.syncProgressCompletedBytes, 0), total)
-        return Double(completed) / Double(total)
-    }
-
-    private var syncProgressBytesText: String {
-        let completed = max(viewModel.syncProgressCompletedBytes, 0)
-        let total = max(viewModel.syncProgressTotalBytes, 0)
-        let formatter = ByteCountFormatter()
-        formatter.countStyle = .file
-        if total > 0 {
-            return "\(formatter.string(fromByteCount: completed)) / \(formatter.string(fromByteCount: total))"
-        }
-        if completed > 0 {
-            return formatter.string(fromByteCount: completed)
-        }
-        return ""
-    }
-
-    private var syncProgressMetaText: String {
-        let rate = max(0, viewModel.syncProgressBytesPerSecond)
-        let eta = viewModel.syncProgressETASeconds
-        let formatter = ByteCountFormatter()
-        formatter.countStyle = .file
-
-        var parts: [String] = []
-        if rate > 1 {
-            parts.append("\(formatter.string(fromByteCount: Int64(rate)))/s")
-        }
-        if let eta, eta >= 0 {
-            let duration = DateComponentsFormatter()
-            duration.allowedUnits = eta >= 3600 ? [.hour, .minute] : [.minute, .second]
-            duration.unitsStyle = .abbreviated
-            if let etaText = duration.string(from: eta) {
-                parts.append("Restzeit \(etaText)")
+    var body: some View {
+        VStack(spacing: 6) {
+            Picker(dataManagerText("view"), selection: $selectedTab) {
+                Text(dataManagerText("tab_map")).tag(DataManagerTab.map)
+                    .accessibilityIdentifier("dataManager.mapTab")
+                Text(dataManagerText("tab_list")).tag(DataManagerTab.list)
+                    .accessibilityIdentifier("dataManager.listTab")
             }
+            .pickerStyle(.segmented)
+            .frame(minHeight: 44)
+            .padding(.horizontal, 12)
+            statusLegend.padding(.horizontal, 12)
+            activeDownloadBanner.padding(.horizontal, 12)
+            if viewModel.bundleInventoryError {
+                Label(dataManagerText("inventory_error"), systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundStyle(.orange).padding(.horizontal, 12)
+            }
+            if selectedTab == .map { mapContent } else { listContent }
         }
-        return parts.joined(separator: " • ")
+        .navigationTitle(dataManagerText("title"))
+        .navigationBarTitleDisplayMode(.inline)
+        .subscreenCloseButton()
+        .task { viewModel.prepareDataManager() }
+        .confirmationDialog(NSLocalizedString("settings.maps.delete_title", comment: ""),
+                            isPresented: $showingDeleteAllConfirmation, titleVisibility: .visible) {
+            RecordingSafeButton(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+                viewModel.deleteDownloadedBundlesKeepingSeed()
+            }
+            RecordingSafeButton(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+        } message: {
+            Text(NSLocalizedString("settings.maps.delete_confirm", comment: ""))
+        }
+        .alert(dataManagerText("delete_title"), isPresented: Binding(
+            get: { pendingDeletion != nil },
+            set: { if !$0 { pendingDeletion = nil } }
+        ), presenting: pendingDeletion) { selection in
+            RecordingSafeButton(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {
+                pendingDeletion = nil
+            }
+            RecordingSafeButton(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+                viewModel.deleteSelectedBundle(selection.option, expectedManifestRegion: selection.region)
+                pendingDeletion = nil
+            }
+        } message: { selection in
+            Text(String(format: dataManagerText("delete_message"), selection.name, selection.count))
+        }
     }
 
-    private func partProgressBytesText(_ part: PartDownloadProgress) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.countStyle = .file
-        let completed = max(0, part.completedBytes)
-        let total = max(0, part.totalBytes)
-        if total > 0 {
-            return "\(formatter.string(fromByteCount: completed)) / \(formatter.string(fromByteCount: total))"
+    private var mapContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    RecordingSafeButton { selectedTab = .list } label: {
+                        Label(dataManagerText("choose_region"), systemImage: "magnifyingglass")
+                    }
+                    .accessibilityIdentifier("dataManager.chooseRegion")
+                    Spacer()
+                    RecordingSafeButton(dataManagerText("europe")) {
+                        viewModel.dataManagerMapViewport = .europe
+                    }
+                    .accessibilityIdentifier("dataManager.europe")
+                }
+                if let catalog = viewModel.dataManagerMapCatalog {
+                    RegionSelectionCanvas(catalog: catalog, options: options,
+                        selectedID: viewModel.dataManagerSelectedOptionID,
+                        displayStates: Dictionary(uniqueKeysWithValues: options.map { ($0.id, viewModel.dataManagerDisplayState(for: $0)) }),
+                        viewport: $viewModel.dataManagerMapViewport) { id in
+                            if let option = options.first(where: { $0.id == id }) {
+                                viewModel.selectDataManagerRegion(option)
+                            }
+                        }
+                        .frame(height: viewModel.screenOrientation.isLandscape ? 210 : 260)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(alignment: .topTrailing) {
+                            VStack(spacing: 0) {
+                                mapControl("plus.magnifyingglass", label: "zoom_in") {
+                                    viewModel.dataManagerMapViewport = viewModel.dataManagerMapViewport.zoomed(by: 1.6)
+                                }
+                                mapControl("minus.magnifyingglass", label: "zoom_out") {
+                                    viewModel.dataManagerMapViewport = viewModel.dataManagerMapViewport.zoomed(by: 1 / 1.6)
+                                }
+                                mapControl("arrow.counterclockwise", label: "reset") {
+                                    viewModel.dataManagerMapViewport = .overview
+                                }
+                            }
+                            .padding(4)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                            .padding(6)
+                        }
+                    Text(catalog.attribution).font(.caption2).foregroundStyle(.secondary)
+                } else {
+                    Text(dataManagerText("map_unavailable")).foregroundStyle(.secondary)
+                }
+                if let option = selectedOption {
+                    regionDetail(option)
+                } else {
+                    Text(dataManagerText("select_hint"))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10).background(.quaternary, in: RoundedRectangle(cornerRadius: 12))
+                }
+                recoveryControls
+                if !viewModel.maintenanceMessage.isEmpty {
+                    Text(viewModel.maintenanceMessage).font(.footnote).foregroundStyle(.secondary)
+                }
+                if !viewModel.lastError.isEmpty {
+                    Text(viewModel.lastError).font(.footnote).foregroundStyle(.red)
+                }
+            }.padding(.horizontal, 12).padding(.bottom, 12)
         }
-        if completed > 0 {
-            return formatter.string(fromByteCount: completed)
-        }
-        return ""
     }
 
     @ViewBuilder
-    private func bundleOptionRow(
-        _ option: DriveSessionViewModel.BundleDownloadOption,
-        title: String
-    ) -> some View {
-        let downloaded = viewModel.isBundleDownloaded(option)
-        let active = viewModel.isActiveBundleDownload(option)
-        let queued = viewModel.queuedBundleDownloadIDs.contains(option.id)
-        let failure = viewModel.bundleDownloadErrors[option.id]
-        let progressText = viewModel.activeBundleDownloadBytesText(option)
-        let status = active ? (progressText.isEmpty ? NSLocalizedString("settings.maps.preparing", comment: "") : progressText)
-            : queued ? NSLocalizedString("settings.maps.queued", comment: "")
-            : failure.map { String(format: NSLocalizedString("settings.maps.download_failed", comment: ""), $0) }
-                ?? viewModel.downloadedBundleStatusText(option)
-        return HStack(spacing: 10) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
-                Text(status.isEmpty ? " " : status)
-                    .font(.caption2).foregroundStyle(failure != nil ? .red : downloaded ? .green : .secondary)
-                    .lineLimit(2, reservesSpace: true).minimumScaleFactor(0.8)
-                // Reserve the progress slot even after completion; rows keep their height.
-                ProgressView(value: viewModel.activeBundleDownloadProgress(option) ?? 0)
-                    .opacity(active ? 1 : 0)
-                    .accessibilityHidden(!active)
+    private var activeDownloadBanner: some View {
+        if viewModel.hasActiveBundleDownload,
+           let active = options.first(where: { $0.id == viewModel.activeDownloadOptionID }),
+           active.id != selectedOption?.id {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("\(dataManagerText("active_download")): \(active.displayName)").font(.caption.bold())
+                    downloadProgress(active)
+                }
+                Spacer(minLength: 4)
+                RecordingSafeButton(dataManagerText("show_region")) {
+                    searchText = ""
+                    viewModel.selectDataManagerRegion(active, focus: selectedTab == .map)
+                }.frame(minHeight: 44)
             }
-            Spacer(minLength: 8)
-            RecordingSafeButton(role: downloaded ? .destructive : nil) {
+        }
+    }
+
+    private var recoveryControls: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if viewModel.isSyncingNow && !viewModel.hasActiveBundleDownload {
+                Text(viewModel.syncProgressDetail).font(.caption)
+                if viewModel.syncProgressTotalBytes > 0 {
+                    ProgressView(value: Double(max(0, min(viewModel.syncProgressCompletedBytes, viewModel.syncProgressTotalBytes)))
+                        / Double(viewModel.syncProgressTotalBytes))
+                    Text("\(bytesText(viewModel.syncProgressCompletedBytes)) / \(bytesText(viewModel.syncProgressTotalBytes))").font(.caption)
+                } else { ProgressView() }
+                ForEach(viewModel.syncPartDownloads) { part in
+                    VStack(alignment: .leading) {
+                        Text(part.detail).font(.caption)
+                        if part.totalBytes > 0 {
+                            ProgressView(value: Double(max(0, min(part.completedBytes, part.totalBytes))) / Double(part.totalBytes))
+                        } else { ProgressView() }
+                        Text("\(bytesText(part.completedBytes)) / \(bytesText(part.totalBytes))").font(.caption2)
+                    }
+                }
+            }
+            DisclosureGroup(dataManagerText("setup")) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(viewModel.firstLocationPackStatus).font(.footnote)
+                    Text(viewModel.countryModelPackStatus).font(.footnote).foregroundStyle(.secondary)
+                    RecordingSafeButton(NSLocalizedString("first_location.retry", comment: "")) {
+                        viewModel.retryFirstLocationSetup()
+                    }
+                    .disabled(viewModel.isManagingBundles)
+                    LabeledContent(NSLocalizedString("settings.maps.status", comment: ""), value: viewModel.syncStatus)
+                    LabeledContent(NSLocalizedString("settings.maps.bundle", comment: ""), value: viewModel.activeBundleVersion)
+                    RecordingSafeButton(dataManagerText("all_downloads"), role: .destructive) {
+                        showingDeleteAllConfirmation = true
+                    }
+                    .disabled(viewModel.isManagingBundles || viewModel.bundleInventoryError)
+                }.padding(.top, 10)
+            }
+        }
+    }
+
+    private var listContent: some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                TextField(dataManagerText("search"), text: $searchText)
+                    .autocorrectionDisabled()
+                    .focused($searchFocused)
+                    .accessibilityIdentifier("dataManager.search")
+                if !searchText.isEmpty {
+                    RecordingSafeButton { searchText = "" } label: {
+                        Image(systemName: "xmark.circle.fill").frame(width: 44, height: 44)
+                    }.accessibilityLabel(dataManagerText("clear_search"))
+                }
+            }
+            .frame(minHeight: 44)
+            .padding(.horizontal, 10)
+            .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+            .padding(.horizontal, 12)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        if filteredOptions.isEmpty {
+                            Text(dataManagerText("no_matches")).padding(12)
+                        }
+                        ForEach(filteredOptions) { option in
+                            regionListRow(option).id(option.id)
+                            Divider()
+                        }
+                        recoveryControls.padding(.vertical, 10)
+                        if !viewModel.maintenanceMessage.isEmpty {
+                            Text(viewModel.maintenanceMessage).font(.caption).foregroundStyle(.secondary)
+                        }
+                        if !viewModel.lastError.isEmpty {
+                            Text(viewModel.lastError).font(.caption).foregroundStyle(.red)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .onAppear {
+                    if let selected = viewModel.dataManagerSelectedOptionID {
+                        proxy.scrollTo(selected, anchor: .top)
+                    }
+                }
+                .onChange(of: viewModel.dataManagerSelectedOptionID) { _, selected in
+                    if let selected { proxy.scrollTo(selected, anchor: .top) }
+                }
+            }
+        }
+    }
+
+    private func regionListRow(_ option: DriveSessionViewModel.BundleDownloadOption) -> some View {
+        let selected = option.id == viewModel.dataManagerSelectedOptionID
+        let state = viewModel.dataManagerDisplayState(for: option)
+        let metadata = viewModel.installedBundleMetadata(for: option) ?? viewModel.dataManagerMetadata(for: option)
+        return VStack(alignment: .leading, spacing: 4) {
+            RecordingSafeButton {
+                searchFocused = false
+                viewModel.selectDataManagerRegion(option)
+            } label: {
+                HStack(alignment: .center, spacing: 8) {
+                    Image(systemName: state.symbol).foregroundStyle(dataManagerColor(state))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(option.displayName).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+                        Text("\(option.countryName) · \(dataManagerText(state.localizationKey))")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Text("\(dataManagerText("size")): \(bytesText(metadata?.bytes)) · \(dataManagerText("date")): \(dateText(metadata?.packageDate))")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 4)
+                    Image(systemName: selected ? "chevron.up" : "chevron.down").foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .padding(.vertical, 6)
+            }
+            .accessibilityIdentifier("dataManager.region.\(option.id)")
+            .accessibilityValue(selected ? dataManagerText("selected") : "")
+            if selected {
+                regionDetail(option, showHeader: false)
+                    .padding(.bottom, 6)
+            }
+        }
+    }
+
+    private var statusLegend: some View {
+        LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)], spacing: 4) {
+            ForEach([BundleMapDisplayState.installed, .available, .unavailable, .unknown], id: \.localizationKey) { state in
+                Label {
+                    Text(dataManagerText(state.localizationKey)).foregroundStyle(.primary)
+                } icon: {
+                    Image(systemName: state.symbol).foregroundStyle(dataManagerColor(state))
+                }.font(.caption2)
+            }
+        }
+    }
+
+    private func regionDetail(_ option: DriveSessionViewModel.BundleDownloadOption, showHeader: Bool = true) -> some View {
+        let metadata = viewModel.dataManagerMetadata(for: option)
+        let state = viewModel.dataManagerMetadataState(for: option)
+        let installed = viewModel.installedBundleMetadata(for: option)
+        let downloaded = viewModel.isBundleDownloaded(option)
+        return GroupBox {
+            VStack(alignment: .leading, spacing: 6) {
+                if showHeader {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(option.displayName).font(.title3.bold())
+                        Text(option.countryName).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    RecordingSafeButton {
+                        viewModel.selectDataManagerRegion(option, focus: true)
+                        selectedTab = .map
+                    } label: {
+                        Image(systemName: "scope").frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel(dataManagerText("show_region"))
+                }
+                }
+                if !showHeader {
+                    RecordingSafeButton {
+                        viewModel.selectDataManagerRegion(option, focus: true)
+                        selectedTab = .map
+                    } label: { Label(dataManagerText("show_region"), systemImage: "scope") }
+                    .frame(minHeight: 44)
+                }
+                LabeledContent(dataManagerText("status"), value: dataManagerText(downloaded ? "installed" : "not_installed"))
+                if let scope = viewModel.installedBundleScopeName(for: option) {
+                    LabeledContent(dataManagerText("installed_scope"), value: scope)
+                    LabeledContent(dataManagerText("installed_size"), value: bytesText(installed?.bytes))
+                    LabeledContent(dataManagerText("installed_date"), value: dateText(installed?.packageDate))
+                    if let installed { LabeledContent(dataManagerText("installed_version"), value: installed.version) }
+                }
+                Divider()
+                LabeledContent(dataManagerText("download_size"), value: bytesText(metadata?.bytes))
+                LabeledContent(dataManagerText("package_date"), value: dateText(metadata?.packageDate))
+                if let metadata { LabeledContent(dataManagerText("package_version"), value: metadata.version) }
+                HStack {
+                    if state == .loading { ProgressView() }
+                    Text(dataManagerText(metadataStateKey(state))).font(.footnote).foregroundStyle(.secondary)
+                    Spacer()
+                    RecordingSafeButton {
+                        viewModel.refreshDataManagerMetadata(for: option)
+                    } label: {
+                        Image(systemName: "arrow.clockwise").frame(width: 44, height: 44)
+                    }
+                    .disabled(state == .loading)
+                    .accessibilityLabel(dataManagerText("refresh"))
+                }
+                if metadata != nil && state != .available {
+                    Text(dataManagerText("cached_metadata")).font(.caption).foregroundStyle(.secondary)
+                }
+                if viewModel.isActiveBundleDownload(option) {
+                    downloadProgress(option)
+                }
+                if viewModel.queuedBundleDownloadIDs.contains(option.id) {
+                    Text(NSLocalizedString("settings.maps.queued", comment: "")).font(.caption)
+                }
+                if let failure = viewModel.bundleDownloadErrors[option.id] {
+                    Text(String(format: NSLocalizedString("settings.maps.download_failed", comment: ""), failure))
+                        .font(.caption).foregroundStyle(.red)
+                }
+                ViewThatFits(in: .horizontal) {
+                    regionActions(option, downloaded: downloaded, state: state, vertical: false)
+                    regionActions(option, downloaded: downloaded, state: state, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .font(.caption)
+        }
+        .accessibilityIdentifier("dataManager.detail")
+    }
+
+    private func regionActions(_ option: DriveSessionViewModel.BundleDownloadOption, downloaded: Bool,
+                               state: BundleMetadataLoadState, vertical: Bool) -> some View {
+        let layout = vertical || dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(spacing: 12))
+        let queued = viewModel.queuedBundleDownloadIDs.contains(option.id)
+        return layout {
+            RecordingSafeButton {
                 if queued { viewModel.cancelQueuedBundleDownload(option) }
-                else if downloaded { viewModel.deleteSelectedBundle(option) }
                 else { viewModel.downloadSelectedBundle(option) }
             } label: {
-                Image(systemName: queued ? "xmark.circle" : downloaded ? "trash" : failure != nil ? "arrow.clockwise.circle" : "arrow.down.circle")
-                    .font(.title3.weight(.semibold))
-                    .frame(width: 44, height: 44)
+                Label(queued ? NSLocalizedString("settings.maps.cancel_queued", comment: "")
+                      : dataManagerText(downloaded ? "check_update" : "download"),
+                      systemImage: queued ? "xmark.circle" : "arrow.down.circle")
+                    .frame(minHeight: 44)
             }
-            .buttonStyle(.plain)
-            .disabled(active || (downloaded && viewModel.isSyncingNow))
-            .accessibilityLabel(Text(queued ? "settings.maps.cancel_queued" : downloaded ? "common.delete" : failure != nil ? "onboarding.map.retry" : "settings.maps.download"))
-            .accessibilityIdentifier("bundle.action.\(option.id)")
+            .buttonStyle(.borderedProminent)
+            .disabled(viewModel.isDeletingBundle || viewModel.isActiveBundleDownload(option) || (!queued && state == .unavailable))
+            .accessibilityIdentifier("dataManager.download")
+            if downloaded {
+                RecordingSafeButton(role: .destructive) {
+                    if let region = viewModel.installedBundleRegion(for: option),
+                       let name = viewModel.installedBundleScopeName(for: option) {
+                        pendingDeletion = DeletionSelection(option: option, region: region, name: name,
+                            count: viewModel.downloadedBundleCountByRegion[region, default: 0])
+                    }
+                } label: {
+                    Label(NSLocalizedString("common.delete", comment: ""), systemImage: "trash")
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.bordered)
+                .disabled(viewModel.isManagingBundles || viewModel.bundleInventoryError)
+                .accessibilityIdentifier("dataManager.delete")
+            }
         }
-        .frame(minHeight: 64)
-        .padding(.vertical, 1)
-        .accessibilityIdentifier("bundle.row.\(option.id)")
+        .fixedSize(horizontal: !vertical && !dynamicTypeSize.isAccessibilitySize, vertical: false)
+    }
+
+    private func downloadProgress(_ option: DriveSessionViewModel.BundleDownloadOption) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if let progress = viewModel.activeBundleDownloadProgress(option) {
+                ProgressView(value: progress)
+            } else { ProgressView() }
+            Text(viewModel.activeBundleDownloadBytesText(option)).font(.caption)
+            Text(viewModel.syncProgressDetail).font(.caption).foregroundStyle(.secondary)
+            Text(dataManagerText("continues_in_background")).font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private func mapControl(_ image: String, label: String, action: @escaping () -> Void) -> some View {
+        RecordingSafeButton(action: action) {
+            Image(systemName: image).frame(width: 44, height: 44)
+        }.accessibilityLabel(dataManagerText(label))
+    }
+
+    private func bytesText(_ value: Int64?) -> String {
+        guard let value else { return dataManagerText("unknown") }
+        return ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
+    }
+
+    private func dateText(_ value: Date?) -> String {
+        guard let value else { return dataManagerText("unknown") }
+        return value.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private func metadataStateKey(_ state: BundleMetadataLoadState) -> String {
+        switch state {
+        case .unknown: return "metadata_unknown"
+        case .loading: return "metadata_loading"
+        case .available: return "metadata_available"
+        case .unavailable: return "metadata_unavailable"
+        case .failed: return "metadata_failed"
+        }
     }
 }
+
+private func dataManagerColor(_ state: BundleMapDisplayState) -> Color {
+    switch state {
+    case .installed: return .green
+    case .available: return .blue
+    case .unavailable: return .gray
+    case .unknown: return .secondary
+    }
+}
+
+private struct RegionSelectionCanvas: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let catalog: OfficialRegionMapCatalog
+    let options: [DriveSessionViewModel.BundleDownloadOption]
+    let selectedID: String?
+    let displayStates: [String: BundleMapDisplayState]
+    @Binding var viewport: RegionMapViewport
+    let onSelect: (String) -> Void
+    @GestureState private var translation: CGSize = .zero
+    @GestureState private var magnification: CGFloat = 1
+
+    var body: some View {
+        GeometryReader { geometry in
+            let width = max(Double(geometry.size.width), 1)
+            let height = max(Double(geometry.size.height), 1)
+            let base = viewport.fitted(aspectRatio: width / height)
+            let visible = base.zoomed(by: Double(magnification))
+                .panned(xFraction: Double(translation.width) / width, yFraction: Double(translation.height) / height)
+            let allowedIDs = Set(options.map(\.id))
+            Canvas { context, size in
+                context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(colorScheme == .dark
+                    ? Color(red: 0.10, green: 0.14, blue: 0.19) : Color(red: 0.90, green: 0.94, blue: 0.98)))
+                for region in catalog.regions where allowedIDs.contains(region.id) {
+                    let path = mapPath(region, viewport: visible, size: size)
+                    let selected = region.id == selectedID
+                    let state = displayStates[region.id] ?? .unknown
+                    let fill = dataManagerColor(state)
+                    context.fill(path, with: .color(fill.opacity(state == .unknown ? 0.08 : (selected ? 0.88 : 0.62))), style: FillStyle(eoFill: true))
+                    if state == .unknown {
+                        context.stroke(path, with: .color(colorScheme == .dark ? .white.opacity(0.6) : .black.opacity(0.5)),
+                                       style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
+                    } else {
+                        context.stroke(path, with: .color(.white), lineWidth: 1)
+                    }
+                }
+                if let selected = catalog.regions.first(where: { $0.id == selectedID }) {
+                    let path = mapPath(selected, viewport: visible, size: size)
+                    context.stroke(path, with: .color(.black), lineWidth: 5)
+                    context.stroke(path, with: .color(.yellow), lineWidth: 3)
+                }
+            }
+            .contentShape(Rectangle())
+            .gesture(SpatialTapGesture().onEnded { value in
+                let lon = visible.minX + Double(value.location.x) / width * visible.width
+                let y = visible.minY + Double(value.location.y) / height * visible.height
+                if let region = catalog.region(atLongitude: lon,
+                    latitude: RegionMapViewport.latitude(fromProjected: y), allowedIDs: allowedIDs) {
+                    onSelect(region.id)
+                }
+            })
+            .simultaneousGesture(DragGesture(minimumDistance: 8)
+                .updating($translation) { value, state, _ in state = value.translation }
+                .onEnded { value in
+                    viewport = base.panned(xFraction: Double(value.translation.width) / width,
+                                           yFraction: Double(value.translation.height) / height)
+                })
+            .simultaneousGesture(MagnificationGesture()
+                .updating($magnification) { value, state, _ in state = value }
+                .onEnded { value in viewport = base.zoomed(by: Double(value)) })
+            // The fully named, searchable selector is the accessible alternative
+            // to tiny map polygons. Canvas must not be an unnamed VoiceOver trap.
+            .accessibilityElement()
+            .accessibilityLabel(dataManagerText("map_accessibility"))
+            .accessibilityHint(dataManagerText("map_accessibility_hint"))
+            .accessibilityIdentifier("dataManager.map")
+        }
+    }
+
+    private func mapPath(_ region: OfficialRegionMapCatalog.Region, viewport: RegionMapViewport, size: CGSize) -> Path {
+        var path = Path()
+        for polygon in region.polygons {
+            for ring in polygon {
+                for (index, coordinate) in ring.enumerated() {
+                    let point = CGPoint(
+                        x: (coordinate[0] - viewport.minX) / viewport.width * Double(size.width),
+                        y: (RegionMapViewport.projectLatitude(coordinate[1]) - viewport.minY) / viewport.height * Double(size.height))
+                    if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
+                }
+                path.closeSubpath()
+            }
+        }
+        return path
+    }
+}
+
 
 private struct DebugInformationView: View {
     @ObservedObject var viewModel: DriveSessionViewModel

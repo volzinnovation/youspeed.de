@@ -19,6 +19,26 @@ The README bundle overview map uses the separate
 [Eurostat/GISCO NUTS 2013](https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/)
 geometry subset in `official-regions-v1.json`: NUTS-2 for the former French
 regions, NUTS-1 for the German Länder, and GISCO country boundaries for the
-country bundles. Those geometries are documentation artwork only and do not
-change mobile bundle routing. The map acknowledges `© EuroGeographics for the
-administrative boundaries` as required by the GISCO usage terms.
+country bundles. Those geometries are used for the documentation overview and
+manual region selection in the mobile Data Manager. They do not change mobile
+bundle routing or define the precise extent of the buffered extract. The map
+acknowledges `© EuroGeographics for the administrative boundaries` as required
+by the GISCO usage terms.
+
+## Mobile Data Manager presentation
+
+- Join official geometry to each app's configured download options by the exact
+  `country_id|region_id` identifier; both catalogs currently cover 51 options.
+- Map taps select a region only. Download and delete remain explicit actions
+  through the existing platform bundle manager.
+- Map and list share availability, local installation, and selection state:
+  green for installed, blue for available, gray for a confirmed unavailable
+  release, and a distinct unchecked/error state. Do not use the README graphic's
+  TSR legend or treat configuration alone as proof of release availability.
+- Provide a complete searchable, accessible List tab alongside the default Map
+  tab so tiny regions and French overseas regions remain reachable. Both tabs
+  expose the same explicit management actions and preserve selected state.
+- Manifest `created_at_utc` is the package build date, not an OSM observation
+  timestamp. Unknown or failed metadata requests must remain visibly unknown.
+- Continue using `catalog-v1.json` for automatic geographic routing. Never
+  substitute administrative boundaries or bounding boxes for routing coverage.

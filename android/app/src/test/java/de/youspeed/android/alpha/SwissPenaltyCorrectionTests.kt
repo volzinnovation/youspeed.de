@@ -28,7 +28,19 @@ class SwissPenaltyCorrectionTests {
                 assertNull(label, notice?.penaltyPoints)
                 if (notice != null) {
                     assertNotNull(label, notice.advisoryCaption)
-                    assertTrue(label, notice.details.isNotEmpty())
+                    val band = rules.bands.single {
+                        int("excess")!! >= it.minDeltaKmh && int("excess")!! <= (it.maxDeltaKmh ?: Int.MAX_VALUE)
+                    }
+                    // Raser is specified by the independent fixture, not the resolver.
+                    val templates = if (int("exceptional_months") == 12)
+                        rules.postedLimitEscalation!!.localizedTemplates.getValue(language)
+                    else band.localizedTemplates.getValue(language)
+                    assertEquals(label, templates.titleTemplate, notice.title)
+                    assertEquals(label, templates.detailTemplate.replace("{currency}", rules.currencyCode), notice.details)
+                    val caption = if (int("exceptional_months") == 12)
+                        rules.postedLimitEscalation!!.localizedCaptions.getValue(language)
+                    else rules.localizedAdvisoryCaptions.getValue(language)
+                    assertEquals(label, caption, notice.advisoryCaption)
                     assertEquals(label, PenaltySeverity.MONEY_ONLY, notice.severity)
                 }
             }

@@ -1,6 +1,45 @@
 import XCTest
 
 final class ScreenOrientationUITests: XCTestCase {
+    func testSwissPenaltyUsesTwoLargeLocalizedLines() {
+        continueAfterFailure = false
+        let labels: [(String, String, String, String)] = [
+            ("de", "Monat Fahrverbot", "Monate Fahrverbot", "Prüfen"),
+            ("fr", "mois d'interdiction", "mois d'interdiction", "À vérifier"),
+            ("en", "month driving ban", "months driving ban", "Review"),
+            ("nl", "maand rijverbod", "maanden rijverbod", "Controleren")
+        ]
+        for (language, singular, plural, review) in labels {
+            let cases = [(50, 5, "residential", "40", "CHF"),
+                         (120, 32, "motorway", "≥1", singular),
+                         (30, 40, "residential", "24", plural),
+                         (120, 32, "trunk", "!", review)]
+            for (index, input) in cases.enumerated() {
+                let app = XCUIApplication()
+                app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "country-penalty"
+                app.launchEnvironment["YOUSPEED_SCREENSHOT_COUNTRY"] = "CH"
+                app.launchEnvironment["YOUSPEED_SCREENSHOT_LIMIT"] = String(input.0)
+                app.launchEnvironment["YOUSPEED_SCREENSHOT_DELTA"] = String(input.1)
+                app.launchEnvironment["YOUSPEED_SCREENSHOT_HIGHWAY"] = input.2
+                app.launchEnvironment["YOUSPEED_SCREENSHOT_INSIDE_CITY"] = input.0 == 120 ? "0" : "1"
+                app.launchArguments = ["-youspeed.screen_orientation", "portrait",
+                                       "-AppleLanguages", "(\(language))", "-AppleLocale", "\(language)_CH"]
+                app.launch()
+                let primary = app.staticTexts["primary-metric"]
+                let secondary = app.staticTexts["secondary-metric"]
+                XCTAssertTrue(primary.waitForExistence(timeout: 20))
+                XCTAssertEqual(primary.label, input.3)
+                XCTAssertEqual(secondary.label, input.4)
+                XCTAssertFalse(app.staticTexts["penalty-advisory-caption"].exists)
+                let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                screenshot.name = "swiss-two-line-\(language)-\(index)"
+                screenshot.lifetime = .keepAlways
+                add(screenshot)
+                app.terminate()
+            }
+        }
+    }
+
     func testLaneOptionIsOffAtBottomOfDiagnostics() {
         continueAfterFailure = false
         let app = XCUIApplication()
@@ -159,6 +198,63 @@ final class ScreenOrientationUITests: XCTestCase {
         close.tap()
         waitForDashboard()
 #endif
+    }
+
+    func testDataManagerNavigationSelectionAndBackPreserveSelectedRegion() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"
+        app.launchArguments = ["-youspeed.screen_orientation", "portrait", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+        let settings = app.buttons["dashboard.settingsButton"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["dashboard.calibrationButton"].exists)
+        settings.tap()
+        let managerLink = app.descendants(matching: .any).matching(identifier: "settings.dataManager").firstMatch
+        XCTAssertTrue(managerLink.isHittable, "Data Manager is at the top of Settings without scrolling")
+        managerLink.tap()
+        let tabs = app.segmentedControls.firstMatch
+        XCTAssertTrue(tabs.waitForExistence(timeout: 5))
+        XCTAssertTrue(tabs.buttons["Map"].isSelected)
+        tabs.buttons["List"].tap()
+        let search = app.textFields["dataManager.search"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.tap()
+        search.typeText("Berlin")
+        let berlin = app.buttons["dataManager.region.germany|berlin"]
+        XCTAssertTrue(berlin.waitForExistence(timeout: 5))
+        berlin.tap()
+        let download = app.buttons["dataManager.download"]
+        for _ in 0..<5 where !download.isHittable { app.swipeUp() }
+        XCTAssertTrue(download.isHittable)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Not installed")).firstMatch.exists)
+        XCTAssertFalse(app.buttons["dataManager.delete"].exists)
+        tabs.buttons["Map"].tap()
+        XCTAssertTrue(app.staticTexts["Berlin"].waitForExistence(timeout: 5))
+        tabs.buttons["List"].tap()
+        XCTAssertTrue(app.buttons["dataManager.region.germany|berlin"].waitForExistence(timeout: 5))
+        // Selecting never starts a download. Back returns to Settings and
+        // reopening retains the selected ID on the long-lived view model.
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(managerLink.waitForExistence(timeout: 5))
+        managerLink.tap()
+        XCTAssertTrue(tabs.buttons["Map"].isSelected)
+        XCTAssertTrue(app.staticTexts["Berlin"].waitForExistence(timeout: 5))
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "data-manager-berlin-selected"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        app.buttons["subscreen.close"].tap()
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        settings.tap()
+        let debug = app.buttons["Open debug information"]
+        for _ in 0..<24 where !debug.isHittable { app.swipeUp() }
+        XCTAssertTrue(debug.isHittable)
+        debug.tap()
+        let lanes = app.switches["show-detected-lanes-toggle"]
+        for _ in 0..<24 where !lanes.isHittable { app.swipeUp() }
+        XCTAssertTrue(lanes.isHittable, "Lane recognition settings remain available with Data Manager")
+        app.terminate()
     }
 
     func testSettingsCanChangeManualMountWithSheetOpen() {

@@ -187,13 +187,16 @@ actor V3BundleManager {
             guard installedDatabaseIsAvailable(at: dbURL) else {
                 continue
             }
+            let installedSize = (try? fileManager.attributesOfItem(atPath: dbURL.path))?[.size] as? NSNumber
             out.append(
                 DownloadedBundleInfo(
                     region: manifest.region,
                     bundleVersion: manifest.bundleVersion,
                     countryCode: manifest.countryCode,
                     dbFileName: manifest.db.file,
-                    dbPath: dbURL.path
+                    dbPath: dbURL.path,
+                    createdAtUTC: manifest.createdAtUTC,
+                    installedBytes: installedSize?.int64Value
                 )
             )
         }

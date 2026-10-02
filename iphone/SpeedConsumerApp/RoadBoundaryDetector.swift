@@ -96,7 +96,14 @@ enum RoadBoundarySamplingRows {
     static func centers(height: Int, horizonY: Double?) -> [Int] {
         let topY = top(horizonY)
         let count = max(8,min(24,Int(((0.94-topY)*Double(height-1)).rounded())+1))
-        return (0..<count).map { row in Int(((0.94-Double(row)*(0.94-topY)/Double(count-1))*Double(height-1)).rounded()) }
+        let span: Double = 0.94 - topY
+        let intervals: Double = Double(count - 1)
+        let pixelHeight: Double = Double(height - 1)
+        return (0..<count).map { row -> Int in
+            let offset: Double = Double(row) * span / intervals
+            let normalizedY: Double = 0.94 - offset
+            return Int((normalizedY * pixelHeight).rounded())
+        }
     }
     static func support(height: Int, horizonY: Double?) -> [Int] {
         Array(Set(centers(height:height,horizonY:horizonY).flatMap { [$0-1,$0,$0+1] })).sorted()
