@@ -1,0 +1,267 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=23mm]{geometry}
+\usepackage{amsmath,amssymb,booktabs,array,microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,urlcolor=blue!55!black,citecolor=blue!55!black,
+  linkcolor=blue!55!black,pdftitle={Bounded Lane Detection on Smartphones},
+  pdfauthor={YouSpeed project}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlength{\emergencystretch}{2em}
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\doc}[1]{\nolinkurl{docs/#1}}
+\title{\vspace{-15mm}\textbf{Bounded Lane Detection on Smartphones}\\[3pt]
+  \large YouSpeed: methods, engineering contributions, and early evidence}
+\author{YouSpeed project\quad\textit{Technical report draft}}
+\date{30 September 2026}
+\begin{document}
+\maketitle
+\vspace{-7mm}
+\begin{abstract}
+\noindent
+We describe a classical, on-device lane-boundary pipeline for the YouSpeed
+iPhone and Android dashcam previews. Its main contributions are an
+output-preserving sparse preparation path, explicitly bounded temporal evidence,
+geometry-constrained presentation, and a shared native replay methodology.
+A paired Moto benchmark reduced median preparation time from 5.04 to 2.95\,ms;
+7,663 recorded frames retained identical tested outputs after optimization.
+These are engineering results, not evidence of general lane-detection accuracy.
+Lighting experiments and an unsuccessful iPhone field deployment expose remaining
+semantic, continuity, and runtime limitations.
+\end{abstract}
+
+\section{Objective and scope}
+The system estimates visible road-boundary evidence from an existing monocular
+camera stream while the phone also supports recording and traffic-sign recognition
+(TSR). The optional overlay is a perception prototype, not a lane-departure warning
+or vehicle-control system. Missing evidence may produce zero or one displayed
+boundary. Confidence is heuristic; neither a plausible pair nor smooth rendering
+proves that the boundaries enclose the vehicle's lane.
+
+This report covers the curved, multi-boundary \code{RoadBoundaryDetector} and
+\code{RoadPathSession} pipeline, including the September 30 preview candidate.
+It supersedes the straight-line description of the initial September prototype.
+Results below are attributed to their recorded experiments rather than to one
+uniformly qualified release. The reviewed working tree includes uncommitted work
+on top of revision \code{a0df46d8c157}; historical measurements were not rerun for
+this report.
+
+\section{Relationship to prior work}
+Aly's classical method uses inverse perspective mapping, selective oriented
+filtering, RANSAC line initialization, and B\'ezier fitting~\cite{aly}.
+Our method shares the filter--associate--fit structure, but operates on sparse
+image-space rows; its final B\'ezier stage is only a bounded display approximation.
+It does not reproduce Aly's detector or inherit its reported performance.
+
+\"Ozgunalp et al. extend symmetrical local thresholding by testing the parallelism
+of lane-marking borders and combining this with stereo-derived road segmentation
+and bird's-eye geometry~\cite{slt}. Their work motivates our offline border
+qualification experiments; our monocular implementation does not provide their
+stereo road mask.
+
+Learned alternatives include UFLDv2, which predicts sparse lane coordinates by
+hybrid-anchor ordinal classification~\cite{ufld}, and TwinLiteNet+, which jointly
+segments lane markings and drivable area~\cite{twin}. These are useful future
+comparators, not evaluated baselines in this project. Published benchmark scores
+and accelerator timings are not directly comparable with our partial paint labels
+or complete phone preparation cost. Classical filtering, patch tracking, and
+B\'ezier curves themselves are established techniques; our contribution is their
+specific bounded integration and its verification.
+
+\newpage
+\section{Method and project-specific contributions}
+\subsection{Sparse preparation with equivalent detector inputs}
+The camera Y plane is sampled into an upright, aspect-preserving image no larger
+than $384\times216$. An immutable sampling plan caches source row and column
+offsets for each geometry, including rotation and stride, without retaining the
+camera buffer. A five-pixel horizontal morphological opening $I\circ B$ yields
+the enhanced image
+\begin{equation}
+  E=\min\!\left(255,\ I+\left\lfloor\frac{3}{2}
+       \bigl(I-(I\circ B)\bigr)\right\rfloor\right).
+\end{equation}
+Only the detector's support rows are enhanced: at most 24 scan centers, each
+reading three neighboring rows, require at most 72 of 216 rows. Raw luma and
+enhanced support-row bytes match the full preparation path; unused enhanced rows
+are zero. Temporal tracking always reads original luma. This dependency-aware
+optimization preserves the detector inputs while avoiding unnecessary work~\cite{prep}.
+
+At each scan row, bilateral bright-stripe contrast identifies paint-like cues;
+separate intensity edges remain distinguishable. Local suppression retains at
+most 12 candidates per row. Bounded inter-row association builds piecewise
+boundaries rather than imposing a globally straight lane. Only suitable paint
+evidence forms corridor hypotheses; an edge alone cannot establish one.
+Visual calibration chooses the scan horizon and gives nearby observed candidates
+a bounded ranking preference, without creating observations.
+
+\subsection{Evidence-aware temporal continuity and preview selection}
+The tracker searches original-luma patches with forward/backward agreement and
+coherent residual checks. Boundaries record fresh, tracked, or fused provenance
+and evidence age. Eligible calibration, causal speed, and GNSS heading rate can
+predict approximate road-plane motion to center the bounded patch search.
+Image correspondence must still support the prediction. This is not a complete
+world-coordinate estimator or an exposure-synchronized IMU solution~\cite{stability}.
+
+The preview runs independently of TSR inference, targeting one admission every
+100\,ms with one active and one latest pending image. Preparation has a 50\,ms
+budget and operation caps; scope changes and thermal pauses invalidate work.
+The target rate is not a sustained-throughput claim. After maturity filtering,
+the selector publishes at most one boundary on each side, checks pair ordering
+and width, and requires a sustained 0.35\,s advantage before replacing a visible
+incumbent. Identity can survive a short absence up to 0.75\,s, but absent
+coordinates are not republished. Calibration guides remain visually distinct.
+The preview and TSR sidecar currently prepare geometry separately, adding cost.
+
+\subsection{Bounded rendering and native reproducibility}
+Display polylines are approximated by cubic B\'ezier segments satisfying
+\begin{equation}
+ \max_{y\ \text{in each supported interval}}
+   |x_{\mathrm{Bezier}}(y)-x_{\mathrm{polyline}}(y)|\leq 2/383.
+\end{equation}
+This is a horizontal error bound of two pixels at the maximum analysis width.
+Endpoints are retained; invalid points, non-increasing $y$, and large gaps split
+curves. Rendering does not extrapolate beyond support or change detection,
+confidence, or TSR evidence~\cite{bezier}.
+
+Swift and Kotlin implement matching arithmetic and contracts. Shared fixtures,
+native video replay, input/source hashes, and separate raw-versus-published
+geometry make algorithm changes auditable. This combination of bounded evidence,
+output-preserving optimization, and parity checks constitutes our engineering
+innovation; priority over all prior systems is not claimed.
+
+\newpage
+\section{Evaluation and limitations}
+\textbf{Preparation cost and equivalence.}
+The paired Moto g86 5G experiment alternated baseline and optimized execution
+within one standalone ART process for 60 seconds, with 7,149 measured samples per
+variant after warm-up. It repeated three fixtures, including live $288\times216$
+analysis geometry. Preparation included sampling, filtering, detection, tracking,
+and presentation preparation; it excluded camera delivery, TSR, recording, and
+UI~\cite{prep}.
+
+\begin{center}
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Measured warm preparation & Baseline & Optimized \\
+\midrule
+Median wall time & 5.04\,ms & 2.95\,ms \\
+95th-percentile wall time & 6.14\,ms & 3.88\,ms \\
+Median thread CPU time & 4.99\,ms & 2.92\,ms \\
+50\,ms budget failures & 0/7,149 & 0/7,149 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Median and p95 wall time fell by 41.5\% and 36.8\%, respectively. Separately,
+all 7,663 replayed frames matched the pre-change tested outputs exactly;
+26 boundary and 21 path fixtures retained Swift/Kotlin parity within $10^{-9}$.
+These support local computation savings and regression equivalence, not improved
+accuracy or sustained full-app thermal performance. B\'ezier parity covered 2,637
+boundaries, reducing 28,090 line segments to 6,293 cubic segments~\cite{bezier}.
+
+\textbf{Continuity candidate.}
+Three development clips supplied 600 exposures over 59.73\,s at approximately
+10\,Hz. Compared with the build 10022 core, the final preview candidate reduced
+visible identities from 97 to 49 and blank frames from 172 to 148; frames with
+more than two displayed lines fell from 42 to zero. Identity-set transitions
+remained 216. Raw detector/tracker output was unchanged because replay supplied
+no motion calibration. Thus these results measure selection and maturity effects,
+not improved accuracy or validated motion compensation~\cite{stability}.
+
+\textbf{Lighting experiments.}
+Eight frozen variants processed 7,663 frames from two recordings, sampled at
+2\,Hz. Evaluation used only 58 partially annotated frames, including six short
+new sequences. At three-pixel tolerance, local normalization increased newly
+labelled visible-paint coverage from 733/2,130 (34.4\%) to 817/2,130 (38.4\%),
+but lost correct paint and produced false roadside geometry in visual review.
+Border qualification showed no primary visible gain. No variant was promoted.
+These reused drives are not an untouched holdout; coverage is neither precision
+nor full-lane accuracy, and unlabelled pixels cannot be treated as negatives~\cite{lighting}.
+
+\textbf{Field failure and next validation.}
+The iPhone 14 Pro build 10023 recorded 744/744 preview preparation-budget failures
+and no visible boundaries, followed by thermal pause. The deployed Swift Debug
+build used \code{-Onone}; a matched 150-frame Mac replay failed on all frames
+without optimization and on none with \code{-O}. This isolates a plausible runtime
+mechanism, but does not establish optimized iPhone performance. A separate probe
+confirmed that tiny intrinsic-value changes reset tracking identity, independently
+of preparation cost~\cite{failure}.
+
+The next acceptance gate is optimized full-app testing on both phones, stable
+calibration identity, and an untouched drive with consecutive labels. It should
+measure false-visible duration, correct-side availability, reacquisition,
+capture-to-overlay age, TSR contention, recording continuity, and thermal behavior.
+Encoded-video crops and live camera geometry must be checked separately.
+The demonstrated advance is a cheaper, reproducible mobile pipeline; robust
+on-road lane interpretation remains an open validation task.
+
+\newpage
+\begin{thebibliography}{10}
+\small
+\setlength{\itemsep}{7pt}
+\bibitem{aly}
+M. Aly, ``Real time detection of lane markers in urban streets,''
+\textit{IEEE Intelligent Vehicles Symposium}, 2008.
+\href{https://doi.org/10.1109/IVS.2008.4621152}{doi:10.1109/IVS.2008.4621152}.
+\href{https://arxiv.org/abs/1411.7113}{Open manuscript: arXiv:1411.7113}.
+
+\bibitem{slt}
+U. \"Ozgunalp et al., ``Robust lane marking detection algorithm using drivable
+area segmentation and extended SLT,'' \textit{IEEE ROBIO}, 2019.
+\href{https://arxiv.org/abs/1911.09054}{arXiv:1911.09054}.
+
+\bibitem{ufld}
+Z. Qin, P. Zhang, and X. Li, ``Ultra fast deep lane detection with hybrid anchor
+driven ordinal classification,'' \textit{IEEE TPAMI}, 2022, early publication.
+\href{https://arxiv.org/abs/2206.07389}{arXiv:2206.07389}.
+
+\bibitem{twin}
+Q.-H. Che, D.-T. Le, M.-Q. Pham, V.-T. Nguyen, and D.-K. Lam,
+``TwinLiteNet+: An enhanced multi-task segmentation model for autonomous driving,''
+\textit{Computers and Electrical Engineering}, vol. 128, article 110694, 2025.
+\href{https://arxiv.org/abs/2403.16958v6}{arXiv:2403.16958v6, revised 2026}.
+
+\bibitem{prep}
+YouSpeed project, ``Lane preparation optimization,'' internal experiment report,
+30 September 2026. \doc{LANE_PREPARATION_OPTIMIZATION_2026-09-30.md}.
+Includes exact replay comparisons, sampler/filter tests, the paired Moto
+benchmark, and a rejected whole-track verification experiment.
+
+\bibitem{stability}
+YouSpeed project, ``Lane stability implementation,'' development-candidate report,
+30 September 2026. \doc{LANE_STABILITY_IMPLEMENTATION_2026-09-30.md}.
+Includes the 600-frame paired preview comparison and rejected variants.
+
+\bibitem{bezier}
+YouSpeed project, ``Lane presentation and calibration review,''
+30 September 2026. \doc{LANE_BEZIER_AND_CALIBRATION_REVIEW_2026-09-30.md}.
+Includes the display error bound and recorded-boundary native parity check.
+
+\bibitem{lighting}
+YouSpeed project, ``Lane lighting evaluation,'' offline experimental report,
+30 September 2026. \doc{LANE_LIGHTING_EVALUATION_2026-09-30.md}.
+Includes frozen variants, partial-label methodology, tolerance sensitivity,
+and qualitative false-boundary review.
+
+\bibitem{failure}
+YouSpeed project, ``iPhone build 10023: lane failure diagnosis,''
+30 September 2026. \doc{LANE_IPHONE_BUILD10023_FAILURE_2026-09-30.md}.
+Includes device diagnostics, matched optimization replay, and calibration-churn probe.
+\end{thebibliography}
+
+\vspace{5pt}
+{\small\textbf{Reproducibility note.}
+Internal paths are relative to the YouSpeed repository. Source entry points are
+\nolinkurl{iphone/SpeedConsumerApp/} and
+\nolinkurl{android/app/src/main/java/de/youspeed/android/alpha/}, principally
+\code{RoadBoundaryDetector}, \code{RoadBoundaryTemporalTracker},
+\code{RoadBoundaryPresentationGate}, \code{RoadPathSession}, and
+\code{LaneBoundaryBezier}. Replay tools are under \nolinkurl{scripts/lanes/}.
+The cited reports identify frozen sources and hashed outputs. Driving recordings
+and detailed evidence are retained locally in ignored directories and are not
+distributed with this standalone document.}
+\end{document}
