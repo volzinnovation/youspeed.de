@@ -19,8 +19,14 @@ enum TrafficSignDocumentationHTML {
             }
         }
         func json(_ url: URL) throws -> Any { try JSONSerialization.jsonObject(with: Data(contentsOf: url)) }
+        var documentationCountry = PenaltyCountryCode.alpha2(activeCountry) ?? "DE"
+        #if DEBUG
+        if let requested = PenaltyCountryCode.alpha2(ProcessInfo.processInfo.environment["YOUSPEED_SCREENSHOT_REFERENCE_COUNTRY"]), catalogs.contains(where: { $0["country"] as? String == requested }) {
+            documentationCountry = requested
+        }
+        #endif
         let input: [String: Any] = ["catalogs": catalogs, "images": images, "locale": locale,
-            "activeCountry": PenaltyCountryCode.alpha2(activeCountry) ?? "DE",
+            "activeCountry": documentationCountry,
             "translations": try json(folder.appendingPathComponent("translations.json")),
             "commonTranslations": try json(root.appendingPathComponent("penalty-documentation/translations.json"))]
         let data = try JSONSerialization.data(withJSONObject: input, options: [.sortedKeys])

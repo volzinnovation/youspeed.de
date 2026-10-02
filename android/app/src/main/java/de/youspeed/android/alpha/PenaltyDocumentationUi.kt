@@ -29,7 +29,7 @@ internal object PenaltyDocumentationHTML {
         fun asset(name: String) = context.assets.open("penalty-documentation/$name").bufferedReader().use { it.readText() }
         val input = JSONObject().put("documents", JSONArray(documents.values.toList()))
             .put("translations", JSONObject(asset("translations.json"))).put("locale", locale)
-            .put("activeCountry", activeRules.countryCode)
+            .put("activeCountry", PenaltyCountryCodes.normalize(referenceScreenshotCountry(context)) ?: activeRules.countryCode)
         return asset("index.html").replace("__YOUSPEED_RENDERER__", asset("renderer.js"))
             .replace("__YOUSPEED_INPUT__", input.toString().replace("<", "\\u003c"))
     }
@@ -69,4 +69,15 @@ internal fun OfflineDocumentationSheet(title: String, testTag: String, html: Str
             }
         }, onRelease = { it.destroy() })
     }
+}
+
+// Capture selection changes documentation only and is unavailable in release builds.
+internal fun referenceScreenshotCountry(context: Context): String? {
+    if (!BuildConfig.DEBUG) return null
+    var current = context
+    while (current is android.content.ContextWrapper) {
+        if (current is android.app.Activity) return current.intent?.getStringExtra("screenshot_reference_country")
+        current = current.baseContext
+    }
+    return null
 }

@@ -483,7 +483,7 @@ final class ScreenOrientationUITests: XCTestCase {
 
 
 extension ScreenOrientationUITests {
-    func testPenaltyLookupBehindInfoInEveryIphoneLanguage() {
+    @objc func testPenaltyLookupBehindInfoInEveryIphoneLanguage() {
         continueAfterFailure = false
         for (language, disclaimer) in [
             ("en", "For information only. This is not legal advice."),
@@ -516,7 +516,7 @@ extension ScreenOrientationUITests {
 }
 
 extension ScreenOrientationUITests {
-    func testTrafficSignReferenceBehindInfoInAllFourLanguages() {
+    @objc func testTrafficSignReferenceBehindInfoInAllFourLanguages() {
         continueAfterFailure = false
         for language in ["en", "fr", "de", "nl"] {
             let app = XCUIApplication()
@@ -545,6 +545,43 @@ extension ScreenOrientationUITests {
             let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
             attachment.name = "traffic-sign-reference-\(language)"; attachment.lifetime = .keepAlways; add(attachment)
             app.terminate()
+        }
+    }
+}
+
+
+extension ScreenOrientationUITests {
+    @objc func testCaptureCountryReferenceScreenshots() {
+        continueAfterFailure = false
+        let fineCountries = ["DEU", "FRA", "CHE", "BEL", "NLD", "GBR", "LUX", "LIE", "MCO", "ROU", "SWE", "ISL"]
+        for (language, storeLocale) in [("en", "en-US"), ("fr", "fr-FR"), ("de", "de-DE"), ("nl", "nl-NL")] {
+            for (kind, countries) in [("signs", ["DE", "FR", "NL", "BE", "CH"]), ("penalties", fineCountries)] {
+                for country in countries {
+                    let app = XCUIApplication()
+                    app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "country-penalty"
+                    app.launchEnvironment["YOUSPEED_SCREENSHOT_COUNTRY"] = "NL"
+                    app.launchEnvironment["YOUSPEED_SCREENSHOT_LIMIT"] = "1"
+                    app.launchEnvironment["YOUSPEED_SCREENSHOT_DELTA"] = "0"
+                    app.launchEnvironment["YOUSPEED_SCREENSHOT_REFERENCE_COUNTRY"] = country
+                    app.launchArguments = ["-youspeed.screen_orientation", "portrait", "-AppleLanguages", "(\(language))", "-AppleLocale", "\(language)_NL"]
+                    app.launch()
+                    let info = app.buttons["dashboard.infoButton"]
+                    XCTAssertTrue(info.waitForExistence(timeout: 20)); info.tap()
+                    let button = app.buttons[kind == "signs" ? "traffic-sign-documentation-button" : "penalty-documentation-button"]
+                    XCTAssertTrue(button.waitForExistence(timeout: 10)); button.tap()
+                    let view = app.webViews.firstMatch
+                    XCTAssertTrue(view.waitForExistence(timeout: 20))
+                    if kind == "signs" { XCTAssertTrue(view.images.firstMatch.waitForExistence(timeout: 20)) }
+                    else {
+                        let disclaimers = ["en": "For information only. This is not legal advice.", "fr": "À titre informatif uniquement. Ceci ne constitue pas un conseil juridique.", "de": "Nur zur Information. Dies ist keine Rechtsberatung.", "nl": "Alleen ter informatie. Dit is geen juridisch advies."]
+                        XCTAssertTrue(view.staticTexts[disclaimers[language]!].waitForExistence(timeout: 20))
+                    }
+                    view.swipeUp()
+                    let image = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                    image.name = "reference-\(storeLocale)-\(kind)-\(country)"; image.lifetime = .keepAlways; add(image)
+                    app.terminate()
+                }
+            }
         }
     }
 }

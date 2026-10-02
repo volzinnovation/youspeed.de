@@ -22,8 +22,14 @@ enum PenaltyDocumentationHTML {
             documents[activeRules.countryCode] = document
         }
         let translations = try JSONSerialization.jsonObject(with: Data(contentsOf: folder.appendingPathComponent("translations.json")))
+        var documentationCountry = activeRules.countryCode
+        #if DEBUG
+        if let requested = ProcessInfo.processInfo.environment["YOUSPEED_SCREENSHOT_REFERENCE_COUNTRY"], documents[requested] != nil {
+            documentationCountry = requested
+        }
+        #endif
         let input: [String: Any] = ["documents": documents.keys.sorted().compactMap { documents[$0] },
-                                  "translations": translations, "locale": locale, "activeCountry": activeRules.countryCode]
+                                  "translations": translations, "locale": locale, "activeCountry": documentationCountry]
         let data = try JSONSerialization.data(withJSONObject: input, options: [.sortedKeys])
         // Country strings are data, including an embedded closing script tag.
         let json = String(decoding: data, as: UTF8.self).replacingOccurrences(of: "<", with: "\\u003c")

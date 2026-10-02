@@ -29,7 +29,7 @@ internal object TrafficSignDocumentationHTML {
         fun asset(name: String) = context.assets.open("traffic-sign-documentation/$name").bufferedReader().use { it.readText() }
         val common = context.assets.open("penalty-documentation/translations.json").bufferedReader().use { it.readText() }
         val input = JSONObject().put("catalogs", catalogs).put("images", images).put("locale", locale)
-            .put("activeCountry", PenaltyCountryCodes.alpha2(activeCountry) ?: "DE")
+            .put("activeCountry", PenaltyCountryCodes.alpha2(referenceScreenshotCountry(context) ?: activeCountry) ?: "DE")
             .put("translations", JSONObject(asset("translations.json"))).put("commonTranslations", JSONObject(common))
         return asset("index.html").replace("__YOUSPEED_RENDERER__", asset("renderer.js"))
             .replace("__YOUSPEED_INPUT__", input.toString().replace("<", "\\u003c"))
