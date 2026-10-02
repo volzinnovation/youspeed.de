@@ -2,6 +2,8 @@ package de.youspeed.android.alpha
 
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.io.File
+import java.security.MessageDigest
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -10,6 +12,7 @@ import java.util.Locale
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.double
 import kotlinx.serialization.json.int
+import kotlinx.serialization.json.long
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -146,6 +149,63 @@ data class DataManagerPackageMetadata(
     }
 }
 
+data class DataManagerMetadataIndexEntry(val manifestUrl: String, val metadata: DataManagerPackageMetadata)
+
+object DataManagerMetadataIndex {
+    const val MAX_BYTES = 512 * 1024
+
+    fun releaseUrl(owner: String, repo: String) =
+        "https://github.com/$owner/$repo/releases/download/bundle-metadata/bundle-metadata.v3.json"
+
+    fun matching(entries: Map<String, DataManagerMetadataIndexEntry>, manifestUrls: Map<String, String>) =
+        entries.filter { (id, entry) -> manifestUrls[id] == entry.manifestUrl }
+
+    fun decode(bytes: ByteArray): Map<String, DataManagerMetadataIndexEntry> {
+        require(bytes.size <= MAX_BYTES) { "Bundle metadata index exceeds size limit" }
+        val root = Json.parseToJsonElement(bytes.toString(Charsets.UTF_8)).jsonObject
+        require(root.getValue("format").jsonPrimitive.content == "youspeed.v3.bundle.metadata")
+        require(root.getValue("schema_version").jsonPrimitive.int == 1)
+        val result = mutableMapOf<String, DataManagerMetadataIndexEntry>()
+        for (element in root.getValue("bundles").jsonArray) {
+            val entry = element.jsonObject
+            val id = entry.getValue("id").jsonPrimitive.content
+            val version = entry.getValue("bundle_version").jsonPrimitive.content
+            val date = entry.getValue("created_at_utc").jsonPrimitive.content
+            val size = entry.getValue("download_bytes").jsonPrimitive.long
+            require(id !in result && version.isNotEmpty() && size > 0)
+            Instant.parse(date)
+            result[id] = DataManagerMetadataIndexEntry(entry.getValue("manifest_url").jsonPrimitive.content,
+                DataManagerPackageMetadata(version, date, size))
+        }
+        return result
+    }
+}
+
+/** Validated snapshots are isolated by source URL and survive app restarts. */
+internal class DataManagerMetadataIndexCache(directory: File, sourceUrl: String) {
+    private val key = MessageDigest.getInstance("SHA-256").digest(sourceUrl.toByteArray(Charsets.UTF_8))
+        .joinToString("") { "%02x".format(it) }
+    val file = File(File(directory, "bundle-metadata"), "$key.json")
+
+    fun load(): Map<String, DataManagerMetadataIndexEntry>? = runCatching {
+        require(file.length() <= DataManagerMetadataIndex.MAX_BYTES)
+        DataManagerMetadataIndex.decode(file.readBytes())
+    }.getOrNull()
+
+    fun save(bytes: ByteArray): Map<String, DataManagerMetadataIndexEntry> {
+        val index = DataManagerMetadataIndex.decode(bytes)
+        file.parentFile?.mkdirs()
+        val temporary = File.createTempFile("metadata-", ".tmp", file.parentFile)
+        try {
+            temporary.writeBytes(bytes)
+            check(temporary.renameTo(file)) { "Could not save bundle metadata snapshot" }
+        } finally {
+            temporary.delete()
+        }
+        return index
+    }
+}
+
 enum class DataManagerMetadataStatus { UNKNOWN, LOADING, READY, UNAVAILABLE, ERROR }
 data class DataManagerMetadataState(
     val status: DataManagerMetadataStatus = DataManagerMetadataStatus.UNKNOWN,
@@ -158,7 +218,7 @@ enum class DataManagerDisplayState { INSTALLED, AVAILABLE, UNAVAILABLE, UNKNOWN 
 fun dataManagerDisplayState(installed: Boolean, metadata: DataManagerMetadataState?): DataManagerDisplayState = when {
     installed -> DataManagerDisplayState.INSTALLED
     metadata?.status == DataManagerMetadataStatus.UNAVAILABLE -> DataManagerDisplayState.UNAVAILABLE
-    metadata?.status == DataManagerMetadataStatus.READY && metadata.metadata != null -> DataManagerDisplayState.AVAILABLE
+    metadata?.metadata != null && metadata.status in setOf(DataManagerMetadataStatus.READY, DataManagerMetadataStatus.UNKNOWN) -> DataManagerDisplayState.AVAILABLE
     else -> DataManagerDisplayState.UNKNOWN
 }
 
@@ -191,7 +251,18 @@ internal class DataManagerManifestReader(
     private val connectionFactory: (URL) -> HttpURLConnection = { it.openConnection() as HttpURLConnection },
 ) {
     fun read(endpoint: V3ManifestEndpoint): DataManagerPackageMetadata {
-        val connection = connectionFactory(URL(endpoint.manifestUrl))
+        val manifest = ContractJson.decodeBundleManifest(readBytes(endpoint.manifestUrl).toString(Charsets.UTF_8))
+        manifest.validateLaunchContract()
+        check(manifest.region.substringAfterLast('/') == endpoint.manifestRegion) { "Region metadata mismatch" }
+        return DataManagerPackageMetadata.fromManifest(manifest)
+    }
+
+    fun readIndex(url: String): Map<String, DataManagerMetadataIndexEntry> = DataManagerMetadataIndex.decode(readIndexBytes(url))
+
+    fun readIndexBytes(url: String): ByteArray = readBytes(url)
+
+    private fun readBytes(url: String): ByteArray {
+        val connection = connectionFactory(URL(url))
         connection.connectTimeout = 10_000
         connection.readTimeout = 10_000
         connection.instanceFollowRedirects = true
@@ -203,13 +274,9 @@ internal class DataManagerManifestReader(
             if (status == 404 || status == 410) throw DataManagerPackageUnavailable()
             check(status in 200..299) { "Package metadata could not be checked" }
             check(connection.contentLengthLong <= MAX_BYTES) { "Package metadata exceeds size limit" }
-            val bytes = connection.inputStream.use { readBounded(it) {
+            return connection.inputStream.use { readBounded(it) {
                 check(!Thread.currentThread().isInterrupted && System.nanoTime() < deadline) { "Metadata request timed out" }
             } }
-            val manifest = ContractJson.decodeBundleManifest(bytes.toString(Charsets.UTF_8))
-            manifest.validateLaunchContract()
-            check(manifest.region.substringAfterLast('/') == endpoint.manifestRegion) { "Region metadata mismatch" }
-            return DataManagerPackageMetadata.fromManifest(manifest)
         } finally {
             connection.disconnect()
         }

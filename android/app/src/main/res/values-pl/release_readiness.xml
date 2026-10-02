@@ -24,7 +24,7 @@
     <string name="data_manager_installed">Zainstalowano</string>
     <string name="data_manager_boundaries_help">Nieznane regiony mają obrys do czasu sprawdzenia. Kolor niebieski oznacza ostatnią udaną kontrolę; dostępność może się zmienić. Granice administracyjne służą do wyboru, nie do wyznaczania tras.</string>
     <string name="data_manager_select_prompt">Wybierz region na mapie lub na karcie Lista.</string>
-    <string name="data_manager_unknown">Nieznany</string>
+    <string name="data_manager_unknown">Niesprawdzone</string>
     <string name="data_manager_installed_size">Rozmiar zainstalowanej bazy (wszystkie wersje): %1$s</string>
     <string name="data_manager_installed_date">Data zainstalowanego pakietu: %1$s</string>
     <string name="data_manager_version">Zainstalowana wersja: %1$s</string>
@@ -59,6 +59,8 @@
     <string name="data_manager_unavailable">Niedostępny</string>
     <string name="data_manager_unavailable_help">Serwer zgłasza brak pakietu dla tego regionu (404/410). Zainstalowane dane pozostają. Odśwież szczegóły, aby sprawdzić ponownie.</string>
     <string name="data_manager_row_details">Rozmiar: %1$s · Data: %2$s</string>
+    <string name="data_manager_row_size">Rozmiar: %1$s</string>
+    <string name="data_manager_row_date">Data: %1$s</string>
     <string name="data_manager_germany">Niemcy</string>
     <string name="gravity_alignment_title">Poziom kamery</string>
     <string name="gravity_alignment_unavailable">Wyrównanie według grawitacji niedostępne</string>

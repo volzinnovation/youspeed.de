@@ -24,7 +24,7 @@
     <string name="data_manager_installed">Installerad</string>
     <string name="data_manager_boundaries_help">Okända regioner visas med kontur tills de har kontrollerats. Blått visar den senaste lyckade kontrollen; tillgängligheten kan ändras. Administrativa gränser används för urval, inte ruttplanering.</string>
     <string name="data_manager_select_prompt">Välj en region på kartan eller på fliken Lista.</string>
-    <string name="data_manager_unknown">Okänd</string>
+    <string name="data_manager_unknown">Inte kontrollerat</string>
     <string name="data_manager_installed_size">Installerad databasstorlek (alla versioner): %1$s</string>
     <string name="data_manager_installed_date">Installerat paketdatum: %1$s</string>
     <string name="data_manager_version">Installerad version: %1$s</string>
@@ -59,6 +59,8 @@
     <string name="data_manager_unavailable">Otillgänglig</string>
     <string name="data_manager_unavailable_help">Servern rapporterar att inget paket finns för regionen (404/410). Installerade data behålls. Uppdatera detaljer för att kontrollera igen.</string>
     <string name="data_manager_row_details">Storlek: %1$s · Datum: %2$s</string>
+    <string name="data_manager_row_size">Storlek: %1$s</string>
+    <string name="data_manager_row_date">Datum: %1$s</string>
     <string name="data_manager_germany">Tyskland</string>
     <string name="gravity_alignment_title">Kameranivå</string>
     <string name="gravity_alignment_unavailable">Gravitationsinriktning är inte tillgänglig</string>

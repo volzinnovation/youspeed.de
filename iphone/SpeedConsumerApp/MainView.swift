@@ -3640,6 +3640,9 @@ private struct DataManagerView: View {
         let selected = option.id == viewModel.dataManagerSelectedOptionID
         let state = viewModel.dataManagerDisplayState(for: option)
         let metadata = viewModel.installedBundleMetadata(for: option) ?? viewModel.dataManagerMetadata(for: option)
+        let details = [bytesText(metadata?.bytes).map { "\(dataManagerText("size")): \($0)" },
+                       dateText(metadata?.packageDate).map { "\(dataManagerText("date")): \($0)" }]
+            .compactMap { $0 }.joined(separator: " · ")
         return VStack(alignment: .leading, spacing: 4) {
             RecordingSafeButton {
                 searchFocused = false
@@ -3651,8 +3654,9 @@ private struct DataManagerView: View {
                         Text(option.displayName).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
                         Text("\(option.countryName) · \(dataManagerText(state.localizationKey))")
                             .font(.caption).foregroundStyle(.secondary)
-                        Text("\(dataManagerText("size")): \(bytesText(metadata?.bytes)) · \(dataManagerText("date")): \(dateText(metadata?.packageDate))")
-                            .font(.caption2).foregroundStyle(.secondary)
+                        if !details.isEmpty {
+                            Text(details).font(.caption2).foregroundStyle(.secondary)
+                        }
                     }
                     Spacer(minLength: 4)
                     Image(systemName: selected ? "chevron.up" : "chevron.down").foregroundStyle(.secondary)
@@ -3714,13 +3718,21 @@ private struct DataManagerView: View {
                 LabeledContent(dataManagerText("status"), value: dataManagerText(downloaded ? "installed" : "not_installed"))
                 if let scope = viewModel.installedBundleScopeName(for: option) {
                     LabeledContent(dataManagerText("installed_scope"), value: scope)
-                    LabeledContent(dataManagerText("installed_size"), value: bytesText(installed?.bytes))
-                    LabeledContent(dataManagerText("installed_date"), value: dateText(installed?.packageDate))
+                    if let value = bytesText(installed?.bytes) {
+                        LabeledContent(dataManagerText("installed_size"), value: value)
+                    }
+                    if let value = dateText(installed?.packageDate) {
+                        LabeledContent(dataManagerText("installed_date"), value: value)
+                    }
                     if let installed { LabeledContent(dataManagerText("installed_version"), value: installed.version) }
                 }
                 Divider()
-                LabeledContent(dataManagerText("download_size"), value: bytesText(metadata?.bytes))
-                LabeledContent(dataManagerText("package_date"), value: dateText(metadata?.packageDate))
+                if let value = bytesText(metadata?.bytes) {
+                    LabeledContent(dataManagerText("download_size"), value: value)
+                }
+                if let value = dateText(metadata?.packageDate) {
+                    LabeledContent(dataManagerText("package_date"), value: value)
+                }
                 if let metadata { LabeledContent(dataManagerText("package_version"), value: metadata.version) }
                 HStack {
                     if state == .loading { ProgressView() }
@@ -3813,13 +3825,13 @@ private struct DataManagerView: View {
         }.accessibilityLabel(dataManagerText(label))
     }
 
-    private func bytesText(_ value: Int64?) -> String {
-        guard let value else { return dataManagerText("unknown") }
+    private func bytesText(_ value: Int64?) -> String? {
+        guard let value, value > 0 else { return nil }
         return ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
     }
 
-    private func dateText(_ value: Date?) -> String {
-        guard let value else { return dataManagerText("unknown") }
+    private func dateText(_ value: Date?) -> String? {
+        guard let value else { return nil }
         return value.formatted(date: .abbreviated, time: .omitted)
     }
 

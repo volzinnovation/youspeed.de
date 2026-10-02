@@ -466,7 +466,7 @@
 "data_manager.cached_metadata" = "Eerder geladen pakketgegevens; huidige beschikbaarheid niet bevestigd.";
 "data_manager.check_update" = "Op update controleren";
 "data_manager.download" = "Downloaden";
-"data_manager.unknown" = "Onbekend";
+"data_manager.unknown" = "Nog niet gecontroleerd";
 "data_manager.metadata_unknown" = "Pakketgegevens nog niet gecontroleerd";
 "data_manager.metadata_loading" = "Pakketgegevens laden…";
 "data_manager.metadata_available" = "Pakketgegevens beschikbaar";

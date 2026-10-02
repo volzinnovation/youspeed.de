@@ -604,6 +604,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     deinit {
         penaltyCountryExpiryTask?.cancel()
         bundleMetadataTask?.cancel()
+        bundleMetadataIndexTask?.cancel()
     }
     @Published var driveStatus: String = "stopped"
     @Published var activeBundleVersion: String = "none"
@@ -696,6 +697,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var dataManagerSelectedOptionID: String?
     @Published var dataManagerMapViewport = RegionMapViewport.overview
     let dataManagerMapCatalog = OfficialRegionMapCatalog.bundled()
+    private var bundleMetadataIndexTask: Task<Void, Never>?
+    private var bundleMetadataIndexCheckedAt: Date?
+    private var bundleMetadataIndexCacheLoaded = false
     private var bundleMetadataTask: Task<Void, Never>?
     private var bundleMetadataTaskRegion: String?
     private var bundleMetadataPriorState = BundleMetadataLoadState.unknown
@@ -1691,6 +1695,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     func prepareDataManager() {
         guard !isScreenshotMode else { return }
+        requestDataManagerMetadataIndex()
         if dataManagerSelectedOptionID == nil {
             dataManagerSelectedOptionID = recommendedBundleOptionID
         }
@@ -1699,6 +1704,63 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         Task { @MainActor [weak self] in
             await self?.refreshDownloadedBundleInventory()
+        }
+    }
+
+    private func applyDataManagerMetadataIndex(_ index: BundleMetadataIndex, fresh: Bool) {
+        let urls = Dictionary(uniqueKeysWithValues: bundleDownloadSections.flatMap(\.options).map { ($0.id, $0.endpoint.manifestURL) })
+        for entry in index.matching(urls) {
+            let region = normalizedManifestRegion(entry.id.split(separator: "|").last.map(String.init) ?? entry.id)
+            let state = bundleMetadataStateByRegion[region] ?? .unknown
+            // Confirmed removals and in-flight checks remain authoritative.
+            guard state != .unavailable else { continue }
+            if !fresh && bundleMetadataByRegion[region] != nil { continue }
+            if let currentDate = bundleMetadataByRegion[region]?.packageDate,
+               let indexDate = entry.metadata.packageDate, currentDate > indexDate { continue }
+            bundleMetadataByRegion[region] = entry.metadata
+            expectedBundleBytesByRegion[region] = entry.metadata.bytes
+            if fresh && state != .loading { bundleMetadataStateByRegion[region] = .available }
+        }
+    }
+
+    private func requestDataManagerMetadataIndex() {
+        guard let owner = bundledTargetsConfig?.githubOwner, let repo = bundledTargetsConfig?.githubRepo,
+              let url = BundleMetadataIndex.releaseURL(owner: owner, repo: repo) else { return }
+        let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first.map {
+            BundleMetadataIndexCache(directory: $0, sourceURL: url)
+        }
+        if !bundleMetadataIndexCacheLoaded {
+            bundleMetadataIndexCacheLoaded = true
+            if let cached = cache?.load() { applyDataManagerMetadataIndex(cached, fresh: false) }
+        }
+        guard bundleMetadataIndexTask == nil,
+              bundleMetadataIndexCheckedAt.map({ Date().timeIntervalSince($0) >= 900 }) ?? true else { return }
+        bundleMetadataIndexTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { bundleMetadataIndexTask = nil }
+            do {
+                let configuration = URLSessionConfiguration.ephemeral
+                configuration.timeoutIntervalForRequest = 15
+                configuration.timeoutIntervalForResource = 20
+                let session = URLSession(configuration: configuration)
+                defer { session.invalidateAndCancel() }
+                let (bytes, response) = try await session.bytes(from: url)
+                guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode),
+                      response.expectedContentLength <= BundleMetadataIndex.maximumBytes else { throw URLError(.badServerResponse) }
+                var data = Data()
+                for try await byte in bytes {
+                    guard data.count < BundleMetadataIndex.maximumBytes else { throw URLError(.dataLengthExceedsMaximum) }
+                    data.append(byte)
+                }
+                try Task.checkCancellation()
+                let index = try BundleMetadataIndex.decode(data)
+                applyDataManagerMetadataIndex(index, fresh: true)
+                _ = try? cache?.save(data)
+                bundleMetadataIndexCheckedAt = Date()
+            } catch {
+                // Retain the validated snapshot offline. Individual refresh and
+                // download-time manifest validation remain independent.
+            }
         }
     }
 
@@ -1726,6 +1788,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             try Task.checkCancellation()
             guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
             if http.statusCode == 404 || http.statusCode == 410 {
+                bundleMetadataByRegion.removeValue(forKey: region)
+                expectedBundleBytesByRegion.removeValue(forKey: region)
                 bundleMetadataStateByRegion[region] = .unavailable
                 return
             }
@@ -1757,7 +1821,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func dataManagerDisplayState(for option: BundleDownloadOption) -> BundleMapDisplayState {
-        BundleMapDisplayState.resolve(installed: isBundleDownloaded(option), metadataState: dataManagerMetadataState(for: option))
+        let state = dataManagerMetadataState(for: option)
+        return BundleMapDisplayState.resolve(installed: isBundleDownloaded(option),
+            metadataState: state == .unknown && dataManagerMetadata(for: option) != nil ? .available : state)
     }
 
     func dataManagerMetadataState(for option: BundleDownloadOption) -> BundleMetadataLoadState {

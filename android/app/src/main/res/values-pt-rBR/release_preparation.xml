@@ -23,7 +23,7 @@
     <string name="data_manager_installed">Instalado</string>
     <string name="data_manager_boundaries_help">Regiões ainda não verificadas aparecem apenas com contorno. Azul indica a última verificação bem-sucedida; a disponibilidade pode mudar. Os limites administrativos servem para seleção, não para navegação.</string>
     <string name="data_manager_select_prompt">Selecione uma região no mapa ou na aba Lista.</string>
-    <string name="data_manager_unknown">Desconhecido</string>
+    <string name="data_manager_unknown">Não verificado</string>
     <string name="data_manager_installed_size">Tamanho dos bancos instalados (todas as versões): %1$s</string>
     <string name="data_manager_installed_date">Data do pacote instalado: %1$s</string>
     <string name="data_manager_version">Versão instalada: %1$s</string>
@@ -58,6 +58,8 @@
     <string name="data_manager_unavailable">Indisponível</string>
     <string name="data_manager_unavailable_help">O servidor informa que não há pacote para esta região (404/410). Os dados instalados são mantidos. Atualize os detalhes para verificar novamente.</string>
     <string name="data_manager_row_details">Tamanho: %1$s · Data: %2$s</string>
+    <string name="data_manager_row_size">Tamanho: %1$s</string>
+    <string name="data_manager_row_date">Data: %1$s</string>
     <string name="data_manager_germany">Alemanha</string>
     <string name="gravity_alignment_title">Nível da câmera</string>
     <string name="gravity_alignment_unavailable">Alinhamento pela gravidade indisponível</string>

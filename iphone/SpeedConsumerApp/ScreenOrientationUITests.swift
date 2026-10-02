@@ -223,6 +223,9 @@ final class ScreenOrientationUITests: XCTestCase {
         search.typeText("Berlin")
         let berlin = app.buttons["dataManager.region.germany|berlin"]
         XCTAssertTrue(berlin.waitForExistence(timeout: 5))
+        XCTAssertFalse(berlin.label.contains("Unknown"), "Missing metadata does not show placeholders")
+        XCTAssertFalse(berlin.label.contains("Size:"), "Missing size is omitted")
+        XCTAssertFalse(berlin.label.contains("Package date:"), "Missing date is omitted")
         berlin.tap()
         let download = app.buttons["dataManager.download"]
         for _ in 0..<5 where !download.isHittable { app.swipeUp() }

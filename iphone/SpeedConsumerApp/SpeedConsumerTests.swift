@@ -728,6 +728,52 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertNotNil(BundleDisplayMetadata(version: "v1", createdAtUTC: "2026-10-01T10:00:00.123Z", bytes: 1).packageDate)
     }
 
+    func testDataManagerReleaseIndexProvidesDateAndSizeBeforeDownload() throws {
+        let payload = """
+        {"format":"youspeed.v3.bundle.metadata","schema_version":1,"bundles":[
+          {"id":"germany|berlin","manifest_url":"https://fixture.test/berlin_manifest.json",
+           "bundle_version":"v1","created_at_utc":"2026-10-01T10:00:00Z","download_bytes":300}]}
+        """
+        let index = try BundleMetadataIndex.decode(Data(payload.utf8))
+        let entry = try XCTUnwrap(index.bundles.first)
+        XCTAssertEqual(entry.id, "germany|berlin")
+        XCTAssertEqual(entry.metadata.bytes, 300)
+        XCTAssertNotNil(entry.metadata.packageDate)
+        for (from, to) in [("\"schema_version\":1", "\"schema_version\":2"),
+                           ("\"download_bytes\":300", "\"download_bytes\":0"),
+                           ("2026-10-01T10:00:00Z", "invalid")] {
+            XCTAssertThrowsError(try BundleMetadataIndex.decode(Data(payload.replacingOccurrences(of: from, with: to).utf8)))
+        }
+    }
+
+    func testDataManagerIndexCacheSurvivesRestartAndRejectsOtherSourcesAndCorruption() throws {
+        let payload = Data("""
+        {"format":"youspeed.v3.bundle.metadata","schema_version":1,"bundles":[
+          {"id":"germany|berlin","manifest_url":"https://fixture.test/berlin_manifest.json",
+           "bundle_version":"v1","created_at_utc":"2026-10-01T10:00:00Z","download_bytes":300}]}
+        """.utf8)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let source = try XCTUnwrap(BundleMetadataIndex.releaseURL(owner: "volzinnovation", repo: "youspeed.de"))
+        XCTAssertEqual(source.absoluteString, "https://github.com/volzinnovation/youspeed.de/releases/download/bundle-metadata/bundle-metadata.v3.json")
+        let cache = BundleMetadataIndexCache(directory: directory, sourceURL: source)
+        XCTAssertNil(cache.load())
+        try cache.save(payload)
+        let restored = try XCTUnwrap(BundleMetadataIndexCache(directory: directory, sourceURL: source).load())
+        XCTAssertEqual(restored.bundles.first?.metadata.bytes, 300)
+        let manifestURL = try XCTUnwrap(URL(string: "https://fixture.test/berlin_manifest.json"))
+        XCTAssertEqual(restored.matching(["germany|berlin": manifestURL]).count, 1)
+        XCTAssertTrue(restored.matching(["germany|berlin": source]).isEmpty)
+        XCTAssertTrue(restored.matching(["germany|bayern": manifestURL]).isEmpty)
+        XCTAssertNil(BundleMetadataIndexCache(directory: directory, sourceURL: manifestURL).load())
+        XCTAssertThrowsError(try cache.save(Data("invalid".utf8)))
+        XCTAssertEqual(cache.load()?.bundles.count, 1, "Invalid refresh keeps the last valid snapshot")
+        try cache.save(payload) // Replacing an existing cache is supported.
+        try Data("corrupt".utf8).write(to: cache.fileURL)
+        XCTAssertNil(cache.load())
+        XCTAssertThrowsError(try BundleMetadataIndex.decode(Data(repeating: 0, count: BundleMetadataIndex.maximumBytes + 1)))
+    }
+
     func testOnboardingRequiresAValidatedNonSeedMap() {
         for version in ["", "none", "seed", " SEED "] {
             XCTAssertFalse(FirstRunOnboardingPolicy.hasUsableMap(databaseReady: true, bundleVersion: version))

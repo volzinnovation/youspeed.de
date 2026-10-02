@@ -15,7 +15,7 @@
   <string name="data_manager_installed">Installiert</string>
   <string name="data_manager_boundaries_help">Ungeprüfte Regionen haben nur eine Kontur. Blau zeigt die letzte erfolgreiche Prüfung; die Verfügbarkeit kann sich ändern. Verwaltungsgrenzen dienen zur Auswahl, nicht zur Routenbestimmung.</string>
   <string name="data_manager_select_prompt">Wähle eine Region auf der Karte oder im Tab Liste aus.</string>
-  <string name="data_manager_unknown">Unbekannt</string>
+  <string name="data_manager_unknown">Noch nicht geprüft</string>
   <string name="data_manager_installed_size">Installierte Datenbanken (alle Versionen): %1$s</string>
   <string name="data_manager_installed_date">Installiertes Paket vom: %1$s</string>
   <string name="data_manager_version">Installierte Version: %1$s</string>
@@ -50,5 +50,7 @@
   <string name="data_manager_unavailable">Nicht verfügbar</string>
   <string name="data_manager_unavailable_help">Der Server meldet kein Paket für diese Region (404/410). Installierte Daten bleiben erhalten. Details aktualisieren prüft erneut.</string>
   <string name="data_manager_row_details">Größe: %1$s · Datum: %2$s</string>
+    <string name="data_manager_row_size">Größe: %1$s</string>
+    <string name="data_manager_row_date">Datum: %1$s</string>
   <string name="data_manager_germany">Deutschland</string>
 </resources>

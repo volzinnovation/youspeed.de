@@ -3554,6 +3554,78 @@ struct BundleDisplayMetadata: Equatable, Sendable {
     }
 }
 
+/// Display metadata only; installation still validates the current bundle manifest.
+struct BundleMetadataIndex: Decodable {
+    struct Entry: Decodable {
+        let id: String
+        let manifestURL: URL
+        let version: String
+        let createdAtUTC: String
+        let downloadBytes: Int64
+        enum CodingKeys: String, CodingKey {
+            case id
+            case manifestURL = "manifest_url"
+            case version = "bundle_version"
+            case createdAtUTC = "created_at_utc"
+            case downloadBytes = "download_bytes"
+        }
+        var metadata: BundleDisplayMetadata {
+            BundleDisplayMetadata(version: version, createdAtUTC: createdAtUTC, bytes: downloadBytes)
+        }
+    }
+    let format: String
+    let schemaVersion: Int
+    let bundles: [Entry]
+    enum CodingKeys: String, CodingKey {
+        case format, bundles
+        case schemaVersion = "schema_version"
+    }
+    static let maximumBytes = 512 * 1024
+
+    static func releaseURL(owner: String, repo: String) -> URL? {
+        URL(string: "https://github.com/\(owner)/\(repo)/releases/download/bundle-metadata/bundle-metadata.v3.json")
+    }
+
+    func matching(_ manifestURLs: [String: URL]) -> [Entry] {
+        bundles.filter { manifestURLs[$0.id] == $0.manifestURL }
+    }
+
+    static func decode(_ data: Data) throws -> BundleMetadataIndex {
+        guard data.count <= maximumBytes else { throw ConsumerAppError.invalidManifest("Bundle metadata index exceeds size limit") }
+        let index = try JSONDecoder().decode(Self.self, from: data)
+        guard index.format == "youspeed.v3.bundle.metadata", index.schemaVersion == 1,
+              Set(index.bundles.map(\.id)).count == index.bundles.count,
+              index.bundles.allSatisfy({ !$0.version.isEmpty && $0.downloadBytes > 0 && $0.metadata.packageDate != nil }) else {
+            throw ConsumerAppError.invalidManifest("Invalid bundle metadata index")
+        }
+        return index
+    }
+}
+
+/// A validated, source-specific snapshot for offline Data Manager details.
+struct BundleMetadataIndexCache {
+    let fileURL: URL
+
+    init(directory: URL, sourceURL: URL) {
+        let key = SHA256.hash(data: Data(sourceURL.absoluteString.utf8)).map { String(format: "%02x", $0) }.joined()
+        fileURL = directory.appendingPathComponent("bundle-metadata", isDirectory: true).appendingPathComponent("\(key).json")
+    }
+
+    func load() -> BundleMetadataIndex? {
+        guard let size = try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+              size <= BundleMetadataIndex.maximumBytes, let data = try? Data(contentsOf: fileURL) else { return nil }
+        return try? BundleMetadataIndex.decode(data)
+    }
+
+    @discardableResult
+    func save(_ data: Data) throws -> BundleMetadataIndex {
+        let index = try BundleMetadataIndex.decode(data)
+        try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try data.write(to: fileURL, options: .atomic)
+        return index
+    }
+}
+
 enum BundleInventorySelection {
     static func totalBytes(_ values: [Int64?]) -> Int64? {
         guard !values.isEmpty else { return nil }

@@ -459,6 +459,9 @@ class ConsumerSessionController(
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
     private val panoramaxStorageWorker = PanoramaxStorageWorker()
     private val dataManagerMetadataExecutor = Executors.newSingleThreadExecutor { task -> Thread(task, "region-metadata") }
+    private var dataManagerMetadataIndexInFlight = false
+    private var dataManagerMetadataIndexCheckedAt: Long? = null
+    private var dataManagerMetadataIndexCacheLoaded = false
     private var dataManagerMetadataInFlight: String? = null
     private var pendingDataManagerMetadata: BundleDownloadOption? = null
     private val trafficSignDeliveryExecutor = Executors.newSingleThreadExecutor { task ->
@@ -4103,6 +4106,55 @@ class ConsumerSessionController(
         if (!isBundleMaintenanceBusy()) submitBackgroundTask { refreshDownloadedBundleInventory() }
     }
 
+    private fun applyDataManagerMetadataIndex(entries: Map<String, DataManagerMetadataIndexEntry>, fresh: Boolean) {
+        val urls = uiState.bundleDownloadSections.flatMap { it.options }.associate { it.id to it.endpoint.manifestUrl }
+        val updates = DataManagerMetadataIndex.matching(entries, urls).mapNotNull { (id, entry) ->
+            val previous = uiState.dataManagerMetadataByRegion[id] ?: DataManagerMetadataState()
+            if (previous.status == DataManagerMetadataStatus.UNAVAILABLE || (!fresh && previous.metadata != null)) return@mapNotNull null
+            val oldDate = previous.metadata?.createdAtUTC?.let { runCatching { java.time.Instant.parse(it) }.getOrNull() }
+            val newDate = entry.metadata.createdAtUTC?.let { java.time.Instant.parse(it) }
+            if (oldDate != null && newDate != null && oldDate > newDate) return@mapNotNull null
+            id to previous.copy(metadata = entry.metadata,
+                status = if (fresh && previous.status != DataManagerMetadataStatus.LOADING) DataManagerMetadataStatus.READY else previous.status,
+                checkedAtMillis = if (fresh && previous.status != DataManagerMetadataStatus.LOADING) clock.millis() else previous.checkedAtMillis)
+        }.toMap()
+        updateState { copy(dataManagerMetadataByRegion = dataManagerMetadataByRegion + updates) }
+    }
+
+    fun prepareDataManagerMetadata() {
+        if (isDisposed.get() || dataManagerMetadataExecutor.isShutdown) return
+        val config = targetsConfig ?: return
+        val owner = config.githubOwner ?: return
+        val repo = config.githubRepo ?: return
+        val url = DataManagerMetadataIndex.releaseUrl(owner, repo)
+        val cache = DataManagerMetadataIndexCache(appContext.cacheDir, url)
+        if (!dataManagerMetadataIndexCacheLoaded) {
+            dataManagerMetadataIndexCacheLoaded = true
+            cache.load()?.let { applyDataManagerMetadataIndex(it, fresh = false) }
+        }
+        if (dataManagerMetadataIndexInFlight || dataManagerMetadataIndexCheckedAt?.let { clock.millis() - it in 0 until 900_000L } == true) return
+        dataManagerMetadataIndexInFlight = true
+        try {
+            dataManagerMetadataExecutor.execute {
+                val result = runCatching {
+                    val bytes = DataManagerManifestReader().readIndexBytes(url)
+                    val entries = DataManagerMetadataIndex.decode(bytes)
+                    runCatching { cache.save(bytes) }
+                    entries
+                }
+                mainHandler.post {
+                    dataManagerMetadataIndexInFlight = false
+                    if (!isDisposed.get() && result.isSuccess) {
+                        applyDataManagerMetadataIndex(result.getOrThrow(), fresh = true)
+                        dataManagerMetadataIndexCheckedAt = clock.millis()
+                    }
+                }
+            }
+        } catch (_: RejectedExecutionException) {
+            dataManagerMetadataIndexInFlight = false
+        }
+    }
+
     /** One in-flight metadata request and one latest selection, never a queue of every map tap. */
     fun requestDataManagerMetadata(option: BundleDownloadOption, force: Boolean = false) {
         if (isDisposed.get() || dataManagerMetadataExecutor.isShutdown) return
@@ -4129,7 +4181,9 @@ class ConsumerSessionController(
                                 result.exceptionOrNull() is DataManagerPackageUnavailable -> DataManagerMetadataStatus.UNAVAILABLE
                                 else -> DataManagerMetadataStatus.ERROR
                             },
-                            metadata = result.getOrNull(),
+                            metadata = result.getOrNull() ?: uiState.dataManagerMetadataByRegion[option.id]?.metadata.takeUnless {
+                                result.exceptionOrNull() is DataManagerPackageUnavailable
+                            },
                             checkedAtMillis = clock.millis(),
                         )
                         updateState { copy(dataManagerMetadataByRegion = dataManagerMetadataByRegion + (option.id to next)) }

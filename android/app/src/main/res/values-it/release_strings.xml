@@ -16,7 +16,7 @@
     <string name="data_manager_installed">Installato</string>
     <string name="data_manager_boundaries_help">Le regioni non verificate sono mostrate con un contorno. Il blu indica l\'ultima verifica riuscita; la disponibilità può cambiare. I confini amministrativi servono per la selezione, non per il calcolo dei percorsi.</string>
     <string name="data_manager_select_prompt">Seleziona una regione sulla mappa o nella scheda Elenco.</string>
-    <string name="data_manager_unknown">Sconosciuto</string>
+    <string name="data_manager_unknown">Non verificato</string>
     <string name="data_manager_installed_size">Dimensione del database installato (tutte le versioni): %1$s</string>
     <string name="data_manager_installed_date">Data del pacchetto installato: %1$s</string>
     <string name="data_manager_version">Versione installata: %1$s</string>
@@ -51,6 +51,8 @@
     <string name="data_manager_unavailable">Non disponibile</string>
     <string name="data_manager_unavailable_help">Il server segnala che non esiste un pacchetto per questa regione (404/410). I dati installati vengono conservati. Aggiorna i dettagli per verificare di nuovo.</string>
     <string name="data_manager_row_details">Dimensione: %1$s · Data: %2$s</string>
+    <string name="data_manager_row_size">Dimensione: %1$s</string>
+    <string name="data_manager_row_date">Data: %1$s</string>
     <string name="data_manager_germany">Germania</string>
     <string name="ui_close">Chiudi</string>
     <string name="ui_download_queued">In coda</string>

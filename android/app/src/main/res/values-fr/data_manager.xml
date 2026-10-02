@@ -15,7 +15,7 @@
   <string name="data_manager_installed">Installé</string>
   <string name="data_manager_boundaries_help">Les régions non vérifiées sont dessinées en contour. Le bleu reflète la dernière vérification réussie ; la disponibilité peut changer. Les limites administratives servent à la sélection, pas au routage.</string>
   <string name="data_manager_select_prompt">Sélectionnez une région sur la carte ou dans l’onglet Liste.</string>
-  <string name="data_manager_unknown">Inconnu</string>
+  <string name="data_manager_unknown">Pas encore vérifié</string>
   <string name="data_manager_installed_size">Bases installées (toutes versions) : %1$s</string>
   <string name="data_manager_installed_date">Date du paquet installé : %1$s</string>
   <string name="data_manager_version">Version installée : %1$s</string>
@@ -50,5 +50,7 @@
   <string name="data_manager_unavailable">Indisponible</string>
   <string name="data_manager_unavailable_help">Le serveur ne propose aucun paquet pour cette région (404/410). Les données installées sont conservées. Actualisez les détails pour vérifier à nouveau.</string>
   <string name="data_manager_row_details">Taille : %1$s · Date : %2$s</string>
+    <string name="data_manager_row_size">Taille : %1$s</string>
+    <string name="data_manager_row_date">Date : %1$s</string>
   <string name="data_manager_germany">Allemagne</string>
 </resources>

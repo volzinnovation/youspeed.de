@@ -119,6 +119,7 @@ internal fun DataManagerSheet(controller: ConsumerSessionController, onBack: () 
             deleteRegionId = option.id
         }
     }
+    LaunchedEffect(Unit) { controller.prepareDataManagerMetadata() }
     LaunchedEffect(selected?.id) { selected?.let { controller.requestDataManagerMetadata(it) } }
     val showOnMap: (BundleDownloadOption) -> Unit = { option ->
         controller.selectDataManagerRegion(option.id)
@@ -253,14 +254,13 @@ private fun DataManagerDetails(option: BundleDownloadOption, controller: Consume
     val scope = controller.dataManagerInstalledScope(option)
     val isInstalled = controller.isBundleDownloaded(option)
     val remote = ui.dataManagerMetadataByRegion[option.id] ?: DataManagerMetadataState()
-    val metadata = remote.metadata.takeIf { remote.status == DataManagerMetadataStatus.READY }
+    val metadata = remote.metadata.takeUnless { remote.status == DataManagerMetadataStatus.UNAVAILABLE }
     val displayState = dataManagerDisplayState(isInstalled, remote)
-    val unknown = stringResource(R.string.data_manager_unknown)
-    fun bytes(value: Long?) = value?.takeIf { it > 0 }?.let { Formatter.formatFileSize(context, it) } ?: unknown
+    fun bytes(value: Long?) = value?.takeIf { it > 0 }?.let { Formatter.formatFileSize(context, it) }
     fun date(value: String?) = value?.let { runCatching {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
             .withZone(ZoneId.systemDefault()).format(Instant.parse(it))
-    }.getOrNull() } ?: unknown
+    }.getOrNull() }
     Card(colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth().testTag("data-manager-details")) {
         Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(regionTitle(option), color = ManagerInk, fontWeight = FontWeight.Bold, fontSize = 18.sp)
@@ -268,12 +268,12 @@ private fun DataManagerDetails(option: BundleDownloadOption, controller: Consume
             Text(stringResource(displayState.label()), color = displayState.color(), fontWeight = FontWeight.SemiBold)
             if (isInstalled && ui.dataManagerInventoryAvailable) {
                 if (scope?.isCountryPackage == true) Text(stringResource(R.string.data_manager_country_package, option.countryName), fontSize = 13.sp)
-                Text(stringResource(R.string.data_manager_installed_size, bytes(installed?.totalDatabaseBytes)), fontSize = 13.sp)
-                Text(stringResource(R.string.data_manager_installed_date, date(installed?.newestPackage?.createdAtUTC)), fontSize = 13.sp)
+                bytes(installed?.totalDatabaseBytes)?.let { Text(stringResource(R.string.data_manager_installed_size, it), fontSize = 13.sp) }
+                date(installed?.newestPackage?.createdAtUTC)?.let { Text(stringResource(R.string.data_manager_installed_date, it), fontSize = 13.sp) }
                 installed?.newestPackage?.bundleVersion?.let { Text(stringResource(R.string.data_manager_version, it), fontSize = 12.sp) }
             }
-            Text(stringResource(R.string.data_manager_download_size, bytes(metadata?.bytes)), fontSize = 13.sp)
-            Text(stringResource(R.string.data_manager_package_date, date(metadata?.createdAtUTC)), fontSize = 13.sp)
+            bytes(metadata?.bytes)?.let { Text(stringResource(R.string.data_manager_download_size, it), fontSize = 13.sp) }
+            date(metadata?.createdAtUTC)?.let { Text(stringResource(R.string.data_manager_package_date, it), fontSize = 13.sp) }
             when (remote.status) {
                 DataManagerMetadataStatus.LOADING -> {
                     LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -317,14 +317,17 @@ private fun DataManagerListRow(option: BundleDownloadOption, isSelected: Boolean
     val state = dataManagerDisplayState(installed, remote)
     val local = controller.installedDataManagerRegion(option)
     val metadata = if (installed) local?.newestPackage
-        else remote?.metadata?.takeIf { remote.status == DataManagerMetadataStatus.READY }
-    val unknown = stringResource(R.string.data_manager_unknown)
+        else remote?.metadata?.takeUnless { remote.status == DataManagerMetadataStatus.UNAVAILABLE }
     val size = (if (installed) local?.totalDatabaseBytes else metadata?.bytes)?.takeIf { it > 0 }
-        ?.let { Formatter.formatFileSize(context, it) } ?: unknown
+        ?.let { Formatter.formatFileSize(context, it) }
     val date = metadata?.createdAtUTC?.let { runCatching {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(Locale.getDefault())
             .withZone(ZoneId.systemDefault()).format(Instant.parse(it))
-    }.getOrNull() } ?: unknown
+    }.getOrNull() }
+    val details = listOfNotNull(
+        size?.let { stringResource(R.string.data_manager_row_size, it) },
+        date?.let { stringResource(R.string.data_manager_row_date, it) },
+    ).joinToString(" · ")
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
         .background(if (isSelected) Color(0xFFDCE8F4) else Color.White)
         .clickable(role = Role.Button, onClick = onSelect).testTag("data-manager-region-${option.id}")
@@ -333,7 +336,7 @@ private fun DataManagerListRow(option: BundleDownloadOption, isSelected: Boolean
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(regionTitle(option), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = ManagerInk)
             Text("${option.countryName} · ${stringResource(state.label())}", fontSize = 11.sp, color = state.color())
-            Text(stringResource(R.string.data_manager_row_details, size, date), fontSize = 11.sp, color = Color.DarkGray)
+            if (details.isNotEmpty()) Text(details, fontSize = 11.sp, color = Color.DarkGray)
         }
         val queued = option.id in ui.queuedBundleDownloadIds
         IconButton(onClick = { onSelect(); if (queued) controller.cancelQueuedBundleDownload(option) else controller.downloadSelectedBundle(option) },

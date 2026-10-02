@@ -127,11 +127,56 @@ class DataManagerTests {
             DataManagerMetadataState(DataManagerMetadataStatus.READY, packageMetadata)))
         assertEquals(DataManagerDisplayState.UNAVAILABLE, dataManagerDisplayState(false,
             DataManagerMetadataState(DataManagerMetadataStatus.UNAVAILABLE)))
-        listOf(DataManagerMetadataStatus.UNKNOWN, DataManagerMetadataStatus.LOADING, DataManagerMetadataStatus.ERROR).forEach { status ->
+        listOf(DataManagerMetadataStatus.LOADING, DataManagerMetadataStatus.ERROR).forEach { status ->
             assertEquals(DataManagerDisplayState.UNKNOWN, dataManagerDisplayState(false,
                 DataManagerMetadataState(status, packageMetadata)))
         }
         assertEquals(DataManagerDisplayState.UNKNOWN, dataManagerDisplayState(false, null))
+    }
+
+    @Test fun releaseIndexProvidesUndownloadedBundleMetadataWithoutClaimingMissingBundlesUnavailable() {
+        val payload = """{"format":"youspeed.v3.bundle.metadata","schema_version":1,"bundles":[
+            {"id":"germany|berlin","manifest_url":"https://fixture.test/berlin_manifest.json",
+             "bundle_version":"v1","created_at_utc":"2026-10-01T10:00:00Z","download_bytes":300}]}"""
+        val entries = DataManagerMetadataIndex.decode(payload.toByteArray())
+        val berlin = entries.getValue("germany|berlin")
+        assertEquals(300L, berlin.metadata.bytes)
+        assertEquals("2026-10-01T10:00:00Z", berlin.metadata.createdAtUTC)
+        assertEquals(DataManagerDisplayState.AVAILABLE, dataManagerDisplayState(false,
+            DataManagerMetadataState(metadata = berlin.metadata)))
+        assertEquals(DataManagerDisplayState.UNKNOWN, dataManagerDisplayState(false, null))
+        for ((from, to) in listOf("\"schema_version\":1" to "\"schema_version\":2", "\"download_bytes\":300" to "\"download_bytes\":0",
+            "2026-10-01T10:00:00Z" to "invalid")) {
+            assertThrows(Exception::class.java) { DataManagerMetadataIndex.decode(payload.replace(from, to).toByteArray()) }
+        }
+    }
+
+    @Test fun releaseIndexCacheSurvivesRestartAndRejectsOtherSourcesAndCorruption() {
+        val payload = """{"format":"youspeed.v3.bundle.metadata","schema_version":1,"bundles":[
+            {"id":"germany|berlin","manifest_url":"https://fixture.test/berlin_manifest.json",
+             "bundle_version":"v1","created_at_utc":"2026-10-01T10:00:00Z","download_bytes":300}]}""".toByteArray()
+        val directory = java.nio.file.Files.createTempDirectory("metadata-index-test").toFile()
+        try {
+            val source = DataManagerMetadataIndex.releaseUrl("volzinnovation", "youspeed.de")
+            assertEquals("https://github.com/volzinnovation/youspeed.de/releases/download/bundle-metadata/bundle-metadata.v3.json", source)
+            val cache = DataManagerMetadataIndexCache(directory, source)
+            assertNull(cache.load())
+            cache.save(payload)
+            val restored = DataManagerMetadataIndexCache(directory, source).load()!!
+            assertEquals(300L, restored.getValue("germany|berlin").metadata.bytes)
+            assertEquals(1, DataManagerMetadataIndex.matching(restored, mapOf("germany|berlin" to "https://fixture.test/berlin_manifest.json")).size)
+            assertTrue(DataManagerMetadataIndex.matching(restored, mapOf("germany|berlin" to source)).isEmpty())
+            assertTrue(DataManagerMetadataIndex.matching(restored, mapOf("germany|bayern" to "https://fixture.test/berlin_manifest.json")).isEmpty())
+            assertNull(DataManagerMetadataIndexCache(directory, "https://other.test/index").load())
+            assertThrows(Exception::class.java) { cache.save("invalid".toByteArray()) }
+            assertEquals(1, cache.load()!!.size)
+            cache.save(payload)
+            cache.file.writeText("corrupt")
+            assertNull(cache.load())
+            assertThrows(Exception::class.java) { DataManagerMetadataIndex.decode(ByteArray(DataManagerMetadataIndex.MAX_BYTES + 1)) }
+        } finally {
+            directory.deleteRecursively()
+        }
     }
 
     @Test fun only404And410BecomeConfirmedUnavailable() {

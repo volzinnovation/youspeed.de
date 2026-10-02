@@ -466,7 +466,7 @@
 "data_manager.cached_metadata" = "Previously loaded package details; current availability is unconfirmed.";
 "data_manager.check_update" = "Check for update";
 "data_manager.download" = "Download";
-"data_manager.unknown" = "Unknown";
+"data_manager.unknown" = "Not checked";
 "data_manager.metadata_unknown" = "Package details not checked yet";
 "data_manager.metadata_loading" = "Loading package details…";
 "data_manager.metadata_available" = "Package details available";

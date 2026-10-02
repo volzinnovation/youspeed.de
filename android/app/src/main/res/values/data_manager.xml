@@ -15,7 +15,7 @@
   <string name="data_manager_installed">Installed</string>
   <string name="data_manager_boundaries_help">Unknown regions are outlined until checked. Blue reflects the last successful check; availability can change. Administrative boundaries are for selection, not routing.</string>
   <string name="data_manager_select_prompt">Select a region on the map or in the List tab.</string>
-  <string name="data_manager_unknown">Unknown</string>
+  <string name="data_manager_unknown">Not checked</string>
   <string name="data_manager_installed_size">Installed database size (all versions): %1$s</string>
   <string name="data_manager_installed_date">Installed package date: %1$s</string>
   <string name="data_manager_version">Installed version: %1$s</string>
@@ -50,5 +50,7 @@
   <string name="data_manager_unavailable">Unavailable</string>
   <string name="data_manager_unavailable_help">The server reports no package for this region (404/410). Installed data is retained. Refresh details to check again.</string>
   <string name="data_manager_row_details">Size: %1$s · Date: %2$s</string>
+    <string name="data_manager_row_size">Size: %1$s</string>
+    <string name="data_manager_row_date">Date: %1$s</string>
   <string name="data_manager_germany">Germany</string>
 </resources>

@@ -1,0 +1,42 @@
+name: Refresh Bundle Metadata
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - EU Country Incremental Bundle Build
+      - Germany Bundle Build And Release
+      - Karlsruhe Bundle Build And Release
+      - Karlsruhe Incremental Bundle Build And Release
+      - Publish Data Bundle Release
+      - Top Country Delta Sequence
+      - France Regional Incremental Release Sequence
+    types: [completed]
+
+# Every run rebuilds from current releases, so overlapping regional builds cannot
+# overwrite another region with an older locally generated entry.
+concurrency:
+  group: bundle-metadata
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        # workflow_run intentionally uses trusted default-branch code.
+      - name: Build metadata from current published bundle manifests
+        run: python3 scripts/map/build_v3_bundle_metadata.py --repo "$GITHUB_REPOSITORY" --out-json "$RUNNER_TEMP/bundle-metadata.v3.json"
+      - name: Publish fixed metadata asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view bundle-metadata --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload bundle-metadata "$RUNNER_TEMP/bundle-metadata.v3.json" --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create bundle-metadata "$RUNNER_TEMP/bundle-metadata.v3.json" --repo "$GITHUB_REPOSITORY" --title "Bundle metadata" --notes "Dates and download sizes for Data Manager." --latest=false
+          fi

@@ -15,7 +15,7 @@
   <string name="data_manager_installed">Geïnstalleerd</string>
   <string name="data_manager_boundaries_help">Niet-gecontroleerde regio’s hebben alleen een omtrek. Blauw toont de laatste geslaagde controle; beschikbaarheid kan veranderen. Bestuurlijke grenzen dienen voor selectie, niet voor routering.</string>
   <string name="data_manager_select_prompt">Kies een regio op de kaart of op het tabblad Lijst.</string>
-  <string name="data_manager_unknown">Onbekend</string>
+  <string name="data_manager_unknown">Nog niet gecontroleerd</string>
   <string name="data_manager_installed_size">Geïnstalleerde databases (alle versies): %1$s</string>
   <string name="data_manager_installed_date">Datum geïnstalleerd pakket: %1$s</string>
   <string name="data_manager_version">Geïnstalleerde versie: %1$s</string>
@@ -50,5 +50,7 @@
   <string name="data_manager_unavailable">Niet beschikbaar</string>
   <string name="data_manager_unavailable_help">De server meldt geen pakket voor deze regio (404/410). Geïnstalleerde gegevens blijven behouden. Vernieuw de details om opnieuw te controleren.</string>
   <string name="data_manager_row_details">Grootte: %1$s · Datum: %2$s</string>
+    <string name="data_manager_row_size">Grootte: %1$s</string>
+    <string name="data_manager_row_date">Datum: %1$s</string>
   <string name="data_manager_germany">Duitsland</string>
 </resources>

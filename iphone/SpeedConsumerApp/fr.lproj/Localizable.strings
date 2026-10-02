@@ -466,7 +466,7 @@
 "data_manager.cached_metadata" = "Derniers détails chargés ; disponibilité actuelle non confirmée.";
 "data_manager.check_update" = "Rechercher une mise à jour";
 "data_manager.download" = "Télécharger";
-"data_manager.unknown" = "Inconnu";
+"data_manager.unknown" = "Pas encore vérifié";
 "data_manager.metadata_unknown" = "Détails du paquet non vérifiés";
 "data_manager.metadata_loading" = "Chargement des détails…";
 "data_manager.metadata_available" = "Détails du paquet disponibles";
