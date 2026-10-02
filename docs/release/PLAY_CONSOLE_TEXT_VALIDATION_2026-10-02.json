@@ -1,0 +1,163 @@
+{
+  "format": "youspeed.play-console-text-validation.v1",
+  "state": "Saved draft; not submitted for review",
+  "locales": 9,
+  "fields_checked": 27,
+  "errors": [],
+  "observed": [
+    {
+      "locale": "it-IT",
+      "fields": {
+        "App-Name": {
+          "length": 28,
+          "sha256": "70e73340b5a155727daf6c3d36045f9b8d55cafbfbb2f70fa6f3f7590213625d"
+        },
+        "Kurze Beschreibung": {
+          "length": 72,
+          "sha256": "3cec06726b6bd205537cc1623d3c29b1b3219c0e98728cda07970f16993df22c"
+        },
+        "Vollständige Beschreibung": {
+          "length": 2554,
+          "sha256": "cfb15f7a59d67f080251e10231bd7d67960cd415027a02f729c9d71cc454f675"
+        }
+      }
+    },
+    {
+      "locale": "nl-NL",
+      "fields": {
+        "App-Name": {
+          "length": 21,
+          "sha256": "92f33e85ab808e73fdccb8763efa49f3cafdf6f868660f34aba707af90e27ea4"
+        },
+        "Kurze Beschreibung": {
+          "length": 74,
+          "sha256": "d6c1e662c7fc23cf0baffd6a3283edc324c56c763c8f670082297dacbeceb841"
+        },
+        "Vollständige Beschreibung": {
+          "length": 2538,
+          "sha256": "840d33953b6ded9f12d909885e19674a2e4bf8ed0d83b14654ad9f043c07994f"
+        }
+      }
+    },
+    {
+      "locale": "pl-PL",
+      "fields": {
+        "App-Name": {
+          "length": 26,
+          "sha256": "ad3c32f8207e653b97b27061ab75187a08a3cc68e41c240c9788f48b667f0cc2"
+        },
+        "Kurze Beschreibung": {
+          "length": 68,
+          "sha256": "10728bd98974598c8d4813bb284b2c7fd265bc0be59d523d22ca43a1f206d3ce"
+        },
+        "Vollständige Beschreibung": {
+          "length": 2354,
+          "sha256": "9be66009a1240a083130e153dc166f3365b553f6911ec0dd69a2c35cf1122a9e"
+        }
+      }
+    },
+    {
+      "locale": "pt-BR",
+      "fields": {
+        "App-Name": {
+          "length": 28,
+          "sha256": "a6e9def2f2f14564c3242544bf36c0449a4ad29891fcd78da7615b0b03ced502"
+        },
+        "Kurze Beschreibung": {
+          "length": 80,
+          "sha256": "397925e41d760bbfeb44eba072add0ec9c9bef2bf41ba0fe106f74f7fd12e2ca"
+        },
+        "Vollständige Beschreibung": {
+          "length": 2475,
+          "sha256": "7d8e97f54d7a0d9eb69183d46b056cd3a0dcae4a56c3fa78cf06e82bfb9f4ab6"
+        }
+      }
+    },
+    {
+      "locale": "sv-SE",
+      "fields": {
+        "App-Name": {
+          "length": 20,
+          "sha256": "6b3d2f6c422a4f80d79cbf9d445263d3d6d9a6346f89985357f7258e39826f45"
+        },
+        "Kurze Beschreibung": {
+          "length": 76,
+          "sha256": "ee4863b5eaaa14318e0bedbd9b1047b15c571708da1119e67b658b871effe9d7"
+        },
+        "Vollständige Beschreibung": {
+          "length": 2300,
+          "sha256": "25daaf8d79285636f2cab25402fa5f3c1094f4125626a95443cb5cdb9d6ac2cf"
+        }
+      }
+    },
+    {
+      "locale": "es-ES",
+      "fields": {
+        "App-Name": {
+          "length": 29,
+          "sha256": "8ebad73914e77b7bee0f7c609b821ab26c341ca43340b541cc3b1150563c3980"
+        },
+        "Kurze Beschreibung": {
+          "length": 76,
+          "sha256": "8f0e30d1172b6953ba74a69b3d467f4cbca47819e2e1e9247072cf2713e6f72c"
+        },
+        "Vollständige Beschreibung": {
+          "length": 2605,
+          "sha256": "8a4754a96e70a785e4526a5729010ecd7bb86c62a6ff679a61fdf5ac80bc2a34"
+        }
+      }
+    },
+    {
+      "locale": "de-DE",
+      "fields": {
+        "App-Name": {
+          "length": 21,
+          "sha256": "473109393ef04a6da742804b5702c8cdc0eeb8b209a82071810c38ebe2670994"
+        },
+        "Kurze Beschreibung": {
+          "length": 79,
+          "sha256": "30d37d0535be4e180aacd504a9c04ede492edf34d02e9fe4f0b231298596d4db"
+        },
+        "Vollständige Beschreibung": {
+          "length": 2798,
+          "sha256": "32a544f80f92a85cde5e26b555f1ab4e945ca844c41f33e664d6dc2a5ea0031f"
+        }
+      }
+    },
+    {
+      "locale": "en-US",
+      "fields": {
+        "App-Name": {
+          "length": 22,
+          "sha256": "2d2a28c07d460b65fb422b544b8e24a17a09be9b5b50cfa1f4c234cf4742ef1c"
+        },
+        "Kurze Beschreibung": {
+          "length": 77,
+          "sha256": "788255d6f47727cc356fa226943b717d00285027a528f4f4685d72cd4cac9e35"
+        },
+        "Vollständige Beschreibung": {
+          "length": 2607,
+          "sha256": "37a4d2a7626d9a988afe63cfab016de13c25f1c6aa23368cdb305741626d087b"
+        }
+      }
+    },
+    {
+      "locale": "fr-FR",
+      "fields": {
+        "App-Name": {
+          "length": 28,
+          "sha256": "98610704d163b55c65e949da9b1ba162f2da8de67e37f97fd13749ddc0422223"
+        },
+        "Kurze Beschreibung": {
+          "length": 78,
+          "sha256": "1daa7ffede2cd78b54b461d467e898b1d58eb45f6e1e8851d1de297e5426a752"
+        },
+        "Vollständige Beschreibung": {
+          "length": 2835,
+          "sha256": "24a5470063d177b741f9026811d59486bfd004ea42de0e4c902f14a6f36b97ad"
+        }
+      }
+    }
+  ],
+  "import_note": "Discarded AI import because it changed Spanish reconocimiento to recognition. Supplied remaining translations directly."
+}

@@ -1,0 +1,550 @@
+[
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/apple/nl-NL/penalties/ISL.png",
+    "native_source": "7FD1606A-8D00-4A42-8E76-463C85B72D4F.png",
+    "timestamp": 1790968111.015
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/apple/nl-NL/penalties/SWE.png",
+    "native_source": "01CC576E-6FDD-4285-B54F-A0D642A32F26.png",
+    "timestamp": 1790968100.754
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/apple/nl-NL/penalties/ROU.png",
+    "native_source": "311E8209-B52D-4696-918A-9DF23C29A445.png",
+    "timestamp": 1790968090.517
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/apple/nl-NL/penalties/MCO.png",
+    "native_source": "317D7037-C2C2-42CE-88A5-F49B2CFEA0C1.png",
+    "timestamp": 1790968080.303
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/apple/nl-NL/penalties/LIE.png",
+    "native_source": "069A606E-EF79-490A-825D-581149BBE466.png",
+    "timestamp": 1790968069.865
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/apple/nl-NL/penalties/LUX.png",
+    "native_source": "A1A4DFE7-E109-492A-B523-4D9AA0C5C841.png",
+    "timestamp": 1790968059.652
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/apple/nl-NL/penalties/GBR.png",
+    "native_source": "0C9E2527-6B23-43DA-A3CD-583629A75972.png",
+    "timestamp": 1790968049.32
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/apple/nl-NL/penalties/NLD.png",
+    "native_source": "B805F03F-E149-4591-B745-833318BB3DE4.png",
+    "timestamp": 1790969371.121,
+    "capture_test": "ScreenOrientationUITests/testCapturePenaltyStoreScreenshots()"
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/apple/nl-NL/penalties/BEL.png",
+    "native_source": "D57D3933-3DD8-4A42-8394-E580737B0920.png",
+    "timestamp": 1790968027.245
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/apple/nl-NL/penalties/CHE.png",
+    "native_source": "81B854D5-7BAC-41E2-BC39-E50B2B605585.png",
+    "timestamp": 1790968017.069
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/apple/nl-NL/penalties/FRA.png",
+    "native_source": "61FD2089-C965-4369-8E77-A7E1B2223726.png",
+    "timestamp": 1790968005.193
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/apple/nl-NL/penalties/DEU.png",
+    "native_source": "3006F945-DAA8-432D-990F-3CD35BA94EB2.png",
+    "timestamp": 1790967994.713
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/apple/nl-NL/signs/CH.png",
+    "native_source": "7EB4AE58-532E-4D91-9676-9922C9DBBA31.png",
+    "timestamp": 1790967983.487
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/apple/nl-NL/signs/BE.png",
+    "native_source": "DE5FD677-ECD8-4063-8BF1-FD91337FDE09.png",
+    "timestamp": 1790967969.829
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/apple/nl-NL/signs/NL.png",
+    "native_source": "428295BE-F90B-4FAC-90D2-39BB7E8FFFC3.png",
+    "timestamp": 1790967955.664
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/apple/nl-NL/signs/FR.png",
+    "native_source": "3C14EC13-5739-4A0B-B0A4-D8978271E1A6.png",
+    "timestamp": 1790967940.777
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/apple/nl-NL/signs/DE.png",
+    "native_source": "F911501E-87C8-4A1D-BD3F-D3C2DA37B02B.png",
+    "timestamp": 1790967925.858
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/apple/de-DE/penalties/ISL.png",
+    "native_source": "469AE812-A927-45AE-812A-F8A3BC7ECBD9.png",
+    "timestamp": 1790967910.101
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/apple/de-DE/penalties/SWE.png",
+    "native_source": "645D7525-6266-417B-A4FD-1AB247D3E071.png",
+    "timestamp": 1790967896.888
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/apple/de-DE/penalties/ROU.png",
+    "native_source": "3AAE6933-7EA4-48AF-9A30-A00B9E2B1EDB.png",
+    "timestamp": 1790967883.764
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/apple/de-DE/penalties/MCO.png",
+    "native_source": "5AE2E0E0-B87F-46BF-8A3A-C53768078FE3.png",
+    "timestamp": 1790967870.777
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/apple/de-DE/penalties/LIE.png",
+    "native_source": "C796870A-84E8-4A88-852D-9D9938B144CE.png",
+    "timestamp": 1790967859.549
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/apple/de-DE/penalties/LUX.png",
+    "native_source": "13E248FC-9100-4E32-B8C5-A676318EAB19.png",
+    "timestamp": 1790967847.809
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/apple/de-DE/penalties/GBR.png",
+    "native_source": "5AB996BE-A418-47C2-9EB2-0707B7F9BF55.png",
+    "timestamp": 1790967835.926
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/apple/de-DE/penalties/NLD.png",
+    "native_source": "466A360A-3AFE-43CC-948A-822C4DA44D98.png",
+    "timestamp": 1790969361.94,
+    "capture_test": "ScreenOrientationUITests/testCapturePenaltyStoreScreenshots()"
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/apple/de-DE/penalties/BEL.png",
+    "native_source": "511707EF-1737-469E-93D0-A6BB47CE3435.png",
+    "timestamp": 1790967811.57
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/apple/de-DE/penalties/CHE.png",
+    "native_source": "F4479C3C-3681-4F43-BA9F-5A7913ACFB88.png",
+    "timestamp": 1790967800.775
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/apple/de-DE/penalties/FRA.png",
+    "native_source": "EB271DFE-0AFA-482C-B1FF-3E2E6FECB6F9.png",
+    "timestamp": 1790967788.097
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/apple/de-DE/penalties/DEU.png",
+    "native_source": "1C705F18-3CAB-4F69-B0B3-75A83E42A2AF.png",
+    "timestamp": 1790967777.162
+  },
+  {
+    "locale": "de-DE",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/apple/de-DE/signs/CH.png",
+    "native_source": "4C7BDD89-418D-4CE6-867B-78FBE8C02A55.png",
+    "timestamp": 1790967766.144
+  },
+  {
+    "locale": "de-DE",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/apple/de-DE/signs/BE.png",
+    "native_source": "4D663F7D-C66F-4A35-9770-1E13A36A8D92.png",
+    "timestamp": 1790967753.107
+  },
+  {
+    "locale": "de-DE",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/apple/de-DE/signs/NL.png",
+    "native_source": "4C32DFEA-1471-4037-BA8B-63AAE9836B4E.png",
+    "timestamp": 1790967740.276
+  },
+  {
+    "locale": "de-DE",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/apple/de-DE/signs/FR.png",
+    "native_source": "3488EAEB-65F5-4AB3-A88F-2A194910B8EE.png",
+    "timestamp": 1790967726.001
+  },
+  {
+    "locale": "de-DE",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/apple/de-DE/signs/DE.png",
+    "native_source": "708A81ED-66CF-4810-AC98-D4DE276AD2D7.png",
+    "timestamp": 1790967712.636
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/apple/fr-FR/penalties/ISL.png",
+    "native_source": "6F94A487-F0A2-4BA1-B836-EC5E1D7663C3.png",
+    "timestamp": 1790967698.659
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/apple/fr-FR/penalties/SWE.png",
+    "native_source": "8064A5F2-4FE6-4AFD-8879-FBA3B9EBC03B.png",
+    "timestamp": 1790967685.074
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/apple/fr-FR/penalties/ROU.png",
+    "native_source": "9BB6F7B8-7427-4DD6-BC9F-829A7EDC5672.png",
+    "timestamp": 1790967672.783
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/apple/fr-FR/penalties/MCO.png",
+    "native_source": "6729E25D-985C-4D7F-9223-169F81AF25A7.png",
+    "timestamp": 1790967661.259
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/apple/fr-FR/penalties/LIE.png",
+    "native_source": "C7BEE306-F405-49E1-B4FC-C208E71201D3.png",
+    "timestamp": 1790967649.857
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/apple/fr-FR/penalties/LUX.png",
+    "native_source": "99C1E4F4-E93C-46E2-AD6F-8E7BF16A8D5F.png",
+    "timestamp": 1790967638.45
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/apple/fr-FR/penalties/GBR.png",
+    "native_source": "748D6739-4BE1-47D3-B9FF-E2903C6315B1.png",
+    "timestamp": 1790967626.369
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/apple/fr-FR/penalties/NLD.png",
+    "native_source": "E086F087-FAF3-4D8A-BA4A-22D314EDE65D.png",
+    "timestamp": 1790969352.693,
+    "capture_test": "ScreenOrientationUITests/testCapturePenaltyStoreScreenshots()"
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/apple/fr-FR/penalties/BEL.png",
+    "native_source": "7E260496-38EC-4809-A511-8588CB4A74A9.png",
+    "timestamp": 1790967601.024
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/apple/fr-FR/penalties/CHE.png",
+    "native_source": "9AE6B112-AE83-49A4-89E2-32392A1D04C7.png",
+    "timestamp": 1790967588.648
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/apple/fr-FR/penalties/FRA.png",
+    "native_source": "B9ECE65B-1B46-4D28-A96F-B43FF165D91F.png",
+    "timestamp": 1790967575.521
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/apple/fr-FR/penalties/DEU.png",
+    "native_source": "D0A768C1-CDD8-48A5-B260-4CEFE360408F.png",
+    "timestamp": 1790967564.205
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/apple/fr-FR/signs/CH.png",
+    "native_source": "96C6B542-59E9-48C9-B67F-1C1179F37042.png",
+    "timestamp": 1790967551.869
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/apple/fr-FR/signs/BE.png",
+    "native_source": "85D0E6C2-FB32-4993-B8C6-FEC53029B287.png",
+    "timestamp": 1790967537.603
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/apple/fr-FR/signs/NL.png",
+    "native_source": "9F44A8E6-A6C2-4871-8DD0-6C586CE2D600.png",
+    "timestamp": 1790967524.059
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/apple/fr-FR/signs/FR.png",
+    "native_source": "1C055F78-8702-4E03-BEB4-8C84F7C4183A.png",
+    "timestamp": 1790967511.404
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/apple/fr-FR/signs/DE.png",
+    "native_source": "D1F3A2B0-47B7-4B54-9453-8395138C7B35.png",
+    "timestamp": 1790967497.954
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/apple/en-US/penalties/ISL.png",
+    "native_source": "0486B7D9-66D1-4DD1-81D5-7632F15E317E.png",
+    "timestamp": 1790967483.67
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/apple/en-US/penalties/SWE.png",
+    "native_source": "42356D1D-9339-4D47-BF57-0AC7DDA03193.png",
+    "timestamp": 1790967472.223
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/apple/en-US/penalties/ROU.png",
+    "native_source": "6D6E1C5A-6012-4ADE-BC89-89E06F62A4F5.png",
+    "timestamp": 1790967460.233
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/apple/en-US/penalties/MCO.png",
+    "native_source": "E63FB521-E2FB-48AF-8322-85037EA94EAB.png",
+    "timestamp": 1790967448.734
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/apple/en-US/penalties/LIE.png",
+    "native_source": "C8A92A09-2ED8-4A5B-8B97-EFD03B4FF8F9.png",
+    "timestamp": 1790967437.071
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/apple/en-US/penalties/LUX.png",
+    "native_source": "84577451-A43D-482D-8CE9-E473A92B77DC.png",
+    "timestamp": 1790967426.047
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/apple/en-US/penalties/GBR.png",
+    "native_source": "FDA18013-81F5-4BA7-8F13-22A140B74277.png",
+    "timestamp": 1790967415.084
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/apple/en-US/penalties/NLD.png",
+    "native_source": "8FAA8E83-CA0D-450F-8929-703C21A56675.png",
+    "timestamp": 1790969343.373,
+    "capture_test": "ScreenOrientationUITests/testCapturePenaltyStoreScreenshots()"
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/apple/en-US/penalties/BEL.png",
+    "native_source": "803D7CD1-E0E1-4565-902E-804A5FD90141.png",
+    "timestamp": 1790967391.465
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/apple/en-US/penalties/CHE.png",
+    "native_source": "8D23669E-BD5B-43A1-A713-24507B4D5D26.png",
+    "timestamp": 1790967380.452
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/apple/en-US/penalties/FRA.png",
+    "native_source": "6753EDAC-820E-44E2-BB3B-C9A6C05A69BD.png",
+    "timestamp": 1790967367.596
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/apple/en-US/penalties/DEU.png",
+    "native_source": "CA1ED65C-B6BE-4CB1-A353-B7C21132B427.png",
+    "timestamp": 1790967356.354
+  },
+  {
+    "locale": "en-US",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/apple/en-US/signs/CH.png",
+    "native_source": "4AEC2395-4C3E-4232-9C04-8FF85F55E62F.png",
+    "timestamp": 1790967344.818
+  },
+  {
+    "locale": "en-US",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/apple/en-US/signs/BE.png",
+    "native_source": "562588AB-9CC3-416A-ABB5-60A7BD39C526.png",
+    "timestamp": 1790967332.421
+  },
+  {
+    "locale": "en-US",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/apple/en-US/signs/NL.png",
+    "native_source": "5CD1B1C2-FB92-4470-90D9-BCFC8A2883F7.png",
+    "timestamp": 1790967320.053
+  },
+  {
+    "locale": "en-US",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/apple/en-US/signs/FR.png",
+    "native_source": "0CCDB069-E9A6-4843-8E6F-409B5DC84FB4.png",
+    "timestamp": 1790967307.137
+  },
+  {
+    "locale": "en-US",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/apple/en-US/signs/DE.png",
+    "native_source": "D84729FB-DB2E-44E6-8D19-CC00B2941269.png",
+    "timestamp": 1790967294.415
+  }
+]

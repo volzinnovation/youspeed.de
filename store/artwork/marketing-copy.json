@@ -8,6 +8,7 @@
     "features": "SEE THE SIGNS. KEEP YOUR ATTENTION ON THE ROAD.\nAutomatic traffic sign recognition uses your phone's camera and runs on your device. Country models cover hundreds of traffic sign classes, including speed limits and additional road signs. Choose sound or spoken feedback. Supported signs and recognition availability depend on the country and installed model.\n\nKNOW YOUR SPEED. UNDERSTAND THE CONSEQUENCES.\nSee your current speed alongside the speed-limit reference. Configure sound alerts and get country-specific penalty estimates where supported, so you can understand what speeding could cost.\n\nRECORD THE DRIVE. KEEP THE VIDEO.\nUse the built-in dashcam to record drives locally. Play back, share or delete your videos when parked. You choose what to keep and share.\n\nREADY BEYOND MOBILE COVERAGE.\nDownload maps before you go and use the speed display without an ongoing map connection. Maps and country advisory rules include Germany, France, Switzerland, Belgium and the Netherlands.\n\nMADE FOR YOUR CAR. BUILT AROUND YOUR PRIVACY.\nCore driving features need no account. No advertising or tracking SDKs. On supported devices and languages, correct speed limits by voice. Capture street photos and review them before choosing an optional Panoramax upload.",
     "hero": [
       "Drive safely.",
+      "Avoid fines.",
       "In any car."
     ],
     "tagline": "Your smartphone. Your driving companion.",
@@ -74,6 +75,7 @@
     "features": "ZEICHEN ERKENNEN. AUFMERKSAM BLEIBEN.\nDie automatische Verkehrszeichenerkennung nutzt deine Smartphone-Kamera und arbeitet auf deinem Gerät. Die Ländermodelle umfassen insgesamt Hunderte Verkehrszeichenklassen, darunter Tempolimits und weitere Straßenschilder. Wähle Tonhinweise oder Sprachausgabe. Unterstützte Zeichen und Verfügbarkeit hängen von Land und installiertem Modell ab.\n\nTEMPO KENNEN. FOLGEN EINSCHÄTZEN.\nSieh deine aktuelle Geschwindigkeit neben dem Referenz-Tempolimit. Stelle Tempowarnungen ein und erfahre, welches Bußgeld bei einer Überschreitung drohen könnte. Die länderspezifischen Schätzungen sind dort verfügbar, wo sie unterstützt werden.\n\nFAHRT AUFZEICHNEN. VIDEO BEHALTEN.\nMit der integrierten Dashcam speicherst du Fahrten lokal. Videos im Stand ansehen, teilen oder löschen. Du entscheidest, was du behältst und teilst.\n\nAUCH OHNE LAUFENDE KARTENVERBINDUNG.\nLade Karten vor der Fahrt herunter und nutze die Tempoanzeige offline. Karten und länderspezifische Hinweise umfassen Deutschland, Frankreich, die Schweiz, Belgien und die Niederlande.\n\nFÜR DEIN AUTO. MIT DEINER PRIVATSPHÄRE IM BLICK.\nDie Fahrtfunktionen benötigen kein Konto. Keine Werbe- oder Tracking-SDKs. Korrigiere Tempolimits per Sprache auf unterstützten Geräten und in unterstützten Sprachen. Erfasse Straßenfotos und prüfe sie vor einem optionalen Panoramax-Upload.",
     "hero": [
       "Fahr sicher.",
+      "Bußgelder vermeiden.",
       "In jedem Auto."
     ],
     "tagline": "Dein Smartphone. Dein Begleiter unterwegs.",
@@ -140,6 +142,7 @@
     "features": "VOYEZ LES PANNEAUX. RESTEZ ATTENTIF À LA ROUTE.\nLa reconnaissance automatique utilise la caméra du téléphone et fonctionne sur l'appareil. Les modèles nationaux couvrent au total des centaines de classes de panneaux, dont les limitations de vitesse. Choisissez des alertes sonores ou vocales. Les panneaux pris en charge et la disponibilité dépendent du pays et du modèle installé.\n\nCONNAISSEZ VOTRE VITESSE ET LES CONSÉQUENCES.\nConsultez votre vitesse et la limitation de référence. Configurez les alertes sonores et obtenez une estimation des sanctions propres au pays lorsque cette fonction est prise en charge.\n\nENREGISTREZ LE TRAJET. GARDEZ LA VIDÉO.\nLa dashcam intégrée sauvegarde les trajets localement. À l'arrêt, regardez, partagez ou supprimez vos vidéos. Vous choisissez ce que vous conservez et partagez.\n\nDES CARTES MÊME SANS CONNEXION CONTINUE.\nTéléchargez les cartes avant de partir. Les cartes et règles indicatives couvrent l'Allemagne, la France, la Suisse, la Belgique et les Pays-Bas.\n\nVOTRE VOITURE. VOTRE VIE PRIVÉE.\nLes fonctions de conduite ne nécessitent pas de compte. Aucun SDK publicitaire ou de suivi. Corrigez les limitations par la voix sur les appareils et dans les langues pris en charge. Vérifiez vos photos de rue avant un éventuel envoi à Panoramax.",
     "hero": [
       "Roulez prudemment.",
+      "Évitez les amendes.",
       "Dans toute voiture."
     ],
     "tagline": "Votre smartphone. Votre compagnon de route.",
@@ -206,6 +209,7 @@
     "features": "HERKEN BORDEN. BLIJF ALERT OP DE WEG.\nAutomatische verkeersbordherkenning gebruikt de camera van je telefoon en werkt op je apparaat. De landenmodellen omvatten samen honderden bordklassen, waaronder snelheidslimieten en andere verkeersborden. Kies geluid of gesproken meldingen. Ondersteunde borden en beschikbaarheid hangen af van het land en geïnstalleerde model.\n\nKEN JE SNELHEID EN DE GEVOLGEN.\nBekijk je snelheid naast de referentielimiet. Stel geluidsmeldingen in en bekijk landspecifieke boeteschattingen waar ondersteund.\n\nNEEM JE RIT OP. BEWAAR DE VIDEO.\nDe ingebouwde dashcam slaat ritten lokaal op. Bekijk, deel of verwijder video's wanneer je geparkeerd staat. Jij kiest wat je bewaart en deelt.\n\nKAARTEN ZONDER DOORLOPENDE VERBINDING.\nDownload kaarten voor vertrek en gebruik de snelheidsweergave offline. Kaarten en landspecifieke informatie omvatten Duitsland, Frankrijk, Zwitserland, België en Nederland.\n\nJOUW AUTO. JOUW PRIVACY.\nDe rijfuncties vereisen geen account. Geen advertentie- of tracking-SDK's. Corrigeer limieten met je stem op ondersteunde apparaten en in ondersteunde talen. Controleer straatfoto's voordat je kiest voor een optionele Panoramax-upload.",
     "hero": [
       "Rijd veilig.",
+      "Voorkom boetes.",
       "In elke auto."
     ],
     "tagline": "Je smartphone. Je reisgenoot.",
@@ -270,6 +274,7 @@
     "features": "RECONOCE SEÑALES. PRESTA ATENCIÓN A LA CARRETERA.\nEl reconocimiento automático utiliza la cámara y funciona en tu dispositivo. Los modelos por país incluyen en total cientos de clases de señales, incluidos límites de velocidad. Elige avisos sonoros o hablados. Las señales compatibles y la disponibilidad dependen del país y del modelo instalado.\n\nCONOCE TU VELOCIDAD Y LAS CONSECUENCIAS.\nConsulta tu velocidad junto al límite de referencia. Configura avisos sonoros y consulta estimaciones de sanciones por país donde estén disponibles.\n\nGRABA EL TRAYECTO. CONSERVA EL VÍDEO.\nLa dashcam integrada guarda vídeos localmente. Reprodúcelos, compártelos o bórralos cuando estés estacionado. Tú eliges qué conservar y compartir.\n\nMAPAS SIN CONEXIÓN CONTINUA.\nDescarga mapas antes de salir. Los mapas y las reglas orientativas incluyen Alemania, Francia, Suiza, Bélgica y los Países Bajos.\n\nTU COCHE. TU PRIVACIDAD.\nLas funciones de conducción no requieren cuenta. Sin SDK de publicidad ni seguimiento. Corrige límites por voz en dispositivos e idiomas compatibles. Revisa tus fotos de calles antes de elegir una subida opcional a Panoramax.",
     "hero": [
       "Conduce con cuidado.",
+      "Evita multas.",
       "En cualquier coche."
     ],
     "tagline": "Tu smartphone. Tu compañero de viaje.",
@@ -324,6 +329,7 @@
     "features": "RICONOSCI I SEGNALI. RESTA ATTENTO ALLA STRADA.\nIl riconoscimento automatico usa la fotocamera e funziona sul dispositivo. I modelli nazionali comprendono complessivamente centinaia di classi di segnali, inclusi i limiti di velocità. Scegli avvisi sonori o vocali. Segnali supportati e disponibilità dipendono dal paese e dal modello installato.\n\nCONOSCI VELOCITÀ E CONSEGUENZE.\nVedi la tua velocità accanto al limite di riferimento. Configura gli avvisi sonori e consulta le stime delle sanzioni per paese dove supportate.\n\nREGISTRA IL VIAGGIO. CONSERVA IL VIDEO.\nLa dashcam integrata salva i viaggi localmente. Riproduci, condividi o elimina i video a veicolo fermo. Scegli tu cosa conservare e condividere.\n\nMAPPE SENZA CONNESSIONE CONTINUA.\nScarica le mappe prima di partire. Mappe e regole indicative comprendono Germania, Francia, Svizzera, Belgio e Paesi Bassi.\n\nLA TUA AUTO. LA TUA PRIVACY.\nLe funzioni di guida non richiedono un account. Nessun SDK pubblicitario o di tracciamento. Correggi i limiti con la voce sui dispositivi e nelle lingue supportati. Controlla le foto stradali prima di un caricamento facoltativo su Panoramax.",
     "hero": [
       "Guida con prudenza.",
+      "Evita le multe.",
       "In ogni auto."
     ],
     "tagline": "Il tuo smartphone. Il tuo compagno di viaggio.",
@@ -378,6 +384,7 @@
     "features": "ROZPOZNAWAJ ZNAKI. ZACHOWAJ UWAGĘ NA DRODZE.\nAutomatyczne rozpoznawanie używa kamery telefonu i działa na urządzeniu. Modele krajowe obejmują łącznie setki klas znaków, w tym ograniczenia prędkości. Wybierz dźwięk lub komunikaty głosowe. Obsługiwane znaki i dostępność zależą od kraju i zainstalowanego modelu.\n\nZNAJ PRĘDKOŚĆ I KONSEKWENCJE.\nZobacz prędkość obok limitu odniesienia. Ustaw alerty dźwiękowe i sprawdź szacowane kary właściwe dla kraju tam, gdzie są obsługiwane.\n\nNAGRAJ PRZEJAZD. ZACHOWAJ FILM.\nWbudowana kamera samochodowa zapisuje filmy lokalnie. Odtwarzaj, udostępniaj lub usuwaj je na postoju. Ty wybierasz, co zachować i udostępnić.\n\nMAPY BEZ STAŁEGO POŁĄCZENIA.\nPobierz mapy przed wyjazdem. Mapy i informacje krajowe obejmują Niemcy, Francję, Szwajcarię, Belgię i Holandię.\n\nTWOJE AUTO. TWOJA PRYWATNOŚĆ.\nFunkcje jazdy nie wymagają konta. Bez reklamowych i śledzących SDK. Koryguj limity głosem na obsługiwanych urządzeniach i w obsługiwanych językach. Sprawdź zdjęcia ulic przed opcjonalnym przesłaniem do Panoramax.",
     "hero": [
       "Jedź bezpiecznie.",
+      "Unikaj mandatów.",
       "W każdym aucie."
     ],
     "tagline": "Twój smartfon. Twój towarzysz podróży.",
@@ -432,6 +439,7 @@
     "features": "RECONHEÇA PLACAS. MANTENHA A ATENÇÃO NA VIA.\nO reconhecimento automático usa a câmera e funciona no dispositivo. Os modelos por país abrangem, no total, centenas de classes de placas, incluindo limites de velocidade. Escolha alertas sonoros ou falados. As placas compatíveis e a disponibilidade dependem do país e do modelo instalado.\n\nSAIBA SUA VELOCIDADE E AS CONSEQUÊNCIAS.\nVeja sua velocidade junto ao limite de referência. Configure alertas sonoros e consulte estimativas de penalidades por país onde houver suporte.\n\nGRAVE O TRAJETO. GUARDE O VÍDEO.\nA dashcam integrada salva os trajetos localmente. Reproduza, compartilhe ou apague os vídeos com o carro estacionado. Você escolhe o que guardar e compartilhar.\n\nMAPAS SEM CONEXÃO CONTÍNUA.\nBaixe mapas antes de sair. Mapas e regras orientativas abrangem Alemanha, França, Suíça, Bélgica e Países Baixos.\n\nSEU CARRO. SUA PRIVACIDADE.\nOs recursos de direção não exigem conta. Sem SDKs de publicidade ou rastreamento. Corrija limites por voz nos dispositivos e idiomas compatíveis. Revise fotos das vias antes de um envio opcional ao Panoramax.",
     "hero": [
       "Dirija com cuidado.",
+      "Evite multas.",
       "Em qualquer carro."
     ],
     "tagline": "Seu smartphone. Seu companheiro de viagem.",
@@ -486,6 +494,7 @@
     "features": "KÄNN IGEN SKYLTAR. VAR UPPMÄRKSAM PÅ VÄGEN.\nAutomatisk skyltigenkänning använder telefonens kamera och körs på enheten. Landsmodellerna omfattar totalt hundratals skyltklasser, inklusive hastighetsgränser. Välj ljud eller talade meddelanden. Skyltar som stöds och tillgänglighet beror på land och installerad modell.\n\nKÄNN DIN HASTIGHET OCH KONSEKVENSERNA.\nSe din hastighet bredvid referensgränsen. Ställ in ljudvarningar och se landsspecifika uppskattningar av påföljder där det stöds.\n\nSPELA IN RESAN. SPARA VIDEON.\nDen inbyggda dashcamen sparar resor lokalt. Spela upp, dela eller radera videor när du står parkerad. Du väljer vad du sparar och delar.\n\nKARTOR UTAN LÖPANDE ANSLUTNING.\nLadda ner kartor före avfärd. Kartor och rådgivande landsregler omfattar Tyskland, Frankrike, Schweiz, Belgien och Nederländerna.\n\nDIN BIL. DIN INTEGRITET.\nKörfunktionerna kräver inget konto. Inga SDK:er för reklam eller spårning. Korrigera gränser med rösten på enheter och språk som stöds. Granska gatufoton innan du väljer en frivillig uppladdning till Panoramax.",
     "hero": [
       "Kör säkert.",
+      "Undvik böter.",
       "I varje bil."
     ],
     "tagline": "Din smartphone. Din följeslagare på vägen.",

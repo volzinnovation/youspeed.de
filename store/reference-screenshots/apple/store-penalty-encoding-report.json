@@ -1,0 +1,54 @@
+[
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/reference-screenshots/apple/nl-NL/penalties/NLD.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGB",
+    "mode_after": "RGB",
+    "alpha_extrema_before": null,
+    "decoded_rgb_sha256_before": "cd6bb96c992354d9afa4044f1f18a1c6a8e5d2fe013f0afc1802729851a46772",
+    "decoded_rgb_sha256_after": "cd6bb96c992354d9afa4044f1f18a1c6a8e5d2fe013f0afc1802729851a46772",
+    "sha256_before": "ffaadabd45125047f3663c2a347d3bed0f8e5c6c7697687fa2ced766d1165807",
+    "sha256_after": "f300e7ba63a5102c61e97a3a70d923756d8ae59e66c41553c3e904838c9a5a35",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/reference-screenshots/apple/de-DE/penalties/NLD.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGB",
+    "mode_after": "RGB",
+    "alpha_extrema_before": null,
+    "decoded_rgb_sha256_before": "98a06395966078ff1488069cb6f30f495397c18a03a80c3573b4f4d7bfdc72ba",
+    "decoded_rgb_sha256_after": "98a06395966078ff1488069cb6f30f495397c18a03a80c3573b4f4d7bfdc72ba",
+    "sha256_before": "be334f1ff81ccd6de6f8ce5223e0352b19bacd7ca4a4cba55fd3156a7d93429b",
+    "sha256_after": "db8664f57d46d158cef0769c6e9f0689b17f073f84643a26ad24d2bd5a170714",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/reference-screenshots/apple/fr-FR/penalties/NLD.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGB",
+    "mode_after": "RGB",
+    "alpha_extrema_before": null,
+    "decoded_rgb_sha256_before": "e4cbe9e76849350bf6d8b173cb1d4798b9eeb868a28e1a7a99571f101b61f39e",
+    "decoded_rgb_sha256_after": "e4cbe9e76849350bf6d8b173cb1d4798b9eeb868a28e1a7a99571f101b61f39e",
+    "sha256_before": "8add0db9ecd8f5325fe299799fb3ae6c4f039e7be2b06e597cc26cf8b39bf7b0",
+    "sha256_after": "b3c94a62a782ffd404171ebb936bb7bd0a2cdd47d1272025d845d46cef010896",
+    "color_space_and_exif_preserved": true
+  },
+  {
+    "path": "/Users/raphaelvolz/Github/youspeed.de/store/reference-screenshots/apple/en-US/penalties/NLD.png",
+    "width": 1320,
+    "height": 2868,
+    "mode_before": "RGB",
+    "mode_after": "RGB",
+    "alpha_extrema_before": null,
+    "decoded_rgb_sha256_before": "84f06016fe406dbc84a00e0f10ed7277f6e0a9c02930ac68c51b0b08fe21ade6",
+    "decoded_rgb_sha256_after": "84f06016fe406dbc84a00e0f10ed7277f6e0a9c02930ac68c51b0b08fe21ade6",
+    "sha256_before": "e5bb7cac6e23db6c941f59702cf5e07e03ef18e4a0d99979cc96aa5066d35b0f",
+    "sha256_after": "6b81ccf77e88280bbb7967342fd2b425c8a4c7c58dce7dfbce2d3fca1cddd6a7",
+    "color_space_and_exif_preserved": true
+  }
+]

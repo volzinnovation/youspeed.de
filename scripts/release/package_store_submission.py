@@ -23,7 +23,8 @@ def main() -> int:
 
     # Explicit source roots prevent inclusion of credentials, device recordings,
     # debug logs, model training data or unrelated concurrent working-tree files.
-    roots = ("store/apple", "store/android", "store/artwork", "fastlane/metadata/android")
+    roots = ("store/apple", "store/android", "store/artwork", "store/reference-screenshots",
+             "store/videos/feature-film", "fastlane/metadata/android")
     files = {p for directory in roots for p in (ROOT / directory).rglob("*")
              if p.is_file() and p.name != ".DS_Store"}
     reports = ("STORE_SUBMISSION_1.3_2026-10-02.md", "STORE_PACKAGE_VALIDATION_2026-10-02.json",
@@ -31,31 +32,35 @@ def main() -> int:
                "STORE_METADATA_READINESS_2026-10-02.md", "STORE_SCREENSHOT_REVIEW_2026-10-02.md",
                "COUNTRY_STORE_EXAMPLES_2026-10-02.md", "COUNTRY_STORE_EXAMPLES_2026-10-02.json",
                "PUBLIC_MAP_READINESS_2026-10-02.json", "SCREENSHOT_ENCODING_VALIDATION_2026-10-02.json",
-               "PANORAMAX_PRIVACY_READINESS_2026-10-02.md", "PANORAMAX_PRIVACY_READINESS_2026-10-02.json")
+               "PANORAMAX_PRIVACY_READINESS_2026-10-02.md", "PANORAMAX_PRIVACY_READINESS_2026-10-02.json",
+               "REFERENCE_SCREENSHOT_VALIDATION_2026-10-02.json", "BUILD_10032_ARTIFACTS_2026-10-02.json",
+               "PLAY_CONSOLE_TEXT_VALIDATION_2026-10-02.json", "PLAY_CONSOLE_AVAILABILITY_2026-10-02.json",
+               "PLAY_RELEASE_DRAFT_2026-10-02.json")
     files.update(ROOT / "docs/release" / name for name in reports)
     files.update(ROOT / name for name in ("store/country-availability-1.3.json", "store/README.md",
                   "Web/datenschutz.html", "Web/support/index.html",
                   "scripts/release/validate_store_package.py", "scripts/release/generate_store_graphics.mjs",
                   "scripts/release/package_store_submission.py", "scripts/release/generate_store_screenshot_layouts.mjs",
+                  "scripts/release/capture_android_reference_screenshots.py",
                   "scripts/iphone/recreate_store_screenshots.sh",
                   "scripts/iphone/normalize_store_screenshot.py", "scripts/iphone/requirements-screenshots.txt",
                   "android/scripts/recreate_store_screenshots.sh", "android/scripts/prepare-play-release.sh",
                   "android/scripts/audit-release-artifact.py"))
     files.update(ROOT / name for name in ("docs/DUTCH_PENALTY_REVIEW_2026-10-02.md",
-                  "docs/PENALTY_DOCUMENTATION.md"))
+                  "docs/PENALTY_DOCUMENTATION.md", "docs/TRAFFIC_SIGN_DOCUMENTATION.md"))
     missing = [str(p.relative_to(ROOT)) for p in files if not p.is_file()]
     if missing:
         raise SystemExit("Required handoff files missing: " + ", ".join(sorted(missing)))
     ordered = sorted(files, key=lambda p: p.relative_to(ROOT).as_posix())
     payloads = {p.relative_to(ROOT).as_posix(): p.read_bytes() for p in ordered}
     validation_report = json.loads(payloads[validation.relative_to(ROOT).as_posix()])
-    if validation_report["android_version_code"] != "10031":
-        raise SystemExit("This handoff is prepared for 1.3 (10031); review the version before packaging another build")
+    if validation_report["android_version_code"] != "10032":
+        raise SystemExit("This handoff is prepared for 1.3 (10032); review the version before packaging another build")
     for checked in validation_report["files"]:
         if hashlib.sha256(payloads[checked["path"]]).hexdigest() != checked["sha256"]:
             raise SystemExit("Source changed after validation: " + checked["path"])
-    manifest = {"format": "youspeed.store-assets.v1", "version": "1.3", "build": 10031,
-                "console_changes_applied": False, "submission_performed": False,
+    manifest = {"format": "youspeed.store-assets.v1", "version": "1.3", "build": 10032,
+                "console_changes_applied": True, "submission_performed": False,
                 "contains_app_binaries": False,
                 "files": [{"path": name, "bytes": len(raw),
                            "sha256": hashlib.sha256(raw).hexdigest()} for name, raw in payloads.items()]}

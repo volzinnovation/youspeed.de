@@ -1,12 +1,12 @@
 # YouSpeed 1.3 store handoff
 
-The listings lead with **Drive safely. Driver assistance for every car.** Automatic traffic-sign recognition, speed alerts, penalty estimates and dashcam recording support the road-safety purpose. The car's age does not matter because the app needs no vehicle integration. Camera recognition is presented as a standard feature, with country/model availability explained. The release preparation retains source version **1.3 (10031)**; verify that build number against both consoles before upload.
+The listings lead with **Drive safely. Driver assistance for every car.** Automatic traffic-sign recognition, speed alerts, penalty estimates and dashcam recording support the road-safety purpose. The car's age does not matter because the app needs no vehicle integration. Camera recognition is presented as a standard feature, with country/model availability explained. The release preparation retains source version **1.3 (10032)**. The signed iPhone binary has uploaded to Apple; Android upload signing is still pending.
 
 | Destination | Text | Upload imagery |
 | --- | --- | --- |
 | App Store Connect | `apple/metadata/<locale>/` | Ten ordered PNGs per locale in `apple/screenshots/<locale>/iphone-6.9/` |
 | Google Play Console | `android/metadata/<locale>/` | Eight ordered PNGs, 512px icon and 1024×500 feature graphic in `android/listing/<locale>/` |
-| Fastlane Android handoff | `../fastlane/metadata/android/<locale>/` | Byte-identical mirrors; candidate changelog `10031.txt` |
+| Fastlane Android handoff | `../fastlane/metadata/android/<locale>/` | Byte-identical mirrors; candidate changelog `10032.txt` |
 
 Apple locales: German, English, French and Dutch. Android locales: those four plus Spanish, Italian, Polish, Brazilian Portuguese and Swedish. French and Dutch localization serve the named countries; Switzerland also has German coverage. Preserve existing store territories and add France, Switzerland, Belgium and the Netherlands using `country-availability-1.3.json` as a proposed configuration.
 
@@ -22,6 +22,8 @@ See [the submission dossier](../docs/release/STORE_SUBMISSION_1.3_2026-10-02.md)
 
 Validate with `python3 scripts/release/validate_store_package.py` from the repository root. Build a review ZIP with `python3 scripts/release/package_store_submission.py`. Neither command contacts a store or submits an app. The ZIP excludes app binaries, credentials, device recordings and debug logs. Source and historical-audit links in the reports refer to the full repository; the ZIP is a listing handoff, not a standalone app source checkout.
 
-No console edits, availability changes, binary uploads, review submissions or publication were performed in this preparation. Authenticated Safari/Chrome control is blocked by the Computer Use runtime despite the user's authorization.
+App Store Connect version 1.3 exists, with saved descriptions in four languages. Apple already enables France, Switzerland, Belgium and the Netherlands among 42 territories. All nine Play listing drafts have been saved with all 27 text fields verified against source by SHA-256. Belgium has been added to the availability change for review, preserving the six existing countries. Neither store has received a review submission. Browser work is currently paused because the Mac is locked. See the submission dossier for the exact remote state.
 
-Dutch tariffs were reviewed anew on 2 October 2026 and are now implemented in both apps. The refreshed Dutch examples show 140 EUR for ordinary urban displayed +12 km/h; 9 EUR administration costs are separate. See [Dutch review](../docs/DUTCH_PENALTY_REVIEW_2026-10-02.md). Previously exported IPA/AAB files predate this update and require rebuilding before store upload.
+Dutch tariffs were reviewed anew on 2 October 2026 and are now implemented in both apps. The refreshed Dutch examples show 140 EUR for ordinary urban displayed +12 km/h; 9 EUR administration costs are separate. See [Dutch review](../docs/DUTCH_PENALTY_REVIEW_2026-10-02.md). The fresh build 10032 binaries include the tariff review and both Info references.
+
+The full native reference collection is in `reference-screenshots/`: 68 iPhone captures (four languages) and 153 Android captures (nine languages), covering five national sign catalogs and all twelve bundled penalty countries. The upload galleries use all five sign catalogs and the Dutch fine table, alongside camera/dashcam feature captures. `docs/release/REFERENCE_SCREENSHOT_VALIDATION_2026-10-02.json` records capture hashes, dimensions and Android country-selector checks.

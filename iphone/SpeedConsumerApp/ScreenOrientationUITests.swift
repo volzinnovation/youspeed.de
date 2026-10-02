@@ -584,4 +584,30 @@ extension ScreenOrientationUITests {
             }
         }
     }
+    @objc func testCapturePenaltyStoreScreenshots() {
+        continueAfterFailure = false
+        for (language, storeLocale) in [("en", "en-US"), ("fr", "fr-FR"), ("de", "de-DE"), ("nl", "nl-NL")] {
+            let app = XCUIApplication()
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "country-penalty"
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_COUNTRY"] = "NL"
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_LIMIT"] = "1"
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_DELTA"] = "0"
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_REFERENCE_COUNTRY"] = "NLD"
+            app.launchArguments = ["-youspeed.screen_orientation", "portrait", "-AppleLanguages", "(\(language))", "-AppleLocale", "\(language)_NL"]
+            app.launch()
+            let info = app.buttons["dashboard.infoButton"]
+            XCTAssertTrue(info.waitForExistence(timeout: 20)); info.tap()
+            let button = app.buttons["penalty-documentation-button"]
+            XCTAssertTrue(button.waitForExistence(timeout: 10)); button.tap()
+            let view = app.webViews.firstMatch
+            XCTAssertTrue(view.waitForExistence(timeout: 20))
+            let disclaimers = ["en": "For information only. This is not legal advice.", "fr": "À titre informatif uniquement. Ceci ne constitue pas un conseil juridique.", "de": "Nur zur Information. Dies ist keine Rechtsberatung.", "nl": "Alleen ter informatie. Dit is geen juridisch advies."]
+            XCTAssertTrue(view.staticTexts[disclaimers[language]!].waitForExistence(timeout: 20))
+            let image = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            image.name = "reference-store-\(storeLocale)-penalties-NLD"
+            image.lifetime = .keepAlways; add(image)
+            app.terminate()
+        }
+    }
+
 }

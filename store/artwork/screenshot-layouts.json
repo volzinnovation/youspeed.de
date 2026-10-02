@@ -33,54 +33,6 @@
       "height": 2868,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/apple/screenshots/en-US/iphone-6.9/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/en-US/05-france-fine.png",
-      "source_sha256": "f7cd11981180e83f6e1e352764c07b4b633757798abf76d63d3e90baca2407a9",
-      "output_sha256": "6e8c6739f59ac526e383f6e6123a7eda4b348d755371cd79e2b281bf37f462f4",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/en-US/06-switzerland-fine.png",
-      "source_sha256": "5470c76a2882c37f59d6a10b132455c3fb2ce08907818f9d73fd0655186cf03b",
-      "output_sha256": "5ef1acf8dd7ed1e5a4e4dd46cbdfd6ea6c47159236e298131275c4805fc81990",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/en-US/07-belgium-fine.png",
-      "source_sha256": "d87fb31978a4415fc995491baa0ec7cd6ff391ce005e9bed2b6f02fe67661b16",
-      "output_sha256": "105ce3871b600b76df450d7a06e4da67b224f245f5c7680860cbee7a415d7354",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/en-US/08-netherlands-fine.png",
-      "source_sha256": "7f6b92066705684c6c14def455981ae744d9c45fa855d276f4144111f1aaa348",
-      "output_sha256": "c2f0941e3d2743f78d7f38393c88140e02c34f0ffbaeb217eba8d48f731d492c",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/09-pedestrian-zone.png": {
-      "source": "store/artwork/raw-screenshots/apple/en-US/09-pedestrian-zone.png",
-      "source_sha256": "c3eb1aabf8d3111e1001d138e71652161852f584eda45b50dc6cef50cd441e51",
-      "output_sha256": "08a98c58bd0776eeec630fd7a46c5e34430abb824359aaa6d342008c9658db37",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/10-autobahn-unlimited.png": {
-      "source": "store/artwork/raw-screenshots/apple/en-US/10-autobahn-unlimited.png",
-      "source_sha256": "aa0156596c0a7e1a5e29993230914a523fc4205590a2963906ba2e28a9e17e18",
-      "output_sha256": "865433ced6ff2839d05e8ea95c7f36680e4dc28814c3181b744ed4c07db8e8d2",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
     "store/apple/screenshots/de-DE/iphone-6.9/01-safe-speed.png": {
       "source": "store/artwork/raw-screenshots/apple/de-DE/01-safe-speed.png",
       "source_sha256": "a42611f942c703c5d3e0a4ef984246881099c3873456c084173618381d8fcff0",
@@ -109,54 +61,6 @@
       "source": "store/artwork/raw-screenshots/apple/de-DE/04-dashcam.png",
       "source_sha256": "5ced10adf38a5160d008d0af5997d672536ed100c9284fd48c1fd60f3a530a87",
       "output_sha256": "6c4f540aa0fd29091e0043b4a4e2ea3d6a7664b59a0eeae3b253583eb1ff3dee",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/de-DE/05-france-fine.png",
-      "source_sha256": "f7cd11981180e83f6e1e352764c07b4b633757798abf76d63d3e90baca2407a9",
-      "output_sha256": "2f72e3eec7aee0a7ff2b8f829a8be1e30a2f18f3985878726cbe6907b2acdbea",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/de-DE/06-switzerland-fine.png",
-      "source_sha256": "5470c76a2882c37f59d6a10b132455c3fb2ce08907818f9d73fd0655186cf03b",
-      "output_sha256": "ae3f2ed618b04cbc06d3d921e127df6698a99b63058a6c735197c99278e7f745",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/de-DE/07-belgium-fine.png",
-      "source_sha256": "d87fb31978a4415fc995491baa0ec7cd6ff391ce005e9bed2b6f02fe67661b16",
-      "output_sha256": "b341df3bc3d8085cd34f8c14dbf7b5bfb2ac68a05e25dd33c55935d31eed5bd0",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/de-DE/08-netherlands-fine.png",
-      "source_sha256": "7f6b92066705684c6c14def455981ae744d9c45fa855d276f4144111f1aaa348",
-      "output_sha256": "c803b3d7d03094bb31cc102a102690b1bb339ef79f3ff86e5f5d8dce7c0b6a4a",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/09-pedestrian-zone.png": {
-      "source": "store/artwork/raw-screenshots/apple/de-DE/09-pedestrian-zone.png",
-      "source_sha256": "c3eb1aabf8d3111e1001d138e71652161852f584eda45b50dc6cef50cd441e51",
-      "output_sha256": "02d21a05612192ade10e2f5e25c8265dbc8cd7a4a8b42e2942e4881927b9d18c",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/10-autobahn-unlimited.png": {
-      "source": "store/artwork/raw-screenshots/apple/de-DE/10-autobahn-unlimited.png",
-      "source_sha256": "a69e65c552613ee51a747933163d91871a5770a315052553250be3ae7c1d61cc",
-      "output_sha256": "4551c84cf166b5acb9ed1f018ca2f5e99ef2f8e56dfd11ce404b972f1236d1d0",
       "width": 1320,
       "height": 2868,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
@@ -193,54 +97,6 @@
       "height": 2868,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/apple/screenshots/fr-FR/iphone-6.9/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/fr-FR/05-france-fine.png",
-      "source_sha256": "f7cd11981180e83f6e1e352764c07b4b633757798abf76d63d3e90baca2407a9",
-      "output_sha256": "563fc4387c8521ee4dabf6be1a97c10ec194d54b734530c513e523391ab2e253",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/fr-FR/06-switzerland-fine.png",
-      "source_sha256": "5470c76a2882c37f59d6a10b132455c3fb2ce08907818f9d73fd0655186cf03b",
-      "output_sha256": "b66aeb90ea2df9ef54c2db865dd848aa8498707ab3d4d1f15c17bf705e0df38f",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/fr-FR/07-belgium-fine.png",
-      "source_sha256": "d87fb31978a4415fc995491baa0ec7cd6ff391ce005e9bed2b6f02fe67661b16",
-      "output_sha256": "678a9e54c3d2f8fea88aa8e0d3e3d0cbbffb4f781175bfab3d0ae83a81667c44",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/fr-FR/08-netherlands-fine.png",
-      "source_sha256": "7f6b92066705684c6c14def455981ae744d9c45fa855d276f4144111f1aaa348",
-      "output_sha256": "e1d607a4ea07ac30fda592d888c0037b5619e97d6fe06683fa553ee78561cbf4",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/09-pedestrian-zone.png": {
-      "source": "store/artwork/raw-screenshots/apple/fr-FR/09-pedestrian-zone.png",
-      "source_sha256": "c3eb1aabf8d3111e1001d138e71652161852f584eda45b50dc6cef50cd441e51",
-      "output_sha256": "cbbf7c6746d94ffb34e03d78027241725e9e992a1cac723e35983cf4ccc9af1e",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/10-autobahn-unlimited.png": {
-      "source": "store/artwork/raw-screenshots/apple/fr-FR/10-autobahn-unlimited.png",
-      "source_sha256": "a69e65c552613ee51a747933163d91871a5770a315052553250be3ae7c1d61cc",
-      "output_sha256": "4ef0a8dde8f4845cbef5907e53268de4a5840ff6da897cd3c0f39dcc81dc6fa0",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
     "store/apple/screenshots/nl-NL/iphone-6.9/01-safe-speed.png": {
       "source": "store/artwork/raw-screenshots/apple/nl-NL/01-safe-speed.png",
       "source_sha256": "a42611f942c703c5d3e0a4ef984246881099c3873456c084173618381d8fcff0",
@@ -273,116 +129,12 @@
       "height": 2868,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/apple/screenshots/nl-NL/iphone-6.9/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/nl-NL/05-france-fine.png",
-      "source_sha256": "f7cd11981180e83f6e1e352764c07b4b633757798abf76d63d3e90baca2407a9",
-      "output_sha256": "ae2acc302573f45aeb832b909a977fa6c4632d37db5fdab343367d1218470fa5",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/nl-NL/06-switzerland-fine.png",
-      "source_sha256": "5470c76a2882c37f59d6a10b132455c3fb2ce08907818f9d73fd0655186cf03b",
-      "output_sha256": "63f79ea63d3b28965998975799a4951fd835ce623b52f121fe52ac5e04cead1e",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/nl-NL/07-belgium-fine.png",
-      "source_sha256": "d87fb31978a4415fc995491baa0ec7cd6ff391ce005e9bed2b6f02fe67661b16",
-      "output_sha256": "1022ad32ff97bd8865dd0c9f6e92c960c648b6a777fee0ae72be33e17eb34661",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/apple/nl-NL/08-netherlands-fine.png",
-      "source_sha256": "7f6b92066705684c6c14def455981ae744d9c45fa855d276f4144111f1aaa348",
-      "output_sha256": "2daca985eda4b2d9cd6376f5cd6b1b7bd46668bce267c151d1084082e56aad7e",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/09-pedestrian-zone.png": {
-      "source": "store/artwork/raw-screenshots/apple/nl-NL/09-pedestrian-zone.png",
-      "source_sha256": "c3eb1aabf8d3111e1001d138e71652161852f584eda45b50dc6cef50cd441e51",
-      "output_sha256": "977bd370bfdf11343bbe1790e49a8eba82e329d4cde10ffc8540dc2b7e5b0114",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/10-autobahn-unlimited.png": {
-      "source": "store/artwork/raw-screenshots/apple/nl-NL/10-autobahn-unlimited.png",
-      "source_sha256": "a69e65c552613ee51a747933163d91871a5770a315052553250be3ae7c1d61cc",
-      "output_sha256": "23e5ef6928c15e4e3ffcf69c4980a81b55549aeba1ae37751433e7737e111a58",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/en-US/phone-screenshots/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/android/en-US/01-safe-speed.png",
-      "source_sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
-      "output_sha256": "3d196d019c25268aa5837998076d69eaa13389beea27fc3a342ef36743797787",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
     "store/android/listing/en-US/phone-screenshots/02-dashcam.png": {
       "source": "store/artwork/raw-screenshots/android/en-US/02-dashcam.png",
       "source_sha256": "195c74313a5667c224dfdfe082dea722bd47187f49a13fb34c9234f1355a00fd",
       "output_sha256": "76138d9ebffd17f9da37574d101372aeaf2ee15d232d16fcd50a11b9224c1206",
       "width": 1920,
       "height": 1080,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/en-US/phone-screenshots/03-camera-recognition.png": {
-      "source": "store/artwork/raw-screenshots/android/en-US/03-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "9985b7836412ccc4142cbd49e900c4450a1788452b57e9490d1a407396e2d51f",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/en-US/phone-screenshots/04-traffic-signs.png": {
-      "source": "store/artwork/raw-screenshots/android/en-US/04-traffic-signs.png",
-      "source_sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
-      "output_sha256": "094051b23b119aa326b61012e08ae1cca49c802cbc3619e892c20beb2aa3dc6c",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/en-US/phone-screenshots/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/en-US/05-france-fine.png",
-      "source_sha256": "ad9e454bed011fb9a17be462ec5ee8fc75b95c16e9079a5806ddeb6a61a5d2c3",
-      "output_sha256": "053f19eac24ac8d0b340b79b1edaae7dc1ac341518e25b8e01ea7d64ed9ca63f",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/en-US/phone-screenshots/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/en-US/06-switzerland-fine.png",
-      "source_sha256": "004c80a9c35f58e65c4d62745bb1f491a2f84dc62b078bbb1f0fa8ae5f37b514",
-      "output_sha256": "1aace368513f93f8300b2b34a8ba79808a2d277fb727c732fd0e2c08ecc63105",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/en-US/phone-screenshots/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/en-US/07-belgium-fine.png",
-      "source_sha256": "6c84e8459a190fefc88d5acfd56dc00b4b4742aaf6e4b442d011303190c9600b",
-      "output_sha256": "d849a18b9968990d3122c0167eb8727468d3221e9d335c256bff5f4da13d507a",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/de-DE/phone-screenshots/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/android/de-DE/01-safe-speed.png",
-      "source_sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
-      "output_sha256": "72b464892b764b6f0fd2c5765f5aab38e06d04ab81a31844196ce153305ade3a",
-      "width": 1080,
-      "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
     "store/android/listing/de-DE/phone-screenshots/02-dashcam.png": {
@@ -393,108 +145,12 @@
       "height": 1080,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/de-DE/phone-screenshots/03-camera-recognition.png": {
-      "source": "store/artwork/raw-screenshots/android/de-DE/03-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "a420508056051b3e8ff4f31da3b0921adbfd8e2decffd970f92fcffaa65d503d",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/de-DE/phone-screenshots/04-traffic-signs.png": {
-      "source": "store/artwork/raw-screenshots/android/de-DE/04-traffic-signs.png",
-      "source_sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
-      "output_sha256": "07c304c9d11d4f04e650a3d5dd0a60bcd0b76c129b0ac3a8d2b7c2d068df102f",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/de-DE/phone-screenshots/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/de-DE/05-france-fine.png",
-      "source_sha256": "3b8bc264371b72de93cb93913d3fc9a45be2e1c3c7c88de8187a0dac80f7ea99",
-      "output_sha256": "64c7a6617d5f4a97d2145bf9f765d708c920089e4d8311fde84aa8052f58392f",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/de-DE/phone-screenshots/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/de-DE/06-switzerland-fine.png",
-      "source_sha256": "d41685d126a173389675bdc692251ae8f997e4dbda2ddf49475126dcfd3e89cd",
-      "output_sha256": "2e4acb57bed534c59fe483f6d90da8e60dfb9d981308775f1ed581b68d722a28",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/de-DE/phone-screenshots/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/de-DE/07-belgium-fine.png",
-      "source_sha256": "61ad7ca52cf9a5d76d06bba82903056f636bb5e0cf3be4d240dae30f70e6966b",
-      "output_sha256": "1826a2022dc7dda7dc90ef2c0eb9ff100606b25aa8a267efbe0a91e6470c0076",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/fr-FR/phone-screenshots/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/android/fr-FR/01-safe-speed.png",
-      "source_sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
-      "output_sha256": "c6cb8364cd4fd08d3dadc76a8d18c7b2c80a05add2dc2c140e6b60c6acea6874",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
     "store/android/listing/fr-FR/phone-screenshots/02-dashcam.png": {
       "source": "store/artwork/raw-screenshots/android/fr-FR/02-dashcam.png",
       "source_sha256": "e1b87a31ad010de79a90d6aafc7e616d188a34c5f7967cfb8ae029d0485df496",
       "output_sha256": "4f4ff3a2245a7aee3bc40af48f56c0dd104b923515790d4eb482add91268d491",
       "width": 1920,
       "height": 1080,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/fr-FR/phone-screenshots/03-camera-recognition.png": {
-      "source": "store/artwork/raw-screenshots/android/fr-FR/03-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "cf87fb19d7aa803762b84854414093d698ec055685c9f67444109f01a39da6be",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/fr-FR/phone-screenshots/04-traffic-signs.png": {
-      "source": "store/artwork/raw-screenshots/android/fr-FR/04-traffic-signs.png",
-      "source_sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
-      "output_sha256": "b7b55870b840f9f8744ada95be7578d7ad645be877a31f85dba4313f1e7f3e7b",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/fr-FR/phone-screenshots/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/fr-FR/05-france-fine.png",
-      "source_sha256": "a97f385672e96f04a0ec887ed8d210b2bed9c6c902d5674ff4969c5d709eaede",
-      "output_sha256": "38ab1f73caa75cc47e87d7de4e480d21631e99949f1fa028f05521fecca13979",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/fr-FR/phone-screenshots/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/fr-FR/06-switzerland-fine.png",
-      "source_sha256": "18eaee3749c95f6a381ef9b89d70eae8d330b988c6b7793833cffa0e52ce664f",
-      "output_sha256": "cbb8277dabcbe656b89eb2fc55f8c2b8ff9e0cbb811f244481485e1cb39ec74a",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/fr-FR/phone-screenshots/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/fr-FR/07-belgium-fine.png",
-      "source_sha256": "cfafddfd85f5f45155fb239b436628b8b74ed80f9d6d0883fedc5ccbf53f0752",
-      "output_sha256": "a17a67fd968cf19f0574fbb5d71ccf3b1f72a45bb48be715288617903aa879eb",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/nl-NL/phone-screenshots/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/android/nl-NL/01-safe-speed.png",
-      "source_sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
-      "output_sha256": "c10869862408d6218fbd3ced66e5065e9ac0809521e5a025c796a8a7eb4614ec",
-      "width": 1080,
-      "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
     "store/android/listing/nl-NL/phone-screenshots/02-dashcam.png": {
@@ -505,108 +161,12 @@
       "height": 1080,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/nl-NL/phone-screenshots/03-camera-recognition.png": {
-      "source": "store/artwork/raw-screenshots/android/nl-NL/03-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "8a637eb7817d620475825179744b268726b66fef2bfc5fa902d91df57f9124e8",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/nl-NL/phone-screenshots/04-traffic-signs.png": {
-      "source": "store/artwork/raw-screenshots/android/nl-NL/04-traffic-signs.png",
-      "source_sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
-      "output_sha256": "2af836e0df7bd7e090b53de8bf49840d0560b414dd64d3c932c43a26852660a3",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/nl-NL/phone-screenshots/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/nl-NL/05-france-fine.png",
-      "source_sha256": "2e11fa8da9774b47d255315bba2dcd8deb2a992b5cf23c665da9158ac4886195",
-      "output_sha256": "bd82c216b515902f77803f53be656b10757417dd48a1b70f979fa1f78acb99d5",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/nl-NL/phone-screenshots/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/nl-NL/06-switzerland-fine.png",
-      "source_sha256": "a7c3ae4e320dd52a5349379129e55307b7594d7078a07f76e094b1489955c50d",
-      "output_sha256": "dc95b69b8684cf7e04d89bbc2291e037b55d5c2f6c83bfc261c6b821ba9c18e4",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/nl-NL/phone-screenshots/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/nl-NL/07-belgium-fine.png",
-      "source_sha256": "c3b8f82700d56fa1542bf0ee50cb9793be9cd73ec817e0aba4bb66fc19c14bff",
-      "output_sha256": "4660634d181ae6b526e6ef390b443e2303c4717b671a3bb8a44a00c3f41364ae",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/es-ES/phone-screenshots/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/android/es-ES/01-safe-speed.png",
-      "source_sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
-      "output_sha256": "b4096b6273da43739e6caf1a7333d2f45fc70d1ffcb7089d44f8360a23f27cab",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
     "store/android/listing/es-ES/phone-screenshots/02-dashcam.png": {
       "source": "store/artwork/raw-screenshots/android/es-ES/02-dashcam.png",
       "source_sha256": "f51a84a1828961af2752bcb5ec3aa87c47c44d87b76a60156457edaf0a4696a6",
       "output_sha256": "bb8c1f7f0afedefae97d8b126d39f163c49e8c60669eef647ccf06a17adf8cd6",
       "width": 1920,
       "height": 1080,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/es-ES/phone-screenshots/03-camera-recognition.png": {
-      "source": "store/artwork/raw-screenshots/android/es-ES/03-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "97e0cc9b5f572a9c0baabcdf520882a6fc9ccf26ae432b891b62f4ce9bce7bf9",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/es-ES/phone-screenshots/04-traffic-signs.png": {
-      "source": "store/artwork/raw-screenshots/android/es-ES/04-traffic-signs.png",
-      "source_sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
-      "output_sha256": "33b10b8cb19ace431323e9e104f7482414f9130bbe669d4612dc93554f2ed9dd",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/es-ES/phone-screenshots/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/es-ES/05-france-fine.png",
-      "source_sha256": "4d3f588e197840bd2f91f7e90e0f931ce7f481803753ce669f1ae31cf02fada7",
-      "output_sha256": "f3d42fd389536bda69a156e4ff2c73a2e0f921579107691314621ecfa88a2754",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/es-ES/phone-screenshots/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/es-ES/06-switzerland-fine.png",
-      "source_sha256": "978d093e3b468550c7552814bac5257c6c504ba89aeabf019211a969f15ca322",
-      "output_sha256": "c101a52243744c28cb29ee09d5fb849bd4e84d41f788fda5b94a35fda2c45363",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/es-ES/phone-screenshots/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/es-ES/07-belgium-fine.png",
-      "source_sha256": "35ec83f1efb36cded00a0d18126f929ac41f8d3bb9b46ca130e338119068b338",
-      "output_sha256": "6c0308667e64bb026c0b7ddf811edb0415f5da997c47e35dba2b7562719b3c9f",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/it-IT/phone-screenshots/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/android/it-IT/01-safe-speed.png",
-      "source_sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
-      "output_sha256": "f2149dcd00641c7a16d3f59d1e3e149b0aaa3bbd8156acbdfd9e4830faf08d28",
-      "width": 1080,
-      "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
     "store/android/listing/it-IT/phone-screenshots/02-dashcam.png": {
@@ -617,108 +177,12 @@
       "height": 1080,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/it-IT/phone-screenshots/03-camera-recognition.png": {
-      "source": "store/artwork/raw-screenshots/android/it-IT/03-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "427342d1cc72a92f5e97c9697fb48c5cc23d3d77dc315a3b3e48dfdbc41cd689",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/it-IT/phone-screenshots/04-traffic-signs.png": {
-      "source": "store/artwork/raw-screenshots/android/it-IT/04-traffic-signs.png",
-      "source_sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
-      "output_sha256": "d9cda9504a580dab260b53df8a7b19e9bc572830fe399583b29b8626818f864e",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/it-IT/phone-screenshots/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/it-IT/05-france-fine.png",
-      "source_sha256": "5f48eae3b23cc5764fe6a7989e0d153cb2d37e0e32669a64cdb7ea0e977396f9",
-      "output_sha256": "e99e9695da1d6bdbd737728cbce66f63fc57e3aeac883133bd8d80e354a0fb58",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/it-IT/phone-screenshots/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/it-IT/06-switzerland-fine.png",
-      "source_sha256": "413b1804428a208e70135803514f6a42c73e910e03b2b77b35795fe3ab08b5c8",
-      "output_sha256": "0ad0dbff1a678a77b58af356789557b72a2c592b18aa7983e4c9e98b6107c07f",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/it-IT/phone-screenshots/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/it-IT/07-belgium-fine.png",
-      "source_sha256": "c6891e6d7d2fabaaeef4e244157ba70997c85a7dc7d95011b65e24a364437384",
-      "output_sha256": "e845476223c407223cab9b34fb1744eb723004de11bef7cc7700789c1fe1a24d",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pl-PL/phone-screenshots/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/android/pl-PL/01-safe-speed.png",
-      "source_sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
-      "output_sha256": "fbd2670d9e737045189f28dbd3a61478f9e3b6018a8e19970b34a27f2c5e5ba9",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
     "store/android/listing/pl-PL/phone-screenshots/02-dashcam.png": {
       "source": "store/artwork/raw-screenshots/android/pl-PL/02-dashcam.png",
       "source_sha256": "76e2b424420cdf660d8874a44cd8bc086f3b954c4de7105cc496a825fc476018",
       "output_sha256": "0283810eba11e87fc9874282f8cd463c5568db7981ef7e03f7d609c582255888",
       "width": 1920,
       "height": 1080,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pl-PL/phone-screenshots/03-camera-recognition.png": {
-      "source": "store/artwork/raw-screenshots/android/pl-PL/03-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "efd32ec57d5cf76c0e293818df8500d23c342164c92078bf0a3b8f3d38a6c691",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pl-PL/phone-screenshots/04-traffic-signs.png": {
-      "source": "store/artwork/raw-screenshots/android/pl-PL/04-traffic-signs.png",
-      "source_sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
-      "output_sha256": "5a95750c820d06f95348561da428a29ecab3336a444d76ec8d6d8013c5f95610",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pl-PL/phone-screenshots/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/pl-PL/05-france-fine.png",
-      "source_sha256": "a307e82fa0514d4876a12dd7afd750f0d9abc6720eb37b6201e977159fedd5f0",
-      "output_sha256": "199267e348f9bbc68b042d9243033502a959d43a3a77994743aa39b069eab3b5",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pl-PL/phone-screenshots/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/pl-PL/06-switzerland-fine.png",
-      "source_sha256": "d9bb350f2e6625796d4e35d34eb5c387403839677df1ce895cb8e886659a72c4",
-      "output_sha256": "4dd20ba123eb93a11cc39320694e5364e72a1ac8851b641c14a0568e5d02a5f0",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pl-PL/phone-screenshots/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/pl-PL/07-belgium-fine.png",
-      "source_sha256": "c6891e6d7d2fabaaeef4e244157ba70997c85a7dc7d95011b65e24a364437384",
-      "output_sha256": "298f59488fea2d01ddbf21f91af1336888a3ddcb9129062ebb2fcb0d9e726718",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pt-BR/phone-screenshots/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/android/pt-BR/01-safe-speed.png",
-      "source_sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
-      "output_sha256": "cd7f7a6ee35abead3b1d04cce26ade822b48c99f59de10596302ef44bff91dcf",
-      "width": 1080,
-      "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
     "store/android/listing/pt-BR/phone-screenshots/02-dashcam.png": {
@@ -729,54 +193,6 @@
       "height": 1080,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/pt-BR/phone-screenshots/03-camera-recognition.png": {
-      "source": "store/artwork/raw-screenshots/android/pt-BR/03-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "81cba06631b859426480664bee6640410155361b8367302d7a6a6705bec8ec47",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pt-BR/phone-screenshots/04-traffic-signs.png": {
-      "source": "store/artwork/raw-screenshots/android/pt-BR/04-traffic-signs.png",
-      "source_sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
-      "output_sha256": "4de9eb2685e4e8009d23a03aedd7d0df5d1a99aa3998285670d827b7e8fd8485",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pt-BR/phone-screenshots/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/pt-BR/05-france-fine.png",
-      "source_sha256": "78363edade768c781ffae482864bdebd7d0cb410b7af4c517bf69d9b6610ebcb",
-      "output_sha256": "1dc73b2aca35e0979830b95448528cf13108697c229978cb140cb0bcaefa763f",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pt-BR/phone-screenshots/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/pt-BR/06-switzerland-fine.png",
-      "source_sha256": "018e63b759041f47486e7ba37a1e3ac07bb4b7588670417ad8f73f3b8d2ffa6b",
-      "output_sha256": "4b097bfbf52fadb79ff76bf3dd53cef2302ea48116f3e1eceab56ccfa2a5e1af",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pt-BR/phone-screenshots/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/pt-BR/07-belgium-fine.png",
-      "source_sha256": "93d121f160c52e6154fe2c444f6bfc51c72d74a70169a75d293d7daec86dac2e",
-      "output_sha256": "de01b22324a991059dced37b81ebfedb9ef60a6e5207f8b2f88e266995aa5075",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/sv-SE/phone-screenshots/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/android/sv-SE/01-safe-speed.png",
-      "source_sha256": "2c1cf4803462cc44cefb9ef0919dee7d048e4c8af468749aa422d7ca33baae0d",
-      "output_sha256": "b899b6c3aa550976058bf5ed5f58c34f6b7c68fb476cb14cbd0490859f1c1887",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
     "store/android/listing/sv-SE/phone-screenshots/02-dashcam.png": {
       "source": "store/artwork/raw-screenshots/android/sv-SE/02-dashcam.png",
       "source_sha256": "5f4775a9bc52aeaa516aea0d7ba52e78d95706358f10d7bd186b509ed4b7be37",
@@ -785,114 +201,698 @@
       "height": 1080,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/sv-SE/phone-screenshots/03-camera-recognition.png": {
-      "source": "store/artwork/raw-screenshots/android/sv-SE/03-camera-recognition.png",
+    "store/apple/screenshots/en-US/iphone-6.9/05-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/apple/en-US/signs/DE.png",
+      "source_sha256": "b3cb7956edceab15d2a68f3c6ef2a0276c0fa7d7a2c90d9e5ff3ddf2d2bd0caf",
+      "output_sha256": "f040812505c0c98dad9c07a1ced4ae6336bc8eb3c46c6653e244e53c3fc44a91",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/en-US/iphone-6.9/06-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/apple/en-US/signs/FR.png",
+      "source_sha256": "1adb811cb4bd0ec8b4177ca357cb6d43b4dfe8855ad2e89f1448a021c6200248",
+      "output_sha256": "f517ffb4ad347469cd16ff772390fd54fe8e3728eea61a4b78b3c7cdfe8820fe",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/en-US/iphone-6.9/07-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/apple/en-US/signs/CH.png",
+      "source_sha256": "fa23ae506d17cbb09d9338fabcc16a3168acf8866a2620f428099e5b3b56a666",
+      "output_sha256": "15cf8d6ba73bd4042f408e9102fdf1b31d49cf59fe697897dae46075fe4d3e79",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/en-US/iphone-6.9/08-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/apple/en-US/signs/BE.png",
+      "source_sha256": "ffd9e738a2ce81b22d9777b737c23ad5b1c9ae113650835d4fa5eaeea51182ad",
+      "output_sha256": "c516d5a40461398afdca2645b0ba54d5f0fc9aa4282c11e5c24fa2291ee972ce",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/en-US/iphone-6.9/09-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/apple/en-US/signs/NL.png",
+      "source_sha256": "7aeeed776b4f2bcf865d0014fcd242768aeb133a3f186583c6fd0c5d353d9558",
+      "output_sha256": "8fc734ceca2696756f181895d9f052d9fce0102099b5b8456f94a82cb51d7266",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/en-US/iphone-6.9/10-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/apple/en-US/penalties/NLD.png",
+      "source_sha256": "6b81ccf77e88280bbb7967342fd2b425c8a4c7c58dce7dfbce2d3fca1cddd6a7",
+      "output_sha256": "a19c6e15aad43a5af72b4ed18f8c2ef198a34cae515ec81894d0de902fd2d9c3",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/de-DE/iphone-6.9/05-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/apple/de-DE/signs/DE.png",
+      "source_sha256": "6ffc39455b6110c4524a4a2c3d7f2f987afbdd4748754c57ffce582a58f4a410",
+      "output_sha256": "3bb8358a8dd17ffc56ecebd31f20fea3793bfb0f812d4cc7864493d19ffc191b",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/de-DE/iphone-6.9/06-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/apple/de-DE/signs/FR.png",
+      "source_sha256": "81b41b382a8000b994fb8e0e0cb0eaf9bf6403445081b41631600880cf59a16d",
+      "output_sha256": "e8ba21fd631d49f242c539af14bf3a05560bbe94eeddc70dc0dc36894169810f",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/de-DE/iphone-6.9/07-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/apple/de-DE/signs/CH.png",
+      "source_sha256": "45e3ebf39cf935c84e87971a026bf4e7db741024f2bf95e70154ee3394b389a3",
+      "output_sha256": "eca8c3bcb645cca1b27e1a8dbb052d8593b5b826730bee9dd553997ca4c02c99",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/de-DE/iphone-6.9/08-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/apple/de-DE/signs/BE.png",
+      "source_sha256": "24e89110ab4786fc1ac6001f474c863b365ebc3c41634e685cb3cc329259758b",
+      "output_sha256": "c9b3c6a42bc3f983aa878a4afb6b33a37a9d93c22132aa806e42d075cd584548",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/de-DE/iphone-6.9/09-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/apple/de-DE/signs/NL.png",
+      "source_sha256": "2f406b302f995421823181be120113fc5f5d7835057adb5f62f3e7435b47c51c",
+      "output_sha256": "13ae086b82dba31417e4a13742d1cc62ad5b906b7d7703692b1180fac0b2b267",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/de-DE/iphone-6.9/10-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/apple/de-DE/penalties/NLD.png",
+      "source_sha256": "db8664f57d46d158cef0769c6e9f0689b17f073f84643a26ad24d2bd5a170714",
+      "output_sha256": "12b8ef70f0aaa82594e0933d8cb4a3132b60d863a1bf3bf54e83381ebc953f4f",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/fr-FR/iphone-6.9/05-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/apple/fr-FR/signs/DE.png",
+      "source_sha256": "97ed167a87bd20cf85a02ae8d9c221db5a5d1a3a98de61c8cd9b511f7b423738",
+      "output_sha256": "a343742cb71bbf71da8b360f27a361faa68524b2bd02975302794d107216c0a0",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/fr-FR/iphone-6.9/06-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/apple/fr-FR/signs/FR.png",
+      "source_sha256": "8b47618e122efa6da420c691e20487b562c334354c7b1529a155e19274a5204c",
+      "output_sha256": "0a12cc3b806bb8d7313c59853222c43fa3bb09d7f57d261b1505c5bed8bfb58c",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/fr-FR/iphone-6.9/07-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/apple/fr-FR/signs/CH.png",
+      "source_sha256": "d9ddbf9541ee5d5c6f492ebd7870555d36458b4dc4f599be61a0a32e569503f6",
+      "output_sha256": "24088f7b1582db4485dd247837db2b7f2ab273a1844312945b7071065eec5d93",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/fr-FR/iphone-6.9/08-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/apple/fr-FR/signs/BE.png",
+      "source_sha256": "e0968f8d278c5374748be81a66ee9fcd1e917ecc6d0a6f3eac13c95f8959fb29",
+      "output_sha256": "0fbfd45cb065fee265d43651f4e58c3154fff07b66a574c3331ce65d0bbc72f3",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/fr-FR/iphone-6.9/09-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/apple/fr-FR/signs/NL.png",
+      "source_sha256": "f03205164ff2cbd6434803db67d3bf0299c7681f5a2263ed4eb6991541a0a635",
+      "output_sha256": "98526cfd9a70eeb32a330f8dc3b9c372aae0cc50b131bc26c8c209a1625dae44",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/fr-FR/iphone-6.9/10-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/apple/fr-FR/penalties/NLD.png",
+      "source_sha256": "b3c94a62a782ffd404171ebb936bb7bd0a2cdd47d1272025d845d46cef010896",
+      "output_sha256": "5e58eaedbe93abd23a4c65f2b908a20ed173e9b8c873d6cda714dec0bce27ef2",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/nl-NL/iphone-6.9/05-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/apple/nl-NL/signs/DE.png",
+      "source_sha256": "e3abd2d9e3151ca1d9f73804fa33d6221bdc69c4e352deb75aea8ec1775832cb",
+      "output_sha256": "d80de3f0ebd495ca4b2f02b6fc89884b8d6ac36b4bd7b94f9714592e5d8c4794",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/nl-NL/iphone-6.9/06-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/apple/nl-NL/signs/FR.png",
+      "source_sha256": "fedcf75fb4598d3c73649386372c4c6101fb9f27191e20d9c6536096d0b4e523",
+      "output_sha256": "c8f49684d2df0a1d7b5431683622171025208276f20ad45009007b179e644dcb",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/nl-NL/iphone-6.9/07-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/apple/nl-NL/signs/CH.png",
+      "source_sha256": "ae5a4f2921cdfb971a481c48a3a6eaaacfc9e0d1fb6aa2c40c6a9f77d66ff143",
+      "output_sha256": "36db236b987692783f13c46d22738fad90325cc34d0c83c0b675547f6cb71d68",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/nl-NL/iphone-6.9/08-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/apple/nl-NL/signs/BE.png",
+      "source_sha256": "8e7d8ac9e6eac673043a182af72f352112d9ac53b1257d97c8f1c0a3e1f904ac",
+      "output_sha256": "6575cb1d6072f6a7cf94996bcb06bffeb8d9e69ca6bf66bb43430d2a762715dc",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/nl-NL/iphone-6.9/09-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/apple/nl-NL/signs/NL.png",
+      "source_sha256": "82cb312084a4feee4b762ee8be3d8f5ed23f4559841ae83b718959f99c3f30b6",
+      "output_sha256": "5431b4cdad4c22543757965f99bfabac78a4c03a33c4a81b31d0e30583c79340",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/nl-NL/iphone-6.9/10-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/apple/nl-NL/penalties/NLD.png",
+      "source_sha256": "f300e7ba63a5102c61e97a3a70d923756d8ae59e66c41553c3e904838c9a5a35",
+      "output_sha256": "9460b91901444895db7ed87b76f5cb36ce0f394ea9a1798ae7380036149b0ba7",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/en-US/phone-screenshots/01-camera-recognition.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/01-camera-recognition.png",
       "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "c3551d23cef0cf45c4b44efd83f3d17071998c1978f07cb7e1aed6f6a0511fe6",
+      "output_sha256": "c7a2d70926e24c8379483f4533d395a7977c6e148385b6e808fc1b38deb02cfd",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/sv-SE/phone-screenshots/04-traffic-signs.png": {
-      "source": "store/artwork/raw-screenshots/android/sv-SE/04-traffic-signs.png",
-      "source_sha256": "ae245b6f6faaa692a2c0d9813702dcd6838fcd6af1fb6d50442d962a178e9a90",
-      "output_sha256": "09c51ab468be8ab4ee715d0e6337bf4911b4a725b4996e660c2aa5492df252a8",
+    "store/android/listing/en-US/phone-screenshots/03-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/en-US/signs/DE.png",
+      "source_sha256": "ba8dde6e397a5f9d72aa403099778a2a53aec51b7b0e77ffbf19b81121aebb0e",
+      "output_sha256": "b4c9ada180cfea0263447f3d568d03fbf863699452136b1f86f475c23af580a8",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/sv-SE/phone-screenshots/05-france-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/sv-SE/05-france-fine.png",
-      "source_sha256": "48e65f068d3896458ef8d7bd2c039682dcbbcad88310d36c1448ef4b66e657bb",
-      "output_sha256": "5deb76b7fe1ec976b63b01b9a465fb83770e246315c4c01286249e87cca42073",
+    "store/android/listing/en-US/phone-screenshots/04-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/android/en-US/signs/FR.png",
+      "source_sha256": "d0a0b2f27d1fe2e841e185f8a7108ab5d4539836a78b23d575a6d3b83af9f1bd",
+      "output_sha256": "8930670d7a33126125757fadbdba2e1612596fed047b163f2907533899e867a0",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/sv-SE/phone-screenshots/06-switzerland-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/sv-SE/06-switzerland-fine.png",
-      "source_sha256": "018e63b759041f47486e7ba37a1e3ac07bb4b7588670417ad8f73f3b8d2ffa6b",
-      "output_sha256": "34de7800a16bda216486c907136ab12adc22959218b6332afecf05a863820a6b",
+    "store/android/listing/en-US/phone-screenshots/05-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/android/en-US/signs/CH.png",
+      "source_sha256": "f0a4e8d59b235d773dccccb058f72acee8685e0808e6613518fbbf7e5e891ab8",
+      "output_sha256": "64a53704118fca6aa9203fdb73f408d799c69f0547819fdbfe270a0d04c1827c",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/sv-SE/phone-screenshots/07-belgium-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/sv-SE/07-belgium-fine.png",
-      "source_sha256": "aacb227f9634c59d7359c4ea3f7bfb745e8c665383e6c6ad3b8d14b16953a766",
-      "output_sha256": "ee47edd966bcb99146d874465f1e5ec99fd3c40cee831200b0a1f1bbd16cf83d",
+    "store/android/listing/en-US/phone-screenshots/06-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/android/en-US/signs/BE.png",
+      "source_sha256": "a98ee11b3f3835fc62ca26ceea0e467c8a29cde877853233b10d123900793ccc",
+      "output_sha256": "200c6f16781e394f07510ad4f353dc9b3592e3fe5b974d6f3183df54a66cb230",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/en-US/phone-screenshots/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/en-US/08-netherlands-fine.png",
-      "source_sha256": "91ded59f190fa6ed8070d80b5d35a86e27e02817cf0b93bf98cd8e8a3861b278",
-      "output_sha256": "3fc4118ed54a8c1c2d52a118346fadc7c4e8eb09c9162ec36d6d50047499136a",
+    "store/android/listing/en-US/phone-screenshots/07-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/android/en-US/signs/NL.png",
+      "source_sha256": "0d71ba625777ab7a56e207669173e4710841bd111b25da06a9ec0417f175c74e",
+      "output_sha256": "defd353f39e0aacf8c9c92f9c4d969bec017a7b1d984f6a516b31250573d4f8c",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/de-DE/phone-screenshots/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/de-DE/08-netherlands-fine.png",
-      "source_sha256": "91ded59f190fa6ed8070d80b5d35a86e27e02817cf0b93bf98cd8e8a3861b278",
-      "output_sha256": "41205717007e4077e911f2c23b06d66db63628c3f9be19ab563ed2ceb08924e6",
+    "store/android/listing/en-US/phone-screenshots/08-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/android/en-US/penalties/NLD.png",
+      "source_sha256": "ba74aa71fe16043839b5c6a4915d931f89a184ec9e15ad9a4ec54d837c8cb62f",
+      "output_sha256": "fe7fa6a779130d2b3ccb022d05bb48d82f36aa1b03a9a346d1802a7d2c1f5527",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/fr-FR/phone-screenshots/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/fr-FR/08-netherlands-fine.png",
-      "source_sha256": "9762c357423d7f0ff8a9ff4dcc4289db36eb9328eae83df13b20b86cb769123b",
-      "output_sha256": "a3687cddd3e09aba483682f9cde4c85f07630a75d8523bbd6ef2888d00aa247b",
+    "store/android/listing/de-DE/phone-screenshots/01-camera-recognition.png": {
+      "source": "store/artwork/raw-screenshots/android/de-DE/01-camera-recognition.png",
+      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "output_sha256": "465fc277fcc10ec967e298ffeebae84089fd333aa6c040d428422aa45e552489",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/nl-NL/phone-screenshots/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/nl-NL/08-netherlands-fine.png",
-      "source_sha256": "91dc79e8f42c049db8aadf9f659f2116ca0c0e1a538d47852de7082c5553347f",
-      "output_sha256": "9ab88ccc445a90f81089accd8e4af3aebfc7e99b86f605ad8c8cf52bec9f2951",
+    "store/android/listing/de-DE/phone-screenshots/03-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/de-DE/signs/DE.png",
+      "source_sha256": "240e8102fbfab56645f9d521e7c40ca361bc5342e638ca9e0725268fd7feed7c",
+      "output_sha256": "d9edf5de9e84b69ed123c43cd24bd8cee622afa86af62f7d67bd6183bad41d96",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/es-ES/phone-screenshots/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/es-ES/08-netherlands-fine.png",
-      "source_sha256": "91ded59f190fa6ed8070d80b5d35a86e27e02817cf0b93bf98cd8e8a3861b278",
-      "output_sha256": "6e2df48900f502a21a994fad656b96127ed3d8c61f1e60a0143abb6759be4c35",
+    "store/android/listing/de-DE/phone-screenshots/04-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/android/de-DE/signs/FR.png",
+      "source_sha256": "a24be78c3d1c09b432f846ec410ec3ceadef56bc76bc630043aeac7c0fc10a48",
+      "output_sha256": "58849605509ac588aa330c87299737973bed1196397062fe93e19215f1eadbd0",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/it-IT/phone-screenshots/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/it-IT/08-netherlands-fine.png",
-      "source_sha256": "91ded59f190fa6ed8070d80b5d35a86e27e02817cf0b93bf98cd8e8a3861b278",
-      "output_sha256": "e4138f3145e6f6b389603855b23670f5d0d81f108a3fb703cca74cefaa66802d",
+    "store/android/listing/de-DE/phone-screenshots/05-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/android/de-DE/signs/CH.png",
+      "source_sha256": "71738dbf1885daab37a43b90d9bedb93b00a5306599a58e6fb82b2deeb86f542",
+      "output_sha256": "179ad0e5c8eea1816ac60b82d8379e9d9ebf73dfa943df1552e636b230bd4be0",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/pl-PL/phone-screenshots/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/pl-PL/08-netherlands-fine.png",
-      "source_sha256": "91ded59f190fa6ed8070d80b5d35a86e27e02817cf0b93bf98cd8e8a3861b278",
-      "output_sha256": "885722f7e2a4f168269146489626c7d0320e115ad7372ba97bdb1be5436a2339",
+    "store/android/listing/de-DE/phone-screenshots/06-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/android/de-DE/signs/BE.png",
+      "source_sha256": "a94ec85cadce1fe1f7c41e5adab36f03f2c6243c145d5a4c1e3e94be683905a3",
+      "output_sha256": "935448ef0d590639deb4f6ebee7ab713c0934baadf7cbe2f9d67f0b8d8230aad",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/pt-BR/phone-screenshots/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/pt-BR/08-netherlands-fine.png",
-      "source_sha256": "91ded59f190fa6ed8070d80b5d35a86e27e02817cf0b93bf98cd8e8a3861b278",
-      "output_sha256": "6b6243652bce10145643c6a02668ea0fc8b7432640497545f2b28d59191ab43e",
+    "store/android/listing/de-DE/phone-screenshots/07-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/android/de-DE/signs/NL.png",
+      "source_sha256": "86126fbd9852cdc79d6f765d1cfd7a5b37884e8929c5d0f5a7d18a6b6c5f8146",
+      "output_sha256": "1902216ac4a6c360e79fa92b58e749fa2485a22abf70bee5ca313785878cc052",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/sv-SE/phone-screenshots/08-netherlands-fine.png": {
-      "source": "store/artwork/raw-screenshots/android/sv-SE/08-netherlands-fine.png",
-      "source_sha256": "91ded59f190fa6ed8070d80b5d35a86e27e02817cf0b93bf98cd8e8a3861b278",
-      "output_sha256": "960c26d66ee12a6cf597fbde7c22eee709f596c496fbc2d062cb36ccab6b51b3",
+    "store/android/listing/de-DE/phone-screenshots/08-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/android/de-DE/penalties/NLD.png",
+      "source_sha256": "dfab40195328c29ed88feccbc74969c763b6274da6b2b063a56550f98b89748f",
+      "output_sha256": "2879ee30357d0328680ec39f2b2b849fd64583514b4f338c31cedb9f6492e92f",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/fr-FR/phone-screenshots/01-camera-recognition.png": {
+      "source": "store/artwork/raw-screenshots/android/fr-FR/01-camera-recognition.png",
+      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "output_sha256": "acea5c597b6fb9311e6fa88744bc43d8a34afab9dcda7daec2b2299ad71578e7",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/fr-FR/phone-screenshots/03-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/fr-FR/signs/DE.png",
+      "source_sha256": "22a80981ec7cd451f0be52bc6b747064147665505bb952da15540f168b36f51a",
+      "output_sha256": "6c996e167bb8ab9c259187c3f8bf290574f0739b2a14cd648cd169a4e406af37",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/fr-FR/phone-screenshots/04-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/android/fr-FR/signs/FR.png",
+      "source_sha256": "4f3cfd4b4e76a0c494a2b26dac88b61236bc4349b4999923c62c034b8df332de",
+      "output_sha256": "1e859d46d4ff0dadceae30d019eba31b99fe52a550dc881bf4f47b1cc20a682e",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/fr-FR/phone-screenshots/05-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/android/fr-FR/signs/CH.png",
+      "source_sha256": "23d9d7dbb64a5c59976e1780f58804164b7d6f7a7499bf4c05b95b56971b6e9d",
+      "output_sha256": "cd68632ea21a27509e1b1e66ac4f9bde2117d7470fd59c7ce9b2c56978fcdebc",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/fr-FR/phone-screenshots/06-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/android/fr-FR/signs/BE.png",
+      "source_sha256": "087a6f865ace3a28d0a4fb5afe20898a432a7ffb19730ee0ea674db332138857",
+      "output_sha256": "7ed9c19935eaa6e967ace7947f6f419532dec33f3b9c8be9a26d5bcdf24936cb",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/fr-FR/phone-screenshots/07-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/android/fr-FR/signs/NL.png",
+      "source_sha256": "d7159d4d9cf9631c9b8ef13428ba0214ed7bd667338918277575152863fb244a",
+      "output_sha256": "444134380a0d7d230775ae5b53fe0fa05fd240f9903c14b8ddb2ec0da69a58fd",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/fr-FR/phone-screenshots/08-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/android/fr-FR/penalties/NLD.png",
+      "source_sha256": "43b832a7adfdc40b25b576746ea2b3fc3481177d16298e6b872747a59cf838ae",
+      "output_sha256": "f8feb918a9afa60477732a33425fc2afb66757a120ef80b88fd77bd32cd91279",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/nl-NL/phone-screenshots/01-camera-recognition.png": {
+      "source": "store/artwork/raw-screenshots/android/nl-NL/01-camera-recognition.png",
+      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "output_sha256": "6868ee3f005f53b5367bd186c00b3188113e45b6f677b725f105720eec534e9c",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/nl-NL/phone-screenshots/03-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/nl-NL/signs/DE.png",
+      "source_sha256": "8ad771f71803e2ceda2542944ccc5afe2edc6e1fd9d910998bafb9ff83726376",
+      "output_sha256": "2c900297db17daa202ff5a0fba2066b8b8f6056df9cc094ad0223abad199fa44",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/nl-NL/phone-screenshots/04-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/android/nl-NL/signs/FR.png",
+      "source_sha256": "4c751e771308e9ba21f55cbe1c79de282ac7251863a4416e4c170de18e2d7302",
+      "output_sha256": "2ea850427f7e5a313e3a4226950c4af52dadc2c79c76857b7a45cf121d6d0af4",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/nl-NL/phone-screenshots/05-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/android/nl-NL/signs/CH.png",
+      "source_sha256": "e48f460b47d67487433478a054cfef7a86219f2d41a18358efa7cc83716ad695",
+      "output_sha256": "b82076eca14bf7f313f7f4bb93cc50eed5c2e1a302b0fc5aee66a783fc49a0be",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/nl-NL/phone-screenshots/06-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/android/nl-NL/signs/BE.png",
+      "source_sha256": "627b4023a8bc875c10f5b70cfe69590fce6f7dc0fd6c862bfe19f7b9c3e8aba6",
+      "output_sha256": "5fe9df6cf93998ed8b701edde55cf07070258fb95d71eaa2b078eed7ee554c40",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/nl-NL/phone-screenshots/07-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/android/nl-NL/signs/NL.png",
+      "source_sha256": "2441b3f86363a0691bf1ccdf991819bb79320668a48f4d4f3af4272a19a8a913",
+      "output_sha256": "4178d4989a4f1deb68dc30a6619fc2877013ffd870497162e734b8e4a0536eb8",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/nl-NL/phone-screenshots/08-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/android/nl-NL/penalties/NLD.png",
+      "source_sha256": "6969394af3931434174ceda93ff19b9883fee7c8b51cd10d14afdb5de2516277",
+      "output_sha256": "71309b1e41cd31f22a5351822ef71b65af8c2be6e40882af436cc12211241a9f",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/es-ES/phone-screenshots/01-camera-recognition.png": {
+      "source": "store/artwork/raw-screenshots/android/es-ES/01-camera-recognition.png",
+      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "output_sha256": "07ecbdcc2ff7559fbdc05e354362fa1d5a54469b942d67d3933a69c3847a7e16",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/es-ES/phone-screenshots/03-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/es-ES/signs/DE.png",
+      "source_sha256": "0d49c2a53fabb74be521f909fd08f9a7b323616123210a306229b2d12e961795",
+      "output_sha256": "c0303108cad78b72ab42fae5acc6c321d025b027b1aed6bb0f0c1340c364be4e",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/es-ES/phone-screenshots/04-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/android/es-ES/signs/FR.png",
+      "source_sha256": "2319aef1066351c8c3533e8aae2a6d345ff924c864676638b4b1e5f4e5cfb940",
+      "output_sha256": "b6da470c0e6e38ec4446eb7333190fb6e676c7a2d2825497b402bea50dfee010",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/es-ES/phone-screenshots/05-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/android/es-ES/signs/CH.png",
+      "source_sha256": "081793440d3552d27655f2656995cffb9be009ac077ec98086bbfcc2828dc8ff",
+      "output_sha256": "47b9fc4de3cece7ee07cb7a45d9946b69351b89bd9489b73b26d5b4bd4f3d034",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/es-ES/phone-screenshots/06-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/android/es-ES/signs/BE.png",
+      "source_sha256": "9bdec2fd330762f14f2b05c14a588824d8ee2e24906b61993427faca1eb99d85",
+      "output_sha256": "4c603de4ada70ab1ff0b83faa1e92b677a489f598c424547b6631e6e92299f1d",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/es-ES/phone-screenshots/07-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/android/es-ES/signs/NL.png",
+      "source_sha256": "819fb59d750d21853c17ec3a16e0cf23bb72f2a027495007a2c8fc1f0793b21e",
+      "output_sha256": "3f02d0e350d1942099a748d9943e794d61fa8e70a2fb7448fd2a4f6da0df80b4",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/es-ES/phone-screenshots/08-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/android/es-ES/penalties/NLD.png",
+      "source_sha256": "78a88098aa48e73d4f0e55d7578d4ca37f9d4176b96d789114a102c746279153",
+      "output_sha256": "a946281cebe6538431fd5a0d89a2678e3778c9b46dc51ed92e6126eaf7682538",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/it-IT/phone-screenshots/01-camera-recognition.png": {
+      "source": "store/artwork/raw-screenshots/android/it-IT/01-camera-recognition.png",
+      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "output_sha256": "fc4b66a9b3e9e57755487c32060fdeea0747c514b0dd62ac5a8c508e29b13c5e",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/it-IT/phone-screenshots/03-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/it-IT/signs/DE.png",
+      "source_sha256": "f31ccdda5a2d6240b99ecb5641846da1dc4194b20c17ca0bd4a6a78653b4ea0f",
+      "output_sha256": "6e7f7d5f4298f155ecf8740632e2dfdd28ef78ba0530039671d5c046b7fe0f69",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/it-IT/phone-screenshots/04-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/android/it-IT/signs/FR.png",
+      "source_sha256": "72c228ebad7a5fa3efce821326c1c353769ddcae82e074b33bcef316fe6d7598",
+      "output_sha256": "7edc838fdc774a4caa1ffa2893a80aa13a09447d0c2b9cfb35c9961e6f83cc76",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/it-IT/phone-screenshots/05-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/android/it-IT/signs/CH.png",
+      "source_sha256": "782f79ba446e27d0d60d8b0dc9f906a1c2364a8e15899034acfb3e2507518a5a",
+      "output_sha256": "7a406889fb2825dded98f42bb4aca17beacd20db81e14769b968e3a9b3cd32d0",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/it-IT/phone-screenshots/06-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/android/it-IT/signs/BE.png",
+      "source_sha256": "5184df39adc90f3a405459b32d5152040a9f20551764a772a0b8bb69b826e505",
+      "output_sha256": "b001e2b77eb816a5d81e0aee4df0587c376f25165fbcea5e7021e9e948751d06",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/it-IT/phone-screenshots/07-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/android/it-IT/signs/NL.png",
+      "source_sha256": "62c46953c979e6742700291a60287d75b76800f464b2ceaeb05deeb0499d0e92",
+      "output_sha256": "ac6eccb559b45a0c590001a7b0b4013eaa4286c060e9b4108b9ab579a0990a5e",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/it-IT/phone-screenshots/08-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/android/it-IT/penalties/NLD.png",
+      "source_sha256": "f6d7c0aa86bc8b1c124bb215f206de070f0a0fa6a293af99188901628856267d",
+      "output_sha256": "08bc467baa236b1cce97820c0579f1c01db95ef5af8022c30c8a18a6ed85d4db",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pl-PL/phone-screenshots/01-camera-recognition.png": {
+      "source": "store/artwork/raw-screenshots/android/pl-PL/01-camera-recognition.png",
+      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "output_sha256": "282989e8b35f69933b11b4591082282aa52df29eebe15d4556f9bedde33402c0",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pl-PL/phone-screenshots/03-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/pl-PL/signs/DE.png",
+      "source_sha256": "0b004b7f4422f1de478a471d5e3cc46589d5c78306c4a080eaf9e6426eddd53d",
+      "output_sha256": "428ee7c5551efd8f8d19f77f315235f6e60d6d17b6f63714f24141cc7fdaf3cd",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pl-PL/phone-screenshots/04-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/android/pl-PL/signs/FR.png",
+      "source_sha256": "cbfbb2c47f48fd2f19f4088b0373621764d7c6a2fcc1aa8683f95e5256526041",
+      "output_sha256": "75403bbabfbdeddccdbb1b6e3e83f3b5b5c928b5925606153e7b9efe372fe26c",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pl-PL/phone-screenshots/05-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/android/pl-PL/signs/CH.png",
+      "source_sha256": "d6a491c3c6a6ba93af3267122269b45636ce97a84da4e4f0eab4efc6a6a1de11",
+      "output_sha256": "ecdf3b275176101d47a3b806da8d2cce348030ae80bec05a1646e83de08d70a5",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pl-PL/phone-screenshots/06-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/android/pl-PL/signs/BE.png",
+      "source_sha256": "9589f8edc99b20931853ec0b5d2e3b8962da82eecf242d161afe4dc160a376a1",
+      "output_sha256": "8b853484c881848d8a7a83cb382f36ab9ca39177aec0b10535924d0c0f756bdd",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pl-PL/phone-screenshots/07-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/android/pl-PL/signs/NL.png",
+      "source_sha256": "14c32bbf54bebb560f642e2150a871d2c1d689c468b810352f931c9592f3e296",
+      "output_sha256": "da97c89c4daec724d6ab5d7a9cde9e5855bd0d340a2a44c88d684165c5c6f68e",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pl-PL/phone-screenshots/08-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/android/pl-PL/penalties/NLD.png",
+      "source_sha256": "d8a979ae6f97f220833d5369a1cd7cfc6d53f382dc4bb402cfdba60f5ac9a6c0",
+      "output_sha256": "44653093c04fdd07b358e5ae5ef5c7496562b8bed164dce4e620ac45f3e03b81",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pt-BR/phone-screenshots/01-camera-recognition.png": {
+      "source": "store/artwork/raw-screenshots/android/pt-BR/01-camera-recognition.png",
+      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "output_sha256": "3c8e29d5709556507e0cee863203cb655c627dddd0831d40d44b5dcc426e6340",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pt-BR/phone-screenshots/03-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/pt-BR/signs/DE.png",
+      "source_sha256": "7ee599c987d6dd8b4882c473b5e49ef63bbaab1d466d01e61f9aa3b31210703e",
+      "output_sha256": "f0f9d79c804342bb67fad9223e4a22ee93e89ced4934d82eb170ffd28a8d2214",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pt-BR/phone-screenshots/04-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/android/pt-BR/signs/FR.png",
+      "source_sha256": "d82370025691d20113a58dadd733188487b832e1e0d0afb4b8e454b1aee67088",
+      "output_sha256": "ace4cb56abeb018336d64a22be00c39bf17c133ecdea8acb424b69da773d3579",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pt-BR/phone-screenshots/05-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/android/pt-BR/signs/CH.png",
+      "source_sha256": "5541f49a6d3f27fe0908bd21a045e007235f1e455b8c94020c898d5b56fe911c",
+      "output_sha256": "befdda2826aa67445369e389ca69248d9eecc687b98c114063bf4534ebc1cc6d",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pt-BR/phone-screenshots/06-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/android/pt-BR/signs/BE.png",
+      "source_sha256": "4cdeed55305b0ccf4eebc4b25cc385391829d8f37159be9e79e7baa08730d3f6",
+      "output_sha256": "4ce6cdb7f0b94c73ec8896b2d53d879fce58a6029af8aa3665246590e40cd035",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pt-BR/phone-screenshots/07-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/android/pt-BR/signs/NL.png",
+      "source_sha256": "376936989bfd8c6dbe1e1f3af6cb04f86ef32ebbc91b834b8aed8119a5134136",
+      "output_sha256": "a81c91911c8cceec12f7ba75a21a4a1c8bf60d8eec0e0634347fefaa9359b197",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pt-BR/phone-screenshots/08-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/android/pt-BR/penalties/NLD.png",
+      "source_sha256": "a1cfbe609578240c1ed198ed50fa7994abaaacf01116b61ce054076ff77dbb04",
+      "output_sha256": "e24acdfa1ca58587413d5573864d488d13ee4d6b275a613f91baae06c2b74660",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/sv-SE/phone-screenshots/01-camera-recognition.png": {
+      "source": "store/artwork/raw-screenshots/android/sv-SE/01-camera-recognition.png",
+      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
+      "output_sha256": "e788838bba3912c806d2d3ec8b6cf5d89bbbe5019edcd51025bbac0eea128c28",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/sv-SE/phone-screenshots/03-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/sv-SE/signs/DE.png",
+      "source_sha256": "8ec83d83ac4ce3ee57b20ff8959152bf59f6d0fb55035b26baf2c83f02a11034",
+      "output_sha256": "a731a9b68e00ef7fe1f365e98ab9036b3772b5d4946426d6243ae4c60908c7ed",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/sv-SE/phone-screenshots/04-reference-signs-FR.png": {
+      "source": "store/reference-screenshots/android/sv-SE/signs/FR.png",
+      "source_sha256": "79a8df7b916690eb4403ecc86859240dc956b49c1e0963a8a07f3ca8c516be9e",
+      "output_sha256": "7a076dad41d01df774db210da456c09916e7f8b98eb6ec1bae3360c354ff941f",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/sv-SE/phone-screenshots/05-reference-signs-CH.png": {
+      "source": "store/reference-screenshots/android/sv-SE/signs/CH.png",
+      "source_sha256": "f1261e173b5f017dae12af2c539ac4674cba6526bb5c1b0d2de64f02af6086f8",
+      "output_sha256": "eeb646bf2c2a8106c28effd69c383037cea0ffeec49552b4f8acdd6d7b9336ef",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/sv-SE/phone-screenshots/06-reference-signs-BE.png": {
+      "source": "store/reference-screenshots/android/sv-SE/signs/BE.png",
+      "source_sha256": "dbd11c86a753d67c8fb7f4932ace82359eb7a1395a8c5c0f7c3d976356c1069d",
+      "output_sha256": "d8e902c3dfec8f172f5f6c15de3276bec201a99b72c40caa3a202c58d7013842",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/sv-SE/phone-screenshots/07-reference-signs-NL.png": {
+      "source": "store/reference-screenshots/android/sv-SE/signs/NL.png",
+      "source_sha256": "fe90c5704d648f9abad04e65a77fb7fbae0a4bc543dc4883433bc29867df7e4a",
+      "output_sha256": "4d1593ab4899247ed85558d2ee3513d98f981f1ec8c8529d9cf6b9b6fdb1333d",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/sv-SE/phone-screenshots/08-reference-penalties-NLD.png": {
+      "source": "store/reference-screenshots/android/sv-SE/penalties/NLD.png",
+      "source_sha256": "4b80e831942564af2d3ac21568e7e6cf7eed6fd9f5e4eb311b388696114fd609",
+      "output_sha256": "e79a1d4dd09b67cbc6545c2bac1d9df3eeacc76ce4d15c1866986eb95354b84c",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."

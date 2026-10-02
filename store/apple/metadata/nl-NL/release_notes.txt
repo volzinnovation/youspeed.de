@@ -1,1 +1,3 @@
 Versie 1.3 biedt lokale dashcamvideo’s, verkeersbordherkenning op het apparaat met geluid of spraak en straatfoto’s die je controleert vóór een optionele Panoramax-upload. De nieuwe gegevensbeheerder vereenvoudigt offline downloads en opslag. Verbeterde bronweergave, opnamebediening, introductie en diagnostiek. Herkenning en kaarten kunnen fouten bevatten; volg altijd de verkeersborden.
+
+Onder Info vind je boetetabellen per land en een verkeersbordencatalogus met pictogrammen en gesproken namen in het Engels, Frans, Duits en Nederlands. De naslagpagina’s zijn offline beschikbaar en vormen geen juridisch advies.

@@ -1,0 +1,25 @@
+{
+  "format": "youspeed.play-availability.v1",
+  "previous": [
+    "DE",
+    "FR",
+    "LI",
+    "LU",
+    "NL",
+    "CH"
+  ],
+  "added": [
+    "BE"
+  ],
+  "saved": [
+    "BE",
+    "DE",
+    "FR",
+    "LI",
+    "LU",
+    "NL",
+    "CH"
+  ],
+  "state": "Saved change; not sent for review",
+  "upload_certificate_sha256": "79:B3:84:31:15:3D:E1:B1:77:6E:A8:3E:19:70:66:2D:0A:40:C6:A4:1A:EC:BC:A9:58:D7:3E:3F:E5:09:E0:8A"
+}

@@ -20,3 +20,5 @@ Funkcje jazdy nie wymagają konta. Bez reklamowych i śledzących SDK. Koryguj l
 Skonfiguruj YouSpeed na postoju. Rozpoznawanie może pominąć lub błędnie odczytać znaki; dostępność zależy od zainstalowanego modelu kraju i urządzenia. Zasięg map i informacje o karach różnią się w zależności od kraju. Znaki, przepisy i oficjalne decyzje są wiążące. YouSpeed nie gwarantuje obowiązującego limitu ani skutków prawnych.
 
 Funkcje jazdy nie wymagają konta. Kamera i mikrofon są opcjonalne. Jeśli robienie zdjęć jest włączone, zdjęcia powstają automatycznie podczas ruchu przy otwartej aplikacji. Zdjęcia i filmy pozostają na urządzeniu, dopóki nie zdecydujesz o ich udostępnieniu lub przesłaniu. Panoramax wymaga połączonego konta, Internetu i wyboru zdjęć; przesłane zdjęcia zawierają lokalizację i metadane wykonania. Lokalne dzienniki diagnostyczne są domyślnie włączone i można je wyłączyć. Brak SDK reklamowych i śledzących.
+
+W sekcji Info znajdziesz tabele mandatów dla poszczególnych krajów oraz katalog znaków z piktogramami i wypowiadanymi nazwami po angielsku, francusku, niemiecku i niderlandzku. Strony są dostępne offline i nie stanowią porady prawnej.

@@ -14,6 +14,8 @@ const copy = JSON.parse(fs.readFileSync(path.join(root, 'store/artwork/marketing
 const options = process.argv.slice(2);
 const platform = options.find(value => ['apple', 'android'].includes(value));
 const refresh = options.includes('--capture-source');
+const signTexts = JSON.parse(fs.readFileSync(path.join(root, 'shared/traffic-sign-documentation/translations.json'), 'utf8'));
+const fineTexts = JSON.parse(fs.readFileSync(path.join(root, 'shared/penalty-documentation/translations.json'), 'utf8'));
 const selectedLocales = options.find(value => value.startsWith('--locales='))?.slice(10).split(',');
 const esc = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 const imageURI = raw => `data:image/png;base64,${raw.toString('base64')}`;
@@ -34,12 +36,18 @@ for (const target of platform ? [platform] : ['apple', 'android']) {
     if (!fs.existsSync(directory)) continue;
     for (const name of fs.readdirSync(directory).filter(name => name.endsWith('.png')).sort()) {
       const output = path.join(directory, name);
-      const capture = path.join(root, `store/artwork/raw-screenshots/${target}/${locale}/${name}`);
+      const signCountry = name.match(/reference-signs-(\w+)\.png$/)?.[1];
+      const fineCountry = name.match(/reference-penalties-(\w+)\.png$/)?.[1];
+      const referenceCountry = signCountry || fineCountry;
+      const capture = referenceCountry
+        ? path.join(root, `store/reference-screenshots/${target}/${locale}/${signCountry ? 'signs' : 'penalties'}/${referenceCountry}.png`)
+        : path.join(root, `store/artwork/raw-screenshots/${target}/${locale}/${name}`);
       fs.mkdirSync(path.dirname(capture), { recursive: true });
       const key = `${relative}/${name}`;
       const alreadyComposed = provenance.images[key]?.output_sha256 === hash(fs.readFileSync(output));
+      if (referenceCountry && !fs.existsSync(capture)) throw new Error(`Native reference capture missing: ${capture}`);
       if (!fs.existsSync(capture) && alreadyComposed) throw new Error(`Retained native source missing: ${capture}`);
-      if (!fs.existsSync(capture) || (refresh && !alreadyComposed)) fs.copyFileSync(output, capture);
+      if (!referenceCountry && (!fs.existsSync(capture) || (refresh && !alreadyComposed))) fs.copyFileSync(output, capture);
       const raw = fs.readFileSync(capture);
       const meta = await sharp(raw).metadata();
       const landscape = target === 'android' && meta.width > meta.height;
@@ -50,7 +58,13 @@ for (const target of platform ? [platform] : ['apple', 'android']) {
       const index = Number(name.slice(0, 2)) - 1;
       // Android places dashcam second; the other benefit captions follow native order.
       const story = target === 'android' ? [0, 3, 1, 2, 4, 5, 6, 7][index] : index;
-      const [line1, line2, detail] = copy[locale].gallery[story];
+      const language = locale.split('-')[0];
+      const referenceText = signCountry ? signTexts[language] : fineTexts[language];
+      const countryAlpha2 = { NLD: 'NL' }[referenceCountry] || referenceCountry;
+      const countryName = referenceCountry ? new Intl.DisplayNames([locale], { type: 'region' }).of(countryAlpha2) : '';
+      const [line1, line2, detail] = referenceCountry
+        ? [referenceText.title, countryName, signCountry ? 'English · Français · Deutsch · Nederlands' : referenceText.disclaimer]
+        : copy[locale].gallery[name === '01-camera-recognition.png' ? 1 : story];
       const headlineBase = landscape ? 66 : 110 * scale;
       const font = Math.min(await fitted(line1, width - 2 * pad, headlineBase, true), await fitted(line2, width - 2 * pad, headlineBase, true));
       const brandY = landscape ? 72 : 140 * scale;

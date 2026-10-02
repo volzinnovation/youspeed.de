@@ -1,0 +1,18 @@
+{
+  "release": "1.3 (10032)",
+  "notesMatchSource": true,
+  "url": "https://play.google.com/console/u/0/developers/5138521418106883804/app/4974352973939108666/tracks/4697360213117564323/releases/2/prepare",
+  "notesSha256": "ffa5edd85ea3fd490c5bb1e7288ca71a94d4e1ae842614d919bab906af12256a",
+  "languages": [
+    "de-DE",
+    "en-US",
+    "fr-FR",
+    "nl-NL",
+    "es-ES",
+    "it-IT",
+    "pl-PL",
+    "pt-BR",
+    "sv-SE"
+  ],
+  "state": "Saved draft; zero app bundles; not submitted"
+}

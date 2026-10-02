@@ -1,1 +1,3 @@
 La version 1.3 propose des vidéos dashcam locales, une reconnaissance des panneaux sur l’appareil avec retour sonore ou vocal, et des photos géolocalisées à vérifier avant un envoi Panoramax facultatif. Le nouveau gestionnaire de données simplifie les téléchargements hors ligne et le stockage. Affichage des sources, commandes, introduction et diagnostics améliorés. Les cartes et la reconnaissance peuvent se tromper ; respectez les panneaux.
+
+Sous Infos, consultez les tableaux d’amendes par pays et un catalogue de panneaux avec pictogrammes et noms prononcés en anglais, français, allemand et néerlandais. Ces références sont disponibles hors ligne et ne constituent pas un conseil juridique.

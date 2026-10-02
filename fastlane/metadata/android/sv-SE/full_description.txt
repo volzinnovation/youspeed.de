@@ -20,3 +20,5 @@ Körfunktionerna kräver inget konto. Inga SDK:er för reklam eller spårning. K
 Ställ in YouSpeed när du står parkerad. Igenkänningen kan missa eller misstolka skyltar; tillgängligheten beror på installerad landsmodell och enhet. Karttäckning och information om påföljder varierar mellan länder. Skyltar, trafikregler och officiella beslut gäller alltid. YouSpeed garanterar inte gällande hastighetsgräns eller juridiska följder.
 
 Körfunktionerna kräver inget konto. Kamera och mikrofon är valfria. När fotofunktionen är aktiverad tas foton automatiskt under rörelse med appen öppen. Foton och videor stannar på enheten tills du väljer att dela eller ladda upp dem. Panoramax kräver ett anslutet konto, internet och ditt urval; uppladdade foton innehåller plats- och bildmetadata. Lokala diagnostikloggar är aktiverade som standard och kan stängas av. Inga annons- eller spårnings-SDK:er.
+
+Under Info finns bötestabeller per land och en vägmärkeskatalog med piktogram och upplästa namn på engelska, franska, tyska och nederländska. Referenssidorna fungerar offline och är inte juridisk rådgivning.

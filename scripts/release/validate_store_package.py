@@ -23,12 +23,12 @@ APPLE_LIMITS = {"name.txt": 30, "subtitle.txt": 30, "description.txt": 4000,
 PLAY_LIMITS = {"title.txt": 30, "short_description.txt": 80,
                "full_description.txt": 4000, "release_notes.txt": 500}
 APPLE_IMAGES = ("01-safe-speed.png", "02-camera-speed-limit.png", "03-secondary-sign.png",
-                "04-dashcam.png", "05-france-fine.png", "06-switzerland-fine.png",
-                "07-belgium-fine.png", "08-netherlands-fine.png",
-                "09-pedestrian-zone.png", "10-autobahn-unlimited.png")
-PLAY_IMAGES = ("01-safe-speed.png", "02-dashcam.png", "03-camera-recognition.png",
-               "04-traffic-signs.png", "05-france-fine.png", "06-switzerland-fine.png",
-               "07-belgium-fine.png", "08-netherlands-fine.png")
+                "04-dashcam.png", "05-reference-signs-DE.png", "06-reference-signs-FR.png",
+                "07-reference-signs-CH.png", "08-reference-signs-BE.png",
+                "09-reference-signs-NL.png", "10-reference-penalties-NLD.png")
+PLAY_IMAGES = ("01-camera-recognition.png", "02-dashcam.png", "03-reference-signs-DE.png",
+               "04-reference-signs-FR.png", "05-reference-signs-CH.png", "06-reference-signs-BE.png",
+               "07-reference-signs-NL.png", "08-reference-penalties-NLD.png")
 
 
 def main() -> int:

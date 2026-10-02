@@ -1,0 +1,2150 @@
+{
+  "format": "youspeed.reference-screenshots.validation.v1",
+  "apple_count": 68,
+  "android_count": 153,
+  "errors": [],
+  "files": [
+    {
+      "path": "store/reference-screenshots/apple/en-US/signs/DE.png",
+      "sha256": "b3cb7956edceab15d2a68f3c6ef2a0276c0fa7d7a2c90d9e5ff3ddf2d2bd0caf",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/signs/FR.png",
+      "sha256": "1adb811cb4bd0ec8b4177ca357cb6d43b4dfe8855ad2e89f1448a021c6200248",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/signs/NL.png",
+      "sha256": "7aeeed776b4f2bcf865d0014fcd242768aeb133a3f186583c6fd0c5d353d9558",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/signs/BE.png",
+      "sha256": "ffd9e738a2ce81b22d9777b737c23ad5b1c9ae113650835d4fa5eaeea51182ad",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/signs/CH.png",
+      "sha256": "fa23ae506d17cbb09d9338fabcc16a3168acf8866a2620f428099e5b3b56a666",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/penalties/DEU.png",
+      "sha256": "b3951807cd6f303647ab48ede8b858e8c654819e435c56cbff409edd0ca327d0",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/penalties/FRA.png",
+      "sha256": "c5d8ed22de70a8de362248deb33a082de1cfcd4bd7da8c9dec461492fdbfd5e5",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/penalties/CHE.png",
+      "sha256": "6fda93a3fdbc82dc9985a953464a839b6e624e47c13a3ad679c4611d178463a6",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/penalties/BEL.png",
+      "sha256": "60913c80ea51a7b85039be51618fb6ba42e9aa0b144178bc18247dccd455c26b",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/penalties/NLD.png",
+      "sha256": "6b81ccf77e88280bbb7967342fd2b425c8a4c7c58dce7dfbce2d3fca1cddd6a7",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/penalties/GBR.png",
+      "sha256": "a416c4d119ba990b9e29a99ab13cc81865b66bab31f2fff5f60fbeecac83d26d",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/penalties/LUX.png",
+      "sha256": "9d19f2ce6700cb6713821be725e9954336e581d5abbecea1239a435f3bcaaa9c",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/penalties/LIE.png",
+      "sha256": "0de9fabd9a98d3fcd74d2d390831b6ddb4d07806e5cd18d6419f25c6b34abbdf",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/penalties/MCO.png",
+      "sha256": "5aaf0a8e3f09cd8ec71585ccc89d816061d9d2ff8bb3ad728bc35ac1cb1de4a0",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/penalties/ROU.png",
+      "sha256": "f5dbe0053f2d37035838e3b8e13a7e5497ec215382fb14b7521a6278f5b5c3a1",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/penalties/SWE.png",
+      "sha256": "d1b9543206928ec467c27a6fd69bfc628b422ef4ede8cd099175f5e7e9599d65",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/en-US/penalties/ISL.png",
+      "sha256": "58d7079ce2206e86ee0788928d994f83c14cc0855956a739b690a034ff57b4f1",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/signs/DE.png",
+      "sha256": "97ed167a87bd20cf85a02ae8d9c221db5a5d1a3a98de61c8cd9b511f7b423738",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/signs/FR.png",
+      "sha256": "8b47618e122efa6da420c691e20487b562c334354c7b1529a155e19274a5204c",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/signs/NL.png",
+      "sha256": "f03205164ff2cbd6434803db67d3bf0299c7681f5a2263ed4eb6991541a0a635",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/signs/BE.png",
+      "sha256": "e0968f8d278c5374748be81a66ee9fcd1e917ecc6d0a6f3eac13c95f8959fb29",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/signs/CH.png",
+      "sha256": "d9ddbf9541ee5d5c6f492ebd7870555d36458b4dc4f599be61a0a32e569503f6",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/penalties/DEU.png",
+      "sha256": "6959f9a4884a251b7982e3a879c4c6156416f85f1dff1c18dccc632e3cd72b19",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/penalties/FRA.png",
+      "sha256": "00830922a1e2d900d7c97504ace459fd37e34ea0ff359dcaa1cbf497d545ac61",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/penalties/CHE.png",
+      "sha256": "805f33414e896683383199bdeee7de40232c9f81ebfd0fa672b9f465d957b5a8",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/penalties/BEL.png",
+      "sha256": "1d15e05a97251b3b88730dd4780fdcd2569c1c33e86281fb68770382f94e59dc",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/penalties/NLD.png",
+      "sha256": "b3c94a62a782ffd404171ebb936bb7bd0a2cdd47d1272025d845d46cef010896",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/penalties/GBR.png",
+      "sha256": "7d472139782c28cdfb11af8f8458af72347d0f3d41d73aa7d9f79da385de59fa",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/penalties/LUX.png",
+      "sha256": "763151159e814e0e4983e9a385a79e305a0841a362e8dc64682e80a6debac6ff",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/penalties/LIE.png",
+      "sha256": "65be86d57d5432f80bdbf20d2251c9d6afe441ae91a30c2785f0544e591685c6",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/penalties/MCO.png",
+      "sha256": "734191d3038a713ef4aa4c66f04023320fb799c7ef6afbe20276fc749e5d4121",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/penalties/ROU.png",
+      "sha256": "dd4bc4276eb8c904ecc6c7ffad9c388ab94b98c2c9e77c60bf752b99699c8f7e",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/penalties/SWE.png",
+      "sha256": "843cfbe22cbd7ded49b6ee2fc3f65bebad2e958f7d11cd08b897c92b0fb4a4ea",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/fr-FR/penalties/ISL.png",
+      "sha256": "b5278873da86817240842b5a1cdc4bb0e31420e95f5258937f3d9fa0bbbd85d1",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/signs/DE.png",
+      "sha256": "6ffc39455b6110c4524a4a2c3d7f2f987afbdd4748754c57ffce582a58f4a410",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/signs/FR.png",
+      "sha256": "81b41b382a8000b994fb8e0e0cb0eaf9bf6403445081b41631600880cf59a16d",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/signs/NL.png",
+      "sha256": "2f406b302f995421823181be120113fc5f5d7835057adb5f62f3e7435b47c51c",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/signs/BE.png",
+      "sha256": "24e89110ab4786fc1ac6001f474c863b365ebc3c41634e685cb3cc329259758b",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/signs/CH.png",
+      "sha256": "45e3ebf39cf935c84e87971a026bf4e7db741024f2bf95e70154ee3394b389a3",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/penalties/DEU.png",
+      "sha256": "beb764e614f3487d18fde96337ab4993b3ab8db819fb2f3b658c98434476c0c8",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/penalties/FRA.png",
+      "sha256": "2245d62f54a496691561e1a344d2d7de7a09fa613dd9f3d467fed4ca64c2801a",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/penalties/CHE.png",
+      "sha256": "46cf06a5e39e5f842726b9b0a4e82366167f4572a7def402d9fbb2e412053f9f",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/penalties/BEL.png",
+      "sha256": "b8eb1d8b7648d1549fa67550670ea7545e9f9b814c812d4ead584206abea5174",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/penalties/NLD.png",
+      "sha256": "db8664f57d46d158cef0769c6e9f0689b17f073f84643a26ad24d2bd5a170714",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/penalties/GBR.png",
+      "sha256": "b32f70957e1e5dd2dfef07e028b7bbed643f33bb3cc763c5d5343a905d1d11b1",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/penalties/LUX.png",
+      "sha256": "f65e4bc46c9d8bdd4724022ac0d11bddc03709ad3adb5357b6e3ca28e5830a55",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/penalties/LIE.png",
+      "sha256": "f01ad41ab473da03a0e4c0a956a44228a9e350164c1c8a1552f595b3f30bf70e",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/penalties/MCO.png",
+      "sha256": "3a6ac3ee94ae911c24b18159a37dd3d96fba1ea7821a23d7f6aa721a244ebf8c",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/penalties/ROU.png",
+      "sha256": "aad755ffd3e49873630bf11cbaf27b59e161a246e4c395ed25f84ba97989a2a8",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/penalties/SWE.png",
+      "sha256": "2a79d5dbed82df175079182e92d7cf6ec1c6054eae35cda50a820238a7dceeec",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/de-DE/penalties/ISL.png",
+      "sha256": "ad471ef40764e3ee111a98ff15e5c04f19842dbea47e9847a55eb10d2932313d",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/signs/DE.png",
+      "sha256": "e3abd2d9e3151ca1d9f73804fa33d6221bdc69c4e352deb75aea8ec1775832cb",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/signs/FR.png",
+      "sha256": "fedcf75fb4598d3c73649386372c4c6101fb9f27191e20d9c6536096d0b4e523",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/signs/NL.png",
+      "sha256": "82cb312084a4feee4b762ee8be3d8f5ed23f4559841ae83b718959f99c3f30b6",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/signs/BE.png",
+      "sha256": "8e7d8ac9e6eac673043a182af72f352112d9ac53b1257d97c8f1c0a3e1f904ac",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/signs/CH.png",
+      "sha256": "ae5a4f2921cdfb971a481c48a3a6eaaacfc9e0d1fb6aa2c40c6a9f77d66ff143",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/penalties/DEU.png",
+      "sha256": "208cf150115746a71e9bc1668ad7e253140453b21df3211189f06b7588d8f013",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/penalties/FRA.png",
+      "sha256": "bf7a8c26e2ef4177292cd92d8017ae53a1c9dd615cb13dc2171cf455eb725e93",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/penalties/CHE.png",
+      "sha256": "55ab11c677b51e633951d668311415fb71619a7ebe02721383ca7747e8f32e39",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/penalties/BEL.png",
+      "sha256": "bdfd50cf1e4aabb592c28cb49cf2349902055d8c2b0b41e26932d5e92061e642",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/penalties/NLD.png",
+      "sha256": "f300e7ba63a5102c61e97a3a70d923756d8ae59e66c41553c3e904838c9a5a35",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/penalties/GBR.png",
+      "sha256": "d7b8f2ed486f9af2224f39a1907d111fb614475f361f4e159432450609359c14",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/penalties/LUX.png",
+      "sha256": "0db52c12cabe1d1f1a05c6dc4788be8f57f2c81eec824777b3ae10fa4b26ad00",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/penalties/LIE.png",
+      "sha256": "62eda3145e7f68b14c2e2f82563f4d7098a611eebcd9e79468fbed170abb4daf",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/penalties/MCO.png",
+      "sha256": "c1ba61ac79918684203ff245c7cf65ba6d695a58b7c6bcf0b2d80ab0c84a7f89",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/penalties/ROU.png",
+      "sha256": "e16652d1a37866a5ec3272c8ca5147e3d6d36436065c815c7d745e017c4055c4",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/penalties/SWE.png",
+      "sha256": "9894a1604c15d6d4cac1b065cc4b73ea7059990d0da6c746672a732d9fd595c9",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/apple/nl-NL/penalties/ISL.png",
+      "sha256": "88ae6169d9b1d5c4654f640818391a35b6c89f1913c4dc3be626d3d3a38819f7",
+      "dimensions": [
+        1320,
+        2868
+      ],
+      "mode": "RGB"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/signs/DE.png",
+      "sha256": "ba8dde6e397a5f9d72aa403099778a2a53aec51b7b0e77ffbf19b81121aebb0e",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Germany"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/signs/FR.png",
+      "sha256": "d0a0b2f27d1fe2e841e185f8a7108ab5d4539836a78b23d575a6d3b83af9f1bd",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "France"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/signs/NL.png",
+      "sha256": "0d71ba625777ab7a56e207669173e4710841bd111b25da06a9ec0417f175c74e",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Netherlands"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/signs/BE.png",
+      "sha256": "a98ee11b3f3835fc62ca26ceea0e467c8a29cde877853233b10d123900793ccc",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Belgium"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/signs/CH.png",
+      "sha256": "f0a4e8d59b235d773dccccb058f72acee8685e0808e6613518fbbf7e5e891ab8",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Switzerland"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/penalties/DEU.png",
+      "sha256": "b0fbfe475a4a73799b5355cf3d53aad0e52b15601e4123cef68af750bcd49421",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Germany"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/penalties/FRA.png",
+      "sha256": "04adf314648ad7edf9201d48d35789e22053c653a5fc55836eaedde9cc0eb7a0",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "France"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/penalties/CHE.png",
+      "sha256": "9f9bb81d5d8dc993e00c151443e54dc3a9de19c47b0fc5484a6e4e20a70c59e1",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Switzerland"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/penalties/BEL.png",
+      "sha256": "81c73f9f336138167db5518105522cf3098e73b5bbeea4d3c630e87041d8fa6c",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Belgium"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/penalties/NLD.png",
+      "sha256": "ba74aa71fe16043839b5c6a4915d931f89a184ec9e15ad9a4ec54d837c8cb62f",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Netherlands"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/penalties/GBR.png",
+      "sha256": "44be28f7b6820c06da4bf36b9ee8f65444bd1339c494f1966e28956ffb4573db",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "United Kingdom"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/penalties/LUX.png",
+      "sha256": "631e06b5f49e8311807a98f323e01e6e6b566a435025fd94f2e43ddf32f7621f",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Luxembourg"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/penalties/LIE.png",
+      "sha256": "f447fd244398ef1824b507981aa0656ae21a90a8c58c9de2f3d745e2f6aca0d5",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Liechtenstein"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/penalties/MCO.png",
+      "sha256": "5729fa5bfec138bc46968670e5a8078edc5b4e9c22b681e7507d59fdc6d22f6f",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Monaco"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/penalties/ROU.png",
+      "sha256": "c8d85a89a72abc2736b22503a7944c60bf39dcc43e3d8466f53b6969ebbb4ff5",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Romania"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/penalties/SWE.png",
+      "sha256": "df9b0ae7b265336c0aec1e615fceea4a3b7386d2df26590881e3c89e0080e70a",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Sweden"
+    },
+    {
+      "path": "store/reference-screenshots/android/en-US/penalties/ISL.png",
+      "sha256": "673916b469064614031b2d8159ef72b9f0ddc23b41d54472eb82b61573b814c9",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Iceland"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/signs/DE.png",
+      "sha256": "22a80981ec7cd451f0be52bc6b747064147665505bb952da15540f168b36f51a",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Allemagne"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/signs/FR.png",
+      "sha256": "4f3cfd4b4e76a0c494a2b26dac88b61236bc4349b4999923c62c034b8df332de",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "France"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/signs/NL.png",
+      "sha256": "d7159d4d9cf9631c9b8ef13428ba0214ed7bd667338918277575152863fb244a",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Pays-Bas"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/signs/BE.png",
+      "sha256": "087a6f865ace3a28d0a4fb5afe20898a432a7ffb19730ee0ea674db332138857",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Belgique"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/signs/CH.png",
+      "sha256": "23d9d7dbb64a5c59976e1780f58804164b7d6f7a7499bf4c05b95b56971b6e9d",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Suisse"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/penalties/DEU.png",
+      "sha256": "e5a27df3c23274a13c6edf6c967ed912b8da1abcf47b12ec91a7d2a4de28fa0f",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Allemagne"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/penalties/FRA.png",
+      "sha256": "e8925f7167ffce32be47069de4cdb1403b1b291c8158d373c43d8031fe8a9b94",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "France"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/penalties/CHE.png",
+      "sha256": "cf98058bba30f065e34759da1aaa4a98f0a0b69b51687815bcf64dcf19a6c4c4",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Suisse"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/penalties/BEL.png",
+      "sha256": "58155826fbfecd3ffd5358ff8a28c3302e9956c1452d984494c8bd3a9e95667e",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Belgique"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/penalties/NLD.png",
+      "sha256": "43b832a7adfdc40b25b576746ea2b3fc3481177d16298e6b872747a59cf838ae",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Pays-Bas"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/penalties/GBR.png",
+      "sha256": "067ee2411092433b9d3bf6ca6529f6c8cba455aaa8426624c78783cc75e9293d",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Royaume-Uni"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/penalties/LUX.png",
+      "sha256": "86dcf357cf2eb02e89a1a3dc919ae54e871bf5ae9557a37499f3058a186f7d31",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Luxembourg"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/penalties/LIE.png",
+      "sha256": "694a7e60ab915b1078297d3e043cbedf5c52f8c157177fa62da0e2537e16f056",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Liechtenstein"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/penalties/MCO.png",
+      "sha256": "1b3d3fe8bcc5f43f411e503c9a641a5e0da0dc452556762465fcbc43bb6a4267",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Monaco"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/penalties/ROU.png",
+      "sha256": "b33cb496a22527e31ae82323e9d128dc0d281dfb88a97186fb51ceac9492d679",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Roumanie"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/penalties/SWE.png",
+      "sha256": "9357a3ddcccd6c033b95f7be8701bce93cace6953e8300624824e77b789129d7",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Suède"
+    },
+    {
+      "path": "store/reference-screenshots/android/fr-FR/penalties/ISL.png",
+      "sha256": "eabca9b79cc720fbe218d259f7878826bcb2b0129fc42a0b173ac6c08d2c398b",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Islande"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/signs/DE.png",
+      "sha256": "240e8102fbfab56645f9d521e7c40ca361bc5342e638ca9e0725268fd7feed7c",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Deutschland"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/signs/FR.png",
+      "sha256": "a24be78c3d1c09b432f846ec410ec3ceadef56bc76bc630043aeac7c0fc10a48",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Frankreich"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/signs/NL.png",
+      "sha256": "86126fbd9852cdc79d6f765d1cfd7a5b37884e8929c5d0f5a7d18a6b6c5f8146",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Niederlande"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/signs/BE.png",
+      "sha256": "a94ec85cadce1fe1f7c41e5adab36f03f2c6243c145d5a4c1e3e94be683905a3",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Belgien"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/signs/CH.png",
+      "sha256": "71738dbf1885daab37a43b90d9bedb93b00a5306599a58e6fb82b2deeb86f542",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Schweiz"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/penalties/DEU.png",
+      "sha256": "1ed122b8b87dda7fd07482e8c70c461e80263f5b46a124721b1b9445ab99b40c",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Deutschland"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/penalties/FRA.png",
+      "sha256": "78cb19b8dcac3090dbb16bbccbbd958ecfdfc64e220c2a8b17cdcd295ef60a3e",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Frankreich"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/penalties/CHE.png",
+      "sha256": "4f7ce401a17ed35d1f48f47a2e7ce115ab3db2239caee1335ffbc20088b4c3dc",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Schweiz"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/penalties/BEL.png",
+      "sha256": "2080fe1610e96b25ccc75f670055b35da3b25b9d7b9d63280cc2d1fcf66cb5d5",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Belgien"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/penalties/NLD.png",
+      "sha256": "dfab40195328c29ed88feccbc74969c763b6274da6b2b063a56550f98b89748f",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Niederlande"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/penalties/GBR.png",
+      "sha256": "3bd30a9574673500f1dbbf6a923d948c9af7a8851b724358c36eca96df986385",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Vereinigtes Königreich"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/penalties/LUX.png",
+      "sha256": "2e7d2dd24a622ad8c93f7477989407164a8640d158cd180b56598f7ed2aa5ed6",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Luxemburg"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/penalties/LIE.png",
+      "sha256": "481fc1b4d2e177a62c587b511719369be6b98b12b13c2794e3f254f1d242951d",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Liechtenstein"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/penalties/MCO.png",
+      "sha256": "bcd0a93bdf0158a7916963ff2317def8bda0fd9bf97f253ce2487b5e97bdfd23",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Monaco"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/penalties/ROU.png",
+      "sha256": "88c2a20e98f584eb79f8f5399d0a6415d3e0292611a2eb81ea55b5852cacdf9d",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Rumänien"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/penalties/SWE.png",
+      "sha256": "7f671fce0f0505cf7c615380aade75359a2006478d1b5e2730dae1859afa653d",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Schweden"
+    },
+    {
+      "path": "store/reference-screenshots/android/de-DE/penalties/ISL.png",
+      "sha256": "26755f9e33c16fb11f621c43e6756c68b3f4ee3f3bf05b9d6528982a2b0f7fa5",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Island"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/signs/DE.png",
+      "sha256": "8ad771f71803e2ceda2542944ccc5afe2edc6e1fd9d910998bafb9ff83726376",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Duitsland"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/signs/FR.png",
+      "sha256": "4c751e771308e9ba21f55cbe1c79de282ac7251863a4416e4c170de18e2d7302",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Frankrijk"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/signs/NL.png",
+      "sha256": "2441b3f86363a0691bf1ccdf991819bb79320668a48f4d4f3af4272a19a8a913",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Nederland"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/signs/BE.png",
+      "sha256": "627b4023a8bc875c10f5b70cfe69590fce6f7dc0fd6c862bfe19f7b9c3e8aba6",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "België"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/signs/CH.png",
+      "sha256": "e48f460b47d67487433478a054cfef7a86219f2d41a18358efa7cc83716ad695",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Zwitserland"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/penalties/DEU.png",
+      "sha256": "165d080572fc3980fd922dbffdc4b99a21b20b399ef20a63d4ffcb3fc718a489",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Duitsland"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/penalties/FRA.png",
+      "sha256": "9b32428b51705236578f680236695fbdfd84fa8f88b673cad98c5d8b8d59eab0",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Frankrijk"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/penalties/CHE.png",
+      "sha256": "720e4f6482223f875a0e010dea9d9796f3848dfe82b0e865e3872fd614f4fd02",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Zwitserland"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/penalties/BEL.png",
+      "sha256": "3f31838072dc25148aa807449e04caa15f11add14d232830860a9b024329b7d6",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "België"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/penalties/NLD.png",
+      "sha256": "6969394af3931434174ceda93ff19b9883fee7c8b51cd10d14afdb5de2516277",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Nederland"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/penalties/GBR.png",
+      "sha256": "393746e370a51756da678ce7b3a4a3cdb563d97918cfbe47df6b4add5e85ceab",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Verenigd Koninkrijk"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/penalties/LUX.png",
+      "sha256": "395d0af78907bcf1b8ca2cac41d7f85db7e2735196d6725d9462f26fee1fb430",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Luxemburg"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/penalties/LIE.png",
+      "sha256": "4d107cb905e42d74c86e0185cfb65ee1ea8a0d24c97df31b388d5623aec49f35",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Liechtenstein"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/penalties/MCO.png",
+      "sha256": "7e9eaf210c5633915092343f9a0e4d4b0aaba8498b4111f96173b65397c1938a",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Monaco"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/penalties/ROU.png",
+      "sha256": "7b4d55a218bd8565d0857668321b9819e0b7d8b3975f8c68be72e15c4102e366",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Roemenië"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/penalties/SWE.png",
+      "sha256": "a068b90c9093ce441d805da97a4ae2110dd0a484ae88f873ea67d5315fc74465",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Zweden"
+    },
+    {
+      "path": "store/reference-screenshots/android/nl-NL/penalties/ISL.png",
+      "sha256": "f746dfddc47cc7be71fcd436186de6c1d09e3216bec94c7bd5354b3bea0506a6",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "IJsland"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/signs/DE.png",
+      "sha256": "0d49c2a53fabb74be521f909fd08f9a7b323616123210a306229b2d12e961795",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Alemania"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/signs/FR.png",
+      "sha256": "2319aef1066351c8c3533e8aae2a6d345ff924c864676638b4b1e5f4e5cfb940",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Francia"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/signs/NL.png",
+      "sha256": "819fb59d750d21853c17ec3a16e0cf23bb72f2a027495007a2c8fc1f0793b21e",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Países Bajos"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/signs/BE.png",
+      "sha256": "9bdec2fd330762f14f2b05c14a588824d8ee2e24906b61993427faca1eb99d85",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Bélgica"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/signs/CH.png",
+      "sha256": "081793440d3552d27655f2656995cffb9be009ac077ec98086bbfcc2828dc8ff",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Suiza"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/penalties/DEU.png",
+      "sha256": "1949b85a4079fb1358bcff9ecdc09712ba6332c77f6fb6440243b98a2cab9385",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Alemania"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/penalties/FRA.png",
+      "sha256": "edfd8158a7e3f69153c1f7f0bd1a2271c5ec363b15a2d0de1652428061355ce3",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Francia"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/penalties/CHE.png",
+      "sha256": "4dd2fe35c512478b8790ba4f1bfcd547dcd34821fb164937e1536a176f6deb9e",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Suiza"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/penalties/BEL.png",
+      "sha256": "8e563125ef2f477d98ce7baf3c08a2101e4cf1bd230d36c17fcff35b9048bc21",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Bélgica"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/penalties/NLD.png",
+      "sha256": "78a88098aa48e73d4f0e55d7578d4ca37f9d4176b96d789114a102c746279153",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Países Bajos"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/penalties/GBR.png",
+      "sha256": "5cc90e63dcf20732f0bd86353730cde39d8638e4ad9d28d44c9903cf35ecbc09",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Reino Unido"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/penalties/LUX.png",
+      "sha256": "c9cc073ee727d7151242b0886bdc33a7fc4ad571adabb1c739dda76f5ceed0b9",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Luxemburgo"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/penalties/LIE.png",
+      "sha256": "f8c1939d6325cb20d79e7a8c7b8dfbbf37248289d3c726e9f1bc1c7c0c99fcf4",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Liechtenstein"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/penalties/MCO.png",
+      "sha256": "99c62caf5a8badd844b70347ace2231addd2a515d5513e6e88d7c95e3606fccd",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Mónaco"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/penalties/ROU.png",
+      "sha256": "d75a2c4842355bd10e982bb649527a2d7a272f892fb6e830ab2e8e14c0577936",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Rumanía"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/penalties/SWE.png",
+      "sha256": "0f7263eb43334be3e55c255f41e1c859546351f89e708d6cb729d1a093baed0d",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Suecia"
+    },
+    {
+      "path": "store/reference-screenshots/android/es-ES/penalties/ISL.png",
+      "sha256": "372ccf47f097b080f99afbc816d1bbd35a171ec7801bbce6fa4c8a82415e935a",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Islandia"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/signs/DE.png",
+      "sha256": "f31ccdda5a2d6240b99ecb5641846da1dc4194b20c17ca0bd4a6a78653b4ea0f",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Germania"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/signs/FR.png",
+      "sha256": "72c228ebad7a5fa3efce821326c1c353769ddcae82e074b33bcef316fe6d7598",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Francia"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/signs/NL.png",
+      "sha256": "62c46953c979e6742700291a60287d75b76800f464b2ceaeb05deeb0499d0e92",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Paesi Bassi"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/signs/BE.png",
+      "sha256": "5184df39adc90f3a405459b32d5152040a9f20551764a772a0b8bb69b826e505",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Belgio"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/signs/CH.png",
+      "sha256": "782f79ba446e27d0d60d8b0dc9f906a1c2364a8e15899034acfb3e2507518a5a",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Svizzera"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/penalties/DEU.png",
+      "sha256": "73eed0c516c52186e17b7dca92a0a482352aaeff799458c9b0aa85799b6da8b4",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Germania"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/penalties/FRA.png",
+      "sha256": "79228a04b1aacb9da68959f7c6d2122236942d5db9b3c935ee4b76d0cc80a2e0",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Francia"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/penalties/CHE.png",
+      "sha256": "b13ce36b4098e8e360ce30d075684fd796e17d2fef52c3476a48ba0c8a66551e",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Svizzera"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/penalties/BEL.png",
+      "sha256": "853f89f4c82de8922ac345069573bfc90688b2b3c1eb3d6a0c6ea5af8e540181",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Belgio"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/penalties/NLD.png",
+      "sha256": "f6d7c0aa86bc8b1c124bb215f206de070f0a0fa6a293af99188901628856267d",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Paesi Bassi"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/penalties/GBR.png",
+      "sha256": "d3678c52af4b22335fbd9af3861d82d93d64f988975dbe44fbdd480241ed9f19",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Regno Unito"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/penalties/LUX.png",
+      "sha256": "e0840a4c4ebd9b9cf2ab9961d0af2475a884ecc11d6f9df557b94da03847ad8e",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Lussemburgo"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/penalties/LIE.png",
+      "sha256": "075d3deca4cf5a79c08e8c0bc8bd9af3859519c6771e76023c96aa6a7bdac308",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Liechtenstein"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/penalties/MCO.png",
+      "sha256": "6813b35481d5b16b519d42014a8703e8ad5380f632d7cb60365069c57e2789e6",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Monaco"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/penalties/ROU.png",
+      "sha256": "0f1f7ada480bbbb1ba49039d6d744638f45480589d41b82ce948d6ea5ece03da",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Romania"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/penalties/SWE.png",
+      "sha256": "889bc50fe016388d5ac38cd8f4df5954021dc4e32494b2114a151ed8d1fcd151",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Svezia"
+    },
+    {
+      "path": "store/reference-screenshots/android/it-IT/penalties/ISL.png",
+      "sha256": "460336067b72bf5d768d50d68637074d2e3b459edd5338e37cbd19209fc2853b",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Islanda"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/signs/DE.png",
+      "sha256": "0b004b7f4422f1de478a471d5e3cc46589d5c78306c4a080eaf9e6426eddd53d",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Niemcy"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/signs/FR.png",
+      "sha256": "cbfbb2c47f48fd2f19f4088b0373621764d7c6a2fcc1aa8683f95e5256526041",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Francja"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/signs/NL.png",
+      "sha256": "14c32bbf54bebb560f642e2150a871d2c1d689c468b810352f931c9592f3e296",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Holandia"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/signs/BE.png",
+      "sha256": "9589f8edc99b20931853ec0b5d2e3b8962da82eecf242d161afe4dc160a376a1",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Belgia"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/signs/CH.png",
+      "sha256": "d6a491c3c6a6ba93af3267122269b45636ce97a84da4e4f0eab4efc6a6a1de11",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Szwajcaria"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/penalties/DEU.png",
+      "sha256": "63eda234eb0a8a9a4ea04bb37ecaf851e6c43fbdab8aca63adc66c43d5009797",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Niemcy"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/penalties/FRA.png",
+      "sha256": "7c7a7f13677376d6a49d62fe52c4ffba9a613a914bb6b200f2522cfbc3637bf5",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Francja"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/penalties/CHE.png",
+      "sha256": "06fe0703a9d67c162837510cde8c31f5929ba7fea1eed7170fcbcef5f2e1dc66",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Szwajcaria"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/penalties/BEL.png",
+      "sha256": "1a7ebac393f6b2e8eb1bcdf8ec5099a7c2a97a4bb433fc21df339684867679e5",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Belgia"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/penalties/NLD.png",
+      "sha256": "d8a979ae6f97f220833d5369a1cd7cfc6d53f382dc4bb402cfdba60f5ac9a6c0",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Holandia"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/penalties/GBR.png",
+      "sha256": "e50f4d34e836ed36c67367a225d1602ff7d87ea43b93e2085ea3375d9f0b6fd0",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Wielka Brytania"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/penalties/LUX.png",
+      "sha256": "48b1e8237e0aa2d4be3d93f87beb02ac0d7e5a9ed4b928d38133bf3aace4c011",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Luksemburg"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/penalties/LIE.png",
+      "sha256": "168e53e770043b2d51c500c20166bfd097b3d06119672f3b18f0e646002087b8",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Liechtenstein"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/penalties/MCO.png",
+      "sha256": "4e36358db5eacd6c274e4647aa1bc1743c415c49b2e832a0353529d6c77357f6",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Monako"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/penalties/ROU.png",
+      "sha256": "67c16498508923fead70b17b9d647e8576d5613a3c68634b139b19b12ae09443",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Rumunia"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/penalties/SWE.png",
+      "sha256": "7d3bf774cfbd82655d0527679f25d430bd1adbe6abe9a0422516028c9d3f17d7",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Szwecja"
+    },
+    {
+      "path": "store/reference-screenshots/android/pl-PL/penalties/ISL.png",
+      "sha256": "dedeb0a10f1be51ee40cad6b750fbf70654590542898adf2de4ef39029a772cc",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Islandia"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/signs/DE.png",
+      "sha256": "7ee599c987d6dd8b4882c473b5e49ef63bbaab1d466d01e61f9aa3b31210703e",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Alemanha"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/signs/FR.png",
+      "sha256": "d82370025691d20113a58dadd733188487b832e1e0d0afb4b8e454b1aee67088",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "França"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/signs/NL.png",
+      "sha256": "376936989bfd8c6dbe1e1f3af6cb04f86ef32ebbc91b834b8aed8119a5134136",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Países Baixos"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/signs/BE.png",
+      "sha256": "4cdeed55305b0ccf4eebc4b25cc385391829d8f37159be9e79e7baa08730d3f6",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Bélgica"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/signs/CH.png",
+      "sha256": "5541f49a6d3f27fe0908bd21a045e007235f1e455b8c94020c898d5b56fe911c",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Suíça"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/penalties/DEU.png",
+      "sha256": "cfd0a15cdb01833f1b6e728bbf248844a8a3be2e2a0444a459275ce6e670692e",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Alemanha"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/penalties/FRA.png",
+      "sha256": "b333c4a2f4576131be20e1a904c43a9460454b0d8c789d21e579c02af14d31fc",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "França"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/penalties/CHE.png",
+      "sha256": "8f0faf515269c80a769fc6a927b75636ffb48c0b7da64666e257ec3c912faffb",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Suíça"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/penalties/BEL.png",
+      "sha256": "f51d43f3bb099521f5f2b805d2fd1c801d58f7b2c388442a444e6453c3beac1d",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Bélgica"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/penalties/NLD.png",
+      "sha256": "a1cfbe609578240c1ed198ed50fa7994abaaacf01116b61ce054076ff77dbb04",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Países Baixos"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/penalties/GBR.png",
+      "sha256": "ac2daa9e726bee2a3600c60a8fc61e7c69a88c2e24a0469da2b0b187d0bc9f8c",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Reino Unido"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/penalties/LUX.png",
+      "sha256": "6f1dc0089e9ce0ca0c0383e0417a8fa04e5726f3d109f997cb172cacd400c44c",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Luxemburgo"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/penalties/LIE.png",
+      "sha256": "443e2ba8dd296fd13d3755ab58dfc3ef0408ec70fc2aa8349a58340448c8dd77",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Liechtenstein"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/penalties/MCO.png",
+      "sha256": "6718a46ca6eb71b918153c1e9d5372dbdcef30f22eb2eb7e3467b23bd4cb74cf",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Mônaco"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/penalties/ROU.png",
+      "sha256": "a1a874df89b9b9727b3500b67375be2c122fb3008ad52d3d339af281ca3ab9a5",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Romênia"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/penalties/SWE.png",
+      "sha256": "efdf70085cba2ebbfd795db2e696c2971e6b1cc5c84020c10f54a3b24f7aeeaf",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Suécia"
+    },
+    {
+      "path": "store/reference-screenshots/android/pt-BR/penalties/ISL.png",
+      "sha256": "3ae7efc60bdd8e2fe12b81793eefc70bc82ffbf53e900120406a342fc0708501",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Islândia"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/signs/DE.png",
+      "sha256": "8ec83d83ac4ce3ee57b20ff8959152bf59f6d0fb55035b26baf2c83f02a11034",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Tyskland"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/signs/FR.png",
+      "sha256": "79a8df7b916690eb4403ecc86859240dc956b49c1e0963a8a07f3ca8c516be9e",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Frankrike"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/signs/NL.png",
+      "sha256": "fe90c5704d648f9abad04e65a77fb7fbae0a4bc543dc4883433bc29867df7e4a",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Nederländerna"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/signs/BE.png",
+      "sha256": "dbd11c86a753d67c8fb7f4932ace82359eb7a1395a8c5c0f7c3d976356c1069d",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Belgien"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/signs/CH.png",
+      "sha256": "f1261e173b5f017dae12af2c539ac4674cba6526bb5c1b0d2de64f02af6086f8",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Schweiz"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/penalties/DEU.png",
+      "sha256": "7061bd27c3e5364c669a0b5b6ee353774a6a94edb975443c7f1a5700510f787d",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Tyskland"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/penalties/FRA.png",
+      "sha256": "9ab46b68154c46f9e41c247a76e97ce7a11510f02762a18a036ad44c665b3a04",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Frankrike"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/penalties/CHE.png",
+      "sha256": "32bdf64b536c064009e742a402df3fe4af422456b3bcd06993ac8de2ddc30582",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Schweiz"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/penalties/BEL.png",
+      "sha256": "43872c75534a043e33351a690d906865debfbdc207f5f93e0266a77779ea606c",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Belgien"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/penalties/NLD.png",
+      "sha256": "4b80e831942564af2d3ac21568e7e6cf7eed6fd9f5e4eb311b388696114fd609",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Nederländerna"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/penalties/GBR.png",
+      "sha256": "4642737558be29f1754fdb590fa3056827e9bacd87676e7e88a7050dbfb1887c",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Storbritannien"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/penalties/LUX.png",
+      "sha256": "082d2e34d35e9aad9ce3f6094346f4bb9a5daa5df5f606b9e910cb207d040572",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Luxemburg"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/penalties/LIE.png",
+      "sha256": "1ef4a77722ceffa996430dde6498e3166007e61ae37e9eea2f63301f69c67319",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Liechtenstein"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/penalties/MCO.png",
+      "sha256": "3ed615ab6b2ffdbd8e2083404495d1e438d2c408f7e7b493d42e3bdd77bbbef3",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Monaco"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/penalties/ROU.png",
+      "sha256": "7f030c949942a59cfba87f3382b69320f95cb486dc666d7aecd5994cfc68cc24",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Rumänien"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/penalties/SWE.png",
+      "sha256": "c5baadd775dd335b5bc8f84b33b71a9ff70f10e4d39d37497d4c3e0d7d21d30c",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Sverige"
+    },
+    {
+      "path": "store/reference-screenshots/android/sv-SE/penalties/ISL.png",
+      "sha256": "233a75e6dda76696a73a658eda4d747958b56c672bdf32c9c5fc6e4934edad93",
+      "dimensions": [
+        1080,
+        1920
+      ],
+      "mode": "RGBA",
+      "country_selector": "Island"
+    }
+  ]
+}

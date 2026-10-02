@@ -1,50 +1,38 @@
 # Store screenshot review — 2 October 2026
 
-## Apple capture set
+The complete native reference collection contains **221 captures**: 68 iPhone images in English, French, German and Dutch, and 153 Android images in those four languages plus Spanish, Italian, Polish, Brazilian Portuguese and Swedish. Each locale includes sign catalogs for DE, FR, CH, BE and NL, and fine tables for DEU, FRA, CHE, BEL, NLD, GBR, LUX, LIE, MCO, ROU, SWE and ISL.
 
-The iPhone set contains **ten ordered screenshots per locale** for `de-DE`, `en-US`, `fr-FR` and `nl-NL`: **40 PNGs**, each **1320 × 2868**, under `store/apple/screenshots/<locale>/iphone-6.9/`. Each selected screenshot demonstrates one state or flow. The set replaces the earlier repeated German fine/points/driving-ban examples with current camera, dashcam, secondary-sign and country presentations.
+The references show existing shared pictograms, reviewed spoken names in English → French → German → Dutch order, and existing fines JSON. They add presentation, without authoring legal data. Missing speech and fine fields retain the application's explicit unavailable/unspecified labels. Both views show the localized not-legal-advice note.
 
-| Order / file | Presentation checked | Fixture |
+## Upload gallery selection
+
+Apple has ten selected images per locale, 40 total, each 1320×2868. Play has eight images per locale, 72 total, each 1080×1920. These gallery limits require selecting from the complete reference collection.
+
+| Apple order | Content | Play order |
 | --- | --- | --- |
-| `01-safe-speed.png` | 50 km/h map limit; 47 km/h telemetry | `warn-level-0` |
-| `02-camera-speed-limit.png` | 30 km/h camera reference and its evidence marker; stationary controls | `camera-limit-active` |
-| `03-secondary-sign.png` | Shared give-way pictogram alongside 50 km/h limit | `traffic-sign-pictogram`, `give_way` |
-| `04-dashcam.png` | Upright portrait dashcam workspace and recorder controls | `camera-limit-active`, `YOUSPEED_SCREENSHOT_DASHCAM=1` |
-| `05-france-fine.png` | **135 EUR** French money-fine example | `FR`, limit 50, excess 3, urban residential road |
-| `06-switzerland-fine.png` | **250 CHF** Swiss money-fine example | `CH`, limit 50, excess 11, urban residential road |
-| `07-belgium-fine.png` | **58 EUR** Belgian money-fine example | `BE`, limit 50, excess 5, urban residential road |
-| `08-netherlands-fine.png` | **140 EUR** Dutch money-fine example | `NL`, limit 50, excess 12, urban residential road |
-| `09-pedestrian-zone.png` | Shared walking-zone artwork and 5 km/h telemetry | `pedestrian-zone` |
-| `10-autobahn-unlimited.png` | Unlimited motorway sign and 142 km/h telemetry | `autobahn-unlimited-above-130` |
+| 01 | Safe speed/map display | — |
+| 02 | Camera speed-limit reference | 01 |
+| 03 | Shared secondary-sign pictogram | — |
+| 04 | Dashcam workspace | 02 |
+| 05 | German sign reference | 03 |
+| 06 | French sign reference | 04 |
+| 07 | Swiss sign reference | 05 |
+| 08 | Belgian sign reference | 06 |
+| 09 | Dutch sign reference | 07 |
+| 10 | Dutch fine reference | 08 |
 
-The France example was refined from excess 20 (which visibly selects two points) to excess 3 so that the store image itself shows the requested money fine. This changes screenshot input only. Belgian rule details additionally state the 2026 administrative fee; the selected primary presentation displays the base fine. The Dutch rules were subsequently reviewed anew and now provide the official per-km/h tariffs. Fresh native iPhone and Android captures show 140 EUR for the Amsterdam +12 example, with the 9 EUR fee separate in details. The linked country report separately documents the official Dutch monetary reference (corrected +12: EUR 140 + EUR 9 fee) and the measurement-correction distinction; the current screenshots show the displayed-excess estimate, while police measurement correction remains separate. See [the country-example report](COUNTRY_STORE_EXAMPLES_2026-10-02.md) for exact source-backed inputs, caveats and translated rule output.
+The Dutch iPhone gallery capture was refined to show the country, road context, administration fee, currency and table headings together. The all-country reference collection remains available for review independently of the selected upload gallery.
 
-## Authenticity and image checks
+## Capture evidence and verification
 
-The upload images now pair localized safety and feature headlines with complete, proportionally scaled **native captures of the actual application UI**, using the repository's explicit screenshot fixtures. Original native PNGs are retained in `store/artwork/raw-screenshots/`; source and composition hashes are recorded in `store/artwork/screenshot-layouts.json`. No replacement traffic-sign drawing, synthetic road footage or retouching was used inside the captures. `scripts/release/generate_store_screenshot_layouts.mjs` creates the marketing compositions from those originals. The dashcam fixture does not start a physical camera or record a movie, so its live preview is empty. Camera/sign fixtures replay interpreted observations; they prove presentation, not model inference accuracy.
+The iPhone country-reference XCTest actually executed one test and passed with zero failures, producing 68 attachments. A second executed capture test passed with zero failures and produced four replacement Dutch fine captures with table headings visible. Source attachments and XCResults are retained under `/tmp/youspeed-reference-iphone-attachments/`, `/tmp/youspeed-reference-penalty-store-attachments/` and the screenshot-derived Logs/Test directory. Capture names and timestamps are retained in `store/reference-screenshots/apple/capture-report.json`.
 
-Before marketing composition, all four complete native contact sheets were inspected for upright orientation, readable primary labels, correct sign states, unclipped controls and localized output. The native simulator originally encoded all 40 captures as RGBA, with every alpha sample equal to 255. They were losslessly re-encoded as RGB for App Store compatibility; decoded RGB SHA-256 values, dimensions, sRGB metadata and EXIF are identical before and after. Originals are preserved outside the repository in `screenshots-rgba-final-originals/`; `screenshot-rgb-normalization.json` records the comparison and `screenshot-inventory-final.json` now records the RGB deliverables. A raw landscape simulator frame was initially sideways; the final dashcam capture uses the real portrait interface and requires no pixel rotation. The common fixture was repaired to seed its map/walking/unlimited input through the unchanged speed-reference runtime; this prevents startup callbacks from replacing a demonstration sign with unknown.
+Android captures came from the native emulator app through `scripts/release/capture_android_reference_screenshots.py`. Every image has a UIAutomator XML sidecar; all 153 country selectors match the requested country in the requested locale. The script restores the emulator's prior locale and logical display size. Screenshot country overrides are compiled out of release builds.
 
-Evidence is retained outside the repository at `/private/tmp/youspeed-appstore-readiness-2026-10-02-iphone/`:
+[Reference validation](REFERENCE_SCREENSHOT_VALIDATION_2026-10-02.json) checks all expected country/locale combinations, dimensions and file hashes: zero errors. Every Apple image is RGB. Lossless alpha-removal reports record identical decoded pixels and preserved color metadata; the opaque RGBA originals remain outside the repository. [Listing validation](STORE_PACKAGE_VALIDATION_2026-10-02.json) checks the 220 selected metadata/image files, including Fastlane mirrors and screenshot provenance: zero errors.
 
-- `screenshot-inventory-final.json`: dimensions and SHA-256 for all 40 final images.
-- `screenshot-reports-final/`: sixteen country reports and four give-way reports; every country and language resolved as requested.
-- `contact-final-<locale>.jpg`: inspection-only contact sheets.
-- `screenshots-final.log` and `france-fine-final.log`: successful captures, including the money-fine refinement.
-- `screenshots-before/`: preserved original store images.
+The upload layouts wrap the complete, unchanged native captures in localized headlines. `store/artwork/screenshot-layouts.json` records source/output hashes; the renderer proportionally scales the entire image. No synthetic road scene or recognition result was inserted into the app capture. Existing camera feature fixtures prove presentation, not inference accuracy. Their dashcam camera preview is empty. Generated road photography appears only in the separate Play feature graphic, with provenance in `store/artwork/source/generation.json`.
 
-The capture script supports a prebuilt application, an external capture-report directory and a single-file filter, so individual fixtures can be regenerated without repeating the other images. It now invokes `scripts/iphone/normalize_store_screenshot.py` after capture, using the Pillow version declared in `scripts/iphone/requirements-screenshots.txt`; `SCREENSHOT_PYTHON` selects its Python environment and `RAW_CAPTURE_BACKUP_DIR` can select an external directory for originals. The normalizer refuses non-opaque alpha and verifies pixel/color-metadata equality before replacing a PNG. The local listing validator passed with zero errors after normalization. The script contains the final reproducible country inputs.
+Native sign and fine captures, sample composed galleries and the refined Dutch fine page were visually inspected. Shared sign artwork was not redrawn or substituted. Existing model-lineage, licence and rollout gates remain documented in the [copyright audit](../license-audit-2026-09-10/README.md) and [Swiss readiness](../TSR_CH_PANORAMAX_READINESS.md); screenshot generation does not close those gates.
 
-## Existing asset and model release gates
-
-The screenshots consume the application's existing shared sign assets. Numeric speed signs retain the repository's approved schematic rendering exception. The sign sources, licence declarations and attribution requirements remain documented in [the shared pictogram README](../../shared/tsr/sign-pictograms/README.md) and [the existing copyright audit](../license-audit-2026-09-10/README.md). This screenshot work does not provide additional legal clearance.
-
-The existing audit still requires a documented assessment of the Panoramax classifier's CC BY-SA training-data lineage and Ultralytics/AGPL distribution obligations. Adding credits or generating screenshots does not approve that model-release gate. The country registry records DE as shadow and FR/BE/NL as evaluation, with calibration, device/legal-action and runtime-manifest gates; [Swiss readiness](../TSR_CH_PANORAMAX_READINESS.md) likewise records a staged evaluation/shadow pack with production rollout blocked. These are internal release classifications and should not be substituted for the user-facing camera-recognition name.
-
-The iPhone UI's remaining “experimental” labels apply only to the separate opt-in lane preview. Camera recognition is presented without that label. Store wording must describe available behavior without claiming validation or rollout beyond the accepted evidence.
-
-## Android and submission handoff
-
-Android capture/build verification is recorded separately in [Android readiness](ANDROID_READINESS_2026-10-02.md). Its set is limited to the Play Console phone-screenshot allowance. Apple screenshots and the verified local IPA are described in [iPhone readiness](IPHONE_READINESS_2026-10-02.md).
-
-Review the selected screenshots and metadata together in the authenticated consoles before submission. No screenshot was uploaded, no listing was published and no physical device was deployed during this preparation.
+The selected new galleries are prepared locally. They have not yet replaced the inherited assets in either console. See [submission status](STORE_SUBMISSION_1.3_2026-10-02.md) for the current upload and device state.

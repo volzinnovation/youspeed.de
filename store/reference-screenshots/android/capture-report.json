@@ -1,0 +1,1073 @@
+[
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/android/de-DE/penalties/BEL.png",
+    "bytes": 122674
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/android/de-DE/penalties/CHE.png",
+    "bytes": 112956
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/android/de-DE/penalties/DEU.png",
+    "bytes": 128714
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/android/de-DE/penalties/FRA.png",
+    "bytes": 109038
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/android/de-DE/penalties/GBR.png",
+    "bytes": 127732
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/android/de-DE/penalties/ISL.png",
+    "bytes": 105907
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/android/de-DE/penalties/LIE.png",
+    "bytes": 133888
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/android/de-DE/penalties/LUX.png",
+    "bytes": 131995
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/android/de-DE/penalties/MCO.png",
+    "bytes": 114348
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/android/de-DE/penalties/NLD.png",
+    "bytes": 126378
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/android/de-DE/penalties/ROU.png",
+    "bytes": 106848
+  },
+  {
+    "locale": "de-DE",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/android/de-DE/penalties/SWE.png",
+    "bytes": 120039
+  },
+  {
+    "locale": "de-DE",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/android/de-DE/signs/BE.png",
+    "bytes": 130154
+  },
+  {
+    "locale": "de-DE",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/android/de-DE/signs/CH.png",
+    "bytes": 124345
+  },
+  {
+    "locale": "de-DE",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/android/de-DE/signs/DE.png",
+    "bytes": 143040
+  },
+  {
+    "locale": "de-DE",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/android/de-DE/signs/FR.png",
+    "bytes": 138350
+  },
+  {
+    "locale": "de-DE",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/android/de-DE/signs/NL.png",
+    "bytes": 133869
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/android/en-US/penalties/BEL.png",
+    "bytes": 107857
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/android/en-US/penalties/CHE.png",
+    "bytes": 109442
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/android/en-US/penalties/DEU.png",
+    "bytes": 109099
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/android/en-US/penalties/FRA.png",
+    "bytes": 111241
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/android/en-US/penalties/GBR.png",
+    "bytes": 113267
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/android/en-US/penalties/ISL.png",
+    "bytes": 117875
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/android/en-US/penalties/LIE.png",
+    "bytes": 113967
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/android/en-US/penalties/LUX.png",
+    "bytes": 115981
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/android/en-US/penalties/MCO.png",
+    "bytes": 114859
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/android/en-US/penalties/NLD.png",
+    "bytes": 114033
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/android/en-US/penalties/ROU.png",
+    "bytes": 114221
+  },
+  {
+    "locale": "en-US",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/android/en-US/penalties/SWE.png",
+    "bytes": 119218
+  },
+  {
+    "locale": "en-US",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/android/en-US/signs/BE.png",
+    "bytes": 136507
+  },
+  {
+    "locale": "en-US",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/android/en-US/signs/CH.png",
+    "bytes": 119409
+  },
+  {
+    "locale": "en-US",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/android/en-US/signs/DE.png",
+    "bytes": 150703
+  },
+  {
+    "locale": "en-US",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/android/en-US/signs/FR.png",
+    "bytes": 138529
+  },
+  {
+    "locale": "en-US",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/android/en-US/signs/NL.png",
+    "bytes": 174714
+  },
+  {
+    "locale": "es-ES",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/android/es-ES/penalties/BEL.png",
+    "bytes": 105199
+  },
+  {
+    "locale": "es-ES",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/android/es-ES/penalties/CHE.png",
+    "bytes": 105664
+  },
+  {
+    "locale": "es-ES",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/android/es-ES/penalties/DEU.png",
+    "bytes": 102594
+  },
+  {
+    "locale": "es-ES",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/android/es-ES/penalties/FRA.png",
+    "bytes": 106913
+  },
+  {
+    "locale": "es-ES",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/android/es-ES/penalties/GBR.png",
+    "bytes": 109478
+  },
+  {
+    "locale": "es-ES",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/android/es-ES/penalties/ISL.png",
+    "bytes": 109900
+  },
+  {
+    "locale": "es-ES",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/android/es-ES/penalties/LIE.png",
+    "bytes": 110965
+  },
+  {
+    "locale": "es-ES",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/android/es-ES/penalties/LUX.png",
+    "bytes": 109954
+  },
+  {
+    "locale": "es-ES",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/android/es-ES/penalties/MCO.png",
+    "bytes": 106680
+  },
+  {
+    "locale": "es-ES",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/android/es-ES/penalties/NLD.png",
+    "bytes": 120602
+  },
+  {
+    "locale": "es-ES",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/android/es-ES/penalties/ROU.png",
+    "bytes": 105972
+  },
+  {
+    "locale": "es-ES",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/android/es-ES/penalties/SWE.png",
+    "bytes": 111715
+  },
+  {
+    "locale": "es-ES",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/android/es-ES/signs/BE.png",
+    "bytes": 138528
+  },
+  {
+    "locale": "es-ES",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/android/es-ES/signs/CH.png",
+    "bytes": 124040
+  },
+  {
+    "locale": "es-ES",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/android/es-ES/signs/DE.png",
+    "bytes": 148254
+  },
+  {
+    "locale": "es-ES",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/android/es-ES/signs/FR.png",
+    "bytes": 141216
+  },
+  {
+    "locale": "es-ES",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/android/es-ES/signs/NL.png",
+    "bytes": 171885
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/android/fr-FR/penalties/BEL.png",
+    "bytes": 125352
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/android/fr-FR/penalties/CHE.png",
+    "bytes": 133670
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/android/fr-FR/penalties/DEU.png",
+    "bytes": 132141
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/android/fr-FR/penalties/FRA.png",
+    "bytes": 113051
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/android/fr-FR/penalties/GBR.png",
+    "bytes": 138679
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/android/fr-FR/penalties/ISL.png",
+    "bytes": 134495
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/android/fr-FR/penalties/LIE.png",
+    "bytes": 131969
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/android/fr-FR/penalties/LUX.png",
+    "bytes": 128378
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/android/fr-FR/penalties/MCO.png",
+    "bytes": 136947
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/android/fr-FR/penalties/NLD.png",
+    "bytes": 140881
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/android/fr-FR/penalties/ROU.png",
+    "bytes": 119167
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/android/fr-FR/penalties/SWE.png",
+    "bytes": 131446
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/android/fr-FR/signs/BE.png",
+    "bytes": 138955
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/android/fr-FR/signs/CH.png",
+    "bytes": 127495
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/android/fr-FR/signs/DE.png",
+    "bytes": 142818
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/android/fr-FR/signs/FR.png",
+    "bytes": 139611
+  },
+  {
+    "locale": "fr-FR",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/android/fr-FR/signs/NL.png",
+    "bytes": 151178
+  },
+  {
+    "locale": "it-IT",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/android/it-IT/penalties/BEL.png",
+    "bytes": 128166
+  },
+  {
+    "locale": "it-IT",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/android/it-IT/penalties/CHE.png",
+    "bytes": 126990
+  },
+  {
+    "locale": "it-IT",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/android/it-IT/penalties/DEU.png",
+    "bytes": 115672
+  },
+  {
+    "locale": "it-IT",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/android/it-IT/penalties/FRA.png",
+    "bytes": 118606
+  },
+  {
+    "locale": "it-IT",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/android/it-IT/penalties/GBR.png",
+    "bytes": 119392
+  },
+  {
+    "locale": "it-IT",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/android/it-IT/penalties/ISL.png",
+    "bytes": 123248
+  },
+  {
+    "locale": "it-IT",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/android/it-IT/penalties/LIE.png",
+    "bytes": 126340
+  },
+  {
+    "locale": "it-IT",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/android/it-IT/penalties/LUX.png",
+    "bytes": 126336
+  },
+  {
+    "locale": "it-IT",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/android/it-IT/penalties/MCO.png",
+    "bytes": 119837
+  },
+  {
+    "locale": "it-IT",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/android/it-IT/penalties/NLD.png",
+    "bytes": 130855
+  },
+  {
+    "locale": "it-IT",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/android/it-IT/penalties/ROU.png",
+    "bytes": 121650
+  },
+  {
+    "locale": "it-IT",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/android/it-IT/penalties/SWE.png",
+    "bytes": 128355
+  },
+  {
+    "locale": "it-IT",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/android/it-IT/signs/BE.png",
+    "bytes": 134725
+  },
+  {
+    "locale": "it-IT",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/android/it-IT/signs/CH.png",
+    "bytes": 123991
+  },
+  {
+    "locale": "it-IT",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/android/it-IT/signs/DE.png",
+    "bytes": 148536
+  },
+  {
+    "locale": "it-IT",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/android/it-IT/signs/FR.png",
+    "bytes": 136719
+  },
+  {
+    "locale": "it-IT",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/android/it-IT/signs/NL.png",
+    "bytes": 173126
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/android/nl-NL/penalties/BEL.png",
+    "bytes": 111063
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/android/nl-NL/penalties/CHE.png",
+    "bytes": 115183
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/android/nl-NL/penalties/DEU.png",
+    "bytes": 101669
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/android/nl-NL/penalties/FRA.png",
+    "bytes": 103079
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/android/nl-NL/penalties/GBR.png",
+    "bytes": 97159
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/android/nl-NL/penalties/ISL.png",
+    "bytes": 104224
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/android/nl-NL/penalties/LIE.png",
+    "bytes": 108112
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/android/nl-NL/penalties/LUX.png",
+    "bytes": 101419
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/android/nl-NL/penalties/MCO.png",
+    "bytes": 94912
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/android/nl-NL/penalties/NLD.png",
+    "bytes": 118724
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/android/nl-NL/penalties/ROU.png",
+    "bytes": 103267
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/android/nl-NL/penalties/SWE.png",
+    "bytes": 106969
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/android/nl-NL/signs/BE.png",
+    "bytes": 134702
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/android/nl-NL/signs/CH.png",
+    "bytes": 121573
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/android/nl-NL/signs/DE.png",
+    "bytes": 152325
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/android/nl-NL/signs/FR.png",
+    "bytes": 139678
+  },
+  {
+    "locale": "nl-NL",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/android/nl-NL/signs/NL.png",
+    "bytes": 177844
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/android/pl-PL/penalties/BEL.png",
+    "bytes": 110700
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/android/pl-PL/penalties/CHE.png",
+    "bytes": 123457
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/android/pl-PL/penalties/DEU.png",
+    "bytes": 105105
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/android/pl-PL/penalties/FRA.png",
+    "bytes": 107268
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/android/pl-PL/penalties/GBR.png",
+    "bytes": 108284
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/android/pl-PL/penalties/ISL.png",
+    "bytes": 113889
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/android/pl-PL/penalties/LIE.png",
+    "bytes": 113049
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/android/pl-PL/penalties/LUX.png",
+    "bytes": 108056
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/android/pl-PL/penalties/MCO.png",
+    "bytes": 104286
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/android/pl-PL/penalties/NLD.png",
+    "bytes": 125534
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/android/pl-PL/penalties/ROU.png",
+    "bytes": 107638
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/android/pl-PL/penalties/SWE.png",
+    "bytes": 116544
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/android/pl-PL/signs/BE.png",
+    "bytes": 141297
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/android/pl-PL/signs/CH.png",
+    "bytes": 127550
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/android/pl-PL/signs/DE.png",
+    "bytes": 155293
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/android/pl-PL/signs/FR.png",
+    "bytes": 143688
+  },
+  {
+    "locale": "pl-PL",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/android/pl-PL/signs/NL.png",
+    "bytes": 184501
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/android/pt-BR/penalties/BEL.png",
+    "bytes": 115155
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/android/pt-BR/penalties/CHE.png",
+    "bytes": 111187
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/android/pt-BR/penalties/DEU.png",
+    "bytes": 109796
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/android/pt-BR/penalties/FRA.png",
+    "bytes": 112422
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/android/pt-BR/penalties/GBR.png",
+    "bytes": 111651
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/android/pt-BR/penalties/ISL.png",
+    "bytes": 117092
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/android/pt-BR/penalties/LIE.png",
+    "bytes": 116892
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/android/pt-BR/penalties/LUX.png",
+    "bytes": 114248
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/android/pt-BR/penalties/MCO.png",
+    "bytes": 110963
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/android/pt-BR/penalties/NLD.png",
+    "bytes": 121181
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/android/pt-BR/penalties/ROU.png",
+    "bytes": 112762
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/android/pt-BR/penalties/SWE.png",
+    "bytes": 115556
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/android/pt-BR/signs/BE.png",
+    "bytes": 141542
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/android/pt-BR/signs/CH.png",
+    "bytes": 123672
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/android/pt-BR/signs/DE.png",
+    "bytes": 158075
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/android/pt-BR/signs/FR.png",
+    "bytes": 145087
+  },
+  {
+    "locale": "pt-BR",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/android/pt-BR/signs/NL.png",
+    "bytes": 185268
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "penalties",
+    "country": "BEL",
+    "path": "store/reference-screenshots/android/sv-SE/penalties/BEL.png",
+    "bytes": 115558
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "penalties",
+    "country": "CHE",
+    "path": "store/reference-screenshots/android/sv-SE/penalties/CHE.png",
+    "bytes": 113638
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "penalties",
+    "country": "DEU",
+    "path": "store/reference-screenshots/android/sv-SE/penalties/DEU.png",
+    "bytes": 99918
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "penalties",
+    "country": "FRA",
+    "path": "store/reference-screenshots/android/sv-SE/penalties/FRA.png",
+    "bytes": 115679
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "penalties",
+    "country": "GBR",
+    "path": "store/reference-screenshots/android/sv-SE/penalties/GBR.png",
+    "bytes": 100991
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "penalties",
+    "country": "ISL",
+    "path": "store/reference-screenshots/android/sv-SE/penalties/ISL.png",
+    "bytes": 110144
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "penalties",
+    "country": "LIE",
+    "path": "store/reference-screenshots/android/sv-SE/penalties/LIE.png",
+    "bytes": 110920
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "penalties",
+    "country": "LUX",
+    "path": "store/reference-screenshots/android/sv-SE/penalties/LUX.png",
+    "bytes": 106549
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "penalties",
+    "country": "MCO",
+    "path": "store/reference-screenshots/android/sv-SE/penalties/MCO.png",
+    "bytes": 106651
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "penalties",
+    "country": "NLD",
+    "path": "store/reference-screenshots/android/sv-SE/penalties/NLD.png",
+    "bytes": 119472
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "penalties",
+    "country": "ROU",
+    "path": "store/reference-screenshots/android/sv-SE/penalties/ROU.png",
+    "bytes": 109796
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "penalties",
+    "country": "SWE",
+    "path": "store/reference-screenshots/android/sv-SE/penalties/SWE.png",
+    "bytes": 113113
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "signs",
+    "country": "BE",
+    "path": "store/reference-screenshots/android/sv-SE/signs/BE.png",
+    "bytes": 140021
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "signs",
+    "country": "CH",
+    "path": "store/reference-screenshots/android/sv-SE/signs/CH.png",
+    "bytes": 123103
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "signs",
+    "country": "DE",
+    "path": "store/reference-screenshots/android/sv-SE/signs/DE.png",
+    "bytes": 156479
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "signs",
+    "country": "FR",
+    "path": "store/reference-screenshots/android/sv-SE/signs/FR.png",
+    "bytes": 143021
+  },
+  {
+    "locale": "sv-SE",
+    "kind": "signs",
+    "country": "NL",
+    "path": "store/reference-screenshots/android/sv-SE/signs/NL.png",
+    "bytes": 181574
+  }
+]

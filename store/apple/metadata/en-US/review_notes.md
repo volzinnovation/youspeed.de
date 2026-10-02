@@ -10,3 +10,5 @@ Review flow:
 7. Diagnostic logging is enabled initially and stores logs locally; switch it off in Settings. The startup storage review offers clearing saved logs over 100 MB. Local logs and exports may contain precise location and technical recognition/matching details.
 
 No account is required for offline driving, dashcam playback or local photo review. An external Panoramax account is required only for the optional upload flow. There are no advertising or tracking SDKs.
+
+8. While stationary, open Info → Penalty tables to browse the current country rules, then Info → Traffic signs to browse national pictograms and reviewed sign-name phrases in English, French, German and Dutch. Both references work offline and include a not-legal-advice note.
