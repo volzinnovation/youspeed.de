@@ -180,11 +180,12 @@ internal fun DataManagerSheet(controller: ConsumerSessionController, onBack: () 
                     item { Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { maintenance() } }
                 }
             } else BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                val mapHeight = if (maxWidth > maxHeight) 200.dp else 230.dp
                 val map: @Composable () -> Unit = {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(stringResource(R.string.data_manager_map_help), color = ManagerInk, fontSize = 12.sp)
                         if (catalog != null) DataManagerRegionCanvas(catalog, states, selected?.id, viewport, setViewport,
-                            controller::selectDataManagerRegion, Modifier.fillMaxWidth().height(if (maxWidth > maxHeight) 200.dp else 230.dp))
+                            controller::selectDataManagerRegion, Modifier.fillMaxWidth().height(mapHeight))
                         else Text(stringResource(if (geometry == null) R.string.data_manager_map_loading else R.string.data_manager_map_error),
                             modifier = Modifier.fillMaxWidth().padding(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
