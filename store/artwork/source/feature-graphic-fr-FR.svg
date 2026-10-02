@@ -9,8 +9,8 @@
 <g font-family="Arial, sans-serif" fill="#ffffff">
   <text x="121" y="75" font-size="39" font-weight="700">YouSpeed</text>
   <text x="48" y="190" font-size="63" font-weight="700" letter-spacing="-2">Roulez prudemment.</text>
-  <text x="48" y="266" font-size="63" font-weight="700" letter-spacing="-2" fill="#fae14f">Dans toute voiture.</text>
-  <text x="48" y="342" font-size="63" font-weight="700" letter-spacing="-2">Évitez les amendes.</text>
+  <text x="48" y="266" font-size="63" font-weight="700" letter-spacing="-2" fill="#fae14f">Évitez les amendes.</text>
+  <text x="48" y="342" font-size="63" font-weight="700" letter-spacing="-2">Dans toute voiture.</text>
   <text x="48" y="394" font-size="21">Panneaux · Alertes de vitesse · Dashcam</text>
   <text x="48" y="455" font-size="20" fill="#eef0f2">Votre smartphone. Votre compagnon de route.</text>
 </g>
