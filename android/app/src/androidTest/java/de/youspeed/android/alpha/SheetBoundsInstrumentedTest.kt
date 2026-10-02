@@ -167,6 +167,16 @@ class SheetBoundsInstrumentedTest {
         waitFor("show-detected-lanes-toggle")
     }
 
+    @Test fun secondarySignSpeechModeIsAvailableInSettings() = withDashboard {
+        clickDashboard("settings-button")
+        val tag = "traffic-sign-feedback-SPOKEN_SPEED_AND_SIGNS"
+        compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("settings-sheet-content")))
+            .performScrollToNode(hasTestTag(tag))
+        compose.onNodeWithTag(tag).assertIsDisplayed()
+        assertSheetBounds("settings-sheet")
+        capture("secondary-sign-speech-settings")
+    }
+
     private fun withDashboard(block: (ActivityScenario<MainActivity>) -> Unit) {
         val preferences = context.getSharedPreferences("youspeed", Context.MODE_PRIVATE)
         val keys = listOf("youspeed.manual_orientation", "youspeed.audio_alerts_enabled", "youspeed.data_manager.selected_region")

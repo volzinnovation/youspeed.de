@@ -556,15 +556,21 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
             TrafficSignFeedbackMode.entries.forEach { mode ->
                 val label = when (mode) {
                     TrafficSignFeedbackMode.SPOKEN_SPEED -> parityText("Speak the speed", "Geschwindigkeit ansagen", "Annoncer la vitesse", "Snelheid uitspreken")
+                    TrafficSignFeedbackMode.SPOKEN_SPEED_AND_SIGNS -> parityText("Speed and other traffic signs", "Tempo und andere Verkehrszeichen", "Vitesse et autres panneaux", "Snelheid en andere verkeersborden")
                     TrafficSignFeedbackMode.SOUND -> parityText("Sound", "Ton", "Son", "Geluid")
                     TrafficSignFeedbackMode.SILENT -> parityText("Silent", "Lautlos", "Silencieux", "Stil")
                 }
-                Row(Modifier.fillMaxWidth().clickable(enabled = ui.trafficSignRecognitionEnabled) { controller.setTrafficSignFeedbackMode(mode) },
+                Row(Modifier.fillMaxWidth().testTag("traffic-sign-feedback-${mode.name}").clickable(enabled = ui.trafficSignRecognitionEnabled) { controller.setTrafficSignFeedbackMode(mode) },
                     verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(ui.trafficSignFeedbackMode == mode, { controller.setTrafficSignFeedbackMode(mode) }, enabled = ui.trafficSignRecognitionEnabled)
                     Text(label)
                 }
             }
+            Text(parityText("Also announces displayed other traffic signs while driving. Enable ‘Show other traffic signs’ to hear them.",
+                "Sagt während der Fahrt auch angezeigte andere Verkehrszeichen an. Dafür ‘Andere Verkehrszeichen anzeigen’ einschalten.",
+                "Annonce aussi les autres panneaux affichés pendant la conduite. Activez ‘Afficher les autres panneaux’ pour les entendre.",
+                "Spreekt tijdens het rijden ook andere getoonde verkeersborden uit. Schakel ‘Andere verkeersborden tonen’ in om ze te horen."),
+                style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = { details = true }, modifier = Modifier.testTag("traffic-sign-details-button")) {
                 Text(parityText("Recognition details", "Erkennungsdetails", "Détails de reconnaissance", "Herkenningsdetails"))
             }

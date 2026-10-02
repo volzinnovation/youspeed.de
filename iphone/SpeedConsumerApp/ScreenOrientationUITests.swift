@@ -257,6 +257,42 @@ final class ScreenOrientationUITests: XCTestCase {
         app.terminate()
     }
 
+    func testSecondarySignSpeechModeIsAvailableInSettings() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"
+        app.launchArguments = ["-youspeed.screen_orientation", "portrait", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+        let settings = app.buttons["dashboard.settingsButton"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 15))
+        settings.tap()
+        let recognition = app.switches["Recognize speed signs"]
+        for _ in 0..<24 where !recognition.isHittable { app.swipeUp() }
+        XCTAssertTrue(recognition.isHittable)
+        let initiallyEnabled = recognition.value as? String == "1"
+        if !initiallyEnabled { recognition.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap() }
+        let feedback = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Recognized traffic signs")).firstMatch
+        for _ in 0..<24 where !feedback.isHittable { app.swipeUp() }
+        XCTAssertTrue(feedback.isHittable)
+        XCTAssertTrue(feedback.isEnabled)
+        feedback.tap()
+        XCTAssertTrue(app.buttons["Speed and other signs"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Notification sound"].exists)
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "secondary-sign-speech-settings"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        app.terminate()
+        if !initiallyEnabled {
+            app.launch()
+            XCTAssertTrue(settings.waitForExistence(timeout: 15))
+            settings.tap()
+            for _ in 0..<24 where !recognition.isHittable { app.swipeUp() }
+            recognition.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        }
+        app.terminate()
+    }
+
     func testSettingsCanChangeManualMountWithSheetOpen() {
         let app = XCUIApplication()
         app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"

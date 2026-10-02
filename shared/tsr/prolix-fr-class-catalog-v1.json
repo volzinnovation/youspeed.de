@@ -266,10 +266,10 @@
       "sign_code": "B21a2",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b21a2.png",
       "label": {
-        "en": "B21a2 — arrow left down",
-        "de": "B21a2 — arrow left down",
-        "fr": "B21a2 — arrow left down",
-        "nl": "B21a2 — arrow left down"
+        "de": "Links vorbeifahren",
+        "en": "Pass on the left",
+        "fr": "Passage par la gauche",
+        "nl": "Links passeren"
       },
       "display_eligible": true,
       "artwork_id": "fr-b21a2",
@@ -279,6 +279,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B21a2.svg",
         "original_sha256": "893fedcb65423d755372944beddc233bd0cd1fc64517a1d099cfb21259af8b93",
         "png_sha256": "07e858e06d26a47f77f5e2d28bb29877d2fa6c34998dd78c74cdc172d94acf0c"
+      },
+      "speech": {
+        "de": "Links vorbeifahren",
+        "en": "Pass on the left",
+        "fr": "Passage par la gauche",
+        "nl": "Links passeren"
       }
     },
     {
@@ -286,10 +292,10 @@
       "sign_code": "B21-2",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b21-2.png",
       "label": {
-        "en": "B21-2 — arrow left",
-        "de": "B21-2 — arrow left",
-        "fr": "B21-2 — arrow left",
-        "nl": "B21-2 — arrow left"
+        "de": "Hier links",
+        "en": "Turn left here",
+        "fr": "Tourner ici à gauche",
+        "nl": "Hier linksaf"
       },
       "display_eligible": true,
       "artwork_id": "fr-b21-2",
@@ -299,6 +305,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B21-2.svg",
         "original_sha256": "bbdc52dd123aef463d45969fd5d681b949357a88b2520c3706a2e349cfe3cc28",
         "png_sha256": "6627686cde92b1aaff6cd2f2e95683145b92f73efa42697048c04f10c0970edf"
+      },
+      "speech": {
+        "de": "Hier links",
+        "en": "Turn left here",
+        "fr": "Tourner ici à gauche",
+        "nl": "Hier linksaf"
       }
     },
     {
@@ -306,10 +318,10 @@
       "sign_code": "B21-1",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b21-1.png",
       "label": {
-        "en": "B21-1 — arrow right",
-        "de": "B21-1 — arrow right",
-        "fr": "B21-1 — arrow right",
-        "nl": "B21-1 — arrow right"
+        "de": "Hier rechts",
+        "en": "Turn right here",
+        "fr": "Tourner ici à droite",
+        "nl": "Hier rechtsaf"
       },
       "display_eligible": true,
       "artwork_id": "fr-b21-1",
@@ -319,6 +331,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B21-1.svg",
         "original_sha256": "f41f1fcea955edf47b3a12271d8b581be0f5e0ccd9b3c806db48829cafea50c2",
         "png_sha256": "91cf6fc64f1fea357bf843e1691ee26c42772f094f1539dd11ec5180a28f768a"
+      },
+      "speech": {
+        "de": "Hier rechts",
+        "en": "Turn right here",
+        "fr": "Tourner ici à droite",
+        "nl": "Hier rechtsaf"
       }
     },
     {
@@ -326,10 +344,10 @@
       "sign_code": "B21b",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b21b.png",
       "label": {
-        "en": "B21b — arrow through",
-        "de": "B21b — arrow through",
-        "fr": "B21b — arrow through",
-        "nl": "B21b — arrow through"
+        "de": "Geradeaus",
+        "en": "Ahead only",
+        "fr": "Tout droit",
+        "nl": "Rechtdoor"
       },
       "display_eligible": true,
       "artwork_id": "fr-b21b",
@@ -339,6 +357,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B21b.svg",
         "original_sha256": "bc63eebd991e6d9132b4a38035bb730bd16b0223f5627e6e6e991f8d74155ea2",
         "png_sha256": "ff9e096ed2b34aef4236e1b16bc2dd9307a37a58fab97d83843756a646d42079"
+      },
+      "speech": {
+        "de": "Geradeaus",
+        "en": "Ahead only",
+        "fr": "Tout droit",
+        "nl": "Rechtdoor"
       }
     },
     {
@@ -346,10 +370,10 @@
       "sign_code": "B21e",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b21e.png",
       "label": {
-        "en": "B21e — arrow turn left right",
-        "de": "B21e — arrow turn left right",
-        "fr": "B21e — arrow turn left right",
-        "nl": "B21e — arrow turn left right"
+        "de": "Links oder rechts",
+        "en": "Turn left or right",
+        "fr": "À gauche ou à droite",
+        "nl": "Linksaf of rechtsaf"
       },
       "display_eligible": true,
       "artwork_id": "fr-b21e",
@@ -359,6 +383,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B21e.svg",
         "original_sha256": "5d36aa1310ea1b81b99dfbceaabaca956446f7d05800837158630cde63c5f1ba",
         "png_sha256": "431d2ee85ebb6aed325e11c269c4361800c55f541923d7de26e815ecfa9d52c0"
+      },
+      "speech": {
+        "de": "Links oder rechts",
+        "en": "Turn left or right",
+        "fr": "À gauche ou à droite",
+        "nl": "Linksaf of rechtsaf"
       }
     },
     {
@@ -366,10 +396,10 @@
       "sign_code": "B21d1",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b21d1.png",
       "label": {
-        "en": "B21d1 — arrow turn left through",
-        "de": "B21d1 — arrow turn left through",
-        "fr": "B21d1 — arrow turn left through",
-        "nl": "B21d1 — arrow turn left through"
+        "de": "Geradeaus oder rechts",
+        "en": "Ahead or right",
+        "fr": "Tout droit ou à droite",
+        "nl": "Rechtdoor of rechtsaf"
       },
       "display_eligible": true,
       "artwork_id": "fr-b21d1",
@@ -379,6 +409,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B21d1.svg",
         "original_sha256": "148d07c1ea625f6c2344e9941b7904938a33ddca1786e5fbb3091913cffd69bd",
         "png_sha256": "a1ecc95ec83d4154ce50a4f3ea5cc0f3ebcba3819c945ccfc64a37906e160728"
+      },
+      "speech": {
+        "de": "Geradeaus oder rechts",
+        "en": "Ahead or right",
+        "fr": "Tout droit ou à droite",
+        "nl": "Rechtdoor of rechtsaf"
       }
     },
     {
@@ -386,10 +422,10 @@
       "sign_code": "B21c2",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b21c2.png",
       "label": {
-        "en": "B21c2 — arrow turn left",
-        "de": "B21c2 — arrow turn left",
-        "fr": "B21c2 — arrow turn left",
-        "nl": "B21c2 — arrow turn left"
+        "de": "Links abbiegen",
+        "en": "Turn left ahead",
+        "fr": "Tourner à gauche",
+        "nl": "Linksaf"
       },
       "display_eligible": true,
       "artwork_id": "fr-b21c2",
@@ -399,6 +435,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B21c2.svg",
         "original_sha256": "207ccc4972cae4703c9022adcc3470c3363aa5f948c353409e4b3a46f64386a0",
         "png_sha256": "50f89a8af71ee934d21db188ac5d9df44fb6668a33b23bf653099c6438c50283"
+      },
+      "speech": {
+        "de": "Links abbiegen",
+        "en": "Turn left ahead",
+        "fr": "Tourner à gauche",
+        "nl": "Linksaf"
       }
     },
     {
@@ -406,10 +448,10 @@
       "sign_code": "B21d2",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b21d2.png",
       "label": {
-        "en": "B21d2 — arrow turn right through",
-        "de": "B21d2 — arrow turn right through",
-        "fr": "B21d2 — arrow turn right through",
-        "nl": "B21d2 — arrow turn right through"
+        "de": "Geradeaus oder links",
+        "en": "Ahead or left",
+        "fr": "Tout droit ou à gauche",
+        "nl": "Rechtdoor of linksaf"
       },
       "display_eligible": true,
       "artwork_id": "fr-b21d2",
@@ -419,6 +461,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B21d2.svg",
         "original_sha256": "f30ef85938745422290d1d6392dcf653e9deeefd30a993b45d6015a5802354fe",
         "png_sha256": "4db21a3f935d581ebec0629555a24e354d2641dded3bfa5e2a983a71ac725520"
+      },
+      "speech": {
+        "de": "Geradeaus oder links",
+        "en": "Ahead or left",
+        "fr": "Tout droit ou à gauche",
+        "nl": "Rechtdoor of linksaf"
       }
     },
     {
@@ -426,10 +474,10 @@
       "sign_code": "B21c1",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b21c1.png",
       "label": {
-        "en": "B21c1 — arrow turn right",
-        "de": "B21c1 — arrow turn right",
-        "fr": "B21c1 — arrow turn right",
-        "nl": "B21c1 — arrow turn right"
+        "de": "Rechts abbiegen",
+        "en": "Turn right ahead",
+        "fr": "Tourner à droite",
+        "nl": "Rechtsaf"
       },
       "display_eligible": true,
       "artwork_id": "fr-b21c1",
@@ -439,6 +487,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B21c1.svg",
         "original_sha256": "03cf66112905fb99e5cdb2d0c923dbbfa29cb3d5dbec0b069cd6928fedf4bfa8",
         "png_sha256": "5138982f3fe6b1b851d97f83eac9d06e7a18b56ee78d9c73c9cebdf5e6083814"
+      },
+      "speech": {
+        "de": "Rechts abbiegen",
+        "en": "Turn right ahead",
+        "fr": "Tourner à droite",
+        "nl": "Rechtsaf"
       }
     },
     {
@@ -446,10 +500,10 @@
       "sign_code": "B40",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b40.png",
       "label": {
-        "en": "B40 — bicycle:end",
-        "de": "B40 — bicycle:end",
-        "fr": "B40 — bicycle:end",
-        "nl": "B40 — bicycle:end"
+        "de": "Ende des Radwegs",
+        "en": "End of compulsory cycle path",
+        "fr": "Fin de piste cyclable obligatoire",
+        "nl": "Einde verplicht fietspad"
       },
       "display_eligible": true,
       "artwork_id": "fr-b40",
@@ -459,6 +513,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B40.svg",
         "original_sha256": "f640a05f72fd152acdf2ab5dfba352fb2ecc93e4658b84fc5421e85d1848d0b8",
         "png_sha256": "b467636cd1b87b63eeabf7cdd668e987a648492eb4e19a8ea1c99489daa1fd98"
+      },
+      "speech": {
+        "de": "Ende des Radwegs",
+        "en": "End of compulsory cycle path",
+        "fr": "Fin de piste cyclable obligatoire",
+        "nl": "Einde verplicht fietspad"
       }
     },
     {
@@ -466,10 +526,10 @@
       "sign_code": "B22a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b22a.png",
       "label": {
-        "en": "B22a — bicycle:start",
-        "de": "B22a — bicycle:start",
-        "fr": "B22a — bicycle:start",
-        "nl": "B22a — bicycle:start"
+        "de": "Radweg",
+        "en": "Cycle path",
+        "fr": "Piste cyclable",
+        "nl": "Fietspad"
       },
       "display_eligible": true,
       "artwork_id": "fr-b22a",
@@ -479,6 +539,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B22a.svg",
         "original_sha256": "4110d647af4140fa0905f711225d22ed3604371faf3c0867d9bbf8f8f50f613a",
         "png_sha256": "ab151f50fd4a2fde05c3ced0492cca2b19186a7a1e54acef9bf15a6a47dcf12b"
+      },
+      "speech": {
+        "de": "Radweg",
+        "en": "Cycle path",
+        "fr": "Piste cyclable",
+        "nl": "Fietspad"
       }
     },
     {
@@ -486,10 +552,10 @@
       "sign_code": "B27a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b27a.png",
       "label": {
-        "en": "B27a — bus:start",
-        "de": "B27a — bus:start",
-        "fr": "B27a — bus:start",
-        "nl": "B27a — bus:start"
+        "de": "Bussonderfahrstreifen",
+        "en": "Bus lane",
+        "fr": "Voie réservée aux bus",
+        "nl": "Busstrook"
       },
       "display_eligible": true,
       "artwork_id": "fr-b27a",
@@ -499,6 +565,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B27a.svg",
         "original_sha256": "af98c8f887bcbaf793be0f273f1a5f5ce9e99a2ef310f12b43057e6b89bbea14",
         "png_sha256": "b0d327ee5a5b7872860c8933391e1998bfd1946e6c3a43de23469568669f7ff4"
+      },
+      "speech": {
+        "de": "Bussonderfahrstreifen",
+        "en": "Bus lane",
+        "fr": "Voie réservée aux bus",
+        "nl": "Busstrook"
       }
     },
     {
@@ -506,10 +578,10 @@
       "sign_code": "B26",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b26.png",
       "label": {
-        "en": "B26 — chains",
-        "de": "B26 — chains",
-        "fr": "B26 — chains",
-        "nl": "B26 — chains"
+        "de": "Schneeketten vorgeschrieben",
+        "en": "Snow chains required",
+        "fr": "Chaînes à neige obligatoires",
+        "nl": "Sneeuwkettingen verplicht"
       },
       "display_eligible": true,
       "artwork_id": "fr-b26",
@@ -519,6 +591,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B26.svg",
         "original_sha256": "584ae71e750192f8a19edbf6cc6a53b7984f1c70142210111b12e68642792524",
         "png_sha256": "6e8cec926029eeda265fec01a10ee12c480c0dd15168fda3fbfbe9eb2a1d12f1"
+      },
+      "speech": {
+        "de": "Schneeketten vorgeschrieben",
+        "en": "Snow chains required",
+        "fr": "Chaînes à neige obligatoires",
+        "nl": "Sneeuwkettingen verplicht"
       }
     },
     {
@@ -526,10 +604,10 @@
       "sign_code": "EB20",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-eb20.png",
       "label": {
-        "en": "EB20 — city:end",
-        "de": "EB20 — city:end",
-        "fr": "EB20 — city:end",
-        "nl": "EB20 — city:end"
+        "de": "Ende einer geschlossenen Ortschaft",
+        "en": "End of built-up area",
+        "fr": "Sortie d’agglomération",
+        "nl": "Einde bebouwde kom"
       },
       "display_eligible": true,
       "artwork_id": "fr-eb20",
@@ -546,10 +624,10 @@
       "sign_code": "EB10",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-eb10.png",
       "label": {
-        "en": "EB10 — city:start",
-        "de": "EB10 — city:start",
-        "fr": "EB10 — city:start",
-        "nl": "EB10 — city:start"
+        "de": "Beginn einer geschlossenen Ortschaft",
+        "en": "Start of built-up area",
+        "fr": "Entrée d’agglomération",
+        "nl": "Begin bebouwde kom"
       },
       "display_eligible": true,
       "artwork_id": "fr-eb10",
@@ -566,10 +644,10 @@
       "sign_code": "A14",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a14.png",
       "label": {
-        "en": "A14 — hazard",
-        "de": "A14 — hazard",
-        "fr": "A14 — hazard",
-        "nl": "A14 — hazard"
+        "de": "Gefahrstelle",
+        "en": "Danger",
+        "fr": "Danger",
+        "nl": "Gevaar"
       },
       "display_eligible": true,
       "artwork_id": "fr-a14",
@@ -579,6 +657,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A14.svg",
         "original_sha256": "e8075cd11c3a5f8a3d58c1820ea5e3a38a9b58f3b7b9099e4372493a7082f9cd",
         "png_sha256": "38e59a24caa16069bf1af4528ec37537596273c3883c48f04063c011ae52cc2e"
+      },
+      "speech": {
+        "de": "Achtung, Gefahrstelle",
+        "en": "Caution, Danger",
+        "fr": "Attention, Danger",
+        "nl": "Let op, Gevaar"
       }
     },
     {
@@ -586,10 +670,10 @@
       "sign_code": "A23",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a23.png",
       "label": {
-        "en": "A23 — hazard:airport",
-        "de": "A23 — hazard:airport",
-        "fr": "A23 — hazard:airport",
-        "nl": "A23 — hazard:airport"
+        "de": "Flugbetrieb",
+        "en": "Low-flying aircraft",
+        "fr": "Avions à basse altitude",
+        "nl": "Laagvliegende vliegtuigen"
       },
       "display_eligible": true,
       "artwork_id": "fr-a23",
@@ -599,6 +683,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A23.svg",
         "original_sha256": "2822f2376f4a31bc1ad52be70367585ce38f4442e9e5b58f0f0a4f6518606e2a",
         "png_sha256": "48822bf76a4eb2a2674376d87876467359af94af8493eca52ca8ac8498d89079"
+      },
+      "speech": {
+        "de": "Achtung, Flugbetrieb",
+        "en": "Caution, Low-flying aircraft",
+        "fr": "Attention, Avions à basse altitude",
+        "nl": "Let op, Laagvliegende vliegtuigen"
       }
     },
     {
@@ -606,10 +696,10 @@
       "sign_code": "A15a1",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a15a1.png",
       "label": {
-        "en": "A15a1 — hazard:animals",
-        "de": "A15a1 — hazard:animals",
-        "fr": "A15a1 — hazard:animals",
-        "nl": "A15a1 — hazard:animals"
+        "de": "Viehtrieb",
+        "en": "Livestock",
+        "fr": "Passage d’animaux domestiques",
+        "nl": "Overstekend vee"
       },
       "display_eligible": true,
       "artwork_id": "fr-a15a1",
@@ -619,6 +709,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A15a1.svg",
         "original_sha256": "32373f382ce192c41433438b4dc6cc0b3efc17d6e490f15b47c848017e48bf86",
         "png_sha256": "5766995f7d032d6beb81dac01c77cd083bebc833d84cb0cea4eacb38865649d4"
+      },
+      "speech": {
+        "de": "Achtung, Viehtrieb",
+        "en": "Caution, Livestock",
+        "fr": "Attention, Passage d’animaux domestiques",
+        "nl": "Let op, Overstekend vee"
       }
     },
     {
@@ -626,10 +722,10 @@
       "sign_code": "A15a2",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a15a2.png",
       "label": {
-        "en": "A15a2 — hazard:animals:sheep",
-        "de": "A15a2 — hazard:animals:sheep",
-        "fr": "A15a2 — hazard:animals:sheep",
-        "nl": "A15a2 — hazard:animals:sheep"
+        "de": "Schafe",
+        "en": "Sheep",
+        "fr": "Passage de moutons",
+        "nl": "Overstekende schapen"
       },
       "display_eligible": true,
       "artwork_id": "fr-a15a2",
@@ -639,6 +735,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A15a2.svg",
         "original_sha256": "33e1520e8cc813275de5044d5bf8bc95255ce6a915382fb3a18e3ccc55a67472",
         "png_sha256": "8343ad16641183a9d6b8b05385555f493199175b0a67d29b52f8e1b7749c8f90"
+      },
+      "speech": {
+        "de": "Achtung, Schafe",
+        "en": "Caution, Sheep",
+        "fr": "Attention, Passage de moutons",
+        "nl": "Let op, Overstekende schapen"
       }
     },
     {
@@ -646,10 +748,10 @@
       "sign_code": "A21",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a21.png",
       "label": {
-        "en": "A21 — hazard:bicycle",
-        "de": "A21 — hazard:bicycle",
-        "fr": "A21 — hazard:bicycle",
-        "nl": "A21 — hazard:bicycle"
+        "de": "Radverkehr",
+        "en": "Cyclists",
+        "fr": "Cyclistes",
+        "nl": "Fietsers"
       },
       "display_eligible": true,
       "artwork_id": "fr-a21",
@@ -659,6 +761,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A21.svg",
         "original_sha256": "cdd49bb4c89911317ea14ab35ea208a047c03ac7240bd6db3e43c24d981d043d",
         "png_sha256": "818b606146660745fd4e7f93c12c24e88b0660bc2061383d739933c0762bc0ca"
+      },
+      "speech": {
+        "de": "Achtung, Radverkehr",
+        "en": "Caution, Cyclists",
+        "fr": "Attention, Cyclistes",
+        "nl": "Let op, Fietsers"
       }
     },
     {
@@ -666,10 +774,10 @@
       "sign_code": "A18",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a18.png",
       "label": {
-        "en": "A18 — hazard:bothways",
-        "de": "A18 — hazard:bothways",
-        "fr": "A18 — hazard:bothways",
-        "nl": "A18 — hazard:bothways"
+        "de": "Gegenverkehr",
+        "en": "Two-way traffic",
+        "fr": "Circulation dans les deux sens",
+        "nl": "Tweerichtingsverkeer"
       },
       "display_eligible": true,
       "artwork_id": "fr-a18",
@@ -679,6 +787,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A18.svg",
         "original_sha256": "8f3d68a7d728206c0441047a225c3415a0fb3339a99b10aea7d3699b3fc63b59",
         "png_sha256": "817962db4caac04fe051c87e85e97adcbbd01b47d9cb0322e22691f451295888"
+      },
+      "speech": {
+        "de": "Achtung, Gegenverkehr",
+        "en": "Caution, Two-way traffic",
+        "fr": "Attention, Circulation dans les deux sens",
+        "nl": "Let op, Tweerichtingsverkeer"
       }
     },
     {
@@ -686,10 +800,10 @@
       "sign_code": "A2b",
       "image_path": null,
       "label": {
-        "en": "A2b — hazard:bump",
-        "de": "A2b — hazard:bump",
-        "fr": "A2b — hazard:bump",
-        "nl": "A2b — hazard:bump"
+        "de": "Bodenschwelle",
+        "en": "Road hump",
+        "fr": "Ralentisseur",
+        "nl": "Verkeersdrempel"
       },
       "display_eligible": false,
       "artwork_id": "fr-a2b",
@@ -707,10 +821,10 @@
       "sign_code": "A2a",
       "image_path": null,
       "label": {
-        "en": "A2a — hazard:bumps",
-        "de": "A2a — hazard:bumps",
-        "fr": "A2a — hazard:bumps",
-        "nl": "A2a — hazard:bumps"
+        "de": "Unebene Fahrbahn",
+        "en": "Uneven road",
+        "fr": "Chaussée déformée",
+        "nl": "Slecht wegdek"
       },
       "display_eligible": false,
       "artwork_id": "fr-a2a",
@@ -728,10 +842,10 @@
       "sign_code": "AB1",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-ab1.png",
       "label": {
-        "en": "AB1 — hazard:crossing",
-        "de": "AB1 — hazard:crossing",
-        "fr": "AB1 — hazard:crossing",
-        "nl": "AB1 — hazard:crossing"
+        "de": "Kreuzung mit Vorfahrt von rechts",
+        "en": "Junction with priority from the right",
+        "fr": "Intersection avec priorité à droite",
+        "nl": "Kruispunt met voorrang van rechts"
       },
       "display_eligible": true,
       "artwork_id": "fr-ab1",
@@ -741,6 +855,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_AB1.svg",
         "original_sha256": "d6d1e75d1790cc145d13dd5d874e4809bccea6d9524320d55d4f4c2e9434da5e",
         "png_sha256": "850800791da9882cbc2a81288511c8db5879ac8ec37913b89b4c42abd175bf56"
+      },
+      "speech": {
+        "de": "Achtung, Kreuzung mit Vorfahrt von rechts",
+        "en": "Caution, Junction with priority from the right",
+        "fr": "Attention, Intersection avec priorité à droite",
+        "nl": "Let op, Kruispunt met voorrang van rechts"
       }
     },
     {
@@ -748,10 +868,10 @@
       "sign_code": "A20",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a20.png",
       "label": {
-        "en": "A20 — hazard:dock",
-        "de": "A20 — hazard:dock",
-        "fr": "A20 — hazard:dock",
-        "nl": "A20 — hazard:dock"
+        "de": "Ufer oder Kai",
+        "en": "Quayside or riverbank",
+        "fr": "Quai ou berge",
+        "nl": "Kade of rivieroever"
       },
       "display_eligible": true,
       "artwork_id": "fr-a20",
@@ -761,6 +881,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A20.svg",
         "original_sha256": "b763a69966be9a0e4cc1811d185ff6bb4524c398b8ade190a0ee041cd032c184",
         "png_sha256": "20a39201c6a8e825d21f09fa2b506c137ab0e468321cf377d225b76715f62259"
+      },
+      "speech": {
+        "de": "Achtung, Ufer oder Kai",
+        "en": "Caution, Quayside or riverbank",
+        "fr": "Attention, Quai ou berge",
+        "nl": "Let op, Kade of rivieroever"
       }
     },
     {
@@ -768,10 +894,10 @@
       "sign_code": "C3",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-c3.png",
       "label": {
-        "en": "C3 — hazard:fire",
-        "de": "C3 — hazard:fire",
-        "fr": "C3 — hazard:fire",
-        "nl": "C3 — hazard:fire"
+        "de": "Brandgefahr",
+        "en": "Fire risk",
+        "fr": "Risque d’incendie",
+        "nl": "Brandgevaar"
       },
       "display_eligible": true,
       "artwork_id": "fr-c3",
@@ -781,6 +907,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_C3.svg",
         "original_sha256": "10403f990a68027076b4fee4beb2105b2d0db9188af3ba663dc37843c057f3b0",
         "png_sha256": "789870e005b5f3d5c734934de35dd8c549258810039fa0f1620d37a6d7060eae"
+      },
+      "speech": {
+        "de": "Achtung, Brandgefahr",
+        "en": "Caution, Fire risk",
+        "fr": "Attention, Risque d’incendie",
+        "nl": "Let op, Brandgevaar"
       }
     },
     {
@@ -788,10 +920,10 @@
       "sign_code": "AK22",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-ak22.png",
       "label": {
-        "en": "AK22 — hazard:gravel",
-        "de": "AK22 — hazard:gravel",
-        "fr": "AK22 — hazard:gravel",
-        "nl": "AK22 — hazard:gravel"
+        "de": "Splitt oder Schotter",
+        "en": "Loose gravel",
+        "fr": "Gravillons",
+        "nl": "Losliggende stenen"
       },
       "display_eligible": true,
       "artwork_id": "fr-ak22",
@@ -801,6 +933,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_AK22.svg",
         "original_sha256": "d6efc0a732d9a313ca09105e8bad8845d06728c71423bd7d5c8b49abd91c5df7",
         "png_sha256": "4bc9eb4c1b0803d81767c3c179c00a78ebb851c336a38ed577a6b4d2c4cc6ed6"
+      },
+      "speech": {
+        "de": "Achtung, Splitt oder Schotter",
+        "en": "Caution, Loose gravel",
+        "fr": "Attention, Gravillons",
+        "nl": "Let op, Losliggende stenen"
       }
     },
     {
@@ -808,10 +946,10 @@
       "sign_code": "A15c",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a15c.png",
       "label": {
-        "en": "A15c — hazard:horse",
-        "de": "A15c — hazard:horse",
-        "fr": "A15c — hazard:horse",
-        "nl": "A15c — hazard:horse"
+        "de": "Reiter",
+        "en": "Horse riders",
+        "fr": "Cavaliers",
+        "nl": "Ruiters"
       },
       "display_eligible": true,
       "artwork_id": "fr-a15c",
@@ -821,6 +959,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A15c.svg",
         "original_sha256": "8f2e9fa69f6386bdeee8790a5d0dc155463435ba63d0021074662c260f23555b",
         "png_sha256": "f9d8e34e1ee8ddb2b27332a322c58499e534be981d8e5f761b052641bde09827"
+      },
+      "speech": {
+        "de": "Achtung, Reiter",
+        "en": "Caution, Horse riders",
+        "fr": "Attention, Cavaliers",
+        "nl": "Let op, Ruiters"
       }
     },
     {
@@ -828,10 +972,10 @@
       "sign_code": "A16",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a16.png",
       "label": {
-        "en": "A16 — hazard:include:down",
-        "de": "A16 — hazard:include:down",
-        "fr": "A16 — hazard:include:down",
-        "nl": "A16 — hazard:include:down"
+        "de": "Gefährliches Gefälle",
+        "en": "Steep descent",
+        "fr": "Descente dangereuse",
+        "nl": "Gevaarlijke daling"
       },
       "display_eligible": true,
       "artwork_id": "fr-a16",
@@ -841,6 +985,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A16.svg",
         "original_sha256": "f404bb46c65fd00716d4d934d7a78b66921b9a357a093234eb8e209671309a93",
         "png_sha256": "a12ec77fc81544f76e7c729e766a61c0788693e10e48990c4552326982c1e7c3"
+      },
+      "speech": {
+        "de": "Achtung, Gefährliches Gefälle",
+        "en": "Caution, Steep descent",
+        "fr": "Attention, Descente dangereuse",
+        "nl": "Let op, Gevaarlijke daling"
       }
     },
     {
@@ -848,10 +998,10 @@
       "sign_code": "AB2",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-ab2.png",
       "label": {
-        "en": "AB2 — hazard:intersection",
-        "de": "AB2 — hazard:intersection",
-        "fr": "AB2 — hazard:intersection",
-        "nl": "AB2 — hazard:intersection"
+        "de": "Vorfahrt an der nächsten Kreuzung",
+        "en": "Priority at next junction",
+        "fr": "Priorité à la prochaine intersection",
+        "nl": "Voorrang op het volgende kruispunt"
       },
       "display_eligible": true,
       "artwork_id": "fr-ab2",
@@ -861,6 +1011,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_AB2.svg",
         "original_sha256": "d586598ae618ea85f5debe3ec7377c6b9781ea31d5c6542eea8bb9c2e9d36f3d",
         "png_sha256": "254ff1ed6be95905b195cde08949c41efc1f68cd5e1df24d67b7ead16bc1c2fd"
+      },
+      "speech": {
+        "de": "Achtung, Vorfahrt an der nächsten Kreuzung",
+        "en": "Caution, Priority at next junction",
+        "fr": "Attention, Priorité à la prochaine intersection",
+        "nl": "Let op, Voorrang op het volgende kruispunt"
       }
     },
     {
@@ -868,10 +1024,10 @@
       "sign_code": "A7",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a7.png",
       "label": {
-        "en": "A7 — hazard:level crossing",
-        "de": "A7 — hazard:level crossing",
-        "fr": "A7 — hazard:level crossing",
-        "nl": "A7 — hazard:level crossing"
+        "de": "Beschrankter Bahnübergang",
+        "en": "Level crossing with barriers",
+        "fr": "Passage à niveau avec barrières",
+        "nl": "Overweg met slagbomen"
       },
       "display_eligible": true,
       "artwork_id": "fr-a7",
@@ -881,6 +1037,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A7.svg",
         "original_sha256": "83217934d40eda99563da4e9b7ade18f95f869c44bd8be841023ce1f2a366fe0",
         "png_sha256": "3b332fe055483017f3f7aa29d280a05c37facc53cc4ac99a9298e4921eab8589"
+      },
+      "speech": {
+        "de": "Achtung, Beschrankter Bahnübergang",
+        "en": "Caution, Level crossing with barriers",
+        "fr": "Attention, Passage à niveau avec barrières",
+        "nl": "Let op, Overweg met slagbomen"
       }
     },
     {
@@ -888,10 +1050,10 @@
       "sign_code": "A6",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a6.png",
       "label": {
-        "en": "A6 — hazard:moving bridge",
-        "de": "A6 — hazard:moving bridge",
-        "fr": "A6 — hazard:moving bridge",
-        "nl": "A6 — hazard:moving bridge"
+        "de": "Bewegliche Brücke",
+        "en": "Opening bridge",
+        "fr": "Pont mobile",
+        "nl": "Beweegbare brug"
       },
       "display_eligible": true,
       "artwork_id": "fr-a6",
@@ -901,6 +1063,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A6.svg",
         "original_sha256": "7d5f250116b90817e1c18a1d9d66e1dfe7b37d575baa6924f8c152697aba4298",
         "png_sha256": "f1e5896345093ee59cab4e33885ec1ee7c61bc0f427f2818bb97d907b8ac3ca4"
+      },
+      "speech": {
+        "de": "Achtung, Bewegliche Brücke",
+        "en": "Caution, Opening bridge",
+        "fr": "Attention, Pont mobile",
+        "nl": "Let op, Beweegbare brug"
       }
     },
     {
@@ -908,10 +1076,10 @@
       "sign_code": "A3",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a3.png",
       "label": {
-        "en": "A3 — hazard:narrow both",
-        "de": "A3 — hazard:narrow both",
-        "fr": "A3 — hazard:narrow both",
-        "nl": "A3 — hazard:narrow both"
+        "de": "Verengte Fahrbahn",
+        "en": "Road narrows",
+        "fr": "Chaussée rétrécie",
+        "nl": "Wegversmalling"
       },
       "display_eligible": true,
       "artwork_id": "fr-a3",
@@ -921,6 +1089,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A3.svg",
         "original_sha256": "597a5185a600466382476179e4b81a26c265d053ce6209b6211368cb9f10b25e",
         "png_sha256": "42fef32ad0d2de31b5d29fed9169d1092f7927fab34f0cca52db6c246a583380"
+      },
+      "speech": {
+        "de": "Achtung, Verengte Fahrbahn",
+        "en": "Caution, Road narrows",
+        "fr": "Attention, Chaussée rétrécie",
+        "nl": "Let op, Wegversmalling"
       }
     },
     {
@@ -928,10 +1102,10 @@
       "sign_code": "A3b",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a3b.png",
       "label": {
-        "en": "A3b — hazard:narrow left",
-        "de": "A3b — hazard:narrow left",
-        "fr": "A3b — hazard:narrow left",
-        "nl": "A3b — hazard:narrow left"
+        "de": "Verengung links",
+        "en": "Road narrows on left",
+        "fr": "Chaussée rétrécie à gauche",
+        "nl": "Wegversmalling links"
       },
       "display_eligible": true,
       "artwork_id": "fr-a3b",
@@ -941,6 +1115,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A3b.svg",
         "original_sha256": "2a15a35f1ef8fead2af02aab48b1d8b0a188275c28d6622c3f147a458b836556",
         "png_sha256": "311117b4db10cae78a63c25a56fa4a49c649621eac391b06deb7927fc328e9d7"
+      },
+      "speech": {
+        "de": "Achtung, Verengung links",
+        "en": "Caution, Road narrows on left",
+        "fr": "Attention, Chaussée rétrécie à gauche",
+        "nl": "Let op, Wegversmalling links"
       }
     },
     {
@@ -948,10 +1128,10 @@
       "sign_code": "A3a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a3a.png",
       "label": {
-        "en": "A3a — hazard:narrow right",
-        "de": "A3a — hazard:narrow right",
-        "fr": "A3a — hazard:narrow right",
-        "nl": "A3a — hazard:narrow right"
+        "de": "Verengung rechts",
+        "en": "Road narrows on right",
+        "fr": "Chaussée rétrécie à droite",
+        "nl": "Wegversmalling rechts"
       },
       "display_eligible": true,
       "artwork_id": "fr-a3a",
@@ -961,6 +1141,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A3a.svg",
         "original_sha256": "d4be135e3839f03792f5f2f60cad61ac58ff3720f678ba7c13f3edee5cabd23f",
         "png_sha256": "6bdefb68dc2f13e42a43727622f4e1adf4db4400a6d92c84e6dcca952d0298ac"
+      },
+      "speech": {
+        "de": "Achtung, Verengung rechts",
+        "en": "Caution, Road narrows on right",
+        "fr": "Attention, Chaussée rétrécie à droite",
+        "nl": "Let op, Wegversmalling rechts"
       }
     },
     {
@@ -968,10 +1154,10 @@
       "sign_code": "A13b",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a13b.png",
       "label": {
-        "en": "A13b — hazard:pedestrian crossing",
-        "de": "A13b — hazard:pedestrian crossing",
-        "fr": "A13b — hazard:pedestrian crossing",
-        "nl": "A13b — hazard:pedestrian crossing"
+        "de": "Fußgängerüberweg voraus",
+        "en": "Pedestrian crossing ahead",
+        "fr": "Passage piéton annoncé",
+        "nl": "Voetgangersoversteekplaats vooruit"
       },
       "display_eligible": true,
       "artwork_id": "fr-a13b",
@@ -981,6 +1167,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A13b.svg",
         "original_sha256": "acc15f618054e7615772c4e9f00a2fe2c609b49a3b72f36c7e88578f574387ae",
         "png_sha256": "fe8aee5e77316aaeb9eccd9669fd85f4bd572e055616c0a8523a8c36c53dcbba"
+      },
+      "speech": {
+        "de": "Achtung, Fußgängerüberweg voraus",
+        "en": "Caution, Pedestrian crossing ahead",
+        "fr": "Attention, Passage piéton annoncé",
+        "nl": "Let op, Voetgangersoversteekplaats vooruit"
       }
     },
     {
@@ -988,10 +1180,10 @@
       "sign_code": "AK5",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-ak5.png",
       "label": {
-        "en": "AK5 — hazard:road works",
-        "de": "AK5 — hazard:road works",
-        "fr": "AK5 — hazard:road works",
-        "nl": "AK5 — hazard:road works"
+        "de": "Baustelle",
+        "en": "Road works",
+        "fr": "Travaux",
+        "nl": "Wegwerkzaamheden"
       },
       "display_eligible": true,
       "artwork_id": "fr-ak5",
@@ -1001,6 +1193,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_AK5.svg",
         "original_sha256": "4137602a98be0284603a7a35acfed8d2590b17d3a92850fd72c3d914ea895604",
         "png_sha256": "b44218a7cf8c0b2d79e97b1c80fa298e173de7542dfdacd34d71579c0d2a2346"
+      },
+      "speech": {
+        "de": "Achtung, Baustelle",
+        "en": "Caution, Road works",
+        "fr": "Attention, Travaux",
+        "nl": "Let op, Wegwerkzaamheden"
       }
     },
     {
@@ -1008,10 +1206,10 @@
       "sign_code": "A19",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a19.png",
       "label": {
-        "en": "A19 — hazard:rocks",
-        "de": "A19 — hazard:rocks",
-        "fr": "A19 — hazard:rocks",
-        "nl": "A19 — hazard:rocks"
+        "de": "Steinschlag",
+        "en": "Falling rocks",
+        "fr": "Chute de pierres",
+        "nl": "Vallende stenen"
       },
       "display_eligible": true,
       "artwork_id": "fr-a19",
@@ -1021,6 +1219,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A19.svg",
         "original_sha256": "70f8a4a39bde26e8eff4751285a514f11e13d4cef59bd964fddead11bf7f08cb",
         "png_sha256": "23c95623a6187fb3ef7dd69518c41d99fcf148dd65efe960a112b757ad16495e"
+      },
+      "speech": {
+        "de": "Achtung, Steinschlag",
+        "en": "Caution, Falling rocks",
+        "fr": "Attention, Chute de pierres",
+        "nl": "Let op, Vallende stenen"
       }
     },
     {
@@ -1028,10 +1232,10 @@
       "sign_code": "AB25",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-ab25.png",
       "label": {
-        "en": "AB25 — hazard:roundabout",
-        "de": "AB25 — hazard:roundabout",
-        "fr": "AB25 — hazard:roundabout",
-        "nl": "AB25 — hazard:roundabout"
+        "de": "Kreisverkehr voraus",
+        "en": "Roundabout ahead",
+        "fr": "Giratoire annoncé",
+        "nl": "Rotonde vooruit"
       },
       "display_eligible": true,
       "artwork_id": "fr-ab25",
@@ -1041,6 +1245,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_AB25.svg",
         "original_sha256": "eef07645274d5398d15fea59d8fc815a75088f6f7600f3cc22549463da0e9034",
         "png_sha256": "ddfa8758be5b94db3ca38974d8a2e0d9312376e7d01391e40c4c14cc47615013"
+      },
+      "speech": {
+        "de": "Achtung, Kreisverkehr voraus",
+        "en": "Caution, Roundabout ahead",
+        "fr": "Attention, Giratoire annoncé",
+        "nl": "Let op, Rotonde vooruit"
       }
     },
     {
@@ -1048,10 +1258,10 @@
       "sign_code": "A13a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a13a.png",
       "label": {
-        "en": "A13a — hazard:school",
-        "de": "A13a — hazard:school",
-        "fr": "A13a — hazard:school",
-        "nl": "A13a — hazard:school"
+        "de": "Kinder",
+        "en": "Children",
+        "fr": "Enfants",
+        "nl": "Kinderen"
       },
       "display_eligible": true,
       "artwork_id": "fr-a13a",
@@ -1061,6 +1271,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A13a.svg",
         "original_sha256": "0bcbac913b8680abdc11d527262cf8447c9410bce6167fb1361a8ddafae0aa64",
         "png_sha256": "7c0d1b040889041561fe702c4a6e0b648228592b1e03668c5d96da487ba71490"
+      },
+      "speech": {
+        "de": "Achtung, Kinder",
+        "en": "Caution, Children",
+        "fr": "Attention, Enfants",
+        "nl": "Let op, Kinderen"
       }
     },
     {
@@ -1068,10 +1284,10 @@
       "sign_code": "A4",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a4.png",
       "label": {
-        "en": "A4 — hazard:slippery",
-        "de": "A4 — hazard:slippery",
-        "fr": "A4 — hazard:slippery",
-        "nl": "A4 — hazard:slippery"
+        "de": "Schleuder- oder Rutschgefahr",
+        "en": "Slippery road",
+        "fr": "Chaussée glissante",
+        "nl": "Slipgevaar"
       },
       "display_eligible": true,
       "artwork_id": "fr-a4",
@@ -1081,6 +1297,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A4.svg",
         "original_sha256": "fdcd5d75532c9bb72042a60b5e9a2895ccc1c4aed93a5b5dc391a7172d7eefc2",
         "png_sha256": "f2aa196212027d848438b1e6ee046603d7afd5b153d0649ababe3537491766e6"
+      },
+      "speech": {
+        "de": "Achtung, Schleuder- oder Rutschgefahr",
+        "en": "Caution, Slippery road",
+        "fr": "Attention, Chaussée glissante",
+        "nl": "Let op, Slipgevaar"
       }
     },
     {
@@ -1088,10 +1310,10 @@
       "sign_code": "A17",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a17.png",
       "label": {
-        "en": "A17 — hazard:traffic signal",
-        "de": "A17 — hazard:traffic signal",
-        "fr": "A17 — hazard:traffic signal",
-        "nl": "A17 — hazard:traffic signal"
+        "de": "Lichtzeichenanlage voraus",
+        "en": "Traffic lights ahead",
+        "fr": "Feux de circulation annoncés",
+        "nl": "Verkeerslichten vooruit"
       },
       "display_eligible": true,
       "artwork_id": "fr-a17",
@@ -1101,6 +1323,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A17.svg",
         "original_sha256": "3126f3d6525bd6c82ded18c786701a712f9b795d6080dea3a6c3eb86c3db8352",
         "png_sha256": "b119d3f6b80a257db19d3e3ca45d2870ab16076b805c1af048361741883caace"
+      },
+      "speech": {
+        "de": "Achtung, Lichtzeichenanlage voraus",
+        "en": "Caution, Traffic lights ahead",
+        "fr": "Attention, Feux de circulation annoncés",
+        "nl": "Let op, Verkeerslichten vooruit"
       }
     },
     {
@@ -1108,10 +1336,10 @@
       "sign_code": "A8",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a8.png",
       "label": {
-        "en": "A8 — hazard:train",
-        "de": "A8 — hazard:train",
-        "fr": "A8 — hazard:train",
-        "nl": "A8 — hazard:train"
+        "de": "Unbeschrankter Bahnübergang",
+        "en": "Level crossing without barriers",
+        "fr": "Passage à niveau sans barrières",
+        "nl": "Overweg zonder slagbomen"
       },
       "display_eligible": true,
       "artwork_id": "fr-a8",
@@ -1121,6 +1349,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A8.svg",
         "original_sha256": "cf9619a2c73f42b55e8c76271a564ab1d18f150682ab1ec4fef1d4c8906f4e2b",
         "png_sha256": "25a3d15aa83a4ba0e2a3f0d1c2d87395841571485aa93e19670363b8010dabb0"
+      },
+      "speech": {
+        "de": "Achtung, Unbeschrankter Bahnübergang",
+        "en": "Caution, Level crossing without barriers",
+        "fr": "Attention, Passage à niveau sans barrières",
+        "nl": "Let op, Overweg zonder slagbomen"
       }
     },
     {
@@ -1128,10 +1362,10 @@
       "sign_code": "A9",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a9.png",
       "label": {
-        "en": "A9 — hazard:tram",
-        "de": "A9 — hazard:tram",
-        "fr": "A9 — hazard:tram",
-        "nl": "A9 — hazard:tram"
+        "de": "Straßenbahn",
+        "en": "Trams crossing",
+        "fr": "Traversée de tramway",
+        "nl": "Kruisende trams"
       },
       "display_eligible": true,
       "artwork_id": "fr-a9",
@@ -1148,10 +1382,10 @@
       "sign_code": "A1b",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a1b.png",
       "label": {
-        "en": "A1b — hazard:turn left",
-        "de": "A1b — hazard:turn left",
-        "fr": "A1b — hazard:turn left",
-        "nl": "A1b — hazard:turn left"
+        "de": "Kurve links",
+        "en": "Left bend",
+        "fr": "Virage à gauche",
+        "nl": "Bocht naar links"
       },
       "display_eligible": true,
       "artwork_id": "fr-a1b",
@@ -1161,6 +1395,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A1b.svg",
         "original_sha256": "523a7e42ef39e93190f17aabc91d8f8db0b5c92e0eb9124e84a39c051ca58258",
         "png_sha256": "caecaebc372e6f7cd8146be11425dffdbdf828fbb0d7d56a0f39892f84258c13"
+      },
+      "speech": {
+        "de": "Achtung, Kurve links",
+        "en": "Caution, Left bend",
+        "fr": "Attention, Virage à gauche",
+        "nl": "Let op, Bocht naar links"
       }
     },
     {
@@ -1168,10 +1408,10 @@
       "sign_code": "A1a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a1a.png",
       "label": {
-        "en": "A1a — hazard:turn right",
-        "de": "A1a — hazard:turn right",
-        "fr": "A1a — hazard:turn right",
-        "nl": "A1a — hazard:turn right"
+        "de": "Kurve rechts",
+        "en": "Right bend",
+        "fr": "Virage à droite",
+        "nl": "Bocht naar rechts"
       },
       "display_eligible": true,
       "artwork_id": "fr-a1a",
@@ -1181,6 +1421,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A1a.svg",
         "original_sha256": "6939ef0760b1d68148860b63cad7fcebdafcdad4f105d62e6e86d852eb361698",
         "png_sha256": "e663e4a7ad12c7e24fa368c372b03ab5e496ee7ce101d5dc289fb14d8cf9591b"
+      },
+      "speech": {
+        "de": "Achtung, Kurve rechts",
+        "en": "Caution, Right bend",
+        "fr": "Attention, Virage à droite",
+        "nl": "Let op, Bocht naar rechts"
       }
     },
     {
@@ -1188,10 +1434,10 @@
       "sign_code": "A15b",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a15b.png",
       "label": {
-        "en": "A15b — hazard:wild animals",
-        "de": "A15b — hazard:wild animals",
-        "fr": "A15b — hazard:wild animals",
-        "nl": "A15b — hazard:wild animals"
+        "de": "Wildwechsel",
+        "en": "Wild animals",
+        "fr": "Passage d’animaux sauvages",
+        "nl": "Overstekend wild"
       },
       "display_eligible": true,
       "artwork_id": "fr-a15b",
@@ -1201,6 +1447,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A15b.svg",
         "original_sha256": "32936956b9494bc9186eeae072532f3f866f8aaf7844d9948d38876c96f18073",
         "png_sha256": "de313b0625c1a44e3b403ff6780eedf4bc63c816ca6b5d819542a6c5f69115ad"
+      },
+      "speech": {
+        "de": "Achtung, Wildwechsel",
+        "en": "Caution, Wild animals",
+        "fr": "Attention, Passage d’animaux sauvages",
+        "nl": "Let op, Overstekend wild"
       }
     },
     {
@@ -1208,10 +1460,10 @@
       "sign_code": "A24",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a24.png",
       "label": {
-        "en": "A24 — hazard:wind",
-        "de": "A24 — hazard:wind",
-        "fr": "A24 — hazard:wind",
-        "nl": "A24 — hazard:wind"
+        "de": "Seitenwind",
+        "en": "Crosswinds",
+        "fr": "Vent latéral",
+        "nl": "Zijwind"
       },
       "display_eligible": true,
       "artwork_id": "fr-a24",
@@ -1221,6 +1473,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A24.svg",
         "original_sha256": "c5d507bc9475a73e618bb3e11dfc5ff2a8c1cf93ea9ca8577e9ddffec8803e7c",
         "png_sha256": "09ea3785763cb6cb2a5ca47a7b3ced3e68dc2408b40b30979b1cbdc1825350f8"
+      },
+      "speech": {
+        "de": "Achtung, Seitenwind",
+        "en": "Caution, Crosswinds",
+        "fr": "Attention, Vent latéral",
+        "nl": "Let op, Zijwind"
       }
     },
     {
@@ -1228,10 +1486,10 @@
       "sign_code": "A1c",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a1c.png",
       "label": {
-        "en": "A1c — hazard:zigzag",
-        "de": "A1c — hazard:zigzag",
-        "fr": "A1c — hazard:zigzag",
-        "nl": "A1c — hazard:zigzag"
+        "de": "Doppelkurve, zuerst rechts",
+        "en": "Double bend, first right",
+        "fr": "Succession de virages, premier à droite",
+        "nl": "S-bocht, eerst rechts"
       },
       "display_eligible": true,
       "artwork_id": "fr-a1c",
@@ -1241,6 +1499,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A1c.svg",
         "original_sha256": "c34c70c158419659ac793906b466178aaab35abf4003c91fa059d563be2f865d",
         "png_sha256": "514eb9886559438fadb98012d12f7d63c67eca9115ee4b5190b7064c27597408"
+      },
+      "speech": {
+        "de": "Achtung, Doppelkurve, zuerst rechts",
+        "en": "Caution, Double bend, first right",
+        "fr": "Attention, Succession de virages, premier à droite",
+        "nl": "Let op, S-bocht, eerst rechts"
       }
     },
     {
@@ -1248,10 +1512,10 @@
       "sign_code": "A1d",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-a1d.png",
       "label": {
-        "en": "A1d — hazard:zigzag:left",
-        "de": "A1d — hazard:zigzag:left",
-        "fr": "A1d — hazard:zigzag:left",
-        "nl": "A1d — hazard:zigzag:left"
+        "de": "Doppelkurve, zuerst links",
+        "en": "Double bend, first left",
+        "fr": "Succession de virages, premier à gauche",
+        "nl": "S-bocht, eerst links"
       },
       "display_eligible": true,
       "artwork_id": "fr-a1d",
@@ -1261,6 +1525,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_A1d.svg",
         "original_sha256": "f25f88eb291d00d339e42434e5c3f346ba30199d8efe384325c862772ce70904",
         "png_sha256": "8a5676c3043597ad773d21e4af510f7857dfa9cdf809d2091d452b382bf1f454"
+      },
+      "speech": {
+        "de": "Achtung, Doppelkurve, zuerst links",
+        "en": "Caution, Double bend, first left",
+        "fr": "Attention, Succession de virages, premier à gauche",
+        "nl": "Let op, S-bocht, eerst links"
       }
     },
     {
@@ -1268,10 +1538,10 @@
       "sign_code": "B42",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b42.png",
       "label": {
-        "en": "B42 — horse:end",
-        "de": "B42 — horse:end",
-        "fr": "B42 — horse:end",
-        "nl": "B42 — horse:end"
+        "de": "Ende des Reitwegs",
+        "en": "End of compulsory bridleway",
+        "fr": "Fin de chemin obligatoire pour cavaliers",
+        "nl": "Einde verplicht ruiterpad"
       },
       "display_eligible": true,
       "artwork_id": "fr-b42",
@@ -1281,6 +1551,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B42.svg",
         "original_sha256": "d06e7eb8743074fd4de3caa093c7b01ee6baa194e40159713ebe743d8d11afb1",
         "png_sha256": "306729da4940b3f752fd84448226a18a801915353354339d91ac65cef9ef376f"
+      },
+      "speech": {
+        "de": "Ende des Reitwegs",
+        "en": "End of compulsory bridleway",
+        "fr": "Fin de chemin obligatoire pour cavaliers",
+        "nl": "Einde verplicht ruiterpad"
       }
     },
     {
@@ -1288,10 +1564,10 @@
       "sign_code": "CE3a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-ce3a.png",
       "label": {
-        "en": "CE3a — information",
-        "de": "CE3a — information",
-        "fr": "CE3a — information",
-        "nl": "CE3a — information"
+        "de": "Touristeninformation",
+        "en": "Tourist information",
+        "fr": "Informations touristiques",
+        "nl": "Toeristische informatie"
       },
       "display_eligible": true,
       "artwork_id": "fr-ce3a",
@@ -1301,6 +1577,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_CE3a.svg",
         "original_sha256": "9704b7e871473fb7843c5aba001934a08ed9d2d42192114da57b95e31b7f9e51",
         "png_sha256": "acf40e2046842edceee346eab04331ead3d71584ac8d1712e8313a37d640667a"
+      },
+      "speech": {
+        "de": "Touristeninformation",
+        "en": "Tourist information",
+        "fr": "Informations touristiques",
+        "nl": "Toeristische informatie"
       }
     },
     {
@@ -1308,10 +1590,10 @@
       "sign_code": "CE22",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-ce22.png",
       "label": {
-        "en": "CE22 — info:radio",
-        "de": "CE22 — info:radio",
-        "fr": "CE22 — info:radio",
-        "nl": "CE22 — info:radio"
+        "de": "Verkehrsfunk",
+        "en": "Traffic information radio",
+        "fr": "Radio d’information routière",
+        "nl": "Verkeersinformatie op de radio"
       },
       "display_eligible": true,
       "artwork_id": "fr-ce22",
@@ -1321,6 +1603,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_CE22.svg",
         "original_sha256": "609cb8700954e2f908e6db920cb62f205b51617f9b007761175796fbc53955fe",
         "png_sha256": "6cda5609c8d80182dea3b0010640542ca05c71d4e9189dd5f52f80f28e1a8c1a"
+      },
+      "speech": {
+        "de": "Verkehrsfunk",
+        "en": "Traffic information radio",
+        "fr": "Radio d’information routière",
+        "nl": "Verkeersinformatie op de radio"
       }
     },
     {
@@ -1328,10 +1616,10 @@
       "sign_code": "B13a",
       "image_path": null,
       "label": {
-        "en": "B13a — maxaxleweight",
-        "de": "B13a — maxaxleweight",
-        "fr": "B13a — maxaxleweight",
-        "nl": "B13a — maxaxleweight"
+        "de": "Achslastbeschränkung",
+        "en": "Axle-weight restriction",
+        "fr": "Limitation de charge par essieu",
+        "nl": "Aslastbeperking"
       },
       "display_eligible": false,
       "artwork_id": "fr-b13a",
@@ -1349,10 +1637,10 @@
       "sign_code": "B12",
       "image_path": null,
       "label": {
-        "en": "B12 — maxheight",
-        "de": "B12 — maxheight",
-        "fr": "B12 — maxheight",
-        "nl": "B12 — maxheight"
+        "de": "Höhenbeschränkung",
+        "en": "Height restriction",
+        "fr": "Limitation de hauteur",
+        "nl": "Hoogtebeperking"
       },
       "display_eligible": false,
       "artwork_id": "fr-b12",
@@ -1650,10 +1938,10 @@
       "sign_code": "B13",
       "image_path": null,
       "label": {
-        "en": "B13 — maxweight",
-        "de": "B13 — maxweight",
-        "fr": "B13 — maxweight",
-        "nl": "B13 — maxweight"
+        "de": "Gewichtsbeschränkung",
+        "en": "Weight restriction",
+        "fr": "Limitation de poids",
+        "nl": "Gewichtsbeperking"
       },
       "display_eligible": false,
       "artwork_id": "fr-b13",
@@ -1671,10 +1959,10 @@
       "sign_code": "B11",
       "image_path": null,
       "label": {
-        "en": "B11 — maxwidth",
-        "de": "B11 — maxwidth",
-        "fr": "B11 — maxwidth",
-        "nl": "B11 — maxwidth"
+        "de": "Breitenbeschränkung",
+        "en": "Width restriction",
+        "fr": "Limitation de largeur",
+        "nl": "Breedtebeperking"
       },
       "display_eligible": false,
       "artwork_id": "fr-b11",
@@ -1692,10 +1980,10 @@
       "sign_code": "B17",
       "image_path": null,
       "label": {
-        "en": "B17 — min distance",
-        "de": "B17 — min distance",
-        "fr": "B17 — min distance",
-        "nl": "B17 — min distance"
+        "de": "Mindestabstand",
+        "en": "Minimum following distance",
+        "fr": "Distance minimale entre véhicules",
+        "nl": "Minimumafstand tussen voertuigen"
       },
       "display_eligible": false,
       "artwork_id": "fr-b17",
@@ -1713,10 +2001,10 @@
       "sign_code": "B9d",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b9d.png",
       "label": {
-        "en": "B9d — no agriculture",
-        "de": "B9d — no agriculture",
-        "fr": "B9d — no agriculture",
-        "nl": "B9d — no agriculture"
+        "de": "Verbot für landwirtschaftliche Kraftfahrzeuge",
+        "en": "No agricultural motor vehicles",
+        "fr": "Accès interdit aux véhicules agricoles à moteur",
+        "nl": "Verboden voor landbouwmotorvoertuigen"
       },
       "display_eligible": true,
       "artwork_id": "fr-b9d",
@@ -1726,6 +2014,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B9d.svg",
         "original_sha256": "f3fb15f2420905564f4f137ddea75c88a6c2f324141a28be5a189dcc7567bbed",
         "png_sha256": "2d3f3cee55447986693ab462fec93d08fdc8c7e5f57f44ab054ea14e991dd123"
+      },
+      "speech": {
+        "de": "Verbot für landwirtschaftliche Kraftfahrzeuge",
+        "en": "No agricultural motor vehicles",
+        "fr": "Accès interdit aux véhicules agricoles à moteur",
+        "nl": "Verboden voor landbouwmotorvoertuigen"
       }
     },
     {
@@ -1733,10 +2027,10 @@
       "sign_code": "B9b",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b9b.png",
       "label": {
-        "en": "B9b — no bicycle",
-        "de": "B9b — no bicycle",
-        "fr": "B9b — no bicycle",
-        "nl": "B9b — no bicycle"
+        "de": "Verbot für Radverkehr",
+        "en": "No cycling",
+        "fr": "Accès interdit aux cycles",
+        "nl": "Verboden voor fietsers"
       },
       "display_eligible": true,
       "artwork_id": "fr-b9b",
@@ -1746,6 +2040,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B9b.svg",
         "original_sha256": "8beb807f2cae4a5e780baf3910531b0e77ebd2ab08a8882d111436867439e8ed",
         "png_sha256": "289b9bdbb270e190480e84bf1e640174d73f03474bb8c8c7dcee646b67836b26"
+      },
+      "speech": {
+        "de": "Verbot für Radverkehr",
+        "en": "No cycling",
+        "fr": "Accès interdit aux cycles",
+        "nl": "Verboden voor fietsers"
       }
     },
     {
@@ -1753,10 +2053,10 @@
       "sign_code": "B9f",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b9f.png",
       "label": {
-        "en": "B9f — no bus",
-        "de": "B9f — no bus",
-        "fr": "B9f — no bus",
-        "nl": "B9f — no bus"
+        "de": "Verbot für Kraftomnibusse",
+        "en": "No buses",
+        "fr": "Accès interdit aux autobus",
+        "nl": "Verboden voor autobussen"
       },
       "display_eligible": true,
       "artwork_id": "fr-b9f",
@@ -1766,6 +2066,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B9f.svg",
         "original_sha256": "07608aba4853f115d377636085280ca84659082b7ef4e70ded5173af0b4a8e40",
         "png_sha256": "b935cc995d72e29a7a9a9a85e500af70df06f624842f0d305b246f72d85aaa1d"
+      },
+      "speech": {
+        "de": "Verbot für Kraftomnibusse",
+        "en": "No buses",
+        "fr": "Accès interdit aux autobus",
+        "nl": "Verboden voor autobussen"
       }
     },
     {
@@ -1773,10 +2079,10 @@
       "sign_code": "B7a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b7a.png",
       "label": {
-        "en": "B7a — no car motorcycle",
-        "de": "B7a — no car motorcycle",
-        "fr": "B7a — no car motorcycle",
-        "nl": "B7a — no car motorcycle"
+        "de": "Verbot für Kraftfahrzeuge außer Mopeds",
+        "en": "No motor vehicles except mopeds",
+        "fr": "Accès interdit aux véhicules à moteur sauf cyclomoteurs",
+        "nl": "Verboden voor motorvoertuigen behalve bromfietsen"
       },
       "display_eligible": true,
       "artwork_id": "fr-b7a",
@@ -1786,6 +2092,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B7a.svg",
         "original_sha256": "74cb1d2c84151414ba11078c02f0339a711877f80907d1300dc4f1c21d5ad148",
         "png_sha256": "fa1ade25182d1d4da17721830f014883a376a38938e18c144307e02f4c52c1cc"
+      },
+      "speech": {
+        "de": "Verbot für Kraftfahrzeuge außer Mopeds",
+        "en": "No motor vehicles except mopeds",
+        "fr": "Accès interdit aux véhicules à moteur sauf cyclomoteurs",
+        "nl": "Verboden voor motorvoertuigen behalve bromfietsen"
       }
     },
     {
@@ -1793,10 +2105,10 @@
       "sign_code": "B9i",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b9i.png",
       "label": {
-        "en": "B9i — no car trailer",
-        "de": "B9i — no car trailer",
-        "fr": "B9i — no car trailer",
-        "nl": "B9i — no car trailer"
+        "de": "Verbot für bestimmte Fahrzeuggespanne mit Anhänger",
+        "en": "Restriction on vehicles towing trailers",
+        "fr": "Accès interdit à certains véhicules avec remorque",
+        "nl": "Verbod voor bepaalde voertuigen met aanhanger"
       },
       "display_eligible": true,
       "artwork_id": "fr-b9i",
@@ -1813,10 +2125,10 @@
       "sign_code": "B18b",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b18b.png",
       "label": {
-        "en": "B18b — no dangerous liquid",
-        "de": "B18b — no dangerous liquid",
-        "fr": "B18b — no dangerous liquid",
-        "nl": "B18b — no dangerous liquid"
+        "de": "Verbot für wassergefährdende Ladung",
+        "en": "No water-polluting loads",
+        "fr": "Accès interdit aux chargements polluant l’eau",
+        "nl": "Verboden voor waterverontreinigende lading"
       },
       "display_eligible": true,
       "artwork_id": "fr-b18b",
@@ -1826,6 +2138,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B18b.svg",
         "original_sha256": "1d119f257e009b4b4aa7f9198c1d327603c308cba69c74d87247dbc703355d00",
         "png_sha256": "0a3b43590b53dd1820413828ca2ebd55de687bcaf8e0e816369adf40d414dff9"
+      },
+      "speech": {
+        "de": "Verbot für wassergefährdende Ladung",
+        "en": "No water-polluting loads",
+        "fr": "Accès interdit aux chargements polluant l’eau",
+        "nl": "Verboden voor waterverontreinigende lading"
       }
     },
     {
@@ -1833,10 +2151,10 @@
       "sign_code": "B18c",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b18c.png",
       "label": {
-        "en": "B18c — no dangerous",
-        "de": "B18c — no dangerous",
-        "fr": "B18c — no dangerous",
-        "nl": "B18c — no dangerous"
+        "de": "Verbot für Gefahrguttransporte",
+        "en": "No dangerous-goods vehicles",
+        "fr": "Accès interdit aux transports de marchandises dangereuses",
+        "nl": "Verboden voor vervoer van gevaarlijke stoffen"
       },
       "display_eligible": true,
       "artwork_id": "fr-b18c",
@@ -1846,6 +2164,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B18c.svg",
         "original_sha256": "4b5cf04b585ae26dc621172b39c502eebed2e189950426842171d923deb25e1c",
         "png_sha256": "0dd0e90f79d9dc553f7ddc21627526062d8bef614d87744b77a16301de3028b5"
+      },
+      "speech": {
+        "de": "Verbot für Gefahrguttransporte",
+        "en": "No dangerous-goods vehicles",
+        "fr": "Accès interdit aux transports de marchandises dangereuses",
+        "nl": "Verboden voor vervoer van gevaarlijke stoffen"
       }
     },
     {
@@ -1853,10 +2177,10 @@
       "sign_code": "B18a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b18a.png",
       "label": {
-        "en": "B18a — no dangerous explosive",
-        "de": "B18a — no dangerous explosive",
-        "fr": "B18a — no dangerous explosive",
-        "nl": "B18a — no dangerous explosive"
+        "de": "Verbot für explosive oder leicht entzündliche Ladung",
+        "en": "No explosive or highly flammable loads",
+        "fr": "Accès interdit aux matières explosives ou inflammables",
+        "nl": "Verboden voor ontplofbare of licht ontvlambare lading"
       },
       "display_eligible": true,
       "artwork_id": "fr-b18a",
@@ -1866,6 +2190,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B18a.svg",
         "original_sha256": "b35cf31992f23b0d41031d7262acd138a98ca57119f148691415d6702b2ee767",
         "png_sha256": "304fbd809ce385e76552f8968a829d5812772298ef12d4ee4d0dab7dc5d7169a"
+      },
+      "speech": {
+        "de": "Verbot für explosive oder leicht entzündliche Ladung",
+        "en": "No explosive or highly flammable loads",
+        "fr": "Accès interdit aux matières explosives ou inflammables",
+        "nl": "Verboden voor ontplofbare of licht ontvlambare lading"
       }
     },
     {
@@ -1873,10 +2203,10 @@
       "sign_code": "B1",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b1.png",
       "label": {
-        "en": "B1 — no entry",
-        "de": "B1 — no entry",
-        "fr": "B1 — no entry",
-        "nl": "B1 — no entry"
+        "de": "Verbot der Einfahrt",
+        "en": "No entry",
+        "fr": "Sens interdit",
+        "nl": "Verboden in te rijden"
       },
       "display_eligible": true,
       "artwork_id": "fr-b1",
@@ -1886,6 +2216,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B1.svg",
         "original_sha256": "68702a3d22044637aa5623a3c0755ac31798c4983f58a33f4fce7bb9b9166f6e",
         "png_sha256": "2b121aaa77df73b5787b6214c8d9be8c4537c6ba2838bde795c962d79846d389"
+      },
+      "speech": {
+        "de": "Verbot der Einfahrt",
+        "en": "No entry",
+        "fr": "Sens interdit",
+        "nl": "Verboden in te rijden"
       }
     },
     {
@@ -1893,10 +2229,10 @@
       "sign_code": "C13a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-c13a.png",
       "label": {
-        "en": "C13a — no exit",
-        "de": "C13a — no exit",
-        "fr": "C13a — no exit",
-        "nl": "C13a — no exit"
+        "de": "Sackgasse",
+        "en": "No through road",
+        "fr": "Impasse",
+        "nl": "Doodlopende weg"
       },
       "display_eligible": true,
       "artwork_id": "fr-c13a",
@@ -1906,6 +2242,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_C13a.svg",
         "original_sha256": "4a00af66dfa987fed581e4c9cde3a5e51aa9bc24c972cf615997888cef9c257a",
         "png_sha256": "04daa938ba03c10411ce70c6216b92c8da888841e7e532b9dc07bc79c9342752"
+      },
+      "speech": {
+        "de": "Sackgasse",
+        "en": "No through road",
+        "fr": "Impasse",
+        "nl": "Doodlopende weg"
       }
     },
     {
@@ -1913,10 +2255,10 @@
       "sign_code": "B8",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b8.png",
       "label": {
-        "en": "B8 — no hgv",
-        "de": "B8 — no hgv",
-        "fr": "B8 — no hgv",
-        "nl": "B8 — no hgv"
+        "de": "Verbot für Güterfahrzeuge",
+        "en": "No goods vehicles",
+        "fr": "Accès interdit aux véhicules de transport de marchandises",
+        "nl": "Verboden voor goederenvoertuigen"
       },
       "display_eligible": true,
       "artwork_id": "fr-b8",
@@ -1926,6 +2268,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B8.svg",
         "original_sha256": "30dd2337e57f5958b7eecc384372142c52cb86e4d6a97696a6a5eb94c826cee7",
         "png_sha256": "e86484a7ce63e74c8e9258ae79d93935d21f56c27f1a7bc29930da5a776e60f8"
+      },
+      "speech": {
+        "de": "Verbot für Güterfahrzeuge",
+        "en": "No goods vehicles",
+        "fr": "Accès interdit aux véhicules de transport de marchandises",
+        "nl": "Verboden voor goederenvoertuigen"
       }
     },
     {
@@ -1933,10 +2281,10 @@
       "sign_code": "B16",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b16.png",
       "label": {
-        "en": "B16 — no horn",
-        "de": "B16 — no horn",
-        "fr": "B16 — no horn",
-        "nl": "B16 — no horn"
+        "de": "Hupen verboten",
+        "en": "No sounding horns",
+        "fr": "Signaux sonores interdits",
+        "nl": "Verboden te claxonneren"
       },
       "display_eligible": true,
       "artwork_id": "fr-b16",
@@ -1946,6 +2294,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B16.svg",
         "original_sha256": "cfa212fbf9da166c71236d2ad95410c0d3b505318cad755ffa75eb54734beea3",
         "png_sha256": "9749292bab4bc7b9ebe5d6cb2606aaf1c09a71f9fd5634f989d2b7a71d27cf1a"
+      },
+      "speech": {
+        "de": "Hupen verboten",
+        "en": "No sounding horns",
+        "fr": "Signaux sonores interdits",
+        "nl": "Verboden te claxonneren"
       }
     },
     {
@@ -1953,10 +2307,10 @@
       "sign_code": "B3",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b3.png",
       "label": {
-        "en": "B3 — no overtaking",
-        "de": "B3 — no overtaking",
-        "fr": "B3 — no overtaking",
-        "nl": "B3 — no overtaking"
+        "de": "Überholverbot",
+        "en": "No overtaking",
+        "fr": "Interdiction de dépasser",
+        "nl": "Inhaalverbod"
       },
       "display_eligible": true,
       "artwork_id": "fr-b3",
@@ -1966,6 +2320,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B3.svg",
         "original_sha256": "ad80549f7caebde64818a687ffb8bc6e6d3167ee178e85cc3fbc9e9756872b6b",
         "png_sha256": "4e6b306aeebfc7b15be9303a3771cd31a4f13f6e475620b21abcba8d82b24df0"
+      },
+      "speech": {
+        "de": "Überholverbot",
+        "en": "No overtaking",
+        "fr": "Interdiction de dépasser",
+        "nl": "Inhaalverbod"
       }
     },
     {
@@ -1973,10 +2333,10 @@
       "sign_code": "B3a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b3a.png",
       "label": {
-        "en": "B3a — no overtaking:hgv",
-        "de": "B3a — no overtaking:hgv",
-        "fr": "B3a — no overtaking:hgv",
-        "nl": "B3a — no overtaking:hgv"
+        "de": "Überholverbot für Lastkraftwagen",
+        "en": "No overtaking by lorries",
+        "fr": "Dépassement interdit aux poids lourds",
+        "nl": "Inhaalverbod voor vrachtauto’s"
       },
       "display_eligible": true,
       "artwork_id": "fr-b3a",
@@ -1986,6 +2346,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B3a.svg",
         "original_sha256": "ed67cb722e029e3c7e02f1ed8e6596ad593e12edfacaecf08ea5de3390f8b83d",
         "png_sha256": "6858bad753c1fef4edaa979f288c7c196b0b272bf3d2d50df017c701642f43d8"
+      },
+      "speech": {
+        "de": "Überholverbot für Lastkraftwagen",
+        "en": "No overtaking by lorries",
+        "fr": "Dépassement interdit aux poids lourds",
+        "nl": "Inhaalverbod voor vrachtauto’s"
       }
     },
     {
@@ -1993,10 +2359,10 @@
       "sign_code": "B6a1",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b6a1.png",
       "label": {
-        "en": "B6a1 — no parking",
-        "de": "B6a1 — no parking",
-        "fr": "B6a1 — no parking",
-        "nl": "B6a1 — no parking"
+        "de": "Parkverbot",
+        "en": "No parking",
+        "fr": "Stationnement interdit",
+        "nl": "Parkeerverbod"
       },
       "display_eligible": true,
       "artwork_id": "fr-b6a1",
@@ -2006,6 +2372,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B6a1.svg",
         "original_sha256": "be1cc28645c212c00a09e41c182b774c1823c99f638ee51b56b65774b48b23f0",
         "png_sha256": "7dc5067cb903d776b04aa99f4a588f63b595ec79a1ede5965d123b5996fa236a"
+      },
+      "speech": {
+        "de": "Parkverbot",
+        "en": "No parking",
+        "fr": "Stationnement interdit",
+        "nl": "Parkeerverbod"
       }
     },
     {
@@ -2013,10 +2385,10 @@
       "sign_code": "B6a2",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b6a2.png",
       "label": {
-        "en": "B6a2 — no parking:1-15",
-        "de": "B6a2 — no parking:1-15",
-        "fr": "B6a2 — no parking:1-15",
-        "nl": "B6a2 — no parking:1-15"
+        "de": "Parkverbot vom Ersten bis zum Fünfzehnten",
+        "en": "No parking from the first to the fifteenth",
+        "fr": "Stationnement interdit du premier au quinze",
+        "nl": "Parkeerverbod van de eerste tot en met de vijftiende"
       },
       "display_eligible": true,
       "artwork_id": "fr-b6a2",
@@ -2026,6 +2398,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B6a2.svg",
         "original_sha256": "7bb6e715f7f59de23ade8977ca19de1edfd9b74e122116f4b2aaec3fe79a5c2d",
         "png_sha256": "5004d5436c4feb6eb7dad35b97e0dcca040a2676b70f1648b70f7440cd731aee"
+      },
+      "speech": {
+        "de": "Parkverbot vom Ersten bis zum Fünfzehnten",
+        "en": "No parking from the first to the fifteenth",
+        "fr": "Stationnement interdit du premier au quinze",
+        "nl": "Parkeerverbod van de eerste tot en met de vijftiende"
       }
     },
     {
@@ -2033,10 +2411,10 @@
       "sign_code": "B6a3",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b6a3.png",
       "label": {
-        "en": "B6a3 — no parking:16-31",
-        "de": "B6a3 — no parking:16-31",
-        "fr": "B6a3 — no parking:16-31",
-        "nl": "B6a3 — no parking:16-31"
+        "de": "Parkverbot vom Sechzehnten bis Monatsende",
+        "en": "No parking from the sixteenth to the end of the month",
+        "fr": "Stationnement interdit du seize à la fin du mois",
+        "nl": "Parkeerverbod van de zestiende tot het einde van de maand"
       },
       "display_eligible": true,
       "artwork_id": "fr-b6a3",
@@ -2046,6 +2424,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B6a3.svg",
         "original_sha256": "7b963a9cb70a79c49fa7e41c21749055dc10cf98158b1fcc9e4c49222c511fd4",
         "png_sha256": "6f9c4c159f9e10a501af1f5feb7e231600e42fd91e4fca740cb14358d0929efe"
+      },
+      "speech": {
+        "de": "Parkverbot vom Sechzehnten bis Monatsende",
+        "en": "No parking from the sixteenth to the end of the month",
+        "fr": "Stationnement interdit du seize à la fin du mois",
+        "nl": "Parkeerverbod van de zestiende tot het einde van de maand"
       }
     },
     {
@@ -2053,10 +2437,10 @@
       "sign_code": "B9a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b9a.png",
       "label": {
-        "en": "B9a — no pedestrian",
-        "de": "B9a — no pedestrian",
-        "fr": "B9a — no pedestrian",
-        "nl": "B9a — no pedestrian"
+        "de": "Verbot für Fußgänger",
+        "en": "No pedestrians",
+        "fr": "Accès interdit aux piétons",
+        "nl": "Verboden voor voetgangers"
       },
       "display_eligible": true,
       "artwork_id": "fr-b9a",
@@ -2066,6 +2450,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B9a.svg",
         "original_sha256": "365393e4c2298e4b40a504799c9c3475c15c3a40fc4ff35c2448157a135def87",
         "png_sha256": "d6d3adfd0dd9b73962a7aac24095e4e84437e09481abb71b5a7f199ef241196f"
+      },
+      "speech": {
+        "de": "Verbot für Fußgänger",
+        "en": "No pedestrians",
+        "fr": "Accès interdit aux piétons",
+        "nl": "Verboden voor voetgangers"
       }
     },
     {
@@ -2073,10 +2463,10 @@
       "sign_code": "B6d",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b6d.png",
       "label": {
-        "en": "B6d — no stop",
-        "de": "B6d — no stop",
-        "fr": "B6d — no stop",
-        "nl": "B6d — no stop"
+        "de": "Absolutes Haltverbot",
+        "en": "No stopping",
+        "fr": "Arrêt et stationnement interdits",
+        "nl": "Stilstaan en parkeren verboden"
       },
       "display_eligible": true,
       "artwork_id": "fr-b6d",
@@ -2086,6 +2476,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B6d.svg",
         "original_sha256": "b7402470b65d81cd6d789ba2c45dbd3831cc37c9f58336fa5c5629d5c0f240c9",
         "png_sha256": "0c6a0dcd550da17469529be63f7b04dcc323026a58e1c111e3e087d2d689054f"
+      },
+      "speech": {
+        "de": "Absolutes Haltverbot",
+        "en": "No stopping",
+        "fr": "Arrêt et stationnement interdits",
+        "nl": "Stilstaan en parkeren verboden"
       }
     },
     {
@@ -2093,10 +2489,10 @@
       "sign_code": "B2a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b2a.png",
       "label": {
-        "en": "B2a — no turn:left",
-        "de": "B2a — no turn:left",
-        "fr": "B2a — no turn:left",
-        "nl": "B2a — no turn:left"
+        "de": "Linksabbiegen verboten",
+        "en": "No left turn",
+        "fr": "Interdiction de tourner à gauche",
+        "nl": "Verboden links af te slaan"
       },
       "display_eligible": true,
       "artwork_id": "fr-b2a",
@@ -2106,6 +2502,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B2a.svg",
         "original_sha256": "7b22920589640698a0cf1085b7c9f6a5ad3b733d638f14759279c4d14bdba77d",
         "png_sha256": "08ed02ff5f28465b94008a24573f82c1d856e6d354c1621b481ffe3e7e707d22"
+      },
+      "speech": {
+        "de": "Linksabbiegen verboten",
+        "en": "No left turn",
+        "fr": "Interdiction de tourner à gauche",
+        "nl": "Verboden links af te slaan"
       }
     },
     {
@@ -2113,10 +2515,10 @@
       "sign_code": "B2b",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b2b.png",
       "label": {
-        "en": "B2b — no turn:right",
-        "de": "B2b — no turn:right",
-        "fr": "B2b — no turn:right",
-        "nl": "B2b — no turn:right"
+        "de": "Rechtsabbiegen verboten",
+        "en": "No right turn",
+        "fr": "Interdiction de tourner à droite",
+        "nl": "Verboden rechts af te slaan"
       },
       "display_eligible": true,
       "artwork_id": "fr-b2b",
@@ -2126,6 +2528,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B2b.svg",
         "original_sha256": "0bdd7dd4fd5d023acd2aabea8e77d5a536ee43c1f36df5c0b027dbfc68f78d1e",
         "png_sha256": "8803d42fbb4f06a94d15c55a2f6bcebfeca0f243db17b5275473a58ca5a9d0b5"
+      },
+      "speech": {
+        "de": "Rechtsabbiegen verboten",
+        "en": "No right turn",
+        "fr": "Interdiction de tourner à droite",
+        "nl": "Verboden rechts af te slaan"
       }
     },
     {
@@ -2133,10 +2541,10 @@
       "sign_code": "B2c",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b2c.png",
       "label": {
-        "en": "B2c — no u turn",
-        "de": "B2c — no u turn",
-        "fr": "B2c — no u turn",
-        "nl": "B2c — no u turn"
+        "de": "Wenden verboten",
+        "en": "No U-turn",
+        "fr": "Demi-tour interdit",
+        "nl": "Verboden te keren"
       },
       "display_eligible": true,
       "artwork_id": "fr-b2c",
@@ -2146,6 +2554,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B2c.svg",
         "original_sha256": "ebc1f004600594be27748fe4e170ef116fe170e78f929a7662133bcb73fc7f02",
         "png_sha256": "d3e5cf8528319b15d4c3f0bd2db5fabe902f2aaba694350c3c167af9d6b6c50b"
+      },
+      "speech": {
+        "de": "Wenden verboten",
+        "en": "No U-turn",
+        "fr": "Demi-tour interdit",
+        "nl": "Verboden te keren"
       }
     },
     {
@@ -2153,10 +2567,10 @@
       "sign_code": "B0",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b0.png",
       "label": {
-        "en": "B0 — no way",
-        "de": "B0 — no way",
-        "fr": "B0 — no way",
-        "nl": "B0 — no way"
+        "de": "Verbot für Fahrzeuge aller Art",
+        "en": "No vehicles",
+        "fr": "Accès interdit à tous véhicules",
+        "nl": "Verboden voor alle voertuigen"
       },
       "display_eligible": true,
       "artwork_id": "fr-b0",
@@ -2166,6 +2580,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_B0.svg",
         "original_sha256": "5bf6c594169cfd91efdf3b7ea9b3ea2dd777c8d2aeb99839d42977d79a4cd0dd",
         "png_sha256": "f657f4d34fdbc80e4843f32665ea3935fc9e927d8dc94b5a3ca7b1d6423b3d18"
+      },
+      "speech": {
+        "de": "Verbot für Fahrzeuge aller Art",
+        "en": "No vehicles",
+        "fr": "Accès interdit à tous véhicules",
+        "nl": "Verboden voor alle voertuigen"
       }
     },
     {
@@ -2173,10 +2593,10 @@
       "sign_code": "B31",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b31.png",
       "label": {
-        "en": "B31 — no:end",
-        "de": "B31 — no:end",
-        "fr": "B31 — no:end",
-        "nl": "B31 — no:end"
+        "de": "Ende der Streckenbeschränkungen",
+        "en": "End of route restrictions",
+        "fr": "Fin des restrictions de section",
+        "nl": "Einde trajectbeperkingen"
       },
       "display_eligible": true,
       "artwork_id": "fr-b31",
@@ -2193,10 +2613,10 @@
       "sign_code": "C1a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-c1a.png",
       "label": {
-        "en": "C1a — parking",
-        "de": "C1a — parking",
-        "fr": "C1a — parking",
-        "nl": "C1a — parking"
+        "de": "Parkplatz",
+        "en": "Parking area",
+        "fr": "Parking",
+        "nl": "Parkeerplaats"
       },
       "display_eligible": true,
       "artwork_id": "fr-c1a",
@@ -2206,6 +2626,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_C1a.svg",
         "original_sha256": "96578b2d5bea5240f2e2fa5c9bffdf4fd42667a3938cc573e1e309f4007bb107",
         "png_sha256": "9a8018e9d368dc35441dcc0f6026b6eae386ec3af0b9242cf4390b54f6e22903"
+      },
+      "speech": {
+        "de": "Parkplatz",
+        "en": "Parking area",
+        "fr": "Parking",
+        "nl": "Parkeerplaats"
       }
     },
     {
@@ -2213,10 +2639,10 @@
       "sign_code": "C1b",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-c1b.png",
       "label": {
-        "en": "C1b — parking:disc",
-        "de": "C1b — parking:disc",
-        "fr": "C1b — parking:disc",
-        "nl": "C1b — parking:disc"
+        "de": "Parken mit Parkscheibe",
+        "en": "Parking with a parking disc",
+        "fr": "Stationnement avec disque",
+        "nl": "Parkeren met parkeerschijf"
       },
       "display_eligible": true,
       "artwork_id": "fr-c1b",
@@ -2226,6 +2652,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_C1b.svg",
         "original_sha256": "ac8286beace9cb5afbde4878dacafc272d0775e725078cc65a663cb696eb9aa5",
         "png_sha256": "c742b818d698a568a2131ed324b907d56f50feee3cd65777a40b7964ee0105fe"
+      },
+      "speech": {
+        "de": "Parken mit Parkscheibe",
+        "en": "Parking with a parking disc",
+        "fr": "Stationnement avec disque",
+        "nl": "Parkeren met parkeerschijf"
       }
     },
     {
@@ -2233,10 +2665,10 @@
       "sign_code": "C1c",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-c1c.png",
       "label": {
-        "en": "C1c — parking:meter",
-        "de": "C1c — parking:meter",
-        "fr": "C1c — parking:meter",
-        "nl": "C1c — parking:meter"
+        "de": "Gebührenpflichtiger Parkplatz",
+        "en": "Paid parking",
+        "fr": "Stationnement payant",
+        "nl": "Betaald parkeren"
       },
       "display_eligible": true,
       "artwork_id": "fr-c1c",
@@ -2246,6 +2678,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_C1c.svg",
         "original_sha256": "3a1d7dcf3e36b195e74aa457f91726aea249d736a4c5d2205d3097b43ee2aaa3",
         "png_sha256": "ff9a7e90bb48b24d21be2b2e6f81e632dd56f607e6e7d01ddc955734765c84ff"
+      },
+      "speech": {
+        "de": "Gebührenpflichtiger Parkplatz",
+        "en": "Paid parking",
+        "fr": "Stationnement payant",
+        "nl": "Betaald parkeren"
       }
     },
     {
@@ -2253,10 +2691,10 @@
       "sign_code": "C5",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-c5.png",
       "label": {
-        "en": "C5 — parking:taxi",
-        "de": "C5 — parking:taxi",
-        "fr": "C5 — parking:taxi",
-        "nl": "C5 — parking:taxi"
+        "de": "Taxistand",
+        "en": "Taxi rank",
+        "fr": "Station de taxis",
+        "nl": "Taxistandplaats"
       },
       "display_eligible": true,
       "artwork_id": "fr-c5",
@@ -2266,6 +2704,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_C5.svg",
         "original_sha256": "6881c9145717f532b5a48e95d390fec3d67e612de4da3a637a8b4603799aafe0",
         "png_sha256": "381aebc1b2e420f1c65c2ad011e7a6bfa9141e59a3d0a83155436572e2874821"
+      },
+      "speech": {
+        "de": "Taxistand",
+        "en": "Taxi rank",
+        "fr": "Station de taxis",
+        "nl": "Taxistandplaats"
       }
     },
     {
@@ -2273,10 +2717,10 @@
       "sign_code": "B41",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-b41.png",
       "label": {
-        "en": "B41 — end of mandatory footpath",
-        "de": "B41 — end of mandatory footpath",
-        "fr": "B41 — end of mandatory footpath",
-        "nl": "B41 — end of mandatory footpath"
+        "de": "Ende des Gehwegs",
+        "en": "End of compulsory footpath",
+        "fr": "Fin de chemin obligatoire pour piétons",
+        "nl": "Einde verplicht voetpad"
       },
       "display_eligible": true,
       "artwork_id": "fr-b41",
@@ -2287,17 +2731,23 @@
         "original_sha256": "f0c9ab2e27a4b379e2028412e45fcdb32cc951850b4088df59a95cf96df9e648",
         "png_sha256": "9559f9e55fa0da5905df062d952d6358ea7a039f2d60d0515947a14bd35fafea"
       },
-      "notes": "Corrected against the French sign regulation; this is not a speed-end action."
+      "notes": "Corrected against the French sign regulation; this is not a speed-end action.",
+      "speech": {
+        "de": "Ende des Gehwegs",
+        "en": "End of compulsory footpath",
+        "fr": "Fin de chemin obligatoire pour piétons",
+        "nl": "Einde verplicht voetpad"
+      }
     },
     {
       "class_id": "C20a",
       "sign_code": "C20a",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-c20a.png",
       "label": {
-        "en": "C20a — pedestrian crossing",
-        "de": "C20a — pedestrian crossing",
-        "fr": "C20a — pedestrian crossing",
-        "nl": "C20a — pedestrian crossing"
+        "de": "Fußgängerüberweg",
+        "en": "Pedestrian crossing",
+        "fr": "Passage piéton",
+        "nl": "Voetgangersoversteekplaats"
       },
       "display_eligible": true,
       "artwork_id": "fr-c20a",
@@ -2307,6 +2757,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_C20a.svg",
         "original_sha256": "de8bb94f11b4151279ea5ff67b985be9767c78cc402eb4edaf4155b49b13c974",
         "png_sha256": "36c7288f9230d0601a91aa970ddcfc382b10578c1f5f951fad4bcbcd99b07666"
+      },
+      "speech": {
+        "de": "Fußgängerüberweg",
+        "en": "Pedestrian crossing",
+        "fr": "Passage piéton",
+        "nl": "Voetgangersoversteekplaats"
       }
     },
     {
@@ -2314,10 +2770,10 @@
       "sign_code": "AB4",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-ab4.png",
       "label": {
-        "en": "AB4 — stop",
-        "de": "AB4 — stop",
-        "fr": "AB4 — stop",
-        "nl": "AB4 — stop"
+        "de": "Halt. Vorfahrt gewähren",
+        "en": "Stop. Give way",
+        "fr": "Stop. Cédez le passage",
+        "nl": "Stop. Voorrang verlenen"
       },
       "display_eligible": true,
       "artwork_id": "fr-ab4",
@@ -2327,6 +2783,12 @@
         "license_source_url": "https://commons.wikimedia.org/wiki/File:France_road_sign_AB4.svg",
         "original_sha256": "0332c46f4249b039b3b821d7d4c2fa59ce5c79b2c4e819c210b0a7c3d7f877ee",
         "png_sha256": "57fc96ffa89e675ac00c3823ec45e2040ee507cb06b86594f1927e2a1ac970e5"
+      },
+      "speech": {
+        "de": "Halt. Vorfahrt gewähren",
+        "en": "Stop. Give way",
+        "fr": "Stop. Cédez le passage",
+        "nl": "Stop. Voorrang verlenen"
       }
     },
     {
@@ -2334,10 +2796,10 @@
       "sign_code": "C107",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-c107.png",
       "label": {
-        "en": "C107 — motorroad entry",
-        "de": "C107 — motorroad entry",
-        "fr": "C107 — motorroad entry",
-        "nl": "C107 — motorroad entry"
+        "de": "Kraftfahrstraße",
+        "en": "Motor road",
+        "fr": "Route pour automobiles",
+        "nl": "Autoweg"
       },
       "display_eligible": true,
       "artwork_id": "fr-c107",
@@ -2355,10 +2817,10 @@
       "sign_code": "C207",
       "image_path": "tsr/sign-pictograms/national/FR/png/fr-c207.png",
       "label": {
-        "en": "C207 — motorway entry",
-        "de": "C207 — motorway entry",
-        "fr": "C207 — motorway entry",
-        "nl": "C207 — motorway entry"
+        "de": "Autobahn",
+        "en": "Motorway",
+        "fr": "Autoroute",
+        "nl": "Autosnelweg"
       },
       "display_eligible": true,
       "artwork_id": "fr-c207",
@@ -4344,6 +4806,358 @@
     "national_artwork_manifest": "shared/tsr/sign-pictograms/national/FR/manifest.json",
     "national_selection": "shared/tsr/sign-pictograms/national/FR/selection.json",
     "classifier_checkpoint_revision": "7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f",
-    "parity_report": "shared/tsr/foreign-calibration/FR-mobile-parity-v1.json"
+    "parity_report": "shared/tsr/foreign-calibration/FR-mobile-parity-v1.json",
+    "speech_review": {
+      "reviewed_at": "2026-10-02",
+      "source_urls": [
+        "https://www.legifrance.gouv.fr/loda/id/LEGITEXT000006075080/"
+      ],
+      "scope": "Concise sign identification only; supplemental plates, applicability, distances and unrecognized numeric values are not inferred. Runtime display, country rollout and speed gates remain unchanged.",
+      "reviewed_signs": [
+        {
+          "class_id": "B21a2",
+          "sign_code": "B21a2"
+        },
+        {
+          "class_id": "B21-2",
+          "sign_code": "B21-2"
+        },
+        {
+          "class_id": "B21-1",
+          "sign_code": "B21-1"
+        },
+        {
+          "class_id": "B21b",
+          "sign_code": "B21b"
+        },
+        {
+          "class_id": "B21e",
+          "sign_code": "B21e"
+        },
+        {
+          "class_id": "B21d1",
+          "sign_code": "B21d1"
+        },
+        {
+          "class_id": "B21c2",
+          "sign_code": "B21c2"
+        },
+        {
+          "class_id": "B21d2",
+          "sign_code": "B21d2"
+        },
+        {
+          "class_id": "B21c1",
+          "sign_code": "B21c1"
+        },
+        {
+          "class_id": "B40",
+          "sign_code": "B40"
+        },
+        {
+          "class_id": "B22a",
+          "sign_code": "B22a"
+        },
+        {
+          "class_id": "B27a",
+          "sign_code": "B27a"
+        },
+        {
+          "class_id": "B26",
+          "sign_code": "B26"
+        },
+        {
+          "class_id": "A14",
+          "sign_code": "A14"
+        },
+        {
+          "class_id": "A23",
+          "sign_code": "A23"
+        },
+        {
+          "class_id": "A15a1",
+          "sign_code": "A15a1"
+        },
+        {
+          "class_id": "A15a2",
+          "sign_code": "A15a2"
+        },
+        {
+          "class_id": "A21",
+          "sign_code": "A21"
+        },
+        {
+          "class_id": "A18",
+          "sign_code": "A18"
+        },
+        {
+          "class_id": "AB1",
+          "sign_code": "AB1"
+        },
+        {
+          "class_id": "A20",
+          "sign_code": "A20"
+        },
+        {
+          "class_id": "C3",
+          "sign_code": "C3"
+        },
+        {
+          "class_id": "AK22",
+          "sign_code": "AK22"
+        },
+        {
+          "class_id": "A15c",
+          "sign_code": "A15c"
+        },
+        {
+          "class_id": "A16",
+          "sign_code": "A16"
+        },
+        {
+          "class_id": "AB2",
+          "sign_code": "AB2"
+        },
+        {
+          "class_id": "A7",
+          "sign_code": "A7"
+        },
+        {
+          "class_id": "A6",
+          "sign_code": "A6"
+        },
+        {
+          "class_id": "A3",
+          "sign_code": "A3"
+        },
+        {
+          "class_id": "A3b",
+          "sign_code": "A3b"
+        },
+        {
+          "class_id": "A3a",
+          "sign_code": "A3a"
+        },
+        {
+          "class_id": "A13b",
+          "sign_code": "A13b"
+        },
+        {
+          "class_id": "AK5",
+          "sign_code": "AK5"
+        },
+        {
+          "class_id": "A19",
+          "sign_code": "A19"
+        },
+        {
+          "class_id": "AB25",
+          "sign_code": "AB25"
+        },
+        {
+          "class_id": "A13a",
+          "sign_code": "A13a"
+        },
+        {
+          "class_id": "A4",
+          "sign_code": "A4"
+        },
+        {
+          "class_id": "A17",
+          "sign_code": "A17"
+        },
+        {
+          "class_id": "A8",
+          "sign_code": "A8"
+        },
+        {
+          "class_id": "A1b",
+          "sign_code": "A1b"
+        },
+        {
+          "class_id": "A1a",
+          "sign_code": "A1a"
+        },
+        {
+          "class_id": "A15b",
+          "sign_code": "A15b"
+        },
+        {
+          "class_id": "A24",
+          "sign_code": "A24"
+        },
+        {
+          "class_id": "A1c",
+          "sign_code": "A1c"
+        },
+        {
+          "class_id": "A1d",
+          "sign_code": "A1d"
+        },
+        {
+          "class_id": "B42",
+          "sign_code": "B42"
+        },
+        {
+          "class_id": "CE3a",
+          "sign_code": "CE3a"
+        },
+        {
+          "class_id": "CE22",
+          "sign_code": "CE22"
+        },
+        {
+          "class_id": "B9d",
+          "sign_code": "B9d"
+        },
+        {
+          "class_id": "B9b",
+          "sign_code": "B9b"
+        },
+        {
+          "class_id": "B9f",
+          "sign_code": "B9f"
+        },
+        {
+          "class_id": "B7a",
+          "sign_code": "B7a"
+        },
+        {
+          "class_id": "B18b",
+          "sign_code": "B18b"
+        },
+        {
+          "class_id": "B18c",
+          "sign_code": "B18c"
+        },
+        {
+          "class_id": "B18a",
+          "sign_code": "B18a"
+        },
+        {
+          "class_id": "B1",
+          "sign_code": "B1"
+        },
+        {
+          "class_id": "C13a",
+          "sign_code": "C13a"
+        },
+        {
+          "class_id": "B8",
+          "sign_code": "B8"
+        },
+        {
+          "class_id": "B16",
+          "sign_code": "B16"
+        },
+        {
+          "class_id": "B3",
+          "sign_code": "B3"
+        },
+        {
+          "class_id": "B3a",
+          "sign_code": "B3a"
+        },
+        {
+          "class_id": "B6a1",
+          "sign_code": "B6a1"
+        },
+        {
+          "class_id": "B6a2",
+          "sign_code": "B6a2"
+        },
+        {
+          "class_id": "B6a3",
+          "sign_code": "B6a3"
+        },
+        {
+          "class_id": "B9a",
+          "sign_code": "B9a"
+        },
+        {
+          "class_id": "B6d",
+          "sign_code": "B6d"
+        },
+        {
+          "class_id": "B2a",
+          "sign_code": "B2a"
+        },
+        {
+          "class_id": "B2b",
+          "sign_code": "B2b"
+        },
+        {
+          "class_id": "B2c",
+          "sign_code": "B2c"
+        },
+        {
+          "class_id": "B0",
+          "sign_code": "B0"
+        },
+        {
+          "class_id": "C1a",
+          "sign_code": "C1a"
+        },
+        {
+          "class_id": "C1b",
+          "sign_code": "C1b"
+        },
+        {
+          "class_id": "C1c",
+          "sign_code": "C1c"
+        },
+        {
+          "class_id": "C5",
+          "sign_code": "C5"
+        },
+        {
+          "class_id": "B41",
+          "sign_code": "B41"
+        },
+        {
+          "class_id": "C20a",
+          "sign_code": "C20a"
+        },
+        {
+          "class_id": "AB4",
+          "sign_code": "AB4"
+        }
+      ],
+      "omitted_display_classes": {
+        "EB20": "Primary speed or structural context; no secondary-sign speech.",
+        "EB10": "Primary speed or structural context; no secondary-sign speech.",
+        "A9": "Legacy A9 identifier predates the current A9a/A9b split; no subtype inferred.",
+        "B14-10": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-100": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-110": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-130": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-15": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-20": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-30": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-40": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-5": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-50": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-60": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-70": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-80": "Primary speed or structural context; no secondary-sign speech.",
+        "B14-90": "Primary speed or structural context; no secondary-sign speech.",
+        "B9i": "Trailer applicability depends on vehicle combination and weight, absent from classifier output.",
+        "B31": "Primary speed or structural context; no secondary-sign speech.",
+        "C107": "Primary speed or structural context; no secondary-sign speech.",
+        "C207": "Primary speed or structural context; no secondary-sign speech."
+      },
+      "baseline_revision": "366132efd566da0e46833738f13e8ddf255bf199",
+      "retained_reviewed_phrase_classes": 77,
+      "newly_reviewed_classes": [],
+      "upstream_display_blocked_since_initial_review": [
+        "A2b",
+        "A2a",
+        "B13a",
+        "B12",
+        "B13",
+        "B11",
+        "B17"
+      ]
+    }
   }
 }

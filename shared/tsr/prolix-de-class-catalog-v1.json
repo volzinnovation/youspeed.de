@@ -162,7 +162,13 @@
         "fr": "Passage par la gauche",
         "nl": "Links passeren"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Links vorbeifahren",
+        "en": "Pass on the left",
+        "fr": "Passage par la gauche",
+        "nl": "Links passeren"
+      }
     },
     {
       "class_id": "arrow_right",
@@ -174,7 +180,13 @@
         "fr": "Tourner ici à droite",
         "nl": "Hier rechtsaf"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Hier rechts",
+        "en": "Turn right here",
+        "fr": "Tourner ici à droite",
+        "nl": "Hier rechtsaf"
+      }
     },
     {
       "class_id": "arrow_right_down",
@@ -186,7 +198,13 @@
         "fr": "Passage par la droite",
         "nl": "Rechts passeren"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Rechts vorbeifahren",
+        "en": "Pass on the right",
+        "fr": "Passage par la droite",
+        "nl": "Rechts passeren"
+      }
     },
     {
       "class_id": "arrow_through",
@@ -198,7 +216,13 @@
         "fr": "Tout droit",
         "nl": "Rechtdoor"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Geradeaus",
+        "en": "Ahead only",
+        "fr": "Tout droit",
+        "nl": "Rechtdoor"
+      }
     },
     {
       "class_id": "arrow_turn_left",
@@ -211,7 +235,13 @@
         "nl": "Linksaf"
       },
       "display_eligible": true,
-      "notes": "Reviewed display mapping: upstream DE:209 → DE:209-10; German StVO/current sign plate. This is not an added classifier class."
+      "notes": "Reviewed display mapping: upstream DE:209 → DE:209-10; German StVO/current sign plate. This is not an added classifier class.",
+      "speech": {
+        "de": "Links abbiegen",
+        "en": "Turn left ahead",
+        "fr": "Tourner à gauche",
+        "nl": "Linksaf"
+      }
     },
     {
       "class_id": "arrow_turn_left_right",
@@ -223,7 +253,13 @@
         "fr": "À gauche ou à droite",
         "nl": "Linksaf of rechtsaf"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Links oder rechts",
+        "en": "Turn left or right",
+        "fr": "À gauche ou à droite",
+        "nl": "Linksaf of rechtsaf"
+      }
     },
     {
       "class_id": "arrow_turn_left_through",
@@ -235,7 +271,13 @@
         "fr": "Tout droit ou à gauche",
         "nl": "Rechtdoor of linksaf"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Geradeaus oder links",
+        "en": "Ahead or left",
+        "fr": "Tout droit ou à gauche",
+        "nl": "Rechtdoor of linksaf"
+      }
     },
     {
       "class_id": "arrow_turn_right",
@@ -248,7 +290,13 @@
         "nl": "Rechtsaf"
       },
       "display_eligible": true,
-      "notes": "Reviewed display mapping: upstream DE:209-10 → DE:209; German StVO/current sign plate. This is not an added classifier class."
+      "notes": "Reviewed display mapping: upstream DE:209-10 → DE:209; German StVO/current sign plate. This is not an added classifier class.",
+      "speech": {
+        "de": "Rechts abbiegen",
+        "en": "Turn right ahead",
+        "fr": "Tourner à droite",
+        "nl": "Rechtsaf"
+      }
     },
     {
       "class_id": "arrow_turn_right_through",
@@ -260,7 +308,13 @@
         "fr": "Tout droit ou à droite",
         "nl": "Rechtdoor of rechtsaf"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Geradeaus oder rechts",
+        "en": "Ahead or right",
+        "fr": "Tout droit ou à droite",
+        "nl": "Rechtdoor of rechtsaf"
+      }
     },
     {
       "class_id": "arrow_u_turn",
@@ -345,13 +399,19 @@
       "sign_code": "DE:244.1",
       "image_path": "tsr/sign-pictograms/png/de-244.1.png",
       "label": {
-        "de": "Fahrradvorrang",
-        "en": "Bicycle priority",
-        "fr": "Priorité aux vélos",
-        "nl": "Voorrang voor fietsers"
+        "de": "Fahrradstraße",
+        "en": "Cycle street",
+        "fr": "Rue cyclable",
+        "nl": "Fietsstraat"
       },
       "display_eligible": true,
-      "notes": "Closest reviewed German equivalent: Zeichen 244.1 (Beginn einer Fahrradstraße). Germany has no standalone StVO sign named bicycle priority; this pictogram is presentation-only."
+      "notes": "Closest reviewed German equivalent: Zeichen 244.1 (Beginn einer Fahrradstraße). Germany has no standalone StVO sign named bicycle priority; this pictogram is presentation-only.",
+      "speech": {
+        "de": "Fahrradstraße",
+        "en": "Cycle street",
+        "fr": "Rue cyclable",
+        "nl": "Fietsstraat"
+      }
     },
     {
       "class_id": "bicycle:start",
@@ -363,7 +423,13 @@
         "fr": "Piste cyclable",
         "nl": "Fietspad"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Radweg",
+        "en": "Cycle path",
+        "fr": "Piste cyclable",
+        "nl": "Fietspad"
+      }
     },
     {
       "class_id": "bus:start",
@@ -375,7 +441,13 @@
         "fr": "Voie réservée aux bus",
         "nl": "Busstrook"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Bussonderfahrstreifen",
+        "en": "Bus lane",
+        "fr": "Voie réservée aux bus",
+        "nl": "Busstrook"
+      }
     },
     {
       "class_id": "exit",
@@ -400,7 +472,13 @@
         "fr": "Cédez le passage",
         "nl": "Voorrang verlenen"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Vorfahrt gewähren",
+        "en": "Give way",
+        "fr": "Cédez le passage",
+        "nl": "Voorrang verlenen"
+      }
     },
     {
       "class_id": "hazard",
@@ -412,7 +490,13 @@
         "fr": "Danger",
         "nl": "Gevaar"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Gefahrstelle",
+        "en": "Caution, Danger",
+        "fr": "Attention, Danger",
+        "nl": "Let op, Gevaar"
+      }
     },
     {
       "class_id": "hazard:airport",
@@ -451,7 +535,13 @@
         "nl": "Fietsers"
       },
       "display_eligible": true,
-      "notes": "Uses the official DE:138-10 bicycle warning sign (bicycle traffic crossing from the right); the classifier does not identify the left/right pictogram variant."
+      "notes": "Uses the official DE:138-10 bicycle warning sign (bicycle traffic crossing from the right); the classifier does not identify the left/right pictogram variant.",
+      "speech": {
+        "de": "Achtung, Radverkehr",
+        "en": "Caution, Cyclists",
+        "fr": "Attention, Cyclistes",
+        "nl": "Let op, Fietsers"
+      }
     },
     {
       "class_id": "hazard:bothways",
@@ -463,7 +553,13 @@
         "fr": "Circulation dans les deux sens",
         "nl": "Tweerichtingsverkeer"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Gegenverkehr",
+        "en": "Caution, Two-way traffic",
+        "fr": "Attention, Circulation dans les deux sens",
+        "nl": "Let op, Tweerichtingsverkeer"
+      }
     },
     {
       "class_id": "hazard:bumps",
@@ -475,7 +571,13 @@
         "fr": "Chaussée déformée",
         "nl": "Slecht wegdek"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Unebene Fahrbahn",
+        "en": "Caution, Uneven road",
+        "fr": "Attention, Chaussée déformée",
+        "nl": "Let op, Slecht wegdek"
+      }
     },
     {
       "class_id": "hazard:crossing",
@@ -487,7 +589,13 @@
         "fr": "Intersection",
         "nl": "Kruispunt"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Kreuzung mit Vorfahrt von rechts",
+        "en": "Caution, Junction with priority from the right",
+        "fr": "Attention, Intersection avec priorité à droite",
+        "nl": "Let op, Kruispunt met voorrang van rechts"
+      }
     },
     {
       "class_id": "hazard:gravel",
@@ -499,7 +607,13 @@
         "fr": "Gravillons",
         "nl": "Losliggende stenen"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Splitt oder Schotter",
+        "en": "Caution, Loose gravel",
+        "fr": "Attention, Gravillons",
+        "nl": "Let op, Losliggende stenen"
+      }
     },
     {
       "class_id": "hazard:horse",
@@ -524,7 +638,13 @@
         "fr": "Neige ou verglas",
         "nl": "Sneeuw of ijzel"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Schnee- oder Eisglätte",
+        "en": "Caution, Snow or ice",
+        "fr": "Attention, Neige ou verglas",
+        "nl": "Let op, Sneeuw of ijzel"
+      }
     },
     {
       "class_id": "hazard:incline",
@@ -549,7 +669,13 @@
         "fr": "Priorité à la prochaine intersection",
         "nl": "Voorrang op het volgende kruispunt"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Vorfahrt an der nächsten Kreuzung",
+        "en": "Caution, Priority at next junction",
+        "fr": "Attention, Priorité à la prochaine intersection",
+        "nl": "Let op, Voorrang op het volgende kruispunt"
+      }
     },
     {
       "class_id": "hazard:left_turn",
@@ -562,7 +688,13 @@
         "nl": "Bocht naar links"
       },
       "display_eligible": true,
-      "notes": "Reviewed display mapping: upstream missing → DE:103-10; German StVO/current sign plate. This is not an added classifier class."
+      "notes": "Reviewed display mapping: upstream missing → DE:103-10; German StVO/current sign plate. This is not an added classifier class.",
+      "speech": {
+        "de": "Achtung, Kurve links",
+        "en": "Caution, Left bend",
+        "fr": "Attention, Virage à gauche",
+        "nl": "Let op, Bocht naar links"
+      }
     },
     {
       "class_id": "hazard:level_crossing",
@@ -575,7 +707,13 @@
         "nl": "Overweg"
       },
       "display_eligible": true,
-      "notes": "Reviewed German equivalent: Zeichen 151 (Bahnübergang)."
+      "notes": "Reviewed German equivalent: Zeichen 151 (Bahnübergang).",
+      "speech": {
+        "de": "Achtung, Bahnübergang",
+        "en": "Caution, Level crossing",
+        "fr": "Attention, Passage à niveau",
+        "nl": "Let op, Overweg"
+      }
     },
     {
       "class_id": "hazard:moving_bridge",
@@ -587,7 +725,13 @@
         "fr": "Pont mobile",
         "nl": "Beweegbare brug"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Bewegliche Brücke",
+        "en": "Caution, Opening bridge",
+        "fr": "Attention, Pont mobile",
+        "nl": "Let op, Beweegbare brug"
+      }
     },
     {
       "class_id": "hazard:narrow_both",
@@ -599,7 +743,13 @@
         "fr": "Chaussée rétrécie",
         "nl": "Wegversmalling"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Verengte Fahrbahn",
+        "en": "Caution, Road narrows",
+        "fr": "Attention, Chaussée rétrécie",
+        "nl": "Let op, Wegversmalling"
+      }
     },
     {
       "class_id": "hazard:narrow_left",
@@ -611,7 +761,13 @@
         "fr": "Chaussée rétrécie à gauche",
         "nl": "Wegversmalling links"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Verengung links",
+        "en": "Caution, Road narrows on left",
+        "fr": "Attention, Chaussée rétrécie à gauche",
+        "nl": "Let op, Wegversmalling links"
+      }
     },
     {
       "class_id": "hazard:narrow_right",
@@ -623,7 +779,13 @@
         "fr": "Chaussée rétrécie à droite",
         "nl": "Wegversmalling rechts"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Verengung rechts",
+        "en": "Caution, Road narrows on right",
+        "fr": "Attention, Chaussée rétrécie à droite",
+        "nl": "Let op, Wegversmalling rechts"
+      }
     },
     {
       "class_id": "hazard:other",
@@ -662,19 +824,31 @@
         "nl": "Bocht naar rechts"
       },
       "display_eligible": true,
-      "notes": "Reviewed display mapping: upstream missing → DE:103-20; German StVO/current sign plate. This is not an added classifier class."
+      "notes": "Reviewed display mapping: upstream missing → DE:103-20; German StVO/current sign plate. This is not an added classifier class.",
+      "speech": {
+        "de": "Achtung, Kurve rechts",
+        "en": "Caution, Right bend",
+        "fr": "Attention, Virage à droite",
+        "nl": "Let op, Bocht naar rechts"
+      }
     },
     {
       "class_id": "hazard:road_works",
       "sign_code": "DE:123",
       "image_path": "tsr/sign-pictograms/png/de-123.png",
       "label": {
-        "de": "Arbeitsstelle",
+        "de": "Baustelle",
         "en": "Road works",
         "fr": "Travaux",
-        "nl": "Werk in uitvoering"
+        "nl": "Wegwerkzaamheden"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Baustelle",
+        "en": "Caution, Road works",
+        "fr": "Attention, Travaux",
+        "nl": "Let op, Wegwerkzaamheden"
+      }
     },
     {
       "class_id": "hazard:rocks",
@@ -700,7 +874,13 @@
         "nl": "Kinderen"
       },
       "display_eligible": true,
-      "notes": "Uses the official DE:136-10 children warning sign (children crossing from the right); the classifier does not identify the left/right pictogram variant."
+      "notes": "Uses the official DE:136-10 children warning sign (children crossing from the right); the classifier does not identify the left/right pictogram variant.",
+      "speech": {
+        "de": "Achtung, Kinder",
+        "en": "Caution, Children",
+        "fr": "Attention, Enfants",
+        "nl": "Let op, Kinderen"
+      }
     },
     {
       "class_id": "hazard:slippery",
@@ -712,7 +892,13 @@
         "fr": "Chaussée glissante",
         "nl": "Slipgevaar"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Schleuder- oder Rutschgefahr",
+        "en": "Caution, Slippery road",
+        "fr": "Attention, Chaussée glissante",
+        "nl": "Let op, Slipgevaar"
+      }
     },
     {
       "class_id": "hazard:traffic_jam",
@@ -724,7 +910,13 @@
         "fr": "Bouchons",
         "nl": "Filevorming"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Stau",
+        "en": "Caution, Traffic queues",
+        "fr": "Attention, Bouchons",
+        "nl": "Let op, Filevorming"
+      }
     },
     {
       "class_id": "hazard:traffic_signal",
@@ -736,7 +928,13 @@
         "fr": "Feux de circulation annoncés",
         "nl": "Verkeerslichten vooruit"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Lichtzeichenanlage voraus",
+        "en": "Caution, Traffic lights ahead",
+        "fr": "Attention, Feux de circulation annoncés",
+        "nl": "Let op, Verkeerslichten vooruit"
+      }
     },
     {
       "class_id": "hazard:train",
@@ -748,7 +946,13 @@
         "fr": "Passage à niveau",
         "nl": "Overweg"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Bahnübergang",
+        "en": "Caution, Level crossing",
+        "fr": "Attention, Passage à niveau",
+        "nl": "Let op, Overweg"
+      }
     },
     {
       "class_id": "hazard:train2",
@@ -761,7 +965,13 @@
         "nl": "Overweg, onbepaald type"
       },
       "display_eligible": true,
-      "notes": "Closest reviewed German equivalent: Zeichen 151 (Bahnübergang); the classifier does not identify a more specific German crossing subtype."
+      "notes": "Closest reviewed German equivalent: Zeichen 151 (Bahnübergang); the classifier does not identify a more specific German crossing subtype.",
+      "speech": {
+        "de": "Achtung, Bahnübergang",
+        "en": "Caution, Level crossing",
+        "fr": "Attention, Passage à niveau",
+        "nl": "Let op, Overweg"
+      }
     },
     {
       "class_id": "hazard:wild_animals",
@@ -774,7 +984,13 @@
         "nl": "Overstekend wild"
       },
       "display_eligible": true,
-      "notes": "Uses the official DE:142-10 wild-animal warning sign (wildlife crossing from the right); the classifier does not identify the left/right pictogram variant."
+      "notes": "Uses the official DE:142-10 wild-animal warning sign (wildlife crossing from the right); the classifier does not identify the left/right pictogram variant.",
+      "speech": {
+        "de": "Achtung, Wildwechsel",
+        "en": "Caution, Wild animals",
+        "fr": "Attention, Passage d’animaux sauvages",
+        "nl": "Let op, Overstekend wild"
+      }
     },
     {
       "class_id": "hazard:wind",
@@ -787,7 +1003,13 @@
         "nl": "Zijwind"
       },
       "display_eligible": true,
-      "notes": "Uses the official DE:117-10 crosswind warning sign (wind from the right); the classifier does not identify the left/right direction variant."
+      "notes": "Uses the official DE:117-10 crosswind warning sign (wind from the right); the classifier does not identify the left/right direction variant.",
+      "speech": {
+        "de": "Achtung, Seitenwind",
+        "en": "Caution, Crosswinds",
+        "fr": "Attention, Vent latéral",
+        "nl": "Let op, Zijwind"
+      }
     },
     {
       "class_id": "hazard:zigzag",
@@ -799,7 +1021,13 @@
         "fr": "Succession de virages, premier à droite",
         "nl": "S-bocht, eerst rechts"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Doppelkurve, zuerst rechts",
+        "en": "Caution, Double bend, first right",
+        "fr": "Attention, Succession de virages, premier à droite",
+        "nl": "Let op, S-bocht, eerst rechts"
+      }
     },
     {
       "class_id": "hazard:zigzag:left",
@@ -811,7 +1039,13 @@
         "fr": "Succession de virages, premier à gauche",
         "nl": "S-bocht, eerst links"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Achtung, Doppelkurve, zuerst links",
+        "en": "Caution, Double bend, first left",
+        "fr": "Attention, Succession de virages, premier à gauche",
+        "nl": "Let op, S-bocht, eerst links"
+      }
     },
     {
       "class_id": "horse:start",
@@ -823,7 +1057,13 @@
         "fr": "Chemin pour cavaliers",
         "nl": "Ruiterpad"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Reitweg",
+        "en": "Bridleway",
+        "fr": "Chemin pour cavaliers",
+        "nl": "Ruiterpad"
+      }
     },
     {
       "class_id": "lanes",
@@ -1158,7 +1398,13 @@
         "fr": "Accès interdit aux cycles",
         "nl": "Verboden voor fietsers"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Verbot für Radverkehr",
+        "en": "No cycling",
+        "fr": "Accès interdit aux cycles",
+        "nl": "Verboden voor fietsers"
+      }
     },
     {
       "class_id": "no_bus",
@@ -1170,7 +1416,13 @@
         "fr": "Accès interdit aux autobus",
         "nl": "Verboden voor autobussen"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Verbot für Kraftomnibusse",
+        "en": "No buses",
+        "fr": "Accès interdit aux autobus",
+        "nl": "Verboden voor autobussen"
+      }
     },
     {
       "class_id": "no_car",
@@ -1182,7 +1434,13 @@
         "fr": "Accès interdit aux véhicules à moteur à plusieurs roues de front",
         "nl": "Verboden voor motorvoertuigen op meer dan twee wielen"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Verbot für mehrspurige Kraftfahrzeuge",
+        "en": "No motor vehicles with more than two wheels",
+        "fr": "Accès interdit aux véhicules à moteur de plus de deux roues",
+        "nl": "Verboden voor motorvoertuigen op meer dan twee wielen"
+      }
     },
     {
       "class_id": "no_car_bicycle",
@@ -1207,7 +1465,13 @@
         "fr": "Accès interdit aux véhicules à moteur",
         "nl": "Verboden voor motorvoertuigen"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Verbot für Kraftfahrzeuge",
+        "en": "No motor vehicles",
+        "fr": "Accès interdit aux véhicules à moteur",
+        "nl": "Verboden voor motorvoertuigen"
+      }
     },
     {
       "class_id": "no_dangerous",
@@ -1219,7 +1483,13 @@
         "fr": "Accès interdit aux transports de matières dangereuses signalés",
         "nl": "Verboden voor gemarkeerd vervoer van gevaarlijke stoffen"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Verbot für Gefahrguttransporte",
+        "en": "No dangerous-goods vehicles",
+        "fr": "Accès interdit aux transports de marchandises dangereuses",
+        "nl": "Verboden voor vervoer van gevaarlijke stoffen"
+      }
     },
     {
       "class_id": "no_dangerous_liquid",
@@ -1231,7 +1501,13 @@
         "fr": "Accès interdit aux chargements polluant l’eau",
         "nl": "Verboden voor waterverontreinigende lading"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Verbot für wassergefährdende Ladung",
+        "en": "No water-polluting loads",
+        "fr": "Accès interdit aux chargements polluant l’eau",
+        "nl": "Verboden voor waterverontreinigende lading"
+      }
     },
     {
       "class_id": "no_entry",
@@ -1243,7 +1519,13 @@
         "fr": "Sens interdit",
         "nl": "Verboden in te rijden"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Verbot der Einfahrt",
+        "en": "No entry",
+        "fr": "Sens interdit",
+        "nl": "Verboden in te rijden"
+      }
     },
     {
       "class_id": "no_exit",
@@ -1255,7 +1537,13 @@
         "fr": "Impasse",
         "nl": "Doodlopende weg"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Sackgasse",
+        "en": "No through road",
+        "fr": "Impasse",
+        "nl": "Doodlopende weg"
+      }
     },
     {
       "class_id": "no_exit:car",
@@ -1280,7 +1568,13 @@
         "fr": "Accès interdit aux véhicules lourds de plus de 3,5 t",
         "nl": "Verboden voor zware voertuigen boven 3,5 t"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Verbot für schwere Kraftfahrzeuge über dreieinhalb Tonnen",
+        "en": "No heavy vehicles over three and a half tonnes",
+        "fr": "Interdit aux véhicules lourds de plus de trois tonnes et demie",
+        "nl": "Verboden voor zware voertuigen boven drie en een halve ton"
+      }
     },
     {
       "class_id": "no_horse",
@@ -1292,7 +1586,13 @@
         "fr": "Accès interdit aux cavaliers",
         "nl": "Verboden voor ruiters"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Verbot für Reiter",
+        "en": "No horse riders",
+        "fr": "Accès interdit aux cavaliers",
+        "nl": "Verboden voor ruiters"
+      }
     },
     {
       "class_id": "no_motorcycle",
@@ -1304,7 +1604,13 @@
         "fr": "Accès interdit aux motos",
         "nl": "Verboden voor motorfietsen"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Verbot für Krafträder",
+        "en": "No motorcycles",
+        "fr": "Accès interdit aux motos",
+        "nl": "Verboden voor motorfietsen"
+      }
     },
     {
       "class_id": "no_overtaking",
@@ -1316,7 +1622,13 @@
         "fr": "Interdiction de dépasser",
         "nl": "Inhaalverbod"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Überholverbot",
+        "en": "No overtaking",
+        "fr": "Interdiction de dépasser",
+        "nl": "Inhaalverbod"
+      }
     },
     {
       "class_id": "no_overtaking:end",
@@ -1328,7 +1640,13 @@
         "fr": "Fin d’interdiction de dépasser",
         "nl": "Einde inhaalverbod"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Ende des Überholverbots",
+        "en": "End of overtaking ban",
+        "fr": "Fin d’interdiction de dépasser",
+        "nl": "Einde inhaalverbod"
+      }
     },
     {
       "class_id": "no_overtaking:hgv",
@@ -1340,7 +1658,13 @@
         "fr": "Dépassement interdit aux véhicules lourds de plus de 3,5 t",
         "nl": "Inhaalverbod voor zware voertuigen boven 3,5 t"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Überholverbot für schwere Kraftfahrzeuge",
+        "en": "No overtaking by heavy vehicles",
+        "fr": "Dépassement interdit aux véhicules lourds",
+        "nl": "Inhaalverbod voor zware voertuigen"
+      }
     },
     {
       "class_id": "no_parking",
@@ -1352,7 +1676,13 @@
         "fr": "Stationnement interdit",
         "nl": "Parkeerverbod"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Eingeschränktes Haltverbot",
+        "en": "No parking",
+        "fr": "Stationnement interdit",
+        "nl": "Parkeerverbod"
+      }
     },
     {
       "class_id": "no_pedestrian",
@@ -1364,7 +1694,13 @@
         "fr": "Accès interdit aux piétons",
         "nl": "Verboden voor voetgangers"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Verbot für Fußgänger",
+        "en": "No pedestrians",
+        "fr": "Accès interdit aux piétons",
+        "nl": "Verboden voor voetgangers"
+      }
     },
     {
       "class_id": "no_stop",
@@ -1376,7 +1712,13 @@
         "fr": "Arrêt interdit",
         "nl": "Stopverbod"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Absolutes Haltverbot",
+        "en": "No stopping",
+        "fr": "Arrêt et stationnement interdits",
+        "nl": "Stilstaan en parkeren verboden"
+      }
     },
     {
       "class_id": "no_u_turn",
@@ -1388,7 +1730,13 @@
         "fr": "Demi-tour interdit",
         "nl": "Verboden te keren"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Wenden verboten",
+        "en": "No U-turn",
+        "fr": "Demi-tour interdit",
+        "nl": "Verboden te keren"
+      }
     },
     {
       "class_id": "no_way",
@@ -1400,7 +1748,13 @@
         "fr": "Accès interdit à tous véhicules",
         "nl": "Verboden voor alle voertuigen"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Verbot für Fahrzeuge aller Art",
+        "en": "No vehicles",
+        "fr": "Accès interdit à tous véhicules",
+        "nl": "Verboden voor alle voertuigen"
+      }
     },
     {
       "class_id": "oneway",
@@ -1477,19 +1831,31 @@
         "fr": "Parc relais",
         "nl": "Parkeren en reizen"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Parken und Reisen",
+        "en": "Park and ride",
+        "fr": "Parc relais",
+        "nl": "Parkeren en reizen"
+      }
     },
     {
       "class_id": "parking",
       "sign_code": "DE:314",
       "image_path": "tsr/sign-pictograms/png/de-314.png",
       "label": {
-        "de": "Parken",
-        "en": "Parking",
-        "fr": "Stationnement",
-        "nl": "Parkeren"
+        "de": "Parkplatz",
+        "en": "Parking area",
+        "fr": "Parking",
+        "nl": "Parkeerplaats"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Parkplatz",
+        "en": "Parking area",
+        "fr": "Parking",
+        "nl": "Parkeerplaats"
+      }
     },
     {
       "class_id": "parking:covered",
@@ -1501,7 +1867,13 @@
         "fr": "Parking couvert",
         "nl": "Parkeergarage"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Parkhaus oder Tiefgarage",
+        "en": "Covered parking",
+        "fr": "Parking couvert",
+        "nl": "Parkeergarage"
+      }
     },
     {
       "class_id": "parking:disabled",
@@ -1514,7 +1886,13 @@
         "nl": "Gehandicaptenparkeerplaats"
       },
       "display_eligible": true,
-      "notes": "German accessible-parking marking is Zeichen 314 with Zusatzzeichen 1044-10; the bundled pictogram is the precise wheelchair supplementary sign, not a fabricated composite."
+      "notes": "German accessible-parking marking is Zeichen 314 with Zusatzzeichen 1044-10; the bundled pictogram is the precise wheelchair supplementary sign, not a fabricated composite.",
+      "speech": {
+        "de": "Behindertenparkplatz",
+        "en": "Accessible parking",
+        "fr": "Stationnement réservé aux personnes handicapées",
+        "nl": "Gehandicaptenparkeerplaats"
+      }
     },
     {
       "class_id": "parking:pedestrian",
@@ -1526,7 +1904,13 @@
         "fr": "Parking de randonnée",
         "nl": "Wandelparkeerplaats"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Wanderparkplatz",
+        "en": "Hikers’ parking",
+        "fr": "Parking de randonnée",
+        "nl": "Wandelparkeerplaats"
+      }
     },
     {
       "class_id": "parking:perpendicular",
@@ -1564,7 +1948,13 @@
         "fr": "Chemin pour piétons",
         "nl": "Voetpad"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Gehweg",
+        "en": "Footpath",
+        "fr": "Chemin pour piétons",
+        "nl": "Voetpad"
+      }
     },
     {
       "class_id": "pedestrian_bicycle:designated",
@@ -1589,7 +1979,13 @@
         "fr": "Voie partagée pour cycles et piétons",
         "nl": "Gedeeld fiets- en voetpad"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Gemeinsamer Geh- und Radweg",
+        "en": "Shared cycle and footpath",
+        "fr": "Voie partagée pour cycles et piétons",
+        "nl": "Gedeeld fiets- en voetpad"
+      }
     },
     {
       "class_id": "pedestrian_crossing",
@@ -1601,7 +1997,13 @@
         "fr": "Passage piéton",
         "nl": "Voetgangersoversteekplaats"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Fußgängerüberweg",
+        "en": "Pedestrian crossing",
+        "fr": "Passage piéton",
+        "nl": "Voetgangersoversteekplaats"
+      }
     },
     {
       "class_id": "priority:backward",
@@ -1613,7 +2015,13 @@
         "fr": "Priorité à la circulation en sens inverse",
         "nl": "Tegenliggers hebben voorrang"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Vorrang des Gegenverkehrs",
+        "en": "Give priority to oncoming traffic",
+        "fr": "Priorité à la circulation en sens inverse",
+        "nl": "Tegenliggers hebben voorrang"
+      }
     },
     {
       "class_id": "priority:end",
@@ -1625,7 +2033,13 @@
         "fr": "Fin de route prioritaire",
         "nl": "Einde voorrangsweg"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Ende der Vorfahrtstraße",
+        "en": "End of priority road",
+        "fr": "Fin de route prioritaire",
+        "nl": "Einde voorrangsweg"
+      }
     },
     {
       "class_id": "priority:forward",
@@ -1637,7 +2051,13 @@
         "fr": "Priorité sur la circulation en sens inverse",
         "nl": "Voorrang op tegenliggers"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Vorrang vor Gegenverkehr",
+        "en": "Priority over oncoming traffic",
+        "fr": "Priorité sur la circulation en sens inverse",
+        "nl": "Voorrang op tegenliggers"
+      }
     },
     {
       "class_id": "priority:start",
@@ -1649,7 +2069,13 @@
         "fr": "Route prioritaire",
         "nl": "Voorrangsweg"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Vorfahrtstraße",
+        "en": "Priority road",
+        "fr": "Route prioritaire",
+        "nl": "Voorrangsweg"
+      }
     },
     {
       "class_id": "roundabout",
@@ -1661,7 +2087,13 @@
         "fr": "Carrefour giratoire",
         "nl": "Rotonde"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Kreisverkehr",
+        "en": "Roundabout",
+        "fr": "Carrefour giratoire",
+        "nl": "Rotonde"
+      }
     },
     {
       "class_id": "stop",
@@ -1673,7 +2105,13 @@
         "fr": "Stop. Cédez le passage",
         "nl": "Stop. Voorrang verlenen"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Halt. Vorfahrt gewähren",
+        "en": "Stop. Give way",
+        "fr": "Stop. Cédez le passage",
+        "nl": "Stop. Voorrang verlenen"
+      }
     },
     {
       "class_id": "traffic_signal",
@@ -1686,7 +2124,13 @@
         "nl": "Verkeerslicht"
       },
       "display_eligible": true,
-      "notes": "Closest reviewed German warning sign: Zeichen 131 (Lichtzeichenanlage)."
+      "notes": "Closest reviewed German warning sign: Zeichen 131 (Lichtzeichenanlage).",
+      "speech": {
+        "de": "Achtung, Lichtzeichenanlage voraus",
+        "en": "Caution, Traffic lights ahead",
+        "fr": "Attention, Feux de circulation annoncés",
+        "nl": "Let op, Verkeerslichten vooruit"
+      }
     },
     {
       "class_id": "trunk:end",
@@ -1722,7 +2166,13 @@
         "fr": "Tunnel",
         "nl": "Tunnel"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Tunnel",
+        "en": "Tunnel",
+        "fr": "Tunnel",
+        "nl": "Tunnel"
+      }
     },
     {
       "class_id": "zone:20",
@@ -1784,7 +2234,13 @@
         "fr": "Début de zone de stationnement interdit",
         "nl": "Begin parkeerverbodszone"
       },
-      "display_eligible": true
+      "display_eligible": true,
+      "speech": {
+        "de": "Beginn einer Haltverbotszone",
+        "en": "Start of no-parking zone",
+        "fr": "Début de zone de stationnement interdit",
+        "nl": "Begin parkeerverbodszone"
+      }
     },
     {
       "class_id": "zone:pedestrian",
@@ -2086,7 +2542,349 @@
       "https://www.gesetze-im-internet.de/stvo_2013/anlage_2.html",
       "https://www.gesetze-im-internet.de/stvo_2013/anlage_3.html",
       "https://www.gesetze-im-internet.de/stvo_2013/__3.html"
-    ]
+    ],
+    "speech_review": {
+      "reviewed_at": "2026-10-02",
+      "source_urls": [
+        "https://www.gesetze-im-internet.de/stvo_2013/anlage_1.html",
+        "https://www.gesetze-im-internet.de/stvo_2013/anlage_2.html",
+        "https://www.gesetze-im-internet.de/stvo_2013/anlage_3.html"
+      ],
+      "scope": "Concise sign identification only; supplemental plates, applicability, distances and unrecognized numeric values are not inferred. Runtime display, country rollout and speed gates remain unchanged.",
+      "reviewed_signs": [
+        {
+          "class_id": "arrow_left_down",
+          "sign_code": "DE:222-10"
+        },
+        {
+          "class_id": "arrow_right",
+          "sign_code": "DE:211"
+        },
+        {
+          "class_id": "arrow_right_down",
+          "sign_code": "DE:222"
+        },
+        {
+          "class_id": "arrow_through",
+          "sign_code": "DE:209-30"
+        },
+        {
+          "class_id": "arrow_turn_left",
+          "sign_code": "DE:209-10"
+        },
+        {
+          "class_id": "arrow_turn_left_right",
+          "sign_code": "DE:214-30"
+        },
+        {
+          "class_id": "arrow_turn_left_through",
+          "sign_code": "DE:214-10"
+        },
+        {
+          "class_id": "arrow_turn_right",
+          "sign_code": "DE:209"
+        },
+        {
+          "class_id": "arrow_turn_right_through",
+          "sign_code": "DE:214"
+        },
+        {
+          "class_id": "bicycle:priority",
+          "sign_code": "DE:244.1"
+        },
+        {
+          "class_id": "bicycle:start",
+          "sign_code": "DE:237"
+        },
+        {
+          "class_id": "bus:start",
+          "sign_code": "DE:245"
+        },
+        {
+          "class_id": "give_way",
+          "sign_code": "DE:205"
+        },
+        {
+          "class_id": "hazard",
+          "sign_code": "DE:101"
+        },
+        {
+          "class_id": "hazard:bicycle",
+          "sign_code": "DE:138"
+        },
+        {
+          "class_id": "hazard:bothways",
+          "sign_code": "DE:125"
+        },
+        {
+          "class_id": "hazard:bumps",
+          "sign_code": "DE:112"
+        },
+        {
+          "class_id": "hazard:crossing",
+          "sign_code": "DE:102"
+        },
+        {
+          "class_id": "hazard:gravel",
+          "sign_code": "DE:101-52"
+        },
+        {
+          "class_id": "hazard:ice",
+          "sign_code": "DE:101-51"
+        },
+        {
+          "class_id": "hazard:intersection",
+          "sign_code": "DE:301"
+        },
+        {
+          "class_id": "hazard:left_turn",
+          "sign_code": "DE:103-10"
+        },
+        {
+          "class_id": "hazard:level_crossing",
+          "sign_code": "DE:151"
+        },
+        {
+          "class_id": "hazard:moving_bridge",
+          "sign_code": "DE:101-55"
+        },
+        {
+          "class_id": "hazard:narrow_both",
+          "sign_code": "DE:120"
+        },
+        {
+          "class_id": "hazard:narrow_left",
+          "sign_code": "DE:121-20"
+        },
+        {
+          "class_id": "hazard:narrow_right",
+          "sign_code": "DE:121-10"
+        },
+        {
+          "class_id": "hazard:right_turn",
+          "sign_code": "DE:103-20"
+        },
+        {
+          "class_id": "hazard:road_works",
+          "sign_code": "DE:123"
+        },
+        {
+          "class_id": "hazard:school",
+          "sign_code": "DE:136"
+        },
+        {
+          "class_id": "hazard:slippery",
+          "sign_code": "DE:114"
+        },
+        {
+          "class_id": "hazard:traffic_jam",
+          "sign_code": "DE:124"
+        },
+        {
+          "class_id": "hazard:traffic_signal",
+          "sign_code": "DE:131"
+        },
+        {
+          "class_id": "hazard:train",
+          "sign_code": "DE:151"
+        },
+        {
+          "class_id": "hazard:train2",
+          "sign_code": "DE:151"
+        },
+        {
+          "class_id": "hazard:wild_animals",
+          "sign_code": "DE:142"
+        },
+        {
+          "class_id": "hazard:wind",
+          "sign_code": "DE:117"
+        },
+        {
+          "class_id": "hazard:zigzag",
+          "sign_code": "DE:105-20"
+        },
+        {
+          "class_id": "hazard:zigzag:left",
+          "sign_code": "DE:105-10"
+        },
+        {
+          "class_id": "horse:start",
+          "sign_code": "DE:238"
+        },
+        {
+          "class_id": "no_bicycle",
+          "sign_code": "DE:254"
+        },
+        {
+          "class_id": "no_bus",
+          "sign_code": "DE:257-54"
+        },
+        {
+          "class_id": "no_car",
+          "sign_code": "DE:251"
+        },
+        {
+          "class_id": "no_car_motorcycle",
+          "sign_code": "DE:260"
+        },
+        {
+          "class_id": "no_dangerous",
+          "sign_code": "DE:261"
+        },
+        {
+          "class_id": "no_dangerous_liquid",
+          "sign_code": "DE:269"
+        },
+        {
+          "class_id": "no_entry",
+          "sign_code": "DE:267"
+        },
+        {
+          "class_id": "no_exit",
+          "sign_code": "DE:357"
+        },
+        {
+          "class_id": "no_hgv",
+          "sign_code": "DE:253"
+        },
+        {
+          "class_id": "no_horse",
+          "sign_code": "DE:257-51"
+        },
+        {
+          "class_id": "no_motorcycle",
+          "sign_code": "DE:255"
+        },
+        {
+          "class_id": "no_overtaking",
+          "sign_code": "DE:276"
+        },
+        {
+          "class_id": "no_overtaking:end",
+          "sign_code": "DE:280"
+        },
+        {
+          "class_id": "no_overtaking:hgv",
+          "sign_code": "DE:277"
+        },
+        {
+          "class_id": "no_parking",
+          "sign_code": "DE:286"
+        },
+        {
+          "class_id": "no_pedestrian",
+          "sign_code": "DE:259"
+        },
+        {
+          "class_id": "no_stop",
+          "sign_code": "DE:283"
+        },
+        {
+          "class_id": "no_u_turn",
+          "sign_code": "DE:272"
+        },
+        {
+          "class_id": "no_way",
+          "sign_code": "DE:250"
+        },
+        {
+          "class_id": "park_ride",
+          "sign_code": "DE:316"
+        },
+        {
+          "class_id": "parking",
+          "sign_code": "DE:314"
+        },
+        {
+          "class_id": "parking:covered",
+          "sign_code": "DE:314-50"
+        },
+        {
+          "class_id": "parking:disabled",
+          "sign_code": "DE:1044-10"
+        },
+        {
+          "class_id": "parking:pedestrian",
+          "sign_code": "DE:317"
+        },
+        {
+          "class_id": "pedestrian:start",
+          "sign_code": "DE:239"
+        },
+        {
+          "class_id": "pedestrian_bicycle:start",
+          "sign_code": "DE:240"
+        },
+        {
+          "class_id": "pedestrian_crossing",
+          "sign_code": "DE:350"
+        },
+        {
+          "class_id": "priority:backward",
+          "sign_code": "DE:208"
+        },
+        {
+          "class_id": "priority:end",
+          "sign_code": "DE:307"
+        },
+        {
+          "class_id": "priority:forward",
+          "sign_code": "DE:308"
+        },
+        {
+          "class_id": "priority:start",
+          "sign_code": "DE:306"
+        },
+        {
+          "class_id": "roundabout",
+          "sign_code": "DE:215"
+        },
+        {
+          "class_id": "stop",
+          "sign_code": "DE:206"
+        },
+        {
+          "class_id": "traffic_signal",
+          "sign_code": "DE:131"
+        },
+        {
+          "class_id": "tunnel:start",
+          "sign_code": "DE:327"
+        },
+        {
+          "class_id": "zone:no_parking",
+          "sign_code": "DE:290.1"
+        }
+      ],
+      "omitted_display_classes": {
+        "maxspeed:10": "Primary speed or structural context; no secondary-sign speech.",
+        "maxspeed:100": "Primary speed or structural context; no secondary-sign speech.",
+        "maxspeed:120": "Primary speed or structural context; no secondary-sign speech.",
+        "maxspeed:130": "Primary speed or structural context; no secondary-sign speech.",
+        "maxspeed:20": "Primary speed or structural context; no secondary-sign speech.",
+        "maxspeed:30": "Primary speed or structural context; no secondary-sign speech.",
+        "maxspeed:40": "Primary speed or structural context; no secondary-sign speech.",
+        "maxspeed:5": "Primary speed or structural context; no secondary-sign speech.",
+        "maxspeed:50": "Primary speed or structural context; no secondary-sign speech.",
+        "maxspeed:60": "Primary speed or structural context; no secondary-sign speech.",
+        "maxspeed:70": "Primary speed or structural context; no secondary-sign speech.",
+        "maxspeed:80": "Primary speed or structural context; no secondary-sign speech.",
+        "motorway:end": "Primary speed or structural context; no secondary-sign speech.",
+        "motorway:start": "Primary speed or structural context; no secondary-sign speech.",
+        "no:end": "Primary speed or structural context; no secondary-sign speech.",
+        "trunk:end": "Primary speed or structural context; no secondary-sign speech.",
+        "trunk:start": "Primary speed or structural context; no secondary-sign speech.",
+        "zone:20": "Primary speed or structural context; no secondary-sign speech.",
+        "zone:30": "Primary speed or structural context; no secondary-sign speech.",
+        "zone:30:end": "Primary speed or structural context; no secondary-sign speech.",
+        "zone:pedestrian": "Primary speed or structural context; no secondary-sign speech."
+      },
+      "baseline_revision": "366132efd566da0e46833738f13e8ddf255bf199",
+      "retained_reviewed_phrase_classes": 76,
+      "newly_reviewed_classes": [],
+      "upstream_display_blocked_since_initial_review": []
+    }
   },
   "policy": {
     "class_labels_are_the_only_pinned_model_outputs": true,

@@ -1,5 +1,7 @@
 package de.youspeed.android.alpha
 
+import java.time.Duration
+import java.time.Instant
 import java.util.Locale
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.boolean
@@ -14,8 +16,13 @@ data class TrafficSignPictogram(
     val classId: String,
     val imagePath: String?,
     val labels: Map<String, String>,
+    val speech: Map<String, String>? = null,
 ) {
     fun label(locale: Locale = Locale.getDefault()): String = labels[locale.language] ?: labels.getValue("en")
+
+    /** Never read technical labels/class IDs, or another language's phrase aloud. */
+    fun spokenText(locale: Locale = Locale.getDefault()): String? =
+        speech?.get(locale.language.lowercase(Locale.ROOT))?.trim()?.takeIf { it.isNotEmpty() }
 }
 
 /** Country packs that are physically bundled in both mobile applications. */
@@ -76,7 +83,13 @@ internal class TrafficSignDisplayCatalog private constructor(
                     }
                     val names = sign.getValue("label").jsonObject.mapValues { it.value.jsonPrimitive.content }
                     require(listOf("en", "de", "fr", "nl").all { !names[it].isNullOrBlank() })
-                    classId to TrafficSignPictogram(classId, imagePath, names)
+                    val speech = sign["speech"]?.let { metadata ->
+                        (metadata as? kotlinx.serialization.json.JsonObject)?.mapNotNull { (language, value) ->
+                            (value as? kotlinx.serialization.json.JsonPrimitive)?.takeIf { it.isString }
+                                ?.contentOrNull?.trim()?.takeIf { it.isNotEmpty() }?.let { language to it }
+                        }?.toMap()
+                    }
+                    classId to TrafficSignPictogram(classId, imagePath, names, speech)
                 }
             }.toMap()
             return TrafficSignDisplayCatalog(root.getValue("classifier_checkpoint_sha256").jsonPrimitive.content, labels, pictograms)
@@ -95,7 +108,91 @@ data class TrafficSignDisplayObservation(
         TrafficSignSemanticKind.ZONE_END,
         TrafficSignSemanticKind.ALL_RESTRICTIONS_END,
     ),
+    val capturedAtUtc: Instant? = null,
+    val source: TrafficSignInputSource? = null,
+    /** Same-frame primary feedback wins even while its durable delivery is pending. */
+    val hasPrimaryFeedback: Boolean = false,
 )
+
+/** Runs on the main delivery lane, after asynchronous inference and context changes. */
+internal class TrafficSignDisplayDeliveryGate {
+    private var lastAcceptedAt: Instant? = null
+
+    fun accept(observation: TrafficSignDisplayObservation, generation: Long, sessionId: String?): Boolean {
+        if (observation.generation != generation || observation.driveSessionId != sessionId) return false
+        val capturedAt = observation.capturedAtUtc ?: return false
+        if (lastAcceptedAt?.let { capturedAt <= it } == true) return false
+        lastAcceptedAt = capturedAt
+        return true
+    }
+
+    fun reset() { lastAcceptedAt = null }
+}
+
+/** No queue: every attempt needs a fresh accepted frame and an idle speech lane. */
+internal class SecondaryTrafficSignSpeechGate(
+    private val absence: Duration = Duration.ofSeconds(8),
+    private val spacing: Duration = Duration.ofSeconds(3),
+    private val maximumAge: Duration = Duration.ofSeconds(2),
+) {
+    private val lastSeen = mutableMapOf<String, Instant>()
+    private val emittedSinceGap = mutableSetOf<String>()
+    private var newestObservation: Instant? = null
+    private var lastEmission: Instant? = null
+
+    fun consume(classId: String, observedAt: Instant, now: Instant, canSpeak: Boolean,
+                emit: () -> Boolean): Boolean {
+        val age = Duration.between(observedAt, now)
+        if (age.isNegative || age > maximumAge || newestObservation?.let { observedAt <= it } == true) return false
+        newestObservation = observedAt
+        val previous = lastSeen.put(classId, observedAt)
+        if (previous == null || Duration.between(previous, observedAt) >= absence) emittedSinceGap.remove(classId)
+        // Busy frames still refresh lastSeen. Waiting never creates a deferred announcement.
+        if (!canSpeak || classId in emittedSinceGap ||
+            lastEmission?.let { Duration.between(it, now) < spacing } == true) return false
+        if (!emit()) return false
+        emittedSinceGap.add(classId)
+        lastEmission = now
+        return true
+    }
+
+    fun reset() {
+        lastSeen.clear()
+        emittedSinceGap.clear()
+        newestObservation = null
+        lastEmission = null
+    }
+}
+
+/** Includes submitted-but-not-started speech and ignores callbacks from flushed utterances. */
+internal class TrafficSignSpeechPlaybackState {
+    private var activeUtteranceId: String? = null
+    private var secondaryUtteranceId: String? = null
+    val hasSecondaryUtterance: Boolean
+        get() = secondaryUtteranceId != null && secondaryUtteranceId == activeUtteranceId
+
+    fun isIdle(engineSpeaking: Boolean): Boolean = activeUtteranceId == null && !engineSpeaking
+
+    fun begin(utteranceId: String, secondary: Boolean) {
+        activeUtteranceId = utteranceId
+        secondaryUtteranceId = utteranceId.takeIf { secondary }
+    }
+
+    fun finish(utteranceId: String) {
+        if (utteranceId == activeUtteranceId) activeUtteranceId = null
+        if (utteranceId == secondaryUtteranceId) secondaryUtteranceId = null
+    }
+
+    fun reset() { activeUtteranceId = null; secondaryUtteranceId = null }
+}
+
+internal object SecondaryTrafficSignSpeechPolicy {
+    fun canSpeak(mode: TrafficSignFeedbackMode, displayEnabled: Boolean, runtimeEnabled: Boolean,
+                 liveFrame: Boolean, speedKmh: Double, captureIdle: Boolean, speechIdle: Boolean,
+                 primaryFeedbackPending: Boolean, visionDismissalIdle: Boolean = true): Boolean =
+        mode == TrafficSignFeedbackMode.SPOKEN_SPEED_AND_SIGNS && displayEnabled && runtimeEnabled && liveFrame &&
+            speedKmh.isFinite() && speedKmh >= 1.0 && captureIdle && speechIdle && !primaryFeedbackPending && visionDismissalIdle
+}
 
 internal object TrafficSignDisplayPolicy {
     const val MINIMUM_SCORE = 0.90

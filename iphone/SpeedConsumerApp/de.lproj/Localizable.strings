@@ -50,9 +50,10 @@
 "drive_recorder.settings.tsr_description" = "Analysiert Kamerabilder lokal, sobald ein geprüftes Ländermodell installiert ist. Kameraschätzungen ersetzen die Datenbank nie unbemerkt.";
 "drive_recorder.settings.tsr_independent" = "Ohne Aufnahme erkennen";
 "drive_recorder.settings.tsr_independent_description" = "Hält die kamerabasierte Verkehrszeichenerkennung aktiv, auch wenn keine Dashcam-Fahrt aufgezeichnet wird.";
-"drive_recorder.settings.tsr_feedback" = "Erkannte Tempolimits";
-"drive_recorder.settings.tsr_feedback_description" = "Gibt für jedes bestätigte Tempolimitschild einmal die gewählte Rückmeldung.";
-"drive_recorder.settings.tsr_feedback_spoken" = "Ansagen";
+"drive_recorder.settings.tsr_feedback" = "Erkannte Verkehrszeichen";
+"drive_recorder.settings.tsr_feedback_description" = "Rückmeldung für bestätigte Tempolimits. „Tempo und andere Verkehrszeichen“ sagt zusätzlich die angezeigten Schilder automatisch an, wenn „Erkanntes Schild anzeigen“ aktiviert ist.";
+"drive_recorder.settings.tsr_feedback_spoken" = "Nur Tempo ansagen";
+"drive_recorder.settings.tsr_feedback_spoken_signs" = "Tempo und andere Verkehrszeichen";
 "drive_recorder.settings.tsr_feedback_sound" = "Hinweiston";
 "drive_recorder.settings.tsr_feedback_silent" = "Lautlos";
 "tsr.feedback.spoken_speed_format" = "Tempolimit %d Kilometer pro Stunde.";

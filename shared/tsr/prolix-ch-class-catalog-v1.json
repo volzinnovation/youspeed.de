@@ -137,10 +137,10 @@
       "sign_code": "CH:1.01",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-01.png",
       "label": {
-        "en": "CH:1.01 — hazard:turn_right",
-        "de": "CH:1.01 — hazard:turn_right",
-        "fr": "CH:1.01 — hazard:turn_right",
-        "nl": "CH:1.01 — hazard:turn_right"
+        "de": "Rechtskurve",
+        "en": "Right-hand bend",
+        "fr": "Virage à droite",
+        "nl": "Bocht naar rechts"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-01",
@@ -152,6 +152,12 @@
         "original_sha256": "0afd83b3216ee7acf31a429805dff77058b8fe5043f42149114fcb2eec14912f",
         "png_sha256": "68fa27783a90209c0ccd407466d0b99bfb0753940b5f4877f4315aa1177eaa95",
         "source_original_sha256": "3793e6f27f2e56e727e4c9ce7d718c26f2850b7a86a1c9aabdbff3358b03e01f"
+      },
+      "speech": {
+        "de": "Achtung, Rechtskurve",
+        "en": "Caution, Right-hand bend",
+        "fr": "Attention, Virage à droite",
+        "nl": "Let op, Bocht naar rechts"
       }
     },
     {
@@ -159,10 +165,10 @@
       "sign_code": "CH:1.02",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-02.png",
       "label": {
-        "en": "CH:1.02 — hazard:turn_left",
-        "de": "CH:1.02 — hazard:turn_left",
-        "fr": "CH:1.02 — hazard:turn_left",
-        "nl": "CH:1.02 — hazard:turn_left"
+        "de": "Linkskurve",
+        "en": "Left-hand bend",
+        "fr": "Virage à gauche",
+        "nl": "Bocht naar links"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-02",
@@ -174,6 +180,12 @@
         "original_sha256": "76b126772c50771f2839bd913f4dd8c05a963b84c9341a6e45eca70736687be4",
         "png_sha256": "be4a385b0cd0b5124d975af0021fa41eae814f956880c19c8264b87e4434a509",
         "source_original_sha256": "53cedf30ad63ca7a9d64ac315785b02bc471a4bb974fe381ffe06ca5e6441c84"
+      },
+      "speech": {
+        "de": "Achtung, Linkskurve",
+        "en": "Caution, Left-hand bend",
+        "fr": "Attention, Virage à gauche",
+        "nl": "Let op, Bocht naar links"
       }
     },
     {
@@ -181,10 +193,10 @@
       "sign_code": "CH:1.03",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-03.png",
       "label": {
-        "en": "CH:1.03 — hazard:zigzag",
-        "de": "CH:1.03 — hazard:zigzag",
-        "fr": "CH:1.03 — hazard:zigzag",
-        "nl": "CH:1.03 — hazard:zigzag"
+        "de": "Doppelkurve, zuerst rechts",
+        "en": "Double bend, first to the right",
+        "fr": "Double virage, le premier à droite",
+        "nl": "Dubbele bocht, eerst rechts"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-03",
@@ -196,6 +208,12 @@
         "original_sha256": "bbebb6783fbf0fe9794a3eed9d040fbb3087bdbfce7fddfca0f541b426662ca5",
         "png_sha256": "8bb2eb0d26b566fd807f3131b02d16adc165c1a372ef004a5bc848c2bc459df1",
         "source_original_sha256": "e60b9f52823310577f56a71d44930bcfa259da9e9a735c135afffa6189ad42cc"
+      },
+      "speech": {
+        "de": "Achtung, Doppelkurve, zuerst rechts",
+        "en": "Caution, Double bend, first to the right",
+        "fr": "Attention, Double virage, le premier à droite",
+        "nl": "Let op, Dubbele bocht, eerst rechts"
       }
     },
     {
@@ -203,10 +221,10 @@
       "sign_code": "CH:1.04",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-04.png",
       "label": {
-        "en": "CH:1.04 — hazard:zigzag:left",
-        "de": "CH:1.04 — hazard:zigzag:left",
-        "fr": "CH:1.04 — hazard:zigzag:left",
-        "nl": "CH:1.04 — hazard:zigzag:left"
+        "de": "Doppelkurve, zuerst links",
+        "en": "Double bend, first to the left",
+        "fr": "Double virage, le premier à gauche",
+        "nl": "Dubbele bocht, eerst links"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-04",
@@ -218,6 +236,12 @@
         "original_sha256": "6e6e3f47b6bd5357d975414199f3104d462209991af0c08638f6f2afc16d7216",
         "png_sha256": "a91f6b8c867f3d87b174128957082a2f197c8a7857e8c29bae06069ea9947d88",
         "source_original_sha256": "64b91a58b2ebb89ae5a8c2bb06ef79652d52efc82d0595b909d6511a2fcddec4"
+      },
+      "speech": {
+        "de": "Achtung, Doppelkurve, zuerst links",
+        "en": "Caution, Double bend, first to the left",
+        "fr": "Attention, Double virage, le premier à gauche",
+        "nl": "Let op, Dubbele bocht, eerst links"
       }
     },
     {
@@ -225,10 +249,10 @@
       "sign_code": "CH:1.05",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-05.png",
       "label": {
-        "en": "CH:1.05 — hazard:slippery",
-        "de": "CH:1.05 — hazard:slippery",
-        "fr": "CH:1.05 — hazard:slippery",
-        "nl": "CH:1.05 — hazard:slippery"
+        "de": "Schleudergefahr",
+        "en": "Slippery road",
+        "fr": "Chaussée glissante",
+        "nl": "Slippengevaar"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-05",
@@ -240,6 +264,12 @@
         "original_sha256": "cbac482b8c764e5fd9a7968ec7e57568267435667ee5fc8042b5d9bc17397ab3",
         "png_sha256": "e46a7fb7bd153ccf573320a1a74e38be4d2cba0b9e91f39f6cb50b3afeeeb002",
         "source_original_sha256": "a1448d0179df4f270959179e2ba1ea5f9d708e2f40b90687b023b80a04eee703"
+      },
+      "speech": {
+        "de": "Achtung, Schleudergefahr",
+        "en": "Caution, Slippery road",
+        "fr": "Attention, Chaussée glissante",
+        "nl": "Let op, Slippengevaar"
       }
     },
     {
@@ -247,10 +277,10 @@
       "sign_code": "CH:1.06",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-06.png",
       "label": {
-        "en": "CH:1.06 — hazard:bumps",
-        "de": "CH:1.06 — hazard:bumps",
-        "fr": "CH:1.06 — hazard:bumps",
-        "nl": "CH:1.06 — hazard:bumps"
+        "de": "Unebene Fahrbahn",
+        "en": "Uneven road",
+        "fr": "Chaussée déformée",
+        "nl": "Oneffen weg"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-06",
@@ -262,6 +292,12 @@
         "original_sha256": "d7df83e99be5e09981a8bd12a2035dedb782fdebcc68e04137b4f3b89d33d7ad",
         "png_sha256": "84cd1ca38c43b67fdddddfaac098c729568be7593fa7f613d2856fb6d4b342c4",
         "source_original_sha256": "495d644f0836f8bb34e70662ca91b3f86ad79e1b7bc406bd3d79c92ba5c271e7"
+      },
+      "speech": {
+        "de": "Achtung, Unebene Fahrbahn",
+        "en": "Caution, Uneven road",
+        "fr": "Attention, Chaussée déformée",
+        "nl": "Let op, Oneffen weg"
       }
     },
     {
@@ -269,10 +305,10 @@
       "sign_code": "CH:1.07",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-07.png",
       "label": {
-        "en": "CH:1.07 — hazard:narrow_both",
-        "de": "CH:1.07 — hazard:narrow_both",
-        "fr": "CH:1.07 — hazard:narrow_both",
-        "nl": "CH:1.07 — hazard:narrow_both"
+        "de": "Beidseitige Fahrbahnverengung",
+        "en": "Road narrows on both sides",
+        "fr": "Chaussée rétrécie des deux côtés",
+        "nl": "Wegversmalling aan beide zijden"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-07",
@@ -284,6 +320,12 @@
         "original_sha256": "a1a818480a247e8baa63457fb311ae81744c88a99b95b58168701f0ebba3d69e",
         "png_sha256": "9f8c17269398a61d5f9c56fbcf395e4bb24165c864341d30084617fc16b4a964",
         "source_original_sha256": "61219172abc77c2884333f7c382f0c2d1f32997e685f28a39c020121e2e6d0cf"
+      },
+      "speech": {
+        "de": "Achtung, Beidseitige Fahrbahnverengung",
+        "en": "Caution, Road narrows on both sides",
+        "fr": "Attention, Chaussée rétrécie des deux côtés",
+        "nl": "Let op, Wegversmalling aan beide zijden"
       }
     },
     {
@@ -291,10 +333,10 @@
       "sign_code": "CH:1.08",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-08.png",
       "label": {
-        "en": "CH:1.08 — hazard:narrow_right",
-        "de": "CH:1.08 — hazard:narrow_right",
-        "fr": "CH:1.08 — hazard:narrow_right",
-        "nl": "CH:1.08 — hazard:narrow_right"
+        "de": "Fahrbahnverengung rechts",
+        "en": "Road narrows on the right",
+        "fr": "Chaussée rétrécie à droite",
+        "nl": "Wegversmalling rechts"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-08",
@@ -306,6 +348,12 @@
         "original_sha256": "f1c8c9fe2c337925bc38bbf0bf26c7d31ae435eab9d5cc8cb31fbb91a2617d32",
         "png_sha256": "c4e78aa007bcd1da6516c9cb43225b863f8e0faa98b7912d8b9def20065b937a",
         "source_original_sha256": "f5dd0f3d434db737d7e3ab87ee1fed5dc2671c303cec00b128c79ecfb32475ea"
+      },
+      "speech": {
+        "de": "Achtung, Fahrbahnverengung rechts",
+        "en": "Caution, Road narrows on the right",
+        "fr": "Attention, Chaussée rétrécie à droite",
+        "nl": "Let op, Wegversmalling rechts"
       }
     },
     {
@@ -313,10 +361,10 @@
       "sign_code": "CH:1.09",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-09.png",
       "label": {
-        "en": "CH:1.09 — hazard:narrow_left",
-        "de": "CH:1.09 — hazard:narrow_left",
-        "fr": "CH:1.09 — hazard:narrow_left",
-        "nl": "CH:1.09 — hazard:narrow_left"
+        "de": "Fahrbahnverengung links",
+        "en": "Road narrows on the left",
+        "fr": "Chaussée rétrécie à gauche",
+        "nl": "Wegversmalling links"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-09",
@@ -328,6 +376,12 @@
         "original_sha256": "27cf22e34fca06a5ab65213c3f93f0728a9e041d72f2920c5c53faa32a2023c6",
         "png_sha256": "436f0ff23dc867021c8e15f928d8e16d4ec4e580a937914183fa5e6f43a564c5",
         "source_original_sha256": "cf788ac6041d35ce0929bfe56be29749c7b64894383135175527fd157e16258c"
+      },
+      "speech": {
+        "de": "Achtung, Fahrbahnverengung links",
+        "en": "Caution, Road narrows on the left",
+        "fr": "Attention, Chaussée rétrécie à gauche",
+        "nl": "Let op, Wegversmalling links"
       }
     },
     {
@@ -335,10 +389,10 @@
       "sign_code": "CH:1.10",
       "image_path": null,
       "label": {
-        "en": "CH:1.10 — hazard:include:down",
-        "de": "CH:1.10 — hazard:include:down",
-        "fr": "CH:1.10 — hazard:include:down",
-        "nl": "CH:1.10 — hazard:include:down"
+        "de": "Gefährliches Gefälle",
+        "en": "Steep descent",
+        "fr": "Descente dangereuse",
+        "nl": "Steile afdaling"
       },
       "display_eligible": false,
       "artwork_id": "ch-1-10",
@@ -358,10 +412,10 @@
       "sign_code": "CH:1.11",
       "image_path": null,
       "label": {
-        "en": "CH:1.11 — hazard:incline:up",
-        "de": "CH:1.11 — hazard:incline:up",
-        "fr": "CH:1.11 — hazard:incline:up",
-        "nl": "CH:1.11 — hazard:incline:up"
+        "de": "Starke Steigung",
+        "en": "Steep ascent",
+        "fr": "Forte montée",
+        "nl": "Steile helling omhoog"
       },
       "display_eligible": false,
       "artwork_id": "ch-1-11",
@@ -381,10 +435,10 @@
       "sign_code": "CH:1.12",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-12.png",
       "label": {
-        "en": "CH:1.12 — hazard:gravel",
-        "de": "CH:1.12 — hazard:gravel",
-        "fr": "CH:1.12 — hazard:gravel",
-        "nl": "CH:1.12 — hazard:gravel"
+        "de": "Rollsplitt",
+        "en": "Loose chippings",
+        "fr": "Gravillons",
+        "nl": "Losse steentjes"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-12",
@@ -396,6 +450,12 @@
         "original_sha256": "119fe94714100729868791870588102f7ec259440bcbe2086621bffc1da02bde",
         "png_sha256": "eb6dcd40e682e41b7a96602d4c76d67640ee04d0af2f322e3f66a953993618fe",
         "source_original_sha256": "7d6761401165bda741a4e83850815121e4ab2c85be47bb13d349791de88f7b96"
+      },
+      "speech": {
+        "de": "Achtung, Rollsplitt",
+        "en": "Caution, Loose chippings",
+        "fr": "Attention, Gravillons",
+        "nl": "Let op, Losse steentjes"
       }
     },
     {
@@ -403,10 +463,10 @@
       "sign_code": "CH:1.13a",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-13.png",
       "label": {
-        "en": "CH:1.13a — hazard:rocks",
-        "de": "CH:1.13a — hazard:rocks",
-        "fr": "CH:1.13a — hazard:rocks",
-        "nl": "CH:1.13a — hazard:rocks"
+        "de": "Steinschlag",
+        "en": "Falling rocks",
+        "fr": "Chute de pierres",
+        "nl": "Vallende stenen"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-13",
@@ -418,6 +478,12 @@
         "original_sha256": "0a6020d78b5cee046017975134d634d17f3049ba83afbee13b40844efc03ff37",
         "png_sha256": "8009507bc8fc56684cc909b7b8748e0268689a983041e7f2d49624d30a2508b6",
         "source_original_sha256": "4161ae029684fa76fcc84d175ea022059570cbcf421392dad6495eb3f1d432ea"
+      },
+      "speech": {
+        "de": "Achtung, Steinschlag",
+        "en": "Caution, Falling rocks",
+        "fr": "Attention, Chute de pierres",
+        "nl": "Let op, Vallende stenen"
       }
     },
     {
@@ -425,10 +491,10 @@
       "sign_code": "CH:1.14",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-14.png",
       "label": {
-        "en": "CH:1.14 — hazard:road_works",
-        "de": "CH:1.14 — hazard:road_works",
-        "fr": "CH:1.14 — hazard:road_works",
-        "nl": "CH:1.14 — hazard:road_works"
+        "de": "Baustelle",
+        "en": "Roadworks",
+        "fr": "Travaux",
+        "nl": "Werk in uitvoering"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-14",
@@ -440,6 +506,12 @@
         "original_sha256": "05802d3fcc67565d10cff7b89259231b4aa6ccbcde9c145ac9a31da8c2ccb2e7",
         "png_sha256": "7155860cc893c2b92c2c9a8f48d179df5c9d369aec4ea78313b6c9cd568858b7",
         "source_original_sha256": "b3763ce8575c2429be8e2a41250985f2f89f80de667cebca2d704d5f8ce83694"
+      },
+      "speech": {
+        "de": "Achtung, Baustelle",
+        "en": "Caution, Roadworks",
+        "fr": "Attention, Travaux",
+        "nl": "Let op, Werk in uitvoering"
       }
     },
     {
@@ -447,10 +519,10 @@
       "sign_code": "CH:1.15",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-15.png",
       "label": {
-        "en": "CH:1.15 — hazard:level_crossing",
-        "de": "CH:1.15 — hazard:level_crossing",
-        "fr": "CH:1.15 — hazard:level_crossing",
-        "nl": "CH:1.15 — hazard:level_crossing"
+        "de": "Schranken",
+        "en": "Barriers",
+        "fr": "Barrières",
+        "nl": "Slagbomen"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-15",
@@ -462,6 +534,12 @@
         "original_sha256": "fd9be71ce9d0c3f2e771f03aa979e462681e875832025a8250e91f22cb75387c",
         "png_sha256": "fdb3bd6c2875abc130f5ab35d105f1c98fb0bcc6d07e95bea36529f85955a02a",
         "source_original_sha256": "4b314b6a4270138c8f4d5cf137cce8da814157efe2e5b91cf3aaf8d87d15890a"
+      },
+      "speech": {
+        "de": "Achtung, Schranken",
+        "en": "Caution, Barriers",
+        "fr": "Attention, Barrières",
+        "nl": "Let op, Slagbomen"
       }
     },
     {
@@ -469,10 +547,10 @@
       "sign_code": "CH:1.16",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-16.png",
       "label": {
-        "en": "CH:1.16 — hazard:train",
-        "de": "CH:1.16 — hazard:train",
-        "fr": "CH:1.16 — hazard:train",
-        "nl": "CH:1.16 — hazard:train"
+        "de": "Bahnübergang ohne Schranken",
+        "en": "Level crossing without barriers",
+        "fr": "Passage à niveau sans barrières",
+        "nl": "Overweg zonder slagbomen"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-16",
@@ -484,6 +562,12 @@
         "original_sha256": "7e21e241c3c513bbd8a761b14002c628b804cefb2bb1d54e33bcb7beda74b761",
         "png_sha256": "e288dac0097baa7170afebc49fca0fc83f59243f654222b6c582a3b2e40db76a",
         "source_original_sha256": "eceeee7f90eeddcc41abffcd66a99be6170341a2eb48ec97c9e4c1aaaab31b23"
+      },
+      "speech": {
+        "de": "Achtung, Bahnübergang ohne Schranken",
+        "en": "Caution, Level crossing without barriers",
+        "fr": "Attention, Passage à niveau sans barrières",
+        "nl": "Let op, Overweg zonder slagbomen"
       }
     },
     {
@@ -491,10 +575,10 @@
       "sign_code": "CH:1.22",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-22.png",
       "label": {
-        "en": "CH:1.22 — hazard:pedestrian_crossing",
-        "de": "CH:1.22 — hazard:pedestrian_crossing",
-        "fr": "CH:1.22 — hazard:pedestrian_crossing",
-        "nl": "CH:1.22 — hazard:pedestrian_crossing"
+        "de": "Fussgängerstreifen voraus",
+        "en": "Pedestrian crossing ahead",
+        "fr": "Passage pour piétons à venir",
+        "nl": "Voetgangersoversteekplaats verderop"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-22",
@@ -506,6 +590,12 @@
         "original_sha256": "3295b8e59c1a4b8b371ad49a524250c2a561c4707ffed2be79af63e755ba0cf1",
         "png_sha256": "64ae7ae6139443e58e23b7c2eeeac660e7236dcc24fa4de536772aa20438afa6",
         "source_original_sha256": "78a98e90e45e8978eb63829eb5926cdead5fa937af4cbfdcde4b1c483910d49b"
+      },
+      "speech": {
+        "de": "Achtung, Fussgängerstreifen voraus",
+        "en": "Caution, Pedestrian crossing ahead",
+        "fr": "Attention, Passage pour piétons à venir",
+        "nl": "Let op, Voetgangersoversteekplaats verderop"
       }
     },
     {
@@ -513,10 +603,10 @@
       "sign_code": "CH:1.23",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-23.png",
       "label": {
-        "en": "CH:1.23 — hazard:school",
-        "de": "CH:1.23 — hazard:school",
-        "fr": "CH:1.23 — hazard:school",
-        "nl": "CH:1.23 — hazard:school"
+        "de": "Kinder",
+        "en": "Children",
+        "fr": "Enfants",
+        "nl": "Kinderen"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-23",
@@ -528,6 +618,12 @@
         "original_sha256": "9dd28a8b88012413535f46a496d1eb9f5fb3c93dc19fe89527bcd4b5ed07edc0",
         "png_sha256": "f915b90f95c12ce67294870138b6bef703e647993edf56f60553b824ebbf147a",
         "source_original_sha256": "8e29f35ebe41dac450adb6323360922bc06e9eb38caaea03c794860e1367b64a"
+      },
+      "speech": {
+        "de": "Achtung, Kinder",
+        "en": "Caution, Children",
+        "fr": "Attention, Enfants",
+        "nl": "Let op, Kinderen"
       }
     },
     {
@@ -535,10 +631,10 @@
       "sign_code": "CH:1.24a",
       "image_path": null,
       "label": {
-        "en": "CH:1.24a — hazard:horse",
-        "de": "CH:1.24a — hazard:horse",
-        "fr": "CH:1.24a — hazard:horse",
-        "nl": "CH:1.24a — hazard:horse"
+        "de": "Wildwechsel",
+        "en": "Wild animals",
+        "fr": "Passage de gibier",
+        "nl": "Overstekend wild"
       },
       "display_eligible": false,
       "artwork_id": "ch-1-24",
@@ -558,10 +654,10 @@
       "sign_code": "CH:1.25",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-25.png",
       "label": {
-        "en": "CH:1.25 — hazard:animals",
-        "de": "CH:1.25 — hazard:animals",
-        "fr": "CH:1.25 — hazard:animals",
-        "nl": "CH:1.25 — hazard:animals"
+        "de": "Tiere auf der Fahrbahn",
+        "en": "Animals on the road",
+        "fr": "Animaux sur la chaussée",
+        "nl": "Dieren op de weg"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-25",
@@ -573,6 +669,12 @@
         "original_sha256": "f9e61239f32549e76e387f9aea10f78607095b3aeb4124ab67564b2b1b3c8f57",
         "png_sha256": "dfd60783cffbcfe91549bca47b3f8922152b39d8795edd1207b3122dc2226074",
         "source_original_sha256": "c1c4a41d29812a0d99e578947343de052c138589b491972922f1e3bec2a8c3f6"
+      },
+      "speech": {
+        "de": "Achtung, Tiere auf der Fahrbahn",
+        "en": "Caution, Animals on the road",
+        "fr": "Attention, Animaux sur la chaussée",
+        "nl": "Let op, Dieren op de weg"
       }
     },
     {
@@ -580,10 +682,10 @@
       "sign_code": "CH:1.26",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-26.png",
       "label": {
-        "en": "CH:1.26 — hazard:bothways",
-        "de": "CH:1.26 — hazard:bothways",
-        "fr": "CH:1.26 — hazard:bothways",
-        "nl": "CH:1.26 — hazard:bothways"
+        "de": "Gegenverkehr",
+        "en": "Two-way traffic",
+        "fr": "Circulation en sens inverse",
+        "nl": "Tegemoetkomend verkeer"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-26",
@@ -595,6 +697,12 @@
         "original_sha256": "eb99b07dedc680a7d79bea53807aca3d0540d14d55306e2d5c46ecd959c5cf8c",
         "png_sha256": "17b21dc26419ba054e7914c0290a287856d315691a838f3c7bc2c931f0112a81",
         "source_original_sha256": "1773e81fe092c3989381b68e331580b1e7fb124a4d3cf6c71d357815248bd9a2"
+      },
+      "speech": {
+        "de": "Achtung, Gegenverkehr",
+        "en": "Caution, Two-way traffic",
+        "fr": "Attention, Circulation en sens inverse",
+        "nl": "Let op, Tegemoetkomend verkeer"
       }
     },
     {
@@ -602,10 +710,10 @@
       "sign_code": "CH:1.27",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-27.png",
       "label": {
-        "en": "CH:1.27 — hazard:traffic_signal",
-        "de": "CH:1.27 — hazard:traffic_signal",
-        "fr": "CH:1.27 — hazard:traffic_signal",
-        "nl": "CH:1.27 — hazard:traffic_signal"
+        "de": "Lichtsignale",
+        "en": "Traffic lights",
+        "fr": "Signaux lumineux",
+        "nl": "Verkeerslichten"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-27",
@@ -617,6 +725,12 @@
         "original_sha256": "f55c9294e5223bd58592b3d2261de145fed5d4b0f12b9ef834d8cecb5b37eede",
         "png_sha256": "462c809c5f5aff1780556280a8e21d0a755946b66c01c5d968ea87f9db472ac7",
         "source_original_sha256": "6acb1bd0395f50c90d97e27367d23abdfa041efeabf87c09733a7929bf02c7b7"
+      },
+      "speech": {
+        "de": "Achtung, Lichtsignale",
+        "en": "Caution, Traffic lights",
+        "fr": "Attention, Signaux lumineux",
+        "nl": "Let op, Verkeerslichten"
       }
     },
     {
@@ -624,10 +738,10 @@
       "sign_code": "CH:1.28",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-28.png",
       "label": {
-        "en": "CH:1.28 — hazard:airport",
-        "de": "CH:1.28 — hazard:airport",
-        "fr": "CH:1.28 — hazard:airport",
-        "nl": "CH:1.28 — hazard:airport"
+        "de": "Flugzeuge",
+        "en": "Aircraft",
+        "fr": "Avions",
+        "nl": "Vliegtuigen"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-28",
@@ -639,6 +753,12 @@
         "original_sha256": "c6047813e9cb3d161a766a3c7514f4eb4c6776d725f291de47d7045eec8fd960",
         "png_sha256": "d4c5c5d221efee3507a957f09c42bad98664fe67d4416fc5e99112b1d8e337bc",
         "source_original_sha256": "d946d758af2a605a69da164cd1bb50bd645444a862d4a57304fb8ce512675fa5"
+      },
+      "speech": {
+        "de": "Achtung, Flugzeuge",
+        "en": "Caution, Aircraft",
+        "fr": "Attention, Avions",
+        "nl": "Let op, Vliegtuigen"
       }
     },
     {
@@ -646,10 +766,10 @@
       "sign_code": "CH:1.30",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-30.png",
       "label": {
-        "en": "CH:1.30 — hazard",
-        "de": "CH:1.30 — hazard",
-        "fr": "CH:1.30 — hazard",
-        "nl": "CH:1.30 — hazard"
+        "de": "Andere Gefahren",
+        "en": "Other dangers",
+        "fr": "Autres dangers",
+        "nl": "Ander gevaar"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-30",
@@ -661,6 +781,12 @@
         "original_sha256": "5ef830f50b664f30f38f9098265ed81b9a1e58b0527c5f985d6cf18c44af148d",
         "png_sha256": "eb9790c9f3032315f7e8f3780a658564aa0f80bd936f709a3d805d6663293ab9",
         "source_original_sha256": "2009f74530456e5b1c9dfc59207e0ee0cbc4ffe9f2f52638325613bc099d1c09"
+      },
+      "speech": {
+        "de": "Achtung, Andere Gefahren",
+        "en": "Caution, Other dangers",
+        "fr": "Attention, Autres dangers",
+        "nl": "Let op, Ander gevaar"
       }
     },
     {
@@ -668,10 +794,10 @@
       "sign_code": "CH:1.31",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-31.png",
       "label": {
-        "en": "CH:1.31 — hazard:traffic_jam",
-        "de": "CH:1.31 — hazard:traffic_jam",
-        "fr": "CH:1.31 — hazard:traffic_jam",
-        "nl": "CH:1.31 — hazard:traffic_jam"
+        "de": "Staugefahr",
+        "en": "Traffic queues",
+        "fr": "Risque de bouchon",
+        "nl": "Kans op file"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-31",
@@ -683,6 +809,12 @@
         "original_sha256": "3fd1e2af90522a90310039f50a85f08470e7579bd64a1eee9dfbaa76683f8505",
         "png_sha256": "a2000616c514897e2c5886d912d8768cb8915bc1d0440e2cee4d3eff6bb48fc8",
         "source_original_sha256": "a5b3f418a5878e9bb3c8d29713e7fdbbab28e2db6a224246419fce5ce202034e"
+      },
+      "speech": {
+        "de": "Achtung, Staugefahr",
+        "en": "Caution, Traffic queues",
+        "fr": "Attention, Risque de bouchon",
+        "nl": "Let op, Kans op file"
       }
     },
     {
@@ -690,10 +822,10 @@
       "sign_code": "CH:1.32",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-32.png",
       "label": {
-        "en": "CH:1.32 — hazard:bicycle",
-        "de": "CH:1.32 — hazard:bicycle",
-        "fr": "CH:1.32 — hazard:bicycle",
-        "nl": "CH:1.32 — hazard:bicycle"
+        "de": "Radfahrer",
+        "en": "Cyclists",
+        "fr": "Cyclistes",
+        "nl": "Fietsers"
       },
       "display_eligible": true,
       "artwork_id": "ch-1-32",
@@ -705,6 +837,12 @@
         "original_sha256": "63d8a9303d0259775b55ad75ebcf1ea199e35d9f8a96f557921d8fbcb0e3401e",
         "png_sha256": "5382866688fbf518b57ebe132ad350d9ede2a6a6d3e70b0056c4467c57ec4a34",
         "source_original_sha256": "9b8f898d68df10d38d87cd8234bfcef1b695348bc082efc4ceb45bcbf75ea618"
+      },
+      "speech": {
+        "de": "Achtung, Radfahrer",
+        "en": "Caution, Cyclists",
+        "fr": "Attention, Cyclistes",
+        "nl": "Let op, Fietsers"
       }
     },
     {
@@ -712,10 +850,10 @@
       "sign_code": "CH:2.01",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-01.png",
       "label": {
-        "en": "CH:2.01 — no_way",
-        "de": "CH:2.01 — no_way",
-        "fr": "CH:2.01 — no_way",
-        "nl": "CH:2.01 — no_way"
+        "de": "Allgemeines Fahrverbot in beiden Richtungen",
+        "en": "No vehicles in either direction",
+        "fr": "Circulation interdite dans les deux sens",
+        "nl": "Gesloten voor voertuigen in beide richtingen"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-01",
@@ -727,6 +865,12 @@
         "original_sha256": "f8717de6a678b39786e43c2bd7b1314a64214174e785a16453718e2c921292da",
         "png_sha256": "dc02aa92e32a8c2207531b537aec94655f673bddf0080756030f44f253162414",
         "source_original_sha256": "b7de0d6e84ff3a4bdaf05e931276e3404cb692297548e8a7bf4c9196ab2d2e83"
+      },
+      "speech": {
+        "de": "Allgemeines Fahrverbot in beiden Richtungen",
+        "en": "No vehicles in either direction",
+        "fr": "Circulation interdite dans les deux sens",
+        "nl": "Gesloten voor voertuigen in beide richtingen"
       }
     },
     {
@@ -734,10 +878,10 @@
       "sign_code": "CH:2.02",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-02.png",
       "label": {
-        "en": "CH:2.02 — no_entry",
-        "de": "CH:2.02 — no_entry",
-        "fr": "CH:2.02 — no_entry",
-        "nl": "CH:2.02 — no_entry"
+        "de": "Einfahrt verboten",
+        "en": "No entry",
+        "fr": "Accès interdit",
+        "nl": "Verboden in te rijden"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-02",
@@ -749,6 +893,12 @@
         "original_sha256": "4f979814cd898d7a623cc8f014fd0564aebe5a2af31acc56e4a734c551139fab",
         "png_sha256": "8d022b789cd3cd79d43d5bf142f82c7705d37165cfea3fe95f621cb15b0c99d5",
         "source_original_sha256": "2d98b0795cc9b70dc66256eaa699333162feec7e82881586d75d5ac55d5abdf8"
+      },
+      "speech": {
+        "de": "Einfahrt verboten",
+        "en": "No entry",
+        "fr": "Accès interdit",
+        "nl": "Verboden in te rijden"
       }
     },
     {
@@ -756,10 +906,10 @@
       "sign_code": "CH:2.03",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-03.png",
       "label": {
-        "en": "CH:2.03 — no_car",
-        "de": "CH:2.03 — no_car",
-        "fr": "CH:2.03 — no_car",
-        "nl": "CH:2.03 — no_car"
+        "de": "Verbot für Motorwagen",
+        "en": "No multi-track motor vehicles",
+        "fr": "Circulation interdite aux voitures automobiles",
+        "nl": "Verboden voor meersporige motorvoertuigen"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-03",
@@ -771,6 +921,12 @@
         "original_sha256": "114e153cf18098b2e3fda25f78e358006fed5a2420f37b91dfae22a46f648116",
         "png_sha256": "6dc47045b373ccffb586782b0f763856fae89a62fbbf6ca8a018c747c08409c4",
         "source_original_sha256": "0f347933d77058ae011eccd3ec516cfd1dd0b44799648fdcf3cb4e06f5f8f595"
+      },
+      "speech": {
+        "de": "Verbot für Motorwagen",
+        "en": "No multi-track motor vehicles",
+        "fr": "Circulation interdite aux voitures automobiles",
+        "nl": "Verboden voor meersporige motorvoertuigen"
       }
     },
     {
@@ -778,10 +934,10 @@
       "sign_code": "CH:2.04",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-04.png",
       "label": {
-        "en": "CH:2.04 — no_motorcycle",
-        "de": "CH:2.04 — no_motorcycle",
-        "fr": "CH:2.04 — no_motorcycle",
-        "nl": "CH:2.04 — no_motorcycle"
+        "de": "Verbot für Motorräder",
+        "en": "No motorcycles",
+        "fr": "Circulation interdite aux motocycles",
+        "nl": "Verboden voor motorfietsen"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-04",
@@ -793,6 +949,12 @@
         "original_sha256": "71cf7b913f93b632b5e0e5498a46764ee976e73e321c5981aef1cb6f639d8555",
         "png_sha256": "5ca78e3a6f8c45c1ef3b34c0c739be94979cb9fe6e22e11e7433c14a845765be",
         "source_original_sha256": "e1ecc9647adcef35f780baf9531dbb20853e015eff13014482b152320a1f33fa"
+      },
+      "speech": {
+        "de": "Verbot für Motorräder",
+        "en": "No motorcycles",
+        "fr": "Circulation interdite aux motocycles",
+        "nl": "Verboden voor motorfietsen"
       }
     },
     {
@@ -800,10 +962,10 @@
       "sign_code": "CH:2.05",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-05.png",
       "label": {
-        "en": "CH:2.05 — no_bicycle",
-        "de": "CH:2.05 — no_bicycle",
-        "fr": "CH:2.05 — no_bicycle",
-        "nl": "CH:2.05 — no_bicycle"
+        "de": "Verbot für Fahrräder und Motorfahrräder",
+        "en": "No bicycles or mopeds",
+        "fr": "Circulation interdite aux cycles et cyclomoteurs",
+        "nl": "Verboden voor fietsen en bromfietsen"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-05",
@@ -815,6 +977,12 @@
         "original_sha256": "49c174b7d520cf6d1daf6ba1ea1045c5eb141ade57eab55edb02c8fd539491e8",
         "png_sha256": "e2012d9eaa4ad732ecbcc3b89a41092ff17d7c9660ca3f5d071f022d8c1e4b86",
         "source_original_sha256": "434a28655c10603c2b8d12481676b98cdf4a8c05b4f1e23b37a815b410cac2f1"
+      },
+      "speech": {
+        "de": "Verbot für Fahrräder und Motorfahrräder",
+        "en": "No bicycles or mopeds",
+        "fr": "Circulation interdite aux cycles et cyclomoteurs",
+        "nl": "Verboden voor fietsen en bromfietsen"
       }
     },
     {
@@ -822,10 +990,10 @@
       "sign_code": "CH:2.06",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-06.png",
       "label": {
-        "en": "CH:2.06 — no_moped",
-        "de": "CH:2.06 — no_moped",
-        "fr": "CH:2.06 — no_moped",
-        "nl": "CH:2.06 — no_moped"
+        "de": "Verbot für Motorfahrräder",
+        "en": "Moped prohibition",
+        "fr": "Circulation interdite aux cyclomoteurs",
+        "nl": "Bromfietsverbod"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-06",
@@ -837,6 +1005,12 @@
         "original_sha256": "c035efd628e90c26abb733b6ef04e18290796233e18f1cb303e2d5781aa49109",
         "png_sha256": "fef12d15ba818f697dc0c2c9a30f6b6898dd5829d4428357c8d9bd8e38fb140a",
         "source_original_sha256": "1026df1b19ad47894540a0298fb77175be1b8f055a7c8f39b69fb0c9bf652ca1"
+      },
+      "speech": {
+        "de": "Verbot für Motorfahrräder",
+        "en": "Moped prohibition",
+        "fr": "Circulation interdite aux cyclomoteurs",
+        "nl": "Bromfietsverbod"
       }
     },
     {
@@ -844,10 +1018,10 @@
       "sign_code": "CH:2.07",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-07.png",
       "label": {
-        "en": "CH:2.07 — no_hgv",
-        "de": "CH:2.07 — no_hgv",
-        "fr": "CH:2.07 — no_hgv",
-        "nl": "CH:2.07 — no_hgv"
+        "de": "Verbot für Lastwagen",
+        "en": "No heavy goods vehicles",
+        "fr": "Circulation interdite aux camions",
+        "nl": "Verboden voor vrachtauto's"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-07",
@@ -859,6 +1033,12 @@
         "original_sha256": "ed66de95214f2e13d60ee9ca86dfe48653cd451cc5d9124f6e57b5c9a5335eba",
         "png_sha256": "5c76082f5f24704a68fd9719179e9add240e44114dc9b4f4bd6398128c400f39",
         "source_original_sha256": "29a6f48ad300dedf1f00992256c191f49780cde35a0cc1059cf6ff87d23f7c6d"
+      },
+      "speech": {
+        "de": "Verbot für Lastwagen",
+        "en": "No heavy goods vehicles",
+        "fr": "Circulation interdite aux camions",
+        "nl": "Verboden voor vrachtauto's"
       }
     },
     {
@@ -866,10 +1046,10 @@
       "sign_code": "CH:2.08",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-08.png",
       "label": {
-        "en": "CH:2.08 — no_bus",
-        "de": "CH:2.08 — no_bus",
-        "fr": "CH:2.08 — no_bus",
-        "nl": "CH:2.08 — no_bus"
+        "de": "Verbot für Gesellschaftswagen",
+        "en": "No buses or coaches",
+        "fr": "Circulation interdite aux autocars",
+        "nl": "Verboden voor bussen"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-08",
@@ -881,6 +1061,12 @@
         "original_sha256": "0d17994622ce10b820731789fe131c0bdf7205652c923710d808ad96ba28359b",
         "png_sha256": "022e3bbe971f2e975bf366e93014c6901c63eb6b7c4ced9caa9efa3b6d94b8d7",
         "source_original_sha256": "9b94014aa065aa39e682830c1408b71f3df2eab03482b73d1823fd1c0b5b43d3"
+      },
+      "speech": {
+        "de": "Verbot für Gesellschaftswagen",
+        "en": "No buses or coaches",
+        "fr": "Circulation interdite aux autocars",
+        "nl": "Verboden voor bussen"
       }
     },
     {
@@ -888,10 +1074,10 @@
       "sign_code": "CH:2.09",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-09.png",
       "label": {
-        "en": "CH:2.09 — no_trailer",
-        "de": "CH:2.09 — no_trailer",
-        "fr": "CH:2.09 — no_trailer",
-        "nl": "CH:2.09 — no_trailer"
+        "de": "Verbot für Anhänger",
+        "en": "Trailer prohibition",
+        "fr": "Circulation interdite aux remorques",
+        "nl": "Aanhangwagenverbod"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-09",
@@ -903,6 +1089,12 @@
         "original_sha256": "04863c2df04b80916282e34ee1b735aeb7128eaefdfffd348464776cb3b6e4a5",
         "png_sha256": "15504a507b09966942398a64ad4598eeed52a817aa169b8449b9a5232ce0cccb",
         "source_original_sha256": "8db823dda7523057159054e50775f47cfe857fe4db5ee6d6bbef2f87e502151a"
+      },
+      "speech": {
+        "de": "Verbot für Anhänger",
+        "en": "Trailer prohibition",
+        "fr": "Circulation interdite aux remorques",
+        "nl": "Aanhangwagenverbod"
       }
     },
     {
@@ -910,10 +1102,10 @@
       "sign_code": "CH:2.10.1",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-10-1.png",
       "label": {
-        "en": "CH:2.10.1 — no_dangerous",
-        "de": "CH:2.10.1 — no_dangerous",
-        "fr": "CH:2.10.1 — no_dangerous",
-        "nl": "CH:2.10.1 — no_dangerous"
+        "de": "Verbot für Fahrzeuge mit gefährlicher Ladung",
+        "en": "No vehicles carrying dangerous goods",
+        "fr": "Véhicules transportant des marchandises dangereuses interdits",
+        "nl": "Verboden voor voertuigen met gevaarlijke stoffen"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-10-1",
@@ -925,6 +1117,12 @@
         "original_sha256": "31fee648452eca60ba1a5107546a85cbb58d104c5f4a06e0a097d456f667b22c",
         "png_sha256": "15bde489e1e00ef0b74d5f8dcd8f7c6a5da93ae21d540ba7950808c9cac26208",
         "source_original_sha256": "988b15f007e6168ef0893965bad110775f72fdf0a6e02985914ce02dfb21a481"
+      },
+      "speech": {
+        "de": "Verbot für Fahrzeuge mit gefährlicher Ladung",
+        "en": "No vehicles carrying dangerous goods",
+        "fr": "Véhicules transportant des marchandises dangereuses interdits",
+        "nl": "Verboden voor voertuigen met gevaarlijke stoffen"
       }
     },
     {
@@ -932,10 +1130,10 @@
       "sign_code": "CH:2.11",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-11.png",
       "label": {
-        "en": "CH:2.11 — no_dangerous_liquid",
-        "de": "CH:2.11 — no_dangerous_liquid",
-        "fr": "CH:2.11 — no_dangerous_liquid",
-        "nl": "CH:2.11 — no_dangerous_liquid"
+        "de": "Verbot für Fahrzeuge mit wassergefährdender Ladung",
+        "en": "No vehicles carrying water-polluting loads",
+        "fr": "Véhicules transportant des produits polluant les eaux interdits",
+        "nl": "Verboden voor voertuigen met waterverontreinigende lading"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-11",
@@ -947,6 +1145,12 @@
         "original_sha256": "9128f39ae4df52fc6b7d401ef80c70c06e721ade2fa8922e6053cf3e97fa89b2",
         "png_sha256": "dbff3f6b33fdb4e287e14dbe8cc25e8272e9a273c8d0b45dcb537a2cd7e7dd75",
         "source_original_sha256": "e174b1eb40d3add737a25d9987bdeabe3ad90d43c7399a860cdac5882a82c571"
+      },
+      "speech": {
+        "de": "Verbot für Fahrzeuge mit wassergefährdender Ladung",
+        "en": "No vehicles carrying water-polluting loads",
+        "fr": "Véhicules transportant des produits polluant les eaux interdits",
+        "nl": "Verboden voor voertuigen met waterverontreinigende lading"
       }
     },
     {
@@ -954,10 +1158,10 @@
       "sign_code": "CH:2.12",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-12.png",
       "label": {
-        "en": "CH:2.12 — no_horse",
-        "de": "CH:2.12 — no_horse",
-        "fr": "CH:2.12 — no_horse",
-        "nl": "CH:2.12 — no_horse"
+        "de": "Verbot für Tiere",
+        "en": "No ridden, led or driven animals",
+        "fr": "Circulation interdite aux animaux",
+        "nl": "Verboden voor bereden, geleide of gedreven dieren"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-12",
@@ -969,6 +1173,12 @@
         "original_sha256": "a088928dce83a2fe47be5e7e1635c538b5f938554155af71504652fe3f9c2f83",
         "png_sha256": "37e3c0b206b325d6ee1a82f471d70446c6a4b7cd5089a9bc91e94cc81cb811c9",
         "source_original_sha256": "b3e3f97f2b285b2eb91bb996fe0126b68feaf801c7540fbaba15e806afbaba75"
+      },
+      "speech": {
+        "de": "Verbot für Tiere",
+        "en": "No ridden, led or driven animals",
+        "fr": "Circulation interdite aux animaux",
+        "nl": "Verboden voor bereden, geleide of gedreven dieren"
       }
     },
     {
@@ -976,10 +1186,10 @@
       "sign_code": "CH:2.13",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-13.png",
       "label": {
-        "en": "CH:2.13 — no_motor_vehicle2",
-        "de": "CH:2.13 — no_motor_vehicle2",
-        "fr": "CH:2.13 — no_motor_vehicle2",
-        "nl": "CH:2.13 — no_motor_vehicle2"
+        "de": "Verbot für Motorwagen und Motorräder",
+        "en": "No multi-track motor vehicles or motorcycles",
+        "fr": "Voitures automobiles et motocycles interdits",
+        "nl": "Verboden voor meersporige motorvoertuigen en motorfietsen"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-13",
@@ -991,6 +1201,12 @@
         "original_sha256": "a4f05e52fd65208aed99dcd92e2e8b2b6d677b404882f6ca4984cce3372d146a",
         "png_sha256": "ad837da83e2177120e293bd7bf587044b14f38b77a775718cb42138f37c16f3d",
         "source_original_sha256": "9328ba861d0271363cf84708741d68504cc45ef67f813ddf3bebf5ef918739bf"
+      },
+      "speech": {
+        "de": "Verbot für Motorwagen und Motorräder",
+        "en": "No multi-track motor vehicles or motorcycles",
+        "fr": "Voitures automobiles et motocycles interdits",
+        "nl": "Verboden voor meersporige motorvoertuigen en motorfietsen"
       }
     },
     {
@@ -998,10 +1214,10 @@
       "sign_code": "CH:2.14",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-14.png",
       "label": {
-        "en": "CH:2.14 — no_motor_vehicle",
-        "de": "CH:2.14 — no_motor_vehicle",
-        "fr": "CH:2.14 — no_motor_vehicle",
-        "nl": "CH:2.14 — no_motor_vehicle"
+        "de": "Verbot für Motorwagen, Motorräder und Motorfahrräder",
+        "en": "No multi-track motor vehicles, motorcycles or mopeds",
+        "fr": "Voitures automobiles, motocycles et cyclomoteurs interdits",
+        "nl": "Verboden voor meersporige motorvoertuigen, motorfietsen en bromfietsen"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-14",
@@ -1013,6 +1229,12 @@
         "original_sha256": "29d37f43e762c9f46495db298531d204dd26c721e4408e310e062bd1a91bed06",
         "png_sha256": "081b99492416b8f16747e1fcbe3ee7b8727b7252be35a3fb4fb7da38971cbde3",
         "source_original_sha256": "bc5e3aade92118bdd8a6289b013ca43744e0d978adfc79eef658900eccd3ad47"
+      },
+      "speech": {
+        "de": "Verbot für Motorwagen, Motorräder und Motorfahrräder",
+        "en": "No multi-track motor vehicles, motorcycles or mopeds",
+        "fr": "Voitures automobiles, motocycles et cyclomoteurs interdits",
+        "nl": "Verboden voor meersporige motorvoertuigen, motorfietsen en bromfietsen"
       }
     },
     {
@@ -1020,10 +1242,10 @@
       "sign_code": "CH:2.15",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-15.png",
       "label": {
-        "en": "CH:2.15 — no_pedestrian",
-        "de": "CH:2.15 — no_pedestrian",
-        "fr": "CH:2.15 — no_pedestrian",
-        "nl": "CH:2.15 — no_pedestrian"
+        "de": "Verbot für Fussgänger",
+        "en": "No pedestrians",
+        "fr": "Accès interdit aux piétons",
+        "nl": "Verboden voor voetgangers"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-15",
@@ -1035,6 +1257,12 @@
         "original_sha256": "832651a69ec8b8f10ed06d71d224de7cac0d43f779fe105eaaf40550d7a3a53c",
         "png_sha256": "f36ea3e216e42598f8b640d8b947d3edfef6a9c9f1bb510491c3a6e46aada011",
         "source_original_sha256": "6afb569da5a2dc882aae8a658b3b9c39f15314614d6d1a7f71af40659ad19b98"
+      },
+      "speech": {
+        "de": "Verbot für Fussgänger",
+        "en": "No pedestrians",
+        "fr": "Accès interdit aux piétons",
+        "nl": "Verboden voor voetgangers"
       }
     },
     {
@@ -1042,10 +1270,10 @@
       "sign_code": "CH:2.15.1",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-15-1.png",
       "label": {
-        "en": "CH:2.15.1 — no_skiing",
-        "de": "CH:2.15.1 — no_skiing",
-        "fr": "CH:2.15.1 — no_skiing",
-        "nl": "CH:2.15.1 — no_skiing"
+        "de": "Skifahren verboten",
+        "en": "No skiing",
+        "fr": "Interdiction de skier",
+        "nl": "Skiën verboden"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-15-1",
@@ -1057,6 +1285,12 @@
         "original_sha256": "56d47ec27f826ffabffadde6701b21b680d4c663945cbfcb8253780c99b8bb49",
         "png_sha256": "8616e9f7d46939d14f9fb9ccbc453ea4679161b90ab47c8f4ecdb56b218a33cf",
         "source_original_sha256": "263ac8f4a8048277ccc00a79f5819e95d222103a6f8a1c02d0f089b0293140b6"
+      },
+      "speech": {
+        "de": "Skifahren verboten",
+        "en": "No skiing",
+        "fr": "Interdiction de skier",
+        "nl": "Skiën verboden"
       }
     },
     {
@@ -1064,10 +1298,10 @@
       "sign_code": "CH:2.15.2",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-15-2.png",
       "label": {
-        "en": "CH:2.15.2 — no_sledging",
-        "de": "CH:2.15.2 — no_sledging",
-        "fr": "CH:2.15.2 — no_sledging",
-        "nl": "CH:2.15.2 — no_sledging"
+        "de": "Schlitteln verboten",
+        "en": "No sledging",
+        "fr": "Interdiction de luger",
+        "nl": "Sleeën verboden"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-15-2",
@@ -1079,6 +1313,12 @@
         "original_sha256": "d277a7d3cc7f2fb5f3e08038256c88c7d2c758fe477568722f5c50755c24ed6e",
         "png_sha256": "c384f0f18ceaf97c0c53f31db7f92c179610ae7e44b36c98238c117ebef2963b",
         "source_original_sha256": "2e017daa832a343ebbf4f46843508bb75fa95b650c7d5ae47922c4c0e8e50453"
+      },
+      "speech": {
+        "de": "Schlitteln verboten",
+        "en": "No sledging",
+        "fr": "Interdiction de luger",
+        "nl": "Sleeën verboden"
       }
     },
     {
@@ -1086,10 +1326,10 @@
       "sign_code": "CH:2.15.3",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-15-3.png",
       "label": {
-        "en": "CH:2.15.3 — no_roller",
-        "de": "CH:2.15.3 — no_roller",
-        "fr": "CH:2.15.3 — no_roller",
-        "nl": "CH:2.15.3 — no_roller"
+        "de": "Verbot für fahrzeugähnliche Geräte",
+        "en": "No skates, skateboards or similar devices",
+        "fr": "Engins assimilés à des véhicules interdits",
+        "nl": "Verboden voor skates, skateboards en soortgelijke middelen"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-15-3",
@@ -1101,6 +1341,12 @@
         "original_sha256": "a638e0c2bb1a51f5facbd15bebed188b7ac200b108c7ef181c1fe885722b893d",
         "png_sha256": "92ab8cb29527a36073165cd32a321b9f3401f24836a8119ae4eb977ee97f4329",
         "source_original_sha256": "46d6ebb272be9c58941dd9784745bb418b6da46c63114418cb6eb854662fca45"
+      },
+      "speech": {
+        "de": "Verbot für fahrzeugähnliche Geräte",
+        "en": "No skates, skateboards or similar devices",
+        "fr": "Engins assimilés à des véhicules interdits",
+        "nl": "Verboden voor skates, skateboards en soortgelijke middelen"
       }
     },
     {
@@ -1108,10 +1354,10 @@
       "sign_code": "CH:2.16",
       "image_path": null,
       "label": {
-        "en": "CH:2.16 — maxweight",
-        "de": "CH:2.16 — maxweight",
-        "fr": "CH:2.16 — maxweight",
-        "nl": "CH:2.16 — maxweight"
+        "de": "Höchstgewicht",
+        "en": "Maximum weight",
+        "fr": "Poids maximal",
+        "nl": "Maximumgewicht"
       },
       "display_eligible": false,
       "artwork_id": "ch-2-16",
@@ -1131,10 +1377,10 @@
       "sign_code": "CH:2.17",
       "image_path": null,
       "label": {
-        "en": "CH:2.17 — maxaxleweight",
-        "de": "CH:2.17 — maxaxleweight",
-        "fr": "CH:2.17 — maxaxleweight",
-        "nl": "CH:2.17 — maxaxleweight"
+        "de": "Höchste Achslast",
+        "en": "Maximum axle load",
+        "fr": "Charge maximale par essieu",
+        "nl": "Maximumaslast"
       },
       "display_eligible": false,
       "artwork_id": "ch-2-17",
@@ -1154,10 +1400,10 @@
       "sign_code": "CH:2.18",
       "image_path": null,
       "label": {
-        "en": "CH:2.18 — maxwidth",
-        "de": "CH:2.18 — maxwidth",
-        "fr": "CH:2.18 — maxwidth",
-        "nl": "CH:2.18 — maxwidth"
+        "de": "Höchstbreite",
+        "en": "Maximum width",
+        "fr": "Largeur maximale",
+        "nl": "Maximumbreedte"
       },
       "display_eligible": false,
       "artwork_id": "ch-2-18",
@@ -1177,10 +1423,10 @@
       "sign_code": "CH:2.19",
       "image_path": null,
       "label": {
-        "en": "CH:2.19 — maxheight",
-        "de": "CH:2.19 — maxheight",
-        "fr": "CH:2.19 — maxheight",
-        "nl": "CH:2.19 — maxheight"
+        "de": "Höchsthöhe",
+        "en": "Maximum height",
+        "fr": "Hauteur maximale",
+        "nl": "Maximumhoogte"
       },
       "display_eligible": false,
       "artwork_id": "ch-2-19",
@@ -1200,10 +1446,10 @@
       "sign_code": "CH:2.20",
       "image_path": null,
       "label": {
-        "en": "CH:2.20 — maxlength",
-        "de": "CH:2.20 — maxlength",
-        "fr": "CH:2.20 — maxlength",
-        "nl": "CH:2.20 — maxlength"
+        "de": "Höchstlänge",
+        "en": "Maximum length",
+        "fr": "Longueur maximale",
+        "nl": "Maximumlengte"
       },
       "display_eligible": false,
       "artwork_id": "ch-2-20",
@@ -1223,10 +1469,10 @@
       "sign_code": "CH:2.31",
       "image_path": null,
       "label": {
-        "en": "CH:2.31 — min_speed",
-        "de": "CH:2.31 — min_speed",
-        "fr": "CH:2.31 — min_speed",
-        "nl": "CH:2.31 — min_speed"
+        "de": "Mindestgeschwindigkeit",
+        "en": "Minimum speed",
+        "fr": "Vitesse minimale",
+        "nl": "Minimumsnelheid"
       },
       "display_eligible": false,
       "artwork_id": "ch-2-31",
@@ -1246,10 +1492,10 @@
       "sign_code": "CH:2.32",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-32.png",
       "label": {
-        "en": "CH:2.32 — arrow_right",
-        "de": "CH:2.32 — arrow_right",
-        "fr": "CH:2.32 — arrow_right",
-        "nl": "CH:2.32 — arrow_right"
+        "de": "Fahrtrichtung rechts vorgeschrieben",
+        "en": "Mandatory right turn",
+        "fr": "Sens obligatoire à droite",
+        "nl": "Verplicht rechts afslaan"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-32",
@@ -1261,6 +1507,12 @@
         "original_sha256": "d9a7055c5209667030a4ddc9957cd95828eacec6975b7543f3f9507428976a72",
         "png_sha256": "5136f9ed33235c531ed146d47bdefb9e0d92b1564ad6e576fb6adf23fd12fbb2",
         "source_original_sha256": "81d59606e223294ffdc79490c98e4ef134bdfb9ed7417b87716203f8de33d699"
+      },
+      "speech": {
+        "de": "Fahrtrichtung rechts vorgeschrieben",
+        "en": "Mandatory right turn",
+        "fr": "Sens obligatoire à droite",
+        "nl": "Verplicht rechts afslaan"
       }
     },
     {
@@ -1268,10 +1520,10 @@
       "sign_code": "CH:2.33",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-33.png",
       "label": {
-        "en": "CH:2.33 — arrow_left",
-        "de": "CH:2.33 — arrow_left",
-        "fr": "CH:2.33 — arrow_left",
-        "nl": "CH:2.33 — arrow_left"
+        "de": "Fahrtrichtung links vorgeschrieben",
+        "en": "Mandatory left turn",
+        "fr": "Sens obligatoire à gauche",
+        "nl": "Verplicht links afslaan"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-33",
@@ -1283,6 +1535,12 @@
         "original_sha256": "23fdb21061a6952d60824e4e95f6ff15dcd66f945da3efc3538e759bdec3c9a0",
         "png_sha256": "80ab90c2b0446863d17b5e4495169abaa820c2f00abc853f0f4e3f007f612d22",
         "source_original_sha256": "fe56305c154ded0e99f433ec384c0dedd4726419d964d56d7d753af05eb562d0"
+      },
+      "speech": {
+        "de": "Fahrtrichtung links vorgeschrieben",
+        "en": "Mandatory left turn",
+        "fr": "Sens obligatoire à gauche",
+        "nl": "Verplicht links afslaan"
       }
     },
     {
@@ -1290,10 +1548,10 @@
       "sign_code": "CH:2.34",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-34.png",
       "label": {
-        "en": "CH:2.34 — arrow_right_down",
-        "de": "CH:2.34 — arrow_right_down",
-        "fr": "CH:2.34 — arrow_right_down",
-        "nl": "CH:2.34 — arrow_right_down"
+        "de": "Hindernis rechts umfahren",
+        "en": "Pass on the right",
+        "fr": "Obstacle à contourner par la droite",
+        "nl": "Rechts voorbijgaan"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-34",
@@ -1305,6 +1563,12 @@
         "original_sha256": "8468ccbdc21ea64bbdfb7216a93112c9f1ea3416d962b33ed777bf2c9366a54e",
         "png_sha256": "a3118cd5f31c0a5d1e2b1090f971eac816ce39d4f0f1999d640b3a40c4405d79",
         "source_original_sha256": "284f4ea5ebb8d89d5871ded578506005b055fe4eabeb41d456edd3f1f93e79bb"
+      },
+      "speech": {
+        "de": "Hindernis rechts umfahren",
+        "en": "Pass on the right",
+        "fr": "Obstacle à contourner par la droite",
+        "nl": "Rechts voorbijgaan"
       }
     },
     {
@@ -1312,10 +1576,10 @@
       "sign_code": "CH:2.35",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-35.png",
       "label": {
-        "en": "CH:2.35 — arrow_left_down",
-        "de": "CH:2.35 — arrow_left_down",
-        "fr": "CH:2.35 — arrow_left_down",
-        "nl": "CH:2.35 — arrow_left_down"
+        "de": "Hindernis links umfahren",
+        "en": "Pass on the left",
+        "fr": "Obstacle à contourner par la gauche",
+        "nl": "Links voorbijgaan"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-35",
@@ -1327,6 +1591,12 @@
         "original_sha256": "0e8c10d56adb12d245c0615cca0444c32ca8fd63c75572615c13cbe530fe96ee",
         "png_sha256": "15f0d24d394158907772b72081602d4a83e81a55210b739155ee18a879dd9eda",
         "source_original_sha256": "33d190c5c8a9141c436b46c9d17f6e81ae9b94fcb1c0612ec78bbe7ca5f92e09"
+      },
+      "speech": {
+        "de": "Hindernis links umfahren",
+        "en": "Pass on the left",
+        "fr": "Obstacle à contourner par la gauche",
+        "nl": "Links voorbijgaan"
       }
     },
     {
@@ -1334,10 +1604,10 @@
       "sign_code": "CH:2.36",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-36.png",
       "label": {
-        "en": "CH:2.36 — arrow_through",
-        "de": "CH:2.36 — arrow_through",
-        "fr": "CH:2.36 — arrow_through",
-        "nl": "CH:2.36 — arrow_through"
+        "de": "Geradeausfahren vorgeschrieben",
+        "en": "Straight ahead only",
+        "fr": "Direction obligatoire tout droit",
+        "nl": "Verplicht rechtdoor"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-36",
@@ -1349,6 +1619,12 @@
         "original_sha256": "5421e47b8b83482d74c63fccd7f46fe3b0eb451983cd3e2b1099e9f76599e098",
         "png_sha256": "2ba83b6561672716dda684e05758c232474ea8fca489035b5e88d59836835a34",
         "source_original_sha256": "3e97147eeaebf74a94bcb7e7612ecc38f25826dbcc7b65c71b1d4275141cc7a9"
+      },
+      "speech": {
+        "de": "Geradeausfahren vorgeschrieben",
+        "en": "Straight ahead only",
+        "fr": "Direction obligatoire tout droit",
+        "nl": "Verplicht rechtdoor"
       }
     },
     {
@@ -1356,10 +1632,10 @@
       "sign_code": "CH:2.37",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-37.png",
       "label": {
-        "en": "CH:2.37 — arrow_turn_right",
-        "de": "CH:2.37 — arrow_turn_right",
-        "fr": "CH:2.37 — arrow_turn_right",
-        "nl": "CH:2.37 — arrow_turn_right"
+        "de": "Rechtsabbiegen vorgeschrieben",
+        "en": "Mandatory right turn ahead",
+        "fr": "Obligation d'obliquer à droite",
+        "nl": "Verplicht rechts afslaan"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-37",
@@ -1371,6 +1647,12 @@
         "original_sha256": "f93cba0b164f4f1bc85ed8d96ef2ba23ffcd63fcaa9e62ead1c7f6011799e455",
         "png_sha256": "60f3ea118421c1efcd0f53d1cbaeacae7a6f61dd788e8095fbe4462029c68d93",
         "source_original_sha256": "f66899e52e2282a8eaf4f462b9ac53c9a433e3a833ea472e2ba3feec3b5f4895"
+      },
+      "speech": {
+        "de": "Rechtsabbiegen vorgeschrieben",
+        "en": "Mandatory right turn ahead",
+        "fr": "Obligation d'obliquer à droite",
+        "nl": "Verplicht rechts afslaan"
       }
     },
     {
@@ -1378,10 +1660,10 @@
       "sign_code": "CH:2.38",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-38.png",
       "label": {
-        "en": "CH:2.38 — arrow_turn_left",
-        "de": "CH:2.38 — arrow_turn_left",
-        "fr": "CH:2.38 — arrow_turn_left",
-        "nl": "CH:2.38 — arrow_turn_left"
+        "de": "Linksabbiegen vorgeschrieben",
+        "en": "Mandatory left turn ahead",
+        "fr": "Obligation d'obliquer à gauche",
+        "nl": "Verplicht links afslaan"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-38",
@@ -1393,6 +1675,12 @@
         "original_sha256": "903f01540e3dfe3817dd85f9b74984683f314f55805dfff877168854555f42ef",
         "png_sha256": "709e112b88fa73ed468c99bafc4644d1e42d11e5790529066cea6e7a333562a4",
         "source_original_sha256": "250b6f32bb937155d85767bc7cae5aa2335e38518305e1ee056e4f62fb5b029c"
+      },
+      "speech": {
+        "de": "Linksabbiegen vorgeschrieben",
+        "en": "Mandatory left turn ahead",
+        "fr": "Obligation d'obliquer à gauche",
+        "nl": "Verplicht links afslaan"
       }
     },
     {
@@ -1400,10 +1688,10 @@
       "sign_code": "CH:2.39",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-39.png",
       "label": {
-        "en": "CH:2.39 — arrow_turn_left_right",
-        "de": "CH:2.39 — arrow_turn_left_right",
-        "fr": "CH:2.39 — arrow_turn_left_right",
-        "nl": "CH:2.39 — arrow_turn_left_right"
+        "de": "Rechts- oder Linksabbiegen vorgeschrieben",
+        "en": "Turn right or left only",
+        "fr": "Obligation d'obliquer à droite ou à gauche",
+        "nl": "Verplicht rechts of links afslaan"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-39",
@@ -1415,6 +1703,12 @@
         "original_sha256": "c93d92f274fbb003b22787bdd4634cdc1caac100d96e7078c88e0ab97e74b9cd",
         "png_sha256": "b045b53ea1358ca7d779f2d207746ede85e80cee5168c1b71695930f6ee298f0",
         "source_original_sha256": "29f64f1f30f692377479a280c5d38d7b6e062f7d834ac9812eb1de78f82f9815"
+      },
+      "speech": {
+        "de": "Rechts- oder Linksabbiegen vorgeschrieben",
+        "en": "Turn right or left only",
+        "fr": "Obligation d'obliquer à droite ou à gauche",
+        "nl": "Verplicht rechts of links afslaan"
       }
     },
     {
@@ -1422,10 +1716,10 @@
       "sign_code": "CH:2.40",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-40.png",
       "label": {
-        "en": "CH:2.40 — arrow_turn_right_through",
-        "de": "CH:2.40 — arrow_turn_right_through",
-        "fr": "CH:2.40 — arrow_turn_right_through",
-        "nl": "CH:2.40 — arrow_turn_right_through"
+        "de": "Geradeaus oder rechts fahren",
+        "en": "Straight ahead or right only",
+        "fr": "Circuler tout droit ou obliquer à droite",
+        "nl": "Verplicht rechtdoor of rechtsaf"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-40",
@@ -1437,6 +1731,12 @@
         "original_sha256": "085c3a86551c9960c780e642a2056ccdf95a7d66316c5ca3baa3a240d05e7a6f",
         "png_sha256": "64b950b3e8a8970cfd3bde9b5e66537664e20dfb02b28f5c75b9c95d8c7613dd",
         "source_original_sha256": "db5dc31251107d1f3f394efc52a1c767c7c5aa485deefa0200a1e5b446142379"
+      },
+      "speech": {
+        "de": "Geradeaus oder rechts fahren",
+        "en": "Straight ahead or right only",
+        "fr": "Circuler tout droit ou obliquer à droite",
+        "nl": "Verplicht rechtdoor of rechtsaf"
       }
     },
     {
@@ -1444,10 +1744,10 @@
       "sign_code": "CH:2.41",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-41.png",
       "label": {
-        "en": "CH:2.41 — arrow_turn_left_through",
-        "de": "CH:2.41 — arrow_turn_left_through",
-        "fr": "CH:2.41 — arrow_turn_left_through",
-        "nl": "CH:2.41 — arrow_turn_left_through"
+        "de": "Geradeaus oder links fahren",
+        "en": "Straight ahead or left only",
+        "fr": "Circuler tout droit ou obliquer à gauche",
+        "nl": "Verplicht rechtdoor of linksaf"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-41",
@@ -1459,6 +1759,12 @@
         "original_sha256": "48dbc76df1a132a98458bc04eba8437085f5e7b02dc75a9a2358f2c0d785f096",
         "png_sha256": "ef018af101d6f561d760c922dd919329f387b54ef94f18b671fdf5f823c1a478",
         "source_original_sha256": "09d3a9321df60dee20d9461e53181689032c6ec797fb24861350c7a3cd95e3a8"
+      },
+      "speech": {
+        "de": "Geradeaus oder links fahren",
+        "en": "Straight ahead or left only",
+        "fr": "Circuler tout droit ou obliquer à gauche",
+        "nl": "Verplicht rechtdoor of linksaf"
       }
     },
     {
@@ -1466,10 +1772,10 @@
       "sign_code": "CH:2.41.1",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-41-1.png",
       "label": {
-        "en": "CH:2.41.1 — roundabout",
-        "de": "CH:2.41.1 — roundabout",
-        "fr": "CH:2.41.1 — roundabout",
-        "nl": "CH:2.41.1 — roundabout"
+        "de": "Kreisverkehr",
+        "en": "Roundabout",
+        "fr": "Carrefour à sens giratoire",
+        "nl": "Rotonde"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-41-1",
@@ -1481,6 +1787,12 @@
         "original_sha256": "3044e8eceaeab5afb4e2fa78fc6cbdcf40b69a3ee4dc10361c76dda0c1c0c239",
         "png_sha256": "c267ee25774de3c2cf35e9ccd4448b65f793c8fc5b05b53faa08fe4a00371b5b",
         "source_original_sha256": "ebbd161fee8c08ab2e5e4b36255dc858af321963ed5e25085be34d0c680a37d9"
+      },
+      "speech": {
+        "de": "Kreisverkehr",
+        "en": "Roundabout",
+        "fr": "Carrefour à sens giratoire",
+        "nl": "Rotonde"
       }
     },
     {
@@ -1488,10 +1800,10 @@
       "sign_code": "CH:2.42",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-42.png",
       "label": {
-        "en": "CH:2.42 — no_turn:right",
-        "de": "CH:2.42 — no_turn:right",
-        "fr": "CH:2.42 — no_turn:right",
-        "nl": "CH:2.42 — no_turn:right"
+        "de": "Rechtsabbiegen verboten",
+        "en": "No right turn",
+        "fr": "Interdiction d'obliquer à droite",
+        "nl": "Rechts afslaan verboden"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-42",
@@ -1503,6 +1815,12 @@
         "original_sha256": "a7aa80d1f1978a71011f352394852aeb07d3c102adc15c79d5766c24ceb58758",
         "png_sha256": "cfb4273be0e8acdcdad2f7e30986ba483fd8f18a5b34a3327b3dda55b96a7fc9",
         "source_original_sha256": "dd9a9f0410b33dc2845bc3052526ad4b856db9dc0e750f49890f935691aa1594"
+      },
+      "speech": {
+        "de": "Rechtsabbiegen verboten",
+        "en": "No right turn",
+        "fr": "Interdiction d'obliquer à droite",
+        "nl": "Rechts afslaan verboden"
       }
     },
     {
@@ -1510,10 +1828,10 @@
       "sign_code": "CH:2.43",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-43.png",
       "label": {
-        "en": "CH:2.43 — no_turn:left",
-        "de": "CH:2.43 — no_turn:left",
-        "fr": "CH:2.43 — no_turn:left",
-        "nl": "CH:2.43 — no_turn:left"
+        "de": "Linksabbiegen verboten",
+        "en": "No left turn",
+        "fr": "Interdiction d'obliquer à gauche",
+        "nl": "Links afslaan verboden"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-43",
@@ -1525,6 +1843,12 @@
         "original_sha256": "9478643f340ad409984f95028d3bbb20c0393e9299711ed53b1db79559299266",
         "png_sha256": "83cebd83bc9fdb755e8220474c2037fb14f2d24d85f9c205bcf13ccba4b34053",
         "source_original_sha256": "9509fdcdf5a704330825eefdfee19999e398411ff3b9ba2ed50067c9babf6da1"
+      },
+      "speech": {
+        "de": "Linksabbiegen verboten",
+        "en": "No left turn",
+        "fr": "Interdiction d'obliquer à gauche",
+        "nl": "Links afslaan verboden"
       }
     },
     {
@@ -1532,10 +1856,10 @@
       "sign_code": "CH:2.44",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-44.png",
       "label": {
-        "en": "CH:2.44 — no_overtaking",
-        "de": "CH:2.44 — no_overtaking",
-        "fr": "CH:2.44 — no_overtaking",
-        "nl": "CH:2.44 — no_overtaking"
+        "de": "Überholen verboten",
+        "en": "No overtaking",
+        "fr": "Interdiction de dépasser",
+        "nl": "Inhalen verboden"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-44",
@@ -1547,6 +1871,12 @@
         "original_sha256": "eb454a5d0be2884af75c4e4656f7f7d83d9bbd0badfb3e9c0d06eb4338675815",
         "png_sha256": "64179dbf72b2d140804ea6acc6dc512ec08c4df931269677c6c4e5b3d1d49ead",
         "source_original_sha256": "49d7ccb315814ed2913aa5b7bdf68e52747f8b13b9b0fea055aa9d6fcc680d49"
+      },
+      "speech": {
+        "de": "Überholen verboten",
+        "en": "No overtaking",
+        "fr": "Interdiction de dépasser",
+        "nl": "Inhalen verboden"
       }
     },
     {
@@ -1554,10 +1884,10 @@
       "sign_code": "CH:2.45",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-45.png",
       "label": {
-        "en": "CH:2.45 — no_overtaking:hgv",
-        "de": "CH:2.45 — no_overtaking:hgv",
-        "fr": "CH:2.45 — no_overtaking:hgv",
-        "nl": "CH:2.45 — no_overtaking:hgv"
+        "de": "Überholen für Lastwagen verboten",
+        "en": "No overtaking by heavy goods vehicles",
+        "fr": "Interdiction aux camions de dépasser",
+        "nl": "Inhalen verboden voor vrachtauto's"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-45",
@@ -1569,6 +1899,12 @@
         "original_sha256": "2201debb97e26f0610251f64f57818312da7bad8d5ddbe370d28375ea97f49ce",
         "png_sha256": "c22eef12438d34dd5ff7a547ca2fe01188763fdc7f95331fb2cd7d55d07c6a3a",
         "source_original_sha256": "83c67480ffa5d8b8314a4ed69cd478ad6e4f7cc226877f577cc7807ff358c55e"
+      },
+      "speech": {
+        "de": "Überholen für Lastwagen verboten",
+        "en": "No overtaking by heavy goods vehicles",
+        "fr": "Interdiction aux camions de dépasser",
+        "nl": "Inhalen verboden voor vrachtauto's"
       }
     },
     {
@@ -1576,10 +1912,10 @@
       "sign_code": "CH:2.46",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-46.png",
       "label": {
-        "en": "CH:2.46 — no_u_turn",
-        "de": "CH:2.46 — no_u_turn",
-        "fr": "CH:2.46 — no_u_turn",
-        "nl": "CH:2.46 — no_u_turn"
+        "de": "Wenden verboten",
+        "en": "No U-turns",
+        "fr": "Interdiction de faire demi-tour",
+        "nl": "Keren verboden"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-46",
@@ -1591,6 +1927,12 @@
         "original_sha256": "d775695413d836d15ee80482e504adfd97930444fa3609ab94c9620e1f9d611c",
         "png_sha256": "1f0ffc033506df94d5839cae47e4ee49692f9c8ccea3ceba719bc60018cd09f3",
         "source_original_sha256": "a60c03bb01f3923bb085b08ee2ebb89172f44fd1857470c7c0df7a5c482c958a"
+      },
+      "speech": {
+        "de": "Wenden verboten",
+        "en": "No U-turns",
+        "fr": "Interdiction de faire demi-tour",
+        "nl": "Keren verboden"
       }
     },
     {
@@ -1598,10 +1940,10 @@
       "sign_code": "CH:2.47",
       "image_path": null,
       "label": {
-        "en": "CH:2.47 — min_distance",
-        "de": "CH:2.47 — min_distance",
-        "fr": "CH:2.47 — min_distance",
-        "nl": "CH:2.47 — min_distance"
+        "de": "Mindestabstand für schwere Motorwagen",
+        "en": "Minimum distance between heavy vehicles",
+        "fr": "Distance minimale entre véhicules lourds",
+        "nl": "Minimumafstand tussen zware motorvoertuigen"
       },
       "display_eligible": false,
       "artwork_id": "ch-2-47",
@@ -1621,10 +1963,10 @@
       "sign_code": "CH:2.48",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-48.png",
       "label": {
-        "en": "CH:2.48 — chains",
-        "de": "CH:2.48 — chains",
-        "fr": "CH:2.48 — chains",
-        "nl": "CH:2.48 — chains"
+        "de": "Schneeketten obligatorisch",
+        "en": "Snow chains required",
+        "fr": "Chaînes à neige obligatoires",
+        "nl": "Sneeuwkettingen verplicht"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-48",
@@ -1636,6 +1978,12 @@
         "original_sha256": "8a55067954baf8ee5d1ce33a6d83b1b700a462dbb3452a86f2b45628ca4e086d",
         "png_sha256": "3633a347ed5ccb1bfd50146445b86309a2f09412355e18496e4136616f76873a",
         "source_original_sha256": "2ed61fdb79b797ca31cb7584c057cc8ba47374cc4f9be6023f484fafd4bbdef7"
+      },
+      "speech": {
+        "de": "Schneeketten obligatorisch",
+        "en": "Snow chains required",
+        "fr": "Chaînes à neige obligatoires",
+        "nl": "Sneeuwkettingen verplicht"
       }
     },
     {
@@ -1643,10 +1991,10 @@
       "sign_code": "CH:2.49",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-49.png",
       "label": {
-        "en": "CH:2.49 — no_stop",
-        "de": "CH:2.49 — no_stop",
-        "fr": "CH:2.49 — no_stop",
-        "nl": "CH:2.49 — no_stop"
+        "de": "Halten verboten",
+        "en": "No stopping",
+        "fr": "Interdiction de s'arrêter",
+        "nl": "Stilstaan verboden"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-49",
@@ -1658,6 +2006,12 @@
         "original_sha256": "a29203cabb6c6e5482ffc68b2790ff3d7abcd104612c6dc77b08097d2cd8d14f",
         "png_sha256": "f54dd8f7e87b6da78c34540957dc025e205bd273394d59513a810c2f35ff20a0",
         "source_original_sha256": "7a096cc050c6343606491a2a2d3fe09923b2793086c8aae20251b60d7589b38e"
+      },
+      "speech": {
+        "de": "Halten verboten",
+        "en": "No stopping",
+        "fr": "Interdiction de s'arrêter",
+        "nl": "Stilstaan verboden"
       }
     },
     {
@@ -1665,10 +2019,10 @@
       "sign_code": "CH:2.50",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-50.png",
       "label": {
-        "en": "CH:2.50 — no_parking",
-        "de": "CH:2.50 — no_parking",
-        "fr": "CH:2.50 — no_parking",
-        "nl": "CH:2.50 — no_parking"
+        "de": "Parkieren verboten",
+        "en": "No parking",
+        "fr": "Interdiction de parquer",
+        "nl": "Parkeren verboden"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-50",
@@ -1680,6 +2034,12 @@
         "original_sha256": "7883b356196708b5fc07bc7c05d1b56c9bf7cb8e4583dd3aa54f3411599bacd3",
         "png_sha256": "2abf3d57f111998740c19fa9058a060107585ec5183f7effb9e3cafe516e8dd3",
         "source_original_sha256": "1d572d242d83a24421e6a3c071eeddda7e08c18dd11cfc83e03d49dd73f2ffd1"
+      },
+      "speech": {
+        "de": "Parkieren verboten",
+        "en": "No parking",
+        "fr": "Interdiction de parquer",
+        "nl": "Parkeren verboden"
       }
     },
     {
@@ -1687,10 +2047,10 @@
       "sign_code": "CH:2.51",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-51.png",
       "label": {
-        "en": "CH:2.51 — customs",
-        "de": "CH:2.51 — customs",
-        "fr": "CH:2.51 — customs",
-        "nl": "CH:2.51 — customs"
+        "de": "Zollhaltestelle",
+        "en": "Stop at customs",
+        "fr": "Arrêt à la douane",
+        "nl": "Stoppen bij de douane"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-51",
@@ -1702,6 +2062,12 @@
         "original_sha256": "c33f2f1957e4308e7bc2f0ffde664cba6b72ee1931a8abd828fa04a3adc92187",
         "png_sha256": "d1bbfb47b8a71647b0d454d91448e869bb5da785a96ab8d45daeabf45659d510",
         "source_original_sha256": "f7992c8e998c21e61fe7439bb1586e4bdbdf012bf6c9a6c6e43c4387ddc28158"
+      },
+      "speech": {
+        "de": "Zollhaltestelle",
+        "en": "Stop at customs",
+        "fr": "Arrêt à la douane",
+        "nl": "Stoppen bij de douane"
       }
     },
     {
@@ -1755,10 +2121,10 @@
       "sign_code": "CH:2.55",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-55.png",
       "label": {
-        "en": "CH:2.55 — no_overtaking:end",
-        "de": "CH:2.55 — no_overtaking:end",
-        "fr": "CH:2.55 — no_overtaking:end",
-        "nl": "CH:2.55 — no_overtaking:end"
+        "de": "Ende des Überholverbots",
+        "en": "End of overtaking prohibition",
+        "fr": "Fin de l'interdiction de dépasser",
+        "nl": "Einde inhaalverbod"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-55",
@@ -1770,6 +2136,12 @@
         "original_sha256": "3cd80a2ba52b3bf29a332fe424beaf3e1d19b0db25a1383f99dd921e14bcbe0a",
         "png_sha256": "b704a77a598d26d6151e04412343c35178983e36a9714f4805706c6bc25e41a6",
         "source_original_sha256": "57fb065a822a2c890f358a9738a63092c13629249e9a9b4ef585cfc655a75902"
+      },
+      "speech": {
+        "de": "Ende des Überholverbots",
+        "en": "End of overtaking prohibition",
+        "fr": "Fin de l'interdiction de dépasser",
+        "nl": "Einde inhaalverbod"
       }
     },
     {
@@ -1777,10 +2149,10 @@
       "sign_code": "CH:2.56",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-56.png",
       "label": {
-        "en": "CH:2.56 — no_overtaking:end:hgv",
-        "de": "CH:2.56 — no_overtaking:end:hgv",
-        "fr": "CH:2.56 — no_overtaking:end:hgv",
-        "nl": "CH:2.56 — no_overtaking:end:hgv"
+        "de": "Ende des Überholverbots für Lastwagen",
+        "en": "End of overtaking prohibition for heavy goods vehicles",
+        "fr": "Fin de l'interdiction aux camions de dépasser",
+        "nl": "Einde inhaalverbod voor vrachtauto's"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-56",
@@ -1792,6 +2164,12 @@
         "original_sha256": "4c6b36877192f1cca65b4541c37987a398039a965b134600e0428f5c4e9fd213",
         "png_sha256": "e586973878bd929cbb9a6d2dea26b2f6afd4a32038337f4b575051c7a0eb47a5",
         "source_original_sha256": "f15ae0b20c0ae4f7f636a7dfb88fb31782d24687c4df0a6e7b0f3befdefc07bc"
+      },
+      "speech": {
+        "de": "Ende des Überholverbots für Lastwagen",
+        "en": "End of overtaking prohibition for heavy goods vehicles",
+        "fr": "Fin de l'interdiction aux camions de dépasser",
+        "nl": "Einde inhaalverbod voor vrachtauto's"
       }
     },
     {
@@ -1799,10 +2177,10 @@
       "sign_code": "CH:2.57",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-57.png",
       "label": {
-        "en": "CH:2.57 — chains:end",
-        "de": "CH:2.57 — chains:end",
-        "fr": "CH:2.57 — chains:end",
-        "nl": "CH:2.57 — chains:end"
+        "de": "Ende der Schneekettenpflicht",
+        "en": "End of snow-chain requirement",
+        "fr": "Fin de l'obligation des chaînes à neige",
+        "nl": "Einde verplichte sneeuwkettingen"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-57",
@@ -1814,6 +2192,12 @@
         "original_sha256": "71295292d63579571c21f428df67fcaaf2811a4312fd217da0dbf0574cf6afa0",
         "png_sha256": "e83d15216c95a19f7441016095b9990f1cd7e5215c20c553e7c7cd507a3180ab",
         "source_original_sha256": "cb7944c0970b589b65913633560f9048aa2dfb0898676ad9094f9d01cfa0ddd8"
+      },
+      "speech": {
+        "de": "Ende der Schneekettenpflicht",
+        "en": "End of snow-chain requirement",
+        "fr": "Fin de l'obligation des chaînes à neige",
+        "nl": "Einde verplichte sneeuwkettingen"
       }
     },
     {
@@ -1865,10 +2249,10 @@
       "sign_code": "CH:2.59.2e",
       "image_path": null,
       "label": {
-        "en": "CH:2.59.2e — zone:no_parking:end",
-        "de": "CH:2.59.2e — zone:no_parking:end",
-        "fr": "CH:2.59.2e — zone:no_parking:end",
-        "nl": "CH:2.59.2e — zone:no_parking:end"
+        "de": "Ende einer beschilderten Zone",
+        "en": "End of a signposted zone",
+        "fr": "Fin de zone signalée",
+        "nl": "Einde van een aangegeven zone"
       },
       "display_eligible": false,
       "artwork_id": "ch-2-59-2",
@@ -1976,10 +2360,10 @@
       "sign_code": "CH:2.60",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-60.png",
       "label": {
-        "en": "CH:2.60 — bicycle:start",
-        "de": "CH:2.60 — bicycle:start",
-        "fr": "CH:2.60 — bicycle:start",
-        "nl": "CH:2.60 — bicycle:start"
+        "de": "Radweg",
+        "en": "Cycle path",
+        "fr": "Piste cyclable",
+        "nl": "Fietspad"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-60",
@@ -1991,6 +2375,12 @@
         "original_sha256": "ffad9526762b5491d1fb25ecf2c80344a4f5e347f8fdf3f40a205f609558aee4",
         "png_sha256": "114c42e7b5afc8ede4aab7941214c2f395a6fab6629a8cd7a9145902661d14c1",
         "source_original_sha256": "83dac65d8ff8a0a9d067749b60155807e65610d65f88acc1cf22d6aee9fea915"
+      },
+      "speech": {
+        "de": "Radweg",
+        "en": "Cycle path",
+        "fr": "Piste cyclable",
+        "nl": "Fietspad"
       }
     },
     {
@@ -1998,10 +2388,10 @@
       "sign_code": "CH:2.60.1",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-60-1.png",
       "label": {
-        "en": "CH:2.60.1 — bicycle:end",
-        "de": "CH:2.60.1 — bicycle:end",
-        "fr": "CH:2.60.1 — bicycle:end",
-        "nl": "CH:2.60.1 — bicycle:end"
+        "de": "Ende des Radwegs",
+        "en": "End of cycle path",
+        "fr": "Fin de la piste cyclable",
+        "nl": "Einde fietspad"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-60-1",
@@ -2013,6 +2403,12 @@
         "original_sha256": "a862e493a38a4b3b1912350585cf3de9088a5a76d9ab648330bd891fcfd7413a",
         "png_sha256": "4a9a9c423b73be46f5ca3e0344b3ff5d95c1d3cbed42cd2ded11189a621b5f0d",
         "source_original_sha256": "455cfef64bd0ffe846e5e5328016a309846bf5824496de9a7721546801d96118"
+      },
+      "speech": {
+        "de": "Ende des Radwegs",
+        "en": "End of cycle path",
+        "fr": "Fin de la piste cyclable",
+        "nl": "Einde fietspad"
       }
     },
     {
@@ -2020,10 +2416,10 @@
       "sign_code": "CH:2.61",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-61.png",
       "label": {
-        "en": "CH:2.61 — pedestrian:start",
-        "de": "CH:2.61 — pedestrian:start",
-        "fr": "CH:2.61 — pedestrian:start",
-        "nl": "CH:2.61 — pedestrian:start"
+        "de": "Fussweg",
+        "en": "Footpath",
+        "fr": "Chemin pour piétons",
+        "nl": "Voetpad"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-61",
@@ -2035,6 +2431,12 @@
         "original_sha256": "c551c1f784317337d45e7fb210d1c6a499e1e6f3b618147812721d42664ab818",
         "png_sha256": "10e63347cfd1751838c43a173e49385b5027a4598aeaa78c93bc428decf9d3bc",
         "source_original_sha256": "6659d694b1024d9c9037635f451fb24dc886320059facd5197d98e32e507b02f"
+      },
+      "speech": {
+        "de": "Fussweg",
+        "en": "Footpath",
+        "fr": "Chemin pour piétons",
+        "nl": "Voetpad"
       }
     },
     {
@@ -2042,10 +2444,10 @@
       "sign_code": "CH:2.62",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-62.png",
       "label": {
-        "en": "CH:2.62 — horse:start",
-        "de": "CH:2.62 — horse:start",
-        "fr": "CH:2.62 — horse:start",
-        "nl": "CH:2.62 — horse:start"
+        "de": "Reitweg",
+        "en": "Bridleway",
+        "fr": "Allée d'équitation",
+        "nl": "Ruiterpad"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-62",
@@ -2057,6 +2459,12 @@
         "original_sha256": "5e18c921360a764839d709c45af24fb2a28594a00f6fdc9a27bc201cb43a865d",
         "png_sha256": "7b8d71af3bbf2caadfa232656cb2c071e9b374e8fb65a3ba93103bbecc0baa55",
         "source_original_sha256": "3b736bf9f3f70a94aaea05e9cbb8a397c97cf6bc4a6c31f6233d8e464ecf2b21"
+      },
+      "speech": {
+        "de": "Reitweg",
+        "en": "Bridleway",
+        "fr": "Allée d'équitation",
+        "nl": "Ruiterpad"
       }
     },
     {
@@ -2064,10 +2472,10 @@
       "sign_code": "CH:2.63",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-63.png",
       "label": {
-        "en": "CH:2.63 — pedestrian_bicycle:designated",
-        "de": "CH:2.63 — pedestrian_bicycle:designated",
-        "fr": "CH:2.63 — pedestrian_bicycle:designated",
-        "nl": "CH:2.63 — pedestrian_bicycle:designated"
+        "de": "Getrennter Rad- und Fussweg",
+        "en": "Separate cycle and pedestrian paths",
+        "fr": "Piste cyclable et chemin piéton séparés",
+        "nl": "Gescheiden fiets- en voetpad"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-63",
@@ -2079,6 +2487,12 @@
         "original_sha256": "de2975fe5110b0d20031fc54383f56aa3310766fc5d8a57cd98ed4aafa91ca1b",
         "png_sha256": "a7d8c14ad218df07672c75dc8a8d2467ab9b289b0ae96c6a15d9ad8186962af4",
         "source_original_sha256": "c6d83bf63f2cc8bdf79c703fff648b1d8f77f06e3a060ab2a66650796c868456"
+      },
+      "speech": {
+        "de": "Getrennter Rad- und Fussweg",
+        "en": "Separate cycle and pedestrian paths",
+        "fr": "Piste cyclable et chemin piéton séparés",
+        "nl": "Gescheiden fiets- en voetpad"
       }
     },
     {
@@ -2086,10 +2500,10 @@
       "sign_code": "CH:2.63.1",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-63-1.png",
       "label": {
-        "en": "CH:2.63.1 — pedestrian_bicycle:start",
-        "de": "CH:2.63.1 — pedestrian_bicycle:start",
-        "fr": "CH:2.63.1 — pedestrian_bicycle:start",
-        "nl": "CH:2.63.1 — pedestrian_bicycle:start"
+        "de": "Gemeinsamer Rad- und Fussweg",
+        "en": "Shared cycle and pedestrian path",
+        "fr": "Voie commune aux cyclistes et aux piétons",
+        "nl": "Gemeenschappelijk fiets- en voetpad"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-63-1",
@@ -2101,6 +2515,12 @@
         "original_sha256": "ce14ec0cc70eca60275d152fb441e737024ee78320f3fd1788fb78e4c12e53df",
         "png_sha256": "4b435d6d4c53631eb83aed06f965f2bc2b69f235eed8dbcae1a5947f1ac84858",
         "source_original_sha256": "8164c2688b504353b7c557308fb4eadbfebf975875e1676ff0338fd863055b7b"
+      },
+      "speech": {
+        "de": "Gemeinsamer Rad- und Fussweg",
+        "en": "Shared cycle and pedestrian path",
+        "fr": "Voie commune aux cyclistes et aux piétons",
+        "nl": "Gemeenschappelijk fiets- en voetpad"
       }
     },
     {
@@ -2108,10 +2528,10 @@
       "sign_code": "CH:2.64",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-64.png",
       "label": {
-        "en": "CH:2.64 — bus:start",
-        "de": "CH:2.64 — bus:start",
-        "fr": "CH:2.64 — bus:start",
-        "nl": "CH:2.64 — bus:start"
+        "de": "Busfahrbahn",
+        "en": "Bus-only road",
+        "fr": "Chaussée réservée aux bus",
+        "nl": "Weg uitsluitend voor bussen"
       },
       "display_eligible": true,
       "artwork_id": "ch-2-64",
@@ -2123,6 +2543,12 @@
         "original_sha256": "5c0149b040cdfe41b814344e7091dd6baa1bf835ef64dd7a4f62b95ee94d7c56",
         "png_sha256": "85d3eaec315b905260ca0567388eeca50dfe5dba3050d5b4a2d3bfe0f94be2f1",
         "source_original_sha256": "c6c2fc6ef4f0c48a87bc11e53359d375299a48282c84c0246736137d84432cf0"
+      },
+      "speech": {
+        "de": "Busfahrbahn",
+        "en": "Bus-only road",
+        "fr": "Chaussée réservée aux bus",
+        "nl": "Weg uitsluitend voor bussen"
       }
     },
     {
@@ -2130,10 +2556,10 @@
       "sign_code": "CH:3.01",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-01.png",
       "label": {
-        "en": "CH:3.01 — stop",
-        "de": "CH:3.01 — stop",
-        "fr": "CH:3.01 — stop",
-        "nl": "CH:3.01 — stop"
+        "de": "Stop",
+        "en": "Stop",
+        "fr": "Stop",
+        "nl": "Stop"
       },
       "display_eligible": true,
       "artwork_id": "ch-3-01",
@@ -2145,6 +2571,12 @@
         "original_sha256": "50ccf70f6047c5f045cebb8c79003e11505f440e678e163609155971beb895ea",
         "png_sha256": "e63316da35e55330b0967aa0e70efd25452bd03e870f1a151dd4f3bb7651ba84",
         "source_original_sha256": "3b4ad010906ee1e029e2c1ae0926270084ba36e4f37f7d94e74a0c8980c677ec"
+      },
+      "speech": {
+        "de": "Stop",
+        "en": "Stop",
+        "fr": "Stop",
+        "nl": "Stop"
       }
     },
     {
@@ -2152,10 +2584,10 @@
       "sign_code": "CH:3.02",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-02.png",
       "label": {
-        "en": "CH:3.02 — give_way",
-        "de": "CH:3.02 — give_way",
-        "fr": "CH:3.02 — give_way",
-        "nl": "CH:3.02 — give_way"
+        "de": "Vortritt gewähren",
+        "en": "Give way",
+        "fr": "Cédez le passage",
+        "nl": "Voorrang verlenen"
       },
       "display_eligible": true,
       "artwork_id": "ch-3-02",
@@ -2167,6 +2599,12 @@
         "original_sha256": "3cd74c9551c7ea3fcff685a31b2cde2e3cabf072c1838cd8e6807bfaa36549ad",
         "png_sha256": "608d419563db6d4f38199166af5b26d63c998c451e25b11347ef6b59b5109e7d",
         "source_original_sha256": "214e4ff27f68965316ff0ee2ff61cfa6dc72d6edbc9732e7f728b451a3e4885f"
+      },
+      "speech": {
+        "de": "Vortritt gewähren",
+        "en": "Give way",
+        "fr": "Cédez le passage",
+        "nl": "Voorrang verlenen"
       }
     },
     {
@@ -2174,10 +2612,10 @@
       "sign_code": "CH:3.03",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-03.png",
       "label": {
-        "en": "CH:3.03 — priority:start",
-        "de": "CH:3.03 — priority:start",
-        "fr": "CH:3.03 — priority:start",
-        "nl": "CH:3.03 — priority:start"
+        "de": "Hauptstrasse mit Vortritt",
+        "en": "Priority road",
+        "fr": "Route principale prioritaire",
+        "nl": "Voorrangsweg"
       },
       "display_eligible": true,
       "artwork_id": "ch-3-03",
@@ -2189,6 +2627,12 @@
         "original_sha256": "6c48000e2c8a1d4c2707e5e1527599e729838cf09ba2535cefbec3d6ecf65464",
         "png_sha256": "066bdfa5bdabed602ca551ffae53193da3a0eb76278c6806ac13000554ec6431",
         "source_original_sha256": "4014d09a66f4dd0a34a16f31156d55571dc6edfc9e0ebee6a6d12fb55defd826"
+      },
+      "speech": {
+        "de": "Hauptstrasse mit Vortritt",
+        "en": "Priority road",
+        "fr": "Route principale prioritaire",
+        "nl": "Voorrangsweg"
       }
     },
     {
@@ -2196,10 +2640,10 @@
       "sign_code": "CH:3.04",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-04.png",
       "label": {
-        "en": "CH:3.04 — priority:end",
-        "de": "CH:3.04 — priority:end",
-        "fr": "CH:3.04 — priority:end",
-        "nl": "CH:3.04 — priority:end"
+        "de": "Ende der Hauptstrasse mit Vortritt",
+        "en": "End of priority road",
+        "fr": "Fin de la route principale prioritaire",
+        "nl": "Einde voorrangsweg"
       },
       "display_eligible": true,
       "artwork_id": "ch-3-04",
@@ -2211,6 +2655,12 @@
         "original_sha256": "0fa6f45a373e24de9adbbdbcb348ab471c072a83e751d78b4d3568156ec493b2",
         "png_sha256": "c6b18ad837bbc25ebdacf39a8e015ad6b66e5d8006854e1f9599e4b77d1fc612",
         "source_original_sha256": "71d8314adca6a1573173252f1e1e40a9c12c54c51b1388587c5e2cb95bfc29a8"
+      },
+      "speech": {
+        "de": "Ende der Hauptstrasse mit Vortritt",
+        "en": "End of priority road",
+        "fr": "Fin de la route principale prioritaire",
+        "nl": "Einde voorrangsweg"
       }
     },
     {
@@ -2218,10 +2668,10 @@
       "sign_code": "CH:3.05",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-05.png",
       "label": {
-        "en": "CH:3.05 — hazard:intersection",
-        "de": "CH:3.05 — hazard:intersection",
-        "fr": "CH:3.05 — hazard:intersection",
-        "nl": "CH:3.05 — hazard:intersection"
+        "de": "Verzweigung mit Strasse ohne Vortritt",
+        "en": "Priority over traffic at the next junction",
+        "fr": "Intersection avec une route sans priorité",
+        "nl": "Voorrang op het volgende kruispunt"
       },
       "display_eligible": true,
       "artwork_id": "ch-3-05",
@@ -2233,6 +2683,12 @@
         "original_sha256": "c2035251ece1e54bbe1a880f2e323821b55bdd109e094d5de994fd703903951a",
         "png_sha256": "44455cb745c064d1cee3a2fb37299ed30c45a7759bcd0c76930dd318854c13c7",
         "source_original_sha256": "4e83675dc6bf98de39445e25cc9061714c53a03eec5938747f27c2cc72e4b43a"
+      },
+      "speech": {
+        "de": "Achtung, Verzweigung mit Strasse ohne Vortritt",
+        "en": "Caution, Priority over traffic at the next junction",
+        "fr": "Attention, Intersection avec une route sans priorité",
+        "nl": "Let op, Voorrang op het volgende kruispunt"
       }
     },
     {
@@ -2240,10 +2696,10 @@
       "sign_code": "CH:3.06",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-06.png",
       "label": {
-        "en": "CH:3.06 — hazard:crossing",
-        "de": "CH:3.06 — hazard:crossing",
-        "fr": "CH:3.06 — hazard:crossing",
-        "nl": "CH:3.06 — hazard:crossing"
+        "de": "Verzweigung mit Rechtsvortritt",
+        "en": "Junction with priority from the right",
+        "fr": "Intersection avec priorité de droite",
+        "nl": "Kruispunt met voorrang van rechts"
       },
       "display_eligible": true,
       "artwork_id": "ch-3-06",
@@ -2255,6 +2711,12 @@
         "original_sha256": "86002fee1f8fc22120e951f3d575c30775cc95d614e017cc1b27737b3eab56c1",
         "png_sha256": "5eb8c4015eee0903caf724b387edfe4dc93296fea082cd7af0cbdc9169fdad4d",
         "source_original_sha256": "40d3a92959b613e8fd62eccef1ecf808b2bf28be1eeffd5443adaf4f308c691b"
+      },
+      "speech": {
+        "de": "Achtung, Verzweigung mit Rechtsvortritt",
+        "en": "Caution, Junction with priority from the right",
+        "fr": "Attention, Intersection avec priorité de droite",
+        "nl": "Let op, Kruispunt met voorrang van rechts"
       }
     },
     {
@@ -2262,10 +2724,10 @@
       "sign_code": "CH:3.09",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-09.png",
       "label": {
-        "en": "CH:3.09 — priority:backward",
-        "de": "CH:3.09 — priority:backward",
-        "fr": "CH:3.09 — priority:backward",
-        "nl": "CH:3.09 — priority:backward"
+        "de": "Dem Gegenverkehr Vortritt lassen",
+        "en": "Give way to oncoming traffic",
+        "fr": "Laissez passer les véhicules en sens inverse",
+        "nl": "Tegemoetkomend verkeer voor laten gaan"
       },
       "display_eligible": true,
       "artwork_id": "ch-3-09",
@@ -2277,6 +2739,12 @@
         "original_sha256": "15eff304d6976b1b862007fb517063169c5d22f8489748ed0288ba701d93879e",
         "png_sha256": "76c260c271ccf84d63b3901731583f636d0162fdc23c558186da1d1ae7e5d90a",
         "source_original_sha256": "492929e138d6e00e9ea7636020499ce07c5c799c66c218798b3effe9635b68bf"
+      },
+      "speech": {
+        "de": "Dem Gegenverkehr Vortritt lassen",
+        "en": "Give way to oncoming traffic",
+        "fr": "Laissez passer les véhicules en sens inverse",
+        "nl": "Tegemoetkomend verkeer voor laten gaan"
       }
     },
     {
@@ -2284,10 +2752,10 @@
       "sign_code": "CH:3.10",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-10.png",
       "label": {
-        "en": "CH:3.10 — priority:forward",
-        "de": "CH:3.10 — priority:forward",
-        "fr": "CH:3.10 — priority:forward",
-        "nl": "CH:3.10 — priority:forward"
+        "de": "Vortritt vor dem Gegenverkehr",
+        "en": "Priority over oncoming traffic",
+        "fr": "Priorité sur les véhicules venant en sens inverse",
+        "nl": "Voorrang op tegemoetkomend verkeer"
       },
       "display_eligible": true,
       "artwork_id": "ch-3-10",
@@ -2299,6 +2767,12 @@
         "original_sha256": "e0c3e380712d712afa293a0b53071cf933b4d5c0a3dc9b72a866a799e9dc4c45",
         "png_sha256": "d544d342532f4f4ea38423f0ec7ebdf68e2d41bb4dca86f400e6528f7d532870",
         "source_original_sha256": "b94af3bd29c35925bd63a581470c5108540aab10e8cde8b65db18ab8fad1f340"
+      },
+      "speech": {
+        "de": "Vortritt vor dem Gegenverkehr",
+        "en": "Priority over oncoming traffic",
+        "fr": "Priorité sur les véhicules venant en sens inverse",
+        "nl": "Voorrang op tegemoetkomend verkeer"
       }
     },
     {
@@ -2394,10 +2868,10 @@
       "sign_code": "CH:4.07",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-07.png",
       "label": {
-        "en": "CH:4.07 — tunnel:start",
-        "de": "CH:4.07 — tunnel:start",
-        "fr": "CH:4.07 — tunnel:start",
-        "nl": "CH:4.07 — tunnel:start"
+        "de": "Tunnel",
+        "en": "Tunnel",
+        "fr": "Tunnel",
+        "nl": "Tunnel"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-07",
@@ -2409,6 +2883,12 @@
         "original_sha256": "35aaad0594b935a3f3e5e42d7cd9db25572c31850de1ddbe5ce71e4e03cf9065",
         "png_sha256": "22342e03fa418097c56bb9006e9e545c0d7aef5375f8e129599506475ebbfc6b",
         "source_original_sha256": "c2f5fbe4fb47dee116876a0ec93d92afe0c44b6bbac89b5e3d8a971e9d6eb7b6"
+      },
+      "speech": {
+        "de": "Tunnel",
+        "en": "Tunnel",
+        "fr": "Tunnel",
+        "nl": "Tunnel"
       }
     },
     {
@@ -2416,10 +2896,10 @@
       "sign_code": "CH:4.08",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-08.png",
       "label": {
-        "en": "CH:4.08 — oneway",
-        "de": "CH:4.08 — oneway",
-        "fr": "CH:4.08 — oneway",
-        "nl": "CH:4.08 — oneway"
+        "de": "Einbahnstrasse",
+        "en": "One-way street",
+        "fr": "Sens unique",
+        "nl": "Eenrichtingsweg"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-08",
@@ -2431,6 +2911,12 @@
         "original_sha256": "ee8b48be21da446ac3d153c0c5f10bbeb6d2a7b2cabc56b0b720bc20c2b947aa",
         "png_sha256": "a5ca16777cbbe15942797b48600516af304f6d39cc55a505c499e722dd67ea15",
         "source_original_sha256": "6b2e6ea1a7500b3c20b15cad426745185b897936c5733d9ed2ee86f60eec5421"
+      },
+      "speech": {
+        "de": "Einbahnstrasse",
+        "en": "One-way street",
+        "fr": "Sens unique",
+        "nl": "Eenrichtingsweg"
       }
     },
     {
@@ -2438,10 +2924,10 @@
       "sign_code": "CH:4.09",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-09.png",
       "label": {
-        "en": "CH:4.09 — no_exit",
-        "de": "CH:4.09 — no_exit",
-        "fr": "CH:4.09 — no_exit",
-        "nl": "CH:4.09 — no_exit"
+        "de": "Sackgasse",
+        "en": "Dead end",
+        "fr": "Impasse",
+        "nl": "Doodlopende weg"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-09",
@@ -2453,6 +2939,12 @@
         "original_sha256": "c5f5ac2782d28f2d4b55fd80bee6bdb5d94669ba6b741525b487bb390abfd6da",
         "png_sha256": "c2eec9d39f5175a7e9a225441925dc69b6ac7fce8f92b779704034aae53de796",
         "source_original_sha256": "9ad005b82cf0f32b27b7e1bb0272a86d79a6fb1b6c2c6f97bd66222ca963545e"
+      },
+      "speech": {
+        "de": "Sackgasse",
+        "en": "Dead end",
+        "fr": "Impasse",
+        "nl": "Doodlopende weg"
       }
     },
     {
@@ -2460,10 +2952,10 @@
       "sign_code": "CH:4.10",
       "image_path": null,
       "label": {
-        "en": "CH:4.10 — no_exit:car",
-        "de": "CH:4.10 — no_exit:car",
-        "fr": "CH:4.10 — no_exit:car",
-        "nl": "CH:4.10 — no_exit:car"
+        "de": "Wasserschutzgebiet",
+        "en": "Water protection area",
+        "fr": "Zone de protection des eaux",
+        "nl": "Waterbeschermingsgebied"
       },
       "display_eligible": false,
       "artwork_id": "ch-4-10",
@@ -2483,10 +2975,10 @@
       "sign_code": "CH:4.11",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-11.png",
       "label": {
-        "en": "CH:4.11 — pedestrian_crossing",
-        "de": "CH:4.11 — pedestrian_crossing",
-        "fr": "CH:4.11 — pedestrian_crossing",
-        "nl": "CH:4.11 — pedestrian_crossing"
+        "de": "Fussgängerstreifen",
+        "en": "Pedestrian crossing",
+        "fr": "Passage pour piétons",
+        "nl": "Voetgangersoversteekplaats"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-11",
@@ -2498,6 +2990,12 @@
         "original_sha256": "3ddd3a57938202ea0ac1a48db44684932347c0d4c19320c75fe8b9b6c10ae7db",
         "png_sha256": "a44921b063427620d3044aae90788c8884fcec899aae50693ac9959ef7184b32",
         "source_original_sha256": "fdbcbc68130ba37d1e380377e19e511ed31aa93f802f2cdd896f23119ca8cccd"
+      },
+      "speech": {
+        "de": "Fussgängerstreifen",
+        "en": "Pedestrian crossing",
+        "fr": "Passage pour piétons",
+        "nl": "Voetgangersoversteekplaats"
       }
     },
     {
@@ -2505,10 +3003,10 @@
       "sign_code": "CH:4.12",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-12.png",
       "label": {
-        "en": "CH:4.12 — pedestrian:underpass",
-        "de": "CH:4.12 — pedestrian:underpass",
-        "fr": "CH:4.12 — pedestrian:underpass",
-        "nl": "CH:4.12 — pedestrian:underpass"
+        "de": "Fussgängerunterführung",
+        "en": "Pedestrian underpass",
+        "fr": "Passage souterrain pour piétons",
+        "nl": "Voetgangerstunnel"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-12",
@@ -2520,6 +3018,12 @@
         "original_sha256": "d43f83c44f717c52e7b35259c406d21fa807d8e223249d515cf88066273d159c",
         "png_sha256": "38ee2daa32b79098307241b6d7715323582b3e4b94fa74b9a3aff1ea18748f29",
         "source_original_sha256": "bdff5d093b3f78df1e3371812da8f16f70c0cd0117bade2eb38d20caf6de346c"
+      },
+      "speech": {
+        "de": "Fussgängerunterführung",
+        "en": "Pedestrian underpass",
+        "fr": "Passage souterrain pour piétons",
+        "nl": "Voetgangerstunnel"
       }
     },
     {
@@ -2527,10 +3031,10 @@
       "sign_code": "CH:4.13",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-13.png",
       "label": {
-        "en": "CH:4.13 — pedestrian:overpass",
-        "de": "CH:4.13 — pedestrian:overpass",
-        "fr": "CH:4.13 — pedestrian:overpass",
-        "nl": "CH:4.13 — pedestrian:overpass"
+        "de": "Fussgängerüberführung",
+        "en": "Pedestrian footbridge",
+        "fr": "Passerelle pour piétons",
+        "nl": "Voetgangersbrug"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-13",
@@ -2542,6 +3046,12 @@
         "original_sha256": "bb01a72d869066eddb11664497776a017e043561555a6328c503852e1bc63876",
         "png_sha256": "bca7f75f833bdd552169fea2b50f39617077ca7626df99bfa90e6cc8b834003a",
         "source_original_sha256": "a737661b2ac27f57e9f24c83a23a7c89f6c8be012f840edbecc0e1405b632833"
+      },
+      "speech": {
+        "de": "Fussgängerüberführung",
+        "en": "Pedestrian footbridge",
+        "fr": "Passerelle pour piétons",
+        "nl": "Voetgangersbrug"
       }
     },
     {
@@ -2549,10 +3059,10 @@
       "sign_code": "CH:4.17",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-17.png",
       "label": {
-        "en": "CH:4.17 — parking",
-        "de": "CH:4.17 — parking",
-        "fr": "CH:4.17 — parking",
-        "nl": "CH:4.17 — parking"
+        "de": "Parkplatz",
+        "en": "Parking",
+        "fr": "Parcage autorisé",
+        "nl": "Parkeerplaats"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-17",
@@ -2564,6 +3074,12 @@
         "original_sha256": "79baf3a98f31a556eabf2875eaaec774404680ef5e629fc84206a832c18cb61f",
         "png_sha256": "7f3dc3110b315ca12d836b3b2940427b1a482baa7e6250e144d7dda57c5ea9dd",
         "source_original_sha256": "192eecc4070d670964141d5501051617712549324aef4f547c35701a2719b993"
+      },
+      "speech": {
+        "de": "Parkplatz",
+        "en": "Parking",
+        "fr": "Parcage autorisé",
+        "nl": "Parkeerplaats"
       }
     },
     {
@@ -2571,10 +3087,10 @@
       "sign_code": "CH:4.18",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-18.png",
       "label": {
-        "en": "CH:4.18 — parking:disc",
-        "de": "CH:4.18 — parking:disc",
-        "fr": "CH:4.18 — parking:disc",
-        "nl": "CH:4.18 — parking:disc"
+        "de": "Parkieren mit Parkscheibe",
+        "en": "Parking disc required",
+        "fr": "Parcage avec disque de stationnement",
+        "nl": "Parkeerschijf verplicht"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-18",
@@ -2586,6 +3102,12 @@
         "original_sha256": "d5b25370ecddf29e5411ea8fcdbcb34686c98bcff4449f8f7cd390927ccbba17",
         "png_sha256": "79e9c30ea29258ede329ade0761a488fd234a1816697a7d17aea3658eab122bd",
         "source_original_sha256": "3c250b8c0727fa07192b2f9394f6c1e3f6c003b278a8c4f11f5ebd43242c78af"
+      },
+      "speech": {
+        "de": "Parkieren mit Parkscheibe",
+        "en": "Parking disc required",
+        "fr": "Parcage avec disque de stationnement",
+        "nl": "Parkeerschijf verplicht"
       }
     },
     {
@@ -2593,10 +3115,10 @@
       "sign_code": "CH:4.20",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-20.png",
       "label": {
-        "en": "CH:4.20 — parking:meter",
-        "de": "CH:4.20 — parking:meter",
-        "fr": "CH:4.20 — parking:meter",
-        "nl": "CH:4.20 — parking:meter"
+        "de": "Gebührenpflichtiges Parkieren",
+        "en": "Paid parking",
+        "fr": "Parcage payant",
+        "nl": "Betaald parkeren"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-20",
@@ -2608,6 +3130,12 @@
         "original_sha256": "70e89245889a6c4b1d2efb6ba9f9192f0b8e959651621e9b9bb753caf746cdc6",
         "png_sha256": "5b5e53ec10597065961276aa60b262dc6c52a2e79a2d793e09f0a030ad4cb3ef",
         "source_original_sha256": "d185af660b3c11314af5cd1e6c5a0d6c4f95e68e55df4bee0ae7fe744d5b8f91"
+      },
+      "speech": {
+        "de": "Gebührenpflichtiges Parkieren",
+        "en": "Paid parking",
+        "fr": "Parcage payant",
+        "nl": "Betaald parkeren"
       }
     },
     {
@@ -2615,10 +3143,10 @@
       "sign_code": "CH:4.21",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-21.png",
       "label": {
-        "en": "CH:4.21 — parking:covered",
-        "de": "CH:4.21 — parking:covered",
-        "fr": "CH:4.21 — parking:covered",
-        "nl": "CH:4.21 — parking:covered"
+        "de": "Parkhaus",
+        "en": "Covered parking",
+        "fr": "Parking couvert",
+        "nl": "Overdekte parkeergelegenheid"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-21",
@@ -2630,6 +3158,12 @@
         "original_sha256": "840ffdb655eff4124294b2eed75643ad384a24f6982e556a00baabb4db88bb93",
         "png_sha256": "9cfaa48d9d73013102a9fec70aa68b3615f81553c73c2550a9c489b4b497a248",
         "source_original_sha256": "787c8bf36332300f65addb870b62968ed84f1cc883a1340ba3ba8f57bce7bdc9"
+      },
+      "speech": {
+        "de": "Parkhaus",
+        "en": "Covered parking",
+        "fr": "Parking couvert",
+        "nl": "Overdekte parkeergelegenheid"
       }
     },
     {
@@ -2637,10 +3171,10 @@
       "sign_code": "CH:4.24",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-24.png",
       "label": {
-        "en": "CH:4.24 — escape_lane",
-        "de": "CH:4.24 — escape_lane",
-        "fr": "CH:4.24 — escape_lane",
-        "nl": "CH:4.24 — escape_lane"
+        "de": "Notfallspur",
+        "en": "Escape lane",
+        "fr": "Voie de détresse",
+        "nl": "Noodstopstrook"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-24",
@@ -2652,6 +3186,12 @@
         "original_sha256": "b9ca7947a6cd84424f20182d23b7d414d6003492a1fff69f52073e024e43bed7",
         "png_sha256": "66d13a784fd809632e73b629caaffde4263472ff8ecb9a0fcacac81583ec0e58",
         "source_original_sha256": "de42b9fd0f31093287c3caf28ff33e8748681aae779208061035c3f86650de05"
+      },
+      "speech": {
+        "de": "Notfallspur",
+        "en": "Escape lane",
+        "fr": "Voie de détresse",
+        "nl": "Noodstopstrook"
       }
     },
     {
@@ -2659,10 +3199,10 @@
       "sign_code": "CH:4.25",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-25.png",
       "label": {
-        "en": "CH:4.25 — parking:park_ride",
-        "de": "CH:4.25 — parking:park_ride",
-        "fr": "CH:4.25 — parking:park_ride",
-        "nl": "CH:4.25 — parking:park_ride"
+        "de": "Parkplatz mit Anschluss an öffentliche Verkehrsmittel",
+        "en": "Park and ride",
+        "fr": "Parking avec accès aux transports publics",
+        "nl": "Parkeerplaats met aansluiting op openbaar vervoer"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-25",
@@ -2674,6 +3214,12 @@
         "original_sha256": "4f17f42f97d769a2ce1a9da0d04a7d8b081520e49180ae5bc44104b5c3738794",
         "png_sha256": "d92b1480786dcdb9e40e3006afb2bfa3ddae299c29fab59382327125d2ea17f2",
         "source_original_sha256": "0e89b080cee0e25ec8f01a354b5b39a54e5fca1473e8959d140c8c475f898ee2"
+      },
+      "speech": {
+        "de": "Parkplatz mit Anschluss an öffentliche Verkehrsmittel",
+        "en": "Park and ride",
+        "fr": "Parking avec accès aux transports publics",
+        "nl": "Parkeerplaats met aansluiting op openbaar vervoer"
       }
     },
     {
@@ -2681,10 +3227,10 @@
       "sign_code": "CH:4.63",
       "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-63.png",
       "label": {
-        "en": "CH:4.63 — exit",
-        "de": "CH:4.63 — exit",
-        "fr": "CH:4.63 — exit",
-        "nl": "CH:4.63 — exit"
+        "de": "Ausfahrt",
+        "en": "Exit",
+        "fr": "Sortie",
+        "nl": "Afrit"
       },
       "display_eligible": true,
       "artwork_id": "ch-4-63",
@@ -2696,6 +3242,12 @@
         "original_sha256": "e7f2026d3439cdd18f9e99d1d12fde4e5243693fa12569655cb6656e05e08feb",
         "png_sha256": "b3e443eaf4903bf983271b89cbb4f3c51dcf6fc9dde204b75059f92b12014d7c",
         "source_original_sha256": "339ffad57e0e38cb80d6d9ef59e2b911b9f1e6fc060b6ab8ee0ea931c6a81a0b"
+      },
+      "speech": {
+        "de": "Ausfahrt",
+        "en": "Exit",
+        "fr": "Sortie",
+        "nl": "Afrit"
       }
     },
     {
@@ -2851,6 +3403,428 @@
     "national_artwork_manifest": "shared/tsr/sign-pictograms/national/CH/manifest.json",
     "national_selection": "shared/tsr/sign-pictograms/national/CH/selection.json",
     "classifier_checkpoint_revision": "ch-classifier-bootstrap-v9",
-    "parity_report": "shared/tsr/foreign-calibration/CH-mobile-parity-v1.json"
+    "parity_report": "shared/tsr/foreign-calibration/CH-mobile-parity-v1.json",
+    "speech_review": {
+      "reviewed_at": "2026-10-02",
+      "source_urls": [
+        "https://www.fedlex.admin.ch/eli/cc/1979/1961_1961_1961/de",
+        "https://www.fedlex.admin.ch/eli/cc/1979/1961_1961_1961/fr",
+        "https://www.astra.admin.ch/de/signale",
+        "https://www.police.be.ch/content/dam/police/dokumente/police-be-ch/d/sicherheitsunternehmen/signalisationsverordnung-de.pdf"
+      ],
+      "source_version": "SSV / OSR, effective 2026-10-01; current German articles and French Annex 2 reviewed in Fedlex; 2017 cantonal PDF used only as a historical cross-check.",
+      "scope": "Reviewed short sign-name announcements for existing model classes only. This metadata does not approve classifier mappings or change Swiss shadow, calibration, redistribution or speed-context gates.",
+      "caveats": [
+        "Short announcements identify the base sign only; supplementary plates, vehicle-specific exceptions, durations and distances are not inferred.",
+        "Slope, dimension, weight and minimum-distance announcements identify only the restriction or warning type; they never announce unrecognized numeric values. Minimum-speed signs remain silent.",
+        "CH:1.15 warns of barriers, which can also protect airfields; it is not announced specifically as a railway crossing.",
+        "CH:1.28 aircraft is present in the current 2026 ordinance, despite being absent from the historical 2017 edition.",
+        "CH:2.03, 2.05, 2.12, 2.13, 2.14 and 2.15.3 use official sign-code categories rather than narrower or opaque model identifiers.",
+        "CH:3.05 is priority at the upcoming junction; CH:3.06 is priority from the right.",
+        "English and Dutch are reviewed plain-language translations, not official legal text.",
+        "The current baseline now blocks the horse/wild-animal, water-protection/dead-end and end-of-parking-zone conflicts and generic numeric pictograms. Their prior speech/omission records are removed from display coverage; upstream gates remain unchanged."
+      ],
+      "reviewed_signs": [
+        {
+          "class_id": "hazard:turn_right",
+          "sign_code": "CH:1.01"
+        },
+        {
+          "class_id": "hazard:turn_left",
+          "sign_code": "CH:1.02"
+        },
+        {
+          "class_id": "hazard:zigzag",
+          "sign_code": "CH:1.03"
+        },
+        {
+          "class_id": "hazard:zigzag:left",
+          "sign_code": "CH:1.04"
+        },
+        {
+          "class_id": "hazard:slippery",
+          "sign_code": "CH:1.05"
+        },
+        {
+          "class_id": "hazard:bumps",
+          "sign_code": "CH:1.06"
+        },
+        {
+          "class_id": "hazard:narrow_both",
+          "sign_code": "CH:1.07"
+        },
+        {
+          "class_id": "hazard:narrow_right",
+          "sign_code": "CH:1.08"
+        },
+        {
+          "class_id": "hazard:narrow_left",
+          "sign_code": "CH:1.09"
+        },
+        {
+          "class_id": "hazard:gravel",
+          "sign_code": "CH:1.12"
+        },
+        {
+          "class_id": "hazard:rocks",
+          "sign_code": "CH:1.13a"
+        },
+        {
+          "class_id": "hazard:road_works",
+          "sign_code": "CH:1.14"
+        },
+        {
+          "class_id": "hazard:level_crossing",
+          "sign_code": "CH:1.15"
+        },
+        {
+          "class_id": "hazard:train",
+          "sign_code": "CH:1.16"
+        },
+        {
+          "class_id": "hazard:pedestrian_crossing",
+          "sign_code": "CH:1.22"
+        },
+        {
+          "class_id": "hazard:school",
+          "sign_code": "CH:1.23"
+        },
+        {
+          "class_id": "hazard:animals",
+          "sign_code": "CH:1.25"
+        },
+        {
+          "class_id": "hazard:bothways",
+          "sign_code": "CH:1.26"
+        },
+        {
+          "class_id": "hazard:traffic_signal",
+          "sign_code": "CH:1.27"
+        },
+        {
+          "class_id": "hazard:airport",
+          "sign_code": "CH:1.28"
+        },
+        {
+          "class_id": "hazard",
+          "sign_code": "CH:1.30"
+        },
+        {
+          "class_id": "hazard:traffic_jam",
+          "sign_code": "CH:1.31"
+        },
+        {
+          "class_id": "hazard:bicycle",
+          "sign_code": "CH:1.32"
+        },
+        {
+          "class_id": "no_way",
+          "sign_code": "CH:2.01"
+        },
+        {
+          "class_id": "no_entry",
+          "sign_code": "CH:2.02"
+        },
+        {
+          "class_id": "no_car",
+          "sign_code": "CH:2.03"
+        },
+        {
+          "class_id": "no_motorcycle",
+          "sign_code": "CH:2.04"
+        },
+        {
+          "class_id": "no_bicycle",
+          "sign_code": "CH:2.05"
+        },
+        {
+          "class_id": "no_moped",
+          "sign_code": "CH:2.06"
+        },
+        {
+          "class_id": "no_hgv",
+          "sign_code": "CH:2.07"
+        },
+        {
+          "class_id": "no_bus",
+          "sign_code": "CH:2.08"
+        },
+        {
+          "class_id": "no_trailer",
+          "sign_code": "CH:2.09"
+        },
+        {
+          "class_id": "no_dangerous",
+          "sign_code": "CH:2.10.1"
+        },
+        {
+          "class_id": "no_dangerous_liquid",
+          "sign_code": "CH:2.11"
+        },
+        {
+          "class_id": "no_horse",
+          "sign_code": "CH:2.12"
+        },
+        {
+          "class_id": "no_motor_vehicle2",
+          "sign_code": "CH:2.13"
+        },
+        {
+          "class_id": "no_motor_vehicle",
+          "sign_code": "CH:2.14"
+        },
+        {
+          "class_id": "no_pedestrian",
+          "sign_code": "CH:2.15"
+        },
+        {
+          "class_id": "no_skiing",
+          "sign_code": "CH:2.15.1"
+        },
+        {
+          "class_id": "no_sledging",
+          "sign_code": "CH:2.15.2"
+        },
+        {
+          "class_id": "no_roller",
+          "sign_code": "CH:2.15.3"
+        },
+        {
+          "class_id": "arrow_right",
+          "sign_code": "CH:2.32"
+        },
+        {
+          "class_id": "arrow_left",
+          "sign_code": "CH:2.33"
+        },
+        {
+          "class_id": "arrow_right_down",
+          "sign_code": "CH:2.34"
+        },
+        {
+          "class_id": "arrow_left_down",
+          "sign_code": "CH:2.35"
+        },
+        {
+          "class_id": "arrow_through",
+          "sign_code": "CH:2.36"
+        },
+        {
+          "class_id": "arrow_turn_right",
+          "sign_code": "CH:2.37"
+        },
+        {
+          "class_id": "arrow_turn_left",
+          "sign_code": "CH:2.38"
+        },
+        {
+          "class_id": "arrow_turn_left_right",
+          "sign_code": "CH:2.39"
+        },
+        {
+          "class_id": "arrow_turn_right_through",
+          "sign_code": "CH:2.40"
+        },
+        {
+          "class_id": "arrow_turn_left_through",
+          "sign_code": "CH:2.41"
+        },
+        {
+          "class_id": "roundabout",
+          "sign_code": "CH:2.41.1"
+        },
+        {
+          "class_id": "no_turn:right",
+          "sign_code": "CH:2.42"
+        },
+        {
+          "class_id": "no_turn:left",
+          "sign_code": "CH:2.43"
+        },
+        {
+          "class_id": "no_overtaking",
+          "sign_code": "CH:2.44"
+        },
+        {
+          "class_id": "no_overtaking:hgv",
+          "sign_code": "CH:2.45"
+        },
+        {
+          "class_id": "no_u_turn",
+          "sign_code": "CH:2.46"
+        },
+        {
+          "class_id": "chains",
+          "sign_code": "CH:2.48"
+        },
+        {
+          "class_id": "no_stop",
+          "sign_code": "CH:2.49"
+        },
+        {
+          "class_id": "no_parking",
+          "sign_code": "CH:2.50"
+        },
+        {
+          "class_id": "customs",
+          "sign_code": "CH:2.51"
+        },
+        {
+          "class_id": "no_overtaking:end",
+          "sign_code": "CH:2.55"
+        },
+        {
+          "class_id": "no_overtaking:end:hgv",
+          "sign_code": "CH:2.56"
+        },
+        {
+          "class_id": "chains:end",
+          "sign_code": "CH:2.57"
+        },
+        {
+          "class_id": "bicycle:start",
+          "sign_code": "CH:2.60"
+        },
+        {
+          "class_id": "bicycle:end",
+          "sign_code": "CH:2.60.1"
+        },
+        {
+          "class_id": "pedestrian:start",
+          "sign_code": "CH:2.61"
+        },
+        {
+          "class_id": "horse:start",
+          "sign_code": "CH:2.62"
+        },
+        {
+          "class_id": "pedestrian_bicycle:designated",
+          "sign_code": "CH:2.63"
+        },
+        {
+          "class_id": "pedestrian_bicycle:start",
+          "sign_code": "CH:2.63.1"
+        },
+        {
+          "class_id": "bus:start",
+          "sign_code": "CH:2.64"
+        },
+        {
+          "class_id": "stop",
+          "sign_code": "CH:3.01"
+        },
+        {
+          "class_id": "give_way",
+          "sign_code": "CH:3.02"
+        },
+        {
+          "class_id": "priority:start",
+          "sign_code": "CH:3.03"
+        },
+        {
+          "class_id": "priority:end",
+          "sign_code": "CH:3.04"
+        },
+        {
+          "class_id": "hazard:intersection",
+          "sign_code": "CH:3.05"
+        },
+        {
+          "class_id": "hazard:crossing",
+          "sign_code": "CH:3.06"
+        },
+        {
+          "class_id": "priority:backward",
+          "sign_code": "CH:3.09"
+        },
+        {
+          "class_id": "priority:forward",
+          "sign_code": "CH:3.10"
+        },
+        {
+          "class_id": "tunnel:start",
+          "sign_code": "CH:4.07"
+        },
+        {
+          "class_id": "oneway",
+          "sign_code": "CH:4.08"
+        },
+        {
+          "class_id": "no_exit",
+          "sign_code": "CH:4.09"
+        },
+        {
+          "class_id": "pedestrian_crossing",
+          "sign_code": "CH:4.11"
+        },
+        {
+          "class_id": "pedestrian:underpass",
+          "sign_code": "CH:4.12"
+        },
+        {
+          "class_id": "pedestrian:overpass",
+          "sign_code": "CH:4.13"
+        },
+        {
+          "class_id": "parking",
+          "sign_code": "CH:4.17"
+        },
+        {
+          "class_id": "parking:disc",
+          "sign_code": "CH:4.18"
+        },
+        {
+          "class_id": "parking:meter",
+          "sign_code": "CH:4.20"
+        },
+        {
+          "class_id": "parking:covered",
+          "sign_code": "CH:4.21"
+        },
+        {
+          "class_id": "escape_lane",
+          "sign_code": "CH:4.24"
+        },
+        {
+          "class_id": "parking:park_ride",
+          "sign_code": "CH:4.25"
+        },
+        {
+          "class_id": "exit",
+          "sign_code": "CH:4.63"
+        }
+      ],
+      "omitted_display_classes": {
+        "no:end": "Primary speed or structural-speed context",
+        "zone:30": "Primary speed or structural-speed context",
+        "zone:pedestrian": "Primary speed or structural-speed context",
+        "zone:pedestrian:end": "Primary speed or structural-speed context",
+        "zone:calm": "Primary speed or structural-speed context",
+        "zone:calm:end": "Primary speed or structural-speed context",
+        "motorway:start": "Primary speed or structural-speed context",
+        "motorway:end": "Primary speed or structural-speed context",
+        "trunk:start": "Primary speed or structural-speed context",
+        "trunk:end": "Primary speed or structural-speed context"
+      },
+      "baseline_revision": "366132efd566da0e46833738f13e8ddf255bf199",
+      "retained_reviewed_phrase_classes": 92,
+      "newly_reviewed_classes": [],
+      "upstream_display_blocked_since_initial_review": [
+        "hazard:include:down",
+        "hazard:incline:up",
+        "hazard:horse",
+        "maxweight",
+        "maxaxleweight",
+        "maxwidth",
+        "maxheight",
+        "maxlength",
+        "min_speed",
+        "min_distance",
+        "maxspeed:end",
+        "min_speed:end",
+        "zone:no_parking:end",
+        "no_exit:car"
+      ]
+    }
   }
 }
