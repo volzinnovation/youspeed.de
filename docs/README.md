@@ -18,3 +18,5 @@ This directory contains the public technical documentation for YouSpeed.
 Platform setup and testing instructions live beside each implementation in [`../android/README.md`](../android/README.md) and [`../iphone/SpeedConsumerApp/README.md`](../iphone/SpeedConsumerApp/README.md).
 
 Research notes, paper sources, reviews, CV material, and conference submissions belong in the separate [youspeed.de-paper repository](https://github.com/volzinnovation/youspeed.de-paper).
+
+- [Traffic-sign reference pages](TRAFFIC_SIGN_DOCUMENTATION.md): country catalogues, shared pictograms and four-language spoken names behind Info on both apps.

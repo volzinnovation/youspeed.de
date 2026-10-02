@@ -489,3 +489,5 @@
 "data_manager.date" = "Paketdatum";
 
 "penalty.documentation.title" = "Bußgeldtabellen";
+
+"traffic.sign.documentation.title" = "Verkehrszeichen";

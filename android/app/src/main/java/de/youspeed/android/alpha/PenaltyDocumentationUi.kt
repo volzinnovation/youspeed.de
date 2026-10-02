@@ -40,7 +40,12 @@ internal fun PenaltyDocumentationSheet(activeRules: SpeedPenaltyRuleSet, onDismi
     val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0].toLanguageTag()
     val html = remember(activeRules, locale) { PenaltyDocumentationHTML.make(context, activeRules, locale) }
-    SheetScaffold(title = stringResource(R.string.penalty_documentation_title), onDismiss = onDismiss, testTag = "penalty-documentation") {
+    OfflineDocumentationSheet(stringResource(R.string.penalty_documentation_title), "penalty-documentation", html, onDismiss)
+}
+
+@Composable
+internal fun OfflineDocumentationSheet(title: String, testTag: String, html: String, onDismiss: () -> Unit) {
+    SheetScaffold(title = title, onDismiss = onDismiss, testTag = testTag) {
         AndroidView(modifier = Modifier.fillMaxSize(), factory = { viewContext ->
             WebView(viewContext).apply {
                 settings.javaScriptEnabled = true
@@ -56,7 +61,6 @@ internal fun PenaltyDocumentationSheet(activeRules: SpeedPenaltyRuleSet, onDismi
                         return url.toString() != "about:blank"
                     }
                 }
-                loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
             }
         }, update = { view ->
             if (view.tag != html) {

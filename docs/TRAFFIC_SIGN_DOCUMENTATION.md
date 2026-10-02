@@ -1,0 +1,11 @@
+# Traffic-sign reference behind Info
+
+Both apps expose **Info → Traffic signs** as a separate subpage alongside the penalty tables. The offline reference reads the five bundled national catalogues directly: Germany, France, the Netherlands, Belgium and Switzerland. It currently covers 483 distinct national sign codes with display-eligible shared pictograms. Repeated classifier entries for one sign code are grouped, preferring the reviewed speech entry.
+
+Every entry shows its original shared PNG, national sign code, localized display label and existing `speech` phrases in this fixed order: **English, French, German, Dutch**. Missing speech is explicitly marked as not announced; display labels never become invented spoken phrases. Country selection and search work across sign codes, all four display labels and all four spoken phrases. The page’s surrounding controls are translated into the apps’ supported languages, and it includes the existing not-legal-advice note. This is catalogue documentation; it does not claim country recognition availability.
+
+The source is `shared/tsr/prolix-*-class-catalog-v1.json` plus the existing bytes under `shared/tsr/sign-pictograms/`. Swift and Kotlin serialize these sources into the shared renderer in `shared/traffic-sign-documentation/`. Images are embedded from those PNG bytes so browsing requires no network or separate artwork. No model, speech gate, recognition eligibility or speed-limit reference policy changes are involved.
+
+Verification: `node --test tests/traffic-sign-documentation.test.cjs` checks source image hashes, exact speech, silence, filtering, search, stable grouping and language order. The native Swift test compares all five packaged catalogues and every embedded PNG against their original bundle bytes. Native iPhone UI tests exercise Info → Traffic signs and search in all four languages, checking the pictogram and visual language order. Both apps build successfully; the penalty-reference tests also pass after sharing their offline WebView wrappers.
+
+Android native emulator verification also passed: Info → Traffic signs → search for DE:206 → original stop pictogram and English/French/German/Dutch rows in ascending visual order. The complete Android debug unit suite passed with no failures.

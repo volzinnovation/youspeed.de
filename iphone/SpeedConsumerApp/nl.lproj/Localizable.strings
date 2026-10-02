@@ -489,3 +489,5 @@
 "data_manager.date" = "Pakketdatum";
 
 "penalty.documentation.title" = "Boetetabellen";
+
+"traffic.sign.documentation.title" = "Verkeersborden";

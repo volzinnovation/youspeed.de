@@ -37,20 +37,21 @@ enum PenaltyDocumentationHTML {
 struct PenaltyDocumentationView: View {
     let activeRules: SpeedPenaltyRuleSet
     var body: some View {
-        PenaltyDocumentationWebView(html: try? PenaltyDocumentationHTML.make(activeRules: activeRules))
+        OfflineDocumentationWebView(html: try? PenaltyDocumentationHTML.make(activeRules: activeRules))
             .navigationTitle(NSLocalizedString("penalty.documentation.title", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .subscreenCloseButton()
     }
 }
 
-private struct PenaltyDocumentationWebView: UIViewRepresentable {
+struct OfflineDocumentationWebView: UIViewRepresentable {
     let html: String?
+    var identifier: String = "penalty-documentation"
     func makeCoordinator() -> Coordinator { Coordinator() }
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView(frame: .zero)
         webView.navigationDelegate = context.coordinator
-        webView.accessibilityIdentifier = "penalty-documentation"
+        webView.accessibilityIdentifier = identifier
         if let html { webView.loadHTMLString(html, baseURL: nil) }
         return webView
     }

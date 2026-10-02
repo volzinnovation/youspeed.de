@@ -514,3 +514,37 @@ extension ScreenOrientationUITests {
         }
     }
 }
+
+extension ScreenOrientationUITests {
+    func testTrafficSignReferenceBehindInfoInAllFourLanguages() {
+        continueAfterFailure = false
+        for language in ["en", "fr", "de", "nl"] {
+            let app = XCUIApplication()
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "country-penalty"
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_COUNTRY"] = "NL"
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_LIMIT"] = "1"
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_DELTA"] = "0"
+            app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", "\(language)_NL"]
+            app.launch()
+            let info = app.buttons["dashboard.infoButton"]
+            XCTAssertTrue(info.waitForExistence(timeout: 20)); info.tap()
+            let reference = app.buttons["traffic-sign-documentation-button"]
+            XCTAssertTrue(reference.waitForExistence(timeout: 10)); reference.tap()
+            let webView = app.webViews.firstMatch
+            let search = webView.searchFields.firstMatch
+            XCTAssertTrue(search.waitForExistence(timeout: 20)); search.tap(); search.typeText("B07\n"); webView.swipeUp()
+            XCTAssertTrue(webView.staticTexts["B07"].waitForExistence(timeout: 10))
+            XCTAssertTrue(webView.images.firstMatch.exists)
+            var previousY: CGFloat = -1
+            for label in ["English", "Français", "Deutsch", "Nederlands"] {
+                let entry = webView.staticTexts[label].firstMatch
+                XCTAssertTrue(entry.exists)
+                XCTAssertGreaterThan(entry.frame.minY, previousY)
+                previousY = entry.frame.minY
+            }
+            let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            attachment.name = "traffic-sign-reference-\(language)"; attachment.lifetime = .keepAlways; add(attachment)
+            app.terminate()
+        }
+    }
+}

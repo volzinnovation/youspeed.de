@@ -1970,6 +1970,17 @@ private struct LegalInformationView: View {
                 .accessibilityIdentifier("penalty-documentation-button")
 
                 NavigationLink {
+                    TrafficSignDocumentationView(activeCountry: activePenaltyRules.countryCode)
+                } label: {
+                    Label(NSLocalizedString("traffic.sign.documentation.title", comment: ""), systemImage: "signpost.right")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                }
+                .accessibilityIdentifier("traffic-sign-documentation-button")
+
+
+                NavigationLink {
                     SourceAttributionsView()
                 } label: {
                     Label(NSLocalizedString("about.sources.title", comment: ""), systemImage: "books.vertical")

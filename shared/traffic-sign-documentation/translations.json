@@ -1,0 +1,65 @@
+{
+  "en": {
+    "title": "Traffic signs",
+    "search": "Search signs",
+    "spoken": "Spoken name",
+    "silent": "Not announced",
+    "reference": "Reference catalogue. Recognition availability depends on the country pack."
+  },
+  "de": {
+    "title": "Verkehrszeichen",
+    "search": "Verkehrszeichen suchen",
+    "spoken": "Gesprochener Name",
+    "silent": "Keine Ansage",
+    "reference": "Referenzkatalog. Die Verfügbarkeit der Erkennung hängt vom Länderpaket ab."
+  },
+  "fr": {
+    "title": "Panneaux de signalisation",
+    "search": "Rechercher un panneau",
+    "spoken": "Nom prononcé",
+    "silent": "Aucune annonce",
+    "reference": "Catalogue de référence. La disponibilité de la reconnaissance dépend du pack pays."
+  },
+  "nl": {
+    "title": "Verkeersborden",
+    "search": "Verkeersborden zoeken",
+    "spoken": "Gesproken naam",
+    "silent": "Geen aankondiging",
+    "reference": "Referentiecatalogus. De beschikbaarheid van herkenning hangt af van het landenpakket."
+  },
+  "es": {
+    "title": "Señales de tráfico",
+    "search": "Buscar señales",
+    "spoken": "Nombre hablado",
+    "silent": "Sin anuncio",
+    "reference": "Catálogo de referencia. La disponibilidad del reconocimiento depende del paquete del país."
+  },
+  "it": {
+    "title": "Segnali stradali",
+    "search": "Cerca segnali",
+    "spoken": "Nome pronunciato",
+    "silent": "Nessun annuncio",
+    "reference": "Catalogo di riferimento. La disponibilità del riconoscimento dipende dal pacchetto del paese."
+  },
+  "pl": {
+    "title": "Znaki drogowe",
+    "search": "Szukaj znaków",
+    "spoken": "Nazwa wypowiadana",
+    "silent": "Brak komunikatu",
+    "reference": "Katalog referencyjny. Dostępność rozpoznawania zależy od pakietu kraju."
+  },
+  "pt": {
+    "title": "Sinais de trânsito",
+    "search": "Pesquisar sinais",
+    "spoken": "Nome falado",
+    "silent": "Sem anúncio",
+    "reference": "Catálogo de referência. A disponibilidade do reconhecimento depende do pacote do país."
+  },
+  "sv": {
+    "title": "Vägmärken",
+    "search": "Sök vägmärken",
+    "spoken": "Uppläst namn",
+    "silent": "Ingen uppläsning",
+    "reference": "Referenskatalog. Tillgängligheten för igenkänning beror på landspaketet."
+  }
+}

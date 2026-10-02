@@ -1811,6 +1811,7 @@ private fun LegalSheet(
 ) {
     var openAttributions by rememberSaveable { mutableStateOf(false) }
     var openPenaltyDocumentation by rememberSaveable { mutableStateOf(false) }
+    var openTrafficSignDocumentation by rememberSaveable { mutableStateOf(false) }
     SheetScaffold(title = stringResource(R.string.ui_legal_title), onDismiss = onDismiss, testTag = "legal-sheet") {
         Column(
             modifier = Modifier
@@ -1820,6 +1821,9 @@ private fun LegalSheet(
         ) {
             OutlinedButton(onClick = { openPenaltyDocumentation = true }, modifier = Modifier.fillMaxWidth().testTag("penalty-documentation-button")) {
                 Text(stringResource(R.string.penalty_documentation_title))
+            }
+            OutlinedButton(onClick = { openTrafficSignDocumentation = true }, modifier = Modifier.fillMaxWidth().testTag("traffic-sign-documentation-button")) {
+                Text(stringResource(R.string.traffic_sign_documentation_title))
             }
             OutlinedButton(onClick = { openAttributions = true }, modifier = Modifier.fillMaxWidth().testTag("attribution-button")) {
                 Text(stringResource(R.string.credits_title))
@@ -1832,6 +1836,7 @@ private fun LegalSheet(
     }
     if (openAttributions) AttributionSheet(onDismiss = { openAttributions = false })
     if (openPenaltyDocumentation) PenaltyDocumentationSheet(ui.activePenaltyRules.ruleSet, onDismiss = { openPenaltyDocumentation = false })
+    if (openTrafficSignDocumentation) TrafficSignDocumentationSheet(ui.activePenaltyRules.ruleSet.countryCode, onDismiss = { openTrafficSignDocumentation = false })
 }
 
 private data class RuntimeBanner(

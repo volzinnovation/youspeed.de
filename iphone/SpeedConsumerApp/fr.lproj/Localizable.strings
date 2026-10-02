@@ -489,3 +489,5 @@
 "data_manager.date" = "Date du paquet";
 
 "penalty.documentation.title" = "Tableaux des amendes";
+
+"traffic.sign.documentation.title" = "Panneaux de signalisation";
