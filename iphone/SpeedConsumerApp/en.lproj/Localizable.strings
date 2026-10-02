@@ -50,9 +50,10 @@
 "drive_recorder.settings.tsr_description" = "Analyzes camera frames locally when a validated country model is installed. Camera estimates never silently replace map data.";
 "drive_recorder.settings.tsr_independent" = "Recognize without recording";
 "drive_recorder.settings.tsr_independent_description" = "Keeps camera-based traffic-sign recognition available while no Dashcam drive recording is running.";
-"drive_recorder.settings.tsr_feedback" = "Recognized speed limits";
-"drive_recorder.settings.tsr_feedback_description" = "Provides the selected feedback once for each confirmed speed-limit sign.";
-"drive_recorder.settings.tsr_feedback_spoken" = "Speak";
+"drive_recorder.settings.tsr_feedback" = "Recognized traffic signs";
+"drive_recorder.settings.tsr_feedback_description" = "Feedback for confirmed speed limits. “Speed and other signs” also speaks displayed secondary signs automatically when “Show recognized sign” is enabled.";
+"drive_recorder.settings.tsr_feedback_spoken" = "Speak speed only";
+"drive_recorder.settings.tsr_feedback_spoken_signs" = "Speed and other signs";
 "drive_recorder.settings.tsr_feedback_sound" = "Notification sound";
 "drive_recorder.settings.tsr_feedback_silent" = "Silent";
 "tsr.feedback.spoken_speed_format" = "Speed limit %d kilometers per hour.";

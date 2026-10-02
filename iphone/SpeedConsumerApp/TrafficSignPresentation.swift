@@ -9,14 +9,23 @@ struct TrafficSignPresentationCatalog: Decodable, Sendable {
         let imagePath: String?
         let label: [String: String]
         let displayEligible: Bool
+        /// Reviewed phrases only. Missing metadata must remain silent.
+        let speech: [String: String]?
 
         enum CodingKeys: String, CodingKey {
             case classID = "class_id", signCode = "sign_code", imagePath = "image_path"
-            case label, displayEligible = "display_eligible"
+            case label, speech, displayEligible = "display_eligible"
         }
 
         func localizedLabel(language: String = Bundle.main.preferredLocalizations.first ?? "en") -> String {
             label[String(language.prefix(2))] ?? label["en"] ?? classID
+        }
+
+        func spokenPhrase(language: String = Bundle.main.preferredLocalizations.first ?? "en") -> String? {
+            let code = String(language.prefix(2)).lowercased()
+            guard let phrase = speech?[code]?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !phrase.isEmpty else { return nil }
+            return phrase
         }
 
         func imageURL(bundle: Bundle = .main) -> URL? {
@@ -160,6 +169,33 @@ struct TrafficSignDisplayState {
             return
         }
         sign = next
+    }
+
+    mutating func reset() { self = Self() }
+}
+
+/// Only fresh observations can speak. Continuous visibility never repeats, even
+/// across track fragmentation or alternating detections. No speech is queued.
+struct TrafficSignSecondarySpeechGate {
+    private var lastSeen: [String: Date] = [:]
+    private var spokenSinceGap = Set<String>()
+    private var newestObservation = Date.distantPast
+    private var lastSpoken = Date.distantPast
+
+    mutating func shouldEmit(classID: String, observedAt: Date, now: Date, canSpeak: Bool) -> Bool {
+        let age = now.timeIntervalSince(observedAt)
+        guard !classID.isEmpty, age.isFinite, (0...2).contains(age),
+              observedAt > newestObservation else { return false }
+        newestObservation = observedAt
+        if let previous = lastSeen[classID], observedAt.timeIntervalSince(previous) >= 8 {
+            spokenSinceGap.remove(classID)
+        }
+        lastSeen[classID] = observedAt
+        guard canSpeak, !spokenSinceGap.contains(classID),
+              now.timeIntervalSince(lastSpoken) >= 3 else { return false }
+        spokenSinceGap.insert(classID)
+        lastSpoken = now
+        return true
     }
 
     mutating func reset() { self = Self() }

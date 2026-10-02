@@ -966,6 +966,10 @@ class TrafficSignRecognitionOrchestratorTests {
         assertEquals("speed_limit_30", output.event.candidate?.rawClassId)
         assertEquals("stop", output.displayObservation?.candidate?.rawClassId)
         assertEquals("drive-test", output.displayObservation?.driveSessionId)
+        assertEquals(Instant.parse("2026-09-01T10:00:00Z"), output.displayObservation?.capturedAtUtc)
+        assertEquals(TrafficSignInputSource.LIVE_FRAME, output.displayObservation?.source)
+        assertEquals(output.event.applicabilityDecision, output.displayObservation?.applicabilityDecision)
+        assertEquals(false, output.displayObservation?.hasPrimaryFeedback)
         assertNull(output.passageEvent)
         assertNull(harness.orchestrator.speedOverride())
 

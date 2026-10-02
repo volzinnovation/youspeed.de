@@ -113,6 +113,7 @@ private final class ConfirmationTonePlayer {
 
 enum TrafficSignFeedbackMode: String, CaseIterable, Identifiable {
     case spokenSpeed = "spoken_speed"
+    case spokenSpeedAndSigns = "spoken_speed_and_signs"
     case sound
     case silent
 
@@ -122,6 +123,8 @@ enum TrafficSignFeedbackMode: String, CaseIterable, Identifiable {
         switch self {
         case .spokenSpeed:
             return NSLocalizedString("drive_recorder.settings.tsr_feedback_spoken", comment: "")
+        case .spokenSpeedAndSigns:
+            return NSLocalizedString("drive_recorder.settings.tsr_feedback_spoken_signs", comment: "")
         case .sound:
             return NSLocalizedString("drive_recorder.settings.tsr_feedback_sound", comment: "")
         case .silent:
@@ -834,6 +837,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 forKey: Self.trafficSignFeedbackModeDefaultsKey
             )
             trafficSignFeedbackGate.reset()
+            secondaryTrafficSignSpeechGate.reset()
+            cancelTrafficSignSpeech()
             Self.tsrLogger.notice(
                 "timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) setting=feedback mode=\(self.trafficSignFeedbackMode.rawValue, privacy: .public)"
             )
@@ -1007,8 +1012,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 return
             }
             UserDefaults.standard.set(audioAlertsEnabled, forKey: Self.audioAlertsEnabledDefaultsKey)
-            if !audioAlertsEnabled, speechSynthesizer.isSpeaking {
-                speechSynthesizer.stopSpeaking(at: .immediate)
+            if !audioAlertsEnabled {
+                stopSpeechImmediately()
             }
         }
     }
@@ -1055,6 +1060,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var trafficSignContextGeneration: UInt64 = 0
     private var trafficSignFrameContextIsCurrent = false
     private var trafficSignFeedbackGate = TrafficSignFeedbackGate()
+    private var secondaryTrafficSignSpeechGate = TrafficSignSecondarySpeechGate()
+    private var activeSpeechUtteranceID: ObjectIdentifier?
+    private var trafficSignSpeechUtterance: AVSpeechUtterance?
+    private var trafficSignSpeechIsSecondary = false
     private var lastTrafficSignConsoleLogSignature: String?
     private var lastTrafficSignConsoleLogAt = Date.distantPast
     private var lastTrafficSignDebugLogSignature: String?
@@ -1113,6 +1122,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var speedCapturePromptFallbackTask: Task<Void, Never>?
     private var speedCaptureListeningTimeoutTask: Task<Void, Never>?
     private var awaitingSpeedCapturePromptCompletion = false
+    private var speedCapturePromptUtteranceID: ObjectIdentifier?
     private var speedCaptureRecognizer: SFSpeechRecognizer?
     private var speedCaptureRecognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var speedCaptureRecognitionTask: SFSpeechRecognitionTask?
@@ -2236,7 +2246,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     func setTrafficSignApplicationActive(_ isActive: Bool) {
         if trafficSignApplicationIsActive != isActive { trafficSignBundleContextTracker.reset() }
         trafficSignApplicationIsActive = isActive
-        if !isActive { cancelVisionDismissalVoice(); endVisualRoadCalibration() }
+        if !isActive {
+            cancelVisionDismissalVoice()
+            endVisualRoadCalibration()
+            secondaryTrafficSignSpeechGate.reset()
+            cancelTrafficSignSpeech(secondaryOnly: true)
+        }
         refreshLaneDetectionActivity()
         updateTrafficSignWriteGate()
         refreshTrafficSignFrameSnapshot()
@@ -2702,6 +2717,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignRuntime = nil
         trafficSignRuntimeCountryCode = nil
         trafficSignRuntimeRequestedCountryCode = countryCode
+        secondaryTrafficSignSpeechGate.reset()
         trafficSignRecognitionModelPackID = nil
         trafficSignPresentationCatalog = TrafficSignPresentationCatalog.bundled(countryCode: countryCode)
         invalidateTrafficSignOverrideForBaseSourceMutation()
@@ -2916,7 +2932,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     /// under the previous OSM/local snapshot immediately. The next completed
     /// map match publishes a fresh coherent context.
     private func invalidateTrafficSignInferenceContext() {
-        resetTrafficSignPictogram()
+        resetTrafficSignPictogram(resetSpeechGate: false)
         trafficSignContextGeneration &+= 1
         trafficSignDebugGenerationSessionContextMismatch = false
         trafficSignFrameContextIsCurrent = false
@@ -2964,7 +2980,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard transition != .none else { return }
         speedReference.boundary(transition == .enteredCity ? "city_entry" : "city_exit")
         clearActiveLocalSpeedCorrection()
-        resetTrafficSignPictogram()
+        resetTrafficSignPictogram(resetSpeechGate: false)
         let base = currentBaseEffectiveSpeedLimitState()
         trafficSignContextGeneration &+= 1
         trafficSignFrameContextIsCurrent = false
@@ -3181,11 +3197,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             cancelVisionDismissalVoice()
             return
         }
+        // A fresh correction window outranks secondary-sign speech. Numeric
+        // sign feedback keeps its existing chance to finish before listening.
+        cancelTrafficSignSpeech(secondaryOnly: true)
         visionDismissalVoiceTask = Task { @MainActor [weak self] in
             // Let the sign's own feedback finish before taking the microphone.
             try? await Task.sleep(nanoseconds: 300_000_000)
             guard !Task.isCancelled, let self else { return }
-            while self.speechSynthesizer.isSpeaking || self.captureConfirmationTonePlayer.isPlaying {
+            while self.activeSpeechUtteranceID != nil || self.speechSynthesizer.isSpeaking
+                || self.captureConfirmationTonePlayer.isPlaying {
                 guard self.visionDismissalVoiceWindow.attempt?.token == attempt.token else { return }
                 guard ProcessInfo.processInfo.systemUptime - attempt.detectedAt < VisionDismissalVoiceWindow.maximumStartDelay else {
                     self.cancelVisionDismissalVoice()
@@ -3323,6 +3343,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             emission.event.applicabilityDecision?.scope.contextGeneration == trafficSignContextGeneration &&
             emission.event.roadContext?.traversalEpoch == latestTrafficSignDetectionContext?.traversalEpoch &&
             emission.event.roadContext?.sourceSignature.bundleSHA256 == latestTrafficSignDetectionContext?.sourceSignature.bundleSHA256)
+        // Speech follows this exact admitted display stream. A speed passage
+        // gets first use of the audio lane, and dismissed/inapplicable frames
+        // cannot announce a previously retained pictogram of the same class.
+        defer {
+            if displayPermitted { maybeSpeakSecondaryTrafficSign(from: emission) }
+        }
         if displayPermitted, let observation = emission.displayObservation, observation.isSpeedLimitEnd {
             pendingTrafficSignEndDisplay = (observation.classID, emission.event.frameTimestampUtc)
         }
@@ -3501,7 +3527,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
               ) else { return }
 
         switch trafficSignFeedbackMode {
-        case .spokenSpeed:
+        case .spokenSpeed, .spokenSpeedAndSigns:
             prepareSpeechPlaybackAudioSession()
             let format = NSLocalizedString("tsr.feedback.spoken_speed_format", comment: "")
             let utterance = AVSpeechUtterance(
@@ -3511,12 +3537,63 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 language: Self.trafficSignSpeechLanguageIdentifier()
             ) ?? AVSpeechSynthesisVoice(language: "en")
             utterance.rate = 0.48
-            speechSynthesizer.speak(utterance)
+            // The latest confirmed speed outranks secondary signs and replaces
+            // old speech rather than building a stale driving-instruction queue.
+            stopSpeechImmediately()
+            trafficSignSpeechUtterance = utterance
+            trafficSignSpeechIsSecondary = false
+            speakTrackedUtterance(utterance)
         case .sound:
             captureConfirmationTonePlayer.play()
         case .silent:
             break
         }
+    }
+
+    private func maybeSpeakSecondaryTrafficSign(from emission: TrafficSignRuntimeEmission) {
+        guard trafficSignFeedbackMode == .spokenSpeedAndSigns,
+              trafficSignPictogramEnabled, trafficSignProcessingIsEnabled,
+              appScreenshotState == nil, emission.event.source == .liveFrame,
+              let observation = emission.displayObservation, !observation.affectsSpeed,
+              let sign = trafficSignPictogram, sign.classID == observation.classID,
+              let phrase = sign.spokenPhrase(language: Self.trafficSignSpeechLanguageIdentifier()),
+              let voice = AVSpeechSynthesisVoice(language: Self.trafficSignSpeechLanguageIdentifier()),
+              secondaryTrafficSignSpeechGate.shouldEmit(
+                  classID: sign.classID, observedAt: observation.timestamp, now: Date(),
+                  canSpeak: emission.frameSpeedKmh.map { $0.isFinite && $0 >= 1 } == true
+                      && !isInSpeedCaptureMode && !isVisionDismissalListening
+                      && visionDismissalVoiceTask == nil && !speechSynthesizer.isSpeaking
+                      && activeSpeechUtteranceID == nil
+              ) else { return }
+        let utterance = AVSpeechUtterance(string: phrase)
+        utterance.voice = voice
+        utterance.rate = 0.48
+        prepareSpeechPlaybackAudioSession()
+        trafficSignSpeechUtterance = utterance
+        trafficSignSpeechIsSecondary = true
+        speakTrackedUtterance(utterance)
+    }
+
+    private func speakTrackedUtterance(_ utterance: AVSpeechUtterance) {
+        // AVSpeechSynthesizer may not report isSpeaking until the next run-loop
+        // turn. Track every app utterance so lower-priority speech cannot queue.
+        activeSpeechUtteranceID = ObjectIdentifier(utterance)
+        speechSynthesizer.speak(utterance)
+    }
+
+    private func stopSpeechImmediately() {
+        activeSpeechUtteranceID = nil
+        trafficSignSpeechUtterance = nil
+        trafficSignSpeechIsSecondary = false
+        speechSynthesizer.stopSpeaking(at: .immediate)
+    }
+
+    private func cancelTrafficSignSpeech(secondaryOnly: Bool = false) {
+        guard trafficSignSpeechUtterance != nil,
+              !secondaryOnly || trafficSignSpeechIsSecondary else { return }
+        trafficSignSpeechUtterance = nil
+        trafficSignSpeechIsSecondary = false
+        stopSpeechImmediately()
     }
 
     private func logTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
@@ -3694,7 +3771,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func resetTrafficSignPictogram() {
+    private func resetTrafficSignPictogram(resetSpeechGate: Bool = true) {
+        // A map-context change does not mean a continuously visible sign vanished.
+        if resetSpeechGate { secondaryTrafficSignSpeechGate.reset() }
+        cancelTrafficSignSpeech(secondaryOnly: true)
         pendingTrafficSignEndDisplay = nil
         trafficSignDisplayState.reset()
         trafficSignPictogram = nil
@@ -5914,9 +5994,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         activeLocalSpeedCorrection = nil
         limitStreetBaseName = nil
         limitStreetRef = nil
-        if speechSynthesizer.isSpeaking {
-            speechSynthesizer.stopSpeaking(at: .immediate)
-        }
+        stopSpeechImmediately()
     }
 
     private func syncTunnelModePublishedState() {
@@ -6331,9 +6409,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard drivingControlsAllowed, !isInSpeedCaptureMode else {
             return
         }
-        if speechSynthesizer.isSpeaking {
-            speechSynthesizer.stopSpeaking(at: .immediate)
-        }
+        stopSpeechImmediately()
         cancelVisionDismissalVoice()
         let attemptID = prepareSpeedCaptureAttempt()
 #if DEBUG
@@ -6741,9 +6817,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func startSpeedCapturePromptSpeech() {
-        if speechSynthesizer.isSpeaking {
-            speechSynthesizer.stopSpeaking(at: .immediate)
-        }
+        stopSpeechImmediately()
         awaitingSpeedCapturePromptCompletion = true
         speedCaptureMode = .speakingPrompt
         let languageIdentifier = Self.speedCaptureLanguageIdentifier()
@@ -6751,8 +6825,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         utterance.voice = AVSpeechSynthesisVoice(language: languageIdentifier)
             ?? AVSpeechSynthesisVoice(language: Locale.preferredLanguages.first ?? languageIdentifier)
         utterance.rate = 0.46
+        speedCapturePromptUtteranceID = ObjectIdentifier(utterance)
+        trafficSignSpeechUtterance = nil
         prepareSpeechPlaybackAudioSession()
-        speechSynthesizer.speak(utterance)
+        speakTrackedUtterance(utterance)
 
         speedCapturePromptFallbackTask?.cancel()
         let attemptID = speedCaptureAttemptID
@@ -8287,7 +8363,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard changedSignificantly || now.timeIntervalSince(lastAudioFeedbackAt) >= minimumInterval else {
             return
         }
-        guard !speechSynthesizer.isSpeaking else {
+        guard !speechSynthesizer.isSpeaking, activeSpeechUtteranceID == nil else {
             return
         }
 
@@ -8296,8 +8372,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
         }
         utterance.rate = 0.48
+        trafficSignSpeechUtterance = nil
         prepareSpeechPlaybackAudioSession()
-        speechSynthesizer.speak(utterance)
+        speakTrackedUtterance(utterance)
         lastAudioFeedbackAt = now
         lastAnnouncedSpeechText = speechText
     }
@@ -8331,14 +8408,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let speechText = Self.drivingBanSpeechText(months: drivingBanMonths)
         if audioAlertsEnabled,
            !speechSynthesizer.isSpeaking,
+           activeSpeechUtteranceID == nil,
            !captureConfirmationTonePlayer.isPlaying {
             let utterance = AVSpeechUtterance(string: speechText)
             if let preferredLanguage = Locale.preferredLanguages.first {
                 utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
             }
             utterance.rate = 0.46
+            trafficSignSpeechUtterance = nil
             prepareSpeechPlaybackAudioSession()
-            speechSynthesizer.speak(utterance)
+            speakTrackedUtterance(utterance)
         }
 
         wasDrivingBanWarningActive = true
@@ -8653,20 +8732,34 @@ extension DriveSessionViewModel {
 
 extension DriveSessionViewModel: AVSpeechSynthesizerDelegate {
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        let utteranceID = ObjectIdentifier(utterance)
         Task { @MainActor [weak self] in
-            guard let self, self.awaitingSpeedCapturePromptCompletion else {
-                return
+            guard let self else { return }
+            if self.activeSpeechUtteranceID == utteranceID { self.activeSpeechUtteranceID = nil }
+            if self.trafficSignSpeechUtterance.map(ObjectIdentifier.init) == utteranceID {
+                self.trafficSignSpeechUtterance = nil
+                self.trafficSignSpeechIsSecondary = false
             }
+            guard self.awaitingSpeedCapturePromptCompletion,
+                  self.speedCapturePromptUtteranceID == utteranceID else { return }
+            self.speedCapturePromptUtteranceID = nil
             self.awaitingSpeedCapturePromptCompletion = false
             self.scheduleSpeedCaptureListeningStart()
         }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        let utteranceID = ObjectIdentifier(utterance)
         Task { @MainActor [weak self] in
-            guard let self, self.awaitingSpeedCapturePromptCompletion else {
-                return
+            guard let self else { return }
+            if self.activeSpeechUtteranceID == utteranceID { self.activeSpeechUtteranceID = nil }
+            if self.trafficSignSpeechUtterance.map(ObjectIdentifier.init) == utteranceID {
+                self.trafficSignSpeechUtterance = nil
+                self.trafficSignSpeechIsSecondary = false
             }
+            guard self.awaitingSpeedCapturePromptCompletion,
+                  self.speedCapturePromptUtteranceID == utteranceID else { return }
+            self.speedCapturePromptUtteranceID = nil
             self.awaitingSpeedCapturePromptCompletion = false
             self.scheduleSpeedCaptureListeningStart()
         }

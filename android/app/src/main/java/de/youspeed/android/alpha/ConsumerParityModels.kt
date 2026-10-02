@@ -3,7 +3,15 @@ package de.youspeed.android.alpha
 import java.time.Duration
 import java.time.Instant
 
-enum class TrafficSignFeedbackMode { SPOKEN_SPEED, SOUND, SILENT }
+enum class TrafficSignFeedbackMode {
+    SPOKEN_SPEED, SPOKEN_SPEED_AND_SIGNS, SOUND, SILENT;
+
+    companion object {
+        /** Persist names, never ordinals; existing preferences keep their meaning. */
+        fun fromStorageValue(value: String?): TrafficSignFeedbackMode =
+            entries.firstOrNull { it.name == value } ?: SOUND
+    }
+}
 
 /** Mirrors the iPhone recorder's distinction between a session and its consumers. */
 object DriveRecorderPolicy {

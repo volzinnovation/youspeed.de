@@ -619,6 +619,12 @@ class ConsumerSessionController(
     private val recentSpeedSampleLocations: MutableList<Location> = mutableListOf()
     private var textToSpeech: TextToSpeech? = null
     private var textToSpeechReady = false
+    // isSpeaking can remain false until Android starts a submitted utterance.
+    private val speechPlaybackState = TrafficSignSpeechPlaybackState()
+    private val secondarySignSpeechGate = SecondaryTrafficSignSpeechGate()
+    private val trafficSignDisplayDeliveryGate = TrafficSignDisplayDeliveryGate()
+    private var secondarySpeechGeneration = trafficSignGeneration.get()
+    private var secondarySpeechCountryCode = "DE"
     private val speechLanguage = SpeedCaptureSpeech.languageFor(Locale.getDefault())
     private var bundledVoskModel: Model? = null
     private var bundledVoskModelPath: String? = null
@@ -817,7 +823,7 @@ class ConsumerSessionController(
             otherTrafficSignDisplayEnabled = preferences.getBoolean(KEY_OTHER_TRAFFIC_SIGN_DISPLAY_ENABLED, false),
             showDetectedLanes = initialShowDetectedLanes,
             trafficSignRecognitionIndependentEnabled = preferences.getBoolean("youspeed.drive_recorder.tsr_independent_enabled", false),
-            trafficSignFeedbackMode = runCatching { TrafficSignFeedbackMode.valueOf(preferences.getString("youspeed.drive_recorder.tsr_feedback_mode", "SOUND")!!) }.getOrDefault(TrafficSignFeedbackMode.SOUND),
+            trafficSignFeedbackMode = TrafficSignFeedbackMode.fromStorageValue(preferences.getString("youspeed.drive_recorder.tsr_feedback_mode", null)),
             panoramaxTriggerMode = runCatching { PanoramaxCaptureTriggerMode.valueOf(preferences.getString("youspeed.panoramax.trigger_mode", "DISTANCE")!!) }.getOrDefault(PanoramaxCaptureTriggerMode.DISTANCE),
             panoramaxMinimumDistanceMeters = preferences.getFloat("youspeed.panoramax.minimum_distance", 25f).toDouble().coerceIn(10.0, 90.0),
             panoramaxMinimumIntervalSeconds = preferences.getFloat("youspeed.panoramax.minimum_interval", 5f).toDouble().coerceIn(5.0, 240.0),
@@ -892,7 +898,7 @@ class ConsumerSessionController(
         lookupWorker.close()
         stopActiveSpeedCaptureRecognition(clearStatus = false)
         closeBundledVoskModel()
-        textToSpeech?.stop()
+        stopSpeech()
         textToSpeech?.shutdown()
         textToSpeech = null
         confirmationToneGenerator?.release()
@@ -1886,6 +1892,8 @@ class ConsumerSessionController(
         reconcileTrafficSignCamera()
     }
     fun setTrafficSignFeedbackMode(value: TrafficSignFeedbackMode) {
+        if (uiState.trafficSignFeedbackMode == value) return
+        resetSecondaryTrafficSignSpeech()
         preferences.edit().putString("youspeed.drive_recorder.tsr_feedback_mode", value.name).apply()
         updateState { copy(trafficSignFeedbackMode = value) }
         feedbackGate.reset()
@@ -1898,6 +1906,7 @@ class ConsumerSessionController(
 
     fun disregardVision() {
         cancelVisionDismissalListening()
+        resetSecondaryTrafficSignSpeech(resetDedup = false)
         synchronized(trafficSignStateLock) {
             visionDismissalGate.dismiss(clock.instant(), listOfNotNull(
                 trafficSignResolver.activeAssertion()?.event?.physicalTrackId,
@@ -2058,6 +2067,9 @@ class ConsumerSessionController(
             val country = AndroidTrafficSignModelPackSelection.availableCountryCode(
                 pack.modelPack.countries.firstOrNull()
             ) ?: return@post
+            resetSecondaryTrafficSignSpeech(resetDedup = country != secondarySpeechCountryCode ||
+                pack.displayCatalog.checkpointSha256 != trafficSignDisplayCatalog.checkpointSha256)
+            secondarySpeechCountryCode = country
             trafficSignDisplayCatalog = pack.displayCatalog
             updateState {
                 copy(
@@ -2086,6 +2098,7 @@ class ConsumerSessionController(
         val countryCode = normalizedCountryCode(rawCountryCode) ?: return
         val previousCountryCode = activeMapCountryCode
         activeMapCountryCode = countryCode
+        if (previousCountryCode != countryCode) resetSecondaryTrafficSignSpeech()
         if (previousCountryCode != null && previousCountryCode != countryCode && reason != "bundle_route_switch") {
             invalidateTrafficSignGeneration(
                 clearAssertion = true,
@@ -2323,7 +2336,7 @@ class ConsumerSessionController(
         resetDerivedSpeedTracking()
         wayMatchTracker.reset()
         cancelSpeedCapture(reason = null)
-        textToSpeech?.stop()
+        stopSpeech()
         lastAnnouncedSpeechText = null
         wasDrivingBanWarningActive = false
         lastAudioFeedbackAtMs = 0L
@@ -2381,6 +2394,7 @@ class ConsumerSessionController(
             )
             return
         }
+        stopSpeech()
         if (!hasMicrophonePermission()) {
             updateState {
                 copy(
@@ -2446,6 +2460,8 @@ class ConsumerSessionController(
             if (visionDismissalWindow.expired(now)) visionDismissalWindow.cancel()
             if (newWindow || visionDismissalWindow.evidence == null) stopVisionDismissalSession()
             if (newWindow) {
+                // Secondary speech yields immediately; confirmed speed feedback retains its existing lead-in.
+                if (speechPlaybackState.hasSecondaryUtterance) stopSpeech()
                 // Sign feedback can already be queued. Give it time to begin, then wait at most 3s.
                 mainHandler.postDelayed(visionDismissalStartRunnable, 300)
             }
@@ -2462,7 +2478,7 @@ class ConsumerSessionController(
             cancelVisionDismissalListening()
             return
         }
-        if (textToSpeech?.isSpeaking == true || clock.millis() < confirmationToneUntilMs) {
+        if (!isSpeechIdle() || clock.millis() < confirmationToneUntilMs) {
             mainHandler.postDelayed(visionDismissalStartRunnable, 100)
             return
         }
@@ -2538,7 +2554,7 @@ class ConsumerSessionController(
 
     fun cancelSpeedCapture(reason: String?) {
         stopActiveSpeedCaptureRecognition(clearStatus = false)
-        textToSpeech?.stop()
+        stopSpeech()
         resetSpeedCaptureTransientState()
         updateState {
             copy(
@@ -2552,7 +2568,7 @@ class ConsumerSessionController(
     fun setAudioAlertsEnabled(enabled: Boolean) {
         preferences.edit().putBoolean(KEY_AUDIO_ALERTS_ENABLED, enabled).apply()
         if (!enabled) {
-            textToSpeech?.stop()
+            stopSpeech()
             lastAnnouncedSpeechText = null
         }
         updateState { copy(audioAlertsEnabled = enabled) }
@@ -2585,6 +2601,8 @@ class ConsumerSessionController(
     }
 
     fun setOtherTrafficSignDisplayEnabled(enabled: Boolean) {
+        if (uiState.otherTrafficSignDisplayEnabled == enabled) return
+        resetSecondaryTrafficSignSpeech()
         preferences.edit().putBoolean(KEY_OTHER_TRAFFIC_SIGN_DISPLAY_ENABLED, enabled).apply()
         updateState { copy(otherTrafficSignDisplayEnabled = enabled, lastTrafficSignPictogram = null) }
     }
@@ -2601,35 +2619,85 @@ class ConsumerSessionController(
         }
         if (!applicable()) return
         if (TrafficSignDisplayPolicy.accepted(listOf(TrafficSignDetection(observation.candidate))) == null) return
-        val currentGeneration = trafficSignGeneration.get()
-        val generationMismatch = observation.generation != currentGeneration
-        val sessionMismatch = observation.driveSessionId != trafficSignDriveSessionId
-        if (generationMismatch || sessionMismatch) {
-            noteTrafficSignDebugMismatch(
-                reason = "display_observation_rejected",
-                details = mapOf(
-                    "eventGeneration" to observation.generation,
-                    "currentGeneration" to currentGeneration,
-                    "eventSessionId" to observation.driveSessionId,
-                    "currentSessionId" to trafficSignDriveSessionId,
+        val observedAt = observation.capturedAtUtc ?: return
+        val expectedRevision = trafficSignStateRevision.get()
+        // Keep end evidence available to the concurrent authoritative passage path,
+        // as before. Display/speech admission is rechecked on the main lane below.
+        if (observation.isSpeedLimitEnd && observation.generation == trafficSignGeneration.get() &&
+            observation.driveSessionId == trafficSignDriveSessionId &&
+            synchronized(trafficSignStateLock) { visionDismissalGate.permits(observation.candidate.trackId, observedAt) }) {
+            pendingTrafficSignEndDisplay = observation.candidate.rawClassId to clock.millis()
+        }
+        mainHandler.post {
+            if (isDisposed.get()) return@post
+            synchronizeTrafficSignSpeechGeneration()
+            val currentGeneration = trafficSignGeneration.get()
+            if (observation.generation != currentGeneration || observation.driveSessionId != trafficSignDriveSessionId) {
+                noteTrafficSignDebugMismatch(
+                    reason = "display_observation_rejected",
+                    details = mapOf(
+                        "eventGeneration" to observation.generation,
+                        "currentGeneration" to currentGeneration,
+                        "eventSessionId" to observation.driveSessionId,
+                        "currentSessionId" to trafficSignDriveSessionId,
+                    ),
+                )
+                return@post
+            }
+            if (trafficSignStateRevision.get() != expectedRevision || !applicable() ||
+                !synchronized(trafficSignStateLock) { visionDismissalGate.permits(observation.candidate.trackId, observedAt) } ||
+                !isTrafficSignRecognitionRuntimeEnabled() || uiState.appScreenshotState != null ||
+                !trafficSignDisplayDeliveryGate.accept(observation, currentGeneration, trafficSignDriveSessionId)) return@post
+            if (!uiState.otherTrafficSignDisplayEnabled) return@post
+            updateState { copy(lastTrafficSignPictogram = TrafficSignDisplayPolicy.next(
+                lastTrafficSignPictogram, observation, trafficSignDisplayCatalog,
+            )) }
+            val pictogram = uiState.lastTrafficSignPictogram
+                ?.takeIf { it.classId == observation.candidate.rawClassId && it.imagePath != null } ?: return@post
+            val locale = Locale.getDefault()
+            val phrase = pictogram.spokenText(locale)
+            secondarySignSpeechGate.consume(
+                classId = pictogram.classId, observedAt = observedAt, now = clock.instant(),
+                canSpeak = phrase != null && SecondaryTrafficSignSpeechPolicy.canSpeak(
+                    mode = uiState.trafficSignFeedbackMode,
+                    displayEnabled = uiState.otherTrafficSignDisplayEnabled,
+                    runtimeEnabled = isTrafficSignRecognitionRuntimeEnabled(),
+                    liveFrame = observation.source == TrafficSignInputSource.LIVE_FRAME,
+                    speedKmh = uiState.currentSpeedKmh,
+                    captureIdle = uiState.speedCaptureMode == SpeedCaptureModeState.IDLE,
+                    speechIdle = isSpeechIdle(),
+                    primaryFeedbackPending = observation.hasPrimaryFeedback,
+                    visionDismissalIdle = visionDismissalWindow.evidence == null && activeVisionDismissalSession == null,
                 ),
-            )
+            ) {
+                if (observation.generation != trafficSignGeneration.get() ||
+                    observation.driveSessionId != trafficSignDriveSessionId ||
+                    trafficSignStateRevision.get() != expectedRevision || !applicable() ||
+                    !synchronized(trafficSignStateLock) { visionDismissalGate.permits(observation.candidate.trackId, observedAt) }) false
+                else speakSecondaryTrafficSign(requireNotNull(phrase), locale)
+            }
+        }
+    }
+
+    private fun resetSecondaryTrafficSignSpeech(resetDedup: Boolean = true) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            val expectedGeneration = trafficSignGeneration.get()
+            mainHandler.post {
+                if (expectedGeneration == trafficSignGeneration.get()) resetSecondaryTrafficSignSpeech(resetDedup)
+            }
             return
         }
-        val observedAt = clock.instant()
-        val expectedRevision = trafficSignStateRevision.get()
-        if (!synchronized(trafficSignStateLock) { visionDismissalGate.permits(observation.candidate.trackId, observedAt) }) return
-        if (observation.isSpeedLimitEnd) pendingTrafficSignEndDisplay = observation.candidate.rawClassId to clock.millis()
-        postState {
-            if (trafficSignStateRevision.get() != expectedRevision ||
-                !synchronized(trafficSignStateLock) { visionDismissalGate.permits(observation.candidate.trackId, observedAt) } ||
-                !applicable() || observation.generation != this@ConsumerSessionController.trafficSignGeneration.get() || observation.driveSessionId != trafficSignDriveSessionId ||
-                !otherTrafficSignDisplayEnabled || !trafficSignRecognitionEnabled || !isDriving) {
-                this
-            } else copy(lastTrafficSignPictogram = TrafficSignDisplayPolicy.next(
-                lastTrafficSignPictogram, observation, trafficSignDisplayCatalog,
-            ))
-        }
+        if (resetDedup) secondarySignSpeechGate.reset()
+        trafficSignDisplayDeliveryGate.reset()
+        secondarySpeechGeneration = trafficSignGeneration.get()
+        // Cancel only our own low-priority utterance, never a capture prompt or speed warning.
+        if (speechPlaybackState.hasSecondaryUtterance) stopSpeech()
+    }
+
+    private fun synchronizeTrafficSignSpeechGeneration() {
+        // Road/city/context generations cancel delivery and playback, but a sign
+        // continuously in view must not be announced once per road segment.
+        if (secondarySpeechGeneration != trafficSignGeneration.get()) resetSecondaryTrafficSignSpeech(resetDedup = false)
     }
 
     private fun showTrafficSignEndOverlay(expectedGeneration: Long, expectedSession: String, classId: String, evidence: TrafficSignPassageEvent) {
@@ -2716,6 +2784,10 @@ class ConsumerSessionController(
             }
         }
         postState {
+            if (trafficSignCameraRuntimeState != state && state in setOf(
+                    TrafficSignCameraRuntimeState.DISABLED, TrafficSignCameraRuntimeState.FAILED,
+                    TrafficSignCameraRuntimeState.UNAVAILABLE, TrafficSignCameraRuntimeState.DENIED,
+                )) resetSecondaryTrafficSignSpeech()
             copy(
                 trafficSignCameraRuntimeState = state,
                 trafficSignCameraRuntimeDetail = if (trafficSignRecognitionUnavailable && state == TrafficSignCameraRuntimeState.ACTIVE) trafficSignCameraRuntimeDetail else detail,
@@ -3087,6 +3159,10 @@ class ConsumerSessionController(
         if (Looper.myLooper() == Looper.getMainLooper()) cancelVisionDismissalListening()
         else mainHandler.post { reconcileVisionDismissalListening() }
         val generation = trafficSignGeneration.incrementAndGet(permitWrites)
+        resetSecondaryTrafficSignSpeech(resetDedup = reason in setOf(
+            "application_lifecycle", "independent_recognition_changed", "bundle_country_switch",
+            "recognition_unavailable", "drive_started", "drive_stopped", "tsr_enabled", "tsr_disabled",
+        ))
         feedbackGate.reset()
         synchronized(captureLock) { latestAnnotationDrafts = emptyList() }
         val base = synchronized(trafficSignStateLock) {
@@ -3274,7 +3350,7 @@ class ConsumerSessionController(
                     feedbackGate.shouldEmit(passage.physicalTrackId, speed, context, passage.passageBoundary.timestampUtc)) {
                     when (uiState.trafficSignFeedbackMode) {
                         TrafficSignFeedbackMode.SOUND -> playSpeedCaptureConfirmationTone()
-                        TrafficSignFeedbackMode.SPOKEN_SPEED -> speakText(ConsumerUiStrings.text(
+                        TrafficSignFeedbackMode.SPOKEN_SPEED, TrafficSignFeedbackMode.SPOKEN_SPEED_AND_SIGNS -> speakText(ConsumerUiStrings.text(
                             "$speed kilometres per hour", "$speed Kilometer pro Stunde", "$speed kilomètres par heure", "$speed kilometer per uur"))
                         TrafficSignFeedbackMode.SILENT -> Unit
                     }
@@ -5101,7 +5177,7 @@ class ConsumerSessionController(
         if (!changedSignificantly && now - lastAudioFeedbackAtMs < 8_000L) {
             return
         }
-        if (textToSpeech?.isSpeaking == true) return
+        if (!isSpeechIdle()) return
         speakText(speechText)
         lastAudioFeedbackAtMs = now
         lastAnnouncedSpeechText = speechText
@@ -5134,7 +5210,7 @@ class ConsumerSessionController(
                 VibrationEffect.createWaveform(longArrayOf(0, 120, 80, 120), -1),
             )
         }
-        if (uiState.audioAlertsEnabled && textToSpeech?.isSpeaking != true && clock.millis() >= confirmationToneUntilMs) {
+        if (uiState.audioAlertsEnabled && isSpeechIdle() && clock.millis() >= confirmationToneUntilMs) {
             speakText(speechText)
         }
         wasDrivingBanWarningActive = true
@@ -5154,42 +5230,65 @@ class ConsumerSessionController(
                     object : UtteranceProgressListener() {
                         override fun onStart(utteranceId: String?) = Unit
 
-                        override fun onDone(utteranceId: String?) {
-                            if (utteranceId != null && utteranceId == speedCapturePromptUtteranceId) {
-                                mainHandler.post {
-                                    if (isAwaitingSpeedCapturePromptCompletion) {
-                                        isAwaitingSpeedCapturePromptCompletion = false
-                                        scheduleSpeedCaptureListeningStart()
-                                    }
-                                }
-                            }
-                        }
+                        override fun onDone(utteranceId: String?) = onSpeechFinished(utteranceId)
 
                         @Deprecated("Deprecated in Java")
-                        override fun onError(utteranceId: String?) {
-                            if (utteranceId != null && utteranceId == speedCapturePromptUtteranceId) {
-                                mainHandler.post {
-                                    if (isAwaitingSpeedCapturePromptCompletion) {
-                                        isAwaitingSpeedCapturePromptCompletion = false
-                                        scheduleSpeedCaptureListeningStart()
-                                    }
-                                }
-                            }
-                        }
+                        override fun onError(utteranceId: String?) = onSpeechFinished(utteranceId)
+
+                        override fun onStop(utteranceId: String?, interrupted: Boolean) =
+                            onSpeechFinished(utteranceId, interrupted = true)
                     },
                 )
             }
         }
     }
 
-    private fun speakText(text: String) {
-        if (activeVisionDismissalSession != null) return
-        ensureTextToSpeech()
-        if (!textToSpeechReady) {
-            return
+    private fun onSpeechFinished(utteranceId: String?, interrupted: Boolean = false) {
+        mainHandler.post {
+            if (utteranceId == null) return@post
+            speechPlaybackState.finish(utteranceId)
+            if (!interrupted && utteranceId == speedCapturePromptUtteranceId && isAwaitingSpeedCapturePromptCompletion) {
+                isAwaitingSpeedCapturePromptCompletion = false
+                scheduleSpeedCaptureListeningStart()
+            }
         }
-        textToSpeech?.language = Locale.forLanguageTag(speechLanguage.localeTag)
-        textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "youspeed-${System.currentTimeMillis()}")
+    }
+
+    private fun isSpeechIdle(): Boolean = speechPlaybackState.isIdle(textToSpeech?.isSpeaking == true)
+
+    private fun stopSpeech() {
+        speechPlaybackState.reset()
+        textToSpeech?.stop()
+    }
+
+    private fun speakText(text: String) {
+        // Numeric feedback can replace stale speech, but never either voice-capture flow.
+        if (activeVisionDismissalSession != null || uiState.speedCaptureMode != SpeedCaptureModeState.IDLE) return
+        ensureTextToSpeech()
+        if (!textToSpeechReady) return
+        val synthesizer = textToSpeech ?: return
+        synthesizer.language = Locale.forLanguageTag(speechLanguage.localeTag)
+        val utteranceId = "youspeed-${UUID.randomUUID()}"
+        speechPlaybackState.begin(utteranceId, secondary = false)
+        if (synthesizer.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId) == TextToSpeech.ERROR) {
+            speechPlaybackState.finish(utteranceId)
+        }
+    }
+
+    private fun speakSecondaryTrafficSign(text: String, locale: Locale): Boolean {
+        if (!textToSpeechReady || !isSpeechIdle() || uiState.speedCaptureMode != SpeedCaptureModeState.IDLE ||
+            visionDismissalWindow.evidence != null || activeVisionDismissalSession != null) return false
+        val synthesizer = textToSpeech ?: return false
+        // A missing installed voice must not silently read a localized phrase in the wrong language.
+        if (synthesizer.setLanguage(locale) < TextToSpeech.LANG_AVAILABLE) return false
+        val utteranceId = "secondary-sign-${UUID.randomUUID()}"
+        speechPlaybackState.begin(utteranceId, secondary = true)
+        // The lane is empty. QUEUE_FLUSH is defensive; secondary signs are never enqueued.
+        if (synthesizer.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId) == TextToSpeech.ERROR) {
+            speechPlaybackState.finish(utteranceId)
+            return false
+        }
+        return true
     }
 
     private fun prepareSpeedCaptureRecognizerAndMaybeStart() {
@@ -5225,9 +5324,10 @@ class ConsumerSessionController(
             scheduleSpeedCaptureListeningStart()
             return
         }
-        textToSpeech?.stop()
+        stopSpeech()
         isAwaitingSpeedCapturePromptCompletion = true
-        speedCapturePromptUtteranceId = "speed-capture-prompt-${System.currentTimeMillis()}"
+        speedCapturePromptUtteranceId = "speed-capture-prompt-${UUID.randomUUID()}"
+        speechPlaybackState.begin(requireNotNull(speedCapturePromptUtteranceId), secondary = false)
         mainHandler.removeCallbacks(speedCapturePromptFallbackRunnable)
         mainHandler.postDelayed(speedCapturePromptFallbackRunnable, SpeedCaptureSpeech.promptFallbackDelayMs)
         textToSpeech?.language = Locale.forLanguageTag(speechLanguage.localeTag)
@@ -5252,6 +5352,7 @@ class ConsumerSessionController(
             return
         }
         val model = bundledVoskModel ?: return showSpeedCaptureFailure(reason = ConsumerRuntimeText.SPEECH_NOT_LOADED.text())
+        stopSpeech() // Includes a prompt whose completion callback was lost before the fallback.
         stopActiveSpeedCaptureRecognition(clearStatus = false)
         isSpeedCaptureResolved = false
         updateState {
@@ -5340,7 +5441,7 @@ class ConsumerSessionController(
 
     private fun showSpeedCaptureFailure(reason: String?) {
         stopActiveSpeedCaptureRecognition(clearStatus = false)
-        textToSpeech?.stop()
+        stopSpeech()
         resetSpeedCaptureTransientState()
         if (!reason.isNullOrBlank()) {
             host?.showTransientMessage(reason)
@@ -5428,6 +5529,7 @@ class ConsumerSessionController(
         if (!shouldResumeSpeedCaptureAfterSpeechModelReady) {
             return
         }
+        stopSpeech()
         if (!hasMicrophonePermission()) {
             updateState {
                 copy(
@@ -6417,6 +6519,7 @@ class ConsumerSessionController(
             postState(transform)
             return
         }
+        synchronizeTrafficSignSpeechGeneration()
         uiState = normalizeOnboardingState(preserveLastKnownLimit(uiState.transform())).withCurrentTrafficSignDisplayGeneration(
             previousGeneration = uiState.trafficSignGeneration, currentGeneration = trafficSignGeneration.get(),
         )
@@ -6432,6 +6535,7 @@ class ConsumerSessionController(
             if (isDisposed.get()) {
                 return@post
             }
+            synchronizeTrafficSignSpeechGeneration()
             uiState = normalizeOnboardingState(preserveLastKnownLimit(uiState.transform())).withCurrentTrafficSignDisplayGeneration(
                 previousGeneration = uiState.trafficSignGeneration, currentGeneration = trafficSignGeneration.get(),
             )

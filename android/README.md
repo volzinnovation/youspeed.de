@@ -50,6 +50,10 @@ photo contribution, settings, and map-update behavior covered by the September
   sets a bounded 1.5–6 second confirmation allowance for this model pack;
   confidence thresholds and sighting counts remain unchanged. The reference
   never enters the live speed, feedback, or observation-store paths.
+  The optional “Speed and other traffic signs” feedback mode also speaks short,
+  reviewed phrases for displayed secondary signs while moving. Other-sign display
+  remains opt-in; missing translations stay silent. Secondary speech never queues,
+  yields to speed feedback and voice capture, and suppresses repeated sightings.
 - Photos default to distance mode, 25 m, 5 s, and a 1 GB quota. JPEGs and sidecars
   retain GPS, altitude/course when available, and confirmed sign annotations.
 - Panoramax account connection and explicit post-drive review/upload, progress,

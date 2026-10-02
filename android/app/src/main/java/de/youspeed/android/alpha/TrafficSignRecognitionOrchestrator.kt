@@ -624,7 +624,13 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                         !active.accepted.driveSessionId.isNullOrBlank() && backendResult is TrafficSignBackendResult.Recognition
                     ) {
                         TrafficSignDisplayPolicy.accepted(created.displayDetections)?.let {
-                            TrafficSignDisplayObservation(it, active.accepted.contextGeneration, requireNotNull(active.accepted.driveSessionId), applicabilityDecision = created.event.applicabilityDecision)
+                            TrafficSignDisplayObservation(
+                                it, active.accepted.contextGeneration, requireNotNull(active.accepted.driveSessionId),
+                                applicabilityDecision = created.event.applicabilityDecision,
+                                capturedAtUtc = active.accepted.metadata.capturedAtUtc,
+                                source = active.accepted.metadata.source,
+                                hasPrimaryFeedback = passage != null,
+                            )
                         }
                     } else null,
                     backendFailureReason = (backendResult as? TrafficSignBackendResult.Unavailable)?.reason,

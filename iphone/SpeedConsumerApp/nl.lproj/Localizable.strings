@@ -50,9 +50,10 @@
 "drive_recorder.settings.tsr_description" = "Analyseert camerabeelden lokaal zodra een gevalideerd landenmodel is geïnstalleerd. Een cameraschatting vervangt nooit stilzwijgend kaartgegevens.";
 "drive_recorder.settings.tsr_independent" = "Herkennen zonder opname";
 "drive_recorder.settings.tsr_independent_description" = "Houdt verkeersbordherkenning via de camera actief zonder een Dashcam-rit op te nemen.";
-"drive_recorder.settings.tsr_feedback" = "Herkende snelheidslimieten";
-"drive_recorder.settings.tsr_feedback_description" = "Geeft de gekozen melding eenmaal voor elk bevestigd snelheidsbord.";
-"drive_recorder.settings.tsr_feedback_spoken" = "Uitspreken";
+"drive_recorder.settings.tsr_feedback" = "Herkende verkeersborden";
+"drive_recorder.settings.tsr_feedback_description" = "Melding bij bevestigde snelheidslimieten. « Snelheid en andere borden » spreekt ook automatisch extra borden uit als « Herkend verkeersbord tonen » is ingeschakeld.";
+"drive_recorder.settings.tsr_feedback_spoken" = "Alleen snelheid uitspreken";
+"drive_recorder.settings.tsr_feedback_spoken_signs" = "Snelheid en andere borden";
 "drive_recorder.settings.tsr_feedback_sound" = "Meldingsgeluid";
 "drive_recorder.settings.tsr_feedback_silent" = "Stil";
 "tsr.feedback.spoken_speed_format" = "Snelheidslimiet %d kilometer per uur.";

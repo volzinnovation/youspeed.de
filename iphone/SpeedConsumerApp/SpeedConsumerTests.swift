@@ -1610,6 +1610,66 @@ final class SpeedConsumerTests: XCTestCase {
         }
     }
 
+    func testSecondarySignSpeechUsesReviewedLanguageOnly() throws {
+        let raw = #"{"class_id":"hazard:roadworks","label":{"en":"technical fallback"},"display_eligible":true,"speech":{"de":"Achtung Baustelle","en":"Roadworks","fr":"Attention, travaux","nl":"Let op, wegwerkzaamheden"}}"#
+        let sign = try JSONDecoder().decode(TrafficSignPresentationCatalog.Sign.self, from: Data(raw.utf8))
+        XCTAssertEqual(sign.spokenPhrase(language: "de-DE"), "Achtung Baustelle")
+        XCTAssertEqual(sign.spokenPhrase(language: "en-GB"), "Roadworks")
+        XCTAssertEqual(sign.spokenPhrase(language: "fr"), "Attention, travaux")
+        XCTAssertEqual(sign.spokenPhrase(language: "nl"), "Let op, wegwerkzaamheden")
+        XCTAssertNil(sign.spokenPhrase(language: "es"), "No wrong-language or technical-label fallback")
+        let legacy = #"{"class_id":"unreviewed","label":{"en":"unreviewed"},"display_eligible":true}"#
+        let unreviewed = try JSONDecoder().decode(TrafficSignPresentationCatalog.Sign.self, from: Data(legacy.utf8))
+        XCTAssertNil(unreviewed.spokenPhrase(language: "en"))
+        XCTAssertEqual(TrafficSignFeedbackMode(rawValue: "spoken_speed"), .spokenSpeed)
+        XCTAssertEqual(TrafficSignFeedbackMode(rawValue: "sound"), .sound)
+        XCTAssertEqual(TrafficSignFeedbackMode(rawValue: "silent"), .silent)
+        XCTAssertEqual(TrafficSignFeedbackMode(rawValue: "spoken_speed_and_signs"), .spokenSpeedAndSigns)
+    }
+
+    func testSecondarySignSpeechDoesNotRepeatWhileContinuouslyVisibleOrAlternating() {
+        var gate = TrafficSignSecondarySpeechGate()
+        func time(_ seconds: Double) -> Date { Date(timeIntervalSince1970: seconds) }
+        XCTAssertTrue(gate.shouldEmit(classID: "parking", observedAt: time(100), now: time(100), canSpeak: true))
+        XCTAssertFalse(gate.shouldEmit(classID: "parking", observedAt: time(106), now: time(106), canSpeak: true))
+        XCTAssertTrue(gate.shouldEmit(classID: "stop", observedAt: time(110), now: time(110), canSpeak: true))
+        XCTAssertFalse(gate.shouldEmit(classID: "parking", observedAt: time(112), now: time(112), canSpeak: true))
+        XCTAssertFalse(gate.shouldEmit(classID: "parking", observedAt: time(119), now: time(119), canSpeak: true))
+        XCTAssertTrue(gate.shouldEmit(classID: "parking", observedAt: time(127), now: time(127), canSpeak: true))
+    }
+
+    func testSecondarySignSpeechTracksVisibilityWhileStoppedOrBusy() {
+        var gate = TrafficSignSecondarySpeechGate()
+        func time(_ seconds: Double) -> Date { Date(timeIntervalSince1970: seconds) }
+        XCTAssertTrue(gate.shouldEmit(classID: "parking", observedAt: time(100), now: time(100), canSpeak: true))
+        for second in [104.0, 108.0, 112.0] {
+            XCTAssertFalse(gate.shouldEmit(classID: "parking", observedAt: time(second), now: time(second), canSpeak: false))
+        }
+        XCTAssertFalse(gate.shouldEmit(classID: "parking", observedAt: time(114), now: time(114), canSpeak: true))
+    }
+
+    func testSecondarySignSpeechDropsOldFutureAndOutOfOrderFrames() {
+        var gate = TrafficSignSecondarySpeechGate()
+        func time(_ seconds: Double) -> Date { Date(timeIntervalSince1970: seconds) }
+        XCTAssertFalse(gate.shouldEmit(classID: "old", observedAt: time(96), now: time(100), canSpeak: true))
+        XCTAssertFalse(gate.shouldEmit(classID: "future", observedAt: time(101), now: time(100), canSpeak: true))
+        XCTAssertFalse(gate.shouldEmit(classID: "invalid", observedAt: Date(timeIntervalSince1970: .nan), now: time(100), canSpeak: true))
+        XCTAssertTrue(gate.shouldEmit(classID: "fresh", observedAt: time(100), now: time(102), canSpeak: true))
+        XCTAssertFalse(gate.shouldEmit(classID: "earlier", observedAt: time(99), now: time(101), canSpeak: true))
+        XCTAssertFalse(gate.shouldEmit(classID: "fresh", observedAt: time(100), now: time(101), canSpeak: true))
+    }
+
+    func testSecondarySignSpeechHasNoQueueAndResetsForANewSession() {
+        var gate = TrafficSignSecondarySpeechGate()
+        func time(_ seconds: Double) -> Date { Date(timeIntervalSince1970: seconds) }
+        XCTAssertFalse(gate.shouldEmit(classID: "parking", observedAt: time(100), now: time(100), canSpeak: false))
+        XCTAssertTrue(gate.shouldEmit(classID: "parking", observedAt: time(101), now: time(101), canSpeak: true))
+        XCTAssertFalse(gate.shouldEmit(classID: "stop", observedAt: time(102), now: time(102), canSpeak: true))
+        XCTAssertTrue(gate.shouldEmit(classID: "stop", observedAt: time(104), now: time(104), canSpeak: true))
+        gate.reset()
+        XCTAssertTrue(gate.shouldEmit(classID: "stop", observedAt: time(1), now: time(1), canSpeak: true))
+    }
+
     func testAdditionalSignDisplayRetainsReplacesClearsAndRejectsWrongModel() throws {
         let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
         var display = TrafficSignDisplayState()
