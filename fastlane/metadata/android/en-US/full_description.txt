@@ -1,14 +1,21 @@
-YouSpeed shows your current speed and the speed limit derived from offline map data. Download supported countries and regions, manage them in Data Manager, and use the driving display without an ongoing map connection.
+Drive safely. Give your car a driving companion.
 
-Offline maps and country-specific advisory rules include Germany, France, Switzerland, Belgium and the Netherlands. The camera models contain hundreds of country-specific sign classes in total, including speed limits and additional road signs. Class coverage is not a recognition accuracy guarantee; only supported signs can be displayed or affect the speed-limit reference.
+YouSpeed turns your smartphone into a driver assistance system for any car, whatever its age. Keep speed limits in view, hear alerts and record your drives. No built-in vehicle system required.
 
-Features:
-- Live speed and speed-limit display with source information
-- Configurable sound alerts and advisory penalty information where supported
-- Optional dashcam videos saved locally, with playback, sharing and deletion
-- Optional traffic-sign recognition on your device, with selectable sound or spoken feedback
-- Local spoken speed-limit corrections on supported devices and languages
-- Geolocated street photos for review and optional upload to Panoramax
+SEE THE SIGNS. KEEP YOUR ATTENTION ON THE ROAD.
+Automatic traffic sign recognition uses your phone's camera and runs on your device. Country models cover hundreds of traffic sign classes, including speed limits and additional road signs. Choose sound or spoken feedback. Supported signs and recognition availability depend on the country and installed model.
+
+KNOW YOUR SPEED. UNDERSTAND THE CONSEQUENCES.
+See your current speed alongside the speed-limit reference. Configure sound alerts and get country-specific penalty estimates where supported, so you can understand what speeding could cost.
+
+RECORD THE DRIVE. KEEP THE VIDEO.
+Use the built-in dashcam to record drives locally. Play back, share or delete your videos when parked. You choose what to keep and share.
+
+READY BEYOND MOBILE COVERAGE.
+Download maps before you go and use the speed display without an ongoing map connection. Maps and country advisory rules include Germany, France, Switzerland, Belgium and the Netherlands.
+
+MADE FOR YOUR CAR. BUILT AROUND YOUR PRIVACY.
+Core driving features need no account. No advertising or tracking SDKs. On supported devices and languages, correct speed limits by voice. Capture street photos and review them before choosing an optional Panoramax upload.
 
 Set up YouSpeed while parked. Camera recognition can miss or misinterpret signs; availability depends on the installed country model and device. Map coverage and penalty information vary by country. Traffic signs, traffic rules and official decisions remain authoritative. YouSpeed cannot guarantee the applicable speed limit or a legal outcome.
 

@@ -1,14 +1,21 @@
-YouSpeed mostra la velocità attuale e il limite ricavato dalle mappe offline. Scarica i paesi e le regioni disponibili, gestiscili nel gestore dei dati e usa la schermata di guida senza una connessione continua alle mappe.
+Guida con prudenza. Un compagno per la tua auto.
 
-Le mappe offline e le regole indicative per paese comprendono Germania, Francia, Svizzera, Belgio e Paesi Bassi. I modelli della fotocamera contengono in totale centinaia di classi di segnali nazionali, inclusi limiti e altri segnali stradali. Questa copertura non garantisce la precisione; solo i segnali supportati possono essere mostrati o influire sul riferimento del limite.
+YouSpeed trasforma lo smartphone in un assistente alla guida per ogni auto, qualunque sia la sua età. Tieni d'occhio i limiti, ascolta gli avvisi e registra i viaggi. Nessun sistema integrato nell'auto necessario.
 
-Funzioni:
-- Velocità e limite in tempo reale con indicazione della fonte
-- Avvisi sonori configurabili e informazioni indicative sulle sanzioni, dove disponibili
-- Video dashcam facoltativi salvati localmente, con riproduzione, condivisione ed eliminazione
-- Riconoscimento facoltativo dei segnali sul dispositivo, con avvisi sonori o vocali
-- Correzioni vocali locali dei limiti su dispositivi e nelle lingue compatibili
-- Foto stradali geolocalizzate da controllare prima di un caricamento facoltativo su Panoramax
+RICONOSCI I SEGNALI. RESTA ATTENTO ALLA STRADA.
+Il riconoscimento automatico usa la fotocamera e funziona sul dispositivo. I modelli nazionali comprendono complessivamente centinaia di classi di segnali, inclusi i limiti di velocità. Scegli avvisi sonori o vocali. Segnali supportati e disponibilità dipendono dal paese e dal modello installato.
+
+CONOSCI VELOCITÀ E CONSEGUENZE.
+Vedi la tua velocità accanto al limite di riferimento. Configura gli avvisi sonori e consulta le stime delle sanzioni per paese dove supportate.
+
+REGISTRA IL VIAGGIO. CONSERVA IL VIDEO.
+La dashcam integrata salva i viaggi localmente. Riproduci, condividi o elimina i video a veicolo fermo. Scegli tu cosa conservare e condividere.
+
+MAPPE SENZA CONNESSIONE CONTINUA.
+Scarica le mappe prima di partire. Mappe e regole indicative comprendono Germania, Francia, Svizzera, Belgio e Paesi Bassi.
+
+LA TUA AUTO. LA TUA PRIVACY.
+Le funzioni di guida non richiedono un account. Nessun SDK pubblicitario o di tracciamento. Correggi i limiti con la voce sui dispositivi e nelle lingue supportati. Controlla le foto stradali prima di un caricamento facoltativo su Panoramax.
 
 Configura YouSpeed a veicolo fermo. Il riconoscimento può ignorare o interpretare male i segnali; la disponibilità dipende dal modello nazionale installato e dal dispositivo. Copertura e informazioni sulle sanzioni variano per paese. Segnali, regole e decisioni ufficiali restano vincolanti. YouSpeed non garantisce il limite applicabile o l’esito giuridico.
 

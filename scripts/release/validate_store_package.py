@@ -28,7 +28,7 @@ APPLE_IMAGES = ("01-safe-speed.png", "02-camera-speed-limit.png", "03-secondary-
                 "09-pedestrian-zone.png", "10-autobahn-unlimited.png")
 PLAY_IMAGES = ("01-safe-speed.png", "02-dashcam.png", "03-camera-recognition.png",
                "04-traffic-signs.png", "05-france-fine.png", "06-switzerland-fine.png",
-               "07-belgium-fine.png", "08-netherlands-warning.png")
+               "07-belgium-fine.png", "08-netherlands-fine.png")
 
 
 def main() -> int:
@@ -142,6 +142,23 @@ def main() -> int:
             png(gallery / name, "play")
             if (gallery / name).is_file():
                 identical(gallery / name, fastlane / "images/phoneScreenshots" / name)
+
+    # Verify each composed image still comes with its unchanged native source.
+    layouts_path = ROOT / "store/artwork/screenshot-layouts.json"
+    if layouts_path.is_file():
+        layouts = json.loads(layouts_path.read_text())
+        expected = {f"store/apple/screenshots/{locale}/iphone-6.9/{name}"
+                    for locale in APPLE_LOCALES for name in APPLE_IMAGES}
+        expected |= {f"store/android/listing/{locale}/phone-screenshots/{name}"
+                     for locale in PLAY_LOCALES for name in PLAY_IMAGES}
+        if set(layouts["images"]) != expected:
+            problem(layouts_path, "layout provenance must cover every selected screenshot")
+        for output, layout in layouts["images"].items():
+            for relative, digest in ((output, layout["output_sha256"]),
+                                     (layout["source"], layout["source_sha256"])):
+                path = ROOT / relative
+                if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+                    problem(path, "does not match retained screenshot provenance")
 
     report = {"format": "youspeed.store-package.validation.v1", "android_version_code": version_code,
               "apple_locales": list(APPLE_LOCALES), "play_locales": list(PLAY_LOCALES),

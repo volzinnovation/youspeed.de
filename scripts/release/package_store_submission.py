@@ -36,7 +36,8 @@ def main() -> int:
     files.update(ROOT / name for name in ("store/country-availability-1.3.json", "store/README.md",
                   "Web/datenschutz.html", "Web/support/index.html",
                   "scripts/release/validate_store_package.py", "scripts/release/generate_store_graphics.mjs",
-                  "scripts/release/package_store_submission.py", "scripts/iphone/recreate_store_screenshots.sh",
+                  "scripts/release/package_store_submission.py", "scripts/release/generate_store_screenshot_layouts.mjs",
+                  "scripts/iphone/recreate_store_screenshots.sh",
                   "scripts/iphone/normalize_store_screenshot.py", "scripts/iphone/requirements-screenshots.txt",
                   "android/scripts/recreate_store_screenshots.sh", "android/scripts/prepare-play-release.sh",
                   "android/scripts/audit-release-artifact.py"))

@@ -1,14 +1,21 @@
-YouSpeed zeigt deine aktuelle Geschwindigkeit und das aus Offline-Kartendaten ermittelte Tempolimit. Lade unterstützte Länder und Regionen herunter, verwalte sie im Datenmanager und nutze die Fahrtanzeige ohne laufende Kartenverbindung.
+Fahr sicher. Gib deinem Auto einen Begleiter.
 
-Offline-Karten und länderspezifische Sanktionshinweise umfassen Deutschland, Frankreich, die Schweiz, Belgien und die Niederlande. Die Kameramodelle enthalten zusammen Hunderte länderspezifische Schildklassen, darunter Tempolimits und weitere Verkehrszeichen. Diese Abdeckung ist keine Genauigkeitsgarantie; nur unterstützte Zeichen können angezeigt werden oder den Tempolimit-Bezug beeinflussen.
+YouSpeed macht dein Smartphone zum Fahrassistenzsystem für jedes Auto, unabhängig vom Baujahr. Behalte Tempolimits im Blick, höre Hinweise und zeichne deine Fahrten auf. Ohne fest eingebautes Assistenzsystem.
 
-Funktionen:
-- Live-Anzeige von Geschwindigkeit und Tempolimit mit Quellenangabe
-- Einstellbare Warntöne und unverbindliche Sanktionshinweise, soweit unterstützt
-- Optionale, lokal gespeicherte Dashcam-Videos mit Wiedergabe, Teilen und Löschen
-- Optionale Verkehrszeichenerkennung auf deinem Gerät mit Ton oder Sprachausgabe
-- Lokale gesprochene Tempolimit-Korrekturen auf unterstützten Geräten und in unterstützten Sprachen
-- Straßenfotos mit Standortdaten zur Prüfung und zum optionalen Panoramax-Upload
+ZEICHEN ERKENNEN. AUFMERKSAM BLEIBEN.
+Die automatische Verkehrszeichenerkennung nutzt deine Smartphone-Kamera und arbeitet auf deinem Gerät. Die Ländermodelle umfassen insgesamt Hunderte Verkehrszeichenklassen, darunter Tempolimits und weitere Straßenschilder. Wähle Tonhinweise oder Sprachausgabe. Unterstützte Zeichen und Verfügbarkeit hängen von Land und installiertem Modell ab.
+
+TEMPO KENNEN. FOLGEN EINSCHÄTZEN.
+Sieh deine aktuelle Geschwindigkeit neben dem Referenz-Tempolimit. Stelle Tempowarnungen ein und erfahre, welches Bußgeld bei einer Überschreitung drohen könnte. Die länderspezifischen Schätzungen sind dort verfügbar, wo sie unterstützt werden.
+
+FAHRT AUFZEICHNEN. VIDEO BEHALTEN.
+Mit der integrierten Dashcam speicherst du Fahrten lokal. Videos im Stand ansehen, teilen oder löschen. Du entscheidest, was du behältst und teilst.
+
+AUCH OHNE LAUFENDE KARTENVERBINDUNG.
+Lade Karten vor der Fahrt herunter und nutze die Tempoanzeige offline. Karten und länderspezifische Hinweise umfassen Deutschland, Frankreich, die Schweiz, Belgien und die Niederlande.
+
+FÜR DEIN AUTO. MIT DEINER PRIVATSPHÄRE IM BLICK.
+Die Fahrtfunktionen benötigen kein Konto. Keine Werbe- oder Tracking-SDKs. Korrigiere Tempolimits per Sprache auf unterstützten Geräten und in unterstützten Sprachen. Erfasse Straßenfotos und prüfe sie vor einem optionalen Panoramax-Upload.
 
 Richte YouSpeed im Stand ein. Die Kameraerkennung kann Zeichen übersehen oder falsch deuten; ihre Verfügbarkeit hängt vom installierten Ländermodell und Gerät ab. Kartenabdeckung und Sanktionshinweise unterscheiden sich je nach Land. Verkehrszeichen, Verkehrsregeln und amtliche Entscheidungen sind maßgeblich. YouSpeed garantiert weder das geltende Tempolimit noch rechtliche Folgen.
 

@@ -1,1 +1,1 @@
-Tempolimit,Dashcam,Verkehrszeichen,offline,Frankreich,Schweiz,Belgien,Niederlande
+Verkehrszeichenerkennung,Tempolimit,Dashcam,Tempowarnung,Bußgeld,Offlinekarten,Autokamera

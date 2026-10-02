@@ -1,14 +1,21 @@
-YouSpeed toont je snelheid en de snelheidslimiet uit offline kaartgegevens. Download beschikbare landen en regio’s, beheer ze in de gegevensbeheerder en gebruik het rijscherm zonder voortdurende kaartverbinding.
+Rijd veilig. Een reisgenoot voor je auto.
 
-Offlinekaarten en landspecifieke sanctie-informatie omvatten Duitsland, Frankrijk, Zwitserland, België en Nederland. De cameramodellen bevatten samen honderden landspecifieke bordklassen, waaronder snelheidslimieten en andere verkeersborden. Deze dekking garandeert geen herkenningsnauwkeurigheid; alleen ondersteunde borden kunnen worden getoond of de snelheidslimietreferentie beïnvloeden.
+YouSpeed maakt van je smartphone een rijassistent voor elke auto, ongeacht de leeftijd. Houd snelheidslimieten in beeld, hoor meldingen en neem je ritten op. Geen ingebouwd assistentiesysteem nodig.
 
-Functies:
-- Live snelheid en snelheidslimiet met broninformatie
-- Instelbare geluidssignalen en indicatieve sanctie-informatie waar beschikbaar
-- Optionele lokaal opgeslagen dashcamvideo’s, met afspelen, delen en verwijderen
-- Optionele verkeersbordherkenning op je apparaat met geluid of gesproken feedback
-- Lokale gesproken correcties van snelheidslimieten op ondersteunde apparaten en in ondersteunde talen
-- Straatfoto’s met locatiegegevens om te bekijken en eventueel naar Panoramax te uploaden
+HERKEN BORDEN. BLIJF ALERT OP DE WEG.
+Automatische verkeersbordherkenning gebruikt de camera van je telefoon en werkt op je apparaat. De landenmodellen omvatten samen honderden bordklassen, waaronder snelheidslimieten en andere verkeersborden. Kies geluid of gesproken meldingen. Ondersteunde borden en beschikbaarheid hangen af van het land en geïnstalleerde model.
+
+KEN JE SNELHEID EN DE GEVOLGEN.
+Bekijk je snelheid naast de referentielimiet. Stel geluidsmeldingen in en bekijk landspecifieke boeteschattingen waar ondersteund.
+
+NEEM JE RIT OP. BEWAAR DE VIDEO.
+De ingebouwde dashcam slaat ritten lokaal op. Bekijk, deel of verwijder video's wanneer je geparkeerd staat. Jij kiest wat je bewaart en deelt.
+
+KAARTEN ZONDER DOORLOPENDE VERBINDING.
+Download kaarten voor vertrek en gebruik de snelheidsweergave offline. Kaarten en landspecifieke informatie omvatten Duitsland, Frankrijk, Zwitserland, België en Nederland.
+
+JOUW AUTO. JOUW PRIVACY.
+De rijfuncties vereisen geen account. Geen advertentie- of tracking-SDK's. Corrigeer limieten met je stem op ondersteunde apparaten en in ondersteunde talen. Controleer straatfoto's voordat je kiest voor een optionele Panoramax-upload.
 
 Stel YouSpeed in terwijl je geparkeerd staat. Herkenning kan borden missen of verkeerd interpreteren; beschikbaarheid hangt af van het geïnstalleerde landmodel en apparaat. Kaartdekking en sanctie-informatie verschillen per land. Verkeersborden, verkeersregels en officiële besluiten blijven bepalend. YouSpeed garandeert geen geldende snelheidslimiet of juridische uitkomst.
 

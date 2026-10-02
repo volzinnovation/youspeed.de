@@ -1,1 +1,1 @@
-snelheid,dashcam,verkeersborden,offline,Frankrijk,Zwitserland,België,Nederland
+verkeersbordherkenning,snelheidslimiet,dashcam,snelheidswaarschuwing,boete,offline kaarten

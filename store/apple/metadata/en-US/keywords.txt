@@ -1,1 +1,1 @@
-speed limit,dashcam,road signs,offline,France,Switzerland,Belgium,Netherlands
+traffic sign recognition,speed limit,dashcam,alert,offline maps,penalty,road safety,speedometer

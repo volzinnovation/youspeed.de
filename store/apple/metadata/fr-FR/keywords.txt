@@ -1,1 +1,1 @@
-vitesse,dashcam,panneaux,hors ligne,France,Suisse,Belgique,Pays-Bas
+reconnaissance panneaux,limitation vitesse,dashcam,alerte,amende,cartes hors ligne,sécurité

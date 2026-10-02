@@ -26,13 +26,18 @@ captures=(
   "05-france-fine.png:warn-level-0:FRA:3"
   "06-switzerland-fine.png:warn-level-0:CHE:11"
   "07-belgium-fine.png:warn-level-0:BEL:5"
-  "08-netherlands-warning.png:warn-level-0:NLD:12"
+  "08-netherlands-fine.png:warn-level-0:NLD:12"
 )
 capture_kind="${SCREENSHOT_CAPTURE_KIND:-all}"
 if [[ "$capture_kind" == dashcam ]]; then
   captures=("02-dashcam.png:camera-limit-active:dashcam")
+elif [[ "$capture_kind" == netherlands ]]; then
+  captures=("08-netherlands-fine.png:warn-level-0:NLD:12")
+elif [[ "$capture_kind" == country-examples ]]; then
+  captures=("05-france-fine.png:warn-level-0:FRA:3" "06-switzerland-fine.png:warn-level-0:CHE:11"
+    "07-belgium-fine.png:warn-level-0:BEL:5" "08-netherlands-fine.png:warn-level-0:NLD:12")
 elif [[ "$capture_kind" != all ]]; then
-  echo 'SCREENSHOT_CAPTURE_KIND must be all or dashcam.' >&2
+  echo 'SCREENSHOT_CAPTURE_KIND must be all, dashcam, netherlands or country-examples.' >&2
   exit 1
 fi
 dashcam_orientation="${DASHCAM_SCREENSHOT_ORIENTATION:-landscape_camera_upper_left}"
@@ -65,6 +70,7 @@ set_app_locale() {
   adb_target shell "cmd locale set-app-locales $PACKAGE_ID --locales '$1'" >/dev/null
 }
 staging_dir="$(mktemp -d "${TMPDIR:-/tmp}/youspeed-android-screenshots.XXXXXX")"
+ui_dump_path="/sdcard/youspeed-store-capture-ui-$$.xml"
 chmod 700 "$staging_dir"
 adb_target shell am force-stop "$PACKAGE_ID" >/dev/null
 # Use the app's existing orientation preference, and restore its original bytes
@@ -118,6 +124,7 @@ restore() {
     fi
   done
   rm -rf "$staging_dir"
+  adb_target shell rm -f "$ui_dump_path" >/dev/null 2>&1 || true
 }
 trap restore EXIT
 for key in "${animation_keys[@]}"; do
@@ -148,6 +155,22 @@ for locale in "${locales[@]}"; do
     # Activity's first frame before the additional Compose settling interval.
     adb_target shell am start -W "${launch[@]}" >/dev/null
     sleep 2
+    # A successful launch can still leave the system splash visible. Country
+    # examples must expose a monetary unit before entering the upload gallery.
+    if [[ -n "${scenario:-}" && "$scenario" != dashcam ]]; then
+      ready=0
+      for attempt in {1..6}; do
+        adb_target shell uiautomator dump "$ui_dump_path" >/dev/null 2>&1
+        ui_tree="$(adb_target shell cat "$ui_dump_path")"
+        if [[ "$scenario" == CHE && "$ui_tree" == *CHF* ]] ||
+           [[ "$scenario" != CHE && "$ui_tree" == *EUR* ]]; then
+          ready=1
+          break
+        fi
+        sleep 2
+      done
+      [[ "$ready" == 1 ]] || { echo "Country screen did not settle: $locale $file_name" >&2; exit 1; }
+    fi
     adb_target exec-out screencap -p > "$locale_staging/$file_name"
     python3 - "$locale_staging/$file_name" <<'PYPNG'
 import struct,sys
@@ -166,6 +189,7 @@ PYPNG
       rm -f "$output_dir/$old"
     done
   fi
+  rm -f "$output_dir/08-netherlands-warning.png"
   cp "$locale_staging/"*.png "$output_dir/"
   fastlane_dir="$ROOT_DIR/fastlane/metadata/android/$locale/images/phoneScreenshots"
   mkdir -p "$fastlane_dir"
@@ -174,7 +198,11 @@ PYPNG
       rm -f "$fastlane_dir/$old"
     done
   fi
+  rm -f "$fastlane_dir/08-netherlands-warning.png"
   cp "$locale_staging/"*.png "$fastlane_dir/"
 done
+
+layout_locales="$(IFS=,; echo "${locales[*]}")"
+"${STORE_SCREENSHOT_NODE:-node}" "$ROOT_DIR/scripts/release/generate_store_screenshot_layouts.mjs" android --capture-source "--locales=$layout_locales"
 
 echo "Store screenshots written to $ROOT_DIR/store/android/listing/*/phone-screenshots"
