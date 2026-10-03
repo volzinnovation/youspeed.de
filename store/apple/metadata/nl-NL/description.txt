@@ -1,24 +1,23 @@
-Rijd veilig. Een reisgenoot voor je auto.
+Een vertrouwde weg. Een andere snelheidslimiet. Met YouSpeed houd je het belangrijkste in beeld.
 
-YouSpeed maakt van je smartphone een rijassistent voor elke auto, ongeacht de leeftijd. Houd snelheidslimieten in beeld, hoor meldingen en neem je ritten op. Geen ingebouwd assistentiesysteem nodig.
+Maak van je iPhone een rijmaatje voor de auto die je al hebt. Bekijk je huidige snelheid naast de referentielimiet, hoor waarschuwingen en bewaar een video van je rit. Een verbinding met je auto is niet nodig.
 
-HERKEN BORDEN. BLIJF ALERT OP DE WEG.
-Automatische verkeersbordherkenning gebruikt de camera van je telefoon en werkt op je apparaat. De landenmodellen omvatten samen honderden bordklassen, waaronder snelheidslimieten en andere verkeersborden. Kies geluid of gesproken meldingen. Ondersteunde borden en beschikbaarheid hangen af van het land en geïnstalleerde model.
+Houd snelheidslimieten in beeld
+Gedownloade kaartgegevens en cameraherkenning geven je onderweg een referentie voor de snelheidslimiet. Kies zelf vanaf welke overschrijding je een waarschuwing hoort. Waar ondersteund, geven schattingen per land een indruk van wat een overschrijding kan kosten.
 
-KEN JE SNELHEID EN DE GEVOLGEN.
-Bekijk je snelheid naast de referentielimiet. Stel geluidsmeldingen in en bekijk landspecifieke boeteschattingen waar ondersteund.
+Luister naar de borden
+Je iPhone herkent ondersteunde verkeersborden op het apparaat zelf. Kies een geluid of gesproken melding bij een herkend bord. Welke borden worden ondersteund en of cameraherkenning beschikbaar is, hangt af van het land, het geïnstalleerde model en je apparaat.
 
-NEEM JE RIT OP. BEWAAR DE VIDEO.
-De ingebouwde dashcam slaat ritten lokaal op. Bekijk, deel of verwijder video's wanneer je geparkeerd staat. Jij kiest wat je bewaart en deelt.
+Nu opnemen. Later bekijken.
+De ingebouwde dashcam bewaart video’s op je iPhone. Bekijk je opnamen wanneer je geparkeerd staat, deel een fragment of verwijder wat je niet meer nodig hebt.
 
-KAARTEN ZONDER DOORLOPENDE VERBINDING.
-Download kaarten voor vertrek en gebruik de snelheidsweergave offline. Kaarten en landspecifieke informatie omvatten Duitsland, Frankrijk, Zwitserland, België en Nederland.
+Voorbereiden en offline rijden
+Download de kaarten die je nodig hebt voordat je vertrekt en gebruik ze zonder voortdurende mobiele verbinding. Er zijn kaarten voor Nederland, België, Duitsland, Frankrijk en Zwitserland. In de gegevensbeheerder beheer je downloads en opslagruimte.
 
-JOUW AUTO. JOUW PRIVACY.
-De rijfuncties vereisen geen account. Geen advertentie- of tracking-SDK's. Corrigeer limieten met je stem op ondersteunde apparaten en in ondersteunde talen. Controleer straatfoto's voordat je kiest voor een optionele Panoramax-upload.
+Ontdek en draag bij
+In Info vind je offline verkeersbordcatalogi en boetetabellen per land. Laat bordnamen uitspreken in het Nederlands, Duits, Engels of Frans. Op ondersteunde apparaten en in ondersteunde talen kun je correcties van snelheidslimieten inspreken. Je kunt ook straatfoto’s maken, ze beoordelen en kiezen welke je naar Panoramax uploadt.
 
-Stel YouSpeed in terwijl je geparkeerd staat. Herkenning kan borden missen of verkeerd interpreteren; beschikbaarheid hangt af van het geïnstalleerde landmodel en apparaat. Kaartdekking en sanctie-informatie verschillen per land. Verkeersborden, verkeersregels en officiële besluiten blijven bepalend. YouSpeed garandeert geen geldende snelheidslimiet of juridische uitkomst.
+Jouw opnamen, jouw keuze
+Voor de rijfuncties is geen account nodig. Toegang tot camera en microfoon is optioneel. Als foto-opname is ingeschakeld, maakt de app automatisch foto’s tijdens het rijden terwijl de app open is. Foto’s en video’s blijven op je iPhone totdat je ze zelf deelt of uploadt. Optionele Panoramax-uploads vereisen een gekoppeld account en internet; geüploade foto’s bevatten locatie- en opnamegegevens. Lokale diagnostische logboeken staan standaard aan en kun je uitschakelen in Instellingen. Geen advertentie- of tracking-SDK’s.
 
-De rijfuncties vereisen geen account. Camera en microfoon zijn optioneel. Als foto-opname is ingeschakeld, worden automatisch foto’s gemaakt tijdens beweging met de app geopend. Foto’s en dashcamvideo’s blijven op je apparaat totdat je ze zelf deelt of uploadt. Panoramax-uploads vereisen een gekoppeld account, internet en je selectie; geüploade foto’s bevatten locatie- en opnamegegevens. Lokale diagnoselogboeken staan standaard aan en kunnen worden uitgeschakeld. Geen advertentie- of tracking-SDK’s.
-
-Onder Info vind je boetetabellen per land en een verkeersbordencatalogus met pictogrammen en gesproken namen in het Engels, Frans, Duits en Nederlands. De naslagpagina’s zijn offline beschikbaar en vormen geen juridisch advies.
+Stel de app in en bedien de functies terwijl je geparkeerd staat. Herkenning en kaartgegevens kunnen onvolledig of onjuist zijn. De dekking en boeteschattingen verschillen per land; de tabellen zijn geen juridisch advies. Volg altijd de verkeersborden en verkeersregels. YouSpeed garandeert geen geldende snelheidslimiet of juridische uitkomst.

@@ -1,24 +1,23 @@
-Fahr sicher. Gib deinem Auto einen Begleiter.
+Die Strecke ist vertraut. Das Tempolimit hat sich geändert. Mit YouSpeed behältst du das Wesentliche im Blick.
 
-YouSpeed macht dein Smartphone zum Fahrassistenzsystem für jedes Auto, unabhängig vom Baujahr. Behalte Tempolimits im Blick, höre Hinweise und zeichne deine Fahrten auf. Ohne fest eingebautes Assistenzsystem.
+Mach dein iPhone zum Begleiter für das Auto, das du schon hast. Sieh deine aktuelle Geschwindigkeit neben dem Referenz-Tempolimit, höre hilfreiche Warnungen und halte deine Fahrt im Video fest. Eine Verbindung zum Auto ist nicht nötig.
 
-ZEICHEN ERKENNEN. AUFMERKSAM BLEIBEN.
-Die automatische Verkehrszeichenerkennung nutzt deine Smartphone-Kamera und arbeitet auf deinem Gerät. Die Ländermodelle umfassen insgesamt Hunderte Verkehrszeichenklassen, darunter Tempolimits und weitere Straßenschilder. Wähle Tonhinweise oder Sprachausgabe. Unterstützte Zeichen und Verfügbarkeit hängen von Land und installiertem Modell ab.
+Tempolimits im Blick
+Nutze heruntergeladene Kartendaten und Kameraerkennung für Tempolimit-Hinweise auf deiner Strecke. Wähle selbst, ab welcher Überschreitung du gewarnt wirst. Wo unterstützt, zeigen länderspezifische Bußgeldschätzungen, was eine Überschreitung kosten könnte.
 
-TEMPO KENNEN. FOLGEN EINSCHÄTZEN.
-Sieh deine aktuelle Geschwindigkeit neben dem Referenz-Tempolimit. Stelle Tempowarnungen ein und erfahre, welches Bußgeld bei einer Überschreitung drohen könnte. Die länderspezifischen Schätzungen sind dort verfügbar, wo sie unterstützt werden.
+Verkehrszeichen hören
+Dein iPhone erkennt unterstützte Verkehrszeichen direkt auf dem Gerät. Wähle einen Ton oder eine Sprachausgabe für erkannte Schilder. Welche Zeichen erkannt werden und ob die Kameraerkennung verfügbar ist, hängt von Land, installiertem Modell und Gerät ab.
 
-FAHRT AUFZEICHNEN. VIDEO BEHALTEN.
-Mit der integrierten Dashcam speicherst du Fahrten lokal. Videos im Stand ansehen, teilen oder löschen. Du entscheidest, was du behältst und teilst.
+Jetzt aufnehmen. Später ansehen.
+Die integrierte Dashcam speichert Videos auf deinem iPhone. Schau sie dir im Stand an, teile einen Clip oder lösche Aufnahmen, die du nicht mehr brauchst.
 
-AUCH OHNE LAUFENDE KARTENVERBINDUNG.
-Lade Karten vor der Fahrt herunter und nutze die Tempoanzeige offline. Karten und länderspezifische Hinweise umfassen Deutschland, Frankreich, die Schweiz, Belgien und die Niederlande.
+Vorbereiten und offline fahren
+Lade die benötigten Karten vor der Fahrt herunter und nutze sie ohne laufende Mobilfunkverbindung. Karten sind für Deutschland, Frankreich, die Schweiz, Belgien und die Niederlande verfügbar. Im Datenmanager verwaltest du Downloads und Speicherplatz.
 
-FÜR DEIN AUTO. MIT DEINER PRIVATSPHÄRE IM BLICK.
-Die Fahrtfunktionen benötigen kein Konto. Keine Werbe- oder Tracking-SDKs. Korrigiere Tempolimits per Sprache auf unterstützten Geräten und in unterstützten Sprachen. Erfasse Straßenfotos und prüfe sie vor einem optionalen Panoramax-Upload.
+Nachschlagen und mitmachen
+Unter Info findest du offline verfügbare Verkehrszeichenkataloge und länderspezifische Bußgeldtabellen. Lass dir Zeichennamen auf Deutsch, Englisch, Französisch oder Niederländisch vorlesen. Auf unterstützten Geräten und in unterstützten Sprachen kannst du Tempolimit-Korrekturen per Sprache erfassen. Straßenfotos kannst du aufnehmen, prüfen und für einen optionalen Panoramax-Upload auswählen.
 
-Richte YouSpeed im Stand ein. Die Kameraerkennung kann Zeichen übersehen oder falsch deuten; ihre Verfügbarkeit hängt vom installierten Ländermodell und Gerät ab. Kartenabdeckung und Sanktionshinweise unterscheiden sich je nach Land. Verkehrszeichen, Verkehrsregeln und amtliche Entscheidungen sind maßgeblich. YouSpeed garantiert weder das geltende Tempolimit noch rechtliche Folgen.
+Deine Aufnahmen. Deine Entscheidung.
+Die Fahrtfunktionen brauchen kein Konto. Kamera und Mikrofon sind optional. Bei eingeschalteter Fotoaufnahme entstehen während der Bewegung mit geöffneter App automatisch Fotos. Fotos und Videos bleiben auf deinem iPhone, bis du sie bewusst teilst oder hochlädst. Panoramax-Uploads benötigen ein verbundenes Konto und Internet; hochgeladene Fotos enthalten Standort- und Aufnahmedaten. Lokale Diagnoseprotokolle sind standardmäßig eingeschaltet und lassen sich in den Einstellungen deaktivieren. Keine Werbe- oder Tracking-SDKs.
 
-Die Fahrtfunktionen benötigen kein Konto. Kamera und Mikrofon sind optional. Bei eingeschalteter Fotoaufnahme werden während der Bewegung mit geöffneter App automatisch Fotos aufgenommen. Fotos und Dashcam-Videos bleiben auf deinem Gerät, bis du sie bewusst teilst oder hochlädst. Panoramax-Uploads benötigen ein verbundenes Konto, Internet und deine Auswahl; hochgeladene Fotos enthalten Standort- und Aufnahmedaten. Lokale Diagnoseprotokolle sind standardmäßig eingeschaltet und können deaktiviert werden. Keine Werbe- oder Tracking-SDKs.
-
-Unter Info findest du länderspezifische Bußgeldtabellen und einen Verkehrszeichenkatalog mit Abbildungen und gesprochenen Namen auf Englisch, Französisch, Deutsch und Niederländisch. Die Referenzseiten sind offline verfügbar und keine Rechtsberatung.
+Richte die App im Stand ein und bediene ihre Funktionen nur im Stand. Erkennung und Kartendaten können unvollständig oder falsch sein. Länderabdeckung und Bußgeldschätzungen unterscheiden sich; die Referenztabellen sind keine Rechtsberatung. Verkehrszeichen und Verkehrsregeln sind maßgeblich. YouSpeed garantiert weder das geltende Tempolimit noch rechtliche Folgen.

@@ -1,24 +1,23 @@
-Drive safely. Give your car a driving companion.
+A familiar road. A changing speed limit. Keep the essentials in view with YouSpeed.
 
-YouSpeed turns your smartphone into a driver assistance system for any car, whatever its age. Keep speed limits in view, hear alerts and record your drives. No built-in vehicle system required.
+Turn your iPhone into a driving companion for the car you already have. See your current speed beside a speed-limit reference, hear helpful alerts and save video of your journey. No connection to your car is needed.
 
-SEE THE SIGNS. KEEP YOUR ATTENTION ON THE ROAD.
-Automatic traffic sign recognition uses your phone's camera and runs on your device. Country models cover hundreds of traffic sign classes, including speed limits and additional road signs. Choose sound or spoken feedback. Supported signs and recognition availability depend on the country and installed model.
+Keep speed limits in view
+Use downloaded map data and camera recognition to follow speed-limit references along your drive. Set your own speed-alert threshold. Where supported, country-specific penalty estimates give you an idea of what an excess could cost.
 
-KNOW YOUR SPEED. UNDERSTAND THE CONSEQUENCES.
-See your current speed alongside the speed-limit reference. Configure sound alerts and get country-specific penalty estimates where supported, so you can understand what speeding could cost.
+Hear the signs
+Your iPhone recognises supported traffic signs on the device. Choose a sound or spoken feedback for recognised signs. Available signs and camera recognition depend on the country, installed model and device.
 
-RECORD THE DRIVE. KEEP THE VIDEO.
-Use the built-in dashcam to record drives locally. Play back, share or delete your videos when parked. You choose what to keep and share.
+Record now. Watch later.
+The built-in dashcam saves video on your iPhone. When parked, play back your recordings, share a clip or delete what you no longer need.
 
-READY BEYOND MOBILE COVERAGE.
-Download maps before you go and use the speed display without an ongoing map connection. Maps and country advisory rules include Germany, France, Switzerland, Belgium and the Netherlands.
+Prepare once. Use maps offline.
+Download the maps you need before you leave, then use them without an ongoing mobile connection. Maps are available for Germany, France, Switzerland, Belgium and the Netherlands. The Data Manager helps you manage downloads and storage.
 
-MADE FOR YOUR CAR. BUILT AROUND YOUR PRIVACY.
-Core driving features need no account. No advertising or tracking SDKs. On supported devices and languages, correct speed limits by voice. Capture street photos and review them before choosing an optional Panoramax upload.
+Explore and contribute
+Browse offline traffic-sign catalogues and country-specific fine tables in Info. Sign names can be spoken in English, French, German and Dutch. On supported devices and in supported languages, you can record speed-limit corrections by voice. You can also capture street photos, review them and choose which to upload to Panoramax.
 
-Set up YouSpeed while parked. Camera recognition can miss or misinterpret signs; availability depends on the installed country model and device. Map coverage and penalty information vary by country. Traffic signs, traffic rules and official decisions remain authoritative. YouSpeed cannot guarantee the applicable speed limit or a legal outcome.
+Your recordings, your choice
+Driving features need no account. Camera and microphone access are optional. With photo capture enabled, the app automatically takes photos while moving with the app open. Photos and videos stay on your iPhone until you choose to share or upload them. Optional Panoramax uploads need a connected account and internet; uploaded photos include location and capture details. Local diagnostic logs are enabled by default and can be switched off in Settings. No advertising or tracking SDKs.
 
-Core driving features do not require an account. Camera and microphone access are optional. Photos can be captured automatically while moving with the app open when photo capture is enabled. Photos and dashcam videos stay on your device until you choose to share or upload them. Panoramax uploads require a connected account, an internet connection and your selection; uploaded photos include location and capture metadata. Local diagnostic logging is enabled by default and can be switched off. No advertising or tracking SDKs.
-
-Behind Info, browse country-specific speeding fine tables and a traffic-sign catalogue with pictograms and spoken names in English, French, German and Dutch. The reference pages are available offline and are not legal advice.
+Set up and operate controls while parked. Recognition and map data can be incomplete or wrong. Country coverage and penalty estimates vary, and the reference tables are not legal advice. Always follow road signs and traffic rules; YouSpeed cannot guarantee the applicable limit or a legal outcome.

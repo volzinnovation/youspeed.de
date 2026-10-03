@@ -1,0 +1,111 @@
+{
+  "format": "youspeed.dashcam-marketing-composite.v1",
+  "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+  "frame": {
+    "path": "store/artwork/source/real-dashcam-5.5s.png",
+    "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+    "source_time_seconds": 5.5,
+    "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+    "archive": {
+      "dataset": "loffenauer/youspeed.de",
+      "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+      "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+    },
+    "source_crop": [
+      0,
+      320,
+      3840,
+      1720
+    ],
+    "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+  },
+  "platforms": {
+    "apple": {
+      "filename": "04-dashcam.png",
+      "native_size": [
+        1320,
+        2868
+      ],
+      "viewport": [
+        54,
+        1311,
+        1212,
+        1043
+      ],
+      "mask": "enclosed-black-component",
+      "protected_capsules": {
+        "de-DE": [
+          [
+            90,
+            1348,
+            379,
+            78
+          ],
+          [
+            214,
+            2242,
+            891,
+            76
+          ]
+        ],
+        "en-US": [
+          [
+            90,
+            1348,
+            379,
+            78
+          ],
+          [
+            328,
+            2242,
+            664,
+            76
+          ]
+        ],
+        "fr-FR": [
+          [
+            90,
+            1348,
+            460,
+            78
+          ],
+          [
+            270,
+            2242,
+            778,
+            76
+          ]
+        ],
+        "nl-NL": [
+          [
+            90,
+            1348,
+            379,
+            78
+          ],
+          [
+            294,
+            2242,
+            731,
+            76
+          ]
+        ]
+      }
+    },
+    "android": {
+      "filename": "02-dashcam.png",
+      "native_size": [
+        1920,
+        1080
+      ],
+      "viewport": [
+        906,
+        264,
+        972,
+        638
+      ],
+      "mask": "rounded-black-pixels",
+      "corner_radius": 42
+    }
+  }
+}

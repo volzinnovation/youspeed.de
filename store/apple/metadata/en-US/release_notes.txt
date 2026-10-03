@@ -1,3 +1,10 @@
-Version 1.3 brings local dashcam videos, on-device sign recognition with sound or spoken feedback, and geolocated photos you review before optional Panoramax upload. A new Data Manager simplifies offline region downloads and storage. Improved source display, recording controls, onboarding and diagnostics. Recognition and map data can be wrong; always follow road signs.
+New in 1.3:
 
-Behind Info, browse country-specific speeding fine tables and a traffic-sign catalogue with pictograms and spoken names in English, French, German and Dutch. The reference pages are available offline and are not legal advice.
+• Record journeys with the built-in dashcam, then watch, share or delete your videos.
+• Hear a sound or spoken feedback when the camera recognises supported signs.
+• Capture street photos and review them before an optional Panoramax upload.
+• Manage offline map downloads and storage in the new Data Manager.
+• Explore traffic-sign catalogues and country-specific fine tables in Info, with spoken sign names in four languages.
+• Improved recording controls, setup and source information.
+
+Sign recognition and map data can be wrong. Always follow road signs and traffic rules.

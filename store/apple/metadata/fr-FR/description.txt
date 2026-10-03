@@ -1,24 +1,23 @@
-Roulez prudemment. Un compagnon pour votre voiture.
+Une route familière. Une limitation qui change. Gardez l’essentiel en vue avec YouSpeed.
 
-YouSpeed transforme votre smartphone en assistant de conduite pour toute voiture, quel que soit son âge. Gardez les limitations en vue, écoutez les alertes et enregistrez vos trajets. Aucun système intégré au véhicule n'est nécessaire.
+Transformez votre iPhone en compagnon de conduite pour la voiture que vous avez déjà. Consultez votre vitesse à côté de la limitation de référence, écoutez les alertes et conservez une vidéo de votre trajet. Aucune connexion à votre voiture n’est nécessaire.
 
-VOYEZ LES PANNEAUX. RESTEZ ATTENTIF À LA ROUTE.
-La reconnaissance automatique utilise la caméra du téléphone et fonctionne sur l'appareil. Les modèles nationaux couvrent au total des centaines de classes de panneaux, dont les limitations de vitesse. Choisissez des alertes sonores ou vocales. Les panneaux pris en charge et la disponibilité dépendent du pays et du modèle installé.
+Gardez les limitations en vue
+Les cartes téléchargées et la reconnaissance par caméra fournissent des indications de limitation pendant votre trajet. Choisissez le seuil de vos alertes de vitesse. Dans les pays pris en charge, une estimation des sanctions vous aide à comprendre ce qu’un dépassement pourrait coûter.
 
-CONNAISSEZ VOTRE VITESSE ET LES CONSÉQUENCES.
-Consultez votre vitesse et la limitation de référence. Configurez les alertes sonores et obtenez une estimation des sanctions propres au pays lorsque cette fonction est prise en charge.
+Écoutez les panneaux
+Votre iPhone reconnaît les panneaux pris en charge directement sur l’appareil. Choisissez un son ou une annonce vocale lorsqu’un panneau est reconnu. Les panneaux disponibles et la reconnaissance par caméra dépendent du pays, du modèle installé et de l’appareil.
 
-ENREGISTREZ LE TRAJET. GARDEZ LA VIDÉO.
-La dashcam intégrée sauvegarde les trajets localement. À l'arrêt, regardez, partagez ou supprimez vos vidéos. Vous choisissez ce que vous conservez et partagez.
+Filmez maintenant. Regardez plus tard.
+La dashcam intégrée enregistre les vidéos sur votre iPhone. À l’arrêt, regardez vos enregistrements, partagez un extrait ou supprimez ce dont vous n’avez plus besoin.
 
-DES CARTES MÊME SANS CONNEXION CONTINUE.
-Téléchargez les cartes avant de partir. Les cartes et règles indicatives couvrent l'Allemagne, la France, la Suisse, la Belgique et les Pays-Bas.
+Préparez vos cartes, puis roulez hors ligne
+Téléchargez les cartes utiles avant de partir et utilisez-les sans connexion mobile permanente. Des cartes sont disponibles pour la France, l’Allemagne, la Suisse, la Belgique et les Pays-Bas. Le gestionnaire de données facilite les téléchargements et la gestion de l’espace de stockage.
 
-VOTRE VOITURE. VOTRE VIE PRIVÉE.
-Les fonctions de conduite ne nécessitent pas de compte. Aucun SDK publicitaire ou de suivi. Corrigez les limitations par la voix sur les appareils et dans les langues pris en charge. Vérifiez vos photos de rue avant un éventuel envoi à Panoramax.
+Découvrez et contribuez
+Dans Info, consultez hors ligne les catalogues de panneaux et les barèmes d’amendes par pays. Écoutez les noms des panneaux en français, allemand, anglais et néerlandais. Sur les appareils et dans les langues pris en charge, vous pouvez enregistrer des corrections de limitation à la voix. Vous pouvez aussi prendre des photos de rues, les vérifier et choisir lesquelles envoyer à Panoramax.
 
-Configurez YouSpeed à l’arrêt. La reconnaissance peut manquer ou mal interpréter des panneaux ; sa disponibilité dépend du modèle national installé et de l’appareil. La couverture cartographique et les informations sur les sanctions varient selon le pays. Les panneaux, règles de circulation et décisions officielles font foi. YouSpeed ne garantit ni la limitation applicable ni les conséquences juridiques.
+Vos enregistrements, votre choix
+Les fonctions de conduite ne nécessitent aucun compte. La caméra et le microphone sont facultatifs. Si la prise de photos est activée, l’app photographie automatiquement pendant les déplacements lorsqu’elle est ouverte. Photos et vidéos restent sur votre iPhone jusqu’à ce que vous choisissiez de les partager ou de les envoyer. Les envois facultatifs à Panoramax nécessitent un compte connecté et Internet ; les photos envoyées contiennent des données de localisation et de prise de vue. Les journaux de diagnostic locaux sont activés par défaut et peuvent être désactivés dans les réglages. Aucun SDK publicitaire ou de suivi.
 
-Les fonctions de conduite ne nécessitent pas de compte. L’accès à la caméra et au microphone est facultatif. Si la capture est activée, des photos sont prises automatiquement en mouvement lorsque l’app est ouverte. Photos et vidéos restent sur votre appareil jusqu’à votre décision de les partager ou de les envoyer. Les envois Panoramax nécessitent un compte connecté, Internet et votre sélection ; les photos envoyées contiennent la position et les métadonnées de capture. Les journaux de diagnostic locaux sont activés par défaut et peuvent être désactivés. Aucun SDK publicitaire ou de suivi.
-
-Sous Infos, consultez les tableaux d’amendes par pays et un catalogue de panneaux avec pictogrammes et noms prononcés en anglais, français, allemand et néerlandais. Ces références sont disponibles hors ligne et ne constituent pas un conseil juridique.
+Configurez l’app et utilisez ses commandes à l’arrêt. La reconnaissance et les cartes peuvent être incomplètes ou erronées. La couverture et les estimations de sanctions varient selon les pays ; les barèmes ne constituent pas un conseil juridique. Respectez toujours les panneaux et le code de la route. YouSpeed ne garantit ni la limitation applicable ni les conséquences juridiques.

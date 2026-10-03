@@ -1,3 +1,10 @@
-Version 1.3 bietet lokale Dashcam-Videos, Verkehrszeichenerkennung auf dem Gerät mit Ton oder Sprache sowie Straßenfotos, die du vor einem optionalen Panoramax-Upload prüfst. Der neue Datenmanager vereinfacht Offline-Downloads und Speicherverwaltung. Verbesserte Quellenanzeige, Aufnahmebedienung, Einführung und Diagnose. Erkennung und Kartendaten können falsch sein; beachte immer die Verkehrszeichen.
+Neu in 1.3:
 
-Unter Info findest du länderspezifische Bußgeldtabellen und einen Verkehrszeichenkatalog mit Abbildungen und gesprochenen Namen auf Englisch, Französisch, Deutsch und Niederländisch. Die Referenzseiten sind offline verfügbar und keine Rechtsberatung.
+• Fahrten mit der integrierten Dashcam aufnehmen und Videos später ansehen, teilen oder löschen.
+• Ton oder Sprachausgabe, wenn die Kamera unterstützte Verkehrszeichen erkennt.
+• Straßenfotos aufnehmen und vor einem optionalen Panoramax-Upload prüfen.
+• Offline-Karten und Speicherplatz im neuen Datenmanager verwalten.
+• Verkehrszeichenkataloge und länderspezifische Bußgeldtabellen unter Info – mit gesprochenen Zeichennamen in vier Sprachen.
+• Verbesserte Aufnahmebedienung, Einrichtung und Quelleninformationen.
+
+Erkennung und Kartendaten können falsch sein. Beachte immer Verkehrszeichen und Verkehrsregeln.

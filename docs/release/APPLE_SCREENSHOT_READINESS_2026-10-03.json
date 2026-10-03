@@ -1,0 +1,800 @@
+{
+  "format": "youspeed.apple-screenshot-readiness.v1",
+  "reviewed_date": "2026-10-03",
+  "status": "passed",
+  "specification": "https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/",
+  "folder_display_label": "iphone-6.9",
+  "errors": [],
+  "locales": [
+    {
+      "locale": "de-DE",
+      "count": 10,
+      "contact_sheet": "docs/release/apple-gallery-review-2026-10-03/de-DE-contact-sheet.jpg",
+      "screenshots": [
+        {
+          "order": 1,
+          "path": "store/apple/screenshots/de-DE/iphone-6.9/01-safe-speed.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/01-safe-speed.png",
+          "sha256": "c7d4742945c57647d89648ceab7438b3f701b4626a3341389c75f54aa70a8994",
+          "bytes": 180131,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/de-DE/01-safe-speed.png",
+          "source_sha256": "a42611f942c703c5d3e0a4ef984246881099c3873456c084173618381d8fcff0"
+        },
+        {
+          "order": 2,
+          "path": "store/apple/screenshots/de-DE/iphone-6.9/02-camera-speed-limit.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/02-camera-speed-limit.png",
+          "sha256": "81aab88601362a891da3cc32af9ca3d19504b8c32652b6af7f7693644c5fdeef",
+          "bytes": 239077,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/de-DE/02-camera-speed-limit.png",
+          "source_sha256": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538"
+        },
+        {
+          "order": 3,
+          "path": "store/apple/screenshots/de-DE/iphone-6.9/03-secondary-sign.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/03-secondary-sign.png",
+          "sha256": "ceeacef793f666d5b657182567c90e3ade324a032774bbb889512047c4363efd",
+          "bytes": 193575,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/de-DE/03-secondary-sign.png",
+          "source_sha256": "f78d5c4768c544850519def612d9335512abd007b2723783019ea79dad584e59"
+        },
+        {
+          "order": 4,
+          "path": "store/apple/screenshots/de-DE/iphone-6.9/04-dashcam.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/04-dashcam.png",
+          "sha256": "340941aeb4372b02e4c07b598f77d58078180659c259c9d83abe1331c985313c",
+          "bytes": 1465926,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/de-DE/04-dashcam.png",
+          "source_sha256": "5ced10adf38a5160d008d0af5997d672536ed100c9284fd48c1fd60f3a530a87",
+          "composite": {
+            "format": "youspeed.dashcam-marketing-composite.v1",
+            "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+            "frame": {
+              "path": "store/artwork/source/real-dashcam-5.5s.png",
+              "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+              "source_time_seconds": 5.5,
+              "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+              "archive": {
+                "dataset": "loffenauer/youspeed.de",
+                "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+                "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+              },
+              "source_crop": [
+                0,
+                320,
+                3840,
+                1720
+              ],
+              "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+            },
+            "native_viewport": [
+              54,
+              1311,
+              1212,
+              1043
+            ],
+            "fit": "centered aspect-fill",
+            "mask": "enclosed-black-component",
+            "protected_capsules": [
+              [
+                90,
+                1348,
+                379,
+                78
+              ],
+              [
+                214,
+                2242,
+                891,
+                76
+              ]
+            ],
+            "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+            "changed_native_pixels": 1155174,
+            "replaced_native_pixels": 1155174,
+            "composed_native_sha256": "c7051021af464d4e4ad495984ecad2f463579ef9e5d6d10b59f1fcd6bfc50e1d",
+            "native_placement": {
+              "x": 192,
+              "y": 690,
+              "width": 936,
+              "height": 2033
+            },
+            "rendered_viewport_bounds": [
+              230,
+              1619,
+              1090,
+              2359
+            ]
+          }
+        },
+        {
+          "order": 5,
+          "path": "store/apple/screenshots/de-DE/iphone-6.9/05-reference-signs-DE.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/05-reference-signs-DE.png",
+          "sha256": "3bb8358a8dd17ffc56ecebd31f20fea3793bfb0f812d4cc7864493d19ffc191b",
+          "bytes": 339531,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/de-DE/signs/DE.png",
+          "source_sha256": "6ffc39455b6110c4524a4a2c3d7f2f987afbdd4748754c57ffce582a58f4a410"
+        },
+        {
+          "order": 6,
+          "path": "store/apple/screenshots/de-DE/iphone-6.9/06-reference-signs-FR.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/06-reference-signs-FR.png",
+          "sha256": "e8ba21fd631d49f242c539af14bf3a05560bbe94eeddc70dc0dc36894169810f",
+          "bytes": 335358,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/de-DE/signs/FR.png",
+          "source_sha256": "81b41b382a8000b994fb8e0e0cb0eaf9bf6403445081b41631600880cf59a16d"
+        },
+        {
+          "order": 7,
+          "path": "store/apple/screenshots/de-DE/iphone-6.9/07-reference-signs-CH.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/07-reference-signs-CH.png",
+          "sha256": "eca8c3bcb645cca1b27e1a8dbb052d8593b5b826730bee9dd553997ca4c02c99",
+          "bytes": 309312,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/de-DE/signs/CH.png",
+          "source_sha256": "45e3ebf39cf935c84e87971a026bf4e7db741024f2bf95e70154ee3394b389a3"
+        },
+        {
+          "order": 8,
+          "path": "store/apple/screenshots/de-DE/iphone-6.9/08-reference-signs-BE.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/08-reference-signs-BE.png",
+          "sha256": "c9b3c6a42bc3f983aa878a4afb6b33a37a9d93c22132aa806e42d075cd584548",
+          "bytes": 300898,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/de-DE/signs/BE.png",
+          "source_sha256": "24e89110ab4786fc1ac6001f474c863b365ebc3c41634e685cb3cc329259758b"
+        },
+        {
+          "order": 9,
+          "path": "store/apple/screenshots/de-DE/iphone-6.9/09-reference-signs-NL.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/09-reference-signs-NL.png",
+          "sha256": "13ae086b82dba31417e4a13742d1cc62ad5b906b7d7703692b1180fac0b2b267",
+          "bytes": 301752,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/de-DE/signs/NL.png",
+          "source_sha256": "2f406b302f995421823181be120113fc5f5d7835057adb5f62f3e7435b47c51c"
+        },
+        {
+          "order": 10,
+          "path": "store/apple/screenshots/de-DE/iphone-6.9/10-reference-penalties-NLD.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/de-DE/iphone-6.9/10-reference-penalties-NLD.png",
+          "sha256": "12b8ef70f0aaa82594e0933d8cb4a3132b60d863a1bf3bf54e83381ebc953f4f",
+          "bytes": 295587,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/de-DE/penalties/NLD.png",
+          "source_sha256": "db8664f57d46d158cef0769c6e9f0689b17f073f84643a26ad24d2bd5a170714"
+        }
+      ]
+    },
+    {
+      "locale": "en-US",
+      "count": 10,
+      "contact_sheet": "docs/release/apple-gallery-review-2026-10-03/en-US-contact-sheet.jpg",
+      "screenshots": [
+        {
+          "order": 1,
+          "path": "store/apple/screenshots/en-US/iphone-6.9/01-safe-speed.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/01-safe-speed.png",
+          "sha256": "97b5dc946ec6678c8773dee5aeb0574112c92d246c21ac3245115ff791ca0983",
+          "bytes": 181798,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/en-US/01-safe-speed.png",
+          "source_sha256": "601692b64b457bdb6b971ba4587430d153a50c89a960f0bedb1f55f1b5dd85f1"
+        },
+        {
+          "order": 2,
+          "path": "store/apple/screenshots/en-US/iphone-6.9/02-camera-speed-limit.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/02-camera-speed-limit.png",
+          "sha256": "e8abdc0d134501c42e234ab355a4308924e87ed891034b4116fd497136f8a904",
+          "bytes": 239753,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/en-US/02-camera-speed-limit.png",
+          "source_sha256": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538"
+        },
+        {
+          "order": 3,
+          "path": "store/apple/screenshots/en-US/iphone-6.9/03-secondary-sign.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/03-secondary-sign.png",
+          "sha256": "d63c628b7e9094dbcce76527ce8383b13395f5e9f73c756190a1235e79a17d4c",
+          "bytes": 199804,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/en-US/03-secondary-sign.png",
+          "source_sha256": "f78d5c4768c544850519def612d9335512abd007b2723783019ea79dad584e59"
+        },
+        {
+          "order": 4,
+          "path": "store/apple/screenshots/en-US/iphone-6.9/04-dashcam.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/04-dashcam.png",
+          "sha256": "30010370d4d0c24f7e158059c024fd8b3329eae5e2447cace139c676164c5d2f",
+          "bytes": 1477520,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/en-US/04-dashcam.png",
+          "source_sha256": "c1ddbae45b10e848ffa8fa3d3df9423f2af81c7d97d20b36699efb72d3aee411",
+          "composite": {
+            "format": "youspeed.dashcam-marketing-composite.v1",
+            "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+            "frame": {
+              "path": "store/artwork/source/real-dashcam-5.5s.png",
+              "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+              "source_time_seconds": 5.5,
+              "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+              "archive": {
+                "dataset": "loffenauer/youspeed.de",
+                "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+                "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+              },
+              "source_crop": [
+                0,
+                320,
+                3840,
+                1720
+              ],
+              "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+            },
+            "native_viewport": [
+              54,
+              1311,
+              1212,
+              1043
+            ],
+            "fit": "centered aspect-fill",
+            "mask": "enclosed-black-component",
+            "protected_capsules": [
+              [
+                90,
+                1348,
+                379,
+                78
+              ],
+              [
+                328,
+                2242,
+                664,
+                76
+              ]
+            ],
+            "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+            "changed_native_pixels": 1172426,
+            "replaced_native_pixels": 1172426,
+            "composed_native_sha256": "12c77dbed1e7a1e9e3210f83601a9dcd7421ec5edc54ded261360626451620e2",
+            "native_placement": {
+              "x": 192,
+              "y": 690,
+              "width": 936,
+              "height": 2033
+            },
+            "rendered_viewport_bounds": [
+              230,
+              1619,
+              1090,
+              2359
+            ]
+          }
+        },
+        {
+          "order": 5,
+          "path": "store/apple/screenshots/en-US/iphone-6.9/05-reference-signs-DE.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/05-reference-signs-DE.png",
+          "sha256": "f040812505c0c98dad9c07a1ced4ae6336bc8eb3c46c6653e244e53c3fc44a91",
+          "bytes": 328427,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/en-US/signs/DE.png",
+          "source_sha256": "b3cb7956edceab15d2a68f3c6ef2a0276c0fa7d7a2c90d9e5ff3ddf2d2bd0caf"
+        },
+        {
+          "order": 6,
+          "path": "store/apple/screenshots/en-US/iphone-6.9/06-reference-signs-FR.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/06-reference-signs-FR.png",
+          "sha256": "f517ffb4ad347469cd16ff772390fd54fe8e3728eea61a4b78b3c7cdfe8820fe",
+          "bytes": 322262,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/en-US/signs/FR.png",
+          "source_sha256": "1adb811cb4bd0ec8b4177ca357cb6d43b4dfe8855ad2e89f1448a021c6200248"
+        },
+        {
+          "order": 7,
+          "path": "store/apple/screenshots/en-US/iphone-6.9/07-reference-signs-CH.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/07-reference-signs-CH.png",
+          "sha256": "15cf8d6ba73bd4042f408e9102fdf1b31d49cf59fe697897dae46075fe4d3e79",
+          "bytes": 298384,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/en-US/signs/CH.png",
+          "source_sha256": "fa23ae506d17cbb09d9338fabcc16a3168acf8866a2620f428099e5b3b56a666"
+        },
+        {
+          "order": 8,
+          "path": "store/apple/screenshots/en-US/iphone-6.9/08-reference-signs-BE.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/08-reference-signs-BE.png",
+          "sha256": "c516d5a40461398afdca2645b0ba54d5f0fc9aa4282c11e5c24fa2291ee972ce",
+          "bytes": 294279,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/en-US/signs/BE.png",
+          "source_sha256": "ffd9e738a2ce81b22d9777b737c23ad5b1c9ae113650835d4fa5eaeea51182ad"
+        },
+        {
+          "order": 9,
+          "path": "store/apple/screenshots/en-US/iphone-6.9/09-reference-signs-NL.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/09-reference-signs-NL.png",
+          "sha256": "8fc734ceca2696756f181895d9f052d9fce0102099b5b8456f94a82cb51d7266",
+          "bytes": 289201,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/en-US/signs/NL.png",
+          "source_sha256": "7aeeed776b4f2bcf865d0014fcd242768aeb133a3f186583c6fd0c5d353d9558"
+        },
+        {
+          "order": 10,
+          "path": "store/apple/screenshots/en-US/iphone-6.9/10-reference-penalties-NLD.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/en-US/iphone-6.9/10-reference-penalties-NLD.png",
+          "sha256": "a19c6e15aad43a5af72b4ed18f8c2ef198a34cae515ec81894d0de902fd2d9c3",
+          "bytes": 290765,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/en-US/penalties/NLD.png",
+          "source_sha256": "6b81ccf77e88280bbb7967342fd2b425c8a4c7c58dce7dfbce2d3fca1cddd6a7"
+        }
+      ]
+    },
+    {
+      "locale": "fr-FR",
+      "count": 10,
+      "contact_sheet": "docs/release/apple-gallery-review-2026-10-03/fr-FR-contact-sheet.jpg",
+      "screenshots": [
+        {
+          "order": 1,
+          "path": "store/apple/screenshots/fr-FR/iphone-6.9/01-safe-speed.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/01-safe-speed.png",
+          "sha256": "49b2e44f5e79f1e57231b3bdf8d4fd6343dbe1f447886b849ef611efa96bd90a",
+          "bytes": 192264,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/fr-FR/01-safe-speed.png",
+          "source_sha256": "601692b64b457bdb6b971ba4587430d153a50c89a960f0bedb1f55f1b5dd85f1"
+        },
+        {
+          "order": 2,
+          "path": "store/apple/screenshots/fr-FR/iphone-6.9/02-camera-speed-limit.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/02-camera-speed-limit.png",
+          "sha256": "dd5ac6cf37aaa728af056ebd13793b4046dc6eb886fa3737685fb9453ae9d2d9",
+          "bytes": 242543,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/fr-FR/02-camera-speed-limit.png",
+          "source_sha256": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538"
+        },
+        {
+          "order": 3,
+          "path": "store/apple/screenshots/fr-FR/iphone-6.9/03-secondary-sign.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/03-secondary-sign.png",
+          "sha256": "370033810312760aa01c9a970873d60cef240c4502824ba8ad810f558b5455ab",
+          "bytes": 199856,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/fr-FR/03-secondary-sign.png",
+          "source_sha256": "dc0ffa236e07d22ac7f4e263ea0eaa2c6405cdc19acb2c689f7ece32ab02a8a2"
+        },
+        {
+          "order": 4,
+          "path": "store/apple/screenshots/fr-FR/iphone-6.9/04-dashcam.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/04-dashcam.png",
+          "sha256": "e79e245854f2ac6479eb4143bfba6477db2b9280b529c37aa1b594cb7dda1a8d",
+          "bytes": 1471944,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/fr-FR/04-dashcam.png",
+          "source_sha256": "e659eeac40bacc0f202cd86d062ce23ef70f2145d154860948644d095ac434ad",
+          "composite": {
+            "format": "youspeed.dashcam-marketing-composite.v1",
+            "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+            "frame": {
+              "path": "store/artwork/source/real-dashcam-5.5s.png",
+              "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+              "source_time_seconds": 5.5,
+              "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+              "archive": {
+                "dataset": "loffenauer/youspeed.de",
+                "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+                "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+              },
+              "source_crop": [
+                0,
+                320,
+                3840,
+                1720
+              ],
+              "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+            },
+            "native_viewport": [
+              54,
+              1311,
+              1212,
+              1043
+            ],
+            "fit": "centered aspect-fill",
+            "mask": "enclosed-black-component",
+            "protected_capsules": [
+              [
+                90,
+                1348,
+                460,
+                78
+              ],
+              [
+                270,
+                2242,
+                778,
+                76
+              ]
+            ],
+            "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+            "changed_native_pixels": 1157444,
+            "replaced_native_pixels": 1157444,
+            "composed_native_sha256": "63b09077ee22b7ff6b60f1aed7e92b255d2e5f1d4a9eef9a80ed66aec27e3590",
+            "native_placement": {
+              "x": 192,
+              "y": 690,
+              "width": 936,
+              "height": 2033
+            },
+            "rendered_viewport_bounds": [
+              230,
+              1619,
+              1090,
+              2359
+            ]
+          }
+        },
+        {
+          "order": 5,
+          "path": "store/apple/screenshots/fr-FR/iphone-6.9/05-reference-signs-DE.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/05-reference-signs-DE.png",
+          "sha256": "a343742cb71bbf71da8b360f27a361faa68524b2bd02975302794d107216c0a0",
+          "bytes": 333159,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/fr-FR/signs/DE.png",
+          "source_sha256": "97ed167a87bd20cf85a02ae8d9c221db5a5d1a3a98de61c8cd9b511f7b423738"
+        },
+        {
+          "order": 6,
+          "path": "store/apple/screenshots/fr-FR/iphone-6.9/06-reference-signs-FR.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/06-reference-signs-FR.png",
+          "sha256": "0a12cc3b806bb8d7313c59853222c43fa3bb09d7f57d261b1505c5bed8bfb58c",
+          "bytes": 357578,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/fr-FR/signs/FR.png",
+          "source_sha256": "8b47618e122efa6da420c691e20487b562c334354c7b1529a155e19274a5204c"
+        },
+        {
+          "order": 7,
+          "path": "store/apple/screenshots/fr-FR/iphone-6.9/07-reference-signs-CH.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/07-reference-signs-CH.png",
+          "sha256": "24088f7b1582db4485dd247837db2b7f2ab273a1844312945b7071065eec5d93",
+          "bytes": 319748,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/fr-FR/signs/CH.png",
+          "source_sha256": "d9ddbf9541ee5d5c6f492ebd7870555d36458b4dc4f599be61a0a32e569503f6"
+        },
+        {
+          "order": 8,
+          "path": "store/apple/screenshots/fr-FR/iphone-6.9/08-reference-signs-BE.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/08-reference-signs-BE.png",
+          "sha256": "0fbfd45cb065fee265d43651f4e58c3154fff07b66a574c3331ce65d0bbc72f3",
+          "bytes": 318831,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/fr-FR/signs/BE.png",
+          "source_sha256": "e0968f8d278c5374748be81a66ee9fcd1e917ecc6d0a6f3eac13c95f8959fb29"
+        },
+        {
+          "order": 9,
+          "path": "store/apple/screenshots/fr-FR/iphone-6.9/09-reference-signs-NL.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/09-reference-signs-NL.png",
+          "sha256": "98526cfd9a70eeb32a330f8dc3b9c372aae0cc50b131bc26c8c209a1625dae44",
+          "bytes": 300433,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/fr-FR/signs/NL.png",
+          "source_sha256": "f03205164ff2cbd6434803db67d3bf0299c7681f5a2263ed4eb6991541a0a635"
+        },
+        {
+          "order": 10,
+          "path": "store/apple/screenshots/fr-FR/iphone-6.9/10-reference-penalties-NLD.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/fr-FR/iphone-6.9/10-reference-penalties-NLD.png",
+          "sha256": "5e58eaedbe93abd23a4c65f2b908a20ed173e9b8c873d6cda714dec0bce27ef2",
+          "bytes": 323202,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/fr-FR/penalties/NLD.png",
+          "source_sha256": "b3c94a62a782ffd404171ebb936bb7bd0a2cdd47d1272025d845d46cef010896"
+        }
+      ]
+    },
+    {
+      "locale": "nl-NL",
+      "count": 10,
+      "contact_sheet": "docs/release/apple-gallery-review-2026-10-03/nl-NL-contact-sheet.jpg",
+      "screenshots": [
+        {
+          "order": 1,
+          "path": "store/apple/screenshots/nl-NL/iphone-6.9/01-safe-speed.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/01-safe-speed.png",
+          "sha256": "c052c162525d685bf18cd3ed106d2fb58f0260391e83136998ad845186d7a5b7",
+          "bytes": 179960,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/nl-NL/01-safe-speed.png",
+          "source_sha256": "a42611f942c703c5d3e0a4ef984246881099c3873456c084173618381d8fcff0"
+        },
+        {
+          "order": 2,
+          "path": "store/apple/screenshots/nl-NL/iphone-6.9/02-camera-speed-limit.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/02-camera-speed-limit.png",
+          "sha256": "f8419ac2349696569593a8d3dbdc7ee35aa07e22bc8f0c46a2e2c1befda98b43",
+          "bytes": 235769,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/nl-NL/02-camera-speed-limit.png",
+          "source_sha256": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538"
+        },
+        {
+          "order": 3,
+          "path": "store/apple/screenshots/nl-NL/iphone-6.9/03-secondary-sign.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/03-secondary-sign.png",
+          "sha256": "3f4506b287b64b119a0d5d23756057eadf2d26e44aa5916308b98613a38cf067",
+          "bytes": 195832,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/nl-NL/03-secondary-sign.png",
+          "source_sha256": "f78d5c4768c544850519def612d9335512abd007b2723783019ea79dad584e59"
+        },
+        {
+          "order": 4,
+          "path": "store/apple/screenshots/nl-NL/iphone-6.9/04-dashcam.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/04-dashcam.png",
+          "sha256": "24bbdd8980febc9f43c7d2b1ea9e8096101e0e0640e07d32660860e4014ce2c7",
+          "bytes": 1473314,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/artwork/raw-screenshots/apple/nl-NL/04-dashcam.png",
+          "source_sha256": "e82d65ba1f506caad3a5a9ceea6d5dc651da1f41815a18631f8db34f75f8179c",
+          "composite": {
+            "format": "youspeed.dashcam-marketing-composite.v1",
+            "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+            "frame": {
+              "path": "store/artwork/source/real-dashcam-5.5s.png",
+              "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+              "source_time_seconds": 5.5,
+              "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+              "archive": {
+                "dataset": "loffenauer/youspeed.de",
+                "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+                "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+              },
+              "source_crop": [
+                0,
+                320,
+                3840,
+                1720
+              ],
+              "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+            },
+            "native_viewport": [
+              54,
+              1311,
+              1212,
+              1043
+            ],
+            "fit": "centered aspect-fill",
+            "mask": "enclosed-black-component",
+            "protected_capsules": [
+              [
+                90,
+                1348,
+                379,
+                78
+              ],
+              [
+                294,
+                2242,
+                731,
+                76
+              ]
+            ],
+            "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+            "changed_native_pixels": 1167334,
+            "replaced_native_pixels": 1167334,
+            "composed_native_sha256": "1fa905c43bdfaf4b6b501d3ef039a821033876d4fd95db1f8a581401007d8b69",
+            "native_placement": {
+              "x": 192,
+              "y": 690,
+              "width": 936,
+              "height": 2033
+            },
+            "rendered_viewport_bounds": [
+              230,
+              1619,
+              1090,
+              2359
+            ]
+          }
+        },
+        {
+          "order": 5,
+          "path": "store/apple/screenshots/nl-NL/iphone-6.9/05-reference-signs-DE.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/05-reference-signs-DE.png",
+          "sha256": "d80de3f0ebd495ca4b2f02b6fc89884b8d6ac36b4bd7b94f9714592e5d8c4794",
+          "bytes": 333357,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/nl-NL/signs/DE.png",
+          "source_sha256": "e3abd2d9e3151ca1d9f73804fa33d6221bdc69c4e352deb75aea8ec1775832cb"
+        },
+        {
+          "order": 6,
+          "path": "store/apple/screenshots/nl-NL/iphone-6.9/06-reference-signs-FR.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/06-reference-signs-FR.png",
+          "sha256": "c8f49684d2df0a1d7b5431683622171025208276f20ad45009007b179e644dcb",
+          "bytes": 318917,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/nl-NL/signs/FR.png",
+          "source_sha256": "fedcf75fb4598d3c73649386372c4c6101fb9f27191e20d9c6536096d0b4e523"
+        },
+        {
+          "order": 7,
+          "path": "store/apple/screenshots/nl-NL/iphone-6.9/07-reference-signs-CH.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/07-reference-signs-CH.png",
+          "sha256": "36db236b987692783f13c46d22738fad90325cc34d0c83c0b675547f6cb71d68",
+          "bytes": 309494,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/nl-NL/signs/CH.png",
+          "source_sha256": "ae5a4f2921cdfb971a481c48a3a6eaaacfc9e0d1fb6aa2c40c6a9f77d66ff143"
+        },
+        {
+          "order": 8,
+          "path": "store/apple/screenshots/nl-NL/iphone-6.9/08-reference-signs-BE.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/08-reference-signs-BE.png",
+          "sha256": "6575cb1d6072f6a7cf94996bcb06bffeb8d9e69ca6bf66bb43430d2a762715dc",
+          "bytes": 309941,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/nl-NL/signs/BE.png",
+          "source_sha256": "8e7d8ac9e6eac673043a182af72f352112d9ac53b1257d97c8f1c0a3e1f904ac"
+        },
+        {
+          "order": 9,
+          "path": "store/apple/screenshots/nl-NL/iphone-6.9/09-reference-signs-NL.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/09-reference-signs-NL.png",
+          "sha256": "5431b4cdad4c22543757965f99bfabac78a4c03a33c4a81b31d0e30583c79340",
+          "bytes": 306980,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/nl-NL/signs/NL.png",
+          "source_sha256": "82cb312084a4feee4b762ee8be3d8f5ed23f4559841ae83b718959f99c3f30b6"
+        },
+        {
+          "order": 10,
+          "path": "store/apple/screenshots/nl-NL/iphone-6.9/10-reference-penalties-NLD.png",
+          "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/screenshots/nl-NL/iphone-6.9/10-reference-penalties-NLD.png",
+          "sha256": "9460b91901444895db7ed87b76f5cb36ce0f394ea9a1798ae7380036149b0ba7",
+          "bytes": 303473,
+          "width": 1320,
+          "height": 2868,
+          "mode": "RGB",
+          "source": "store/reference-screenshots/apple/nl-NL/penalties/NLD.png",
+          "source_sha256": "f300e7ba63a5102c61e97a3a70d923756d8ae59e66c41553c3e904838c9a5a35"
+        }
+      ]
+    }
+  ],
+  "display_type_label": "iPhone 6.9-inch Display",
+  "visual_review": {
+    "reviewed_locales": [
+      "de-DE",
+      "en-US",
+      "fr-FR",
+      "nl-NL"
+    ],
+    "status": "passed",
+    "notes": [
+      "Headlines and supporting copy are legible and stay within the composition.",
+      "Complete native app captures are proportionally scaled, with unchanged shared pictograms.",
+      "Five country sign-reference images intentionally repeat a catalog layout.",
+      "Dashcam native simulator capture has an empty camera preview; no road footage was invented."
+    ]
+  },
+  "preview": {
+    "locale": "en-US",
+    "path": "store/apple/previews/en-US/iphone-6.9/youspeed-app-preview.mp4",
+    "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/store/apple/previews/en-US/iphone-6.9/youspeed-app-preview.mp4",
+    "sha256": "d5d8b4819c593d29bc65e7609b8b0ad955c5eba0e91fc35cfb347c96b7a243e5",
+    "bytes": 41955856,
+    "width": 1920,
+    "height": 886,
+    "duration_seconds": 30,
+    "format_validation": "passed (retained render report; specifications rechecked 2026-10-03)",
+    "specification": "https://developer.apple.com/help/app-store-connect/reference/app-information/app-preview-specifications/",
+    "content_status": "draft native app demonstration; camera recognition results explicitly labelled examples",
+    "limitations": [
+      "English only; no German, French or Dutch localized previews.",
+      "Actual calibration, recording interactions and Gallery playback still need device capture for a fully filmed demonstration."
+    ],
+    "evidence": "store/apple/previews/en-US/iphone-6.9/README.md"
+  },
+  "dashcam_composite_review": {
+    "status": "passed",
+    "frame_time_seconds": 5.5,
+    "people_visible": false,
+    "cars_visible": false,
+    "source_crop_excludes_recording_car_interior": true,
+    "validation": "docs/release/dashcam-composites-2026-10-03/validation.json"
+  }
+}

@@ -1,0 +1,353 @@
+{
+  "format": "youspeed.dashcam-composite-validation.v1",
+  "date": "2026-10-03",
+  "status": "passed",
+  "errors": [],
+  "baseline_files_checked": 314,
+  "changed_files": [
+    "fastlane/metadata/android/de-DE/images/phoneScreenshots/02-dashcam.png",
+    "fastlane/metadata/android/en-US/images/phoneScreenshots/02-dashcam.png",
+    "fastlane/metadata/android/es-ES/images/phoneScreenshots/02-dashcam.png",
+    "fastlane/metadata/android/fr-FR/images/phoneScreenshots/02-dashcam.png",
+    "fastlane/metadata/android/it-IT/images/phoneScreenshots/02-dashcam.png",
+    "fastlane/metadata/android/nl-NL/images/phoneScreenshots/02-dashcam.png",
+    "fastlane/metadata/android/pl-PL/images/phoneScreenshots/02-dashcam.png",
+    "fastlane/metadata/android/pt-BR/images/phoneScreenshots/02-dashcam.png",
+    "fastlane/metadata/android/sv-SE/images/phoneScreenshots/02-dashcam.png",
+    "store/android/listing/de-DE/phone-screenshots/02-dashcam.png",
+    "store/android/listing/en-US/phone-screenshots/02-dashcam.png",
+    "store/android/listing/es-ES/phone-screenshots/02-dashcam.png",
+    "store/android/listing/fr-FR/phone-screenshots/02-dashcam.png",
+    "store/android/listing/it-IT/phone-screenshots/02-dashcam.png",
+    "store/android/listing/nl-NL/phone-screenshots/02-dashcam.png",
+    "store/android/listing/pl-PL/phone-screenshots/02-dashcam.png",
+    "store/android/listing/pt-BR/phone-screenshots/02-dashcam.png",
+    "store/android/listing/sv-SE/phone-screenshots/02-dashcam.png",
+    "store/apple/screenshots/de-DE/iphone-6.9/04-dashcam.png",
+    "store/apple/screenshots/en-US/iphone-6.9/04-dashcam.png",
+    "store/apple/screenshots/fr-FR/iphone-6.9/04-dashcam.png",
+    "store/apple/screenshots/nl-NL/iphone-6.9/04-dashcam.png"
+  ],
+  "source_frame": {
+    "path": "store/artwork/source/real-dashcam-5.5s.png",
+    "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+    "source_time_seconds": 5.5,
+    "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+    "archive": {
+      "dataset": "loffenauer/youspeed.de",
+      "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+      "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+    },
+    "source_crop": [
+      0,
+      320,
+      3840,
+      1720
+    ],
+    "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+  },
+  "composites": [
+    {
+      "path": "store/apple/screenshots/en-US/iphone-6.9/04-dashcam.png",
+      "sha256": "30010370d4d0c24f7e158059c024fd8b3329eae5e2447cace139c676164c5d2f",
+      "source": "store/artwork/raw-screenshots/apple/en-US/04-dashcam.png",
+      "before_sha256": "98062a493ca07ddc13ecdd8eba83ce5addff328f8cdc4da674d8b0f0c48cbd04",
+      "mapped_preview_bounds": [
+        230,
+        1619,
+        1090,
+        2359
+      ],
+      "changed_pixel_bounds": [
+        231,
+        1621,
+        1089,
+        2357
+      ],
+      "changed_pixels": 591914,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    },
+    {
+      "path": "store/apple/screenshots/de-DE/iphone-6.9/04-dashcam.png",
+      "sha256": "340941aeb4372b02e4c07b598f77d58078180659c259c9d83abe1331c985313c",
+      "source": "store/artwork/raw-screenshots/apple/de-DE/04-dashcam.png",
+      "before_sha256": "6c4f540aa0fd29091e0043b4a4e2ea3d6a7664b59a0eeae3b253583eb1ff3dee",
+      "mapped_preview_bounds": [
+        230,
+        1619,
+        1090,
+        2359
+      ],
+      "changed_pixel_bounds": [
+        231,
+        1621,
+        1089,
+        2357
+      ],
+      "changed_pixels": 583378,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    },
+    {
+      "path": "store/apple/screenshots/fr-FR/iphone-6.9/04-dashcam.png",
+      "sha256": "e79e245854f2ac6479eb4143bfba6477db2b9280b529c37aa1b594cb7dda1a8d",
+      "source": "store/artwork/raw-screenshots/apple/fr-FR/04-dashcam.png",
+      "before_sha256": "ddc017c454ce55b3ba4edfa9fcc63c68700e4fc905e9e38ee206ef0b9ac275a5",
+      "mapped_preview_bounds": [
+        230,
+        1619,
+        1090,
+        2359
+      ],
+      "changed_pixel_bounds": [
+        231,
+        1621,
+        1089,
+        2357
+      ],
+      "changed_pixels": 584519,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    },
+    {
+      "path": "store/apple/screenshots/nl-NL/iphone-6.9/04-dashcam.png",
+      "sha256": "24bbdd8980febc9f43c7d2b1ea9e8096101e0e0640e07d32660860e4014ce2c7",
+      "source": "store/artwork/raw-screenshots/apple/nl-NL/04-dashcam.png",
+      "before_sha256": "a7cd7d21b25d096d20bec50db5a79b46c0229b827d2649c99034bc49ff6de605",
+      "mapped_preview_bounds": [
+        230,
+        1619,
+        1090,
+        2359
+      ],
+      "changed_pixel_bounds": [
+        231,
+        1621,
+        1089,
+        2357
+      ],
+      "changed_pixels": 589397,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    },
+    {
+      "path": "store/android/listing/en-US/phone-screenshots/02-dashcam.png",
+      "sha256": "ce89872d58782ecd3125377efc2b88d04a4e74e4968f52d1363b8e97f0e26ddc",
+      "source": "store/artwork/raw-screenshots/android/en-US/02-dashcam.png",
+      "before_sha256": "76138d9ebffd17f9da37574d101372aeaf2ee15d232d16fcd50a11b9224c1206",
+      "mapped_preview_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixel_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixels": 195298,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    },
+    {
+      "path": "store/android/listing/de-DE/phone-screenshots/02-dashcam.png",
+      "sha256": "13e90a6ee227eadc3fa2cf3224035efb0f0b8df5167738d2606c28c71d0f2ba8",
+      "source": "store/artwork/raw-screenshots/android/de-DE/02-dashcam.png",
+      "before_sha256": "002d50995e38f7ec0285f0410a3a7b9f36b1f7a6f1c50505b0f4f08211141277",
+      "mapped_preview_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixel_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixels": 195252,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    },
+    {
+      "path": "store/android/listing/fr-FR/phone-screenshots/02-dashcam.png",
+      "sha256": "346bc921ae62c531ed8c85642ee4ea80b4e452c74a6ce3cde34f047e1ed941a7",
+      "source": "store/artwork/raw-screenshots/android/fr-FR/02-dashcam.png",
+      "before_sha256": "4f4ff3a2245a7aee3bc40af48f56c0dd104b923515790d4eb482add91268d491",
+      "mapped_preview_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixel_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixels": 195198,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    },
+    {
+      "path": "store/android/listing/nl-NL/phone-screenshots/02-dashcam.png",
+      "sha256": "516946ed035bcc88017275c5a6ec6ce58032382828c405e8b8be7d49e4974bf7",
+      "source": "store/artwork/raw-screenshots/android/nl-NL/02-dashcam.png",
+      "before_sha256": "58807b29b88f3fc96ec1a97b73b33544dc5c396383ce26555593b8c6d203a5e2",
+      "mapped_preview_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixel_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixels": 195228,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    },
+    {
+      "path": "store/android/listing/es-ES/phone-screenshots/02-dashcam.png",
+      "sha256": "35a531bf7b355d67f7a58052765a16635c26eae283ad59cd29844d1dc5c66718",
+      "source": "store/artwork/raw-screenshots/android/es-ES/02-dashcam.png",
+      "before_sha256": "bb8c1f7f0afedefae97d8b126d39f163c49e8c60669eef647ccf06a17adf8cd6",
+      "mapped_preview_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixel_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixels": 195298,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    },
+    {
+      "path": "store/android/listing/it-IT/phone-screenshots/02-dashcam.png",
+      "sha256": "0f63ec15abc54fac797fc49e04ad213a80ee074b23a03763b176c11967d371ef",
+      "source": "store/artwork/raw-screenshots/android/it-IT/02-dashcam.png",
+      "before_sha256": "50bb1707c86b0282d8b289889cd5c21d3bb464966fa597f63d70d7f932524702",
+      "mapped_preview_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixel_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixels": 195298,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    },
+    {
+      "path": "store/android/listing/pl-PL/phone-screenshots/02-dashcam.png",
+      "sha256": "56783c64ca4bf8978bb3e327d190c3f73ed4422478d005c1af51ef92dd62b199",
+      "source": "store/artwork/raw-screenshots/android/pl-PL/02-dashcam.png",
+      "before_sha256": "0283810eba11e87fc9874282f8cd463c5568db7981ef7e03f7d609c582255888",
+      "mapped_preview_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixel_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixels": 195298,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    },
+    {
+      "path": "store/android/listing/pt-BR/phone-screenshots/02-dashcam.png",
+      "sha256": "cae0d11cd2d22a1e1950a12e4455d44e71edb5c652727c96ad54c31270be91e2",
+      "source": "store/artwork/raw-screenshots/android/pt-BR/02-dashcam.png",
+      "before_sha256": "f6bfae5377830be443ea0665d93980e9302fa9cb523c72de4debbab2d746b407",
+      "mapped_preview_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixel_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixels": 195298,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    },
+    {
+      "path": "store/android/listing/sv-SE/phone-screenshots/02-dashcam.png",
+      "sha256": "6fdc73c722653a468076c8ac2c658b4355dde82f5255973db917fa56bdf15757",
+      "source": "store/artwork/raw-screenshots/android/sv-SE/02-dashcam.png",
+      "before_sha256": "00e6ef0dead7e4459ea7238d2c53f252fe13282875d357df7bae8a80df60c6f6",
+      "mapped_preview_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixel_bounds": [
+        929,
+        557,
+        1475,
+        916
+      ],
+      "changed_pixels": 195298,
+      "final_pixels_changed_outside_mapped_preview": 0,
+      "native_pixels_changed_outside_preview": 0,
+      "native_nonblack_ui_pixels_changed": 0,
+      "native_caption_capsule_pixels_changed": 0
+    }
+  ],
+  "before_hashes": "/private/tmp/youspeed-dashcam-before-sha.json",
+  "before_images": "/private/tmp/youspeed-dashcam-before",
+  "native_composites": "/private/tmp/youspeed-dashcam-native-composites"
+}
