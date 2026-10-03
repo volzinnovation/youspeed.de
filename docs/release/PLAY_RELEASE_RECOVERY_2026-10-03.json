@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-03",
+  "version": "1.3",
+  "android_version_code": 10033,
+  "release_name": "1.3 (10033)",
+  "release_id": "2",
+  "uploaded_bundle": "YouSpeed-1.3-10033-Play.aab",
+  "review_validation": {
+    "blocking_errors": 0,
+    "warnings": [
+      "Significant increase in delivered APK size",
+      "Native debug symbols not supplied"
+    ],
+    "devices_no_longer_supported": 0,
+    "supported_devices": {
+      "phones": 3303,
+      "tablets": 2422,
+      "cars": 5,
+      "chromebooks": 5,
+      "android_xr": 1
+    },
+    "release_notes_languages": 9
+  },
+  "publishing": {
+    "pending_changes": 16,
+    "submission_performed": false,
+    "managed_publishing": true,
+    "queued": [
+      "Production 1.3 (10033), full rollout",
+      "Belgium availability",
+      "Eight new localized listings",
+      "German name, short/full description, phone screenshots, feature graphic, video"
+    ]
+  },
+  "data_safety": {
+    "existing_declaration_date": "2026-07-04",
+    "existing_global_collection": "No; inconsistent with optional Panoramax uploads",
+    "saved_partial_draft": {
+      "global_collection": "Yes",
+      "encrypted_in_transit": "Yes",
+      "account_method": "OAuth"
+    },
+    "required_deletion_url": "Unresolved; no URL invented",
+    "finalized": false
+  },
+  "youtube": {
+    "url": "https://www.youtube.com/watch?v=89oEyuqHVMw",
+    "visibility": "unlisted",
+    "captions": "English (United States)"
+  },
+  "device_deployment": {
+    "physical_android_connected": false,
+    "adb_device": "Only emulator-5554 visible",
+    "signed_apk_ready": true
+  },
+  "source_commit": "a067abb7ffc65cbbfe454542c036aa6e68c97a07"
+}

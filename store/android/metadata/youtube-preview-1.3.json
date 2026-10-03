@@ -1,0 +1,24 @@
+{
+  "version": "1.3",
+  "channel_id": "UCg6EvZJ-wWVt0Id2YCCK3mA",
+  "channel_name": "Raphael Volz",
+  "video_id": "89oEyuqHVMw",
+  "url": "https://www.youtube.com/watch?v=89oEyuqHVMw",
+  "visibility": "unlisted",
+  "uploaded_at": "2026-10-03",
+  "source": "store/videos/feature-film/en-US/youspeed-feature-film.mp4",
+  "captions": "English (United States), uploaded timed SRT",
+  "copyright_check": "No problems found",
+  "terms_acceptance": "User approved at the upload dialog on 2026-10-03",
+  "play_locales": [
+    "de-DE",
+    "en-US",
+    "fr-FR",
+    "it-IT",
+    "nl-NL",
+    "pl-PL",
+    "pt-BR",
+    "sv-SE",
+    "es-ES"
+  ]
+}

@@ -1,0 +1,1 @@
+Version 1.3 ger lokala dashcamvideor, skyltigenkänning på enheten med ljud eller tal samt platsmärkta foton att granska före valfri Panoramax-uppladdning. Under Info finns bötestabeller per land och en vägmärkeskatalog med piktogram och upplästa namn på engelska, franska, tyska och nederländska. Referenssidorna fungerar offline och är inte juridisk rådgivning.

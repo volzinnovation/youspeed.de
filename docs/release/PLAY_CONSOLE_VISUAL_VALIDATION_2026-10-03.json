@@ -1,0 +1,150 @@
+{
+  "date": "2026-10-03",
+  "validation": "Saved listing UI inspected for nine locales, eight ordered phone screenshots and one localized feature graphic each; all video fields match the uploaded unlisted preview.",
+  "locales": [
+    {
+      "locale": "de-DE",
+      "screenshots": [
+        "01-camera-recognition.png",
+        "02-dashcam.png",
+        "03-reference-signs-DE.png",
+        "04-reference-signs-FR.png",
+        "05-reference-signs-CH.png",
+        "06-reference-signs-BE.png",
+        "07-reference-signs-NL.png",
+        "08-reference-penalties-NLD.png"
+      ],
+      "featureGraphic": "de-DE-feature-graphic-1024x500.png",
+      "video": "https://www.youtube.com/watch?v=89oEyuqHVMw",
+      "verified": true
+    },
+    {
+      "locale": "en-US",
+      "screenshots": [
+        "en-US-01-camera-recognition.png",
+        "en-US-02-dashcam.png",
+        "en-US-03-reference-signs-DE.png",
+        "en-US-04-reference-signs-FR.png",
+        "en-US-05-reference-signs-CH.png",
+        "en-US-06-reference-signs-BE.png",
+        "en-US-07-reference-signs-NL.png",
+        "en-US-08-reference-penalties-NLD.png"
+      ],
+      "featureGraphic": "en-US-feature-graphic-1024x500.png",
+      "video": "https://www.youtube.com/watch?v=89oEyuqHVMw",
+      "verified": true
+    },
+    {
+      "locale": "fr-FR",
+      "screenshots": [
+        "fr-FR-01-camera-recognition.png",
+        "fr-FR-02-dashcam.png",
+        "fr-FR-03-reference-signs-DE.png",
+        "fr-FR-04-reference-signs-FR.png",
+        "fr-FR-05-reference-signs-CH.png",
+        "fr-FR-06-reference-signs-BE.png",
+        "fr-FR-07-reference-signs-NL.png",
+        "fr-FR-08-reference-penalties-NLD.png"
+      ],
+      "featureGraphic": "fr-FR-feature-graphic-1024x500.png",
+      "video": "https://www.youtube.com/watch?v=89oEyuqHVMw",
+      "verified": true
+    },
+    {
+      "locale": "it-IT",
+      "screenshots": [
+        "it-IT-01-camera-recognition.png",
+        "it-IT-02-dashcam.png",
+        "it-IT-03-reference-signs-DE.png",
+        "it-IT-04-reference-signs-FR.png",
+        "it-IT-05-reference-signs-CH.png",
+        "it-IT-06-reference-signs-BE.png",
+        "it-IT-07-reference-signs-NL.png",
+        "it-IT-08-reference-penalties-NLD.png"
+      ],
+      "featureGraphic": "it-IT-feature-graphic-1024x500.png",
+      "video": "https://www.youtube.com/watch?v=89oEyuqHVMw",
+      "verified": true
+    },
+    {
+      "locale": "nl-NL",
+      "screenshots": [
+        "nl-NL-01-camera-recognition.png",
+        "nl-NL-02-dashcam.png",
+        "nl-NL-03-reference-signs-DE.png",
+        "nl-NL-04-reference-signs-FR.png",
+        "nl-NL-05-reference-signs-CH.png",
+        "nl-NL-06-reference-signs-BE.png",
+        "nl-NL-07-reference-signs-NL.png",
+        "nl-NL-08-reference-penalties-NLD.png"
+      ],
+      "featureGraphic": "nl-NL-feature-graphic-1024x500.png",
+      "video": "https://www.youtube.com/watch?v=89oEyuqHVMw",
+      "verified": true
+    },
+    {
+      "locale": "pl-PL",
+      "screenshots": [
+        "pl-PL-01-camera-recognition.png",
+        "pl-PL-02-dashcam.png",
+        "pl-PL-03-reference-signs-DE.png",
+        "pl-PL-04-reference-signs-FR.png",
+        "pl-PL-05-reference-signs-CH.png",
+        "pl-PL-06-reference-signs-BE.png",
+        "pl-PL-07-reference-signs-NL.png",
+        "pl-PL-08-reference-penalties-NLD.png"
+      ],
+      "featureGraphic": "pl-PL-feature-graphic-1024x500.png",
+      "video": "https://www.youtube.com/watch?v=89oEyuqHVMw",
+      "verified": true
+    },
+    {
+      "locale": "pt-BR",
+      "screenshots": [
+        "pt-BR-01-camera-recognition.png",
+        "pt-BR-02-dashcam.png",
+        "pt-BR-03-reference-signs-DE.png",
+        "pt-BR-04-reference-signs-FR.png",
+        "pt-BR-05-reference-signs-CH.png",
+        "pt-BR-06-reference-signs-BE.png",
+        "pt-BR-07-reference-signs-NL.png",
+        "pt-BR-08-reference-penalties-NLD.png"
+      ],
+      "featureGraphic": "pt-BR-feature-graphic-1024x500.png",
+      "video": "https://www.youtube.com/watch?v=89oEyuqHVMw",
+      "verified": true
+    },
+    {
+      "locale": "sv-SE",
+      "screenshots": [
+        "sv-SE-01-camera-recognition.png",
+        "sv-SE-02-dashcam.png",
+        "sv-SE-03-reference-signs-DE.png",
+        "sv-SE-04-reference-signs-FR.png",
+        "sv-SE-05-reference-signs-CH.png",
+        "sv-SE-06-reference-signs-BE.png",
+        "sv-SE-07-reference-signs-NL.png",
+        "sv-SE-08-reference-penalties-NLD.png"
+      ],
+      "featureGraphic": "sv-SE-feature-graphic-1024x500.png",
+      "video": "https://www.youtube.com/watch?v=89oEyuqHVMw",
+      "verified": true
+    },
+    {
+      "locale": "es-ES",
+      "screenshots": [
+        "es-ES-01-camera-recognition.png",
+        "es-ES-02-dashcam.png",
+        "es-ES-03-reference-signs-DE.png",
+        "es-ES-04-reference-signs-FR.png",
+        "es-ES-05-reference-signs-CH.png",
+        "es-ES-06-reference-signs-BE.png",
+        "es-ES-07-reference-signs-NL.png",
+        "es-ES-08-reference-penalties-NLD.png"
+      ],
+      "featureGraphic": "es-ES-feature-graphic-1024x500.png",
+      "video": "https://www.youtube.com/watch?v=89oEyuqHVMw",
+      "verified": true
+    }
+  ]
+}
