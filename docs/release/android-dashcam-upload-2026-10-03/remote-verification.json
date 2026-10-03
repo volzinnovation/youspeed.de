@@ -1,0 +1,410 @@
+{
+  "date": "2026-10-03",
+  "app": "Youspeed.de",
+  "packageName": "de.youspeed.android",
+  "consoleUrl": "https://play.google.com/console/u/0/developers/5138521418106883804/app/4974352973939108666/store-listings/default/edit",
+  "sourceFrameSha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+  "submittedForReview": false,
+  "published": false,
+  "locales": {
+    "de-DE": {
+      "status": "saved-draft",
+      "screenshotCount": 8,
+      "dashcamPosition": 2,
+      "filename": "de-DE-02-dashcam-real-road.png",
+      "sha256": "13e90a6ee227eadc3fa2cf3224035efb0f0b8df5167738d2606c28c71d0f2ba8",
+      "gallery": [
+        {
+          "name": "01-camera-recognition.png",
+          "src": "https://lh3.googleusercontent.com/gkraHy6FYDcTxIov3qWoPIpEoPQJRXQXCq3TUPiMtej_3SIJomyWkiXJC5hTRPLUmeVlGIimj-hysfB2BMtp"
+        },
+        {
+          "name": "de-DE-02-dashcam-real-road.png",
+          "src": "https://lh3.googleusercontent.com/nvpnmkJkKmzqxkDZsSZviuAfvL_COfmCsER-wQdWhYWdk7qfN684jvNTmsjIbXneG2_JP1HtNppzM6zIJ6d5uQ"
+        },
+        {
+          "name": "03-reference-signs-DE.png",
+          "src": "https://lh3.googleusercontent.com/G5dqG7ExZewaqiUiSxSYR_ENXGekyDdL39bpNKiMrehG9iq54IfjLvTgW2sZZQswmoxsgpwZ0d6ZERKDzc8Wfg"
+        },
+        {
+          "name": "04-reference-signs-FR.png",
+          "src": "https://lh3.googleusercontent.com/aDEin569WBlrF7En2ecvcSr1cbkYEuaSKXJzFNoxoOxKomHSt3LRtpPIoHFj1jd42QunVbeC92Tpy4XRZoBJ"
+        },
+        {
+          "name": "05-reference-signs-CH.png",
+          "src": "https://lh3.googleusercontent.com/TPUM0N3bvOv_7sdV-GsUrYAwEx00OclZ6QbZYdnpJQqkeFfycbhpj--r1JAHGWQB7X5YU8fm1YFZW-U69IKGPw"
+        },
+        {
+          "name": "06-reference-signs-BE.png",
+          "src": "https://lh3.googleusercontent.com/_5gVY-P5Z4k8clnmoYEUTHdbNNSFeNQJ3tu7ikLRJbr_w5yGqGZoKsNeZlWZ5uNxRsnKFmuasj7pirJuUVpN3A"
+        },
+        {
+          "name": "07-reference-signs-NL.png",
+          "src": "https://lh3.googleusercontent.com/r2Sz5NWxZjmuIU5V0OKrjfz0kj8MfGzZR70E4l4MkYt9GRux-oLlQjc28HB6XhMM3JnNo9WX1zFGYu9rVPAOvxo"
+        },
+        {
+          "name": "08-reference-penalties-NLD.png",
+          "src": "https://lh3.googleusercontent.com/iaUr_N7yR4Ldu3fi8uDtCNhNhRxOQwW86venX9W6V5or3lM5GJOICLIT0jodEWCIXuyOCit31L7ycAipatBfTw"
+        }
+      ],
+      "referencesUnchanged": true,
+      "savedAt": "2026-10-03T18:00:35.887Z",
+      "revisitedSaved": true,
+      "nonDashcamImagesUnchanged": true
+    },
+    "en-US": {
+      "status": "saved-draft",
+      "screenshotCount": 8,
+      "dashcamPosition": 2,
+      "filename": "en-US-02-dashcam-real-road.png",
+      "sha256": "ce89872d58782ecd3125377efc2b88d04a4e74e4968f52d1363b8e97f0e26ddc",
+      "gallery": [
+        {
+          "name": "en-US-01-camera-recognition.png",
+          "src": "https://lh3.googleusercontent.com/KBpGVwO2bwFpB0NvOBOm_5pdMOc6w5fQdW3LMM5u-CmZFvwB7-wkOv9hjVo7uTK6jRea5xbiCVgI04uDmVdgqjs"
+        },
+        {
+          "name": "en-US-02-dashcam-real-road.png",
+          "src": "https://lh3.googleusercontent.com/i7igXR7ju4gwrUgsaNVkMlYJHmdc8rsiFMHJT_GbjrRdqrranz1PBilMFWjcVMLgTO9HWIg1l3XeM1crl83l"
+        },
+        {
+          "name": "en-US-03-reference-signs-DE.png",
+          "src": "https://lh3.googleusercontent.com/9ltf7jurXXLOAunq-IcD3hk-ILZ24j2NPuIGQu1GvBQHN_nVvsO7hcwtyhHhHyfqzz9zbcsx_yBPXAKgd0fRPQ"
+        },
+        {
+          "name": "en-US-04-reference-signs-FR.png",
+          "src": "https://lh3.googleusercontent.com/0Q6EiE0jZHU_JucXrgUCZhQj1DnU1dk1nmoWkMmmHROjEtz0rtGrswUqipP54UFvTJvoQywDfOIA_6SaWQJxLIU"
+        },
+        {
+          "name": "en-US-05-reference-signs-CH.png",
+          "src": "https://lh3.googleusercontent.com/zQ15WptQjBriipk2KcjHQ98_qRxAsZ5Nn3rhpiwg_MqLBW4wAiUY85LRI1Wq2dNe6I1QS5VNemFbgXJ8bIWPMA"
+        },
+        {
+          "name": "en-US-06-reference-signs-BE.png",
+          "src": "https://lh3.googleusercontent.com/bG2ehw2cRTbfcCfcNLECRDkzC6G8Nzx9pUHXsdkmWFUlV44KMAM__Cw0vmfN7GKV7ke0sZW7946yykPzVpkcsQ"
+        },
+        {
+          "name": "en-US-07-reference-signs-NL.png",
+          "src": "https://lh3.googleusercontent.com/auH16ziUrzodf_pn2pv57vySeEhmZIRH1Ze7s-OzNsvvUfXwSK0XipItXQYtROZVe3OIed6-Y8-gWSzXgplBlA"
+        },
+        {
+          "name": "en-US-08-reference-penalties-NLD.png",
+          "src": "https://lh3.googleusercontent.com/o_3F0XjmME-QJyRtbj9FdIKQgX_Tz_whVBXN2siValuagRcLalxG-_4DgoxtCJgGrdlWOypaopYehMajcPh9Uw"
+        }
+      ],
+      "nonDashcamImagesUnchanged": true,
+      "savedAt": "2026-10-03T18:05:40.532Z",
+      "revisitedSaved": true
+    },
+    "fr-FR": {
+      "status": "saved-draft",
+      "screenshotCount": 8,
+      "dashcamPosition": 2,
+      "filename": "fr-FR-02-dashcam-real-road.png",
+      "sha256": "346bc921ae62c531ed8c85642ee4ea80b4e452c74a6ce3cde34f047e1ed941a7",
+      "gallery": [
+        {
+          "name": "fr-FR-01-camera-recognition.png",
+          "src": "https://lh3.googleusercontent.com/bEO9lqLGhGSboT4rcijeEAxheZgIvUPob92-a5YUao7k3oaq6rswC1zRMAvlxoWZCDuMnpOYmaA-dPhnjqZSFOs"
+        },
+        {
+          "name": "fr-FR-02-dashcam-real-road.png",
+          "src": "https://lh3.googleusercontent.com/HR67WpNFbbIsvHx7OFAqSJeQJn3dROfqq5vaWdSH01tBL4lUQcwhNmH_JQoK9NzXSbjwUXmbAwkVUkpWhjYP-A"
+        },
+        {
+          "name": "fr-FR-03-reference-signs-DE.png",
+          "src": "https://lh3.googleusercontent.com/-0ovSaIR4d5CiA47gepe9lQXkZ_cjMI5kp45XUSOFDEGDxav9h2B4ZZEjC15SQHnTg9sE8K2Kzcq3EiLJfEKKw"
+        },
+        {
+          "name": "fr-FR-04-reference-signs-FR.png",
+          "src": "https://lh3.googleusercontent.com/CUEf1XhpV0NuFbpoT4QzqJf7GrjrWDfC8bdCkzHlxcxO3vjTHDhTnui6Yy9loRKmM5HeymKoOwiQCpNbeMXW0w"
+        },
+        {
+          "name": "fr-FR-05-reference-signs-CH.png",
+          "src": "https://lh3.googleusercontent.com/PJrpQd4lUQgWnPwFhjqUfXUe0cF3LBHNwWQ8HP6AWFuvIA3F84ZswjvRnprnl92EJk3Bv5Ioi4NXnDqoxK8gPA"
+        },
+        {
+          "name": "fr-FR-06-reference-signs-BE.png",
+          "src": "https://lh3.googleusercontent.com/IEKTXlH65Z5tRiwRb2CkJKXMmJFI5bKuRHt7UyEsJZ2untQQM4YcmUjeNFCf0gNi-k6ouO4GT7E8i5aKGztMqtQ"
+        },
+        {
+          "name": "fr-FR-07-reference-signs-NL.png",
+          "src": "https://lh3.googleusercontent.com/NE6JJHe_xxVNsQDiFMfkAUNMyl02CWZfgqA84X4qV4kEmWqF85lW2Caqiv8gP0tIAJR25J594q7eS_foP3Y0jg"
+        },
+        {
+          "name": "fr-FR-08-reference-penalties-NLD.png",
+          "src": "https://lh3.googleusercontent.com/nP8i5D3c2qETaAYcVmrrxT2_wy10gw0ZWiwH2FsSBcBDmfwtUYpTlgZiqx-o-iiWX6m0b99W3tq_Tc6xcNFBVfI"
+        }
+      ],
+      "nonDashcamImagesUnchanged": true,
+      "savedAt": "2026-10-03T18:06:04.499Z",
+      "revisitedSaved": true
+    },
+    "it-IT": {
+      "status": "saved-draft",
+      "screenshotCount": 8,
+      "dashcamPosition": 2,
+      "filename": "it-IT-02-dashcam-real-road.png",
+      "sha256": "0f63ec15abc54fac797fc49e04ad213a80ee074b23a03763b176c11967d371ef",
+      "gallery": [
+        {
+          "name": "it-IT-01-camera-recognition.png",
+          "src": "https://lh3.googleusercontent.com/5leoRSi6hDZygR6Ip7gTciMM3y2HQrqJCTvKinkm8NvD2d7hTm4axjvfLaeoyQfL7ehmUDAIXnvkYKUJP71r2Q"
+        },
+        {
+          "name": "it-IT-02-dashcam-real-road.png",
+          "src": "https://lh3.googleusercontent.com/iFLiclbRxPFZQIXWwvUROQiXuN1WSqP-lcu5r0XaNpmrQo2yDGmjwEUkuTlnL6BQGPXrWPew_uL-LzBvugRugH0"
+        },
+        {
+          "name": "it-IT-03-reference-signs-DE.png",
+          "src": "https://lh3.googleusercontent.com/-PEdoniyf218RPzafXan9b7NoXu1lXU5-KXU9ZmuvWBjVCgcumPMYGzhoq55pE7HFKJk3MJOX3M_LTdxFv_BWA"
+        },
+        {
+          "name": "it-IT-04-reference-signs-FR.png",
+          "src": "https://lh3.googleusercontent.com/hse8i-0PvArgsmR0aHImnd4BzTMtdVBlkgSs1fLLJhZZRjHXgw9dACNCURK0RijHrBriRNtLllJJO4Jcz_5iOQ"
+        },
+        {
+          "name": "it-IT-05-reference-signs-CH.png",
+          "src": "https://lh3.googleusercontent.com/CGMqKkb16p6GmgJYZHxlZQttJoTE3n2BJcIYpdCjaos1UuqG5sRZfHD_-EuKQ9kpz4h0rqouTIl0lx9fdEottg"
+        },
+        {
+          "name": "it-IT-06-reference-signs-BE.png",
+          "src": "https://lh3.googleusercontent.com/aDYNSVzyDCPmFk-dtbd79QsQ7NpOYSwKTlfG5VpdSao2XRrY7NqqKqXz9A14d07T79QOiUn60UDxoBTZHZmJxEw"
+        },
+        {
+          "name": "it-IT-07-reference-signs-NL.png",
+          "src": "https://lh3.googleusercontent.com/W0VwNMUCRHw8OcRzG-sZDe3Bz6w8XNhtznNaKFO6pYL4zgVJepQ2ixoB8RPAHASWlGPrq8XZLTGkrB5fb3sISA"
+        },
+        {
+          "name": "it-IT-08-reference-penalties-NLD.png",
+          "src": "https://lh3.googleusercontent.com/e9T7d8d7xy2_EzvjR0eJdiHcr3vnrGHVtqcBZ6CBSSfDSZNOnASITSQTvd2yQUkolFhand_-pZ7rnn2nqSSn6mg"
+        }
+      ],
+      "nonDashcamImagesUnchanged": true,
+      "savedAt": "2026-10-03T18:06:13.268Z",
+      "revisitedSaved": true
+    },
+    "nl-NL": {
+      "status": "saved-draft",
+      "screenshotCount": 8,
+      "dashcamPosition": 2,
+      "filename": "nl-NL-02-dashcam-real-road.png",
+      "sha256": "516946ed035bcc88017275c5a6ec6ce58032382828c405e8b8be7d49e4974bf7",
+      "gallery": [
+        {
+          "name": "nl-NL-01-camera-recognition.png",
+          "src": "https://lh3.googleusercontent.com/ldqiIdHyHiY4p_LDkDkGZt0DFGbx5A9DfDtFqXndBkr37CA3pd0nWUJpy8C4xpy71RlU7MUf1GG3FIAQS-3_ww"
+        },
+        {
+          "name": "nl-NL-02-dashcam-real-road.png",
+          "src": "https://lh3.googleusercontent.com/GxqV5PGh860UArcS6J0rSK97VuW0UMTpdyBLC_GiMBNBPJwlnxA_s6VjiC32Q_FZSuiRXt6VEtWp5miAZqoe"
+        },
+        {
+          "name": "nl-NL-03-reference-signs-DE.png",
+          "src": "https://lh3.googleusercontent.com/XAE4eZLH4gcWeOwhtFwhIaJiXux1EiHHsB1qjaC3jIPVd0J39jIEi8pnR1SBDXo6mwa_MWChUNMR7NL9TJw2Mg"
+        },
+        {
+          "name": "nl-NL-04-reference-signs-FR.png",
+          "src": "https://lh3.googleusercontent.com/UkCXA2yikPkKz-aQk9RJcdSaiAlSy-0hMDRge6-XHu-EWA6ZohlGgjAJ8AP3LjvUga_5QuACFBE4buKMff7aPA"
+        },
+        {
+          "name": "nl-NL-05-reference-signs-CH.png",
+          "src": "https://lh3.googleusercontent.com/IJGFz30ff0ucyfRa3nkM5kRIKuvmcT_VKLCFXZbiTq7-2gAeCXcVFAkVNG2ovVoIRCofnf_BXjaETeAljHWQUQ"
+        },
+        {
+          "name": "nl-NL-06-reference-signs-BE.png",
+          "src": "https://lh3.googleusercontent.com/LbsPj_0Y01c6Ap4_7PlIYqWYjG8AJj_o4_nQM0B-W_gjHxJQRJ9XCutlOYBNSpTs0PV_SBSNxusPyXdt3pWvwuo"
+        },
+        {
+          "name": "nl-NL-07-reference-signs-NL.png",
+          "src": "https://lh3.googleusercontent.com/GFk99agCVm56EdLQBHHko3eRKaMsbJVM7dX3L8x1vnV6j8kBJ2231O9uY5nefxUowwjKtuIcREFGgtVsI3UH"
+        },
+        {
+          "name": "nl-NL-08-reference-penalties-NLD.png",
+          "src": "https://lh3.googleusercontent.com/tlBJZhqTmPSun0DPK7uEXKkITi7NUvb3WHtFdap3iSgPW5_Ud_DbHBieHf1n5s_Z1SegNolGjNkrWYqBlVHG"
+        }
+      ],
+      "nonDashcamImagesUnchanged": true,
+      "savedAt": "2026-10-03T18:06:34.610Z",
+      "revisitedSaved": true
+    },
+    "pl-PL": {
+      "status": "saved-draft",
+      "screenshotCount": 8,
+      "dashcamPosition": 2,
+      "filename": "pl-PL-02-dashcam-real-road.png",
+      "sha256": "56783c64ca4bf8978bb3e327d190c3f73ed4422478d005c1af51ef92dd62b199",
+      "gallery": [
+        {
+          "name": "pl-PL-01-camera-recognition.png",
+          "src": "https://lh3.googleusercontent.com/qPtDEgpQ4yiJ76HRPNA3JF0cfRmOShfXcjyYTcoaLQqLIdz5xnCfBF1wqkhjFomdMQRlkMs2HVROtlW9lIoOjHs"
+        },
+        {
+          "name": "pl-PL-02-dashcam-real-road.png",
+          "src": "https://lh3.googleusercontent.com/uQMx_c_oWXcnb9eP8JsBxsgh79BaT08ZMWT3skFC3pBfuNw5TsniGAiXxyIN2RNJcItEavo2wa6FtuyQME37dco"
+        },
+        {
+          "name": "pl-PL-03-reference-signs-DE.png",
+          "src": "https://lh3.googleusercontent.com/FVcWMV6tnH9PudkY6b_DruHozb0mZPFHBLRZqM3YjWTlG8v688oZpsVNnuE_6Yuue7ndNQkPiSCd3vIrQctn"
+        },
+        {
+          "name": "pl-PL-04-reference-signs-FR.png",
+          "src": "https://lh3.googleusercontent.com/q99iXwOUv2g3egYZjcAkfXMSv9QFSDJHk6suiRTfa9nW-c7weCgrdzdlonuO2pfLZrt7DhG9aZRlYqsv_gVyJYE"
+        },
+        {
+          "name": "pl-PL-05-reference-signs-CH.png",
+          "src": "https://lh3.googleusercontent.com/W4Czn6CCGPCEFdgxKpn5eXUQTjLX-CP6OovYjCCQr8DdZ8u_dumr-jFkhg9QFNnTB_LKNTwwq-cE9-EcNobuSRk"
+        },
+        {
+          "name": "pl-PL-06-reference-signs-BE.png",
+          "src": "https://lh3.googleusercontent.com/jDR8NLPZ21tzQqCFm8KFglId1JJqKwslNzBd9bm9Fv4hz2AVPoLbpSudfOsZ4mVh3jk1JucrZDIJyR1wVyPlLNI"
+        },
+        {
+          "name": "pl-PL-07-reference-signs-NL.png",
+          "src": "https://lh3.googleusercontent.com/6FzwOkQgZrKdU8p4KxXgzGGycpQvUP74sD9dWXs9j-trReZBzZmOsSi9Yr1QwRweAU40yW0pigzBznirrqs0dQ"
+        },
+        {
+          "name": "pl-PL-08-reference-penalties-NLD.png",
+          "src": "https://lh3.googleusercontent.com/CAw1oiIWIKYl6-azphS1I-0nq0Qt0ivE7xvhuOV174nXWsntGaoa5_VWXKLLVOoyZGmVrwWgbtbbROZrPbXaEmg"
+        }
+      ],
+      "nonDashcamImagesUnchanged": true,
+      "savedAt": "2026-10-03T18:06:42.833Z",
+      "revisitedSaved": true
+    },
+    "pt-BR": {
+      "status": "saved-draft",
+      "screenshotCount": 8,
+      "dashcamPosition": 2,
+      "filename": "pt-BR-02-dashcam-real-road.png",
+      "sha256": "cae0d11cd2d22a1e1950a12e4455d44e71edb5c652727c96ad54c31270be91e2",
+      "gallery": [
+        {
+          "name": "pt-BR-01-camera-recognition.png",
+          "src": "https://lh3.googleusercontent.com/wXfUtNU1ofhpekdPbDuHhpykrQul8WtZ2qy098Cvm-fZXKqdU2lP4giKDaHkhAfpiqpgxIKnp6J4vyW8wXdT4Q"
+        },
+        {
+          "name": "pt-BR-02-dashcam-real-road.png",
+          "src": "https://lh3.googleusercontent.com/de7Kgbp_dHthdhokNfbLZJkgCe1-iIuGJtXg_OXAkhXA4_KYd3TByyWbT56J_W50zDueTAOcUqDmsg4I-l53dw"
+        },
+        {
+          "name": "pt-BR-03-reference-signs-DE.png",
+          "src": "https://lh3.googleusercontent.com/NMdxlx2dIDBfxdfrSVcKQzWMivS4FGeEmwKRceMS6IzYVNGWmPPm0nEHg1uCzYGb6iJoVUSkUIsNUHq1I4gH9w"
+        },
+        {
+          "name": "pt-BR-04-reference-signs-FR.png",
+          "src": "https://lh3.googleusercontent.com/bJx5yaez9BD8EG67hcWVJZQs4intTtaK5FdHfQ9YuK8hh7Ok6KJfICtdQYQlynUsSLcU0BGIfdljXrRg_cxU"
+        },
+        {
+          "name": "pt-BR-05-reference-signs-CH.png",
+          "src": "https://lh3.googleusercontent.com/FUrQ2ewHZAVqU63-I6djMS4TjRiinpRc8tMFQ1riPXTpXoYfNoFr3CuLOWLgL8TNC4ctyGH-EYymORmRm6qE3w"
+        },
+        {
+          "name": "pt-BR-06-reference-signs-BE.png",
+          "src": "https://lh3.googleusercontent.com/b1j_KxMvwrue-5GY_M-p3JqjmoDtkc7klqUb192yq0dJZWhz8J9zCQ3qJhwAJffqfIPUEnykYTWp_IKUOO2hmQ"
+        },
+        {
+          "name": "pt-BR-07-reference-signs-NL.png",
+          "src": "https://lh3.googleusercontent.com/twYcAgAJqASKIS5GgP9pRegJyO15bfCTMxJxVnhGTVNtW0POwyvbiODTOFvZtBaYIGaDQBv8Q7ibV9wiFvErow"
+        },
+        {
+          "name": "pt-BR-08-reference-penalties-NLD.png",
+          "src": "https://lh3.googleusercontent.com/O7hoXFn4uinPKKmykuxP_6Pqk8999ALKy1iKGt1Vi8PuxCHPPwFB8mUCn7IVbOH_0GSl5zRPJi2en_Pe9u9UQQ"
+        }
+      ],
+      "nonDashcamImagesUnchanged": true,
+      "savedAt": "2026-10-03T18:07:02.116Z",
+      "revisitedSaved": true
+    },
+    "sv-SE": {
+      "status": "saved-draft",
+      "screenshotCount": 8,
+      "dashcamPosition": 2,
+      "filename": "sv-SE-02-dashcam-real-road.png",
+      "sha256": "6fdc73c722653a468076c8ac2c658b4355dde82f5255973db917fa56bdf15757",
+      "gallery": [
+        {
+          "name": "sv-SE-01-camera-recognition.png",
+          "src": "https://lh3.googleusercontent.com/JrATBa_0_KfntgwdW0wP6LBbnMsY7PYkacUwsj2DcXyp-F4kwJm6417X9Kf5Ia2pqqYfKFF0RSfsCrTL2Nuu"
+        },
+        {
+          "name": "sv-SE-02-dashcam-real-road.png",
+          "src": "https://lh3.googleusercontent.com/_I_WF9yR0K6nphtazAJw8SZScSHHeLVxU9nontqmdeueZDap-sJKBMapbcJjw2IGxPPg5Ou7dHY6VHN7oiE"
+        },
+        {
+          "name": "sv-SE-03-reference-signs-DE.png",
+          "src": "https://lh3.googleusercontent.com/KbOr4l-mxmbjFYp04jTXpPl6oT4rVaaxuoSyEadO83nfar1wxtSE_ORC7iLz6biRDk1syj7NoZhscSwiqch4"
+        },
+        {
+          "name": "sv-SE-04-reference-signs-FR.png",
+          "src": "https://lh3.googleusercontent.com/Eoe5CrVpr4yTfYjgHkogcdZ4KX8QMJoU_-kmjiqEAw6qSQn_iHLnIPYI-8TjJqjowJ1wNT5Bd8p3lVL_zmsxQVg"
+        },
+        {
+          "name": "sv-SE-05-reference-signs-CH.png",
+          "src": "https://lh3.googleusercontent.com/jluS9IRYL8mP4FHaWNKgdH_YnTUrh8hyLo5PjlUGD1zL9ncs-nEh0qsgujh4IVkABL1MYVX7BeSCOduCHeVdiQ"
+        },
+        {
+          "name": "sv-SE-06-reference-signs-BE.png",
+          "src": "https://lh3.googleusercontent.com/QL2m3Wb9F1Hr2DKHK3M6qxXCXlQH1k667mjkGyj1mNxCrpKtuczqZe2cGPQV73kvkOcK8tpseiGTTpy5nL4BFw"
+        },
+        {
+          "name": "sv-SE-07-reference-signs-NL.png",
+          "src": "https://lh3.googleusercontent.com/oqkVjmAibL0kEfEAOzNq7zm9wQdGPck990jeef8MSHsX9OhtRfR7I25KAh1JAAVjiPo2GqjmcsP4cpfiyEMvVg"
+        },
+        {
+          "name": "sv-SE-08-reference-penalties-NLD.png",
+          "src": "https://lh3.googleusercontent.com/5BdkRkr7ADEd13-1kJ1LbU1-XEvWmzay62HpYs5FofOSZ10JTfe0Duk6SUg0K0fud5-q9B8wekpwwJf2nNrtFw"
+        }
+      ],
+      "nonDashcamImagesUnchanged": true,
+      "savedAt": "2026-10-03T18:07:10.239Z",
+      "revisitedSaved": true
+    },
+    "es-ES": {
+      "status": "saved-draft",
+      "screenshotCount": 8,
+      "dashcamPosition": 2,
+      "filename": "es-ES-02-dashcam-real-road.png",
+      "sha256": "35a531bf7b355d67f7a58052765a16635c26eae283ad59cd29844d1dc5c66718",
+      "gallery": [
+        {
+          "name": "es-ES-01-camera-recognition.png",
+          "src": "https://lh3.googleusercontent.com/HshdPFZHJtJmZQt_iSfmL__k9XypYBQqO8S2MZa-8VauxtguG2071pzKyabcOSoG9ZbdzBzjhivT71J4MUpUvpU"
+        },
+        {
+          "name": "es-ES-02-dashcam-real-road.png",
+          "src": "https://lh3.googleusercontent.com/dulaerRFbeHt3X89znlbsNvkh3XCuRWJs53BASiz5J3UTWcqA-qjLyPvD4xBJO1nMF0zaPxnwIXAMOIUA8cM"
+        },
+        {
+          "name": "es-ES-03-reference-signs-DE.png",
+          "src": "https://lh3.googleusercontent.com/-SZklcVnQw-ryBkcpKqoQCQCR40vc72UOurFjIK18T6zbUWcHQ5d1OoPpODRh2oiw9CctK7y2eDI1y-2qvGlGQ"
+        },
+        {
+          "name": "es-ES-04-reference-signs-FR.png",
+          "src": "https://lh3.googleusercontent.com/WH6Eqy6G0FE5VyLoK5Y3sE1ezLkRlj0VIrb97-TKnY49UerrrH8iQNzEy-N418Evy3b2-TE6DmTscClyN7XvvkY"
+        },
+        {
+          "name": "es-ES-05-reference-signs-CH.png",
+          "src": "https://lh3.googleusercontent.com/aowhoR12wrNz73YWU9YTGsaudaakQx0ET6XpNotwba2bX_1yNXwqvQMLBuHOaV1u2Q2nlAadLPfTYhD1pqBR"
+        },
+        {
+          "name": "es-ES-06-reference-signs-BE.png",
+          "src": "https://lh3.googleusercontent.com/QujffTMHKH0L7rKr2doXYeBBnIDq_LBWnUAS_-wvKCNYvlUDncFfgiG9A2Dkuvpd7OGViyfb65MbRaHPNs_kKg"
+        },
+        {
+          "name": "es-ES-07-reference-signs-NL.png",
+          "src": "https://lh3.googleusercontent.com/OGWweDzbwkkCNqrgjRV_LAytDVbSmBvwviFbU7iw_U5THyg5y4so89RrFQ3RK0Nnj9REmvYsQU-Ib6IL36LK"
+        },
+        {
+          "name": "es-ES-08-reference-penalties-NLD.png",
+          "src": "https://lh3.googleusercontent.com/TR1XzjJcAFU30G8A08OHdt6tcuffE10k-UWsEmWLA70T7AeIzDXDQE7VnJwzVe6x-OMdSi6jp6CRlvEr7_6VCQg"
+        }
+      ],
+      "nonDashcamImagesUnchanged": true,
+      "savedAt": "2026-10-03T18:07:19.373Z",
+      "revisitedSaved": true
+    }
+  },
+  "status": "all-nine-localized-dashcam-screenshots-uploaded-saved-and-revisited",
+  "verifiedAt": "2026-10-03T18:09:45.157Z"
+}
