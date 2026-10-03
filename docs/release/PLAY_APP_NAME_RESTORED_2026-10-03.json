@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-03",
+  "appName": "Youspeed.de",
+  "scope": "Android store names only",
+  "locales": [
+    {
+      "language": "Standard – Deutsch – de-DE",
+      "name": "Youspeed.de",
+      "verified": true
+    },
+    {
+      "language": "Englisch (Vereinigte Staaten) – en-US",
+      "name": "Youspeed.de",
+      "otherTextUnchanged": true
+    },
+    {
+      "language": "Französisch (Frankreich) – fr-FR",
+      "name": "Youspeed.de",
+      "otherTextUnchanged": true
+    },
+    {
+      "language": "Italienisch – it-IT",
+      "name": "Youspeed.de",
+      "otherTextUnchanged": true
+    },
+    {
+      "language": "Niederländisch – nl-NL",
+      "name": "Youspeed.de",
+      "otherTextUnchanged": true
+    },
+    {
+      "language": "Polnisch – pl-PL",
+      "name": "Youspeed.de",
+      "otherTextUnchanged": true
+    },
+    {
+      "language": "Portugiesisch (Brasilien) – pt-BR",
+      "name": "Youspeed.de",
+      "otherTextUnchanged": true
+    },
+    {
+      "language": "Schwedisch – sv-SE",
+      "name": "Youspeed.de",
+      "otherTextUnchanged": true
+    },
+    {
+      "language": "Spanisch (Spanien) – es-ES",
+      "name": "Youspeed.de",
+      "otherTextUnchanged": true
+    }
+  ],
+  "savedToPublishingOverview": true,
+  "otherListingChangesPreserved": true
+}
