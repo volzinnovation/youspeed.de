@@ -5,6 +5,17 @@ import org.junit.Test
 
 class TrafficSignRoadContextFreshnessTests {
     @Test
+    fun discardedLookupReportsTheActualFreshnessFailureWithoutChangingAcceptanceBounds() {
+        val matched = position(10_000)
+        assertNull(TrafficSignRoadContextFreshness.rejectionReason(matched, position(16_000), 16_000))
+        assertEquals("matched_fix_stale", TrafficSignRoadContextFreshness.rejectionReason(matched, position(16_001), 16_001))
+        assertEquals("latest_fix_future", TrafficSignRoadContextFreshness.rejectionReason(matched, position(13_450), 13_000))
+        assertEquals("latest_fix_older", TrafficSignRoadContextFreshness.rejectionReason(matched, position(9_999), 13_000))
+        assertEquals("excessive_displacement", TrafficSignRoadContextFreshness.rejectionReason(matched, position(12_000, longitude = 8.004), 12_000))
+        assertEquals("heading_changed", TrafficSignRoadContextFreshness.rejectionReason(matched, position(12_000, heading = 180.0), 12_000))
+    }
+
+    @Test
     fun threeSecondLookupRemainsUsableWhenNewerFixArrivesDuringFastTravel() {
         val matched = position(10_000)
         val latest = position(13_000, longitude = 8.0017)

@@ -19368,6 +19368,52 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         )
     }
 
+    func testMoreNearbyRoadFeaturesSwitchImmediatelyInBothBorderDirections() {
+        let france = LocalBundleRoute(region: "alsace", bundleVersion: "v1", countryCode: "FRA", dbPath: "/alsace.sqlite")
+        let germany = LocalBundleRoute(region: "baden-wuerttemberg", bundleVersion: "v1", countryCode: "DEU", dbPath: "/bw.sqlite")
+        for (current, destination) in [(france, germany), (germany, france)] {
+            let incumbent = BundleRouteProbe(route: current, hasWayMatch: true, hasSpeedMatch: true,
+                nearestCandidateDistanceM: 0, nearestSpeedCandidateDistanceM: 0, candidateCount: 2, speedCandidateCount: 2)
+            let moreComplete = BundleRouteProbe(route: destination, hasWayMatch: true, hasSpeedMatch: true,
+                nearestCandidateDistanceM: 90, nearestSpeedCandidateDistanceM: 90, candidateCount: 3, speedCandidateCount: 1)
+            let probes = [incumbent, moreComplete]
+            let routes = [current, destination]
+            XCTAssertEqual(BundleRouteSelection.choose(probes: probes, currentDBPath: current.dbPath, coveringRoutes: routes), destination)
+            XCTAssertEqual(BundleRouteSelection.choose(probes: Array(probes.reversed()), currentDBPath: nil, coveringRoutes: routes), destination)
+            XCTAssertEqual(BundleRouteSelection.choose(probes: probes, currentDBPath: destination.dbPath, coveringRoutes: routes), destination)
+        }
+    }
+
+    func testEqualRoadCountsPreferMoreSpeedFeaturesThenKeepExistingHysteresis() {
+        let current = LocalBundleRoute(region: "alsace", bundleVersion: "v1", countryCode: "FRA", dbPath: "/alsace.sqlite")
+        let alternate = LocalBundleRoute(region: "baden-wuerttemberg", bundleVersion: "v1", countryCode: "DEU", dbPath: "/bw.sqlite")
+        let incumbent = BundleRouteProbe(route: current, hasWayMatch: true, hasSpeedMatch: true,
+            nearestCandidateDistanceM: 0, nearestSpeedCandidateDistanceM: 0, candidateCount: 4, speedCandidateCount: 1)
+        let moreSpeedFeatures = BundleRouteProbe(route: alternate, hasWayMatch: true, hasSpeedMatch: true,
+            nearestCandidateDistanceM: 90, nearestSpeedCandidateDistanceM: 90, candidateCount: 4, speedCandidateCount: 2)
+        let routes = [current, alternate]
+        XCTAssertEqual(BundleRouteSelection.choose(probes: [incumbent, moreSpeedFeatures], currentDBPath: current.dbPath, coveringRoutes: routes), alternate)
+        let tiedCounts = BundleRouteProbe(route: alternate, hasWayMatch: true, hasSpeedMatch: true,
+            nearestCandidateDistanceM: 0, nearestSpeedCandidateDistanceM: 0, candidateCount: 4, speedCandidateCount: 1)
+        XCTAssertEqual(BundleRouteSelection.choose(probes: [incumbent, tiedCounts], currentDBPath: current.dbPath, coveringRoutes: routes), current)
+        let smallScoreLead = BundleRouteProbe(route: alternate, hasWayMatch: true, hasSpeedMatch: true,
+            nearestCandidateDistanceM: 10, nearestSpeedCandidateDistanceM: 10, candidateCount: 4, speedCandidateCount: 1)
+        XCTAssertEqual(BundleRouteSelection.choose(probes: [incumbent, smallScoreLead], currentDBPath: alternate.dbPath, coveringRoutes: routes), alternate)
+    }
+
+    func testNearbyFeatureCountsNeverOverrideCoverageEligibility() {
+        let covering = LocalBundleRoute(region: "baden-wuerttemberg", bundleVersion: "v1", countryCode: "DEU", dbPath: "/bw.sqlite")
+        let outside = LocalBundleRoute(region: "alsace", bundleVersion: "v1", countryCode: "FRA", dbPath: "/alsace.sqlite")
+        let probes = [
+            BundleRouteProbe(route: covering, hasWayMatch: false, hasSpeedMatch: false,
+                nearestCandidateDistanceM: nil, nearestSpeedCandidateDistanceM: nil, candidateCount: 1),
+            BundleRouteProbe(route: outside, hasWayMatch: true, hasSpeedMatch: true,
+                nearestCandidateDistanceM: 0, nearestSpeedCandidateDistanceM: 0, candidateCount: 100, speedCandidateCount: 100)
+        ]
+        XCTAssertEqual(BundleRouteSelection.choose(probes: probes, currentDBPath: outside.dbPath, coveringRoutes: [covering]), covering)
+        XCTAssertNil(BundleRouteSelection.choose(probes: probes, currentDBPath: outside.dbPath, coveringRoutes: []))
+    }
+
     func testStaleBundleStateIsExplicitAndNotCameraEvidence() {
         let state = EffectiveSpeedLimitState(
             value: .numeric(50),
@@ -21928,4 +21974,45 @@ final class PhysicalCameraSettingsContinuityTests: XCTestCase {
                 userInfo: [NSLocalizedDescriptionKey: detail])
         }
     }
+}
+
+extension SpeedConsumerTests {
+    func testBundleRouteFeatureCountsUseActualGeometryAndCommonRadius() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("route-feature-counts-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let database = directory.appendingPathComponent("roads.sqlite")
+        try createTraceRankingFixtureDB(at: database)
+        try executeSQL(at: database, sql: """
+            UPDATE ways SET highway='motorway', maxspeed='none' WHERE way_id='9104';
+            INSERT INTO ways(row_id,way_id,highway,maxspeed,min_lon,min_lat,max_lon,max_lat)
+            VALUES(5,'9199','tertiary','50',13.0000,52.0390,13.0100,52.0430);
+            INSERT INTO ways_rtree(way_id,min_lon,max_lon,min_lat,max_lat)
+            VALUES(9199,13.0000,13.0100,52.0390,52.0430);
+            INSERT INTO way_geom(row_id,way_id,points_json)
+            VALUES(5,'9199','[[52.0423,13.0000],[52.0423,13.0100]]');
+            INSERT INTO ways(row_id,way_id,highway,maxspeed,min_lon,min_lat,max_lon,max_lat)
+            VALUES(6,'9200','tertiary','50',13.0045,52.0401,13.0045,52.0401),
+                  (7,'9201','tertiary','50',13.0045,52.0401,13.0045,52.0401),
+                  (8,'9202','tertiary','50',13.0045,52.0401,13.0045,52.0401);
+            INSERT INTO ways_rtree(way_id,min_lon,max_lon,min_lat,max_lat)
+            VALUES(9200,13.0045,13.0045,52.0401,52.0401),
+                  (9201,13.0045,13.0045,52.0401,52.0401),
+                  (9202,13.0045,13.0045,52.0401,52.0401);
+            INSERT INTO way_geom(row_id,way_id,points_json)
+            VALUES(7,'9201','malformed'),(8,'9202','[[52.0401,13.0045]]');
+            """)
+        let service = V3SpeedLimitService(dbPath: database.path, countryCode: "DEU",
+            matchingModel: .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic)
+        // The bbox admits the far road, but its polyline is over 200 m away.
+        // Missing, malformed and single-point geometry supply no feature count.
+        // The common 50 m window also includes roads outside M7's narrow cap.
+        let wide = try service.bundleRouteFeatureCounts(lat: 52.04010, lon: 13.0045, radiusM: 50, maxCandidates: 256)
+        XCTAssertEqual(wide.candidateCount, 4)
+        XCTAssertEqual(wide.speedCandidateCount, 4, "German unlimited ways count as speed features")
+        let narrow = try service.bundleRouteFeatureCounts(lat: 52.04010, lon: 13.0045, radiusM: 10, maxCandidates: 256)
+        XCTAssertEqual(narrow.candidateCount, 2)
+        XCTAssertEqual(narrow.speedCandidateCount, 2)
+    }
+
 }

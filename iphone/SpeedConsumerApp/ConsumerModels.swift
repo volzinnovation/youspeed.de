@@ -524,6 +524,20 @@ struct BundleRouteProbe: Sendable {
     let hasSpeedMatch: Bool
     let nearestCandidateDistanceM: Double?
     let nearestSpeedCandidateDistanceM: Double?
+    let candidateCount: Int
+    let speedCandidateCount: Int
+
+    init(route: LocalBundleRoute, hasWayMatch: Bool, hasSpeedMatch: Bool,
+         nearestCandidateDistanceM: Double?, nearestSpeedCandidateDistanceM: Double?,
+         candidateCount: Int = 0, speedCandidateCount: Int = 0) {
+        self.route = route
+        self.hasWayMatch = hasWayMatch
+        self.hasSpeedMatch = hasSpeedMatch
+        self.nearestCandidateDistanceM = nearestCandidateDistanceM
+        self.nearestSpeedCandidateDistanceM = nearestSpeedCandidateDistanceM
+        self.candidateCount = max(0, candidateCount)
+        self.speedCandidateCount = max(0, speedCandidateCount)
+    }
 
     var score: Double {
         var value = 0.0
@@ -556,6 +570,8 @@ enum BundleRouteSelection {
         let eligible = probes.filter { coveringPaths.contains($0.route.dbPath) }
         guard !eligible.isEmpty else { return nil }
         let ordered = eligible.sorted {
+            if $0.candidateCount != $1.candidateCount { return $0.candidateCount > $1.candidateCount }
+            if $0.speedCandidateCount != $1.speedCandidateCount { return $0.speedCandidateCount > $1.speedCandidateCount }
             if $0.score != $1.score { return $0.score > $1.score }
             return $0.route.region < $1.route.region
         }
@@ -565,6 +581,13 @@ enum BundleRouteSelection {
             return best.route
         }
         guard best.route.dbPath != current.route.dbPath else { return current.route }
+
+        // Actual nearby ways outrank incumbent hysteresis, even when the old
+        // extract can still match a road at the edge of its coverage.
+        if best.candidateCount > current.candidateCount
+            || (best.candidateCount == current.candidateCount && best.speedCandidateCount > current.speedCandidateCount) {
+            return best.route
+        }
 
         // A route with no road match is not a viable incumbent. Likewise, a
         // road-only match should yield to a route that actually supplies a

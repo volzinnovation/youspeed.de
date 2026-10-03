@@ -7671,13 +7671,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 let probes = await Task.detached(priority: .utility) {
                     probeRoutes.compactMap { candidate -> BundleRouteProbe? in
                         do {
-                            let result = try servicePool.service(
+                            let service = servicePool.service(
                                 dbPath: candidate.dbPath,
                                 bundleIdentity: candidate.dbSHA256,
                                 countryCode: candidate.countryCode,
                                 matchingModel: matchingModel,
                                 regulationRegion: { SpeedRegulationRegions.bundled?.region(latitude: $0, longitude: $1) }
-                            ).lookupSpeedLimit(
+                            )
+                            let result = try service.lookupSpeedLimit(
                                 lat: lat,
                                 lon: lon,
                                 radiusM: probeRadiusM,
@@ -7687,12 +7688,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                                 speedKmh: speedKmh,
                                 horizontalAccuracyM: horizontalAccuracyM
                             )
+                            let counts = try service.bundleRouteFeatureCounts(lat: lat, lon: lon,
+                                radiusM: probeRadiusM, maxCandidates: probeMaxCandidates)
                             return BundleRouteProbe(
                                 route: candidate,
                                 hasWayMatch: result.wayID != nil,
                                 hasSpeedMatch: result.speedLimitKmh != nil || result.isUnlimitedSpeedLimit == true,
                                 nearestCandidateDistanceM: result.nearestCandidateDistanceM,
-                                nearestSpeedCandidateDistanceM: result.nearestSpeedCandidateDistanceM
+                                nearestSpeedCandidateDistanceM: result.nearestSpeedCandidateDistanceM,
+                                candidateCount: counts.candidateCount,
+                                speedCandidateCount: counts.speedCandidateCount
                             )
                         } catch {
                             return nil

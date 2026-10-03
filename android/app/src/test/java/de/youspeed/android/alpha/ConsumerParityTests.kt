@@ -156,6 +156,49 @@ class ConsumerParityTests {
     }
 
     @Test
+    fun moreNearbyRoadFeaturesSwitchImmediatelyInBothBorderDirections() {
+        val france = LocalBundleRoute("alsace", "v1", "FRA", "/alsace.sqlite")
+        val germany = LocalBundleRoute("baden-wuerttemberg", "v1", "DEU", "/bw.sqlite")
+        for ((current, destination) in listOf(france to germany, germany to france)) {
+            // Both maps still match, and the incumbent has a much better old
+            // proximity score. Local road completeness must still win.
+            val incumbent = BundleRouteProbe(current, true, true, 0.0, 0.0, candidateCount = 2, speedCandidateCount = 2)
+            val moreComplete = BundleRouteProbe(destination, true, true, 90.0, 90.0, candidateCount = 3, speedCandidateCount = 1)
+            val probes = listOf(incumbent, moreComplete)
+            val routes = listOf(current, destination)
+            assertEquals(destination, BundleRouteSelection.choose(probes, current.dbPath, routes))
+            assertEquals(destination, BundleRouteSelection.choose(probes.reversed(), null, routes))
+            assertEquals(destination, BundleRouteSelection.choose(probes, destination.dbPath, routes))
+        }
+    }
+
+    @Test
+    fun equalRoadCountsPreferMoreSpeedFeaturesThenKeepExistingHysteresis() {
+        val current = LocalBundleRoute("alsace", "v1", "FRA", "/alsace.sqlite")
+        val alternate = LocalBundleRoute("baden-wuerttemberg", "v1", "DEU", "/bw.sqlite")
+        val incumbent = BundleRouteProbe(current, true, true, 0.0, 0.0, candidateCount = 4, speedCandidateCount = 1)
+        val moreSpeedFeatures = BundleRouteProbe(alternate, true, true, 90.0, 90.0, candidateCount = 4, speedCandidateCount = 2)
+        val routes = listOf(current, alternate)
+        assertEquals(alternate, BundleRouteSelection.choose(listOf(incumbent, moreSpeedFeatures), current.dbPath, routes))
+        val tiedCounts = moreSpeedFeatures.copy(speedCandidateCount = 1, nearestCandidateDistanceM = 0.0, nearestSpeedCandidateDistanceM = 0.0)
+        assertEquals(current, BundleRouteSelection.choose(listOf(incumbent, tiedCounts), current.dbPath, routes))
+        val smallScoreLead = tiedCounts.copy(nearestCandidateDistanceM = 10.0, nearestSpeedCandidateDistanceM = 10.0)
+        assertEquals(alternate, BundleRouteSelection.choose(listOf(incumbent, smallScoreLead), alternate.dbPath, routes))
+    }
+
+    @Test
+    fun nearbyFeatureCountsNeverOverrideCoverageEligibility() {
+        val covering = LocalBundleRoute("baden-wuerttemberg", "v1", "DEU", "/bw.sqlite")
+        val outside = LocalBundleRoute("alsace", "v1", "FRA", "/alsace.sqlite")
+        val probes = listOf(
+            BundleRouteProbe(covering, false, false, null, null, candidateCount = 1),
+            BundleRouteProbe(outside, true, true, 0.0, 0.0, candidateCount = 100, speedCandidateCount = 100),
+        )
+        assertEquals(covering, BundleRouteSelection.choose(probes, outside.dbPath, listOf(covering)))
+        assertNull(BundleRouteSelection.choose(probes, outside.dbPath, emptyList()))
+    }
+
+    @Test
     fun trafficSignGenerationDoesNotSwitchForSameRouteWithUnknownDigest() {
         val route = BundleRouteIdentity(
             dbPath = "/bundles/belgium/belgium_speeds.sqlite",

@@ -18,20 +18,28 @@ internal object TrafficSignRoadContextFreshness {
     const val MAXIMUM_DISPLACEMENT_M = 250.0
     private const val MAXIMUM_HEADING_CHANGE_DEGREES = 45.0
 
-    fun accepts(matched: TrafficSignPositionSample, latest: TrafficSignPositionSample?, nowMs: Long): Boolean {
-        latest ?: return false
-        if (!valid(matched) || !valid(latest)) return false
-        if (nowMs - matched.timestampMs !in 0..MAXIMUM_AGE_MS ||
-            nowMs - latest.timestampMs !in 0..MAXIMUM_AGE_MS || latest.timestampMs < matched.timestampMs
-        ) return false
-        if (distanceMeters(matched.latitude, matched.longitude, latest.latitude, latest.longitude) > MAXIMUM_DISPLACEMENT_M) return false
+    fun accepts(matched: TrafficSignPositionSample, latest: TrafficSignPositionSample?, nowMs: Long): Boolean =
+        rejectionReason(matched, latest, nowMs) == null
+
+    fun rejectionReason(matched: TrafficSignPositionSample, latest: TrafficSignPositionSample?, nowMs: Long): String? {
+        latest ?: return "missing_latest_position"
+        if (!valid(matched) || !valid(latest)) return "invalid_position"
+        val matchedAgeMs = nowMs - matched.timestampMs
+        val latestAgeMs = nowMs - latest.timestampMs
+        if (matchedAgeMs < 0) return "matched_fix_future"
+        if (matchedAgeMs > MAXIMUM_AGE_MS) return "matched_fix_stale"
+        if (latestAgeMs < 0) return "latest_fix_future"
+        if (latestAgeMs > MAXIMUM_AGE_MS) return "latest_fix_stale"
+        if (latest.timestampMs < matched.timestampMs) return "latest_fix_older"
+        if (distanceMeters(matched.latitude, matched.longitude, latest.latitude, latest.longitude) > MAXIMUM_DISPLACEMENT_M)
+            return "excessive_displacement"
         if (matched.speedMetersPerSecond >= 1.0 && latest.speedMetersPerSecond >= 1.0 &&
             matched.headingDegrees != null && latest.headingDegrees != null
         ) {
             val change = abs(matched.headingDegrees - latest.headingDegrees)
-            if (minOf(change, 360.0 - change) > MAXIMUM_HEADING_CHANGE_DEGREES) return false
+            if (minOf(change, 360.0 - change) > MAXIMUM_HEADING_CHANGE_DEGREES) return "heading_changed"
         }
-        return true
+        return null
     }
 
     fun refreshedContext(

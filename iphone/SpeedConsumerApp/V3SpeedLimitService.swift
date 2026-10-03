@@ -887,6 +887,27 @@ final class V3SpeedLimitService: @unchecked Sendable {
         return session.db
     }
 
+    /// Counts road features within one common radius for overlapping bundle
+    /// selection. Matcher accuracy caps and previous-road history cannot make
+    /// two extracts use different geographic windows.
+    func bundleRouteFeatureCounts(lat: Double, lon: Double, radiusM: Double,
+                                  maxCandidates: Int) throws -> (candidateCount: Int, speedCandidateCount: Int) {
+        guard radiusM.isFinite, radiusM >= 0 else { return (0, 0) }
+        let db = try acquireDatabase()
+        defer { resources.releaseSession() }
+        let context = normalizedMatchContext(from: nil, fallbackPreferredWayID: nil, ageOutStaleRefContinuity: false)
+        let query = try loadCandidates(db: db, lat: lat, lon: lon, radiusM: radiusM,
+                                       maxCandidates: maxCandidates, headingForScoring: nil, matchContext: context)
+        // A way's bbox can intersect the search square while its actual road
+        // geometry is far away; those features are not nearby road evidence.
+        let nearby = query.candidates.filter { candidate in
+            candidate.points.count >= 2
+                && candidate.points.allSatisfy { $0.0.isFinite && $0.1.isFinite && (-90...90).contains($0.0) && (-180...180).contains($0.1) }
+                && candidate.distanceM.isFinite && candidate.distanceM <= radiusM
+        }
+        return (nearby.count, nearby.filter { $0.speedKmh != nil || $0.isUnlimitedSpeedLimit }.count)
+    }
+
     func lookupSpeedLimit(
         lat: Double,
         lon: Double,

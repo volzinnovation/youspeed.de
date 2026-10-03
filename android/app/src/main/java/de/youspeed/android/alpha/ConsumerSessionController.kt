@@ -521,6 +521,8 @@ class ConsumerSessionController(
         override fun onLocationChanged(location: Location) { discoverPacks(location) }
     }
     private val lookupToken = TrafficSignLookupMutationGate()
+    private val preciseLocationIntake = PreciseLocationIntake()
+    private var lastPreciseLocationDiagnosticAtMs = 0L
     @Volatile private var resetLookupHistoryOnResume = false
     private val lookupWorker = LatestPendingLookupWorker(onFailure = { error ->
         appendRuntimeDiagnosticEvent("lookup_worker_failed", mapOf("error" to (error.message ?: error.javaClass.simpleName)))
@@ -616,6 +618,7 @@ class ConsumerSessionController(
     private var immediateTrafficSignOverride: TrafficSignSpeedOverride? = null
     private var latestResolverLocation: Location? = null
     @Volatile private var latestCaptureLocation: Location? = null
+    private val lastLookupDiscardDiagnosticAtMs = AtomicLong(0L)
     private var coarseLocationSequence = 0L
     private var latestTrafficSignDirection = TrafficSignTravelDirection.UNKNOWN
     private var latestTrafficSignInsideCity: Boolean? = null
@@ -2347,6 +2350,7 @@ class ConsumerSessionController(
         invalidateTrafficSignGeneration(clearAssertion = true, reason = "drive_stopped", permitWrites = false)
         trafficSignDriveSessionId = null
         stopLocationUpdates()
+        preciseLocationIntake.reset()
         resetDerivedSpeedTracking()
         wayMatchTracker.reset()
         cancelSpeedCapture(reason = null)
@@ -4540,6 +4544,7 @@ class ConsumerSessionController(
             return
         }
         stopLocationUpdates()
+        preciseLocationIntake.reset()
         resetDerivedSpeedTracking()
         updateState { copy(currentSpeedKmh = 0.0) }
         ensureDrivingLogsExist()
@@ -4680,7 +4685,7 @@ class ConsumerSessionController(
                     dbPath = candidate.dbPath,
                     countryCode = candidate.countryCode,
                 ) { lookup ->
-                    val result = lookup.lookup(
+                    val result = lookup.lookupRouteEvidence(
                         lat = location.latitude,
                         lon = location.longitude,
                         radiusM = radiusM,
@@ -4689,17 +4694,23 @@ class ConsumerSessionController(
                         speedKmh = speedKmh,
                         horizontalAccuracyM = horizontalAccuracyM,
                         gpsSignalBars = gpsSignalBars,
-                        matchContext = null,
                         headingAccuracyDeg = location.bearingAccuracyDegrees.toDouble().takeIf { location.hasBearingAccuracy() },
                     )
                     BundleRouteProbe(
                         route = candidate,
-                        hasWayMatch = result.wayId != null,
-                        hasSpeedMatch = result.speedLimitKmh != null || result.isUnlimitedSpeedLimit,
+                        hasWayMatch = result.hasWayMatch,
+                        hasSpeedMatch = result.hasSpeedMatch,
                         nearestCandidateDistanceM = result.nearestCandidateDistanceM,
                         nearestSpeedCandidateDistanceM = result.nearestSpeedCandidateDistanceM,
+                        candidateCount = result.candidateCount,
+                        speedCandidateCount = result.speedCandidateCount,
                     )
                 }
+            }.onFailure { error ->
+                appendRuntimeDiagnosticEvent("bundle_probe_error", mapOf(
+                    "region" to candidate.region, "dbPath" to candidate.dbPath,
+                    "errorClass" to error.javaClass.name,
+                    "error" to (error.message ?: error.javaClass.simpleName)))
             }.getOrNull()
         }
         return BundleRouteSelection.choose(probes, currentDBPath, coveringRoutes = candidates) ?: candidates.first()
@@ -4739,10 +4750,37 @@ class ConsumerSessionController(
         return lastSpeed.takeIf { eligible }
     }
 
-    private fun consumeLocation(location: Location) {
-        if (!hasFineLocationPermission() || location.provider == LocationManager.NETWORK_PROVIDER) {
+    private fun consumeLocation(incomingLocation: Location) {
+        if (!hasFineLocationPermission() || incomingLocation.provider == LocationManager.NETWORK_PROVIDER) {
             return
         }
+        val receivedAtMs = clock.millis()
+        val intake = preciseLocationIntake.evaluate(
+            PreciseLocationSample(incomingLocation.time, incomingLocation.elapsedRealtimeNanos,
+                incomingLocation.latitude, incomingLocation.longitude,
+                incomingLocation.accuracy.toDouble().takeIf { incomingLocation.hasAccuracy() }),
+            receivedAtMs, SystemClock.elapsedRealtimeNanos(),
+        )
+        if (intake is PreciseLocationIntakeResult.Rejected) {
+            if (intake.reason != PreciseLocationRejection.DUPLICATE_FIX &&
+                receivedAtMs - lastPreciseLocationDiagnosticAtMs >= 5_000) {
+                lastPreciseLocationDiagnosticAtMs = receivedAtMs
+                appendRuntimeDiagnosticEvent("precise_location_rejected", mapOf(
+                    "reason" to intake.reason.diagnosticValue, "provider" to incomingLocation.provider,
+                    "fixAgeMs" to receivedAtMs - incomingLocation.time))
+            }
+            return
+        }
+        intake as PreciseLocationIntakeResult.Accepted
+        val location = if (intake.wallClockAdjusted) {
+            if (receivedAtMs - lastPreciseLocationDiagnosticAtMs >= 5_000) {
+                lastPreciseLocationDiagnosticAtMs = receivedAtMs
+                appendRuntimeDiagnosticEvent("precise_location_normalized", mapOf(
+                    "provider" to incomingLocation.provider, "originalTimestampMs" to incomingLocation.time,
+                    "timestampMs" to intake.timestampMs, "fixAgeMs" to receivedAtMs - intake.timestampMs))
+            }
+            Location(incomingLocation).also { it.time = intake.timestampMs }
+        } else incomingLocation
         discoverPacks(location)
         val previousLocation = recentSpeedSampleLocations
             .asReversed()
@@ -4860,16 +4898,39 @@ class ConsumerSessionController(
             }
         }
 
+        val lookupSubmittedAtNs = SystemClock.elapsedRealtimeNanos()
         lookupWorker.submit lookup@{
             // New GPS arrivals replace pending work without cancelling this lookup.
             // Stop/restart, source changes and stale positions still invalidate it.
             if (isDisposed.get() || !isDriving || sessionId != trafficSignDriveSessionId || !lookupToken.isCurrent(token)) return@lookup
             var expectedGeneration = trafficSignGeneration.get()
-            fun lookupIsFresh(): Boolean = !isDisposed.get() && isDriving &&
-                sessionId == trafficSignDriveSessionId && lookupToken.isCurrent(token) &&
-                trafficSignGeneration.get() == expectedGeneration &&
-                TrafficSignRoadContextFreshness.accepts(position, latestTrafficSignPosition, clock.millis())
-            if (!lookupIsFresh()) return@lookup
+            val lookupStartedAtNs = SystemClock.elapsedRealtimeNanos()
+            var probeTimeMs = 0.0
+            var selectedQueryTimeMs = 0.0
+            fun lookupIsFresh(stage: String = "publication"): Boolean {
+                val nowMs = clock.millis()
+                val latest = latestTrafficSignPosition
+                val reason = when {
+                    isDisposed.get() || !isDriving || sessionId != trafficSignDriveSessionId -> "session_changed"
+                    !lookupToken.isCurrent(token) -> "lookup_invalidated"
+                    trafficSignGeneration.get() != expectedGeneration -> "source_generation_changed"
+                    else -> TrafficSignRoadContextFreshness.rejectionReason(position, latest, nowMs)
+                }
+                if (reason == null) return true
+                val last = lastLookupDiscardDiagnosticAtMs.get()
+                if (nowMs - last >= 5_000 && lastLookupDiscardDiagnosticAtMs.compareAndSet(last, nowMs)) {
+                    appendRuntimeDiagnosticEvent("lookup_discarded", mapOf(
+                        "reason" to reason, "stage" to stage, "fixId" to gpsFixCount,
+                        "fixAgeMs" to nowMs - position.timestampMs,
+                        "latestFixAgeMs" to latest?.let { nowMs - it.timestampMs },
+                        "queueTimeMs" to (lookupStartedAtNs - lookupSubmittedAtNs) / 1e6,
+                        "elapsedMs" to (SystemClock.elapsedRealtimeNanos() - lookupStartedAtNs) / 1e6,
+                        "probeTimeMs" to probeTimeMs, "selectedQueryTimeMs" to selectedQueryTimeMs,
+                        "lat" to position.latitude, "lon" to position.longitude))
+                }
+                return false
+            }
+            if (!lookupIsFresh("admission")) return@lookup
             if (resetLookupHistoryOnResume) {
                 // The worker owns continuity; reset after the previous query has returned.
                 wayMatchTracker.reset()
@@ -4913,6 +4974,7 @@ class ConsumerSessionController(
             mainHandler.post {
                 if (lookupIsFresh()) updateState { copy(missingCoverageDownloadOptionId = recommendation) }
             }
+            val probesStartedAtNs = SystemClock.elapsedRealtimeNanos()
             val route = selectRouteByRoadEvidence(
                 candidates = coveringRoutes,
                 currentDBPath = fallbackDBPath,
@@ -4922,6 +4984,7 @@ class ConsumerSessionController(
                 horizontalAccuracyM = gpsHorizontalAccuracyM,
                 gpsSignalBars = gpsSignalBars,
             )
+            probeTimeMs = (SystemClock.elapsedRealtimeNanos() - probesStartedAtNs) / 1e6
             val routedDBPath = route?.dbPath?.takeIf { it.isNotBlank() && File(it).exists() }
             val effectiveDBPath = routedDBPath
             // The persisted active-bundle file can describe an older bundle
@@ -4958,7 +5021,7 @@ class ConsumerSessionController(
                 )
             )
 
-            if (!lookupIsFresh()) return@lookup
+            if (!lookupIsFresh("after_bundle_probes")) return@lookup
 
             // Keep the country-specific legal rules and the bundled TSR model
             // on the same route-selection event. The callback is posted to
@@ -5090,6 +5153,10 @@ class ConsumerSessionController(
             }
 
             try {
+                // Match iPhone's bundle-switch reset before the first query in
+                // the new database; repeated fixes in that bundle keep continuity.
+                wayMatchTracker.selectBundle(BundleRouteIdentity(effectiveDBPath, effectiveBundleVersion,
+                    effectiveCountryCode, effectiveBundleSha256))
                 val matchContext = wayMatchTracker.snapshotOrNull()
                 val result = withLookupService(
                     dbPath = effectiveDBPath,
@@ -5108,7 +5175,8 @@ class ConsumerSessionController(
                         headingAccuracyDeg = location.bearingAccuracyDegrees.toDouble().takeIf { location.hasBearingAccuracy() },
                     )
                 }
-                if (!lookupIsFresh()) return@lookup
+                selectedQueryTimeMs = result.queryTimeMs
+                if (!lookupIsFresh("after_selected_query")) return@lookup
                 val activeCorrectionOverrideValue = applyActiveLocalSpeedCorrectionIfNeeded(result = result)
                 // Saved observations remain review/export evidence; expired
                 // voice/camera assertions must not return through the map index.

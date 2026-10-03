@@ -53,6 +53,7 @@ internal data class WayMatchContext(
 )
 
 internal class WayMatchSessionTracker {
+    private var bundleIdentity: BundleRouteIdentity? = null
     private var preferredWayId: String? = null
     private var preferredHighway: String? = null
     private var preferredEndpointProximityM: Double? = null
@@ -81,6 +82,12 @@ internal class WayMatchSessionTracker {
     private var approachCorridorFixCount = 0
     private var approachCorridorStartDepthM: Double? = null
     private var approachCorridorStartDepthNodes: Int? = null
+
+    /** Road, ref and tunnel history belongs to one installed database. */
+    fun selectBundle(identity: BundleRouteIdentity) {
+        if (bundleIdentity?.let(identity::differsFrom) != false) reset()
+        bundleIdentity = identity
+    }
 
     fun snapshotOrNull(): WayMatchContext? {
         if (
@@ -191,6 +198,7 @@ internal class WayMatchSessionTracker {
     }
 
     fun reset() {
+        bundleIdentity = null
         preferredWayId = null
         preferredHighway = null
         preferredEndpointProximityM = null

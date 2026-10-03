@@ -64,6 +64,15 @@ internal data class CityContextLookupResult(
     val insideCity: Boolean?,
 )
 
+internal data class RouteLookupEvidence(
+    val hasWayMatch: Boolean,
+    val hasSpeedMatch: Boolean,
+    val candidateCount: Int,
+    val speedCandidateCount: Int,
+    val nearestCandidateDistanceM: Double?,
+    val nearestSpeedCandidateDistanceM: Double?,
+)
+
 internal class V3SpeedLimitLookup(
     private val dbPath: String,
     countryCode: String? = null,
@@ -167,6 +176,17 @@ internal class V3SpeedLimitLookup(
             LookupMatchingModel.CORRIDOR_HMM_ANTI_ABA_HYSTERESIS -> true
         }
 
+    private data class LookupEvaluation(
+        val result: SpeedLookupResult,
+        val geographicCandidateCount: Int = 0,
+        val geographicSpeedCandidateCount: Int = 0,
+    )
+
+    private data class CandidateAdmission(
+        val admitted: List<WayCandidate>,
+        val fullRadius: List<WayCandidate>,
+    )
+
     fun lookup(
         lat: Double,
         lon: Double,
@@ -178,7 +198,58 @@ internal class V3SpeedLimitLookup(
         gpsSignalBars: Int? = null,
         matchContext: WayMatchContext? = null,
         headingAccuracyDeg: Double? = null,
-    ): SpeedLookupResult {
+    ): SpeedLookupResult = lookupResult(
+        lat, lon, radiusM, maxCandidates, headingDeg, speedKmh, horizontalAccuracyM,
+        gpsSignalBars, matchContext, headingAccuracyDeg, includePresentationDetails = true,
+    ).result
+
+    /**
+     * Stateless road evidence for choosing among covering bundles. Candidate admission,
+     * matcher selection and effective speed use the same path as [lookup], while city
+     * labels, route-relation output and TSR branch geometry are only needed by the
+     * selected bundle's subsequent lookup. Counts describe roads within the requested
+     * common geographic radius, independent of the accuracy cap used for matching.
+     */
+    fun lookupRouteEvidence(
+        lat: Double,
+        lon: Double,
+        radiusM: Double,
+        maxCandidates: Int,
+        headingDeg: Double?,
+        speedKmh: Double? = null,
+        horizontalAccuracyM: Double? = null,
+        gpsSignalBars: Int? = null,
+        headingAccuracyDeg: Double? = null,
+    ): RouteLookupEvidence {
+        val evaluation = lookupResult(
+            lat, lon, radiusM, maxCandidates, headingDeg, speedKmh, horizontalAccuracyM,
+            gpsSignalBars, null, headingAccuracyDeg,
+            includePresentationDetails = false,
+        )
+        val result = evaluation.result
+        return RouteLookupEvidence(
+            hasWayMatch = result.wayId != null,
+            hasSpeedMatch = result.speedLimitKmh != null || result.isUnlimitedSpeedLimit,
+            candidateCount = evaluation.geographicCandidateCount,
+            speedCandidateCount = evaluation.geographicSpeedCandidateCount,
+            nearestCandidateDistanceM = result.nearestCandidateDistanceM,
+            nearestSpeedCandidateDistanceM = result.nearestSpeedCandidateDistanceM,
+        )
+    }
+
+    private fun lookupResult(
+        lat: Double,
+        lon: Double,
+        radiusM: Double,
+        maxCandidates: Int,
+        headingDeg: Double?,
+        speedKmh: Double?,
+        horizontalAccuracyM: Double?,
+        gpsSignalBars: Int?,
+        matchContext: WayMatchContext?,
+        headingAccuracyDeg: Double?,
+        includePresentationDetails: Boolean,
+    ): LookupEvaluation {
         val startedAtNs = System.nanoTime()
         val normalizedMatchContext = normalizedMatchContext(matchContext ?: WayMatchContext())
         val effectiveRadiusM = if (
@@ -193,7 +264,7 @@ internal class V3SpeedLimitLookup(
                 !(headingAccuracyDeg != null && headingAccuracyDeg.isFinite() && headingAccuracyDeg > 45.0)
         }?.let(::normalizedHeadingDegrees)
         if (!hasWaysTable) {
-            return SpeedLookupResult(
+            return LookupEvaluation(SpeedLookupResult(
                 wayId = null,
                 highway = null,
                 streetName = null,
@@ -226,14 +297,31 @@ internal class V3SpeedLimitLookup(
                 miniHMMCandidateCount = 0,
                 matchHypotheses = emptyList(),
                 selectionTrace = emptyList(),
-            )
+            ))
         }
 
-        val candidates = queryCandidatesWithAccuracy(
+        val candidateQuery = queryCandidatesWithAccuracy(
             lat, lon, effectiveRadiusM, maxCandidates, observedHeadingDeg, horizontalAccuracyM, normalizedMatchContext,
         )
-        val areaCandidates = queryAreaCandidates(lat = lat, lon = lon)
-        val polygonCityContext = if (hasCityBoundaryTable && hasCityRingTable) {
+        val candidates = candidateQuery.admitted
+        // Both bundles are compared over the same footprint. A matcher's narrow
+        // window or a sparse accuracy-cap fallback must not change feature density.
+        val geographicCandidates = if (includePresentationDetails) emptyList() else {
+            val commonRadiusM = radiusM.coerceAtLeast(0.0)
+            val fullRadiusCandidates = if (commonRadiusM > effectiveRadiusM) {
+                queryWayCandidates(lat, lon, commonRadiusM, maxCandidates, observedHeadingDeg, normalizedMatchContext)
+            } else {
+                candidateQuery.fullRadius
+            }
+            fullRadiusCandidates.filter { candidate ->
+                candidate.points.size >= 2 && candidate.points.all { point ->
+                    point.lat.isFinite() && point.lon.isFinite() &&
+                        point.lat in -90.0..90.0 && point.lon in -180.0..180.0
+                } && candidate.distanceM.isFinite() && candidate.distanceM <= commonRadiusM
+            }
+        }
+        val areaCandidates = if (includePresentationDetails) queryAreaCandidates(lat = lat, lon = lon) else null
+        val polygonCityContext = if (includePresentationDetails && hasCityBoundaryTable && hasCityRingTable) {
             resolveCityContextFromPolygons(
                 lat = lat,
                 lon = lon,
@@ -242,8 +330,8 @@ internal class V3SpeedLimitLookup(
         } else {
             null
         }
-        val areaCityContext = if (hasAreasTable) {
-            resolveCityContextFromAreas(lat = lat, lon = lon, areas = areaCandidates)
+        val areaCityContext = if (includePresentationDetails && hasAreasTable) {
+            resolveCityContextFromAreas(lat = lat, lon = lon, areas = areaCandidates.orEmpty())
         } else {
             null
         }
@@ -285,13 +373,24 @@ internal class V3SpeedLimitLookup(
         val matchedWayStable = selectedWayId != null &&
             normalizedMatchContext.matchedFixCount > 0 &&
             normalizedWayId(normalizedMatchContext.preferredWayId) == selectedWayId
-        val routeMembership = loadRouteRelationMembership(best?.wayId)
-        val residential = resolveResidentialContext(lat = lat, lon = lon, areas = areaCandidates)
-        val settlement = settlementContextResolver.resolve(
-            wayId = best?.wayId, lat = lat, lon = lon,
-            heading = SettlementContextPolicy.reliableHeading(headingDeg, speedKmh, headingAccuracyDeg),
-            residentialInside = residential.insideCity,
-        )
+        val routeMembership = if (includePresentationDetails) loadRouteRelationMembership(best?.wayId) else emptyMap()
+        // Posted/unlimited limits and road classes with their own explicit defaults
+        // do not consult settlement evidence. Probes only need its more expensive
+        // residential fallback when it can affect effectiveSpeed below.
+        val needsSettlement = includePresentationDetails || (best != null && !best.isUnlimitedSpeedLimit &&
+            best.speedSource != DerivedSpeedSource.EXPLICIT_TAG && best.highway?.lowercase() != "living_street" &&
+            allowsResidentialAreaFallback(best.highway))
+        val settlement = if (needsSettlement) {
+            val residential = resolveResidentialContext(lat = lat, lon = lon,
+                areas = areaCandidates ?: queryAreaCandidates(lat = lat, lon = lon))
+            settlementContextResolver.resolve(
+                wayId = best?.wayId, lat = lat, lon = lon,
+                heading = SettlementContextPolicy.reliableHeading(headingDeg, speedKmh, headingAccuracyDeg),
+                residentialInside = residential.insideCity,
+            )
+        } else {
+            SettlementContext.unknown()
+        }
         val region = if (RoadSpeedDefaults.country(countryCode) == "BE") regulationRegion?.invoke(lat, lon) else null
         val effectiveSpeed = when {
             best == null || best.isUnlimitedSpeedLimit -> null
@@ -307,7 +406,7 @@ internal class V3SpeedLimitLookup(
             else -> null
         }
 
-        return SpeedLookupResult(
+        return LookupEvaluation(SpeedLookupResult(
             wayId = best?.wayId,
             highway = best?.highway,
             streetName = best?.streetName,
@@ -351,8 +450,9 @@ internal class V3SpeedLimitLookup(
             sourceRelationIds = routeMembership.values.filterNotNull().toSet(),
             routeRelationContinuityAvailable = routeRelationContinuityAvailable,
             matchedWayStable = matchedWayStable,
-            applicabilityGeometry = applicabilityGeometry(best, candidates, wayLinks),
-        )
+            applicabilityGeometry = if (includePresentationDetails) applicabilityGeometry(best, candidates, wayLinks) else null,
+        ), geographicCandidateCount = geographicCandidates.size,
+            geographicSpeedCandidateCount = geographicCandidates.count { it.speedLimitKmh != null || it.isUnlimitedSpeedLimit })
     }
 
     /**
@@ -5422,12 +5522,12 @@ internal class V3SpeedLimitLookup(
     }
 
     private fun queryCandidatesWithAccuracy(lat: Double, lon: Double, radius: Double, maxCandidates: Int,
-        heading: Double?, accuracy: Double?, context: WayMatchContext): List<WayCandidate> {
+        heading: Double?, accuracy: Double?, context: WayMatchContext): CandidateAdmission {
         val cap = candidateLookupRadiusM(radius, accuracy)
         val capped = queryWayCandidates(lat, lon, cap, maxCandidates, heading, context)
-        if (cap >= radius) return capped
+        if (cap >= radius) return CandidateAdmission(capped, capped)
         val full = queryWayCandidates(lat, lon, radius, maxCandidates, heading, context)
-        if (capped.isEmpty()) return full
+        if (capped.isEmpty()) return CandidateAdmission(full, full)
         val links = loadWayLinksContext(context, full)
         val refs = (normalizedRefTokens(context.preferredStreetRef) + normalizedRefTokens(context.activeStreetRef) +
             context.recentStreetRefs + context.recentTunnelCandidateRefs).toSet()
@@ -5439,7 +5539,7 @@ internal class V3SpeedLimitLookup(
                 normalizedRefTokens(candidate.streetRef).any(refs::contains) || isLinkedCandidate(id, context, links) || id in expansion
             keep && selected.add(id)
         }
-        return (capped + additional).sortedWith(candidateComparator)
+        return CandidateAdmission((capped + additional).sortedWith(candidateComparator), full)
     }
 
     private fun queryWayCandidates(

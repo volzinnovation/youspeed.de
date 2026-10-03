@@ -6,6 +6,8 @@ data class BundleRouteProbe(
     val hasSpeedMatch: Boolean,
     val nearestCandidateDistanceM: Double?,
     val nearestSpeedCandidateDistanceM: Double?,
+    val candidateCount: Int = 0,
+    val speedCandidateCount: Int = 0,
 ) {
     val score: Double
         get() = (if (hasWayMatch) 1_000.0 else 0.0) +
@@ -54,12 +56,20 @@ object BundleRouteSelection {
         val eligible = probes.filter { it.route.dbPath in coveringPaths }
         if (eligible.isEmpty()) return null
         val best = eligible.sortedWith(
-            compareByDescending<BundleRouteProbe> { it.score }
+            compareByDescending<BundleRouteProbe> { it.candidateCount.coerceAtLeast(0) }
+                .thenByDescending { it.speedCandidateCount.coerceAtLeast(0) }
+                .thenByDescending { it.score }
                 .thenBy { it.route.region },
         ).first()
         val current = currentDBPath?.let { path -> eligible.firstOrNull { it.route.dbPath == path } }
             ?: return best.route
         if (best.route.dbPath == current.route.dbPath) return current.route
+        // Compare actual nearby ways before incumbent hysteresis. An extract
+        // with fewer local features must yield even when it still matches a road.
+        if (best.candidateCount.coerceAtLeast(0) > current.candidateCount.coerceAtLeast(0) ||
+            (best.candidateCount.coerceAtLeast(0) == current.candidateCount.coerceAtLeast(0) &&
+                best.speedCandidateCount.coerceAtLeast(0) > current.speedCandidateCount.coerceAtLeast(0))
+        ) return best.route
         if ((!current.hasWayMatch && best.hasWayMatch) ||
             (current.hasWayMatch && !current.hasSpeedMatch && best.hasSpeedMatch)
         ) return best.route
