@@ -2,6 +2,7 @@ package de.youspeed.android.alpha
 
 import java.io.File
 import java.time.Instant
+import java.util.Locale
 import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -11,6 +12,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ConsumerParityTests {
+    private fun withLocale(locale: Locale, block: () -> Unit) {
+        val previous = Locale.getDefault()
+        try {
+            Locale.setDefault(locale)
+            block()
+        } finally {
+            Locale.setDefault(previous)
+        }
+    }
+
     @Test
     fun requiresWelcomeForSeedNoneAndStaleBundles() {
         assertTrue(ConsumerAppLogic.requiresWelcome("seed", Instant.parse("2026-03-12T00:00:00Z")))
@@ -455,7 +466,7 @@ class ConsumerParityTests {
     }
 
     @Test
-    fun mainScreenLogicPrefersDrivingBanPresentationForHighGermanOverspeed() {
+    fun mainScreenLogicPrefersDrivingBanPresentationForHighGermanOverspeed() = withLocale(Locale.GERMANY) {
         val state = ConsumerUiState(
             startupDataState = StartupDataState.READY,
             activeDBPath = "/tmp/mock.sqlite",
@@ -543,7 +554,7 @@ class ConsumerParityTests {
     }
 
     @Test
-    fun mainScreenLogicMovesSearchSignalIntoSecondaryMetric() {
+    fun mainScreenLogicMovesSearchSignalIntoSecondaryMetric() = withLocale(Locale.GERMANY) {
         val state = ConsumerUiState(
             startupDataState = StartupDataState.READY,
             activeDBPath = "/tmp/mock.sqlite",
