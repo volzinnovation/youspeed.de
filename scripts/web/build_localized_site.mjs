@@ -1,12 +1,17 @@
 #!/usr/bin/env node
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildReferencePages, referenceCopy, referenceRoute, youtube } from "./build_reference_pages.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 const webRoot = path.join(repoRoot, "Web");
 const siteBase = "https://youspeed.de";
+const release = JSON.parse(readFileSync(path.join(__dirname, "release-1.3.json"), "utf8"));
+const releaseUrl = "https://github.com/volzinnovation/youspeed.de/releases/tag/android-v1.3";
+const apkUrl = "https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.3/YouSpeed-1.3-100332.apk";
+const checksumsUrl = "https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.3/SHA256SUMS";
 
 const locales = {
   de: {
@@ -15,56 +20,16 @@ const locales = {
     route: "",
     label: "Deutsch",
     shortLabel: "DE",
-    title: "YouSpeed.de - Dein Tempo immer im Blick.",
-    description:
-      "YouSpeed zeigt erkannte Tempolimits live, warnt unverbindlich vor Bußgeld, Punkten und Fahrverbot und funktioniert mit lokalen Offline-Kartendaten.",
     nav: {
       product: "App",
       warnings: "Warnstufen",
       offline: "Offline-Daten",
-      launch: "Status",
       trust: "Vertrauen",
     },
     aria: {
       menu: "Menü öffnen",
       languages: "Sprache wechseln",
       visual: "YouSpeed App-Bildschirme",
-    },
-    hero: {
-      badge: "Ab 29. August 2026 · iOS & Android · Offline-Karten · Keine Werbung",
-      title: "YouSpeed.de",
-      kicker: "„Dein Tempo immer im Blick.“",
-      lead:
-        "Die App zeigt dir das erkannte Tempolimit und deine Geschwindigkeit klar im Blickfeld. Hinweise zu Bußgeld, Punkten und Fahrverbot bleiben unverbindlich und laufen auf lokalen Kartendaten.",
-      googlePlay: ["Android-App", "Google Play"],
-      appStore: ["iPhone-App", "App Store"],
-      facts: ["Offline im Fahrbetrieb", "Keine Werbung, kein Tracking", "Lokale Kartendaten"],
-    },
-    launch: {
-      eyebrow: "Öffentlicher Start · 29. August 2026",
-      title: "YouSpeed startet auf iOS und Android",
-      body:
-        "Zum Start bietet YouSpeed lokale Tempolimit-Suche, verständliche Warnstufen, optionale Spracheingabe auf dem Gerät und Offline-Datenpakete für Länder und Regionen.",
-      items: [
-        {
-          state: "iOS & Android",
-          title: "Gemeinsame App-Basis",
-          body:
-            "App-Oberflächen, lokalisierte Texte und Offline-Datenverträge werden plattformübergreifend geführt.",
-        },
-        {
-          state: "Offline-Betrieb",
-          title: "Lokale Tempolimit-Daten",
-          body:
-            "Während der Fahrt arbeitet die App mit lokalen Kartendaten; Internet wird nur für optionale Datenaktualisierungen benötigt.",
-        },
-        {
-          state: "Offene Daten",
-          title: "OSM-Attribution",
-          body:
-            "Geschwindigkeitsdaten basieren auf OpenStreetMap und werden mit klarer Lizenz- und Quellenangabe verwendet.",
-        },
-      ],
     },
     warnings: {
       eyebrow: "Live-Anzeige",
@@ -87,29 +52,6 @@ const locales = {
       ariaLabel: "Video-Demo der YouSpeed App",
       caption: "YouSpeed App-Demo",
       fallback: "Demo-Video öffnen",
-    },
-    features: {
-      eyebrow: "Was die App kann",
-      title: "Gebaut für Orientierung, nicht Ablenkung",
-      body:
-        "Die wichtigsten Funktionen kommen direkt aus den bestehenden App-Oberflächen und Store-Metadaten.",
-      items: [
-        ["Live-Tempolimit", "Aktuelles Limit und Geschwindigkeit stehen im Zentrum der Fahrtansicht."],
-        ["Unverbindliche Hinweise", "Bußgeld, Punkte und Fahrverbot werden als Orientierung angezeigt, nicht als Rechtsberatung."],
-        ["Offline-Karten", "Kartendaten liegen lokal auf dem Gerät und funktionieren während der Fahrt ohne Netz."],
-        ["Lokale Korrektur", "Erkannte Tempolimits können per Sprache lokal erfasst und später geprüft werden."],
-      ],
-    },
-    offline: {
-      eyebrow: "Daten & Betrieb",
-      title: "Offline zuerst, nachvollziehbar gepflegt",
-      body:
-        "Die App arbeitet mit lokalen OSM-Bundles, reproduzierbaren Targets und getrennten Release-Pfaden für iOS und Android.",
-      metrics: [
-        ["Top bundle target", "NLD, ROU, LUX", "kleine Länder als kompakte Einzelpakete"],
-        ["Länder & Regionen", "Pakete", "regionale Shards für handhabbare Downloads"],
-        ["Fahrtbetrieb", "lokal", "Internet nur für optionale Datenaktualisierungen"],
-      ],
     },
     trust: {
       eyebrow: "Vertrauen",
@@ -146,56 +88,16 @@ const locales = {
     route: "en/",
     label: "English",
     shortLabel: "EN",
-    title: "YouSpeed.de - Live speed-limit assistance with offline maps",
-    description:
-      "YouSpeed shows detected speed limits live, gives advisory fine, points, and driving-ban warnings, and works with local offline map data.",
     nav: {
       product: "App",
       warnings: "Warnings",
       offline: "Offline data",
-      launch: "Status",
       trust: "Trust",
     },
     aria: {
       menu: "Open menu",
       languages: "Change language",
       visual: "YouSpeed app screens",
-    },
-    hero: {
-      badge: "iOS & Android · Offline maps · No ads",
-      title: "YouSpeed.de",
-      kicker: "Live speed-limit assistance",
-      lead:
-        "The app keeps the detected speed limit and your current speed visible at a glance. Fine, points, and driving-ban information stays advisory and runs on local map data.",
-      googlePlay: ["Android app", "Google Play"],
-      appStore: ["iPhone app", "App Store"],
-      facts: ["Offline while driving", "No ads, no tracking", "Local map data"],
-    },
-    launch: {
-      eyebrow: "Public launch · 29 August 2026",
-      title: "YouSpeed launches on iOS and Android",
-      body:
-        "At launch, YouSpeed provides local speed-limit lookup, clear warning levels, optional on-device spoken capture, and offline bundles for countries and regions.",
-      items: [
-        {
-          state: "iOS & Android",
-          title: "Shared app basis",
-          body:
-            "App surfaces, localized text, and offline data contracts are maintained across platforms.",
-        },
-        {
-          state: "Offline operation",
-          title: "Local speed-limit data",
-          body:
-            "While driving, the app uses local map data; internet access is only needed for optional data updates.",
-        },
-        {
-          state: "Open data",
-          title: "OSM attribution",
-          body:
-            "Speed data is based on OpenStreetMap and is used with clear license and source attribution.",
-        },
-      ],
     },
     warnings: {
       eyebrow: "Live display",
@@ -218,29 +120,6 @@ const locales = {
       ariaLabel: "Video demo of the YouSpeed app",
       caption: "YouSpeed app demo",
       fallback: "Open the demo video",
-    },
-    features: {
-      eyebrow: "What the app does",
-      title: "Built for orientation, not distraction",
-      body:
-        "The core functions come directly from the existing app surfaces and store metadata.",
-      items: [
-        ["Live speed limit", "Current limit and speed sit at the center of the driving view."],
-        ["Advisory warnings", "Fine, points, and driving-ban information is guidance, not legal advice."],
-        ["Offline maps", "Map data lives locally on the device and works while driving without connectivity."],
-        ["Local correction", "Detected limits can be captured locally by voice and reviewed later."],
-      ],
-    },
-    offline: {
-      eyebrow: "Data & operation",
-      title: "Offline first, reproducibly maintained",
-      body:
-        "The app runs on local OSM bundles, reproducible targets, and separate release paths for iOS and Android.",
-      metrics: [
-        ["Top bundle target", "NLD, ROU, LUX", "small countries as compact single packages"],
-        ["Countries & regions", "Packages", "regional shards for manageable downloads"],
-        ["Driving mode", "local", "internet only for optional data updates"],
-      ],
     },
     trust: {
       eyebrow: "Trust",
@@ -277,56 +156,16 @@ const locales = {
     route: "fr/",
     label: "Français",
     shortLabel: "FR",
-    title: "YouSpeed.de - Assistant de vitesse avec cartes hors ligne",
-    description:
-      "YouSpeed affiche les limitations détectées en direct, fournit des alertes indicatives pour amendes, points et interdictions de conduire, et fonctionne avec des cartes locales hors ligne.",
     nav: {
       product: "App",
       warnings: "Alertes",
       offline: "Donnees hors ligne",
-      launch: "Statut",
       trust: "Confiance",
     },
     aria: {
       menu: "Ouvrir le menu",
       languages: "Changer de langue",
       visual: "Écrans de l'app YouSpeed",
-    },
-    hero: {
-      badge: "iOS & Android · Cartes hors ligne · Sans publicité",
-      title: "YouSpeed.de",
-      kicker: "Assistant de limitation de vitesse",
-      lead:
-        "L'app garde la limitation détectée et votre vitesse actuelle visibles en un coup d'oeil. Les informations d'amende, de points et d'interdiction restent indicatives et s'appuient sur des données locales.",
-      googlePlay: ["App Android", "Google Play"],
-      appStore: ["App iPhone", "App Store"],
-      facts: ["Hors ligne en conduite", "Sans publicité, sans suivi", "Données cartographiques locales"],
-    },
-    launch: {
-      eyebrow: "Lancement public · 29 août 2026",
-      title: "YouSpeed arrive sur iOS et Android",
-      body:
-        "Au lancement, YouSpeed proposera la recherche locale des limitations, des niveaux d'alerte clairs, la saisie vocale optionnelle sur l'appareil et des bundles hors ligne pour pays et régions.",
-      items: [
-        {
-          state: "iOS & Android",
-          title: "Base d'app commune",
-          body:
-            "Les interfaces, les textes localisés et les contrats de données hors ligne sont maintenus entre plateformes.",
-        },
-        {
-          state: "Fonctionnement hors ligne",
-          title: "Données de vitesse locales",
-          body:
-            "En conduite, l'app utilise des données cartographiques locales ; internet n'est nécessaire que pour les mises à jour optionnelles.",
-        },
-        {
-          state: "Données ouvertes",
-          title: "Attribution OSM",
-          body:
-            "Les données de vitesse reposent sur OpenStreetMap et sont utilisées avec une attribution claire des licences et sources.",
-        },
-      ],
     },
     warnings: {
       eyebrow: "Affichage en direct",
@@ -349,29 +188,6 @@ const locales = {
       ariaLabel: "Démo vidéo de l’app YouSpeed",
       caption: "Démo de l’app YouSpeed",
       fallback: "Ouvrir la vidéo de démonstration",
-    },
-    features: {
-      eyebrow: "Ce que fait l'app",
-      title: "Conçue pour orienter, pas distraire",
-      body:
-        "Les fonctions principales viennent directement des interfaces existantes et des métadonnées de store.",
-      items: [
-        ["Limitation en direct", "La limitation actuelle et la vitesse restent au centre de la vue de conduite."],
-        ["Alertes indicatives", "Amendes, points et interdictions sont des indications, pas un conseil juridique."],
-        ["Cartes hors ligne", "Les données cartographiques sont locales et fonctionnent en conduite sans réseau."],
-        ["Correction locale", "Les limitations détectées peuvent être saisies localement par la voix puis vérifiées plus tard."],
-      ],
-    },
-    offline: {
-      eyebrow: "Données & fonctionnement",
-      title: "Hors ligne d'abord, maintenance reproductible",
-      body:
-        "L'app utilise des bundles OSM locaux, des cibles reproductibles et des chemins de sortie séparés pour iOS et Android.",
-      metrics: [
-        ["Premières cibles", "NLD, ROU, LUX", "petits pays en packages compacts"],
-        ["Pays & régions", "Packages", "shards régionaux pour des téléchargements gérables"],
-        ["Mode conduite", "local", "internet seulement pour les mises à jour optionnelles"],
-      ],
     },
     trust: {
       eyebrow: "Confiance",
@@ -408,14 +224,10 @@ const locales = {
     route: "nl/",
     label: "Nederlands",
     shortLabel: "NL",
-    title: "YouSpeed.de - Live snelheidslimietassistent met offline kaarten",
-    description:
-      "YouSpeed toont herkende snelheidslimieten live, geeft indicatieve waarschuwingen voor boetes, punten en rijverboden, en werkt met lokale offline kaartgegevens.",
     nav: {
       product: "App",
       warnings: "Waarschuwingen",
       offline: "Offline data",
-      launch: "Status",
       trust: "Vertrouwen",
     },
     aria: {
@@ -423,45 +235,9 @@ const locales = {
       languages: "Taal wijzigen",
       visual: "YouSpeed app-schermen",
     },
-    hero: {
-      badge: "iOS & Android · Offline kaarten · Geen advertenties",
-      title: "YouSpeed.de",
-      kicker: "Live snelheidslimietassistent",
-      lead:
-        "De app houdt de herkende snelheidslimiet en je actuele snelheid direct zichtbaar. Boete-, punten- en rijverbodsinformatie blijft indicatief en draait op lokale kaartgegevens.",
-      googlePlay: ["Android-app", "Google Play"],
-      appStore: ["iPhone-app", "App Store"],
-      facts: ["Offline tijdens rijden", "Geen advertenties, geen tracking", "Lokale kaartgegevens"],
-    },
-    launch: {
-      eyebrow: "Publieke lancering · 29 augustus 2026",
-      title: "YouSpeed start op iOS en Android",
-      body:
-        "Bij de lancering biedt YouSpeed lokale snelheidslimietherkenning, duidelijke waarschuwingen, optionele spraakinvoer op het apparaat en offline bundels voor landen en regio's.",
-      items: [
-        {
-          state: "iOS & Android",
-          title: "Gedeelde appbasis",
-          body:
-            "App-schermen, gelokaliseerde teksten en offline datacontracten worden platformoverstijgend beheerd.",
-        },
-        {
-          state: "Offline werking",
-          title: "Lokale snelheidsdata",
-          body:
-            "Tijdens het rijden gebruikt de app lokale kaartgegevens; internet is alleen nodig voor optionele data-updates.",
-        },
-        {
-          state: "Open data",
-          title: "OSM-attributie",
-          body:
-            "Snelheidsgegevens zijn gebaseerd op OpenStreetMap en worden gebruikt met duidelijke licentie- en bronvermelding.",
-        },
-      ],
-    },
     warnings: {
       eyebrow: "Live weergave",
-      title: "Waarschuwingsniveaus die in de auto leesbaar blijven",
+      title: "Duidelijke waarschuwingen onderweg",
       body:
         "YouSpeed reduceert de rijweergave tot snelheid, limiet en gevolg. De kleuren volgen de app: neutraal, boete, punten, rijverbod en onbeperkte Autobahn.",
       shots: [
@@ -480,29 +256,6 @@ const locales = {
       ariaLabel: "Videodemo van de YouSpeed-app",
       caption: "YouSpeed-app-demo",
       fallback: "De demovideo openen",
-    },
-    features: {
-      eyebrow: "Wat de app doet",
-      title: "Gebouwd voor oriëntatie, niet voor afleiding",
-      body:
-        "De kernfuncties komen rechtstreeks uit de bestaande app-schermen en storemetadata.",
-      items: [
-        ["Live snelheidslimiet", "De actuele limiet en snelheid staan centraal in de rijweergave."],
-        ["Indicatieve waarschuwingen", "Boetes, punten en rijverboden zijn oriëntatie, geen juridisch advies."],
-        ["Offline kaarten", "Kaartgegevens staan lokaal op het apparaat en werken onderweg zonder netwerk."],
-        ["Lokale correctie", "Herkende limieten kunnen lokaal via spraak worden vastgelegd en later gecontroleerd."],
-      ],
-    },
-    offline: {
-      eyebrow: "Data & werking",
-      title: "Offline eerst, reproduceerbaar onderhouden",
-      body:
-        "De app draait op lokale OSM-bundles, reproduceerbare doelen en aparte releasepaden voor iOS en Android.",
-      metrics: [
-        ["Top bundledoel", "NLD, ROU, LUX", "kleine landen als compacte pakketten"],
-        ["Landen & regio's", "Pakketten", "regionale shards voor beheersbare downloads"],
-        ["Rijmodus", "lokaal", "internet alleen voor optionele data-updates"],
-      ],
     },
     trust: {
       eyebrow: "Vertrouwen",
@@ -585,7 +338,8 @@ function navLinks(content) {
   return [
     ["#app", content.nav.product],
     ["#warnstufen", content.nav.warnings],
-    ["#launch", content.nav.launch],
+    ["#launch", content.release.nav],
+    ["#download", content.download.nav],
     ["#trust", content.nav.trust],
   ];
 }
@@ -600,19 +354,6 @@ function renderLanguageSwitch(currentLocale) {
             })
             .join("")}
         </div>`;
-}
-
-function renderStatusItems(items) {
-  return items
-    .map(
-      (item, index) => `
-          <article class="status-item reveal reveal-d${index + 1}">
-            <span>${escapeHtml(item.state)}</span>
-            <h3>${escapeHtml(item.title)}</h3>
-            <p>${escapeHtml(item.body)}</p>
-          </article>`,
-    )
-    .join("");
 }
 
 function renderFeatureItems(items) {
@@ -639,19 +380,6 @@ function renderShotItems(locale, shots) {
               <span>${escapeHtml(body)}</span>
             </figcaption>
           </figure>`,
-    )
-    .join("");
-}
-
-function renderMetrics(metrics) {
-  return metrics
-    .map(
-      ([label, value, body]) => `
-          <div class="metric reveal">
-            <span>${escapeHtml(label)}</span>
-            <strong>${escapeHtml(value)}</strong>
-            <p>${escapeHtml(body)}</p>
-          </div>`,
     )
     .join("");
 }
@@ -695,7 +423,10 @@ function renderStructuredData(locale, content) {
         url: "https://studios.moonshots.gmbh",
       },
       sameAs: ["https://github.com/volzinnovation/youspeed.de"],
-      installUrl: [googlePlayUrl, appStoreUrl],
+      softwareVersion: "1.3",
+      downloadUrl: apkUrl,
+      releaseNotes: releaseUrl,
+      installUrl: [googlePlayUrl, appStoreUrl, apkUrl],
     },
     null,
     2,
@@ -703,10 +434,13 @@ function renderStructuredData(locale, content) {
 }
 
 function renderPage(locale) {
-  const content = locales[locale];
+  const content = { ...locales[locale], ...release[locale] };
   const pageUrl = absoluteUrl(locale);
   const assetPrefix = prefix(locale);
-  const nav = navLinks(content)
+  const nav = [...navLinks(content),
+    [rootRelative(locale, referenceRoute(locale, "signs")), referenceCopy[locale].signsNav],
+    [rootRelative(locale, referenceRoute(locale, "fines")), referenceCopy[locale].finesNav],
+  ]
     .map(([href, label]) => `<a href="${href}">${escapeHtml(label)}</a>`)
     .join("");
   const socialImage = `${siteBase}/assets/social/youspeed-og-${locale}.png`;
@@ -783,6 +517,11 @@ ${renderLanguageSwitch(locale)}
             <p class="hero-kicker">${escapeHtml(content.hero.kicker)}</p>
             <p class="lead">${escapeHtml(content.hero.lead)}</p>
             <div class="hero-actions">
+              <a class="btn btn-primary" href="${apkUrl}">${escapeHtml(content.download.primary)}</a>
+              <a class="btn btn-secondary" href="#launch">${escapeHtml(content.release.nav)}</a>
+            </div>
+            <p class="download-hint">${escapeHtml(content.download.compatibility)}</p>
+            <div class="store-links">
               <a class="btn store-btn store-btn-google" href="${googlePlayUrl}" target="_blank" rel="noreferrer">
                 <span><small>${escapeHtml(content.hero.googlePlay[0])}</small>${escapeHtml(content.hero.googlePlay[1])}</span>
               </a>
@@ -794,28 +533,71 @@ ${renderLanguageSwitch(locale)}
               ${content.hero.facts.map((fact) => `<li>${escapeHtml(fact)}</li>`).join("")}
             </ul>
           </div>
-          <div class="app-visual reveal visible" aria-label="${escapeHtml(content.aria.visual)}">
-            <div class="road-lines" aria-hidden="true"></div>
-            <figure class="phone-frame phone-side phone-side-left">
-              <img src="${rootRelative(locale, "assets/screenshots/warn-level-1-money.png")}" alt="" width="1179" height="2556" />
-            </figure>
-            <figure class="phone-frame phone-main">
-              <img src="${rootRelative(locale, "assets/screenshots/warn-level-2-points.png")}" alt="" width="1179" height="2556" />
-            </figure>
-            <figure class="phone-frame phone-side phone-side-right">
-              <img src="${rootRelative(locale, "assets/screenshots/autobahn-unlimited-over-130.png")}" alt="" width="1179" height="2556" />
-            </figure>
-          </div>
+          <figure class="release-hero-artwork reveal visible">
+            <div class="hero-sign-circle" role="img" aria-label="${escapeHtml(content.release.artworkAlt)}">
+              ${["de-274-50", "de-206", "de-283", "de-102", "de-205"].map((sign, index) => `<img class="hero-sign hero-sign-${index + 1}" src="${rootRelative(locale, `assets/release-1.3/signs/${sign}.png`)}" alt="" width="256" height="256" />`).join("")}
+            </div>
+          </figure>
         </div>
       </section>
 
-      <section class="section container" id="launch">
-        <div class="section-header reveal">
-          <p class="eyebrow">${escapeHtml(content.launch.eyebrow)}</p>
-          <h2>${escapeHtml(content.launch.title)}</h2>
-          <p>${escapeHtml(content.launch.body)}</p>
+      <section class="section container reference-discovery" id="nachschlagen">
+        <div class="section-header section-header-left reveal">
+          <p class="eyebrow">${escapeHtml(referenceCopy[locale].browseEyebrow)}</p>
+          <h2>${escapeHtml(referenceCopy[locale].browseTitle)}</h2>
         </div>
-        <div class="status-grid">${renderStatusItems(content.launch.items)}</div>
+        <div class="reference-discovery-grid">
+          ${["signs", "fines"].map((type, index) => `<a class="reference-discovery-link reveal reveal-d${index + 1}" href="${rootRelative(locale, referenceRoute(locale, type))}">
+            <span class="eyebrow">${escapeHtml(referenceCopy[locale][`${type}Coverage`])}</span>
+            <h3>${escapeHtml(referenceCopy[locale][type])}<span aria-hidden="true"> ↗</span></h3>
+            <p>${escapeHtml(referenceCopy[locale][`${type}Browse`])}</p>
+            <span class="reference-discovery-action">${escapeHtml(referenceCopy[locale].browseAction)} <span aria-hidden="true">→</span></span>
+          </a>`).join("")}
+        </div>
+      </section>
+
+      <section class="section container release-section" id="launch">
+        <div class="section-header section-header-left reveal">
+          <p class="eyebrow">${escapeHtml(content.release.eyebrow)}</p>
+          <h2>${escapeHtml(content.release.title)}</h2>
+          <p>${escapeHtml(content.release.body)}</p>
+        </div>
+        <div class="release-features">${renderFeatureItems(content.release.items)}</div>
+        <nav class="reference-home-links" aria-label="${escapeHtml(content.release.eyebrow)}">
+          <a href="${rootRelative(locale, referenceRoute(locale, "signs"))}">${escapeHtml(referenceCopy[locale].signs)}</a>
+          <a href="${rootRelative(locale, referenceRoute(locale, "fines"))}">${escapeHtml(referenceCopy[locale].fines)}</a>
+        </nav>
+        <div class="release-gallery">
+          ${content.release.gallery.map(([file, alt], index) => `<figure class="reveal reveal-d${index + 1}">
+            <img src="${rootRelative(locale, `assets/release-1.3/${locale}/${file}.webp`)}" alt="${escapeHtml(alt)}" loading="lazy" width="660" height="1434" />
+          </figure>`).join("")}
+        </div>
+        <p class="artwork-note">${escapeHtml(content.release.artworkNote)}</p>
+      </section>
+
+      <section class="section section-contrast" id="download">
+        <div class="container download-layout">
+          <div class="section-header section-header-left reveal">
+            <p class="eyebrow">${escapeHtml(content.download.nav)}</p>
+            <h2>${escapeHtml(content.download.title)}</h2>
+            <p>${escapeHtml(content.download.body)}</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="${apkUrl}">${escapeHtml(content.download.primary)}</a>
+              <a class="btn btn-secondary" href="${releaseUrl}" target="_blank" rel="noreferrer">${escapeHtml(content.download.other)}</a>
+            </div>
+            <div class="store-links">
+              <a class="btn store-btn store-btn-google" href="${googlePlayUrl}" target="_blank" rel="noreferrer"><span><small>${escapeHtml(content.hero.googlePlay[0])}</small>${escapeHtml(content.hero.googlePlay[1])}</span></a>
+              <a class="btn store-btn store-btn-apple" href="${appStoreUrl}" target="_blank" rel="noreferrer"><span><small>${escapeHtml(content.hero.appStore[0])}</small>${escapeHtml(content.hero.appStore[1])}</span></a>
+            </div>
+            <p class="download-hint">${escapeHtml(content.download.compatibility)}</p>
+            <p class="download-hint"><a href="${checksumsUrl}">${escapeHtml(content.download.checksums)}</a></p>
+            <p class="download-hint">${escapeHtml(content.download.storeStatus)}</p>
+          </div>
+          <figure class="android-artwork reveal reveal-d2">
+            <img src="${rootRelative(locale, `assets/release-1.3/${locale}/android-dashcam.webp`)}" alt="${escapeHtml(content.release.androidAlt)}" loading="lazy" width="960" height="540" />
+            <figcaption>${escapeHtml(content.release.androidCaption)}</figcaption>
+          </figure>
+        </div>
       </section>
 
       <section class="section section-contrast" id="warnstufen">
@@ -830,18 +612,20 @@ ${renderLanguageSwitch(locale)}
       </section>
 
       <section class="section demo-showcase" id="demo">
-        <div class="container demo-layout">
+        <div class="container">
           <div class="demo-copy reveal">
-            <p class="eyebrow">${escapeHtml(content.demo.eyebrow)}</p>
-            <h2>${escapeHtml(content.demo.title)}</h2>
-            <p>${escapeHtml(content.demo.body)}</p>
+            <p class="eyebrow">YouTube · 1.3</p>
+            <h2>${escapeHtml(referenceCopy[locale].videoTitle)}</h2>
+            <p>${escapeHtml(referenceCopy[locale].videoBody)}</p>
           </div>
-          <figure class="demo-player reveal reveal-d2">
-            <video controls playsinline preload="metadata" aria-label="${escapeHtml(content.demo.ariaLabel)}" width="590" height="1280">
-              <source src="${rootRelative(locale, "assets/video/youspeed-demo.mp4")}" type="video/mp4" />
-              <a href="${rootRelative(locale, "assets/video/youspeed-demo.mp4")}">${escapeHtml(content.demo.fallback)}</a>
-            </video>
-            <figcaption>${escapeHtml(content.demo.caption)}</figcaption>
+          <figure class="youtube-film reveal reveal-d2">
+            <div class="youtube-stage" data-video-id="${escapeHtml(youtube.video_id)}" data-video-title="${escapeHtml(referenceCopy[locale].videoTitle)}">
+              <button class="youtube-load" type="button" aria-label="${escapeHtml(referenceCopy[locale].videoLoad)}">
+                <img src="${rootRelative(locale, "assets/release-1.3/feature-film-poster.jpg")}" alt="" width="1920" height="1080" loading="lazy" />
+                <span>${escapeHtml(referenceCopy[locale].videoLoad)}</span>
+              </button>
+            </div>
+            <figcaption>${escapeHtml(referenceCopy[locale].videoPrivacy)} <a href="${escapeHtml(youtube.url)}" target="_blank" rel="noreferrer">${escapeHtml(referenceCopy[locale].videoLink)}</a></figcaption>
           </figure>
         </div>
       </section>
@@ -890,12 +674,25 @@ ${renderLanguageSwitch(locale)}
           <p><a href="mailto:studios@moonshots.gmbh">studios@moonshots.gmbh</a></p>
           <p><a href="${assetPrefix}datenschutz.html">${escapeHtml(content.footer.privacy)}</a></p>
           <p><a href="${guideUrl(locale)}" target="_blank" rel="noreferrer">${escapeHtml(content.guide)}</a></p>
+          <p><a href="${rootRelative(locale, referenceRoute(locale, "signs"))}">${escapeHtml(referenceCopy[locale].signs)}</a> · <a href="${rootRelative(locale, referenceRoute(locale, "fines"))}">${escapeHtml(referenceCopy[locale].fines)}</a></p>
           <p><a href="https://github.com/volzinnovation/youspeed.de" target="_blank" rel="noreferrer">${escapeHtml(content.footer.github)}</a></p>
         </div>
       </div>
     </footer>
 
     <script>
+      document.querySelectorAll(".youtube-load").forEach((button) => {
+        button.addEventListener("click", () => {
+          const stage = button.closest(".youtube-stage");
+          const player = document.createElement("iframe");
+          player.src = "https://www.youtube-nocookie.com/embed/" + stage.dataset.videoId + "?autoplay=1";
+          player.title = stage.dataset.videoTitle;
+          player.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+          player.allowFullscreen = true;
+          player.referrerPolicy = "strict-origin-when-cross-origin";
+          stage.replaceChildren(player);
+        });
+      });
       const reveals = document.querySelectorAll(".reveal");
       const observer = new IntersectionObserver(
         (entries) => {
@@ -942,7 +739,7 @@ function writePage(locale) {
   writeFileSync(path.join(dir, "index.html"), renderPage(locale));
 }
 
-function writeSitemap() {
+function writeSitemap(referencePages) {
   const localizedUrls = localeCodes
     .map(
       (locale) => `  <url>
@@ -957,7 +754,16 @@ function writeSitemap() {
   </url>`,
     )
     .join("\n");
+  const referenceUrls = referencePages.map((page) => `  <url>
+    <loc>${siteBase}/${page.route}</loc>
+    ${localeCodes.map((alternate) => `<xhtml:link rel="alternate" hreflang="${alternate}" href="${siteBase}/${referenceRoute(alternate, page.type, page.country)}" />`).join("\n    ")}
+    <xhtml:link rel="alternate" hreflang="x-default" href="${siteBase}/${referenceRoute("de", page.type, page.country)}" />
+  </url>`).join("\n");
   const urls = `${localizedUrls}
+${referenceUrls}
+  <url>
+    <loc>${siteBase}/support/</loc>
+  </url>
   <url>
     <loc>${siteBase}/datenschutz.html</loc>
   </url>`;
@@ -990,7 +796,7 @@ function writeManifest() {
       {
         name: "YouSpeed.de",
         short_name: "YouSpeed.de",
-        description: locales.en.description,
+        description: release.en.description,
         start_url: "/",
         display: "standalone",
         background_color: "#0b0e10",
@@ -1016,7 +822,8 @@ function writeManifest() {
 }
 
 localeCodes.forEach(writePage);
-writeSitemap();
+const referencePages = buildReferencePages(webRoot);
+writeSitemap(referencePages);
 writeRobots();
 writeManifest();
-console.log(`Built localized Web pages: ${localeCodes.join(", ")}`);
+console.log(`Built localized homepages and ${referencePages.length} reference pages: ${localeCodes.join(", ")}`);

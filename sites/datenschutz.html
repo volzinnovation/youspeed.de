@@ -34,6 +34,7 @@
   </head>
   <body class="legal-page">
     <main class="legal-shell">
+<!-- app-store-banner:start --><aside class="app-store-banner" aria-label="YouSpeed App"><a class="app-banner-icon" href="./" aria-label="YouSpeed"><img src="./assets/icons/app-icon-mark-192.png" alt="YouSpeed" width="40" height="40" /></a><div><strong>YouSpeed · Assistenzsystem für jedes Auto</strong><p>Schilderkennung, Tempohinweise und Dashcam auf deinem Smartphone.</p></div><a class="btn store-btn store-btn-google" href="https://play.google.com/store/apps/details?id=de.youspeed.android" target="_blank" rel="noreferrer"><span><small>Android</small>Google Play</span></a><a class="btn store-btn store-btn-apple" href="https://apps.apple.com/de/app/youspeed-de/id6787469256" target="_blank" rel="noreferrer"><span><small>iPhone</small>App Store</span></a></aside><!-- app-store-banner:end -->
       <a class="legal-back" href="./index.html">&larr; Zur App</a>
 
       <article class="legal-card">
@@ -100,9 +101,20 @@
             Tempolimit-Beobachtungen genutzt.
           </li>
           <li>
-            Einstellungen, lokale Beobachtungen, Offline-Daten und optionale
-            Diagnoseprotokolle werden grundsätzlich lokal auf dem Gerät
-            gespeichert.
+            Kameraaufnahmen werden für die Dashcam, die optionale
+            Verkehrszeichenerkennung und die Fotoaufnahme verwendet.
+            Die Erkennung läuft auf dem Gerät und ist standardmäßig ausgeschaltet.
+          </li>
+          <li>
+            Einstellungen, lokale Beobachtungen, Offline-Daten, Videos,
+            Fotos und Diagnoseprotokolle werden auf dem Gerät gespeichert.
+            Debug-Protokollierung ist standardmäßig eingeschaltet und kann in
+            den Einstellungen ausgeschaltet werden.
+          </li>
+          <li>
+            Eine optionale Panoramax-Verbindung ermöglicht ausdrücklich
+            gestartete Foto-Uploads. Dabei werden Fotos mit Standort- und
+            Aufnahmedaten dem verbundenen Panoramax-Konto zugeordnet.
           </li>
           <li>
             Routine-Fahrtdaten werden nicht für Werbung oder Tracking an Dritte
@@ -121,10 +133,100 @@
         <h2>Mikrofon und lokale Beobachtungen</h2>
         <p>
           Die Mikrofonfunktion ist für lokale, nutzerinitiierte
-          Tempolimit-Korrekturen vorgesehen. Beobachtungen, Exporte und
+          Tempolimit-Korrekturen und kurze Sprachbefehle zum Verwerfen einer
+          Kamera-Erkennung vorgesehen. Die Sprachverarbeitung erfolgt auf dem
+          Gerät, auf iPhone mit verfügbarer lokaler Spracherkennung und auf
+          Android mit gebündelten Vosk-Modellen. Bei aktiver Zeichenerkennung
+          und bereits erteilten Sprachberechtigungen kann die App nach einem
+          neu bestätigten Kamera-Tempolimit bis zu vier Sekunden auf den
+          lokalen Befehl „Falsch“ beziehungsweise dessen Sprachvariante
+          hören. Es gibt keinen Rückfall auf eine Cloud-Spracherkennung.
+          Beobachtungen, Exporte und
           Diagnosepakete können Koordinaten, erkannte Straßenkandidaten und
           technische App-Diagnosen enthalten. Eine Weitergabe erfolgt nur, wenn
           du einen Export oder eine Teilen-Funktion bewusst auslöst.
+        </p>
+
+        <h2>Kamera, Dashcam und Fotos</h2>
+        <p>
+          Die Kamera wird nach Freigabe für aktive Aufnahme- und
+          Erkennungsfunktionen verwendet. Dashcam-Videos bleiben zunächst in
+          der lokalen Videobibliothek und können wiedergegeben, geteilt oder
+          gelöscht werden. Die Videoaufnahme läuft nicht dauerhaft im
+          Hintergrund. Die separate Fotoaufnahme kann auch ohne Videoaufnahme
+          laufen; der Fotoaufnahme-Schalter ist in der Aufnahmekonfiguration
+          standardmäßig eingeschaltet. Du kannst ihn vor der Fahrt ausschalten.
+        </p>
+        <p>
+          Fotos und zugehörige Metadaten können genaue GPS-Koordinaten,
+          Aufnahmezeit, Höhe, Fahrtrichtung und erkannte Verkehrszeichen
+          enthalten. Lokale Beobachtungen und Diagnoseprotokolle können
+          ebenfalls Standort- und Erkennungsdaten enthalten. Bei aktivierter
+          Debug-Protokollierung können auf iPhone zusätzlich Diagnosebilder
+          gespeichert werden. Teile nur Aufnahmen und Exporte, deren Inhalt
+          du geprüft hast.
+        </p>
+
+        <h2>Optionale Panoramax-Verbindung und Uploads</h2>
+        <p>
+          Für normale Tempolimit-Anzeige, lokale Videos und lokale Erkennung
+          ist kein Konto nötig. Für Foto-Uploads kannst du dich beim gewählten
+          Panoramax-Anbieter anmelden und dessen Konto verbinden. Bei
+          OpenStreetMap France wird beim ersten Anmelden über OpenStreetMap
+          ein Beitragskonto der Panoramax-Instanz angelegt. Das OpenStreetMap-Konto
+          und dieses Beitragskonto sind getrennte Konten. Zur Auswahl stehen
+          <a href="https://panoramax.youspeed.de" target="_blank" rel="noopener noreferrer">panoramax.youspeed.de</a>
+          und
+          <a href="https://panoramax.openstreetmap.fr" target="_blank" rel="noopener noreferrer">panoramax.openstreetmap.fr</a>.
+          YouSpeed speichert die benötigten Zugangstokens getrennt vom
+          Aufnahmebestand im iOS-Schlüsselbund beziehungsweise mit Schutz
+          durch den Android Keystore. Uploads starten erst nach deiner ausdrücklichen Auswahl und
+          Bestätigung; es gibt keine automatischen Foto-Uploads.
+        </p>
+        <p>
+          Bei einem Upload erhält die ausgewählte Panoramax-Instanz die Fotos
+          und ihre Standort-, Zeit- und Erkennungsdaten, verknüpft mit deinem
+          Konto. Beide Instanzen sind standardmäßig auf öffentliche Beiträge
+          eingestellt. Veröffentlichte Bilder stehen unter CC BY-SA 4.0;
+          weitere Regeln gelten für Metadaten und abgeleitete Daten. Die
+          Anbieter beschreiben eine automatische Unkenntlichmachung von
+          Gesichtern und Kennzeichen vor Veröffentlichung. Diese Verarbeitung
+          kann Fehler enthalten und hebt die Zuordnung zum Beitragskonto nicht auf.
+          Prüfe daher deine Aufnahmen und die Bedingungen des gewählten Dienstes.
+          Veröffentlichung, Bildbearbeitung, Lizenz, Aufbewahrung und Löschung
+          richten sich nach dessen Bedingungen und Datenschutzerklärung.
+          Öffentlich weiterverwendete Kopien können bei anderen Empfängern
+          erhalten bleiben. Eine lokale Löschung oder das
+          Trennen der Verbindung löscht bereits hochgeladene Bilder oder das
+          externe Konto nicht. Für deren Löschung wende dich an den jeweiligen
+          Panoramax-Anbieter.
+        </p>
+        <p>
+          Herausgeber der YouSpeed-Instanz ist Moonshots Studios GmbH;
+          technische Bereitstellung und Hosting erfolgen durch HSPF IMAS,
+          Prof. Dr. Raphael Volz. Die veröffentlichten
+          <a href="https://panoramax.youspeed.de/api/pages/terms-of-service/de" target="_blank" rel="noopener noreferrer">Instanzbedingungen</a>
+          nennen Konto- und Kontaktdaten, Authentifizierungs- und
+          Sicherheitsdaten, IP-Adressen und Serverprotokolle sowie Fotos und
+          Aufnahmedaten. Als Zwecke werden unter anderem Betrieb, Sicherheit,
+          Fehleranalyse, Anonymisierung, Forschung und Veröffentlichung genannt.
+          Rechte- und Löschanfragen können an
+          <a href="mailto:raphael.volz@hs-pforzheim.de">raphael.volz@hs-pforzheim.de</a>
+          gerichtet werden. Die Fristen für diese serverseitigen Daten sind
+          mit dem Betreiber zu klären.
+        </p>
+        <p>
+          Die andere Instanz wird von der Association OpenStreetMap France
+          herausgegeben und betrieben. Ihre
+          <a href="https://panoramax.openstreetmap.fr/api/pages/terms-of-service/fr" target="_blank" rel="noopener noreferrer">Datenschutzhinweise</a>
+          nennen eine Aufbewahrung des zur Anmeldung verwendeten Pseudonyms
+          von drei Jahren und
+          <a href="mailto:panoramax@panoramax.fr">panoramax@panoramax.fr</a>
+          als Kontakt für Betroffenenrechte. Die
+          <a href="https://panoramax.openstreetmap.fr/api/pages/end-user-license-agreement/fr" target="_blank" rel="noopener noreferrer">Nutzungsbedingungen</a>
+          regeln öffentliche Beiträge, Lizenzierung und Bildbearbeitung.
+          Der externe OpenStreetMap-Anmeldedienst wird von der OpenStreetMap
+          Foundation nach deren eigener Datenschutzerklärung betrieben.
         </p>
 
         <h2>Externe Empfänger und Datenquellen</h2>
@@ -145,13 +247,28 @@
           Diese Verarbeitung dient ausschließlich dem Betrieb der Website.
         </p>
 
+        <p>
+          Das YouTube-Vorschaubild wird lokal ausgeliefert. Erst wenn du
+          „YouTube-Video laden“ anklickst, wird ein Player von
+          youtube-nocookie.com eingebunden. Dabei werden technische
+          Verbindungsdaten an YouTube (Google) übertragen. Wenn du den
+          externen YouTube-Link öffnest, gelten ebenfalls die
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Datenschutzhinweise von Google</a>.
+        </p>
+
         <h2>Speicherdauer</h2>
         <p>
-          Lokal gespeicherte Einstellungen, Beobachtungen, Offline-Daten und
-          Diagnoseprotokolle bleiben auf deinem Gerät, bis du sie löschst oder
-          die App deinstallierst. Serverseitige Logdaten bei beteiligten Hosting-
-          und Download-Anbietern richten sich nach deren technischen
-          Betriebsfristen.
+          Lokale Daten können über die jeweiligen Bibliotheken und
+          Verwaltungsfunktionen gelöscht werden. Aufnahmespeicher wird durch
+          die eingestellten Quoten begrenzt; die Videobibliothek verwendet
+          standardmäßig 10 GB, Fotos standardmäßig 1 GB. Alte Videos können
+          aufgrund der Speichergrenze entfernt werden. Diagnoseprotokolle
+          werden bei mehr als 100 MB zum Löschen oder Behalten angeboten.
+          Das Ausschalten der Protokollierung entfernt vorhandene Dateien
+          nicht. Die optionale Bereinigung hochgeladener Fotos entfernt lokale
+          Kopien erst nach erfolgreicher Verarbeitung. Serverseitige Daten
+          richten sich nach den Fristen des jeweiligen Hosting-, Download-
+          oder Panoramax-Anbieters.
         </p>
 
         <h2>Deine Rechte</h2>
@@ -168,7 +285,7 @@
           <a href="mailto:studios@moonshots.gmbh">studios@moonshots.gmbh</a>.
         </p>
 
-        <p class="legal-meta">Stand: 04.07.2026</p>
+        <p class="legal-meta">Stand: 02.10.2026 · App-Version 1.3</p>
       </article>
     </main>
   </body>

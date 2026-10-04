@@ -33,6 +33,617 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/" />
   </url>
   <url>
+    <loc>https://youspeed.de/verkehrszeichen.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/verkehrszeichen/belgien.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/belgien.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/belgium.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/belgique.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/belgie.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/belgien.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/verkehrszeichen/deutschland.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/deutschland.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/germany.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/allemagne.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/duitsland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/deutschland.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/verkehrszeichen/frankreich.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/frankreich.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/france.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/france.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/frankrijk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/frankreich.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/verkehrszeichen/niederlande.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/niederlande.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/netherlands.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/pays-bas.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/nederland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/niederlande.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/verkehrszeichen/schweiz.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/schweiz.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/switzerland.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/suisse.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/zwitserland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/schweiz.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld/belgien.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/belgien.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/belgium.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/belgique.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/belgie.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/belgien.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld/deutschland.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/deutschland.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/germany.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/allemagne.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/duitsland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/deutschland.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld/frankreich.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/frankreich.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/france.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/france.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/frankrijk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/frankreich.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld/island.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/island.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/iceland.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/islande.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/ijsland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/island.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld/liechtenstein.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/liechtenstein.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld/luxemburg.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/luxemburg.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/luxembourg.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/luxembourg.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/luxemburg.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/luxemburg.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld/monaco.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/monaco.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld/niederlande.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/niederlande.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/netherlands.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/pays-bas.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/nederland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/niederlande.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld/rumaenien.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/rumaenien.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/romania.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/roumanie.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/roemenie.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/rumaenien.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld/schweden.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/schweden.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/sweden.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/suede.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/zweden.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/schweden.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld/schweiz.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/schweiz.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/switzerland.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/suisse.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/zwitserland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/schweiz.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/bussgeld/vereinigtes-koenigreich.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/vereinigtes-koenigreich.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/united-kingdom.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/royaume-uni.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/verenigd-koninkrijk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/vereinigtes-koenigreich.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/traffic-signs.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/traffic-signs/belgium.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/belgien.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/belgium.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/belgique.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/belgie.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/belgien.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/traffic-signs/france.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/frankreich.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/france.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/france.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/frankrijk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/frankreich.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/traffic-signs/germany.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/deutschland.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/germany.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/allemagne.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/duitsland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/deutschland.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/traffic-signs/netherlands.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/niederlande.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/netherlands.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/pays-bas.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/nederland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/niederlande.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/traffic-signs/switzerland.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/schweiz.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/switzerland.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/suisse.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/zwitserland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/schweiz.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines/belgium.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/belgien.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/belgium.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/belgique.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/belgie.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/belgien.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines/france.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/frankreich.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/france.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/france.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/frankrijk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/frankreich.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines/germany.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/deutschland.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/germany.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/allemagne.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/duitsland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/deutschland.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines/iceland.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/island.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/iceland.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/islande.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/ijsland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/island.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines/liechtenstein.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/liechtenstein.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines/luxembourg.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/luxemburg.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/luxembourg.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/luxembourg.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/luxemburg.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/luxemburg.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines/monaco.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/monaco.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines/netherlands.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/niederlande.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/netherlands.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/pays-bas.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/nederland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/niederlande.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines/romania.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/rumaenien.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/romania.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/roumanie.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/roemenie.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/rumaenien.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines/sweden.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/schweden.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/sweden.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/suede.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/zweden.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/schweden.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines/switzerland.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/schweiz.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/switzerland.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/suisse.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/zwitserland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/schweiz.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/en/speeding-fines/united-kingdom.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/vereinigtes-koenigreich.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/united-kingdom.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/royaume-uni.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/verenigd-koninkrijk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/vereinigtes-koenigreich.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/panneaux.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/panneaux/allemagne.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/deutschland.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/germany.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/allemagne.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/duitsland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/deutschland.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/panneaux/belgique.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/belgien.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/belgium.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/belgique.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/belgie.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/belgien.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/panneaux/france.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/frankreich.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/france.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/france.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/frankrijk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/frankreich.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/panneaux/pays-bas.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/niederlande.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/netherlands.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/pays-bas.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/nederland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/niederlande.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/panneaux/suisse.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/schweiz.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/switzerland.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/suisse.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/zwitserland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/schweiz.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes/allemagne.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/deutschland.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/germany.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/allemagne.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/duitsland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/deutschland.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes/belgique.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/belgien.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/belgium.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/belgique.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/belgie.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/belgien.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes/france.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/frankreich.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/france.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/france.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/frankrijk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/frankreich.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes/islande.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/island.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/iceland.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/islande.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/ijsland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/island.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes/liechtenstein.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/liechtenstein.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes/luxembourg.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/luxemburg.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/luxembourg.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/luxembourg.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/luxemburg.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/luxemburg.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes/monaco.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/monaco.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes/pays-bas.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/niederlande.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/netherlands.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/pays-bas.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/nederland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/niederlande.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes/roumanie.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/rumaenien.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/romania.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/roumanie.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/roemenie.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/rumaenien.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes/royaume-uni.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/vereinigtes-koenigreich.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/united-kingdom.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/royaume-uni.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/verenigd-koninkrijk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/vereinigtes-koenigreich.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes/suede.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/schweden.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/sweden.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/suede.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/zweden.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/schweden.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/fr/amendes/suisse.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/schweiz.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/switzerland.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/suisse.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/zwitserland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/schweiz.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/verkeersborden.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/verkeersborden/belgie.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/belgien.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/belgium.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/belgique.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/belgie.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/belgien.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/verkeersborden/duitsland.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/deutschland.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/germany.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/allemagne.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/duitsland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/deutschland.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/verkeersborden/frankrijk.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/frankreich.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/france.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/france.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/frankrijk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/frankreich.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/verkeersborden/nederland.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/niederlande.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/netherlands.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/pays-bas.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/nederland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/niederlande.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/verkeersborden/zwitserland.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/verkehrszeichen/schweiz.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/traffic-signs/switzerland.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/panneaux/suisse.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/verkeersborden/zwitserland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/verkehrszeichen/schweiz.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes/belgie.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/belgien.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/belgium.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/belgique.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/belgie.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/belgien.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes/duitsland.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/deutschland.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/germany.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/allemagne.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/duitsland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/deutschland.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes/frankrijk.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/frankreich.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/france.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/france.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/frankrijk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/frankreich.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes/ijsland.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/island.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/iceland.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/islande.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/ijsland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/island.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes/liechtenstein.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/liechtenstein.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/liechtenstein.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes/luxemburg.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/luxemburg.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/luxembourg.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/luxembourg.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/luxemburg.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/luxemburg.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes/monaco.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/monaco.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/monaco.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes/nederland.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/niederlande.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/netherlands.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/pays-bas.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/nederland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/niederlande.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes/roemenie.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/rumaenien.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/romania.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/roumanie.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/roemenie.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/rumaenien.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes/verenigd-koninkrijk.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/vereinigtes-koenigreich.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/united-kingdom.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/royaume-uni.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/verenigd-koninkrijk.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/vereinigtes-koenigreich.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes/zweden.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/schweden.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/sweden.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/suede.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/zweden.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/schweden.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/nl/boetes/zwitserland.html</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://youspeed.de/bussgeld/schweiz.html" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://youspeed.de/en/speeding-fines/switzerland.html" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/amendes/suisse.html" />
+    <xhtml:link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/boetes/zwitserland.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://youspeed.de/bussgeld/schweiz.html" />
+  </url>
+  <url>
+    <loc>https://youspeed.de/support/</loc>
+  </url>
+  <url>
     <loc>https://youspeed.de/datenschutz.html</loc>
   </url>
 </urlset>

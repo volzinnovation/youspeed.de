@@ -10,6 +10,7 @@ if [[ ! -f "${src}/index.html" ]]; then
   exit 1
 fi
 
+node "${repo_root}/scripts/web/build_localized_site.mjs"
 python3 "${repo_root}/scripts/web/render_social_assets.py"
 
 rm -rf "${dst}"

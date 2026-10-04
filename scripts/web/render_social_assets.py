@@ -2,14 +2,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from textwrap import wrap
+from shutil import copyfile
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 WEB_ROOT = REPO_ROOT / "Web"
-SCREENSHOT_ROOT = WEB_ROOT / "assets" / "screenshots"
 ICON_SOURCE = (
     REPO_ROOT
     / "iphone"
@@ -20,40 +19,6 @@ ICON_SOURCE = (
 )
 SOCIAL_ROOT = WEB_ROOT / "assets" / "social"
 ICON_ROOT = WEB_ROOT / "assets" / "icons"
-
-FONT_REGULAR = Path("/System/Library/Fonts/Supplemental/Arial.ttf")
-FONT_BOLD = Path("/System/Library/Fonts/Supplemental/Arial Bold.ttf")
-
-LOCALES = {
-    "de": {
-        "title": "YouSpeed.de",
-        "subtitle": "Dein Tempo immer im Blick.",
-        "detail": "Start am 29. August 2026 · iOS & Android · Offline · Keine Werbung",
-    },
-    "en": {
-        "title": "YouSpeed.de",
-        "subtitle": "Live speed-limit assist with offline maps",
-        "detail": "Available on App Store & Google Play · Offline · No ads",
-    },
-    "fr": {
-        "title": "YouSpeed.de",
-        "subtitle": "Assistant de vitesse avec cartes hors ligne",
-        "detail": "Disponible sur App Store et Google Play · Hors ligne · Sans publicité",
-    },
-    "nl": {
-        "title": "YouSpeed.de",
-        "subtitle": "Live snelheidslimiet met offline kaarten",
-        "detail": "Beschikbaar in App Store en Google Play · Offline · Geen advertenties",
-    },
-}
-
-
-def font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
-    path = FONT_BOLD if bold else FONT_REGULAR
-    if path.exists():
-        return ImageFont.truetype(str(path), size=size)
-    return ImageFont.load_default()
-
 
 def cover(image: Image.Image, size: tuple[int, int]) -> Image.Image:
     image = image.convert("RGBA")
@@ -92,109 +57,38 @@ def circle_mask(size: int, radius_ratio: float = 0.388) -> Image.Image:
     return mask.resize((size, size), Image.Resampling.LANCZOS)
 
 
-def paste_rounded(
-    base: Image.Image,
-    image: Image.Image,
-    xy: tuple[int, int],
-    size: tuple[int, int],
-    radius: int,
-    border: tuple[int, int, int, int] | None = None,
-) -> None:
-    thumb = cover(image, size)
-    mask = rounded_mask(size, radius)
-
-    shadow = Image.new("RGBA", size, (0, 0, 0, 220))
-    shadow.putalpha(mask.filter(ImageFilter.GaussianBlur(18)))
-    base.alpha_composite(shadow, (xy[0] + 10, xy[1] + 18))
-
-    base.paste(thumb, xy, mask)
-    if border:
-        draw = ImageDraw.Draw(base)
-        draw.rounded_rectangle(
-            (xy[0], xy[1], xy[0] + size[0], xy[1] + size[1]),
-            radius=radius,
-            outline=border,
-            width=2,
-        )
-
-
-def draw_wrapped(
-    draw: ImageDraw.ImageDraw,
-    text: str,
-    xy: tuple[int, int],
-    max_chars: int,
-    text_font: ImageFont.FreeTypeFont,
-    fill: tuple[int, int, int],
-    line_gap: int,
-) -> int:
-    x, y = xy
-    for line in wrap(text, width=max_chars):
-        draw.text((x, y), line, font=text_font, fill=fill)
-        bbox = draw.textbbox((x, y), line, font=text_font)
-        y += bbox[3] - bbox[1] + line_gap
-    return y
-
-
-def render_social(locale: str, strings: dict[str, str]) -> None:
-    width, height = 1200, 630
-    canvas = Image.new("RGBA", (width, height), "#0b0e10")
-    draw = ImageDraw.Draw(canvas)
-
-    # Road plane and lane marks.
-    draw.polygon([(610, 0), (1200, 0), (1200, 630), (765, 630)], fill="#11171a")
-    draw.line((820, 0, 610, 630), fill=(255, 255, 255, 30), width=4)
-    draw.line((1020, 0, 960, 630), fill=(245, 166, 35, 52), width=5)
-    for offset in range(-20, 720, 92):
-        draw.line((970, offset, 950, offset + 48), fill=(255, 255, 255, 48), width=8)
-
-    # App icon.
-    icon = Image.open(ICON_SOURCE).convert("RGBA")
-    icon_size = (88, 88)
-    icon_thumb = cover(icon, icon_size)
-    canvas.paste(icon_thumb, (74, 70), rounded_mask(icon_size, 22))
-
-    draw.text((74, 178), strings["title"], font=font(72, bold=True), fill="#ffffff")
-    next_y = draw_wrapped(
-        draw,
-        strings["subtitle"],
-        (76, 276),
-        28,
-        font(42, bold=True),
-        (255, 232, 185),
-        10,
-    )
-    draw_wrapped(
-        draw,
-        strings["detail"],
-        (78, next_y + 26),
-        46,
-        font(25),
-        (190, 198, 201),
-        8,
-    )
-
-    # Speed sign accent.
-    draw.ellipse((80, 492, 190, 602), fill="#ffffff", outline="#e63c2f", width=13)
-    draw.text((111, 520), "80", font=font(38, bold=True), fill="#111111")
-    draw.line((220, 546, 460, 546), fill=(230, 60, 47, 140), width=4)
-    draw.line((220, 570, 390, 570), fill=(245, 166, 35, 120), width=4)
-
-    shots = [
-        ("warn-level-1-money.png", (665, 112), (176, 382), 28),
-        ("warn-level-2-points.png", (800, 50), (244, 530), 36),
-        ("autobahn-unlimited-over-130.png", (1015, 130), (166, 360), 28),
-    ]
-    for filename, xy, size, radius in shots:
-        paste_rounded(
-            canvas,
-            Image.open(SCREENSHOT_ROOT / filename),
-            xy,
-            size,
-            radius,
-            border=(255, 255, 255, 42),
-        )
-
-    canvas.convert("RGB").save(SOCIAL_ROOT / f"youspeed-og-{locale}.png", quality=95)
+def render_release_artwork() -> None:
+    """Reuse approved 1.3 store artwork; scale for the web without cropping."""
+    release_root = WEB_ROOT / "assets" / "release-1.3"
+    release_root.mkdir(parents=True, exist_ok=True)
+    copyfile(REPO_ROOT / "store/videos/feature-film/en-US/youspeed-feature-film-poster.jpg", release_root / "feature-film-poster.jpg")
+    signs_root = release_root / "signs"
+    signs_root.mkdir(parents=True, exist_ok=True)
+    for sign in ["de-274-50", "de-206", "de-283", "de-102", "de-205"]:
+        copyfile(REPO_ROOT / f"shared/tsr/sign-pictograms/png/{sign}.png", signs_root / f"{sign}.png")
+    road = Image.open(REPO_ROOT / "store/artwork/source/european-road-backdrop.png")
+    road.convert("RGB").save(release_root / "road.webp", quality=88)
+    for locale, store_locale in {"de": "de-DE", "en": "en-US", "fr": "fr-FR", "nl": "nl-NL"}.items():
+        target = release_root / locale
+        target.mkdir(parents=True, exist_ok=True)
+        sources = {
+            "recognition": REPO_ROOT / f"store/apple/screenshots/{store_locale}/iphone-6.9/02-camera-speed-limit.png",
+            "signs": REPO_ROOT / f"store/apple/screenshots/{store_locale}/iphone-6.9/03-secondary-sign.png",
+            "dashcam": REPO_ROOT / f"store/apple/screenshots/{store_locale}/iphone-6.9/04-dashcam.png",
+            "android-dashcam": REPO_ROOT / f"store/android/listing/{store_locale}/phone-screenshots/02-dashcam.png",
+        }
+        for name, source in sources.items():
+            image = Image.open(source).convert("RGB")
+            image.thumbnail((960, 540) if name == "android-dashcam" else (660, 1434), Image.Resampling.LANCZOS)
+            image.save(target / f"{name}.webp", quality=90, method=6)
+        # Keep the localized feature graphic complete in the social preview.
+        graphic = Image.open(REPO_ROOT / f"store/android/listing/{store_locale}/feature-graphic-1024x500.png").convert("RGB")
+        graphic.thumbnail((1200, 630), Image.Resampling.LANCZOS)
+        scale = 1200 / graphic.width
+        graphic = graphic.resize((1200, round(graphic.height * scale)), Image.Resampling.LANCZOS)
+        canvas = Image.new("RGB", (1200, 630), "#0b0e10")
+        canvas.paste(graphic, (0, (630 - graphic.height) // 2))
+        canvas.save(SOCIAL_ROOT / f"youspeed-og-{locale}.png")
 
 
 def render_icons() -> None:
@@ -228,9 +122,8 @@ def main() -> None:
     SOCIAL_ROOT.mkdir(parents=True, exist_ok=True)
     ICON_ROOT.mkdir(parents=True, exist_ok=True)
     render_icons()
-    for locale, strings in LOCALES.items():
-        render_social(locale, strings)
-    print("Rendered social and icon assets")
+    render_release_artwork()
+    print("Rendered 1.3 release, social and icon assets")
 
 
 if __name__ == "__main__":

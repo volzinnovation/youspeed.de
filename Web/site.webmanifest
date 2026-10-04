@@ -1,7 +1,7 @@
 {
   "name": "YouSpeed.de",
   "short_name": "YouSpeed.de",
-  "description": "YouSpeed shows detected speed limits live, gives advisory fine, points, and driving-ban warnings, and works with local offline map data.",
+  "description": "YouSpeed 1.3 brings on-device traffic sign recognition, speed alerts, a dashcam and offline maps. Download Android directly or find the app in the stores.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0b0e10",
