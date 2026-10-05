@@ -1,0 +1,7 @@
+{
+  "source_repository": "Woladen.de-analytics",
+  "source_branch": "codex/youspeed-backend-services",
+  "source_commit": "bae998285660e4e1beb113a24a200bdbe58937b1",
+  "manifest_sha256": "820aa65f8999a4af54a40435363161279ee56ebf880c6e83dfa5d4c0103e2c96",
+  "live_transport_enabled": true
+}

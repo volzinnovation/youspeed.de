@@ -430,6 +430,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     private var storageLimitBytes: Int64?
     private var batch: PanoramaxBatchRecord?
     private var lastCaptureSample: PanoramaxLocationSample?
+    private var pendingSignEvidence: [SignCaptureFilter.Evidence] = []
     private var pendingSample: PanoramaxLocationSample?
     private var pendingPhotoUniqueID: Int64?
     private var photoInFlight = false
@@ -920,20 +921,31 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
     }
 
+    @discardableResult
+    func ingestRecognizedSigns(_ evidence: [SignCaptureFilter.Evidence], location: CLLocation, speedMetersPerSecond: Double?) -> Bool {
+        guard cadenceConfiguration.recognizedSignsOnly, !evidence.isEmpty, evidence.allSatisfy({ abs(Date().timeIntervalSince($0.frameAt)) <= 2 }) else { return false }
+        return capture(location: location, speedMetersPerSecond: speedMetersPerSecond, signEvidence: evidence)
+    }
     func ingest(location: CLLocation, speedMetersPerSecond: Double? = nil) {
+        guard !cadenceConfiguration.recognizedSignsOnly else { return }
+        _ = capture(location: location, speedMetersPerSecond: speedMetersPerSecond, signEvidence: [])
+    }
+    private func capture(location: CLLocation, speedMetersPerSecond: Double?, signEvidence: [SignCaptureFilter.Evidence]) -> Bool {
         guard state == .recording,
               activePanoramaxEnabled,
               !photoInFlight,
               batch != nil else {
-            return
+            return false
         }
         let accuracy = location.horizontalAccuracy
         let requestedAt = Date()
-        guard PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: speedMetersPerSecond ?? location.speed) else { return }
+        if !signEvidence.isEmpty, let last = lastCaptureAt, requestedAt.timeIntervalSince(last) < 2 { return false }
+        guard PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: speedMetersPerSecond ?? location.speed) else { return false }
         guard accuracy >= 0,
               accuracy.isFinite,
-              requestedAt.timeIntervalSince(location.timestamp) <= cadenceConfiguration.maxLocationAge else {
-            return
+              requestedAt.timeIntervalSince(location.timestamp) <= cadenceConfiguration.maxLocationAge,
+              location.timestamp <= requestedAt.addingTimeInterval(60), accuracy <= cadenceConfiguration.maxAccuracyMeters else {
+            return false
         }
         let heading: Double?
         if location.course >= 0, location.course <= 360, location.courseAccuracy >= 0 {
@@ -950,16 +962,17 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             headingDegrees: heading
         )
         lastAccuracyMeters = accuracy
-        guard PanoramaxCapturePolicy.shouldCapture(
+        guard !signEvidence.isEmpty || PanoramaxCapturePolicy.shouldCapture(
             lastCapture: lastCaptureSample,
             current: sample,
             now: requestedAt,
             configuration: cadenceConfiguration
         ) else {
             notifyChange()
-            return
+            return false
         }
 
+        pendingSignEvidence = signEvidence
         pendingSample = sample
         pendingPhotoOrientationEpoch = orientationEpoch
         let photoAngle = screenOrientation.captureRotationAngle
@@ -978,6 +991,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             }
             self.photoOutput.capturePhoto(with: settings, delegate: self)
         }
+        return true
     }
 
     private func preparePanoramaxBatch(captureSessionID: String, requestedGeneration: Int) async {
@@ -1190,6 +1204,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             return
         }
         let storageLimit = storageLimitBytes
+        let signEvidence = pendingSignEvidence
         let annotationDraft = pendingPhotoOrientationEpoch == orientationEpoch
             ? latestTrafficSignAnnotationDraft : nil
         latestTrafficSignAnnotationDraft = nil
@@ -1200,7 +1215,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 batch: batch,
                 queueStore: queueStore,
                 storageLimitBytes: storageLimit,
-                annotationDraft: annotationDraft
+                annotationDraft: annotationDraft, signEvidence: signEvidence
             )
             Task { @MainActor [weak self] in
                 self?.finishPhotoProcessing(uniqueID: uniqueID, result: result)
@@ -1313,7 +1328,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         batch: PanoramaxBatchRecord,
         queueStore: PanoramaxQueueStore,
         storageLimitBytes: Int64?,
-        annotationDraft: PanoramaxTrafficSignAnnotationDraft?
+        annotationDraft: PanoramaxTrafficSignAnnotationDraft?, signEvidence: [SignCaptureFilter.Evidence]
     ) -> PanoramaxPhotoProcessingResult {
         let dimensions = PanoramaxJPEGMetadata.pixelDimensions(from: data)
         let annotations: [PanoramaxTrafficSignAnnotation]
@@ -1345,7 +1360,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             software: "YouSpeed/1.0.1",
             imageWidthPixels: dimensions?.width,
             imageHeightPixels: dimensions?.height,
-            trafficSignAnnotations: annotations.isEmpty ? nil : annotations
+            trafficSignAnnotations: annotations.isEmpty ? nil : annotations,
+            captureReason: signEvidence.isEmpty ? "cadence" : "recognized_sign", signEvidence: signEvidence.isEmpty ? nil : signEvidence
         )
         do {
             _ = try queueStore.addJPEG(

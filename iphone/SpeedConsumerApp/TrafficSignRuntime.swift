@@ -3,6 +3,7 @@
 import CoreGraphics
 import CoreImage
 import Foundation
+import CryptoKit
 import ImageIO
 import OSLog
 import UniformTypeIdentifiers
@@ -114,6 +115,7 @@ struct TrafficSignVerifiedModelPack: Sendable {
     let classifierArtifact: TrafficSignModelPackManifest.Artifact?
     let classifierArtifactURL: URL?
     let shadowRuntimeConfigurationV2: TrafficSignShadowRuntimeConfigurationV2?
+    let manifestSHA256: String?
 
     init(
         directoryURL: URL,
@@ -122,7 +124,8 @@ struct TrafficSignVerifiedModelPack: Sendable {
         detectorArtifactURL: URL,
         classifierArtifact: TrafficSignModelPackManifest.Artifact? = nil,
         classifierArtifactURL: URL? = nil,
-        shadowRuntimeConfigurationV2: TrafficSignShadowRuntimeConfigurationV2? = nil
+        shadowRuntimeConfigurationV2: TrafficSignShadowRuntimeConfigurationV2? = nil,
+        manifestSHA256: String? = nil
     ) {
         self.directoryURL = directoryURL
         self.manifest = manifest
@@ -131,6 +134,7 @@ struct TrafficSignVerifiedModelPack: Sendable {
         self.classifierArtifact = classifierArtifact
         self.classifierArtifactURL = classifierArtifactURL
         self.shadowRuntimeConfigurationV2 = shadowRuntimeConfigurationV2
+        self.manifestSHA256 = manifestSHA256
     }
 }
 
@@ -176,8 +180,10 @@ enum TrafficSignModelPackDirectoryLoader {
         }
 
         let manifest: TrafficSignModelPackManifest
+        let manifestSHA256: String
         do {
             let data = try Data(contentsOf: manifestURL, options: [.mappedIfSafe])
+            manifestSHA256 = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
             manifest = try TrafficSignPackJSON.decoder().decode(
                 TrafficSignModelPackManifest.self,
                 from: data
@@ -266,7 +272,8 @@ enum TrafficSignModelPackDirectoryLoader {
             detectorArtifactURL: artifactURL,
             classifierArtifact: classifierArtifact,
             classifierArtifactURL: classifierArtifactURL,
-            shadowRuntimeConfigurationV2: shadowRuntimeConfigurationV2
+            shadowRuntimeConfigurationV2: shadowRuntimeConfigurationV2,
+            manifestSHA256: manifestSHA256
         )
     }
 
@@ -1119,6 +1126,8 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
     let roadPathDiagnostic: String?
     /// Raw recognition for the independently consented, non-authoritative annotation sink only.
     let annotationEvent: TrafficSignRecognitionEvent?
+    let collectionDetections: [TrafficSignDetection]
+    let collectionFrame: SignCollectionFrame?
 
     init(
         event: TrafficSignRecognitionEvent,
@@ -1132,7 +1141,9 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         displayObservation: TrafficSignDisplayObservation? = nil,
         applicabilityDiagnostic: TSRApplicabilityDiagnostic? = nil,
         roadPathDiagnostic: String? = nil,
-        annotationEvent: TrafficSignRecognitionEvent? = nil
+        annotationEvent: TrafficSignRecognitionEvent? = nil,
+        collectionDetections: [TrafficSignDetection] = [],
+        collectionFrame: SignCollectionFrame? = nil
     ) {
         precondition(
             event.roadContext == frameContext,
@@ -1150,6 +1161,8 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         self.applicabilityDiagnostic = applicabilityDiagnostic
         self.roadPathDiagnostic = roadPathDiagnostic
         self.annotationEvent = annotationEvent
+        self.collectionDetections = collectionDetections
+        self.collectionFrame = collectionFrame
     }
 }
 
@@ -1209,6 +1222,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         let roadPathDiagnostic: String?
         let displayDetections: [TrafficSignDetection]
         let annotationEvent: TrafficSignRecognitionEvent?
+        let collectionDetections: [TrafficSignDetection]
     }
 
     private struct SchedulingState {
@@ -1710,7 +1724,8 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                         applicabilityDiagnostic: applicability,
                         roadPathDiagnostic: roadPathDiagnostic,
                         displayDetections: selectedDetections,
-                        annotationEvent: annotationEvent
+                        annotationEvent: annotationEvent,
+                        collectionDetections: detections
                     )
                 }
 
@@ -1743,7 +1758,8 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     ),
                     applicabilityDiagnostic: processed.applicabilityDiagnostic,
                     roadPathDiagnostic: processed.roadPathDiagnostic,
-                    annotationEvent: processed.annotationEvent
+                    annotationEvent: processed.annotationEvent,
+                    collectionDetections: processed.collectionDetections
                 )
             } catch {
                 self.roadPathSession?.invalidatePreparedOverlay(frameId: item.frameId)
@@ -1951,7 +1967,8 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         displayObservation: TrafficSignDisplayObservation?,
         applicabilityDiagnostic: TSRApplicabilityDiagnostic? = nil,
         roadPathDiagnostic: String? = nil,
-        annotationEvent: TrafficSignRecognitionEvent? = nil
+        annotationEvent: TrafficSignRecognitionEvent? = nil,
+        collectionDetections: [TrafficSignDetection] = []
     ) {
         let now = ProcessInfo.processInfo.systemUptime
         var next: WorkItem?
@@ -2000,7 +2017,20 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 displayObservation: displayObservation,
                 applicabilityDiagnostic: applicabilityDiagnostic,
                 roadPathDiagnostic: roadPathDiagnostic,
-                annotationEvent: annotationEvent
+                annotationEvent: annotationEvent,
+                collectionDetections: collectionDetections,
+                collectionFrame: item.source == .liveFrame ? SignCollectionFrame(token: item.frameId) {
+                    let source: CIImage
+                    switch item.image { case .pixelBuffer(let buffer): source = CIImage(cvPixelBuffer: buffer); case .cgImage(let image): source = CIImage(cgImage: image) }
+                    let upright = source.oriented(forExifOrientation: Int32(item.orientation.rawValue))
+                    let color = CGColorSpace(name: CGColorSpace.sRGB)!
+                    let ci = CIContext(options: [.cacheIntermediates: false])
+                    guard let image = ci.createCGImage(upright, from: upright.extent, format: .RGBA8, colorSpace: color),
+                          let rgb = CGContext(data: nil, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: image.width * 4,
+                                              space: color, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else { throw SignCollectionError.storage }
+                    rgb.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+                    guard let result = rgb.makeImage() else { throw SignCollectionError.storage }; return result
+                } : nil
             )
             callbackQueue.async { [weak self, eventHandler] in
                 guard self?.canDeliverCallback == true else { return }

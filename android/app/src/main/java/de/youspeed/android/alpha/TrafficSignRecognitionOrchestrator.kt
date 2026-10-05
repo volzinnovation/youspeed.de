@@ -96,6 +96,7 @@ sealed interface TrafficSignBackendResult {
         val strongPassGeometry: Boolean = false,
         val displayDetections: List<TrafficSignDetection> = listOfNotNull(detection),
         val diagnostics: TrafficSignInferenceDiagnostics? = null,
+        val collectionFrame: SignCollectionFrame? = null,
     ) : TrafficSignBackendResult
 
     data class Unavailable(
@@ -140,6 +141,8 @@ data class TrafficSignOrchestrationOutput(
     val effectiveConfirmationWindowMs: Long? = null,
     val applicabilityDiagnostic: TSRApplicabilityDiagnostic? = null,
     val annotationEvent: TrafficSignRecognitionEvent? = null,
+    val collectionDetections: List<TrafficSignDetection> = emptyList(),
+    val collectionFrame: SignCollectionFrame? = null,
     val roadPathDiagnostic: String? = null,
 )
 
@@ -525,6 +528,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         synchronized(lock) {
             val active = activeInference
             if (active == null || active.inferenceId != inferenceId) {
+                (backendResult as? TrafficSignBackendResult.Recognition)?.collectionFrame?.close()
                 return
             }
             activeInference = null
@@ -641,6 +645,8 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     effectiveConfirmationWindowMs = fusionEngine.confirmationWindowMs,
                     applicabilityDiagnostic = created.applicabilityDiagnostic,
                     annotationEvent = created.annotationEvent,
+                    collectionDetections = created.collectionDetections,
+                    collectionFrame = (backendResult as? TrafficSignBackendResult.Recognition)?.collectionFrame,
                     roadPathDiagnostic = created.roadPathDiagnostic,
                 )
                 dispatch = takeDispatchLocked()
@@ -648,6 +654,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         }
 
         overrideNotification?.deliver(observer)
+        if (output == null) (backendResult as? TrafficSignBackendResult.Recognition)?.collectionFrame?.close()
         output?.let(observer::onRecognition)
         dispatch?.start()
     }
@@ -829,6 +836,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             applicabilityDiagnostic = applicability,
             roadPathDiagnostic = roadPathDiagnostic,
             annotationEvent = annotationEvent,
+            collectionDetections = rawDetections.toList(),
             selectedTrackId = selectedTrack?.trackId,
             displayDetections = if (enforcing) listOfNotNull(selectedDetection) else exitEligibleDetections,
             contextIsCurrent = sourceIsCurrent,
@@ -923,6 +931,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         val selectedTrackId: String?,
         val displayDetections: List<TrafficSignDetection>,
         val annotationEvent: TrafficSignRecognitionEvent?,
+        val collectionDetections: List<TrafficSignDetection>,
     )
 
     private data class ActiveInference<T : TrafficSignNormalizedFrameHandle>(

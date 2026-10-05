@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "state": "provisional_backend_contract",
+  "canonicalization": "semantic-json-v1",
+  "client_shared_root": "youspeed.de/shared/tsr",
+  "cross_client_approved": false,
+  "files": [
+    {
+      "path": "batch-v1.schema.json",
+      "sha256": "f883b5405bc1357cc0f503a3ce7d41fe608eec46cfecc19fa1130bec23d65f44"
+    },
+    {
+      "path": "consent-v1.schema.json",
+      "sha256": "e7334831771a5b6a7f22222a23fc827d385dfdd3ac35f6a2d5f58bd9fc97d5f2"
+    },
+    {
+      "path": "correction-v1.schema.json",
+      "sha256": "9f242fd65afd8db39119fadaf45e5be6b5f37e77938314cbffb6657731681479"
+    },
+    {
+      "path": "crop-v1.schema.json",
+      "sha256": "8be0bad64f685e77d99eed529f1060ad43fff678697eb88d4fbe55859f714bf1"
+    },
+    {
+      "path": "deletion-v1.schema.json",
+      "sha256": "0fea2833dc83734fa134911a5380365bacaaa7a5f85de31a99803287b090683f"
+    },
+    {
+      "path": "extraction-v1.schema.json",
+      "sha256": "b17469fdad60d7759780d778f6dd0e9f74eb4ea4a34eeda5277fc39484165f40"
+    },
+    {
+      "path": "fixtures/consent-v1.json",
+      "sha256": "db1eaa6dc249b07b3569b0c333fe955b33d3f150dd5a1bc7569baf8e990e60b7"
+    },
+    {
+      "path": "fixtures/correction-v1.json",
+      "sha256": "d7c3b0222e2dab114560a156d364d57b8cddfd73902f2f5834f58ce2c2be68b1"
+    },
+    {
+      "path": "fixtures/crop-v1.json",
+      "sha256": "f588f90f24685da10673923632838c7e7aa644507189e169389eb8731c6ec386"
+    },
+    {
+      "path": "fixtures/deletion-v1.json",
+      "sha256": "33bd17eb0a4147d1572dbd86f0395169b99bb8f5fa262d1c329838b72e61a97a"
+    },
+    {
+      "path": "fixtures/extraction-v1.json",
+      "sha256": "c9e8562844c34cf54f6c2ea11e07b3036b3a09d9f542baf4b64f56eb45c0890c"
+    },
+    {
+      "path": "fixtures/manual-batch-v1.json",
+      "sha256": "d86026c20055563f4c4f28427150421cbd40746ebdce9f08acc4d6aaf4c57b51"
+    },
+    {
+      "path": "fixtures/media-status-v1.json",
+      "sha256": "f2c9d773b19d5b5843901ec691e1a5194cc105cc8f509122cbfa6e5ef7eb1849"
+    },
+    {
+      "path": "fixtures/pixel-hash-v1.json",
+      "sha256": "c0779a73d0e2e526db4d7c21e5e0fea78d9b38a54c21e0e68902783ab6fcceb2"
+    },
+    {
+      "path": "fixtures/semantic-json-v1.json",
+      "sha256": "b44c57231f6e161795546f158b0e4d509167327109f40213f8825afdda90659c"
+    },
+    {
+      "path": "fixtures/sighting-batch-v1.json",
+      "sha256": "d34cfe24624f97d4a2a0f8f4ccb3af638e2c051e77d5d530f9be4d226f1818be"
+    },
+    {
+      "path": "media-status-v1.schema.json",
+      "sha256": "ecb044322d000596d32983459842caf9e28e41428244264f44466e41a9edc671"
+    },
+    {
+      "path": "sighting-v1.schema.json",
+      "sha256": "e028a89805869732517a7ad7f521dc51f7cb6a1670314037ef5ca68a91b20291"
+    }
+  ]
+}

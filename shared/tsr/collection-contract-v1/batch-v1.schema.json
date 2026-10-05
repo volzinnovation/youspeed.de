@@ -1,0 +1,101 @@
+{
+  "$defs": {
+    "Authorization": {
+      "additionalProperties": false,
+      "properties": {
+        "consent_generation": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Consent Generation",
+          "type": "integer"
+        },
+        "decided_at": {
+          "format": "date-time",
+          "title": "Decided At",
+          "type": "string"
+        },
+        "disclosure_version": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Disclosure Version",
+          "type": "string"
+        },
+        "origin": {
+          "const": "client_claim",
+          "title": "Origin",
+          "type": "string"
+        },
+        "scope": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Scope",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "granted",
+            "withdrawn",
+            "refused"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "disclosure_version",
+        "decided_at",
+        "consent_generation",
+        "state",
+        "origin"
+      ],
+      "title": "Authorization",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "batch_id": {
+      "title": "Batch Id",
+      "type": "string"
+    },
+    "collection_authorization": {
+      "$ref": "#/$defs/Authorization"
+    },
+    "collection_epoch": {
+      "maximum": 2147483647,
+      "minimum": 0,
+      "title": "Collection Epoch",
+      "type": "integer"
+    },
+    "events": {
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Events",
+      "type": "array"
+    },
+    "installation_id": {
+      "title": "Installation Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "batch_id",
+    "installation_id",
+    "collection_epoch",
+    "collection_authorization",
+    "events"
+  ],
+  "title": "Batch",
+  "type": "object"
+}

@@ -1,0 +1,339 @@
+{
+  "$defs": {
+    "Alternative": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "raw_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Raw Score"
+        }
+      },
+      "required": [
+        "label",
+        "raw_score"
+      ],
+      "title": "Alternative",
+      "type": "object"
+    },
+    "Classification": {
+      "additionalProperties": false,
+      "properties": {
+        "alternatives": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Alternative"
+          },
+          "maxItems": 16,
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "canonical_code": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Canonical Code"
+        },
+        "country": {
+          "pattern": "^(?:[A-Z]{2}|unknown)$",
+          "title": "Country",
+          "type": "string"
+        },
+        "family": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Family",
+          "type": "string"
+        },
+        "mapping_revision": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mapping Revision"
+        },
+        "mapping_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mapping Sha256"
+        },
+        "model_label": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Model Label"
+        },
+        "role": {
+          "enum": [
+            "primary",
+            "supplementary",
+            "unknown"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "country",
+        "model_label",
+        "canonical_code",
+        "family",
+        "value",
+        "unit",
+        "role",
+        "mapping_revision",
+        "mapping_sha256"
+      ],
+      "title": "Classification",
+      "type": "object"
+    },
+    "SignPosition": {
+      "additionalProperties": false,
+      "properties": {
+        "latitude": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Latitude",
+          "type": "number"
+        },
+        "longitude": {
+          "maximum": 180,
+          "minimum": -180,
+          "title": "Longitude",
+          "type": "number"
+        },
+        "method": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Method",
+          "type": "string"
+        },
+        "uncertainty_m": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Uncertainty M",
+          "type": "number"
+        }
+      },
+      "required": [
+        "latitude",
+        "longitude",
+        "uncertainty_m",
+        "method"
+      ],
+      "title": "SignPosition",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "association_status": {
+      "enum": [
+        "exact",
+        "ambiguous",
+        "unresolved"
+      ],
+      "title": "Association Status",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "input_modality": {
+      "enum": [
+        "touch",
+        "voice",
+        "manual"
+      ],
+      "title": "Input Modality",
+      "type": "string"
+    },
+    "intent": {
+      "enum": [
+        "unspecified_wrong",
+        "not_a_sign",
+        "wrong_class",
+        "wrong_value",
+        "wrong_location",
+        "wrong_applicability",
+        "supplementary_condition_missing",
+        "retract_correction"
+      ],
+      "title": "Intent",
+      "type": "string"
+    },
+    "media_refs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8,
+      "title": "Media Refs",
+      "type": "array"
+    },
+    "presentation_id": {
+      "anyOf": [
+        {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Presentation Id"
+    },
+    "replacement_classification": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Classification"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "replacement_position": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SignPosition"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "speech_attempt_id": {
+      "anyOf": [
+        {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Speech Attempt Id"
+    },
+    "target_id": {
+      "title": "Target Id",
+      "type": "string"
+    },
+    "target_kind": {
+      "enum": [
+        "observation",
+        "sign",
+        "overlay",
+        "correction"
+      ],
+      "title": "Target Kind",
+      "type": "string"
+    },
+    "target_version": {
+      "anyOf": [
+        {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Target Version"
+    }
+  },
+  "required": [
+    "schema_version",
+    "event_id",
+    "created_at",
+    "intent",
+    "input_modality",
+    "target_kind",
+    "target_id",
+    "target_version",
+    "association_status"
+  ],
+  "title": "Correction",
+  "type": "object"
+}

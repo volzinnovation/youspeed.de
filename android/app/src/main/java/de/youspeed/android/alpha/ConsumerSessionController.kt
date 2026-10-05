@@ -314,6 +314,7 @@ data class ConsumerUiState(
     val trafficSignCameraRuntimeState: TrafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
     val trafficSignCameraRuntimeDetail: String = ConsumerRuntimeText.CAMERA_DISABLED.text(),
     val panoramaxCaptureEnabled: Boolean = true,
+    val panoramaxRecognizedSignsOnly: Boolean = false,
     val panoramaxTriggerMode: PanoramaxCaptureTriggerMode = PanoramaxCaptureTriggerMode.DISTANCE,
     val panoramaxMinimumDistanceMeters: Double = 25.0,
     val panoramaxMinimumIntervalSeconds: Double = 5.0,
@@ -455,6 +456,10 @@ class ConsumerSessionController(
         preferences.getBoolean(DebugLogPersistence.PREFERENCE_KEY, true),
     )
     private val appContext = context.applicationContext
+    // Shared v1.4 collection storage and automatic upload coordinator.
+    internal val signCollectionFoundation = SignCollectionFoundation(appContext)
+    internal val signCollection by lazy { SignCollectionCoordinator(appContext, signCollectionFoundation) }
+    internal fun recordManualSignSighting() { signCollection.manualSighting(latestCaptureLocation?.let(::Location)) }
     private val mainHandler = Handler(Looper.getMainLooper())
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
     private val panoramaxStorageWorker = PanoramaxStorageWorker()
@@ -740,10 +745,12 @@ class ConsumerSessionController(
     }
     @Volatile private var latestDashcamEventPath: String? = null
     private data class PendingPhoto(val requestId: String, val sessionId: String, val orientationEpoch: Long,
-        val sample: PanoramaxLocationSample, val drafts: List<PanoramaxTrafficSignAnnotationDraft>)
+        val sample: PanoramaxLocationSample, val drafts: List<PanoramaxTrafficSignAnnotationDraft>, val signEvidence: List<SignCaptureEvidence> = emptyList())
     private var annotationOrientationEpoch = 0L
     private var annotationOrientationStartedAt = Instant.MIN
     private var annotationEligibleCaptureIds = emptySet<String>()
+    private var activeTrafficSignModelPackForCollection: TrafficSignModelPack? = null
+    private val panoramaxSignFilter = SignCaptureFilter()
     private var pendingPhoto: PendingPhoto? = null
     private var latestAnnotationDrafts: List<PanoramaxTrafficSignAnnotationDraft> = emptyList()
     private var panoramaxCaptureSessionId: String? = null
@@ -840,6 +847,7 @@ class ConsumerSessionController(
             showDetectedLanes = initialShowDetectedLanes,
             trafficSignRecognitionIndependentEnabled = preferences.getBoolean("youspeed.drive_recorder.tsr_independent_enabled", false),
             trafficSignFeedbackMode = TrafficSignFeedbackMode.fromStorageValue(preferences.getString("youspeed.drive_recorder.tsr_feedback_mode", null)),
+            panoramaxRecognizedSignsOnly = preferences.getBoolean("youspeed.panoramax.recognized_signs_only", false),
             panoramaxTriggerMode = runCatching { PanoramaxCaptureTriggerMode.valueOf(preferences.getString("youspeed.panoramax.trigger_mode", "DISTANCE")!!) }.getOrDefault(PanoramaxCaptureTriggerMode.DISTANCE),
             panoramaxMinimumDistanceMeters = preferences.getFloat("youspeed.panoramax.minimum_distance", 25f).toDouble().coerceIn(10.0, 90.0),
             panoramaxMinimumIntervalSeconds = preferences.getFloat("youspeed.panoramax.minimum_interval", 5f).toDouble().coerceIn(5.0, 240.0),
@@ -900,6 +908,7 @@ class ConsumerSessionController(
         }
         panoramaxUploader.close()
         stopDriving()
+        signCollection.close()
         runCatching { locationManager.removeUpdates(firstLocationListener) }
         mainHandler.removeCallbacks(speedCapturePromptFallbackRunnable)
         mainHandler.removeCallbacks(speedCaptureListeningStartRunnable)
@@ -1727,6 +1736,7 @@ class ConsumerSessionController(
                     software = "YouSpeed Android ${BuildConfig.VERSION_NAME}",
                     imageWidthPixels = dimensions.first, imageHeightPixels = dimensions.second,
                     trafficSignAnnotations = annotations.takeIf { it.isNotEmpty() },
+                    captureReason = if (request.signEvidence.isEmpty()) "cadence" else "recognized_sign", signEvidence = request.signEvidence.takeIf { it.isNotEmpty() },
                 )
                 val mayPersist = synchronized(captureLock) {
                     pendingPhoto?.requestId == requestId && panoramaxCaptureSessionId == request.sessionId
@@ -1772,24 +1782,40 @@ class ConsumerSessionController(
         if (wasPending) postState { copy(panoramaxLastCaptureDetail = detail) }
     }
 
+    private fun captureRecognizedSigns(event: TrafficSignRecognitionEvent, detections: List<TrafficSignDetection>) {
+        if (!uiState.panoramaxRecognizedSignsOnly || !applicationActive || event.source != TrafficSignInputSource.LIVE_FRAME || kotlin.math.abs(Duration.between(event.frameTimestampUtc,clock.instant()).toMillis()) > 2000) return
+        val pack = activeTrafficSignModelPackForCollection ?: return
+        val eligible = detections.filter { it.candidate.rawScore.isFinite() && it.candidate.rawScore >= (pack.classFor(it.candidate.rawClassId)?.threshold ?: pack.thresholds.provisional) }.map { d ->
+            val box = d.candidate.boundingBox
+            SignCaptureFilter.Detection(event.packId + ":" + d.candidate.rawLabel, d.candidate.rawLabel, listOf(box.x,box.y,box.width,box.height), d.candidate.rawScore, event.frameId)
+        }
+        val evidence = panoramaxSignFilter.observe(event.frameTimestampUtc, eligible)
+        if (evidence.isNotEmpty() && capturePanoramaxPhoto(evidence)) panoramaxSignFilter.captured(evidence, event.frameTimestampUtc)
+    }
     private fun maybeCapturePanoramaxPhoto() {
-        if (!isPanoramaxCaptureEnabled() || uiState.trafficSignCameraRuntimeState != TrafficSignCameraRuntimeState.ACTIVE) return
-        if (!PanoramaxCapturePolicy.isMoving(uiState.currentSpeedKmh / 3.6)) return
-        val sample = currentPanoramaxLocationSample() ?: return
+        if (!uiState.panoramaxRecognizedSignsOnly) capturePanoramaxPhoto(emptyList())
+    }
+    private fun capturePanoramaxPhoto(evidence: List<SignCaptureEvidence>): Boolean {
+        if (!isPanoramaxCaptureEnabled() || uiState.trafficSignCameraRuntimeState != TrafficSignCameraRuntimeState.ACTIVE) return false
+        if (!PanoramaxCapturePolicy.isMoving(uiState.currentSpeedKmh / 3.6)) return false
+        val sample = currentPanoramaxLocationSample() ?: return false
+        if (sample.accuracyMeters > 50 || sample.capturedAt.isAfter(clock.instant().plusSeconds(60)) || Duration.between(sample.capturedAt, clock.instant()).seconds > 10) return false
+        if (evidence.isNotEmpty() && uiState.panoramaxLastCaptureAt?.let { Duration.between(it, clock.instant()).toMillis() < 2000 } == true) return false
         val request = synchronized(captureLock) {
-            val sessionId = panoramaxCaptureSessionId ?: return
-            if (panoramaxCaptureInFlight || !PanoramaxCapturePolicy.shouldCapture(panoramaxLastCaptureSample, sample,
+            val sessionId = panoramaxCaptureSessionId ?: return false
+            if (panoramaxCaptureInFlight || (evidence.isEmpty() && !PanoramaxCapturePolicy.shouldCapture(panoramaxLastCaptureSample, sample,
                     now = clock.instant(), config = PanoramaxCadenceConfig(distanceMeters = uiState.panoramaxMinimumDistanceMeters,
                         fallbackInterval = Duration.ofMillis((uiState.panoramaxMinimumIntervalSeconds * 1000).toLong()),
-                        triggerMode = uiState.panoramaxTriggerMode))) return
+                        triggerMode = uiState.panoramaxTriggerMode)))) return false
             PendingPhoto(UUID.randomUUID().toString(), sessionId, annotationOrientationEpoch,
-                sample.copy(capturedAt = clock.instant()), latestAnnotationDrafts.toList()).also {
+                sample.copy(capturedAt = clock.instant()), latestAnnotationDrafts.toList(), evidence).also {
                 pendingPhoto = it; panoramaxCaptureInFlight = true
             }
         }
         val currentHost = host
         if (currentHost == null) onPanoramaxPhotoCaptureFailed("Camera unavailable", request.requestId)
         else mainHandler.post { currentHost.capturePanoramaxPhoto(request.requestId) }
+        return currentHost != null
     }
 
     private fun preparePanoramaxStorage() {
@@ -1866,6 +1892,10 @@ class ConsumerSessionController(
         refreshPanoramaxBatches()
     }
 
+    fun setPanoramaxRecognizedSignsOnly(value: Boolean) {
+        preferences.edit().putBoolean("youspeed.panoramax.recognized_signs_only", value).apply(); panoramaxSignFilter.reset()
+        updateState { copy(panoramaxRecognizedSignsOnly = value) }
+    }
     fun setPanoramaxTriggerMode(value: PanoramaxCaptureTriggerMode) {
         preferences.edit().putString("youspeed.panoramax.trigger_mode", value.name).apply()
         updateState { copy(panoramaxTriggerMode = value) }
@@ -1921,7 +1951,14 @@ class ConsumerSessionController(
             speedReference.output()?.source == "camera"
     }
 
-    fun disregardVision() {
+    fun disregardVision() = disregardVision(recordCollectionCorrection = true)
+
+    private fun disregardVision(recordCollectionCorrection: Boolean) {
+        if (recordCollectionCorrection) {
+            val attempt = SignCollectionJson.uuid()
+            signCollection.freezeCorrection(attempt, speedReference.output()?.evidenceId?.removeSuffix(":enclosing"))
+            signCollection.correct(attempt, "touch")
+        }
         cancelVisionDismissalListening()
         resetSecondaryTrafficSignSpeech(resetDedup = false)
         synchronized(trafficSignStateLock) {
@@ -1939,6 +1976,14 @@ class ConsumerSessionController(
         updateState { copy(trafficSignLastEvent = null, lastTrafficSignPictogram = null,
             isTrafficSignEndOverlayVisible = false, trafficSignEndPictogram = null) }
         appendRuntimeDiagnosticEvent("vision_dismissed", mapOf("source" to "user"))
+    }
+
+    internal fun onSignCollectionFrame(event: TrafficSignRecognitionEvent, detections: List<TrafficSignDetection>, generation: Long, frame: SignCollectionFrame? = null) {
+        mainHandler.post {
+            if (generation != trafficSignGeneration.get() || event.driveSessionId != trafficSignDriveSessionId || !isTrafficSignRecognitionRuntimeEnabled()) { frame?.close(); return@post }
+            captureRecognizedSigns(event, detections)
+            signCollection.observe(event, detections, latestCaptureLocation?.let(::Location), frame)
+        }
     }
 
     fun onTrafficSignRecognitionEvent(event: TrafficSignRecognitionEvent, generation: Long) {
@@ -2079,8 +2124,10 @@ class ConsumerSessionController(
     }
 
     internal fun onTrafficSignModelPackLoaded(pack: AndroidTrafficSignVerifiedPack) {
+        signCollection.modelLoaded(pack)
         mainHandler.post {
             if (isDisposed.get()) return@post
+            activeTrafficSignModelPackForCollection = pack.modelPack; panoramaxSignFilter.reset()
             val country = AndroidTrafficSignModelPackSelection.availableCountryCode(
                 pack.modelPack.countries.firstOrNull()
             ) ?: return@post
@@ -2333,6 +2380,7 @@ class ConsumerSessionController(
     }
 
     fun stopDriving() {
+        signCollection.endSession()
         if (isDriving) { roadPathSession.resetTrajectory(); lanePreviewSession.resetTrajectory() }
         mainHandler.removeCallbacks(speedReferenceTick)
         speedReference.reset()
@@ -2502,6 +2550,8 @@ class ConsumerSessionController(
         }
         val model = bundledVoskModel ?: return cancelVisionDismissalListening()
         if (!visionDismissalWindow.begin(evidence, now)) return
+        val collectionAttempt = SignCollectionJson.uuid()
+        signCollection.freezeCorrection(collectionAttempt, evidence.trackId)
         val session = VoskSpeedCaptureSession(model, VisionDismissalSpeech.grammar(speechLanguage)) { candidates ->
             candidates.firstOrNull()?.let { VisionDismissalSpeech.accepts(it, speechLanguage) } == true
         }
@@ -2522,7 +2572,10 @@ class ConsumerSessionController(
                             "language" to speechLanguage.localeTag, "trackId" to evidence.trackId,
                             "speedKmh" to evidence.speedKmh, "source" to source))
                         synchronized(trafficSignStateLock) {
-                            if (currentVisionDismissalEvidence() == evidence) disregardVision()
+                            if (currentVisionDismissalEvidence() == evidence) {
+                                signCollection.correct(collectionAttempt, "voice")
+                                disregardVision(recordCollectionCorrection = false)
+                            }
                         }
                     }
                 }
@@ -2780,6 +2833,7 @@ class ConsumerSessionController(
                 details = mapOf("state" to state.name.lowercase(Locale.US), "detail" to detail),
             )
         }
+        signCollection.cameraChanged(state == TrafficSignCameraRuntimeState.ACTIVE && isTrafficSignRecognitionRuntimeEnabled())
         if (state == TrafficSignCameraRuntimeState.ACTIVE && isPanoramaxCaptureEnabled()) beginPanoramaxCaptureSession()
         if (state in setOf(TrafficSignCameraRuntimeState.DISABLED, TrafficSignCameraRuntimeState.FAILED,
                 TrafficSignCameraRuntimeState.UNAVAILABLE, TrafficSignCameraRuntimeState.DENIED)) endPanoramaxCaptureSession()

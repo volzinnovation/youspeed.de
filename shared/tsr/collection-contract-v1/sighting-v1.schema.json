@@ -1,0 +1,809 @@
+{
+  "$defs": {
+    "Alternative": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "raw_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Raw Score"
+        }
+      },
+      "required": [
+        "label",
+        "raw_score"
+      ],
+      "title": "Alternative",
+      "type": "object"
+    },
+    "App": {
+      "additionalProperties": false,
+      "properties": {
+        "build": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Build",
+          "type": "string"
+        },
+        "platform": {
+          "enum": [
+            "ios",
+            "android"
+          ],
+          "title": "Platform",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform",
+        "version",
+        "build"
+      ],
+      "title": "App",
+      "type": "object"
+    },
+    "Box": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Height",
+          "type": "number"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "Box",
+      "type": "object"
+    },
+    "Classification": {
+      "additionalProperties": false,
+      "properties": {
+        "alternatives": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Alternative"
+          },
+          "maxItems": 16,
+          "title": "Alternatives",
+          "type": "array"
+        },
+        "canonical_code": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Canonical Code"
+        },
+        "country": {
+          "pattern": "^(?:[A-Z]{2}|unknown)$",
+          "title": "Country",
+          "type": "string"
+        },
+        "family": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Family",
+          "type": "string"
+        },
+        "mapping_revision": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mapping Revision"
+        },
+        "mapping_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Mapping Sha256"
+        },
+        "model_label": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Model Label"
+        },
+        "role": {
+          "enum": [
+            "primary",
+            "supplementary",
+            "unknown"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "country",
+        "model_label",
+        "canonical_code",
+        "family",
+        "value",
+        "unit",
+        "role",
+        "mapping_revision",
+        "mapping_sha256"
+      ],
+      "title": "Classification",
+      "type": "object"
+    },
+    "Component": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Artifact Sha256",
+          "type": "string"
+        },
+        "calibration_id": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Calibration Id"
+        },
+        "calibration_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Calibration Sha256"
+        },
+        "preprocessing_version": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Preprocessing Version",
+          "type": "string"
+        },
+        "role": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "artifact_sha256",
+        "preprocessing_version",
+        "calibration_id",
+        "calibration_sha256"
+      ],
+      "title": "Component",
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "analyzed_frames": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Analyzed Frames",
+          "type": "integer"
+        },
+        "assembly_id": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Assembly Id"
+        },
+        "finalization_reason": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Finalization Reason",
+          "type": "string"
+        },
+        "normalized_box": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Box"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quality_flags": {
+          "items": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Quality Flags",
+          "type": "array"
+        },
+        "track_id": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Track Id"
+        }
+      },
+      "required": [
+        "track_id",
+        "assembly_id",
+        "analyzed_frames",
+        "finalization_reason",
+        "quality_flags"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "Model": {
+      "additionalProperties": false,
+      "properties": {
+        "components": {
+          "items": {
+            "$ref": "#/$defs/Component"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Components",
+          "type": "array"
+        },
+        "pack_id": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Pack Id",
+          "type": "string"
+        },
+        "pack_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Pack Sha256",
+          "type": "string"
+        },
+        "pack_version": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Pack Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "pack_id",
+        "pack_version",
+        "pack_sha256",
+        "components"
+      ],
+      "title": "Model",
+      "type": "object"
+    },
+    "Position": {
+      "additionalProperties": false,
+      "properties": {
+        "alignment": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Alignment",
+          "type": "string"
+        },
+        "course_accuracy_degrees": {
+          "anyOf": [
+            {
+              "maximum": 180,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Course Accuracy Degrees"
+        },
+        "course_degrees": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 360,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Course Degrees"
+        },
+        "fix_at": {
+          "format": "date-time",
+          "title": "Fix At",
+          "type": "string"
+        },
+        "frame_fix_delta_ms": {
+          "maximum": 86400000,
+          "minimum": -86400000,
+          "title": "Frame Fix Delta Ms",
+          "type": "number"
+        },
+        "horizontal_accuracy_m": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Horizontal Accuracy M",
+          "type": "number"
+        },
+        "latitude": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Latitude",
+          "type": "number"
+        },
+        "longitude": {
+          "maximum": 180,
+          "minimum": -180,
+          "title": "Longitude",
+          "type": "number"
+        },
+        "source": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "latitude",
+        "longitude",
+        "horizontal_accuracy_m",
+        "fix_at",
+        "frame_fix_delta_ms",
+        "source",
+        "alignment"
+      ],
+      "title": "Position",
+      "type": "object"
+    },
+    "Road": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Direction"
+        },
+        "map_revision": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Map Revision",
+          "type": "string"
+        },
+        "match_quality": {
+          "enum": [
+            "unknown",
+            "uncertain",
+            "reviewed"
+          ],
+          "title": "Match Quality",
+          "type": "string"
+        },
+        "road_id": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Road Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "road_id",
+        "map_revision",
+        "match_quality",
+        "direction"
+      ],
+      "title": "Road",
+      "type": "object"
+    },
+    "Scores": {
+      "additionalProperties": false,
+      "properties": {
+        "calibrated_confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Calibrated Confidence"
+        },
+        "calibration_id": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calibration Id"
+        },
+        "calibration_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[a-f0-9]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calibration Sha256"
+        },
+        "classifier_raw": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Classifier Raw"
+        },
+        "detector_raw": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Detector Raw"
+        },
+        "raw_domain": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Raw Domain"
+        },
+        "track_support": {
+          "anyOf": [
+            {
+              "maximum": 100000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Track Support"
+        }
+      },
+      "required": [
+        "detector_raw",
+        "classifier_raw",
+        "raw_domain",
+        "calibrated_confidence",
+        "track_support"
+      ],
+      "title": "Scores",
+      "type": "object"
+    },
+    "SignPosition": {
+      "additionalProperties": false,
+      "properties": {
+        "latitude": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Latitude",
+          "type": "number"
+        },
+        "longitude": {
+          "maximum": 180,
+          "minimum": -180,
+          "title": "Longitude",
+          "type": "number"
+        },
+        "method": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Method",
+          "type": "string"
+        },
+        "uncertainty_m": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Uncertainty M",
+          "type": "number"
+        }
+      },
+      "required": [
+        "latitude",
+        "longitude",
+        "uncertainty_m",
+        "method"
+      ],
+      "title": "SignPosition",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "app": {
+      "$ref": "#/$defs/App"
+    },
+    "classification": {
+      "$ref": "#/$defs/Classification"
+    },
+    "clock_quality": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Clock Quality",
+      "type": "string"
+    },
+    "collection_session_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Collection Session Id"
+    },
+    "duration_ms": {
+      "maximum": 3600000,
+      "minimum": 0,
+      "title": "Duration Ms",
+      "type": "number"
+    },
+    "event_id": {
+      "title": "Event Id",
+      "type": "string"
+    },
+    "evidence": {
+      "$ref": "#/$defs/Evidence"
+    },
+    "first_seen_at": {
+      "format": "date-time",
+      "title": "First Seen At",
+      "type": "string"
+    },
+    "last_seen_at": {
+      "format": "date-time",
+      "title": "Last Seen At",
+      "type": "string"
+    },
+    "media_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8,
+      "title": "Media Refs",
+      "type": "array"
+    },
+    "model": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Model"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "observer_version": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Observer Version",
+      "type": "string"
+    },
+    "representative_frame_at": {
+      "format": "date-time",
+      "title": "Representative Frame At",
+      "type": "string"
+    },
+    "road_context": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Road"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "scores": {
+      "$ref": "#/$defs/Scores"
+    },
+    "sign_position": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SignPosition"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_kind": {
+      "enum": [
+        "detector",
+        "manual_capture"
+      ],
+      "title": "Source Kind",
+      "type": "string"
+    },
+    "vehicle_position": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Position"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "event_id",
+    "collection_session_id",
+    "observer_version",
+    "source_kind",
+    "media_refs",
+    "app",
+    "first_seen_at",
+    "last_seen_at",
+    "representative_frame_at",
+    "duration_ms",
+    "clock_quality",
+    "vehicle_position",
+    "sign_position",
+    "classification",
+    "scores",
+    "model",
+    "evidence",
+    "road_context"
+  ],
+  "title": "Sighting",
+  "type": "object"
+}

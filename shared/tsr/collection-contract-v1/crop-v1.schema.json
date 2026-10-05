@@ -1,0 +1,325 @@
+{
+  "$defs": {
+    "Authorization": {
+      "additionalProperties": false,
+      "properties": {
+        "consent_generation": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Consent Generation",
+          "type": "integer"
+        },
+        "decided_at": {
+          "format": "date-time",
+          "title": "Decided At",
+          "type": "string"
+        },
+        "disclosure_version": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Disclosure Version",
+          "type": "string"
+        },
+        "origin": {
+          "const": "client_claim",
+          "title": "Origin",
+          "type": "string"
+        },
+        "scope": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Scope",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "granted",
+            "withdrawn",
+            "refused"
+          ],
+          "title": "State",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope",
+        "disclosure_version",
+        "decided_at",
+        "consent_generation",
+        "state",
+        "origin"
+      ],
+      "title": "Authorization",
+      "type": "object"
+    },
+    "Box": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Height",
+          "type": "number"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "Box",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "actual_box": {
+      "items": {
+        "type": "integer"
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "title": "Actual Box",
+      "type": "array"
+    },
+    "actual_extra_height": {
+      "minimum": 0,
+      "title": "Actual Extra Height",
+      "type": "integer"
+    },
+    "bottom_clipped": {
+      "title": "Bottom Clipped",
+      "type": "boolean"
+    },
+    "byte_length": {
+      "exclusiveMinimum": 0,
+      "maximum": 5242880,
+      "title": "Byte Length",
+      "type": "integer"
+    },
+    "collection_authorization": {
+      "$ref": "#/$defs/Authorization"
+    },
+    "collection_epoch": {
+      "maximum": 2147483647,
+      "minimum": 0,
+      "title": "Collection Epoch",
+      "type": "integer"
+    },
+    "crop_id": {
+      "title": "Crop Id",
+      "type": "string"
+    },
+    "crop_version": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Crop Version",
+      "type": "string"
+    },
+    "decoded_height": {
+      "exclusiveMinimum": 0,
+      "maximum": 32768,
+      "title": "Decoded Height",
+      "type": "integer"
+    },
+    "decoded_width": {
+      "exclusiveMinimum": 0,
+      "maximum": 32768,
+      "title": "Decoded Width",
+      "type": "integer"
+    },
+    "encoded_sha256": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Encoded Sha256",
+      "type": "string"
+    },
+    "encoding": {
+      "enum": [
+        "JPEG",
+        "PNG"
+      ],
+      "title": "Encoding",
+      "type": "string"
+    },
+    "installation_id": {
+      "title": "Installation Id",
+      "type": "string"
+    },
+    "local_frame_token": {
+      "anyOf": [
+        {
+          "maxLength": 160,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Local Frame Token"
+    },
+    "observation_id": {
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "orientation_version": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Orientation Version",
+      "type": "string"
+    },
+    "original_box": {
+      "items": {
+        "type": "integer"
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "title": "Original Box",
+      "type": "array"
+    },
+    "privacy_preflight": {
+      "enum": [
+        "passed",
+        "user_reviewed"
+      ],
+      "title": "Privacy Preflight",
+      "type": "string"
+    },
+    "processor_authorization": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Authorization"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "redaction_masks": {
+      "items": {
+        "$ref": "#/$defs/Box"
+      },
+      "maxItems": 32,
+      "title": "Redaction Masks",
+      "type": "array"
+    },
+    "redaction_version": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Redaction Version",
+      "type": "string"
+    },
+    "requested_box": {
+      "items": {
+        "type": "integer"
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "title": "Requested Box",
+      "type": "array"
+    },
+    "requested_extra_height": {
+      "exclusiveMinimum": 0,
+      "title": "Requested Extra Height",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "source_frame_at": {
+      "format": "date-time",
+      "title": "Source Frame At",
+      "type": "string"
+    },
+    "source_height": {
+      "exclusiveMinimum": 0,
+      "maximum": 32768,
+      "title": "Source Height",
+      "type": "integer"
+    },
+    "source_kind": {
+      "enum": [
+        "detector",
+        "manual_capture"
+      ],
+      "title": "Source Kind",
+      "type": "string"
+    },
+    "source_upright_sha256": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Source Upright Sha256"
+    },
+    "source_width": {
+      "exclusiveMinimum": 0,
+      "maximum": 32768,
+      "title": "Source Width",
+      "type": "integer"
+    },
+    "supplied_box": {
+      "$ref": "#/$defs/Box"
+    }
+  },
+  "required": [
+    "schema_version",
+    "installation_id",
+    "collection_epoch",
+    "crop_id",
+    "observation_id",
+    "source_kind",
+    "source_frame_at",
+    "source_width",
+    "source_height",
+    "supplied_box",
+    "original_box",
+    "requested_box",
+    "actual_box",
+    "requested_extra_height",
+    "actual_extra_height",
+    "bottom_clipped",
+    "source_upright_sha256",
+    "local_frame_token",
+    "encoded_sha256",
+    "byte_length",
+    "decoded_width",
+    "decoded_height",
+    "encoding",
+    "orientation_version",
+    "crop_version",
+    "redaction_version",
+    "redaction_masks",
+    "privacy_preflight",
+    "collection_authorization"
+  ],
+  "title": "Crop",
+  "type": "object"
+}

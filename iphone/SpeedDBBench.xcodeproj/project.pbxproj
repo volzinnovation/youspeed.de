@@ -184,6 +184,17 @@
 		FC456C524266C29AC987BE43 /* TrafficSignCameraReferenceOfferTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 414763A09BE57A810C9A1F9A /* TrafficSignCameraReferenceOfferTests.swift */; };
 		FD62AB20C68AC0EB6376D543 /* VisionDismissalVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E99625FEFE84861C5DCC7691 /* VisionDismissalVoice.swift */; };
 		FDADD879200055ACA254B841 /* V3SpeedLimitServicePool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98DD2E5EF42CC8EFC99702FF /* V3SpeedLimitServicePool.swift */; };
+		50864EBA421489ED313D17B9 /* SignCollectionContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE3650368C1CFA077E985D1 /* SignCollectionContract.swift */; };
+		2B51584596A648CAAD8BE249 /* SignCollectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F1C121761016E3F284C5389 /* SignCollectionStore.swift */; };
+		2540B576F228AB69DF4D51D5 /* SignCollectionCrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69E7C62133B96E960019FD15 /* SignCollectionCrop.swift */; };
+		EEA0D4E3CEB4E79F1E1CB9F1 /* SignCollectionFoundation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C9181862E0C5F5B43F7CEF /* SignCollectionFoundation.swift */; };
+		C9E727BDD6DF06B2025C2250 /* collection-contract-v1 in Resources */ = {isa = PBXBuildFile; fileRef = DA9863924122F263843FEF6C /* collection-contract-v1 */; };
+		2B2A28B5836158F51766A5D2 /* SignCollectionSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5436B4B2CA905B43BAB46FA4 /* SignCollectionSchema.swift */; };
+		A28E6469747C8B468C472E94 /* SignCollectionFoundationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDB5BDE7DE1CCE8BC0372618 /* SignCollectionFoundationTests.swift */; };
+		3FF871FA25444EB0A0FD1266 /* SignCollectionTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B473D43E2A94AAFBE5EE1E9 /* SignCollectionTransport.swift */; };
+		4965CEC189DC49C08BDE4D64 /* SignCollectionObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8646A694B94F268DCE4BA9 /* SignCollectionObserver.swift */; };
+		48DCB5B125034E3A9DE0891C /* SignCollectionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8629EBA37400445894D8D3C0 /* SignCollectionCoordinator.swift */; };
+		5665BD52526B4DBF9994D779 /* SignCollectionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C617D7FA4F184E44A226A6A0 /* SignCollectionViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -396,12 +407,33 @@
 		FBA1B9CD185BDF7E00FDE66B /* MCO-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "MCO-rules.json"; sourceTree = "<group>"; };
 		FBE90CAE15446042E62B6F56 /* hamburg.poly */ = {isa = PBXFileReference; path = hamburg.poly; sourceTree = "<group>"; };
 		FC99AE36886F7BCCAF89C410 /* RoadPathEvidence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadPathEvidence.swift; sourceTree = "<group>"; };
+		1DE3650368C1CFA077E985D1 /* SignCollectionContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionContract.swift; sourceTree = "<group>"; };
+		9F1C121761016E3F284C5389 /* SignCollectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionStore.swift; sourceTree = "<group>"; };
+		69E7C62133B96E960019FD15 /* SignCollectionCrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionCrop.swift; sourceTree = "<group>"; };
+		63C9181862E0C5F5B43F7CEF /* SignCollectionFoundation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionFoundation.swift; sourceTree = "<group>"; };
+		DA9863924122F263843FEF6C /* collection-contract-v1 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "../shared/tsr/collection-contract-v1"; name = "collection-contract-v1"; sourceTree = SOURCE_ROOT; };
+		5436B4B2CA905B43BAB46FA4 /* SignCollectionSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionSchema.swift; sourceTree = "<group>"; };
+		CDB5BDE7DE1CCE8BC0372618 /* SignCollectionFoundationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionFoundationTests.swift; sourceTree = "<group>"; };
+		7B473D43E2A94AAFBE5EE1E9 /* SignCollectionTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionTransport.swift; sourceTree = "<group>"; };
+		CE8646A694B94F268DCE4BA9 /* SignCollectionObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionObserver.swift; sourceTree = "<group>"; };
+		8629EBA37400445894D8D3C0 /* SignCollectionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionCoordinator.swift; sourceTree = "<group>"; };
+		C617D7FA4F184E44A226A6A0 /* SignCollectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		014723ABB9088B389ACA00C0 /* SpeedConsumerApp */ = {
 			isa = PBXGroup;
 			children = (
+				5436B4B2CA905B43BAB46FA4 /* SignCollectionSchema.swift */,
+				DA9863924122F263843FEF6C /* collection-contract-v1 */,
+				63C9181862E0C5F5B43F7CEF /* SignCollectionFoundation.swift */,
+				C617D7FA4F184E44A226A6A0 /* SignCollectionViews.swift */,
+				8629EBA37400445894D8D3C0 /* SignCollectionCoordinator.swift */,
+				CE8646A694B94F268DCE4BA9 /* SignCollectionObserver.swift */,
+				7B473D43E2A94AAFBE5EE1E9 /* SignCollectionTransport.swift */,
+				69E7C62133B96E960019FD15 /* SignCollectionCrop.swift */,
+				9F1C121761016E3F284C5389 /* SignCollectionStore.swift */,
+				1DE3650368C1CFA077E985D1 /* SignCollectionContract.swift */,
 				D90286AF9D5D3E5CE8B04DA9 /* AppReviewPrompt.swift */,
 				734BE1C063C1A673E23AE2B7 /* Assets.xcassets */,
 				4C1D195FA30679288FABB9AA /* BackgroundDownloadCenter.swift */,
@@ -564,6 +596,7 @@
 		A7CB22E93C70002B927746FB /* SpeedConsumerTests */ = {
 			isa = PBXGroup;
 			children = (
+				CDB5BDE7DE1CCE8BC0372618 /* SignCollectionFoundationTests.swift */,
 				9C7EC41B2369882B24D01C21 /* AppReviewPromptTests.swift */,
 				A6A8ADF8A021CE971882EEE6 /* CandidateAdmissionParityTests.swift */,
 				9EE7FBD20C2C207434E0A6A0 /* DebugLogPersistenceTests.swift */,
@@ -898,6 +931,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C9E727BDD6DF06B2025C2250 /* collection-contract-v1 in Resources */,
 				5D1CD363DA0827B1B41B087B /* Assets.xcassets in Resources */,
 				8937CC343BE22060EF6DAA14 /* BEL-rules.json in Resources */,
 				014EE424EC263574AB5B4CBC /* BundleTargets.top10.json in Resources */,
@@ -987,6 +1021,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2B2A28B5836158F51766A5D2 /* SignCollectionSchema.swift in Sources */,
+				EEA0D4E3CEB4E79F1E1CB9F1 /* SignCollectionFoundation.swift in Sources */,
+				5665BD52526B4DBF9994D779 /* SignCollectionViews.swift in Sources */,
+				48DCB5B125034E3A9DE0891C /* SignCollectionCoordinator.swift in Sources */,
+				4965CEC189DC49C08BDE4D64 /* SignCollectionObserver.swift in Sources */,
+				3FF871FA25444EB0A0FD1266 /* SignCollectionTransport.swift in Sources */,
+				2540B576F228AB69DF4D51D5 /* SignCollectionCrop.swift in Sources */,
+				2B51584596A648CAAD8BE249 /* SignCollectionStore.swift in Sources */,
+				50864EBA421489ED313D17B9 /* SignCollectionContract.swift in Sources */,
 				993E99E3D22FDC60BEAD3863 /* AppReviewPrompt.swift in Sources */,
 				90E6AA8C6EAA235DF5279794 /* BackgroundDownloadCenter.swift in Sources */,
 				52E0BC41A844D0D41B0DBF86 /* BundleDownloadQueue.swift in Sources */,
@@ -1072,6 +1115,7 @@
 				02C8C041AE046D1B34185DF7 /* RoadBoundaryTemporalTrackerTests.swift in Sources */,
 				E59DF7E1FC536928DBF4394F /* RoadPathEvidenceTests.swift in Sources */,
 				2C54920BFD153D152CFF0258 /* RoadPathSessionTests.swift in Sources */,
+				A28E6469747C8B468C472E94 /* SignCollectionFoundationTests.swift in Sources */,
 				197A06403B8311B89F11D4D6 /* SpeedConsumerTests.swift in Sources */,
 				4BB377309057ED673B835A3B /* SpeedLimitReferenceModelTests.swift in Sources */,
 				D4C72035447C5F3BD658AC0A /* TrafficSignApplicabilityTests.swift in Sources */,

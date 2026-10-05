@@ -533,6 +533,14 @@ enum PanoramaxGalleryDeletionPolicy {
 
 @MainActor
 final class DriveSessionViewModel: NSObject, ObservableObject {
+    /// Provisional v1.4 foundations: local only; no upload/recognizer hook yet.
+    let signCollectionFoundation = SignCollectionFoundation()
+    private let panoramaxSignFilter = SignCaptureFilter()
+    @Published var panoramaxRecognizedSignsOnly = UserDefaults.standard.bool(forKey: "youspeed.panoramax.recognized_signs_only") {
+        didSet { UserDefaults.standard.set(panoramaxRecognizedSignsOnly, forKey: "youspeed.panoramax.recognized_signs_only"); panoramaxSignFilter.reset(); applyPanoramaxConfiguration() }
+    }
+    lazy var signCollection = SignCollectionCoordinator(foundation: signCollectionFoundation)
+    func recordManualSignSighting() { signCollection.manualSighting(location: locationManager.location) }
     #if DEBUG
     /// Opt-in device-test access to the actual app owner, avoiding a second loaded model/camera.
     private(set) static weak var testActiveInstance: DriveSessionViewModel?
@@ -3315,7 +3323,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             speedReference.output?.source == "camera"
     }
 
-    func disregardVision() {
+    func disregardVision() { disregardVision(recordCollectionCorrection: true) }
+
+    private func disregardVision(recordCollectionCorrection: Bool) {
+        if recordCollectionCorrection {
+            let attempt = SignCollectionJSON.uuid()
+            signCollection.freezeCorrection(attempt: attempt, presentation: trafficSignEffectiveLimitResolver.activePassage?.physicalTrackID ?? trafficSignOverridePolicy.activeOverride?.trackId)
+            signCollection.correct(attempt: attempt, modality: "touch")
+        }
         cancelVisionDismissalVoice()
         let now = Date()
         visionDismissalGate.dismiss(at: now, tracks: [
@@ -3415,6 +3430,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 self.cancelVisionDismissalVoice()
                 return
             }
+            self.signCollection.freezeCorrection(attempt: attempt.token.uuidString.lowercased(), presentation: self.trafficSignEffectiveLimitResolver.activePassage?.physicalTrackID ?? self.trafficSignOverridePolicy.activeOverride?.trackId)
             let listener = VisionDismissalSpeechListener()
             self.visionDismissalSpeechListener = listener
             do {
@@ -3451,7 +3467,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             token: token, evidenceID: identity, transcript: transcript,
             now: ProcessInfo.processInfo.systemUptime
         ) {
-            disregardVision()
+            signCollection.correct(attempt: token.uuidString.lowercased(), modality: "voice")
+            disregardVision(recordCollectionCorrection: false)
             appendTSRLog("event=vision_dismissed source=voice")
         } else if ended {
             cancelVisionDismissalVoice()
@@ -3491,6 +3508,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // yellow because of a stale callback that arrived during a normal
         // context refresh.
         trafficSignDebugGenerationSessionContextMismatch = false
+        if panoramaxRecognizedSignsOnly, trafficSignApplicationIsActive, emission.event.source == .liveFrame, let location = locationManager.location {
+            let detections = emission.collectionDetections.filter { $0.boundingBox.isValid && $0.rawScore.isFinite && $0.rawScore >= $0.classThreshold }.map { d in
+                SignCaptureFilter.Detection(key: emission.event.packId + ":" + d.rawLabel, label: d.rawLabel,
+                    box: [d.boundingBox.x,d.boundingBox.y,d.boundingBox.width,d.boundingBox.height], score: d.rawScore, frameID: emission.event.frameId)
+            }
+            let evidence = panoramaxSignFilter.observe(at: emission.event.frameTimestampUtc, detections: detections)
+            if driveCaptureCoordinator?.ingestRecognizedSigns(evidence, location: location, speedMetersPerSecond: emission.frameSpeedKmh.map { $0 / 3.6 }) == true {
+                panoramaxSignFilter.captured(evidence, at: emission.event.frameTimestampUtc)
+            }
+        }
+        signCollection.observe(emission, pack: trafficSignRuntime?.verifiedPack, location: locationManager.location)
         guard visionDismissalGate.permits(track: emission.event.candidate?.trackId,
                                           observedAt: emission.event.frameTimestampUtc) else { return }
         let immediateOverrideChanged: Bool
@@ -4082,7 +4110,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             fallbackInterval: panoramaxMinimumIntervalSeconds,
             maxLocationAge: 10,
             maxAccuracyMeters: 50,
-            triggerMode: panoramaxTriggerMode
+            triggerMode: panoramaxTriggerMode, recognizedSignsOnly: panoramaxRecognizedSignsOnly
         )
         driveCaptureCoordinator?.updatePanoramaxConfiguration(
             cadence,
@@ -4116,6 +4144,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         driveRecorderTrafficSignRecognitionActive = driveCaptureCoordinator?.isTrafficSignRecognitionModuleActive ?? false
         driveRecorderTrafficSignRecognitionAvailable = driveCaptureCoordinator?.isTrafficSignRecognitionOutputAvailable ?? false
         driveRecorderPanoramaxActive = driveCaptureCoordinator?.isPanoramaxModuleActive ?? false
+        signCollection.cameraChanged(active: driveRecorderTrafficSignRecognitionActive)
         refreshLaneDetectionActivity()
         // The model may finish loading while camera permission/session setup is
         // still in progress. Honor the persisted chip selection as soon as the
@@ -6148,6 +6177,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func stopDriving() {
+        signCollection.endSession()
         if isDriving { roadPathSession.resetTrajectory(); lanePreviewSession.resetTrajectory() }
         cancelVisionDismissalVoice()
         mapLookupWorker.cancel()

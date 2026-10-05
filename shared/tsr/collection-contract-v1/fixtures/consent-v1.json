@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "event_id": "c832dd15-b925-414b-ae21-e757fcfe1601",
+  "installation_id": "d3e3c09c-2fc6-4f05-9698-67b8c3c30212",
+  "collection_epoch": 0,
+  "collection_authorization": {
+    "scope": "sign_metadata",
+    "disclosure_version": "example-camera-use-1",
+    "decided_at": "2026-10-02T09:55:00.000Z",
+    "consent_generation": 2,
+    "state": "withdrawn",
+    "origin": "client_claim"
+  }
+}

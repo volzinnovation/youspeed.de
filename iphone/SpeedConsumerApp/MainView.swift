@@ -410,6 +410,7 @@ struct MainView: View {
                 photoCaptureFeedbackVisible = false
             } catch { } // A newer capture owns the replacement task.
         }
+        .modifier(SignCollectionConsentModifier(collection: viewModel.signCollection))
         .sheet(isPresented: settingsPresentation) {
             DismissibleNavigationSheet {
                 SettingsView(viewModel: viewModel, account: viewModel.panoramaxAccount)
@@ -2724,6 +2725,7 @@ private struct PictureGalleryView: View {
     @State private var selectedItemIDs: Set<String> = []
     @State private var showingDeleteConfirmation = false
     @State private var showingAccountRequired = false
+    @State private var signsOnly = false
 
     private struct GalleryItem: Identifiable {
         let id: String
@@ -2731,12 +2733,15 @@ private struct PictureGalleryView: View {
         let item: PanoramaxItemRecord
     }
 
-    private var entries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] { viewModel.panoramaxGalleryItems }
+    private var allEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] { viewModel.panoramaxGalleryItems }
+    private var entries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
+        allEntries.filter { !signsOnly || $0.item.metadata.captureReason == "recognized_sign" || !($0.item.metadata.trafficSignAnnotations ?? []).isEmpty }
+    }
     private var locallySelectableEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
         entries.filter { canSelectLocally(batch: $0.batch) }
     }
     private var selectedEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
-        entries.filter { selectedItemIDs.contains($0.item.itemID) }
+        allEntries.filter { selectedItemIDs.contains($0.item.itemID) }
     }
     private var uploadableSelectedEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
         selectedEntries.filter { isUploadEligible(batch: $0.batch, item: $0.item) }
@@ -2759,6 +2764,9 @@ private struct PictureGalleryView: View {
     }
     var body: some View {
         VStack(spacing: 0) {
+            Toggle(SignCollectionText.text("Show traffic-sign captures only", "Nur Verkehrszeichen-Aufnahmen anzeigen"), isOn: $signsOnly).padding(.horizontal)
+            if signsOnly { Text(SignCollectionText.text("Filter active · selected hidden photos stay selected", "Filter aktiv · ausgeblendete Bilder bleiben ausgewählt")).font(.caption).foregroundStyle(.secondary) }
+
             Group {
                 if entries.isEmpty {
                     ContentUnavailableView(NSLocalizedString("panoramax.gallery.empty", comment: ""), systemImage: "photo.on.rectangle")
@@ -2817,7 +2825,7 @@ private struct PictureGalleryView: View {
                                 .padding(6)
                             }
                             .overlay(alignment: .bottomLeading) {
-                                Text(entry.item.metadata.capturedAt.formatted(date: .omitted, time: .shortened))
+                                Text((entry.item.metadata.captureReason == "recognized_sign" ? SignCollectionText.text("Sign · ", "Zeichen · ") : "") + entry.item.metadata.capturedAt.formatted(date: .omitted, time: .shortened))
                                     .font(.caption2.monospacedDigit())
                                     .foregroundStyle(.white)
                                     .padding(5)
@@ -3178,6 +3186,8 @@ private struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            SignCollectionSettingsSection(collection: viewModel.signCollection, manualSighting: viewModel.recordManualSignSighting)
+
             Section(NSLocalizedString("drive_recorder.settings.section", comment: "")) {
                 Text(NSLocalizedString("drive_recorder.settings.description", comment: ""))
                     .font(.footnote)
@@ -3239,47 +3249,53 @@ private struct SettingsView: View {
                     .foregroundStyle(.secondary)
 
                 if viewModel.panoramaxCaptureEnabled {
+                    Toggle(SignCollectionText.text("Capture recognized traffic signs only", "Nur erkannte Verkehrszeichen aufnehmen"), isOn: $viewModel.panoramaxRecognizedSignsOnly)
+                    if viewModel.panoramaxRecognizedSignsOnly {
+                        Text(SignCollectionText.text("Waiting for camera recognition of a stable sign. Distance/time capture is paused; photos still require Panoramax review and approval.", "Wartet auf die Kameraerkennung eines stabilen Zeichens. Abstand-/Zeitaufnahmen pausieren; Bilder benötigen weiterhin die Panoramax-Prüfung und Freigabe.")).font(.footnote).foregroundStyle(.secondary)
+                    }
                     LabeledContent(NSLocalizedString("panoramax.settings.saved_images", comment: ""), value: "\(viewModel.panoramaxCaptureCount)")
 
-                    Picker(NSLocalizedString("panoramax.settings.trigger", comment: ""), selection: $viewModel.panoramaxTriggerMode) {
-                        ForEach(PanoramaxCaptureTriggerMode.allCases, id: \.self) { mode in
-                            Text(mode.label).tag(mode)
+                    if !viewModel.panoramaxRecognizedSignsOnly {
+                        Picker(NSLocalizedString("panoramax.settings.trigger", comment: ""), selection: $viewModel.panoramaxTriggerMode) {
+                            ForEach(PanoramaxCaptureTriggerMode.allCases, id: \.self) { mode in
+                                Text(mode.label).tag(mode)
+                            }
                         }
-                    }
-                    .pickerStyle(.segmented)
+                        .pickerStyle(.segmented)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(NSLocalizedString("panoramax.settings.minimum_distance", comment: ""))
-                            Spacer()
-                            Text("\(Int(viewModel.panoramaxMinimumDistanceMeters.rounded())) m")
-                                .monospacedDigit()
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(NSLocalizedString("panoramax.settings.minimum_distance", comment: ""))
+                                Spacer()
+                                Text("\(Int(viewModel.panoramaxMinimumDistanceMeters.rounded())) m")
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                            }
+                            Slider(value: $viewModel.panoramaxMinimumDistanceMeters, in: 10...90, step: 1)
+                        }
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(NSLocalizedString("panoramax.settings.minimum_time", comment: ""))
+                                Spacer()
+                                Text("\(Int(viewModel.panoramaxMinimumIntervalSeconds.rounded())) s")
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                            }
+                            Slider(value: $viewModel.panoramaxMinimumIntervalSeconds, in: 5...240, step: 1)
+                        }
+
+                        if let accuracy = viewModel.panoramaxLastAccuracyMeters {
+                            Text(String(format: NSLocalizedString("panoramax.settings.gps_distance_explanation", comment: ""), Int(accuracy.rounded())))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(NSLocalizedString("panoramax.settings.gps_accuracy_explanation", comment: ""))
+                                .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
-                        Slider(value: $viewModel.panoramaxMinimumDistanceMeters, in: 10...90, step: 1)
-                    }
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(NSLocalizedString("panoramax.settings.minimum_time", comment: ""))
-                            Spacer()
-                            Text("\(Int(viewModel.panoramaxMinimumIntervalSeconds.rounded())) s")
-                                .monospacedDigit()
-                                .foregroundStyle(.secondary)
-                        }
-                        Slider(value: $viewModel.panoramaxMinimumIntervalSeconds, in: 5...240, step: 1)
                     }
-
-                    if let accuracy = viewModel.panoramaxLastAccuracyMeters {
-                        Text(String(format: NSLocalizedString("panoramax.settings.gps_distance_explanation", comment: ""), Int(accuracy.rounded())))
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text(NSLocalizedString("panoramax.settings.gps_accuracy_explanation", comment: ""))
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-
                     Toggle(NSLocalizedString("panoramax.settings.unlimited_storage", comment: ""), isOn: $viewModel.panoramaxUnlimitedStorage)
                     if !viewModel.panoramaxUnlimitedStorage {
                         VStack(alignment: .leading, spacing: 4) {
@@ -3993,6 +4009,7 @@ private struct DebugInformationView: View {
             }
 
             Section("Logs") {
+                Button(SignCollectionText.text("Clear pending observations", "Ausstehende Beobachtungen löschen"), role: .destructive) { viewModel.signCollection.clearPendingForDeveloper() }
                 if let gpsLogURL {
                     RecordingSafeButton("GPS-CSV teilen") {
                         shareItem = LocalDebugShareItem(url: gpsLogURL)

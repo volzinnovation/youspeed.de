@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "event_id": "7ece78da-9375-41ba-98d4-c5f769fc9201",
+  "created_at": "2026-10-02T10:01:00Z",
+  "crop_id": "78b247a4-9f14-430d-a3c0-af218a95d101",
+  "status": "missing",
+  "observation_id": "15e77710-981b-4db4-9c65-a35b4b21b60a",
+  "superseded_by": null
+}

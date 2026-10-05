@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "batch_id": "b467e55e-0f44-45fa-93db-0b0839c47228",
+  "installation_id": "d3e3c09c-2fc6-4f05-9698-67b8c3c30212",
+  "events": [
+    {
+      "schema_version": 1,
+      "event_id": "15e77710-981b-4db4-9c65-a35b4b21b60a",
+      "collection_session_id": "348e8edc-e5ae-45a8-a59b-b03f9c15c973",
+      "observer_version": "sighting-observer-1",
+      "source_kind": "detector",
+      "media_refs": [],
+      "app": {
+        "platform": "ios",
+        "version": "1.4",
+        "build": "example"
+      },
+      "first_seen_at": "2026-10-02T10:00:00.000Z",
+      "last_seen_at": "2026-10-02T10:00:01.200Z",
+      "representative_frame_at": "2026-10-02T10:00:01.000Z",
+      "duration_ms": 1200,
+      "clock_quality": "device_unverified",
+      "vehicle_position": {
+        "latitude": 48.9,
+        "longitude": 8.7,
+        "horizontal_accuracy_m": 8.0,
+        "fix_at": "2026-10-02T10:00:00.900Z",
+        "frame_fix_delta_ms": 100,
+        "source": "gnss",
+        "alignment": "nearest_fix",
+        "course_degrees": 90.0,
+        "course_accuracy_degrees": 10.0
+      },
+      "sign_position": null,
+      "classification": {
+        "country": "DE",
+        "model_label": "maxspeed:50",
+        "canonical_code": "DE:274-50",
+        "family": "maximum_speed",
+        "value": 50,
+        "unit": "km/h",
+        "role": "primary",
+        "mapping_revision": "example-map-1",
+        "mapping_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "alternatives": []
+      },
+      "scores": {
+        "detector_raw": 0.84,
+        "classifier_raw": null,
+        "raw_domain": "model_declared_score_0_1",
+        "calibrated_confidence": null,
+        "track_support": 4
+      },
+      "model": {
+        "pack_id": "example-direct-pack",
+        "pack_version": "1",
+        "pack_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "components": [
+          {
+            "role": "direct_detector",
+            "artifact_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "preprocessing_version": "example-preprocess-1",
+            "calibration_id": null,
+            "calibration_sha256": null
+          }
+        ]
+      },
+      "evidence": {
+        "track_id": "local-17",
+        "assembly_id": null,
+        "analyzed_frames": 4,
+        "finalization_reason": "track_timeout",
+        "quality_flags": []
+      },
+      "road_context": null
+    }
+  ],
+  "collection_epoch": 0,
+  "collection_authorization": {
+    "scope": "sign_metadata",
+    "disclosure_version": "example-camera-use-1",
+    "decided_at": "2026-10-02T09:55:00.000Z",
+    "consent_generation": 1,
+    "state": "granted",
+    "origin": "client_claim"
+  }
+}

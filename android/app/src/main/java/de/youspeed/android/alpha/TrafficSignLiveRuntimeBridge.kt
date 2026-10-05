@@ -25,6 +25,7 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
         submitFinalizedPassage = controller::submitFinalizedTrafficSignPassage,
         submitDisplayObservation = controller::submitTrafficSignDisplayObservation,
         submitRecognitionEvent = controller::onTrafficSignRecognitionEvent,
+        submitCollectionFrame = controller::onSignCollectionFrame,
         submitAnnotationEvent = controller::onTrafficSignAnnotationEvent,
         onRuntimeUnavailable = onRuntimeUnavailable,
         onContextMismatch = onContextMismatch,
@@ -72,6 +73,7 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
 internal class TrafficSignFinalizedPassageForwarder(
     private val submitDisplayObservation: (TrafficSignDisplayObservation) -> Unit = {},
     private val submitRecognitionEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
+    private val submitCollectionFrame: (TrafficSignRecognitionEvent, List<TrafficSignDetection>, Long, SignCollectionFrame?) -> Unit = { _, _, _, frame -> frame?.close() },
     private val submitAnnotationEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
     private val onRuntimeUnavailable: (String, Long) -> Unit = { _, _ -> },
     private val onContextMismatch: (Long) -> Unit = {},
@@ -90,9 +92,11 @@ internal class TrafficSignFinalizedPassageForwarder(
         // output; finalized passages still carry durable activation.
         output.passageEvent?.let(submitFinalizedPassage)
         if (!output.terminalBackendFailure && output.backendFailureReason == null) {
+            submitCollectionFrame(output.event, output.collectionDetections, output.contextGeneration, output.collectionFrame)
             submitRecognitionEvent(output.event, output.contextGeneration)
             submitAnnotationEvent(output.annotationEvent ?: output.event, output.contextGeneration)
         }
+        if (output.terminalBackendFailure || output.backendFailureReason != null) output.collectionFrame?.close()
         output.displayObservation?.let(submitDisplayObservation)
         onInferenceDiagnostics(output)
     }

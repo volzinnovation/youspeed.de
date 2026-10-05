@@ -224,6 +224,7 @@ internal object CameraSpeedLimitUsePresentation {
 @Composable
 internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: AppReviewPrompt? = null) {
     val ui = controller.uiState
+    SignCollectionConsentDialog(controller.signCollection)
     var openSettings by rememberSaveable { mutableStateOf(false) }
     var openDataManager by rememberSaveable { mutableStateOf(false) }
     val dataManagerSavedState = rememberSaveableStateHolder()
@@ -1452,6 +1453,7 @@ private fun SettingsSheet(
                     }
                 }
             }
+            item { SignCollectionSettings(controller.signCollection, controller::recordManualSignSighting) }
             item { RecorderParitySettings(controller) }
             item {
                 SectionCard(stringResource(R.string.ui_audio_alerts)) {
@@ -1537,6 +1539,7 @@ private fun DebugSheet(
     val ui = controller.uiState
     SheetScaffold(title = stringResource(R.string.ui_diagnostics), onDismiss = onDismiss, testTag = "debug-sheet") {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize()) {
+            item { TextButton(onClick = { controller.signCollection.clearPendingForDeveloper() }) { Text(SignCollectionText.text("Clear pending observations", "Ausstehende Beobachtungen löschen")) } }
             item {
                 SectionCard(stringResource(R.string.ui_latest_location)) {
                     controller.debugRows().forEach { (key, value) -> DebugLabel(key, value) }

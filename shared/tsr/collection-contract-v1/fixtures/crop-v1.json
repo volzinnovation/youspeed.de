@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "installation_id": "d3e3c09c-2fc6-4f05-9698-67b8c3c30212",
+  "collection_epoch": 0,
+  "crop_id": "78b247a4-9f14-430d-a3c0-af218a95d101",
+  "observation_id": "15e77710-981b-4db4-9c65-a35b4b21b60a",
+  "source_kind": "detector",
+  "source_frame_at": "2026-10-02T10:00:01Z",
+  "source_width": 640,
+  "source_height": 330,
+  "supplied_box": {
+    "x": 0.1875,
+    "y": 0.6060606060606061,
+    "width": 0.125,
+    "height": 0.24242424242424243
+  },
+  "original_box": [
+    120,
+    200,
+    200,
+    280
+  ],
+  "requested_box": [
+    120,
+    200,
+    200,
+    360
+  ],
+  "actual_box": [
+    120,
+    200,
+    200,
+    330
+  ],
+  "requested_extra_height": 80,
+  "actual_extra_height": 50,
+  "bottom_clipped": true,
+  "source_upright_sha256": null,
+  "local_frame_token": "synthetic-upright-frame",
+  "encoded_sha256": "af33dc2e048068e1be10b63d1fc81732e20348c608a1adf2eb1a33993a71abc5",
+  "byte_length": 280,
+  "decoded_width": 80,
+  "decoded_height": 130,
+  "encoding": "PNG",
+  "orientation_version": "upright-1",
+  "crop_version": "downward-1",
+  "redaction_version": "review-1",
+  "redaction_masks": [],
+  "privacy_preflight": "passed",
+  "collection_authorization": {
+    "scope": "crop_storage",
+    "disclosure_version": "crop-1",
+    "decided_at": "2026-10-02T09:55:00.000Z",
+    "consent_generation": 1,
+    "state": "granted",
+    "origin": "client_claim"
+  },
+  "processor_authorization": null
+}
