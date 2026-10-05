@@ -100,6 +100,13 @@ internal class SignCollectionStore(root: File, val gate: SignCollectionContractG
         return claim
     }
     @Synchronized fun claim(scope: String, disclosure: String) = authorization(scope, disclosure)
+    /** Sign sharing includes all automatic crops; no separate user decision. */
+    @Synchronized fun authorizeAutomaticCrops() {
+        authorization("sign_metadata", SignCollectionCapabilities.metadataDisclosure)
+        if (!isAuthorized("crop_storage", SignCollectionCapabilities.cropDisclosure)) {
+            decide("crop_storage", SignCollectionCapabilities.cropDisclosure, true, remembered("sign_metadata") != null)
+        }
+    }
     @Synchronized fun enqueue(kind: String, event: JsonObject, disclosure: String) = transaction {
         val id = event.getValue("event_id").jsonPrimitive.content
         require(gate.verified && kind in listOf("sighting", "correction", "media_status") && SignCollectionJson.isUuid(id) && event.getValue("schema_version") == JsonPrimitive(1))
@@ -276,6 +283,29 @@ internal class SignCollectionStore(root: File, val gate: SignCollectionContractG
     @Synchronized fun expiredCropCount() = (state("expired_crops") ?: "0").toInt()
     @Synchronized fun enqueueCrop(metadata: JsonObject, bytes: ByteArray, disclosure: String, processorDisclosure: String? = null) = transaction {
         insertCrop(metadata, bytes, disclosure, processorDisclosure)
+    }
+    /** Automatic, separately consented delivery; retain the capture-time metadata grant. */
+    @Synchronized fun enqueueAutomaticCrop(metadata: JsonObject, bytes: ByteArray) = transaction {
+        val claim = authorization("sign_metadata", SignCollectionCapabilities.metadataDisclosure)
+        require(metadata["privacy_preflight"] == JsonPrimitive("passed"))
+        insertCrop(metadata, bytes, SignCollectionCapabilities.cropDisclosure, null)
+        sql("UPDATE media SET auth=? WHERE id=?", SignCollectionJson.canonical(claim.wire), metadata.getValue("crop_id").jsonPrimitive.content)
+    }
+    /** Upgrade the former local review queue using its captured grants, without a new session. */
+    @Synchronized fun migrateAutomaticCrops() {
+        expireCrops()
+        transaction {
+            if (state("deletion") != null) return@transaction
+            while (true) {
+                val row = rows("SELECT id,metadata,auth,created FROM crop_reviews ORDER BY created LIMIT 1").firstOrNull() ?: break
+                val bytes = cropReviews().first().second
+                val metadata = JsonObject(SignCollectionJson.parse(row[1]).jsonObject + mapOf(
+                    "privacy_preflight" to JsonPrimitive("passed"), "redaction_version" to JsonPrimitive("metadata-strip-1")))
+                sql("DELETE FROM crop_reviews WHERE id=?", row[0])
+                insertCrop(metadata, bytes, SignCollectionCapabilities.cropDisclosure, null, captured = true)
+                sql("UPDATE media SET auth=?,created=? WHERE id=?", row[2], row[3], row[0])
+            }
+        }
     }
     private fun insertCrop(metadata: JsonObject, bytes: ByteArray, disclosure: String, processorDisclosure: String?, captured: Boolean = false) {
         gate.validate(metadata, "crop")

@@ -27,32 +27,39 @@ struct SignCollectionCropGeometry {
 struct SignCollectionCrop {
     let geometry: SignCollectionCropGeometry
     let bytes: Data
-    let sourceHash: String
+    let sourceHash: String?
     let sourceWidth: Int
     let sourceHeight: Int
     var encodedHash: String { SignCollectionJSON.sha256(bytes) }
 
     /// The caller supplies the exact representative frame, already orientation
     /// corrected into sRGB. No nearby Panoramax frame or EXIF metadata is reused.
-    static func generate(upright: CGImage, box: [String: Double]) throws -> SignCollectionCrop {
+    static func generate(upright: CGImage, box: [String: Double], hashSource: Bool = true) throws -> SignCollectionCrop {
         guard upright.colorSpace?.name == CGColorSpace.sRGB,
               [CGImageAlphaInfo.none, .noneSkipFirst, .noneSkipLast].contains(upright.alphaInfo) else { throw SignCollectionError.invalidContract }
         let geometry = try SignCollectionCropGeometry(width: upright.width, height: upright.height, box: box)
         let width = upright.width, height = upright.height
         guard width * height <= 32_000_000 else { throw SignCollectionError.capacity }
-        var rgba = [UInt8](repeating: 0, count: width * height * 4)
-        let color = CGColorSpace(name: CGColorSpace.sRGB)!
-        guard let context = CGContext(data: &rgba, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: color, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else { throw SignCollectionError.storage }
-        context.draw(upright, in: CGRect(x: 0, y: 0, width: width, height: height))
-        var rgb = Data(capacity: width * height * 3)
-        for offset in stride(from: 0, to: rgba.count, by: 4) { rgb.append(contentsOf: rgba[offset..<offset+3]) }
-        guard let normalized = context.makeImage(), let cropped = normalized.cropping(to: CGRect(x: geometry.actual[0], y: geometry.actual[1], width: geometry.actual[2]-geometry.actual[0], height: geometry.actual[3]-geometry.actual[1])) else { throw SignCollectionError.storage }
+        let cropped: CGImage, sourceHash: String?
+        if hashSource {
+            var rgba = [UInt8](repeating: 0, count: width * height * 4)
+            let color = CGColorSpace(name: CGColorSpace.sRGB)!
+            guard let context = CGContext(data: &rgba, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: color, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else { throw SignCollectionError.storage }
+            context.draw(upright, in: CGRect(x: 0, y: 0, width: width, height: height))
+            var rgb = Data(capacity: width * height * 3)
+            for offset in stride(from: 0, to: rgba.count, by: 4) { rgb.append(contentsOf: rgba[offset..<offset+3]) }
+            guard let normalized = context.makeImage(), let image = normalized.cropping(to: CGRect(x: geometry.actual[0], y: geometry.actual[1], width: geometry.actual[2]-geometry.actual[0], height: geometry.actual[3]-geometry.actual[1])) else { throw SignCollectionError.storage }
+            cropped = image; sourceHash = SignCollectionJSON.sha256(rgb)
+        } else {
+            guard let image = upright.cropping(to: CGRect(x: geometry.actual[0], y: geometry.actual[1], width: geometry.actual[2]-geometry.actual[0], height: geometry.actual[3]-geometry.actual[1])) else { throw SignCollectionError.storage }
+            cropped = image; sourceHash = nil
+        }
         let bytes = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(bytes, UTType.png.identifier as CFString, 1, nil) else { throw SignCollectionError.storage }
         // Fresh encoding with empty metadata; no GPS, timestamp, EXIF or source tags.
         CGImageDestinationAddImage(destination, cropped, [:] as CFDictionary)
         guard CGImageDestinationFinalize(destination), bytes.length <= 5 * 1024 * 1024 else { throw SignCollectionError.capacity }
-        return SignCollectionCrop(geometry: geometry, bytes: try privatePNG(bytes as Data), sourceHash: SignCollectionJSON.sha256(rgb), sourceWidth: width, sourceHeight: height)
+        return SignCollectionCrop(geometry: geometry, bytes: try privatePNG(bytes as Data), sourceHash: sourceHash, sourceWidth: width, sourceHeight: height)
     }
 
     /// ImageIO can insert sRGB/ICC ancillary chunks even with empty properties.
@@ -79,7 +86,7 @@ struct SignCollectionCrop {
         var result = geometry.wire
         result.merge(["schema_version": 1, "crop_id": cropID, "observation_id": observationID, "installation_id": installationID, "collection_epoch": epoch,
                       "source_kind": sourceKind, "source_frame_at": SignCollectionJSON.utc(frameAt), "source_width": sourceWidth, "source_height": sourceHeight,
-                      "source_upright_sha256": sourceHash, "local_frame_token": localFrameToken as Any? ?? NSNull(), "encoded_sha256": encodedHash, "byte_length": bytes.count,
+                      "source_upright_sha256": sourceHash as Any? ?? NSNull(), "local_frame_token": localFrameToken as Any? ?? NSNull(), "encoded_sha256": encodedHash, "byte_length": bytes.count,
                       "decoded_width": geometry.actual[2]-geometry.actual[0], "decoded_height": geometry.actual[3]-geometry.actual[1], "encoding": "PNG",
                       "orientation_version": "upright-1", "crop_version": "downward-1", "redaction_version": redactionVersion, "redaction_masks": [],
                       "privacy_preflight": privacyPreflight, "collection_authorization": collectionClaim.wire, "processor_authorization": processorClaim?.wire as Any? ?? NSNull()]) { _, new in new }

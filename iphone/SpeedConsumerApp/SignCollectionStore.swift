@@ -389,10 +389,46 @@ final class SignCollectionStore: @unchecked Sendable {
     func expiredEventCount() throws -> Int { try locked { Int(try state("expired_events") ?? "0")! } }
     func expiredCropCount() throws -> Int { try locked { Int(try state("expired_crops") ?? "0")! } }
 
+    /// Sign sharing includes all automatic crops; no separate user decision.
+    func authorizeAutomaticCrops() throws {
+        try locked {
+            _ = try authorization("sign_metadata", disclosure: SignCollectionCapabilities.metadataDisclosure)
+            if !isAuthorized(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure) {
+                _ = try decide(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure, granted: true,
+                               dontAskAgain: try remembered("sign_metadata") != nil)
+            }
+        }
+    }
     func enqueueCrop(metadata: [String: Any], bytes: Data, disclosure: String, processorDisclosure: String? = nil) throws {
         try locked { try transaction {
             try insertCrop(metadata: metadata, bytes: bytes, disclosure: disclosure, processorDisclosure: processorDisclosure)
         } }
+    }
+    /// Automatic, separately consented delivery retains the capture-time metadata grant.
+    func enqueueAutomaticCrop(metadata: [String: Any], bytes: Data) throws {
+        try locked { try transaction {
+            let claim = try authorization("sign_metadata", disclosure: SignCollectionCapabilities.metadataDisclosure)
+            guard metadata["privacy_preflight"] as? String == "passed" else { throw SignCollectionError.invalidContract }
+            try insertCrop(metadata: metadata, bytes: bytes, disclosure: SignCollectionCapabilities.cropDisclosure, processorDisclosure: nil)
+            try execute("UPDATE media SET auth=? WHERE id=?", [try SignCollectionJSON.canonical(claim.wire), metadata["crop_id"] as! String])
+        } }
+    }
+    /// Upgrade the former review queue with its captured grants, without a new session.
+    func migrateAutomaticCrops() throws {
+        try locked {
+            try expireCrops()
+            try transaction {
+                guard try state("deletion") == nil else { return }
+                while let row = try rows("SELECT id,metadata,auth,created FROM crop_reviews ORDER BY created LIMIT 1").first {
+                    guard let bytes = try cropReviews().first?.bytes else { throw SignCollectionError.storage }
+                    var metadata = try SignCollectionJSON.parse(row[1]) as! [String: Any]
+                    metadata["privacy_preflight"] = "passed"; metadata["redaction_version"] = "metadata-strip-1"
+                    try execute("DELETE FROM crop_reviews WHERE id=?", [row[0]])
+                    try insertCrop(metadata: metadata, bytes: bytes, disclosure: SignCollectionCapabilities.cropDisclosure, processorDisclosure: nil, captured: true)
+                    try execute("UPDATE media SET auth=?,created=? WHERE id=?", [row[2], row[3], row[0]])
+                }
+            }
+        }
     }
     private func insertCrop(metadata: [String: Any], bytes: Data, disclosure: String, processorDisclosure: String?, captured: Bool = false) throws {
             try gate.validate(metadata, model: "crop")

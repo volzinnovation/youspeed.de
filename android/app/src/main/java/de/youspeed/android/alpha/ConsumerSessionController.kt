@@ -459,7 +459,6 @@ class ConsumerSessionController(
     // Shared v1.4 collection storage and automatic upload coordinator.
     internal val signCollectionFoundation = SignCollectionFoundation(appContext)
     internal val signCollection by lazy { SignCollectionCoordinator(appContext, signCollectionFoundation) }
-    internal fun recordManualSignSighting() { signCollection.manualSighting(latestCaptureLocation?.let(::Location)) }
     private val mainHandler = Handler(Looper.getMainLooper())
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
     private val panoramaxStorageWorker = PanoramaxStorageWorker()

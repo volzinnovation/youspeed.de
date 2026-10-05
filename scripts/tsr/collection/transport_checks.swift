@@ -141,8 +141,7 @@ func runCollectionTransportChecks(gate: SignCollectionContractGate, root: URL, f
     let liveCropMetadata = liveCrop.metadata(cropID: liveCropID, observationID: synthetic["event_id"] as! String,
         installationID: try liveStore.installationID, epoch: 0, sourceKind: "manual_capture", frameAt: Date(), localFrameToken: "computer-generated-pixel",
         privacyPreflight: "user_reviewed", redactionVersion: "host-solid-pixel-1", collectionClaim: liveCropClaim)
-    try liveStore.stageCrop(metadata: liveCropMetadata, bytes: liveCrop.bytes)
-    try liveStore.reviewCrop(id: liveCropID, approved: true)
+    try liveStore.enqueueAutomaticCrop(metadata: liveCropMetadata, bytes: liveCrop.bytes)
     do {
         let committed = try await transport.runOnce(networkAvailable: true, ordinaryDeliveryAllowed: true)
         try check(committed == "crop_committed" && liveStore.nextCrop() == nil && liveStore.pendingCount() == 1, "live durable metadata and bounded crop intake")
@@ -195,7 +194,8 @@ private func runCropChecks(gate: SignCollectionContractGate, root: URL, caps ori
     var store: SignCollectionStore? = try SignCollectionStore(root: directory, gate: gate, now: { time })
     try store!.beginSession(SignCollectionJSON.uuid())
     _ = try store!.decide(scope: "sign_metadata", disclosure: SignCollectionCapabilities.metadataDisclosure, granted: true, dontAskAgain: false)
-    let claim = try store!.decide(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure, granted: true, dontAskAgain: false)
+    try store!.authorizeAutomaticCrops()
+    let claim = try store!.claim(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure)
     var pixel: [UInt8] = [0,170,187,255]
     let context = CGContext(data: &pixel, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4, space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)!
     let crop = try SignCollectionCrop.generate(upright: context.makeImage()!, box: ["x":0,"y":0,"width":1,"height":1])
@@ -203,12 +203,12 @@ private func runCropChecks(gate: SignCollectionContractGate, root: URL, caps ori
     let metadata = crop.metadata(cropID: id, observationID: observation, installationID: try store!.installationID, epoch: 0, sourceKind: "detector", frameAt: time,
         localFrameToken: "host-crop-frame", privacyPreflight: "user_reviewed", redactionVersion: "user-review-1", collectionClaim: claim)
     try store!.stageCrop(metadata: metadata, bytes: crop.bytes)
-    try check(store!.nextCrop() == nil && store!.cropReviewCount() == 1, "unreviewed bytes never enter the upload queue")
+    try check(store!.nextCrop() == nil && store!.cropReviewCount() == 1, "legacy staged bytes wait for migration")
     store!.endSession(); store = nil
     store = try SignCollectionStore(root: directory, gate: gate, now: { time })
     try check(store!.cropReviewCount() == 1, "crop reviews survive restart without granting new consent")
-    try store!.reviewCrop(id: id, approved: true)
-    try check(store!.cropReviewCount() == 0 && store!.nextCrop()!.bytes == crop.bytes, "explicit post-session review commits original bytes")
+    try store!.migrateAutomaticCrops()
+    try check(store!.cropReviewCount() == 0 && store!.nextCrop()!.bytes == crop.bytes, "automatic migration commits original bytes after session end")
     var reservedBody: String?, durable = false, puts = 0, linked = false
     let http = CollectionFakeHTTP { path, body in
         if path == "capabilities" { return .init(status: 200, body: caps, retryAfter: nil) }
@@ -216,7 +216,7 @@ private func runCropChecks(gate: SignCollectionContractGate, root: URL, caps ori
         if path == "consent-events" { return .init(status: 200, body: ["state":"recorded", "operation_receipt":"grant-" + (value["event_id"] as! String)], retryAfter: nil) }
         if path == "media-uploads" {
             if let previous = reservedBody { try check(previous == body, "reservation replay retains exact metadata") }; reservedBody = body
-            try check(value["privacy_preflight"] as? String == "user_reviewed", "review assertion belongs only to approved wire metadata")
+            try check(value["privacy_preflight"] as? String == "passed", "automatic upload must not claim user review")
             return .init(status: 200, body: durable ? ["state":"media_durable", "durability":"live_eu_committed", "operation_receipt":"crop-receipt", "sha256":crop.encodedHash] : ["state":"reserved", "operation_receipt":"crop-receipt", "sha256":crop.encodedHash, "handle":"safe_handle"], retryAfter: nil)
         }
         try check(path == "media-status-batches", "only append-only media status remains")
@@ -253,15 +253,22 @@ private func runCropChecks(gate: SignCollectionContractGate, root: URL, caps ori
             localFrameToken: nil, privacyPreflight: "user_reviewed", redactionVersion: "user-review-1", collectionClaim: renewed)
         try store!.stageCrop(metadata: value, bytes: crop.bytes); return id
     }
-    let expiredID = try stage(); try store!.reviewCrop(id: expiredID, approved: true); _ = try stage()
+    _ = try stage(); try store!.migrateAutomaticCrops(); _ = try stage()
     time = time.addingTimeInterval(8*86400); try store!.expireCrops()
     try check(store!.cropReviewCount() == 0 && store!.nextCrop() == nil && store!.expiredCropCount() == 2, "review and transfer bytes expire after seven days")
     let expiration = try store!.prepareBatch()!
     let expirationEnvelope = try SignCollectionJSON.parse(expiration.body) as! [String: Any]
     try check((expirationEnvelope["events"] as! [[String: Any]])[0]["status"] as? String == "expired", "expired upload adds captured-authorized status")
-    _ = try stage(); try store!.withdraw(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure)
+    let automatic = try SignCollectionCrop.generate(upright: context.makeImage()!, box: ["x":0,"y":0,"width":1,"height":1], hashSource: false)
+    try check(automatic.sourceHash == nil && automatic.bytes == crop.bytes, "runtime crop skips full-frame hashing without changing pixels")
+    let automaticMetadata = automatic.metadata(cropID: SignCollectionJSON.uuid(), observationID: observation, installationID: try store!.installationID, epoch: 0, sourceKind: "detector", frameAt: time,
+        localFrameToken: "automatic-host-frame", privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: renewed)
+    try store!.enqueueAutomaticCrop(metadata: automaticMetadata, bytes: automatic.bytes)
+    store!.endSession()
+    try check(store!.nextCrop()!.bytes == automatic.bytes && store!.cropReviewCount() == 0, "new capture enters automatic upload directly and survives session end")
+    try store!.withdraw(scope: "sign_metadata", disclosure: SignCollectionCapabilities.metadataDisclosure)
     try check(store!.cropReviewCount() == 0 && store!.nextCrop() == nil, "withdrawal purges optional evidence")
-    print("Swift host crops: review, recovery copy, lost PUT ACK, linked/expired status and withdrawal passed")
+    print("Swift host crops: automatic migration, recovery copy, lost PUT ACK, linked/expired status and withdrawal passed")
 
     let filter = SignCaptureFilter(), start = Date()
     let signs = [SignCaptureFilter.Detection(key:"white",label:"white",box:[0.1,0.1,0.2,0.2],score:0.8), SignCaptureFilter.Detection(key:"white",label:"white",box:[0.7,0.1,0.2,0.2],score:0.9)]

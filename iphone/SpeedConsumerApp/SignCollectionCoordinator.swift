@@ -8,15 +8,8 @@ import CoreGraphics
 @MainActor final class SignCollectionCoordinator: ObservableObject {
     @Published private(set) var enabled: Bool
     @Published private(set) var authorized = false
-    @Published private(set) var cropsEnabled = UserDefaults.standard.bool(forKey: "youspeed.collection.crops")
     @Published private(set) var cropsAuthorized = false
-    @Published private(set) var cropConsentPresented = false
-    @Published private(set) var reviewCropID: String?
-    @Published private(set) var reviewCropBytes: Data?
-    @Published private(set) var reviewCount = 0
-    var canReviewCrops: Bool { !cameraActive && !privacyChangePending }
     private var framePending = false
-    private var cropPromptChecked = false
     @Published private(set) var consentPresented = false
     @Published private(set) var status = "idle"
     @Published private(set) var deletions: [[String: Bool]] = []
@@ -54,7 +47,7 @@ import CoreGraphics
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.deliver() }
         }
-        refresh()
+        perform { try $0.migrateAutomaticCrops() }
     }
     deinit { timer?.invalidate(); monitor.cancel(); upload?.cancel(); client?.close() }
     func cameraChanged(active: Bool) {
@@ -69,8 +62,7 @@ import CoreGraphics
         if !active { deliver() }
     }
     func endSession() {
-        cropPromptChecked = false
-        session = nil; consentPresented = false; cropConsentPresented = false; authorized = false; cropsAuthorized = false; cameraActive = false
+        session = nil; consentPresented = false; authorized = false; cropsAuthorized = false; cameraActive = false
         perform { [capture] store in capture.observer.reset(); store.endSession() }
         deliver()
     }
@@ -79,47 +71,18 @@ import CoreGraphics
         let token = generation, expectedSession = session
         perform { store in
             let prompt = try store.shouldPrompt(scope: "sign_metadata", disclosure: SignCollectionCapabilities.metadataDisclosure)
-            Task { @MainActor [weak self] in if self?.generation == token && self?.session == expectedSession && self?.cameraActive == true && self?.enabled == true { self?.consentPresented = prompt; if !prompt { self?.requestCropConsent() } } }
+            Task { @MainActor [weak self] in if self?.generation == token && self?.session == expectedSession && self?.cameraActive == true && self?.enabled == true { self?.consentPresented = prompt } }
         }
     }
     func decide(granted: Bool, dontAskAgain: Bool) {
         consentPresented = false
         privacy { store in _ = try store.decide(scope: "sign_metadata", disclosure: SignCollectionCapabilities.metadataDisclosure, granted: granted, dontAskAgain: dontAskAgain) }
     }
-    private func requestCropConsent() {
-        guard enabled, authorized, cropsEnabled, cameraActive, !consentPresented, !cropConsentPresented, !cropPromptChecked else { return }
-        cropPromptChecked = true
-        let token = generation, expectedSession = session
-        perform { store in
-            guard store.isAuthorized(scope: "sign_metadata", disclosure: SignCollectionCapabilities.metadataDisclosure) else { return }
-            let prompt = try store.shouldPrompt(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure)
-            Task { @MainActor [weak self] in if self?.generation == token && self?.session == expectedSession && self?.cameraActive == true && self?.cropsEnabled == true { self?.cropConsentPresented = prompt } }
-        }
-    }
-    func setCropsEnabled(_ value: Bool) {
-        cropPromptChecked = false
-        cropsEnabled = value; UserDefaults.standard.set(value, forKey: "youspeed.collection.crops")
-        cropsAuthorized = false; cropConsentPresented = false; reviewCropBytes = nil; reviewCropID = nil
-        privacy { store in
-            if value { try store.allowPromptAgain(scope: "crop_storage") }
-            else { try store.withdraw(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure) }
-        }
-    }
-    func decideCrop(granted: Bool, dontAskAgain: Bool) {
-        cropConsentPresented = false
-        privacy { _ = try $0.decide(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure, granted: granted, dontAskAgain: dontAskAgain) }
-    }
-    func dismissCropConsent() { cropConsentPresented = false }
-    func reviewCrop(approved: Bool) {
-        guard canReviewCrops, let id = reviewCropID else { return }
-        reviewCropBytes = nil; reviewCropID = nil
-        perform { try $0.reviewCrop(id: id, approved: approved) }
-    }
     func dismissConsent() { consentPresented = false }
     func setEnabled(_ value: Bool) {
         guard value != enabled else { return }
         enabled = value; UserDefaults.standard.set(value, forKey: "youspeed.collection.enabled")
-        invalidateUpload(); authorized = false; cropsAuthorized = false; consentPresented = false; cropConsentPresented = false; reviewCropID = nil; reviewCropBytes = nil
+        invalidateUpload(); authorized = false; cropsAuthorized = false; consentPresented = false
         privacy { [capture] store in
             capture.observer.reset()
             if value { try store.allowPromptAgain(scope: "sign_metadata") }
@@ -128,8 +91,7 @@ import CoreGraphics
         if value { requestConsent() }
     }
     func deleteObservations() {
-        cropPromptChecked = false
-        invalidateUpload(); authorized = false; cropsAuthorized = false; consentPresented = false; cropConsentPresented = false; reviewCropID = nil; reviewCropBytes = nil; session = nil
+        invalidateUpload(); authorized = false; cropsAuthorized = false; consentPresented = false; session = nil
         privacy { [capture] store in capture.observer.reset(); _ = try store.requestDeletion() }
     }
     func clearPendingForDeveloper() {
@@ -148,22 +110,21 @@ import CoreGraphics
             }
         }
     }
-    private func perform(_ action: @escaping (SignCollectionStore) throws -> Void) {
+    private func perform(refreshAfter: Bool = true, _ action: @escaping (SignCollectionStore) throws -> Void) {
         guard case .success(let store) = foundation.store else { return }
         storage.async { [weak self] in
-            do { try action(store); Task { @MainActor in self?.refresh() } }
+            do { try action(store); if refreshAfter { Task { @MainActor in self?.refresh() } } }
             catch { Task { @MainActor in self?.status = "local_operation_failed"; self?.refresh() } }
         }
     }
     private func refresh() {
         guard case .success(let store) = foundation.store else { return }
-        let token = generation, reviewNeeded = !cameraActive && !privacyChangePending
+        let token = generation
         storage.async { [weak self] in
             let authorized = store.isAuthorized(scope: "sign_metadata", disclosure: SignCollectionCapabilities.metadataDisclosure)
+            if authorized { try? store.authorizeAutomaticCrops() }
             let crops = store.isAuthorized(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure)
             try? store.expireCrops()
-            let reviews = reviewNeeded ? try? store.cropReviews() : nil
-            let count = (try? store.cropReviewCount()) ?? 0
             let epoch = try? store.collectionEpoch, barrier = (try? store.deletionIsPending) ?? true
             let phases = (try? store.controlHistory())?.filter { $0.kind == "deletion" }.suffix(3).map { control in
                 Dictionary(uniqueKeysWithValues: ["active_data_removed", "archives_purged", "backup_expiry_complete"].map { ($0, SignCollectionJSON.boolean(control.response?[$0]) == true) })
@@ -175,10 +136,7 @@ import CoreGraphics
                 }
                 self.currentEpoch = epoch
                 self.authorized = authorized && self.enabled && !self.privacyChangePending; self.deletions = phases
-                self.cropsAuthorized = crops && self.authorized && self.cropsEnabled
-                self.reviewCount = count
-                self.reviewCropID = reviews?.first?.id; self.reviewCropBytes = self.cameraActive || self.privacyChangePending ? nil : reviews?.first?.bytes
-                self.requestCropConsent()
+                self.cropsAuthorized = crops && self.authorized
                 // Active removal invalidates the old session. A new grant is required.
                 if self.cameraActive, self.session == nil, !self.privacyChangePending, !barrier {
                     self.session = SignCollectionJSON.uuid()
@@ -198,15 +156,20 @@ import CoreGraphics
             guard let self, token == self.generation else { return }
             if !self.privacyChangePending { self.status = result }
             self.upload = nil; self.refresh()
+            if ["crop_committed", "metadata_committed", "batch_split"].contains(result) {
+                Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] _ in
+                    Task { @MainActor in self?.deliver() }
+                }
+            }
         }
     }
     func observe(_ emission: TrafficSignRuntimeEmission, pack: TrafficSignVerifiedModelPack?, location: CLLocation?) {
         guard enabled, authorized, cameraActive, let session, let pack, emission.event.source == .liveFrame, !framePending else { return }
         framePending = true
-        let cropRequested = cropsEnabled && cropsAuthorized, token = generation
+        let cropRequested = cropsAuthorized, token = generation
         let app = ["platform": "ios", "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.4",
                    "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"]
-        perform { [capture, weak self] store in
+        perform(refreshAfter: false) { [capture, weak self] store in
             defer { Task { @MainActor in self?.framePending = false } }
             guard store.isAuthorized(scope: "sign_metadata", disclosure: SignCollectionCapabilities.metadataDisclosure) else { return }
             let path = pack.directoryURL.appendingPathComponent("manifest.json").path
@@ -251,28 +214,16 @@ import CoreGraphics
                     let claim = try store.claim(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure)
                     cropCount += 1
                     if upright == nil { upright = try frame.image() }
-                    let crop = try SignCollectionCrop.generate(upright: upright!, box: box)
+                    let crop = try SignCollectionCrop.generate(upright: upright!, box: box, hashSource: false)
                     let metadata = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: observation["event_id"] as! String,
                         installationID: try store.installationID, epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: at,
-                        localFrameToken: frame.token, privacyPreflight: "user_reviewed", redactionVersion: "user-review-1", collectionClaim: claim)
-                    try store.stageCrop(metadata: metadata, bytes: crop.bytes)
+                        localFrameToken: frame.token, privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: claim)
+                    try store.enqueueAutomaticCrop(metadata: metadata, bytes: crop.bytes)
                 } catch { Task { @MainActor [weak self] in if self?.generation == token { self?.status = "crop_capture_unavailable" } } }
             }
         }
     }
     func freezeCorrection(attempt: String, presentation: String?) { perform { [capture] _ in capture.observer.freeze(attempt: attempt, presentation: presentation) } }
-    func manualSighting(location: CLLocation?) {
-        guard enabled, authorized, let session else { return }
-        let at = Date(), id = SignCollectionJSON.uuid()
-        let event: [String: Any] = ["schema_version": 1, "event_id": id, "collection_session_id": session, "observer_version": "sighting-observer-1", "source_kind": "manual_capture",
-            "app": ["platform": "ios", "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.4", "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"],
-            "first_seen_at": SignCollectionJSON.utc(at), "last_seen_at": SignCollectionJSON.utc(at), "representative_frame_at": SignCollectionJSON.utc(at), "duration_ms": 0,
-            "clock_quality": "device_unverified", "vehicle_position": Self.position(location, at: at), "sign_position": NSNull(),
-            "classification": ["country": "unknown", "model_label": NSNull(), "canonical_code": NSNull(), "family": "unknown", "value": NSNull(), "unit": NSNull(), "role": "unknown", "mapping_revision": NSNull(), "mapping_sha256": NSNull(), "alternatives": []],
-            "scores": ["detector_raw": NSNull(), "classifier_raw": NSNull(), "raw_domain": NSNull(), "calibrated_confidence": NSNull(), "track_support": NSNull()], "model": NSNull(),
-            "evidence": ["track_id": NSNull(), "assembly_id": NSNull(), "analyzed_frames": 0, "finalization_reason": "manual_capture", "quality_flags": ["manual_metadata_only"]], "road_context": NSNull(), "media_refs": []]
-        perform { try $0.enqueue(kind: "sighting", event: event, disclosure: SignCollectionCapabilities.metadataDisclosure) }
-    }
     func correct(attempt: String, modality: String) {
         perform { [capture] store in if let correction = capture.observer.correction(attempt: attempt, modality: modality, at: Date()) {
             try store.enqueue(kind: "correction", event: correction, disclosure: SignCollectionCapabilities.metadataDisclosure)

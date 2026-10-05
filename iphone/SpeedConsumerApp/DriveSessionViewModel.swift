@@ -540,7 +540,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         didSet { UserDefaults.standard.set(panoramaxRecognizedSignsOnly, forKey: "youspeed.panoramax.recognized_signs_only"); panoramaxSignFilter.reset(); applyPanoramaxConfiguration() }
     }
     lazy var signCollection = SignCollectionCoordinator(foundation: signCollectionFoundation)
-    func recordManualSignSighting() { signCollection.manualSighting(location: locationManager.location) }
     #if DEBUG
     /// Opt-in device-test access to the actual app owner, avoiding a second loaded model/camera.
     private(set) static weak var testActiveInstance: DriveSessionViewModel?

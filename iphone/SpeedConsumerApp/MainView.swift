@@ -3186,7 +3186,7 @@ private struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            SignCollectionSettingsSection(collection: viewModel.signCollection, manualSighting: viewModel.recordManualSignSighting)
+            SignCollectionSettingsSection(collection: viewModel.signCollection)
 
             Section(NSLocalizedString("drive_recorder.settings.section", comment: "")) {
                 Text(NSLocalizedString("drive_recorder.settings.description", comment: ""))

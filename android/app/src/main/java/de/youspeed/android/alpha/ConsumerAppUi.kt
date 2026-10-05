@@ -1453,7 +1453,7 @@ private fun SettingsSheet(
                     }
                 }
             }
-            item { SignCollectionSettings(controller.signCollection, controller::recordManualSignSighting) }
+            item { SignCollectionSettings(controller.signCollection) }
             item { RecorderParitySettings(controller) }
             item {
                 SectionCard(stringResource(R.string.ui_audio_alerts)) {

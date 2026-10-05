@@ -63,7 +63,7 @@ class SignCollectionStoreInstrumentedTest {
             assertNull(store.prepareBatch()); assertEquals(0, store.pendingCount()); assertEquals(1, store.expiredEventCount())
         } finally { store.close(); root.deleteRecursively() }
     }
-    @Test fun approvedCropsRecoverLostAckAndAppendStatusWithoutSessionConsent() {
+    @Test fun automaticCropsRecoverLostAckAndAppendStatusWithoutSessionConsent() {
         val gate = SignCollectionContractGate { path -> context.assets.open("tsr/collection-contract-v1/$path").use { it.readBytes() } }
         val root = File(context.noBackupFilesDir, "crop-test-${SignCollectionJson.uuid()}")
         val clock = TestClock(); var store = SignCollectionStore(root, gate, clock)
@@ -72,12 +72,13 @@ class SignCollectionStoreInstrumentedTest {
             bitmap.setPixel(0,0,0xff00aabb.toInt()); val crop = SignCollectionCrop.generate(bitmap, mapOf("x" to 0.0,"y" to 0.0,"width" to 1.0,"height" to 1.0))
             store.beginSession(SignCollectionJson.uuid())
             store.decide("sign_metadata", SignCollectionCapabilities.metadataDisclosure, true, false)
-            val claim = store.decide("crop_storage", SignCollectionCapabilities.cropDisclosure, true, false)
+            store.authorizeAutomaticCrops()
+            val claim = store.claim("crop_storage", SignCollectionCapabilities.cropDisclosure)
             val id = SignCollectionJson.uuid(); val observation = SignCollectionJson.uuid()
             val metadata = crop.metadata(id, observation, store.installationId, 0, "detector", clock.instant(), "test-frame", "user_reviewed", "user-review-1", claim)
             store.stageCrop(metadata, crop.bytes); assertEquals(1,store.cropReviewCount()); assertNull(store.nextCrop())
             store.endSession(); store.close(); store = SignCollectionStore(root, gate, clock)
-            store.reviewCrop(id, true); assertArrayEquals(crop.bytes, store.nextCrop()!!.bytes)
+            store.migrateAutomaticCrops(); assertArrayEquals(crop.bytes, store.nextCrop()!!.bytes)
             val caps = buildJsonObject {
                 put("contract_manifest_sha256", SignCollectionContractGate.MANIFEST_SHA256); put("schema_versions", JsonArray(listOf(JsonPrimitive(1))))
                 put("one_way_uploads", true); put("durability", "live_eu_committed")
@@ -92,7 +93,7 @@ class SignCollectionStoreInstrumentedTest {
                     if (path == "consent-events") return SignCollectionHTTPResponse(200, buildJsonObject { put("state","recorded"); put("operation_receipt", "grant-"+value.getValue("event_id").jsonPrimitive.content) })
                     if (path == "media-uploads") {
                         if (reservedBody != null) assertEquals(reservedBody,body); reservedBody = body
-                        assertEquals(JsonPrimitive("user_reviewed"), value["privacy_preflight"])
+                        assertEquals(JsonPrimitive("passed"), value["privacy_preflight"])
                         return SignCollectionHTTPResponse(200, buildJsonObject { put("state",if (durable) "media_durable" else "reserved"); put("sha256",crop.encodedHash); put("operation_receipt","crop-receipt"); if (durable) put("durability","live_eu_committed") else put("handle","safe_handle") })
                     }
                     assertEquals("media-status-batches",path)
@@ -120,11 +121,15 @@ class SignCollectionStoreInstrumentedTest {
                 store.stageCrop(crop.metadata(cropId,observation,store.installationId,0,"detector",clock.instant(),null,"user_reviewed","user-review-1",renewed),crop.bytes)
                 return cropId
             }
-            store.reviewCrop(stage(),true); stage(); clock.time = clock.time.plusSeconds(8L*86400); store.expireCrops()
+            stage(); store.migrateAutomaticCrops(); stage(); clock.time = clock.time.plusSeconds(8L*86400); store.expireCrops()
             assertNull(store.nextCrop()); assertEquals(0,store.cropReviewCount()); assertEquals(2,store.expiredCropCount())
             val expired = SignCollectionJson.parse(store.prepareBatch()!!.body).jsonObject.getValue("events").jsonArray[0].jsonObject
             assertEquals(JsonPrimitive("expired"),expired["status"])
-            stage(); store.withdraw("crop_storage",SignCollectionCapabilities.cropDisclosure); assertEquals(0,store.cropReviewCount())
+            val automatic = SignCollectionCrop.generate(bitmap, mapOf("x" to 0.0,"y" to 0.0,"width" to 1.0,"height" to 1.0), hashSource = false)
+            assertNull(automatic.sourceHash); assertArrayEquals(crop.bytes, automatic.bytes)
+            store.enqueueAutomaticCrop(automatic.metadata(SignCollectionJson.uuid(),observation,store.installationId,0,"detector",clock.instant(),"automatic-device-frame","passed","metadata-strip-1",renewed),automatic.bytes)
+            store.endSession(); assertArrayEquals(automatic.bytes, store.nextCrop()!!.bytes); assertEquals(0,store.cropReviewCount())
+            store.withdraw("sign_metadata",SignCollectionCapabilities.metadataDisclosure); assertNull(store.nextCrop())
         } finally { bitmap.recycle(); store.close(); root.deleteRecursively() }
     }
 

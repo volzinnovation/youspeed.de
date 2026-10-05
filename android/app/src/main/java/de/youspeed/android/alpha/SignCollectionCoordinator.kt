@@ -19,16 +19,9 @@ internal class SignCollectionCoordinator(private val context: Context, private v
     private val preferences = context.getSharedPreferences("youspeed.sign_collection", Context.MODE_PRIVATE)
     var enabled by mutableStateOf(preferences.getBoolean("enabled", true)); private set
     var authorized by mutableStateOf(false); private set
-    var cropsEnabled by mutableStateOf(preferences.getBoolean("crops", false)); private set
     var cropsAuthorized by mutableStateOf(false); private set
-    var cropConsentPresented by mutableStateOf(false); private set
-    var reviewCropId by mutableStateOf<String?>(null); private set
-    var reviewCropBytes by mutableStateOf<ByteArray?>(null); private set
-    var reviewCount by mutableStateOf(0); private set
-    val canReviewCrops get() = !cameraActive && !privacyChangePending
     @Volatile var wantsCropFrame = false; private set
     private var framePending = false
-    private var cropPromptChecked = false
     var consentPresented by mutableStateOf(false); private set
     var status by mutableStateOf("idle"); private set
     var deletions by mutableStateOf<List<Map<String, Boolean>>>(emptyList()); private set
@@ -47,7 +40,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
     private var closed = false
     private var pack: AndroidTrafficSignVerifiedPack? = null // Storage executor only.
     private val tick = object : Runnable { override fun run() { if (!closed) { deliver(); main.postDelayed(this, 60_000) } } }
-    init { if (worker == null) status = "storage_unavailable"; main.post(tick); refresh() }
+    init { if (worker == null) status = "storage_unavailable"; perform { it.migrateAutomaticCrops(); main.post { deliver() } }; main.post(tick) }
     fun cameraChanged(active: Boolean) {
         val becameActive = active && !cameraActive; cameraActive = active; if (!active) wantsCropFrame = false
         if (becameActive) {
@@ -57,7 +50,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
         if (!active) deliver()
     }
     fun endSession() {
-        cropPromptChecked = false; cropConsentPresented = false; wantsCropFrame = false; cropsAuthorized = false
+        wantsCropFrame = false; cropsAuthorized = false
         session = null; consentPresented = false; authorized = false; cameraActive = false
         perform { observer.reset(); it.endSession() }; deliver()
     }
@@ -70,31 +63,6 @@ internal class SignCollectionCoordinator(private val context: Context, private v
             main.post { if (generation == token && session == expectedSession && enabled && cameraActive) consentPresented = prompt }
         }
     }
-    private fun requestCropConsent() {
-        if (!enabled || !authorized || !cropsEnabled || !cameraActive || consentPresented || cropConsentPresented || cropPromptChecked) return
-        cropPromptChecked = true
-        val token = generation; val expectedSession = session
-        perform { store ->
-            if (!store.isAuthorized("sign_metadata", SignCollectionCapabilities.metadataDisclosure)) return@perform
-            val prompt = store.shouldPrompt("crop_storage", SignCollectionCapabilities.cropDisclosure)
-            main.post { if (generation == token && session == expectedSession && cameraActive && cropsEnabled) cropConsentPresented = prompt }
-        }
-    }
-    fun updateCropsEnabled(value: Boolean) {
-        cropsEnabled = value; preferences.edit().putBoolean("crops", value).apply(); cropPromptChecked = false
-        cropConsentPresented = false; reviewCropBytes = null; reviewCropId = null
-        privacy { if (value) it.allowPromptAgain("crop_storage") else it.withdraw("crop_storage", SignCollectionCapabilities.cropDisclosure) }
-    }
-    fun decideCrop(granted: Boolean, dontAskAgain: Boolean) {
-        cropConsentPresented = false
-        privacy { it.decide("crop_storage", SignCollectionCapabilities.cropDisclosure, granted, dontAskAgain) }
-    }
-    fun dismissCropConsent() { cropConsentPresented = false }
-    fun reviewCrop(approved: Boolean) {
-        if (!canReviewCrops) return
-        val id = reviewCropId ?: return; reviewCropBytes = null; reviewCropId = null
-        perform { it.reviewCrop(id, approved) }
-    }
     fun dismissConsent() { consentPresented = false }
     fun decide(granted: Boolean, dontAskAgain: Boolean) {
         consentPresented = false
@@ -103,7 +71,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
     fun updateEnabled(value: Boolean) {
         if (value == enabled) return
         enabled = value; preferences.edit().putBoolean("enabled", value).apply()
-        invalidateUpload(); authorized = false; cropsAuthorized = false; wantsCropFrame = false; cropConsentPresented = false; reviewCropBytes = null; reviewCropId = null; consentPresented = false
+        invalidateUpload(); authorized = false; cropsAuthorized = false; wantsCropFrame = false; consentPresented = false
         privacy {
             observer.reset()
             if (value) it.allowPromptAgain("sign_metadata") else it.withdraw("sign_metadata", SignCollectionCapabilities.metadataDisclosure)
@@ -111,8 +79,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
         if (value) requestConsent()
     }
     fun deleteObservations() {
-        cropPromptChecked = false
-        invalidateUpload(); authorized = false; cropsAuthorized = false; wantsCropFrame = false; cropConsentPresented = false; reviewCropBytes = null; reviewCropId = null; consentPresented = false; session = null
+        invalidateUpload(); authorized = false; cropsAuthorized = false; wantsCropFrame = false; consentPresented = false; session = null
         privacy { observer.reset(); it.requestDeletion() }
     }
     fun clearPendingForDeveloper() { invalidateUpload(); perform { observer.reset(); it.clearPendingForDeveloper() } }
@@ -125,27 +92,26 @@ internal class SignCollectionCoordinator(private val context: Context, private v
             main.post { if (generation == token) { privacyChangePending = false; deliver() } }
         }
     }
-    private fun perform(action: (SignCollectionStore) -> Unit) {
+    private fun perform(refreshAfter: Boolean = true, action: (SignCollectionStore) -> Unit) {
         if (closed) return
         val store = foundation.store.getOrNull() ?: return
         storage.execute {
             try { action(store) } catch (_: Exception) { main.post { status = "local_operation_failed" } }
-            refresh()
+            if (refreshAfter) refresh()
         }
     }
     private fun refresh() {
         if (closed) return
         val store = foundation.store.getOrNull() ?: return
-        val token = generation; val reviewNeeded = !cameraActive && !privacyChangePending
+        val token = generation
         storage.execute {
             val allowed = store.isAuthorized("sign_metadata", SignCollectionCapabilities.metadataDisclosure)
             val phases = runCatching { store.controlHistory().filter { it.kind == "deletion" }.takeLast(3).map { control ->
                 listOf("active_data_removed", "archives_purged", "backup_expiry_complete").associateWith { control.response?.get(it) == JsonPrimitive(true) }
             } }.getOrDefault(emptyList())
+            if (allowed) runCatching { store.authorizeAutomaticCrops() }
             val crops = store.isAuthorized("crop_storage", SignCollectionCapabilities.cropDisclosure)
             runCatching { store.expireCrops() }
-            val reviews = if (reviewNeeded) runCatching { store.cropReviews() }.getOrNull() else null
-            val count = runCatching { store.cropReviewCount() }.getOrDefault(0)
             val barrier = store.deletionIsPending
             val epoch = store.collectionEpoch
             main.post {
@@ -153,10 +119,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                 if (currentEpoch != null && currentEpoch != epoch) { session = null; perform { observer.reset() } }
                 currentEpoch = epoch
                 authorized = allowed && enabled && !privacyChangePending; deletions = phases
-                cropsAuthorized = crops && authorized && cropsEnabled; wantsCropFrame = cropsAuthorized && cameraActive
-                reviewCount = count; reviewCropId = reviews?.firstOrNull()?.first
-                reviewCropBytes = if (cameraActive || privacyChangePending) null else reviews?.firstOrNull()?.second
-                requestCropConsent()
+                cropsAuthorized = crops && authorized; wantsCropFrame = cropsAuthorized && cameraActive
                 if (cameraActive && session == null && !privacyChangePending && !barrier) {
                     session = SignCollectionJson.uuid(); val id = session!!
                     perform { it.beginSession(id) }; requestConsent()
@@ -173,15 +136,19 @@ internal class SignCollectionCoordinator(private val context: Context, private v
         val allowed = enabled && !privacyChangePending; val token = generation
         upload = network.submit {
             val result = runCatching { transport.runOnce(available, allowed) }.getOrDefault("delivery_unavailable")
-            main.post { if (!closed && generation == token) { if (!privacyChangePending) status = result; upload = null; refresh() } }
+            main.post { if (!closed && generation == token) {
+                if (!privacyChangePending) status = result
+                upload = null; refresh()
+                if (result in listOf("crop_committed", "metadata_committed", "batch_split")) main.postDelayed({ deliver() }, 1_000)
+            } }
         }
     }
     fun observe(event: TrafficSignRecognitionEvent, detections: List<TrafficSignDetection>, location: Location?, frame: SignCollectionFrame? = null) {
         if (closed || !enabled || !authorized || !cameraActive || event.source != TrafficSignInputSource.LIVE_FRAME || framePending) { frame?.close(); return }
         val id = session ?: run { frame?.close(); return }
-        val cropRequested = cropsAuthorized && cropsEnabled
+        val cropRequested = cropsAuthorized
         framePending = true
-        perform { store ->
+        perform(refreshAfter = false) { store ->
           try {
             if (!store.isAuthorized("sign_metadata", SignCollectionCapabilities.metadataDisclosure)) return@perform
             val modelPack = pack ?: return@perform
@@ -234,33 +201,14 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                     val box = observation.getValue("evidence").jsonObject.getValue("normalized_box").jsonObject.mapValues { it.value.jsonPrimitive.double }
                     val crop = frame.crop(box)
                     val metadata = crop.metadata(SignCollectionJson.uuid(), observation.getValue("event_id").jsonPrimitive.content,
-                        store.installationId, store.collectionEpoch, "detector", event.frameTimestampUtc, frame.token, "user_reviewed", "user-review-1", claim)
-                    store.stageCrop(metadata, crop.bytes)
+                        store.installationId, store.collectionEpoch, "detector", event.frameTimestampUtc, frame.token, "passed", "metadata-strip-1", claim)
+                    store.enqueueAutomaticCrop(metadata, crop.bytes)
                 }.onFailure { main.post { status = "crop_capture_unavailable" } }
             }
           } finally { frame?.close(); main.post { framePending = false } }
         }
     }
     fun freezeCorrection(attempt: String, presentation: String?) { perform { observer.freeze(attempt, presentation) } }
-    fun manualSighting(location: Location?) {
-        if (!enabled || !authorized) return
-        val sessionId = session ?: return; val at = Instant.now()
-        val event = buildJsonObject {
-            put("schema_version", 1); put("event_id", SignCollectionJson.uuid()); put("collection_session_id", sessionId); put("observer_version", "sighting-observer-1"); put("source_kind", "manual_capture")
-            put("app", buildJsonObject { put("platform", "android"); put("version", BuildConfig.VERSION_NAME); put("build", BuildConfig.VERSION_CODE.toString()) })
-            put("first_seen_at", at.toString()); put("last_seen_at", at.toString()); put("representative_frame_at", at.toString()); put("duration_ms", 0)
-            put("clock_quality", "device_unverified"); put("vehicle_position", position(location, at)); put("sign_position", JsonNull)
-            put("classification", buildJsonObject {
-                put("country", "unknown"); put("family", "unknown"); put("role", "unknown"); put("alternatives", JsonArray(emptyList()))
-                listOf("model_label", "canonical_code", "value", "unit", "mapping_revision", "mapping_sha256").forEach { put(it, JsonNull) }
-            })
-            put("scores", buildJsonObject { listOf("detector_raw", "classifier_raw", "raw_domain", "calibrated_confidence", "track_support").forEach { put(it, JsonNull) } }); put("model", JsonNull)
-            put("evidence", buildJsonObject {
-                put("track_id", JsonNull); put("assembly_id", JsonNull); put("analyzed_frames", 0); put("finalization_reason", "manual_capture"); put("quality_flags", JsonArray(listOf(JsonPrimitive("manual_metadata_only"))))
-            }); put("road_context", JsonNull); put("media_refs", JsonArray(emptyList()))
-        }
-        perform { it.enqueue("sighting", event, SignCollectionCapabilities.metadataDisclosure) }
-    }
     fun correct(attempt: String, modality: String) { perform { store -> observer.correction(attempt, modality, Instant.now())?.let { store.enqueue("correction", it, SignCollectionCapabilities.metadataDisclosure) } } }
     fun close() { if (closed) return; closed = true; main.removeCallbacks(tick); invalidateUpload(); storage.shutdown(); network.shutdownNow() }
     private fun position(fix: Location?, at: Instant): JsonElement {

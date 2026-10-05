@@ -96,6 +96,7 @@ internal class V3SpeedLimitLookup(
     private val wayGeometry = DecodedGeometryCache<String, LatLonPoint>(2048, 32_768)
     private val ringGeometry = DecodedGeometryCache<String, LonLatPoint>(256, 16_384)
     private var schemaQueryCount = 0L
+    private var spatialIndexNodeReads = 0L
     private data class WayQueryShape(val network: CandidateNetwork, val networkRtree: Boolean,
         val generalRtree: Boolean, val tilePrefilter: Boolean)
     private val wayCandidateSql = mutableMapOf<WayQueryShape, String>()
@@ -144,6 +145,19 @@ internal class V3SpeedLimitLookup(
     @Volatile private var allowAreasRtreeQueries = hasAreasRtreeTable && supportsRtreeModule
     @Volatile private var allowCityBoundaryRtreeQueries = hasCityBoundaryRtreeTable && supportsRtreeModule
     @Volatile private var allowCityPlaceRtreeQueries = hasCityPlaceRtreeTable && supportsRtreeModule
+    private val readOnlyWaysIndex by lazy {
+        val definition = db.rawQuery("SELECT sql FROM sqlite_master WHERE name='ways_rtree'", null).use {
+            if (it.moveToFirst()) it.stringOrNull(0) else null
+        }?.lowercase()?.replace(Regex("\\s+"), "")
+        if (tableExists("ways_rtree_node") && definition?.contains("usingrtree(way_id,min_lon,max_lon,min_lat,max_lat)") == true) {
+            ReadOnlyRtreeIndex { id ->
+                spatialIndexNodeReads++
+                db.rawQuery("SELECT data FROM ways_rtree_node WHERE nodeno=?", arrayOf(id.toString())).use {
+                    if (it.moveToFirst()) it.getBlob(0) else null
+                }
+            }
+        } else null
+    }
 
     private val usesThreeWayGate: Boolean
         get() = matchingModel != LookupMatchingModel.CORRIDOR_HMM_NO_THREE_WAY_GATE
@@ -581,9 +595,9 @@ internal class V3SpeedLimitLookup(
     }
 
     internal data class CacheStats(val ways: GeometryCacheStats, val rings: GeometryCacheStats,
-        val schemaQueries: Long, val queryShapes: Int)
+        val schemaQueries: Long, val queryShapes: Int, val spatialIndexNodeReads: Long = 0)
 
-    internal fun cacheStats() = CacheStats(wayGeometry.stats(), ringGeometry.stats(), schemaQueryCount, wayCandidateSql.size)
+    internal fun cacheStats() = CacheStats(wayGeometry.stats(), ringGeometry.stats(), schemaQueryCount, wayCandidateSql.size, spatialIndexNodeReads)
 
     /** Uses the production SQL before matcher scoring, for the shared dense-candidate fixture. */
     internal fun admittedWayIdsForTesting(lat: Double, lon: Double, radiusM: Double, maxCandidates: Int): List<String> =
@@ -5708,9 +5722,19 @@ internal class V3SpeedLimitLookup(
             add(maxCandidates.toString())
         }.toTypedArray()
 
+        // Legacy packs have no tile table. Android's SQLite may omit R-tree;
+        // use the existing immutable index rather than scanning every way for
+        // each network, accuracy window and overlapping-bundle probe.
+        val indexedIds = if (!useNetworkRtree && !useGeneralRtree && !useTilePrefilter) {
+            readOnlyWaysIndex?.intersect(bounds.minLon, bounds.maxLon, bounds.minLat, bounds.maxLat)
+        } else null
+        if (indexedIds?.isEmpty() == true) return emptyList()
+        val effectiveSql = if (indexedIds != null) {
+            sql.replace("WHERE w.min_lon", "WHERE w.way_id IN (${indexedIds.joinToString(",")}) AND w.min_lon")
+        } else sql
         val out = ArrayList<WayCandidate>()
         try {
-            db.rawQuery(sql, params).use { cursor ->
+            db.rawQuery(effectiveSql, params).use { cursor ->
                 while (cursor.moveToNext()) {
                     val wayId = cursor.stringOrNull(0)
                     val highway = cursor.stringOrNull(1)

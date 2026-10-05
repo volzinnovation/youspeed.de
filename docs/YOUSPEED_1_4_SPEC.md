@@ -17,7 +17,7 @@ The owner requests global sign collection attributed to a random installation
 UUID without a YouSpeed account; class, GPS, time and original model scores;
 automatic and manual observations; corrections including Wrong/Falsch; durable
 offline buffering; a Panoramax recognized-sign capture setting and gallery
-filter; optional downward-expanded sign crops for server-side online LLM
+filter; automatic downward-expanded sign crops for server-side online LLM
 interpretation; and reviewed bundle enrichment or proposed OSM contributions.
 Metadata collection and on-device TSR are on by default in the disclosed
 contribution configuration. Future normal app access is funded by payment or
@@ -97,7 +97,9 @@ Upgrade preserves explicit off preferences and denied permissions. Revised
 contribution authorization is required before sending new data; do not
 retroactively upload old local observations or logs. An update or preselected
 switch is not authorization. TSR-on does not silently enable independent
-camera mode, Dashcam, optional crops, external processing or Panoramax upload.
+camera mode, Dashcam, external processing or Panoramax upload. Sign sharing
+includes every automatically captured crop, as explicitly directed by the owner
+on 5 October 2026.
 Preserve their existing defaults unless separately approved. Purchase/restore
 preserves privacy preferences.
 
@@ -117,8 +119,9 @@ new contribution for the current session; it persists across sessions only when
 Don't ask again is selected. The default cannot override that decision. Before
 the future commercial gate is enabled, declining contribution does not restrict
 local TSR; the future
-paid route permits local camera/TSR without required contribution. Crops and
-online third-party AI each retain separate affirmative choices, initially off.
+paid route permits local camera/TSR without required contribution. Sign sharing
+includes automatic crop upload without a separate choice. Online third-party AI
+retains its separate affirmative choice, initially off.
 The product consent stage and native OS permission prompt are distinct within
 the same first-camera-use flow. Do not imitate an OS alert; if an OS permission
 pre-alert is used, follow its Continue/Next convention.
@@ -198,9 +201,8 @@ to validate before release.
 | --- | --- |
 | Contribute sign observations and corrections | On by default after camera-use disclosure/authorization; session-only or explicitly remembered choice governs. Existing settings allow changing/forgetting the remembered choice. Authorized evidence is buffered and delivered automatically. Off always takes effect immediately. |
 | Traffic-sign recognition | On by default after required permissions; retain unavailable, denied, thermal-paused and interrupted states. Independent of contribution permission. |
-| Contribute sign crops | Separate opt-in, initially off; explains bounded image segments, location/time, destination and retention. Requires metadata contribution. |
+| Automatic sign photos | Every captured crop accompanies sign sharing. No separate toggle, consent prompt, approval or manual entry. Explain destination, location/time and offline retention in the sharing disclosure. |
 | Allow online vision-LLM processing | Separate opt-in, initially off; identifies configured processor, purpose and retention/transfer terms. Requires crop contribution. |
-| Capture a sign manually | Explicit user-sourced evidence without a detector hit; detailed classification/box editing occurs during safe review. |
 | Panoramax: Capture recognized traffic signs only | Separate future-capture setting, initially off; existing distance/time behavior remains when off. |
 | Panoramax: Show traffic-sign captures only | Gallery visibility filter, initially off; no approval, exclusion or deletion of hidden originals. |
 | Automatic upload connectivity | Upload whenever internet is available, including metered/mobile connections and while the camera is active. No separate network or camera-idle toggle. |
@@ -218,18 +220,16 @@ directly.
 
 Turning contribution off atomically closes admission, cancels private upload
 work, invalidates callbacks and removes pending private observations,
-corrections, crops and manual working images. Accepted data may remain until
+corrections and crops. Accepted data may remain until
 server deletion. It does not silently disable local TSR or modify approved
 Panoramax batches. Turning TSR off does not grant or revoke media permissions.
 
-Turning crops off deletes unuploaded private crops/working images and prevents
-new media dispatch; preserve authorized metadata and append unavailable-media
-status instead of rewriting a sighting. Turning processor permission off
+There is no separate crop-off setting. Turning processor permission off
 immediately stops local dispatch and durably sends the withdrawal control.
 Show pending server propagation or already dispatched processing honestly.
 
 Waiting reasons distinguish permission required/denied, unsupported model,
-inactive app, drive active/finalizing, costly network, offline, backoff, server
+inactive app, offline, backoff, server
 unavailable, schema update required, queue/storage failure, media expired,
 processor withdrawal pending and deletion in progress. Preference, authorized
 capture, local save and server acceptance are distinct states.
@@ -321,27 +321,11 @@ Corrections may arrive before targets and receive durable
 `target_resolution=pending`; missing targets are not retargeted.
 This channel has no cross-installation evidence browsing/feedback UI.
 
-## Manual sign capture
+## Automatic sign capture
 
-Provide a lightweight explicit action integrated with existing camera ownership.
-It works without a detector hit, AR, supported pack, road match, speed passage
-or GPS. Unavailable camera/denied permission can still produce explicitly
-unclassified metadata-only evidence with `media_unavailable`, when the user
-chooses that authorized action; show what was saved.
-
-An explicit manual action can save one protected local working frame under
-disclosed OS/app capture permission, proposed maximum 24 hours, for post-drive
-box selection. It does not authorize private upload, external processing or
-Panoramax publication. Remove the working frame after crop finalization,
-cancellation, expiry or crop-permission withdrawal. Never upload a full working
-frame to the private service.
-
-Manual sightings use `manual_capture`, camera time and optional vehicle fix;
-scores/model/track are null. Safe review provides upright box and optional
-class/value/condition edits. Private manual crop upload needs crop permission
-and a user-confirmed box; optional model/LLM results are separate derived
-evidence. An explicit request to retain an original in Panoramax uses its own
-gallery/review/retention contract.
+Ordinary detections create sightings and their exact representative crops
+automatically. No manual entry, box selection or review action is offered.
+The legacy `manual_capture` wire shape remains only for compatibility.
 
 ## Panoramax recognized-sign capture
 
@@ -369,7 +353,7 @@ and valid separately connected Panoramax credentials. Drive stop, reconnect,
 private contribution permission and sign-triggered capture never automatically
 upload Panoramax originals. Its external account remains separate.
 
-## Optional crop geometry and media ownership
+## Automatic crop geometry and media ownership
 
 Private crops and reviewed Panoramax originals have distinct permissions,
 queues, retention and destinations. An actual-sign annotation on a Panoramax
@@ -409,9 +393,11 @@ the full source need not be retained/uploaded. Define pixel hashing color
 space/row layout in fixtures. Edited boxes create new crop/supersession records.
 
 Use bounded JPEG/PNG with orientation applied; remove EXIF/XMP/GPS/device
-identifiers from bytes. Location/time is in structured metadata. Privacy
-preflight/redaction or review holds suspected people/plates/unrelated sensitive
-text; cropping is not anonymization. Never invent removed/unreadable text.
+identifiers from bytes. Location/time is in structured metadata. The product owner requires automatic upload of every captured crop, with no
+separate crop setting, consent prompt, manual entry or user review (5 October
+2026). Automatic file preflight strips embedded metadata and validates geometry,
+size and digest; it does not assert face/plate anonymization or user review.
+Never invent removed/unreadable text.
 Proposed bounds: 5 MiB encoded, 16 megapixels decoded. Provider resize is a
 separately identified derivative with transform/hash, not silent geometry change.
 
@@ -447,13 +433,13 @@ Leases have expiry/generation; startup returns orphans to retry. Persist exact
 request bytes before transport. Remove rows/spool only after durable accepted/
 identical-duplicate reconciliation. Unknown/missing response IDs clear nothing.
 
-After drive fully inactive, automatically attempt work on launch/resume,
-eligible connectivity and best-effort OS opportunities. Deliver small batches
-without waiting to fill; do not open camera/run inference to upload.
+Automatically attempt work on launch/resume, internet availability and
+best-effort OS opportunities, including active camera use and mobile networks.
+Deliver small batches without waiting to fill; do not open camera/run inference
+to upload.
 Proposed limits: 100 events/batch, 512 KiB uncompressed, 16 KiB/event, one
-in-flight batch per UUID. Starting a drive cancels/suspends transfers and fences
-callbacks; reconcile already accepted responses idempotently and start no
-further private transfer until inactive.
+in-flight batch per UUID. Starting a drive does not suspend transfers; privacy
+actions still fence callbacks and accepted responses reconcile idempotently.
 
 Persistent exponential backoff/full jitter: proposed 5-second initial, 6-hour
 cap, honoring longer Retry-After. Network changes cannot create parallel workers.
