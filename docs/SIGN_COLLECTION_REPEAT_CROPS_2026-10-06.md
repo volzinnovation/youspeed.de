@@ -30,7 +30,8 @@ accuracy and frame/fix timing to that crop, independently of the immutable paren
 sighting. Missing GPS is explicit null; replay crops remain unlocated. The
 inspector prefers crop position and shows GPS course/accuracy/timing, with an
 explicit sighting-level fallback only for old manifests lacking the field.
-These source changes have not been installed on devices or deployed.
+The crop-position extension was subsequently installed on the attached iPhone as
+version 1.4, build 10041; see the deployment record below.
 
 ## Replay evidence
 
@@ -146,7 +147,7 @@ The subsequent frame-position extension passed Swift host collection checks,
 including distinct course/fix metadata on repeated crops and durable queue
 preservation. All 12 targeted Android collection unit tests passed, and the app
 and instrumentation APKs built. The iPhone simulator app and test targets built;
-phone tests were not rerun or installed for this extension. The five inspector
+phone tests were not rerun at this initial verification stage. The five inspector
 JavaScript tests and 18 inspector HTTP tests passed (plus 18 HTTP subtests).
 Thirteen targeted sibling-backend tests passed, including optional/invalid
 position validation and preservation of distinct crop positions through intake
@@ -154,6 +155,25 @@ and signed archive export. Shared schema bytes, native pins, generated requests,
 Swift/Kotlin numeric parity and PNG metadata checks passed. Logs/output are in
 `/private/tmp/youspeed-crop-position-checks/` and the adjacent
 `youspeed-crop-position-ios-*.log` files. Production activation is not included.
+
+## Crop-position extension iPhone deployment
+
+The owner authorized commit, push and deployment to the attached iPhone on
+6 October 2026. Backend contract commit
+`e378973ea0` was pushed to `Woladen.de-analytics/main`; app commit `4071d55`
+was pushed to `youspeed.de/codex/youspeed-v1.4-app-foundations`. The app's shared
+source lock now references the committed backend schema rather than a local
+working-tree extension.
+
+A signed device build used `MARKETING_VERSION=1.4`,
+`CURRENT_PROJECT_VERSION=10041`, and the existing development team. Device
+installation succeeded on the attached iPhone 14 Pro. The device's installed-app
+inventory independently confirms bundle `de.youspeed.SpeedConsumer`, version
+1.4, build 10041. The packaged crop schema and manifest match the source and
+native contract pin. Initial launch was rejected by iOS because the phone was
+locked; unlocking is required for launch and focused native test execution.
+Build/install evidence is retained in `/private/tmp/youspeed-crop-position-*`.
+No backend or inspector production deployment was performed in this step.
 
 ## Hugging Face archive replay
 
