@@ -230,21 +230,28 @@
   }
 
   function setMode(mode, options = {}) {
-    state.mode = mode === "tsr" ? "tsr" : "matcher";
+    state.mode = ["tsr", "crops"].includes(mode) ? mode : "matcher";
     const tsrActive = state.mode === "tsr";
+    const matcherActive = state.mode === "matcher";
+    const cropsActive = state.mode === "crops";
     document.body.dataset.inspectorMode = state.mode;
-    elements.matcherMode?.classList.toggle("active", !tsrActive);
+    elements.matcherMode?.classList.toggle("active", matcherActive);
     elements.tsrMode?.classList.toggle("active", tsrActive);
-    elements.matcherMode?.setAttribute("aria-selected", String(!tsrActive));
+    byID("crops-mode-btn")?.classList.toggle("active", cropsActive);
+    byID("crops-mode-btn")?.setAttribute("aria-selected", String(cropsActive));
+    elements.matcherMode?.setAttribute("aria-selected", String(matcherActive));
     elements.tsrMode?.setAttribute("aria-selected", String(tsrActive));
-    if (elements.matcherPanel) elements.matcherPanel.hidden = tsrActive;
+    if (elements.matcherPanel) elements.matcherPanel.hidden = !matcherActive;
     if (elements.tsrPanel) elements.tsrPanel.hidden = !tsrActive;
-    if (elements.matcherWorkspace) elements.matcherWorkspace.hidden = tsrActive;
+    if (elements.matcherWorkspace) elements.matcherWorkspace.hidden = !matcherActive;
     elements.workspace.hidden = !tsrActive;
+    byID("crops-workspace").hidden = !cropsActive;
+    byID("workspace-locality-label").textContent = cropsActive ? "Report-Zugriff · privates Netz" : "QA-Daten lokal verarbeitet";
     if (!options.preserveHash) {
-      history.replaceState(null, "", tsrActive ? "#tsr" : "#matcher");
+      history.replaceState(null, "", "#" + state.mode);
     }
-    if (!tsrActive) {
+    window.dispatchEvent(new CustomEvent("youspeed:mode", { detail: state.mode }));
+    if (matcherActive) {
       window.YouSpeedInspectorBridge?.ensureMapTiles();
       window.setTimeout(() => window.YouSpeedInspectorBridge?.invalidateMap(), 0);
       void window.YouSpeedInspectorBridge?.ensureMatcherData();
@@ -1611,6 +1618,7 @@
 
   elements.matcherMode?.addEventListener("click", () => setMode("matcher"));
   elements.tsrMode?.addEventListener("click", () => setMode("tsr"));
+  byID("crops-mode-btn")?.addEventListener("click", () => setMode("crops"));
   elements.loadFixture?.addEventListener("click", () => void loadFixtureSet());
   elements.loadM0Fixture?.addEventListener("click", () => void loadM0FixtureSet());
   elements.modelInput?.addEventListener("change", async (event) => {
@@ -1697,7 +1705,7 @@
     const context = itemContext(selectedItem());
     if (!context) return;
     const approved = window.confirm(
-      "Die Kartenprüfung lädt OpenStreetMap-Kacheln. Dabei werden die Umgebung der exakten "
+      "Die Kartenprüfung lädt Kartenkacheln von Stadia Maps. Dabei werden die Umgebung der exakten "
       + "Sample-Koordinate und Ihre IP-Adresse an den Kacheldienst übertragen. Fortfahren?"
     );
     if (!approved) return;
@@ -1732,10 +1740,10 @@
   });
 
   window.addEventListener("hashchange", () => {
-    setMode(window.location.hash === "#tsr" ? "tsr" : "matcher", { preserveHash: true });
+    setMode(window.location.hash.slice(1), { preserveHash: true });
   });
 
-  setMode(window.location.hash === "#tsr" ? "tsr" : "matcher", { preserveHash: true });
+  setMode(window.location.hash.slice(1), { preserveHash: true });
   renderAll();
   void loadFixtureSet();
 })();

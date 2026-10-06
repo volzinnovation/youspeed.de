@@ -42,9 +42,11 @@ let baseTileLayer = null;
 
 function ensureMapTiles() {
   if (!baseTileLayer) {
-    baseTileLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    baseTileLayer = L.tileLayer("https://tiles-eu.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png", {
+      maxZoom: 20,
+      // Stadia recognizes localhost via the origin; never send private paths or queries.
+      referrerPolicy: "origin",
+      attribution: '&copy; <a href="https://stadiamaps.com/attribution/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
   }
   return baseTileLayer;
@@ -2836,6 +2838,15 @@ function applyLocation(lat, lon) {
   });
 }
 
+function focusVehiclePosition(lat, lon) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return false;
+  ensureMapTiles();
+  map.invalidateSize();
+  applyLocation(lat, lon);
+  locationMarker.bindTooltip(`Fahrzeugposition · ${lat}, ${lon}`);
+  return true;
+}
+
 function readBrowserLocation() {
   if (!navigator.geolocation) {
     setStatus("Geolocation wird im Browser nicht unterstützt.", true);
@@ -3024,6 +3035,7 @@ window.YouSpeedInspectorBridge = Object.freeze({
     renderSelectedDriveLogEntry({ focusMap: false });
   },
   focusTSRContext,
+  focusVehiclePosition,
   clearTSRContext: clearTSRContextLayers,
   ensureMapTiles,
   invalidateMap: () => map.invalidateSize(),
@@ -3043,8 +3055,8 @@ map.whenReady(() => {
     portalTraceEl.innerHTML = "";
   }
   setBundleValue("nicht geladen");
-  if (window.location.hash === "#tsr") {
-    setStatus("TSR QA aktiv. Matcher-Daten werden erst beim Kartenwechsel geladen.");
+  if (["#tsr", "#crops"].includes(window.location.hash)) {
+    setStatus("QA aktiv. Matcher-Daten werden erst beim Kartenwechsel geladen.");
   } else {
     setStatus(window.location.hash === "#track" ? "Bereit. Drive-Log und zugehöriges TSR-Log laden." : "Bereit. SQLite-Bundle laden.");
     ensureMapTiles();
@@ -3058,3 +3070,11 @@ map.on("moveend", () => {
   refreshAdminBoundaryOverlay();
   refreshCrosshairAdminContainment();
 });
+
+// Coordinate links also work when opened in another tab or copied to a new window.
+const positionParams = new URLSearchParams(window.location.search);
+if (window.location.hash === "#matcher" && positionParams.get("lat")?.trim() && positionParams.get("lon")?.trim()) {
+  void ensureMatcherData().then(() => {
+    focusVehiclePosition(Number(positionParams.get("lat")), Number(positionParams.get("lon")));
+  });
+}

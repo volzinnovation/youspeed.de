@@ -43,10 +43,12 @@
         >
           TSR QA
         </button>
+        <button id="crops-mode-btn" class="mode-switch-button" type="button" role="tab"
+          aria-selected="false" aria-controls="crops-workspace">Backend-Crops</button>
       </nav>
       <div class="workspace-locality">
         <span class="workspace-locality-dot" aria-hidden="true"></span>
-        QA-Daten lokal verarbeitet
+        <span id="workspace-locality-label">QA-Daten lokal verarbeitet</span>
       </div>
     </header>
 
@@ -98,7 +100,7 @@
         <section class="track-tsr-panel" aria-labelledby="track-tsr-title">
           <h2 id="track-tsr-title">Verkehrszeichen auf der Fahrt</h2>
           <p class="hint">Drive-Log oben und zugehöriges TSR-Log hier öffnen. Kein SQLite-Bundle nötig.
-            Dateien bleiben lokal; die Hintergrundkarte lädt Kartenkacheln von OpenStreetMap.</p>
+            Dateien bleiben lokal; die Hintergrundkarte lädt Kartenkacheln von Stadia Maps (OpenStreetMap-Daten).</p>
           <label for="track-tsr-file">TSR-Log (.ndjson / .json / .log)</label>
           <input id="track-tsr-file" type="file" accept=".ndjson,.jsonl,.json,.log,.txt" />
           <div class="track-tsr-filters">
@@ -462,6 +464,46 @@
       </aside>
     </main>
 
+    <main id="crops-workspace" class="crop-workspace mode-workspace" role="tabpanel"
+      aria-labelledby="crops-mode-btn" hidden>
+      <section class="crop-browser">
+        <h1>Backend-Crops</h1>
+        <p class="hint">Gespeicherte Bildausschnitte auf volz-db. Zugriff über die eingerichteten
+          Report-Zugangsdaten des Servers, ohne Browser-Login. Bilder und Metadaten bleiben im privaten Netz.</p>
+        <p id="crops-connection" class="status" role="status">Report-Verbindung wird geprüft …</p>
+        <form id="crops-filters" class="crop-filters">
+          <label>Gerät (Installations-ID) <select id="crops-installation"><option value="">Alle Geräte</option></select></label>
+          <label>Land <select id="crops-country"><option value="">Alle Länder</option>
+            <option>DE</option><option>FR</option><option>BE</option><option>NL</option><option>CH</option></select></label>
+          <label>Erfassung <select id="crops-source"><option value="">Alle Arten</option>
+            <option value="detector">Detektor</option><option value="manual">Manuell</option></select></label>
+          <label>Klasse / Crop-ID <input id="crops-query" type="search" maxlength="160" placeholder="z. B. DE:274-50" /></label>
+          <label>Ab (UTC) <input id="crops-from" type="date" /></label>
+          <label>Bis (UTC, einschließlich) <input id="crops-to" type="date" /></label>
+          <button type="submit">Aktualisieren</button>
+        </form>
+        <p id="crops-summary" class="hint" role="status">Noch keine Crops geladen.</p>
+        <div id="crops-gallery" class="crop-gallery" aria-label="Gespeicherte Crops"></div>
+        <div class="crop-pagination">
+          <button id="crops-previous" type="button" disabled>Vorherige Seite</button>
+          <button id="crops-next" type="button" disabled>Nächste Seite</button>
+        </div>
+      </section>
+      <aside class="crop-detail" aria-label="Ausgewählter Backend-Crop">
+        <h2 id="crops-title">Crop auswählen</h2>
+        <p id="crops-image-status" class="hint" role="status"></p>
+        <label class="track-tsr-check"><input id="crops-show-box" type="checkbox" checked /> Ursprüngliche Zeichenbox anzeigen</label>
+        <div id="crops-stage" class="crop-stage" hidden>
+          <img id="crops-image" alt="Gespeicherter Bildausschnitt" />
+          <span id="crops-sign-box" class="crop-sign-box" aria-hidden="true"></span>
+        </div>
+        <p class="hint">Der Ausschnitt enthält zusätzlichen Kontext unterhalb des Zeichens.
+          Ein erkannter Standort ist kein vermessener Schildstandort.</p>
+        <dl id="crops-metadata" class="crop-metadata"></dl>
+        <details><summary>Crop-Manifest und Beobachtung</summary><pre id="crops-raw" class="raw-block">Kein Crop ausgewählt.</pre></details>
+      </aside>
+    </main>
+
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
@@ -476,5 +518,6 @@
     <script src="./track-path.js"></script>
     <script src="./tsr-qa-core.js"></script>
     <script src="./tsr-qa.js"></script>
+    <script src="./backend-crops.js"></script>
   </body>
 </html>

@@ -1,5 +1,129 @@
 # YouSpeed Web Inspector
 
+## Gespeicherte Backend-Crops (volz-db / VPN)
+
+**Backend-Crops** (`/inspector/#crops`) zeigt die gespeicherten PNG-/JPEG-Bytes,
+Zeichenklasse, Scores, Aufnahmezeit, App, Crop-Geometrie und zugehörige Beobachtung.
+Die orange Box markiert das ursprüngliche Zeichen innerhalb des erweiterten
+Ausschnitts. Filter: Gerät (Installations-ID), Land, Erfassungsart,
+Klasse/Crop-/Beobachtungs-ID und UTC-Zeitraum. Die Geräteauswahl enthält alle
+aktiven Crop-Quellen, unabhängig von der aktuellen Ergebnisseite, mit Plattform
+und Crop-Anzahl. Jede Karte und die Detailansicht zeigen die Installations-ID.
+Sie bleibt bei App-Updates erhalten; eine Neuinstallation kann eine neue ID
+erzeugen. Es handelt sich nicht um eine Hardware-ID.
+Die Liste lädt 50 Einträge pro Seite, neueste Aufnahmen zuerst.
+Die Koordinaten unter **Fahrzeugposition** sind ein Link: ein Klick öffnet den
+Map Matcher mit Positionsmarker; „In neuem Tab öffnen“ zeigt dieselbe Position
+in einer separaten Inspector-Karte. Fehlende oder ungültige Koordinaten bleiben
+ohne Link.
+
+Dieser Modus benötigt den mitgelieferten Python-Server statt `http.server`:
+
+```sh
+python3 -m venv /tmp/youspeed-inspector-venv
+/tmp/youspeed-inspector-venv/bin/python -m pip install -r inspector/requirements.txt
+/tmp/youspeed-inspector-venv/bin/python inspector/server.py
+```
+
+Der Standardbenutzer ist **`youspeed_report`**, die Datenbank **`youspeed`**.
+Es gibt keinen Browser-Login: ausschließlich der Server verwendet die bereits
+eingerichteten Report-Zugangsdaten. Er sucht zuerst `YOUSPEED_DATABASE_URL_FILE`,
+dann `/srv/woladen/config/youspeed/database-report.txt`,
+`/run/secrets/youspeed/database.txt` und die vorhandene lokale Datei im
+Geschwister-Repository `Woladen.de-analytics/secret/youspeed/database-report.txt`.
+Die Datei muss privat sein (0600). Alternativ unterstützt der Server libpq-
+Zugangsdaten (`PGHOST`, `PGPORT`, `PGPASSFILE`/`.pgpass`) und
+`YOUSPEED_DATABASE_URL`. Ohne Datei/Hostkonfiguration ist der Host `volz-db`.
+`--database-file`, `--db-host`, `--db-port` und `--db-user` erlauben explizite
+Overrides. Passwörter gehören ausschließlich in private Dateien/Umgebungen.
+
+Direkt **auf volz-db** mit erreichbarem privaten PostgreSQL-Endpunkt starten:
+
+```sh
+YOUSPEED_DATABASE_URL_FILE=/srv/woladen/config/youspeed/database-report.txt \
+YOUSPEED_MANAGEMENT_MEDIA_ROOT=/path/to/read-only/management-media \
+python3 inspector/server.py --bind PRIVATE_VPN_IP --allowed-host volz-db:8080
+```
+
+Dann über die VPN-Verbindung `http://volz-db:8080/inspector/#crops` öffnen.
+volz-db hat die Adresse **141.47.91.52**. Falls der Kurzname im VPN nicht
+aufgelöst wird, direkt `http://141.47.91.52:8080/inspector/#crops` öffnen;
+beide Browser-Hostnamen sind bereits zugelassen. `--bind 141.47.91.52` bindet
+an diese Serveradresse; Listener/Firewall müssen auf das genehmigte private
+VPN-Netz beschränkt bleiben.
+`PRIVATE_VPN_IP` muss die tatsächliche private Serveradresse sein. Der Default
+bindet nur an `127.0.0.1`; es wird kein öffentlicher Listener eingerichtet.
+Bei einem Reverse Proxy den genauen Inspector-Host inklusive Port mit
+`--allowed-host` zulassen. Der Proxy muss ebenfalls auf das private Netz
+beschränkt sein. Daten- und Bildantworten sind same-origin und `no-store`.
+
+PostgreSQL und Bildablage sind getrennt: `YOUSPEED_MANAGEMENT_MEDIA_ROOT` muss
+das **Management-Medienverzeichnis** bzw. seinen nur lesbaren Mount bezeichnen.
+Der Backend-Container verwendet `/var/lib/woladen/youspeed-management-media`
+(Compose-Volume `youspeed_management_media`). Der Server erstellt oder verändert
+dieses Verzeichnis nicht. Mit passender Dateileseberechtigung ausführen; der
+Backend-Dienst verwendet UID/GID 10001 und private Bilddateien (0600).
+Der Container-DNS-Name `panoramax-backend-db-1` in der Produktions-DSN ist nur im
+zugehörigen Docker-Netz erreichbar. Auf dem Host den bestätigten privaten
+PostgreSQL-Endpunkt per `--db-host` wählen oder den Inspector mit dem bestehenden
+Datenbanknetz und einem nur lesbaren Medienmount betreiben. Kein DB-Port muss
+öffentlich geöffnet werden.
+
+Die bisherige Report-Rolle darf `media` und die Lifecycle-Kontrolltabellen noch
+nicht lesen. Ein Administrator muss nach Prüfung einmal
+[`report-crops-grants.sql`](report-crops-grants.sql) in **youspeed** anwenden.
+Das ergänzt ausschließlich SELECT auf `media`, `tombstones`, `authorizations`;
+die vorhandenen SELECT-Rechte auf `events` werden weiterhin benötigt.
+Das Backend-Grants-Skript entzieht Rechte vor seiner Neuvergabe; nach dessen
+erneuter Anwendung diesen Inspector-Zusatz ebenfalls erneut anwenden.
+Der Inspector führt selbst keine Grants/Migrationen aus. Die SQL-Verbindungen
+und Transaktionen sind read-only. Listen- und Bildabfragen schließen abgelaufene,
+gelöschte und ausdrücklich widerrufene Crops aus. Bilder werden bei jedem Abruf
+erneut geprüft (Größe, SHA-256, Format, sicherer Dateipfad).
+
+Für lokale Entwicklung mit bereits eingerichteter privater DB-Weiterleitung
+kann die vorhandene Report-Datei weiter verwendet werden. Eine DB-Verbindung
+allein transportiert keine Bilder: dafür ist ein nur lesbarer Medienmount oder
+der direkt auf volz-db laufende Inspector nötig. VPN-/Tunnel-/Rechtefehler werden
+in der Ansicht angezeigt; Zugangsdaten erscheinen weder im Browser noch in
+Fehlermeldungen/Access-Logs.
+
+Tests: `python3 -m unittest discover -s tests/inspector -p 'test_backend_crops.py'`
+und `node --test tests/inspector/*.test.js`.
+
+### Installation mit dem vorhandenen Backend-Image und SSH-Tunnel
+
+`python3 scripts/inspector/package.py` erzeugt ein Paket mit Hash-Manifest in
+der temporären Ablage. Es enthält ausschließlich Inspector-Code, synthetische
+QA-Fixtures und gemeinsame Anzeigeassets, keine Zugangsdaten oder Drive-Logs.
+Das Paket privat nach volz-db kopieren, SHA-256 prüfen und in einen eigenen
+Staging-Ordner entpacken. Dort mit Administratorrechten ausführen:
+
+```sh
+sudo python3 scripts/inspector/install-volz-db.py
+```
+
+Der Installer prüft alle Paketbytes, verwendet das bereits laufende Reports-
+Image unverändert und bindet dessen vorhandenes privates DB-Netz und Report-
+Publikationsnetz an. Der neue Container `youspeed-inspector` läuft als UID/GID
+10001, mit read-only Dateisystem, Report-Datei und Medienvolume. Er veröffentlicht
+ausschließlich **127.0.0.1:8080** und startet nach einem Docker-Neustart wieder.
+Vorhandene Backend-Container werden nicht ersetzt. Der Installer ergänzt die
+benötigten SELECT-Grants und prüft Report-Identität, Galerie und, falls vorhanden,
+die Bytes eines gespeicherten Crops. Ein vorhandener Inspector wird nicht
+automatisch überschrieben.
+
+Auf dem Mac den Tunnel starten und offen lassen:
+
+```sh
+ssh -i ~/.ssh/id_ed25519 -N -o ExitOnForwardFailure=yes \
+  -L 127.0.0.1:18080:127.0.0.1:8080 raphael@141.47.91.52
+```
+
+Danach `http://localhost:18080/inspector/#crops` öffnen. Die Standardports sind
+bereits in der Host-Prüfung zugelassen; alternative Ports beim Installer über
+`--port` und `--local-port` angeben.
+
 ## Dashcam zum Drive-Log
 
 In **Karte & TSR** Drive-Log und TSR-Log laden, dann unter der Karte **Dashcam**
@@ -69,6 +193,18 @@ Tests: `node --test tests/inspector/*.test.js`.
 
 Eigenständiges Browser-Tool zum visuellen Prüfen von Ways auf OSM-Karte gegen lokale YouSpeed-SQLite.
 
+Die Hintergrundkarte verwendet **Stadia Maps Alidade Smooth**, über den
+EU-Endpunkt `https://tiles-eu.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png`.
+Stadia Maps, OpenMapTiles und OpenStreetMap werden auf der Karte attribuiert.
+[Lokale Entwicklung](https://docs.stadiamaps.com/authentication/) unter
+`localhost` oder `127.0.0.1` benötigt keinen API-Key, unterliegt aber Rate-Limits.
+Andere Hosts (auch VPN-/Intranet-Hosts) benötigen eine passende Stadia-
+Authentifizierung. Der lokale SSH-Tunnel unter `localhost:18080` kann direkt
+verwendet werden. Nur Kachelbilder verwenden `referrerPolicy: "origin"`, damit
+Stadia den lokalen Zugriff erkennt; Pfade, Suchparameter und Crop-Metadaten
+werden dabei nicht als Referrer übertragen. Der sichtbare Kartenausschnitt und
+die IP-Adresse werden an Stadia übertragen. Es gibt keinen Kachel-Prefetch.
+
 ## Features
 
 - Lädt eine lokale SQLite-Datenbank (URL oder Dateiauswahl).
@@ -119,7 +255,7 @@ Tastatur im TSR-Arbeitsbereich: `←`/`→` wechselt den Beleg, `1` markiert
 plausibel, `2` als zu prüfen und `3` als zu verwerfen.
 
 Die QA-Verarbeitung und Dateiimporte bleiben lokal im Browser. Beim direkten
-Start mit `#tsr` werden noch keine OpenStreetMap-Kacheln geladen. Erst ein
+Start mit `#tsr` werden noch keine Stadia-Maps-Kacheln geladen. Erst ein
 bewusster Wechsel in den Map Matcher oder die Aktion `Way auf Karte prüfen
 (OSM)` aktiviert den externen Kacheldienst. Vor dem Fokus auf eine exakte
 Sample-Koordinate warnt der Inspector ausdrücklich vor der Übertragung der
@@ -203,8 +339,8 @@ in den Piktogrammen sind keine aus dem Log erkannten Ortsnamen. Ältere Logs mit
 **Auch nicht identifizierbare Kandidaten** macht diese Einträge sichtbar.
 
 Dateien bleiben im Browser und werden nicht hochgeladen oder gespeichert.
-Die Kartenansicht lädt wie bisher OSM-Kacheln (sichtbarer Kartenausschnitt wird
-an OSM übermittelt); `#tsr` bleibt ohne Kacheln, bis zur Karte gewechselt wird.
+Die Kartenansicht lädt Stadia-Maps-Kacheln (sichtbarer Kartenausschnitt wird
+an Stadia übermittelt); `#tsr` bleibt ohne Kacheln, bis zur Karte gewechselt wird.
 Private Fahrdaten gehören nicht in das Repository. Kein neuer Bundle-Build und
 keine Änderung an der mobilen Erkennungs- oder Geschwindigkeitslogik ist nötig.
 
