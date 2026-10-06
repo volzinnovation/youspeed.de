@@ -107,8 +107,13 @@ the actual upload worker with the existing real backlog: **all 15 crops received
 accepted, and pending events/review rows/crop bytes are now zero. No synthetic
 server observations were created. The app was relaunched after acceptance.
 
-The iPhone **1.4 (10038)** build is prepared and its signature verifies. Installation
-is blocked by Apple's `kAMDMobileImageMounterDeviceLocked` response; its installed
-build remains **10037**. A paired installation-service fallback also failed.
-The 228 iPhone crops are preserved and are not reported as uploaded. Unlocking
-the attached iPhone is required to complete deployment and verify its backlog.
+The iPhone **1.4 (10038)** was installed and launched on 6 October after the
+device was unlocked; Apple's installed-app inventory confirms the version.
+The update preserved all 228 crops and migrated every review row automatically.
+The first post-launch snapshot confirms **4 `media_durable` /
+`live_eu_committed` receipts**, with **224 crops still queued** and no pending
+metadata events. Upload is progressing through the app's automatic worker;
+this snapshot does not claim that the full iPhone backlog has completed.
+Earlier deployment attempts had failed with
+`kAMDMobileImageMounterDeviceLocked`; the paired installation-service fallback
+had also failed before the successful CoreDevice installation.
