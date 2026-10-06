@@ -171,7 +171,12 @@ installation succeeded on the attached iPhone 14 Pro. The device's installed-app
 inventory independently confirms bundle `de.youspeed.SpeedConsumer`, version
 1.4, build 10041. The packaged crop schema and manifest match the source and
 native contract pin. Initial launch was rejected by iOS because the phone was
-locked; unlocking is required for launch and focused native test execution.
+locked. The owner subsequently confirmed the phone was unlocked and the app
+was launched. The follow-up focused device test could not start: both CoreDevice
+and Xcode then reported the iPhone unavailable to this Mac, so no passing native
+test result is claimed for build 10041. The signed test target had built
+successfully. Host collection, Android unit, inspector and backend checks remain
+the verified automated evidence for this extension.
 Build/install evidence is retained in `/private/tmp/youspeed-crop-position-*`.
 No backend or inspector production deployment was performed in this step.
 
