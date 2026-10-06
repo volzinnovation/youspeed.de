@@ -12,7 +12,7 @@ The source contract was exported from `Woladen.de-analytics`, branch `codex/yous
 820aa65f8999a4af54a40435363161279ee56ebf880c6e83dfa5d4c0103e2c96
 ```
 
-The deployed runtime advertised by the handoff is `c329bee419702704554ab7ee7634889c74a7186a`; the sibling checkout was rechecked at `a686124159b2896fc53f2553101dcb739240e28f`. The contract remains provisional (`cross_client_approved: false`). Native byte validation permits transport; every upload run additionally checks deployed capabilities and the event's explicit authorization. Contract success alone never grants collection consent.
+The deployed runtime advertised by the handoff is `c329bee419702704554ab7ee7634889c74a7186a`; the sibling checkout was rechecked at `a686124159b2896fc53f2553101dcb739240e28f`. The contract remains provisional (`cross_client_approved: false`). Evidence fixture checks remain local; uploads cache limits/disclosures for five minutes and preserve the event's sharing authorization. The current source removes the old upload protocol; coordinated backend activation is pending. Contract success alone never grants collection consent.
 
 - API: `https://live-eu.woladen.de/youspeed/v1`, configurable through the HTTP client constructor.
 - Metadata disclosure: `youspeed-camera-use-pilot-1`.
@@ -31,19 +31,19 @@ The deployed runtime advertised by the handoff is `c329bee419702704554ab7ee76348
 | Camera | Collection receives all eligible raw classes before numeric speed applicability/dismissal filtering. It uses independent collection tracks and does not modify the protected speed-reference policy. Existing explicit TSR choices are preserved. |
 | Sightings | Two distinct analyzed frames spanning at least 100 ms qualify one immutable sighting. Continued frames suppress duplicates until 2 s without support. A successful SQLite commit precedes marking a track recorded. Multiple signs have separate IDs. Bounding-box tracking is approximate; server aggregation must not treat these local track IDs as permanent physical sign identities. |
 | Provenance | Actual raw class/model scores, component artifacts/preprocessing/calibration IDs, manifest byte hash, frame times and nearest real location fix. Vehicle position remains distinct from sign position. Missing GPS, unverified clock and manifest schema-version provenance are explicit. The pack has no separate release-version field, so `pack_version` records `manifest-schema-<revision>` with the `manifest_schema_version` quality flag. Unknown OSM mapping/calibration hashes and calibrated confidence remain null. |
-| Manual entry | Removed from both apps. Ordinary camera detections create observations and photos automatically; the legacy wire fixture remains for compatibility only. |
+| Manual entry | Removed from both apps. Ordinary camera detections create observations and photos automatically; manual evidence fixtures are development data examples, not a client fallback. |
 | Corrections | Existing touch dismissal and Wrong/Falsch listening for a presented numeric camera sign append `unspecified_wrong` corrections when uniquely associated with a collected observation. The target is frozen when speech starts, not reassigned at transcript delivery. Ambiguous/unassociated commands still work locally and do not manufacture server targets. General non-numeric speech windows remain future work. |
 | Queue | SQLite WAL/FULL transactions, immutable IDs/epochs/captured authorization, 20,000 ordinary events/50 MiB and 1,000 corrections/5 MiB reserved separately. Thirty-day expiry, bounded crop storage and explicit capacity errors. Storage work runs separately from camera/UI and network workers. |
-| Delivery | Automatic one-way upload whenever internet is available, including active camera use and metered/mobile connections. Consent, contribution-off, privacy changes and deletion barriers still govern ordinary delivery. Foreground startup/network changes plus a 60 s timer resume delivery. Successful transfers schedule another cycle to drain the backlog. There are no synchronization or user-triggered send controls. Interrupted requests retain the same saved body and batch identity. |
-| HTTP outcomes | Per-event accepted/duplicate/rejected/retry-later handling; 413 creates new batch IDs while preserving events/claims/epoch; 429/408/5xx honor Retry-After with jitter; 409 deletion-pending defers ordinary work while privacy polling continues; conflicts/permanent errors/410 quarantine safely without relabeling epochs. Non-JSON error replies retain HTTP retry/split semantics. |
+| Delivery | Automatic one-way upload whenever internet is available, including active camera use and metered/mobile connections. Consent, contribution-off, privacy changes and deletion barriers still govern ordinary delivery. Foreground startup/network changes plus a 60 s timer resume delivery. Successful transfers schedule another cycle to drain the backlog. There are no synchronization or user-triggered send controls. Ordinary items have at most three total attempts. Retry deadlines schedule directly; successful cycles continue after one second. |
+| HTTP outcomes | Any 2xx releases the whole batch/crop. Temporary network/408/429/5xx failures honor Retry-After; permanent failures and the third failed attempt discard ordinary work. No per-event outcome or hash validation. |
 | Withdrawal/deletion | Cancel stale transport work, stop new collection locally, purge relevant pending data transactionally and retain privacy controls. Ordinary delivery cannot resume ahead of a privacy transaction. Failed privacy storage changes keep ordinary contribution delivery paused. |
-| Receipts | Intake is not completion. Persist opaque receipts and POST them in an operation-status JSON body. Poll the active deletion barrier first; old unsent consent cannot starve it. Fairly poll historical archive/backup operations. Processor withdrawal terminal state is `processing_stop_applied`, never `processing_stopped`. |
+| Privacy receipts | Ordinary uploads create no receipt. Persist permission/deletion operation receipts and POST them in an operation-status JSON body. Poll the active deletion barrier first; old unsent consent cannot starve it. Fairly poll historical archive/backup operations. Processor withdrawal terminal state is `processing_stop_applied`, never `processing_stopped`. |
 | Deletion UI | “Delete my observations” reports active removal, archive purging and backup expiry separately, including earlier requests. Advance epoch once after active removal; old snapshots never advance it again or clear a newer barrier. Require a fresh camera-use decision for new collection. |
 | Developer controls | “Clear pending observations” appears only in diagnostics and retains withdrawal/deletion operations. |
-| Crops | Every captured crop is sent as part of automatic sign sharing. No separate crop toggle or consent prompt. The backend crop claim is recorded from the overall sharing decision. Keep the exact analyzed upright frame, outward-round bounds, add the original height below and clip without padding. Freshly encode an opaque metadata-free PNG. Runtime source hash is null with an exact local frame token; encoded bytes remain SHA-256 verified. |
+| Crops | Every captured crop is sent as part of automatic sign sharing. No separate crop toggle or consent prompt. The backend crop claim is recorded from the overall sharing decision. Keep the exact analyzed upright frame, outward-round bounds, add the original height below and clip without padding. Freshly encode an opaque metadata-free PNG. Runtime source hash is null with an exact local frame token; the encoder records encoded identity once without insertion/upload revalidation. |
 | Automatic crops | New captures enter the upload queue directly. Upgrade migrates the former review queue transactionally using captured grants. `privacy_preflight: passed` and `redaction_version: metadata-strip-1` describe automatic file/metadata validation; neither user review nor face/plate redaction is asserted. The product owner explicitly removed review on 5 October. Session end/restart preserves captured grants; withdrawal/deletion still purges pending bytes. |
-| Crop transport | Reserve with immutable metadata, persist the scoped handle/receipt, PUT exact bytes, and erase local bytes only after a validated `media_durable` receipt. Identical reservation replay recovers lost content ACKs and refreshes expired handles. Append linked/missing/expired media status under the captured metadata grant. Optional image retry backoff is persisted separately, so it cannot pause metadata or privacy controls. |
-| Crop limits | 5 MiB encoded image, 16 MP decoded crop, 1 GiB queued image storage, seven-day local expiry, at most four crops from one processed representative frame and one media transfer per worker cycle. Frame ownership is bounded; camera work never waits for generation, storage or delivery. Backend media retention is separately advertised as 30 days. |
+| Crop transport | One binary-framed POST carries metadata and bytes, with empty 204 completion. The backend links crops internally. No reservation, handle, PUT/finalize, ordinary receipt or fallback. Crop backoff remains separate from metadata/privacy controls. |
+| Crop limits | 5 MiB encoded image, 16 MP decoded crop, 1 GiB queued image storage, seven-day local expiry, at most four crops from one processed representative frame and eight media transfers per worker cycle. Frame ownership is bounded; camera work never waits for generation, storage or delivery. Backend media retention is separately advertised as 30 days. |
 | Panoramax capture filter | “Capture recognized traffic signs only” defaults off. When on, suspend distance/time stills; all admitted classes qualify after two frames spanning 100 ms, independently from speed applicability and private contribution permission. Deduplicate by encounter, keep separate boxes for multiple same-class signs, enforce a global two-second minimum and require foreground/movement/fresh accurate GPS. Missing TSR waits instead of falling back to cadence. Capture reason, recognition frame ID/time, labels, boxes and scores persist in the sidecar. |
 | Panoramax gallery filter | “Show traffic-sign captures only” filters originals with explicit sign-capture evidence or existing sign annotations. It displays the active filter and preserves hidden selections, exclusions, favorites and batch approval. Clearing the filter restores all originals. Legacy files acquire no invented evidence. Existing Panoramax account and post-drive upload approval remain separate from private sign sharing. |
 
@@ -55,7 +55,7 @@ The handoff's identity, explicit local claims, durable sightings/corrections, me
 
 The live host-only smoke verified native HTTPS capabilities, one fresh synthetic manual observation, durable intake and exact replay. It submitted deletion and persisted the receipt. A later host-only receipt poll confirmed **active removal and advancement to epoch 1**; archive purging and backup expiry remain pending. This client smoke does not independently confirm signed import into volz-db or completed server recovery/backup acceptance. The sibling handoff reports separate operator acceptance; keep the two evidence sources distinct.
 
-The user's instruction supersedes putting synthetic/release gates in the ordinary device camera path. Consent and deletion remain mandatory client behavior. Physical-device deployment is recorded below. No code was committed, pushed, merged or changed in the sibling repository.
+The user's instruction supersedes putting synthetic/release gates in the ordinary device camera path. Consent and deletion remain mandatory client behavior. Physical-device deployment is recorded below. Backend source changes are recorded separately in its repository; production activation remains an explicit coordinated step.
 
 Remaining v1.4 release features: general non-numeric correction windows; restriction-enabled bundle consumption when the backend contract exists. External extraction and payment/contribution enforcement require separate backend/product acceptance. This branch does not claim App Store policy approval or enable payment enforcement.
 
@@ -74,19 +74,13 @@ python3 scripts/tsr/collection/check_contracts.py \
   --native-output /private/tmp/youspeed-collection-results
 ```
 
-Explicit live smoke, confined to the computer suite:
-
-```sh
-scripts/tsr/collection/run_swift_checks.sh /private/tmp/youspeed-collection-results --live
-```
-
 Resume existing host deletion receipts without generating more observations:
 
 ```sh
 scripts/tsr/collection/run_swift_checks.sh /private/tmp/youspeed-collection-results --resume-live
 ```
 
-The live suite generates a fresh synthetic installation/session/event plus one solid-color pixel crop, commits and replays the immutable metadata and crop reservation, checks linked media status, then requests deletion. Receipts stay in the host-only SQLite directory so incomplete deletion can be recovered; the suite never erases those pending control records. Do not delete that test directory until server cleanup completes. No synthetic generator is included in app targets.
+The computer suite uses isolated stores and fake HTTP responses to exercise the sole best-effort protocol. It does not create synthetic production observations. The resume option only continues existing host privacy cleanup. No synthetic generator is included in app targets.
 
 Validation on 2026-10-05: Swift host contract/store/crop/transport/observer checks; Android desktop contract/observer/capability tests and app build; iPhone simulator build and five focused foundation tests; sibling schema/Pydantic/semantic/pixel comparisons. Prior simulator/emulator SQLite and native pixel tests also cover 16,384-byte acceptance/16,385-byte rejection and recovery of separate deletion phases. Follow-up compilation covers the final metadata and privacy-ordering changes.
 
@@ -140,3 +134,12 @@ performance issue is diagnosed and is not repaired by the upload change.
 Validation: Android unit tests and builds, five emulator SQLite/crop/transport
 tests, the Swift host contract/transport/recovery suite, and an iPhone simulator
 build passed. Physical-device deployment uses version 1.4 build 10037.
+
+
+## Best-effort delivery and completed iPhone backlog (6 October 2026)
+
+The owner's speed/loss decision is implemented identically on both clients and the backend. [The sole upload protocol](../shared/tsr/collection-upload-v2.md) removes old upload routes/methods and every client fallback. One POST sends a crop; batches use status-only completion, capabilities cache for five minutes, and at most three attempts permit ordinary data loss. Camera work remains independent. Background archive hashing and durable privacy controls are separate.
+
+One final snapshot of the attached iPhone confirmed all **228 original crops uploaded**, zero retained queued bytes for them and zero review rows. The installed build 10038 completed that backlog through the previously deployed backend. New build 10039 is prepared for the matching backend protocol; it must not be launched against the old server. Backend activation precedes both phone updates.
+
+Validation: Swift host queue/transport/privacy/crop checks passed; signed iPhone build 10039 passed; Android build and test APK passed with 647 unit tests passing. Backend: 75 tests passed, 19 PostgreSQL-dependent tests skipped locally, and Ruff passed. Native Android queue tests compiled but could not run on the detached phone. All old upload routes are covered by removal assertions.

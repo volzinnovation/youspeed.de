@@ -228,6 +228,25 @@ final class SignCollectionStore: @unchecked Sendable {
     func cropRetryDate() throws -> Date { try locked { Date(timeIntervalSince1970: Double(try state("crop_retry") ?? "0") ?? 0) } }
     func deferCrop(until: Date) throws { try locked { try save("crop_retry", String(until.timeIntervalSince1970)) } }
     func deferOrdinary(until: Date) throws { try locked { try save("ordinary_retry", String(until.timeIntervalSince1970)) } }
+    func recordBestEffortFailure(id: String) throws -> Int {
+        try locked {
+            let key = "capture_attempts_" + id, count = Int(try state(key) ?? "0")! + 1
+            try save(key, String(count)); return count
+        }
+    }
+    func finishBestEffortBatch(id: String, dropped: Bool = false) throws {
+        try locked { try transaction {
+            try execute("DELETE FROM events WHERE batch=?", [id])
+            try execute("UPDATE batches SET body='',response=? WHERE id=?", [try SignCollectionJSON.canonical(["state": dropped ? "dropped" : "sent"]), id])
+            try execute("DELETE FROM state WHERE key=?", ["capture_attempts_" + id])
+        } }
+    }
+    func finishBestEffortCrop(id: String, dropped: Bool = false) throws {
+        try locked { try transaction {
+            try execute("UPDATE media SET bytes=X'',metadata='',handle=NULL,receipt=NULL,response=? WHERE id=?", [try SignCollectionJSON.canonical(["state": dropped ? "dropped" : "sent"]), id])
+            try execute("DELETE FROM state WHERE key=?", ["capture_attempts_" + id])
+        } }
+    }
     var deletionIsPending: Bool { get throws { try locked { try state("deletion") != nil } } }
 
     func quarantineBatch(id: String, code: String) throws {
@@ -260,37 +279,6 @@ final class SignCollectionStore: @unchecked Sendable {
                 for event in part { try execute("UPDATE events SET batch=? WHERE id=? AND batch=?", [next, event["event_id"] as! String, id]) }
             }
             try execute("UPDATE batches SET body='',response=? WHERE id=?", [try SignCollectionJSON.canonical(["transport_error": "request_too_large"]), id])
-        } }
-    }
-
-    func applyBatchReceipt(_ receipt: [String: Any]) throws {
-        try locked { try transaction {
-            guard let id = receipt["batch_id"] as? String, let row = try rows("SELECT epoch,response FROM batches WHERE id=?", [id]).first,
-                  SignCollectionJSON.integer(receipt["schema_version"]) == 1, SignCollectionJSON.integer(receipt["collection_epoch"]) == Int(row[0]),
-                  receipt["durability"] as? String == "live_eu_committed", let token = receipt["operation_receipt"] as? String, !token.isEmpty, token.count <= 128,
-                  let results = receipt["results"] as? [[String: Any]] else { throw SignCollectionError.invalidReceipt }
-            let encoded = try SignCollectionJSON.canonical(receipt)
-            if !row[1].isEmpty { guard row[1] == encoded else { throw SignCollectionError.invalidReceipt }; return }
-            let expected = Set(try rows("SELECT id FROM events WHERE batch=?", [id]).map { $0[0] })
-            let ids = results.compactMap { $0["event_id"] as? String }
-            guard ids.count == results.count, Set(ids) == expected, Set(ids).count == ids.count else { throw SignCollectionError.invalidReceipt }
-            for result in results {
-                guard let status = result["status"] as? String, ["accepted", "duplicate", "rejected", "retry_later"].contains(status),
-                      let retryable = SignCollectionJSON.boolean(result["retryable"]), retryable == (status == "retry_later") else { throw SignCollectionError.invalidReceipt }
-            }
-            for result in results {
-                let eventID = result["event_id"] as! String
-                switch result["status"] as! String {
-                case "accepted", "duplicate": try execute("DELETE FROM events WHERE id=?", [eventID])
-                case "retry_later":
-                    let time = now().timeIntervalSince1970
-                    let retryAt = result["code"] as? String == "daily_quota" ? (floor(time / 86400) + 1) * 86400 : time + 60
-                    try execute("UPDATE events SET batch=NULL,not_before=? WHERE id=?", [String(retryAt), eventID])
-                default: try execute("UPDATE events SET state='quarantined',batch=NULL WHERE id=?", [eventID])
-                }
-            }
-            // Keep the receipt, discard the acknowledged payload's GPS/model data.
-            try execute("UPDATE batches SET body='',receipt=?,response=? WHERE id=?", [token, encoded, id])
         } }
     }
 
@@ -409,7 +397,7 @@ final class SignCollectionStore: @unchecked Sendable {
         try locked { try transaction {
             let claim = try authorization("sign_metadata", disclosure: SignCollectionCapabilities.metadataDisclosure)
             guard metadata["privacy_preflight"] as? String == "passed" else { throw SignCollectionError.invalidContract }
-            try insertCrop(metadata: metadata, bytes: bytes, disclosure: SignCollectionCapabilities.cropDisclosure, processorDisclosure: nil)
+            try insertCrop(metadata: metadata, bytes: bytes, disclosure: SignCollectionCapabilities.cropDisclosure, processorDisclosure: nil, trustedEncoding: true)
             try execute("UPDATE media SET auth=? WHERE id=?", [try SignCollectionJSON.canonical(claim.wire), metadata["crop_id"] as! String])
         } }
     }
@@ -430,10 +418,11 @@ final class SignCollectionStore: @unchecked Sendable {
             }
         }
     }
-    private func insertCrop(metadata: [String: Any], bytes: Data, disclosure: String, processorDisclosure: String?, captured: Bool = false) throws {
-            try gate.validate(metadata, model: "crop")
+    private func insertCrop(metadata: [String: Any], bytes: Data, disclosure: String, processorDisclosure: String?, captured: Bool = false, trustedEncoding: Bool = false) throws {
+            if !trustedEncoding { try gate.validate(metadata, model: "crop") }
+            guard let encodedHash = metadata["encoded_sha256"] as? String else { throw SignCollectionError.invalidContract }
             guard metadata["installation_id"] as? String == (try state("installation")), metadata["collection_epoch"] as? Int == Int(try state("epoch")!),
-                  metadata["byte_length"] as? Int == bytes.count, metadata["encoded_sha256"] as? String == SignCollectionJSON.sha256(bytes) else { throw SignCollectionError.invalidContract }
+                  metadata["byte_length"] as? Int == bytes.count, trustedEncoding || encodedHash == SignCollectionJSON.sha256(bytes) else { throw SignCollectionError.invalidContract }
             if !captured {
                 let claim = try authorization("crop_storage", disclosure: disclosure)
                 guard try SignCollectionJSON.canonical(metadata["collection_authorization"]!) == SignCollectionJSON.canonical(claim.wire) else { throw SignCollectionError.consentRequired }
@@ -449,7 +438,7 @@ final class SignCollectionStore: @unchecked Sendable {
             }
             let size = Int(try rows("SELECT (SELECT COALESCE(sum(length(bytes)),0) FROM media)+(SELECT COALESCE(sum(length(bytes)),0) FROM crop_reviews)")[0][0])!
             guard size + bytes.count <= 1024 * 1024 * 1024 else { throw SignCollectionError.capacity }
-            try execute("INSERT INTO media(id,epoch,metadata,created,encoded_hash,bytes) VALUES(?,?,?,?,?,?)", [id, try state("epoch")!, text, String(now().timeIntervalSince1970), SignCollectionJSON.sha256(bytes)], blob: bytes)
+            try execute("INSERT INTO media(id,epoch,metadata,created,encoded_hash,bytes) VALUES(?,?,?,?,?,?)", [id, try state("epoch")!, text, String(now().timeIntervalSince1970), encodedHash], blob: bytes)
             try execute("INSERT INTO identities VALUES(?,?,?,?)", [id, try state("epoch")!, "crop", digest])
     }
 
@@ -526,34 +515,20 @@ final class SignCollectionStore: @unchecked Sendable {
             }
         }
     }
-    func nextCrop() throws -> (id: String, metadata: String, bytes: Data, handle: String?, receipt: String?)? {
+    func nextCrop() throws -> (id: String, metadata: String, bytes: Data)? {
         try locked {
             guard try state("deletion") == nil else { throw SignCollectionError.deletionPending }
-            guard let row = try rows("SELECT id,metadata,handle,receipt FROM media WHERE length(bytes)>0 AND created>=? ORDER BY created,id LIMIT 1", [String(now().timeIntervalSince1970 - 7 * 86400)]).first else { return nil }
+            guard let row = try rows("SELECT id,metadata FROM media WHERE length(bytes)>0 AND created>=? ORDER BY created,id LIMIT 1", [String(now().timeIntervalSince1970 - 7 * 86400)]).first else { return nil }
             var statement: OpaquePointer?
             guard sqlite3_prepare_v2(db, "SELECT bytes FROM media WHERE id=?", -1, &statement, nil) == SQLITE_OK else { throw SignCollectionError.storage }
             defer { sqlite3_finalize(statement) }
             sqlite3_bind_text(statement, 1, row[0], -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
             guard sqlite3_step(statement) == SQLITE_ROW, let pointer = sqlite3_column_blob(statement, 0) else { throw SignCollectionError.storage }
             let bytes = Data(bytes: pointer, count: Int(sqlite3_column_bytes(statement, 0)))
-            return (row[0], row[1], bytes, row[2].isEmpty ? nil : row[2], row[3].isEmpty ? nil : row[3])
+            return (row[0], row[1], bytes)
         }
     }
 
-    func applyCropReceipt(id: String, response: [String: Any]) throws {
-        try locked { try transaction {
-            guard let row = try rows("SELECT encoded_hash,receipt,metadata,auth FROM media WHERE id=?", [id]).first,
-                  response["sha256"] as? String == row[0], let token = response["operation_receipt"] as? String, !token.isEmpty, token.count <= 128,
-                  row[1].isEmpty || row[1] == token, let state = response["state"] as? String else { throw SignCollectionError.invalidReceipt }
-            if state == "reserved" {
-                guard let handle = response["handle"] as? String, !handle.isEmpty, handle.count <= 128 else { throw SignCollectionError.invalidReceipt }
-                try execute("UPDATE media SET handle=?,receipt=?,response=? WHERE id=?", [handle, token, try SignCollectionJSON.canonical(response), id])
-            } else if state == "media_durable", response["durability"] as? String == "live_eu_committed" {
-                if !row[2].isEmpty { try mediaStatus(metadata: row[2], auth: row[3], status: "linked"); privacyCheckpointNeeded = true }
-                try execute("UPDATE media SET bytes=X'',metadata='',handle=NULL,receipt=?,response=? WHERE id=?", [token, try SignCollectionJSON.canonical(response), id])
-            } else { throw SignCollectionError.invalidReceipt }
-        } }
-    }
     private var privacyCheckpointNeeded = false
     private func purge(scope: String) throws {
         privacyCheckpointNeeded = true

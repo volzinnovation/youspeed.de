@@ -45,21 +45,10 @@ try Data(batch.body.utf8).write(to: outputRoot.appendingPathComponent("swift-bat
 store = nil
 store = try SignCollectionStore(root: root, gate: gate, now: { instant })
 try check(store!.installationID == installation && store!.collectionEpoch == 0, "restart identity/epoch")
-try check(store!.prepareBatch()!.body == batch.body, "lost ACK exact bytes")
+try check(store!.prepareBatch()!.body == batch.body, "buffered batch survives restart")
 rejects { try store!.enqueue(kind: "sighting", event: event, disclosure: "example-camera-use-1") }
-func receipt(_ status: String, eventID: String? = nil) -> [String: Any] {
-    ["schema_version": 1, "batch_id": batch.id, "collection_epoch": batch.epoch, "durability": "live_eu_committed", "operation_receipt": "test-private-receipt", "results": [["event_id": eventID ?? event["event_id"]!, "status": status, "retryable": status == "retry_later"]]]
-}
-rejects { try store!.applyBatchReceipt(receipt("accepted", eventID: SignCollectionJSON.uuid())) }
-try check(store!.pendingCount() == 1, "unknown receipt preserves pending")
-try store!.applyBatchReceipt(receipt("retry_later"))
-try check(store!.prepareBatch() == nil, "retry backoff")
-instant = instant.addingTimeInterval(61)
-let second = try store!.prepareBatch()!
-try check(second.id != batch.id, "retry_later needs new immutable batch")
-var accepted = receipt("duplicate"); accepted["batch_id"] = second.id
-try store!.applyBatchReceipt(accepted)
-try check(store!.pendingCount() == 0, "duplicate receipt releases event")
+try store!.finishBestEffortBatch(id: batch.id)
+try check(store!.pendingCount() == 0, "successful HTTP send releases the whole batch")
 try store!.beginSession(SignCollectionJSON.uuid())
 try check(store!.shouldPrompt(scope: "sign_metadata", disclosure: "example-camera-use-1"), "unchecked acceptance session only")
 _ = try store!.decide(scope: "sign_metadata", disclosure: "example-camera-use-1", granted: false, dontAskAgain: true)
@@ -98,11 +87,9 @@ try encoded.bytes.write(to: outputRoot.appendingPathComponent("swift-crop.png"))
 try Data(store!.nextControl()!.body.utf8).write(to: outputRoot.appendingPathComponent("swift-consent.json"))
 store = nil; store = try SignCollectionStore(root: root, gate: gate, now: { instant })
 try check(store!.nextCrop()!.bytes == encoded.bytes, "durable crop bytes after restart")
-try store!.applyCropReceipt(id: cropID, response: ["state": "reserved", "handle": "upload-handle", "operation_receipt": "crop-receipt", "sha256": encoded.encodedHash])
-try check(store!.nextCrop()!.handle == "upload-handle", "crop handle durable")
-try store!.applyCropReceipt(id: cropID, response: ["state": "media_durable", "durability": "live_eu_committed", "operation_receipt": "crop-receipt", "sha256": encoded.encodedHash])
-try check(store!.nextCrop() == nil, "release crop only after durable receipt")
-print("Swift: pinned contracts, JSON identity, consent memory, SQLite restart, immutable receipts, deletion barrier and pixel crop passed")
+try store!.finishBestEffortCrop(id: cropID)
+try check(store!.nextCrop() == nil, "successful HTTP send releases crop bytes")
+print("Swift: pinned contracts, JSON identity, consent memory, SQLite restart, best-effort completion, deletion barrier and pixel crop passed")
 
 // A second owner cannot use a stale session grant after an explicit withdrawal.
 let peer = try SignCollectionStore(root: root, gate: gate, now: { instant })
@@ -231,7 +218,7 @@ let transportChecksDone = DispatchSemaphore(value: 0)
 var transportChecksResult: Result<Void, Error>?
 Task.detached {
     do {
-        try await runCollectionTransportChecks(gate: gate, root: outputRoot, fixture: event, live: CommandLine.arguments.contains("--live"))
+        try await runCollectionTransportChecks(gate: gate, root: outputRoot, fixture: event)
         if CommandLine.arguments.contains("--resume-live") { try await resumeCollectionHostCleanup(gate: gate, root: outputRoot) }
         transportChecksResult = .success(())
     }

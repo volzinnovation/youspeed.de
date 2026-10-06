@@ -6,7 +6,7 @@ import java.io.File
 import java.time.Clock
 
 internal data class SignCollectionBatch(val id: String, val epoch: Int, val kind: String, val body: String)
-internal data class SignCollectionQueuedCrop(val id: String, val metadata: String, val bytes: ByteArray, val handle: String?, val receipt: String?)
+internal data class SignCollectionQueuedCrop(val id: String, val metadata: String, val bytes: ByteArray)
 internal data class SignCollectionControl(val id: String, val kind: String, val body: String, val receipt: String?, val response: JsonObject?) {
     val isComplete: Boolean get() = response?.let {
         if (kind == "deletion") listOf("active_data_removed", "archives_purged", "backup_expiry_complete").all { phase -> it[phase] == JsonPrimitive(true) }
@@ -166,6 +166,19 @@ internal class SignCollectionStore(root: File, val gate: SignCollectionContractG
     @Synchronized fun cropRetryMillis() = state("crop_retry")?.toLong() ?: 0L
     @Synchronized fun deferCrop(untilMillis: Long) = save("crop_retry", untilMillis.toString())
     @Synchronized fun deferOrdinary(untilMillis: Long) = save("ordinary_retry", untilMillis.toString())
+    @Synchronized fun recordBestEffortFailure(id: String): Int {
+        val key = "capture_attempts_$id"; val count = (state(key) ?: "0").toInt() + 1
+        save(key,count.toString()); return count
+    }
+    @Synchronized fun finishBestEffortBatch(id: String, dropped: Boolean = false) = transaction {
+        sql("DELETE FROM events WHERE batch=?",id)
+        sql("UPDATE batches SET body='',response=? WHERE id=?",SignCollectionJson.canonical(buildJsonObject { put("state",if (dropped) "dropped" else "sent") }),id)
+        sql("DELETE FROM state WHERE key=?","capture_attempts_$id")
+    }
+    @Synchronized fun finishBestEffortCrop(id: String, dropped: Boolean = false) = transaction {
+        sql("UPDATE media SET bytes=X'',metadata='',handle=NULL,receipt=NULL,response=? WHERE id=?",SignCollectionJson.canonical(buildJsonObject { put("state",if (dropped) "dropped" else "sent") }),id)
+        sql("DELETE FROM state WHERE key=?","capture_attempts_$id")
+    }
     val deletionIsPending: Boolean @Synchronized get() = state("deletion") != null
     @Synchronized fun quarantineBatch(id: String, code: String) = transaction { finishFailedBatch(id, code) }
     @Synchronized fun quarantineControl(id: String, code: String) = transaction {
@@ -193,35 +206,6 @@ internal class SignCollectionStore(root: File, val gate: SignCollectionContractG
             part.forEach { sql("UPDATE events SET batch=? WHERE id=? AND batch=?", next, it.jsonObject.getValue("event_id").jsonPrimitive.content, id) }
         }
         sql("UPDATE batches SET body='',response=? WHERE id=?", SignCollectionJson.canonical(buildJsonObject { put("transport_error", "request_too_large") }), id)
-    }
-    @Synchronized fun applyBatchReceipt(receipt: JsonObject) = transaction {
-        val id = receipt.getValue("batch_id").jsonPrimitive.content
-        val row = rows("SELECT epoch,response FROM batches WHERE id=?", id).firstOrNull() ?: error("invalid_receipt")
-        val token = receipt.getValue("operation_receipt").jsonPrimitive.content
-        require(receipt.getValue("schema_version") == JsonPrimitive(1) && receipt.getValue("collection_epoch") == JsonPrimitive(row[0].toInt()) && receipt.getValue("durability").jsonPrimitive.content == "live_eu_committed" && token.length in 1..128)
-        val encoded = SignCollectionJson.canonical(receipt)
-        if (row[1].isNotEmpty()) { require(row[1] == encoded); return@transaction }
-        val expected = rows("SELECT id FROM events WHERE batch=?", id).map { it[0] }.toSet()
-        val results = receipt.getValue("results").jsonArray.map { it.jsonObject }
-        val ids = results.map { it.getValue("event_id").jsonPrimitive.content }
-        require(ids.toSet() == expected && ids.size == ids.toSet().size) { "invalid_receipt" }
-        results.forEach {
-            val status = it.getValue("status").jsonPrimitive.content
-            require(status in listOf("accepted", "duplicate", "rejected", "retry_later") && it.getValue("retryable") == JsonPrimitive(status == "retry_later"))
-        }
-        results.forEach {
-            val eventId = it.getValue("event_id").jsonPrimitive.content
-            when (it.getValue("status").jsonPrimitive.content) {
-                "accepted", "duplicate" -> sql("DELETE FROM events WHERE id=?", eventId)
-                "retry_later" -> {
-                    val time = clock.millis() / 1000.0
-                    val retryAt = if (it["code"]?.jsonPrimitive?.content == "daily_quota") (kotlin.math.floor(time / 86400) + 1) * 86400 else time + 60
-                    sql("UPDATE events SET batch=NULL,not_before=? WHERE id=?", retryAt.toString(), eventId)
-                }
-                else -> sql("UPDATE events SET state='quarantined',batch=NULL WHERE id=?", eventId)
-            }
-        }
-        sql("UPDATE batches SET body='',receipt=?,response=? WHERE id=?", token, encoded, id)
     }
     @Synchronized fun requestDeletion(): String = transaction {
         state("deletion")?.let { return@transaction it }
@@ -288,7 +272,7 @@ internal class SignCollectionStore(root: File, val gate: SignCollectionContractG
     @Synchronized fun enqueueAutomaticCrop(metadata: JsonObject, bytes: ByteArray) = transaction {
         val claim = authorization("sign_metadata", SignCollectionCapabilities.metadataDisclosure)
         require(metadata["privacy_preflight"] == JsonPrimitive("passed"))
-        insertCrop(metadata, bytes, SignCollectionCapabilities.cropDisclosure, null)
+        insertCrop(metadata, bytes, SignCollectionCapabilities.cropDisclosure, null, trustedEncoding = true)
         sql("UPDATE media SET auth=? WHERE id=?", SignCollectionJson.canonical(claim.wire), metadata.getValue("crop_id").jsonPrimitive.content)
     }
     /** Upgrade the former local review queue using its captured grants, without a new session. */
@@ -307,10 +291,11 @@ internal class SignCollectionStore(root: File, val gate: SignCollectionContractG
             }
         }
     }
-    private fun insertCrop(metadata: JsonObject, bytes: ByteArray, disclosure: String, processorDisclosure: String?, captured: Boolean = false) {
-        gate.validate(metadata, "crop")
+    private fun insertCrop(metadata: JsonObject, bytes: ByteArray, disclosure: String, processorDisclosure: String?, captured: Boolean = false, trustedEncoding: Boolean = false) {
+        if (!trustedEncoding) gate.validate(metadata, "crop")
         require(metadata.getValue("installation_id").jsonPrimitive.content == installationId && metadata.getValue("collection_epoch") == JsonPrimitive(collectionEpoch))
-        require(metadata.getValue("byte_length") == JsonPrimitive(bytes.size) && metadata.getValue("encoded_sha256").jsonPrimitive.content == SignCollectionJson.sha256(bytes))
+        val encodedHash = metadata.getValue("encoded_sha256").jsonPrimitive.content
+        require(metadata.getValue("byte_length") == JsonPrimitive(bytes.size) && (trustedEncoding || encodedHash == SignCollectionJson.sha256(bytes)))
         if (!captured) {
             val claim = authorization("crop_storage", disclosure)
             require(SignCollectionJson.canonical(metadata.getValue("collection_authorization")) == SignCollectionJson.canonical(claim.wire))
@@ -325,7 +310,7 @@ internal class SignCollectionStore(root: File, val gate: SignCollectionContractG
         rows("SELECT epoch,kind,digest FROM identities WHERE id=?", id).firstOrNull()?.let { require(it == listOf(collectionEpoch.toString(), "crop", digest)); return }
         val size = rows("SELECT (SELECT COALESCE(sum(length(bytes)),0) FROM media)+(SELECT COALESCE(sum(length(bytes)),0) FROM crop_reviews)")[0][0].toLong()
         require(size + bytes.size <= 1024L * 1024 * 1024) { "capacity" }
-        db.execSQL("INSERT INTO media(id,epoch,metadata,created,encoded_hash,bytes) VALUES(?,?,?,?,?,?)", arrayOf(id, collectionEpoch, text, clock.millis() / 1000.0, SignCollectionJson.sha256(bytes), bytes))
+        db.execSQL("INSERT INTO media(id,epoch,metadata,created,encoded_hash,bytes) VALUES(?,?,?,?,?,?)", arrayOf(id, collectionEpoch, text, clock.millis() / 1000.0, encodedHash, bytes))
         sql("INSERT INTO identities VALUES(?,?,?,?)", id, collectionEpoch.toString(), "crop", digest)
     }
     /** Local-only review. No privacy assertion is sent until explicit approval. */
@@ -386,25 +371,8 @@ internal class SignCollectionStore(root: File, val gate: SignCollectionContractG
     }
     @Synchronized fun nextCrop(): SignCollectionQueuedCrop? {
         check(state("deletion") == null) { "deletion_pending" }
-        return db.rawQuery("SELECT id,metadata,bytes,handle,receipt FROM media WHERE length(bytes)>0 AND created>=? ORDER BY created,id LIMIT 1", arrayOf((clock.millis() / 1000.0 - 7 * 86400).toString())).use { cursor ->
-            if (!cursor.moveToFirst()) null else SignCollectionQueuedCrop(cursor.getString(0), cursor.getString(1), cursor.getBlob(2), cursor.getString(3), cursor.getString(4))
-        }
-    }
-    @Synchronized fun applyCropReceipt(id: String, response: JsonObject) = transaction {
-        val row = rows("SELECT encoded_hash,receipt,metadata,auth FROM media WHERE id=?", id).firstOrNull() ?: error("invalid_receipt")
-        val token = response.getValue("operation_receipt").jsonPrimitive.content
-        require(response.getValue("sha256").jsonPrimitive.content == row[0] && token.length in 1..128 && (row[1].isEmpty() || row[1] == token))
-        when (response.getValue("state").jsonPrimitive.content) {
-            "reserved" -> {
-                val handle = response.getValue("handle").jsonPrimitive.content; require(handle.length in 1..128)
-                sql("UPDATE media SET handle=?,receipt=?,response=? WHERE id=?", handle, token, SignCollectionJson.canonical(response), id)
-            }
-            "media_durable" -> {
-                require(response.getValue("durability").jsonPrimitive.content == "live_eu_committed")
-                if (row[2].isNotEmpty()) { mediaStatus(row[2], row[3], "linked"); privacyCheckpointNeeded = true }
-                sql("UPDATE media SET bytes=X'',metadata='',handle=NULL,receipt=?,response=? WHERE id=?", token, SignCollectionJson.canonical(response), id)
-            }
-            else -> error("invalid_receipt")
+        return db.rawQuery("SELECT id,metadata,bytes FROM media WHERE length(bytes)>0 AND created>=? ORDER BY created,id LIMIT 1", arrayOf((clock.millis() / 1000.0 - 7 * 86400).toString())).use { cursor ->
+            if (!cursor.moveToFirst()) null else SignCollectionQueuedCrop(cursor.getString(0), cursor.getString(1), cursor.getBlob(2))
         }
     }
     private var privacyCheckpointNeeded = false

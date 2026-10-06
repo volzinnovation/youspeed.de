@@ -59,15 +59,11 @@ final class SignCollectionFoundationTests: XCTestCase {
         try store!.stageCrop(metadata: metadata, bytes: crop.bytes)
         XCTAssertNil(try store!.nextCrop()); XCTAssertEqual(try store!.cropReviewCount(),1)
         store!.endSession(); store = nil; store = try SignCollectionStore(root: root, gate: gate)
-        try store!.reviewCrop(id: id, approved: true)
+        try store!.migrateAutomaticCrops()
         XCTAssertEqual(try store!.nextCrop()?.bytes,crop.bytes)
-        try store!.applyCropReceipt(id: id, response: ["state":"reserved","handle":"scoped_handle","operation_receipt":"crop-receipt","sha256":crop.encodedHash])
-        try store!.applyCropReceipt(id: id, response: ["state":"media_durable","durability":"live_eu_committed","operation_receipt":"crop-receipt","sha256":crop.encodedHash])
+        try store!.finishBestEffortCrop(id: id)
         XCTAssertNil(try store!.nextCrop())
-        let batch = try XCTUnwrap(store!.prepareBatch()); XCTAssertEqual(batch.kind,"media_status")
-        let envelope = try SignCollectionJSON.parse(batch.body) as! [String:Any]
-        XCTAssertEqual((envelope["events"] as! [[String:Any]])[0]["status"] as? String,"linked")
-        XCTAssertEqual((envelope["events"] as! [[String:Any]])[0]["observation_id"] as? String,observation)
+        XCTAssertNil(try store!.prepareBatch()) // The backend creates the media link internally.
         try store!.withdraw(scope:"crop_storage",disclosure:SignCollectionCapabilities.cropDisclosure)
         XCTAssertEqual(try store!.cropReviewCount(),0)
     }

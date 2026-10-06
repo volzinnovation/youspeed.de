@@ -136,10 +136,15 @@ internal class SignCollectionCoordinator(private val context: Context, private v
         val allowed = enabled && !privacyChangePending; val token = generation
         upload = network.submit {
             val result = runCatching { transport.runOnce(available, allowed) }.getOrDefault("delivery_unavailable")
+            val delay = when (result) {
+                "crop_sent", "metadata_sent", "crop_dropped", "metadata_dropped", "batch_split" -> 1_000L
+                "backoff", "crop_delivery_unavailable", "delivery_unavailable" -> runCatching { transport.retryDelayMillis() }.getOrDefault(60_000L)
+                else -> null
+            }
             main.post { if (!closed && generation == token) {
                 if (!privacyChangePending) status = result
                 upload = null; refresh()
-                if (result in listOf("crop_committed", "metadata_committed", "batch_split")) main.postDelayed({ deliver() }, 1_000)
+                if (delay != null) main.postDelayed({ if (!closed && generation == token) deliver() }, delay)
             } }
         }
     }

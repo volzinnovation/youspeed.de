@@ -13,10 +13,6 @@ internal data class SignCollectionCapabilities(val metadataBytes: Int, val event
         const val metadataDisclosure = "youspeed-camera-use-pilot-1"
         const val cropDisclosure = "youspeed-crop-storage-pilot-1"
         fun decode(value: JsonObject): SignCollectionCapabilities {
-            require(value["contract_manifest_sha256"] == JsonPrimitive(SignCollectionContractGate.MANIFEST_SHA256))
-            require(value.getValue("schema_versions").jsonArray.contains(JsonPrimitive(1)))
-            require(value["one_way_uploads"] == JsonPrimitive(true))
-            require(value["durability"] == JsonPrimitive("live_eu_committed"))
             val limits = value.getValue("limits").jsonObject
             val metadata = limits.getValue("metadata_bytes").jsonPrimitive.int
             val event = limits.getValue("event_bytes").jsonPrimitive.int
@@ -37,7 +33,7 @@ internal data class SignCollectionCapabilities(val metadataBytes: Int, val event
 internal data class SignCollectionHTTPResponse(val status: Int, val body: JsonObject, val retryAfter: String? = null)
 internal fun interface SignCollectionRequesting {
     fun request(path: String, body: String?): SignCollectionHTTPResponse
-    fun upload(handle: String, bytes: ByteArray): SignCollectionHTTPResponse = error("unsupported_media")
+    fun captureCrop(metadata: String, bytes: ByteArray): SignCollectionHTTPResponse = error("unsupported_capture")
 }
 
 /** Anonymous HTTP with bounded replies; redirects/cookies/authentication are not used. */
@@ -51,9 +47,11 @@ internal class SignCollectionHTTPClient(baseURL: String = defaultBaseURL) : Sign
         require(path.isNotEmpty() && '/' !in path && '?' !in path)
         return send(path, if (body == null) "GET" else "POST", body?.toByteArray(Charsets.UTF_8), "application/json")
     }
-    override fun upload(handle: String, bytes: ByteArray): SignCollectionHTTPResponse {
-        require(Regex("^[A-Za-z0-9_-]{1,128}$").matches(handle) && bytes.size <= 5 * 1024 * 1024)
-        return send("media-uploads/$handle/content", "PUT", bytes, "application/octet-stream")
+    override fun captureCrop(metadata: String, bytes: ByteArray): SignCollectionHTTPResponse {
+        val json = metadata.toByteArray(Charsets.UTF_8)
+        require(json.size in 1..16384 && bytes.size <= 5 * 1024 * 1024)
+        val body = java.nio.ByteBuffer.allocate(4 + json.size + bytes.size).putInt(json.size).put(json).put(bytes).array()
+        return send("capture-crops", "POST", body, "application/vnd.youspeed.crop")
     }
     private fun send(path: String, method: String, body: ByteArray?, contentType: String): SignCollectionHTTPResponse {
         if (Thread.currentThread().isInterrupted) throw java.io.InterruptedIOException()
@@ -81,7 +79,7 @@ internal class SignCollectionHTTPClient(baseURL: String = defaultBaseURL) : Sign
             } ?: ByteArray(0)
             require(bytes.size <= 512 * 1024) { "invalid_receipt" }
             val value = runCatching { SignCollectionJson.parse(bytes.toString(Charsets.UTF_8)).jsonObject }.getOrNull()
-            require(status !in 200..299 || value != null) { "invalid_receipt" }
+            require(path.startsWith("capture-") || status == 204 || status !in 200..299 || value != null) { "invalid_receipt" }
             return SignCollectionHTTPResponse(status, value ?: JsonObject(emptyMap()), connection.getHeaderField("Retry-After"))
         } finally { connection.disconnect(); active = null }
     }
@@ -92,17 +90,21 @@ internal class SignCollectionUploadWorker(private val store: SignCollectionStore
     private var pollOffset = 0
     private var failures = 0
     private var mediaFailures = 0
+    private var cachedCapabilities: SignCollectionCapabilities? = null
+    private var capabilitiesUntil = 0L
     @Synchronized fun capabilities(): SignCollectionCapabilities {
-        require(store.gate.verified)
+        cachedCapabilities?.let { if (capabilitiesUntil > clock.millis()) return it }
         val response = client.request("capabilities", null); require(response.status == 200)
-        return SignCollectionCapabilities.decode(response.body)
+        return SignCollectionCapabilities.decode(response.body).also { cachedCapabilities = it; capabilitiesUntil = clock.millis() + 300_000 }
     }
+    @Synchronized fun retryDelayMillis(): Long = maxOf(1_000, maxOf(store.transportRetryMillis(), store.cropRetryMillis()) - clock.millis())
     @Synchronized fun runOnce(networkAvailable: Boolean, ordinaryDeliveryAllowed: Boolean): String {
         if (!networkAvailable) return "offline"
         if (store.pendingControls().isEmpty()) {
             if (!ordinaryDeliveryAllowed) return "contribution_paused"
         }
         if (store.transportRetryMillis() > clock.millis()) return "backoff"
+        var attemptedBatch: String? = null
         try {
             val capabilities = capabilities()
             for (index in 0 until 2) {
@@ -140,35 +142,52 @@ internal class SignCollectionUploadWorker(private val store: SignCollectionStore
             if (!capabilities.accepts(envelope["collection_authorization"])) return "disclosure_update_required"
             val events = envelope.getValue("events").jsonArray
             if (batch.body.toByteArray(Charsets.UTF_8).size > capabilities.metadataBytes || events.size > 100) { store.splitBatch(batch.id); return "batch_split" }
-            if (events.any { SignCollectionJson.canonical(it).toByteArray(Charsets.UTF_8).size > capabilities.eventBytes }) { store.quarantineBatch(batch.id, "event_too_large"); return "quarantined" }
-            val path = mapOf("sighting" to "sighting-batches", "correction" to "correction-batches", "media_status" to "media-status-batches").getValue(batch.kind)
+            val path = mapOf("sighting" to "capture-sightings", "correction" to "capture-corrections", "media_status" to "capture-media-status").getValue(batch.kind)
+            attemptedBatch = batch.id
             val response = client.request(path, batch.body)
-            if (response.status !in 200..299) return handle(response, batch = batch.id)
-            store.applyBatchReceipt(response.body); failures = 0; result = "metadata_committed"
+            attemptedBatch = null
+            if (response.status !in 200..299) {
+                if (response.status < 500 && response.status !in listOf(408,429) || store.recordBestEffortFailure(batch.id) >= 3) { store.finishBestEffortBatch(batch.id,true); return "metadata_dropped" }
+                return handle(response, batch = batch.id)
             }
-            return try { sendCrop(capabilities) ?: result } catch (error: Exception) {
+            store.finishBestEffortBatch(batch.id)
+            failures = 0; result = "metadata_sent"
+            }
+            // Drain a bounded group independently of the camera.
+            return try {
+                for (index in 0 until 8) {
+                    if (Thread.currentThread().isInterrupted) throw java.io.InterruptedIOException()
+                    val cropResult = sendCrop(capabilities) ?: break
+                    result = cropResult
+                    if (cropResult != "crop_sent") break
+                }
+                result
+            } catch (error: Exception) {
                 if (Thread.currentThread().isInterrupted) throw error
                 mediaFailures++; store.deferCrop(clock.millis() + ((minOf(300.0, 2.0.pow(minOf(mediaFailures, 8))) + jitter()) * 1000).toLong())
                 "crop_delivery_unavailable"
             }
         } catch (error: Exception) {
+            if (Thread.currentThread().isInterrupted) throw error
+            attemptedBatch?.let { if (store.recordBestEffortFailure(it) >= 3) { store.finishBestEffortBatch(it,true); return "metadata_dropped" } }
             failures++; store.deferTransport(clock.millis() + (minOf(300.0, 2.0.pow(minOf(failures, 8))) + jitter()).times(1000).toLong())
             throw error
         }
     }
     private fun sendCrop(capabilities: SignCollectionCapabilities): String? {
-        if (store.cropRetryMillis() > clock.millis()) return null
+        if (store.cropRetryMillis() > clock.millis()) return "backoff"
         val crop = store.nextCrop() ?: return null
-        val manifest = SignCollectionJson.parse(crop.metadata).jsonObject
-        if (capabilities.mediaBytes <= 0 || !capabilities.accepts(manifest["collection_authorization"])) return "crop_disclosure_update_required"
-        if (crop.bytes.size > capabilities.mediaBytes) { store.discardCrop(crop.id); return "crop_rejected" }
-        val reserved = client.request("media-uploads", crop.metadata)
-        if (reserved.status !in 200..299) return handle(reserved, crop = crop.id)
-        store.applyCropReceipt(crop.id, reserved.body)
-        if (reserved.body["state"] == JsonPrimitive("media_durable")) { mediaFailures = 0; return "crop_committed" }
-        val response = client.upload(reserved.body.getValue("handle").jsonPrimitive.content, crop.bytes)
-        if (response.status !in 200..299) return handle(response, crop = crop.id)
-        store.applyCropReceipt(crop.id, response.body); mediaFailures = 0; return "crop_committed"
+        if (crop.bytes.size > capabilities.mediaBytes) { store.finishBestEffortCrop(crop.id,true); return "crop_dropped" }
+        try {
+            val response = client.captureCrop(crop.metadata,crop.bytes)
+            if (response.status in 200..299) { store.finishBestEffortCrop(crop.id); mediaFailures = 0; return "crop_sent" }
+            if (response.status < 500 && response.status !in listOf(408,429) || store.recordBestEffortFailure(crop.id) >= 3) { store.finishBestEffortCrop(crop.id,true); return "crop_dropped" }
+            return handle(response,crop=crop.id)
+        } catch (error: Exception) {
+            if (Thread.currentThread().isInterrupted) throw error
+            if (store.recordBestEffortFailure(crop.id) >= 3) { store.finishBestEffortCrop(crop.id,true); return "crop_dropped" }
+            throw error
+        }
     }
     private fun handle(response: SignCollectionHTTPResponse, batch: String? = null, control: String? = null, crop: String? = null): String {
         val raw = response.body["code"]?.jsonPrimitive?.content ?: response.body["error"]?.jsonPrimitive?.content ?: "server_rejected"
@@ -187,7 +206,6 @@ internal class SignCollectionUploadWorker(private val store: SignCollectionStore
             else store.deferTransport(clock.millis() + ((delay + jitter()) * 1000).toLong())
             return "backoff"
         }
-        if (response.status == 410 && code == "reservation_expired") return "crop_reservation_expired"
         if (crop != null) store.discardCrop(crop, if (code == "media_expired") "expired" else "missing")
         if (batch != null) store.quarantineBatch(batch, code)
         if (control != null) store.quarantineControl(control, code)

@@ -9,11 +9,7 @@ struct SignCollectionCapabilities {
     let disclosures: [String: [String]]
 
     init(_ value: [String: Any]) throws {
-        guard value["contract_manifest_sha256"] as? String == SignCollectionContractGate.manifestSHA256,
-              (value["schema_versions"] as? [Int])?.contains(1) == true,
-              SignCollectionJSON.boolean(value["one_way_uploads"]) == true,
-              value["durability"] as? String == "live_eu_committed",
-              let limits = value["limits"] as? [String: Any],
+        guard let limits = value["limits"] as? [String: Any],
               let metadata = SignCollectionJSON.integer(limits["metadata_bytes"]), metadata > 0, metadata <= 512 * 1024,
               let event = SignCollectionJSON.integer(limits["event_bytes"]), event > 0, event <= SignCollectionStore.maximumEventBytes,
               let versions = value["disclosure_versions"] as? [String: [String]],
@@ -37,10 +33,10 @@ struct SignCollectionHTTPResponse {
 
 protocol SignCollectionRequesting {
     func request(path: String, body: String?) async throws -> SignCollectionHTTPResponse
-    func upload(handle: String, bytes: Data) async throws -> SignCollectionHTTPResponse
+    func captureCrop(metadata: String, bytes: Data) async throws -> SignCollectionHTTPResponse
 }
 extension SignCollectionRequesting {
-    func upload(handle: String, bytes: Data) async throws -> SignCollectionHTTPResponse { throw SignCollectionError.invalidContract }
+    func captureCrop(metadata: String, bytes: Data) async throws -> SignCollectionHTTPResponse { throw SignCollectionError.invalidContract }
 }
 
 /// Ephemeral, anonymous HTTP. No cookies, authentication or redirects carrying receipts.
@@ -69,14 +65,14 @@ final class SignCollectionHTTPClient: NSObject, SignCollectionRequesting, URLSes
         request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
         return try await send(request)
     }
-    func upload(handle: String, bytes: Data) async throws -> SignCollectionHTTPResponse {
-        guard handle.range(of: "^[A-Za-z0-9_-]{1,128}$", options: .regularExpression) != nil, bytes.count <= 5 * 1024 * 1024 else { throw SignCollectionError.invalidContract }
-        var request = URLRequest(url: base.appendingPathComponent("media-uploads").appendingPathComponent(handle).appendingPathComponent("content"))
-        request.httpMethod = "PUT"; request.httpBody = bytes
-        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("identity", forHTTPHeaderField: "Content-Encoding")
-        request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+    func captureCrop(metadata: String, bytes: Data) async throws -> SignCollectionHTTPResponse {
+        let json = Data(metadata.utf8), length = json.count
+        guard length > 0, length <= 16384, bytes.count <= 5 * 1024 * 1024 else { throw SignCollectionError.capacity }
+        var body = Data([UInt8((length >> 24) & 255), UInt8((length >> 16) & 255), UInt8((length >> 8) & 255), UInt8(length & 255)])
+        body.append(json); body.append(bytes)
+        var request = URLRequest(url: base.appendingPathComponent("capture-crops"))
+        request.httpMethod = "POST"; request.httpBody = body
+        request.setValue("application/vnd.youspeed.crop", forHTTPHeaderField: "Content-Type")
         return try await send(request)
     }
     private func send(_ request: URLRequest) async throws -> SignCollectionHTTPResponse {
@@ -84,7 +80,7 @@ final class SignCollectionHTTPClient: NSObject, SignCollectionRequesting, URLSes
         try Task.checkCancellation()
         guard data.count <= 512 * 1024, let response = response as? HTTPURLResponse else { throw SignCollectionError.invalidReceipt }
         let value = (try? SignCollectionJSON.parse(String(decoding: data, as: UTF8.self))) as? [String: Any]
-        guard !(200..<300).contains(response.statusCode) || value != nil else { throw SignCollectionError.invalidReceipt }
+        guard request.url?.lastPathComponent.hasPrefix("capture-") == true || response.statusCode == 204 || !(200..<300).contains(response.statusCode) || value != nil else { throw SignCollectionError.invalidReceipt }
         return SignCollectionHTTPResponse(status: response.statusCode, body: value ?? [:], retryAfter: response.value(forHTTPHeaderField: "Retry-After"))
     }
     func close() { session.invalidateAndCancel() }
@@ -102,14 +98,22 @@ actor SignCollectionUploadWorker {
     private var pollOffset = 0
     private var failures = 0
     private var mediaFailures = 0
+    private var cachedCapabilities: SignCollectionCapabilities?
+    private var capabilitiesUntil = Date.distantPast
     init(store: SignCollectionStore, client: SignCollectionRequesting, now: @escaping () -> Date = Date.init, jitter: @escaping () -> Double = { Double.random(in: 0...1) }) {
         self.store = store; self.client = client; self.now = now; self.jitter = jitter
     }
     func capabilities() async throws -> SignCollectionCapabilities {
-        guard store.gate.verified else { throw SignCollectionError.invalidContract }
+        if let cachedCapabilities, capabilitiesUntil > now() { return cachedCapabilities }
         let response = try await client.request(path: "capabilities", body: nil)
         guard response.status == 200 else { throw SignCollectionError.invalidContract }
-        return try SignCollectionCapabilities(response.body)
+        let value = try SignCollectionCapabilities(response.body)
+        cachedCapabilities = value; capabilitiesUntil = now().addingTimeInterval(300)
+        return value
+    }
+
+    func retryDelay() throws -> TimeInterval {
+        max(1, max(try store.transportRetryDate(), try store.cropRetryDate()).timeIntervalSince(now()))
     }
 
     /// Call on foreground/resume and a bounded timer. Never sleep a camera thread.
@@ -121,6 +125,7 @@ actor SignCollectionUploadWorker {
         }
         guard try store.transportRetryDate() <= now() else { return "backoff" }
         running = true; defer { running = false }
+        var attemptedBatch: String?
         do {
             let capabilities = try await capabilities()
             // Unsent local controls first; the active deletion always leads.
@@ -163,17 +168,30 @@ actor SignCollectionUploadWorker {
             guard capabilities.accepts(envelope["collection_authorization"]) else { return "disclosure_update_required" }
             let events = envelope["events"] as! [[String: Any]]
             if batch.body.utf8.count > capabilities.metadataBytes || events.count > 100 { try store.splitBatch(id: batch.id); return "batch_split" }
-            guard try events.allSatisfy({ try SignCollectionJSON.canonical($0).utf8.count <= capabilities.eventBytes }) else {
-                try store.quarantineBatch(id: batch.id, code: "event_too_large"); return "quarantined"
-            }
-            let path = ["sighting": "sighting-batches", "correction": "correction-batches", "media_status": "media-status-batches"][batch.kind]!
+            let path = ["sighting":"capture-sightings", "correction":"capture-corrections", "media_status":"capture-media-status"][batch.kind]!
+            attemptedBatch = batch.id
             let response = try await client.request(path: path, body: batch.body)
-            if !(200..<300).contains(response.status) { return try handle(response, batch: batch.id) }
-            try store.applyBatchReceipt(response.body); failures = 0
-                result = "metadata_committed"
+            attemptedBatch = nil
+            if !(200..<300).contains(response.status) {
+                if try (response.status < 500 && ![408,429].contains(response.status)) || (store.recordBestEffortFailure(id: batch.id) >= 3) {
+                    try store.finishBestEffortBatch(id: batch.id, dropped: true); return "metadata_dropped"
+                }
+                return try handle(response, batch: batch.id)
             }
-            // At most one bounded optional image per cycle; metadata always leads.
-            do { return try await sendCrop(capabilities) ?? result }
+            try store.finishBestEffortBatch(id: batch.id)
+            failures = 0
+                result = "metadata_sent"
+            }
+            // Drain a bounded group independently of the camera.
+            do {
+                for _ in 0..<8 {
+                    try Task.checkCancellation()
+                    guard let cropResult = try await sendCrop(capabilities) else { break }
+                    result = cropResult
+                    if cropResult != "crop_sent" { break }
+                }
+                return result
+            }
             catch is CancellationError { throw CancellationError() }
             catch {
                 mediaFailures += 1
@@ -182,6 +200,9 @@ actor SignCollectionUploadWorker {
             }
         } catch is CancellationError { throw CancellationError() }
         catch {
+            if let attemptedBatch, try store.recordBestEffortFailure(id: attemptedBatch) >= 3 {
+                try store.finishBestEffortBatch(id: attemptedBatch, dropped: true); return "metadata_dropped"
+            }
             failures += 1
             try store.deferTransport(until: now().addingTimeInterval(min(300, pow(2, Double(min(failures, 8)))) + jitter()))
             throw error
@@ -189,20 +210,25 @@ actor SignCollectionUploadWorker {
     }
 
     private func sendCrop(_ capabilities: SignCollectionCapabilities) async throws -> String? {
-        guard try store.cropRetryDate() <= now(), let crop = try store.nextCrop() else { return nil }
-        let manifest = try SignCollectionJSON.parse(crop.metadata) as! [String: Any]
-        guard capabilities.mediaBytes > 0, capabilities.accepts(manifest["collection_authorization"]) else { return "crop_disclosure_update_required" }
-        guard crop.bytes.count <= capabilities.mediaBytes else { try store.discardCrop(id: crop.id); return "crop_rejected" }
-        // Re-reserving identical metadata also refreshes a handle that expired after 24h.
-        let reserved = try await client.request(path: "media-uploads", body: crop.metadata)
-        guard (200..<300).contains(reserved.status) else { return try handle(reserved, crop: crop.id) }
-        try store.applyCropReceipt(id: crop.id, response: reserved.body)
-        if reserved.body["state"] as? String == "media_durable" { mediaFailures = 0; return "crop_committed" }
-        guard let mediaHandle = reserved.body["handle"] as? String else { throw SignCollectionError.invalidReceipt }
-        let response = try await client.upload(handle: mediaHandle, bytes: crop.bytes)
-        guard (200..<300).contains(response.status) else { return try handle(response, crop: crop.id) }
-        try store.applyCropReceipt(id: crop.id, response: response.body); mediaFailures = 0
-        return "crop_committed"
+        guard try store.cropRetryDate() <= now() else { return "backoff" }
+        guard let crop = try store.nextCrop() else { return nil }
+        guard crop.bytes.count <= capabilities.mediaBytes else { try store.finishBestEffortCrop(id: crop.id, dropped: true); return "crop_dropped" }
+        do {
+            let response = try await client.captureCrop(metadata: crop.metadata, bytes: crop.bytes)
+            if (200..<300).contains(response.status) {
+                try store.finishBestEffortCrop(id: crop.id); mediaFailures = 0; return "crop_sent"
+            }
+            if try (response.status < 500 && ![408,429].contains(response.status)) || (store.recordBestEffortFailure(id: crop.id) >= 3) {
+                try store.finishBestEffortCrop(id: crop.id, dropped: true); return "crop_dropped"
+            }
+            return try handle(response, crop: crop.id)
+        } catch is CancellationError { throw CancellationError() }
+        catch {
+            if try store.recordBestEffortFailure(id: crop.id) >= 3 {
+                try store.finishBestEffortCrop(id: crop.id, dropped: true); return "crop_dropped"
+            }
+            throw error
+        }
     }
 
     private func handle(_ response: SignCollectionHTTPResponse, batch: String? = nil, control: String? = nil, crop: String? = nil) throws -> String {
@@ -226,7 +252,6 @@ actor SignCollectionUploadWorker {
             else { try store.deferTransport(until: now().addingTimeInterval(delay + jitter())) }
             return "backoff"
         }
-        if response.status == 410 && code == "reservation_expired" { return "crop_reservation_expired" }
         if let crop { try store.discardCrop(id: crop, status: code == "media_expired" ? "expired" : "missing") }
         if let batch { try store.quarantineBatch(id: batch, code: code) }
         if let control { try store.quarantineControl(id: control, code: code) }

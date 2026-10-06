@@ -79,10 +79,8 @@ class SignCollectionContractTests {
         observer.freeze("attempt-unassociated", "unknown")
         assertNull(observer.correction("attempt-unassociated", "voice", at.plusSeconds(3)))
     }
-    @Test fun capabilityContractIgnoresCommercialAndExternalProcessorFlags() {
+    @Test fun capabilitiesNeedOnlyLimitsAndDisclosures() {
         val capabilities = buildJsonObject {
-            put("contract_manifest_sha256", SignCollectionContractGate.MANIFEST_SHA256); put("schema_versions", JsonArray(listOf(JsonPrimitive(1))))
-            put("one_way_uploads", true); put("durability", "live_eu_committed")
             put("limits", buildJsonObject { put("metadata_bytes", 524288); put("event_bytes", 16384) })
             put("disclosure_versions", buildJsonObject {
                 put("sign_metadata", JsonArray(listOf(JsonPrimitive(SignCollectionCapabilities.metadataDisclosure))))
@@ -90,7 +88,8 @@ class SignCollectionContractTests {
             }); put("enforcement_enabled", true); put("external_processor_enabled", true)
         }
         assertEquals(16384, SignCollectionCapabilities.decode(capabilities).eventBytes)
-        assertThrows(Exception::class.java) { SignCollectionCapabilities.decode(JsonObject(capabilities + ("contract_manifest_sha256" to JsonPrimitive("changed")))) }
+        assertEquals(16384, SignCollectionCapabilities.decode(JsonObject(capabilities + ("contract_manifest_sha256" to JsonPrimitive("ignored")))).eventBytes)
+        assertThrows(Exception::class.java) { SignCollectionCapabilities.decode(JsonObject(capabilities - "limits")) }
     }
 
 }

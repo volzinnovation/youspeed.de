@@ -117,3 +117,26 @@ this snapshot does not claim that the full iPhone backlog has completed.
 Earlier deployment attempts had failed with
 `kAMDMobileImageMounterDeviceLocked`; the paired installation-service fallback
 had also failed before the successful CoreDevice installation.
+
+
+## Completed backlog and sole fast protocol (6 October 2026)
+
+The final iPhone snapshot confirms **all 228 original crops uploaded**, zero
+retained queued bytes for them and no review rows. Build 10038 finished that
+backlog using the already deployed server. The Android backlog had already
+finished as recorded above. No recurring receipt/hash monitor remains.
+
+The owner then accepted occasional loss to prioritize speed and directed removal
+of the old protocol from the v1.4 development branch. The new client/backend
+source uses one POST per crop, empty 204 completion, no reservations or ordinary
+receipt/hash checks, eight crops per cycle, cached capabilities and at most three
+attempts. Both client implementations and the server specifications agree on
+[the sole protocol](../shared/tsr/collection-upload-v2.md). Backend capture limits
+are 120 requests/minute; image inspection/archive hashing run off the intake path.
+
+Signed iPhone and Android build 10039 passed; all 647 Android unit tests and the
+Swift host transport/storage/privacy checks passed. Backend: 75 tests passed,
+19 PostgreSQL-dependent tests skipped locally; Ruff passed. Native Android tests
+compiled, but the phone is now disconnected. New builds are ready for coordinated
+activation after the matching backend deploys; neither client has an old-server
+fallback. Fresh driving measurements are still needed for end-to-end performance.

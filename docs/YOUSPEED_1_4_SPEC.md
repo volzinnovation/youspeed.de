@@ -1,8 +1,8 @@
 # YouSpeed 1.4 app specification
 
-Status: implementation proposal, revised 4 October 2026. This document owns the
+Status: implementation proposal, revised 6 October 2026. This document owns the
 iPhone and Android requirements for version 1.4: controls, local capture and
-state, evidence schemas, durable buffered uploads, privacy actions and future
+state, evidence schemas, bounded best-effort uploads, privacy actions and future
 access behavior. Released builds do not gain these features from this document. Branch implementation progress and acceptance evidence are recorded in [YOUSPEED_1_4_APP_IMPLEMENTATION.md](YOUSPEED_1_4_APP_IMPLEMENTATION.md).
 
 The separate [server specification](https://github.com/volzinnovation/Woladen.de-analytics/blob/main/docs/youspeed/YOUSPEED_1_4_SERVER_SPEC.md)
@@ -15,7 +15,7 @@ implementation. Neither authorizes deployment or publication.
 
 The owner requests global sign collection attributed to a random installation
 UUID without a YouSpeed account; class, GPS, time and original model scores;
-automatic and manual observations; corrections including Wrong/Falsch; durable
+automatic observations; corrections including Wrong/Falsch; bounded
 offline buffering; a Panoramax recognized-sign capture setting and gallery
 filter; automatic downward-expanded sign crops for server-side online LLM
 interpretation; and reviewed bundle enrichment or proposed OSM contributions.
@@ -171,7 +171,7 @@ This local bookkeeping is separate from the protected driving policy and does
 not create/upload a contribution-session record without authorization.
 
 Session-only acceptance authorizes collection during that session and delayed
-buffered delivery of its saved evidence after the drive is inactive. Session end
+buffered delivery of its saved evidence whenever internet is available. Session end
 prevents new collection under that acceptance, rather than silently revoking
 already authorized pending uploads. A session-only refusal/cancellation creates
 no new evidence in that session and does not withdraw earlier authorized buffered
@@ -206,7 +206,7 @@ to validate before release.
 | Panoramax: Capture recognized traffic signs only | Separate future-capture setting, initially off; existing distance/time behavior remains when off. |
 | Panoramax: Show traffic-sign captures only | Gallery visibility filter, initially off; no approval, exclusion or deletion of hidden originals. |
 | Automatic upload connectivity | Upload whenever internet is available, including metered/mobile connections and while the camera is active. No separate network or camera-idle toggle. |
-| Buffered upload status | Pending count/bytes/oldest age, last durable acceptance, waiting reason, rejected/lost count and deletion progress. Accepted is separate from analytics/credit. |
+| Buffered upload status | Pending count/bytes/oldest age, last send, waiting reason, dropped count and deletion progress. Sent is separate from durable storage, analytics and credit. |
 | Delete my observations | Always available; clears pending private evidence, pauses contribution, requests deletion directly by UUID and shows progress. UUID retained. |
 | Future access and Restore purchases | Paid/contribution/grace state and verified progress; purchase/restore and privacy actions remain available when ordinary use is restricted. |
 
@@ -237,7 +237,7 @@ capture, local save and server acceptance are distinct states.
 ## Encounter lifecycle and observation payload
 
 A frame detection is transient model output. A sighting is a consolidated
-encounter with one visual sign panel, or a labeled manual observation. A
+encounter with one visual sign panel. A
 physical sign is a server hypothesis, not an app-generated rounded GPS/class
 key. Panels in one assembly have separate sightings and an assembly link.
 
@@ -317,15 +317,15 @@ The correction schema carries correction UUID/time, input modality/locale,
 normalized intent, frozen target type/ID, association evidence/status, optional
 replacement fields/crop and retracted correction ID. No audio/raw transcript.
 Edits/undo append records; original scores/evidence remain unchanged.
-Corrections may arrive before targets and receive durable
-`target_resolution=pending`; missing targets are not retargeted.
+Corrections may arrive before targets; background processing retains unresolved
+targets as pending rather than retargeting them.
 This channel has no cross-installation evidence browsing/feedback UI.
 
 ## Automatic sign capture
 
 Ordinary detections create sightings and their exact representative crops
 automatically. No manual entry, box selection or review action is offered.
-The legacy `manual_capture` wire shape remains only for compatibility.
+The app does not create manual observations.
 
 ## Panoramax recognized-sign capture
 
@@ -395,8 +395,9 @@ space/row layout in fixtures. Edited boxes create new crop/supersession records.
 Use bounded JPEG/PNG with orientation applied; remove EXIF/XMP/GPS/device
 identifiers from bytes. Location/time is in structured metadata. The product owner requires automatic upload of every captured crop, with no
 separate crop setting, consent prompt, manual entry or user review (5 October
-2026). Automatic file preflight strips embedded metadata and validates geometry,
-size and digest; it does not assert face/plate anonymization or user review.
+2026). The capture encoder applies geometry and strips embedded metadata. Queue
+insertion trusts its output without decoding or hashing it again; this does
+not assert face/plate anonymization or user review.
 Never invent removed/unreadable text.
 Proposed bounds: 5 MiB encoded, 16 megapixels decoded. Provider resize is a
 separately identified derivative with transform/hash, not silent geometry change.
@@ -408,155 +409,38 @@ does not block metadata. Server online LLM extraction uses a server-held key
 absent from apps/bundles/events/logs. White supplementary text, temporary limits
 and French lane arrows may remain unresolved; output never activates a limit.
 
-## Durable buffers and automatic delivery
+## Bounded buffers and fast automatic delivery
 
-Dedicated SQLite queues use app-private storage excluded from backup. Commit
-immutable finalized payload, UUID, semantic digest, collection epoch and pending
-state atomically before displaying saved. Verify WAL/`synchronous=FULL` and
-platform durability, migrations/corruption recovery. No camera-thread disk wait.
+The owner replaced lossless contribution delivery with best-effort upload on
+6 October 2026. [The shared v2 upload contract](../shared/tsr/collection-upload-v2.md)
+is authoritative for both clients and the server.
 
-Proposed metadata/correction limits: 20,000 events or 50 MiB, whichever first,
-30 days from local commit; reserve 1,000 events/5 MiB within totals for
-corrections. Never evict deletion/permission-withdrawal controls. Crops:
-separate 1 GiB/7-day local queue; manual working frames: maximum 24 hours.
+Keep collection off the camera thread. Preserve existing bounded local queues
+and retention limits, but allow ordinary signs/crops to be lost. Each item gets
+at most three attempts. A successful HTTP status is enough to release local
+bytes; it is not a durable-storage or analytics guarantee. Respect temporary
+server retry deadlines directly and discard permanent failures promptly.
 
-At caps, transactionally evict oldest unleased ordinary pending sightings and
-persist loss count/reason/time. Never evict owned in-flight requests; refuse
-new data visibly if leased data exhausts capacity. Exhausted correction reserve
-visibly refuses persistence. Crop overflow/expiry removes unleased bytes and
-appends unavailable status, preserving sighting. Count spool/temporary bytes;
-no unlimited memory fallback or false uploaded state.
-
-States: `provisional → pending → leased → accepted`, plus
-`retry_wait`, `quarantined`, `expired`, `cleared`.
-Leases have expiry/generation; startup returns orphans to retry. Persist exact
-request bytes before transport. Remove rows/spool only after durable accepted/
-identical-duplicate reconciliation. Unknown/missing response IDs clear nothing.
-
-Automatically attempt work on launch/resume, internet availability and
-best-effort OS opportunities, including active camera use and mobile networks.
-Deliver small batches without waiting to fill; do not open camera/run inference
-to upload.
-Proposed limits: 100 events/batch, 512 KiB uncompressed, 16 KiB/event, one
-in-flight batch per UUID. Starting a drive does not suspend transfers; privacy
-actions still fence callbacks and accepted responses reconcile idempotently.
-
-Persistent exponential backoff/full jitter: proposed 5-second initial, 6-hour
-cap, honoring longer Retry-After. Network changes cannot create parallel workers.
-Privacy controls/corrections have priority; target arrival order is not assumed.
-
-| Outcome | Client action |
-| --- | --- |
-| Loss/timeout/lost response | Retry unchanged IDs/content; acceptance may already have occurred. |
-| Per-event accepted/duplicate | Atomically clear only acknowledged identical records. |
-| Retry later/429/transient 5xx | Retain work, honor backoff/Retry-After. |
-| 413 | Split into new batch IDs with same events; quarantine single oversized record. |
-| Unsupported schema/permanent rejection | Quarantine affected events; valid siblings continue. |
-| Changed content under same batch/event ID | Quarantine conflict, never hide it with a fresh event ID. |
-| Old epoch 410 | Reject old work permanently; never relabel it into a newer epoch. |
-| New epoch 409 while deletion pending | Keep contribution paused until active-data-removal acknowledgment. |
-| Withdrawal/cancellation | Clear pending private data, invalidate callbacks; accepted data requires deletion. |
-| Invalid control response/configuration | Pause visibly; no invented device-authentication refresh. |
-
-iPhone uses file-backed background URLSession tasks, durable task mapping and
-foreground delivery. Android uses unique bounded WorkManager work with network
-constraints. Neither replaces SQLite. Force-quit/force-stop/OS constraints may
-postpone delivery until resume; no guaranteed stopped-app flushing. Test network
-cost/constraint adapters on supported versions and document OS differences.
+Every automatically captured crop travels in one request with its metadata.
+Remove reservations, upload handles, per-crop receipt validation/polling,
+client-side linked-status requests and repeated encoded-image hash checks.
+Transfer bounded groups of eight crops; sightings/corrections remain batches
+of up to 100. Cache capabilities for five minutes. Use available internet,
+including cellular, while recognition continues. Both platforms share this
+behavior. Sharing withdrawal and deletion continue to clear/cancel private work.
 
 ## Mobile API and shared schemas
 
-Proposed HTTPS base: `https://live-eu.woladen.de/youspeed/v1`.
-Freeze schemas, endpoint names, digests, maximum sizes and examples jointly.
-Contribution envelopes include installation UUID, `collection_epoch` initially
-0, and `collection_authorization`: `scope`, `disclosure_version`, `decided_at`,
-`consent_generation`, `state` and `origin=client_claim`. These are client claims,
-not ownership proof; the server cannot verify who made that authorization.
-The epoch orders deletion and is public, not a credential.
-Session lifetime, the prompt-shown marker and Don't ask again are local consent
-bookkeeping. They do not change the agreed collection_authorization fields or
-create a server ownership-verification claim. Buffered events retain their
-captured authorization snapshot across delayed delivery.
+Use the v2 single-request endpoints and empty HTTP 204 success described in the
+shared contract. The server accepts ordinary evidence without comprehensive
+per-event/provenance/geometry checks. It stores opaque images and links them
+internally, then interprets images and calculates archive identities in
+background work. The ordinary capture burst limit is 120 requests per minute.
 
-| Interface | App use |
-| --- | --- |
-| POST /sighting-batches | Immutable consolidated detector/manual evidence; durable per-event outcomes. |
-| POST /correction-batches | Append-only correction/retraction, unresolved target allowed. |
-| POST /media-uploads | Idempotent crop reservation by UUID/epoch/crop ID/digest/length; opaque handle. |
-| PUT /media-uploads/{handle}/content | Bounded crop bytes and separate durable media acknowledgment. |
-| POST /media-status-batches | Immutable unavailable/superseded/link status, no sighting rewrite. |
-| POST /consent-events | Durable crop/processor permission generations and withdrawal. |
-| POST /observation-deletions | Body installation_id, collection_epoch, deletion_request_id; returns deletion_id, operation_receipt, next_collection_epoch and deletion_pending. |
-| POST /operation-status | Opaque receipt in body; returns operation counts/state only, including accepted/media/deletion progress; no observation/media/catalog download. |
-| GET /capabilities | Schema versions/limits only; cannot enable sensors/consent/access gate. |
-| Future access-policy/status/store-proof/entitlement interfaces | Bounded credit/access status and verified purchases; finalize for future release, no contribution-data download. |
-
-Illustrative manual batch; synthetic IDs, not release data:
-
-```json
-{
-  "schema_version": 1,
-  "batch_id": "b467e55e-0f44-45fa-93db-0b0839c47228",
-  "installation_id": "d3e3c09c-2fc6-4f05-9698-67b8c3c30212",
-  "collection_epoch": 0,
-  "collection_authorization": {
-    "scope": "sign_metadata",
-    "disclosure_version": "camera-contribution-1",
-    "decided_at": "2026-10-04T09:55:00.000Z",
-    "consent_generation": 1,
-    "state": "granted",
-    "origin": "client_claim"
-  },
-  "events": [{
-    "schema_version": 1,
-    "event_id": "15e77710-981b-4db4-9c65-a35b4b21b60a",
-    "collection_session_id": "348e8edc-e5ae-45a8-a59b-b03f9c15c973",
-    "observer_version": "sighting-observer-1",
-    "source_kind": "manual_capture",
-    "app": {"platform": "ios", "version": "1.4", "build": "example"},
-    "first_seen_at": "2026-10-04T10:00:00.000Z",
-    "last_seen_at": "2026-10-04T10:00:00.000Z",
-    "representative_frame_at": "2026-10-04T10:00:00.000Z",
-    "duration_ms": 0,
-    "clock_quality": "device_unverified",
-    "vehicle_position": null,
-    "sign_position": null,
-    "classification": {
-      "country": null, "model_label": null, "canonical_code": null,
-      "family": null, "value": null, "unit": null, "role": "unknown",
-      "mapping_revision": null, "mapping_sha256": null,
-      "alternatives": [], "unknown_reason": "manual_unclassified"
-    },
-    "scores": null,
-    "model": null,
-    "evidence": {
-      "track_id": null, "assembly_id": null, "analyzed_frames": 0,
-      "finalization_reason": "manual_action",
-      "quality_flags": ["unlocated", "media_unavailable"]
-    },
-    "road_context": null,
-    "media_refs": []
-  }]
-}
-```
-
-Detector fixtures include original detector/classifier scores and invoked
-components with domains/calibration lineage. Null classifier score means not
-invoked/unavailable, never zero; raw 0–1 scores are not probabilities.
-
-ACK includes schema/batch/opaque operation receipt, time/durability/epoch and one
-result per recoverable input: `accepted`, `duplicate`, bounded
-`rejected` code, or `retry_later`. Acceptance is separate from analytics/
-credit. Invalid envelopes cause no effects; partial-valid effects are explicit.
-Frozen batch conflict returns 409. Lost responses retry exact bytes; receipt
-status contains counts/state, not source observations. No receipt proves UUID
-ownership.
-
-Additive schemas cover sighting, correction, crop, media status, authorization/
-permission event, deletion request/receipt, batch ACK/error and future access.
-Canonical semantic JSON digests exclude delivery time/transport whitespace and
-share cross-language number/null fixtures. Pin agreed hashes across repositories.
-Existing recognition/passage and protected speed-policy bytes stay unchanged.
+The existing evidence fields remain available. The old ordinary upload routes,
+reservation protocol and client fallback are removed from this v1.4 development
+branch. Permission/deletion controls, bundle activation and speed-reference
+semantics retain their respective existing contracts.
 
 ## Delete my observations and epoch barrier
 

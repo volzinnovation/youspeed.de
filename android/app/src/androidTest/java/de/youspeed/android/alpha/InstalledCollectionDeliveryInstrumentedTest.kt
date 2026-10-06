@@ -8,7 +8,7 @@ import org.junit.Test
 
 /** Explicit device acceptance sends only the installation's existing real queue. */
 class InstalledCollectionDeliveryInstrumentedTest {
-    @Test fun existingRealCropsReceiveDurableReceipts() {
+    @Test fun existingRealCropsAreSent() {
         assumeTrue(InstrumentationRegistry.getArguments().getString("send_real_queue") == "true")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val store = SignCollectionFoundation(context).store.getOrThrow()
@@ -19,8 +19,8 @@ class InstalledCollectionDeliveryInstrumentedTest {
                 override fun request(path: String,body: String?): SignCollectionHTTPResponse = client.request(path,body).also {
                     Log.i("YouSpeedCollectionAcceptance","$path status=${it.status}")
                 }
-                override fun upload(handle: String,bytes: ByteArray) = client.upload(handle,bytes).also {
-                    Log.i("YouSpeedCollectionAcceptance","crop_content status=${it.status}")
+                override fun captureCrop(metadata: String,bytes: ByteArray) = client.captureCrop(metadata,bytes).also {
+                    Log.i("YouSpeedCollectionAcceptance","capture-crops status=${it.status}")
                 }
             }
             val worker = SignCollectionUploadWorker(store,measured)
@@ -28,12 +28,11 @@ class InstalledCollectionDeliveryInstrumentedTest {
             while (store.nextCrop() != null && cycles++ < 30) {
                 val result = worker.runOnce(true,true)
                 Log.i("YouSpeedCollectionAcceptance","cycle=$cycles result=$result")
-                assertTrue("Automatic delivery result: $result",result in listOf("crop_committed","metadata_committed"))
+                assertTrue("Automatic delivery result: $result",result in listOf("crop_sent","metadata_sent"))
                 // Respect the server request budget while exercising the real worker.
                 Thread.sleep(7000)
             }
             assertNull(store.nextCrop()); assertEquals(0,store.cropReviewCount())
-            worker.runOnce(true,true) // append the final crop's linked status
         } finally { store.close() }
     }
 }

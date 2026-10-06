@@ -153,12 +153,17 @@ import CoreGraphics
             do { result = try await worker.runOnce(networkAvailable: available, ordinaryDeliveryAllowed: allowed) }
             catch is CancellationError { return }
             catch { result = "delivery_unavailable" }
+            let delay: TimeInterval?
+            if ["crop_sent", "metadata_sent", "crop_dropped", "metadata_dropped", "batch_split"].contains(result) { delay = 1 }
+            else if ["backoff", "crop_delivery_unavailable", "delivery_unavailable"].contains(result) {
+                delay = (try? await worker.retryDelay()) ?? 60
+            } else { delay = nil }
             guard let self, token == self.generation else { return }
             if !self.privacyChangePending { self.status = result }
             self.upload = nil; self.refresh()
-            if ["crop_committed", "metadata_committed", "batch_split"].contains(result) {
-                Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] _ in
-                    Task { @MainActor in self?.deliver() }
+            if let delay {
+                Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+                    Task { @MainActor in if self?.generation == token { self?.deliver() } }
                 }
             }
         }
