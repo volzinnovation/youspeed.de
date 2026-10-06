@@ -171,6 +171,8 @@ import CoreGraphics
     func observe(_ emission: TrafficSignRuntimeEmission, pack: TrafficSignVerifiedModelPack?, location: CLLocation?) {
         guard enabled, authorized, cameraActive, let session, let pack, emission.event.source == .liveFrame, !framePending else { return }
         framePending = true
+        // Snapshot the fix for this analyzed frame before asynchronous storage.
+        let framePosition = Self.position(location, at: emission.event.frameTimestampUtc)
         let cropRequested = cropsAuthorized, token = generation
         let app = ["platform": "ios", "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.4",
                    "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"]
@@ -190,7 +192,7 @@ import CoreGraphics
             }
             guard !components.isEmpty else { return }
             let model: [String: Any] = ["pack_id": event.packId, "pack_version": "manifest-schema-\(pack.manifest.schemaVersion)", "pack_sha256": hash, "components": components]
-            let position = Self.position(location, at: at)
+            let position = framePosition
             let eligible = Array(emission.collectionDetections.filter { $0.boundingBox.isValid && $0.rawScore.isFinite && $0.rawScore >= $0.classThreshold }.prefix(64))
             let presentationMatches = event.candidate.map { candidate in eligible.filter { $0.rawLabel == candidate.rawLabel && $0.boundingBox.intersectionOverUnion(with: candidate.boundingBox) >= 0.5 }.count } ?? 0
             let detections = eligible.map { detection -> SignCollectionObserver.Detection in
@@ -211,20 +213,27 @@ import CoreGraphics
                 return .init(key: hash + ":" + detection.rawLabel, box: [box.x,box.y,box.width,box.height], payload: payload, presentationTrack: presentation)
             }
             var cropCount = 0, upright: CGImage?
-            try capture.observer.observe(at: at, detections: detections) { observation in
-                try store.enqueue(kind: "sighting", event: observation, disclosure: SignCollectionCapabilities.metadataDisclosure)
+            try capture.observer.observe(at: at, detections: detections, captureCrop: { candidate in
                 guard cropRequested, cropCount < 4, let frame = emission.collectionFrame,
-                      let box = (observation["evidence"] as? [String: Any])?["normalized_box"] as? [String: Double] else { return }
+                      candidate.box.count == 4 else { return .skipped }
+                let box = Dictionary(uniqueKeysWithValues: zip(["x", "y", "width", "height"], candidate.box))
                 do {
-                    let claim = try store.claim(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure)
                     cropCount += 1
+                    let claim = try store.claim(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure)
                     if upright == nil { upright = try frame.image() }
                     let crop = try SignCollectionCrop.generate(upright: upright!, box: box, hashSource: false)
-                    let metadata = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: observation["event_id"] as! String,
-                        installationID: try store.installationID, epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: at,
-                        localFrameToken: frame.token, privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: claim)
+                    let metadata = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: candidate.observationID,
+                        installationID: try store.installationID, epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: candidate.frameAt,
+                        localFrameToken: frame.token, privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: claim,
+                        vehiclePosition: framePosition)
                     try store.enqueueAutomaticCrop(metadata: metadata, bytes: crop.bytes)
-                } catch { Task { @MainActor [weak self] in if self?.generation == token { self?.status = "crop_capture_unavailable" } } }
+                    return .stored
+                } catch {
+                    Task { @MainActor [weak self] in if self?.generation == token { self?.status = "crop_capture_unavailable" } }
+                    return .failed
+                }
+            }) { observation in
+                try store.enqueue(kind: "sighting", event: observation, disclosure: SignCollectionCapabilities.metadataDisclosure)
             }
         }
     }

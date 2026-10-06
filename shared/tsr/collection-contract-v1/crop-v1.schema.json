@@ -88,6 +88,91 @@
       ],
       "title": "Box",
       "type": "object"
+    },
+    "Position": {
+      "additionalProperties": false,
+      "properties": {
+        "alignment": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Alignment",
+          "type": "string"
+        },
+        "course_accuracy_degrees": {
+          "anyOf": [
+            {
+              "maximum": 180,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Course Accuracy Degrees"
+        },
+        "course_degrees": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 360,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Course Degrees"
+        },
+        "fix_at": {
+          "format": "date-time",
+          "title": "Fix At",
+          "type": "string"
+        },
+        "frame_fix_delta_ms": {
+          "maximum": 86400000,
+          "minimum": -86400000,
+          "title": "Frame Fix Delta Ms",
+          "type": "number"
+        },
+        "horizontal_accuracy_m": {
+          "maximum": 100000,
+          "minimum": 0,
+          "title": "Horizontal Accuracy M",
+          "type": "number"
+        },
+        "latitude": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Latitude",
+          "type": "number"
+        },
+        "longitude": {
+          "maximum": 180,
+          "minimum": -180,
+          "title": "Longitude",
+          "type": "number"
+        },
+        "source": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "latitude",
+        "longitude",
+        "horizontal_accuracy_m",
+        "fix_at",
+        "frame_fix_delta_ms",
+        "source",
+        "alignment"
+      ],
+      "title": "Position",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -287,6 +372,17 @@
     },
     "supplied_box": {
       "$ref": "#/$defs/Box"
+    },
+    "vehicle_position": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Position"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     }
   },
   "required": [

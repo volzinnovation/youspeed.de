@@ -4,6 +4,12 @@
 
 **Backend-Crops** (`/inspector/#crops`) zeigt die gespeicherten PNG-/JPEG-Bytes,
 Zeichenklasse, Scores, Aufnahmezeit, App, Crop-Geometrie und zugehörige Beobachtung.
+Die Details zeigen Fahrzeugposition, GPS-Kurs, Kurs-/Positionsgenauigkeit,
+GPS-Fixzeit und den vorzeichenbehafteten Frame/Fix-Zeitabstand. Neue Crops nutzen
+ihre eigene `vehicle_position`; ältere Crops ohne dieses Feld zeigen ausdrücklich
+die Position der Beobachtung. Ein expliziter Nullwert übernimmt keine ältere
+Position oder Fahrtrichtung. GPS-Kurs beschreibt die Fahrtrichtung, nicht die
+kalibrierte Kameraausrichtung.
 Die orange Box markiert das ursprüngliche Zeichen innerhalb des erweiterten
 Ausschnitts. Filter: Gerät (Installations-ID), Land, Erfassungsart,
 Klasse/Crop-/Beobachtungs-ID und UTC-Zeitraum. Die Geräteauswahl enthält alle

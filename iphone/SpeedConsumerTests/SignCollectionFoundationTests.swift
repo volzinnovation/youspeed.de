@@ -9,6 +9,67 @@ final class SignCollectionFoundationTests: XCTestCase {
             return try Data(contentsOf: root.appendingPathComponent(path))
         }
     }
+    func testRepeatCropsKeepExactFramesAndOneDurableSighting() throws {
+        let gate = try gate()
+        let contractRoot = try XCTUnwrap(Bundle.main.url(forResource: "collection-contract-v1", withExtension: nil))
+        let batch = try SignCollectionJSON.parse(String(contentsOf: contractRoot.appendingPathComponent("fixtures/sighting-batch-v1.json"), encoding: .utf8)) as! [String: Any]
+        let fixture = (batch["events"] as! [[String: Any]])[0]
+        let start = Date()
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("repeat-crops-" + SignCollectionJSON.uuid())
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try SignCollectionStore(root: root, gate: gate, now: { start })
+        try store.beginSession(SignCollectionJSON.uuid())
+        _ = try store.decide(scope: "sign_metadata", disclosure: SignCollectionCapabilities.metadataDisclosure, granted: true, dontAskAgain: false)
+        try store.authorizeAutomaticCrops()
+        let context = try XCTUnwrap(CGContext(data: nil, width: 100, height: 100, bitsPerComponent: 8, bytesPerRow: 400,
+            space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue))
+        context.setFillColor(CGColor(gray: 0.5, alpha: 1)); context.fill(CGRect(x: 0, y: 0, width: 100, height: 100))
+        let image = try XCTUnwrap(context.makeImage()), observer = SignCollectionObserver()
+        var manifests = [[String: Any]](), failure: Error?
+        for (ms, size) in [(0, 0.2), (100, 0.2), (599, 0.2), (600, 0.3)] {
+            let detection = SignCollectionObserver.Detection(key: "sign", box: [0.1, 0.1, size, size], payload: fixture, presentationTrack: nil)
+            try observer.observe(at: start.addingTimeInterval(Double(ms) / 1000), detections: [detection], captureCrop: { candidate in
+                do {
+                    let crop = try SignCollectionCrop.generate(upright: image,
+                        box: Dictionary(uniqueKeysWithValues: zip(["x", "y", "width", "height"], candidate.box)), hashSource: false)
+                    var position = fixture["vehicle_position"] as! [String: Any]
+                    position["latitude"] = 47.0 + Double(ms) / 1_000_000
+                    position["course_degrees"] = Double(ms) / 10
+                    position["fix_at"] = SignCollectionJSON.utc(candidate.frameAt)
+                    position["frame_fix_delta_ms"] = 0
+                    let manifest = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: candidate.observationID, installationID: try store.installationID,
+                        epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: candidate.frameAt, localFrameToken: "frame-\(ms)",
+                        privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: try store.claim(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure),
+                        vehiclePosition: position)
+                    try gate.validate(manifest, model: "crop")
+                    try store.enqueueAutomaticCrop(metadata: manifest, bytes: crop.bytes)
+                    manifests.append(manifest); return .stored
+                } catch { failure = error; return .failed }
+            }) { try store.enqueue(kind: "sighting", event: $0, disclosure: SignCollectionCapabilities.metadataDisclosure) }
+        }
+        if let failure { throw failure }
+        XCTAssertEqual(try store.pendingCount(), 1); XCTAssertEqual(manifests.count, 2)
+        XCTAssertEqual(manifests[0]["observation_id"] as? String, manifests[1]["observation_id"] as? String)
+        XCTAssertNotEqual(manifests[0]["crop_id"] as? String, manifests[1]["crop_id"] as? String)
+        XCTAssertEqual(manifests[1]["source_frame_at"] as? String, SignCollectionJSON.utc(start.addingTimeInterval(0.6)))
+        XCTAssertEqual(manifests[1]["local_frame_token"] as? String, "frame-600")
+        XCTAssertEqual(manifests[1]["original_box"] as? [Int], [10, 10, 40, 40])
+        XCTAssertEqual((manifests[0]["vehicle_position"] as? [String: Any])?["course_degrees"] as? Double, 10)
+        XCTAssertEqual((manifests[1]["vehicle_position"] as? [String: Any])?["course_degrees"] as? Double, 60)
+        XCTAssertEqual((manifests[1]["vehicle_position"] as? [String: Any])?["fix_at"] as? String, manifests[1]["source_frame_at"] as? String)
+        var queued = [[String: Any]]()
+        for _ in 0..<2 {
+            let crop = try XCTUnwrap(store.nextCrop())
+            queued.append(try SignCollectionJSON.parse(crop.metadata) as! [String: Any])
+            try store.finishBestEffortCrop(id: crop.id)
+        }
+        XCTAssertEqual(Set(queued.map { $0["crop_id"] as! String }), Set(manifests.map { $0["crop_id"] as! String }))
+        for saved in queued {
+            let original = try XCTUnwrap(manifests.first { $0["crop_id"] as? String == saved["crop_id"] as? String })
+            XCTAssertEqual(try SignCollectionJSON.canonical(saved["vehicle_position"]!), try SignCollectionJSON.canonical(original["vehicle_position"]!))
+        }
+        XCTAssertNil(try store.nextCrop())
+    }
     func testPackagedGoldenContractAndIdentityAcrossRestart() throws {
         let gate = try gate(); XCTAssertTrue(gate.verified); XCTAssertTrue(gate.liveTransportAllowed)
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("collection-" + SignCollectionJSON.uuid())

@@ -124,6 +124,21 @@
     description.replaceChildren(link);
   }
 
+  function addFramePosition(manifest, observation) {
+    const cropPosition = Object.prototype.hasOwnProperty.call(manifest, "vehicle_position");
+    // Explicitly missing crop GPS must never inherit an older sighting's fix.
+    const position = cropPosition ? manifest.vehicle_position : observation?.vehicle_position;
+    addMetadata("Positionsbezug", cropPosition ? "Crop-Aufnahme" : "Beobachtung · ältere Crop-Metadaten");
+    addVehiclePosition(position);
+    const number = (value, unit) => Number.isFinite(value) ? `${value} ${unit}` : null;
+    addMetadata("Fahrtrichtung (GPS-Kurs)", number(position?.course_degrees, "°"));
+    addMetadata("Kursgenauigkeit", number(position?.course_accuracy_degrees, "°"));
+    addMetadata("Positionsgenauigkeit", number(position?.horizontal_accuracy_m, "m"));
+    addMetadata("GPS-Fix (UTC)", position?.fix_at);
+    addMetadata("Frame − GPS-Fix", number(position?.frame_fix_delta_ms, "ms"));
+    addMetadata("Positionsabgleich", position?.alignment);
+  }
+
   async function select(row, button) {
     clearImage();
     selected = row;
@@ -143,7 +158,7 @@
     addMetadata("Detektor / Klassifikator", `${observation?.scores?.detector_raw ?? "—"} / ${observation?.scores?.classifier_raw ?? "—"}`);
     addMetadata("Bild", `${manifest.decoded_width} × ${manifest.decoded_height} · ${manifest.encoding} · ${manifest.byte_length} Bytes`);
     addMetadata("Kontext unten", `${manifest.actual_extra_height} px${manifest.bottom_clipped ? " · abgeschnitten" : ""}`);
-    addVehiclePosition(observation?.vehicle_position);
+    addFramePosition(manifest, observation);
     addMetadata("Läuft ab (UTC)", new Date(row.expires * 1000).toISOString());
     addMetadata("SHA-256", row.digest);
     el("raw").textContent = JSON.stringify({ installation_id: row.installation, collection_epoch: row.epoch, manifest, observation }, null, 2);

@@ -323,7 +323,7 @@ This channel has no cross-installation evidence browsing/feedback UI.
 
 ## Automatic sign capture
 
-Ordinary detections create sightings and their exact representative crops
+Ordinary detections create sightings and crops from their exact analyzed frames
 automatically. No manual entry, box selection or review action is offered.
 The app does not create manual observations.
 
@@ -387,6 +387,9 @@ Preserve both boxes; halving a clipped crop cannot recover the original.
 Crop metadata includes UUID, target sighting/panel/assembly, source kind,
 exact frame token/time/dimensions, original supplied coordinates, transform/
 version, resolved sign/requested/actual crop boxes, extra-height/truncation,
+optional nullable frame-associated `vehicle_position` using the sighting Position
+contract (GPS coordinates, accuracy, fix time, signed frame/fix delta, source,
+alignment, GPS course and course accuracy),
 orientation/redaction/encoding versions, optional upright-source pixel SHA-256,
 encoded SHA-256/byte length and decoded dimensions. Missing source hash is null;
 the full source need not be retained/uploaded. Define pixel hashing color
@@ -404,7 +407,22 @@ separately identified derivative with transform/hash, not silent geometry change
 
 Temporary write, flush, atomic rename and required directory synchronization
 precede durable queue-reference commit. Missing referenced files fail visibly.
-Keep one bounded best crop, not a stream; unavailable/expired optional media
+Keep a bounded crop sequence per encounter: six regular samples at least 500 ms
+apart and two additional samples only when normalized sign area is at least
+1.5 times the largest successfully saved area. Later crops share the durable
+sighting ID but carry independent crop IDs, source frame times, tokens and boxes.
+Each crop snapshots the current frame's location fix before asynchronous storage;
+it does not reuse the original sighting's position or course. No usable fix is
+explicit null, and unavailable course remains null even when coordinates exist.
+The stored fix time and frame/fix delta describe nearest-fix alignment rather
+than asserting an exact exposure-time pose. GPS course is a camera-heading proxy
+only with a fixed mount and known mounting angle; camera calibration is separate.
+Legacy crops may omit the field; inspector fallback must label their position
+and course as belonging to the sighting.
+At most four crop attempts use any one analyzed frame; skipped work consumes no
+interval or encounter slot, and failed storage retries at the bounded cadence.
+This policy was approved by the product owner on 6 October; it supersedes
+selecting only one best private crop. Unavailable/expired optional media
 does not block metadata. Server online LLM extraction uses a server-held key
 absent from apps/bundles/events/logs. White supplementary text, temporary limits
 and French lane arrows may remain unresolved; output never activates a limit.

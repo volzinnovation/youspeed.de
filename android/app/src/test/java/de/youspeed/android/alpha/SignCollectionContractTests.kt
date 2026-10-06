@@ -8,6 +8,21 @@ import org.junit.Test
 class SignCollectionContractTests {
     private val root = File("../../shared/tsr/collection-contract-v1")
     private fun gate() = SignCollectionContractGate { File(root, it).readBytes() }
+    @Test fun cropFramePositionIsOptionalAndCourseIsValidated() {
+        val gate = gate()
+        val crop = SignCollectionJson.parse(File(root, "fixtures/crop-v1.json").readText()).jsonObject
+        val position = SignCollectionJson.parse(File(root, "fixtures/sighting-batch-v1.json").readText())
+            .jsonObject.getValue("events").jsonArray[0].jsonObject.getValue("vehicle_position").jsonObject
+        gate.validate(crop, "crop") // Legacy manifest without the field.
+        gate.validate(JsonObject(crop + ("vehicle_position" to JsonNull)), "crop")
+        gate.validate(JsonObject(crop + ("vehicle_position" to position)), "crop")
+        val unavailableCourse = JsonObject(position + mapOf("course_degrees" to JsonNull, "course_accuracy_degrees" to JsonNull))
+        gate.validate(JsonObject(crop + ("vehicle_position" to unavailableCourse)), "crop")
+        for ((key, value) in listOf("course_degrees" to 360, "course_degrees" to -1, "course_accuracy_degrees" to 181, "horizontal_accuracy_m" to -1)) {
+            val invalid = JsonObject(position + (key to JsonPrimitive(value)))
+            assertThrows(Exception::class.java) { gate.validate(JsonObject(crop + ("vehicle_position" to invalid)), "crop") }
+        }
+    }
     @Test fun pinnedVectorsAndSchemasPassWithVerifiedTransport() {
         val gate = gate(); assertTrue(gate.verified); assertTrue(gate.liveTransportAllowed)
         listOf("sighting", "manual").forEach { name ->
@@ -63,13 +78,13 @@ class SignCollectionContractTests {
         val second = first.copy(key = "supplementary", box = listOf(.6,.1,.2,.2), presentationTrack = "presentation-2")
         val at = java.time.Instant.parse("2026-10-05T10:00:00Z")
         val sightings = mutableListOf<JsonObject>()
-        observer.observe(at, listOf(first, second), sightings::add)
-        observer.observe(at.plusMillis(100), listOf(first, second), sightings::add)
-        observer.observe(at.plusMillis(200), listOf(first, second), sightings::add)
+        observer.observe(at, listOf(first, second), commit = sightings::add)
+        observer.observe(at.plusMillis(100), listOf(first, second), commit = sightings::add)
+        observer.observe(at.plusMillis(200), listOf(first, second), commit = sightings::add)
         assertEquals(2, sightings.size)
         sightings.forEach { gate().validate(it, "sighting") }
         observer.freeze("attempt-1", "presentation-1")
-        observer.observe(at.plusSeconds(3), emptyList(), sightings::add)
+        observer.observe(at.plusSeconds(3), emptyList(), commit = sightings::add)
         val correction = observer.correction("attempt-1", "voice", at.plusSeconds(3))!!
         assertEquals(sightings[0]["event_id"], correction["target_id"])
         gate().validate(correction, "correction")

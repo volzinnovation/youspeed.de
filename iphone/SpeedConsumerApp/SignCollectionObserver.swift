@@ -2,7 +2,8 @@ import Foundation
 
 /// Collection identity is independent of speed-limit applicability and its tracks.
 /// Two distinct frames spanning 100 ms qualify a sighting, which is committed
-/// immediately. Continuing frames suppress duplicates until 2 s without support.
+/// immediately. Continuing frames share that sighting's identity but can supply
+/// a bounded crop sequence until 2 s without support.
 final class SignCollectionObserver {
     struct Detection {
         let key: String
@@ -10,6 +11,18 @@ final class SignCollectionObserver {
         let payload: [String: Any]
         let presentationTrack: String?
     }
+    struct CropCandidate {
+        let observationID: String
+        let frameAt: Date
+        let box: [Double]
+    }
+    enum CropCaptureResult { case stored, failed, skipped }
+    // Six regular samples plus two reserved for a substantially larger view.
+    // No image buffers are retained here; selection uses existing box geometry.
+    private static let regularCropLimit = 6
+    private static let maximumCropLimit = 8
+    private static let minimumCropIntervalMilliseconds = 500.0
+    private static let improvementAreaRatio = 1.5
     private struct Track {
         let id: String
         let key: String
@@ -18,13 +31,18 @@ final class SignCollectionObserver {
         var box: [Double]
         var frames: Int
         var committed: Bool
+        var cropCount = 0
+        var lastCropAttempt: Date?
+        var largestCropArea = 0.0
     }
     private var tracks: [Track] = []
     private var presentations: [String: String] = [:]
     private var attempts: [String: String] = [:]
     private var frameTime: Date?
     func reset() { tracks.removeAll(); presentations.removeAll(); attempts.removeAll(); frameTime = nil }
-    func observe(at: Date, detections: [Detection], commit: ([String: Any]) throws -> Void) throws {
+    func observe(at: Date, detections: [Detection],
+                 captureCrop: ((CropCandidate) -> CropCaptureResult)? = nil,
+                 commit: ([String: Any]) throws -> Void) throws {
         if let previous = frameTime, at <= previous { return }
         frameTime = at
         tracks.removeAll { at.timeIntervalSince($0.last) > 2 }
@@ -54,6 +72,24 @@ final class SignCollectionObserver {
                 evidence["finalization_reason"] = "qualified_track"; event["evidence"] = evidence
                 try commit(event) // Mark only after the durable transaction succeeds.
                 tracks[selected].committed = true
+            }
+            if tracks[selected].committed, let captureCrop {
+                let saved = tracks[selected]
+                let area = detection.box[2] * detection.box[3]
+                let intervalReady = saved.lastCropAttempt.map {
+                    (at.timeIntervalSince($0) * 1000).rounded() >= Self.minimumCropIntervalMilliseconds
+                } ?? true
+                if intervalReady, saved.cropCount < Self.maximumCropLimit,
+                   saved.cropCount < Self.regularCropLimit || area >= saved.largestCropArea * Self.improvementAreaRatio {
+                    let result = captureCrop(CropCandidate(observationID: saved.id, frameAt: at, box: detection.box))
+                    // Missing frames/per-frame capacity consume neither a slot nor
+                    // the interval. Actual failures retry at the bounded cadence.
+                    if result != .skipped { tracks[selected].lastCropAttempt = at }
+                    if result == .stored {
+                        tracks[selected].cropCount += 1
+                        tracks[selected].largestCropArea = max(saved.largestCropArea, area)
+                    }
+                }
             }
             if tracks[selected].committed, let presentation = detection.presentationTrack {
                 if presentations.count >= 512, presentations[presentation] == nil { presentations.removeAll() }

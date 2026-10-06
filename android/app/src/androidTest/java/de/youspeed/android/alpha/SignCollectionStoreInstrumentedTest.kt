@@ -20,6 +20,53 @@ class SignCollectionStoreInstrumentedTest {
         override fun withZone(zone: ZoneId): Clock = this
         override fun instant() = time
     }
+    @Test fun repeatCropsKeepExactFramesAndOneDurableSighting() {
+        val gate = SignCollectionContractGate { path -> context.assets.open("tsr/collection-contract-v1/$path").use { it.readBytes() } }
+        val fixture = SignCollectionJson.parse(context.assets.open("tsr/collection-contract-v1/fixtures/sighting-batch-v1.json").bufferedReader().use { it.readText() })
+            .jsonObject.getValue("events").jsonArray[0].jsonObject
+        val root = File(context.noBackupFilesDir, "repeat-crops-${SignCollectionJson.uuid()}")
+        val clock = TestClock(); val store = SignCollectionStore(root, gate, clock)
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        try {
+            bitmap.eraseColor(0xff808080.toInt()); bitmap.setHasAlpha(false)
+            store.beginSession(SignCollectionJson.uuid())
+            store.decide("sign_metadata", SignCollectionCapabilities.metadataDisclosure, true, false); store.authorizeAutomaticCrops()
+            val observer = SignCollectionObserver()
+            val manifests = mutableListOf<JsonObject>()
+            for ((ms, size) in listOf(0L to .2, 100L to .2, 599L to .2, 600L to .3)) {
+                val detection = SignCollectionObserver.Detection("sign", listOf(.1, .1, size, size), fixture, null)
+                observer.observe(clock.instant().plusMillis(ms), listOf(detection), captureCrop = { candidate ->
+                    val crop = SignCollectionCrop.generate(bitmap, listOf("x", "y", "width", "height").zip(candidate.box).toMap(), hashSource = false)
+                    val position = JsonObject(fixture.getValue("vehicle_position").jsonObject + mapOf(
+                        "latitude" to JsonPrimitive(47.0 + ms / 1_000_000.0), "course_degrees" to JsonPrimitive(ms / 10.0),
+                        "fix_at" to JsonPrimitive(candidate.frameAt.toString()), "frame_fix_delta_ms" to JsonPrimitive(0)))
+                    val metadata = crop.metadata(SignCollectionJson.uuid(), candidate.observationId, store.installationId, store.collectionEpoch,
+                        "detector", candidate.frameAt, "frame-$ms", "passed", "metadata-strip-1", store.claim("crop_storage", SignCollectionCapabilities.cropDisclosure),
+                        vehiclePosition = position)
+                    gate.validate(metadata, "crop"); store.enqueueAutomaticCrop(metadata, crop.bytes)
+                    manifests += metadata; SignCollectionObserver.CropCaptureResult.STORED
+                }) { store.enqueue("sighting", it, SignCollectionCapabilities.metadataDisclosure) }
+            }
+            assertEquals(1, store.pendingCount()); assertEquals(2, manifests.size)
+            assertEquals(manifests[0]["observation_id"], manifests[1]["observation_id"])
+            assertNotEquals(manifests[0]["crop_id"], manifests[1]["crop_id"])
+            assertEquals(clock.instant().plusMillis(600).toString(), manifests[1].getValue("source_frame_at").jsonPrimitive.content)
+            assertEquals("frame-600", manifests[1].getValue("local_frame_token").jsonPrimitive.content)
+            assertEquals(listOf(10, 10, 40, 40), manifests[1].getValue("original_box").jsonArray.map { it.jsonPrimitive.int })
+            assertEquals(10.0, manifests[0].getValue("vehicle_position").jsonObject.getValue("course_degrees").jsonPrimitive.double, 0.0)
+            assertEquals(60.0, manifests[1].getValue("vehicle_position").jsonObject.getValue("course_degrees").jsonPrimitive.double, 0.0)
+            assertEquals(manifests[1]["source_frame_at"], manifests[1].getValue("vehicle_position").jsonObject["fix_at"])
+            val queued = mutableListOf<JsonObject>()
+            repeat(2) {
+                val crop = store.nextCrop()!!
+                queued += SignCollectionJson.parse(crop.metadata).jsonObject
+                store.finishBestEffortCrop(crop.id)
+            }
+            assertEquals(manifests.map { it["crop_id"] }.toSet(), queued.map { it["crop_id"] }.toSet())
+            queued.forEach { saved -> assertEquals(manifests.first { it["crop_id"] == saved["crop_id"] }["vehicle_position"], saved["vehicle_position"]) }
+            assertNull(store.nextCrop())
+        } finally { bitmap.recycle(); store.close(); root.deleteRecursively() }
+    }
     @Test fun sqliteRestartSharingAndDeletionBarrier() {
         val gate = SignCollectionContractGate { path -> context.assets.open("tsr/collection-contract-v1/$path").use { it.readBytes() } }
         val root = File(context.noBackupFilesDir, "collection-test-${SignCollectionJson.uuid()}")

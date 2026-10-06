@@ -32,7 +32,7 @@ struct SignCollectionCrop {
     let sourceHeight: Int
     var encodedHash: String { SignCollectionJSON.sha256(bytes) }
 
-    /// The caller supplies the exact representative frame, already orientation
+    /// The caller supplies the exact sampled frame, already orientation
     /// corrected into sRGB. No nearby Panoramax frame or EXIF metadata is reused.
     static func generate(upright: CGImage, box: [String: Double], hashSource: Bool = true) throws -> SignCollectionCrop {
         guard upright.colorSpace?.name == CGColorSpace.sRGB,
@@ -82,10 +82,11 @@ struct SignCollectionCrop {
 
     func metadata(cropID: String, observationID: String, installationID: String, epoch: Int, sourceKind: String, frameAt: Date,
                   localFrameToken: String?, privacyPreflight: String, redactionVersion: String, collectionClaim: SignCollectionClaim,
-                  processorClaim: SignCollectionClaim? = nil) -> [String: Any] {
+                  processorClaim: SignCollectionClaim? = nil, vehiclePosition: Any = NSNull()) -> [String: Any] {
         var result = geometry.wire
         result.merge(["schema_version": 1, "crop_id": cropID, "observation_id": observationID, "installation_id": installationID, "collection_epoch": epoch,
                       "source_kind": sourceKind, "source_frame_at": SignCollectionJSON.utc(frameAt), "source_width": sourceWidth, "source_height": sourceHeight,
+                      "vehicle_position": vehiclePosition,
                       "source_upright_sha256": sourceHash as Any? ?? NSNull(), "local_frame_token": localFrameToken as Any? ?? NSNull(), "encoded_sha256": encodedHash, "byte_length": bytes.count,
                       "decoded_width": geometry.actual[2]-geometry.actual[0], "decoded_height": geometry.actual[3]-geometry.actual[1], "encoding": "PNG",
                       "orientation_version": "upright-1", "crop_version": "downward-1", "redaction_version": redactionVersion, "redaction_masks": [],

@@ -81,6 +81,15 @@ try store!.beginSession(SignCollectionJSON.uuid())
 let cropClaim = try store!.decide(scope: "crop_storage", disclosure: "crop-1", granted: true, dontAskAgain: false)
 let cropID = SignCollectionJSON.uuid()
 let cropMetadata = encoded.metadata(cropID: cropID, observationID: SignCollectionJSON.uuid(), installationID: installation, epoch: 1, sourceKind: "manual_capture", frameAt: instant, localFrameToken: "synthetic-frame", privacyPreflight: "user_reviewed", redactionVersion: "review-1", collectionClaim: cropClaim)
+try check(cropMetadata["vehicle_position"] is NSNull, "missing crop GPS is explicit rather than inherited")
+try gate.validate(cropMetadata, model: "crop")
+var positionedCrop = cropMetadata
+positionedCrop["vehicle_position"] = event["vehicle_position"]
+try gate.validate(positionedCrop, model: "crop")
+var invalidPosition = event["vehicle_position"] as! [String: Any]
+invalidPosition["course_degrees"] = 360
+positionedCrop["vehicle_position"] = invalidPosition
+rejects { try gate.validate(positionedCrop, model: "crop") }
 try store!.enqueueCrop(metadata: cropMetadata, bytes: encoded.bytes, disclosure: "crop-1")
 try Data(SignCollectionJSON.canonical(cropMetadata).utf8).write(to: outputRoot.appendingPathComponent("swift-crop.json"))
 try encoded.bytes.write(to: outputRoot.appendingPathComponent("swift-crop.png"))
@@ -219,6 +228,8 @@ var transportChecksResult: Result<Void, Error>?
 Task.detached {
     do {
         try await runCollectionTransportChecks(gate: gate, root: outputRoot, fixture: event)
+        try runCollectionRepeatCropChecks(gate: gate, root: outputRoot, fixture: event,
+            vectors: contractRoot.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("tests/tsr/collection/repeat-crops-v1.json"))
         if CommandLine.arguments.contains("--resume-live") { try await resumeCollectionHostCleanup(gate: gate, root: outputRoot) }
         transportChecksResult = .success(())
     }

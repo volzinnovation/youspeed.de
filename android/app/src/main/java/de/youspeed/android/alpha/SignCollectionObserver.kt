@@ -6,13 +6,23 @@ import java.time.Instant
 /** Independent of numeric speed policy; matches the iPhone qualification rule. */
 internal class SignCollectionObserver {
     data class Detection(val key: String, val box: List<Double>, val payload: JsonObject, val presentationTrack: String?)
-    private data class Track(val id: String, val key: String, val first: Instant, var last: Instant, var box: List<Double>, var frames: Int = 0, var committed: Boolean = false)
+    data class CropCandidate(val observationId: String, val frameAt: Instant, val box: List<Double>)
+    enum class CropCaptureResult { STORED, FAILED, SKIPPED }
+    private companion object {
+        const val REGULAR_CROP_LIMIT = 6
+        const val MAXIMUM_CROP_LIMIT = 8
+        const val MINIMUM_CROP_INTERVAL_MILLIS = 500L
+        const val IMPROVEMENT_AREA_RATIO = 1.5
+    }
+    // Selection retains geometry only, never camera buffers.
+    private data class Track(val id: String, val key: String, val first: Instant, var last: Instant, var box: List<Double>, var frames: Int = 0,
+        var committed: Boolean = false, var cropCount: Int = 0, var lastCropAttempt: Instant? = null, var largestCropArea: Double = 0.0)
     private val tracks = mutableListOf<Track>()
     private val presentations = mutableMapOf<String, String>()
     private val attempts = mutableMapOf<String, String>()
     private var frameTime: Instant? = null
     fun reset() { tracks.clear(); presentations.clear(); attempts.clear(); frameTime = null }
-    fun observe(at: Instant, detections: List<Detection>, commit: (JsonObject) -> Unit) {
+    fun observe(at: Instant, detections: List<Detection>, captureCrop: ((CropCandidate) -> CropCaptureResult)? = null, commit: (JsonObject) -> Unit) {
         if (frameTime?.let { at <= it } == true) return
         frameTime = at; tracks.removeAll { at.toEpochMilli() - it.last.toEpochMilli() > 2000 }
         val used = mutableSetOf<String>()
@@ -33,6 +43,21 @@ internal class SignCollectionObserver {
                     "evidence" to JsonObject(detection.payload.getValue("evidence").jsonObject + mapOf("track_id" to JsonPrimitive(track.id), "analyzed_frames" to JsonPrimitive(track.frames), "finalization_reason" to JsonPrimitive("qualified_track"))),
                 ))
                 commit(event); track.committed = true
+            }
+            if (track.committed && captureCrop != null) {
+                val area = detection.box[2] * detection.box[3]
+                val intervalReady = track.lastCropAttempt?.let { at.toEpochMilli() - it.toEpochMilli() >= MINIMUM_CROP_INTERVAL_MILLIS } ?: true
+                if (intervalReady && track.cropCount < MAXIMUM_CROP_LIMIT &&
+                    (track.cropCount < REGULAR_CROP_LIMIT || area >= track.largestCropArea * IMPROVEMENT_AREA_RATIO)) {
+                    val result = captureCrop(CropCandidate(track.id, at, detection.box))
+                    // Unavailable frames/capacity do not consume a slot; failures
+                    // retry without hammering storage on every analyzed frame.
+                    if (result != CropCaptureResult.SKIPPED) track.lastCropAttempt = at
+                    if (result == CropCaptureResult.STORED) {
+                        track.cropCount++
+                        track.largestCropArea = maxOf(track.largestCropArea, area)
+                    }
+                }
             }
             if (track.committed) detection.presentationTrack?.let {
                 if (presentations.size >= 512 && it !in presentations) presentations.clear()

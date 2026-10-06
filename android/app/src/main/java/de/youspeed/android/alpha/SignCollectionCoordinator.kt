@@ -153,6 +153,8 @@ internal class SignCollectionCoordinator(private val context: Context, private v
         val id = session ?: run { frame?.close(); return }
         val cropRequested = cropsAuthorized
         framePending = true
+        // Snapshot mutable Location data for this frame before asynchronous storage.
+        val framePosition = position(location?.let { Location(it) }, event.frameTimestampUtc)
         perform(refreshAfter = false) { store ->
           try {
             if (!store.isAuthorized("sign_metadata", SignCollectionCapabilities.metadataDisclosure)) return@perform
@@ -168,7 +170,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                 put("components", JsonArray(components))
             }
             val country = modelPack.modelPack.countries.firstOrNull { Regex("^[A-Z]{2}$").matches(it) } ?: "unknown"
-            val position = position(location, event.frameTimestampUtc)
+            val position = framePosition
             val eligible = detections.filter { it.candidate.rawScore.isFinite() && it.candidate.rawScore >= (modelPack.modelPack.classFor(it.candidate.rawClassId)?.threshold ?: modelPack.modelPack.thresholds.provisional) }.take(64)
             val presentationMatches = event.candidate?.let { candidate -> eligible.count { it.candidate.rawLabel == candidate.rawLabel && it.candidate.boundingBox.intersectionOverUnion(candidate.boundingBox) >= 0.5 } } ?: 0
             val mapped = eligible.map { detection ->
@@ -198,17 +200,24 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                 SignCollectionObserver.Detection(modelPack.manifestSHA256 + ":" + d.rawLabel, listOf(box.x,box.y,box.width,box.height), payload, presentation)
             }
             var cropCount = 0
-            observer.observe(event.frameTimestampUtc, mapped) { observation ->
-                store.enqueue("sighting", observation, SignCollectionCapabilities.metadataDisclosure)
-                if (cropRequested && frame != null && cropCount < 4) runCatching {
+            observer.observe(event.frameTimestampUtc, mapped, captureCrop = { candidate ->
+                if (!cropRequested || frame == null || cropCount >= 4) SignCollectionObserver.CropCaptureResult.SKIPPED
+                else runCatching {
                     cropCount++
                     val claim = store.claim("crop_storage", SignCollectionCapabilities.cropDisclosure)
-                    val box = observation.getValue("evidence").jsonObject.getValue("normalized_box").jsonObject.mapValues { it.value.jsonPrimitive.double }
+                    val box = listOf("x", "y", "width", "height").zip(candidate.box).toMap()
                     val crop = frame.crop(box)
-                    val metadata = crop.metadata(SignCollectionJson.uuid(), observation.getValue("event_id").jsonPrimitive.content,
-                        store.installationId, store.collectionEpoch, "detector", event.frameTimestampUtc, frame.token, "passed", "metadata-strip-1", claim)
+                    val metadata = crop.metadata(SignCollectionJson.uuid(), candidate.observationId,
+                        store.installationId, store.collectionEpoch, "detector", candidate.frameAt, frame.token, "passed", "metadata-strip-1", claim,
+                        vehiclePosition = framePosition)
                     store.enqueueAutomaticCrop(metadata, crop.bytes)
-                }.onFailure { main.post { status = "crop_capture_unavailable" } }
+                    SignCollectionObserver.CropCaptureResult.STORED
+                }.getOrElse {
+                    main.post { status = "crop_capture_unavailable" }
+                    SignCollectionObserver.CropCaptureResult.FAILED
+                }
+            }) { observation ->
+                store.enqueue("sighting", observation, SignCollectionCapabilities.metadataDisclosure)
             }
           } finally { frame?.close(); main.post { framePending = false } }
         }
@@ -222,7 +231,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
             put("latitude", fix.latitude); put("longitude", fix.longitude); put("horizontal_accuracy_m", fix.accuracy)
             put("fix_at", Instant.ofEpochMilli(fix.time).toString()); put("frame_fix_delta_ms", at.toEpochMilli()-fix.time)
             put("source", fix.provider ?: "android_location"); put("alignment", "nearest_fix")
-            put("course_degrees", if (fix.hasBearing()) JsonPrimitive(fix.bearing) else JsonNull)
+            put("course_degrees", if (fix.hasBearing() && fix.bearing.isFinite() && fix.bearing >= 0f && fix.bearing < 360f) JsonPrimitive(fix.bearing) else JsonNull)
             put("course_accuracy_degrees", if (fix.hasBearingAccuracy() && fix.bearingAccuracyDegrees in 0f..180f) JsonPrimitive(fix.bearingAccuracyDegrees) else JsonNull)
         }
     }

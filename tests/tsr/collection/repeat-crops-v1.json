@@ -1,0 +1,250 @@
+{
+  "scenarios": [
+    {
+      "name": "regular-and-reserved-growth",
+      "frames": [
+        {
+          "milliseconds": 0,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 0,
+          "stored": 0
+        },
+        {
+          "milliseconds": 99,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 0,
+          "stored": 0
+        },
+        {
+          "milliseconds": 100,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 1,
+          "stored": 1
+        },
+        {
+          "milliseconds": 200,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 1,
+          "stored": 1
+        },
+        {
+          "milliseconds": 599,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 1,
+          "stored": 1
+        },
+        {
+          "milliseconds": 600,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 2,
+          "stored": 2
+        },
+        {
+          "milliseconds": 1099,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 2,
+          "stored": 2
+        },
+        {
+          "milliseconds": 1100,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 3,
+          "stored": 3
+        },
+        {
+          "milliseconds": 1600,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 4,
+          "stored": 4
+        },
+        {
+          "milliseconds": 2100,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 5,
+          "stored": 5
+        },
+        {
+          "milliseconds": 2600,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 6,
+          "stored": 6
+        },
+        {
+          "milliseconds": 3100,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 6,
+          "stored": 6
+        },
+        {
+          "milliseconds": 3200,
+          "size": 0.26,
+          "result": "stored",
+          "attempts": 7,
+          "stored": 7
+        },
+        {
+          "milliseconds": 3600,
+          "size": 0.34,
+          "result": "stored",
+          "attempts": 7,
+          "stored": 7
+        },
+        {
+          "milliseconds": 3700,
+          "size": 0.27,
+          "result": "stored",
+          "attempts": 7,
+          "stored": 7
+        },
+        {
+          "milliseconds": 3800,
+          "size": 0.34,
+          "result": "stored",
+          "attempts": 8,
+          "stored": 8
+        },
+        {
+          "milliseconds": 4300,
+          "size": 0.5,
+          "result": "stored",
+          "attempts": 8,
+          "stored": 8
+        }
+      ]
+    },
+    {
+      "name": "retry-and-frame-ordering",
+      "frames": [
+        {
+          "milliseconds": 0,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 0,
+          "stored": 0
+        },
+        {
+          "milliseconds": 100,
+          "size": 0.2,
+          "result": "skipped",
+          "attempts": 1,
+          "stored": 0
+        },
+        {
+          "milliseconds": 101,
+          "size": 0.2,
+          "result": "failed",
+          "attempts": 2,
+          "stored": 0
+        },
+        {
+          "milliseconds": 200,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 2,
+          "stored": 0
+        },
+        {
+          "milliseconds": 600,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 2,
+          "stored": 0
+        },
+        {
+          "milliseconds": 601,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 3,
+          "stored": 1
+        },
+        {
+          "milliseconds": 601,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 3,
+          "stored": 1
+        },
+        {
+          "milliseconds": 600,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 3,
+          "stored": 1
+        },
+        {
+          "milliseconds": 1100,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 3,
+          "stored": 1
+        },
+        {
+          "milliseconds": 1101,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 4,
+          "stored": 2
+        }
+      ]
+    },
+    {
+      "name": "unavailable-frame",
+      "frames": [
+        {
+          "milliseconds": 0,
+          "size": 0.2,
+          "result": "skipped",
+          "attempts": 0,
+          "stored": 0
+        },
+        {
+          "milliseconds": 100,
+          "size": 0.2,
+          "result": "skipped",
+          "attempts": 1,
+          "stored": 0
+        },
+        {
+          "milliseconds": 200,
+          "size": 0.2,
+          "result": "skipped",
+          "attempts": 2,
+          "stored": 0
+        },
+        {
+          "milliseconds": 300,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 3,
+          "stored": 1
+        },
+        {
+          "milliseconds": 799,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 3,
+          "stored": 1
+        },
+        {
+          "milliseconds": 800,
+          "size": 0.2,
+          "result": "stored",
+          "attempts": 4,
+          "stored": 2
+        }
+      ]
+    }
+  ]
+}
