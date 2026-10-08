@@ -70,6 +70,10 @@ internal fun roadBoundaryXAt(points: List<LanePoint>, y: Double): Double {
  * still resemble markings: this output cannot establish drivable space or sign applicability.
  * A cancelled/deadline-exceeded call returns no partial geometry and retains no frame state.
  */
+/** Optional offline diagnostic sink. Payloads are allocated only when supplied;
+ * observers must not mutate state read by shouldContinue. */
+typealias RoadBoundaryTraceObserver = (Map<String, Any?>) -> Unit
+
 class RoadBoundaryDetector {
     private data class Sample(val point: LanePoint, val strength: Double, val cue: RoadBoundaryCue, val row: Int, val stripeWidth: Int)
     private class Track(val samples: MutableList<Sample>, val guide: List<LanePoint>? = null, val guideCorrectionLimit: Double) {
@@ -102,13 +106,24 @@ class RoadBoundaryDetector {
         maximumOperations: Int = 250_000,
         guidance: RoadBoundarySearchGuidance? = null,
         options: RoadBoundaryDetectionOptions = RoadBoundaryDetectionOptions(),
+        trace: RoadBoundaryTraceObserver? = null,
         shouldContinue: () -> Boolean = { true },
     ): RoadBoundaryFrame {
+        fun sampleID(sample: Sample) = sample.row * width + (sample.point.x * (width-1)).roundToInt()
+        fun sampleFields(sample: Sample): Map<String, Any?> = mapOf(
+            "sampleID" to sampleID(sample), "point" to listOf(sample.point.x,sample.point.y), "strength" to sample.strength,
+            "cue" to sample.cue.name.lowercase(), "row" to sample.row, "stripeWidth" to sample.stripeWidth)
+        fun trackFields(track: Track, outcome: String): Map<String, Any?> = mapOf(
+            "stage" to "track", "trackID" to sampleID(track.samples.first()),
+            "samples" to track.samples.map(::sampleFields), "outcome" to outcome)
         val budget = Budget(maximumOperations.coerceAtLeast(0), shouldContinue)
         val rejections = linkedMapOf<String,Int>()
         fun reject(reason: String, count: Int = 1) { if (count > 0) rejections[reason] = (rejections[reason] ?: 0)+count }
-        fun empty(exceeded: Boolean = false) = RoadBoundaryFrame(emptyList(), emptyList(), timestampSeconds, exceeded, budget.used,
-            rejectionCounts = rejections.toMap(), detectionVariant = options.identifier)
+        fun empty(exceeded: Boolean = false): RoadBoundaryFrame {
+            trace?.invoke(mapOf("stage" to "completion", "status" to if(exceeded) "budget_or_cancelled" else "invalid_input", "operationCount" to budget.used))
+            return RoadBoundaryFrame(emptyList(), emptyList(), timestampSeconds, exceeded, budget.used,
+                rejectionCounts = rejections.toMap(), detectionVariant = options.identifier)
+        }
         if (width !in 64..384 || height !in 64..216 || grayscale.size != width * height || !timestampSeconds.isFinite()) return empty()
         if (!budget.check()) return empty(true)
         val active = ArrayList<Track>()
@@ -124,6 +139,8 @@ class RoadBoundaryDetector {
             p.zipWithNext().all { (a,b) -> b.y > a.y } }
         val topY = RoadBoundarySamplingRows.top(guidance?.horizonY)
         val rows = RoadBoundarySamplingRows.centers(height,guidance?.horizonY)
+        trace?.invoke(mapOf("stage" to "configuration", "schemaVersion" to 1, "width" to width, "height" to height,
+            "samplingRows" to rows.toList(), "variant" to options.identifier, "guides" to guides.map { it.map { p -> listOf(p.x,p.y) } }))
         for (row in rows.indices) {
             if (!budget.check()) return empty(true)
             val y = rows[row]
@@ -199,6 +216,8 @@ class RoadBoundaryDetector {
                 rowCandidates = selected.sorted().map { ranked[it] }
                 reject("outside_bands_retained",rowCandidates.count { sample -> centers.all { abs(sample.point.x-it)>halfWidth } })
             }
+            trace?.invoke(mapOf("stage" to "row", "row" to row, "y" to normalizedY,
+                "preCap" to ranked.map(::sampleFields), "postCap" to rowCandidates.map(::sampleFields)))
             reject("candidate_capacity",candidates.size-rowCandidates.size)
             val expired = active.filter { row - it.samples.last().row > 4 }
             completed.addAll(expired)
@@ -224,6 +243,9 @@ class RoadBoundaryDetector {
                     }
                 }
                 if (bestTrack >= 0) {
+                    trace?.invoke(mapOf("stage" to "association", "outcome" to "assigned", "row" to row,
+                        "sampleID" to sampleID(rowCandidates[bestCandidate]), "trackID" to sampleID(active[bestTrack].samples.first()),
+                        "distance" to bestDistance, "predictedX" to active[bestTrack].predictedX(normalizedY)))
                     active[bestTrack].samples.add(rowCandidates[bestCandidate])
                     usedTracks[bestTrack] = true; usedCandidates[bestCandidate] = true
                 }
@@ -233,7 +255,12 @@ class RoadBoundaryDetector {
                     val sample = rowCandidates[index]
                     val guide = guides.minByOrNull { abs(sample.point.x-roadBoundaryXAt(it,sample.point.y)) }
                         ?.takeIf { abs(sample.point.x-roadBoundaryXAt(it,sample.point.y)) <= 0.05 }
+                    trace?.invoke(mapOf("stage" to "association", "outcome" to "created", "row" to row,
+                        "sampleID" to sampleID(sample), "trackID" to sampleID(sample)))
                     active.add(Track(arrayListOf(sample),guide,1.0 / (width - 1)))
+                } else if (!usedCandidates[index]) {
+                    trace?.invoke(mapOf("stage" to "association", "outcome" to "active_track_capacity", "row" to row,
+                        "sampleID" to sampleID(rowCandidates[index])))
                 }
             }
         }
@@ -247,11 +274,13 @@ class RoadBoundaryDetector {
             val samples = track.samples
             val span = samples.first().point.y - samples.last().point.y
             if (samples.size < 8) {
+                trace?.invoke(trackFields(track,"track_support"))
                 reject("track_support")
                 if (options.groupFragments) fragments.add(samples.toList())
                 continue
             }
             if (span < min(0.16,(0.94-topY)*0.6)) {
+                trace?.invoke(trackFields(track,"track_span"))
                 reject("track_span")
                 if (options.groupFragments) fragments.add(samples.toList())
                 continue
@@ -262,10 +291,12 @@ class RoadBoundaryDetector {
             var confidence = min(1.0, span / 0.32) * density * min(1.0, samples.sumOf { it.strength } / samples.size / 90.0)
             if (cue == RoadBoundaryCue.EDGE) confidence = min(0.40, confidence)
             if (confidence < 0.22) {
+                trace?.invoke(trackFields(track,"confidence"))
                 reject("confidence")
                 if (options.groupFragments) fragments.add(samples.toList())
                 continue
             }
+            trace?.invoke(trackFields(track,"accepted"))
             evidence.add(RoadBoundaryEvidence(samples.asReversed().map { it.point },confidence,cue,samples.size,
                 observedSegments=if (options.groupFragments && cue==RoadBoundaryCue.PAINT) paintedSegments(samples) else emptyList(),
                 paintOccupancy=if (options.groupFragments && cue==RoadBoundaryCue.PAINT) density else null))
@@ -321,6 +352,14 @@ class RoadBoundaryDetector {
         }
         reject("fragment_output_capacity",max(0,additions.size-(6-protected.size)))
         val boundaries=(protected+ranked(additions).take(6-protected.size)).sortedBy { it.points.last().x }
+        if (trace != null) {
+            for ((origin,values) in listOf("measured" to evidence,"fragment" to additions)) for (boundary in values) {
+                trace(mapOf("stage" to "fresh_hypothesis", "origin" to origin, "points" to boundary.points.map { listOf(it.x,it.y) },
+                    "confidence" to boundary.confidence, "cue" to boundary.cue.name.lowercase(), "supportRows" to boundary.supportRows,
+                    "observedSegments" to boundary.observedSegments.map { it.map { p -> listOf(p.x,p.y) } },
+                    "outputIndex" to boundaries.indexOf(boundary).takeIf { it>=0 }))
+            }
+        }
         val corridors = ArrayList<RoadCorridorHypothesis>()
         for (leftIndex in boundaries.indices) {
             if (!budget.check(32)) return empty(true)
@@ -340,6 +379,7 @@ class RoadBoundaryDetector {
             corridors.add(RoadCorridorHypothesis(leftIndex, rightIndex, min(left.confidence, right.confidence)))
         }
         if (!budget.check()) return empty(true)
+        trace?.invoke(mapOf("stage" to "completion", "status" to "complete", "operationCount" to budget.used))
         return RoadBoundaryFrame(boundaries, corridors.sortedWith(compareByDescending<RoadCorridorHypothesis> { it.confidence }
             .thenBy { it.leftBoundaryIndex }).take(2), timestampSeconds, false, budget.used,
             rejectionCounts=rejections.toMap(), detectionVariant=options.identifier)

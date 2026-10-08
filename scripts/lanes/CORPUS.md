@@ -315,8 +315,10 @@ python3 scripts/lanes/audit_selection_opportunity.py \
   --output-dir "$LANE_CORPUS_ROOT/selection-opportunity"
 ```
 
-Replay `rawBoundaries` are post-temporal hypotheses. They cannot identify whether
-a missing border failed ridge extraction or fragment association. Keep visible
+Replay `rawBoundaries` are post-temporal hypotheses. Use the optional native
+`--detector-trace` replay and `audit_detector_trace.py` to inspect pre/post-cap
+stripes, actual association dispositions, rejected tracks and fresh fits. The
+trace is default-off and does not change ranks or operation accounting. Keep visible
 matches, score competition, maturity, temporal holds, other gates and absent
 hypotheses separate. The report also checks whether wrong displayed selections
 had a matching same-side alternative. A wrong sole candidate needs a separately
@@ -328,15 +330,89 @@ a gap cap and explicit exposure binding. Previously inspected approximate
 development labels do not become independent acceptance truth. This inventory
 cannot complete a reviewed-mask ablation or establish a model benefit.
 
-The separate offline `qualify_semantic_hints.py` prototype and shared
+The separate `qualify_semantic_hints.py` reference and shared
 [`semantic-hint-v1` contract](../../shared/lanes/semantic-hint-v1/README.md) prepare
 #21/#23 fault fixtures. They qualify exact exposure, scope, clocks, model,
 geometry and score/validity arrays and exercise source-time ordering. Rejected
 inputs provide no qualified hint. Preserving a baseline object in this adapter
-is not proof of live iPhone/Android fallback parity. The prototype does not wire
-models into the lane workers, rerank candidates, change temporal confirmations
-or implement motion propagation. Platform clock conversion, actual model outputs,
-runtime parity and sustained device workloads remain separate qualification.
+is not proof of live iPhone/Android fallback parity. The Swift/Kotlin cores and
+`compare_semantic_hint_platforms.py` execute the same contract, cache and trusted
+relative-clock operations on synthetic and real masks. They do not establish
+clock synchronization or wire an asynchronous model worker into camera capture.
+
+### Stateful guidance and fault replay
+
+`evaluate_semantic_guidance.py` verifies a native baseline and persisted model
+probability maps, writes a fixed protocol before scoring, and runs the **actual
+native selector** with optional bounded score adjustments. The positive bonus is
+at most 0.10, after existing eligibility checks. Native geometry, pair checks,
+challenger margins and dwell remain active; raw confidence, support and temporal
+observations never receive semantic confirmations. All array values/counts must
+be valid or the selector ignores the whole array. These hooks are default-off;
+shipping camera callers do not supply model scores.
+
+```sh
+python3 scripts/lanes/evaluate_semantic_guidance.py \
+  --replay-dir "$LANE_CORPUS_ROOT/baseline-reviewed" \
+  --probabilities "$LANE_CORPUS_ROOT/auxiliary-video-reviewed-run-002/frames.json" \
+  --checkpoint "$LANE_CORPUS_ROOT/a2d2-training/run-002/auxiliary-marking.pt" \
+  --detector "$LANE_CORPUS_ROOT/a2d2-training/yolo11n_panoramax.pt" \
+  --labels "$LANE_CORPUS_ROOT/reviewed-development-labels.json" \
+  --negative-intervals "$LANE_CORPUS_ROOT/reviewed-development-negative-labels.json" \
+  --output-dir "$LANE_CORPUS_ROOT/semantic-ablation"
+```
+
+Omit the two label arguments for unreviewed footage: accuracy and unsupported
+duration are then unavailable. The tool checks that extraction/tracking and
+maturity history remain identical, and missing/rejected arms reproduce **all**
+native output fields except enumerated timing, trace and experiment labels.
+Publication, deadline and budget flags stay in that comparison. Each experiment
+preserves its helper source snapshots; each native replay preserves its compiled
+source snapshots and normalized input manifest.
+
+The 15 arms cover baseline, qualified/unqualified paint, spatially uniform
+control, hypothetical 5/20 ms decision budgets using measured host model cost,
+missing/stale/malformed/wrong-model/wrong-generation/mixed-clock/old-exposure
+faults, declared geometry shifts, and concealed shifts. Replay capture clocks
+are explicitly simulated from relative encoded PTS. No arm waits for inference
+or reruns an old exposure. These are scheduling probes, not measured phone
+arrival times. Concealed shifts deliberately retain false alignment metadata:
+identity validation cannot detect an incorrectly mapped producer output.
+Road-only and road+paint arms remain unavailable with a paint-only checkpoint.
+
+### Export qualification
+
+`export_auxiliary_model.py` traverses the frozen detector explicitly, compares
+it with the hook-based reference on multiple verified A2D2 validation images,
+exports baseline/shared Core ML models, and executes the persisted artifacts.
+It also creates a LiteRT head-only operator control. The separate
+`export_auxiliary_litert.py` converts the verified full traces through pinned
+ONNX/onnx2tf dependencies and checks the **full** baseline/shared LiteRT outputs.
+Use new output directories outside Git; no model or private image is bundled.
+
+```sh
+python3 scripts/lanes/export_auxiliary_model.py --help
+python3 scripts/lanes/export_auxiliary_litert.py --help
+python3 scripts/lanes/export_auxiliary_prefix.py --help
+```
+
+Keep FP32 and FP16 decisions separate. Identical baseline/shared detector
+outputs establish the effect of adding the head within that export backend;
+comparison against PyTorch separately measures conversion drift. Numerical
+threshold crossings before NMS are diagnostics, not end-to-end sign passages.
+Recorded package sizes, operator inventories and warmed CPU costs are host
+evidence. A whole-frame export does not establish compatibility with the
+shipping calibrated TSR crop, small-sign recall, device accelerators, steady
+memory or sustained coexistence with recording.
+
+`export_auxiliary_prefix.py` provides a separate full-scene control that keeps
+the existing cropped TSR pass: copy only the original frozen layers through
+P3 and the unchanged paint head, omit the later detector layers, and compare
+its lane logits against the complete original detector/head before export.
+It verifies Core ML/LiteRT FP32 at 640 and 1280, with the latter explicitly a
+resolution control of weights trained at 640. Compare its complete invocation
+cost and preprocessing against the shared-model alternative; parameter counts
+or head-only timings do not describe the extra whole-frame path.
 
 ## Tests and next decision
 
@@ -362,5 +438,6 @@ python3 -m unittest discover -s tests/lanes -p test_qualify_semantic_hints.py -v
 The next gate is independent teacher quality and selection-opportunity evidence,
 not simply more stable output. Keep #10 open for independently adjudicated
 sequence truth, route/drive separation and the existing sign-applicability
-requirements. Phone export, guidance integration, performance and adoption remain
-later work in #22–#24; an offline trained head does not complete those gates.
+requirements. Host exports and native guidance experiments contribute evidence
+to #22–#24; live scheduling, independent field truth, device performance and
+adoption remain separate gates. Export/fallback success does not establish benefit.

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "provenance": "synthetic_engineering_only",
+  "excludedJsonCaseIds": ["boolean-score", "text-score", "null-score", "invalid-validity-type"],
+  "exclusionReason": "These invalid element types cannot be represented by native Double/Bool arrays and remain covered by the JSON reference suite.",
+  "qualificationCases": [
+    {"id":"typed-caller-mutation-detaches","mutateCallerBuffers":true,"expectedReason":"qualified"},
+    {"id":"typed-short-validity","hintMutations":[{"path":["mask","validity"],"value":[true,true,false]}],"expectedReason":"shape_mismatch"},
+    {"id":"typed-zero-width","hintMutations":[{"path":["mask","width"],"value":0}],"expectedReason":"shape_mismatch"},
+    {"id":"typed-oversized-width","hintMutations":[{"path":["mask","width"],"value":513}],"expectedReason":"shape_mismatch"},
+    {"id":"typed-nan-invalid-cell","hintMutations":[{"path":["mask","validity",0],"value":false}],"nonfiniteScore":"nan","expectedReason":"invalid_scores"}
+  ],
+  "cacheSequences": [
+    {"id":"typed-cache-owns-caller-buffers","operations":[
+      {"op":"offer","mutateCallerBuffers":true,"expectedReason":"qualified"},
+      {"op":"current","expectedReason":"qualified"},
+      {"op":"offer","hintMutations":[{"path":["mask","probabilities"],"value":[0.9,0.9,0.9,0.9]}],"expectedReason":"duplicate_exposure"},
+      {"op":"current","expectedReason":"qualified"}
+    ]}
+  ]
+}

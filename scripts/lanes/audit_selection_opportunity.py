@@ -71,7 +71,7 @@ def load_replay(directory):
     require(list(byid) == list(inputs) == list(original), 'Replay/source frame IDs or ordering differ')
     require(len(rows) == metadata.get('frameCount') and rows, 'Replay frame count mismatch')
     require(manifest.get('variant') == metadata.get('variant'), 'Manifest variant mismatch')
-    for option in ('previewMode', 'useSearchBands', 'groupFragments', 'fragmentTracking', 'retainTentativeIdentity', 'jointSelection'):
+    for option in ('previewMode', 'useSearchBands', 'groupFragments', 'fragmentTracking', 'retainTentativeIdentity', 'jointSelection', 'detectorTrace'):
         require(manifest.get(option) == metadata.get(option), 'Replay option mismatch: ' + option)
     sequence, previous, closed, splits = None, None, set(), {}
     for row in rows:
