@@ -3470,6 +3470,10 @@ private struct DataManagerView: View {
             .padding(.horizontal, 12)
             statusLegend.padding(.horizontal, 12)
             activeDownloadBanner.padding(.horizontal, 12)
+            if !viewModel.queuedBundleDownloadIDs.isEmpty {
+                Text(String(format: dataManagerText("queue_count"), viewModel.queuedBundleDownloadIDs.count))
+                    .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 12)
+            }
             if viewModel.bundleInventoryError {
                 Label(dataManagerText("inventory_error"), systemImage: "exclamationmark.triangle")
                     .font(.caption).foregroundStyle(.orange).padding(.horizontal, 12)
@@ -3619,7 +3623,7 @@ private struct DataManagerView: View {
                     RecordingSafeButton(dataManagerText("all_downloads"), role: .destructive) {
                         showingDeleteAllConfirmation = true
                     }
-                    .disabled(viewModel.isManagingBundles || viewModel.bundleInventoryError)
+                    .disabled(viewModel.isManagingBundles || viewModel.bundleInventoryError || !viewModel.queuedBundleDownloadIDs.isEmpty)
                 }.padding(.top, 10)
             }
         }
@@ -3680,9 +3684,6 @@ private struct DataManagerView: View {
         let selected = option.id == viewModel.dataManagerSelectedOptionID
         let state = viewModel.dataManagerDisplayState(for: option)
         let metadata = viewModel.installedBundleMetadata(for: option) ?? viewModel.dataManagerMetadata(for: option)
-        let details = [bytesText(metadata?.bytes).map { "\(dataManagerText("size")): \($0)" },
-                       dateText(metadata?.packageDate).map { "\(dataManagerText("date")): \($0)" }]
-            .compactMap { $0 }.joined(separator: " · ")
         return VStack(alignment: .leading, spacing: 4) {
             RecordingSafeButton {
                 searchFocused = false
@@ -3694,9 +3695,14 @@ private struct DataManagerView: View {
                         Text(option.displayName).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
                         Text("\(option.countryName) · \(dataManagerText(state.localizationKey))")
                             .font(.caption).foregroundStyle(.secondary)
-                        if !details.isEmpty {
-                            Text(details).font(.caption2).foregroundStyle(.secondary)
-                        }
+                        Text(downloadStatusText(option) ?? " ")
+                            .font(.caption2).foregroundStyle(viewModel.bundleDownloadErrors[option.id] == nil ? Color.secondary : Color.red)
+                            .lineLimit(2, reservesSpace: true)
+                        ProgressView(value: viewModel.activeBundleDownloadProgress(option) ?? 0)
+                            .opacity(viewModel.isActiveBundleDownload(option) ? 1 : 0)
+                            .accessibilityHidden(!viewModel.isActiveBundleDownload(option))
+                        Text("\(dataManagerText("size")): \(bytesText(metadata?.bytes) ?? dataManagerText("unknown")) · \(dataManagerText("date")): \(dateText(metadata?.packageDate) ?? dataManagerText("unknown"))")
+                            .font(.caption2).foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 4)
                     Image(systemName: selected ? "chevron.up" : "chevron.down").foregroundStyle(.secondary)
@@ -3789,6 +3795,11 @@ private struct DataManagerView: View {
                 if metadata != nil && state != .available {
                     Text(dataManagerText("cached_metadata")).font(.caption).foregroundStyle(.secondary)
                 }
+                if let status = downloadStatusText(option) {
+                    Text(status).font(.caption)
+                        .foregroundStyle(viewModel.bundleDownloadErrors[option.id] == nil ? Color.secondary : Color.red)
+                        .accessibilityIdentifier("dataManager.downloadStatus")
+                }
                 if viewModel.isActiveBundleDownload(option) {
                     downloadProgress(option)
                 }
@@ -3815,20 +3826,29 @@ private struct DataManagerView: View {
         let layout = vertical || dynamicTypeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
             : AnyLayout(HStackLayout(spacing: 12))
-        let queued = viewModel.queuedBundleDownloadIDs.contains(option.id)
+        let operation = viewModel.dataManagerDownloadState(for: option)
         return layout {
-            RecordingSafeButton {
-                if queued { viewModel.cancelQueuedBundleDownload(option) }
-                else { viewModel.downloadSelectedBundle(option) }
-            } label: {
-                Label(queued ? NSLocalizedString("settings.maps.cancel_queued", comment: "")
-                      : dataManagerText(downloaded ? "check_update" : "download"),
-                      systemImage: queued ? "xmark.circle" : "arrow.down.circle")
-                    .frame(minHeight: 44)
+            if case .queued = operation {
+                RecordingSafeButton {
+                    viewModel.cancelQueuedBundleDownload(option)
+                } label: {
+                    Label(NSLocalizedString("settings.maps.cancel_queued", comment: ""), systemImage: "xmark.circle")
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("dataManager.cancelQueued")
+            } else {
+                RecordingSafeButton {
+                    viewModel.downloadSelectedBundle(option)
+                } label: {
+                    Label(downloadActionTitle(option, downloaded: downloaded),
+                          systemImage: viewModel.bundleDownloadErrors[option.id] == nil ? "arrow.down.circle" : "arrow.clockwise.circle")
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!viewModel.canRequestDataManagerDownload(option))
+                .accessibilityIdentifier("dataManager.download")
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(viewModel.isDeletingBundle || viewModel.isActiveBundleDownload(option) || (!queued && state == .unavailable))
-            .accessibilityIdentifier("dataManager.download")
             if downloaded {
                 RecordingSafeButton(role: .destructive) {
                     if let region = viewModel.installedBundleRegion(for: option),
@@ -3841,11 +3861,33 @@ private struct DataManagerView: View {
                         .frame(minHeight: 44)
                 }
                 .buttonStyle(.bordered)
-                .disabled(viewModel.isManagingBundles || viewModel.bundleInventoryError)
+                .disabled(!viewModel.canDeleteDataManagerBundle(option))
                 .accessibilityIdentifier("dataManager.delete")
             }
         }
         .fixedSize(horizontal: !vertical && !dynamicTypeSize.isAccessibilitySize, vertical: false)
+    }
+
+    private func downloadActionTitle(_ option: DriveSessionViewModel.BundleDownloadOption, downloaded: Bool) -> String {
+        switch viewModel.dataManagerDownloadState(for: option) {
+        case .downloading: return NSLocalizedString("metric.downloading_data", comment: "")
+        case .queued: return NSLocalizedString("settings.maps.cancel_queued", comment: "")
+        case .failed: return NSLocalizedString("onboarding.map.retry", comment: "")
+        case .idle: return dataManagerText(downloaded ? "check_update" : "download")
+        }
+    }
+
+    private func downloadStatusText(_ option: DriveSessionViewModel.BundleDownloadOption) -> String? {
+        switch viewModel.dataManagerDownloadState(for: option) {
+        case .downloading:
+            let bytes = viewModel.activeBundleDownloadBytesText(option)
+            return bytes.isEmpty ? NSLocalizedString("settings.maps.preparing", comment: "") : bytes
+        case .queued(let position):
+            return String(format: dataManagerText("queued_position"), position)
+        case .failed(let message):
+            return String(format: NSLocalizedString("settings.maps.download_failed", comment: ""), message)
+        case .idle: return nil
+        }
     }
 
     private func downloadProgress(_ option: DriveSessionViewModel.BundleDownloadOption) -> some View {

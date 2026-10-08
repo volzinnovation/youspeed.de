@@ -41,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -256,7 +257,9 @@ private fun DataManagerDetails(option: BundleDownloadOption, controller: Consume
     val remote = ui.dataManagerMetadataByRegion[option.id] ?: DataManagerMetadataState()
     val metadata = remote.metadata.takeUnless { remote.status == DataManagerMetadataStatus.UNAVAILABLE }
     val displayState = dataManagerDisplayState(isInstalled, remote)
-    fun bytes(value: Long?) = value?.takeIf { it > 0 }?.let { Formatter.formatFileSize(context, it) }
+    val transfer = DataManagerTransferState.resolve(option.id, ui.activeDownloadOptionId, ui.queuedBundleDownloadIds, ui.bundleDownloadErrors)
+    val unknown = stringResource(R.string.data_manager_unknown)
+    fun bytes(value: Long?) = value?.takeIf { it > 0 }?.let { Formatter.formatFileSize(context, it) } ?: unknown
     fun date(value: String?) = value?.let { runCatching {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
             .withZone(ZoneId.systemDefault()).format(Instant.parse(it))
@@ -288,15 +291,18 @@ private fun DataManagerDetails(option: BundleDownloadOption, controller: Consume
             }
             TextButton(onClick = { controller.requestDataManagerMetadata(option, force = true) },
                 enabled = remote.status != DataManagerMetadataStatus.LOADING) { Text(stringResource(R.string.data_manager_refresh)) }
-            val queued = option.id in ui.queuedBundleDownloadIds
-            if (queued) Text(stringResource(R.string.ui_download_queued), fontSize = 12.sp)
-            ui.bundleDownloadErrors[option.id]?.let { Text(it, fontSize = 12.sp, color = Color(0xFFAA2637)) }
+            DataManagerBundleTransferStatus(option.id, ui)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { if (queued) controller.cancelQueuedBundleDownload(option) else controller.downloadSelectedBundle(option) },
-                    enabled = ui.activeBundleDeletionOptionId == null && ui.activeDownloadOptionId != option.id &&
-                        (queued || remote.status != DataManagerMetadataStatus.UNAVAILABLE),
+                Button(onClick = {
+                    if (transfer.queued) controller.cancelQueuedBundleDownload(option) else controller.downloadSelectedBundle(option)
+                }, enabled = ui.activeBundleDeletionOptionId == null && (transfer.queued || transfer.canRequest(remote)),
                     modifier = Modifier.weight(1f).testTag("data-manager-download")) {
-                    Text(stringResource(if (queued) R.string.ui_cancel_queued_download else if (isInstalled && scope?.isCountryPackage != true) R.string.data_manager_check_update else R.string.data_manager_download))
+                    Text(stringResource(when {
+                        transfer.queued -> R.string.ui_cancel_queued_download
+                        transfer.error != null -> R.string.onboarding_retry_download
+                        isInstalled && scope?.isCountryPackage != true -> R.string.data_manager_check_update
+                        else -> R.string.data_manager_download
+                    }))
                 }
                 if (isInstalled) OutlinedButton(onClick = onDelete, enabled = !controller.isBundleMaintenanceBusy() && ui.dataManagerInventoryAvailable,
                     modifier = Modifier.weight(1f).testTag("data-manager-delete")) {
@@ -314,38 +320,43 @@ private fun DataManagerListRow(option: BundleDownloadOption, isSelected: Boolean
     val context = LocalContext.current
     val installed = controller.isBundleDownloaded(option)
     val remote = ui.dataManagerMetadataByRegion[option.id]
+    val transfer = DataManagerTransferState.resolve(option.id, ui.activeDownloadOptionId, ui.queuedBundleDownloadIds, ui.bundleDownloadErrors)
     val state = dataManagerDisplayState(installed, remote)
     val local = controller.installedDataManagerRegion(option)
     val metadata = if (installed) local?.newestPackage
         else remote?.metadata?.takeUnless { remote.status == DataManagerMetadataStatus.UNAVAILABLE }
     val size = (if (installed) local?.totalDatabaseBytes else metadata?.bytes)?.takeIf { it > 0 }
-        ?.let { Formatter.formatFileSize(context, it) }
+        ?.let { Formatter.formatFileSize(context, it) } ?: stringResource(R.string.data_manager_unknown)
     val date = metadata?.createdAtUTC?.let { runCatching {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(Locale.getDefault())
             .withZone(ZoneId.systemDefault()).format(Instant.parse(it))
-    }.getOrNull() }
-    val details = listOfNotNull(
-        size?.let { stringResource(R.string.data_manager_row_size, it) },
-        date?.let { stringResource(R.string.data_manager_row_date, it) },
-    ).joinToString(" · ")
+    }.getOrNull() } ?: stringResource(R.string.data_manager_unknown)
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
         .background(if (isSelected) Color(0xFFDCE8F4) else Color.White)
         .clickable(role = Role.Button, onClick = onSelect).testTag("data-manager-region-${option.id}")
         .semantics { selected = isSelected }
         .padding(start = 8.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(regionTitle(option), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = ManagerInk)
-            Text("${option.countryName} · ${stringResource(state.label())}", fontSize = 11.sp, color = state.color())
-            if (details.isNotEmpty()) Text(details, fontSize = 11.sp, color = Color.DarkGray)
+            Text(regionTitle(option), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = ManagerInk,
+                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Text("${option.countryName} · ${stringResource(state.label())}", fontSize = 11.sp, color = state.color(),
+                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            Text(stringResource(R.string.data_manager_row_details, size, date), fontSize = 11.sp, color = Color.DarkGray,
+                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            DataManagerBundleTransferStatus(option.id, ui, reserveSpace = true)
         }
-        val queued = option.id in ui.queuedBundleDownloadIds
-        IconButton(onClick = { onSelect(); if (queued) controller.cancelQueuedBundleDownload(option) else controller.downloadSelectedBundle(option) },
-            enabled = ui.activeBundleDeletionOptionId == null && ui.activeDownloadOptionId != option.id &&
-                (queued || remote?.status != DataManagerMetadataStatus.UNAVAILABLE),
+        IconButton(onClick = {
+            onSelect()
+            if (transfer.queued) controller.cancelQueuedBundleDownload(option) else controller.downloadSelectedBundle(option)
+        }, enabled = ui.activeBundleDeletionOptionId == null && (transfer.queued || transfer.canRequest(remote)),
             modifier = Modifier.size(48.dp).testTag("data-manager-row-download-${option.id}")) {
-            Icon(if (queued) Icons.Default.Close else Icons.Default.Download,
-                contentDescription = "${stringResource(if (queued) R.string.ui_cancel_queued_download else if (installed && controller.dataManagerInstalledScope(option)?.isCountryPackage != true)
-                    R.string.data_manager_check_update else R.string.data_manager_download)} ${regionTitle(option)}",
+            Icon(if (transfer.queued) Icons.Default.Close else if (transfer.error != null) Icons.Default.Refresh else Icons.Default.Download,
+                contentDescription = "${stringResource(when {
+                    transfer.queued -> R.string.ui_cancel_queued_download
+                    transfer.error != null -> R.string.onboarding_retry_download
+                    installed && controller.dataManagerInstalledScope(option)?.isCountryPackage != true -> R.string.data_manager_check_update
+                    else -> R.string.data_manager_download
+                })} ${regionTitle(option)}",
                 tint = if (state == DataManagerDisplayState.UNAVAILABLE) UnavailableGray else ManagerInk)
         }
         if (installed) IconButton(onClick = { onSelect(); onDelete() },
@@ -371,9 +382,60 @@ private fun DataManagerDisplayState.label(): Int = when (this) {
 }
 
 @Composable
+internal fun DataManagerBundleTransferStatus(optionId: String, ui: ConsumerUiState, reserveSpace: Boolean = false) {
+    val context = LocalContext.current
+    val state = DataManagerTransferState.resolve(optionId, ui.activeDownloadOptionId, ui.queuedBundleDownloadIds, ui.bundleDownloadErrors)
+    val preparing = stringResource(R.string.ui_download_preparing)
+    if (reserveSpace) {
+        val status = when {
+            state.active -> ui.syncProgressDetail.ifBlank { preparing } + if (ui.syncProgressTotalBytes > 0)
+                "\n${Formatter.formatFileSize(context, ui.syncProgressCompletedBytes)} / ${Formatter.formatFileSize(context, ui.syncProgressTotalBytes)}" else ""
+            state.queued -> stringResource(R.string.ui_download_queued)
+            state.error != null -> stringResource(R.string.ui_bundle_download_failed, state.error)
+            else -> " "
+        }
+        // Match the upstream queue list: completion must not move other regions' action targets.
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.testTag("data-manager-row-transfer-$optionId")) {
+            Text(status, fontSize = 11.sp, lineHeight = 14.sp, minLines = 2, maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                color = if (state.error != null) Color(0xFFAA2637) else Color.DarkGray)
+            Box(Modifier.fillMaxWidth().height(4.dp)) {
+                if (state.active) {
+                    if (ui.syncProgressTotalBytes > 0) LinearProgressIndicator(
+                        progress = (ui.syncProgressCompletedBytes.toDouble() / ui.syncProgressTotalBytes).coerceIn(0.0, 1.0).toFloat(),
+                        modifier = Modifier.fillMaxSize())
+                    else LinearProgressIndicator(Modifier.fillMaxSize())
+                }
+            }
+        }
+        return
+    }
+    if (!state.active && !state.queued && state.error == null) return
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.testTag("data-manager-transfer-$optionId")) {
+        when {
+            state.active -> {
+                Text(ui.syncProgressDetail.ifBlank { preparing }, fontSize = 11.sp)
+                if (ui.syncProgressTotalBytes > 0) {
+                    LinearProgressIndicator(progress = (ui.syncProgressCompletedBytes.toDouble() / ui.syncProgressTotalBytes).coerceIn(0.0, 1.0).toFloat(),
+                        modifier = Modifier.fillMaxWidth().height(4.dp))
+                    Text("${Formatter.formatFileSize(context, ui.syncProgressCompletedBytes)} / ${Formatter.formatFileSize(context, ui.syncProgressTotalBytes)}", fontSize = 11.sp)
+                } else LinearProgressIndicator(Modifier.fillMaxWidth().height(4.dp))
+            }
+            state.queued -> Text(stringResource(R.string.ui_download_queued), fontSize = 11.sp)
+            state.error != null -> Text(stringResource(R.string.ui_bundle_download_failed, state.error), fontSize = 11.sp,
+                color = Color(0xFFAA2637), maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
 private fun DataManagerOperationStatus(ui: ConsumerUiState, options: List<BundleDownloadOption>) {
     val context = LocalContext.current
     if (ui.activeBundleDeletionOptionId != null) Text(stringResource(R.string.data_manager_deleting))
+    if (ui.queuedBundleDownloadIds.isNotEmpty()) Text(stringResource(R.string.data_manager_queued_count, ui.queuedBundleDownloadIds.size),
+        fontSize = 12.sp, modifier = Modifier.testTag("data-manager-queue-summary"))
+    if (ui.bundleDownloadErrors.isNotEmpty()) Text(stringResource(R.string.data_manager_failed_count, ui.bundleDownloadErrors.size),
+        fontSize = 12.sp, color = Color(0xFFAA2637), modifier = Modifier.testTag("data-manager-failure-summary"))
     if (ui.syncStatus != "syncing" && ui.syncStatus != "bootstrapping") return
     Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.testTag("data-manager-progress")) {
         options.firstOrNull { it.id == ui.activeDownloadOptionId }?.let { Text(regionTitle(it), fontWeight = FontWeight.SemiBold) }

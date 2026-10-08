@@ -3705,3 +3705,27 @@ enum BundleMapDisplayState: Equatable {
         }
     }
 }
+
+
+/// Presentation of the existing FIFO, independent from installed/release colors.
+/// Queuing another region never implies a second simultaneous transfer.
+enum DataManagerDownloadState: Equatable {
+    case idle
+    case downloading
+    case queued(position: Int)
+    case failed(String)
+
+    static func resolve(optionID: String, activeID: String?, queuedIDs: [String], failures: [String: String]) -> Self {
+        if optionID == activeID { return .downloading }
+        if let index = queuedIDs.firstIndex(of: optionID) { return .queued(position: index + 1) }
+        if let failure = failures[optionID] { return .failed(failure) }
+        return .idle
+    }
+
+    var acceptsDownloadRequest: Bool {
+        switch self {
+        case .idle, .failed: return true
+        case .downloading, .queued: return false
+        }
+    }
+}

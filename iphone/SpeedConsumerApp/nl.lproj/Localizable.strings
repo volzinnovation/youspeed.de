@@ -491,3 +491,5 @@
 "penalty.documentation.title" = "Boetetabellen";
 
 "traffic.sign.documentation.title" = "Verkeersborden";
+"data_manager.queue_count" = "%d downloads in de wachtrij";
+"data_manager.queued_position" = "Wachtrij: positie %d";

@@ -491,3 +491,5 @@
 "penalty.documentation.title" = "Tableaux des amendes";
 
 "traffic.sign.documentation.title" = "Panneaux de signalisation";
+"data_manager.queue_count" = "%d téléchargements en attente";
+"data_manager.queued_position" = "En attente : position %d";

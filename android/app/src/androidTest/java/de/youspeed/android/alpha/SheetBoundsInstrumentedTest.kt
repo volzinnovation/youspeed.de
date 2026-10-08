@@ -253,10 +253,9 @@ class SheetBoundsInstrumentedTest {
         val close = compose.onNodeWithTag("$tag-close").fetchSemanticsNode()
         val title = compose.onNodeWithTag("$tag-title").fetchSemanticsNode()
         val back = compose.onAllNodesWithTag("$tag-back").fetchSemanticsNodes().firstOrNull()
-        if (back == null) assertTrue("Close is left of the title", close.positionInWindow.x + close.size.width <= title.positionInWindow.x)
-        else {
+        assertTrue("Close is right of the title", title.positionInWindow.x + title.size.width <= close.positionInWindow.x)
+        if (back != null) {
             assertTrue("Back is left of the title", back.positionInWindow.x + back.size.width <= title.positionInWindow.x)
-            assertTrue("Close is right of the title", title.positionInWindow.x + title.size.width <= close.positionInWindow.x)
         }
         val minimum = 48 * context.resources.displayMetrics.density - 1
         assertTrue("Close has a 48dp touch target", close.size.width >= minimum && close.size.height >= minimum)

@@ -491,3 +491,5 @@
 "penalty.documentation.title" = "Penalty tables";
 
 "traffic.sign.documentation.title" = "Traffic signs";
+"data_manager.queue_count" = "%d downloads queued";
+"data_manager.queued_position" = "Queued: position %d";

@@ -604,6 +604,44 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
 
+    func testDataManagerDownloadStateAllowsIndependentQueuedRequests() {
+        let active = "germany|berlin", waiting = "germany|bayern", failed = "belgium|belgium"
+        func state(_ id: String) -> DataManagerDownloadState {
+            .resolve(optionID: id, activeID: active, queuedIDs: [waiting],
+                     failures: [failed: "offline", active: "stale active error", waiting: "stale queued error"])
+        }
+        XCTAssertEqual(state(active), .downloading)
+        XCTAssertFalse(state(active).acceptsDownloadRequest)
+        XCTAssertEqual(state(waiting), .queued(position: 1))
+        XCTAssertFalse(state(waiting).acceptsDownloadRequest)
+        XCTAssertEqual(state(failed), .failed("offline"))
+        XCTAssertTrue(state(failed).acceptsDownloadRequest)
+        XCTAssertEqual(state("france|reunion"), .idle)
+        XCTAssertTrue(state("france|reunion").acceptsDownloadRequest,
+                      "A different active transfer must not disable adding this region to the FIFO")
+    }
+
+    func testDataManagerQueuedCancellationRetryAndRemovalStaySerial() {
+        struct Request: Identifiable { let id: String }
+        var queue = BundleDownloadQueue<Request>()
+        queue.enqueue(Request(id: "a"), activeID: nil)
+        let active = queue.next(isBusy: false)?.id
+        XCTAssertEqual(active, "a")
+        queue.enqueue(Request(id: "b"), activeID: active)
+        queue.enqueue(Request(id: "c"), activeID: active)
+        queue.enqueue(Request(id: "b"), activeID: active)
+        XCTAssertNil(queue.next(isBusy: true), "Transfer/removal ownership must retain a single worker")
+        XCTAssertEqual(queue.ids, ["b", "c"])
+        queue.remove(id: "b")
+        XCTAssertEqual(DataManagerDownloadState.resolve(optionID: "b", activeID: active,
+            queuedIDs: queue.ids, failures: [:]), .idle)
+        queue.enqueue(Request(id: "b"), activeID: active)
+        XCTAssertEqual(queue.ids, ["c", "b"])
+        XCTAssertEqual(queue.next(isBusy: false)?.id, "c")
+        XCTAssertEqual(queue.next(isBusy: false)?.id, "b")
+        XCTAssertNil(queue.next(isBusy: false))
+    }
+
     func testDataManagerMapAndListShareTruthfulAvailabilityStates() {
         for phase in [BundleMetadataLoadState.unknown, .loading, .available, .unavailable, .failed] {
             XCTAssertEqual(BundleMapDisplayState.resolve(installed: true, metadataState: phase), .installed)

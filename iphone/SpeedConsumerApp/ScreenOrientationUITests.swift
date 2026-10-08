@@ -238,7 +238,9 @@ final class ScreenOrientationUITests: XCTestCase {
         XCTAssertTrue(app.buttons["dataManager.region.germany|berlin"].waitForExistence(timeout: 5))
         // Selecting never starts a download. Back returns to Settings and
         // reopening retains the selected ID on the long-lived view model.
-        app.navigationBars.buttons.firstMatch.tap()
+        let backToSettings = app.navigationBars["Data Manager"].buttons["Settings"]
+        XCTAssertTrue(backToSettings.isHittable)
+        backToSettings.tap()
         XCTAssertTrue(managerLink.waitForExistence(timeout: 5))
         managerLink.tap()
         XCTAssertTrue(tabs.buttons["Map"].isSelected)

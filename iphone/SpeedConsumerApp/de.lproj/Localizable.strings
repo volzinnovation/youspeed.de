@@ -491,3 +491,5 @@
 "penalty.documentation.title" = "Bußgeldtabellen";
 
 "traffic.sign.documentation.title" = "Verkehrszeichen";
+"data_manager.queue_count" = "%d Downloads in der Warteschlange";
+"data_manager.queued_position" = "Warteschlange: Position %d";

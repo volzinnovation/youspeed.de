@@ -691,7 +691,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func startNextBundleDownload() {
-        guard let request = bundleDownloadQueue.next(isBusy: isSyncingNow) else { return }
+        guard let request = bundleDownloadQueue.next(isBusy: isManagingBundles) else { return }
         startBundleDownload(request.option, firstLocationSetup: request.firstLocationSetup)
     }
 
@@ -1825,6 +1825,23 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             // Keep any previously fetched metadata explicitly marked as cached.
             bundleMetadataStateByRegion[region] = .failed
         }
+    }
+
+    func dataManagerDownloadState(for option: BundleDownloadOption) -> DataManagerDownloadState {
+        DataManagerDownloadState.resolve(optionID: option.id,
+            activeID: hasActiveBundleDownload ? activeDownloadOptionID : nil,
+            queuedIDs: queuedBundleDownloadIDs, failures: bundleDownloadErrors)
+    }
+
+    func canRequestDataManagerDownload(_ option: BundleDownloadOption) -> Bool {
+        // A different region's active transfer and startup work may hold the
+        // FIFO, but must not block adding an independent request to that FIFO.
+        !isDeletingBundle && dataManagerMetadataState(for: option) != .unavailable
+            && dataManagerDownloadState(for: option).acceptsDownloadRequest
+    }
+
+    func canDeleteDataManagerBundle(_ option: BundleDownloadOption) -> Bool {
+        !isManagingBundles && !bundleInventoryError && !queuedBundleDownloadIDs.contains(option.id)
     }
 
     func dataManagerDisplayState(for option: BundleDownloadOption) -> BundleMapDisplayState {
@@ -5281,7 +5298,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func deleteSelectedBundle(_ option: BundleDownloadOption, expectedManifestRegion: String? = nil) {
-        guard !isDeletingBundle else { return }
+        guard !isDeletingBundle, !bundleInventoryError,
+              !queuedBundleDownloadIDs.contains(option.id) else { return }
         if let expectedManifestRegion, installedBundleRegion(for: option) != expectedManifestRegion {
             maintenanceMessage = NSLocalizedString("data_manager.delete_changed", comment: "")
             return
@@ -5303,9 +5321,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 return
             }
             defer {
-                isDeletingBundle = false
                 mapLookupPauseState.finishBundleRemoval()
                 refreshMapLookupPause()
+                isDeletingBundle = false
+                startNextBundleDownload()
             }
             do {
                 let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
@@ -5576,7 +5595,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func deleteDownloadedBundlesKeepingSeed() {
-        guard !isDeletingBundle, !bundleInventoryError else { return }
+        guard !isDeletingBundle, !bundleInventoryError, queuedBundleDownloadIDs.isEmpty else { return }
         guard startupTask == nil else {
             maintenanceMessage = "Startup-Datenvorbereitung laeuft noch."
             return
@@ -5594,9 +5613,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 return
             }
             defer {
-                isDeletingBundle = false
                 mapLookupPauseState.finishBundleRemoval()
                 refreshMapLookupPause()
+                isDeletingBundle = false
+                startNextBundleDownload()
             }
             do {
                 let removed = try await bundleManager.removeDownloadedBundlesKeepingSeed()

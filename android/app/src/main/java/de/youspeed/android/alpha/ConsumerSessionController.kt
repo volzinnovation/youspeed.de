@@ -3588,7 +3588,7 @@ class ConsumerSessionController(
 
     private fun startNextBundleDownload() {
         if (isDisposed.get()) return
-        val next = bundleDownloadQueue.next(isSyncingNow()) ?: return
+        val next = bundleDownloadQueue.next(isSyncingNow() || uiState.activeBundleDeletionOptionId != null) ?: return
         updateState { copy(queuedBundleDownloadIds = bundleDownloadQueue.ids) }
         startBundleDownload(next.option, next.initialDownloader, next.firstLocationSetup)
     }
@@ -4143,7 +4143,7 @@ class ConsumerSessionController(
     }
 
     fun isBundleMaintenanceBusy(): Boolean = isSyncingNow() || hasActiveBundleDownload() ||
-        uiState.activeBundleDeletionOptionId != null
+        uiState.activeBundleDeletionOptionId != null || uiState.queuedBundleDownloadIds.isNotEmpty()
 
     fun selectDataManagerRegion(id: String) {
         val option = uiState.bundleDownloadSections.flatMap { it.options }.firstOrNull { it.id == id } ?: return

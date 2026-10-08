@@ -1964,19 +1964,19 @@ internal fun SheetScaffold(
                         .padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = onBack ?: onDismiss,
-                        modifier = Modifier.size(48.dp).testTag(if (onBack != null) "$testTag-back" else "$testTag-close")) {
-                        Icon(if (onBack != null) Icons.AutoMirrored.Filled.ArrowBack else Icons.Default.Close,
-                            contentDescription = stringResource(if (onBack != null) R.string.data_manager_back else R.string.ui_done), tint = Color.Black)
+                    if (onBack != null) {
+                        IconButton(onClick = onBack, modifier = Modifier.size(48.dp).testTag("$testTag-back")) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.data_manager_back), tint = Color.Black)
+                        }
+                        Spacer(Modifier.width(8.dp))
                     }
-                    Spacer(Modifier.width(8.dp))
                     Text(title, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.Black,
                         maxLines = 2, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f).testTag("$testTag-title"))
-                    if (onBack != null) {
-                        IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).testTag("$testTag-close")) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_done), tint = Color.Black)
-                        }
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).testTag("$testTag-close")) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_close), tint = Color.Black)
                     }
                 }
                 HorizontalDivider()
