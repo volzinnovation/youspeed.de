@@ -258,8 +258,7 @@ private fun DataManagerDetails(option: BundleDownloadOption, controller: Consume
     val metadata = remote.metadata.takeUnless { remote.status == DataManagerMetadataStatus.UNAVAILABLE }
     val displayState = dataManagerDisplayState(isInstalled, remote)
     val transfer = DataManagerTransferState.resolve(option.id, ui.activeDownloadOptionId, ui.queuedBundleDownloadIds, ui.bundleDownloadErrors)
-    val unknown = stringResource(R.string.data_manager_unknown)
-    fun bytes(value: Long?) = value?.takeIf { it > 0 }?.let { Formatter.formatFileSize(context, it) } ?: unknown
+    fun bytes(value: Long?) = value?.takeIf { it > 0 }?.let { Formatter.formatFileSize(context, it) }
     fun date(value: String?) = value?.let { runCatching {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault())
             .withZone(ZoneId.systemDefault()).format(Instant.parse(it))
@@ -326,11 +325,15 @@ private fun DataManagerListRow(option: BundleDownloadOption, isSelected: Boolean
     val metadata = if (installed) local?.newestPackage
         else remote?.metadata?.takeUnless { remote.status == DataManagerMetadataStatus.UNAVAILABLE }
     val size = (if (installed) local?.totalDatabaseBytes else metadata?.bytes)?.takeIf { it > 0 }
-        ?.let { Formatter.formatFileSize(context, it) } ?: stringResource(R.string.data_manager_unknown)
+        ?.let { Formatter.formatFileSize(context, it) }
     val date = metadata?.createdAtUTC?.let { runCatching {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(Locale.getDefault())
             .withZone(ZoneId.systemDefault()).format(Instant.parse(it))
-    }.getOrNull() } ?: stringResource(R.string.data_manager_unknown)
+    }.getOrNull() }
+    val details = listOfNotNull(
+        size?.let { stringResource(R.string.data_manager_row_size, it) },
+        date?.let { stringResource(R.string.data_manager_row_date, it) },
+    ).joinToString(" · ")
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
         .background(if (isSelected) Color(0xFFDCE8F4) else Color.White)
         .clickable(role = Role.Button, onClick = onSelect).testTag("data-manager-region-${option.id}")
@@ -341,7 +344,7 @@ private fun DataManagerListRow(option: BundleDownloadOption, isSelected: Boolean
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             Text("${option.countryName} · ${stringResource(state.label())}", fontSize = 11.sp, color = state.color(),
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-            Text(stringResource(R.string.data_manager_row_details, size, date), fontSize = 11.sp, color = Color.DarkGray,
+            if (details.isNotEmpty()) Text(details, fontSize = 11.sp, color = Color.DarkGray,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             DataManagerBundleTransferStatus(option.id, ui, reserveSpace = true)
         }

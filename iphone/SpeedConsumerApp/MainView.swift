@@ -3684,6 +3684,9 @@ private struct DataManagerView: View {
         let selected = option.id == viewModel.dataManagerSelectedOptionID
         let state = viewModel.dataManagerDisplayState(for: option)
         let metadata = viewModel.installedBundleMetadata(for: option) ?? viewModel.dataManagerMetadata(for: option)
+        let details = [bytesText(metadata?.bytes).map { "\(dataManagerText("size")): \($0)" },
+                       dateText(metadata?.packageDate).map { "\(dataManagerText("date")): \($0)" }]
+            .compactMap { $0 }.joined(separator: " · ")
         return VStack(alignment: .leading, spacing: 4) {
             RecordingSafeButton {
                 searchFocused = false
@@ -3701,8 +3704,9 @@ private struct DataManagerView: View {
                         ProgressView(value: viewModel.activeBundleDownloadProgress(option) ?? 0)
                             .opacity(viewModel.isActiveBundleDownload(option) ? 1 : 0)
                             .accessibilityHidden(!viewModel.isActiveBundleDownload(option))
-                        Text("\(dataManagerText("size")): \(bytesText(metadata?.bytes) ?? dataManagerText("unknown")) · \(dataManagerText("date")): \(dateText(metadata?.packageDate) ?? dataManagerText("unknown"))")
-                            .font(.caption2).foregroundStyle(.secondary)
+                        if !details.isEmpty {
+                            Text(details).font(.caption2).foregroundStyle(.secondary)
+                        }
                     }
                     Spacer(minLength: 4)
                     Image(systemName: selected ? "chevron.up" : "chevron.down").foregroundStyle(.secondary)
