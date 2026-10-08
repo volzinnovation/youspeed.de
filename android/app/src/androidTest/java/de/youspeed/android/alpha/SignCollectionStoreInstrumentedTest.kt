@@ -63,7 +63,11 @@ class SignCollectionStoreInstrumentedTest {
                 store.finishBestEffortCrop(crop.id)
             }
             assertEquals(manifests.map { it["crop_id"] }.toSet(), queued.map { it["crop_id"] }.toSet())
-            queued.forEach { saved -> assertEquals(manifests.first { it["crop_id"] == saved["crop_id"] }["vehicle_position"], saved["vehicle_position"]) }
+            queued.forEach { saved ->
+                val original = manifests.first { it["crop_id"] == saved["crop_id"] }.getValue("vehicle_position")
+                // Persistence uses semantic JSON: integral doubles normalize to integers.
+                assertEquals(SignCollectionJson.canonical(original), SignCollectionJson.canonical(saved.getValue("vehicle_position")))
+            }
             assertNull(store.nextCrop())
         } finally { bitmap.recycle(); store.close(); root.deleteRecursively() }
     }
@@ -107,7 +111,7 @@ class SignCollectionStoreInstrumentedTest {
         val gate = SignCollectionContractGate { path -> context.assets.open("tsr/collection-contract-v1/$path").use { it.readBytes() } }
         val root = File(context.noBackupFilesDir,"fast-crops-${SignCollectionJson.uuid()}")
         val clock = TestClock(); var store = SignCollectionStore(root,gate,clock)
-        val bitmap = Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(1,1,Bitmap.Config.ARGB_8888,false,ColorSpace.get(ColorSpace.Named.SRGB))
         try {
             bitmap.eraseColor(0xff00aabb.toInt())
             val crop = SignCollectionCrop.generate(bitmap,mapOf("x" to 0.0,"y" to 0.0,"width" to 1.0,"height" to 1.0),hashSource=false)
