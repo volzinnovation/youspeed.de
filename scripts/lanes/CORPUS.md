@@ -300,6 +300,44 @@ proof is embedded in each checkpoint. No mobile model is exported. Cached
 features/targets take roughly13.1MB per640-pixel frame; the default512-frame
 per-source cap is a memory guard, not a dataset selection rule.
 
+## Selection opportunity and hint qualification
+
+`audit_selection_opportunity.py` inventories where a reviewed boundary was lost
+using an existing native replay. It verifies the original and normalized input
+manifests, luma bytes, frozen source snapshots, frame/time/split bindings, and
+selection decisions before scoring. Reuse the existing review tolerances:
+
+```sh
+python3 scripts/lanes/audit_selection_opportunity.py \
+  --replay-dir "$LANE_CORPUS_ROOT/baseline-reviewed" \
+  --labels "$LANE_CORPUS_ROOT/reviewed-development-labels.json" \
+  --negative-intervals "$LANE_CORPUS_ROOT/reviewed-development-negative-labels.json" \
+  --output-dir "$LANE_CORPUS_ROOT/selection-opportunity"
+```
+
+Replay `rawBoundaries` are post-temporal hypotheses. They cannot identify whether
+a missing border failed ridge extraction or fragment association. Keep visible
+matches, score competition, maturity, temporal holds, other gates and absent
+hypotheses separate. The report also checks whether wrong displayed selections
+had a matching same-side alternative. A wrong sole candidate needs a separately
+scoped abstention experiment; reordering candidates cannot remove it.
+
+Sparse keyframes provide geometry matching and painted-span support only. Dense
+negative intervals separately measure sampled unsupported display duration, with
+a gap cap and explicit exposure binding. Previously inspected approximate
+development labels do not become independent acceptance truth. This inventory
+cannot complete a reviewed-mask ablation or establish a model benefit.
+
+The separate offline `qualify_semantic_hints.py` prototype and shared
+[`semantic-hint-v1` contract](../../shared/lanes/semantic-hint-v1/README.md) prepare
+#21/#23 fault fixtures. They qualify exact exposure, scope, clocks, model,
+geometry and score/validity arrays and exercise source-time ordering. Rejected
+inputs provide no qualified hint. Preserving a baseline object in this adapter
+is not proof of live iPhone/Android fallback parity. The prototype does not wire
+models into the lane workers, rerank candidates, change temporal confirmations
+or implement motion propagation. Platform clock conversion, actual model outputs,
+runtime parity and sustained device workloads remain separate qualification.
+
 ## Tests and next decision
 
 Run the corpus tests with NumPy, OpenCV and pytest installed:
@@ -317,6 +355,8 @@ Run the training checks in the isolated training environment:
 python3 -m unittest discover -s tests/lanes -p test_train_a2d2_auxiliary.py -v
 python3 -m unittest discover -s tests/lanes -p test_prepare_zod_lane_corpus.py -v
 python3 -m unittest discover -s tests/lanes -p test_train_mixed_auxiliary.py -v
+python3 -m unittest discover -s tests/lanes -p test_audit_selection_opportunity.py -v
+python3 -m unittest discover -s tests/lanes -p test_qualify_semantic_hints.py -v
 ```
 
 The next gate is independent teacher quality and selection-opportunity evidence,
