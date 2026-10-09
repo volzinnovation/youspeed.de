@@ -1056,6 +1056,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
 // MARK: - Atomic frame state
 
 struct TrafficSignFrameSnapshot: Equatable, Sendable {
+    let collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch?
     let applicabilityMapFix: TSRMapFix?
     let context: TrafficSignDetectionContext?
     let coordinate: TrafficSignCoordinate?
@@ -1073,7 +1074,8 @@ struct TrafficSignFrameSnapshot: Equatable, Sendable {
         sessionGeneration: UInt64 = 0,
         contextGeneration: UInt64 = 0,
         captureSessionId: String? = nil,
-        diagnosticCaptureEnabled: Bool = false
+        diagnosticCaptureEnabled: Bool = false,
+        collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch? = nil
     ) {
         self.context = context
         self.applicabilityMapFix = applicabilityMapFix
@@ -1085,6 +1087,7 @@ struct TrafficSignFrameSnapshot: Equatable, Sendable {
         self.contextGeneration = contextGeneration
         self.captureSessionId = captureSessionId
         self.diagnosticCaptureEnabled = diagnosticCaptureEnabled
+        self.collectionPhoneRoadMatch = collectionPhoneRoadMatch
     }
 }
 
@@ -1128,6 +1131,7 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
     let annotationEvent: TrafficSignRecognitionEvent?
     let collectionDetections: [TrafficSignDetection]
     let collectionFrame: SignCollectionFrame?
+    let collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch?
 
     init(
         event: TrafficSignRecognitionEvent,
@@ -1143,7 +1147,8 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         roadPathDiagnostic: String? = nil,
         annotationEvent: TrafficSignRecognitionEvent? = nil,
         collectionDetections: [TrafficSignDetection] = [],
-        collectionFrame: SignCollectionFrame? = nil
+        collectionFrame: SignCollectionFrame? = nil,
+        collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch? = nil
     ) {
         precondition(
             event.roadContext == frameContext,
@@ -1163,6 +1168,7 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         self.annotationEvent = annotationEvent
         self.collectionDetections = collectionDetections
         self.collectionFrame = collectionFrame
+        self.collectionPhoneRoadMatch = collectionPhoneRoadMatch
     }
 }
 
@@ -2030,7 +2036,8 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                                               space: color, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else { throw SignCollectionError.storage }
                     rgb.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
                     guard let result = rgb.makeImage() else { throw SignCollectionError.storage }; return result
-                } : nil
+                } : nil,
+                collectionPhoneRoadMatch: item.snapshot.collectionPhoneRoadMatch
             )
             callbackQueue.async { [weak self, eventHandler] in
                 guard self?.canDeliverCallback == true else { return }

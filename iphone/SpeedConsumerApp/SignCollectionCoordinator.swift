@@ -225,7 +225,7 @@ import CoreGraphics
                     let metadata = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: candidate.observationID,
                         installationID: try store.installationID, epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: candidate.frameAt,
                         localFrameToken: frame.token, privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: claim,
-                        vehiclePosition: framePosition)
+                        vehiclePosition: framePosition, phoneRoadMatch: emission.collectionPhoneRoadMatch)
                     try store.enqueueAutomaticCrop(metadata: metadata, bytes: crop.bytes)
                     return .stored
                 } catch {

@@ -75,6 +75,32 @@ Map Matcher mit Positionsmarker; „In neuem Tab öffnen“ zeigt dieselbe Posit
 in einer separaten Inspector-Karte. Fehlende oder ungültige Koordinaten bleiben
 ohne Link.
 
+Neue Crops können zusätzlich `phone_road_match` enthalten: die auf dem Telefon
+mit dem Frame festgehaltene OSM-Way-ID, Bundle-Version und -SHA-256, ursprüngliche
+Match-Fixzeit, signierter Frame/Fix-Abstand, Richtung und Stabilitätsmarker.
+**OSM-Way vom Telefon** filtert exakt nach dieser ID, vor der Seitenauswahl. Die
+API akzeptiert `phone_way_id` als dezimale Zeichenkette; IDs werden nicht über
+JavaScript-Zahlen gerundet. **Im geladenen Karten-Bundle ansehen** öffnet direkt
+den Way samt vorhandenen Korridor-/Portalverbindungen und zeigt, wenn vorhanden,
+Crop-Position und GPS-Kurs. Das ist ausdrücklich das aktuell geladene Inspector-
+Bundle; Version und Hash des damaligen Telefon-Bundles bleiben separat sichtbar.
+Der externe OSM-Link zeigt die heutige OSM-Version.
+
+**Crops dieser Beobachtung anzeigen** lädt die Geschwister-Crops derselben
+Installation, Sammlungsepoche und Beobachtung; Klasse-/Zeit-/Way-Filter werden
+dafür aufgehoben. Die API bindet `observation_id` zusammen mit `installation` und
+`collection_epoch`. Damit lassen sich zeitlich aufeinanderfolgende Ausschnitte,
+Positionen und Richtung gemeinsam prüfen. Zwei qualifizierende Detektorframes
+sind keine Garantie für zwei erfolgreich gespeicherte Crops. Eine Beobachtung
+beweist auch nicht, dass das Zeichen tatsächlich eingeblendet wurde; diese
+Präsentationsverknüpfung wird bisher nicht dauerhaft übertragen.
+
+Ältere Crops ohne Match-Feld und neue Crops mit explizit unbekanntem Match (`null`)
+werden unterschiedlich angezeigt. Es gibt keinen Fallback auf die spätere
+Telefonposition, die Beobachtung oder einen neu berechneten OSM-Match. Dieses
+Metadatenfeld ändert weder Zeichenentscheidungen noch den nachträglichen
+Ausfahrtkontext. Den erweiterten Backend-Vertrag vor den neuen Clients aktivieren.
+
 Dieser Modus benötigt den mitgelieferten Python-Server statt `http.server`:
 
 ```sh

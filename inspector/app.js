@@ -2872,22 +2872,23 @@ function readBrowserLocation() {
 
 function loadAndCenterWay(rawWayID) {
   if (!requireDatabase()) {
-    return;
+    return false;
   }
   const wayID = normalizeWayID(rawWayID);
   if (wayID == null) {
     setStatus("Ungültige Way-ID. Bitte nur Ziffern eingeben.", true);
-    return;
+    return false;
   }
 
   const row = queryWayByID(wayID);
   if (!row) {
+    clearWayLayers();
     setStatus(`Way ${wayID} nicht im geladenen Bundle gefunden.`, true);
     setStreetAndWay(null, wayID);
     updatePortalInspection([], {
       sourceLabel: `Way ${wayID}`
     });
-    return;
+    return false;
   }
 
   const points = parseWayPoints(row.points_json);
@@ -2913,6 +2914,32 @@ function loadAndCenterWay(rawWayID) {
 
   const speed = safeString(row.maxspeed) ?? "n/a";
   setStatus(`Way ${wayID} geladen (maxspeed=${speed}).`);
+  return true;
+}
+
+function focusCropRoad(rawWayID, position) {
+  clearTSRContextLayers();
+  clearWayLayers();
+  updatePortalInspection([]);
+  // The current sql.js matcher uses numeric IDs. Never round a recorded int64.
+  const wayID = String(rawWayID ?? "");
+  if (!/^[1-9][0-9]{0,18}$/.test(wayID) || !Number.isSafeInteger(Number(wayID))) {
+    setStatus("Diese Way-ID kann der lokale Kartenbetrachter nicht verlustfrei darstellen. Die Crop-Metadaten bleiben vollständig erhalten.", true);
+    return false;
+  }
+  if (!requireDatabase()) return false;
+  ensureMapTiles();
+  map.invalidateSize();
+  const found = loadAndCenterWay(wayID);
+  if (Number.isFinite(position?.latitude) && Math.abs(position.latitude) <= 90
+      && Number.isFinite(position?.longitude) && Math.abs(position.longitude) <= 180) {
+    const course = position.course_degrees;
+    focusTSRContext({way_id: wayID, latitude: position.latitude, longitude: position.longitude,
+      ...(Number.isFinite(course) && course >= 0 && course < 360 ? {heading_degrees: course} : {})});
+  }
+  // Portal/connected-way inspection uses the explicitly loaded map. It does not
+  // silently claim to reconstruct the bundle that was installed on the phone.
+  return found;
 }
 
 function identifyStreetUnderCrosshair() {
@@ -3036,6 +3063,7 @@ window.YouSpeedInspectorBridge = Object.freeze({
   },
   focusTSRContext,
   focusVehiclePosition,
+  focusCropRoad,
   clearTSRContext: clearTSRContextLayers,
   ensureMapTiles,
   invalidateMap: () => map.invalidateSize(),

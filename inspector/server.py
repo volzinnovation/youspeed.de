@@ -70,7 +70,7 @@ def database_error(error):
 
 
 def crop_filters(query):
-    allowed = {"offset", "limit", "country", "source", "installation", "query", "from", "to", "scope", "review_state", "exit_context", "class_source"}
+    allowed = {"offset", "limit", "country", "source", "installation", "query", "from", "to", "scope", "review_state", "exit_context", "class_source", "phone_way_id", "observation_id", "collection_epoch"}
     if set(query) - allowed or any(len(values) != 1 for values in query.values()):
         raise InspectorError("Ungültige Crop-Filter.", 400)
     get = lambda name, default="": query.get(name, [default])[0]
@@ -92,11 +92,31 @@ def crop_filters(query):
             raise ValueError
         if len(search) > 160:
             raise ValueError
+        phone_way_id = get("phone_way_id")
+        if phone_way_id and (not re.fullmatch(r"[1-9][0-9]{0,18}", phone_way_id)
+                             or int(phone_way_id) > 9223372036854775807):
+            raise ValueError
         clauses, params = [], []
         if get("installation"):
             installation = str(UUID(get("installation")))
             clauses.append("m.installation=%s")
             params.append(installation)
+        if get("observation_id") or get("collection_epoch"):
+            # A crop sequence is one source observation in one installation epoch.
+            if not get("installation") or not get("observation_id") or not re.fullmatch(r"0|[1-9][0-9]{0,9}", get("collection_epoch")):
+                raise ValueError
+            epoch = int(get("collection_epoch"))
+            if epoch > 2147483647:
+                raise ValueError
+            observation_id = str(UUID(get("observation_id")))
+            clauses.extend(["m.epoch=%s", "m.manifest->>'observation_id'=%s"])
+            params.extend([epoch, observation_id])
+        if phone_way_id:
+            clauses.append("jsonb_typeof(m.manifest->'phone_road_match'->'osm_way_id')='string'")
+            clauses.append("m.manifest->'phone_road_match'->'schema_version'='1'::jsonb")
+            clauses.append("m.manifest->'phone_road_match'->>'source'='on_device_bundle_matcher'")
+            clauses.append("m.manifest->'phone_road_match'->>'osm_way_id'=%s")
+            params.append(phone_way_id)
         if country:
             if class_source == "reviewed":
                 clauses.append("(CASE WHEN r.verdict='confirmed' THEN e.payload->'event'->'classification' WHEN r.verdict='wrong_class' THEN r.corrected_classification ELSE NULL END)->>'country'=%s")

@@ -2918,6 +2918,42 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(afterBundleChange.roadContext, nextBundleContext)
     }
 
+    func testCollectionPhoneMatchStaysWithAcceptedFrameAcrossNewMatcherResult() throws {
+        let manifest = makeTrafficSignModelPackManifest()
+        let artifact = try XCTUnwrap(manifest.detector.artifacts.first)
+        let verified = TrafficSignVerifiedModelPack(directoryURL: URL(fileURLWithPath: NSTemporaryDirectory()),
+            manifest: manifest, detectorArtifact: artifact, detectorArtifactURL: URL(fileURLWithPath: "/unused-test-model"))
+        let backend = FirstInvocationBlockingTrafficSignInferenceBackend()
+        let at = Date(timeIntervalSince1970: 7000)
+        let original = try XCTUnwrap(SignCollectionPhoneRoadMatch(osmWayID: "123", bundleVersion: "bundle-a",
+            bundleDBSHA256: String(repeating: "a", count: 64), matchedFixAt: at.addingTimeInterval(-0.5), travelDirection: "forward", matchedWayStable: true))
+        let conditions = TrafficSignAnalysisConditions(speedKmh: 50, candidateRecentlySeen: false,
+            lowPowerMode: false, thermalState: .nominal, appIsActive: true)
+        let initial = TrafficSignFrameSnapshot(context: makeTrafficSignDetectionContext(), conditions: conditions,
+            collectionPhoneRoadMatch: original)
+        let newer = TrafficSignFrameSnapshot(context: initial.context, conditions: conditions,
+            collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch(osmWayID: "456", bundleVersion: "bundle-b",
+                bundleDBSHA256: String(repeating: "b", count: 64), matchedFixAt: at, travelDirection: "reverse", matchedWayStable: false))
+        let state = TrafficSignAtomicFrameState(value: initial)
+        let emissions = TrafficSignTestEmissionStore(), signal = DispatchSemaphore(value: 0)
+        let runtime = TrafficSignRuntime(verifiedPack: verified, backend: backend, snapshotProvider: { state.snapshot() },
+            callbackQueue: DispatchQueue(label: "phone-match-test"), eventHandler: { emissions.append($0); signal.signal() })
+        defer { runtime.stop() }
+        let image = try makeTrafficSignTestImage()
+        runtime.analyzeStill(cgImage: image, orientation: .up, timestampUTC: at, snapshot: initial)
+        XCTAssertEqual(backend.waitUntilStarted(timeout: .now() + 2), .success)
+        state.update(newer)
+        backend.releaseFirstInvocation()
+        XCTAssertEqual(signal.wait(timeout: .now() + 3), .success)
+        XCTAssertEqual(emissions.snapshot().first?.collectionPhoneRoadMatch, original)
+        let absent = TrafficSignFrameSnapshot(context: initial.context, conditions: conditions)
+        state.update(absent)
+        runtime.analyzeStill(cgImage: image, orientation: .up, timestampUTC: at.addingTimeInterval(1), snapshot: absent)
+        XCTAssertEqual(signal.wait(timeout: .now() + 3), .success)
+        XCTAssertEqual(emissions.snapshot().count, 2)
+        XCTAssertNil(emissions.snapshot().last?.collectionPhoneRoadMatch)
+    }
+
     func testCalibratedRuntimeCropsActualInputAndRemapsForEveryMountOrientation() throws {
         let manifest = makeTrafficSignModelPackManifest()
         let artifact = try XCTUnwrap(manifest.detector.artifacts.first)

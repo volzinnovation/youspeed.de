@@ -116,9 +116,13 @@ Priority remains:
 
 1. Qualify and approve the backend/Inspector rollout, then enable durable class
    review and persist contexts only after current lifecycle/source checks.
-2. Review a 30–50-group development queue and recover verified surrounding live
-   context. Report category shortfalls; resolve physical-sign/site groups before
-   any future split. Expand regional map coverage only as a separate pinned run.
+2. Start road-context triage from the recorded way, travel bearing and repeated
+   crops; [the new phone-match extension](CROP_PHONE_ROAD_MATCH_2026-10-09.md)
+   supplies direct way lookup for future captures. The current snapshot already
+   has 266 multi-crop observation groups with crop-level course. Review the
+   development queue, using surrounding live frames for unresolved cases. Report
+   category shortfalls and resolve physical-sign/site groups before any future
+   split. Expand regional map coverage only as a separate pinned run.
 3. Qualify native exposure/context and whole-frame guard/display/passage behavior
    under #13/#15, using the reviewed simultaneous-sign cases.
 4. Compare native, Hough, semantic-guided and reviewed geometry on identical

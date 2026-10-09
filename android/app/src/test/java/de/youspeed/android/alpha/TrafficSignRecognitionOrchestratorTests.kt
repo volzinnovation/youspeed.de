@@ -11,6 +11,26 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrafficSignRecognitionOrchestratorTests {
+    @Test fun collectionPhoneMatchIsFrozenAtAdmissionAndNullNeverBlocksRecognition() {
+        val harness = Harness()
+        val at = Instant.parse("2026-09-01T10:00:00Z")
+        val original = SignCollectionPhoneRoadMatch.capture("123", "bundle-a", "a".repeat(64), at.minusMillis(500), "forward", true)
+        harness.phoneRoadMatch = original
+        harness.orchestrator.submit(harness.frame("a", capturedAtNanos = 0))
+        harness.phoneRoadMatch = SignCollectionPhoneRoadMatch.capture("456", "bundle-b", "b".repeat(64), at, "reverse", false)
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        assertSame(original, harness.observer.outputs.single().collectionPhoneRoadMatch)
+        assertEquals("123", harness.observer.outputs.single().collectionPhoneRoadMatch?.osmWayId)
+        harness.clockNanos = 1_000_000_000
+        harness.phoneRoadMatch = null
+        harness.orchestrator.submit(harness.frame("unmatched-metadata", capturedAtNanos = harness.clockNanos))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        assertEquals(2, harness.observer.outputs.size)
+        assertNull(harness.observer.outputs.last().collectionPhoneRoadMatch)
+        assertTrue(harness.observer.outputs.last().collectionDetections.isNotEmpty())
+    }
+
+
     @Test fun cameraBackpressureDropsBusyFramesWithoutRetainingPixelsOrChangingDefaultQueue() {
         val harness=Harness()
         val drops=mutableListOf<String>()
@@ -1090,6 +1110,7 @@ class TrafficSignRecognitionOrchestratorTests {
         var runtimeActivationEligible = true
         var conditions=TrafficSignAnalysisConditions()
         var mapFix: TSRMapFix? = null
+        var phoneRoadMatch: SignCollectionPhoneRoadMatch? = null
         val orchestrator = TrafficSignRecognitionOrchestrator(
             modelPack = pack,
             runtimeArtifact = requireNotNull(pack.androidArtifact()),
@@ -1101,6 +1122,7 @@ class TrafficSignRecognitionOrchestratorTests {
                     runtimeActivationEligible,
                     driveSessionId = "drive-test",
                     applicabilityMapFix = mapFix,
+                    collectionPhoneRoadMatch = phoneRoadMatch,
                 )
             },
             conditionsSnapshot = { conditions },

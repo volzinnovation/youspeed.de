@@ -146,6 +146,37 @@ class StoreTests(unittest.TestCase):
         self.assertIn("WHEN r.verdict='wrong_class' THEN r.corrected_classification ELSE NULL END)->>'country'=%s", sql)
         self.assertEqual(params, ["FR", 51, 0])
 
+    def test_phone_way_filter_is_exact_string_before_pagination(self):
+        way = "9007199254740993"
+        self.store.list({"phone_way_id": [way], "country": ["DE"], "offset": ["50"]})
+        sql, params = self.calls[-1]
+        self.assertIn("m.manifest->'phone_road_match'->>'osm_way_id'=%s", sql)
+        self.assertIn("jsonb_typeof(m.manifest->'phone_road_match'->'osm_way_id')='string'", sql)
+        self.assertIn("->>'source'='on_device_bundle_matcher'", sql)
+        self.assertLess(sql.index("->>'osm_way_id'=%s"), sql.rindex(" LIMIT "))
+        self.assertNotIn(way, sql)
+        self.assertEqual(params, [way, "DE", 51, 50])
+
+    def test_phone_way_filter_rejects_lossy_or_noncanonical_ids(self):
+        for value in ["0", "01", "-1", "1.5", "1e4", "1 OR true", " 123", "9223372036854775808"]:
+            with self.subTest(value=value), self.assertRaises(server.InspectorError):
+                self.store.list({"phone_way_id": [value]})
+        self.assertEqual(self.calls, [])
+
+    def test_observation_sequence_is_bound_to_installation_epoch(self):
+        self.store.list({"installation": [INSTALLATION], "observation_id": [CROP], "collection_epoch": ["0"]})
+        sql, params = self.calls[-1]
+        self.assertIn("m.installation=%s", sql)
+        self.assertIn("m.epoch=%s", sql)
+        self.assertIn("m.manifest->>'observation_id'=%s", sql)
+        self.assertEqual(params, [INSTALLATION, 0, CROP, 51, 0])
+        for fields in [{"observation_id": [CROP]},
+                       {"observation_id": [CROP], "collection_epoch": ["0"]},
+                       {"installation": [INSTALLATION], "collection_epoch": ["0"]},
+                       {"installation": [INSTALLATION], "observation_id": [CROP], "collection_epoch": ["2147483648"]}]:
+            with self.subTest(fields=fields), self.assertRaises(server.InspectorError):
+                self.store.list(fields)
+
     def test_live_analysis_requires_fresh_complete_controls(self):
         for control in (None, {"fresh": False}, {"fresh": None}):
             self.control = control

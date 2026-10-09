@@ -1,7 +1,7 @@
 {
   "source_repository": "Woladen.de-analytics",
   "source_branch": "main",
-  "source_commit": "e378973ea03cb61fbae96f1d80a38e60cf8ddbd6",
-  "manifest_sha256": "b24c5b585b0c8d2c235f36964cbdd7cb932fd85da93a011f380055cdd6f7663f",
+  "source_commit": "e7dd00933c5ca6154655b590b83cbd47de916e79",
+  "manifest_sha256": "2aca3371266166637d5a2d8528b774e7fbbfb9981f638538c672d126f3a836dd",
   "live_transport_enabled": true
 }

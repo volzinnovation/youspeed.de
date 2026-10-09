@@ -28,6 +28,7 @@ data class TrafficSignDetectionContextSnapshotValue(
     val runtimeActivationEligible: Boolean = false,
     val driveSessionId: String? = null,
     val applicabilityMapFix: TSRMapFix? = null,
+    val collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch? = null,
 ) {
     init {
         require(generation >= 0L) { "Traffic-sign context generation must not be negative" }
@@ -144,6 +145,7 @@ data class TrafficSignOrchestrationOutput(
     val collectionDetections: List<TrafficSignDetection> = emptyList(),
     val collectionFrame: SignCollectionFrame? = null,
     val roadPathDiagnostic: String? = null,
+    val collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch? = null,
 )
 
 interface TrafficSignRecognitionObserver {
@@ -284,6 +286,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                             runtimeActivationEligible = snapshot.runtimeActivationEligible,
                             driveSessionId = snapshot.driveSessionId,
                             applicabilityMapFix = snapshot.applicabilityMapFix,
+                            collectionPhoneRoadMatch = snapshot.collectionPhoneRoadMatch,
                         ),
                         capturedAtNanos = frame.capturedAtMonotonicNanos,
                     )
@@ -648,6 +651,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     collectionDetections = created.collectionDetections,
                     collectionFrame = (backendResult as? TrafficSignBackendResult.Recognition)?.collectionFrame,
                     roadPathDiagnostic = created.roadPathDiagnostic,
+                    collectionPhoneRoadMatch = active.accepted.collectionPhoneRoadMatch,
                 )
                 dispatch = takeDispatchLocked()
             }
@@ -892,6 +896,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         val runtimeActivationEligible: Boolean,
         val driveSessionId: String?,
         val applicabilityMapFix: TSRMapFix?,
+        val collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch?,
     )
 
     private data class FrameMetadata(

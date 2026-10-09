@@ -73,7 +73,7 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
 internal class TrafficSignFinalizedPassageForwarder(
     private val submitDisplayObservation: (TrafficSignDisplayObservation) -> Unit = {},
     private val submitRecognitionEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
-    private val submitCollectionFrame: (TrafficSignRecognitionEvent, List<TrafficSignDetection>, Long, SignCollectionFrame?) -> Unit = { _, _, _, frame -> frame?.close() },
+    private val submitCollectionFrame: (TrafficSignRecognitionEvent, List<TrafficSignDetection>, Long, SignCollectionFrame?, SignCollectionPhoneRoadMatch?) -> Unit = { _, _, _, frame, _ -> frame?.close() },
     private val submitAnnotationEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
     private val onRuntimeUnavailable: (String, Long) -> Unit = { _, _ -> },
     private val onContextMismatch: (Long) -> Unit = {},
@@ -92,7 +92,7 @@ internal class TrafficSignFinalizedPassageForwarder(
         // output; finalized passages still carry durable activation.
         output.passageEvent?.let(submitFinalizedPassage)
         if (!output.terminalBackendFailure && output.backendFailureReason == null) {
-            submitCollectionFrame(output.event, output.collectionDetections, output.contextGeneration, output.collectionFrame)
+            submitCollectionFrame(output.event, output.collectionDetections, output.contextGeneration, output.collectionFrame, output.collectionPhoneRoadMatch)
             submitRecognitionEvent(output.event, output.contextGeneration)
             submitAnnotationEvent(output.annotationEvent ?: output.event, output.contextGeneration)
         }

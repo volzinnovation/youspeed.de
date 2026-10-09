@@ -98,6 +98,14 @@ def main():
                     assert backend.canonical(value) == path.read_bytes(), path
                     if model == "batch":
                         for event in value["events"]: backend.Sighting.model_validate(event)
+            for name in [f"{platform}-phone-road-match-crop.json", f"{platform}-fractional-phone-road-match-crop.json"]:
+                path = out / name
+                if path.exists():
+                    value = json.loads(path.read_text())
+                    jsonschema.validate(value, schemas["crop"])
+                    if backend:
+                        backend.Crop.model_validate(value)
+                        assert backend.canonical(value) == path.read_bytes(), path
             crop_path = out / f"{platform}-crop.png"
             if crop_path.exists():
                 from PIL import Image

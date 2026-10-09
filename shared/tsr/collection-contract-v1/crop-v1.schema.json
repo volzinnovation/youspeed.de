@@ -89,6 +89,75 @@
       "title": "Box",
       "type": "object"
     },
+    "PhoneRoadMatch": {
+      "additionalProperties": false,
+      "description": "Recorded phone matcher result; neither reviewed road nor sign applicability.",
+      "properties": {
+        "bundle_db_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Bundle Db Sha256",
+          "type": "string"
+        },
+        "bundle_version": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Bundle Version",
+          "type": "string"
+        },
+        "frame_match_delta_ms": {
+          "maximum": 86400000,
+          "minimum": -86400000,
+          "title": "Frame Match Delta Ms",
+          "type": "number"
+        },
+        "matched_fix_at": {
+          "format": "date-time",
+          "title": "Matched Fix At",
+          "type": "string"
+        },
+        "matched_way_stable": {
+          "title": "Matched Way Stable",
+          "type": "boolean"
+        },
+        "osm_way_id": {
+          "pattern": "^[1-9][0-9]{0,18}$",
+          "title": "Osm Way Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "source": {
+          "const": "on_device_bundle_matcher",
+          "title": "Source",
+          "type": "string"
+        },
+        "travel_direction": {
+          "enum": [
+            "forward",
+            "reverse",
+            "unknown"
+          ],
+          "title": "Travel Direction",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "source",
+        "osm_way_id",
+        "bundle_version",
+        "bundle_db_sha256",
+        "matched_fix_at",
+        "frame_match_delta_ms",
+        "travel_direction",
+        "matched_way_stable"
+      ],
+      "title": "PhoneRoadMatch",
+      "type": "object"
+    },
     "Position": {
       "additionalProperties": false,
       "properties": {
@@ -280,6 +349,17 @@
       "minItems": 4,
       "title": "Original Box",
       "type": "array"
+    },
+    "phone_road_match": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PhoneRoadMatch"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "privacy_preflight": {
       "enum": [
