@@ -74,20 +74,25 @@ Its rollout instructions are in
 role grants as one coordinated backend revision before enabling the live workflow.
 See [Inspector setup](../inspector/README.md).
 
-**No production schema inspection, migration, crop inventory or enrichment run was
-completed here:** volz-db was unreachable on the VPN. No eligible crop/encounter
-count, class accuracy, wrong-road rejection improvement or production readiness is
-claimed. No model training or phone deployment was performed. Prior ZOD/native
-comparison evidence remains unchanged.
+The initial implementation pass could not reach volz-db. After VPN access returned,
+a read-only inventory and offline context run completed: **1,801 live crops** remain
+after excluding **5,452 archive/replay crops**; **201** are near mapped exits.
+See the [live inventory and remaining gates](LIVE_CROP_INVENTORY_2026-10-09.md).
+The review/context tables are absent on the inspected database; no migration or
+production context write was performed. Class accuracy, wrong-road rejection
+improvement and production readiness remain unmeasured. No model training or phone
+deployment was performed. Prior ZOD/native comparison evidence remains unchanged.
 
 ## Next work, in order
 
-1. Restore server connectivity, inspect the deployed revision/schema and prepare
-   the coordinated backend/Inspector rollout for approval. Then run the bounded
-   read-only inventory before any context write. Report live, replay and unknown
-   provenance separately, followed by exact/legacy/missing/stale location counts
-   and map coverage. Estimated remaining operational work: 0.5–1 day after access
-   and rollout approval, subject to deployed compatibility.
+1. The bounded read-only inventory and offline geographic staging are complete.
+   Finish administrator attestation of the running containers, then approve the
+   coordinated backend/Inspector rollout. A concrete migration, grants, credentials,
+   compatibility and rollback plan is prepared privately. Current SSH access cannot
+   inspect Docker, and noninteractive sudo requires authentication. Estimated
+   remaining operational work: 0.5–1 day after administrator access and rollout
+   approval, subject to deployed compatibility. Recheck current consent and source
+   equality before any context write.
 2. Build the initial **30–50 encounter target** from eligible live captures only.
    This is a target, not a guaranteed available sample. Keep mainline-near-exit,
    taken/untaken exit, simultaneous sign, overhead/supplementary and non-exit
