@@ -324,6 +324,8 @@ final class RoadPathSession: @unchecked Sendable {
     }
 
     func prepare(frame: RoadPathCameraFrame, frameId: String, scope: TSRApplicabilityScope,
+                 detectorTrace: RoadBoundaryTraceObserver? = nil,
+                 semanticScoreAdjustments: [Double]? = nil,
                  shouldPublish: () -> Bool = { true }) -> RoadPathPreparedFrame {
         evaluationLock.lock(); defer { evaluationLock.unlock() }
         lock.lock()
@@ -382,7 +384,7 @@ final class RoadPathSession: @unchecked Sendable {
             }
             let fresh = prediction.budgetExceeded ? RoadBoundaryFrame(boundaries:[],corridors:[],timestampSeconds:frame.capturedAtSeconds,budgetExceeded:true) :
                 detector.detect(grayscale:enhanced,width:frame.width,height:frame.height,timestampSeconds:frame.capturedAtSeconds,
-                    maximumOperations:maximumGeometryOperations,guidance:RoadBoundarySearchGuidance(horizonY:samplingVisual?.horizonY,polylines:guides),options:detectionOptions)
+                    maximumOperations:maximumGeometryOperations,guidance:RoadBoundarySearchGuidance(horizonY:samplingVisual?.horizonY,polylines:guides),options:detectionOptions,trace:detectorTrace)
             let detectedAt=nowUptime(); detectionMs=max(0,(detectedAt-predictedAt)*1000)
             freshBoundaries=fresh.boundaries; freshRejections=fresh.rejectionCounts; variant=fresh.detectionVariant
             geometry = temporal.complete(prediction:prediction,fresh:fresh,grayscale:frame.grayscale)
@@ -410,7 +412,8 @@ final class RoadPathSession: @unchecked Sendable {
                 jointSelection:jointSelection,egoContext:RoadBoundaryEgoContext(
                     calibration:motionProjection == nil ? nil : frame.calibration,
                     speedMetersPerSecond:motionProjection == nil ? nil : motionHint.speedMetersPerSecond,
-                    headingRateDegreesPerSecond:motionProjection == nil ? nil : motionHint.headingRateDegreesPerSecond))
+                    headingRateDegreesPerSecond:motionProjection == nil ? nil : motionHint.headingRateDegreesPerSecond),
+                semanticScoreAdjustments:semanticScoreAdjustments)
         }
         let ready = nowUptime(), geometryMs = max(0,(ready-detectorStart)*1000)
         let preparationMs = max(0,(ready-frame.startedAt)*1000)

@@ -1,0 +1,355 @@
+import copy
+import importlib.util
+import json
+from pathlib import Path
+import tempfile
+import unittest
+
+import cv2
+import numpy as np
+
+SPEC = importlib.util.spec_from_file_location("zod_adapter", Path(__file__).parents[2] / "scripts/lanes/prepare_zod_lane_corpus.py")
+zod = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(zod)
+
+
+def feature(identity, x1, y1, x2, y2, category="lm_dashed", **properties):
+    props = {"annotation_uuid": identity, "InstanceID": 1, **properties}
+    if category is not None:
+        props["class"] = category
+    return {"geometry": {"type": "Polygon", "coordinates": [[[x1, y1], [x2, y1], [x2, y2], [x1, y2]]]}, "properties": props}
+
+
+def record(identity, latitude, split="train", date="2020-01-01", car="car1"):
+    return {"frame_id": identity, "latitude": latitude, "longitude": 10., "capture_date": date,
+            "collection_car": car, "official_split": split}
+
+
+class RasterizationTest(unittest.TestCase):
+    def test_tiny_positive_can_disappear_in_predeclared_loss_space(self):
+        paint=np.zeros((100,200),np.uint8);paint[0,0]=255
+        counts=zod.loss_space_counts(paint,paint,200,100,32)
+        self.assertEqual(counts["training_input_valid_pixels"],0)
+        self.assertEqual(counts["training_input_positive_pixels"],0)
+        complete=zod.loss_space_counts(paint,np.full_like(paint,255),200,100,32)
+        self.assertEqual(complete["training_input_valid_pixels"],32*16)
+
+    def test_same_instance_dash_gaps_are_background(self):
+        polygons = [feature("first", 2, 2, 4, 4), feature("second", 2, 8, 4, 10)]
+        positive, valid, stats = zod.rasterize_annotations(polygons, 12, 12, True)
+        self.assertEqual(int(positive[3, 3]), 255)
+        self.assertEqual(int(positive[9, 3]), 255)
+        self.assertEqual(int(positive[6, 3]), 0)
+        self.assertEqual(int(valid[6, 3]), 255)
+        self.assertEqual(stats["annotation_counts"], {"lm_dashed": 2})
+
+    def test_other_paint_uncertainty_and_overlap_ignore_wins(self):
+        annotations = [feature("positive", 1, 1, 8, 8, "lm_solid"),
+                       feature("arrow", 3, 3, 4, 4, None, ContainsArrow=True),
+                       feature("unclear", 6, 6, 10, 10, Unclear=True),
+                       feature("raised", 0, 0, 2, 2, "lm_botts_dot")]
+        positive, valid, _ = zod.rasterize_annotations(annotations, 12, 12, True)
+        for y, x in ((3, 3), (7, 7), (1, 1)):
+            self.assertEqual(int(positive[y, x]), 0)
+            self.assertEqual(int(valid[y, x]), 0)
+        self.assertEqual(int(positive[5, 5]), 255)
+        self.assertEqual(int(valid[11, 11]), 255)
+
+    def test_unknown_coverage_never_infers_negatives(self):
+        positive, valid, _ = zod.rasterize_annotations([feature("dash", 2, 2, 4, 4)], 10, 10)
+        np.testing.assert_array_equal(positive, valid)
+        self.assertEqual(int(valid[0, 0]), 0)
+        empty, empty_valid, _ = zod.rasterize_annotations([], 10, 10)
+        self.assertFalse(empty.any())
+        self.assertFalse(empty_valid.any())
+
+    def test_unknown_class_invalid_flag_and_duplicate_uuid_fail(self):
+        cases = [([feature("new", 1, 1, 3, 3, "unknown")], "Unrecognized ZOD lane class"),
+                 ([feature("bad", 1, 1, 3, 3, Unclear="False")], "flag"),
+                 ([feature("bad", 1, 1, 3, 3, None)], "road-painting"),
+                 ([feature("same", 1, 1, 3, 3), feature("same", 4, 4, 6, 6)], "Duplicate")]
+        for annotations, message in cases:
+            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+                zod.rasterize_annotations(annotations, 10, 10, True)
+
+    def test_geometry_is_not_rescaled_or_flattened(self):
+        oversized = feature("outside", 1, 1, 20, 20)
+        multi = feature("multi", 1, 1, 3, 3)
+        multi["geometry"]["coordinates"].append([[5, 5], [7, 5], [7, 7], [5, 7]])
+        nonfinite = feature("nan", 1, 1, 3, 3)
+        nonfinite["geometry"]["coordinates"][0][0][0] = float("nan")
+        line = feature("line", 1, 1, 3, 3)
+        line["geometry"]["type"] = "LineString"
+        for annotation in (oversized, multi, nonfinite, line):
+            with self.subTest(annotation=annotation["properties"]["annotation_uuid"]), self.assertRaises(ValueError):
+                zod.rasterize_annotations([annotation], 10, 10, True)
+
+    def test_flat_and_single_ring_sdk_formats_match(self):
+        wrapped = feature("shape", 1.9, 1.9, 4.9, 4.9)
+        flat = copy.deepcopy(wrapped)
+        flat["geometry"]["coordinates"] = flat["geometry"]["coordinates"][0]
+        a = zod.rasterize_annotations([wrapped], 10, 10, True)[0]
+        b = zod.rasterize_annotations([flat], 10, 10, True)[0]
+        np.testing.assert_array_equal(a, b)
+        self.assertEqual(int(a[1, 1]), 255)  # SDK truncation, not rounding
+
+
+class GroupingTest(unittest.TestCase):
+    def test_spatial_index_matches_pairwise_reference_including_dateline_and_poles(self):
+        rng = np.random.default_rng(20261009)
+        rows = []
+        for i in range(150):
+            r = record(f"{i:06d}", 50. + float(rng.uniform(0, .05)), car=f"car{i}")
+            r["longitude"] = 10. + float(rng.uniform(0, .05))
+            rows.append(r)
+        rows += [dict(record("900001", 0., car="x"), longitude=179.9995),
+                 dict(record("900002", 0., car="y"), longitude=-179.9995),
+                 dict(record("900003", 89.9999, car="z"), longitude=0.),
+                 dict(record("900004", 89.9999, car="w"), longitude=180.)]
+        parents = list(range(len(rows)))
+        def root(i):
+            while parents[i] != i:
+                i = parents[i]
+            return i
+        for i, a in enumerate(rows):
+            for j, b in enumerate(rows[:i]):
+                if zod.distance_m(a, b) <= 250.:
+                    parents[root(i)] = root(j)
+        expected = {frozenset(r["frame_id"] for i,r in enumerate(rows) if root(i) == key) for key in {root(i) for i in range(len(rows))}}
+        result = zod.assign_groups(copy.deepcopy(rows))
+        self.assertEqual(expected, {frozenset(r["frame_id"] for r in group) for group in result})
+
+    def test_more_than_5000_dense_duplicate_coordinates_are_bounded(self):
+        rows = [record(f"{i:06d}", 50., car=f"car{i}") for i in range(6000)]
+        groups = zod.assign_groups(rows)
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(len(groups[0]), 6000)
+
+    def test_official_val_preserved_and_nearby_train_purged(self):
+        rows = [record("000001", 50., "val"),
+                record("000002", 50.001, date="2020-02-01"),
+                record("000003", 51., date="2020-02-01"),
+                record("000004", 53., date="2020-03-01")]
+        result, excluded = zod.assign_splits(rows)
+        self.assertEqual([r["split"] for r in result], ["test", "excluded", "excluded", "train"])
+        self.assertEqual(len(excluded), 2)
+        self.assertEqual(len({r["group_id"] for r in result[:3]}), 1)
+
+    def test_optional_validation_is_whole_group_and_order_independent(self):
+        rows = [record("000001", 50., date="2020-01-01"),
+                record("000002", 50.5, date="2020-01-01"),
+                record("000003", 51., date="2020-01-02"),
+                record("000004", 52., "val", date="2020-01-03")]
+        first, _ = zod.assign_splits(copy.deepcopy(rows), validation_fraction=.5)
+        second, _ = zod.assign_splits(list(reversed(copy.deepcopy(rows))), validation_fraction=.5)
+        self.assertEqual({r["frame_id"]: r["split"] for r in first}, {r["frame_id"]: r["split"] for r in second})
+        self.assertEqual(first[0]["split"], first[1]["split"])
+        self.assertEqual({r["split"] for r in first}, {"train", "validation", "test"})
+
+    def test_missing_or_invalid_grouping_metadata_fails(self):
+        for update in ({"latitude": float("nan")}, {"collection_car": ""}, {"official_split": "test"}):
+            with self.subTest(update=update), self.assertRaises(ValueError):
+                zod.assign_splits([dict(record("000001", 50.), **update)])
+
+
+class ImportTest(unittest.TestCase):
+    def fixture(self, root, coverage="complete_lane_markings"):
+        source = root / "source"
+        source.mkdir()
+        infos = {"train": [], "val": []}
+        for i, split in enumerate(("train", "val")):
+            identity = f"{i + 1:06d}"
+            prefix = "single_frames/" + identity
+            frame = source / prefix
+            frame.mkdir(parents=True)
+            time = f"2020-01-0{i + 1}T12:00:00+00:00"
+            cv2.imwrite(str(frame / "image.jpg"), np.full((12, 12, 3), 30 + i * 50, np.uint8))
+            (frame / "lanes.json").write_text(json.dumps([feature(identity, 2, 2, 4, 4)]))
+            metadata = {"frameId": identity, "time": time, "collectionCar": "car1", "latitude": 50. + i, "longitude": 10.}
+            (frame / "metadata.json").write_text(json.dumps(metadata))
+            infos[split].append({"id": identity, "keyframeTime": time, "metadataPath": prefix + "/metadata.json",
+                "annotations": {"lane_markings": {"project": "lane_markings", "filepath": prefix + "/lanes.json"}},
+                "cameraFrames": {"front_blur": [{"filepath": prefix + "/image.jpg", "time": time, "width": 12, "height": 12}]}})
+        trainval = source / "trainval-frames-mini.json"
+        trainval.write_text(json.dumps(infos))
+        receipt = root / "receipt.json"
+        receipt.write_text(json.dumps({"schemaVersion": 1, "dataset": "ZOD", "source_revision": "unit-test-fixture",
+            "source_url": "https://example.invalid/test", "license": "CC BY-SA 4.0", "geometry": "original-pixel-polygons",
+            "annotation_coverage": coverage, "coverage_evidence": "Synthetic test fixture, not downloaded data"}))
+        return source, trainval, receipt, root / "prepared", infos
+
+    def add_frame_qa(self, source, trainval, receipt, infos):
+        data = json.loads(receipt.read_text())
+        frames = []
+        for info in infos["train"] + infos["val"]:
+            frames.append({"frame_id": info["id"], "decision": "accept", "reason": "Synthetic alignment check",
+                "rgb_sha256": zod.sha256_file(source / info["cameraFrames"]["front_blur"][0]["filepath"]),
+                "annotation_sha256": zod.sha256_file(source / info["annotations"]["lane_markings"]["filepath"])})
+        data["frame_qa"] = {"trainval_sha256": zod.sha256_file(trainval), "frames": frames}
+        receipt.write_text(json.dumps(data))
+        return data
+
+    def test_hash_bound_visual_qa_excludes_whole_frame_and_preserves_original(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, infos = self.fixture(Path(directory))
+            data = self.add_frame_qa(source, trainval, receipt, infos)
+            data["frame_qa"]["frames"][0].update(decision="exclude", reason="Visible paint missing from original annotation")
+            receipt.write_text(json.dumps(data))
+            path = source / infos["train"][0]["annotations"]["lane_markings"]["filepath"]
+            original = path.read_bytes()
+            result = zod.prepare(source, trainval, receipt, output)
+            self.assertEqual(result["partition_counts"], {"train": 0, "validation": 0, "test": 1})
+            self.assertFalse(result["training_eligible"])
+            self.assertEqual(result["exclusion_counts"], {"source_qa": 1})
+            self.assertEqual(result["excluded"][0]["annotation_sha256"], zod.sha256_file(path))
+            self.assertIn("Visible paint missing", result["excluded"][0]["reason"])
+            self.assertEqual(path.read_bytes(), original)
+            self.assertIn(str(path.resolve()), [o["local_path"] for o in result["objects"]])
+
+    def test_per_frame_positive_only_train_has_no_negative_supervision(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, infos = self.fixture(Path(directory), "per_frame")
+            data = self.add_frame_qa(source, trainval, receipt, infos)
+            data["frame_qa"]["frames"][0]["decision"] = "positive_only"
+            receipt.write_text(json.dumps(data))
+            result = zod.prepare(source, trainval, receipt, output)
+            self.assertTrue(result["training_eligible"])
+            train = next(r for r in result["pairs"] if r["split"] == "train")
+            self.assertEqual(train["annotation_coverage"], "positive_only")
+            objects = {o["key"]:o["local_path"] for o in result["objects"]}
+            np.testing.assert_array_equal(cv2.imread(objects[train["label"]],0),cv2.imread(objects[train["valid"]],0))
+            self.assertEqual(result["coverage_counts"]["train"]["positive_only"]["negative_pixels"],0)
+            self.assertGreater(result["coverage_counts"]["test"]["complete_lane_markings"]["negative_pixels"],0)
+
+    def test_positive_only_holdout_and_unbound_per_frame_coverage_fail_closed(self):
+        for coverage in ("per_frame", "complete_lane_markings"):
+            with self.subTest(coverage=coverage), tempfile.TemporaryDirectory() as directory:
+                source, trainval, receipt, output, infos = self.fixture(Path(directory), coverage)
+                data = self.add_frame_qa(source, trainval, receipt, infos)
+                data["frame_qa"]["frames"][1]["decision"] = "positive_only"
+                receipt.write_text(json.dumps(data))
+                with self.assertRaisesRegex(ValueError,"evaluation"):
+                    zod.prepare(source,trainval,receipt,output)
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, _ = self.fixture(Path(directory),"per_frame")
+            with self.assertRaisesRegex(ValueError,"hash-bound"):
+                zod.prepare(source,trainval,receipt,output)
+
+    def test_empty_positive_only_frame_is_excluded_without_invented_negatives(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source,trainval,receipt,output,infos=self.fixture(Path(directory),"per_frame")
+            (source/infos["train"][0]["annotations"]["lane_markings"]["filepath"]).write_text("[]")
+            data=self.add_frame_qa(source,trainval,receipt,infos)
+            data["frame_qa"]["frames"][0]["decision"]="positive_only"
+            receipt.write_text(json.dumps(data))
+            result=zod.prepare(source,trainval,receipt,output)
+            self.assertEqual(result["partition_counts"]["train"],0)
+            self.assertFalse(result["training_eligible"])
+            self.assertIn("no valid supervision",result["excluded"][0]["reason"])
+
+    def test_visual_qa_cannot_cover_another_source_or_unreviewed_frame(self):
+        for mutation in ("rgb", "annotation", "trainval", "missing", "duplicate"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as directory:
+                source, trainval, receipt, output, infos = self.fixture(Path(directory))
+                data = self.add_frame_qa(source, trainval, receipt, infos)
+                if mutation in ("rgb", "annotation"):
+                    data["frame_qa"]["frames"][0][mutation + "_sha256"] = "0" * 64
+                elif mutation == "trainval":
+                    data["frame_qa"]["trainval_sha256"] = "0" * 64
+                elif mutation == "missing":
+                    data["frame_qa"]["frames"].pop()
+                else:
+                    data["frame_qa"]["frames"].append(data["frame_qa"]["frames"][0])
+                receipt.write_text(json.dumps(data))
+                with self.assertRaisesRegex(ValueError, "QA"):
+                    zod.prepare(source, trainval, receipt, output)
+                self.assertFalse((output / "manifest.json").exists())
+
+    def test_complete_import_hashes_masks_and_preserves_official_holdout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, _ = self.fixture(Path(directory))
+            manifest = zod.prepare(source, trainval, receipt, output)
+            self.assertEqual(manifest["partition_counts"], {"train": 1, "validation": 0, "test": 1})
+            self.assertTrue(manifest["training_eligible"])
+            objects = {o["key"]: o for o in manifest["objects"]}
+            for obj in objects.values():
+                self.assertEqual(zod.sha256_file(obj["local_path"]), obj["sha256"])
+            for pair in manifest["pairs"]:
+                for key in ("label", "valid"):
+                    mask = cv2.imread(objects[pair[key]]["local_path"], cv2.IMREAD_UNCHANGED)
+                    self.assertEqual(mask.shape, (12, 12))
+                    self.assertTrue(set(np.unique(mask)) <= {0, 255})
+                if pair["official_split"] == "val":
+                    self.assertEqual(pair["split"], "test")
+
+    def test_unknown_coverage_manifest_not_eligible(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, _ = self.fixture(Path(directory), "unknown")
+            result = zod.prepare(source, trainval, receipt, output)
+            self.assertFalse(result["training_eligible"])
+
+    def test_resized_image_rejected_with_incomplete_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, _ = self.fixture(Path(directory))
+            cv2.imwrite(str(source / "single_frames/000001/image.jpg"), np.zeros((6, 6, 3), np.uint8))
+            with self.assertRaisesRegex(ValueError, "dimensions"):
+                zod.prepare(source, trainval, receipt, output)
+            self.assertTrue((output / "incomplete.json").exists())
+            self.assertFalse((output / "manifest.json").exists())
+
+    def test_missing_annotation_is_not_negative_scene(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, infos = self.fixture(Path(directory))
+            infos["train"][0]["annotations"] = {}
+            trainval.write_text(json.dumps(infos))
+            with self.assertRaisesRegex(ValueError, "Missing lane annotation"):
+                zod.prepare(source, trainval, receipt, output)
+            self.assertFalse(output.exists())
+
+    def test_blacklisted_train_frame_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, infos = self.fixture(Path(directory))
+            infos["blacklisted"] = [copy.deepcopy(infos["train"][0])]
+            trainval.write_text(json.dumps(infos))
+            with self.assertRaisesRegex(ValueError, "blacklisted"):
+                zod.prepare(source, trainval, receipt, output)
+            self.assertFalse(output.exists())
+
+    def test_optional_quarantine_keeps_valid_frame_and_exposes_filtered_holdout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, infos = self.fixture(Path(directory))
+            invalid_path = source / infos["val"][0]["annotations"]["lane_markings"]["filepath"]
+            invalid_path.write_text(json.dumps([feature("invalid", 1, 1, 3, 3, "new_unknown_class")]))
+            result = zod.prepare(source, trainval, receipt, output, quarantine_invalid_annotations=True)
+            self.assertEqual(result["partition_counts"], {"train": 1, "validation": 0, "test": 0})
+            self.assertFalse(result["training_eligible"])
+            self.assertEqual(result["exclusion_counts"], {"invalid_annotation": 1})
+            self.assertEqual(result["excluded"][0]["official_split"], "val")
+            self.assertEqual(result["excluded"][0]["annotation_sha256"], zod.sha256_file(invalid_path))
+
+    def test_optional_quarantine_preserves_malformed_json_source_and_reason(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, infos = self.fixture(Path(directory))
+            invalid_path = source / infos["val"][0]["annotations"]["lane_markings"]["filepath"]
+            original = b'{"truncated":'
+            invalid_path.write_bytes(original)
+            result = zod.prepare(source, trainval, receipt, output, quarantine_invalid_annotations=True)
+            self.assertEqual(invalid_path.read_bytes(), original)
+            self.assertEqual(result["exclusion_counts"], {"invalid_annotation": 1})
+            self.assertEqual(result["partition_counts"]["test"], 0)
+            self.assertFalse(result["training_eligible"])
+            self.assertIn("Invalid annotation:", result["excluded"][0]["reason"])
+            self.assertEqual(result["excluded"][0]["annotation_sha256"], zod.sha256_file(invalid_path))
+            self.assertIn(invalid_path.resolve(), [Path(o["local_path"]) for o in result["objects"]])
+
+    def test_source_path_cannot_escape(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "some.json").write_text("{}")
+            for path in ("../some.json", str(root / "some.json")):
+                with self.assertRaises(ValueError):
+                    zod.safe_source(root, path)
+
+
+if __name__ == "__main__":
+    unittest.main()

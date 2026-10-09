@@ -1,0 +1,540 @@
+{
+  "schemaVersion": 1,
+  "provenance": "synthetic_engineering_only",
+  "policy": {
+    "schemaVersion": 1,
+    "modelIdentity": {
+      "modelId": "synthetic-lane-paint",
+      "revision": "fixture-revision-1",
+      "outputKind": "lane-paint-probability-v1"
+    },
+    "maskWidth": 2,
+    "maskHeight": 2,
+    "maxCaptureAgeNs": 200000000
+  },
+  "context": {
+    "schemaVersion": 1,
+    "scope": {
+      "sessionId": "synthetic-session",
+      "sessionGeneration": 1,
+      "cameraId": "rear-camera",
+      "cameraGeneration": 2,
+      "calibrationGeneration": 3
+    },
+    "exposure": {
+      "frameId": "frame-10",
+      "sourceTimeNs": 1000000000,
+      "sourceClockId": "synthetic-sensor-clock",
+      "capturedAtNs": 10000000000,
+      "clockId": "synthetic-monotonic-clock",
+      "clockKnown": true
+    },
+    "geometry": {
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "rotationDegrees": 0,
+      "mirrored": false,
+      "analysisWidth": 384,
+      "analysisHeight": 216,
+      "mappingId": "full-upright-pixel-centers-v1",
+      "fullScene": true
+    },
+    "now": {
+      "atNs": 10100000000,
+      "clockId": "synthetic-monotonic-clock",
+      "clockKnown": true
+    }
+  },
+  "hint": {
+    "schemaVersion": 1,
+    "modelIdentity": {
+      "modelId": "synthetic-lane-paint",
+      "revision": "fixture-revision-1",
+      "outputKind": "lane-paint-probability-v1"
+    },
+    "provenance": {
+      "kind": "synthetic_fixture",
+      "sourceId": "semantic-hint-v1/exact-exposure"
+    },
+    "scope": {
+      "sessionId": "synthetic-session",
+      "sessionGeneration": 1,
+      "cameraId": "rear-camera",
+      "cameraGeneration": 2,
+      "calibrationGeneration": 3
+    },
+    "exposure": {
+      "frameId": "frame-10",
+      "sourceTimeNs": 1000000000,
+      "sourceClockId": "synthetic-sensor-clock",
+      "capturedAtNs": 10000000000,
+      "clockId": "synthetic-monotonic-clock",
+      "clockKnown": true
+    },
+    "arrival": {
+      "atNs": 10080000000,
+      "clockId": "synthetic-monotonic-clock",
+      "clockKnown": true
+    },
+    "geometry": {
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 1080
+      },
+      "rotationDegrees": 0,
+      "mirrored": false,
+      "analysisWidth": 384,
+      "analysisHeight": 216,
+      "mappingId": "full-upright-pixel-centers-v1",
+      "fullScene": true
+    },
+    "alignment": {
+      "mode": "exact_exposure"
+    },
+    "mask": {
+      "width": 2,
+      "height": 2,
+      "probabilities": [
+        0.1,
+        0.8,
+        0.3,
+        0.6
+      ],
+      "validity": [
+        true,
+        true,
+        false,
+        true
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "exact-exposure",
+      "expectedReason": "qualified"
+    },
+    {
+      "id": "missing-hint",
+      "missingHint": true,
+      "expectedReason": "missing_hint"
+    },
+    {
+      "id": "schema-version",
+      "expectedReason": "schema_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "schemaVersion"
+          ],
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "missing-model-identity",
+      "expectedReason": "invalid_hint",
+      "hintMutations": [
+        {
+          "path": [
+            "modelIdentity"
+          ],
+          "remove": true
+        }
+      ]
+    },
+    {
+      "id": "model-revision",
+      "expectedReason": "model_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "modelIdentity",
+            "revision"
+          ],
+          "value": "other-checkpoint"
+        }
+      ]
+    },
+    {
+      "id": "unidentified-origin",
+      "expectedReason": "invalid_provenance",
+      "hintMutations": [
+        {
+          "path": [
+            "provenance",
+            "sourceId"
+          ],
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "wrong-session",
+      "expectedReason": "scope_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "scope",
+            "sessionId"
+          ],
+          "value": "old-session"
+        }
+      ]
+    },
+    {
+      "id": "wrong-session-generation",
+      "expectedReason": "scope_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "scope",
+            "sessionGeneration"
+          ],
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "wrong-camera-generation",
+      "expectedReason": "scope_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "scope",
+            "cameraGeneration"
+          ],
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "wrong-calibration-generation",
+      "expectedReason": "scope_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "scope",
+            "calibrationGeneration"
+          ],
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "wrong-exposure",
+      "expectedReason": "exposure_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "exposure",
+            "sourceTimeNs"
+          ],
+          "value": 900000000
+        }
+      ]
+    },
+    {
+      "id": "wrong-frame",
+      "expectedReason": "exposure_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "exposure",
+            "frameId"
+          ],
+          "value": "frame-9"
+        }
+      ]
+    },
+    {
+      "id": "capture-time-skew",
+      "expectedReason": "exposure_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "exposure",
+            "capturedAtNs"
+          ],
+          "value": 10000000001
+        }
+      ]
+    },
+    {
+      "id": "unknown-hint-clock",
+      "expectedReason": "unknown_clock",
+      "hintMutations": [
+        {
+          "path": [
+            "exposure",
+            "clockKnown"
+          ],
+          "value": false
+        }
+      ]
+    },
+    {
+      "id": "unknown-context-clock",
+      "expectedReason": "unknown_clock",
+      "contextMutations": [
+        {
+          "path": [
+            "now",
+            "clockKnown"
+          ],
+          "value": false
+        }
+      ]
+    },
+    {
+      "id": "wrong-arrival-clock",
+      "expectedReason": "clock_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "arrival",
+            "clockId"
+          ],
+          "value": "wall-clock"
+        }
+      ]
+    },
+    {
+      "id": "arrival-before-capture",
+      "expectedReason": "arrival_before_capture",
+      "hintMutations": [
+        {
+          "path": [
+            "arrival",
+            "atNs"
+          ],
+          "value": 9999999999
+        }
+      ]
+    },
+    {
+      "id": "future-arrival",
+      "expectedReason": "future_arrival",
+      "hintMutations": [
+        {
+          "path": [
+            "arrival",
+            "atNs"
+          ],
+          "value": 10100000001
+        }
+      ]
+    },
+    {
+      "id": "future-capture",
+      "expectedReason": "future_capture",
+      "contextMutations": [
+        {
+          "path": [
+            "now",
+            "atNs"
+          ],
+          "value": 9999999999
+        }
+      ]
+    },
+    {
+      "id": "stale-hint",
+      "expectedReason": "stale_hint",
+      "contextMutations": [
+        {
+          "path": [
+            "now",
+            "atNs"
+          ],
+          "value": 10200000001
+        }
+      ]
+    },
+    {
+      "id": "shifted-crop",
+      "expectedReason": "geometry_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "geometry",
+            "crop"
+          ],
+          "value": {
+            "x": 1,
+            "y": 0,
+            "width": 1919,
+            "height": 1080
+          }
+        }
+      ]
+    },
+    {
+      "id": "wrong-rotation",
+      "expectedReason": "geometry_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "geometry",
+            "rotationDegrees"
+          ],
+          "value": 90
+        }
+      ]
+    },
+    {
+      "id": "wrong-mapping",
+      "expectedReason": "geometry_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "geometry",
+            "mappingId"
+          ],
+          "value": "half-pixel-shift"
+        }
+      ]
+    },
+    {
+      "id": "wrong-mirroring",
+      "expectedReason": "geometry_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "geometry",
+            "mirrored"
+          ],
+          "value": true
+        }
+      ]
+    },
+    {
+      "id": "crop-outside-image",
+      "expectedReason": "invalid_geometry",
+      "hintMutations": [
+        {
+          "path": [
+            "geometry",
+            "crop",
+            "x"
+          ],
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "partial-context",
+      "expectedReason": "partial_scene_unsupported",
+      "contextMutations": [
+        {
+          "path": [
+            "geometry",
+            "fullScene"
+          ],
+          "value": false
+        }
+      ]
+    },
+    {
+      "id": "propagated-map",
+      "expectedReason": "alignment_unsupported",
+      "hintMutations": [
+        {
+          "path": [
+            "alignment"
+          ],
+          "value": {
+            "mode": "motion_aligned",
+            "ageNs": 1000000,
+            "quality": 0.99
+          }
+        }
+      ]
+    },
+    {
+      "id": "mismatched-mask-size",
+      "expectedReason": "shape_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "width"
+          ],
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "short-mask",
+      "expectedReason": "shape_mismatch",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "probabilities"
+          ],
+          "value": [
+            0.1,
+            0.8,
+            0.3
+          ]
+        }
+      ]
+    },
+    {
+      "id": "out-of-range-score",
+      "expectedReason": "invalid_scores",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "probabilities",
+            0
+          ],
+          "value": 1.01
+        }
+      ]
+    },
+    {
+      "id": "invalid-validity-type",
+      "expectedReason": "invalid_validity",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "validity",
+            0
+          ],
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "entirely-unknown-map",
+      "expectedReason": "no_valid_pixels",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "validity"
+          ],
+          "value": [
+            false,
+            false,
+            false,
+            false
+          ]
+        }
+      ]
+    }
+  ]
+}
