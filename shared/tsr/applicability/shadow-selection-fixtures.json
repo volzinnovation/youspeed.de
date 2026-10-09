@@ -1,0 +1,661 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "blocked_exit_preserves_lower_mainline",
+      "runtime_output": "raw_score",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "mainline",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.85,
+          "calibrated_confidence": 0.85,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": "mainline"
+    },
+    {
+      "id": "all_candidates_withheld",
+      "runtime_output": "raw_score",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": null
+    },
+    {
+      "id": "unsupported_survivor_does_not_hide_known",
+      "runtime_output": "raw_score",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "unknown",
+          "semantic_kind": "unknown",
+          "value": null,
+          "raw_score": 0.98,
+          "calibrated_confidence": 0.98,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "known",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.8,
+          "calibrated_confidence": 0.8,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": "known"
+    },
+    {
+      "id": "calibrated_ranking_uses_declared_output",
+      "runtime_output": "calibrated_confidence",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "raw-winner",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.97,
+          "calibrated_confidence": 0.7,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "calibrated-winner",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.8,
+          "calibrated_confidence": 0.92,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": "calibrated-winner"
+    },
+    {
+      "id": "raw_ranking_uses_declared_output",
+      "runtime_output": "raw_score",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "raw-winner",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.97,
+          "calibrated_confidence": 0.7,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "calibrated-winner",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.8,
+          "calibrated_confidence": 0.92,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": "raw-winner"
+    },
+    {
+      "id": "equal_score_prefers_larger_crop",
+      "runtime_output": "raw_score",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "small",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.85,
+          "calibrated_confidence": 0.85,
+          "box": [
+            0.1,
+            0.2,
+            0.05,
+            0.05
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "large",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.85,
+          "calibrated_confidence": 0.85,
+          "box": [
+            0.3,
+            0.2,
+            0.15,
+            0.15
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": "large"
+    },
+    {
+      "id": "class_threshold_rejects_higher_score",
+      "runtime_output": "raw_score",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "unqualified",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.95,
+          "calibrated_confidence": 0.95,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.98
+        },
+        {
+          "id": "qualified",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.8,
+          "calibrated_confidence": 0.8,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": "qualified"
+    },
+    {
+      "id": "missing_calibration_is_not_qualified",
+      "runtime_output": "calibrated_confidence",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "uncalibrated",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.98,
+          "calibrated_confidence": null,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "calibrated",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.8,
+          "calibrated_confidence": 0.8,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": "calibrated"
+    },
+    {
+      "id": "below_unknown_threshold_is_no_recognition",
+      "runtime_output": "raw_score",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "weak",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.1,
+          "calibrated_confidence": 0.1,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": null
+    },
+    {
+      "id": "unknown_survivor_remains_diagnostic",
+      "runtime_output": "raw_score",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "unknown",
+          "semantic_kind": "unknown",
+          "value": null,
+          "raw_score": 0.9,
+          "calibrated_confidence": 0.9,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": "unknown"
+    },
+    {
+      "id": "no_filter_reference_prefers_supported",
+      "runtime_output": "raw_score",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "unknown",
+          "semantic_kind": "unknown",
+          "value": null,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "known",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.8,
+          "calibrated_confidence": 0.8,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [],
+      "expected_candidate_id": "known"
+    },
+    {
+      "id": "out_of_frame_survivor_cannot_hide_valid_sign",
+      "runtime_output": "raw_score",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "outside",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.98,
+          "calibrated_confidence": 0.98,
+          "box": [
+            0.9,
+            0.2,
+            0.10000000001,
+            0.2
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "mainline",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.85,
+          "calibrated_confidence": 0.85,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": "mainline"
+    },
+    {
+      "id": "explicit_non_speed_end_semantic_keeps_swift_ranking",
+      "runtime_output": "raw_score",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "280",
+          "semantic_kind": "restriction_end",
+          "value": null,
+          "raw_score": 0.98,
+          "calibrated_confidence": 0.98,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "mainline",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.85,
+          "calibrated_confidence": 0.85,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": "280"
+    },
+    {
+      "id": "shipping_unknown_ancillary_alias_cannot_hide_mainline",
+      "runtime_output": "raw_score",
+      "unknown_threshold": 0.3,
+      "candidates": [
+        {
+          "id": "blocked-exit",
+          "semantic_kind": "maximum_speed",
+          "value": 30,
+          "raw_score": 0.99,
+          "calibrated_confidence": 0.99,
+          "box": [
+            0.75,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        },
+        {
+          "id": "no_overtaking:end",
+          "semantic_kind": "unknown",
+          "value": null,
+          "raw_score": 0.98,
+          "calibrated_confidence": 0.98,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.7
+        },
+        {
+          "id": "mainline",
+          "semantic_kind": "maximum_speed",
+          "value": 80,
+          "raw_score": 0.85,
+          "calibrated_confidence": 0.85,
+          "box": [
+            0.2,
+            0.2,
+            0.08,
+            0.12
+          ],
+          "class_threshold": 0.3
+        }
+      ],
+      "withheld_indices": [
+        0
+      ],
+      "expected_candidate_id": "mainline"
+    }
+  ]
+}

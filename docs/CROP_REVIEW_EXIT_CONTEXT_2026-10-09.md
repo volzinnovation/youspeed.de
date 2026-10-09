@@ -93,8 +93,9 @@ comparison evidence remains unchanged.
    taken/untaken exit, simultaneous sign, overhead/supplementary and non-exit
    categories, reporting every shortfall. Allow 1–3 review days after source links
    and surrounding context are available; measure actual review time first.
-3. Complete the bounded #15 simultaneous-sign parity fix and #13 capture-context
-   regression work. Calibrated yaw is currently unavailable to general applicability;
+3. The bounded #15 selection fix and #13 capture-context regression work are
+   now implemented and tested: see [native follow-through](TSR_CAPTURE_AND_SELECTION_2026-10-09.md).
+   Next qualify actual exposure-aligned context and remaining guard-wide effects. Calibrated yaw is currently unavailable to general applicability;
    assumed mount zero and image guide alignment do not establish it. Keep that
    uncertainty and the 1.5-second freshness gate explicit.
 4. Only then compare sign decisions with existing safeguards, native geometry,

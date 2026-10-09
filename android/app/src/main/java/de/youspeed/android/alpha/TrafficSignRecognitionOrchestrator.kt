@@ -737,11 +737,11 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                 .thenByDescending { it.samples.lastOrNull()?.candidate?.rawScore ?: 0.0 }.thenBy { it.trackId })?.firstOrNull()
         val selectedIndex = selectedTrack?.samples?.lastOrNull()?.candidate?.candidateId?.substringAfterLast(':')?.toIntOrNull()
         val selectedDetection = if (enforcing) selectedIndex?.let { rawDetections[it] } else
-            (backendResult as? TrafficSignBackendResult.Recognition)?.detection?.takeIf {
-                (exitWithheld.isEmpty() && accessWithheld.isEmpty()) || exitEligibleDetections.any { eligible ->
-                    eligible.candidate.rawClassId == it.candidate.rawClassId && eligible.candidate.boundingBox == it.candidate.boundingBox
-                }
-            }
+            if (exitWithheld.isNotEmpty() || accessWithheld.isNotEmpty()) {
+                // iPhone reselects from the surviving frame detections. Keeping
+                // only the backend winner would hide a valid lower-scoring sign.
+                fusionEngine.selectPrimaryDetection(exitEligibleDetections)
+            } else (backendResult as? TrafficSignBackendResult.Recognition)?.detection
         val physicalSamples = selectedTrack?.samples?.filter { it.candidate.recognitionEligible && batch.capturedAtMs - it.capturedAtMs <= fusionEngine.confirmationWindowMs }.orEmpty()
         val fusion = when (backendResult) {
             is TrafficSignBackendResult.Recognition -> if (sourceIsCurrent) {
