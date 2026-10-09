@@ -11,10 +11,14 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
 from urllib.parse import parse_qs, unquote, urlsplit
 from uuid import UUID
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from inspector.crop_review_proxy import CropReviewProxy, ReviewProxyError
 MAX_IMAGE_BYTES = 5 * 1024**2
 VOLZ_DB_ADDRESS = "141.47.91.52"
 ACTIVE_MEDIA = """
@@ -24,6 +28,12 @@ ACTIVE_MEDIA = """
  AND NOT EXISTS (SELECT 1 FROM youspeed.authorizations a
    WHERE a.installation=m.installation AND a.epoch=m.epoch
      AND a.scope IN ('sign_metadata','crop_storage') AND a.state<>'granted')
+"""
+LIVE_ACTIVE_MEDIA = ACTIVE_MEDIA + """
+ AND EXISTS (SELECT 1 FROM youspeed.authorizations a WHERE a.installation=m.installation
+   AND a.epoch=m.epoch AND a.scope='sign_metadata' AND a.state='granted')
+ AND EXISTS (SELECT 1 FROM youspeed.authorizations a WHERE a.installation=m.installation
+   AND a.epoch=m.epoch AND a.scope='crop_storage' AND a.state='granted')
 """
 OBSERVATION_JOIN = """LEFT JOIN youspeed.events e
  ON e.installation=m.installation AND e.epoch=m.epoch AND e.kind='sighting'
@@ -54,13 +64,13 @@ def database_error(error):
     # Never pass libpq exceptions through: they can contain connection secrets.
     if getattr(error, "sqlstate", None) == "42501":
         return InspectorError("Report-Leserechte fehlen. Administrator muss inspector/report-crops-grants.sql anwenden.")
-    if getattr(error, "sqlstate", None) in ("42P01", "3F000"):
-        return InspectorError("YouSpeed-Backend-Schema fehlt auf dieser Datenbank.")
+    if getattr(error, "sqlstate", None) in ("42P01", "3F000", "42883"):
+        return InspectorError("YouSpeed-Crop-Analyse benötigt die geprüften Backend-Migrationen und Leserechte. Die alte Galerie bleibt unter Altbestand verfügbar.")
     return InspectorError("Report-Datenbank nicht erreichbar oder Anmeldung fehlgeschlagen. VPN, privaten PostgreSQL-Endpunkt und serverseitige Report-Zugangsdaten prüfen.")
 
 
 def crop_filters(query):
-    allowed = {"offset", "limit", "country", "source", "installation", "query", "from", "to"}
+    allowed = {"offset", "limit", "country", "source", "installation", "query", "from", "to", "scope", "review_state", "exit_context", "class_source"}
     if set(query) - allowed or any(len(values) != 1 for values in query.values()):
         raise InspectorError("Ungültige Crop-Filter.", 400)
     get = lambda name, default="": query.get(name, [default])[0]
@@ -69,9 +79,16 @@ def crop_filters(query):
         if not 0 <= offset <= 1_000_000 or not 1 <= limit <= 100:
             raise ValueError
         country, source, search = get("country"), get("source"), get("query")
+        scope, review_state, exit_context = get("scope", "live"), get("review_state"), get("exit_context")
+        class_source = get("class_source", "original")
+        if (scope not in {"live", "legacy"} or class_source not in {"original", "reviewed"}
+                or review_state not in {"", "unreviewed", "confirmed", "wrong_class", "not_a_sign", "uncertain"}
+                or exit_context not in {"", "near_exit", "no_exit", "unknown", "not_computed"}
+                or (scope == "legacy" and (review_state or exit_context or class_source != "original"))):
+            raise ValueError
         if country and not re.fullmatch(r"[A-Z]{2}", country):
             raise ValueError
-        if source and source not in ("detector", "manual"):
+        if source and source not in ("detector", "manual", "manual_capture"):
             raise ValueError
         if len(search) > 160:
             raise ValueError
@@ -81,12 +98,30 @@ def crop_filters(query):
             clauses.append("m.installation=%s")
             params.append(installation)
         if country:
-            clauses.append("e.payload->'event'->'classification'->>'country'=%s")
+            if class_source == "reviewed":
+                clauses.append("(CASE WHEN r.verdict='confirmed' THEN e.payload->'event'->'classification' WHEN r.verdict='wrong_class' THEN r.corrected_classification ELSE NULL END)->>'country'=%s")
+            else:
+                clauses.append("e.payload->'event'->'classification'->>'country'=%s")
             params.append(country)
         if source:
             clauses.append("m.manifest->>'source_kind'=%s")
-            params.append(source)
-        if search:
+            params.append("manual_capture" if source == "manual" else source)
+        if review_state:
+            clauses.append("COALESCE(r.verdict,'unreviewed')=%s")
+            params.append(review_state)
+        if exit_context:
+            if exit_context == "not_computed":
+                clauses.append("c.context_key IS NULL")
+            else:
+                clauses.append("c.status=%s")
+                params.append(exit_context)
+        if search and class_source == "reviewed":
+            effective = "(CASE WHEN r.verdict='confirmed' THEN e.payload->'event'->'classification' WHEN r.verdict='wrong_class' THEN r.corrected_classification ELSE NULL END)"
+            clauses.append(f"""(strpos(lower(COALESCE({effective}->>'canonical_code','')),%s)>0
+              OR strpos(lower(COALESCE({effective}->>'model_label','')),%s)>0
+              OR strpos(m.crop_id::text,%s)>0 OR strpos(m.manifest->>'observation_id',%s)>0)""")
+            params.extend([search.lower()] * 4)
+        elif search:
             clauses.append("""(strpos(lower(COALESCE(e.payload->'event'->'classification'->>'canonical_code','')),%s)>0
               OR strpos(lower(COALESCE(e.payload->'event'->'classification'->>'model_label','')),%s)>0
               OR strpos(m.crop_id::text,%s)>0 OR strpos(m.manifest->>'observation_id',%s)>0)""")
@@ -197,29 +232,65 @@ class CropStore:
             db.execute("SELECT 1 FROM youspeed.media, youspeed.tombstones, youspeed.authorizations, youspeed.events LIMIT 0")
         return {**identity, "media_available": bool(self.media_root and self.media_root.is_dir() and os.access(self.media_root, os.R_OK | os.X_OK))}
 
+    @staticmethod
+    def require_live_controls(db):
+        control = db.execute("""SELECT (refreshed_at <= extract(epoch FROM now())
+          AND refreshed_at >= extract(epoch FROM now()) - 900
+          AND watermark >= 0 AND contiguous_sequence >= watermark) AS fresh
+          FROM youspeed.control_state WHERE singleton""").fetchone()
+        if not control or control["fresh"] is not True:
+            raise InspectorError("Live-Analyse wartet auf aktuelle, vollständige Freigabe- und Löschkontrollen des Backends. Später neu laden; Altbestand bleibt nur lesbar.", 503)
+
     def list(self, query):
         offset, limit, clauses, params = crop_filters(query)
-        sql = """SELECT m.installation::text, m.epoch, m.crop_id::text, m.digest,
-          m.manifest, m.expires, e.payload->'event' AS observation
-          FROM youspeed.media m """ + OBSERVATION_JOIN + " WHERE " + ACTIVE_MEDIA
+        scope = query.get("scope", ["live"])[0]
+        base = """SELECT m.installation::text, m.epoch, m.crop_id::text, m.digest,
+          m.manifest, m.expires, e.payload->'event' AS observation, """
+        if scope == "live":
+            base += """true AS analysis_eligible, NULL::text AS exclusion_reason,
+              'live-crops-only-v1'::text AS source_policy,
+              COALESCE(r.revision,0) AS current_revision,
+              CASE WHEN r.request_id IS NOT NULL THEN to_jsonb(r) ELSE NULL END AS current_review,
+              c.result AS exit_context FROM youspeed.media m """ + OBSERVATION_JOIN + """
+              LEFT JOIN LATERAL (SELECT rr.* FROM youspeed.crop_reviews rr
+                WHERE rr.installation=m.installation AND rr.epoch=m.epoch AND rr.crop_id=m.crop_id
+                ORDER BY rr.revision DESC LIMIT 1) r ON true
+              LEFT JOIN LATERAL (SELECT cc.* FROM youspeed.crop_exit_contexts cc
+                WHERE cc.installation=m.installation AND cc.epoch=m.epoch AND cc.crop_id=m.crop_id
+                ORDER BY cc.created_at DESC, cc.context_key DESC LIMIT 1) c ON true
+              WHERE youspeed.live_crop_exclusion_reason(m.manifest,e.payload->'event') IS NULL AND """ + LIVE_ACTIVE_MEDIA
+        else:
+            base += """false AS analysis_eligible, 'legacy_scope_read_only'::text AS exclusion_reason,
+              'live-crops-only-v1'::text AS source_policy, 0 AS current_revision,
+              NULL::jsonb AS current_review, NULL::jsonb AS exit_context
+              FROM youspeed.media m """ + OBSERVATION_JOIN + " WHERE " + ACTIVE_MEDIA
         if clauses:
-            sql += " AND " + " AND ".join(clauses)
-        sql += " ORDER BY (m.manifest->>'source_frame_at')::timestamptz DESC, m.crop_id, m.installation, m.epoch LIMIT %s OFFSET %s"
+            base += " AND " + " AND ".join(clauses)
+        base += " ORDER BY (m.manifest->>'source_frame_at')::timestamptz DESC, m.crop_id, m.installation, m.epoch LIMIT %s OFFSET %s"
         with self.connection() as db:
-            rows = db.execute(sql, [*params, limit + 1, offset]).fetchall()
+            if scope == "live":
+                self.require_live_controls(db)
+            rows = db.execute(base, [*params, limit + 1, offset]).fetchall()
         crops = rows[:limit]
         for row in crops:
             row["image_url"] = f"/inspector/api/crops/{row['installation']}/{row['epoch']}/{row['crop_id']}/image"
-        return {"crops": crops, "offset": offset, "has_more": len(rows) > limit}
+        return {"crops": crops, "offset": offset, "has_more": len(rows) > limit,
+                "scope": scope, "source_policy": "live-crops-only-v1"}
 
-    def devices(self):
+    def devices(self, scope="live"):
+        if scope not in {"live", "legacy"}:
+            raise InspectorError("Ungültiger Quellenfilter.", 400)
         # Read all active device sources, independently of the current gallery page.
         sql = """SELECT m.installation::text, count(*) AS crop_count,
           array_agg(DISTINCT e.payload->'event'->'app'->>'platform')
             FILTER (WHERE e.payload->'event'->'app'->>'platform' IS NOT NULL) AS platforms
           FROM youspeed.media m """ + OBSERVATION_JOIN + " WHERE " + ACTIVE_MEDIA
+        if scope == "live":
+            sql += " AND youspeed.live_crop_exclusion_reason(m.manifest,e.payload->'event') IS NULL AND " + LIVE_ACTIVE_MEDIA
         sql += " GROUP BY m.installation ORDER BY m.installation"
         with self.connection() as db:
+            if scope == "live":
+                self.require_live_controls(db)
             rows = db.execute(sql).fetchall()
         return {"devices": rows}
 
@@ -271,29 +342,89 @@ class InspectorHandler(SimpleHTTPRequestHandler):
         if not head:
             self.wfile.write(data)
 
+    def request_allowed(self, head=False):
+        host = self.headers.get("Host", "")
+        if len(self.headers.get_all("Host", [])) != 1 or host not in self.server.allowed_hosts:
+            self.json_response({"error": "Unbekannter Host."}, 403, head)
+            return False
+        origin = self.headers.get("Origin")
+        if (origin and origin not in {"http://" + host, "https://" + host}) or self.headers.get("Sec-Fetch-Site") == "cross-site":
+            self.json_response({"error": "Nur direkter Zugriff auf den privaten Inspector erlaubt."}, 403, head)
+            return False
+        return True
+
+    def review_request(self, action, payload):
+        proxy = getattr(self.server, "review_proxy", None)
+        if proxy is None:
+            raise ReviewProxyError("Prüfdienst ist noch nicht eingerichtet.", 503)
+        return proxy.request(action, payload, self.headers.get("Authorization"))
+
+    def do_POST(self):
+        if not self.request_allowed():
+            return
+        parsed = urlsplit(self.path)
+        actions = {f"/inspector/api/crops/review/{a}": a for a in ("history", "save", "export")}
+        try:
+            if parsed.query or parsed.path not in actions:
+                raise InspectorError("Unbekannter Inspector-Endpunkt.", 404)
+            lengths = self.headers.get_all("Content-Length", [])
+            if self.headers.get("Transfer-Encoding") or len(lengths) != 1:
+                raise InspectorError("Eindeutige Inhaltslänge erforderlich.", 400)
+            try:
+                length = int(lengths[0])
+            except ValueError:
+                raise InspectorError("Ungültige Inhaltslänge.", 400) from None
+            if not 0 < length <= 128 * 1024:
+                raise InspectorError("Prüfanfrage zu groß oder leer.", 413)
+            if self.headers.get_content_type() != "application/json":
+                raise InspectorError("JSON-Prüfanfrage erforderlich.", 415)
+            self.connection.settimeout(15)
+            raw = self.rfile.read(length)
+            if len(raw) != length:
+                raise InspectorError("Unvollständige Prüfanfrage.", 400)
+            def invalid_constant(value):
+                raise ValueError(value)
+            try:
+                payload = json.loads(raw, parse_constant=invalid_constant)
+            except (ValueError, UnicodeError):
+                raise InspectorError("Ungültige JSON-Prüfanfrage.", 400) from None
+            if not isinstance(payload, dict):
+                raise InspectorError("JSON-Objekt erforderlich.", 400)
+            self.json_response(self.review_request(actions[parsed.path], payload))
+        except (InspectorError, ReviewProxyError) as error:
+            self.json_response({"error": str(error)}, error.status)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        except Exception:
+            self.json_response({"error": "Prüfanfrage fehlgeschlagen."}, 500)
+
     def do_HEAD(self):
         self.do_GET(head=True)
 
     def do_GET(self, head=False):
         parsed = urlsplit(self.path)
-        host = self.headers.get("Host", "")
-        if host not in self.server.allowed_hosts:
-            self.json_response({"error": "Unbekannter Host."}, 403, head)
-            return
-        origin = self.headers.get("Origin")
-        if (origin and origin not in {"http://" + host, "https://" + host}) or self.headers.get("Sec-Fetch-Site") == "cross-site":
-            self.json_response({"error": "Nur direkter Zugriff auf den privaten Inspector erlaubt."}, 403, head)
+        if not self.request_allowed(head):
             return
         if parsed.path.startswith("/inspector/api/"):
             try:
                 if len(parsed.query) > 2048:
                     raise InspectorError("Abfrage zu lang.", 400)
-                if parsed.path == "/inspector/api/crops/status":
-                    self.json_response(self.server.store.status(), head=head)
-                elif parsed.path == "/inspector/api/crops/devices":
+                if parsed.path == "/inspector/api/crops/review/taxonomy":
                     if parsed.query:
+                        raise InspectorError("Ungültige Taxonomie-Abfrage.", 400)
+                    self.json_response(self.review_request("taxonomy", {}), head=head)
+                elif parsed.path == "/inspector/api/crops/status":
+                    status = self.server.store.status()
+                    status["review_service_configured"] = bool(getattr(self.server, "review_proxy", None) and self.server.review_proxy.configured)
+                    self.json_response(status, head=head)
+                elif parsed.path == "/inspector/api/crops/devices":
+                    query = parse_qs(parsed.query, keep_blank_values=True)
+                    if set(query) - {"scope"} or any(len(values) != 1 for values in query.values()):
                         raise InspectorError("Ungültige Geräteabfrage.", 400)
-                    self.json_response(self.server.store.devices(), head=head)
+                    if not query:
+                        self.json_response(self.server.store.devices(), head=head)
+                    else:
+                        self.json_response(self.server.store.devices(query.get("scope", ["live"])[0]), head=head)
                 elif parsed.path == "/inspector/api/crops":
                     self.json_response(self.server.store.list(parse_qs(parsed.query, keep_blank_values=True)), head=head)
                 elif parsed.path.endswith("/image"):
@@ -306,7 +437,7 @@ class InspectorHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(data)
                 else:
                     raise InspectorError("Unbekannter Inspector-Endpunkt.", 404)
-            except InspectorError as error:
+            except (InspectorError, ReviewProxyError) as error:
                 self.json_response({"error": str(error)}, error.status, head)
             except (BrokenPipeError, ConnectionResetError):
                 pass
@@ -341,6 +472,7 @@ def arguments(argv=None):
     parser.add_argument("--db-user", default=os.environ.get("YOUSPEED_REPORT_USER", "youspeed_report"))
     parser.add_argument("--db-host", default=None, help="Override the credential file's PostgreSQL host")
     parser.add_argument("--db-port", type=int, default=None)
+    parser.add_argument("--review-service-url", default=os.environ.get("YOUSPEED_CROP_REVIEW_URL"), help="Separately authenticated backend review origin (HTTPS, loopback HTTP or private youspeed-review service); no browser-selected destinations")
     parser.add_argument("--media-root", type=Path, default=os.environ.get("YOUSPEED_MANAGEMENT_MEDIA_ROOT"), help="Read-only path to management-media on volz-db (or its read-only mount)")
     return parser.parse_args(argv)
 
@@ -350,6 +482,7 @@ def main():
     store = CropStore(args)
     server = ThreadingHTTPServer((args.bind, args.port), InspectorHandler)
     server.store = store
+    server.review_proxy = CropReviewProxy(args.review_service_url)
     server.allowed_hosts = {f"{args.bind}:{server.server_port}", f"volz-db:{server.server_port}",
                             f"{VOLZ_DB_ADDRESS}:{server.server_port}", *args.allowed_host}
     if args.bind == "127.0.0.1":

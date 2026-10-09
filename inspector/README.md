@@ -1,5 +1,57 @@
 # YouSpeed Web Inspector
 
+## Crop-Prüfung und Ausfahrtskontext (#27 / #28)
+
+Die Analyse verwendet standardmäßig **Live-Aufnahmen**. Archiv- und Dashcam-
+Replay-Crops sind ausgeschlossen, auch wenn sie eine Position besitzen. Die
+versionierte Backend-Quellenprüfung erkennt Replay-/Simulationsmerkmale und
+führt unklare Herkunft separat. **Altbestand** bleibt nur lesbar; daraus sind
+keine Prüfungen oder Analyse-Exporte möglich. Originalbilder, ursprüngliche
+Klassifikation und Scores werden durch eine Prüfung nicht verändert.
+
+Im gewählten Live-Crop: **Falsche Klasse**, korrekte Klasse im durchsuchbaren
+Länderkatalog auswählen, **Prüfung speichern**. Alternativen sind **Richtig**,
+**Kein Zeichen** und **Unsicher**. Eine unbekannte Ersatzklasse bleibt offen.
+Die Anzeige trennt Original und Prüfung, zeigt Revisionen und bietet Rücknahme
+als neue Revision. Änderungen werden nicht auf andere Crops übertragen. Der
+Export enthält ausdrücklich gewählte, verwendbare Prüfungen der aktuellen Seite
+mit Quellen- und Revisionsbindung; er ersetzt keine geprüfte Aufteilung nach
+Fahrt, physischem Zeichen und Ort.
+
+Für Prüfungen einen berechtigten **Prüfschlüssel** eingeben. Er bleibt nur im
+Arbeitsspeicher dieses Browser-Tabs und wird weder in localStorage noch in
+Zugangsdaten der Galerie gespeichert. Der Server leitet ihn ausschließlich an
+den konfigurierten privaten Backend-Prüfdienst weiter. Report-Datenbankrechte
+bleiben nur lesend. Speichern/Export prüfen erneut Bildidentität, Herkunft,
+Berechtigungen, Löschung, Ablauf und erwartete Revision. Eine konkurrierende
+Änderung verlangt erneutes Laden; fehlende Speicherrückmeldung darf mit derselben
+Anfrage-ID wiederholt werden.
+
+Die separaten Filter **Prüfstatus**, **Original/geprüfte Klasse** und
+**Ausfahrtskontext** werden vor der Seiteneinteilung angewendet. Ausfahrtsnähe
+ist ein automatischer Suchhinweis, keine Aussage darüber, für welche Straße das
+Zeichen gilt. Fehlende Position, ungenauer/alter Fix, Kartenlücken und noch nicht
+berechnete Ergebnisse bleiben unterscheidbar. Originale OSM-Daten, Kartenstand,
+Methode und Suchradius sind Teil der Ergebnisprovenienz; die Online-Karte wird
+nicht pro Crop abgefragt.
+
+Voraussetzungen: Backend-Migrationen **005 und 006**, dazugehörige explizite
+Report-/Reviewer-/Worker-Rechte und der getrennte Review-Dienst. Bei fehlenden
+Migrationen bleibt die alte Galerie über **Altbestand** lesbar. Für lokale
+Entwicklung oder einen bestehenden SSH-Tunnel:
+
+```sh
+python3 inspector/server.py --review-service-url http://127.0.0.1:8023
+```
+
+Der Produktionsinstaller akzeptiert optional `--review-service-url`; innerhalb
+des bestehenden privaten Management-Netzes kann der konfigurierte Dienst
+`http://youspeed-review:8023` verwendet werden, sonst HTTPS oder ein
+Loopback-Tunnel. Kein Ziel wird aus Browserdaten übernommen; Weiterleitungen
+werden verweigert. Der Prüf-Token wird dem Installer nicht übergeben. Änderungen
+am Backend müssen als gemeinsamer Runtime-Stand gemäß dessen Deployment-Regeln
+vorbereitet werden. Diese Dokumentation startet weder Migration noch Deployment.
+
 ## Gespeicherte Backend-Crops (volz-db / VPN)
 
 **Backend-Crops** (`/inspector/#crops`) zeigt die gespeicherten PNG-/JPEG-Bytes,
@@ -75,13 +127,13 @@ PostgreSQL-Endpunkt per `--db-host` wählen oder den Inspector mit dem bestehend
 Datenbanknetz und einem nur lesbaren Medienmount betreiben. Kein DB-Port muss
 öffentlich geöffnet werden.
 
-Die bisherige Report-Rolle darf `media` und die Lifecycle-Kontrolltabellen noch
-nicht lesen. Ein Administrator muss nach Prüfung einmal
-[`report-crops-grants.sql`](report-crops-grants.sql) in **youspeed** anwenden.
-Das ergänzt ausschließlich SELECT auf `media`, `tombstones`, `authorizations`;
-die vorhandenen SELECT-Rechte auf `events` werden weiterhin benötigt.
-Das Backend-Grants-Skript entzieht Rechte vor seiner Neuvergabe; nach dessen
-erneuter Anwendung diesen Inspector-Zusatz ebenfalls erneut anwenden.
+Für ältere Backend-Versionen ergänzt
+[`report-crops-grants.sql`](report-crops-grants.sql) ausschließlich die
+SELECT-Rechte für die alte Galerie. Die Live-Analyse benötigt die Backend-
+Migrationen 005/006 und das zugehörige `02-grants.sql`; dort sind die benötigten
+Report-Leserechte und die reine Quellenprüffunktion ausdrücklich enthalten.
+Aktuelle vollständige Freigabe-/Löschkontrollen sind für Live-Listen erforderlich;
+bei einem alten Kontrollstand wird ein Fehler statt einer leeren Population gezeigt.
 Der Inspector führt selbst keine Grants/Migrationen aus. Die SQL-Verbindungen
 und Transaktionen sind read-only. Listen- und Bildabfragen schließen abgelaufene,
 gelöschte und ausdrücklich widerrufene Crops aus. Bilder werden bei jedem Abruf

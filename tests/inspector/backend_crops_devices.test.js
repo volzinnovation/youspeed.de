@@ -34,7 +34,7 @@ function inspector({manifest = {}, observation = {}} = {}) {
       urls.push(url);
       let body;
       if (url.endsWith('/status')) body = {database: 'youspeed', user: 'youspeed_report', media_available: true};
-      else if (url.endsWith('/devices')) body = {devices};
+      else if (url.includes('/devices?')) body = {devices};
       else if (url.includes('?')) {
         const params = new URLSearchParams(url.split('?')[1]);
         body = {crops: [row(params.get('installation') || iphone)], has_more: false};
@@ -103,7 +103,7 @@ test('individual device filtering survives refresh and combines with existing fi
   app.el('installation').value = android;
   app.el('country').value = 'DE';
   app.el('filters').listeners.submit({preventDefault() {}}); await settle();
-  const params = new URLSearchParams(app.urls.filter(url => url.includes('?')).at(-1).split('?')[1]);
+  const params = new URLSearchParams(app.urls.filter(url => url.includes('/crops?')).at(-1).split('?')[1]);
   assert.equal(params.get('installation'), android);
   assert.equal(params.get('country'), 'DE');
   assert.equal(params.get('offset'), '0');

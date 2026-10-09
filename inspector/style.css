@@ -36,6 +36,20 @@
 .crop-metadata dt { color: var(--muted); }
 .crop-metadata dd { margin: 0; overflow-wrap: anywhere; }
 .crop-metadata a { color: var(--accent); text-underline-offset: .2em; }
+.crop-review { border-block: 1px solid var(--border); margin: 1.25rem 0; padding-block: 1rem; }
+.crop-review h3 { margin: .5rem 0 .75rem; }
+.crop-review label { display: grid; gap: .3rem; margin-block: .6rem; font-size: .85rem; }
+.crop-review input, .crop-review select, .crop-review textarea { min-width: 0; max-width: 100%; width: 100%; }
+.crop-review fieldset { min-width: 0; border: 1px solid var(--border); padding: .75rem; }
+.crop-review fieldset:disabled { opacity: .65; }
+.crop-review-verdicts, .crop-review-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.crop-review-verdicts [aria-pressed="true"] { outline: 2px solid var(--accent); }
+.crop-class-preview { display: flex; align-items: center; gap: 1rem; }
+.crop-class-preview img { width: 64px; height: 64px; object-fit: contain; }
+.crop-class-preview label { max-width: 10rem; }
+#crops-review-history { padding-left: 1.25rem; font-size: .85rem; overflow-wrap: anywhere; }
+#crops-review-history li { margin-block: .65rem; }
+.crop-pagination { flex-wrap: wrap; }
 @media (max-width: 850px) {
   body[data-inspector-mode="crops"] { overflow: auto; height: auto; min-height: 100%; }
   .crop-workspace { grid-template-columns: minmax(0, 1fr); }

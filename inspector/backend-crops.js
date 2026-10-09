@@ -12,6 +12,14 @@
   let imageURL = null;
   let imageController = null;
   let selected = null;
+  const reviews = window.YouSpeedCropReview?.create(getJSON, (row) => {
+    for (const card of el("gallery").children) {
+      if (card.dataset?.cropIdentity === reviews.core.key(row)) {
+        const badge = card.querySelector?.(".crop-review-badge");
+        if (badge) badge.textContent = reviews.core.reviewLabel(row.current_review);
+      }
+    }
+  });
 
   async function getJSON(url, options = {}) {
     const response = await fetch(url, { cache: "no-store", credentials: "omit", ...options });
@@ -19,7 +27,11 @@
       throw new Error("Crop-Server fehlt. Inspector mit python3 inspector/server.py starten; python -m http.server bietet keinen Backend-Zugriff.");
     }
     const body = await response.json();
-    if (!response.ok) throw new Error(body.error || "Report-Abfrage fehlgeschlagen.");
+    if (!response.ok) {
+      const error = new Error(body.error || "Report-Abfrage fehlgeschlagen.");
+      error.status = response.status;
+      throw error;
+    }
     return body;
   }
 
@@ -72,7 +84,7 @@
   async function loadDevices() {
     const request = ++devicesRequest;
     const value = el("installation").value;
-    const result = await getJSON("./api/crops/devices");
+    const result = await getJSON("./api/crops/devices?" + new URLSearchParams({scope: el("scope").value || "live"}));
     if (request !== devicesRequest) return;
     const all = document.createElement("option");
     all.value = "";
@@ -142,6 +154,7 @@
   async function select(row, button) {
     clearImage();
     selected = row;
+    void reviews?.select(row);
     for (const card of el("gallery").children) card.setAttribute("aria-pressed", String(card === button));
     const manifest = row.manifest;
     const observation = row.observation;
@@ -190,6 +203,8 @@
     const request = ++listRequest;
     clearImage();
     selected = null;
+    reviews?.clear();
+    reviews?.setPage([], el("scope").value || "live");
     el("title").textContent = "Crop auswählen";
     el("metadata").replaceChildren();
     el("raw").textContent = "Kein Crop ausgewählt.";
@@ -199,13 +214,15 @@
     el("next").disabled = true;
     el("summary").textContent = "Crops werden geladen …";
     const params = new URLSearchParams({ offset, limit: pageSize });
-    for (const name of ["installation", "country", "source", "query", "from", "to"]) {
+    params.set("scope", el("scope").value || "live");
+    for (const name of ["installation", "country", "source", "query", "from", "to", "review_state", "exit_context", "class_source"]) {
       if (el(name).value) params.set(name, el(name).value);
     }
     try {
       const result = await getJSON("./api/crops?" + params);
       if (request !== listRequest) return;
       hasMore = result.has_more;
+      reviews?.setPage(result.crops, el("scope").value || "live");
       el("summary").textContent = result.crops.length
         ? `${offset + 1}–${offset + result.crops.length} · neueste Aufnahmen zuerst`
         : "Keine aktiven, nicht abgelaufenen Crops für diese Filter gespeichert.";
@@ -215,6 +232,7 @@
         const card = document.createElement("button");
         card.type = "button";
         card.className = "crop-card";
+        if (reviews) card.dataset.cropIdentity = reviews.core.key(row);
         card.setAttribute("aria-pressed", "false");
         const img = document.createElement("img");
         img.loading = "lazy";
@@ -231,6 +249,14 @@
         availability.textContent = `${row.manifest.decoded_width} × ${row.manifest.decoded_height} · ${row.manifest.source_kind}`;
         img.addEventListener("error", () => { img.hidden = true; availability.textContent = "Bild nicht verfügbar · Details öffnen"; });
         card.append(img, title, time, device, availability);
+        if (reviews) {
+          const review = document.createElement("span"); review.className = "crop-review-badge";
+          review.textContent = reviews.core.reviewLabel(row.current_review);
+          const context = document.createElement("span");
+          const exit = typeof row.exit_context === "string" ? row.exit_context : row.exit_context?.result || row.exit_context?.status || "not_computed";
+          context.textContent = reviews.core.exitLabels[exit] || exit;
+          card.append(review, context);
+        }
         card.addEventListener("click", () => void select(row, card));
         el("gallery").append(card);
       }
@@ -279,6 +305,8 @@
       el("metadata").replaceChildren();
       el("raw").textContent = "Kein Crop ausgewählt.";
       selected = null;
+      reviews?.clear();
+      reviews?.setPage([], "live");
     }
   });
   window.addEventListener("pagehide", clearImage);
