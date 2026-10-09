@@ -21,8 +21,7 @@ class SignCollectionPhoneRoadMatchTests {
                            JsonObject(match + ("osm_way_id" to JsonPrimitive("9223372036854775808"))))) {
             assertThrows(Exception::class.java) { gate.validate(JsonObject(crop + ("phone_road_match" to bad)), "crop") }
         }
-        val output = File("/private/tmp/youspeed-collection-results"); output.mkdirs()
-        File(output, "kotlin-phone-road-match-crop.json").writeText(SignCollectionJson.canonical(crop))
+        File(signCollectionTestOutputDirectory(), "kotlin-phone-road-match-crop.json").writeText(SignCollectionJson.canonical(crop))
     }
 
     @Test fun sharedOriginalMatchVectorsPreserveSignedAgeAndExactStringIdentity() {
