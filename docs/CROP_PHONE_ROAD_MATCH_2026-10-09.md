@@ -34,9 +34,11 @@ explicitly unavailable and recorded contexts are distinct in Inspector. No
 historical crop is backfilled with a later map match.
 
 The backend retains the field through its existing intake, archive, management
-manifest and reviewed export paths. The bounded fast intake still preserves raw
-manifests; the contract validators enforce metadata validity downstream. No new
-database column or crop storage migration is required for this JSON field.
+manifest and reviewed export paths. The published contract and native validators
+constrain compliant payloads; the bounded fast intake, archive and import paths
+preserve raw manifests without automatically invoking the full crop contract
+validator. No new database column or crop storage migration is required for this
+JSON field.
 
 ## Use the way, bearing and successive crops together
 
@@ -65,11 +67,19 @@ course is vehicle travel bearing; calibrated camera yaw/FOV are not in the crop
 contract. The recorded way is a context anchor, not a sign-to-road label.
 
 The October 9 read-only live snapshot contains **266 observation groups with two
-or more saved crops**; every crop in those groups has its own recorded location
-and usable recorded GPS course. Another 846 groups have one saved crop. All 1,801
-eligible crops have usable recorded course, including legacy fallback positions.
-These counts describe retained metadata, not independent directional accuracy or
-which signs were actually displayed.
+or more saved crops**, totaling **955 crops**; each has its own recorded location
+and a finite GPS course in the range [0°, 360°). Another 846 groups have one saved
+crop. All 1,801 eligible crops have a recorded finite course, including legacy
+fallback positions, but **254 of 1,801** have reported course uncertainty above
+30°; **183 of the 955** crops in multi-crop groups do so.
+
+The 30° comparison applies the existing frozen exit-context algorithm's
+`max_course_accuracy_degrees` bound as a diagnostic. That algorithm requires
+reported course uncertainty between 0° and 30° inclusive to classify heading
+relative to a mapped exit approach; higher uncertainty leaves that relation
+unknown. It does not change geographic near-exit status or exclude these crops
+from review. These counts describe retained metadata, not independently measured
+directional accuracy or which signs were actually displayed.
 
 The observer qualifies a sighting after at least two analyzed frames spanning
 100 ms. It then attempts a first crop and subsequent crops at least 500 ms apart,
@@ -119,6 +129,14 @@ and **83 JavaScript tests**. These include the real map-handoff function and
 synthetic DOM workflow checks; no phone or field accuracy qualification is claimed.
 Independent review found and fixed a Swift fractional timestamp boundary that
 could reject a valid crop, and stale map overlays between Inspector selections.
+
+The full CI run also exposed a pre-existing Swift expression type-check timeout
+and macOS-specific Android test export paths. The behavior-preserving Swift
+decomposition produced identical actual penalty-engine outputs in 58,080 cases
+and passed iOS simulator-target type checking. After the path fix, the complete
+Android unit suite passed 663 tests with one skip using a Linux-style temporary
+root. These local checks do not establish a green full GitHub run; see the current
+[PR #29 checks](https://github.com/volzinnovation/youspeed.de/pull/29/checks).
 
 Activate the accepting backend before shipping clients that emit this field,
 including explicit null: an older strict processor does not know the new key.
