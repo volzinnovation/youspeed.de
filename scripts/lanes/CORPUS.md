@@ -317,8 +317,17 @@ The existing 100 scored frames are now development evidence. A new untouched
 holdout is required for acceptance; diagnostic comparisons can reuse this cohort
 when that exposure is explicit and the comparison is fixed before training.
 
-The follow-up `zod-three-way-final-v1` adds the missing ZOD-only control and
-reruns **all three arms** with fixed final-epoch selection:
+The completed follow-up `zod-three-way-final-v1` adds the missing ZOD-only
+control and reruns **all three arms** with fixed final-epoch selection. ZOD-only
+has mean ZOD precision 0.51%, recall 99.84%, F1 1.01% and IoU 0.51%; its
+no-paint background pixel FPR is 51.60%. A2D2-only has F1 25.94% / IoU 14.90%,
+and mixed has F1 15.12% / IoU 8.19%. All three seeds rank A2D2-only above mixed
+above ZOD-only on ZOD F1/IoU. Do not promote the ZOD-only or mixed checkpoints.
+The result motivates complete-coverage supervision and loss/sampling controls;
+it does not establish that ZOD itself is unsuitable. See the
+[three-way results, all seeds and evidence limits](../../docs/LANE_ZOD_THREE_WAY_RESULTS_2026-10-09.md).
+
+Reproduce the source/selection control with:
 
 ```sh
 python3 scripts/lanes/train_mixed_auxiliary.py \
