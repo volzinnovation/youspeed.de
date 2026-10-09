@@ -307,6 +307,15 @@ per-source cap is a memory guard, not a dataset selection rule.
 
 ### Prospective larger cohorts and repeated comparisons
 
+The completed 2026-10-09 comparison retained 812 ZOD training frames and 100
+heldout frames across 20 vehicle/day groups. Across all three seeds, the mixed
+recipe increased recall but reduced paint precision, F1 and IoU; mean ZOD IoU
+fell from 16.12% to 9.06%, and negative-scene pixel FPR rose from 0.136% to
+1.897%. Do not promote those mixed checkpoints. See the
+[full result and evidence limits](../../docs/LANE_ZOD_SCALE_RESULTS_2026-10-09.md).
+The next experiment needs predeclared supervision/loss/exposure controls and a
+new untouched holdout; the existing 100 scored frames are now development evidence.
+
 `select_zod_lane_cohort.py` reads the **entire original Frames metadata** before
 selecting any images. In `vehicle-day-direct-v2` mode, it groups frames by
 collection vehicle and UTC day, then records exact direct adjacency whenever
