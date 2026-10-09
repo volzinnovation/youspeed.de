@@ -142,6 +142,35 @@ class FakeDetector(nn.Module):
 
 
 class TrainingTest(unittest.TestCase):
+    def test_optional_heldout_frame_counts_reproduce_unchanged_aggregate(self):
+        class FixedHead(nn.Module):
+            def forward(self, features):
+                return features[0][:, :1]
+
+        records = []
+        for dataset, pair in (("A2D2", {"rgb": "frame-a", "capture_date": "20181001", "split": "test"}),
+                              ("ZOD", {"frame_id": "z", "group_id": "collection-z", "split": "test"})):
+            records.append(dict(dataset=dataset, pair=pair,
+                                features=(torch.tensor([[[1., -1.], [1., -1.]]]), torch.zeros(1, 1, 1)),
+                                target=torch.tensor([[[1., 1.], [0., 0.]]]),
+                                valid=torch.tensor([[[1., 1.], [1., 0.]]])))
+        args = (FixedHead(), records, "cpu", 2, 20., 2)
+        baseline = aux.evaluate(*args)
+        detailed = aux.evaluate(*args, include_frame_counts=True)
+        rows = detailed.pop("frameCounts")
+        self.assertEqual(detailed, baseline)
+        self.assertEqual(rows[0], dict(dataset="A2D2", split="test", frame_id="frame-a", group_id="20181001",
+                                       group_kind="capture_date", counts=dict(tp=1, fp=1, fn=1, tn=0)))
+        self.assertEqual(rows[1]["group_id"], "collection-z")
+        for key, value in baseline["counts"].items():
+            self.assertEqual(sum(row["counts"][key] for row in rows), value)
+        records[0]["pair"]["split"] = "train"
+        with self.assertRaisesRegex(ValueError, "held-out"):
+            aux.evaluate(*args, include_frame_counts=True)
+        records[0]["pair"] = {}
+        with self.assertRaisesRegex(ValueError, "identities"):
+            aux.evaluate(*args, include_frame_counts=True)
+
     def test_frozen_weights_bn_modes_and_gradients(self):
         extractor = aux.FrozenYOLOFeatures(FakeDetector())
         before = aux.state_hash(extractor)

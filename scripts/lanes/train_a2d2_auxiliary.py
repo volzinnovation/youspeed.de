@@ -334,10 +334,11 @@ def metrics_from_counts(tp, fp, fn, tn):
 
 
 @torch.no_grad()
-def evaluate(head, records, device, batch_size, positive_weight, size):
+def evaluate(head, records, device, batch_size, positive_weight, size, *, include_frame_counts=False):
     head.eval()
     counts = np.zeros(4, np.int64)
     total_loss = 0
+    frame_counts = []
     for start in range(0, len(records), batch_size):
         batch = records[start:start + batch_size]
         features, target, valid = batch_tensors(batch, device)
@@ -347,9 +348,29 @@ def evaluate(head, records, device, batch_size, positive_weight, size):
         truth, mask = target.bool(), valid.bool()
         counts += np.array([int((pred & truth & mask).sum()), int((pred & ~truth & mask).sum()),
                             int((~pred & truth & mask).sum()), int((~pred & ~truth & mask).sum())])
+        if include_frame_counts:
+            for index, record in enumerate(batch):
+                pair, dataset = record.get("pair", {}), record.get("dataset", "A2D2")
+                if dataset == "ZOD":
+                    frame_id, group_id, group_kind = pair.get("frame_id"), pair.get("group_id"), "group_id"
+                elif dataset == "A2D2":
+                    frame_id, group_id, group_kind = pair.get("rgb"), pair.get("capture_date"), "capture_date"
+                else:
+                    raise ValueError("Unknown dataset in per-frame evaluation")
+                if not all(isinstance(value, str) and value for value in (frame_id, group_id)):
+                    raise ValueError("Per-frame evaluation requires source frame and grouping identities")
+                if pair.get("split") not in ("validation", "test"):
+                    raise ValueError("Detailed frame counts are only available for held-out rows")
+                p, t, v = pred[index], truth[index], mask[index]
+                frame_counts.append(dict(dataset=dataset, split=pair["split"], frame_id=frame_id,
+                                         group_id=group_id, group_kind=group_kind,
+                                         counts=dict(tp=int((p & t & v).sum()), fp=int((p & ~t & v).sum()),
+                                                     fn=int((~p & t & v).sum()), tn=int((~p & ~t & v).sum()))))
     result = metrics_from_counts(*(int(x) for x in counts))
     result["loss"] = total_loss / len(records)
     result["frames"] = len(records)
+    if include_frame_counts:
+        result["frameCounts"] = frame_counts
     return result
 
 

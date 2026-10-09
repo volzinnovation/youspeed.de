@@ -305,6 +305,94 @@ proof is embedded in each checkpoint. No mobile model is exported. Cached
 features/targets take roughly13.1MB per640-pixel frame; the default512-frame
 per-source cap is a memory guard, not a dataset selection rule.
 
+### Prospective larger cohorts and repeated comparisons
+
+`select_zod_lane_cohort.py` reads the **entire original Frames metadata** before
+selecting any images. In `vehicle-day-direct-v2` mode, it groups frames by
+collection vehicle and UTC day, then records exact direct adjacency whenever
+any source-frame pair from two days is within 250 m. All source frames participate,
+including unselected and officially blacklisted rows. Reserve held-out days and
+purge both those days and all their directly adjacent days from training. Do not
+take multihop spatial closure through unused days. The initial connected-component
+proposal was infeasible on metadata alone: previously exposed components left
+only 16 fresh validation frames. Preserve that failed proposal as provenance.
+
+Previously exposed mini and mirror IDs exclude their entire vehicle/day groups
+from the new holdout. Neighboring unselected days can contain earlier analyst
+exposure; this does not establish unseen regions or complete route independence.
+Only official training rows can train; selected official-validation days are
+reserved for evaluation, and unused official-validation rows never train. This
+is a custom, group-separated cohort, not the complete official benchmark.
+
+```sh
+python3 scripts/lanes/select_zod_lane_cohort.py \
+  --dataset-root "$LANE_CORPUS_ROOT/zod/originals" \
+  --trainval "$LANE_CORPUS_ROOT/zod/originals/trainval-frames-full.json" \
+  --prior-exposure "$LANE_CORPUS_ROOT/zod/prior-exposure-ids.json" \
+  --prior-source-receipt "$LANE_CORPUS_ROOT/zod/mini-source-receipt.json" \
+  --output-dir "$LANE_CORPUS_ROOT/zod/cohort-v2" \
+  --grouping-mode vehicle-day-direct-v2 \
+  --train-count 1024 --test-count 128 --expected-source-frames 100000 \
+  --min-test-groups 8 --target-test-groups 16 --full-review-train-count 32 \
+  --training-input-size 640 --seed zod-scale-20261009-v2
+```
+
+The resulting cohort receipt binds the original trainval hash, every metadata
+hash, full-source day graph, exposure IDs, selected frames and a fixed QA
+plan. It targets at least 16 holdout days and requires at least eight;
+source-capacity failures stop selection. Extract only the selected original RGB
+and preserve archive and member hashes. Run the importer with the selected
+trainval and `--cohort-selection` pointing to this receipt. The importer rebuilds
+and verifies `full-source-day-graph.json`; regrouping only selected rows would
+lose out-of-cohort proximity evidence.
+
+Do not infer complete background coverage from the small pilot or a sample
+review. A `per_frame` source receipt binds each frame to `accept`, `exclude` or
+`positive_only`. All held-out frames require full coverage QA before scoring;
+uncertain frames are excluded with no refill. The 32 predeclared training QA
+frames can receive complete supervision after review. Other training frames
+supervise only explicitly annotated paint and ignore every other pixel. A2D2
+continues to supply dense negative examples. Malformed polygons, absent paint
+in positive-only frames and targets that vanish under the declared input resize
+are recorded exclusions, never manufactured background labels. The importer
+rechecks the minimum number of retained holdout groups after QA.
+
+For the larger experiment, use 10 epochs ×256 updates ×8 frames for each arm
+and run all three fixed seeds `20261009`, `20262009`, `20263009` in separate
+output directories. The baseline receives 20,480 A2D2 frame exposures; the mixed
+arm receives 10,240 A2D2 plus 10,240 ZOD exposures. Architecture, loss, threshold
+and A2D2-validation-only selection stay unchanged. Enable
+`--max-source-frames 1152 --max-cache-gib 20 --holdout-frame-counts`.
+The maximum 1,152 ZOD plus 192 A2D2 frames at640 retain16.40625GiB of tensors;
+the explicit cache guard excludes runtime/decode/batch overhead. Use a32GiB
+container allowance and run seeds sequentially on the selected GPU.
+
+`source-supervision.json` records positive, negative, valid and ignored pixels
+after the actual training transform, together with coverage decisions. Its hash
+is included in checkpoint provenance. A50:50 frame mix is not an equal source
+loss weight, especially with positive-only ZOD supervision. Per-frame confusion
+counts are recorded only after checkpoint selection, preserving the selection
+rule. No private video or retrospective label enters these runs.
+
+```sh
+python3 scripts/lanes/summarize_mixed_experiments.py \
+  --run "$LANE_CORPUS_ROOT/zod/seed-20261009" \
+  --run "$LANE_CORPUS_ROOT/zod/seed-20262009" \
+  --run "$LANE_CORPUS_ROOT/zod/seed-20263009" \
+  --expected-seeds 20261009 20262009 20263009 \
+  --output "$LANE_CORPUS_ROOT/zod/scale-summary.json"
+```
+
+The summarizer requires every predeclared seed, matching source/protocol/runtime
+identities, finalized checkpoints and detector preservation. It binds evaluated
+frames and groups to the original manifests, checks aggregate confusion counts
+and reports all paired seed results. Group-bootstrap intervals use the same
+whole-group sample for both arms and every fitted seed, and are suppressed below
+eight groups. They condition on the retained cohort and fitted seeds; they do
+not measure label error, filtering bias or on-device recognition quality. The
+previously exposed A2D2 test set remains descriptive. Never promote the best seed
+or infer production readiness from segmentation metrics alone.
+
 ### Linux GPU execution and remote evidence
 
 Both auxiliary trainers accept `--device cuda` or `cuda:N`, as well as `cpu`

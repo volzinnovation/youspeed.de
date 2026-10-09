@@ -26,6 +26,14 @@ def record(identity, latitude, split="train", date="2020-01-01", car="car1"):
 
 
 class RasterizationTest(unittest.TestCase):
+    def test_tiny_positive_can_disappear_in_predeclared_loss_space(self):
+        paint=np.zeros((100,200),np.uint8);paint[0,0]=255
+        counts=zod.loss_space_counts(paint,paint,200,100,32)
+        self.assertEqual(counts["training_input_valid_pixels"],0)
+        self.assertEqual(counts["training_input_positive_pixels"],0)
+        complete=zod.loss_space_counts(paint,np.full_like(paint,255),200,100,32)
+        self.assertEqual(complete["training_input_valid_pixels"],32*16)
+
     def test_same_instance_dash_gaps_are_background(self):
         polygons = [feature("first", 2, 2, 4, 4), feature("second", 2, 8, 4, 10)]
         positive, valid, stats = zod.rasterize_annotations(polygons, 12, 12, True)
@@ -87,6 +95,36 @@ class RasterizationTest(unittest.TestCase):
 
 
 class GroupingTest(unittest.TestCase):
+    def test_spatial_index_matches_pairwise_reference_including_dateline_and_poles(self):
+        rng = np.random.default_rng(20261009)
+        rows = []
+        for i in range(150):
+            r = record(f"{i:06d}", 50. + float(rng.uniform(0, .05)), car=f"car{i}")
+            r["longitude"] = 10. + float(rng.uniform(0, .05))
+            rows.append(r)
+        rows += [dict(record("900001", 0., car="x"), longitude=179.9995),
+                 dict(record("900002", 0., car="y"), longitude=-179.9995),
+                 dict(record("900003", 89.9999, car="z"), longitude=0.),
+                 dict(record("900004", 89.9999, car="w"), longitude=180.)]
+        parents = list(range(len(rows)))
+        def root(i):
+            while parents[i] != i:
+                i = parents[i]
+            return i
+        for i, a in enumerate(rows):
+            for j, b in enumerate(rows[:i]):
+                if zod.distance_m(a, b) <= 250.:
+                    parents[root(i)] = root(j)
+        expected = {frozenset(r["frame_id"] for i,r in enumerate(rows) if root(i) == key) for key in {root(i) for i in range(len(rows))}}
+        result = zod.assign_groups(copy.deepcopy(rows))
+        self.assertEqual(expected, {frozenset(r["frame_id"] for r in group) for group in result})
+
+    def test_more_than_5000_dense_duplicate_coordinates_are_bounded(self):
+        rows = [record(f"{i:06d}", 50., car=f"car{i}") for i in range(6000)]
+        groups = zod.assign_groups(rows)
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(len(groups[0]), 6000)
+
     def test_official_val_preserved_and_nearby_train_purged(self):
         rows = [record("000001", 50., "val"),
                 record("000002", 50.001, date="2020-02-01"),
@@ -167,6 +205,47 @@ class ImportTest(unittest.TestCase):
             self.assertIn("Visible paint missing", result["excluded"][0]["reason"])
             self.assertEqual(path.read_bytes(), original)
             self.assertIn(str(path.resolve()), [o["local_path"] for o in result["objects"]])
+
+    def test_per_frame_positive_only_train_has_no_negative_supervision(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, infos = self.fixture(Path(directory), "per_frame")
+            data = self.add_frame_qa(source, trainval, receipt, infos)
+            data["frame_qa"]["frames"][0]["decision"] = "positive_only"
+            receipt.write_text(json.dumps(data))
+            result = zod.prepare(source, trainval, receipt, output)
+            self.assertTrue(result["training_eligible"])
+            train = next(r for r in result["pairs"] if r["split"] == "train")
+            self.assertEqual(train["annotation_coverage"], "positive_only")
+            objects = {o["key"]:o["local_path"] for o in result["objects"]}
+            np.testing.assert_array_equal(cv2.imread(objects[train["label"]],0),cv2.imread(objects[train["valid"]],0))
+            self.assertEqual(result["coverage_counts"]["train"]["positive_only"]["negative_pixels"],0)
+            self.assertGreater(result["coverage_counts"]["test"]["complete_lane_markings"]["negative_pixels"],0)
+
+    def test_positive_only_holdout_and_unbound_per_frame_coverage_fail_closed(self):
+        for coverage in ("per_frame", "complete_lane_markings"):
+            with self.subTest(coverage=coverage), tempfile.TemporaryDirectory() as directory:
+                source, trainval, receipt, output, infos = self.fixture(Path(directory), coverage)
+                data = self.add_frame_qa(source, trainval, receipt, infos)
+                data["frame_qa"]["frames"][1]["decision"] = "positive_only"
+                receipt.write_text(json.dumps(data))
+                with self.assertRaisesRegex(ValueError,"evaluation"):
+                    zod.prepare(source,trainval,receipt,output)
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, _ = self.fixture(Path(directory),"per_frame")
+            with self.assertRaisesRegex(ValueError,"hash-bound"):
+                zod.prepare(source,trainval,receipt,output)
+
+    def test_empty_positive_only_frame_is_excluded_without_invented_negatives(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source,trainval,receipt,output,infos=self.fixture(Path(directory),"per_frame")
+            (source/infos["train"][0]["annotations"]["lane_markings"]["filepath"]).write_text("[]")
+            data=self.add_frame_qa(source,trainval,receipt,infos)
+            data["frame_qa"]["frames"][0]["decision"]="positive_only"
+            receipt.write_text(json.dumps(data))
+            result=zod.prepare(source,trainval,receipt,output)
+            self.assertEqual(result["partition_counts"]["train"],0)
+            self.assertFalse(result["training_eligible"])
+            self.assertIn("no valid supervision",result["excluded"][0]["reason"])
 
     def test_visual_qa_cannot_cover_another_source_or_unreviewed_frame(self):
         for mutation in ("rgb", "annotation", "trainval", "missing", "duplicate"):
