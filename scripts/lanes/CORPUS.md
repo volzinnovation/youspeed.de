@@ -17,6 +17,11 @@ The next decision gate is per-sign road/exit association on reviewed encounters,
 not paint IoU or overlay availability. Nothing in these tools changes the live
 apps or the protected speed-reference policy.
 
+The [current next-work order](../../docs/LANE_NEXT_PRIORITIES_2026-10-09.md) starts
+with crop class review and geographic exit triage, then reviewed sign encounters
+and a matched test of the existing Hough extractor. It supersedes earlier planning
+priorities; the experiments and their reported measurements remain unchanged.
+
 ## Three separate evidence layers
 
 1. **Source exposures:** hash-verified videos and aspect-preserving decoded frames,
