@@ -225,13 +225,19 @@ def finalize_arm(output, metrics, checkpoint, preservation):
     aux.write_json(output / "metrics.json", metrics)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+def build_parser():
+    parser = argparse.ArgumentParser(description=__doc__, epilog=
+        "CUDA launch environment: CUBLAS_WORKSPACE_CONFIG=:4096:8 and PYTHONHASHSEED matching --seed. "
+        "Isolate the intended GPU with CUDA_VISIBLE_DEVICES or the container GPU selector; "
+        "NVIDIA_TF32_OVERRIDE must be unset or 0. No cross-device bitwise guarantee.")
     parser.add_argument("--a2d2-manifest", type=Path, required=True)
     parser.add_argument("--zod-manifest", type=Path, required=True)
     parser.add_argument("--detector", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--device", choices=("cpu", "mps"), default="mps")
+    parser.add_argument("--device", type=aux.training_device, default="mps",
+                        help="cpu, mps, cuda or cuda:N; index is relative to CUDA_VISIBLE_DEVICES")
+    parser.add_argument("--cuda-determinism", choices=("seeded", "strict"), default="seeded",
+                        help="CUDA: seeded retains unsupported deterministic kernels with recorded warnings; strict fails")
     parser.add_argument("--epochs", type=int, default=15)
     parser.add_argument("--steps-per-epoch", type=int, default=16)
     parser.add_argument("--batch-size", type=int, default=8)
@@ -239,6 +245,11 @@ def main():
     parser.add_argument("--max-source-frames", type=int, default=512,
                         help="Per-source cache bound; default total ceiling ~9.3GB for192 A2D2+512 ZOD at640")
     parser.add_argument("--seed", type=int, default=20261008)
+    return parser
+
+
+def main():
+    parser = build_parser()
     args = parser.parse_args()
     if (not 1 <= args.epochs <= 20 or not 1 <= args.steps_per_epoch <= 64
             or not 2 <= args.batch_size <= 32 or args.batch_size % 2
@@ -249,6 +260,13 @@ def main():
     repository = Path(__file__).resolve().parents[2]
     if args.output_dir.resolve() == repository or repository in args.output_dir.resolve().parents:
         parser.error("Keep dataset and experiment artifacts outside repository")
+    try:
+        args.device, runtime = aux.configure_execution(args.device, args.seed, args.cuda_determinism)
+        if args.device.startswith("cuda"):
+            runtime["trainingPreflight"] = aux.training_preflight(args.device)
+    except (ValueError, RuntimeError) as error:
+        parser.error(str(error))
+    print(json.dumps(dict(stage="execution", **runtime)), flush=True)
     a_manifest, a_objects, a_parts, class_map = aux.validate_manifest(args.a2d2_manifest)
     z_manifest, z_objects, z_parts = validate_zod_manifest(args.zod_manifest)
     if args.max_source_frames < 1 or any(sum(map(len, p.values())) > args.max_source_frames for p in (a_parts, z_parts)):
@@ -262,10 +280,6 @@ def main():
                 if identity in rgb_splits and rgb_splits[identity] != split:
                     raise ValueError("Cross-corpus image content overlaps partitions")
                 rgb_splits[identity] = split
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
-    cv2.setNumThreads(1)
-    torch.set_num_threads(4)
     detector = aux.load_detector(args.detector, args.device)
     initial = {k: v.detach().cpu().clone() for k, v in aux.AuxiliaryMarkingHead().state_dict().items()}
     initial_hash = hashlib.sha256(b"".join(k.encode() + v.numpy().tobytes() for k, v in sorted(initial.items()))).hexdigest()
@@ -279,6 +293,7 @@ def main():
                   detectorSha256=aux.sha256_file(args.detector), detectorPath=str(args.detector.resolve()),
                   seed=args.seed, epochs=args.epochs, stepsPerEpoch=args.steps_per_epoch,
                   batchSize=args.batch_size, positiveWeight=20., device=args.device,
+                  execution=runtime,
                   headInitialStateSha256=initial_hash,
                   selection="Maximum A2D2 validation paint IoU, threshold0.5, earliest tie, both arms",
                   sampling="Fixed updates; baseline all A2D2; mixture 50:50 frame counts within every batch; seeded cycles",
@@ -294,7 +309,8 @@ def main():
                                  "ZOD holdouts scored after selection; any subsequent tuning requires fresh holdout",
                                  "Entire detector frozen; no phone export/runtime or speed-reference changes",
                                  "Frame-balanced sampling is not equal per-source loss weight; valid pixel counts differ",
-                                 "MPS kernels may not reproduce bitwise on other hardware/software"])
+                                 "Backend kernels may not reproduce bitwise on other hardware/software",
+                                 "CUDA seeded mode records unsupported deterministic kernels; strict mode fails instead"])
     args.output_dir.mkdir(parents=True)
     # Persist protocol before any feature extraction, optimizer step or holdout score.
     aux.write_json(args.output_dir / "protocol.json", config)

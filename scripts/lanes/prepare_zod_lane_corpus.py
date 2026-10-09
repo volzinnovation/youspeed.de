@@ -233,6 +233,18 @@ def read_receipt(path):
         raise ValueError("Only original image/annotation coordinates are supported; resized derivatives require a verified transform")
     if receipt.get("annotation_coverage") not in ("unknown", "complete_lane_markings"):
         raise ValueError("Annotation coverage must be explicit")
+    qa = receipt.get("frame_qa")
+    if qa is not None:
+        if not isinstance(qa, dict) or not re.fullmatch(r"[0-9a-f]{64}", str(qa.get("trainval_sha256", ""))) or not isinstance(qa.get("frames"), list):
+            raise ValueError("Malformed frame QA scope")
+        seen = set()
+        for row in qa["frames"]:
+            if (not isinstance(row, dict) or not re.fullmatch(r"\d{6}", str(row.get("frame_id", "")))
+                    or row["frame_id"] in seen or row.get("decision") not in ("accept", "exclude")
+                    or not isinstance(row.get("reason"), str) or not row["reason"].strip()
+                    or any(not re.fullmatch(r"[0-9a-f]{64}", str(row.get(key, ""))) for key in ("rgb_sha256", "annotation_sha256"))):
+                raise ValueError("Malformed, duplicate or unbound frame QA decision")
+            seen.add(row["frame_id"])
     return receipt
 
 
@@ -291,6 +303,11 @@ def prepare(dataset_root, trainval_path, receipt_path, output, proximity_m=250.0
     receipt = read_receipt(receipt_path)
     records = read_records(dataset_root, trainval_path)
     records, excluded = assign_splits(records, proximity_m, validation_fraction)
+    qa = receipt.get("frame_qa")
+    qa_frames = {row["frame_id"]: row for row in qa["frames"]} if qa is not None else {}
+    if qa is not None and (qa["trainval_sha256"] != sha256_file(trainval_path)
+            or set(qa_frames) != {row["frame_id"] for row in records}):
+        raise ValueError("Frame QA scope does not match all original trainval records")
     complete = receipt["annotation_coverage"] == "complete_lane_markings"
     objects, selected, image_hashes = {}, [], {}
     def add_object(key, path, role):
@@ -313,13 +330,24 @@ def prepare(dataset_root, trainval_path, receipt_path, output, proximity_m=250.0
             if rgb_hash in image_hashes:
                 raise ValueError("Duplicate RGB source bytes across official frame IDs")
             image_hashes[rgb_hash] = row["frame_id"]
+            decision = qa_frames.get(row["frame_id"])
+            if decision is not None:
+                if (decision["rgb_sha256"] != rgb_hash
+                        or decision["annotation_sha256"] != objects[row["annotation"]]["sha256"]):
+                    raise ValueError("Frame QA source hash mismatch: " + row["frame_id"])
+                if decision["decision"] == "exclude" and row["split"] != "excluded":
+                    excluded.append({"frame_id": row["frame_id"], "group_id": row["group_id"],
+                        "official_split": row["official_split"], "assigned_split": row["split"],
+                        "reason": "Source QA: " + decision["reason"], "rgb_sha256": rgb_hash,
+                        "annotation_sha256": objects[row["annotation"]]["sha256"]})
+                    continue
             if row["split"] == "excluded":
                 continue
             image = cv2.imread(str(safe_source(dataset_root, row["rgb"])), cv2.IMREAD_COLOR)
             if image is None or image.shape[:2] != (row["height"], row["width"]):
                 raise ValueError("RGB dimensions differ from original camera metadata")
-            annotations = json.loads(safe_source(dataset_root, row["annotation"]).read_text())
             try:
+                annotations = json.loads(safe_source(dataset_root, row["annotation"]).read_text())
                 positive, valid, stats = rasterize_annotations(annotations, row["width"], row["height"], complete)
             except ValueError as error:
                 if not quarantine_invalid_annotations:
@@ -349,7 +377,7 @@ def prepare(dataset_root, trainval_path, receipt_path, output, proximity_m=250.0
             "license": LICENSE, "license_url": "https://zod.zenseact.com/license/", "source_receipt": receipt,
             "sdk_reference_revision": SDK_REVISION, "adapter_sha256": sha256_file(__file__),
             "objects": list(objects.values()), "pairs": selected, "excluded": excluded,
-            "exclusion_counts": dict(Counter("invalid_annotation" if row["reason"].startswith("Invalid annotation:") else "split_overlap" for row in excluded)),
+            "exclusion_counts": dict(Counter("invalid_annotation" if row["reason"].startswith("Invalid annotation:") else "source_qa" if row["reason"].startswith("Source QA:") else "split_overlap" for row in excluded)),
             "quarantine_invalid_annotations": quarantine_invalid_annotations,
             "grouping": {"method": "vehicle-capture-day-or-geographic-connected-components-v1", "proximity_m": proximity_m,
                 "validation_fraction": validation_fraction, "official_val": "test", "overlap_policy": "exclude official train components touching official val"},

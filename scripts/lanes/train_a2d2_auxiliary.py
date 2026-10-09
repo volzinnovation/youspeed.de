@@ -12,10 +12,13 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import platform
 import random
+import re
 import shutil
 import subprocess
 import time
+import warnings
 
 import cv2
 import numpy as np
@@ -27,6 +30,120 @@ DETECTOR_SHA256 = "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c79
 DETECTOR_URL = "https://raw.githubusercontent.com/cquest/sgblur/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt"
 POSITIVE_RGB = ((255, 193, 37), (128, 0, 255))
 IGNORE_RGB = ((96, 69, 143), (53, 46, 82), (72, 209, 204))
+
+
+def training_device(value):
+    """One explicit backend; CUDA indices are relative to CUDA_VISIBLE_DEVICES."""
+    if value not in ("cpu", "mps", "cuda") and not re.fullmatch(r"cuda:(0|[1-9][0-9]*)", value):
+        raise argparse.ArgumentTypeError("Use cpu, mps, cuda or cuda:N (one visible GPU)")
+    return value
+
+
+def validate_cuda_environment(seed):
+    # These must be present before process startup / the first CUDA operation.
+    # Setting PYTHONHASHSEED here would not reseed the running Python interpreter.
+    if os.environ.get("CUBLAS_WORKSPACE_CONFIG") not in (":4096:8", ":16:8"):
+        raise ValueError("CUDA requires CUBLAS_WORKSPACE_CONFIG=:4096:8 (or :16:8) before launch")
+    if os.environ.get("PYTHONHASHSEED") != str(seed):
+        raise ValueError("CUDA requires PYTHONHASHSEED matching --seed before launch")
+    if os.environ.get("NVIDIA_TF32_OVERRIDE") not in (None, "0"):
+        raise ValueError("NVIDIA_TF32_OVERRIDE must be unset or 0; training uses float32 without TF32")
+
+
+def configure_execution(device, seed, cuda_determinism="seeded"):
+    """Seed existing computations; do not replace unsupported CUDA kernels.
+
+    The unchanged head/loss differentiates bilinear interpolation. PyTorch lists
+    its CUDA backward as nondeterministic. Seeded mode therefore requests
+    deterministic implementations where available and records warnings for the
+    rest; strict mode fails. Neither implies equality with CPU/MPS or another
+    CUDA hardware/software stack.
+    https://docs.pytorch.org/docs/stable/generated/torch.use_deterministic_algorithms.html
+    """
+    training_device(device)
+    if not 0 <= seed <= 2**32 - 1:
+        raise ValueError("Seed must be in [0, 2**32-1] for the existing NumPy sampler")
+    if cuda_determinism not in ("seeded", "strict"):
+        raise ValueError("Unknown CUDA determinism policy")
+    requested = device
+    cuda_info = None
+    if device.startswith("cuda"):
+        validate_cuda_environment(seed)
+        if not torch.cuda.is_available():
+            raise ValueError("CUDA requested but unavailable; no fallback to another device")
+        index = torch.device(device).index
+        index = 0 if index is None else index
+        if index >= torch.cuda.device_count():
+            raise ValueError("CUDA index is outside visible devices")
+        device = "cuda:%d" % index
+        torch.cuda.set_device(index)
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+        torch.set_float32_matmul_precision("highest")
+        torch.use_deterministic_algorithms(True, warn_only=cuda_determinism == "seeded")
+        properties = torch.cuda.get_device_properties(index)
+        cuda_info = dict(index=index, name=properties.name,
+                         capability=[properties.major, properties.minor],
+                         totalMemoryBytes=properties.total_memory,
+                         runtimeVersion=torch.version.cuda, cudnnVersion=torch.backends.cudnn.version(),
+                         cudnnBenchmark=torch.backends.cudnn.benchmark,
+                         cudnnDeterministic=torch.backends.cudnn.deterministic,
+                         cudnnAllowTF32=torch.backends.cudnn.allow_tf32,
+                         matmulAllowTF32=torch.backends.cuda.matmul.allow_tf32,
+                         float32MatmulPrecision=torch.get_float32_matmul_precision())
+    elif device == "mps" and not torch.backends.mps.is_available():
+        raise ValueError("MPS requested but unavailable; no fallback to another device")
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    cv2.setNumThreads(1)
+    torch.set_num_threads(4)
+    runtime = dict(requestedDevice=requested, device=device, seed=seed,
+                   torchVersion=str(torch.__version__), pythonVersion=platform.python_version(),
+                   platform=platform.platform(), numpyVersion=np.__version__, opencvVersion=cv2.__version__,
+                   torchThreads=torch.get_num_threads(), opencvThreads=cv2.getNumThreads(),
+                   cudaDeterminism=cuda_determinism if cuda_info else None,
+                   deterministicAlgorithms=torch.are_deterministic_algorithms_enabled(),
+                   deterministicWarnOnly=torch.is_deterministic_algorithms_warn_only_enabled(),
+                   environment={k: os.environ.get(k) for k in
+                                ("CUBLAS_WORKSPACE_CONFIG", "PYTHONHASHSEED", "CUDA_VISIBLE_DEVICES",
+                                 "NVIDIA_VISIBLE_DEVICES", "NVIDIA_TF32_OVERRIDE")},
+                   cuda=cuda_info,
+                   scope="Seeded same-stack execution; no cross-device/version bitwise guarantee. "
+                         "CUDA seeded mode permits kernels without deterministic implementations with warnings; strict mode rejects them. "
+                         "Actual support depends on the runtime; inspect preflight results and training warnings.")
+    return device, runtime
+
+
+def training_preflight(device):
+    """Exercise the unchanged head, full-resolution loss and AdamW on fake data.
+
+    No data/holdout access, no feature-extractor change, and no consumption of the
+    training initialization RNG stream. Only the selected GPU is used.
+    """
+    devices = [torch.device(device).index] if str(device).startswith("cuda") else []
+    with torch.random.fork_rng(devices=devices), warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        head = AuxiliaryMarkingHead().to(device)
+        features = (torch.ones(2, 64, 8, 8, device=device), torch.ones(2, 128, 4, 4, device=device))
+        target = torch.zeros(2, 1, 32, 32, device=device)
+        target[:, :, :, 12:14] = 1
+        valid = torch.ones_like(target)
+        optimizer = torch.optim.AdamW(head.parameters(), lr=.001, weight_decay=.0001)
+        optimizer.zero_grad(set_to_none=True)
+        loss = masked_loss(head(features), target, valid, 20.)
+        loss.backward()
+        if not bool(torch.isfinite(loss)) or not all(p.grad is not None and bool(torch.isfinite(p.grad).all()) for p in head.parameters()):
+            raise ValueError("Synthetic training preflight produced non-finite loss/gradients")
+        optimizer.step()
+        if not all(bool(torch.isfinite(p).all()) for p in head.parameters()):
+            raise ValueError("Synthetic training preflight produced non-finite parameters")
+        synchronize(device)
+        return dict(status="passed", device=str(device), loss=float(loss.detach()),
+                    warnings=sorted(set(str(w.message) for w in caught)),
+                    scope="One synthetic head/loss/AdamW update; not detector, dataset, accuracy or throughput qualification")
 
 
 def sha256_file(path):
@@ -245,33 +362,45 @@ def synchronize(device):
     if str(device) == "mps":
         torch.mps.synchronize()
     elif str(device).startswith("cuda"):
-        torch.cuda.synchronize()
+        torch.cuda.synchronize(device)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+def build_parser():
+    parser = argparse.ArgumentParser(description=__doc__, epilog=
+        "CUDA launch environment: CUBLAS_WORKSPACE_CONFIG=:4096:8 and PYTHONHASHSEED matching --seed. "
+        "Isolate the intended GPU with CUDA_VISIBLE_DEVICES or the container GPU selector; "
+        "NVIDIA_TF32_OVERRIDE must be unset or 0. No cross-device bitwise guarantee.")
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--detector", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--epochs", type=int, default=15)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--input-size", type=int, default=640)
-    parser.add_argument("--device", choices=("cpu", "mps"), default="mps")
+    parser.add_argument("--device", type=training_device, default="mps",
+                        help="cpu, mps, cuda or cuda:N; index is relative to CUDA_VISIBLE_DEVICES")
+    parser.add_argument("--cuda-determinism", choices=("seeded", "strict"), default="seeded",
+                        help="CUDA: seeded retains unsupported deterministic kernels with recorded warnings; strict fails")
     parser.add_argument("--seed", type=int, default=20261008)
     parser.add_argument("--supersedes-invalid-run", type=Path,
                         help="Disclose a prior invalid evaluation; never silently erase test exposure")
+    return parser
+
+
+def main():
+    parser = build_parser()
     args = parser.parse_args()
     if not (1 <= args.epochs <= 20) or args.input_size % 32 or args.batch_size < 1:
         parser.error("Use 1–20 epochs, input size divisible by 32, positive batch size")
     if args.output_dir.exists():
         parser.error("Output directory already exists; preserve prior experiments")
+    try:
+        args.device, runtime = configure_execution(args.device, args.seed, args.cuda_determinism)
+        if args.device.startswith("cuda"):
+            runtime["trainingPreflight"] = training_preflight(args.device)
+    except (ValueError, RuntimeError) as error:
+        parser.error(str(error))
+    print(json.dumps(dict(stage="execution", **runtime)), flush=True)
     manifest, objects, partitions, class_map = validate_manifest(args.manifest)
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
-    random.seed(args.seed)
-    cv2.setNumThreads(1)
-    torch.set_num_threads(4)
-    # MPS does not promise bitwise reproducibility across releases/hardware.
     args.output_dir.mkdir(parents=True)
     shutil.copy2(__file__, args.output_dir / "train_a2d2_auxiliary.py")
     shutil.copy2(args.manifest, args.output_dir / "dataset-manifest.json")
@@ -286,6 +415,7 @@ def main():
               "trainingSourceSha256": sha256_file(__file__), "seed": args.seed,
               "epochs": args.epochs, "batchSize": args.batch_size, "device": args.device,
               "torchVersion": str(torch.__version__), "ultralyticsVersion": "8.4.56",
+              "execution": runtime,
               "positiveRgb": POSITIVE_RGB, "ignoreRgb": IGNORE_RGB,
               "unknownRgbIgnored": True, "paddingIgnored": True, "cachePrecision": "float32",
               "rgbInterpolation": "OpenCV INTER_LINEAR", "labelInterpolation": "OpenCV INTER_NEAREST_EXACT",
@@ -302,7 +432,8 @@ def main():
                                 "P2/P3 taps offer limited semantic context; no architecture tuning from test/private-video results",
                                 "Small date-grouped pilot; held-out dates are few and not a production accuracy estimate",
                                 "Private dashcam and retrospective weak labels excluded from training and checkpoint selection",
-                                "MPS kernels may not be bitwise reproducible across hardware or dependency versions"]}
+                                "Backend kernels may not be bitwise reproducible across hardware or dependency versions",
+                                "CUDA seeded mode records unsupported deterministic kernels; strict mode fails instead"]}
     if args.supersedes_invalid_run:
         config["priorInvalidEvaluation"] = {
             "path": str(args.supersedes_invalid_run.resolve()),

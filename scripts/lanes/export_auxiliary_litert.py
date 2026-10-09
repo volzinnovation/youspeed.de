@@ -107,6 +107,11 @@ def run(args):
             raise ValueError("Source was not bound by upstream qualification")
     traces = {name: bind_trace(args.qualification_dir, name) for name in ("baseline", "shared")}
     checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
+    provenance = export.validate_training_provenance(args.checkpoint, args.manifest,
+        zod_manifest=getattr(args, "zod_manifest", None))
+    if ((provenance["schema"] == "mixed-v1" or "trainingProvenance" in previous)
+            and previous.get("trainingProvenance") != provenance):
+        raise ValueError("Upstream qualification does not bind this training provenance")
     input_size = previous["inputSize"]
     samples = export.sample_validation(args.manifest, checkpoint["config"], args.samples, input_size)
     tf.config.threading.set_intra_op_parallelism_threads(4)
@@ -117,8 +122,11 @@ def run(args):
     shutil.copy2(__file__, out / Path(__file__).name)
     source_paths = [Path(__file__), Path(export.__file__), Path(training.__file__), args.manifest, args.checkpoint,
                     args.qualification_dir / "summary.json", args.qualification_dir / "artifact-sha256.json", *traces.values()]
+    if getattr(args, "zod_manifest", None) is not None:
+        source_paths.append(args.zod_manifest)
     hashes = {str(path.resolve()): training.sha256_file(path) for path in source_paths}
-    report = dict(status="started", decision="DEFER_PRODUCTION", sourceHashes=hashes, environment=required,
+    report = dict(status="started", decision="DEFER_PRODUCTION", sourceHashes=hashes,
+                  trainingProvenance=provenance, environment=required,
                   frames=len(samples), inputSize=input_size, trainingInputSize=checkpoint["config"]["inputSize"],
                   resolutionControlOnly=input_size != checkpoint["config"]["inputSize"], host=previous["host"], exports={},
                   sources=["https://github.com/PINTO0309/onnx2tf/tree/1.20.0",
@@ -210,6 +218,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--qualification-dir", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--zod-manifest", type=Path,
+                        help="Exact original ZOD manifest required for mixed-experiment checkpoints; no ZOD images needed")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--samples", type=int, default=32)

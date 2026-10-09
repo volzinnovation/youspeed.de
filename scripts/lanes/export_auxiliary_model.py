@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export/qualify the frozen A2D2 lane-head prototype on a Mac, without training.
+"""Export/qualify a provenance-bound frozen lane-head prototype on a Mac.
 
 Core ML exports share the complete original detector graph and expose decoded
 boxes/class scores plus stride-4 lane logits. A fixed-weight TensorFlow rewrite
@@ -11,10 +11,13 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 import copy
+import hashlib
 import importlib.metadata
 import json
+import math
 from pathlib import Path
 import platform
+import re
 import shutil
 import sys
 import time
@@ -146,8 +149,92 @@ def convolution_cost(model, sample):
                 qualification="Conv2d MACs only; excludes attention matmuls, resizing, activation, decode and backend scheduling. Not a mobile latency or peak-memory estimate.")
 
 
+def source_manifest_hashes(config):
+    """Keep legacy and matched-experiment provenance explicit and unambiguous."""
+    if not isinstance(config, dict):
+        raise ValueError("Missing training checkpoint configuration")
+    if "sourceManifestSha256" in config:
+        hashes = config["sourceManifestSha256"]
+        if ("datasetManifestSha256" in config or config.get("schemaVersion") != 1
+                or config.get("arm") not in ("a2d2", "a2d2_zod")
+                or not isinstance(hashes, dict) or set(hashes) != {"A2D2", "ZOD"}):
+            raise ValueError("Invalid or ambiguous mixed-training manifest provenance")
+    else:
+        if "arm" in config:
+            raise ValueError("Mixed-training checkpoint is missing both source manifest hashes")
+        hashes = {"A2D2": config.get("datasetManifestSha256")}
+    if any(not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None
+           for value in hashes.values()):
+        raise ValueError("Invalid training source manifest SHA-256")
+    return dict(hashes)
+
+
+def validate_training_provenance(checkpoint_path, manifest_path, *, zod_manifest=None,
+                                 detector_state_hash=None):
+    """Bind every mixed source and the finalized frozen-detector proof.
+
+    ZOD pixels are not export-parity inputs: retain and hash the exact original
+    manifest without requiring its source images to be present on the Mac.
+    Never rewrite the checkpoint/config to imitate the legacy A2D2 schema.
+    """
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+    config = checkpoint["config"]
+    hashes = source_manifest_hashes(config)
+    paths = {"A2D2": Path(manifest_path)}
+    if "ZOD" in hashes:
+        if zod_manifest is None:
+            raise ValueError("Mixed-training export requires the original --zod-manifest")
+        paths["ZOD"] = Path(zod_manifest)
+    elif zod_manifest is not None:
+        raise ValueError("A2D2-only checkpoint does not bind a ZOD manifest")
+    for source, path in paths.items():
+        if training.sha256_file(path) != hashes[source]:
+            raise ValueError(source + " manifest differs from the frozen training run")
+    if config.get("detectorSha256") != training.DETECTOR_SHA256:
+        raise ValueError("Training provenance does not bind the pinned original detector")
+    result = dict(checkpointSha256=training.sha256_file(checkpoint_path),
+                  schema="mixed-v1" if "ZOD" in hashes else "a2d2-legacy",
+                  sourceManifestSha256=hashes,
+                  sourceManifests={source: dict(path=str(path.resolve()), sha256=hashes[source])
+                                   for source, path in paths.items()},
+                  detectorSha256=config["detectorSha256"])
+    if "ZOD" not in hashes:
+        return result
+    zod = json.loads(paths["ZOD"].read_text())
+    if (not isinstance(zod, dict) or zod.get("dataset") != "ZOD" or zod.get("training_eligible") is not True
+            or zod.get("target_kind") != "paint" or zod.get("license") != "CC BY-SA 4.0"
+            or not isinstance(zod.get("source_revision"), str) or not zod["source_revision"].strip()):
+        raise ValueError("Bound ZOD manifest is not a qualified paint-training source")
+    provenance = checkpoint.get("provenance", {})
+    if not isinstance(provenance, dict):
+        raise ValueError("Missing mixed checkpoint finalization provenance")
+    config_hash = hashlib.sha256((json.dumps(config, sort_keys=True, indent=2) + "\n").encode()).hexdigest()
+    if provenance.get("configSha256") != config_hash:
+        raise ValueError("Mixed checkpoint configuration differs from its finalized provenance")
+    proof = provenance.get("detectorPreservation")
+    required = ("stateIdentical", "probeEqual", "allParametersFrozen", "allModulesEval")
+    if not isinstance(proof, dict) or not all(proof.get(key) is True for key in required):
+        raise ValueError("Missing or unsuccessful frozen detector preservation proof")
+    before, after = proof.get("stateHashBefore"), proof.get("stateHashAfter")
+    if (not isinstance(before, str) or re.fullmatch(r"[0-9a-f]{64}", before) is None
+            or before != after):
+        raise ValueError("Frozen detector state hashes disagree")
+    if any(proof.get(key) != config["detectorSha256"]
+           for key in ("checkpointHashBefore", "checkpointHashAfter")):
+        raise ValueError("Frozen detector checkpoint hashes disagree")
+    delta = proof.get("probeMaxAbsDifference")
+    if type(delta) not in (int, float) or not math.isfinite(delta) or delta != 0:
+        raise ValueError("Frozen detector output probe changed")
+    if detector_state_hash is not None and detector_state_hash != before:
+        raise ValueError("Loaded detector state differs from the frozen training proof")
+    result.update(arm=config["arm"], configSha256=config_hash,
+                  zodSourceRevision=zod["source_revision"],
+                  detectorPreservation=copy.deepcopy(proof))
+    return result
+
+
 def sample_validation(manifest_path, config, count, input_size=None):
-    if training.sha256_file(manifest_path) != config["datasetManifestSha256"]:
+    if training.sha256_file(manifest_path) != source_manifest_hashes(config)["A2D2"]:
         raise ValueError("Qualification manifest differs from the frozen training run")
     _, objects, partitions, _ = training.validate_manifest(manifest_path)
     pairs = partitions["validation"]
@@ -259,26 +346,31 @@ def run(args):
     torch.set_num_threads(4)
     cv2.setNumThreads(1)
     extractor, head, config = training.load_auxiliary(args.checkpoint, args.detector, "cpu")
+    provenance = validate_training_provenance(args.checkpoint, args.manifest,
+        zod_manifest=getattr(args, "zod_manifest", None), detector_state_hash=training.state_hash(extractor))
     if config["inputSize"] != 640 or config["featureLayers"] != [2, 4]:
         raise ValueError("This qualification protocol requires the existing 640 P2/P3 pilot")
     input_size = getattr(args, "input_size", 640)
     if input_size not in (640, 1280):
         raise ValueError("Only 640 pilot and 1280 resolution-control exports are supported")
     samples = sample_validation(args.manifest, config, args.samples, input_size)
-    source_hashes = {str(path.resolve()): training.sha256_file(path) for path in
-                     (args.checkpoint, args.detector, args.manifest, Path(__file__), Path(training.__file__))}
+    source_paths = [args.checkpoint, args.detector, args.manifest, Path(__file__), Path(training.__file__)]
+    if getattr(args, "zod_manifest", None) is not None:
+        source_paths.append(args.zod_manifest)
+    source_hashes = {str(path.resolve()): training.sha256_file(path) for path in source_paths}
     before = training.state_hash(extractor.detector)
     head_before = training.state_hash(head)
     out.mkdir(parents=True)
     shutil.copy2(__file__, out / Path(__file__).name)
     shutil.copy2(training.__file__, out / Path(training.__file__).name)
     report = dict(schemaVersion=1, decision="DEFER_PRODUCTION", sourceHashes=source_hashes,
+                  trainingProvenance=provenance,
                   validationSelection="Evenly spaced chronological validation frames; no fitting, calibration or test/private-video selection",
                   inputSize=input_size, trainingInputSize=config["inputSize"], resolutionControlOnly=input_size != config["inputSize"],
                   frames=len(samples), torchVersion=str(torch.__version__),
                   host=dict(platform=platform.platform(), machine=platform.machine(), processor=platform.processor(),
                             python=sys.version, torchThreads=4, cpuOnly=True),
-                  qualification=["Only the frozen A2D2 run is exported. No training or threshold tuning.",
+                  qualification=["Only the bound frozen training checkpoint is exported. No training or threshold tuning.",
                                  "Whole-frame distorted RGB letterbox does not qualify the production TSR calibration-crop/full-scene contract.",
                                  "1280 export is a numerical/cost resolution control of weights trained at 640; no lane accuracy at 1280 is claimed.",
                                  "Raw detector tensor preservation does not replace end-to-end TSR classifier/event parity.",
@@ -391,6 +483,8 @@ def run(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--zod-manifest", type=Path,
+                        help="Exact original ZOD manifest required for mixed-experiment checkpoints; no ZOD images needed")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--detector", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)

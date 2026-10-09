@@ -1,9 +1,13 @@
 """Small graph tests; real checkpoint/export checks live in the external report."""
 from pathlib import Path
+import copy
+import json
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
+import cv2
 import numpy as np
 import torch
 from torch import nn
@@ -12,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).parents[2]))
 from scripts.lanes import export_auxiliary_model as export
 from scripts.lanes import export_auxiliary_litert as lite
 from scripts.lanes import train_a2d2_auxiliary as training
+from scripts.lanes import train_mixed_auxiliary as mixed
 
 
 class Concat(nn.Module):
@@ -174,6 +179,133 @@ class ExportTest(unittest.TestCase):
             expected = head(features).numpy()
         actual = module(*[x.numpy().transpose(0, 2, 3, 1) for x in features])["lane_logits"].numpy().transpose(0, 3, 1, 2)
         np.testing.assert_allclose(actual, expected, atol=1e-6, rtol=1e-5)
+
+
+class TrainingProvenanceTest(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        self.a2d2 = self.root / "a2d2-manifest.json"
+        self.zod = self.root / "zod-manifest.json"
+        training.write_json(self.a2d2, {"dataset": "A2D2"})
+        training.write_json(self.zod, dict(dataset="ZOD", training_eligible=True,
+            target_kind="paint", license="CC BY-SA 4.0", source_revision="original-mini-archive-sha"))
+        self.config = dict(schemaVersion=1, arm="a2d2_zod", detectorSha256=training.DETECTOR_SHA256,
+            sourceManifestSha256={"A2D2": training.sha256_file(self.a2d2), "ZOD": training.sha256_file(self.zod)})
+        self.proof = dict(stateHashBefore="a" * 64, stateHashAfter="a" * 64, stateIdentical=True,
+            probeEqual=True, allParametersFrozen=True, allModulesEval=True, probeMaxAbsDifference=0.,
+            checkpointHashBefore=training.DETECTOR_SHA256, checkpointHashAfter=training.DETECTOR_SHA256)
+        training.write_json(self.root / "config.json", self.config)
+        self.checkpoint = dict(config=self.config, headState={"weight": torch.zeros(1)}, provenance={})
+        # Exercise the real trainer finalizer's checkpoint format, not a fabricated
+        # legacy alias for a mixed experiment.
+        mixed.finalize_arm(self.root, {}, self.checkpoint, self.proof)
+        self.path = self.root / "auxiliary-marking.pt"
+
+    def validate(self, **kwargs):
+        return export.validate_training_provenance(self.path, self.a2d2,
+            zod_manifest=self.zod, detector_state_hash="a" * 64, **kwargs)
+
+    def test_finalized_mixed_checkpoint_retains_both_sources_and_detector_proof(self):
+        result = self.validate()
+        self.assertEqual(result["schema"], "mixed-v1")
+        self.assertEqual(result["sourceManifestSha256"], self.config["sourceManifestSha256"])
+        self.assertEqual(result["detectorPreservation"], self.proof)
+        self.assertEqual(result["zodSourceRevision"], "original-mini-archive-sha")
+        self.assertEqual(result["configSha256"], training.sha256_file(self.root / "config.json"))
+        for source, path in (("A2D2", self.a2d2), ("ZOD", self.zod)):
+            self.assertEqual(result["sourceManifests"][source],
+                             dict(path=str(path.resolve()), sha256=training.sha256_file(path)))
+        result["detectorPreservation"]["probeEqual"] = False
+        self.assertTrue(self.validate()["detectorPreservation"]["probeEqual"])
+
+    def test_compute_matched_a2d2_arm_still_binds_zod_experiment_source(self):
+        self.config["arm"] = "a2d2"
+        training.write_json(self.root / "config.json", self.config)
+        mixed.finalize_arm(self.root, {}, self.checkpoint, self.proof)
+        self.assertEqual(self.validate()["arm"], "a2d2")
+        with self.assertRaisesRegex(ValueError, "zod-manifest"):
+            export.validate_training_provenance(self.path, self.a2d2)
+
+    def test_both_original_manifest_bytes_are_required(self):
+        for source, path in (("A2D2", self.a2d2), ("ZOD", self.zod)):
+            with self.subTest(source=source):
+                original = path.read_bytes()
+                path.write_bytes(original + b"\n")
+                with self.assertRaisesRegex(ValueError, source + " manifest differs"):
+                    self.validate()
+                path.write_bytes(original)
+
+    def test_mixed_config_cannot_be_rewritten_after_finalization(self):
+        altered = copy.deepcopy(self.checkpoint)
+        altered["config"]["arm"] = "a2d2"
+        torch.save(altered, self.path)
+        with self.assertRaisesRegex(ValueError, "configuration differs"):
+            self.validate()
+
+    def test_missing_failed_or_inconsistent_preservation_is_rejected(self):
+        mutations = [
+            ("missing", lambda p: p.pop("detectorPreservation")),
+            ("integer flag", lambda p: p["detectorPreservation"].update(probeEqual=1)),
+            ("unfrozen", lambda p: p["detectorPreservation"].update(allParametersFrozen=False)),
+            ("training mode", lambda p: p["detectorPreservation"].update(allModulesEval=False)),
+            ("state mismatch", lambda p: p["detectorPreservation"].update(stateHashAfter="b" * 64)),
+            ("missing state", lambda p: p["detectorPreservation"].update(stateHashBefore=None, stateHashAfter=None)),
+            ("checkpoint mismatch", lambda p: p["detectorPreservation"].update(checkpointHashAfter="b" * 64)),
+            ("changed probe", lambda p: p["detectorPreservation"].update(probeMaxAbsDifference=.001)),
+            ("nonfinite probe", lambda p: p["detectorPreservation"].update(probeMaxAbsDifference=float("nan"))),
+            ("boolean probe", lambda p: p["detectorPreservation"].update(probeMaxAbsDifference=False)),
+        ]
+        for name, mutate in mutations:
+            with self.subTest(name=name):
+                altered = copy.deepcopy(self.checkpoint)
+                mutate(altered["provenance"])
+                torch.save(altered, self.path)
+                with self.assertRaises(ValueError):
+                    self.validate()
+
+    def test_loaded_detector_must_match_the_recorded_training_state(self):
+        with self.assertRaisesRegex(ValueError, "Loaded detector state differs"):
+            export.validate_training_provenance(self.path, self.a2d2, zod_manifest=self.zod,
+                                                detector_state_hash="b" * 64)
+
+    def test_incomplete_or_ambiguous_source_maps_are_rejected(self):
+        variants = [dict(self.config, sourceManifestSha256={"A2D2": "a" * 64}),
+                    dict(self.config, sourceManifestSha256={"A2D2": "a" * 64, "ZOD": ""}),
+                    dict(self.config, sourceManifestSha256=None),
+                    dict(self.config, datasetManifestSha256="a" * 64),
+                    dict(self.config, arm="unknown"),
+                    {k: v for k, v in self.config.items() if k != "sourceManifestSha256"}]
+        for config in variants:
+            with self.subTest(config=config), self.assertRaises(ValueError):
+                export.source_manifest_hashes(config)
+
+    def test_legacy_a2d2_hash_contract_is_preserved(self):
+        checkpoint = dict(config=dict(detectorSha256=training.DETECTOR_SHA256,
+            datasetManifestSha256=training.sha256_file(self.a2d2)), headState={"weight": torch.zeros(1)})
+        torch.save(checkpoint, self.path)
+        result = export.validate_training_provenance(self.path, self.a2d2)
+        self.assertEqual(result["schema"], "a2d2-legacy")
+        self.assertEqual(result["sourceManifestSha256"], {"A2D2": training.sha256_file(self.a2d2)})
+        with self.assertRaisesRegex(ValueError, "does not bind a ZOD"):
+            self.validate()
+        self.a2d2.write_text("changed")
+        with self.assertRaisesRegex(ValueError, "A2D2 manifest differs"):
+            export.validate_training_provenance(self.path, self.a2d2)
+
+    def test_mixed_validation_sampling_uses_only_bound_a2d2_validation(self):
+        objects, pairs = {}, []
+        for index in range(3):
+            path = self.root / (str(index) + ".png")
+            cv2.imwrite(str(path), np.full((4, 6, 3), index * 30, np.uint8))
+            objects[str(index)] = dict(local_path=str(path), sha256=training.sha256_file(path))
+            pairs.append(dict(rgb=str(index)))
+        with mock.patch.object(export.training, "validate_manifest",
+                return_value=({}, objects, {"validation": pairs}, {})):
+            records = export.sample_validation(self.a2d2, self.config, 2, 32)
+        self.assertEqual([row["key"] for row in records], ["0", "2"])
+        self.assertTrue(all(row["tensor"].shape == (1, 3, 32, 32) for row in records))
 
 
 if __name__ == "__main__":

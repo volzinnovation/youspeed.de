@@ -243,8 +243,8 @@ handling remain separate steps. No speed-reference semantics are changed.
 `prepare_zod_lane_corpus.py` adds a bounded ZOD Frames importer. Use original
 blurred RGB, official train/val information, lane JSON and capture metadata from
 the same release. Preserve the producer license and download checksums outside
-Git. Its official info loader still needs an end-to-end check on an acquired
-official archive; the annotation parser has been checked on actual legacy JSON.
+Git. The official info loader and annotation parser have been checked on the
+original 12-frame mini archive, retaining 3848×2168 image geometry.
 The public resized mirror is currently useful for schema fixtures only: its
 image transform and grouped split provenance have not been established.
 
@@ -254,6 +254,11 @@ The source receipt is JSON with `schemaVersion: 1`, `dataset: "ZOD"`,
 `coverage_evidence`. Set coverage to `unknown` until verified; only
 `complete_lane_markings` permits background supervision. Record the verified
 archive revision/hash and supporting producer documentation, not placeholders.
+For inspected subsets, bind each frame's coverage decision to its RGB and
+annotation hashes and bind the complete scope to the trainval hash. Preserve
+excluded source objects and reasons. The original mini contains examples of
+uncertain or missing visible-paint coverage, so publisher-level annotation
+availability alone does not qualify every frame for negative supervision.
 
 ```sh
 python3 scripts/lanes/prepare_zod_lane_corpus.py \
@@ -299,6 +304,55 @@ after detector tensor/file hashes and an identical-input output probe pass; the
 proof is embedded in each checkpoint. No mobile model is exported. Cached
 features/targets take roughly13.1MB per640-pixel frame; the default512-frame
 per-source cap is a memory guard, not a dataset selection rule.
+
+### Linux GPU execution and remote evidence
+
+Both auxiliary trainers accept `--device cuda` or `cuda:N`, as well as `cpu`
+and `mps`. Use a pinned container, an explicitly isolated GPU and persistent
+output storage. For the existing seeded comparison:
+
+```sh
+export CUBLAS_WORKSPACE_CONFIG=:4096:8
+export PYTHONHASHSEED=20261008
+export NVIDIA_TF32_OVERRIDE=0
+python3 scripts/lanes/train_mixed_auxiliary.py \
+  --a2d2-manifest /data/a2d2-manifest.json \
+  --zod-manifest /data/zod-derived/manifest.json \
+  --detector /data/yolo11n_panoramax.pt \
+  --output-dir /results/comparison-001 --device cuda:0 \
+  --cuda-determinism seeded --seed 20261008
+```
+
+The CUDA index is relative to the devices exposed to the container. Device
+availability, launch flags and an actual head/loss/backward preflight are checked
+before dataset loading. Seeded mode disables TF32 and cuDNN benchmarking and
+permits kernels without deterministic implementations while recording warnings;
+`--cuda-determinism strict` rejects those kernels. Actual support, including
+bilinear interpolation backward, depends on the installed runtime and is checked
+by the preflight and training execution. The RTX A5000 / PyTorch 2.6.0+cu126
+synthetic smoke passed both seeded and strict preflights without warnings.
+Neither mode promises bitwise agreement with CPU/MPS or other runtimes.
+Both comparison arms keep identical initial weights and update budgets.
+
+Keep canonical, hash-verified archives and completed evidence on durable storage;
+stage a bounded working set on compute-local NVMe. The feature/target cache is
+RAM-only: 192 A2D2 plus 512 ZOD frames at 640 requires about 8.59 GiB before
+overhead. A 32 GiB container allowance leaves room for this bounded experiment;
+the full 100,000-frame corpus is not supported by this cache design.
+
+Manifests bind absolute paths and hashes. Preserve those paths with read-only
+container mounts, or prepare a separately recorded, hash-bound relocation before
+training. Never rewrite a selected checkpoint's manifest/config to make export
+accept it. Run long jobs detached, retain logs, exit codes, source/config hashes
+and partial progress on persistent storage, and verify completed output hashes
+when copying results back. This trainer does not resume optimizer state after a
+process failure; use a new run directory for a restart.
+
+Core ML, LiteRT and prefix exporters accept mixed checkpoints with an explicit
+`--zod-manifest` alongside the A2D2 manifest. They verify both source bindings,
+the finalized config and frozen-detector proof. Only the ZOD manifest is needed
+for A2D2-based export parity, not its image bytes. New checkpoints still require
+fresh numerical export checks; Core ML prediction verification runs on macOS.
 
 ## Selection opportunity and hint qualification
 

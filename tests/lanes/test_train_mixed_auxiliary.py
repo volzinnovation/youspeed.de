@@ -15,6 +15,16 @@ SPEC.loader.exec_module(mixed)
 
 
 class MixedTrainingTest(unittest.TestCase):
+    def test_cuda_cli_preserves_predeclared_budget_and_defaults(self):
+        required = ["--a2d2-manifest", "a.json", "--zod-manifest", "z.json",
+                    "--detector", "d.pt", "--output-dir", "/tmp/new"]
+        args = mixed.build_parser().parse_args(required)
+        self.assertEqual((args.epochs, args.steps_per_epoch, args.batch_size, args.input_size,
+                          args.seed, args.max_source_frames, args.device),
+                         (15, 16, 8, 640, 20261008, 512, "mps"))
+        cuda = mixed.build_parser().parse_args(required + ["--device", "cuda:2", "--cuda-determinism", "strict"])
+        self.assertEqual((cuda.device, cuda.cuda_determinism), ("cuda:2", "strict"))
+
     def manifest(self, root):
         objects, pairs = [], []
         for index, split in enumerate(("train", "test")):

@@ -1,8 +1,13 @@
 import importlib.util
 import json
+import os
 from pathlib import Path
+import random
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
+import warnings
 
 import numpy as np
 import torch
@@ -11,6 +16,118 @@ from torch import nn
 SPEC = importlib.util.spec_from_file_location("auxiliary", Path(__file__).parents[2] / "scripts/lanes/train_a2d2_auxiliary.py")
 aux = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(aux)
+
+
+class ExecutionTest(unittest.TestCase):
+    def setUp(self):
+        rng, np_rng, py_rng = torch.random.get_rng_state(), np.random.get_state(), random.getstate()
+        deterministic = torch.are_deterministic_algorithms_enabled()
+        warn_only = torch.is_deterministic_algorithms_warn_only_enabled()
+        precision = torch.get_float32_matmul_precision()
+        benchmark, cudnn_deterministic = torch.backends.cudnn.benchmark, torch.backends.cudnn.deterministic
+        cudnn_tf32, matmul_tf32 = torch.backends.cudnn.allow_tf32, torch.backends.cuda.matmul.allow_tf32
+        threads = torch.get_num_threads()
+
+        def restore():
+            torch.random.set_rng_state(rng)
+            np.random.set_state(np_rng)
+            random.setstate(py_rng)
+            torch.use_deterministic_algorithms(deterministic, warn_only=warn_only)
+            torch.set_float32_matmul_precision(precision)
+            torch.backends.cudnn.benchmark = benchmark
+            torch.backends.cudnn.deterministic = cudnn_deterministic
+            torch.backends.cudnn.allow_tf32 = cudnn_tf32
+            torch.backends.cuda.matmul.allow_tf32 = matmul_tf32
+            torch.set_num_threads(threads)
+        self.addCleanup(restore)
+
+    def test_cli_adds_cuda_without_changing_training_defaults(self):
+        required = ["--manifest", "m.json", "--detector", "d.pt", "--output-dir", "/tmp/new"]
+        args = aux.build_parser().parse_args(required)
+        self.assertEqual((args.device, args.epochs, args.batch_size, args.input_size, args.seed),
+                         ("mps", 15, 8, 640, 20261008))
+        for device in ("cpu", "mps", "cuda", "cuda:0", "cuda:2"):
+            self.assertEqual(aux.build_parser().parse_args(required + ["--device", device]).device, device)
+        for invalid in ("cuda:-1", "cuda:01", "cuda:0,1", "cuda:1.0", "cpu:0", "auto"):
+            with self.assertRaises(aux.argparse.ArgumentTypeError):
+                aux.training_device(invalid)
+
+    def test_cuda_environment_requires_launch_time_hash_and_blas_settings(self):
+        valid = dict(CUBLAS_WORKSPACE_CONFIG=":4096:8", PYTHONHASHSEED="20261008")
+        with patch.dict(os.environ, valid, clear=True):
+            aux.validate_cuda_environment(20261008)
+        for update in ({"CUBLAS_WORKSPACE_CONFIG": ""}, {"CUBLAS_WORKSPACE_CONFIG": ":4096:2"},
+                       {"PYTHONHASHSEED": "0"}, {"NVIDIA_TF32_OVERRIDE": "1"}):
+            with patch.dict(os.environ, dict(valid, **update), clear=True):
+                with self.assertRaises(ValueError):
+                    aux.validate_cuda_environment(20261008)
+        with patch.dict(os.environ, dict(valid, CUBLAS_WORKSPACE_CONFIG=":16:8"), clear=True):
+            aux.validate_cuda_environment(20261008)
+
+    def test_cuda_selection_and_policies_are_recorded_without_silent_fallback(self):
+        env = dict(CUBLAS_WORKSPACE_CONFIG=":4096:8", PYTHONHASHSEED="20261008", CUDA_VISIBLE_DEVICES="2,3,4")
+        props = SimpleNamespace(name="fixture GPU", major=8, minor=6, total_memory=1234)
+        with patch.dict(os.environ, env, clear=True), patch.object(torch.cuda, "is_available", return_value=True), \
+                patch.object(torch.cuda, "device_count", return_value=3), \
+                patch.object(torch.cuda, "get_device_properties", return_value=props), \
+                patch.object(torch.cuda, "set_device") as select, patch.object(torch.cuda, "manual_seed_all"):
+            for policy in ("seeded", "strict"):
+                device, info = aux.configure_execution("cuda:2", 20261008, policy)
+                self.assertEqual(device, "cuda:2")
+                select.assert_called_with(2)
+                self.assertTrue(info["deterministicAlgorithms"])
+                self.assertEqual(info["deterministicWarnOnly"], policy == "seeded")
+                self.assertFalse(info["cuda"]["cudnnBenchmark"])
+                self.assertTrue(info["cuda"]["cudnnDeterministic"])
+                self.assertFalse(info["cuda"]["cudnnAllowTF32"])
+                self.assertFalse(info["cuda"]["matmulAllowTF32"])
+                self.assertEqual(info["cuda"]["float32MatmulPrecision"], "highest")
+                self.assertEqual(info["environment"]["CUDA_VISIBLE_DEVICES"], "2,3,4")
+                json.dumps(info)
+            self.assertEqual(aux.configure_execution("cuda", 20261008)[0], "cuda:0")
+            with self.assertRaisesRegex(ValueError, "outside visible"):
+                aux.configure_execution("cuda:3", 20261008)
+        with patch.dict(os.environ, env, clear=True), patch.object(torch.cuda, "is_available", return_value=False):
+            with self.assertRaisesRegex(ValueError, "no fallback"):
+                aux.configure_execution("cuda", 20261008)
+        with patch.object(torch.backends.mps, "is_available", return_value=False):
+            with self.assertRaisesRegex(ValueError, "no fallback"):
+                aux.configure_execution("mps", 20261008)
+        for seed in (-1, 2**32):
+            with self.assertRaisesRegex(ValueError, "Seed"):
+                aux.configure_execution("cpu", seed)
+
+    def test_synthetic_preflight_preserves_real_training_initialization_rng(self):
+        aux.configure_execution("cpu", 20261008)
+        before = torch.random.get_rng_state().clone()
+        result = aux.training_preflight("cpu")
+        self.assertTrue(torch.equal(before, torch.random.get_rng_state()))
+        self.assertEqual(result["status"], "passed")
+        self.assertTrue(np.isfinite(result["loss"]))
+        first = aux.AuxiliaryMarkingHead()
+        aux.configure_execution("cpu", 20261008)
+        self.assertEqual(aux.state_hash(first), aux.state_hash(aux.AuxiliaryMarkingHead()))
+
+    def test_preflight_reports_warnings_and_does_not_downgrade_kernel_errors(self):
+        loss = aux.masked_loss
+
+        def warning_loss(*args):
+            warnings.warn("fixture unsupported deterministic kernel", UserWarning)
+            return loss(*args)
+
+        with patch.object(aux, "masked_loss", side_effect=warning_loss):
+            result = aux.training_preflight("cpu")
+            self.assertIn("fixture unsupported deterministic kernel", result["warnings"])
+        before = torch.random.get_rng_state().clone()
+        with patch.object(aux, "masked_loss", side_effect=RuntimeError("unsupported deterministic kernel")):
+            with self.assertRaisesRegex(RuntimeError, "unsupported deterministic"):
+                aux.training_preflight("cpu")
+        self.assertTrue(torch.equal(before, torch.random.get_rng_state()))
+
+    def test_synchronization_targets_selected_cuda_device(self):
+        with patch.object(torch.cuda, "synchronize") as synchronize:
+            aux.synchronize("cuda:2")
+            synchronize.assert_called_once_with("cuda:2")
 
 
 class FakeDetector(nn.Module):

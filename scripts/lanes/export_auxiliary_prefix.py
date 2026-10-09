@@ -140,10 +140,14 @@ def run(args):
     tf.config.threading.set_inter_op_parallelism_threads(1)
     torch.set_num_threads(4); cv2.setNumThreads(1)
     extractor, head, config = training.load_auxiliary(args.checkpoint, args.detector, "cpu")
+    provenance = export.validate_training_provenance(args.checkpoint, args.manifest,
+        zod_manifest=getattr(args, "zod_manifest", None), detector_state_hash=training.state_hash(extractor))
     if config["inputSize"] != 640 or config["featureLayers"] != [2, 4]:
-        raise ValueError("Require the existing frozen 640 P2/P3 A2D2 pilot")
+        raise ValueError("Require a bound frozen 640 P2/P3 lane-head pilot")
     detector_before, head_before = training.state_hash(extractor.detector), training.state_hash(head)
     sources = [Path(__file__), Path(export.__file__), Path(training.__file__), args.checkpoint, args.detector, args.manifest]
+    if getattr(args, "zod_manifest", None) is not None:
+        sources.append(args.zod_manifest)
     hashes = {str(path.resolve()): training.sha256_file(path) for path in sources}
     # Validate bound source manifest and sample count before creating the output.
     records_640 = export.sample_validation(args.manifest, config, args.samples, 640)
@@ -151,7 +155,8 @@ def run(args):
     for path in sources[:3]:
         shutil.copy2(path, out / path.name)
     report = dict(status="started", decision="DEFER_PRODUCTION", control="separate_full_field_frozen_prefix_plus_head",
-                  sourceHashes=hashes, environment=versions, trainingInputSize=640, trainedParametersChanged=False,
+                  sourceHashes=hashes, trainingProvenance=provenance,
+                  environment=versions, trainingInputSize=640, trainedParametersChanged=False,
                   host=dict(platform=platform.platform(), machine=platform.machine(), torchThreads=4, cpuOnly=True),
                   resolutions={}, numericalTolerance=dict(atol=1e-4, rtol=1e-4),
                   sources=["https://apple.github.io/coremltools/docs-guides/source/convert-pytorch-workflow.html",
@@ -238,6 +243,8 @@ def run(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--zod-manifest", type=Path,
+                        help="Exact original ZOD manifest required for mixed-experiment checkpoints; no ZOD images needed")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--detector", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)

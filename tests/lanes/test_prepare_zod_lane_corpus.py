@@ -140,6 +140,52 @@ class ImportTest(unittest.TestCase):
             "annotation_coverage": coverage, "coverage_evidence": "Synthetic test fixture, not downloaded data"}))
         return source, trainval, receipt, root / "prepared", infos
 
+    def add_frame_qa(self, source, trainval, receipt, infos):
+        data = json.loads(receipt.read_text())
+        frames = []
+        for info in infos["train"] + infos["val"]:
+            frames.append({"frame_id": info["id"], "decision": "accept", "reason": "Synthetic alignment check",
+                "rgb_sha256": zod.sha256_file(source / info["cameraFrames"]["front_blur"][0]["filepath"]),
+                "annotation_sha256": zod.sha256_file(source / info["annotations"]["lane_markings"]["filepath"])})
+        data["frame_qa"] = {"trainval_sha256": zod.sha256_file(trainval), "frames": frames}
+        receipt.write_text(json.dumps(data))
+        return data
+
+    def test_hash_bound_visual_qa_excludes_whole_frame_and_preserves_original(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, infos = self.fixture(Path(directory))
+            data = self.add_frame_qa(source, trainval, receipt, infos)
+            data["frame_qa"]["frames"][0].update(decision="exclude", reason="Visible paint missing from original annotation")
+            receipt.write_text(json.dumps(data))
+            path = source / infos["train"][0]["annotations"]["lane_markings"]["filepath"]
+            original = path.read_bytes()
+            result = zod.prepare(source, trainval, receipt, output)
+            self.assertEqual(result["partition_counts"], {"train": 0, "validation": 0, "test": 1})
+            self.assertFalse(result["training_eligible"])
+            self.assertEqual(result["exclusion_counts"], {"source_qa": 1})
+            self.assertEqual(result["excluded"][0]["annotation_sha256"], zod.sha256_file(path))
+            self.assertIn("Visible paint missing", result["excluded"][0]["reason"])
+            self.assertEqual(path.read_bytes(), original)
+            self.assertIn(str(path.resolve()), [o["local_path"] for o in result["objects"]])
+
+    def test_visual_qa_cannot_cover_another_source_or_unreviewed_frame(self):
+        for mutation in ("rgb", "annotation", "trainval", "missing", "duplicate"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as directory:
+                source, trainval, receipt, output, infos = self.fixture(Path(directory))
+                data = self.add_frame_qa(source, trainval, receipt, infos)
+                if mutation in ("rgb", "annotation"):
+                    data["frame_qa"]["frames"][0][mutation + "_sha256"] = "0" * 64
+                elif mutation == "trainval":
+                    data["frame_qa"]["trainval_sha256"] = "0" * 64
+                elif mutation == "missing":
+                    data["frame_qa"]["frames"].pop()
+                else:
+                    data["frame_qa"]["frames"].append(data["frame_qa"]["frames"][0])
+                receipt.write_text(json.dumps(data))
+                with self.assertRaisesRegex(ValueError, "QA"):
+                    zod.prepare(source, trainval, receipt, output)
+                self.assertFalse((output / "manifest.json").exists())
+
     def test_complete_import_hashes_masks_and_preserves_official_holdout(self):
         with tempfile.TemporaryDirectory() as directory:
             source, trainval, receipt, output, _ = self.fixture(Path(directory))
@@ -201,6 +247,21 @@ class ImportTest(unittest.TestCase):
             self.assertEqual(result["exclusion_counts"], {"invalid_annotation": 1})
             self.assertEqual(result["excluded"][0]["official_split"], "val")
             self.assertEqual(result["excluded"][0]["annotation_sha256"], zod.sha256_file(invalid_path))
+
+    def test_optional_quarantine_preserves_malformed_json_source_and_reason(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, trainval, receipt, output, infos = self.fixture(Path(directory))
+            invalid_path = source / infos["val"][0]["annotations"]["lane_markings"]["filepath"]
+            original = b'{"truncated":'
+            invalid_path.write_bytes(original)
+            result = zod.prepare(source, trainval, receipt, output, quarantine_invalid_annotations=True)
+            self.assertEqual(invalid_path.read_bytes(), original)
+            self.assertEqual(result["exclusion_counts"], {"invalid_annotation": 1})
+            self.assertEqual(result["partition_counts"]["test"], 0)
+            self.assertFalse(result["training_eligible"])
+            self.assertIn("Invalid annotation:", result["excluded"][0]["reason"])
+            self.assertEqual(result["excluded"][0]["annotation_sha256"], zod.sha256_file(invalid_path))
+            self.assertIn(invalid_path.resolve(), [Path(o["local_path"]) for o in result["objects"]])
 
     def test_source_path_cannot_escape(self):
         with tempfile.TemporaryDirectory() as directory:
