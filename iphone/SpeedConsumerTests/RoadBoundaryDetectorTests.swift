@@ -149,8 +149,11 @@ final class RoadBoundaryDetectorTests: XCTestCase {
         let paint = scene("straight",width:width,height:height)
         let lowContrast: [UInt8] = paint.map { $0 > 100 ? 47 : 32 }
         let blackLevel: [UInt8] = paint.map { $0 > 100 ? 30 : 0 }
-        let texture: [UInt8] = (0..<(width*height)).map { index in
-            UInt8(40+((index%width)*13+(index/width)*7)%15)
+        let texture: [UInt8] = (0..<(width*height)).map { (index: Int) -> UInt8 in
+            let column = index % width
+            let row = index / width
+            let variation = (column * 13 + row * 7) % 15
+            return UInt8(40 + variation)
         }
         let gradient: [UInt8] = (0..<(width*height)).map { index in UInt8(25+50*(index%width)/width) }
         let shadow: [UInt8] = (0..<(width*height)).map { index in
