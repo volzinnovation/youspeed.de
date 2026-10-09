@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Compute-matched A2D2 versus A2D2+ZOD paint-head experiment, entirely offline.
+"""Compute-matched A2D2, ZOD and mixed paint-head experiments, entirely offline.
 
-Both arms start from identical random head weights. Only A2D2 validation selects
-checkpoints; ZOD holdouts and private videos never choose epochs or thresholds.
+Requested arms start from identical random head weights. The default comparison
+uses A2D2 validation selection; opt-in final-epoch selection uses a fixed budget.
+ZOD holdouts and private videos never choose epochs or thresholds.
 The original detector, its input contract, and the phone apps are not changed.
 """
 from __future__ import annotations
@@ -24,6 +25,17 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import train_a2d2_auxiliary as aux
+
+ARMS = ("a2d2", "zod", "a2d2_zod")
+DEFAULT_ARMS = ("a2d2", "a2d2_zod")
+SELECTION_POLICIES = ("a2d2-validation", "final-epoch")
+
+
+def validate_arms(arms):
+    if (not isinstance(arms, (list, tuple)) or not arms
+            or any(arm not in ARMS for arm in arms) or len(set(arms)) != len(arms)):
+        raise ValueError("Require a nonempty ordered list of distinct known arms")
+    return tuple(arms)
 
 
 def validate_zod_manifest(path, *, input_size=None):
@@ -122,10 +134,11 @@ def load_zod_pair(pair, objects):
 
 
 def sampled_batches(a2d2, zod, *, arm, seed, epoch, steps, batch_size):
-    """Cycle shuffled source indices. Each arm has identical update/pixel budgets."""
-    if arm not in ("a2d2", "a2d2_zod") or steps < 1 or batch_size < 2 or batch_size % 2:
+    """Cycle source indices with identical update/frame budgets, not valid pixels."""
+    if arm not in ARMS or steps < 1 or batch_size < 2 or batch_size % 2:
         raise ValueError("Use known arm, positive steps and even batch size >=2")
-    if not a2d2 or (arm == "a2d2_zod" and not zod):
+    if ((arm in ("a2d2", "a2d2_zod") and not a2d2)
+            or (arm in ("zod", "a2d2_zod") and not zod)):
         raise ValueError("Empty training source")
     rng = np.random.default_rng(seed + epoch)
 
@@ -138,6 +151,8 @@ def sampled_batches(a2d2, zod, *, arm, seed, epoch, steps, batch_size):
     for _ in range(steps):
         if arm == "a2d2":
             yield [next(a) for _ in range(batch_size)]
+        elif arm == "zod":
+            yield [next(z) for _ in range(batch_size)]
         else:
             # Interleave so every batch has exactly equal source frame weight.
             yield [row for _ in range(batch_size // 2) for row in (next(a), next(z))]
@@ -194,22 +209,32 @@ def cached_tensor_bytes(cache):
                for tensor in (*row["features"], row["target"], row["valid"]))
 
 
-def declared_training_budget(partitions_by_source, epochs, steps, batch_size):
+def declared_training_budget(partitions_by_source, epochs, steps, batch_size,
+                             arms=DEFAULT_ARMS, selection_policy="a2d2-validation"):
+    arms = validate_arms(arms)
+    if selection_policy not in SELECTION_POLICIES:
+        raise ValueError("Unknown checkpoint selection policy")
     if epochs < 1 or steps < 1 or batch_size < 2 or batch_size % 2:
         raise ValueError("Invalid comparison update budget")
     train_counts = {name: len(partitions["train"]) for name, partitions in partitions_by_source.items()}
     if set(train_counts) != {"A2D2", "ZOD"} or not all(train_counts.values()):
         raise ValueError("Both sources require nonempty training rows")
     updates, frames = epochs * steps, epochs * steps * batch_size
-    exposures = {"a2d2": {"A2D2": frames}, "a2d2_zod": {"A2D2": frames // 2, "ZOD": frames // 2}}
-    return dict(optimizerUpdatesPerArm=updates, frameExposuresPerArm=frames,
-                selectionEvaluationsPerArm=epochs, trainingFramesPerSource=train_counts,
+    source_mix = {"a2d2": {"A2D2": frames}, "zod": {"ZOD": frames},
+                  "a2d2_zod": {"A2D2": frames // 2, "ZOD": frames // 2}}
+    exposures = {arm: source_mix[arm] for arm in arms}
+    budget = dict(optimizerUpdatesPerArm=updates, frameExposuresPerArm=frames,
+                selectionEvaluationsPerArm=epochs if selection_policy == "a2d2-validation" else 0,
+                trainingFramesPerSource=train_counts,
                 sourceFrameExposuresByArm=exposures,
                 meanExposuresPerTrainingFrameByArm={arm: {source: count / train_counts[source]
                                                          for source, count in counts.items()}
                                                    for arm, counts in exposures.items()},
                 scope="Fixed source-composition comparison; same update/frame budget per arm. "
                       "Mean exposures do not imply identical per-frame sampling counts.")
+    if selection_policy == "final-epoch":
+        budget["diagnosticValidationEvaluationsPerArm"] = epochs
+    return budget
 
 
 def exposure_distribution(cache, frame_exposures):
@@ -280,6 +305,11 @@ def cache_source(name, partitions, objects, class_map, detector, device, size):
 
 
 def train_arm(arm, cache, initial, config, output, device):
+    selection_policy = config.get("selectionPolicy", "a2d2-validation")
+    if selection_policy not in SELECTION_POLICIES or arm not in ARMS:
+        raise ValueError("Unknown arm or checkpoint selection policy")
+    if "arms" in config and arm not in validate_arms(config["arms"]):
+        raise ValueError("Arm is absent from the predeclared experiment")
     output.mkdir()
     head = aux.AuxiliaryMarkingHead().to(device)
     head.load_state_dict(initial)
@@ -307,7 +337,10 @@ def train_arm(arm, cache, initial, config, output, device):
                                   config["batchSize"], config["positiveWeight"], config["inputSize"])
         row = dict(epoch=epoch, trainLoss=total_loss / config["stepsPerEpoch"], validation=validation)
         curves.append(row)
-        if validation["marking"]["iou"] > best_iou:
+        # A2D2 validation is recorded but cannot select the fixed final epoch.
+        select = (epoch == config["epochs"] if selection_policy == "final-epoch"
+                  else validation["marking"]["iou"] > best_iou)
+        if select:
             best_iou, best_epoch = validation["marking"]["iou"], epoch
             best_state = {k: v.detach().cpu().clone() for k, v in head.state_dict().items()}
         aux.write_json(output / "curves.json", curves)
@@ -378,12 +411,20 @@ def build_parser():
     parser.add_argument("--holdout-frame-counts", action="store_true",
                         help="Record frame/group-bound confusion counts after checkpoint selection, for grouped analysis")
     parser.add_argument("--seed", type=int, default=20261008)
+    parser.add_argument("--arms", nargs="+", choices=ARMS, default=list(DEFAULT_ARMS),
+                        help="Ordered distinct arms; default preserves the A2D2 versus mixed comparison")
+    parser.add_argument("--selection-policy", choices=SELECTION_POLICIES, default="a2d2-validation",
+                        help="final-epoch records A2D2 validation diagnostically without using it for selection")
     return parser
 
 
 def main():
     parser = build_parser()
     args = parser.parse_args()
+    try:
+        validate_arms(args.arms)
+    except ValueError as error:
+        parser.error(str(error))
     if (not 1 <= args.epochs <= 20 or not 1 <= args.steps_per_epoch <= 256
             or not 2 <= args.batch_size <= 32 or args.batch_size % 2
             or not 32 <= args.input_size <= 1280 or args.input_size % 32):
@@ -429,16 +470,26 @@ def main():
                   featureLayers=[2, 4], featureChannels=[64, 128], hiddenChannels=16, headParameters=3457,
                   detectorSha256=aux.sha256_file(args.detector), detectorPath=str(args.detector.resolve()),
                   seed=args.seed, epochs=args.epochs, stepsPerEpoch=args.steps_per_epoch,
+                  arms=list(args.arms), selectionPolicy=args.selection_policy,
                   batchSize=args.batch_size, positiveWeight=20., device=args.device,
                   execution=runtime,
                   featureCache=cache_plan,
                   computeBudget=declared_training_budget({"A2D2": a_parts, "ZOD": z_parts}, args.epochs,
-                                                        args.steps_per_epoch, args.batch_size),
+                                                        args.steps_per_epoch, args.batch_size,
+                                                        args.arms, args.selection_policy),
                   holdoutFrameCounts=args.holdout_frame_counts,
                   headInitialStateSha256=initial_hash,
-                  selection="Maximum A2D2 validation paint IoU, threshold0.5, earliest tie, both arms",
-                  sampling="Fixed updates; baseline all A2D2; mixture 50:50 frame counts within every batch; seeded cycles",
-                  loss="Pooled valid-pixel BCE positive weight20 plus soft Dice; identical both arms",
+                  selection=("Final epoch; A2D2 validation diagnostics only; threshold0.5"
+                             if args.selection_policy == "final-epoch" else
+                             "Maximum A2D2 validation paint IoU, threshold0.5, earliest tie, both arms"
+                             if tuple(args.arms) == DEFAULT_ARMS else
+                             "Maximum A2D2 validation paint IoU, threshold0.5, earliest tie, all requested arms"),
+                  sampling=("Fixed updates; baseline all A2D2; mixture 50:50 frame counts within every batch; seeded cycles"
+                            if tuple(args.arms) == DEFAULT_ARMS else
+                            "Fixed updates; a2d2 all A2D2; zod all ZOD; a2d2_zod 50:50 frame counts within every batch; seeded cycles"),
+                  loss=("Pooled valid-pixel BCE positive weight20 plus soft Dice; identical both arms"
+                        if tuple(args.arms) == DEFAULT_ARMS else
+                        "Pooled valid-pixel BCE positive weight20 plus soft Dice; identical across requested arms"),
                   transform="RGB INTER_LINEAR + binary targets INTER_NEAREST_EXACT letterbox; no augmentation",
                   sourceManifestSha256={"A2D2": aux.sha256_file(args.a2d2_manifest), "ZOD": aux.sha256_file(args.zod_manifest)},
                   sourceCodeSha256={Path(p).name: aux.sha256_file(p) for p in (__file__, aux.__file__)},
@@ -467,18 +518,19 @@ def main():
         raise RuntimeError("Actual cache tensors differ from the declared allocation plan; training not started")
     aux.write_json(args.output_dir / "feature-cache.json", dict(cache_plan, observedTensorBytes=observed_cache_bytes))
     supervision = cached_supervision_summary(cache)
-    if supervision["A2D2"]["train"]["negativePixels"] <= 0:
+    if any(arm != "zod" for arm in args.arms) and supervision["A2D2"]["train"]["negativePixels"] <= 0:
         raise RuntimeError("A2D2 training cache must provide known-negative supervision")
     supervision_path = args.output_dir / "source-supervision.json"
     aux.write_json(supervision_path, dict(sourceManifestSha256=config["sourceManifestSha256"],
                                          inputSize=args.input_size, rasterSpace="letterboxed_loss_input",
                                          bySource=supervision,
                                          interpretation="50:50 frame sampling is not equal valid-pixel loss weight. "
-                                                        "Positive-only ZOD rows contribute no negative pixels; A2D2 supplies dense known negatives. "
+                                                        "Positive-only ZOD rows contribute no negative pixels. "
+                                                        "A2D2 supplies dense negatives only in arms that sample it; ZOD-only uses its complete-coverage rows. "
                                                         "The existing pooled valid-pixel BCE plus Dice loss is unchanged."))
     source_supervision_sha256 = aux.sha256_file(supervision_path)
     results, checkpoints = {}, {}
-    for arm in ("a2d2", "a2d2_zod"):
+    for arm in args.arms:
         results[arm], checkpoints[arm] = train_arm(arm, cache, initial, config, args.output_dir / arm, args.device)
     with torch.no_grad():
         probe_after = detector.detector(probe)[0].detach().cpu()

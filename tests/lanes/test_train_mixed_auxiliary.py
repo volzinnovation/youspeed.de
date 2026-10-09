@@ -67,6 +67,8 @@ class MixedTrainingTest(unittest.TestCase):
         self.assertEqual((args.epochs, args.steps_per_epoch, args.batch_size, args.input_size,
                           args.seed, args.max_source_frames, args.device),
                          (15, 16, 8, 640, 20261008, 512, "mps"))
+        self.assertEqual(args.arms, ["a2d2", "a2d2_zod"])
+        self.assertEqual(args.selection_policy, "a2d2-validation")
         cuda = mixed.build_parser().parse_args(required + ["--device", "cuda:2", "--cuda-determinism", "strict"])
         self.assertEqual((cuda.device, cuda.cuda_determinism), ("cuda:2", "strict"))
         scale = mixed.build_parser().parse_args(required + ["--epochs", "10", "--steps-per-epoch", "256",
@@ -74,6 +76,51 @@ class MixedTrainingTest(unittest.TestCase):
                                                         "--holdout-frame-counts"])
         self.assertEqual((scale.epochs, scale.steps_per_epoch, scale.max_cache_gib, scale.holdout_frame_counts),
                          (10, 256, 20., True))
+        three_way = mixed.build_parser().parse_args(required + ["--arms", "a2d2", "zod", "a2d2_zod",
+                                                               "--selection-policy", "final-epoch"])
+        self.assertEqual(three_way.arms, ["a2d2", "zod", "a2d2_zod"])
+        self.assertEqual(three_way.selection_policy, "final-epoch")
+
+    def test_ordered_arm_declaration_and_three_way_source_budget(self):
+        parts = {"A2D2": {"train": range(128)}, "ZOD": {"train": range(812)}}
+        arms = ["a2d2", "zod", "a2d2_zod"]
+        self.assertEqual(mixed.validate_arms(arms), tuple(arms))
+        budget = mixed.declared_training_budget(parts, 10, 256, 8, arms, "final-epoch")
+        self.assertEqual(list(budget["sourceFrameExposuresByArm"]), arms)
+        self.assertEqual(budget["sourceFrameExposuresByArm"],
+                         {"a2d2": {"A2D2": 20480}, "zod": {"ZOD": 20480},
+                          "a2d2_zod": {"A2D2": 10240, "ZOD": 10240}})
+        self.assertEqual(budget["selectionEvaluationsPerArm"], 0)
+        self.assertEqual(budget["diagnosticValidationEvaluationsPerArm"], 10)
+        self.assertEqual(budget["meanExposuresPerTrainingFrameByArm"]["zod"], {"ZOD": 20480 / 812})
+        self.assertEqual(mixed.declared_training_budget(parts, 10, 256, 8)["selectionEvaluationsPerArm"], 10)
+        for invalid in ([], ["zod", "zod"], ["unknown"], "zod"):
+            with self.subTest(arms=invalid), self.assertRaisesRegex(ValueError, "distinct known arms"):
+                mixed.declared_training_budget(parts, 10, 256, 8, invalid)
+        with self.assertRaisesRegex(ValueError, "selection"):
+            mixed.declared_training_budget(parts, 10, 256, 8, arms, "best-test")
+
+    def test_zod_sampler_never_reads_a2d2_and_consumes_full_source_budget(self):
+        class ForbiddenSource:
+            def __bool__(self):
+                raise AssertionError("Unused A2D2 source must not be inspected by ZOD sampler")
+
+            def __len__(self):
+                raise AssertionError("Unused A2D2 source must not be sampled")
+
+        zod = [("ZOD", i) for i in range(812)]
+        counts = Counter()
+        for epoch in range(1, 11):
+            for batch in mixed.sampled_batches(ForbiddenSource(), zod, arm="zod", seed=20261009,
+                                                epoch=epoch, steps=256, batch_size=8):
+                self.assertEqual(len(batch), 8)
+                self.assertTrue(all(source == "ZOD" for source, _ in batch))
+                counts.update(identity for _, identity in batch)
+        self.assertEqual(sum(counts.values()), 20480)
+        self.assertEqual(len(counts), 812)
+        self.assertTrue(list(mixed.sampled_batches([], zod, arm="zod", seed=1, epoch=1, steps=1, batch_size=2)))
+        with self.assertRaisesRegex(ValueError, "Empty"):
+            list(mixed.sampled_batches([1], [], arm="zod", seed=1, epoch=1, steps=1, batch_size=2))
 
     def manifest(self, root):
         objects, pairs = [], []
@@ -356,6 +403,64 @@ class MixedTrainingTest(unittest.TestCase):
                     self.assertTrue(torch.equal(checkpoint["headState"][key], states[0][key]))
         self.assertTrue(all(torch.equal(a, b) for a, b in zip(*starts)))
         self.assertTrue(all(torch.equal(selected["a2d2"][k], selected["a2d2_zod"][k]) for k in selected["a2d2"]))
+
+    def test_zod_only_gradients_and_final_epoch_ignore_a2d2_training_and_selection_scores(self):
+        torch.set_num_threads(1)
+        torch.manual_seed(73)
+        zod_features = (torch.randn(64, 8, 8), torch.randn(128, 4, 4))
+        target = torch.zeros(1, 32, 32)
+        target[:, 10:20, 10:12] = 1
+        initial = {k: v.clone() for k, v in mixed.aux.AuxiliaryMarkingHead().state_dict().items()}
+        config = dict(seed=1, epochs=10, stepsPerEpoch=1, batchSize=2, positiveWeight=20., inputSize=32,
+                      arms=["a2d2", "zod", "a2d2_zod"], selectionPolicy="final-epoch")
+        selected = []
+        for variant in (0, 1):
+            cache = {}
+            for source in ("A2D2", "ZOD"):
+                cache[source] = {}
+                for split in ("train", "validation", "test"):
+                    features = (tuple(f.clone().requires_grad_(True) for f in zod_features) if source == "ZOD"
+                                else (torch.full((64, 8, 8), float(variant * 100), requires_grad=True),
+                                      torch.full((128, 4, 4), float(variant * -100), requires_grad=True)))
+                    cache[source][split] = [dict(dataset=source, identity=source + split, features=features,
+                                                 target=target.clone() if source == "ZOD" else torch.full_like(target, variant),
+                                                 valid=torch.ones_like(target))]
+            states, evaluated, sampled = [], [], []
+            real_batch = mixed.aux.batch_tensors
+
+            def batch_tensors(rows, device):
+                sampled.extend(row["dataset"] for row in rows)
+                return real_batch(rows, device)
+
+            def evaluate(head, rows, *args, **kwargs):
+                identity = rows[0]["identity"]
+                evaluated.append(identity)
+                if identity == "A2D2validation":
+                    states.append({k: v.detach().cpu().clone() for k, v in head.state_dict().items()})
+                    return {"marking": {"iou": .9 if len(states) < 10 else .1}}
+                return {"marking": {"iou": .999}}
+
+            with tempfile.TemporaryDirectory() as folder, \
+                    patch.object(mixed.aux, "evaluate", side_effect=evaluate), \
+                    patch.object(mixed.aux, "batch_tensors", side_effect=batch_tensors):
+                metrics, checkpoint = mixed.train_arm("zod", cache, initial, config, Path(folder) / "zod", "cpu")
+            self.assertEqual(sampled, ["ZOD"] * 20)
+            self.assertEqual(metrics["sourceFrameExposures"], {"ZOD": 20})
+            self.assertEqual(metrics["sourceFrameExposureDistribution"]["A2D2"]["histogram"], {"0": 1})
+            self.assertEqual(metrics["sourceFrameExposureDistribution"]["A2D2"]["sampledFrames"], 0)
+            self.assertTrue(all(f.grad is None for f in cache["A2D2"]["train"][0]["features"]))
+            self.assertTrue(any(f.grad is not None and bool(torch.any(f.grad != 0))
+                                for f in cache["ZOD"]["train"][0]["features"]))
+            self.assertEqual(metrics["bestEpoch"], 10)
+            self.assertEqual(metrics["validation"]["marking"]["iou"], .1)
+            self.assertEqual(checkpoint["provenance"], {"bestEpoch": 10, "validationMarkingIoU": .1})
+            self.assertEqual(checkpoint["config"]["selectionPolicy"], "final-epoch")
+            self.assertEqual(evaluated, ["A2D2validation"] * 10 + ["A2D2test", "ZODvalidation", "ZODtest"])
+            self.assertTrue(all(torch.equal(checkpoint["headState"][k], states[-1][k]) for k in states[-1]))
+            self.assertTrue(any(not torch.equal(states[0][k], states[-1][k]) for k in states[0]))
+            selected.append(checkpoint["headState"])
+        # Even extreme changes to unused A2D2 optimizer inputs cannot affect ZOD-only weights.
+        self.assertTrue(all(torch.equal(selected[0][k], selected[1][k]) for k in selected[0]))
 
 
 if __name__ == "__main__":

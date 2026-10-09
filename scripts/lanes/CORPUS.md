@@ -313,8 +313,40 @@ recipe increased recall but reduced paint precision, F1 and IoU; mean ZOD IoU
 fell from 16.12% to 9.06%, and negative-scene pixel FPR rose from 0.136% to
 1.897%. Do not promote those mixed checkpoints. See the
 [full result and evidence limits](../../docs/LANE_ZOD_SCALE_RESULTS_2026-10-09.md).
-The next experiment needs predeclared supervision/loss/exposure controls and a
-new untouched holdout; the existing 100 scored frames are now development evidence.
+The existing 100 scored frames are now development evidence. A new untouched
+holdout is required for acceptance; diagnostic comparisons can reuse this cohort
+when that exposure is explicit and the comparison is fixed before training.
+
+The follow-up `zod-three-way-final-v1` adds the missing ZOD-only control and
+reruns **all three arms** with fixed final-epoch selection:
+
+```sh
+python3 scripts/lanes/train_mixed_auxiliary.py \
+  --a2d2-manifest "$A2D2_MANIFEST" --zod-manifest "$ZOD_MANIFEST" \
+  --detector "$FROZEN_DETECTOR" --output-dir "$NEW_RUN" --device cuda:0 \
+  --arms a2d2 zod a2d2_zod --selection-policy final-epoch \
+  --epochs 10 --steps-per-epoch 256 --batch-size 8 --input-size 640 \
+  --max-source-frames 1152 --max-cache-gib 20 --holdout-frame-counts \
+  --seed 20261009
+```
+
+Run seeds 20261009, 20262009 and 20263009 and summarize all three together.
+Each arm uses 2,560 optimizer updates and 20,480 sampled frames. ZOD-only uses
+zero A2D2 optimizer samples; mixed uses 10,240 from each source. A2D2 validation
+curves remain diagnostic, while epoch 10 is selected regardless of those scores.
+The default CLI still runs the original two arms with A2D2 validation selection.
+The summarizer verifies arm/policy agreement and checkpoint selection, reports
+every source contrast, and describes false positives on ground-truth no-paint
+frames. Day-group intervals are conditional and not adjusted for the three
+contrasts; negative-scene breakdowns have no bootstrap interval.
+
+This comparison reuses the qualified 812/100 ZOD and 192 A2D2 frames unchanged.
+It tests only the 3,457-parameter head on frozen detector features, not a newly
+fine-tuned segmentation backbone. Sparse ZOD supervision (796 positive-only
+versus 16 complete-coverage training frames), assistant coverage QA, previously
+scored evaluation frames and cross-day geographic correlation limit conclusions.
+No model promotion, device activation or video-reliability claim follows from
+this developmental experiment.
 
 `select_zod_lane_cohort.py` reads the **entire original Frames metadata** before
 selecting any images. In `vehicle-day-direct-v2` mode, it groups frames by
