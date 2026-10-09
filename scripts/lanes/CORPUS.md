@@ -5,6 +5,18 @@ pipeline and prepares training inputs for an optional semantic-guidance model.
 The optional A2D2 experiment below trains an offline marking head. It does not
 export, integrate or deploy a phone model.
 
+The [native comparison and sign-relevance report](../../docs/LANE_NATIVE_SIGN_RELEVANCE_RESULTS_2026-10-09.md)
+replays the actual Swift/Kotlin app sessions on all 100 ZOD and 32 A2D2 development
+test stills, with all nine frozen heads and 22 native guidance/control variants.
+`compare_still_lane_platforms.py` enforces one fresh observation per still and
+checks exact cross-platform semantics and repeats. `score_native_paint_support.py`
+keeps fitted-line paint support, explicit observed spans, model masks and an
+offline candidate suppression probe separate. The mixed filter improves raw
+paint support but loses useful geometry; no sign-relevance benefit is established.
+The next decision gate is per-sign road/exit association on reviewed encounters,
+not paint IoU or overlay availability. Nothing in these tools changes the live
+apps or the protected speed-reference policy.
+
 ## Three separate evidence layers
 
 1. **Source exposures:** hash-verified videos and aspect-preserving decoded frames,
