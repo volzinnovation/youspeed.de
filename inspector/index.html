@@ -45,6 +45,8 @@
         </button>
         <button id="crops-mode-btn" class="mode-switch-button" type="button" role="tab"
           aria-selected="false" aria-controls="crops-workspace">Backend-Crops</button>
+        <button id="positions-mode-btn" class="mode-switch-button" type="button" role="tab"
+          aria-selected="false" aria-controls="positions-workspace">Tempolimit-Positionen</button>
       </nav>
       <div class="workspace-locality">
         <span class="workspace-locality-dot" aria-hidden="true"></span>
@@ -559,6 +561,49 @@
       </aside>
     </main>
 
+    <main id="positions-workspace" class="sign-positions-workspace mode-workspace" role="tabpanel"
+      aria-labelledby="positions-mode-btn" hidden>
+      <section class="sign-positions-panel" aria-labelledby="sign-positions-title">
+        <h1 id="sign-positions-title">Tempolimit-Positionen</h1>
+        <p class="hint">Nachträglich berechnete Standorthypothesen aus mehreren Aufnahmen.
+          Angezeigt werden nur vorhergesagte Höchstgeschwindigkeiten und Tempo-Zonen.</p>
+        <div class="controls">
+          <label for="sign-positions-case">Position auswählen</label>
+          <select id="sign-positions-case" disabled></select>
+          <label for="sign-positions-extent">Kartenausschnitt</label>
+          <select id="sign-positions-extent">
+            <option value="context">Position und Ausfahrtkontext</option>
+            <option value="uncertainty">Vollständiger Annahmebereich</option>
+            <option value="close">Aufnahmepositionen im Detail</option>
+          </select>
+          <div class="sign-positions-toggles">
+            <label><input id="sign-positions-region" type="checkbox" checked /> Unsicherheitsbereich</label>
+            <label><input id="sign-positions-rays" type="checkbox" checked /> Angenommene Sichtlinien</label>
+            <label><input id="sign-positions-alternatives" type="checkbox" checked /> Andere Kameraannahmen</label>
+          </div>
+          <button id="sign-positions-refresh" type="button">Freigabe und Daten aktualisieren</button>
+        </div>
+        <p id="sign-positions-status" class="status" role="status" aria-live="polite">Beim Öffnen werden die aktuell freigegebenen Tempolimit-Positionen geladen.</p>
+        <p id="sign-positions-summary" class="hint"></p>
+        <div class="sign-positions-legend" aria-label="Kartenlegende">
+          <span><i class="sign-positions-key fit"></i>Positionshypothese</span>
+          <span><i class="sign-positions-key capture"></i>Aufnahme und Sichtlinie</span>
+          <span><i class="sign-positions-key exit"></i>Kartierte Ausfahrt</span>
+          <span><i class="sign-positions-key alternative"></i>Andere Kameraannahme</span>
+        </div>
+        <p id="sign-positions-detail" class="sign-positions-detail"></p>
+        <p class="hint">Die Kameraausrichtung ist angenommen, nicht kalibriert. Flächen zeigen die Empfindlichkeit
+          gegenüber diesen Annahmen, keine gemessene Genauigkeit. Weder der berechnete Standort noch die Nähe
+          einer Ausfahrt belegt, für welche Straße das Zeichen gilt.</p>
+        <p id="sign-positions-source" class="hint compact"></p>
+        <p class="hint compact">Die Hintergrundkarte lädt beim Betrachten sichtbare Kartenkacheln von OpenStreetMap.
+          Beim Verlassen des Tabs werden die Positionsdaten aus dieser Ansicht entfernt.</p>
+      </section>
+      <section id="sign-positions-map-wrap" class="sign-positions-map-wrap" aria-label="Karte der Tempolimit-Hypothesen" hidden>
+        <div id="sign-positions-map" class="sign-positions-map"></div>
+      </section>
+    </main>
+
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
@@ -576,5 +621,7 @@
     <script src="./crop-review-core.js"></script>
     <script src="./crop-review.js"></script>
     <script src="./backend-crops.js"></script>
+    <script src="./sign-positions-core.js"></script>
+    <script src="./sign-positions.js"></script>
   </body>
 </html>

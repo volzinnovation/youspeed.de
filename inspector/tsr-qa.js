@@ -230,15 +230,19 @@
   }
 
   function setMode(mode, options = {}) {
-    state.mode = ["tsr", "crops"].includes(mode) ? mode : "matcher";
+    if (mode === "sign-positions") mode = "positions";
+    state.mode = ["tsr", "crops", "positions"].includes(mode) ? mode : "matcher";
     const tsrActive = state.mode === "tsr";
     const matcherActive = state.mode === "matcher";
     const cropsActive = state.mode === "crops";
+    const positionsActive = state.mode === "positions";
     document.body.dataset.inspectorMode = state.mode;
     elements.matcherMode?.classList.toggle("active", matcherActive);
     elements.tsrMode?.classList.toggle("active", tsrActive);
     byID("crops-mode-btn")?.classList.toggle("active", cropsActive);
     byID("crops-mode-btn")?.setAttribute("aria-selected", String(cropsActive));
+    byID("positions-mode-btn")?.classList.toggle("active", positionsActive);
+    byID("positions-mode-btn")?.setAttribute("aria-selected", String(positionsActive));
     elements.matcherMode?.setAttribute("aria-selected", String(matcherActive));
     elements.tsrMode?.setAttribute("aria-selected", String(tsrActive));
     if (elements.matcherPanel) elements.matcherPanel.hidden = !matcherActive;
@@ -246,9 +250,10 @@
     if (elements.matcherWorkspace) elements.matcherWorkspace.hidden = !matcherActive;
     elements.workspace.hidden = !tsrActive;
     byID("crops-workspace").hidden = !cropsActive;
-    byID("workspace-locality-label").textContent = cropsActive ? "Report-Zugriff · privates Netz" : "QA-Daten lokal verarbeitet";
+    if (byID("positions-workspace")) byID("positions-workspace").hidden = !positionsActive;
+    byID("workspace-locality-label").textContent = cropsActive || positionsActive ? "Report-Zugriff · privates Netz" : "QA-Daten lokal verarbeitet";
     if (!options.preserveHash) {
-      history.replaceState(null, "", "#" + state.mode);
+      history.replaceState(null, "", "#" + (positionsActive ? "sign-positions" : state.mode));
     }
     window.dispatchEvent(new CustomEvent("youspeed:mode", { detail: state.mode }));
     if (matcherActive) {
@@ -1619,6 +1624,7 @@
   elements.matcherMode?.addEventListener("click", () => setMode("matcher"));
   elements.tsrMode?.addEventListener("click", () => setMode("tsr"));
   byID("crops-mode-btn")?.addEventListener("click", () => setMode("crops"));
+  byID("positions-mode-btn")?.addEventListener("click", () => setMode("positions"));
   elements.loadFixture?.addEventListener("click", () => void loadFixtureSet());
   elements.loadM0Fixture?.addEventListener("click", () => void loadM0FixtureSet());
   elements.modelInput?.addEventListener("change", async (event) => {

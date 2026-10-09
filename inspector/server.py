@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from inspector.crop_review_proxy import CropReviewProxy, ReviewProxyError
+from inspector.sign_positions import SignPositionStore, SignPositionsError  # noqa: E402
 MAX_IMAGE_BYTES = 5 * 1024**2
 VOLZ_DB_ADDRESS = "141.47.91.52"
 ACTIVE_MEDIA = """
@@ -411,7 +412,7 @@ class InspectorHandler(SimpleHTTPRequestHandler):
             if not isinstance(payload, dict):
                 raise InspectorError("JSON-Objekt erforderlich.", 400)
             self.json_response(self.review_request(actions[parsed.path], payload))
-        except (InspectorError, ReviewProxyError) as error:
+        except (InspectorError, ReviewProxyError, SignPositionsError) as error:
             self.json_response({"error": str(error)}, error.status)
         except (BrokenPipeError, ConnectionResetError):
             pass
@@ -425,11 +426,18 @@ class InspectorHandler(SimpleHTTPRequestHandler):
         parsed = urlsplit(self.path)
         if not self.request_allowed(head):
             return
-        if parsed.path.startswith("/inspector/api/"):
+        if parsed.path.startswith("/inspector/api/") or parsed.path == "/api/sign-positions":
             try:
                 if len(parsed.query) > 2048:
                     raise InspectorError("Abfrage zu lang.", 400)
-                if parsed.path == "/inspector/api/crops/review/taxonomy":
+                if parsed.path in ("/api/sign-positions", "/inspector/api/sign-positions"):
+                    if parsed.query:
+                        raise InspectorError("Ungültige Schildpositions-Abfrage.", 400)
+                    store = getattr(self.server, "sign_positions", None)
+                    if store is None:
+                        raise SignPositionsError("Datei für Schildpositionen ist nicht eingerichtet.")
+                    self.json_response(store.get(), head=head)
+                elif parsed.path == "/inspector/api/crops/review/taxonomy":
                     if parsed.query:
                         raise InspectorError("Ungültige Taxonomie-Abfrage.", 400)
                     self.json_response(self.review_request("taxonomy", {}), head=head)
@@ -457,7 +465,7 @@ class InspectorHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(data)
                 else:
                     raise InspectorError("Unbekannter Inspector-Endpunkt.", 404)
-            except (InspectorError, ReviewProxyError) as error:
+            except (InspectorError, ReviewProxyError, SignPositionsError) as error:
                 self.json_response({"error": str(error)}, error.status, head)
             except (BrokenPipeError, ConnectionResetError):
                 pass
@@ -494,6 +502,7 @@ def arguments(argv=None):
     parser.add_argument("--db-port", type=int, default=None)
     parser.add_argument("--review-service-url", default=os.environ.get("YOUSPEED_CROP_REVIEW_URL"), help="Separately authenticated backend review origin (HTTPS, loopback HTTP or private youspeed-review service); no browser-selected destinations")
     parser.add_argument("--media-root", type=Path, default=os.environ.get("YOUSPEED_MANAGEMENT_MEDIA_ROOT"), help="Read-only path to management-media on volz-db (or its read-only mount)")
+    parser.add_argument("--sign-positions-file", type=Path, default=os.environ.get("YOUSPEED_SIGN_POSITIONS_FILE"), help="Private external static fit export; sources rechecked on every request")
     return parser.parse_args(argv)
 
 
@@ -502,6 +511,7 @@ def main():
     store = CropStore(args)
     server = ThreadingHTTPServer((args.bind, args.port), InspectorHandler)
     server.store = store
+    server.sign_positions = SignPositionStore(args.sign_positions_file, store)
     server.review_proxy = CropReviewProxy(args.review_service_url)
     server.allowed_hosts = {f"{args.bind}:{server.server_port}", f"volz-db:{server.server_port}",
                             f"{VOLZ_DB_ADDRESS}:{server.server_port}", *args.allowed_host}

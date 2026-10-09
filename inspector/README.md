@@ -1,5 +1,72 @@
 # YouSpeed Web Inspector
 
+## Tempolimit-Positionen aus gespeicherten Berechnungen
+
+Der separate Tab **Tempolimit-Positionen** (`/inspector/#sign-positions`)
+zeigt die gespeicherten Positionshypothesen für erkannte Höchstgeschwindigkeiten
+und den Beginn numerischer Tempo-Zonen. Andere Zeichen, Mindestgeschwindigkeiten,
+Richtgeschwindigkeiten und Aufhebungen gehören nicht zu dieser Auswahl. Die
+ursprünglichen Fallnummern bleiben erhalten. Angezeigte Klassen sind Vorhersagen,
+keine bestätigten Klassifikationen oder physisch zusammengeführten Zeichen.
+
+Die Karte legt Position, Aufnahmeorte, Sichtlinien, alternative Kameraannahmen,
+Unsicherheitsfläche und vorhandene Ausfahrtgeometrie über OpenStreetMap-Kacheln.
+Die Auswahl priorisiert ausfahrtsnahe Fälle, wenn solche im Tempolimit-Bestand
+vorliegen. Ungeprüfte Kartenabdeckung bleibt unbekannt. Nähe zu einer Ausfahrt
+oder zur nächsten Straße belegt nicht, für welche Fahrspur das Zeichen gilt.
+Die heutigen Hintergrundkacheln sind vom älteren Geometriestand der Berechnung
+zu unterscheiden; die Karte berechnet keine neue Position oder Straßenzuordnung.
+
+Die Ergebnisse kommen zunächst aus einer **separaten privaten JSON-Datei**, nicht
+aus Git oder einer öffentlichen statischen URL:
+
+```sh
+python3 inspector/server.py --sign-positions-file /private/sign-position-results.json
+```
+
+Alternativ setzt `YOUSPEED_SIGN_POSITIONS_FILE` denselben serverseitigen Pfad.
+Der Wrapper hat `schema_version: 1`, `source_policy: "live-crops-only-v1"`,
+`display_data` und `case_bindings`. Jede Fallbindung enthält alle unveränderten
+Quellbindungen, auch die für die nachträgliche Positionsinterpolation verwendeten
+Aufnahmen. `display_data` enthält die gepackten Straßen und Fälle sowie die
+explizite numerische `classification` (`family`, `value`, `unit`).
+Der Server prüft bei jedem Abruf Berechtigungen, Löschung, Ablauf, Quell-Hashes
+und Prüfungsrevisionen in einer rein lesenden Datenbanktransaktion. Geänderte
+Fälle und ihre nicht mehr benötigte Geometrie werden zurückgehalten; unvollständige
+Kontrollen oder eine unerreichbare Datenbank geben einen Fehler statt alter Daten
+zurück. Quellbindungen werden nicht an den Browser übertragen. Antworten sind
+`no-store`; der Tab speichert keine Positionsdaten im Browser-Speicher.
+
+Nur der aktive Tab lädt Kacheln des sichtbaren Ausschnitts von
+`https://tile.openstreetmap.org/{z}/{x}/{y}.png`. Der Browser übernimmt deren
+Cache-Regeln; es gibt keinen Vorabruf oder Offline-Download. Der Kacheldienst
+erhält den sichtbaren Kartenausschnitt, die IP-Adresse und ausschließlich den
+Origin als Referrer. Crop-IDs, Berechnungsdatei und Metadaten werden nicht dorthin
+übertragen. Attribution und Verwendung folgen der
+[OpenStreetMap-Kachelrichtlinie](https://operations.osmfoundation.org/policies/tiles/).
+
+### Bestehenden privaten Inspector aktualisieren
+
+`scripts/inspector/package.py` packt weiterhin nur Code, Anzeigeassets und
+synthetische Fixtures. Die private Ergebnisdatei separat mit restriktiven
+Dateirechten übertragen. Für den bereits vorhandenen Inspector verwendet der
+Administrator den Updater, nicht den Erstinstaller:
+
+```sh
+sudo python3 scripts/inspector/update-volz-db.py \
+  --sign-positions-file /private/sign-position-results.json --check-only
+sudo python3 scripts/inspector/update-volz-db.py \
+  --sign-positions-file /private/sign-position-results.json
+```
+
+Der Updater prüft das Paket und erhält das vorhandene Image, die privaten
+Netze, Loopback-Ports, Report-Zugangsdaten und Medienmounts. Er ergänzt einen
+separaten, nur lesbaren Mount der Ergebnisdatei. Datenbankmigrationen, Grants,
+Backend-Neustarts und Image-Downloads sind nicht Teil dieses Updates. Bei einem
+fehlgeschlagenen Bereitschaftstest wird der alte Inspector wieder gestartet;
+sein Container bleibt zur Rückkehr zum vorigen Stand erhalten. Der bereits
+eingerichtete SSH-Tunnel auf `localhost:18080` kann weiter verwendet werden.
+
 ## Crop-Prüfung und Ausfahrtskontext (#27 / #28)
 
 Die Analyse verwendet standardmäßig **Live-Aufnahmen**. Archiv- und Dashcam-
