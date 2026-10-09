@@ -149,7 +149,7 @@ internal class SignCollectionContractGate private constructor(val verified: Bool
         }
     }
     companion object {
-        const val MANIFEST_SHA256 = "b24c5b585b0c8d2c235f36964cbdd7cb932fd85da93a011f380055cdd6f7663f"
+        const val MANIFEST_SHA256 = "2aca3371266166637d5a2d8528b774e7fbbfb9981f638538c672d126f3a836dd"
         val blocked get() = SignCollectionContractGate(false)
     }
 }

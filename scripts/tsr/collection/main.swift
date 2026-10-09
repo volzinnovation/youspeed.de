@@ -238,3 +238,33 @@ Task.detached {
 }
 transportChecksDone.wait()
 try transportChecksResult!.get()
+
+try runPhoneRoadMatchChecks(vectors: clientVectors.deletingLastPathComponent().appendingPathComponent("phone-road-match-vectors.json"))
+
+var matchedCrop = try SignCollectionJSON.parse(String(contentsOf: contractRoot.appendingPathComponent("fixtures/crop-v1.json"), encoding: .utf8)) as! [String: Any]
+let matchFix = ISO8601DateFormatter().date(from: "2026-10-02T09:55:00Z")!
+matchedCrop["source_frame_at"] = SignCollectionJSON.utc(matchFix.addingTimeInterval(0.5))
+matchedCrop["phone_road_match"] = SignCollectionPhoneRoadMatch(osmWayID: "9007199254740993", bundleVersion: "fixture",
+    bundleDBSHA256: String(repeating: "a", count: 64), matchedFixAt: matchFix, travelDirection: "unknown", matchedWayStable: false)!.metadata(at: matchFix.addingTimeInterval(0.5))
+try gate.validate(matchedCrop, model: "crop")
+var inconsistent = matchedCrop, invalidMatch = matchedCrop["phone_road_match"] as! [String: Any]
+invalidMatch["frame_match_delta_ms"] = 0; inconsistent["phone_road_match"] = invalidMatch
+rejects { try gate.validate(inconsistent, model: "crop") }
+invalidMatch = matchedCrop["phone_road_match"] as! [String: Any]; invalidMatch["osm_way_id"] = "9223372036854775808"
+inconsistent["phone_road_match"] = invalidMatch
+rejects { try gate.validate(inconsistent, model: "crop") }
+try Data(SignCollectionJSON.canonical(matchedCrop).utf8).write(to: outputRoot.appendingPathComponent("swift-phone-road-match-crop.json"))
+print("Swift phone road match: full crop contract, timestamp consistency and int64 boundary passed")
+
+// Real crop metadata serializes Date to milliseconds; inclusive tolerance must not fail on binary Date arithmetic.
+let fractionalFrame = Date(timeIntervalSince1970: 1_791_532_800.0015)
+let fractionalFix = Date(timeIntervalSince1970: 1_791_532_799.5)
+let fractionalMatch = SignCollectionPhoneRoadMatch(osmWayID: "123", bundleVersion: "fixture",
+    bundleDBSHA256: String(repeating: "a", count: 64), matchedFixAt: fractionalFix, travelDirection: "forward", matchedWayStable: true)!
+// The original fixture authorization is preserved while exercising the production metadata serializer.
+var fractionalMetadata = matchedCrop
+fractionalMetadata["source_frame_at"] = SignCollectionJSON.utc(fractionalFrame)
+fractionalMetadata["phone_road_match"] = fractionalMatch.metadata(at: fractionalFrame)
+try gate.validate(fractionalMetadata, model: "crop")
+try Data(SignCollectionJSON.canonical(fractionalMetadata).utf8).write(to: outputRoot.appendingPathComponent("swift-fractional-phone-road-match-crop.json"))
+print("Swift phone road match: fractional source-frame inclusive tolerance regression passed")

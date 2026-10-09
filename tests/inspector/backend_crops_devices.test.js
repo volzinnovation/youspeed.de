@@ -6,7 +6,7 @@ const source = fs.readFileSync(require.resolve('../../inspector/backend-crops.js
 const iphone = 'd3e3c09c-2fc6-4f05-9698-67b8c3c30212';
 const android = '78b247a4-9f14-430d-a3c0-af218a95d101';
 
-function inspector({manifest = {}, observation = {}} = {}) {
+function inspector({manifest = {}, observation = {}, bridge = {}} = {}) {
   const elements = new Map();
   function element() {
     return {value: '', children: [], listeners: {}, style: {}, attrs: {}, textContent: '',
@@ -15,7 +15,7 @@ function inspector({manifest = {}, observation = {}} = {}) {
       replaceChildren(...children) {this.children = children;},
       setAttribute(name, value) {this.attrs[name] = value;},
       removeAttribute(name) {delete this.attrs[name];},
-      decode: async () => {}};
+      click() {this.listeners.click?.({});}, decode: async () => {}};
   }
   const el = id => {if (!elements.has(id)) elements.set(id, element()); return elements.get(id);};
   const devices = [{installation: iphone, platforms: ['ios'], crop_count: 228},
@@ -29,12 +29,12 @@ function inspector({manifest = {}, observation = {}} = {}) {
       app: {platform: installation === iphone ? 'ios' : 'android', version: '1.4', build: '10039'}, ...observation}});
   vm.runInNewContext(source, {
     document: {getElementById: el, createElement: element, body: {dataset: {inspectorMode: 'crops'}}},
-    window: {addEventListener() {}}, AbortController, URL, URLSearchParams,
+    window: {addEventListener() {}, YouSpeedInspectorBridge: bridge}, AbortController, URL, URLSearchParams,
     fetch: async url => {
       urls.push(url);
       let body;
       if (url.endsWith('/status')) body = {database: 'youspeed', user: 'youspeed_report', media_available: true};
-      else if (url.endsWith('/devices')) body = {devices};
+      else if (url.includes('/devices?')) body = {devices};
       else if (url.includes('?')) {
         const params = new URLSearchParams(url.split('?')[1]);
         body = {crops: [row(params.get('installation') || iphone)], has_more: false};
@@ -103,7 +103,7 @@ test('individual device filtering survives refresh and combines with existing fi
   app.el('installation').value = android;
   app.el('country').value = 'DE';
   app.el('filters').listeners.submit({preventDefault() {}}); await settle();
-  const params = new URLSearchParams(app.urls.filter(url => url.includes('?')).at(-1).split('?')[1]);
+  const params = new URLSearchParams(app.urls.filter(url => url.includes('/crops?')).at(-1).split('?')[1]);
   assert.equal(params.get('installation'), android);
   assert.equal(params.get('country'), 'DE');
   assert.equal(params.get('offset'), '0');
@@ -114,4 +114,77 @@ test('individual device filtering survives refresh and combines with existing fi
   app.el('filters').listeners.submit({preventDefault() {}}); await settle();
   assert.equal(app.el('installation').value, android);
   assert.match(app.el('installation').children.at(-1).textContent, /keine aktiven Crops/);
+});
+
+const phoneMatch = {
+  schema_version: 1, source: 'on_device_bundle_matcher', osm_way_id: '9007199254740993',
+  bundle_version: 'bundle-test', bundle_db_sha256: 'a'.repeat(64),
+  matched_fix_at: '2026-10-06T08:00:00.050Z', frame_match_delta_ms: -50,
+  travel_direction: 'unknown', matched_way_stable: false
+};
+
+test('phone match keeps exact large way ID and per-frame lineage distinct from parent', async () => {
+  const fields = await metadata({manifest: {phone_road_match: phoneMatch},
+    observation: {road_context: {road_id: '123', map_revision: 'later-bundle'}}});
+  const way = fields['OSM-Way vom Telefon'].children[0];
+  assert.equal(way.textContent, '9007199254740993');
+  assert.equal(way.href, 'https://www.openstreetmap.org/way/9007199254740993');
+  assert.equal(fields['Karten-Bundle des Matchs'].textContent, 'bundle-test');
+  assert.equal(fields['Aufnahme − Match-Fix'].textContent, '-50 ms');
+  assert.equal(fields['Vom Telefon als stabil markiert'].textContent, 'Nein');
+  assert.equal(fields['Match-Richtung'].textContent, 'Unbekannt');
+});
+
+test('old, explicit null and malformed phone contexts are distinct and never inherit', async () => {
+  for (const [manifest, expected] of [
+    [{}, 'Nicht erfasst · ältere Crop-Metadaten'],
+    [{phone_road_match: null}, 'Kein aufgezeichneter Match'],
+    [{phone_road_match: {...phoneMatch, osm_way_id: 123}}, 'Ungültige Match-Metadaten'],
+    [{phone_road_match: {...phoneMatch, osm_way_id: '9223372036854775808'}}, 'Ungültige Match-Metadaten']
+  ]) {
+    const fields = await metadata({manifest, observation: {road_context: {road_id: '123'}}});
+    assert.equal(fields['Straßenabgleich vom Telefon'].textContent, expected);
+    assert.equal(fields['OSM-Way vom Telefon'], undefined);
+  }
+});
+
+test('exact phone way filter reaches the API without numeric conversion', async () => {
+  const app = inspector(); await settle();
+  app.el('phone_way_id').value = phoneMatch.osm_way_id;
+  app.el('filters').listeners.submit({preventDefault() {}}); await settle();
+  const params = new URLSearchParams(app.urls.filter(url => url.includes('/crops?')).at(-1).split('?')[1]);
+  assert.equal(params.get('phone_way_id'), phoneMatch.osm_way_id);
+});
+
+test('crop map action uses the recorded way and exact crop position after map loading', async () => {
+  const calls = [];
+  const position = {latitude: 48, longitude: 8, course_degrees: 90};
+  const app = inspector({manifest: {phone_road_match: phoneMatch, vehicle_position: position},
+    bridge: {ensureMatcherData: async () => calls.push('loaded'), focusCropRoad: (way, fix) => calls.push([way, fix])}});
+  await settle(); await app.el('gallery').children[0].listeners.click(); await settle();
+  const children = app.el('metadata').children;
+  const index = children.findIndex(child => child.textContent === 'OSM-Way vom Telefon');
+  children[index + 1].children[1].click(); await settle();
+  assert.deepEqual(calls, ['loaded', [phoneMatch.osm_way_id, position]]);
+});
+
+test('observation sequence action clears conflicting filters and keeps installation/source scope', async () => {
+  const observation = '08d3f6f8-4c2f-4a8d-9264-4d7908d5e42d';
+  const app = inspector({manifest: {observation_id: observation}}); await settle();
+  await app.el('gallery').children[0].listeners.click(); await settle();
+  app.el('country').value = 'DE'; app.el('phone_way_id').value = '123';
+  app.el('exit_context').value = 'near_exit'; app.el('class_source').value = 'reviewed';
+  const children = app.el('metadata').children;
+  const index = children.findIndex(child => child.textContent === 'Weitere Aufnahmen');
+  children[index + 1].children[0].click(); await settle();
+  const params = new URLSearchParams(app.urls.filter(url => url.includes('/crops?')).at(-1).split('?')[1]);
+  assert.equal(params.get('installation'), iphone);
+  assert.equal(params.get('scope'), 'live');
+  assert.equal(params.get('query'), observation);
+  assert.equal(params.get('observation_id'), observation);
+  assert.equal(params.get('collection_epoch'), '0');
+  assert.equal(params.get('country'), null);
+  assert.equal(params.get('phone_way_id'), null);
+  assert.equal(params.get('exit_context'), null);
+  assert.equal(params.get('class_source'), 'original');
 });

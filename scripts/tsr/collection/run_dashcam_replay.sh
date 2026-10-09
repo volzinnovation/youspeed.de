@@ -13,6 +13,7 @@ swiftc -module-cache-path "$replay_output/swift-module-cache" \
   "$replay_repo_root/iphone/SpeedConsumerApp/SignCollectionStore.swift" \
   "$replay_repo_root/iphone/SpeedConsumerApp/SignCollectionTransport.swift" \
   "$replay_repo_root/iphone/SpeedConsumerApp/SignCollectionCrop.swift" \
+  "$replay_repo_root/iphone/SpeedConsumerApp/SignCollectionPhoneRoadMatch.swift" \
   "$replay_repo_root/iphone/SpeedConsumerApp/SignCollectionObserver.swift" \
   "$replay_repo_root/scripts/tsr/collection/replay_dashcam.swift" \
   -o "$replay_output/replay-dashcam"

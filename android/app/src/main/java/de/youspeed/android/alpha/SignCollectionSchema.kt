@@ -69,6 +69,15 @@ internal fun signCollectionSemantics(value: JsonElement, model: String) {
         if (scores.getValue("calibrated_confidence") !== JsonNull) require(scores["calibration_id"] is JsonPrimitive && scores["calibration_id"] !== JsonNull && scores["calibration_sha256"] is JsonPrimitive && scores["calibration_sha256"] !== JsonNull)
     }
     if (model == "correction" && o.getValue("intent").jsonPrimitive.content == "retract_correction") require(o.getValue("target_kind").jsonPrimitive.content == "correction")
+    if (model == "crop") o["phone_road_match"]?.takeIf { it != JsonNull }?.jsonObject?.let { match ->
+        val way = match.getValue("osm_way_id").jsonPrimitive.content
+        require(way.toLongOrNull()?.let { it > 0 && it.toString() == way } == true)
+        val frame = OffsetDateTime.parse(o.getValue("source_frame_at").jsonPrimitive.content).toInstant()
+        val fix = OffsetDateTime.parse(match.getValue("matched_fix_at").jsonPrimitive.content).toInstant()
+        val elapsed = java.time.Duration.between(fix, frame)
+        val actual = elapsed.seconds * 1000.0 + elapsed.nano / 1_000_000.0
+        require(kotlin.math.abs(actual - match.getValue("frame_match_delta_ms").jsonPrimitive.double) <= 1.0)
+    }
     if (model == "crop") {
         val geometry = SignCollectionCropGeometry.resolve(o.getValue("source_width").jsonPrimitive.int, o.getValue("source_height").jsonPrimitive.int, o.getValue("supplied_box").jsonObject.mapValues { it.value.jsonPrimitive.double })
         geometry.wire.forEach { (key, expected) -> require(SignCollectionJson.canonical(expected) == SignCollectionJson.canonical(o.getValue(key))) }

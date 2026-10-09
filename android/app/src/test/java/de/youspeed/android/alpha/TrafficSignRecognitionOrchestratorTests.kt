@@ -11,6 +11,26 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrafficSignRecognitionOrchestratorTests {
+    @Test fun collectionPhoneMatchIsFrozenAtAdmissionAndNullNeverBlocksRecognition() {
+        val harness = Harness()
+        val at = Instant.parse("2026-09-01T10:00:00Z")
+        val original = SignCollectionPhoneRoadMatch.capture("123", "bundle-a", "a".repeat(64), at.minusMillis(500), "forward", true)
+        harness.phoneRoadMatch = original
+        harness.orchestrator.submit(harness.frame("a", capturedAtNanos = 0))
+        harness.phoneRoadMatch = SignCollectionPhoneRoadMatch.capture("456", "bundle-b", "b".repeat(64), at, "reverse", false)
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        assertSame(original, harness.observer.outputs.single().collectionPhoneRoadMatch)
+        assertEquals("123", harness.observer.outputs.single().collectionPhoneRoadMatch?.osmWayId)
+        harness.clockNanos = 1_000_000_000
+        harness.phoneRoadMatch = null
+        harness.orchestrator.submit(harness.frame("unmatched-metadata", capturedAtNanos = harness.clockNanos))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        assertEquals(2, harness.observer.outputs.size)
+        assertNull(harness.observer.outputs.last().collectionPhoneRoadMatch)
+        assertTrue(harness.observer.outputs.last().collectionDetections.isNotEmpty())
+    }
+
+
     @Test fun cameraBackpressureDropsBusyFramesWithoutRetainingPixelsOrChangingDefaultQueue() {
         val harness=Harness()
         val drops=mutableListOf<String>()
@@ -994,6 +1014,88 @@ class TrafficSignRecognitionOrchestratorTests {
         assertNull(still.observer.outputs.single().displayObservation)
     }
 
+    @Test fun shadowExitWithholdingReselectsSurvivingMainlineAndPreservesRawLineage() {
+        val harness = Harness()
+        val blocked = highSideRoadDetection()
+        val mainline = mainlineDetection()
+        harness.mapFix = guardedMapFix("motorway", "motorway_link", 0)
+        harness.orchestrator.submit(harness.frame("two-signs", capturedAtNanos = 0))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(blocked, displayDetections = listOf(blocked, mainline)))
+        val output = harness.observer.outputs.single()
+        assertEquals(TrafficSignRecognitionState.PROVISIONAL, output.event.state)
+        assertEquals(80, output.event.candidate?.semantic?.value)
+        assertNull(output.displayObservation)
+        assertEquals(listOf(blocked, mainline), output.collectionDetections)
+        assertEquals(30, output.annotationEvent?.candidate?.semantic?.value)
+        val selectedTrack = requireNotNull(output.applicabilityDiagnostic).tracks.single { it.samples.last().candidate.candidateId == "two-signs:1" }
+        assertEquals(selectedTrack.trackId, output.event.applicabilityDecision?.trackId)
+        assertNull(output.passageEvent)
+    }
+
+    @Test fun allExitCandidatesWithheldNeverBecomeAnalyzedAbsenceOrPassage() {
+        val harness = Harness()
+        repeat(3) { index ->
+            harness.clockNanos = index * 500_000_000L
+            harness.orchestrator.submit(harness.frame("before-exit-$index", capturedAtNanos = harness.clockNanos))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        }
+        assertEquals(TrafficSignRecognitionState.CONFIRMED, harness.observer.outputs.last().event.state)
+        val priorOverride = harness.orchestrator.speedOverride()
+        assertEquals(30, priorOverride?.speedKmh)
+        repeat(5) { index ->
+            harness.clockNanos = (index + 3) * 500_000_000L
+            harness.mapFix = guardedMapFix("motorway", "motorway_link", harness.clockNanos)
+            harness.orchestrator.submit(harness.frame("withheld-$index", capturedAtNanos = harness.clockNanos))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection(), strongPassGeometry = true))
+        }
+        assertTrue(harness.observer.outputs.drop(3).all { it.event.state == TrafficSignRecognitionState.NO_RECOGNITION && it.event.candidate == null })
+        assertTrue(harness.observer.outputs.drop(3).all { it.displayObservation == null && it.collectionDetections.size == 1 })
+        assertTrue(harness.observer.outputs.none { it.passageEvent != null })
+        // Withholding neither creates passage nor clears an existing valid limit.
+        assertEquals(priorOverride, harness.orchestrator.speedOverride())
+    }
+
+    @Test fun shadowAccessRoadHistoryReselectsMainlineInsteadOfHigherSideRoadSign() {
+        val harness = Harness()
+        val mainline = mainlineDetection()
+        val blocked = highSideRoadDetection()
+        repeat(3) { index ->
+            harness.clockNanos = index * 500_000_000L
+            harness.mapFix = guardedMapFix("primary", "service", harness.clockNanos)
+            harness.orchestrator.submit(harness.frame("mainline-$index", capturedAtNanos = harness.clockNanos))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(mainline))
+        }
+        harness.clockNanos = 1_500_000_000L
+        harness.mapFix = guardedMapFix("primary", "service", harness.clockNanos)
+        harness.orchestrator.submit(harness.frame("access-two-signs", capturedAtNanos = harness.clockNanos))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(blocked, displayDetections = listOf(blocked, mainline)))
+        val output = harness.observer.outputs.last()
+        assertEquals(80, output.event.candidate?.semantic?.value)
+        assertEquals(TrafficSignRecognitionState.CONFIRMED, output.event.state)
+        assertEquals(30, output.annotationEvent?.candidate?.semantic?.value)
+        assertTrue(harness.observer.outputs.none { it.passageEvent != null })
+    }
+
+    @Test fun noWithholdingPreservesBackendSelectionEvenIfOtherFrameScoreIsHigher() {
+        val harness = Harness()
+        val selected = detection()
+        val other = mainlineDetection().let { it.copy(candidate = it.candidate.copy(rawScore = 0.99, calibratedConfidence = 0.99)) }
+        harness.orchestrator.submit(harness.frame("unchanged", capturedAtNanos = 0))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(selected, displayDetections = listOf(selected, other)))
+        assertEquals(30, harness.observer.outputs.single().event.candidate?.semantic?.value)
+        assertEquals(listOf(selected, other), harness.observer.outputs.single().collectionDetections)
+    }
+
+    private fun highSideRoadDetection() = detection().let { it.copy(candidate = it.candidate.copy(rawScore = 0.99, calibratedConfidence = 0.99)) }
+    private fun mainlineDetection() = detection().let { it.copy(candidate = it.candidate.copy(rawClassId = "speed_limit_80",
+        semantic = TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, 80, "km/h"), rawScore = 0.85, calibratedConfidence = 0.85,
+        boundingBox = NormalizedTrafficSignBoundingBox(0.2, 0.15, 0.08, 0.12))) }
+    private fun guardedMapFix(roadClass: String, branchClass: String, nanos: Long) = TSRMapFix(
+        TSRMapGeometry("way-1", 82.0, roadClass, emptyList(),
+            listOf(TSRApplicabilityCorridor("branch", 90.0, 20.0, branchClass, true, 8.0)), emptyList(), 120),
+        Instant.parse("2026-09-01T10:00:00Z").toEpochMilli().toDouble() + nanos / 1_000_000.0,
+        5.0, 82.0, 5.0, true)
+
     private class Harness(
         val pack: TrafficSignModelPack = fixture("de-direct-pack-v1.json").readText().let(TrafficSignModelPackJson::decode),
         pathEvaluator: ((FakeFrame, TSRApplicabilityDiagnostic) -> String?)? = null,
@@ -1007,6 +1109,8 @@ class TrafficSignRecognitionOrchestratorTests {
         var contextGeneration = 0L
         var runtimeActivationEligible = true
         var conditions=TrafficSignAnalysisConditions()
+        var mapFix: TSRMapFix? = null
+        var phoneRoadMatch: SignCollectionPhoneRoadMatch? = null
         val orchestrator = TrafficSignRecognitionOrchestrator(
             modelPack = pack,
             runtimeArtifact = requireNotNull(pack.androidArtifact()),
@@ -1017,6 +1121,8 @@ class TrafficSignRecognitionOrchestratorTests {
                     contextGeneration,
                     runtimeActivationEligible,
                     driveSessionId = "drive-test",
+                    applicabilityMapFix = mapFix,
+                    collectionPhoneRoadMatch = phoneRoadMatch,
                 )
             },
             conditionsSnapshot = { conditions },

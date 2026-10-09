@@ -17,8 +17,9 @@ def main():
     files = []
     for extension in ("js", "css", "html"):
         files.extend((root / "inspector").glob("*." + extension))
-    files.extend(root / "inspector" / name for name in ("server.py", "requirements.txt", "report-crops-grants.sql", "README.md"))
+    files.extend(root / "inspector" / name for name in ("server.py", "crop_review_proxy.py", "sign_positions.py", "requirements.txt", "report-crops-grants.sql", "README.md"))
     files.append(root / "scripts/inspector/install-volz-db.py")
+    files.append(root / "scripts/inspector/update-volz-db.py")
     files.extend(path for path in (root / "shared/tsr/fixtures").rglob("*")
                  if path.is_file() and path.suffix in {".json", ".ppm", ".png", ".jpg", ".jpeg"})
     files.extend((root / "shared/tsr/sign-pictograms/png").rglob("*.png"))

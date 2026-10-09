@@ -19,7 +19,7 @@
     },
     {
       "path": "crop-v1.schema.json",
-      "sha256": "da208be452a43b58797035229e6a097a8cb9250a5e9b0ff1807d2ca50f196800"
+      "sha256": "b70d6cf722ac937c786ae4910611a973d69d2b11f75a1c71bea3f153f37efb84"
     },
     {
       "path": "deletion-v1.schema.json",

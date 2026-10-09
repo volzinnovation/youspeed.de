@@ -76,6 +76,31 @@ extension SignCollectionSchema {
             if !(scores["calibrated_confidence"] is NSNull), scores["calibration_id"] as? String == nil || scores["calibration_sha256"] as? String == nil { throw SignCollectionError.invalidContract }
         }
         if model == "correction", o["intent"] as? String == "retract_correction", o["target_kind"] as? String != "correction" { throw SignCollectionError.invalidContract }
+        if model == "crop", let match = o["phone_road_match"] as? [String: Any] {
+            guard let way = match["osm_way_id"] as? String, let id = Int64(way), id > 0, String(id) == way,
+                  let delta = match["frame_match_delta_ms"] as? NSNumber else { throw SignCollectionError.invalidContract }
+            // Compare serialized UTC components at the backend's microsecond precision.
+            // Date subtraction can turn an exact inclusive 1 ms difference into 1.00009 ms.
+            func timestampMicroseconds(_ text: String) throws -> Int64 {
+                var whole = text, micros: Int64 = 0
+                if let dot = text.firstIndex(of: ".") {
+                    let start = text.index(after: dot)
+                    let digits = text[start...].prefix { $0 >= "0" && $0 <= "9" }
+                    guard !digits.isEmpty else { throw SignCollectionError.invalidContract }
+                    let padded = String(digits.prefix(6)) + String(repeating: "0", count: max(0, 6 - digits.count))
+                    guard let fraction = Int64(padded) else { throw SignCollectionError.invalidContract }
+                    micros = fraction
+                    whole = String(text[..<dot]) + String(text[text.index(start, offsetBy: digits.count)...])
+                }
+                let formatter = ISO8601DateFormatter(); formatter.formatOptions = [.withInternetDateTime]
+                guard let value = formatter.date(from: whole) else { throw SignCollectionError.invalidContract }
+                let seconds = value.timeIntervalSince1970.rounded()
+                guard seconds.isFinite, seconds >= -62_135_596_800, seconds <= 253_402_300_799 else { throw SignCollectionError.invalidContract }
+                return Int64(seconds) * 1_000_000 + micros
+            }
+            let actual = try timestampMicroseconds(o["source_frame_at"] as! String) - timestampMicroseconds(match["matched_fix_at"] as! String)
+            guard abs(Double(actual) - delta.doubleValue * 1000) <= 1000 else { throw SignCollectionError.invalidContract }
+        }
         if model == "crop" {
             let geometry = try SignCollectionCropGeometry(width: o["source_width"] as! Int, height: o["source_height"] as! Int, box: o["supplied_box"] as! [String: Double])
             for (key, expected) in geometry.wire { guard let actual = o[key], try SignCollectionJSON.canonical(expected) == SignCollectionJSON.canonical(actual) else { throw SignCollectionError.invalidContract } }

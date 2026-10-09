@@ -919,6 +919,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             trafficSignDebugGenerationSessionContextMismatch = false
             trafficSignFrameContextIsCurrent = false
             latestTrafficSignDetectionContext = nil
+            latestCollectionPhoneRoadMatch = nil
             trafficSignFrameState.update(nil)
             updateTrafficSignWriteGate()
             // Already confirmed limits and pictograms retain their ordinary
@@ -1198,6 +1199,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var currentBundledUnlimitedSpeedLimitActive = false
     private var currentBaseUnlimitedSpeedLimitActive = false
     private var currentTrafficSignTravelDirection: TrafficSignTravelDirection = .unknown
+    private var latestCollectionPhoneRoadMatch: SignCollectionPhoneRoadMatch?
     private var latestTrafficSignMapFix: TSRMapFix?
     private var latestTrafficSignDetectionContext: TrafficSignDetectionContext?
     private var limitStreetBaseName: String?
@@ -3133,7 +3135,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             // These files never enter the Panoramax queue.
             diagnosticCaptureEnabled: debugLoggingEnabled && driveRecorderState == .recording
                 && driveRecorderDashcamActive
-                && driveRecorderTrafficSignRecognitionActive
+                && driveRecorderTrafficSignRecognitionActive,
+            collectionPhoneRoadMatch: trafficSignFrameContextIsCurrent ? latestCollectionPhoneRoadMatch : nil
         ))
     }
 
@@ -3156,6 +3159,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignDebugGenerationSessionContextMismatch = false
         trafficSignFrameContextIsCurrent = false
         latestTrafficSignDetectionContext = nil
+        latestCollectionPhoneRoadMatch = nil
         trafficSignFrameState.update(nil)
         updateTrafficSignWriteGate()
     }
@@ -3204,6 +3208,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignContextGeneration &+= 1
         trafficSignFrameContextIsCurrent = false
         latestTrafficSignDetectionContext = nil
+        latestCollectionPhoneRoadMatch = nil
         trafficSignFrameState.update(nil)
         trafficSignOverridePolicy.clear()
         trafficSignTraversalTracker.reset()
@@ -6171,6 +6176,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignContextGeneration &+= 1
         trafficSignFrameContextIsCurrent = false
         latestTrafficSignDetectionContext = nil
+        latestCollectionPhoneRoadMatch = nil
         currentTrafficSignSourceSignature = nil
         trafficSignTraversalTracker.reset()
         trafficSignEffectiveLimitResolver.clear(base: currentBaseEffectiveSpeedLimitState())
@@ -6212,6 +6218,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         driveCaptureCoordinator?.stop()
         locationManager.stopUpdatingLocation()
         latestTrafficSignDetectionContext = nil
+        latestCollectionPhoneRoadMatch = nil
         currentTrafficSignSourceSignature = nil
         trafficSignFrameContextIsCurrent = false
         latestTrafficSignLookupFixID = 0
@@ -7873,6 +7880,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let matchContext = currentWayMatchContext()
         let gpsBars = gpsSignalBars
         let lookupContextGeneration = trafficSignContextGeneration
+        // Freeze identity of the database used by this lookup before leaving the owner actor.
+        let collectionBundleVersion = activeBundleVersion
+        let collectionBundleSHA256 = activeBundleDBSHA256
         await Task.detached(priority: .utility) {
             do {
                 let result = try service.lookupSpeedLimit(
@@ -8004,6 +8014,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                             accuracyM: hAcc, courseDeg: course, courseAccuracyDeg: courseAccuracy,
                             stable: nextTrafficSignContext?.matchedWayStable == true)
                     }
+                    self.latestCollectionPhoneRoadMatch = SignCollectionPhoneRoadMatch(
+                        osmWayID: result.wayID, bundleVersion: collectionBundleVersion, bundleDBSHA256: collectionBundleSHA256,
+                        matchedFixAt: location.timestamp, travelDirection: travelDirection.rawValue,
+                        matchedWayStable: nextTrafficSignContext?.matchedWayStable == true)
                     self.latestTrafficSignDetectionContext = nextTrafficSignContext
                     self.trafficSignFrameContextIsCurrent = true
                     self.updateTrafficSignWriteGate()

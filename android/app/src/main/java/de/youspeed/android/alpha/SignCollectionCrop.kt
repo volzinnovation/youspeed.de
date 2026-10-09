@@ -45,11 +45,11 @@ internal data class SignCollectionCrop(val geometry: SignCollectionCropGeometry,
     }
     fun metadata(cropId: String, observationId: String, installationId: String, epoch: Int, sourceKind: String, frameAt: Instant,
         localFrameToken: String?, privacyPreflight: String, redactionVersion: String, collectionClaim: SignCollectionClaim, processorClaim: SignCollectionClaim? = null,
-        vehiclePosition: JsonElement = JsonNull): JsonObject =
+        vehiclePosition: JsonElement = JsonNull, phoneRoadMatch: SignCollectionPhoneRoadMatch? = null): JsonObject =
         JsonObject(geometry.wire + buildJsonObject {
             put("schema_version", 1); put("crop_id", cropId); put("observation_id", observationId); put("installation_id", installationId); put("collection_epoch", epoch)
             put("source_kind", sourceKind); put("source_frame_at", frameAt.toString()); put("source_width", sourceWidth); put("source_height", sourceHeight)
-            put("vehicle_position", vehiclePosition)
+            put("vehicle_position", vehiclePosition); put("phone_road_match", phoneRoadMatch?.metadata(frameAt) ?: JsonNull)
             put("source_upright_sha256", sourceHash?.let(::JsonPrimitive) ?: JsonNull); put("local_frame_token", localFrameToken?.let(::JsonPrimitive) ?: JsonNull)
             put("encoded_sha256", encodedHash); put("byte_length", bytes.size); put("decoded_width", geometry.actual[2]-geometry.actual[0]); put("decoded_height", geometry.actual[3]-geometry.actual[1])
             put("encoding", "PNG"); put("orientation_version", "upright-1"); put("crop_version", "downward-1"); put("redaction_version", redactionVersion)

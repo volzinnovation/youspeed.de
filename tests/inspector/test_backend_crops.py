@@ -88,6 +88,7 @@ class StoreTests(unittest.TestCase):
         self.store = server.CropStore(server.arguments([]))
         self.calls = []
         self.rows = []
+        self.control = {"fresh": True}
         test = self
 
         class Database:
@@ -99,6 +100,8 @@ class StoreTests(unittest.TestCase):
                 return test.rows
 
             def fetchone(self):
+                if "AS fresh" in test.calls[-1][0]:
+                    return test.control
                 return test.rows[0] if test.rows else None
 
         @contextmanager
@@ -112,11 +115,93 @@ class StoreTests(unittest.TestCase):
         result = self.store.list({"query": ["' OR true --"], "limit": ["2"]})
         self.assertEqual(len(result["crops"]), 2)
         self.assertTrue(result["has_more"])
-        sql, params = self.calls[0]
+        sql, params = self.calls[-1]
         self.assertNotIn("' OR true --", sql)
         self.assertEqual(params[-2:], [3, 0])
         self.assertIn("' or true --", params)
         self.assertEqual(result["crops"][0]["image_url"], IMAGE_PATH)
+
+    def test_live_default_excludes_replay_before_pagination(self):
+        result = self.store.list({})
+        sql, params = self.calls[-1]
+        self.assertEqual(result["scope"], "live")
+        self.assertIn("youspeed.live_crop_exclusion_reason(m.manifest,e.payload->'event') IS NULL", sql)
+        self.assertLess(sql.index("live_crop_exclusion_reason"), sql.rindex(" LIMIT "))
+        self.assertIn("a.scope='crop_storage' AND a.state='granted'", sql)
+        self.assertIn("a.scope='sign_metadata' AND a.state='granted'", sql)
+
+    def test_review_and_exit_filters_are_global_and_distinct(self):
+        self.store.list({"review_state": ["wrong_class"], "exit_context": ["near_exit"], "class_source": ["reviewed"], "query": ["274"]})
+        sql, params = self.calls[-1]
+        self.assertIn("COALESCE(r.verdict,'unreviewed')=%s", sql)
+        self.assertIn("c.status=%s", sql)
+        self.assertIn("WHEN r.verdict='confirmed' THEN e.payload->'event'->'classification'", sql)
+        self.assertIn("WHEN r.verdict='wrong_class' THEN r.corrected_classification", sql)
+        self.assertEqual(params, ["wrong_class", "near_exit", "274", "274", "274", "274", 51, 0])
+        self.assertLess(sql.index("c.status=%s"), sql.rindex(" LIMIT "))
+
+    def test_reviewed_country_uses_reviewed_classification(self):
+        self.store.list({"class_source": ["reviewed"], "country": ["FR"]})
+        sql, params = self.calls[-1]
+        self.assertIn("WHEN r.verdict='wrong_class' THEN r.corrected_classification ELSE NULL END)->>'country'=%s", sql)
+        self.assertEqual(params, ["FR", 51, 0])
+
+    def test_phone_way_filter_is_exact_string_before_pagination(self):
+        way = "9007199254740993"
+        self.store.list({"phone_way_id": [way], "country": ["DE"], "offset": ["50"]})
+        sql, params = self.calls[-1]
+        self.assertIn("m.manifest->'phone_road_match'->>'osm_way_id'=%s", sql)
+        self.assertIn("jsonb_typeof(m.manifest->'phone_road_match'->'osm_way_id')='string'", sql)
+        self.assertIn("->>'source'='on_device_bundle_matcher'", sql)
+        self.assertLess(sql.index("->>'osm_way_id'=%s"), sql.rindex(" LIMIT "))
+        self.assertNotIn(way, sql)
+        self.assertEqual(params, [way, "DE", 51, 50])
+
+    def test_phone_way_filter_rejects_lossy_or_noncanonical_ids(self):
+        for value in ["0", "01", "-1", "1.5", "1e4", "1 OR true", " 123", "9223372036854775808"]:
+            with self.subTest(value=value), self.assertRaises(server.InspectorError):
+                self.store.list({"phone_way_id": [value]})
+        self.assertEqual(self.calls, [])
+
+    def test_observation_sequence_is_bound_to_installation_epoch(self):
+        self.store.list({"installation": [INSTALLATION], "observation_id": [CROP], "collection_epoch": ["0"]})
+        sql, params = self.calls[-1]
+        self.assertIn("m.installation=%s", sql)
+        self.assertIn("m.epoch=%s", sql)
+        self.assertIn("m.manifest->>'observation_id'=%s", sql)
+        self.assertEqual(params, [INSTALLATION, 0, CROP, 51, 0])
+        for fields in [{"observation_id": [CROP]},
+                       {"observation_id": [CROP], "collection_epoch": ["0"]},
+                       {"installation": [INSTALLATION], "collection_epoch": ["0"]},
+                       {"installation": [INSTALLATION], "observation_id": [CROP], "collection_epoch": ["2147483648"]}]:
+            with self.subTest(fields=fields), self.assertRaises(server.InspectorError):
+                self.store.list(fields)
+
+    def test_live_analysis_requires_fresh_complete_controls(self):
+        for control in (None, {"fresh": False}, {"fresh": None}):
+            self.control = control
+            for operation in (lambda: self.store.list({}), self.store.devices):
+                with self.subTest(control=control), self.assertRaises(server.InspectorError) as error:
+                    operation()
+                self.assertEqual(error.exception.status, 503)
+                self.assertIn("AS fresh", self.calls[-1][0])
+        self.store.list({"scope": ["legacy"]})
+        self.assertNotIn("control_state", self.calls[-1][0])
+
+    def test_legacy_browsing_has_no_analysis_or_review_authority(self):
+        self.store.list({"scope": ["legacy"]})
+        sql, _ = self.calls[-1]
+        self.assertIn("false AS analysis_eligible", sql)
+        self.assertNotIn("live_crop_exclusion_reason", sql)
+        self.assertNotIn("crop_reviews", sql)
+        with self.assertRaises(server.InspectorError):
+            self.store.list({"scope": ["legacy"], "review_state": ["confirmed"]})
+
+    def test_not_computed_is_not_a_negative_or_unknown_context(self):
+        self.store.list({"exit_context": ["not_computed"]})
+        sql, _ = self.calls[-1]
+        self.assertIn("c.context_key IS NULL", sql)
+        self.assertNotIn("c.status=%s", sql)
 
     def test_bad_filters_fail_before_database_access(self):
         for query in ({"limit": ["10000"]}, {"source": ["invented"]}, {"offset": ["-1"]},
@@ -130,7 +215,7 @@ class StoreTests(unittest.TestCase):
 
     def test_individual_device_filter_uses_exact_uuid_and_keeps_other_filters(self):
         self.store.list({"installation": [INSTALLATION.upper()], "country": ["DE"], "offset": ["50"]})
-        sql, params = self.calls[0]
+        sql, params = self.calls[-1]
         self.assertIn("m.installation=%s", sql)
         self.assertNotIn(INSTALLATION, sql)
         self.assertEqual(params, [INSTALLATION, "DE", 51, 50])
@@ -140,7 +225,7 @@ class StoreTests(unittest.TestCase):
                      {"installation": CROP, "crop_count": 15, "platforms": ["android"]}]
         result = self.store.devices()
         self.assertEqual(result["devices"], self.rows)
-        sql, params = self.calls[0]
+        sql, params = self.calls[-1]
         self.assertIsNone(params)
         self.assertIn("GROUP BY m.installation", sql)
         self.assertNotIn("OFFSET", sql)
@@ -159,7 +244,7 @@ class StoreTests(unittest.TestCase):
                 self.store.image((INSTALLATION, 0, CROP))
             self.assertEqual(error.exception.status, 404)
             read.assert_not_called()
-        sql, params = self.calls[0]
+        sql, params = self.calls[-1]
         self.assertEqual(params, (INSTALLATION, 0, CROP))
         for condition in ("m.expires >", "t.deleted_through", "a.state<>'granted'"):
             self.assertIn(condition, sql)

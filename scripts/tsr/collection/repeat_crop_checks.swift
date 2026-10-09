@@ -91,7 +91,9 @@ func runCollectionRepeatCropChecks(gate: SignCollectionContractGate, root: URL, 
                 let manifest = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: candidate.observationID, installationID: try store.installationID,
                     epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: candidate.frameAt, localFrameToken: "frame-\(ms)",
                     privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: try store.claim(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure),
-                    vehiclePosition: position)
+                    vehiclePosition: position, phoneRoadMatch: SignCollectionPhoneRoadMatch(
+                            osmWayID: String(4700 + ms), bundleVersion: "bundle-\(ms)", bundleDBSHA256: String(repeating: ms == 100 ? "a" : "b", count: 64),
+                            matchedFixAt: candidate.frameAt.addingTimeInterval(-0.1), travelDirection: "forward", matchedWayStable: true))
                 try gate.validate(manifest, model: "crop")
                 try store.enqueueAutomaticCrop(metadata: manifest, bytes: crop.bytes)
                 manifests.append(manifest); return .stored
@@ -108,12 +110,15 @@ func runCollectionRepeatCropChecks(gate: SignCollectionContractGate, root: URL, 
               "each crop retains its own course")
     try check((manifests[1]["vehicle_position"] as! [String: Any])["fix_at"] as! String == manifests[1]["source_frame_at"] as! String,
               "crop position fix is associated with its own frame")
+    try check((manifests[0]["phone_road_match"] as! [String: Any])["osm_way_id"] as! String == "4800" &&
+              (manifests[1]["phone_road_match"] as! [String: Any])["osm_way_id"] as! String == "5300", "repeat crops retain their exact frame's phone match")
     for _ in 0..<2 {
         let next = try store.nextCrop()!
         let queued = try SignCollectionJSON.parse(next.metadata) as! [String: Any]
         let original = manifests.first { $0["crop_id"] as? String == next.id }!
         try check(try SignCollectionJSON.canonical(queued["vehicle_position"]!) == SignCollectionJSON.canonical(original["vehicle_position"]!),
                   "durable queue preserves crop coordinates and course")
+        try check(try SignCollectionJSON.canonical(queued["phone_road_match"]!) == SignCollectionJSON.canonical(original["phone_road_match"]!), "queue retains immutable phone match")
         try store.finishBestEffortCrop(id: next.id)
     }
     try check(store.nextCrop() == nil, "both repeated crops can drain independently")

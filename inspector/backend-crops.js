@@ -12,6 +12,15 @@
   let imageURL = null;
   let imageController = null;
   let selected = null;
+  let observationSequence = null;
+  const reviews = window.YouSpeedCropReview?.create(getJSON, (row) => {
+    for (const card of el("gallery").children) {
+      if (card.dataset?.cropIdentity === reviews.core.key(row)) {
+        const badge = card.querySelector?.(".crop-review-badge");
+        if (badge) badge.textContent = reviews.core.reviewLabel(row.current_review);
+      }
+    }
+  });
 
   async function getJSON(url, options = {}) {
     const response = await fetch(url, { cache: "no-store", credentials: "omit", ...options });
@@ -19,7 +28,11 @@
       throw new Error("Crop-Server fehlt. Inspector mit python3 inspector/server.py starten; python -m http.server bietet keinen Backend-Zugriff.");
     }
     const body = await response.json();
-    if (!response.ok) throw new Error(body.error || "Report-Abfrage fehlgeschlagen.");
+    if (!response.ok) {
+      const error = new Error(body.error || "Report-Abfrage fehlgeschlagen.");
+      error.status = response.status;
+      throw error;
+    }
     return body;
   }
 
@@ -72,7 +85,7 @@
   async function loadDevices() {
     const request = ++devicesRequest;
     const value = el("installation").value;
-    const result = await getJSON("./api/crops/devices");
+    const result = await getJSON("./api/crops/devices?" + new URLSearchParams({scope: el("scope").value || "live"}));
     if (request !== devicesRequest) return;
     const all = document.createElement("option");
     all.value = "";
@@ -139,9 +152,74 @@
     addMetadata("Positionsabgleich", position?.alignment);
   }
 
+  function addPhoneRoadMatch(manifest) {
+    // This is the phone's recorded match for this frame. Never borrow a parent
+    // observation, current matcher state or retrospective exit-context result.
+    if (!Object.prototype.hasOwnProperty.call(manifest, "phone_road_match")) {
+      addMetadata("Straßenabgleich vom Telefon", "Nicht erfasst · ältere Crop-Metadaten");
+      return;
+    }
+    const match = manifest.phone_road_match;
+    if (match === null) {
+      addMetadata("Straßenabgleich vom Telefon", "Kein aufgezeichneter Match");
+      return;
+    }
+    const way = match?.osm_way_id;
+    const validWay = typeof way === "string" && /^[1-9][0-9]{0,18}$/.test(way)
+      && (way.length < 19 || way <= "9223372036854775807");
+    if (!validWay || match.schema_version !== 1 || match.source !== "on_device_bundle_matcher") {
+      addMetadata("Straßenabgleich vom Telefon", "Ungültige Match-Metadaten");
+      return;
+    }
+    addMetadata("Straßenabgleich vom Telefon", "Aufgezeichneter Telefon-Match · keine geprüfte Zeichenzuordnung");
+    const field = addMetadata("OSM-Way vom Telefon", way);
+    const link = document.createElement("a");
+    link.href = `https://www.openstreetmap.org/way/${way}`;
+    link.textContent = way;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.title = "Way in der heutigen OSM-Karte öffnen; der damalige Bundle-Stand kann abweichen";
+    field.replaceChildren(link);
+    const mapButton = document.createElement("button");
+    mapButton.type = "button";
+    mapButton.textContent = "Im geladenen Karten-Bundle ansehen";
+    mapButton.addEventListener("click", () => {
+      document.getElementById("matcher-mode-btn").click();
+      const bridge = window.YouSpeedInspectorBridge;
+      void Promise.resolve(bridge?.ensureMatcherData()).then(() => bridge?.focusCropRoad(way, manifest.vehicle_position));
+    });
+    field.append(mapButton);
+    addMetadata("Karten-Bundle des Matchs", match.bundle_version);
+    addMetadata("Bundle-SHA-256", match.bundle_db_sha256);
+    addMetadata("Match-Fix (UTC)", match.matched_fix_at);
+    addMetadata("Aufnahme − Match-Fix", Number.isFinite(match.frame_match_delta_ms) ? `${match.frame_match_delta_ms} ms` : null);
+    addMetadata("Match-Richtung", ({forward: "Vorwärts", reverse: "Rückwärts", unknown: "Unbekannt"})[match.travel_direction] ?? null);
+    addMetadata("Vom Telefon als stabil markiert", match.matched_way_stable === true ? "Ja" : match.matched_way_stable === false ? "Nein" : null);
+  }
+
+  function addObservationSequence(row) {
+    const observation = row.manifest?.observation_id;
+    if (typeof observation !== "string" || !/^[a-f0-9-]{36}$/.test(observation)) return;
+    const field = addMetadata("Weitere Aufnahmen", null);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Crops dieser Beobachtung anzeigen";
+    button.addEventListener("click", () => {
+      for (const name of ["country", "source", "from", "to", "review_state", "exit_context", "phone_way_id"]) el(name).value = "";
+      el("class_source").value = "original";
+      el("installation").value = row.installation;
+      el("query").value = observation;
+      observationSequence = {observation, installation: row.installation, epoch: row.epoch};
+      offset = 0;
+      void load();
+    });
+    field.replaceChildren(button);
+  }
+
   async function select(row, button) {
     clearImage();
     selected = row;
+    void reviews?.select(row);
     for (const card of el("gallery").children) card.setAttribute("aria-pressed", String(card === button));
     const manifest = row.manifest;
     const observation = row.observation;
@@ -159,6 +237,8 @@
     addMetadata("Bild", `${manifest.decoded_width} × ${manifest.decoded_height} · ${manifest.encoding} · ${manifest.byte_length} Bytes`);
     addMetadata("Kontext unten", `${manifest.actual_extra_height} px${manifest.bottom_clipped ? " · abgeschnitten" : ""}`);
     addFramePosition(manifest, observation);
+    addPhoneRoadMatch(manifest);
+    addObservationSequence(row);
     addMetadata("Läuft ab (UTC)", new Date(row.expires * 1000).toISOString());
     addMetadata("SHA-256", row.digest);
     el("raw").textContent = JSON.stringify({ installation_id: row.installation, collection_epoch: row.epoch, manifest, observation }, null, 2);
@@ -190,6 +270,8 @@
     const request = ++listRequest;
     clearImage();
     selected = null;
+    reviews?.clear();
+    reviews?.setPage([], el("scope").value || "live");
     el("title").textContent = "Crop auswählen";
     el("metadata").replaceChildren();
     el("raw").textContent = "Kein Crop ausgewählt.";
@@ -199,13 +281,20 @@
     el("next").disabled = true;
     el("summary").textContent = "Crops werden geladen …";
     const params = new URLSearchParams({ offset, limit: pageSize });
-    for (const name of ["installation", "country", "source", "query", "from", "to"]) {
+    params.set("scope", el("scope").value || "live");
+    if (observationSequence && el("query").value === observationSequence.observation
+        && el("installation").value === observationSequence.installation) {
+      params.set("observation_id", observationSequence.observation);
+      params.set("collection_epoch", String(observationSequence.epoch));
+    }
+    for (const name of ["installation", "country", "source", "query", "from", "to", "review_state", "exit_context", "class_source", "phone_way_id"]) {
       if (el(name).value) params.set(name, el(name).value);
     }
     try {
       const result = await getJSON("./api/crops?" + params);
       if (request !== listRequest) return;
       hasMore = result.has_more;
+      reviews?.setPage(result.crops, el("scope").value || "live");
       el("summary").textContent = result.crops.length
         ? `${offset + 1}–${offset + result.crops.length} · neueste Aufnahmen zuerst`
         : "Keine aktiven, nicht abgelaufenen Crops für diese Filter gespeichert.";
@@ -215,6 +304,7 @@
         const card = document.createElement("button");
         card.type = "button";
         card.className = "crop-card";
+        if (reviews) card.dataset.cropIdentity = reviews.core.key(row);
         card.setAttribute("aria-pressed", "false");
         const img = document.createElement("img");
         img.loading = "lazy";
@@ -231,6 +321,14 @@
         availability.textContent = `${row.manifest.decoded_width} × ${row.manifest.decoded_height} · ${row.manifest.source_kind}`;
         img.addEventListener("error", () => { img.hidden = true; availability.textContent = "Bild nicht verfügbar · Details öffnen"; });
         card.append(img, title, time, device, availability);
+        if (reviews) {
+          const review = document.createElement("span"); review.className = "crop-review-badge";
+          review.textContent = reviews.core.reviewLabel(row.current_review);
+          const context = document.createElement("span");
+          const exit = typeof row.exit_context === "string" ? row.exit_context : row.exit_context?.result || row.exit_context?.status || "not_computed";
+          context.textContent = reviews.core.exitLabels[exit] || exit;
+          card.append(review, context);
+        }
         card.addEventListener("click", () => void select(row, card));
         el("gallery").append(card);
       }
@@ -279,6 +377,8 @@
       el("metadata").replaceChildren();
       el("raw").textContent = "Kein Crop ausgewählt.";
       selected = null;
+      reviews?.clear();
+      reviews?.setPage([], "live");
     }
   });
   window.addEventListener("pagehide", clearImage);

@@ -587,7 +587,10 @@ enum SpeedPenaltyRuleEngine {
         let tariffTemplates = tariffFine != nil
             ? (tariffFine == 0 ? tariff?.localizedBelowThresholdTemplates : tariff?.localizedTemplates)
             : (tariffCriminal && overspeedKmh < 50 ? tariff?.localizedCriminalTemplates : nil)
-        let templates = tariffTemplates?[language] ?? tariffTemplates?["en"] ?? escalation?.localizedTemplates[language] ?? escalation?.localizedTemplates["en"] ?? band.localizedTemplates?[language] ?? band.localizedTemplates?["en"]
+        let localizedTariffTemplates = tariffTemplates?[language] ?? tariffTemplates?["en"]
+        let localizedEscalationTemplates = escalation?.localizedTemplates[language] ?? escalation?.localizedTemplates["en"]
+        let localizedBandTemplates = band.localizedTemplates?[language] ?? band.localizedTemplates?["en"]
+        let templates = localizedTariffTemplates ?? localizedEscalationTemplates ?? localizedBandTemplates
         let categoryKnown = !rules.requiresRoadCategory || (area != nil && (postedLimitKmh ?? 0) > 0)
         let moneyFine = tariff != nil ? tariffFine : (escalation == nil && categoryKnown ? (variant?.moneyFineEUR ?? band.moneyFineEUR) : nil)
         let points = variant?.penaltyPoints ?? band.penaltyPoints

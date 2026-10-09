@@ -64,7 +64,8 @@ Remaining v1.4 release features: general non-numeric correction windows; restric
 ```sh
 scripts/tsr/collection/run_swift_checks.sh /private/tmp/youspeed-collection-results
 cd android
-./gradlew --offline :app:testDebugUnitTest \
+YOUSPEED_COLLECTION_TEST_OUTPUT=/private/tmp/youspeed-collection-results \
+  ./gradlew --offline :app:testDebugUnitTest \
   --tests de.youspeed.android.alpha.SignCollectionContractTests \
   --tests de.youspeed.android.alpha.SignCaptureFilterTests \
   --tests de.youspeed.android.alpha.PanoramaxCaptureTests :app:assembleDebug

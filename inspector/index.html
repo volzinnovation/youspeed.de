@@ -45,6 +45,8 @@
         </button>
         <button id="crops-mode-btn" class="mode-switch-button" type="button" role="tab"
           aria-selected="false" aria-controls="crops-workspace">Backend-Crops</button>
+        <button id="positions-mode-btn" class="mode-switch-button" type="button" role="tab"
+          aria-selected="false" aria-controls="positions-workspace">Tempolimit-Positionen</button>
       </nav>
       <div class="workspace-locality">
         <span class="workspace-locality-dot" aria-hidden="true"></span>
@@ -468,26 +470,42 @@
       aria-labelledby="crops-mode-btn" hidden>
       <section class="crop-browser">
         <h1>Backend-Crops</h1>
-        <p class="hint">Gespeicherte Bildausschnitte auf volz-db. Zugriff über die eingerichteten
-          Report-Zugangsdaten des Servers, ohne Browser-Login. Bilder und Metadaten bleiben im privaten Netz.</p>
+        <p class="hint">Gespeicherte Bildausschnitte auf volz-db. Die Analyse verwendet ausschließlich Live-Aufnahmen.
+          Der Altbestand ist nur lesend verfügbar; Archiv- und Replay-Crops bleiben aus der Analyse ausgeschlossen.</p>
         <p id="crops-connection" class="status" role="status">Report-Verbindung wird geprüft …</p>
         <form id="crops-filters" class="crop-filters">
+          <label>Bestand <select id="crops-scope"><option value="live">Live-Aufnahmen · Analyse</option>
+            <option value="legacy">Altbestand · nur ansehen</option></select></label>
           <label>Gerät (Installations-ID) <select id="crops-installation"><option value="">Alle Geräte</option></select></label>
           <label>Land <select id="crops-country"><option value="">Alle Länder</option>
             <option>DE</option><option>FR</option><option>BE</option><option>NL</option><option>CH</option></select></label>
           <label>Erfassung <select id="crops-source"><option value="">Alle Arten</option>
             <option value="detector">Detektor</option><option value="manual">Manuell</option></select></label>
           <label>Klasse / Crop-ID <input id="crops-query" type="search" maxlength="160" placeholder="z. B. DE:274-50" /></label>
+          <label>OSM-Way vom Telefon <input id="crops-phone_way_id" type="text" inputmode="numeric" maxlength="19" pattern="[1-9][0-9]{0,18}" placeholder="Exakte Way-ID" /></label>
+          <label>Klasse durchsuchen <select id="crops-class_source"><option value="original">Originalerkennung</option>
+            <option value="reviewed">Geprüfte Klasse</option></select></label>
           <label>Ab (UTC) <input id="crops-from" type="date" /></label>
           <label>Bis (UTC, einschließlich) <input id="crops-to" type="date" /></label>
+          <label>Klassenprüfung <select id="crops-review_state"><option value="">Alle Prüfstände</option>
+            <option value="unreviewed">Nicht geprüft</option><option value="confirmed">Klasse bestätigt</option>
+            <option value="wrong_class">Falsche Klasse</option><option value="not_a_sign">Kein Verkehrszeichen</option>
+            <option value="uncertain">Unsicher</option></select></label>
+          <label>Ausfahrtkontext <select id="crops-exit_context"><option value="">Alle Kontexte</option>
+            <option value="near_exit">Mögliche Ausfahrtnähe</option><option value="no_exit">Kein Kandidat im abgedeckten Radius</option>
+            <option value="unknown">Kontext unbekannt · Grund in Details</option>
+            <option value="not_computed">Noch nicht angereichert</option></select></label>
           <button type="submit">Aktualisieren</button>
         </form>
+        <p class="hint">Ausfahrtnähe ist ein Suchhinweis und sagt nicht, für welche Straße ein Zeichen gilt.</p>
         <p id="crops-summary" class="hint" role="status">Noch keine Crops geladen.</p>
         <div id="crops-gallery" class="crop-gallery" aria-label="Gespeicherte Crops"></div>
         <div class="crop-pagination">
           <button id="crops-previous" type="button" disabled>Vorherige Seite</button>
           <button id="crops-next" type="button" disabled>Nächste Seite</button>
+          <button id="crops-export" type="button" disabled>Geprüfte Seite exportieren</button>
         </div>
+        <p id="crops-export-status" class="hint" role="status"></p>
       </section>
       <aside class="crop-detail" aria-label="Ausgewählter Backend-Crop">
         <h2 id="crops-title">Crop auswählen</h2>
@@ -499,9 +517,91 @@
         </div>
         <p class="hint">Der Ausschnitt enthält zusätzlichen Kontext unterhalb des Zeichens.
           Ein erkannter Standort ist kein vermessener Schildstandort.</p>
+        <section class="crop-review" aria-labelledby="crops-review-heading">
+          <h3 id="crops-review-heading">Zeichenklasse prüfen</h3>
+          <p id="crops-review-eligibility" class="hint">Crop auswählen.</p>
+          <div class="crop-review-access">
+            <label>Prüfzugang <input id="crops-review-token" type="password" autocomplete="off" spellcheck="false" placeholder="Persönlicher Prüfschlüssel" /></label>
+            <label>Prüfer <input id="crops-reviewer" type="text" maxlength="160" autocomplete="off" /></label>
+            <button id="crops-review-connect" type="button">Prüfstand laden</button>
+          </div>
+          <p class="hint">Der Prüfschlüssel bleibt nur in diesem geöffneten Fenster. Originalerkennung und Prüfungen werden getrennt gespeichert.</p>
+          <dl class="crop-metadata"><dt>Originalerkennung</dt><dd id="crops-review-original">—</dd>
+            <dt>Aktuelle Prüfung</dt><dd id="crops-review-current">—</dd></dl>
+          <form id="crops-review-form">
+            <fieldset id="crops-review-fields" disabled>
+              <legend>Klasse dieses Crops</legend>
+              <div class="crop-review-verdicts">
+                <button type="button" data-crop-verdict="wrong_class" aria-pressed="false">Falsche Klasse</button>
+                <button type="button" data-crop-verdict="confirmed" aria-pressed="false">Klasse bestätigen</button>
+                <button type="button" data-crop-verdict="not_a_sign" aria-pressed="false">Kein Verkehrszeichen</button>
+                <button type="button" data-crop-verdict="uncertain" aria-pressed="false">Unsicher</button>
+              </div>
+              <div id="crops-review-correction" hidden>
+                <label>Land <select id="crops-review-country"><option value="">Alle Länder</option></select></label>
+                <label>Richtige Klasse suchen <input id="crops-review-search" type="search" maxlength="160" placeholder="Klassenname, Code oder Geschwindigkeit" /></label>
+                <label>Richtige Klasse <select id="crops-review-class" size="5" aria-describedby="crops-review-class-hint"></select></label>
+                <div class="crop-class-preview"><img id="crops-review-artwork" hidden alt="Gemeinsames Zeichenpiktogramm" />
+                  <label>Zahlenwert <input id="crops-review-value" type="number" readonly /><span id="crops-review-unit"></span></label></div>
+                <p id="crops-review-class-hint" class="hint">Eine konkrete Variante aus der Klassenliste wählen. Ohne Ersatzklasse bleibt die Korrektur offen und wird nicht als Trainingsziel exportiert.</p>
+              </div>
+              <label>Begründung (optional) <textarea id="crops-review-reason" rows="2" maxlength="2000"></textarea></label>
+              <div class="crop-review-actions"><button id="crops-review-save" type="submit">Prüfung speichern</button>
+                <button id="crops-review-undo" type="button">Prüfung zurücknehmen</button></div>
+            </fieldset>
+          </form>
+          <p id="crops-review-status" class="status" role="status" aria-live="polite"></p>
+          <details><summary>Prüfverlauf</summary><ol id="crops-review-history"></ol></details>
+          <h3>Ausfahrtkontext</h3>
+          <p id="crops-exit-status" class="hint">Noch kein Crop ausgewählt.</p>
+          <pre id="crops-exit-provenance" class="raw-block"></pre>
+        </section>
         <dl id="crops-metadata" class="crop-metadata"></dl>
         <details><summary>Crop-Manifest und Beobachtung</summary><pre id="crops-raw" class="raw-block">Kein Crop ausgewählt.</pre></details>
       </aside>
+    </main>
+
+    <main id="positions-workspace" class="sign-positions-workspace mode-workspace" role="tabpanel"
+      aria-labelledby="positions-mode-btn" hidden>
+      <section class="sign-positions-panel" aria-labelledby="sign-positions-title">
+        <h1 id="sign-positions-title">Tempolimit-Positionen</h1>
+        <p class="hint">Nachträglich berechnete Standorthypothesen aus mehreren Aufnahmen.
+          Angezeigt werden nur vorhergesagte Höchstgeschwindigkeiten und Tempo-Zonen.</p>
+        <div class="controls">
+          <label for="sign-positions-case">Position auswählen</label>
+          <select id="sign-positions-case" disabled></select>
+          <label for="sign-positions-extent">Kartenausschnitt</label>
+          <select id="sign-positions-extent">
+            <option value="context">Position und Ausfahrtkontext</option>
+            <option value="uncertainty">Vollständiger Annahmebereich</option>
+            <option value="close">Aufnahmepositionen im Detail</option>
+          </select>
+          <div class="sign-positions-toggles">
+            <label><input id="sign-positions-region" type="checkbox" checked /> Unsicherheitsbereich</label>
+            <label><input id="sign-positions-rays" type="checkbox" checked /> Angenommene Sichtlinien</label>
+            <label><input id="sign-positions-alternatives" type="checkbox" checked /> Andere Kameraannahmen</label>
+          </div>
+          <button id="sign-positions-refresh" type="button">Freigabe und Daten aktualisieren</button>
+        </div>
+        <p id="sign-positions-status" class="status" role="status" aria-live="polite">Beim Öffnen werden die aktuell freigegebenen Tempolimit-Positionen geladen.</p>
+        <p id="sign-positions-summary" class="hint"></p>
+        <div class="sign-positions-legend" aria-label="Kartenlegende">
+          <span><i class="sign-positions-key fit"></i>Positionshypothese</span>
+          <span><i class="sign-positions-key capture"></i>Aufnahme und Sichtlinie</span>
+          <span><i class="sign-positions-key exit"></i>Kartierte Ausfahrt</span>
+          <span><i class="sign-positions-key alternative"></i>Andere Kameraannahme</span>
+        </div>
+        <p id="sign-positions-detail" class="sign-positions-detail"></p>
+        <p class="hint">Die Kameraausrichtung ist angenommen, nicht kalibriert. Flächen zeigen die Empfindlichkeit
+          gegenüber diesen Annahmen, keine gemessene Genauigkeit. Weder der berechnete Standort noch die Nähe
+          einer Ausfahrt belegt, für welche Straße das Zeichen gilt.</p>
+        <p id="sign-positions-source" class="hint compact"></p>
+        <p class="hint compact">Die Hintergrundkarte lädt beim Betrachten sichtbare Kartenkacheln von OpenStreetMap.
+          Beim Verlassen des Tabs werden die Positionsdaten aus dieser Ansicht entfernt.</p>
+      </section>
+      <section id="sign-positions-map-wrap" class="sign-positions-map-wrap" aria-label="Karte der Tempolimit-Hypothesen" hidden>
+        <div id="sign-positions-map" class="sign-positions-map"></div>
+      </section>
     </main>
 
     <script
@@ -518,6 +618,10 @@
     <script src="./track-path.js"></script>
     <script src="./tsr-qa-core.js"></script>
     <script src="./tsr-qa.js"></script>
+    <script src="./crop-review-core.js"></script>
+    <script src="./crop-review.js"></script>
     <script src="./backend-crops.js"></script>
+    <script src="./sign-positions-core.js"></script>
+    <script src="./sign-positions.js"></script>
   </body>
 </html>

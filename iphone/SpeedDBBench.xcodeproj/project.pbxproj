@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D09675A3FA1249EBBBA81201 /* SignCollectionPhoneRoadMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = D09675A3FA1249EBBBA81202 /* SignCollectionPhoneRoadMatch.swift */; };
 		014EE424EC263574AB5B4CBC /* BundleTargets.top10.json in Resources */ = {isa = PBXBuildFile; fileRef = B4180056200225822BF33821 /* BundleTargets.top10.json */; };
 		021C1A2776097C50D00FC6D0 /* TSRModelPacks in Resources */ = {isa = PBXBuildFile; fileRef = 2811A15F038D37D70FFEA60E /* TSRModelPacks */; };
 		02C8C041AE046D1B34185DF7 /* RoadBoundaryTemporalTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3B28DE5916E71A3F35CFD7 /* RoadBoundaryTemporalTrackerTests.swift */; };
@@ -229,6 +230,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D09675A3FA1249EBBBA81202 /* SignCollectionPhoneRoadMatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionPhoneRoadMatch.swift; sourceTree = "<group>"; };
 		03C46F5B39F4707AAB46BEE0 /* TrafficSignRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignRuntime.swift; sourceTree = "<group>"; };
 		04C2F0D2C62B67E17CA605B3 /* penalty-documentation */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "penalty-documentation"; path = "../shared/penalty-documentation"; sourceTree = SOURCE_ROOT; };
 		04E3DFEEB128C612F8014906 /* romania.poly */ = {isa = PBXFileReference; path = romania.poly; sourceTree = "<group>"; };
@@ -432,6 +434,7 @@
 				CE8646A694B94F268DCE4BA9 /* SignCollectionObserver.swift */,
 				7B473D43E2A94AAFBE5EE1E9 /* SignCollectionTransport.swift */,
 				69E7C62133B96E960019FD15 /* SignCollectionCrop.swift */,
+				D09675A3FA1249EBBBA81202 /* SignCollectionPhoneRoadMatch.swift */,
 				9F1C121761016E3F284C5389 /* SignCollectionStore.swift */,
 				1DE3650368C1CFA077E985D1 /* SignCollectionContract.swift */,
 				D90286AF9D5D3E5CE8B04DA9 /* AppReviewPrompt.swift */,
@@ -1028,6 +1031,7 @@
 				4965CEC189DC49C08BDE4D64 /* SignCollectionObserver.swift in Sources */,
 				3FF871FA25444EB0A0FD1266 /* SignCollectionTransport.swift in Sources */,
 				2540B576F228AB69DF4D51D5 /* SignCollectionCrop.swift in Sources */,
+				D09675A3FA1249EBBBA81201 /* SignCollectionPhoneRoadMatch.swift in Sources */,
 				2B51584596A648CAAD8BE249 /* SignCollectionStore.swift in Sources */,
 				50864EBA421489ED313D17B9 /* SignCollectionContract.swift in Sources */,
 				993E99E3D22FDC60BEAD3863 /* AppReviewPrompt.swift in Sources */,

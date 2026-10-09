@@ -148,7 +148,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
             } }
         }
     }
-    fun observe(event: TrafficSignRecognitionEvent, detections: List<TrafficSignDetection>, location: Location?, frame: SignCollectionFrame? = null) {
+    fun observe(event: TrafficSignRecognitionEvent, detections: List<TrafficSignDetection>, location: Location?, frame: SignCollectionFrame? = null, phoneRoadMatch: SignCollectionPhoneRoadMatch? = null) {
         if (closed || !enabled || !authorized || !cameraActive || event.source != TrafficSignInputSource.LIVE_FRAME || framePending) { frame?.close(); return }
         val id = session ?: run { frame?.close(); return }
         val cropRequested = cropsAuthorized
@@ -209,7 +209,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                     val crop = frame.crop(box)
                     val metadata = crop.metadata(SignCollectionJson.uuid(), candidate.observationId,
                         store.installationId, store.collectionEpoch, "detector", candidate.frameAt, frame.token, "passed", "metadata-strip-1", claim,
-                        vehiclePosition = framePosition)
+                        vehiclePosition = framePosition, phoneRoadMatch = phoneRoadMatch)
                     store.enqueueAutomaticCrop(metadata, crop.bytes)
                     SignCollectionObserver.CropCaptureResult.STORED
                 }.getOrElse {

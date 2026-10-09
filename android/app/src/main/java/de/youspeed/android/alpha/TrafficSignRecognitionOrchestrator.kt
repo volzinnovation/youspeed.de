@@ -28,6 +28,7 @@ data class TrafficSignDetectionContextSnapshotValue(
     val runtimeActivationEligible: Boolean = false,
     val driveSessionId: String? = null,
     val applicabilityMapFix: TSRMapFix? = null,
+    val collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch? = null,
 ) {
     init {
         require(generation >= 0L) { "Traffic-sign context generation must not be negative" }
@@ -144,6 +145,7 @@ data class TrafficSignOrchestrationOutput(
     val collectionDetections: List<TrafficSignDetection> = emptyList(),
     val collectionFrame: SignCollectionFrame? = null,
     val roadPathDiagnostic: String? = null,
+    val collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch? = null,
 )
 
 interface TrafficSignRecognitionObserver {
@@ -284,6 +286,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                             runtimeActivationEligible = snapshot.runtimeActivationEligible,
                             driveSessionId = snapshot.driveSessionId,
                             applicabilityMapFix = snapshot.applicabilityMapFix,
+                            collectionPhoneRoadMatch = snapshot.collectionPhoneRoadMatch,
                         ),
                         capturedAtNanos = frame.capturedAtMonotonicNanos,
                     )
@@ -648,6 +651,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     collectionDetections = created.collectionDetections,
                     collectionFrame = (backendResult as? TrafficSignBackendResult.Recognition)?.collectionFrame,
                     roadPathDiagnostic = created.roadPathDiagnostic,
+                    collectionPhoneRoadMatch = active.accepted.collectionPhoneRoadMatch,
                 )
                 dispatch = takeDispatchLocked()
             }
@@ -737,11 +741,11 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                 .thenByDescending { it.samples.lastOrNull()?.candidate?.rawScore ?: 0.0 }.thenBy { it.trackId })?.firstOrNull()
         val selectedIndex = selectedTrack?.samples?.lastOrNull()?.candidate?.candidateId?.substringAfterLast(':')?.toIntOrNull()
         val selectedDetection = if (enforcing) selectedIndex?.let { rawDetections[it] } else
-            (backendResult as? TrafficSignBackendResult.Recognition)?.detection?.takeIf {
-                (exitWithheld.isEmpty() && accessWithheld.isEmpty()) || exitEligibleDetections.any { eligible ->
-                    eligible.candidate.rawClassId == it.candidate.rawClassId && eligible.candidate.boundingBox == it.candidate.boundingBox
-                }
-            }
+            if (exitWithheld.isNotEmpty() || accessWithheld.isNotEmpty()) {
+                // iPhone reselects from the surviving frame detections. Keeping
+                // only the backend winner would hide a valid lower-scoring sign.
+                fusionEngine.selectPrimaryDetection(exitEligibleDetections)
+            } else (backendResult as? TrafficSignBackendResult.Recognition)?.detection
         val physicalSamples = selectedTrack?.samples?.filter { it.candidate.recognitionEligible && batch.capturedAtMs - it.capturedAtMs <= fusionEngine.confirmationWindowMs }.orEmpty()
         val fusion = when (backendResult) {
             is TrafficSignBackendResult.Recognition -> if (sourceIsCurrent) {
@@ -892,6 +896,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         val runtimeActivationEligible: Boolean,
         val driveSessionId: String?,
         val applicabilityMapFix: TSRMapFix?,
+        val collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch?,
     )
 
     private data class FrameMetadata(

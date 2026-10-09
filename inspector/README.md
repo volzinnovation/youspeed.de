@@ -1,5 +1,124 @@
 # YouSpeed Web Inspector
 
+## Tempolimit-Positionen aus gespeicherten Berechnungen
+
+Der separate Tab **Tempolimit-Positionen** (`/inspector/#sign-positions`)
+zeigt die gespeicherten Positionshypothesen für erkannte Höchstgeschwindigkeiten
+und den Beginn numerischer Tempo-Zonen. Andere Zeichen, Mindestgeschwindigkeiten,
+Richtgeschwindigkeiten und Aufhebungen gehören nicht zu dieser Auswahl. Die
+ursprünglichen Fallnummern bleiben erhalten. Angezeigte Klassen sind Vorhersagen,
+keine bestätigten Klassifikationen oder physisch zusammengeführten Zeichen.
+
+Die Karte legt Position, Aufnahmeorte, Sichtlinien, alternative Kameraannahmen,
+Unsicherheitsfläche und vorhandene Ausfahrtgeometrie über OpenStreetMap-Kacheln.
+Die Auswahl priorisiert ausfahrtsnahe Fälle, wenn solche im Tempolimit-Bestand
+vorliegen. Ungeprüfte Kartenabdeckung bleibt unbekannt. Nähe zu einer Ausfahrt
+oder zur nächsten Straße belegt nicht, für welche Fahrspur das Zeichen gilt.
+Die heutigen Hintergrundkacheln sind vom älteren Geometriestand der Berechnung
+zu unterscheiden; die Karte berechnet keine neue Position oder Straßenzuordnung.
+
+Die Ergebnisse kommen zunächst aus einer **separaten privaten JSON-Datei**, nicht
+aus Git oder einer öffentlichen statischen URL:
+
+```sh
+python3 inspector/server.py --sign-positions-file /private/sign-position-results.json
+```
+
+Alternativ setzt `YOUSPEED_SIGN_POSITIONS_FILE` denselben serverseitigen Pfad.
+Der Wrapper hat `schema_version: 1`, `source_policy: "live-crops-only-v1"`,
+`display_data` und `case_bindings`. Jede Fallbindung enthält alle unveränderten
+Quellbindungen, auch die für die nachträgliche Positionsinterpolation verwendeten
+Aufnahmen. `display_data` enthält die gepackten Straßen und Fälle sowie die
+explizite numerische `classification` (`family`, `value`, `unit`).
+Der Server prüft bei jedem Abruf Berechtigungen, Löschung, Ablauf, Quell-Hashes
+und Prüfungsrevisionen in einer rein lesenden Datenbanktransaktion. Geänderte
+Fälle und ihre nicht mehr benötigte Geometrie werden zurückgehalten; unvollständige
+Kontrollen oder eine unerreichbare Datenbank geben einen Fehler statt alter Daten
+zurück. Quellbindungen werden nicht an den Browser übertragen. Antworten sind
+`no-store`; der Tab speichert keine Positionsdaten im Browser-Speicher.
+
+Nur der aktive Tab lädt Kacheln des sichtbaren Ausschnitts von
+`https://tile.openstreetmap.org/{z}/{x}/{y}.png`. Der Browser übernimmt deren
+Cache-Regeln; es gibt keinen Vorabruf oder Offline-Download. Der Kacheldienst
+erhält den sichtbaren Kartenausschnitt, die IP-Adresse und ausschließlich den
+Origin als Referrer. Crop-IDs, Berechnungsdatei und Metadaten werden nicht dorthin
+übertragen. Attribution und Verwendung folgen der
+[OpenStreetMap-Kachelrichtlinie](https://operations.osmfoundation.org/policies/tiles/).
+
+### Bestehenden privaten Inspector aktualisieren
+
+`scripts/inspector/package.py` packt weiterhin nur Code, Anzeigeassets und
+synthetische Fixtures. Die private Ergebnisdatei separat mit restriktiven
+Dateirechten übertragen. Für den bereits vorhandenen Inspector verwendet der
+Administrator den Updater, nicht den Erstinstaller:
+
+```sh
+sudo python3 scripts/inspector/update-volz-db.py \
+  --sign-positions-file /private/sign-position-results.json --check-only
+sudo python3 scripts/inspector/update-volz-db.py \
+  --sign-positions-file /private/sign-position-results.json
+```
+
+Der Updater prüft das Paket und erhält das vorhandene Image, die privaten
+Netze, Loopback-Ports, Report-Zugangsdaten und Medienmounts. Er ergänzt einen
+separaten, nur lesbaren Mount der Ergebnisdatei. Datenbankmigrationen, Grants,
+Backend-Neustarts und Image-Downloads sind nicht Teil dieses Updates. Bei einem
+fehlgeschlagenen Bereitschaftstest wird der alte Inspector wieder gestartet;
+sein Container bleibt zur Rückkehr zum vorigen Stand erhalten. Der bereits
+eingerichtete SSH-Tunnel auf `localhost:18080` kann weiter verwendet werden.
+
+## Crop-Prüfung und Ausfahrtskontext (#27 / #28)
+
+Die Analyse verwendet standardmäßig **Live-Aufnahmen**. Archiv- und Dashcam-
+Replay-Crops sind ausgeschlossen, auch wenn sie eine Position besitzen. Die
+versionierte Backend-Quellenprüfung erkennt Replay-/Simulationsmerkmale und
+führt unklare Herkunft separat. **Altbestand** bleibt nur lesbar; daraus sind
+keine Prüfungen oder Analyse-Exporte möglich. Originalbilder, ursprüngliche
+Klassifikation und Scores werden durch eine Prüfung nicht verändert.
+
+Im gewählten Live-Crop: **Falsche Klasse**, korrekte Klasse im durchsuchbaren
+Länderkatalog auswählen, **Prüfung speichern**. Alternativen sind **Richtig**,
+**Kein Zeichen** und **Unsicher**. Eine unbekannte Ersatzklasse bleibt offen.
+Die Anzeige trennt Original und Prüfung, zeigt Revisionen und bietet Rücknahme
+als neue Revision. Änderungen werden nicht auf andere Crops übertragen. Der
+Export enthält ausdrücklich gewählte, verwendbare Prüfungen der aktuellen Seite
+mit Quellen- und Revisionsbindung; er ersetzt keine geprüfte Aufteilung nach
+Fahrt, physischem Zeichen und Ort.
+
+Für Prüfungen einen berechtigten **Prüfschlüssel** eingeben. Er bleibt nur im
+Arbeitsspeicher dieses Browser-Tabs und wird weder in localStorage noch in
+Zugangsdaten der Galerie gespeichert. Der Server leitet ihn ausschließlich an
+den konfigurierten privaten Backend-Prüfdienst weiter. Report-Datenbankrechte
+bleiben nur lesend. Speichern/Export prüfen erneut Bildidentität, Herkunft,
+Berechtigungen, Löschung, Ablauf und erwartete Revision. Eine konkurrierende
+Änderung verlangt erneutes Laden; fehlende Speicherrückmeldung darf mit derselben
+Anfrage-ID wiederholt werden.
+
+Die separaten Filter **Prüfstatus**, **Original/geprüfte Klasse** und
+**Ausfahrtskontext** werden vor der Seiteneinteilung angewendet. Ausfahrtsnähe
+ist ein automatischer Suchhinweis, keine Aussage darüber, für welche Straße das
+Zeichen gilt. Fehlende Position, ungenauer/alter Fix, Kartenlücken und noch nicht
+berechnete Ergebnisse bleiben unterscheidbar. Originale OSM-Daten, Kartenstand,
+Methode und Suchradius sind Teil der Ergebnisprovenienz; die Online-Karte wird
+nicht pro Crop abgefragt.
+
+Voraussetzungen: Backend-Migrationen **005 und 006**, dazugehörige explizite
+Report-/Reviewer-/Worker-Rechte und der getrennte Review-Dienst. Bei fehlenden
+Migrationen bleibt die alte Galerie über **Altbestand** lesbar. Für lokale
+Entwicklung oder einen bestehenden SSH-Tunnel:
+
+```sh
+python3 inspector/server.py --review-service-url http://127.0.0.1:8023
+```
+
+Der Produktionsinstaller akzeptiert optional `--review-service-url`; innerhalb
+des bestehenden privaten Management-Netzes kann der konfigurierte Dienst
+`http://youspeed-review:8023` verwendet werden, sonst HTTPS oder ein
+Loopback-Tunnel. Kein Ziel wird aus Browserdaten übernommen; Weiterleitungen
+werden verweigert. Der Prüf-Token wird dem Installer nicht übergeben. Änderungen
+am Backend müssen als gemeinsamer Runtime-Stand gemäß dessen Deployment-Regeln
+vorbereitet werden. Diese Dokumentation startet weder Migration noch Deployment.
+
 ## Gespeicherte Backend-Crops (volz-db / VPN)
 
 **Backend-Crops** (`/inspector/#crops`) zeigt die gespeicherten PNG-/JPEG-Bytes,
@@ -22,6 +141,32 @@ Die Koordinaten unter **Fahrzeugposition** sind ein Link: ein Klick öffnet den
 Map Matcher mit Positionsmarker; „In neuem Tab öffnen“ zeigt dieselbe Position
 in einer separaten Inspector-Karte. Fehlende oder ungültige Koordinaten bleiben
 ohne Link.
+
+Neue Crops können zusätzlich `phone_road_match` enthalten: die auf dem Telefon
+mit dem Frame festgehaltene OSM-Way-ID, Bundle-Version und -SHA-256, ursprüngliche
+Match-Fixzeit, signierter Frame/Fix-Abstand, Richtung und Stabilitätsmarker.
+**OSM-Way vom Telefon** filtert exakt nach dieser ID, vor der Seitenauswahl. Die
+API akzeptiert `phone_way_id` als dezimale Zeichenkette; IDs werden nicht über
+JavaScript-Zahlen gerundet. **Im geladenen Karten-Bundle ansehen** öffnet direkt
+den Way samt vorhandenen Korridor-/Portalverbindungen und zeigt, wenn vorhanden,
+Crop-Position und GPS-Kurs. Das ist ausdrücklich das aktuell geladene Inspector-
+Bundle; Version und Hash des damaligen Telefon-Bundles bleiben separat sichtbar.
+Der externe OSM-Link zeigt die heutige OSM-Version.
+
+**Crops dieser Beobachtung anzeigen** lädt die Geschwister-Crops derselben
+Installation, Sammlungsepoche und Beobachtung; Klasse-/Zeit-/Way-Filter werden
+dafür aufgehoben. Die API bindet `observation_id` zusammen mit `installation` und
+`collection_epoch`. Damit lassen sich zeitlich aufeinanderfolgende Ausschnitte,
+Positionen und Richtung gemeinsam prüfen. Zwei qualifizierende Detektorframes
+sind keine Garantie für zwei erfolgreich gespeicherte Crops. Eine Beobachtung
+beweist auch nicht, dass das Zeichen tatsächlich eingeblendet wurde; diese
+Präsentationsverknüpfung wird bisher nicht dauerhaft übertragen.
+
+Ältere Crops ohne Match-Feld und neue Crops mit explizit unbekanntem Match (`null`)
+werden unterschiedlich angezeigt. Es gibt keinen Fallback auf die spätere
+Telefonposition, die Beobachtung oder einen neu berechneten OSM-Match. Dieses
+Metadatenfeld ändert weder Zeichenentscheidungen noch den nachträglichen
+Ausfahrtkontext. Den erweiterten Backend-Vertrag vor den neuen Clients aktivieren.
 
 Dieser Modus benötigt den mitgelieferten Python-Server statt `http.server`:
 
@@ -75,13 +220,13 @@ PostgreSQL-Endpunkt per `--db-host` wählen oder den Inspector mit dem bestehend
 Datenbanknetz und einem nur lesbaren Medienmount betreiben. Kein DB-Port muss
 öffentlich geöffnet werden.
 
-Die bisherige Report-Rolle darf `media` und die Lifecycle-Kontrolltabellen noch
-nicht lesen. Ein Administrator muss nach Prüfung einmal
-[`report-crops-grants.sql`](report-crops-grants.sql) in **youspeed** anwenden.
-Das ergänzt ausschließlich SELECT auf `media`, `tombstones`, `authorizations`;
-die vorhandenen SELECT-Rechte auf `events` werden weiterhin benötigt.
-Das Backend-Grants-Skript entzieht Rechte vor seiner Neuvergabe; nach dessen
-erneuter Anwendung diesen Inspector-Zusatz ebenfalls erneut anwenden.
+Für ältere Backend-Versionen ergänzt
+[`report-crops-grants.sql`](report-crops-grants.sql) ausschließlich die
+SELECT-Rechte für die alte Galerie. Die Live-Analyse benötigt die Backend-
+Migrationen 005/006 und das zugehörige `02-grants.sql`; dort sind die benötigten
+Report-Leserechte und die reine Quellenprüffunktion ausdrücklich enthalten.
+Aktuelle vollständige Freigabe-/Löschkontrollen sind für Live-Listen erforderlich;
+bei einem alten Kontrollstand wird ein Fehler statt einer leeren Population gezeigt.
 Der Inspector führt selbst keine Grants/Migrationen aus. Die SQL-Verbindungen
 und Transaktionen sind read-only. Listen- und Bildabfragen schließen abgelaufene,
 gelöschte und ausdrücklich widerrufene Crops aus. Bilder werden bei jedem Abruf
