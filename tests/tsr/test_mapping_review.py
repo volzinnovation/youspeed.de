@@ -6,7 +6,7 @@ from pathlib import Path
 import jsonschema
 import pytest
 
-from scripts.tsr.mapping_review import COUNTRIES, ROOT, run, semantic
+from scripts.tsr.mapping_review import COUNTRIES, ROOT, run, semantic, reconcile_catalog
 
 
 @pytest.mark.parametrize('country,count', [('DE',134), ('BE',143), ('FR',256), ('NL',160), ('CH',127)])
@@ -74,6 +74,24 @@ def test_unrelated_endings_and_footpaths_cannot_reset_speed(country):
 
 def test_no_drift_in_review_ledger_and_generators():
     assert run(write=False) == []
+
+
+@pytest.mark.parametrize('country', ['BE', 'FR', 'NL'])
+def test_reconciliation_keeps_reviewed_localized_labels_and_speech(country):
+    catalog = json.loads((ROOT / f'shared/tsr/prolix-{country.lower()}-class-catalog-v1.json').read_text())
+    reconciled = {s['class_id']: s for s in reconcile_catalog(catalog)['signs']}
+    for original in catalog['signs']:
+        assert reconciled[original['class_id']]['label'] == original['label']
+        assert reconciled[original['class_id']].get('speech') == original.get('speech')
+
+
+def test_french_unreviewed_entry_still_gets_its_corrected_meaning():
+    catalog = json.loads((ROOT / 'shared/tsr/prolix-fr-class-catalog-v1.json').read_text())
+    sign = next(s for s in catalog['signs'] if s['class_id'] == 'C107')
+    sign['notes'] = 'Unreviewed upstream description'
+    sign['label'] = {'en': 'End of motorway'}
+    corrected = next(s for s in reconcile_catalog(catalog)['signs'] if s['class_id'] == 'C107')
+    assert corrected['label']['en'] == 'C107 — motorroad entry'
 
 
 def test_actual_model_gaps_are_not_filled_with_fictional_labels():
