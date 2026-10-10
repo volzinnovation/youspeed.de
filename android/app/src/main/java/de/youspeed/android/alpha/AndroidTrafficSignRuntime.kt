@@ -861,6 +861,7 @@ internal class AndroidTrafficSignCameraRuntime(
     private val calibrationRotation = AndroidTrafficSignBitmapRotation()
     private val analysisCadence = CameraAnalysisCadenceWindow()
     private var imageCapture: ImageCapture? = null
+    private var manualPhotoOutputUnavailable = false
     private var videoCapture: VideoCapture<Recorder>? = null
     private var preview: Preview? = null
     private var previewSurfaceProvider: Preview.SurfaceProvider? = null
@@ -1183,8 +1184,10 @@ internal class AndroidTrafficSignCameraRuntime(
 
     @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
     private fun bindCamera(startGeneration: Long) {
-        val graphPlan = DriveCameraGraphPlan.resolve(controller.isDriveRecorderSessionActive(),
-            controller.isPanoramaxCaptureEnabled(), boundGraphPlan)
+        var graphPlan = DriveCameraGraphPlan.resolve(controller.isDriveRecorderSessionActive(),
+            controller.isPhotoOutputRequested() || controller.isPanoramaxCaptureEnabled(), boundGraphPlan)
+        if (manualPhotoOutputUnavailable && !controller.isPanoramaxCaptureEnabled())
+            graphPlan = graphPlan.copy(photoOutput = false)
         if (cameraBindingInProgress || (cameraBound && graphPlan == boundGraphPlan)) return
         cameraBindingInProgress = true
         val providerFuture = ProcessCameraProvider.getInstance(context)
@@ -1220,7 +1223,7 @@ internal class AndroidTrafficSignCameraRuntime(
                 }
                 // Keep still/movie outputs optional, and retain them once bound
                 // so consumer toggles do not interrupt independent analysis.
-                val capture = if (graphPlan.photoOutput) imageCapture ?: run {
+                var capture = if (graphPlan.photoOutput) imageCapture ?: run {
                     val builder = ImageCapture.Builder()
                     configureInfinityFocus(builder)
                     builder
@@ -1255,7 +1258,21 @@ internal class AndroidTrafficSignCameraRuntime(
                 // binding order so constrained devices reserve recorder outputs
                 // before the optional recognition stream.
                 val useCases = graphPlan.bindOrder<androidx.camera.core.UseCase>(currentPreview, analysis, capture, video)
-                boundCamera = provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
+                boundCamera = try {
+                    provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
+                } catch (failure: Exception) {
+                    // A dormant manual shutter is optional. A constrained camera must
+                    // retain its movie/recognition streams if the extra still output
+                    // is unsupported. Never change the graph in response to a tap.
+                    val fallbackPlan = graphPlan.withoutOptionalManualPhoto(controller.isPanoramaxCaptureEnabled())
+                        ?: throw failure
+                    provider.unbind(*useCases.toTypedArray())
+                    graphPlan = fallbackPlan
+                    capture = null
+                    manualPhotoOutputUnavailable = true
+                    val fallback = graphPlan.bindOrder<androidx.camera.core.UseCase>(currentPreview, analysis, null, video)
+                    provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *fallback.toTypedArray())
+                }
                 expectedAnalysisRotation = boundCamera?.cameraInfo?.getSensorRotationDegrees(rotation)
                 pathIntrinsics = runCatching {
                     val info = Camera2CameraInfo.from(boundCamera!!.cameraInfo)
@@ -1271,11 +1288,13 @@ internal class AndroidTrafficSignCameraRuntime(
                 videoCapture = video
                 preview = currentPreview
                 boundGraphPlan = graphPlan
+                controller.onPanoramaxPhotoOutputReadyChanged(capture != null)
                 controller.onTrafficSignCameraAnalysisDiagnostic("graph_bound", mapOf(
                     "preview" to true, "analysis" to true, "photoOutput" to graphPlan.photoOutput,
                     "movieOutput" to graphPlan.movieOutput, "expectedRotation" to expectedAnalysisRotation))
                 refreshAnalysisConsumer()
             }.onFailure { failure ->
+                controller.onPanoramaxPhotoOutputReadyChanged(false)
                 cameraBindingInProgress = false
                 onStateChanged(
                     TrafficSignCameraRuntimeState.UNAVAILABLE,
@@ -1408,7 +1427,7 @@ internal class AndroidTrafficSignCameraRuntime(
     fun capturePanoramaxPhoto(requestId: String) {
         val captureGeneration = generation.get()
         fun fail(detail: String) = controller.onPanoramaxPhotoCaptureFailed(detail, requestId)
-        if (closed.get()) return fail("Camera session has stopped")
+        if (closed.get() || !cameraBound) return fail("Camera session has stopped")
         val capture = imageCapture ?: return fail("Still camera is unavailable")
         val sample = controller.currentPanoramaxLocationSample() ?: return fail("No current GPS fix for photo")
         val file = runCatching { File.createTempFile("panoramax-", ".jpg", context.cacheDir) }
@@ -1468,6 +1487,7 @@ internal class AndroidTrafficSignCameraRuntime(
         cameraProvider?.unbind(*listOfNotNull(imageAnalysis, imageCapture, videoCapture, preview).toTypedArray())
         imageAnalysis = null
         imageCapture = null
+        controller.onPanoramaxPhotoOutputReadyChanged(false)
         videoCapture = null
         preview = null
         cameraProvider = null

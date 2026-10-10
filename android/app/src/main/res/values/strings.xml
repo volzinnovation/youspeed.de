@@ -140,4 +140,8 @@
     <string name="calibration_up">Move up</string>
     <string name="calibration_down">Move down</string>
     <string name="calibration_defaults">Reset draft</string>
+    <string name="ui_driving_photo">Take photo</string>
+    <string name="ui_driving_photo_unavailable">Photo unavailable</string>
+    <string name="ui_driving_photo_local_only">Saves one photo locally for review. Nothing is uploaded.</string>
+    <string name="ui_driving_photo_failed">Photo could not be saved. Try again when the camera is ready.</string>
 </resources>

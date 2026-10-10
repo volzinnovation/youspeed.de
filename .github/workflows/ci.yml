@@ -76,7 +76,8 @@ jobs:
           disable-animations: true
           script: >-
             ./gradlew :app:connectedDebugAndroidTest
-            -Pandroid.testInstrumentationRunnerArguments.class=de.youspeed.android.alpha.CandidateAdmissionParityInstrumentedTest,de.youspeed.android.alpha.MatcherSequenceParityInstrumentedTest,de.youspeed.android.alpha.MatcherParityInstrumentedTest,de.youspeed.android.alpha.LookupResourcesInstrumentedTest,de.youspeed.android.alpha.NativeRtreeFallbackInstrumentedTest,de.youspeed.android.alpha.V3SpeedLimitLookupInstrumentedTest,de.youspeed.android.alpha.PanoramaxMetadataInstrumentedTest
+            -PyouspeedIsolatedTests=true
+            -Pandroid.testInstrumentationRunnerArguments.class=de.youspeed.android.alpha.CandidateAdmissionParityInstrumentedTest,de.youspeed.android.alpha.MatcherSequenceParityInstrumentedTest,de.youspeed.android.alpha.MatcherParityInstrumentedTest,de.youspeed.android.alpha.LookupResourcesInstrumentedTest,de.youspeed.android.alpha.NativeRtreeFallbackInstrumentedTest,de.youspeed.android.alpha.V3SpeedLimitLookupInstrumentedTest,de.youspeed.android.alpha.PanoramaxMetadataInstrumentedTest,de.youspeed.android.alpha.DrivingPhotoCaptureInstrumentedTest,de.youspeed.android.alpha.ManualOrientationInstrumentedTest,de.youspeed.android.alpha.DriveRecorderInstrumentedTest
 
       - name: Upload Android native test reports
         if: always()
@@ -100,6 +101,30 @@ jobs:
 
       - name: Verify packaged iPhone country rules
         run: python3 scripts/check_mobile_rules.py --iphone-app iphone/.derived/SpeedConsumerBuild/Build/Products/Debug-iphonesimulator/SpeedConsumer.app
+
+      - name: Run iPhone driving-photo regression tests
+        run: |
+          ./scripts/iphone/run_consumer_device_tests.sh \
+            --skip-project-gen \
+            --destination 'platform=iOS Simulator,name=iPhone 16' \
+            --only-testing SpeedConsumerTests/SpeedConsumerTests/testDrivingPhotoThresholdAndReadiness \
+            --only-testing SpeedConsumerTests/SpeedConsumerTests/testDrivingPhotoManualPipelineIgnoresAutomaticFiltersAndRejectsRepeatedTaps \
+            --only-testing SpeedConsumerTests/SpeedConsumerTests/testDrivingPhotoLateCompletionCannotEnterNewSession \
+            --only-testing SpeedConsumerTests/SpeedConsumerTests/testDrivingPhotoDecelerationFinishesPhotoBeforeReview \
+            --only-testing SpeedConsumerTests/SpeedConsumerTests/testDrivingPhotoSharesBusyGateWithoutStoppingDashcam \
+            --only-testing SpeedConsumerTests/SpeedConsumerTests/testDrivingPhotoFailedExposureStillBecomesReviewableAfterDeceleration \
+            --only-testing SpeedConsumerUITests/ScreenOrientationUITests/testDrivingPhotoButtonLayoutAndManualCapture \
+            --only-testing SpeedConsumerUITests/ScreenOrientationUITests/testDrivingPhotoThresholdAndDisabledCamera \
+            --result-bundle /tmp/DrivingPhotoTests.xcresult
+
+      - name: Upload iPhone driving-photo test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iphone-driving-photo-tests
+          path: /tmp/DrivingPhotoTests.xcresult
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Run iOS simulator tests
         run: |

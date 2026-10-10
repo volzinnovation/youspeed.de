@@ -22063,3 +22063,182 @@ extension SpeedConsumerTests {
     }
 
 }
+
+extension SpeedConsumerTests {
+    func testDrivingPhotoThresholdAndReadiness() {
+        for speed in [-1.0, 0, 0.999, 1, Double.nan, Double.infinity] {
+            XCTAssertFalse(DrivingPhotoPolicy.showsButton(speedKmh: speed))
+        }
+        for speed in [1.001, 1.79, 3.99, 4, 80] {
+            XCTAssertTrue(DrivingPhotoPolicy.showsButton(speedKmh: speed))
+        }
+        XCTAssertEqual(DrivingControlAvailability.controlsSpeedThresholdKmh, 4)
+        let now = Date(timeIntervalSince1970: 10_000)
+        func location(latitude: Double = 49, longitude: Double = 8,
+                      accuracy: Double = 5, age: Double = 0) -> Bool {
+            DrivingPhotoPolicy.locationIsUsable(latitude: latitude, longitude: longitude,
+                accuracy: accuracy, timestamp: now.addingTimeInterval(-age), now: now)
+        }
+        XCTAssertTrue(location(age: 10))
+        XCTAssertTrue(location(age: -60)) // Preserve the existing timestamp-skew allowance.
+        for valid in [location(age: 10.001), location(age: -60.001), location(latitude: 91),
+                      location(longitude: .nan), location(accuracy: -1), location(accuracy: 50.001),
+                      location(accuracy: .infinity)] { XCTAssertFalse(valid) }
+        func ready(recording: Bool = true, authorized: Bool = true, output: Bool = true,
+                   storage: Bool = true, inFlight: Bool = false, location: Bool = true,
+                   last: Date? = nil) -> Bool {
+            DrivingPhotoPolicy.canCapture(recording: recording, cameraAuthorized: authorized,
+                photoOutputAvailable: output, storageReady: storage, photoInFlight: inFlight,
+                locationUsable: location, lastRequestAt: last, now: now)
+        }
+        XCTAssertTrue(ready())
+        for result in [ready(recording: false), ready(authorized: false), ready(output: false),
+                       ready(storage: false), ready(inFlight: true), ready(location: false),
+                       ready(last: now.addingTimeInterval(-0.499))] { XCTAssertFalse(result) }
+        XCTAssertTrue(ready(last: now.addingTimeInterval(-0.5)))
+    }
+
+    @MainActor
+    func testDrivingPhotoManualPipelineIgnoresAutomaticFiltersAndRejectsRepeatedTaps() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        var requests: [(Int64, CGFloat)] = []
+        try coordinator.testPrepareManualPhotoSession { requests.append(($0, $1)) }
+        coordinator.updatePanoramaxConfiguration(PanoramaxCadenceConfiguration(
+            distanceMeters: 90, fallbackInterval: 240, recognizedSignsOnly: true), storageLimitBytes: 100_000_000)
+        let location = CLLocation(coordinate: .init(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 1.01 / 3.6, timestamp: Date())
+        XCTAssertFalse(coordinator.isPanoramaxModuleActive, "Automatic photo preference stays off")
+        XCTAssertFalse(coordinator.needsDashcamFinalization)
+        coordinator.ingest(location: location, speedMetersPerSecond: 10)
+        XCTAssertTrue(requests.isEmpty)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).jpegData(withCompressionQuality: 0.8) { _ in }
+        for orientation in ScreenOrientation.allCases {
+            coordinator.setScreenOrientation(orientation)
+            let before = requests.count
+            XCTAssertTrue(coordinator.captureManualPhoto(location: location, speedKmh: 1.01))
+            XCTAssertFalse(coordinator.captureManualPhoto(location: location, speedKmh: 30))
+            coordinator.ingest(location: location, speedMetersPerSecond: 10)
+            XCTAssertEqual(requests.count, before + 1)
+            XCTAssertEqual(requests.last?.1, orientation.captureRotationAngle)
+            coordinator.testCompletePhoto(data: image, uniqueID: try XCTUnwrap(requests.last?.0))
+            for _ in 0..<100 where coordinator.isManualPhotoInFlight { try await Task.sleep(for: .milliseconds(20)) }
+            XCTAssertFalse(coordinator.isManualPhotoInFlight)
+            XCTAssertEqual(coordinator.capturedImageCount, before + 1)
+            try await Task.sleep(for: .milliseconds(510))
+        }
+        let batches = try store.listBatches()
+        let items = batches.flatMap(\.items)
+        XCTAssertEqual(items.count, 3)
+        XCTAssertTrue(items.allSatisfy { $0.metadata.captureReason == "manual" && $0.state == .captured && $0.remoteID == nil })
+        XCTAssertTrue(items.allSatisfy { $0.metadata.signEvidence == nil })
+        XCTAssertEqual(coordinator.state, .recording)
+        XCTAssertFalse(coordinator.isPanoramaxModuleActive)
+        XCTAssertFalse(coordinator.needsDashcamFinalization)
+    }
+
+    @MainActor
+    func testDrivingPhotoLateCompletionCannotEnterNewSession() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        var requests: [Int64] = []
+        try coordinator.testPrepareManualPhotoSession { id, _ in requests.append(id) }
+        let location = CLLocation(coordinate: .init(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 10, timestamp: Date())
+        XCTAssertTrue(coordinator.captureManualPhoto(location: location, speedKmh: 36))
+        let oldID = try XCTUnwrap(requests.last)
+        coordinator.stop()
+        XCTAssertFalse(coordinator.captureManualPhoto(location: location, speedKmh: 36))
+        for _ in 0..<100 where coordinator.state == .stopping { try await Task.sleep(for: .milliseconds(20)) }
+        try coordinator.testPrepareManualPhotoSession { id, _ in requests.append(id) }
+        XCTAssertTrue(coordinator.captureManualPhoto(location: location, speedKmh: 36))
+        coordinator.testCompletePhoto(data: nil, uniqueID: oldID)
+        XCTAssertTrue(coordinator.isManualPhotoInFlight, "Stale callback cannot release the new request")
+        let newID = try XCTUnwrap(requests.last)
+        coordinator.testCompletePhoto(data: nil, uniqueID: newID)
+        XCTAssertFalse(coordinator.isManualPhotoInFlight)
+        XCTAssertEqual(coordinator.capturedImageCount, 0)
+        XCTAssertTrue(try store.listBatches().flatMap(\.items).isEmpty)
+    }
+
+    @MainActor
+    func testDrivingPhotoDecelerationFinishesPhotoBeforeReview() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        var requestID: Int64?
+        try coordinator.testPrepareManualPhotoSession { id, _ in requestID = id }
+        let location = CLLocation(coordinate: .init(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 10, timestamp: Date())
+        XCTAssertTrue(coordinator.captureManualPhoto(location: location, speedKmh: 36))
+        coordinator.setManualPhotoMoving(false)
+        XCTAssertEqual(try store.listBatches().first?.state, .capturing)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).jpegData(withCompressionQuality: 0.8) { _ in }
+        coordinator.testCompletePhoto(data: image, uniqueID: try XCTUnwrap(requestID))
+        for _ in 0..<100 where (try store.listBatches().first?.state) != .awaitingReview {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let batch = try XCTUnwrap(store.listBatches().first)
+        XCTAssertEqual(batch.state, .awaitingReview)
+        XCTAssertEqual(batch.items.count, 1)
+        XCTAssertFalse(coordinator.canCaptureManualPhoto(location: location))
+    }
+}
+
+extension SpeedConsumerTests {
+    @MainActor
+    func testDrivingPhotoSharesBusyGateWithoutStoppingDashcam() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        var requests: [Int64] = []
+        try coordinator.testPrepareManualPhotoSession(automaticPhotos: true, dashcamActive: true) { id, _ in requests.append(id) }
+        let location = CLLocation(coordinate: .init(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 10, timestamp: Date())
+        XCTAssertTrue(coordinator.captureManualPhoto(location: location, speedKmh: 36))
+        coordinator.ingest(location: location, speedMetersPerSecond: 10)
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertEqual(coordinator.state, .recording)
+        XCTAssertTrue(coordinator.isDashcamModuleActive)
+        XCTAssertTrue(coordinator.needsDashcamFinalization)
+        coordinator.testCompletePhoto(data: nil, uniqueID: try XCTUnwrap(requests.last))
+        XCTAssertTrue(coordinator.manualPhotoCaptureFailed)
+        XCTAssertFalse(coordinator.isManualPhotoInFlight)
+        XCTAssertTrue(coordinator.isDashcamModuleActive)
+        let unavailable = DriveCaptureCoordinator(queueStore: store)
+        try unavailable.testPrepareManualPhotoSession(outputAvailable: false) { _, _ in XCTFail("No output must never request an image") }
+        XCTAssertFalse(unavailable.captureManualPhoto(location: location, speedKmh: 36))
+        XCTAssertFalse(unavailable.canCaptureManualPhoto(location: location))
+    }
+}
+
+extension SpeedConsumerTests {
+    @MainActor
+    func testDrivingPhotoFailedExposureStillBecomesReviewableAfterDeceleration() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        var requestID: Int64?
+        try coordinator.testPrepareManualPhotoSession(dashcamActive: true) { id, _ in requestID = id }
+        let location = CLLocation(coordinate: .init(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 10, timestamp: Date())
+        XCTAssertTrue(coordinator.captureManualPhoto(location: location, speedKmh: 36))
+        coordinator.setManualPhotoMoving(false)
+        coordinator.testCompletePhoto(data: nil, uniqueID: try XCTUnwrap(requestID))
+        for _ in 0..<100 where (try store.listBatches().first?.state) != .awaitingReview {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertEqual(try store.listBatches().first?.state, .awaitingReview)
+        XCTAssertTrue(coordinator.manualPhotoCaptureFailed)
+        XCTAssertFalse(coordinator.isManualPhotoInFlight)
+        XCTAssertTrue(coordinator.isDashcamModuleActive)
+        XCTAssertEqual(coordinator.state, .recording)
+    }
+}

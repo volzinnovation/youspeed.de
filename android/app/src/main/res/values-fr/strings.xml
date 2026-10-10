@@ -140,4 +140,8 @@
     <string name="calibration_up">Déplacer vers le haut</string>
     <string name="calibration_down">Déplacer vers le bas</string>
     <string name="calibration_defaults">Réinitialiser le brouillon</string>
+    <string name="ui_driving_photo">Prendre une photo</string>
+    <string name="ui_driving_photo_unavailable">Photo indisponible</string>
+    <string name="ui_driving_photo_local_only">Enregistre une photo localement pour vérification. Aucun envoi.</string>
+    <string name="ui_driving_photo_failed">La photo n’a pas pu être enregistrée. Réessayez lorsque la caméra est prête.</string>
 </resources>

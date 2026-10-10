@@ -24,3 +24,32 @@ struct DrivingControlAvailability {
         return Self(controlsAllowed: true, stationaryObservedAt: stopped ? observedAt : nil)
     }
 }
+
+/// Independent of the four-km/h lock for navigation/settings. Manual capture
+/// never changes that lock or opens a permission/settings sheet.
+enum DrivingPhotoPolicy {
+    static let speedThresholdKmh = 1.0
+    static let minimumTapInterval: TimeInterval = 0.5
+
+    static func showsButton(speedKmh: Double) -> Bool {
+        speedKmh.isFinite && speedKmh > speedThresholdKmh
+    }
+
+    static func locationIsUsable(latitude: Double, longitude: Double, accuracy: Double,
+                                 timestamp: Date, now: Date,
+                                 maxAge: TimeInterval = 10, maxAccuracy: Double = 50) -> Bool {
+        let age = now.timeIntervalSince(timestamp)
+        return latitude.isFinite && (-90...90).contains(latitude)
+            && longitude.isFinite && (-180...180).contains(longitude)
+            && accuracy.isFinite && accuracy >= 0 && accuracy <= maxAccuracy
+            && age >= -60 && age <= maxAge
+    }
+
+    static func canCapture(recording: Bool, cameraAuthorized: Bool, photoOutputAvailable: Bool,
+                           storageReady: Bool, photoInFlight: Bool, locationUsable: Bool,
+                           lastRequestAt: Date?, now: Date) -> Bool {
+        recording && cameraAuthorized && photoOutputAvailable && storageReady
+            && !photoInFlight && locationUsable
+            && (lastRequestAt.map { now.timeIntervalSince($0) >= minimumTapInterval } ?? true)
+    }
+}

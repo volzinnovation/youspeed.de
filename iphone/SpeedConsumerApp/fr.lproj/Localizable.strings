@@ -493,3 +493,10 @@
 "traffic.sign.documentation.title" = "Panneaux de signalisation";
 "data_manager.queue_count" = "%d téléchargements en attente";
 "data_manager.queued_position" = "En attente : position %d";
+
+/* Driving manual photo shutter */
+"drive_photo.capture" = "Prendre une photo";
+"drive_photo.unavailable" = "Prise de photo indisponible";
+"drive_photo.local_hint" = "Enregistre une photo localement pour examen ultérieur. Aucun envoi.";
+"drive_photo.ready" = "Prise de photo manuelle prête";
+"drive_photo.retry" = "Échec de la photo. Touchez pour réessayer";

@@ -374,6 +374,14 @@ final class PanoramaxQueueStore: @unchecked Sendable {
         }
     }
 
+    /// Leave headroom for the JPEG, thumbnail and atomic sidecar writes. Quota
+    /// retention remains the same shared policy used by automatic capture.
+    func hasSpaceForManualPhoto(minimumFreeBytes: Int64 = 20_000_000) -> Bool {
+        guard let attributes = try? FileManager.default.attributesOfFileSystem(forPath: root.path),
+              let free = attributes[.systemFreeSize] as? NSNumber else { return false }
+        return free.int64Value >= minimumFreeBytes
+    }
+
     @discardableResult
     func addJPEG(batchID: String, jpeg: Data, thumbnail: Data, metadata: PanoramaxCaptureMetadata) throws -> PanoramaxItemRecord {
         guard Self.isJPEG(jpeg), !thumbnail.isEmpty else { throw QueueError.invalidImage }
