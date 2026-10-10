@@ -192,6 +192,7 @@
           <div class="track-video-stage">
             <video id="track-video" controls playsinline preload="metadata" muted tabindex="0" aria-label="Dashcam-Video"></video>
             <canvas id="track-path-overlay" aria-hidden="true" hidden></canvas>
+            <canvas id="lane-canvas" hidden tabindex="0" aria-label="Spurannotation: vier Kontrollpunkte für eine Bézier-Kurve klicken; Punkte ziehen; Pfeiltasten wechseln Frames"></canvas>
           </div>
           <details class="track-path-panel" open>
             <summary>Spur- und Fahrpfad-Diagnose</summary>
@@ -224,6 +225,50 @@
             <p id="track-video-source" class="hint compact"></p>
           </details>
         </div>
+        <details id="lane-panel" class="lane-panel" open>
+          <summary>Spurannotation · Trainingsdaten</summary>
+          <div class="track-video-toolbar">
+            <button id="lane-open" type="button">Video annotieren</button>
+            <button id="lane-exit" type="button" disabled>Zur Videowiedergabe</button>
+            <button id="lane-new" type="button">Neues Dataset</button>
+            <label>Dataset importieren <input id="lane-import" type="file" accept=".zip" /></label>
+            <button id="lane-export" type="button">Dataset exportieren (.zip)</button>
+          </div>
+          <p class="hint compact">Lokaler FFmpeg-Decoder · einzelne echte Frames, auch bei variabler Bildrate. Vier Klicks setzen eine kubische Bézier-Kurve; Kontrollpunkte ziehen. ← / →: ein Frame. Kopierte Kurven bleiben Entwürfe bis zur Bestätigung.</p>
+          <div id="lane-editor" hidden>
+            <div class="track-video-toolbar">
+              <label>Frame <input id="lane-frame" type="number" min="0" step="1" value="0" /></label>
+              <output id="lane-position"></output>
+              <label>Zoom <select id="lane-zoom"><option value="1">1×</option><option value="1.5">1,5×</option><option value="2">2×</option><option value="3">3×</option></select></label>
+            </div>
+            <div class="track-video-toolbar">
+              <button id="lane-add" type="button">Neue Kurve · 4 Punkte</button>
+              <label>Kurve <select id="lane-curves"><option value="">Keine Kurve</option></select></label>
+              <label>Markierung <select id="lane-marking"><option value="solid">Durchgezogen</option><option value="dashed">Gestrichelt</option></select></label>
+              <button id="lane-delete" type="button">Kurve löschen</button>
+              <button id="lane-undo" type="button">Rückgängig</button>
+              <button id="lane-redo" type="button">Wiederholen</button>
+            </div>
+            <div class="track-video-toolbar">
+              <label>Track verknüpfen <select id="lane-track"><option value="">Track auswählen</option></select></label>
+              <button id="lane-unlink" type="button">Neuer Track / Verbindung lösen</button>
+            </div>
+            <div class="track-video-toolbar">
+              <label>Vorlage <select id="lane-prior"><option value="">Vorheriger annotierter Frame</option></select></label>
+              <button id="lane-copy" type="button">Vorherige Annotation als Entwurf</button>
+              <button id="lane-clear" type="button">Frame explizit leeren</button>
+              <button id="lane-confirm" type="button">Frame geprüft bestätigen</button>
+            </div>
+            <div class="track-video-toolbar">
+              <label>Drive-Gruppe <input id="lane-group" type="text" maxlength="160" pattern="[a-zA-Z0-9_-]+" /></label>
+              <label>Split <select id="lane-split"><option value="train">Train</option><option value="validation">Validation</option><option value="test">Test</option></select></label>
+              <button id="lane-group-save" type="button">Gruppe / Split speichern</button>
+            </div>
+            <p class="hint compact">Clips derselben Fahrt derselben Drive-Gruppe zuordnen. Ein Track entspricht derselben physischen Markierung über Frames; Entfernen einer Kurve beendet ihre Sichtbarkeit. Gestrichelte Kurven beschreiben den Markierungspfad einschließlich Lücken, keine Pixelmaske.</p>
+          </div>
+          <label>Gespeicherte Frames <select id="lane-samples"><option value="">Frame auswählen</option></select></label>
+          <p id="lane-status" class="hint compact" role="status">Video wählen und „Video annotieren“ starten. Annotationen und PNGs werden lokal im Browser gesichert; ZIP exportieren als portable Sicherung.</p>
+        </details>
         <p id="track-video-status" class="hint compact" role="status" tabindex="-1">Lokales Video öffnen. Klick auf Zeichen oder GPS-Fix springt zur passenden Videozeit.</p>
       </section>
       </div>
@@ -516,6 +561,9 @@
     <script src="./track-video.js"></script>
     <script src="./track-path-core.js"></script>
     <script src="./track-path.js"></script>
+    <script src="./lane-annotations-core.js"></script>
+    <script src="./lane-dataset-zip.js"></script>
+    <script src="./lane-annotations.js"></script>
     <script src="./tsr-qa-core.js"></script>
     <script src="./tsr-qa.js"></script>
     <script src="./backend-crops.js"></script>

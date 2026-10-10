@@ -28,6 +28,7 @@
   }
   function seekTimestamp(time) {
     if (!file || !Number.isFinite(time)) return;
+    window.YouSpeedLaneAnnotations?.deactivate();
     pendingTime = time;
     if (video.readyState < 1) return;
     stopReverse(); video.pause();
@@ -51,6 +52,7 @@
     status("Manuelle Videoprüfung");
   }
   function clear(resetInput = true) {
+    window.YouSpeedLaneAnnotations?.closeVideo();
     ++version; stopReverse(); video.pause(); video.removeAttribute("src"); video.load();
     if (url) URL.revokeObjectURL(url);
     url = null; file = null; start = null; pendingTime = null;
@@ -102,6 +104,10 @@
   el("back").addEventListener("click", () => step(-5));
   el("forward").addEventListener("click", () => step(5));
   function frame(direction) {
+    if (window.YouSpeedLaneAnnotations?.isActive()) {
+      window.YouSpeedLaneAnnotations.step(direction);
+      return;
+    }
     const fps = Number(el("fps").value);
     if (!Number.isFinite(fps) || fps < 1 || fps > 240) { status("Gültige Bildrate (1–240) eingeben."); return; }
     step(direction / fps);
@@ -155,4 +161,9 @@
     pendingTime = null; update();
   });
   document.addEventListener("visibilitychange", () => { if (document.hidden) { stopReverse(); video.pause(); } });
+  window.YouSpeedTrackVideoController = {
+    getFile: () => file,
+    pause: () => { stopReverse(); video.pause(); },
+    showTime: seconds => { stopReverse(); video.pause(); video.currentTime = seconds; update(seconds); }
+  };
 })();

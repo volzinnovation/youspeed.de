@@ -1,0 +1,634 @@
+{
+  "schema": "youspeed-lane-dataset-v1",
+  "id": "synthetic-lane-example-v1",
+  "coordinateConvention": "normalized_pixel_centres_top_left",
+  "curveSemantics": "visible_lane_marking_path_including_dashed_gaps",
+  "sources": [
+    {
+      "id": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f",
+      "sha256": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f",
+      "name": "train.mp4",
+      "byteLength": 2168,
+      "width": 128,
+      "height": 72,
+      "timeBase": "1/12800",
+      "startPts": "0",
+      "sourceRotation": 0,
+      "transform": "ffmpeg_autorotate_full_frame",
+      "frames": [
+        {
+          "index": 0,
+          "pts": "0",
+          "timeSeconds": 0.0
+        },
+        {
+          "index": 1,
+          "pts": "512",
+          "timeSeconds": 0.04
+        },
+        {
+          "index": 2,
+          "pts": "1024",
+          "timeSeconds": 0.08
+        }
+      ],
+      "groupId": "synthetic-drive-train",
+      "split": "train",
+      "sequenceId": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f"
+    },
+    {
+      "id": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d",
+      "sha256": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d",
+      "name": "validation.mp4",
+      "byteLength": 2164,
+      "width": 128,
+      "height": 72,
+      "timeBase": "1/12800",
+      "startPts": "0",
+      "sourceRotation": 0,
+      "transform": "ffmpeg_autorotate_full_frame",
+      "frames": [
+        {
+          "index": 0,
+          "pts": "0",
+          "timeSeconds": 0.0
+        },
+        {
+          "index": 1,
+          "pts": "512",
+          "timeSeconds": 0.04
+        },
+        {
+          "index": 2,
+          "pts": "1024",
+          "timeSeconds": 0.08
+        }
+      ],
+      "groupId": "synthetic-drive-validation",
+      "split": "validation",
+      "sequenceId": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d"
+    },
+    {
+      "id": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4",
+      "sha256": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4",
+      "name": "test.mp4",
+      "byteLength": 2164,
+      "width": 128,
+      "height": 72,
+      "timeBase": "1/12800",
+      "startPts": "0",
+      "sourceRotation": 0,
+      "transform": "ffmpeg_autorotate_full_frame",
+      "frames": [
+        {
+          "index": 0,
+          "pts": "0",
+          "timeSeconds": 0.0
+        },
+        {
+          "index": 1,
+          "pts": "512",
+          "timeSeconds": 0.04
+        },
+        {
+          "index": 2,
+          "pts": "1024",
+          "timeSeconds": 0.08
+        }
+      ],
+      "groupId": "synthetic-drive-test",
+      "split": "test",
+      "sequenceId": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4"
+    }
+  ],
+  "samples": [
+    {
+      "id": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f-0",
+      "sourceId": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f",
+      "sequenceId": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f",
+      "frameIndex": 0,
+      "pts": "0",
+      "timeSeconds": 0.0,
+      "width": 128,
+      "height": 72,
+      "image": {
+        "path": "images/9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f-0.png",
+        "sha256": "288bf836cbb9be85d79dd90fe0d0ac462c15fa687b9e8f86e3038b8ec45cb2cf",
+        "byteLength": 2748
+      },
+      "revision": 1,
+      "status": "reviewed",
+      "reviewedAt": "2026-10-08T00:00:00.000Z",
+      "updatedAt": "2026-10-08T00:00:00.000Z",
+      "draftFrom": null,
+      "curves": [
+        {
+          "id": "train-left-0",
+          "trackId": "track-train-left",
+          "degree": 3,
+          "marking": "solid",
+          "controlPoints": [
+            [
+              0.15,
+              0.95
+            ],
+            [
+              0.25,
+              0.75
+            ],
+            [
+              0.35,
+              0.55
+            ],
+            [
+              0.45,
+              0.35
+            ]
+          ],
+          "copiedFrom": null
+        },
+        {
+          "id": "train-right-0",
+          "trackId": "track-train-right",
+          "degree": 3,
+          "marking": "dashed",
+          "controlPoints": [
+            [
+              0.85,
+              0.95
+            ],
+            [
+              0.75,
+              0.75
+            ],
+            [
+              0.65,
+              0.55
+            ],
+            [
+              0.55,
+              0.35
+            ]
+          ],
+          "copiedFrom": null
+        }
+      ]
+    },
+    {
+      "id": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f-1",
+      "sourceId": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f",
+      "sequenceId": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f",
+      "frameIndex": 1,
+      "pts": "512",
+      "timeSeconds": 0.04,
+      "width": 128,
+      "height": 72,
+      "image": {
+        "path": "images/9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f-1.png",
+        "sha256": "d6153527e677ecbfc02048255c00f0e241a56b6a7ef676365d1f710c151555a2",
+        "byteLength": 2731
+      },
+      "revision": 1,
+      "status": "draft",
+      "reviewedAt": null,
+      "updatedAt": "2026-10-08T00:00:00.000Z",
+      "draftFrom": {
+        "sampleId": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f-0",
+        "revision": 1
+      },
+      "curves": [
+        {
+          "id": "train-left-1",
+          "trackId": "track-train-left",
+          "degree": 3,
+          "marking": "solid",
+          "controlPoints": [
+            [
+              0.16,
+              0.95
+            ],
+            [
+              0.26,
+              0.75
+            ],
+            [
+              0.36,
+              0.55
+            ],
+            [
+              0.46,
+              0.35
+            ]
+          ],
+          "copiedFrom": {
+            "sampleId": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f-0",
+            "annotationId": "train-left-0",
+            "revision": 1
+          }
+        },
+        {
+          "id": "train-right-1",
+          "trackId": "track-train-right",
+          "degree": 3,
+          "marking": "dashed",
+          "controlPoints": [
+            [
+              0.86,
+              0.95
+            ],
+            [
+              0.76,
+              0.75
+            ],
+            [
+              0.66,
+              0.55
+            ],
+            [
+              0.56,
+              0.35
+            ]
+          ],
+          "copiedFrom": {
+            "sampleId": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f-0",
+            "annotationId": "train-right-0",
+            "revision": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f-2",
+      "sourceId": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f",
+      "sequenceId": "9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f",
+      "frameIndex": 2,
+      "pts": "1024",
+      "timeSeconds": 0.08,
+      "width": 128,
+      "height": 72,
+      "image": {
+        "path": "images/9fb9318cdedcb3aabc1402c5c7c50e70519fb6c903b9c60fbf88a51819fa9c9f-2.png",
+        "sha256": "12c77b9031dc3d7fc779c63a91f7c8b888f5b2a6f894fe8c30e196f102012d0d",
+        "byteLength": 262
+      },
+      "revision": 1,
+      "status": "reviewed",
+      "reviewedAt": "2026-10-08T00:00:00.000Z",
+      "updatedAt": "2026-10-08T00:00:00.000Z",
+      "draftFrom": null,
+      "curves": []
+    },
+    {
+      "id": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d-0",
+      "sourceId": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d",
+      "sequenceId": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d",
+      "frameIndex": 0,
+      "pts": "0",
+      "timeSeconds": 0.0,
+      "width": 128,
+      "height": 72,
+      "image": {
+        "path": "images/aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d-0.png",
+        "sha256": "3a36d67a4d5c951b5126a08b4b61f49b87d6105492a40340d6474f0431bee31d",
+        "byteLength": 2655
+      },
+      "revision": 1,
+      "status": "reviewed",
+      "reviewedAt": "2026-10-08T00:00:00.000Z",
+      "updatedAt": "2026-10-08T00:00:00.000Z",
+      "draftFrom": null,
+      "curves": [
+        {
+          "id": "validation-left-0",
+          "trackId": "track-validation-left",
+          "degree": 3,
+          "marking": "solid",
+          "controlPoints": [
+            [
+              0.15,
+              0.95
+            ],
+            [
+              0.25,
+              0.75
+            ],
+            [
+              0.35,
+              0.55
+            ],
+            [
+              0.45,
+              0.35
+            ]
+          ],
+          "copiedFrom": null
+        },
+        {
+          "id": "validation-right-0",
+          "trackId": "track-validation-right",
+          "degree": 3,
+          "marking": "dashed",
+          "controlPoints": [
+            [
+              0.85,
+              0.95
+            ],
+            [
+              0.75,
+              0.75
+            ],
+            [
+              0.65,
+              0.55
+            ],
+            [
+              0.55,
+              0.35
+            ]
+          ],
+          "copiedFrom": null
+        }
+      ]
+    },
+    {
+      "id": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d-1",
+      "sourceId": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d",
+      "sequenceId": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d",
+      "frameIndex": 1,
+      "pts": "512",
+      "timeSeconds": 0.04,
+      "width": 128,
+      "height": 72,
+      "image": {
+        "path": "images/aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d-1.png",
+        "sha256": "aa9eabc86d095d2229cb911618a76596197358fead8417400c3bfd47ef1ad3ee",
+        "byteLength": 2617
+      },
+      "revision": 1,
+      "status": "draft",
+      "reviewedAt": null,
+      "updatedAt": "2026-10-08T00:00:00.000Z",
+      "draftFrom": {
+        "sampleId": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d-0",
+        "revision": 1
+      },
+      "curves": [
+        {
+          "id": "validation-left-1",
+          "trackId": "track-validation-left",
+          "degree": 3,
+          "marking": "solid",
+          "controlPoints": [
+            [
+              0.16,
+              0.95
+            ],
+            [
+              0.26,
+              0.75
+            ],
+            [
+              0.36,
+              0.55
+            ],
+            [
+              0.46,
+              0.35
+            ]
+          ],
+          "copiedFrom": {
+            "sampleId": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d-0",
+            "annotationId": "validation-left-0",
+            "revision": 1
+          }
+        },
+        {
+          "id": "validation-right-1",
+          "trackId": "track-validation-right",
+          "degree": 3,
+          "marking": "dashed",
+          "controlPoints": [
+            [
+              0.86,
+              0.95
+            ],
+            [
+              0.76,
+              0.75
+            ],
+            [
+              0.66,
+              0.55
+            ],
+            [
+              0.56,
+              0.35
+            ]
+          ],
+          "copiedFrom": {
+            "sampleId": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d-0",
+            "annotationId": "validation-right-0",
+            "revision": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d-2",
+      "sourceId": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d",
+      "sequenceId": "aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d",
+      "frameIndex": 2,
+      "pts": "1024",
+      "timeSeconds": 0.08,
+      "width": 128,
+      "height": 72,
+      "image": {
+        "path": "images/aac012b37152d76ff6ee336035cc83469e6bf36692e5869dbb7fddbc3a03c46d-2.png",
+        "sha256": "866efaba999a54c7b03435f23294cd7ffcc7a74217aefbe7769efe09e59e5b6a",
+        "byteLength": 262
+      },
+      "revision": 1,
+      "status": "reviewed",
+      "reviewedAt": "2026-10-08T00:00:00.000Z",
+      "updatedAt": "2026-10-08T00:00:00.000Z",
+      "draftFrom": null,
+      "curves": []
+    },
+    {
+      "id": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4-0",
+      "sourceId": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4",
+      "sequenceId": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4",
+      "frameIndex": 0,
+      "pts": "0",
+      "timeSeconds": 0.0,
+      "width": 128,
+      "height": 72,
+      "image": {
+        "path": "images/1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4-0.png",
+        "sha256": "ce6ef8cbf09cb132b14af458e12afea0ff5107d5eb94b84e390f16544c9afef2",
+        "byteLength": 2516
+      },
+      "revision": 1,
+      "status": "reviewed",
+      "reviewedAt": "2026-10-08T00:00:00.000Z",
+      "updatedAt": "2026-10-08T00:00:00.000Z",
+      "draftFrom": null,
+      "curves": [
+        {
+          "id": "test-left-0",
+          "trackId": "track-test-left",
+          "degree": 3,
+          "marking": "solid",
+          "controlPoints": [
+            [
+              0.15,
+              0.95
+            ],
+            [
+              0.25,
+              0.75
+            ],
+            [
+              0.35,
+              0.55
+            ],
+            [
+              0.45,
+              0.35
+            ]
+          ],
+          "copiedFrom": null
+        },
+        {
+          "id": "test-right-0",
+          "trackId": "track-test-right",
+          "degree": 3,
+          "marking": "dashed",
+          "controlPoints": [
+            [
+              0.85,
+              0.95
+            ],
+            [
+              0.75,
+              0.75
+            ],
+            [
+              0.65,
+              0.55
+            ],
+            [
+              0.55,
+              0.35
+            ]
+          ],
+          "copiedFrom": null
+        }
+      ]
+    },
+    {
+      "id": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4-1",
+      "sourceId": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4",
+      "sequenceId": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4",
+      "frameIndex": 1,
+      "pts": "512",
+      "timeSeconds": 0.04,
+      "width": 128,
+      "height": 72,
+      "image": {
+        "path": "images/1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4-1.png",
+        "sha256": "f9553cddc33a5cf269327a08c2f8a02dd8d407f112923fc844c0d520cca81147",
+        "byteLength": 2622
+      },
+      "revision": 1,
+      "status": "draft",
+      "reviewedAt": null,
+      "updatedAt": "2026-10-08T00:00:00.000Z",
+      "draftFrom": {
+        "sampleId": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4-0",
+        "revision": 1
+      },
+      "curves": [
+        {
+          "id": "test-left-1",
+          "trackId": "track-test-left",
+          "degree": 3,
+          "marking": "solid",
+          "controlPoints": [
+            [
+              0.16,
+              0.95
+            ],
+            [
+              0.26,
+              0.75
+            ],
+            [
+              0.36,
+              0.55
+            ],
+            [
+              0.46,
+              0.35
+            ]
+          ],
+          "copiedFrom": {
+            "sampleId": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4-0",
+            "annotationId": "test-left-0",
+            "revision": 1
+          }
+        },
+        {
+          "id": "test-right-1",
+          "trackId": "track-test-right",
+          "degree": 3,
+          "marking": "dashed",
+          "controlPoints": [
+            [
+              0.86,
+              0.95
+            ],
+            [
+              0.76,
+              0.75
+            ],
+            [
+              0.66,
+              0.55
+            ],
+            [
+              0.56,
+              0.35
+            ]
+          ],
+          "copiedFrom": {
+            "sampleId": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4-0",
+            "annotationId": "test-right-0",
+            "revision": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4-2",
+      "sourceId": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4",
+      "sequenceId": "1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4",
+      "frameIndex": 2,
+      "pts": "1024",
+      "timeSeconds": 0.08,
+      "width": 128,
+      "height": 72,
+      "image": {
+        "path": "images/1bb3400c25513d3d6c38a5a9dc3a8fef27a7f0908eb79ff34079258ebb6066e4-2.png",
+        "sha256": "aca4dc403c18bb6ef94ee2e3cec296513db498c6c992b73f44015186c8e91c1c",
+        "byteLength": 262
+      },
+      "revision": 1,
+      "status": "reviewed",
+      "reviewedAt": "2026-10-08T00:00:00.000Z",
+      "updatedAt": "2026-10-08T00:00:00.000Z",
+      "draftFrom": null,
+      "curves": []
+    }
+  ]
+}

@@ -397,3 +397,189 @@ sortiert; **Einzeldetektionen** kann alternativ als Sortiermaß gewählt werden.
   Tempowert abgeleitet. Auch diese Zeilen fließen in die ausgewiesene Summe ein.
 
 Die Statistik benötigt nur das TSR-Log, keinen Drive-Log oder Karten-Bundle.
+
+### Datenbank-Report pro gespeicherter Zeichenklasse
+
+`scripts/inspector/sign_statistics.py` liest mit `youspeed_report` und dessen
+vorhandener privater Passwort-/DSN-Datei dieselben Zugangsdaten wie der Inspector.
+Der Report gruppiert nach Land und Zeichenklasse und zählt **alle gespeicherten Crops**, einschließlich noch gespeicherter
+inaktiver/abgelaufener Einträge und Replay-Installationen. Die Klasse ist
+`model_label`, ersatzweise `canonical_code`, sonst `(unclassified)`.
+Die separate Spalte `country` übernimmt `classification.country`; fehlende Länder
+erscheinen als `unknown`. Das ist die protokollierte Modelldomäne, kein geprüftes
+Fahrtland. Gleiche Klassen verschiedener Länder erhalten getrennte Zeilen.
+Mehrere Crops einer Sichtung zählen einzeln; die zusätzliche Spalte
+`linked_sightings` zählt unterschiedliche verknüpfte Sichtungsidentitäten.
+Diese gespeicherten Labels sind keine geprüfte Klassifikation und keine Zahl
+physisch unterschiedlicher Schilder.
+
+```sh
+python3 scripts/inspector/sign_statistics.py --output-dir /tmp/youspeed-sign-statistics
+```
+
+Benötigt `inspector/requirements.txt`. Gibt eine Markdown-Tabelle auf stdout aus
+und ersetzt lokal `sign-statistics.csv`, `sign-statistics.json` und
+`sign-statistics.md`, jeweils nach Crop-Anzahl absteigend und bei Gleichstand
+nach Land und Klassenname sortiert. JSON und Markdown enthalten den UTC-Snapshotzeitpunkt
+und die Zähldefinition. Ohne `--output-dir` wird ein Unterordner
+`youspeed-sign-statistics` im temporären Systemverzeichnis verwendet.
+Alle Abfragen laufen in einer Read-only-/Repeatable-read-Transaktion; die Summe
+der Klassen wird gegen die Gesamtzahl derselben Momentaufnahme geprüft.
+`--database-file`, `--db-host` und `--db-port` unterstützen vorhandene private
+Verbindungen/Tunnel. Der Report enthält keine Passwörter, Geräte-IDs oder GPS-Daten.
+Es gibt keine automatische Veröffentlichung auf einem Server.
+
+## Spurannotation für Lane-Detection-Datasets
+
+Mit installiertem **FFmpeg und ffprobe** den lokalen Server starten:
+
+```sh
+python3 inspector/server.py --port 8080
+```
+
+`http://127.0.0.1:8080/inspector/` öffnen, unter **Dashcam** ein Video auswählen
+und **Video annotieren** anklicken. Es gibt keinen Opt-in-Schalter für den
+Decoder: der lokale Server aktiviert ihn automatisch, wenn FFmpeg startfähig
+ist. SQLite, Drive-Log und TSR-Log sind zum Annotieren nicht erforderlich.
+MOV/MP4, MKV, AVI und MPEG-TS werden unterstützt. Die Decoder-Endpunkte sind
+nur auf Loopback verfügbar; die private volz-db-Galerie bleibt unverändert.
+Ein statischer `http.server` bietet keine Frame-Dekodierung.
+
+Der Browser überträgt die ausgewählte Datei als Datei-Body an den **lokalen**
+Server, ohne sie komplett in JavaScript einzulesen. Der Server speichert eine
+temporäre Kopie, hasht sie und indexiert die tatsächlich dekodierten Frames.
+Bis 16 GiB pro Video, eine Million Frames und 36 Megapixel pro Frame; ausreichend
+freier temporärer Speicher ist erforderlich. Indexierung großer Videos kann
+dauern. Originaldateien werden nicht verändert. Die Videositzung wird beim
+Entfernen/Wechseln des Videos und beim Schließen der Seite freigegeben;
+liegengebliebene Sitzungen werden nach zwei Stunden beim nächsten Upload
+bereinigt, alle temporären Daten beim Serverende. Bis zu vier Sitzungen sind
+parallel möglich.
+
+### Bearbeitung Frame für Frame
+
+- **‹ Bild / Bild ›**, **← / →** im Editor oder die Frame-Nummer wechseln zwischen
+  tatsächlichen dekodierten Frames. Frame-Nummern sind nullbasiert; der Zähler
+  zeigt zusätzlich Position, Medienzeit und originalen PTS. Im Annotationsmodus
+  ersetzen PNGs die Videoansicht. Nominale FPS werden dabei nicht verwendet.
+- **Neue Kurve · 4 Punkte**: Startpunkt, zwei Kontrollpunkte und Endpunkt setzen.
+  Es entsteht eine kubische Bézier-Kurve. Mehrere Markierungen sind unabhängig
+  möglich. Kurve oder Kontrollpunkt anklicken, Punkte ziehen, Markierung als
+  **Durchgezogen / Gestrichelt** einstellen. **Esc** bricht eine neue Kurve ab.
+  **Entf**, **Rückgängig / Wiederholen** und **⌘/Ctrl+Z / Shift+⌘/Ctrl+Z** bearbeiten
+  den aktuellen Frame. Undo/Redo wird pro Frame für die laufende Sitzung gehalten.
+- **Vorherige Annotation als Entwurf** übernimmt die jüngste frühere Annotation
+  desselben Videos; unter **Vorlage** kann ein anderer früherer Frame gewählt
+  werden. Die Geometrie wird unabhängig kopiert, Track-IDs und Markierungsattribute
+  bleiben erhalten. Aktuelle Arbeit wird nicht überschrieben: zuerst explizit
+  **Frame leeren**, falls eine andere Vorlage gewünscht ist.
+- **Track verknüpfen** ordnet eine Kurve derselben physischen Markierung in
+  anderen Frames zu. **Neuer Track / Verbindung lösen** beginnt eine neue
+  Identität. Pro Frame ist höchstens eine Kurve eines Tracks erlaubt. Eine
+  verschwundene Markierung im nächsten Frame entfernen; ihre früheren Instanzen
+  bleiben erhalten. Sichtbare Track-Spannen ergeben sich aus den vorhandenen
+  Frame-Instanzen, ohne automatische Links aufgrund von links/rechts oder
+  Kurvenreihenfolge.
+- **Frame geprüft bestätigen** gibt die Annotation zur Nutzung frei, auch für
+  einen Frame ohne sichtbare Markierungen. Neue Frames und kopierte oder erneut
+  bearbeitete Annotationen sind **Entwürfe**. Jede Geometrie-, Attribut- oder
+  Trackänderung setzt den Frame wieder auf Entwurf.
+- **Drive-Gruppe / Split** bestimmt die gemeinsame Fahrtidentität und den
+  Trainings-/Validierungs-/Test-Split. Clips derselben Fahrt **vor dem Export**
+  derselben Gruppe zuordnen. Die Splitänderung gilt für sämtliche Quellen der
+  Gruppe, damit benachbarte Frames und Clips nicht in mehreren Splits liegen.
+  Standardgruppe ist die Video-SHA-256; FNV-1a über die Gruppen-ID modulo 10
+  wählt standardmäßig 80/10/10. Das ist eine deterministische Gruppenzuordnung,
+  keine Garantie für ausgeglichene kleine Datasets. Splitzuordnungen können
+  bewusst geändert werden.
+
+Geometrie bleibt bei Zoom, Resize und Letterboxing am dekodierten Bild gebunden.
+Gestrichelte Kurven beschreiben den Verlauf **einer Markierung einschließlich
+sichtbarer Lücken**; die dekorativen Striche entsprechen nicht den einzelnen
+Lacksegmenten. v1 erzeugt deshalb Polylinien mit Markierungsklassen, keine
+Pixelmasken und keine erfundenen Gap-Labels.
+
+Annotationen und die angezeigten PNGs werden in IndexedDB lokal gesichert.
+Beim Wiederöffnen können **Gespeicherte Frames** ohne Originalvideo bearbeitet
+werden. Für weitere Frames das ursprüngliche Video erneut auswählen und
+indexieren; SHA-256 und vollständiger Frame-Index müssen übereinstimmen.
+Speicher-/Quotafehler erscheinen im Status. **Dataset exportieren (.zip)** ist
+die portable Sicherung; **Dataset importieren** prüft Vertrag, Splits,
+CRC32, PNG-Abmessungen und SHA-256, bevor das vorhandene Dataset ersetzt wird.
+Import und Export funktionieren auch ohne ausgewähltes Video.
+**Neues Dataset** beginnt nach expliziter Bestätigung einen neuen Bestand und
+ersetzt die lokale Sicherung; bestehende Arbeit vorher als ZIP exportieren.
+
+### Speichervertrag `youspeed-lane-dataset-v1`
+
+Das ZIP verwendet unkomprimiertes STORE, UTF-8-Dateinamen und CRC32; PNGs sind
+bereits komprimiert. Es enthält `manifest.json`, `images/<sample-id>.png` und
+`splits/{train,validation,test}.json`. Grenze: 4 GiB oder 65.535 Dateien je ZIP;
+größere Bestände in mehrere Datasets aufteilen. Die Originalvideos werden nicht
+in das ZIP kopiert. Alle besuchten Frames bleiben im Manifest, auch leere
+Entwürfe; nur **reviewed**-Samples erscheinen in den drei Split-Listen.
+
+Der ausführbare Vertragsvalidator ist `lane-annotations-core.js::validate`:
+
+| Feld | Bedeutung |
+| --- | --- |
+| `schema`, `id`, `coordinateConvention`, `curveSemantics` | Version, Dataset-ID, normalisierte Pixelzentrum-Koordinaten von links oben, Markierungspfad-Semantik |
+| `sources[]` | Video-SHA-256/ID, Name, Byte-Länge, Drive-Gruppe, Split, Sequence-ID, dekodierte Bildgröße, ursprüngliche Rotation und vollständiger Frame-Index |
+| `sources[].timeBase`, `startPts`, `frames[]` | Originale rationale PTS-Zeitbasis; PTS als Dezimalstrings; Index und Zeit in Sekunden relativ zum ersten dekodierten Frame |
+| `samples[]` | ID `<source-sha256>-<frame-index>`, Quell-/Sequence-ID, exakter Frame/PTS/Zeit, Bildgröße, PNG-Pfad/Länge/SHA-256 |
+| `status`, `revision`, `reviewedAt`, `updatedAt` | `draft` oder `reviewed`, monoton steigende Frame-Revision und Bearbeitungs-/Reviewzeit |
+| `draftFrom` | Quell-Sample-ID und Quellrevision der übernommenen Vorlage, oder `null` |
+| `curves[]` | Eigene Annotations-ID, dauerhafte Track-ID, `degree: 3`, vier `[x,y]`-Kontrollpunkte in `[0,1]`, `marking: solid\|dashed`, Kopierprovenienz |
+| `curves[].copiedFrom` | Ursprüngliche Sample-/Annotations-ID und Quellrevision, oder `null`; bleibt nach unabhängigen Änderungen nachvollziehbar |
+
+`(0,0)` ist das obere linke, `(1,1)` das untere rechte Pixelzentrum des
+vollständigen PNGs. FFmpeg-Autorotation ist bereits angewendet; `transform` ist
+`ffmpeg_autorotate_full_frame`. Keine Vorschau-Crops, kein Letterboxing und
+keine Zoomtransformation werden im PNG gespeichert. PTS stammt vom Decoder,
+nicht von einer geschätzten Browser-Seekposition. Doppelte/nicht aufsteigende
+PTS, Geometriewechsel oder eine nicht unterstützte Ausrichtung führen zum
+Fehler, statt ein anderes Frame-Bild als Annotationsträger zu verwenden.
+
+### Nutzung für Training, Test und Evaluation
+
+Der dependency-freie Node-Loader prüft denselben Vertrag wie der Browser,
+prüft sämtliche Split-Listen und Bildbytes und gibt für jeden Frame Bild,
+Track-IDs, Klassen und deterministisch abgetastete Polylinien aus:
+
+```sh
+node scripts/inspector/lane_dataset_loader.mjs /path/to/dataset.zip \
+  --split train --points 65 --output /path/to/training
+node scripts/inspector/lane_dataset_loader.mjs /path/to/dataset.zip \
+  --split validation --output /path/to/validation
+node scripts/inspector/lane_dataset_loader.mjs /path/to/dataset.zip \
+  --split test --output /path/to/test
+```
+
+Jedes Ausgabeziel enthält `images/` und `labels.jsonl`; Originalvideos sind
+nicht erforderlich. Ein extrahiertes Dataset-Verzeichnis wird ebenfalls
+unterstützt. Ohne `--output` wird JSONL nach stdout geschrieben. Entwürfe werden
+nur mit ausdrücklichem `--include-drafts` geladen und tragen ihren Status.
+Programmatic API: `loadDataset(input, {split, points, includeDrafts})` aus der
+`.mjs`-Datei; Ergebnisse enthalten zusätzlich `imageBytes` als Node-Buffer.
+
+Klassen: `solid = 0`, `dashed = 1`. Für N Punkte wird die kubische Kurve bei
+`t=i/(N-1)` ausgewertet und nach `x*(width-1), y*(height-1)` in Pixelkoordinaten
+transformiert. Keine Resize-/Croptransformation wird implizit angewendet. Für
+Modelle mit anderer Eingabegröße dieselbe explizite affine Transformation auf
+Bild und Punkte anwenden; keine erneute Autorotation. Leere geprüfte Frames
+liefern eine leere Kurvenliste und können als negative Beispiele genutzt werden.
+
+Das kleine synthetische Beispiel unter `tests/inspector/fixtures/lane-dataset-v1/`
+enthält für jeden Split zwei geprüfte Frames (Markierungen und leerer Frame),
+einen kopierten Entwurf sowie die drei winzigen Quellvideos zum Wiederöffnen.
+Es enthält keine echten Fahrten und ist kein Genauigkeitsnachweis. Regenerieren:
+
+```sh
+python3 scripts/inspector/make_lane_example.py
+```
+
+Tests: `node --test tests/inspector/*.test.js` und
+`python3 -m unittest discover -s tests/inspector -p 'test_*.py'`.
+Die Decodertests benötigen FFmpeg/ffprobe und vergleichen echte synthetische
+VFR-/B-Frame-, Rotations- und PTS-Offset-Frames bytegenau mit vollständiger
+FFmpeg-Dekodierung.

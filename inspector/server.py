@@ -274,6 +274,72 @@ class InspectorHandler(SimpleHTTPRequestHandler):
     def do_HEAD(self):
         self.do_GET(head=True)
 
+    def lane_request(self, method, head=False):
+        """The local decoder is available on loopback; crop access remains read-only."""
+        parsed = urlsplit(self.path)
+        host = self.headers.get("Host", "")
+        origin = self.headers.get("Origin")
+        if (host not in self.server.allowed_hosts or self.client_address[0] != "127.0.0.1"
+                or self.headers.get("Sec-Fetch-Site") == "cross-site"
+                or (origin and origin != "http://" + host)
+                or (method != "GET" and origin != "http://" + host)):
+            self.json_response({"error": "Spurannotation erlaubt nur lokalen Same-Origin-Zugriff."}, 403, head)
+            return
+        decoder = getattr(self.server, "lane_videos", None)
+        if decoder is None:
+            self.json_response({"error": "Spurannotation benötigt den lokalen Python-Server auf 127.0.0.1 und ffmpeg/ffprobe."}, 503, head)
+            return
+        uploaded = None
+        try:
+            if parsed.query:
+                raise InspectorError("Ungültige Videoabfrage.", 400)
+            if method == "POST" and parsed.path == "/inspector/api/lanes/video":
+                if self.headers.get("Content-Type") != "application/octet-stream" or self.headers.get("Transfer-Encoding"):
+                    raise InspectorError("Video als Datei mit bekannter Länge übertragen.", 400)
+                try:
+                    length = int(self.headers.get("Content-Length", "0"))
+                except ValueError:
+                    raise InspectorError("Ungültige Videolänge.", 400) from None
+                name = unquote(self.headers.get("X-Video-Name", "dashcam"))
+                uploaded = decoder.upload(self.rfile, length, name)
+                self.json_response(uploaded)
+            else:
+                match = re.fullmatch(r"/inspector/api/lanes/video/([a-f0-9]{32})(?:/frames/([0-9]{1,7}))?", parsed.path)
+                if not match:
+                    raise InspectorError("Ungültige Videositzung.", 404)
+                token, index = match.groups()
+                if method == "DELETE" and index is None:
+                    decoder.delete(token)
+                    self.json_response({"closed": True})
+                elif method == "GET" and index is not None:
+                    data = decoder.frame(token, int(index))
+                    self.send_response(200)
+                    self.send_header("Content-Type", "image/png")
+                    self.send_header("Content-Length", str(len(data)))
+                    self.end_headers()
+                    if not head:
+                        self.wfile.write(data)
+                else:
+                    raise InspectorError("Ungültige Videomethode.", 405)
+        except (BrokenPipeError, ConnectionResetError):
+            if uploaded:
+                decoder.delete(uploaded["session"])
+        except Exception as error:
+            self.json_response({"error": str(error) if hasattr(error, "status") else "Lokale Videodekodierung fehlgeschlagen."},
+                               getattr(error, "status", 500), head)
+
+    def do_POST(self):
+        if urlsplit(self.path).path.startswith("/inspector/api/lanes/"):
+            self.lane_request("POST")
+        else:
+            self.json_response({"error": "Unbekannter Endpunkt."}, 404)
+
+    def do_DELETE(self):
+        if urlsplit(self.path).path.startswith("/inspector/api/lanes/"):
+            self.lane_request("DELETE")
+        else:
+            self.json_response({"error": "Unbekannter Endpunkt."}, 404)
+
     def do_GET(self, head=False):
         parsed = urlsplit(self.path)
         host = self.headers.get("Host", "")
@@ -285,6 +351,9 @@ class InspectorHandler(SimpleHTTPRequestHandler):
             self.json_response({"error": "Nur direkter Zugriff auf den privaten Inspector erlaubt."}, 403, head)
             return
         if parsed.path.startswith("/inspector/api/"):
+            if parsed.path.startswith("/inspector/api/lanes/"):
+                self.lane_request("GET", head)
+                return
             try:
                 if len(parsed.query) > 2048:
                     raise InspectorError("Abfrage zu lang.", 400)
@@ -347,9 +416,17 @@ def arguments(argv=None):
 
 def main():
     args = arguments()
+    lane_videos = None
+    if args.bind == "127.0.0.1":
+        from lane_video import LaneVideos, VideoError
+        try:
+            lane_videos = LaneVideos()
+        except VideoError as error:
+            print(str(error), flush=True)
     store = CropStore(args)
     server = ThreadingHTTPServer((args.bind, args.port), InspectorHandler)
     server.store = store
+    server.lane_videos = lane_videos
     server.allowed_hosts = {f"{args.bind}:{server.server_port}", f"volz-db:{server.server_port}",
                             f"{VOLZ_DB_ADDRESS}:{server.server_port}", *args.allowed_host}
     if args.bind == "127.0.0.1":
@@ -362,6 +439,8 @@ def main():
         pass
     finally:
         server.server_close()
+        if lane_videos:
+            lane_videos.close()
 
 
 if __name__ == "__main__":
