@@ -38,7 +38,7 @@ class DriveRecorderInstrumentedTest {
     private val injectedLatitudes = mutableListOf<Double>()
     @get:Rule val permissions: GrantPermissionRule = GrantPermissionRule.grant(
         Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.RECORD_AUDIO,
     )
 
     @Test fun liveButtonsFinalizeMovieAndPreservePhotoSession() {
@@ -55,6 +55,7 @@ class DriveRecorderInstrumentedTest {
         val activeStateFile = File(bundleRoot, "active_bundle.json")
         val previousActiveState = activeStateFile.takeIf { it.isFile }?.readBytes()
         var fixtureDatabase: File? = null
+        var fixtureDirectory: File? = null
         var replacedActiveState = false
         try {
             val existingActive = BundleBootstrapper(bundleRoot, HttpUrlFetcher()).activeState()
@@ -62,7 +63,9 @@ class DriveRecorderInstrumentedTest {
                     File(existingActive.dbPath).isFile)) {
                 // A real local road database satisfies setup exactly as a downloaded
                 // map does. Do not weaken production onboarding for camera tests.
-                val fixture = File(context.cacheDir, "recorder-map-${UUID.randomUUID()}.sqlite")
+                val directory = File(bundleRoot, "bundles/recorder-map-${UUID.randomUUID()}").apply { mkdirs() }
+                fixtureDirectory = directory
+                val fixture = File(directory, "roads.sqlite")
                 fixtureDatabase = fixture
                 createRecorderMapFixture(fixture)
                 val active = ActiveBundleState(
@@ -77,6 +80,8 @@ class DriveRecorderInstrumentedTest {
                     activatedAtUTC = Instant.now().toString(),
                 )
                 assertTrue(bundleRoot.isDirectory || bundleRoot.mkdirs())
+                // Keep the synthetic map usable across real GPS callbacks and injected capture fixes.
+                writeCoverageFixtureManifest(fixture, active.region, active.bundleVersion, -180.0, -90.0, 180.0, 90.0)
                 replacedActiveState = true
                 activeStateFile.writeText(ContractJson.encodeActiveBundleState(active))
                 assertEquals(active, BundleBootstrapper(bundleRoot, HttpUrlFetcher()).activeState())
@@ -87,6 +92,8 @@ class DriveRecorderInstrumentedTest {
                 .putBoolean("youspeed.panoramax.unlimited_storage", true)
                 .putBoolean("youspeed.panoramax.delete_uploaded", false).commit())
             ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->
+                val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+                device.findObject(By.res("com.android.systemui", "ok"))?.click()
                 fun act(action: (ConsumerSessionController) -> Unit) = scenario.onActivity { action(it.sessionController) }
                 fun state(): ConsumerUiState {
                     lateinit var value: ConsumerUiState
@@ -111,6 +118,7 @@ class DriveRecorderInstrumentedTest {
                     awaitState(label) { state -> state.driveRecorderDashcamActive &&
                         movies.listFiles().orEmpty().any { it.name !in previousNames && it.length() > 1_024 } }
                 }
+                act { if (it.uiState.startupLogReviewState == StartupLogReviewState.CHOICE) it.keepStartupLogs() }
                 awaitState("Startup") { it.startupDataState == StartupDataState.READY && !it.panoramaxMaintenanceInProgress }
                 act {
                     assertTrue("Recorder test requires a real road database", it.hasUsableOnboardingMap())
@@ -121,6 +129,13 @@ class DriveRecorderInstrumentedTest {
                     it.setTrafficSignRecognitionIndependentEnabled(true)
                     it.setPanoramaxCaptureEnabled(true)
                     it.startDriving()
+                    // Real GPS must not race the labelled capture samples below.
+                    val manager = ConsumerSessionController::class.java.getDeclaredField("locationManager")
+                        .apply { isAccessible = true }.get(it) as LocationManager
+                    for (name in listOf("locationListener", "coarseLocationListener")) {
+                        manager.removeUpdates(ConsumerSessionController::class.java.getDeclaredField(name)
+                            .apply { isAccessible = true }.get(it) as android.location.LocationListener)
+                    }
                 }
                 awaitState("Standalone camera active") {
                     it.trafficSignCameraRuntimeState == TrafficSignCameraRuntimeState.ACTIVE &&
@@ -132,14 +147,18 @@ class DriveRecorderInstrumentedTest {
                 awaitState("Movie and photos active") { it.driveRecorderDashcamActive && it.driveRecorderPanoramaxActive }
                 // The tethered phone is stationary. Feed only this controller a
                 // labelled test fix; never install an OS mock-location provider.
-                act(::injectMovingTestFix)
+                act { injectMovingTestFix(it, fast = true) }
                 awaitState("First Panoramax photo saved") { it.panoramaxCaptureCount > 0 }
                 awaitState("Initial movie has encoder frames before the stop action") {
                     File(context.filesDir, "dashcam").listFiles().orEmpty()
                         .any { file -> file.name !in existingMovies && file.length() > 1_024 }
                 }
+                act { injectMovingTestFix(it, stationary = true) }
+                awaitState("Stationary sample permits dashboard controls") { it.drivingControlsAllowed }
+                // Camera continuity is independent of the optional contribution
+                // prompt. Dismiss it without granting or recording consent.
+                act { it.signCollection.dismissConsent() }
                 assertPreviewButtonFinalizesMovieAndPreservesSurface(scenario, context, ::state)
-                val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
                 val settings = device.wait(Until.findObject(By.res("settings-button")), 10_000)
                 assertNotNull(settings)
                 settings!!.click()
@@ -159,8 +178,8 @@ class DriveRecorderInstrumentedTest {
                 // interval; the stationary tethered GPS supplies no later one.
                 val captureDeadline = SystemClock.uptimeMillis() + 30_000
                 while (state().panoramaxCaptureCount <= pausedCount && SystemClock.uptimeMillis() < captureDeadline) {
-                    act(::injectMovingTestFix)
-                    SystemClock.sleep(500)
+                    act { injectMovingTestFix(it) }
+                    SystemClock.sleep(3_000)
                 }
                 awaitState("Camera saves a photo while Settings pauses matching") { it.panoramaxCaptureCount > pausedCount }
                 assertTrue(state().gpsFixCount > pausedFixes)
@@ -215,6 +234,7 @@ class DriveRecorderInstrumentedTest {
                     }
                 }
                 fixtureDatabase?.let(SQLiteDatabase::deleteDatabase)
+                fixtureDirectory?.deleteRecursively()
                 File(context.filesDir, "dashcam").listFiles().orEmpty().filter { it.name !in existingMovies }.forEach { it.delete() }
                 queue.listBatches().filter { it.batchId !in existingBatches }.forEach { batch ->
                     queue.deleteItems(batch.batchId, batch.items.map { it.itemId }.toSet())
@@ -240,14 +260,17 @@ class DriveRecorderInstrumentedTest {
         }
     }
 
-    private fun injectMovingTestFix(controller: ConsumerSessionController) {
+    private fun injectMovingTestFix(controller: ConsumerSessionController, stationary: Boolean = false, fast: Boolean = false) {
         // TIME mode also rejects stationary fixes inside twice their accuracy.
-        // Advance about 22 m per sample, without mocking the OS provider.
-        val nextLatitude = (injectedLatitudes.size + 1) * 0.0002
-        injectedLatitudes += nextLatitude
+        // About 2.2 m per three-second sample keeps Settings safely reachable.
+        val nextLatitude = if (stationary) injectedLatitudes.last() else (injectedLatitudes.size + 1) * 0.00002
+        if (!stationary) injectedLatitudes += nextLatitude
+        // Begin the stationary phase with no preceding movement history.
+        if (stationary) ConsumerSessionController::class.java.getDeclaredMethod("resetDerivedSpeedTracking")
+            .apply { isAccessible = true }.invoke(controller)
         val location = Location(LocationManager.GPS_PROVIDER).apply {
             latitude = nextLatitude; longitude = 0.0
-            accuracy = 5f; speed = 10f; bearing = 90f; altitude = 123.0
+            accuracy = 0.1f; speed = if (stationary) 0f else if (fast) 2f else 0.5f; bearing = 90f; altitude = 123.0
             time = System.currentTimeMillis(); elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
         }
         ConsumerSessionController::class.java.getDeclaredMethod("consumeLocation", Location::class.java)
@@ -261,7 +284,12 @@ class DriveRecorderInstrumentedTest {
     ) {
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         fun click(tag: String) {
+            device.findObject(By.res("com.android.systemui", "ok"))?.click()
             val button = device.wait(Until.findObject(By.res(tag)), 10_000)
+            if (button == null) {
+                device.dumpWindowHierarchy(File(context.cacheDir, "recorder-failed-hierarchy.xml"))
+                device.takeScreenshot(File(context.cacheDir, "recorder-failed-screen.png"))
+            }
             assertNotNull("Preview control $tag", button)
             button!!.click()
         }

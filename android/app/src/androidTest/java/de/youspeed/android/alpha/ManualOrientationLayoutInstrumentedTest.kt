@@ -152,7 +152,7 @@ class ManualOrientationLayoutInstrumentedTest {
         }
     }
 
-    @Test fun portraitFooterFitsFiveEvenlySpacedButtonsAt320Dp() {
+    @Test fun portraitFooterFitsSixEvenlySpacedButtonsAt320Dp() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val preferences = context.getSharedPreferences("youspeed", Context.MODE_PRIVATE)
@@ -220,7 +220,7 @@ class ManualOrientationLayoutInstrumentedTest {
         val footer = bounds("dashboard-bottom-controls")
         val footerTags = mutableListOf("drive-recorder-toggle-button")
         footerTags += "local-recordings-button"
-        footerTags += listOf("panoramax-gallery-button", "legal-button", "settings-button")
+        footerTags += listOf("panoramax-gallery-button", "visual-calibration-button", "legal-button", "settings-button")
         val buttons = footerTags.map { tag ->
             bounds(tag).also { button ->
                 assertTrue("$tag has a 48dp target", button.width() >= 48 * density - 1 && button.height() >= 48 * density - 1)
@@ -230,8 +230,8 @@ class ManualOrientationLayoutInstrumentedTest {
         assertTrue("The controls stay at the bottom", safe.bottom - footer.bottom <= 24 * density + 1)
         if (!orientation.isLandscape) {
             val gaps = buttons.zipWithNext { left, right -> right.left - left.right }
-            assertTrue("All five controls have generous spacing", gaps.all { it >= 8 * density - 1 })
-            assertTrue("The five controls are evenly spaced", requireNotNull(gaps.maxOrNull()) - requireNotNull(gaps.minOrNull()) <= 2)
+            assertTrue("All six 48dp controls fit without overlap", gaps.all { it >= -1 })
+            assertTrue("The six controls are evenly spaced", requireNotNull(gaps.maxOrNull()) - requireNotNull(gaps.minOrNull()) <= 2)
             assertTrue("Every portrait control is on one row", buttons.all { kotlin.math.abs(it.top - buttons.first().top) <= 1 })
         }
         val pictogram = bounds("last-traffic-sign-pictogram")

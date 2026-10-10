@@ -44,9 +44,9 @@ class SpeedReferenceControllerInstrumentedTest {
                 val resolver = field("trafficSignResolver").get(controller) as TrafficSignRuntimeSourceResolver
                 val baseLimit = TrafficSignBaseLimit(TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 80), EffectiveSpeedLimitSource.BUNDLE, "test-map")
                 field("latestTrafficSignBase").set(controller, baseLimit)
-                val offer = ConsumerSessionController::class.java.getDeclaredMethod("offerCameraReference", EffectiveSpeedLimit::class.java, TrafficSignPassageEvent::class.java).apply { isAccessible = true }
+                val offer = ConsumerSessionController::class.java.getDeclaredMethod("offerCameraReference", EffectiveSpeedLimit::class.java, TrafficSignPassageEvent::class.java, TrafficSignSpeedOverride::class.java).apply { isAccessible = true }
                 fun publish(effective: EffectiveSpeedLimit, event: TrafficSignPassageEvent? = null) {
-                    offer.invoke(controller, effective, event)
+                    offer.invoke(controller, effective, event, null)
                     // Ordinary controller publication reprojects the authoritative reference.
                     controller.setAudioAlertThresholdKmh(10)
                 }

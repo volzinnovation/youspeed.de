@@ -93,6 +93,14 @@ cd android
   -Pandroid.testInstrumentationRunnerArguments.class=de.youspeed.android.alpha.AndroidLiteRtTrafficSignInstrumentedTest,de.youspeed.android.alpha.VoskNativeRuntimeInstrumentedTest
 ```
 
+For a full suite on a phone that contains personal maps or recordings, use a separate test installation:
+
+```bash
+ANDROID_SERIAL=<device-serial> ./gradlew :app:connectedDebugAndroidTest -PyouspeedIsolatedTests=true
+```
+
+This installs `de.youspeed.android.testhost`; the normal debug application remains `de.youspeed.android.debug`. Build and install the normal application again after testing, without the property. Optional installed-map checks require an explicitly selected installation with the relevant map. GPU benchmarks require a supported physical GPU and skip on emulators that fall back to CPU. The road-path wall-time acceptance budget is also measured only on physical hardware; emulator replay correctness still runs.
+
 The wrapper targets Gradle `8.7`, which is already present in the local cache on this machine.
 
 The default connected suite also checks replay lookup correctness and latency

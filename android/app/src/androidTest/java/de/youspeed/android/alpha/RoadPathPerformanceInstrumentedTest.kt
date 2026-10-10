@@ -20,6 +20,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -43,6 +44,7 @@ class RoadPathPerformanceInstrumentedTest {
 
     @Test
     fun pairedReplayMeasuresAdditionalRoadPathComponentsAndDeadlineMisses() {
+        assumeFalse("Wall-time budgets require a physical device", Build.FINGERPRINT.startsWith("generic") || Build.MODEL.contains("sdk_gphone"))
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val args = InstrumentationRegistry.getArguments()

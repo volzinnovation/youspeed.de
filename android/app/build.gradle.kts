@@ -65,7 +65,7 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".debug"
+            applicationIdSuffix = if (providers.gradleProperty("youspeedIsolatedTests").orNull == "true") ".testhost" else ".debug"
             versionNameSuffix = "-debug"
         }
         release {

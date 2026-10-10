@@ -13,14 +13,34 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.Until
+import androidx.test.core.app.ActivityScenario
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.performScrollToNode
+import org.junit.Rule
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ConsumerSmokeTest {
+    @get:Rule val compose = createEmptyComposeRule()
     private val targetPackage: String = InstrumentationRegistry.getInstrumentation().targetContext.packageName
     private val device: UiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+
+    private var scenario: ActivityScenario<MainActivity>? = null
+
+    @After
+    fun closeApp() { scenario?.close(); scenario = null }
 
     @Before
     fun prepareDevice() {
@@ -33,19 +53,22 @@ class ConsumerSmokeTest {
         waitByRes("main-root", 20_000)
         waitByRes("primary-metric", 10_000)
 
+        assertFalse(selectorsForTag("settings-button").any(device::hasObject))
+        launchApp(screenshotState = "other-sign-give-way")
+        waitByRes("main-root", 20_000)
         clickByRes("settings-button")
         waitByRes("settings-sheet", 10_000)
-        device.pressBack()
+        clickByRes("settings-sheet-close")
         waitByRes("main-root", 10_000)
 
         clickByRes("city-badge")
         waitByRes("debug-sheet", 10_000)
-        device.pressBack()
+        clickByRes("debug-sheet-close")
         waitByRes("main-root", 10_000)
 
         clickByRes("legal-button")
         waitByRes("legal-sheet", 10_000)
-        device.pressBack()
+        clickByRes("legal-sheet-close")
         waitByRes("main-root", 10_000)
 
         // Reset into the deterministic screenshot fixture before local-capture coverage,
@@ -54,6 +77,9 @@ class ConsumerSmokeTest {
         waitByRes("main-root", 20_000)
         waitByRes("primary-metric", 10_000)
 
+        assertFalse(selectorsForTag("settings-button").any(device::hasObject))
+        launchApp(screenshotState = "other-sign-give-way")
+        waitByRes("speed-sign", 10_000)
         doubleTapByRes("speed-sign")
         waitByRes("main-root", 10_000)
     }
@@ -63,6 +89,9 @@ class ConsumerSmokeTest {
         launchApp(screenshotState = "autobahn-unlimited-above-130")
         waitByRes("main-root", 20_000)
         waitByRes("speed-sign", 10_000)
+        assertFalse(selectorsForTag("settings-button").any(device::hasObject))
+        launchApp(screenshotState = "other-sign-give-way")
+        waitByRes("main-root", 20_000)
         clickByRes("settings-button")
         waitByRes("settings-sheet", 10_000)
     }
@@ -76,9 +105,13 @@ class ConsumerSmokeTest {
             assertTrue(waitByRes("speed-sign", 10_000).contentDescription.contains("30"))
             waitByRes("camera-speed-source-marker", 10_000)
             if (state == "other-sign-cleared") {
-                assertFalse(device.hasObject(By.res("last-traffic-sign-pictogram")))
+                compose.onNodeWithTag("last-traffic-sign-pictogram", useUnmergedTree = true).assertDoesNotExist()
             } else {
-                waitByRes("last-traffic-sign-pictogram", 10_000)
+                scenario!!.onActivity { activity ->
+                    org.junit.Assert.assertNotNull("Fixture $state retains its sign: ${activity.sessionController.uiState.otherTrafficSignDisplayEnabled}",
+                        activity.sessionController.uiState.lastTrafficSignPictogram)
+                }
+                compose.onNodeWithTag("last-traffic-sign-pictogram", useUnmergedTree = true).assertIsDisplayed()
             }
             // Accessibility can expose the new tree one frame before the GPU paints its text.
             device.waitForIdle()
@@ -87,16 +120,19 @@ class ConsumerSmokeTest {
             assertTrue(device.takeScreenshot(file))
         }
         launchApp("other-sign-stop")
-        waitByRes("last-traffic-sign-pictogram", 10_000)
+        compose.onNodeWithTag("last-traffic-sign-pictogram", useUnmergedTree = true).assertIsDisplayed()
         clickByRes("settings-button")
-        val master = waitByRes("traffic-sign-recognition-toggle", 10_000)
-        assertTrue(master.isChecked)
+        compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("settings-sheet-content")))
+            .performScrollToNode(hasTestTag("traffic-sign-recognition-toggle"))
+        compose.onNodeWithTag("traffic-sign-recognition-toggle").assertIsOn()
+        compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("settings-sheet-content")))
+            .performScrollToNode(hasTestTag("other-traffic-sign-display-toggle"))
         clickByRes("other-traffic-sign-display-toggle")
-        assertTrue(waitByRes("traffic-sign-recognition-toggle", 10_000).isChecked)
-        device.pressBack()
+        compose.onNodeWithTag("traffic-sign-recognition-toggle").assertIsOn()
+        clickByRes("settings-sheet-close")
         assertTrue(waitByRes("speed-sign", 10_000).contentDescription.contains("30"))
         waitByRes("camera-speed-source-marker", 10_000)
-        assertFalse(device.hasObject(By.res("last-traffic-sign-pictogram")))
+        compose.onNodeWithTag("last-traffic-sign-pictogram", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
@@ -119,14 +155,15 @@ class ConsumerSmokeTest {
         waitByRes("data-manager-search", 10_000)
         waitByRes("data-manager-region-list", 10_000)
         clickByRes("data-manager-map-tab")
-        device.pressBack()
+        clickByRes("data-manager-sheet-back")
         waitByRes("settings-sheet", 10_000)
-        device.pressBack()
+        clickByRes("settings-sheet-close")
         waitByRes("main-root", 10_000)
     }
 
     private fun launchApp(screenshotState: String?) {
-        val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
+        scenario?.close()
+        scenario = null
         device.pressHome()
         val intent = Intent(Intent.ACTION_MAIN).apply {
             setClassName(targetPackage, ACTIVITY_CLASS)
@@ -134,7 +171,8 @@ class ConsumerSmokeTest {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             screenshotState?.let { putExtra("screenshot_state", it) }
         }
-        targetContext.startActivity(intent)
+        scenario = ActivityScenario.launch(intent)
+        compose.waitForIdle()
         val deadline = SystemClock.uptimeMillis() + 20_000
         while (SystemClock.uptimeMillis() < deadline) {
             if (device.hasObject(By.pkg(targetPackage))) {
@@ -154,18 +192,15 @@ class ConsumerSmokeTest {
     }
 
     private fun clickByRes(tag: String) {
-        val deadline = SystemClock.uptimeMillis() + 10_000
-        do {
-            try {
-                waitByRes(tag, 10_000).click()
-                device.waitForIdle()
-                return
-            } catch (_: StaleObjectException) {
-                // Compose can replace a node between locating it and clicking it.
-                device.waitForIdle()
-            }
-        } while (SystemClock.uptimeMillis() < deadline)
-        throw AssertionError("UI element remained stale for tag=$tag")
+        compose.waitForIdle()
+        val tagged = compose.onNodeWithTag(tag, useUnmergedTree = true)
+        if (tagged.fetchSemanticsNode().config.contains(SemanticsActions.OnClick)) {
+            tagged.performClick()
+        } else {
+            compose.onNode(hasClickAction() and hasAnyAncestor(hasTestTag(tag)), useUnmergedTree = true).performClick()
+        }
+        compose.waitForIdle()
+        device.waitForIdle()
     }
 
     private fun doubleTapByRes(tag: String) {
@@ -195,20 +230,21 @@ class ConsumerSmokeTest {
     }
 
     private fun waitObject(selectors: List<BySelector>, timeoutMs: Long): UiObject2 {
-        val deadline = SystemClock.uptimeMillis() + timeoutMs
-        while (SystemClock.uptimeMillis() < deadline) {
-            if (device.hasObject(By.pkg(PERMISSION_PACKAGE))) {
-                allowRuntimePermissionIfPrompted()
+        var match: UiObject2? = null
+        try {
+            // Compose owns the frame clock; advance it while accessibility waits
+            // for sheet transitions and newly painted fixture nodes.
+            compose.waitUntil(timeoutMillis = timeoutMs) {
+                if (device.hasObject(By.pkg(PERMISSION_PACKAGE))) allowRuntimePermissionIfPrompted()
+                match = selectors.firstNotNullOfOrNull { device.findObject(it) }
+                match != null
             }
-            for (selector in selectors) {
-                val match = device.findObject(selector)
-                if (match != null) {
-                    return match
-                }
-            }
-            SystemClock.sleep(250)
+        } catch (failure: androidx.compose.ui.test.ComposeTimeoutException) {
+            val evidence = File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir, "smoke-failed-hierarchy.xml")
+            device.dumpWindowHierarchy(evidence)
+            throw AssertionError("UI element not found for selectors: $selectors; hierarchy=${evidence.absolutePath}", failure)
         }
-        throw AssertionError("UI element not found for selectors: $selectors")
+        return requireNotNull(match)
     }
 
     private fun waitUntilGoneByRes(tag: String, timeoutMs: Long) {
@@ -235,6 +271,8 @@ class ConsumerSmokeTest {
 
     private fun fallbackTextForTag(tag: String): String? {
         return when (tag) {
+            "data-manager-list-tab" -> InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.data_manager_list_tab)
+            "data-manager-map-tab" -> InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.data_manager_map_tab)
             "settings-button" -> "Einstellungen"
             "legal-button" -> "Rechtliche Hinweise"
             "open-debug-button" -> "Debug-Informationen oeffnen"

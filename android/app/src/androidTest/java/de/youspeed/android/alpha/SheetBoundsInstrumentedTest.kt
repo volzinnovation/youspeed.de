@@ -46,9 +46,13 @@ class SheetBoundsInstrumentedTest {
         val originalWindow = focusedWindow()
         for (mount in listOf(ManualOrientation.LANDSCAPE_CAMERA_LOWER_RIGHT,
             ManualOrientation.LANDSCAPE_CAMERA_UPPER_LEFT)) {
+            compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("settings-sheet-content")))
+                .performScrollToNode(hasTestTag("orientation-${mount.storageValue}"))
             compose.onNodeWithTag("orientation-${mount.storageValue}").performClick()
             waitForRotation(mount)
             assertSheetBounds("settings-sheet")
+            compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("settings-sheet-content")))
+                .performScrollToNode(hasTestTag("orientation-portrait"))
             compose.onNodeWithTag("orientation-portrait").performClick()
             waitForRotation(ManualOrientation.PORTRAIT)
             assertSame("The open sheet and its input state survive rotation", originalWindow, focusedWindow())
