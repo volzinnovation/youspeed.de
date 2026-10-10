@@ -49,15 +49,30 @@ jobs:
           TSR_APPLICABILITY_PARITY_OUTPUT: ${{ github.workspace }}/applicability-kotlin.json
         run: ./gradlew :app:testDebugUnitTest :app:assembleDebug -Duser.language=de -Duser.country=DE
 
+      # A pre-existing JVM test can fail after the APK has built successfully.
+      # Keep that failure red, but still exercise the native photo/UI paths.
+      - name: Check Android APK availability
+        if: ${{ !cancelled() }}
+        id: android-apk
+        run: |
+          if test -f android/app/build/outputs/apk/debug/app-debug.apk; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Verify packaged Android country rules
+        if: ${{ !cancelled() && steps.android-apk.outputs.available == 'true' }}
         run: python3 scripts/check_mobile_rules.py --android-apk android/app/build/outputs/apk/debug/app-debug.apk
 
       - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() && steps.android-apk.outputs.available == 'true' }}
         with:
           name: applicability-kotlin
           path: applicability-kotlin.json
 
       - name: Enable emulator acceleration
+        if: ${{ !cancelled() && steps.android-apk.outputs.available == 'true' }}
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
@@ -66,6 +81,7 @@ jobs:
       # These tests need Android SQLite, filesystem, EXIF and Keystore implementations.
       # The real-Rtree fixture also checks the production fallback when the image lacks Rtree.
       - name: Run Android native conformance tests
+        if: ${{ !cancelled() && steps.android-apk.outputs.available == 'true' }}
         uses: reactivecircus/android-emulator-runner@b530d96654c385303d652368551fb075bc2f0b6b # v2.35.0
         timeout-minutes: 20
         with:
