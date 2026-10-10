@@ -168,11 +168,14 @@ struct MainView: View {
             let bottomButtonGapWidth = max(0, paneWidth - screenInset * 2 - controlDiameter * 2)
             let topPadding = max(screenInset, proxy.safeAreaInsets.top * 0.28)
             let bottomPadding = max(screenInset, proxy.safeAreaInsets.bottom * 0.45)
+            let photoButtonDiameter = max(44, controlDiameter)
+            let photoRowReserve: CGFloat = viewModel.showsDrivingPhotoButton && viewModel.drivingControlsAllowed
+                ? photoButtonDiameter + 8 : 0
             let contentTopInset = topPadding + (landscape ? 76 : 72)
             let recorderStatusReserve: CGFloat = showsDriveRecorderStatusStrip ? 68 : 0
             // The recorder strip sits above landscape content and below portrait
             // content. Both modes reserve the bottom action row outside it.
-            let contentBottomInset = bottomPadding + controlDiameter + 10
+            let contentBottomInset = bottomPadding + controlDiameter + photoRowReserve + 10
                 + (landscape ? 0 : recorderStatusReserve)
             let workspaceTopInset = landscape ? screenInset + recorderStatusReserve : 0
             let locationReserve = viewModel.isInSpeedCaptureMode ? CGFloat(0)
@@ -221,6 +224,10 @@ struct MainView: View {
                 ? AnyLayout(HStackLayout(alignment: .center, spacing: sectionGap))
                 : AnyLayout(VStackLayout(spacing: sectionGap))
             ZStack {
+                Color.clear
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("dashboard.safeAreaGeometry")
                 screenBackgroundView.ignoresSafeArea()
                 layout {
                     ZStack(alignment: .top) {
@@ -324,13 +331,13 @@ struct MainView: View {
                                 .accessibilityIdentifier("dashboard.recorderStatus")
                                 .padding(.horizontal, max(8, horizontalPadding * 0.72))
                                 .padding(.top, landscape ? screenInset : 0)
-                                .padding(.bottom, landscape ? 0 : bottomPadding + controlDiameter + 8)
+                                .padding(.bottom, landscape ? 0 : bottomPadding + controlDiameter + photoRowReserve + 8)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: landscape ? .top : .bottom)
                         }
                         if landscape && viewModel.drivingControlsAllowed {
                             bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true,
                                                 buttonDiameter: controlDiameter)
-                                .padding(.bottom, bottomPadding)
+                                .padding(.bottom, bottomPadding + photoRowReserve)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         }
                     }
@@ -361,8 +368,17 @@ struct MainView: View {
             if !landscape && viewModel.drivingControlsAllowed {
                 bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true,
                                     buttonDiameter: controlDiameter)
-                    .padding(.bottom, bottomPadding)
+                    .padding(.bottom, bottomPadding + photoRowReserve)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            }
+            // A sibling of the locked dashboard subtree. This is the sole
+            // actionable control at >=4 km/h, anchored inside the safe area.
+            if viewModel.showsDrivingPhotoButton {
+                drivingPhotoButton(diameter: photoButtonDiameter)
+                    .padding(.trailing, screenInset)
+                    .padding(.bottom, bottomPadding)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    .environment(\.layoutDirection, .leftToRight)
             }
         }
         .task(id: scenePhase) {
@@ -565,6 +581,33 @@ struct MainView: View {
             return .yellow
         }
         return primaryForegroundColor
+    }
+
+    private func drivingPhotoButton(diameter: CGFloat) -> some View {
+        // Re-evaluate freshness and the tap cooldown even when GPS stops. The
+        // action repeats every gate; an old enabled frame cannot admit a shot.
+        TimelineView(.periodic(from: .now, by: 0.25)) { timeline in
+            let ready = viewModel.canCaptureDrivingPhoto(at: timeline.date)
+            Button {
+                _ = viewModel.captureDrivingPhoto()
+            } label: {
+                Image(systemName: "camera.fill")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(photoCaptureFeedbackVisible ? Color.green : (ready ? primaryForegroundColor : Color.gray))
+                    .frame(width: diameter, height: diameter)
+            }
+            .buttonStyle(.plain)
+            .background(ready ? actionButtonBackgroundColor : Color.gray.opacity(0.16), in: Circle())
+            .overlay { Circle().strokeBorder(ready ? actionButtonBorderColor : Color.gray.opacity(0.6), lineWidth: 1.5) }
+            .contentShape(Circle())
+            .disabled(!ready)
+            .accessibilityIdentifier("dashboard.photoButton")
+            .accessibilityLabel(NSLocalizedString(ready
+                ? (viewModel.drivingPhotoCaptureFailed ? "drive_photo.retry" : "drive_photo.capture")
+                : "drive_photo.unavailable", comment: ""))
+            .accessibilityHint(NSLocalizedString("drive_photo.local_hint", comment: ""))
+            .accessibilityValue(String(viewModel.panoramaxCaptureCount))
+        }
     }
 
     private func bottomCornerButtons(

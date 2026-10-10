@@ -331,6 +331,10 @@ data class ConsumerUiState(
     val panoramaxActiveUploadBatchIds: Set<String> = emptySet(),
     val panoramaxUploadStatusByBatch: Map<String, String> = emptyMap(),
     val panoramaxUploadProgressByBatch: Map<String, PanoramaxUploadProgress> = emptyMap(),
+    val drivingPhotoCaptureFailed: Boolean = false,
+    val panoramaxPhotoOutputReady: Boolean = false,
+    val panoramaxPhotoCaptureInFlight: Boolean = false,
+    val panoramaxCaptureBatchReady: Boolean = false,
     val panoramaxCaptureCount: Int = 0,
     val panoramaxLastCaptureAt: Instant? = null,
     val panoramaxLastCaptureDetail: String = "No photo captured",
@@ -744,7 +748,8 @@ class ConsumerSessionController(
     }
     @Volatile private var latestDashcamEventPath: String? = null
     private data class PendingPhoto(val requestId: String, val sessionId: String, val orientationEpoch: Long,
-        val sample: PanoramaxLocationSample, val drafts: List<PanoramaxTrafficSignAnnotationDraft>, val signEvidence: List<SignCaptureEvidence> = emptyList())
+        val sample: PanoramaxLocationSample, val drafts: List<PanoramaxTrafficSignAnnotationDraft>,
+        val signEvidence: List<SignCaptureEvidence> = emptyList(), val manual: Boolean = false)
     private var annotationOrientationEpoch = 0L
     private var annotationOrientationStartedAt = Instant.MIN
     private var annotationEligibleCaptureIds = emptySet<String>()
@@ -755,6 +760,8 @@ class ConsumerSessionController(
     private var panoramaxCaptureSessionId: String? = null
     private var panoramaxLastCaptureSample: PanoramaxLocationSample? = null
     private var panoramaxCaptureInFlight = false
+    private var lastManualPhotoRequestAt: Instant? = null
+    private var reconciledManualPhotoCameraDemand = false
     private var startupLogRetryClears = false
     private var startupLogTaskRunning = false
     private var pendingStartupData: PendingStartupData? = null
@@ -1249,6 +1256,46 @@ class ConsumerSessionController(
         DriveRecorderPolicy.shouldRunAutomaticPhotos(panoramaxCaptureEnabled, isDriving, applicationActive,
             !uiState.panoramaxMaintenanceInProgress)
 
+    /** Reserve a still output up front, before a movie can start, even with automatic photos off. */
+    internal fun isPhotoOutputRequested(): Boolean = !isDisposed.get() && !shouldPresentOnboarding() &&
+        uiState.appScreenshotState == null && uiState.startupDataState == StartupDataState.READY &&
+        isDriving && applicationActive && hasCameraPermission()
+
+    private fun isManualPhotoCameraRequested(): Boolean = isPhotoOutputRequested() &&
+        (DrivingPhotoCapturePolicy.isVisible(uiState.currentSpeedKmh) ||
+            synchronized(captureLock) { panoramaxCaptureInFlight })
+
+    private fun isPhotoCaptureSessionEnabled(): Boolean = isPhotoOutputRequested() &&
+        !uiState.panoramaxMaintenanceInProgress &&
+        (panoramaxCaptureEnabled || isManualPhotoCameraRequested())
+
+    private fun reconcilePhotoCaptureSession() {
+        if (isManualPhotoCameraRequested() != reconciledManualPhotoCameraDemand)
+            reconcileTrafficSignCamera("manual_photo_motion")
+        else if (isPhotoCaptureSessionEnabled()) ensurePanoramaxCaptureSessionIfCameraActive()
+        else endPanoramaxCaptureSession()
+    }
+
+    internal fun onPanoramaxPhotoOutputReadyChanged(ready: Boolean) {
+        updateState { copy(panoramaxPhotoOutputReady = ready) }
+        if (ready) ensurePanoramaxCaptureSessionIfCameraActive()
+    }
+
+    internal fun canCaptureDrivingPhoto(now: Instant = clock.instant()): Boolean = synchronized(captureLock) {
+        DrivingPhotoCapturePolicy.isReady(
+            speedKmh = uiState.currentSpeedKmh, sessionActive = isPhotoCaptureSessionEnabled() && host != null,
+            cameraReady = uiState.trafficSignCameraRuntimeState == TrafficSignCameraRuntimeState.ACTIVE,
+            photoOutputReady = uiState.panoramaxPhotoOutputReady,
+            batchReady = panoramaxCaptureSessionId != null && uiState.panoramaxCaptureBatchReady,
+            storageReady = appContext.filesDir.usableSpace >= DrivingPhotoCapturePolicy.MINIMUM_FREE_BYTES,
+            captureInFlight = panoramaxCaptureInFlight, sample = currentPanoramaxLocationSample(),
+            now = now, lastManualRequestAt = lastManualPhotoRequestAt,
+        )
+    }
+
+    /** Intentionally bypasses performButtonAction: a still must never stop an ongoing movie. */
+    fun captureDrivingPhoto(): Boolean = capturePanoramaxPhoto(emptyList(), manual = true)
+
     internal fun laneAdmission(thermallyPaused: Boolean): LaneAdmission = LaneAdmission(
         enabled = uiState.showDetectedLanes && lanePreviewVisible && lanePreviewGeometry != null &&
             isDashcamRecordingEnabled() && uiState.driveRecorderDashcamActive &&
@@ -1439,7 +1486,7 @@ class ConsumerSessionController(
         reconcileTrafficSignCamera()
     }
 
-    /** All dashboard buttons enter here, including accessibility and navigation. */
+    /** General dashboard actions use this gate; the dedicated still shutter deliberately bypasses it. */
     fun performButtonAction(action: () -> Unit) {
         if (isDisposed.get() || dashcamButtonActionGate.isWaiting || !uiState.drivingControlsAllowed) return
         val finalizingPath = activeDashcamPath
@@ -1577,7 +1624,6 @@ class ConsumerSessionController(
         panoramaxCaptureEnabled = enabled
         preferences.edit().putBoolean(KEY_PANORAMAX_CAPTURE_ENABLED, enabled).apply()
         updateState { copy(panoramaxCaptureEnabled = enabled) }
-        if (!enabled) endPanoramaxCaptureSession()
         reconcileTrafficSignCamera()
     }
 
@@ -1597,7 +1643,7 @@ class ConsumerSessionController(
     }
 
     private fun beginPanoramaxCaptureSession() {
-        if (!panoramaxCaptureEnabled) return
+        if (!isPhotoCaptureSessionEnabled() || !uiState.panoramaxPhotoOutputReady) return
         val sessionId = synchronized(captureLock) {
             if (panoramaxCaptureSessionId != null) return
             UUID.randomUUID().toString().lowercase(Locale.US).also {
@@ -1609,9 +1655,14 @@ class ConsumerSessionController(
                 panoramaxCaptureInFlight = false
             }
         }
+        updateState { copy(panoramaxCaptureBatchReady = false, panoramaxPhotoCaptureInFlight = false) }
         if (!submitPanoramaxStorageTask {
             if (synchronized(captureLock) { panoramaxCaptureSessionId != sessionId }) return@submitPanoramaxStorageTask
             runCatching { panoramaxQueueStore.createBatch(sessionId) }
+                .onSuccess {
+                    postState { if (synchronized(captureLock) { panoramaxCaptureSessionId == sessionId })
+                        copy(panoramaxCaptureBatchReady = true) else this }
+                }
                 .onFailure { error ->
                     val current = synchronized(captureLock) {
                         if (panoramaxCaptureSessionId != sessionId) false else {
@@ -1622,7 +1673,8 @@ class ConsumerSessionController(
                         }
                     }
                     if (current) postState { copy(lastError = error.message ?: error.javaClass.simpleName,
-                        driveRecorderPanoramaxActive = false) }
+                        driveRecorderPanoramaxActive = false, panoramaxCaptureBatchReady = false,
+                        panoramaxPhotoCaptureInFlight = false) }
                 }
         }) synchronized(captureLock) {
             if (panoramaxCaptureSessionId == sessionId) panoramaxCaptureSessionId = null
@@ -1639,6 +1691,7 @@ class ConsumerSessionController(
             annotationEligibleCaptureIds = emptySet()
             sessionId
         }
+        updateState { copy(panoramaxCaptureBatchReady = false, panoramaxPhotoCaptureInFlight = false) }
         if (endedSessionId == null) return
         try {
             // This scoped finalizer must survive disposal, unlike ordinary
@@ -1677,7 +1730,7 @@ class ConsumerSessionController(
      */
     private fun ensurePanoramaxCaptureSessionIfCameraActive() {
         if (DriveRecorderPolicy.shouldEnsurePanoramaxCaptureSession(
-                panoramaxEnabled = isPanoramaxCaptureEnabled(), driving = isDriving,
+                panoramaxEnabled = isPhotoCaptureSessionEnabled(), driving = isDriving,
                 applicationActive = applicationActive, cameraState = uiState.trafficSignCameraRuntimeState)) {
             beginPanoramaxCaptureSession()
         }
@@ -1737,7 +1790,7 @@ class ConsumerSessionController(
                     software = "YouSpeed Android ${BuildConfig.VERSION_NAME}",
                     imageWidthPixels = dimensions.first, imageHeightPixels = dimensions.second,
                     trafficSignAnnotations = annotations.takeIf { it.isNotEmpty() },
-                    captureReason = if (request.signEvidence.isEmpty()) "cadence" else "recognized_sign", signEvidence = request.signEvidence.takeIf { it.isNotEmpty() },
+                    captureReason = if (request.manual) "manual" else if (request.signEvidence.isEmpty()) "cadence" else "recognized_sign", signEvidence = request.signEvidence.takeIf { it.isNotEmpty() },
                 )
                 val mayPersist = synchronized(captureLock) {
                     pendingPhoto?.requestId == requestId && panoramaxCaptureSessionId == request.sessionId
@@ -1764,23 +1817,36 @@ class ConsumerSessionController(
                 }
                 enforcePanoramaxStorageLimit()
             } catch (error: Exception) {
-                updateState { copy(panoramaxLastCaptureDetail = error.message ?: "Photo could not be saved") }
+                updateState { copy(panoramaxLastCaptureDetail = error.message ?: "Photo could not be saved",
+                    drivingPhotoCaptureFailed = drivingPhotoCaptureFailed || request.manual) }
             } finally {
                 File(path).delete()
                 thumbnailFile?.delete()
-                synchronized(captureLock) { if (pendingPhoto?.requestId == requestId) { pendingPhoto = null; panoramaxCaptureInFlight = false } }
+                val cleared = synchronized(captureLock) {
+                    if (pendingPhoto?.requestId != requestId) false else {
+                        pendingPhoto = null; panoramaxCaptureInFlight = false; true
+                    }
+                }
+                if (cleared) {
+                    postState { copy(panoramaxPhotoCaptureInFlight = false) }
+                    mainHandler.post { if (!isDisposed.get()) reconcilePhotoCaptureSession() }
+                }
                 refreshPanoramaxBatches()
             }
         }) File(path).delete()
     }
 
     internal fun onPanoramaxPhotoCaptureFailed(detail: String, requestId: String) {
-        val wasPending = synchronized(captureLock) {
-            if (pendingPhoto?.requestId != requestId) false else {
-                pendingPhoto = null; panoramaxCaptureInFlight = false; true
+        val failedRequest = synchronized(captureLock) {
+            pendingPhoto?.takeIf { it.requestId == requestId }?.also {
+                pendingPhoto = null; panoramaxCaptureInFlight = false
             }
         }
-        if (wasPending) postState { copy(panoramaxLastCaptureDetail = detail) }
+        if (failedRequest != null) {
+            postState { copy(panoramaxLastCaptureDetail = detail, panoramaxPhotoCaptureInFlight = false,
+                drivingPhotoCaptureFailed = drivingPhotoCaptureFailed || failedRequest.manual) }
+            mainHandler.post { if (!isDisposed.get()) reconcilePhotoCaptureSession() }
+        }
     }
 
     private fun captureRecognizedSigns(event: TrafficSignRecognitionEvent, detections: List<TrafficSignDetection>) {
@@ -1796,26 +1862,47 @@ class ConsumerSessionController(
     private fun maybeCapturePanoramaxPhoto() {
         if (!uiState.panoramaxRecognizedSignsOnly) capturePanoramaxPhoto(emptyList())
     }
-    private fun capturePanoramaxPhoto(evidence: List<SignCaptureEvidence>): Boolean {
-        if (!isPanoramaxCaptureEnabled() || uiState.trafficSignCameraRuntimeState != TrafficSignCameraRuntimeState.ACTIVE) return false
-        if (!PanoramaxCapturePolicy.isMoving(uiState.currentSpeedKmh / 3.6)) return false
+    private fun capturePanoramaxPhoto(evidence: List<SignCaptureEvidence>, manual: Boolean = false): Boolean {
+        if (manual) {
+            if (!canCaptureDrivingPhoto()) return false
+        } else {
+            if (!isPanoramaxCaptureEnabled() || !uiState.panoramaxPhotoOutputReady ||
+                !uiState.panoramaxCaptureBatchReady || uiState.trafficSignCameraRuntimeState != TrafficSignCameraRuntimeState.ACTIVE) return false
+            if (!PanoramaxCapturePolicy.isMoving(uiState.currentSpeedKmh / 3.6)) return false
+        }
+        val now = clock.instant()
         val sample = currentPanoramaxLocationSample() ?: return false
-        if (sample.accuracyMeters > 50 || sample.capturedAt.isAfter(clock.instant().plusSeconds(60)) || Duration.between(sample.capturedAt, clock.instant()).seconds > 10) return false
-        if (evidence.isNotEmpty() && uiState.panoramaxLastCaptureAt?.let { Duration.between(it, clock.instant()).toMillis() < 2000 } == true) return false
+        if (manual) {
+            if (!DrivingPhotoCapturePolicy.isLocationUsable(sample, now) ||
+                appContext.filesDir.usableSpace < DrivingPhotoCapturePolicy.MINIMUM_FREE_BYTES) return false
+        } else if (sample.accuracyMeters > 50 || sample.capturedAt.isAfter(now.plusSeconds(60)) ||
+            Duration.between(sample.capturedAt, now).seconds > 10) return false
+        if (evidence.isNotEmpty() && uiState.panoramaxLastCaptureAt?.let { Duration.between(it, now).toMillis() < 2000 } == true) return false
         val request = synchronized(captureLock) {
             val sessionId = panoramaxCaptureSessionId ?: return false
-            if (panoramaxCaptureInFlight || (evidence.isEmpty() && !PanoramaxCapturePolicy.shouldCapture(panoramaxLastCaptureSample, sample,
-                    now = clock.instant(), config = PanoramaxCadenceConfig(distanceMeters = uiState.panoramaxMinimumDistanceMeters,
+            if (panoramaxCaptureInFlight || (manual && !canCaptureDrivingPhoto(now)) ||
+                (!manual && evidence.isEmpty() && !PanoramaxCapturePolicy.shouldCapture(panoramaxLastCaptureSample, sample,
+                    now = now, config = PanoramaxCadenceConfig(distanceMeters = uiState.panoramaxMinimumDistanceMeters,
                         fallbackInterval = Duration.ofMillis((uiState.panoramaxMinimumIntervalSeconds * 1000).toLong()),
                         triggerMode = uiState.panoramaxTriggerMode)))) return false
             PendingPhoto(UUID.randomUUID().toString(), sessionId, annotationOrientationEpoch,
-                sample.copy(capturedAt = clock.instant()), latestAnnotationDrafts.toList(), evidence).also {
+                sample.copy(capturedAt = now), latestAnnotationDrafts.toList(), evidence, manual).also {
                 pendingPhoto = it; panoramaxCaptureInFlight = true
+                if (manual) lastManualPhotoRequestAt = now
             }
         }
+        updateState { copy(panoramaxPhotoCaptureInFlight = true,
+            drivingPhotoCaptureFailed = if (manual) false else drivingPhotoCaptureFailed) }
         val currentHost = host
         if (currentHost == null) onPanoramaxPhotoCaptureFailed("Camera unavailable", request.requestId)
-        else mainHandler.post { currentHost.capturePanoramaxPhoto(request.requestId) }
+        else mainHandler.post {
+            val current = synchronized(captureLock) {
+                pendingPhoto?.requestId == request.requestId && panoramaxCaptureSessionId == request.sessionId
+            }
+            if (current && isPhotoCaptureSessionEnabled() && host === currentHost)
+                currentHost.capturePanoramaxPhoto(request.requestId)
+            else onPanoramaxPhotoCaptureFailed("Camera session has stopped", request.requestId)
+        }
         return currentHost != null
     }
 
@@ -2275,7 +2362,7 @@ class ConsumerSessionController(
                     trafficSignDebugRuntimeUnhealthy = true,
                 )
             }
-            if (!isDriveRecorderSessionActive() && !isPanoramaxCaptureEnabled()) host?.stopTrafficSignCamera()
+            if (!isDriveRecorderSessionActive() && !isPanoramaxCaptureEnabled() && !isManualPhotoCameraRequested()) host?.stopTrafficSignCamera()
         }
     }
 
@@ -2838,7 +2925,7 @@ class ConsumerSessionController(
             )
         }
         signCollection.cameraChanged(state == TrafficSignCameraRuntimeState.ACTIVE && isTrafficSignRecognitionRuntimeEnabled())
-        if (state == TrafficSignCameraRuntimeState.ACTIVE && isPanoramaxCaptureEnabled()) beginPanoramaxCaptureSession()
+        if (state == TrafficSignCameraRuntimeState.ACTIVE && isPhotoCaptureSessionEnabled()) beginPanoramaxCaptureSession()
         if (state in setOf(TrafficSignCameraRuntimeState.DISABLED, TrafficSignCameraRuntimeState.FAILED,
                 TrafficSignCameraRuntimeState.UNAVAILABLE, TrafficSignCameraRuntimeState.DENIED)) endPanoramaxCaptureSession()
         if (driveRecorderEnabled) {
@@ -2852,7 +2939,7 @@ class ConsumerSessionController(
                 TrafficSignCameraRuntimeState.DISABLED -> DriveRecorderState.DISABLED
             }
             updateState { copy(driveRecorderState = recorderState) }
-            if (state == TrafficSignCameraRuntimeState.ACTIVE && isPanoramaxCaptureEnabled()) beginPanoramaxCaptureSession()
+            if (state == TrafficSignCameraRuntimeState.ACTIVE && isPhotoCaptureSessionEnabled()) beginPanoramaxCaptureSession()
             if (state == TrafficSignCameraRuntimeState.ACTIVE) ensureDashcamRecordingIfCameraActive(state)
             if (state in setOf(TrafficSignCameraRuntimeState.FAILED, TrafficSignCameraRuntimeState.UNAVAILABLE, TrafficSignCameraRuntimeState.DENIED)) {
                 driveRecorderEnabled = false
@@ -2865,6 +2952,9 @@ class ConsumerSessionController(
                     TrafficSignCameraRuntimeState.UNAVAILABLE, TrafficSignCameraRuntimeState.DENIED,
                 )) resetSecondaryTrafficSignSpeech()
             copy(
+                panoramaxPhotoOutputReady = panoramaxPhotoOutputReady && state !in setOf(
+                    TrafficSignCameraRuntimeState.DISABLED, TrafficSignCameraRuntimeState.FAILED,
+                    TrafficSignCameraRuntimeState.UNAVAILABLE, TrafficSignCameraRuntimeState.DENIED),
                 trafficSignCameraRuntimeState = state,
                 trafficSignCameraRuntimeDetail = if (trafficSignRecognitionUnavailable && state == TrafficSignCameraRuntimeState.ACTIVE) trafficSignCameraRuntimeDetail else detail,
                 driveRecorderPanoramaxActive = isPanoramaxCaptureEnabled() && state == TrafficSignCameraRuntimeState.ACTIVE,
@@ -2927,9 +3017,10 @@ class ConsumerSessionController(
     }
 
     private fun reconcileTrafficSignCamera(reason: String = "capture_state") {
-        val shouldRun = !shouldPresentOnboarding() && (isTrafficSignRecognitionRuntimeEnabled() || isDriveRecorderSessionActive() || isPanoramaxCaptureEnabled() || isVisualCalibrationActive()) && uiState.appScreenshotState == null
+        reconciledManualPhotoCameraDemand = isManualPhotoCameraRequested()
+        val shouldRun = !shouldPresentOnboarding() && (isTrafficSignRecognitionRuntimeEnabled() || isDriveRecorderSessionActive() || isPanoramaxCaptureEnabled() || reconciledManualPhotoCameraDemand || isVisualCalibrationActive()) && uiState.appScreenshotState == null
         appendCaptureConfigurationDiagnostic(reason)
-        if (!isPanoramaxCaptureEnabled()) endPanoramaxCaptureSession()
+        if (!isPhotoCaptureSessionEnabled()) endPanoramaxCaptureSession()
         if (!shouldRun) {
             clearLanePreview()
             host?.stopTrafficSignCamera()
@@ -2957,7 +3048,9 @@ class ConsumerSessionController(
                     )
                 }
             }
-        } else if (uiState.trafficSignCameraRuntimeState != TrafficSignCameraRuntimeState.REQUESTING_PERMISSION) {
+        } else if (!DrivingPhotoCapturePolicy.isVisible(uiState.currentSpeedKmh) &&
+            uiState.drivingControlsAllowed &&
+            uiState.trafficSignCameraRuntimeState != TrafficSignCameraRuntimeState.REQUESTING_PERMISSION) {
             updateState {
                 copy(
                     trafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.REQUESTING_PERMISSION,
@@ -4907,6 +5000,7 @@ class ConsumerSessionController(
         if (!motion.controlsAllowed && uiState.speedCaptureMode != SpeedCaptureModeState.IDLE) {
             cancelSpeedCapture(reason = null)
         }
+        reconcilePhotoCaptureSession()
         maybeSpeakOverspeedWarning()
         maybeCapturePanoramaxPhoto()
 

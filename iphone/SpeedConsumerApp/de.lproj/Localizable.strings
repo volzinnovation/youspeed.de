@@ -493,3 +493,10 @@
 "traffic.sign.documentation.title" = "Verkehrszeichen";
 "data_manager.queue_count" = "%d Downloads in der Warteschlange";
 "data_manager.queued_position" = "Warteschlange: Position %d";
+
+/* Driving manual photo shutter */
+"drive_photo.capture" = "Foto aufnehmen";
+"drive_photo.unavailable" = "Fotoaufnahme nicht verfügbar";
+"drive_photo.local_hint" = "Speichert ein Foto lokal zur späteren Prüfung. Es wird nichts hochgeladen.";
+"drive_photo.ready" = "Manuelle Fotoaufnahme bereit";
+"drive_photo.retry" = "Foto fehlgeschlagen. Zum Wiederholen tippen";

@@ -153,6 +153,36 @@ class DriveRecorderInstrumentedTest {
                     File(context.filesDir, "dashcam").listFiles().orEmpty()
                         .any { file -> file.name !in existingMovies && file.length() > 1_024 }
                 }
+                // Exercise the driving shutter against the actual CameraX
+                // ImageCapture output, not only the request-counting UI host.
+                // Automatic photos are off and the movie must keep its file.
+                val moviesBeforeManual = File(context.filesDir, "dashcam").listFiles().orEmpty()
+                    .filter { it.name !in existingMovies }.map { it.name }.toSet()
+                act {
+                    it.setPanoramaxCaptureEnabled(false)
+                    injectMovingTestFix(it, fast = true)
+                }
+                awaitState("Manual still output ready during movie") {
+                    it.panoramaxPhotoOutputReady && it.panoramaxCaptureBatchReady && !it.panoramaxPhotoCaptureInFlight
+                }
+                val beforeManual = state().panoramaxCaptureCount
+                act {
+                    injectMovingTestFix(it, fast = true)
+                    assertTrue("Explicit shutter accepts a photo with automatic capture off", it.captureDrivingPhoto())
+                    assertFalse("A repeated in-flight tap cannot enqueue another photo", it.captureDrivingPhoto())
+                }
+                awaitState("Manual CameraX JPEG saved") { it.panoramaxCaptureCount == beforeManual + 1 }
+                val manualPhoto = queue.listBatches().filter { it.batchId !in existingBatches }
+                    .flatMap { it.items }.maxBy { it.metadata.capturedAt }
+                assertEquals("manual", manualPhoto.metadata.captureReason)
+                assertEquals(PanoramaxItemState.CAPTURED, manualPhoto.state)
+                assertTrue(queue.originalFile(manualPhoto).isFile)
+                assertTrue(state().driveRecorderDashcamActive)
+                assertFalse(state().panoramaxCaptureEnabled)
+                assertEquals("The shutter does not replace/finalize the movie", moviesBeforeManual,
+                    File(context.filesDir, "dashcam").listFiles().orEmpty()
+                        .filter { it.name !in existingMovies }.map { it.name }.toSet())
+                act { it.setPanoramaxCaptureEnabled(true) }
                 act { injectMovingTestFix(it, stationary = true) }
                 awaitState("Stationary sample permits dashboard controls") { it.drivingControlsAllowed }
                 // Camera continuity is independent of the optional contribution
