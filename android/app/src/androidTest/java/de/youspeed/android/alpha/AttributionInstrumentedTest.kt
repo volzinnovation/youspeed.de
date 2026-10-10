@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import java.io.File
@@ -22,6 +23,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.*
 import org.junit.Rule
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -30,6 +32,9 @@ class AttributionInstrumentedTest {
     @get:Rule val compose = createEmptyComposeRule()
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    private var scenario: ActivityScenario<MainActivity>? = null
+
+    @After fun closeApp() { scenario?.close(); scenario = null }
 
     @Test fun packagedCreditsAndFullNoticesAreAvailableOfflineFromInfo() {
         val catalog = context.assets.open(AttributionCatalog.ASSET_PATH).bufferedReader().use { AttributionCatalog.decode(it.readText()) }
@@ -48,9 +53,11 @@ class AttributionInstrumentedTest {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             putExtra("screenshot_state", "other-sign-stop")
         }
-        context.startActivity(launch)
+        scenario = ActivityScenario.launch(launch)
+        compose.waitForIdle()
         waitFor("legal-button")
         compose.onNode(hasClickAction() and hasAnyAncestor(hasTestTag("legal-button")), useUnmergedTree = true).performClick()
+        waitFor("legal-sheet")
         compose.onNodeWithTag("attribution-button").performClick()
         waitFor("attribution-list")
         capture("info-sources")
@@ -79,8 +86,14 @@ class AttributionInstrumentedTest {
 
     private fun waitFor(tag: String) {
         // Compose owns the test frame clock, including frames scheduled after asset IO.
-        compose.waitUntil(timeoutMillis = 20_000) {
-            compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+        try {
+            compose.waitUntil(timeoutMillis = 20_000) {
+                compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
+            }
+        } catch (failure: androidx.compose.ui.test.ComposeTimeoutException) {
+            device.dumpWindowHierarchy(File(context.cacheDir, "attribution-failed-hierarchy.xml"))
+            device.takeScreenshot(File(context.cacheDir, "attribution-failed-screen.png"))
+            throw AssertionError("Attribution screen did not expose $tag; evidence retained in app cache", failure)
         }
     }
 
