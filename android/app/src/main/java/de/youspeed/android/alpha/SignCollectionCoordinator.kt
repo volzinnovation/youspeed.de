@@ -37,7 +37,8 @@ internal class SignCollectionCoordinator(private val context: Context, private v
     private var generation = 0
     private var privacyChangePending = false
     private var currentEpoch: Int? = null
-    private var closed = false
+    @Volatile private var closed = false
+    private val storageLifecycle = Any()
     private var pack: AndroidTrafficSignVerifiedPack? = null // Storage executor only.
     private val tick = object : Runnable { override fun run() { if (!closed) { deliver(); main.postDelayed(this, 60_000) } } }
     init { if (worker == null) status = "storage_unavailable"; perform { it.migrateAutomaticCrops(); main.post { deliver() } }; main.post(tick) }
@@ -54,7 +55,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
         session = null; consentPresented = false; authorized = false; cameraActive = false
         perform { observer.reset(); it.endSession() }; deliver()
     }
-    fun modelLoaded(value: AndroidTrafficSignVerifiedPack) { storage.execute { pack = value; observer.reset() } }
+    fun modelLoaded(value: AndroidTrafficSignVerifiedPack) { executeStorage { pack = value; observer.reset() } }
     private fun requestConsent() {
         if (!enabled || !cameraActive || consentPresented) return
         val token = generation; val expectedSession = session
@@ -95,7 +96,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
     private fun perform(refreshAfter: Boolean = true, action: (SignCollectionStore) -> Unit) {
         if (closed) return
         val store = foundation.store.getOrNull() ?: return
-        storage.execute {
+        executeStorage {
             try { action(store) } catch (_: Exception) { main.post { status = "local_operation_failed" } }
             if (refreshAfter) refresh()
         }
@@ -104,7 +105,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
         if (closed) return
         val store = foundation.store.getOrNull() ?: return
         val token = generation
-        storage.execute {
+        executeStorage {
             val allowed = store.isAuthorized("sign_metadata", SignCollectionCapabilities.metadataDisclosure)
             val phases = runCatching { store.controlHistory().filter { it.kind == "deletion" }.takeLast(3).map { control ->
                 listOf("active_data_removed", "archives_purged", "backup_expiry_complete").associateWith { control.response?.get(it) == JsonPrimitive(true) }
@@ -224,7 +225,17 @@ internal class SignCollectionCoordinator(private val context: Context, private v
     }
     fun freezeCorrection(attempt: String, presentation: String?) { perform { observer.freeze(attempt, presentation) } }
     fun correct(attempt: String, modality: String) { perform { store -> observer.correction(attempt, modality, Instant.now())?.let { store.enqueue("correction", it, SignCollectionCapabilities.metadataDisclosure) } } }
-    fun close() { if (closed) return; closed = true; main.removeCallbacks(tick); invalidateUpload(); storage.shutdown(); network.shutdownNow() }
+    private fun executeStorage(action: () -> Unit) = synchronized(storageLifecycle) {
+        if (!closed) storage.execute(action)
+    }
+    fun close() {
+        synchronized(storageLifecycle) {
+            if (closed) return
+            closed = true
+            storage.shutdown()
+        }
+        main.removeCallbacks(tick); invalidateUpload(); network.shutdownNow()
+    }
     private fun position(fix: Location?, at: Instant): JsonElement {
         if (fix == null || !fix.hasAccuracy() || fix.accuracy !in 0f..100_000f || !fix.latitude.isFinite() || !fix.longitude.isFinite() || fix.latitude !in -90.0..90.0 || fix.longitude !in -180.0..180.0 || kotlin.math.abs(at.toEpochMilli() - fix.time) > 30_000) return JsonNull
         return buildJsonObject {
