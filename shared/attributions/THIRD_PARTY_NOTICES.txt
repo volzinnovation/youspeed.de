@@ -1229,9 +1229,9 @@ Changes: Reference for the app's rule data and summaries. Source checked: 2026-0
 Traffic-rule reference · Netherlands
 www.om.nl
 Reference citation; original website rights remain with its publisher
-Source: https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden
-Licence / legal basis: https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden
-Changes: Reference for the app's rule data and summaries. Source checked: 2026-09-16. The original website is not bundled.
+Source: https://www.om.nl/documenten/mulderbundel/map/map/mulderbundel-2026
+Licence / legal basis: https://www.om.nl/documenten/mulderbundel/map/map/mulderbundel-2026
+Changes: Reference for the app's rule data and summaries. Source checked: 2026-10-02. The original website is not bundled.
 
 ================================================================================
 
