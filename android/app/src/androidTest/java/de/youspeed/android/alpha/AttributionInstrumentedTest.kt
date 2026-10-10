@@ -64,10 +64,10 @@ class AttributionInstrumentedTest {
         scrollTo("credit-${first.id}")
         capture("info-source-detail")
         for (path in AttributionCatalog.NOTICE_PATHS) {
-            scrollTo("notice-${path.substringBefore('/')}")
-            compose.onNodeWithTag("notice-${path.substringBefore('/')}").performClick()
+            scrollTo("notice-${path.replace('/', '-')}")
+            compose.onNodeWithTag("notice-${path.replace('/', '-')}").performClick()
             waitFor("attribution-notice-text")
-            capture("info-notice-${path.substringBefore('/')}")
+            capture("info-notice-${path.replace('/', '-')}")
             device.pressBack()
             waitFor("attribution-list")
         }

@@ -1419,6 +1419,8 @@ class ConsumerSessionController(
         }
         if (applicationActive == active) return
         applicationActive = active
+        // Deterministic screenshot signs survive foreground transitions, as on iPhone.
+        if (uiState.appScreenshotState != null) return
         clearLanePreview()
         invalidateTrafficSignGeneration(clearAssertion = true, reason = "application_lifecycle", permitWrites = active && isTrafficSignRecognitionRuntimeEnabled())
         if (!active) {
@@ -2126,6 +2128,9 @@ class ConsumerSessionController(
         signCollection.modelLoaded(pack)
         mainHandler.post {
             if (isDisposed.get()) return@post
+            // Screenshot fixtures own their presentation; an asynchronous pack
+            // preload must not clear the sign they were configured to display.
+            if (uiState.appScreenshotState != null) return@post
             activeTrafficSignModelPackForCollection = pack.modelPack; panoramaxSignFilter.reset()
             val country = AndroidTrafficSignModelPackSelection.availableCountryCode(
                 pack.modelPack.countries.firstOrNull()
