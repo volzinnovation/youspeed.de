@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -121,9 +122,17 @@ class DrivingPhotoCaptureInstrumentedTest {
             scenario.onActivity {
                 // The same position cannot meet automatic cadence, but is a valid next explicit photo.
                 assertFalse(PanoramaxCapturePolicy.shouldCapture(item.metadata.location, item.metadata.location))
+                fixture.fix(Instant.now())
             }
-            compose.waitUntil(5_000) { fixture.controller.canCaptureDrivingPhoto() }
-            compose.onNodeWithTag("driving-photo-button").performClick()
+            // The controller's wall-clock cooldown can expire before the next
+            // Compose readiness tick. A click while semantics are still disabled
+            // is correctly ignored, so wait for the actual user-visible state.
+            compose.waitUntil(5_000) {
+                fixture.controller.canCaptureDrivingPhoto() &&
+                    !compose.onNodeWithTag("driving-photo-button").fetchSemanticsNode()
+                        .config.contains(SemanticsProperties.Disabled)
+            }
+            compose.onNodeWithTag("driving-photo-button").assertIsEnabled().performClick()
             compose.waitUntil(5_000) { fixture.host.requests.size == 2 }
             scenario.onActivity {
                 fixture.controller.onPanoramaxPhotoCaptureFailed("Synthetic test failure", fixture.host.requests.last())
