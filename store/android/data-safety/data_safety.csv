@@ -4,7 +4,7 @@ data_collection,yes,"Optional authenticated Panoramax photos with GPS metadata u
 data_sharing,review_pending,"OSM France is independent; HSPF processing role unverified. Verify user-initiated disclosure/consent and subsequent server uses before choosing No."
 tracking,no_app_tracking,"No app advertising or tracking SDK; confirm supported server practices."
 encryption_in_transit,yes_known_app_flows,"Downloads and Panoramax account/upload requests use HTTPS; verify final binary and external export scope."
-delete_data,review_pending,"Published operator rights contacts exist; local delete and Disconnect do not delete remote uploads/accounts. Complete account-and-data deletion path is unverified."
+delete_data,owner_url_saved,"Owner selected https://panoramax.youspeed.de/terms-of-service; saved for deletion in Play. Prepared Moonshots contact and account/data request amendment is not deployed. Local delete and Disconnect do not delete remote uploads/accounts; execution and retention remain unverified."
 account_deletion_applicability,recommended_yes_owner_review,"OSM France creates contributor account on first login; external Sign Up is exposed. Google includes app-directed external creation. No submitted Console answer."
 name_email,review_pending,"YouSpeed server policy lists contact fields; confirm app-directed browser/account-service scope and retention before final categories."
 server_diagnostics_and_research,review_pending,"Published YouSpeed purposes include server security/error analysis and research. Confirm retained data types and purpose mapping; do not answer unknown handling No."

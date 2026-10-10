@@ -1,16 +1,17 @@
 # YouSpeed Store Release Checklist
 
-Current preparation: **1.3 (10031), 2 October 2026**. See [the submission dossier](STORE_SUBMISSION_1.3_2026-10-02.md) and [store handoff](../../store/README.md) for completed local work, exact artifacts and outstanding requirements. Historical public launch: 29 August 2026.
+Current Android preparation: **1.3 (10033), checked 4 October 2026**, saved in Play and awaiting review. See the [current Android audit](ANDROID_SUBMISSION_1.3_2026-10-04.md), [dated submission dossier](STORE_SUBMISSION_1.3_2026-10-02.md) and [store handoff](../../store/README.md). Historical public launch: 29 August 2026.
 
 ## Current release gates
 
-- Authenticated Safari/Chrome control is blocked by Computer Use despite user authorization; listings and country availability have not been applied.
-- Retained build 10031 must be confirmed unused in both consoles. Add France, Switzerland, Belgium and the Netherlands while preserving existing territories.
-- The iPhone IPA is signed and verified; Android still needs the existing matching Play upload key, final signing and certificate verification.
-- Resolve the documented Android 16 KB native-library findings and perform a 16 KB runtime check. A packaging alignment pass alone does not establish compatibility.
+- Chrome control is working. Play has 18 pending changes, including the signed 10033 bundle, all nine listing locales, Belgium, privacy URL and Data safety. Managed publishing is enabled; review submission remains pending.
+- Align Play with the intended source: its recorded 10033 AAB predates the cross-border fix in the GitHub Android 1.3 release. A replacement needs a fresh unused Play version code and updated artifact names.
+- Existing Android upload signing is verified and the old signed Play CI has passed. The iPhone 10032 upload is recorded separately; do not treat matching version names as matching platform binaries.
+- Play reports 16 KB support for 10033. Actual 16 KB runtime verification and resolution of the separate native-audit findings remain outstanding; the Console compatibility result alone does not establish runtime acceptance.
 - Complete the existing model rights/calibration/rollout reviews for the intended camera markets.
 - Reconcile Panoramax operator privacy/deletion answers, approve and publish the revised public privacy/support sources, then verify live pages.
 - Resolve account-and-content deletion initiation for the app-directed OSM France contributor-account creation flow; Disconnect only revokes a token.
+- Finalize the corrected Data safety answers: the July declaration said no collection and no encryption. The owner-selected terms URL is now saved for privacy and deletion, and the URL field no longer blocks Next. Publish the prepared Moonshots contact/deletion amendment and verify retention and actual execution. Reconcile reviewer access: it currently says all features are unrestricted, despite Panoramax login.
 - Freeze agreed source, match artifact fingerprints and complete physical-device acceptance before publication.
 
 The prepared listings include four Apple locales, nine Android locales, 40 Apple screenshots, 72 Android screenshots and nine Play feature graphics. Camera recognition is presented as a standard feature. Validate and package the final local assets with `scripts/release/validate_store_package.py` and `scripts/release/package_store_submission.py`; neither contacts a store.
@@ -59,4 +60,4 @@ The prepared listings include four Apple locales, nine Android locales, 40 Apple
 - Run TestFlight and Play internal testing on physical devices.
 - Review all user-facing text in non-welcome/debug screens for full localization coverage.
 - Confirm legal review of advisory fine/points/driving-ban copy for each release country.
-- No merge, deployment, binary upload, review submission or publication was performed. Obtain explicit approval for external release actions under the repository policy.
+- Signed binary and listing uploads were performed in prior authorized work; the 4 October audit made no Console changes, review submission, deployment or publication. Follow the repository's explicit-approval policy for release actions.
