@@ -1113,18 +1113,32 @@ struct MainView: View {
                     }
                     .contentShape(Rectangle())
                     .opacity(showingPreview ? 1 : 0)
-                    .allowsHitTesting(showingPreview)
                     .accessibilityElement(children: .ignore)
                     .accessibilityIdentifier("dashboard.dashcamPreview")
                     .accessibilityLabel(NSLocalizedString("drive_recorder.preview.live", comment: ""))
                     .accessibilityHint(viewModel.drivingControlsAllowed ? NSLocalizedString("drive_recorder.preview.hide", comment: "") : "")
-                    .accessibilityHidden(!showingPreview)
                     .onTapGesture {
                         guard viewModel.drivingControlsAllowed, DriveRecorderPreviewInteractionPolicy.canDismissPreview(
                             at: Date(),
                             notBefore: driveRecorderPreviewDismissalAllowedAt
                         ) else { return }
                         viewModel.performDriveInteraction { setDriveRecorderPreviewVisible(false) }
+                    }
+                    // Apply visibility outside the gesture's accessibility wrapper so
+                    // a retained, transparent preview cannot cover telemetry labels.
+                    .allowsHitTesting(showingPreview)
+                    .accessibilityHidden(!showingPreview)
+                    .accessibilityRepresentation {
+                        if showingPreview {
+                            Button(NSLocalizedString("drive_recorder.preview.live", comment: "")) {
+                                guard viewModel.drivingControlsAllowed, DriveRecorderPreviewInteractionPolicy.canDismissPreview(
+                                    at: Date(), notBefore: driveRecorderPreviewDismissalAllowedAt
+                                ) else { return }
+                                viewModel.performDriveInteraction { setDriveRecorderPreviewVisible(false) }
+                            }
+                            .accessibilityIdentifier("dashboard.dashcamPreview")
+                            .accessibilityHint(viewModel.drivingControlsAllowed ? NSLocalizedString("drive_recorder.preview.hide", comment: "") : "")
+                        }
                     }
             }
         }

@@ -119,6 +119,11 @@ final class ScreenOrientationUITests: XCTestCase {
         defer { app.terminate() }
 
         let settings = app.buttons["dashboard.settingsButton"]
+        let keepLogs = app.buttons["startup.logs.keep"]
+        let startupReady = NSPredicate { _, _ in settings.exists || keepLogs.exists }
+        expectation(for: startupReady, evaluatedWith: nil)
+        waitForExpectations(timeout: 60)
+        if keepLogs.exists { keepLogs.tap() }
         XCTAssertTrue(settings.waitForExistence(timeout: 60),
                       "The live dashboard requires an installed map and completed onboarding.")
         let close = app.buttons["subscreen.close"]
@@ -136,19 +141,35 @@ final class ScreenOrientationUITests: XCTestCase {
             XCTAssertTrue(close.isHittable)
             if pass == 0 {
                 let mounts = ["Portrait", "Landscape · camera lower right", "Landscape · camera upper left"]
+                // Landscape has less vertical space, so later mount options
+                // may need scrolling after the preceding orientation change.
+                let revealMount: (String) -> XCUIElement = { name in
+                    // Short drags avoid a full-screen flick skipping past the
+                    // orientation section in the shallow landscape viewport.
+                    let middle = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
+                    let lower = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.70))
+                    for _ in 0..<12 where !app.buttons["Portrait"].isHittable {
+                        middle.press(forDuration: 0.1, thenDragTo: lower)
+                    }
+                    let option = app.buttons[name]
+                    for _ in 0..<12 where !option.isHittable {
+                        lower.press(forDuration: 0.1, thenDragTo: middle)
+                    }
+                    return option
+                }
                 guard let originalMount = mounts.first(where: {
-                    let button = app.buttons[$0]
+                    let button = revealMount($0)
                     return button.isSelected || (button.value as? String) == "1"
                 }) else {
                     XCTFail("Cannot preserve the original mount: \(app.debugDescription)")
                     return
                 }
                 defer {
-                    let original = app.buttons[originalMount]
+                    let original = revealMount(originalMount)
                     if original.isHittable { original.tap() }
                 }
                 for mount in mounts {
-                    let option = app.buttons[mount]
+                    let option = revealMount(mount)
                     XCTAssertTrue(option.isHittable)
                     option.tap()
                     let settled = NSPredicate { _, _ in
@@ -405,6 +426,7 @@ final class ScreenOrientationUITests: XCTestCase {
                     hierarchy.lifetime = .keepAlways
                     self.add(hierarchy)
                 }
+                attachDashboard(caseName)
                 let city = workspace.staticTexts["Bad Herrenalb"]
                 assertLabelClearance()
                 if !dashcam {
