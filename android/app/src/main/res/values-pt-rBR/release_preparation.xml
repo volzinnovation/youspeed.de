@@ -160,4 +160,6 @@
     <string name="calibration_up">Mover para cima</string>
     <string name="calibration_down">Mover para baixo</string>
     <string name="calibration_defaults">Redefinir rascunho</string>
+    <string name="data_manager_queued_count">Downloads na fila: %1$d</string>
+    <string name="data_manager_failed_count">Downloads com falha: %1$d. Consulte cada região em Lista.</string>
 </resources>

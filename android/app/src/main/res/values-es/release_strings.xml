@@ -160,4 +160,6 @@
     <string name="gravity_alignment_unavailable">Alineación por gravedad no disponible</string>
     <string name="gravity_alignment_angles">Giro %1$.0f°, inclinación %2$.0f°. La gravedad no permite determinar el rumbo.</string>
     <string name="tsr_voice_dismissal_listening">Di «Incorrecto»</string>
+    <string name="data_manager_queued_count">Descargas en cola: %1$d</string>
+    <string name="data_manager_failed_count">Descargas fallidas: %1$d. Consulta cada región en Lista.</string>
 </resources>
