@@ -169,10 +169,9 @@ iPhone simulator:
 
 ```bash
 ./scripts/iphone/build_consumer_app.sh
-xcodebuild test \
-  -project iphone/SpeedDBBench.xcodeproj \
-  -scheme SpeedConsumer \
-  -destination 'platform=iOS Simulator,name=iPhone 16'
+./scripts/iphone/run_consumer_device_tests.sh \
+  --skip-project-gen \
+  --destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
 See [`android/README.md`](android/README.md), [`iphone/SpeedConsumerApp/README.md`](iphone/SpeedConsumerApp/README.md), and [`docs/README.md`](docs/README.md) for details.

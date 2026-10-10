@@ -547,6 +547,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     var testTrafficSignRuntime: TrafficSignRuntime? { trafficSignRuntime }
     var testIsDriving: Bool { isDriving }
     var testPanoramaxQueueStore: PanoramaxQueueStore? { panoramaxQueueStore }
+    var testSpeedCaptureConfirmationTone: (() -> Void)?
     #endif
     private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "session")
     private nonisolated static let tsrLogger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "tsr")
@@ -7320,6 +7321,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func playSpeedCaptureConfirmationTone() {
+#if DEBUG
+        if let testSpeedCaptureConfirmationTone {
+            testSpeedCaptureConfirmationTone()
+            return
+        }
+#endif
         captureConfirmationTonePlayer.play()
         Self.logger.notice("capture_speech confirmation_tone played freq_hz=432")
     }
@@ -8880,6 +8887,9 @@ extension DriveSessionViewModel {
     }
 
     func testBeginSpeedCaptureListening() -> UUID {
+        // State-machine unit fixtures must not depend on a simulator audio
+        // device. Live captures continue to use the actual confirmation tone.
+        if testSpeedCaptureConfirmationTone == nil { testSpeedCaptureConfirmationTone = {} }
         let attemptID = prepareSpeedCaptureAttempt()
         speedCaptureMode = .listening
         return attemptID

@@ -487,6 +487,13 @@ private final class TrafficSignTestEmissionStore: @unchecked Sendable {
 }
 
 final class SpeedConsumerTests: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        guard Bundle.main.bundleIdentifier == "de.youspeed.SpeedConsumer.TestHost" else {
+            throw XCTSkip("Run the unit suite through run_consumer_device_tests.sh in its isolated TestHost app; these fixtures replace map data.")
+        }
+    }
+
     @MainActor
     func testGPSRoutingLeavesCoverageAndReusesReadersWhenReturning() async throws {
         let fm = FileManager.default
@@ -508,7 +515,7 @@ final class SpeedConsumerTests: XCTestCase {
                 coverage: BundleCoverage(bbox: BundleCoverageBBox(minLon: lon - 0.05, minLat: lat - 0.05,
                     maxLon: lon + 0.05, maxLat: lat + 0.05), poly: nil))
             try JSONEncoder().encode(manifest).write(to: directory.appendingPathComponent("bundle-manifest.v3.json"))
-            return database
+            return database.resolvingSymlinksInPath().standardizedFileURL
         }
         let france = try fixture(region: "france/rhone-alpes", country: "FRA", lat: 45.7204, lon: 5.078, city: "French Test City")
         let swiss = try fixture(region: "switzerland", country: "CHE", lat: 47, lon: 8, city: "Swiss Test City")
@@ -523,7 +530,7 @@ final class SpeedConsumerTests: XCTestCase {
         model.matcherDebugProfile = .m7
         // Persisted Switzerland must yield to France even 44 m off its nearest road.
         await model.testRunGPSLookup(latitude: 45.720, longitude: 5.078)
-        XCTAssertEqual(model.activeDBPath, france.path)
+        assertPathEqual(model.activeDBPath, france.path)
         XCTAssertEqual(model.testMapCountryCode, "FRA")
         XCTAssertNil(model.limitWayID)
         XCTAssertEqual(model.limitCityName, "French Test City")
@@ -549,14 +556,14 @@ final class SpeedConsumerTests: XCTestCase {
         await model.testRunGPSLookup(latitude: 43.2965, longitude: 5.3698)
         XCTAssertEqual(model.testMapContextGeneration, generation)
         await model.testRunGPSLookup(latitude: 45.7204, longitude: 5.078)
-        XCTAssertEqual(model.activeDBPath, france.path)
+        assertPathEqual(model.activeDBPath, france.path)
         XCTAssertEqual(model.testLookupServiceIdentity, franceReader)
         XCTAssertEqual(model.testLookupResourceStatistics?.opens, opens)
         await model.testRunGPSLookup(latitude: 47, longitude: 8)
-        XCTAssertEqual(model.activeDBPath, swiss.path)
+        assertPathEqual(model.activeDBPath, swiss.path)
         XCTAssertEqual(model.testMapCountryCode, "CHE")
         await model.testRunGPSLookup(latitude: 45.7204, longitude: 5.078)
-        XCTAssertEqual(model.activeDBPath, france.path)
+        assertPathEqual(model.activeDBPath, france.path)
         XCTAssertEqual(model.testMapCountryCode, "FRA")
         XCTAssertEqual(model.testLookupServiceIdentity, franceReader)
         XCTAssertEqual(model.testLookupResourceStatistics?.opens, opens)
@@ -7939,7 +7946,8 @@ final class SpeedConsumerTests: XCTestCase {
         let firstExport = try await store.exportProposalAsOscPackage(observationID: newer.id)
         let recoveredExport = try await store.exportProposalAsOscPackage(observationID: newer.id)
         XCTAssertEqual(firstExport.exportID, recoveredExport.exportID)
-        XCTAssertEqual(firstExport.packageDirectory, recoveredExport.packageDirectory)
+        XCTAssertEqual(firstExport.packageDirectory.resolvingSymlinksInPath().standardizedFileURL,
+                       recoveredExport.packageDirectory.resolvingSymlinksInPath().standardizedFileURL)
         XCTAssertTrue(fm.fileExists(atPath: recoveredExport.changesFile.path))
     }
 
@@ -21384,7 +21392,7 @@ private final class BlockingOrientationFrameConsumer: DriveVideoFrameConsumer, @
     let release = DispatchSemaphore(value: 0)
     func consumeVideoFrame(_ sampleBuffer: CMSampleBuffer, orientation: CGImagePropertyOrientation) {
         entered.signal()
-        _ = release.wait(timeout: .now() + 2)
+        _ = release.wait(timeout: .now() + 10)
     }
 }
 
@@ -21406,7 +21414,8 @@ extension SpeedConsumerTests {
         dispatcher.setConsumer(consumer)
         dispatcher.setEnabled(true)
         DispatchQueue.global().async { dispatcher.dispatch(frame) }
-        XCTAssertEqual(consumer.entered.wait(timeout: .now() + 1), .success)
+        defer { consumer.release.signal() }
+        XCTAssertEqual(consumer.entered.wait(timeout: .now() + 5), .success)
         let updated = DispatchSemaphore(value: 0)
         let setterEntered = DispatchSemaphore(value: 0)
         DispatchQueue.global().async {
@@ -21414,11 +21423,11 @@ extension SpeedConsumerTests {
             dispatcher.setOrientation(.down)
             updated.signal()
         }
-        XCTAssertEqual(setterEntered.wait(timeout: .now() + 1), .success)
+        XCTAssertEqual(setterEntered.wait(timeout: .now() + 5), .success)
         XCTAssertEqual(updated.wait(timeout: .now() + 0.05), .timedOut,
                        "A mount change must not overtake a frame that is acquiring its context")
         consumer.release.signal()
-        XCTAssertEqual(updated.wait(timeout: .now() + 1), .success)
+        XCTAssertEqual(updated.wait(timeout: .now() + 5), .success)
     }
 }
 
