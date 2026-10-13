@@ -4574,7 +4574,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         notePanoramaxCleanupFailures(result.deletion.failedRelativePaths)
         guard publicationGeneration == panoramaxBatchPublicationGeneration,
-              result.batchLoadSucceeded else { return }
+              result.batchDirectoryReadSucceeded else { return }
         panoramaxBatches = result.batches
     }
 

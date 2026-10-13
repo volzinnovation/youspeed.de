@@ -4717,6 +4717,47 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.batches.first?.state, .awaitingReview)
     }
 
+    func testPanoramaxReadableBatchRemainsPublishableWithAnotherJournalGap() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let healthy = try store.createBatch(captureSessionID: "healthy-gallery")
+        let item = try addPanoramaxTestItem(store: store, batch: healthy, itemID: "healthy-photo")
+        let damaged = try store.createBatch(captureSessionID: "damaged-gallery")
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let header = try JSONSerialization.jsonObject(with: encoder.encode(damaged))
+        let journal = root.appendingPathComponent("Panoramax/batches/\(damaged.batchID).journal")
+        try FileManager.default.createDirectory(at: journal, withIntermediateDirectories: true)
+        let record: [String: Any] = ["version": 1, "sequence": 2, "header": header,
+                                   "upserts": [], "removed": []]
+        try JSONSerialization.data(withJSONObject: record)
+            .write(to: journal.appendingPathComponent("00000000000000000002.json"))
+
+        let reopened = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let result = await PanoramaxQueueMaintenanceExecutor.shared.loadBatches(store: reopened)
+        XCTAssertTrue(result.batchDirectoryReadSucceeded, "Healthy photos must remain publishable")
+        XCTAssertFalse(result.batchLoadSucceeded, "Partial reads must not reconcile deletion intents")
+        XCTAssertEqual(result.batches.map(\.batchID), [healthy.batchID])
+        XCTAssertEqual(result.batches.first?.items.map(\.itemID), [item.itemID])
+        XCTAssertTrue(result.deletion.failedRelativePaths.contains("batches/\(damaged.batchID).json"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(store.originalURL(for: item)).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: journal.path))
+    }
+
+    func testPanoramaxFailedDirectoryReadDoesNotPublishAnEmptyGallery() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let directory = root.appendingPathComponent("Panoramax/batches")
+        try FileManager.default.removeItem(at: directory)
+        try Data("not a directory".utf8).write(to: directory)
+        let result = await PanoramaxQueueMaintenanceExecutor.shared.loadBatches(store: store)
+        XCTAssertFalse(result.batchDirectoryReadSucceeded)
+        XCTAssertFalse(result.batchLoadSucceeded)
+        XCTAssertTrue(result.batches.isEmpty)
+    }
+
     func testPanoramaxMaintenanceExecutorDeletesAndReloadsGallerySnapshot() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

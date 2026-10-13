@@ -1106,6 +1106,9 @@ struct PanoramaxQueueMaintenanceResult: @unchecked Sendable {
     let deletion: PanoramaxDeletionReport
     let batches: [PanoramaxBatchRecord]
     let batchLoadSucceeded: Bool
+    // A successful directory scan can return healthy batches even when some
+    // records are unreadable. Only a complete load can reconcile deletions.
+    let batchDirectoryReadSucceeded: Bool
 }
 
 /// Serializes gallery scans, upload preparation and retention deletion away from the main actor.
@@ -1193,7 +1196,8 @@ actor PanoramaxQueueMaintenanceExecutor {
                 startupCleanup: nil,
                 deletion: PanoramaxDeletionReport(),
                 batches: [],
-                batchLoadSucceeded: false
+                batchLoadSucceeded: false,
+                batchDirectoryReadSucceeded: false
             )
         }
         var deletion = PanoramaxDeletionReport()
@@ -1266,7 +1270,8 @@ actor PanoramaxQueueMaintenanceExecutor {
             report.failedRelativePaths += store.unreadableRelativePaths
             return PanoramaxQueueMaintenanceResult(
                 startupCleanup: startup, deletion: report, batches: batches,
-                batchLoadSucceeded: store.unreadableRelativePaths.isEmpty
+                batchLoadSucceeded: store.unreadableRelativePaths.isEmpty,
+                batchDirectoryReadSucceeded: true
             )
         } catch {
             var failedDeletion = deletion
@@ -1275,7 +1280,8 @@ actor PanoramaxQueueMaintenanceExecutor {
                 startupCleanup: startup,
                 deletion: failedDeletion,
                 batches: [],
-                batchLoadSucceeded: false
+                batchLoadSucceeded: false,
+                batchDirectoryReadSucceeded: false
             )
         }
     }
