@@ -59,8 +59,12 @@
   }
 
   function label(row) {
+    if (row.source === "panoramax") {
+      const ids = [...new Set((row.labels || []).map(item => item.selected_yolo?.label).filter(Boolean))];
+      return ids.length ? ids.join(" · ") : "Ohne eindeutige Klassen-ID";
+    }
     const classification = row.observation?.classification;
-    return classification?.canonical_code || classification?.model_label || "Ohne Zeichenklasse";
+    return classification?.model_label || classification?.canonical_code || "Ohne Zeichenklasse";
   }
 
   function platformLabel(platform) {
@@ -76,16 +80,16 @@
     if (request !== devicesRequest) return;
     const all = document.createElement("option");
     all.value = "";
-    all.textContent = "Alle Geräte";
+    all.textContent = "Alle Geräte / Quellen";
     const options = [all];
     for (const device of result.devices) {
       const option = document.createElement("option");
-      option.value = device.installation;
+      option.value = device.device_id || device.installation;
       const platforms = device.platforms?.length ? device.platforms.map(platformLabel).join(" / ") : "Plattform unbekannt";
-      option.textContent = `${platforms} · ${device.installation} · ${device.crop_count} Crops`;
+      option.textContent = device.name ? `${device.name} · ${device.crop_count} Crops` : `${platforms} · ${device.installation} · ${device.crop_count} Crops`;
       options.push(option);
     }
-    if (value && !result.devices.some(device => device.installation === value)) {
+    if (value && !result.devices.some(device => (device.device_id || device.installation) === value)) {
       const option = document.createElement("option");
       option.value = value;
       option.textContent = `${value} · keine aktiven Crops`;
@@ -147,6 +151,32 @@
     const observation = row.observation;
     el("title").textContent = label(row);
     el("metadata").replaceChildren();
+    if (row.source === "panoramax") {
+      addMetadata("Gerät / Quelle", "Panoramax Server · " + row.source_id);
+      addMetadata("Erfassung", "Panoramax");
+      addMetadata("Crop-ID", row.crop_id);
+      addMetadata("Bild-ID", row.picture_id);
+      addMetadata("Annotation", row.annotation_id);
+      addMetadata("Aufnahme (UTC)", manifest.source_frame_at);
+      addMetadata("Klassifikator-Land", [...new Set((row.labels || []).map(item => item.target_classifier_country).filter(Boolean))].join(" · ") || null);
+      addMetadata("Geografisches Land", row.geographic_country);
+      addMetadata("Klassenzuordnung", [...new Set((row.labels || []).map(item => item.yolo_mapping_status).filter(Boolean))].join(" · "));
+      addMetadata("Bild", `${manifest.decoded_width} × ${manifest.decoded_height} · ${manifest.encoding} · ${manifest.byte_length} Bytes`);
+      addMetadata("SHA-256", row.digest);
+      const origin = addMetadata("Panoramax-Quelle", row.source_id);
+      try {
+        const url = new URL(row.source_url);
+        if (url.protocol === "https:" && !url.username && !url.password) {
+          url.searchParams.set("pic", row.picture_id);
+          url.searchParams.set("annot", row.annotation_id);
+          const link = document.createElement("a");
+          link.href = url.href; link.textContent = row.source_id;
+          link.target = "_blank"; link.rel = "noreferrer noopener";
+          origin.replaceChildren(link);
+        }
+      } catch (_) { /* Invalid source metadata is shown as plain text. */ }
+      el("raw").textContent = JSON.stringify(row, null, 2);
+    } else {
     addMetadata("Geräte-ID (Installation)", row.installation);
     addMetadata("Sammlungsepoche", row.epoch);
     addMetadata("Crop-ID", row.crop_id);
@@ -162,6 +192,7 @@
     addMetadata("Läuft ab (UTC)", new Date(row.expires * 1000).toISOString());
     addMetadata("SHA-256", row.digest);
     el("raw").textContent = JSON.stringify({ installation_id: row.installation, collection_epoch: row.epoch, manifest, observation }, null, 2);
+    }
     el("image-status").textContent = "Bild wird geladen und serverseitig geprüft …";
     const request = imageRequest;
     imageController = new AbortController();
@@ -199,8 +230,9 @@
     el("next").disabled = true;
     el("summary").textContent = "Crops werden geladen …";
     const params = new URLSearchParams({ offset, limit: pageSize });
-    for (const name of ["installation", "country", "source", "query", "from", "to"]) {
-      if (el(name).value) params.set(name, el(name).value);
+    for (const name of ["installation", "country", "source", "class", "query", "from", "to"]) {
+      const value = name === "class" ? el(name).value.trim() : el(name).value;
+      if (value) params.set(name, value);
     }
     try {
       const result = await getJSON("./api/crops?" + params);
@@ -223,9 +255,9 @@
         const title = document.createElement("strong");
         title.textContent = label(row);
         const time = document.createElement("span");
-        time.textContent = row.manifest.source_frame_at;
+        time.textContent = row.manifest.source_frame_at || "Aufnahmezeit unbekannt";
         const device = document.createElement("span");
-        device.textContent = `${platformLabel(row.observation?.app?.platform)} · ${row.installation}`;
+        device.textContent = row.source === "panoramax" ? `Panoramax Server · ${row.source_id}` : `${platformLabel(row.observation?.app?.platform)} · ${row.installation}`;
         const availability = document.createElement("span");
         availability.className = "hint";
         availability.textContent = `${row.manifest.decoded_width} × ${row.manifest.decoded_height} · ${row.manifest.source_kind}`;
@@ -262,6 +294,18 @@
     offset = 0;
     if (!started) void activate();
     else void loadDevices().then(load).catch(error => { el("summary").textContent = error.message; });
+  });
+  // Keep the two source selectors compatible; unrelated country/class/date filters stay intact.
+  el("installation").addEventListener("change", () => {
+    const device = el("installation").value;
+    if (device.startsWith("panoramax")) el("source").value = "panoramax";
+    else if (device && el("source").value === "panoramax") el("source").value = "";
+  });
+  el("source").addEventListener("change", () => {
+    const device = el("installation").value;
+    const source = el("source").value;
+    if (source === "panoramax" && device && !device.startsWith("panoramax")) el("installation").value = "panoramax";
+    else if (source && source !== "panoramax" && device.startsWith("panoramax")) el("installation").value = "";
   });
   el("previous").addEventListener("click", () => { offset = Math.max(0, offset - pageSize); void load(); });
   el("next").addEventListener("click", () => { if (hasMore) { offset += pageSize; void load(); } });

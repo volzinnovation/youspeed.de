@@ -517,12 +517,13 @@
           Report-Zugangsdaten des Servers, ohne Browser-Login. Bilder und Metadaten bleiben im privaten Netz.</p>
         <p id="crops-connection" class="status" role="status">Report-Verbindung wird geprüft …</p>
         <form id="crops-filters" class="crop-filters">
-          <label>Gerät (Installations-ID) <select id="crops-installation"><option value="">Alle Geräte</option></select></label>
+          <label>Gerät / Quelle <select id="crops-installation"><option value="">Alle Geräte</option></select></label>
           <label>Land <select id="crops-country"><option value="">Alle Länder</option>
             <option>DE</option><option>FR</option><option>BE</option><option>NL</option><option>CH</option></select></label>
           <label>Erfassung <select id="crops-source"><option value="">Alle Arten</option>
-            <option value="detector">Detektor</option><option value="manual">Manuell</option></select></label>
-          <label>Klasse / Crop-ID <input id="crops-query" type="search" maxlength="160" placeholder="z. B. DE:274-50" /></label>
+            <option value="detector">Detektor · auf dem Gerät</option><option value="panoramax">Panoramax</option><option value="manual">Manuell</option></select></label>
+          <label>Zeichenklasse (exakt) <input id="crops-class" type="search" maxlength="160" placeholder="z. B. bad oder DE:274-50" /></label>
+          <label>Suche (Teiltext / IDs) <input id="crops-query" type="search" maxlength="160" placeholder="z. B. Crop- oder Beobachtungs-ID" /></label>
           <label>Ab (UTC) <input id="crops-from" type="date" /></label>
           <label>Bis (UTC, einschließlich) <input id="crops-to" type="date" /></label>
           <button type="submit">Aktualisieren</button>

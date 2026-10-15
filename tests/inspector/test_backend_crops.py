@@ -4,6 +4,7 @@ import hashlib
 from http.client import HTTPConnection
 import importlib.util
 import json
+import sqlite3
 from pathlib import Path
 import tempfile
 import threading
@@ -86,6 +87,7 @@ class ImageTests(unittest.TestCase):
 class StoreTests(unittest.TestCase):
     def setUp(self):
         self.store = server.CropStore(server.arguments([]))
+        self.store.has_panoramax = lambda db: False
         self.calls = []
         self.rows = []
         test = self
@@ -107,6 +109,13 @@ class StoreTests(unittest.TestCase):
 
         self.store.connection = connection
 
+    def test_statistics_cli_does_not_require_gallery_media_options(self):
+        from scripts.inspector.sign_statistics import arguments as report_arguments
+        store = server.CropStore(report_arguments([]))
+        self.assertIsNone(store.media_root)
+        self.assertIsNone(store.panoramax_root)
+        self.assertIsNone(store.mapping_digest)
+
     def test_pagination_and_search_stay_parameterized(self):
         self.rows = [{"crop_id": CROP, "installation": INSTALLATION, "epoch": n} for n in range(3)]
         result = self.store.list({"query": ["' OR true --"], "limit": ["2"]})
@@ -123,10 +132,44 @@ class StoreTests(unittest.TestCase):
                       {"country": ["DE", "FR"]}, {"sql": ["DROP TABLE"]},
                       {"from": ["2026-10-06"], "to": ["2026-10-01"]},
                       {"installation": ["not-a-device"]},
+                      {"class": ["x" * 161]}, {"class": ["bad", "bad:round"]},
                       {"installation": [INSTALLATION, CROP]}):
             with self.subTest(query=query), self.assertRaises(server.InspectorError):
                 self.store.list(query)
         self.assertEqual(self.calls, [])
+
+    def test_exact_class_is_parameterized_and_combines_with_other_filters(self):
+        self.store.list({"class": ["  ' OR TRUE --  "], "country": ["DE"],
+                         "query": ["465bad98"], "offset": ["50"]})
+        sql, params = self.calls[0]
+        self.assertNotIn("' OR TRUE --", sql)
+        self.assertEqual(params[:3], ["DE", "' or true --", "' or true --"])
+        self.assertEqual(params[3:-2], ["465bad98"] * 4)
+        self.assertEqual(params[-2:], [51, 50])
+
+    def test_exact_bad_class_excludes_uuid_substrings_and_subclasses(self):
+        # Execute the generated JSON/equality predicate against synthetic rows.
+        # SQLite supports the same JSON operators used by this filter.
+        with sqlite3.connect(":memory:") as db:
+            db.execute("CREATE TABLE events (crop_id TEXT, payload TEXT)")
+            fixtures = [
+                ("model-match", {"country": "DE", "model_label": "bad"}),
+                ("canonical-match", {"country": "DE", "canonical_code": "bad"}),
+                ("465bad98-c093-404b-9a47-8f19c833f988", {"country": "DE", "model_label": "Maximum speed 70 km/h"}),
+                ("subclass", {"country": "DE", "model_label": "bad:round"}),
+                ("other-country", {"country": "CH", "model_label": "bad"}),
+                ("missing-class", {"country": "DE"}),
+            ]
+            db.executemany("INSERT INTO events VALUES (?, ?)", [
+                (crop_id, json.dumps({"event": {"classification": classification}}))
+                for crop_id, classification in fixtures
+            ])
+            _, _, clauses, params = server.crop_filters({"class": [" BAD "], "country": ["DE"]})
+            sql = "SELECT e.crop_id FROM events e WHERE " + " AND ".join(clauses)
+            matches = {row[0] for row in db.execute(sql.replace("%s", "?"), params)}
+            self.assertEqual(matches, {"model-match", "canonical-match"})
+            # Empty input imposes no class restriction.
+            self.assertEqual(server.crop_filters({"class": ["  "]})[2:], ([], []))
 
     def test_individual_device_filter_uses_exact_uuid_and_keeps_other_filters(self):
         self.store.list({"installation": [INSTALLATION.upper()], "country": ["DE"], "offset": ["50"]})
@@ -146,6 +189,66 @@ class StoreTests(unittest.TestCase):
         self.assertNotIn("OFFSET", sql)
         for condition in ("m.expires >", "t.deleted_through", "a.state<>'granted'"):
             self.assertIn(condition, sql)
+
+    def test_panoramax_device_filters_are_separate_from_phone_installations(self):
+        for device in ("panoramax", "panoramax:panoramax.woladen.de"):
+            _, _, clauses, params = server.crop_filters({"installation": [device]})
+            self.assertIn("FALSE", clauses)
+            self.assertEqual(params, [])
+        clauses, params = self.store.panoramax_filters({"installation": ["panoramax:panoramax.woladen.de"]})
+        self.assertEqual(clauses, ["f.source_id=%s"])
+        self.assertEqual(params, ["panoramax.woladen.de"])
+        self.assertIn("FALSE", self.store.panoramax_filters({"installation": [INSTALLATION]})[0])
+        for value in ("panoramax:x/../../", "panoramax:", "panoramax:not a host"):
+            with self.assertRaises(server.InspectorError):
+                server.crop_filters({"installation": [value]})
+
+    def test_panoramax_exact_class_and_country_match_the_same_current_label(self):
+        self.store.mapping_digest = "current-mapping"
+        sql, params = self.store.panoramax_sql({"source": ["panoramax"], "class": [" BAD "], "country": ["DE"]})
+        self.assertIn("EXISTS (SELECT 1 FROM youspeed.panoramax_class_labels", sql)
+        self.assertIn("l.fingerprint=f.fingerprint", sql)
+        self.assertIn("l.mapping_sha256=%s", sql)
+        self.assertIn("l.label#>>'{selected_yolo,label}'", sql)
+        self.assertIn("l.label->>'target_classifier_country'=%s", sql)
+        self.assertEqual(params, ["current-mapping", "current-mapping", "DE", "bad"])
+        self.assertNotIn("bad", sql)
+        for condition in ("f.current_render", "f.state='ready'", "i.active", "s.visibility_scope", "panoramax_suppressions"):
+            self.assertIn(condition, sql)
+
+    def test_panoramax_combined_gallery_paginates_once_and_preserves_source_identity(self):
+        self.store.has_panoramax = lambda db: True
+        self.rows = [{"record": {"source": "panoramax", "crop_id": CROP}}]
+        result = self.store.list({"source": ["panoramax"], "offset": ["50"], "limit": ["2"]})
+        sql, params = self.calls[0]
+        self.assertIn("UNION ALL", sql)
+        self.assertEqual(sql.count("OFFSET"), 1)
+        self.assertEqual(params[-2:], [3, 50])
+        row = result["crops"][0]
+        self.assertNotIn("installation", row)
+        self.assertEqual(row["image_url"], f"/inspector/api/panoramax/crops/{CROP}/image")
+
+    def test_panoramax_unavailable_image_never_reads_storage(self):
+        # An admitted request still checks current lifecycle before any disk/API read.
+        self.rows = [{"acquired": True}]
+        calls = self.calls
+        class Database:
+            def execute(self, sql, params=None):
+                calls.append((sql, params))
+                self.row = {"acquired": True} if "pg_try_advisory" in sql else None
+                return self
+            def fetchone(self):
+                return self.row
+        @contextmanager
+        def connection():
+            yield Database()
+        self.store.connection = connection
+        with patch.object(server, "read_image") as read:
+            with self.assertRaises(server.InspectorError) as error:
+                self.store.panoramax_image(CROP)
+            self.assertEqual(error.exception.status, 404)
+            read.assert_not_called()
+        self.assertIn("panoramax_suppressions", calls[-1][0])
 
     def test_utc_inclusive_day_filter(self):
         _, _, clauses, params = server.crop_filters({"from": ["2026-10-01"], "to": ["2026-10-06"]})
@@ -184,6 +287,9 @@ class HTTPTests(unittest.TestCase):
 
             def devices(self):
                 return {"devices": [{"installation": INSTALLATION, "crop_count": 228, "platforms": ["ios"]}]}
+
+            def panoramax_image(self, crop_id):
+                return PNG, "image/png"
 
             def image(self, identity):
                 raise server.InspectorError("Crop zurückgezogen.", 404)
@@ -231,6 +337,14 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(response.headers["Cache-Control"], "no-store")
         self.assertEqual(json.loads(body)["devices"][0]["installation"], INSTALLATION)
         response, _ = self.request("/inspector/api/crops/devices?installation=bad")
+        self.assertEqual(response.status, 400)
+
+    def test_panoramax_images_have_a_separate_uuid_route(self):
+        response, body = self.request(f"/inspector/api/panoramax/crops/{CROP}/image")
+        self.assertEqual(response.status, 200)
+        self.assertEqual(body, PNG)
+        self.assertEqual(response.headers["Content-Type"], "image/png")
+        response, _ = self.request("/inspector/api/panoramax/crops/not-a-uuid/image")
         self.assertEqual(response.status, 400)
 
     def test_static_inspector_works_without_exposing_server_secrets(self):

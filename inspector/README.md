@@ -12,7 +12,13 @@ Position oder Fahrtrichtung. GPS-Kurs beschreibt die Fahrtrichtung, nicht die
 kalibrierte Kameraausrichtung.
 Die orange Box markiert das ursprüngliche Zeichen innerhalb des erweiterten
 Ausschnitts. Filter: Gerät (Installations-ID), Land, Erfassungsart,
-Klasse/Crop-/Beobachtungs-ID und UTC-Zeitraum. Die Geräteauswahl enthält alle
+Zeichenklasse (exakt), Teiltext/Crop-/Beobachtungs-ID und UTC-Zeitraum.
+**Zeichenklasse (exakt)** vergleicht die vollständige `canonical_code` oder
+`model_label` ohne Beachtung der Groß-/Kleinschreibung. `bad` findet hier weder
+`bad:round` noch UUIDs mit `bad` darin. Das getrennte Feld **Suche (Teiltext / IDs)**
+behält die bisherige Teiltextsuche; beide Felder können kombiniert werden.
+Die API verwendet dafür den zusätzlichen Parameter `class`.
+Die Geräteauswahl enthält alle
 aktiven Crop-Quellen, unabhängig von der aktuellen Ergebnisseite, mit Plattform
 und Crop-Anzahl. Jede Karte und die Detailansicht zeigen die Installations-ID.
 Sie bleibt bei App-Updates erhalten; eine Neuinstallation kann eine neue ID
@@ -588,3 +594,41 @@ Tests: `node --test tests/inspector/*.test.js` und
 Die Decodertests benötigen FFmpeg/ffprobe und vergleichen echte synthetische
 VFR-/B-Frame-, Rotations- und PTS-Offset-Frames bytegenau mit vollständiger
 FFmpeg-Dekodierung.
+
+### Panoramax als Erfassung und Gerät / Quelle
+
+In **Erfassung** trennt `Panoramax` den externen Crop-Korpus von
+`Detektor · auf dem Gerät` und `Manuell`. **Gerät / Quelle** enthält
+`Panoramax Server` (alle Panoramax-Quellen) und je eine Auswahl pro
+`panoramax_sources.source_id`. Die Auswahlwerte `panoramax` und
+`panoramax:<source_id>` sind Quellenkennungen, keine Installations-UUIDs.
+Bei einem Quellenwechsel werden widersprüchliche Geräte-/Erfassungsfilter
+angepasst; Land, exakte Klasse, Suchtext und Zeitraum bleiben erhalten.
+`Alle Arten` verwendet eine gemeinsame, stabil sortierte Seitennavigation
+über beide Korpora. Quellenuntergruppen werden dabei nicht doppelt gezählt.
+
+Panoramax setzt Migration 009 und deren Report-Leserechte voraus. Die aktuelle
+Reverse-Mapping-Datei wird über `--panoramax-mapping-file` angegeben (lokal
+standardmäßig aus dem Schwesterrepo `Woladen.de-analytics`). Klassen stammen
+nur aus `selected_yolo.label` der aktuellen Mapping-Version und
+Feature-Fingerprint. Land filtert das Klassifikator-Land derselben Zuordnung;
+das geografische Land bleibt separat in den Details sichtbar. Mehrdeutige
+Zuordnungen werden als solche angezeigt und erhalten keine erfundene Klasse.
+
+Bilder benötigen entweder einen nur lesbaren Corpus-Mount
+`--panoramax-media-root` / `YOUSPEED_PANORAMAX_CORPUS_ROOT` oder einen
+SSH-Tunnel zum optionalen Bild-Proxy:
+
+```sh
+python3 inspector/server.py --port 18081 \
+  --panoramax-image-proxy-url http://127.0.0.1:18082
+```
+
+`inspector/panoramax_image_proxy.py` läuft auf volz-db unter dem bestehenden
+Dienstbenutzer und liest dessen vorhandene Operator-Token-Datei. Er bindet
+nur an `127.0.0.1:8082` und erlaubt ausschließlich GET einer Crop-UUID;
+die autoritative Report-API prüft Sichtbarkeit und aktuellen Render.
+Der Token bleibt auf volz-db. Der Inspector prüft zusätzlich aktuelle
+Zulässigkeit, Größe und SHA-256. Der Tunnel lautet
+`-L 127.0.0.1:18082:127.0.0.1:8082`. Eine Aktivierung auf volz-db ist ein
+separater, freizugebender Deployment-Schritt.

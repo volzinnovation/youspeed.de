@@ -6,7 +6,7 @@ const source = fs.readFileSync(require.resolve('../../inspector/backend-crops.js
 const iphone = 'd3e3c09c-2fc6-4f05-9698-67b8c3c30212';
 const android = '78b247a4-9f14-430d-a3c0-af218a95d101';
 
-function inspector({manifest = {}, observation = {}} = {}) {
+function inspector({manifest = {}, observation = {}, hasMore = false, panoramax = false} = {}) {
   const elements = new Map();
   function element() {
     return {value: '', children: [], listeners: {}, style: {}, attrs: {}, textContent: '',
@@ -20,6 +20,8 @@ function inspector({manifest = {}, observation = {}} = {}) {
   const el = id => {if (!elements.has(id)) elements.set(id, element()); return elements.get(id);};
   const devices = [{installation: iphone, platforms: ['ios'], crop_count: 228},
     {installation: android, platforms: ['android'], crop_count: 15}];
+  if (panoramax) devices.push({device_id: 'panoramax', name: 'Panoramax Server', crop_count: 3},
+    {device_id: 'panoramax:panoramax.woladen.de', name: 'Panoramax · panoramax.woladen.de', crop_count: 3});
   const urls = [];
   const row = installation => ({installation, epoch: 0, crop_id: 'crop', digest: 'digest',
     expires: 2000000000, image_url: '/inspector/api/crops/image',
@@ -37,7 +39,13 @@ function inspector({manifest = {}, observation = {}} = {}) {
       else if (url.endsWith('/devices')) body = {devices};
       else if (url.includes('?')) {
         const params = new URLSearchParams(url.split('?')[1]);
-        body = {crops: [row(params.get('installation') || iphone)], has_more: false};
+        const crop = panoramax && params.get('source') === 'panoramax'
+          ? {source: 'panoramax', source_id: 'panoramax.woladen.de', source_url: 'https://panoramax.youspeed.de',
+              crop_id: 'external-crop', picture_id: 'picture', annotation_id: 'annotation', digest: 'digest',
+              labels: [{selected_yolo: {label: 'priority:start'}, target_classifier_country: 'DE', yolo_mapping_status: 'unique'}],
+              manifest: {source_kind: 'panoramax', source_frame_at: '2026-10-15T08:00:00Z', decoded_width: 10, decoded_height: 20}}
+          : row(params.get('installation') || iphone);
+        body = {crops: [crop], has_more: hasMore};
       } else return {ok: false, json: async () => ({error: 'Preview absent in unit test'})};
       return {ok: true, headers: {get: () => 'application/json'}, json: async () => body};
     }
@@ -114,4 +122,67 @@ test('individual device filtering survives refresh and combines with existing fi
   app.el('filters').listeners.submit({preventDefault() {}}); await settle();
   assert.equal(app.el('installation').value, android);
   assert.match(app.el('installation').children.at(-1).textContent, /keine aktiven Crops/);
+});
+
+test('exact class uses a separate API filter and survives pagination with ID search', async () => {
+  const app = inspector({hasMore: true}); await settle();
+  app.el('country').value = 'DE';
+  app.el('class').value = ' bad ';
+  app.el('query').value = '465bad98';
+  app.el('filters').listeners.submit({preventDefault() {}}); await settle();
+  let params = new URLSearchParams(app.urls.filter(url => url.includes('?')).at(-1).split('?')[1]);
+  assert.equal(params.get('class'), 'bad');
+  assert.equal(params.get('query'), '465bad98');
+  assert.equal(params.get('country'), 'DE');
+  app.el('next').listeners.click(); await settle();
+  params = new URLSearchParams(app.urls.filter(url => url.includes('?')).at(-1).split('?')[1]);
+  assert.equal(params.get('class'), 'bad');
+  assert.equal(params.get('query'), '465bad98');
+  assert.equal(params.get('offset'), '50');
+  app.el('class').value = '  ';
+  app.el('filters').listeners.submit({preventDefault() {}}); await settle();
+  params = new URLSearchParams(app.urls.filter(url => url.includes('?')).at(-1).split('?')[1]);
+  assert.equal(params.has('class'), false);
+  assert.equal(params.get('query'), '465bad98');
+});
+
+test('Panoramax Server and individual metadata sources are device choices with compatible capture filters', async () => {
+  const app = inspector({panoramax: true}); await settle();
+  assert.match(app.el('installation').children[3].textContent, /Panoramax Server/);
+  assert.equal(app.el('installation').children[4].value, 'panoramax:panoramax.woladen.de');
+  app.el('country').value = 'DE'; app.el('class').value = 'bad';
+  app.el('installation').value = 'panoramax:panoramax.woladen.de';
+  app.el('installation').listeners.change();
+  assert.equal(app.el('source').value, 'panoramax');
+  app.el('filters').listeners.submit({preventDefault() {}}); await settle();
+  const params = new URLSearchParams(app.urls.filter(url => url.includes('?')).at(-1).split('?')[1]);
+  assert.equal(params.get('installation'), 'panoramax:panoramax.woladen.de');
+  assert.equal(params.get('source'), 'panoramax');
+  assert.equal(params.get('class'), 'bad'); assert.equal(params.get('country'), 'DE');
+  app.el('source').value = 'detector'; app.el('source').listeners.change();
+  assert.equal(app.el('installation').value, '');
+  app.el('installation').value = iphone;
+  app.el('source').value = 'panoramax'; app.el('source').listeners.change();
+  assert.equal(app.el('installation').value, 'panoramax');
+  app.el('installation').value = android; app.el('installation').listeners.change();
+  assert.equal(app.el('source').value, '');
+});
+
+test('Panoramax details use class IDs and source metadata without phone lifecycle fields', async () => {
+  const app = inspector({panoramax: true}); await settle();
+  app.el('source').value = 'panoramax';
+  app.el('filters').listeners.submit({preventDefault() {}}); await settle();
+  const card = app.el('gallery').children[0];
+  assert.equal(card.children[1].textContent, 'priority:start');
+  assert.match(card.children[3].textContent, /Panoramax Server/);
+  await card.listeners.click(); await settle();
+  const raw = JSON.parse(app.el('raw').textContent);
+  assert.equal(raw.source_id, 'panoramax.woladen.de');
+  assert.equal('installation_id' in raw, false);
+  assert.equal('collection_epoch' in raw, false);
+  const fields = app.el('metadata').children.map(child => child.textContent);
+  assert.ok(fields.includes('Klassifikator-Land'));
+  assert.ok(fields.includes('DE'));
+  assert.equal(fields.includes('Sammlungsepoche'), false);
+  assert.equal(fields.includes('Läuft ab (UTC)'), false);
 });

@@ -12,6 +12,8 @@ import os
 from pathlib import Path
 import re
 from urllib.parse import parse_qs, unquote, urlsplit
+import urllib.request
+import urllib.error
 from uuid import UUID
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +30,16 @@ ACTIVE_MEDIA = """
 OBSERVATION_JOIN = """LEFT JOIN youspeed.events e
  ON e.installation=m.installation AND e.epoch=m.epoch AND e.kind='sighting'
  AND e.event_id::text=m.manifest->>'observation_id'"""
+
+PANORAMAX_JOIN = """FROM youspeed.panoramax_features f
+ JOIN youspeed.panoramax_items i USING(source_id,picture_id)
+ JOIN youspeed.panoramax_sources s USING(source_id)
+ JOIN youspeed.panoramax_crops c ON c.crop_id=f.crop_id AND c.render_key=f.current_render
+ JOIN youspeed.panoramax_crop_objects o ON o.digest=c.digest"""
+ACTIVE_PANORAMAX = """f.active AND i.active AND f.state='ready' AND i.visibility='anyone'
+ AND s.visibility_scope ? i.visibility
+ AND NOT EXISTS (SELECT 1 FROM youspeed.panoramax_suppressions x
+   WHERE x.source_id=f.source_id AND x.picture_id=f.picture_id)"""
 
 
 class InspectorError(Exception):
@@ -60,7 +72,7 @@ def database_error(error):
 
 
 def crop_filters(query):
-    allowed = {"offset", "limit", "country", "source", "installation", "query", "from", "to"}
+    allowed = {"offset", "limit", "country", "source", "installation", "class", "query", "from", "to"}
     if set(query) - allowed or any(len(values) != 1 for values in query.values()):
         raise InspectorError("Ungültige Crop-Filter.", 400)
     get = lambda name, default="": query.get(name, [default])[0]
@@ -69,23 +81,32 @@ def crop_filters(query):
         if not 0 <= offset <= 1_000_000 or not 1 <= limit <= 100:
             raise ValueError
         country, source, search = get("country"), get("source"), get("query")
+        sign_class = get("class").strip()
         if country and not re.fullmatch(r"[A-Z]{2}", country):
             raise ValueError
-        if source and source not in ("detector", "manual"):
+        if source and source not in ("detector", "manual", "panoramax"):
             raise ValueError
-        if len(search) > 160:
+        if len(search) > 160 or len(get("class")) > 160:
             raise ValueError
         clauses, params = [], []
         if get("installation"):
-            installation = str(UUID(get("installation")))
-            clauses.append("m.installation=%s")
-            params.append(installation)
+            device = get("installation")
+            if device == "panoramax" or re.fullmatch(r"panoramax:[a-z0-9][a-z0-9.-]{0,199}", device):
+                clauses.append("FALSE")
+            else:
+                installation = str(UUID(device))
+                clauses.append("m.installation=%s")
+                params.append(installation)
         if country:
             clauses.append("e.payload->'event'->'classification'->>'country'=%s")
             params.append(country)
         if source:
             clauses.append("m.manifest->>'source_kind'=%s")
             params.append(source)
+        if sign_class:
+            clauses.append("""(lower(COALESCE(e.payload->'event'->'classification'->>'canonical_code',''))=%s
+              OR lower(COALESCE(e.payload->'event'->'classification'->>'model_label',''))=%s)""")
+            params.extend([sign_class.lower()] * 2)
         if search:
             clauses.append("""(strpos(lower(COALESCE(e.payload->'event'->'classification'->>'canonical_code','')),%s)>0
               OR strpos(lower(COALESCE(e.payload->'event'->'classification'->>'model_label','')),%s)>0
@@ -125,7 +146,7 @@ def read_image(media_root, row):
     if media_root is None:
         raise InspectorError("Bildverzeichnis nicht eingerichtet. YOUSPEED_MANAGEMENT_MEDIA_ROOT auf das Backend-Medienverzeichnis setzen.")
     name = row["object_path"]
-    if not re.fullmatch(r"(?:[a-f0-9]{64}|[a-f0-9-]{36}-[0-9]+-[a-f0-9-]{36}\.crop)", name):
+    if not re.fullmatch(r"(?:[a-f0-9]{64}(?:\.png)?|[a-f0-9-]{36}-[0-9]+-[a-f0-9-]{36}\.crop)", name):
         raise InspectorError("Ungültiger gespeicherter Bildpfad.", 422)
     path = media_root / name
     try:
@@ -156,6 +177,71 @@ class CropStore:
     def __init__(self, args):
         self.args = args
         self.media_root = args.media_root.resolve() if args.media_root else None
+        panoramax_root = getattr(args, "panoramax_media_root", None)
+        self.panoramax_root = panoramax_root.resolve() if panoramax_root else None
+        self.mapping_digest = None
+        mapping_file = getattr(args, "panoramax_mapping_file", None)
+        if mapping_file and mapping_file.is_file():
+            self.mapping_digest = json.loads(mapping_file.read_text())["sha256"]
+
+    def has_panoramax(self, db):
+        return bool(self.mapping_digest and db.execute(
+            "SELECT to_regclass('youspeed.panoramax_features') AS corpus").fetchone()["corpus"])
+
+    def panoramax_filters(self, query):
+        # Validate the same public filter contract before constructing either branch.
+        crop_filters(query)
+        get = lambda name: query.get(name, [""])[0]
+        clauses, params = [], []
+        device, source = get("installation"), get("source")
+        if source in ("manual", "detector") or (device and not device.startswith("panoramax")):
+            clauses.append("FALSE")
+        if device.startswith("panoramax:"):
+            clauses.append("f.source_id=%s")
+            params.append(device.split(":", 1)[1])
+        country, sign_class = get("country"), get("class").strip()
+        if country or sign_class:
+            label_clauses = ["l.crop_id=f.crop_id", "l.fingerprint=f.fingerprint", "l.mapping_sha256=%s"]
+            params.append(self.mapping_digest)
+            if country:
+                label_clauses.append("l.label->>'target_classifier_country'=%s")
+                params.append(country)
+            if sign_class:
+                label_clauses.append("lower(l.label#>>'{selected_yolo,label}')=%s")
+                params.append(sign_class.lower())
+            clauses.append("EXISTS (SELECT 1 FROM youspeed.panoramax_class_labels l WHERE " + " AND ".join(label_clauses) + ")")
+        if get("query"):
+            clauses.append("""(strpos(lower(f.crop_id::text),%s)>0 OR strpos(lower(f.picture_id::text),%s)>0
+              OR strpos(lower(f.annotation_id),%s)>0 OR EXISTS (
+                SELECT 1 FROM youspeed.panoramax_class_labels l WHERE l.crop_id=f.crop_id
+                AND l.fingerprint=f.fingerprint AND l.mapping_sha256=%s
+                AND strpos(lower(COALESCE(l.label#>>'{selected_yolo,label}','')),%s)>0))""")
+            search = get("query").lower()
+            params.extend([search, search, search, self.mapping_digest, search])
+        for name, operator, extra in (("from", ">=", 0), ("to", "<", 1)):
+            if get(name):
+                clauses.append("(i.metadata#>>'{picture,ts}')::timestamptz" + operator + "%s")
+                day = date.fromisoformat(get(name)) + timedelta(days=extra)
+                params.append(datetime.combine(day, datetime.min.time(), timezone.utc))
+        return clauses, params
+
+    def panoramax_sql(self, query):
+        clauses, params = self.panoramax_filters(query)
+        sql = """SELECT jsonb_build_object(
+          'source','panoramax','source_id',f.source_id,'source_url',s.canonical_url,
+          'crop_id',f.crop_id::text,'digest',c.digest,'picture_id',f.picture_id::text,
+          'annotation_id',f.annotation_id,'metadata',jsonb_build_object('item',i.metadata,'feature',f.metadata,'geometry',c.geometry),
+          'geographic_country',i.geographic_country,
+          'labels',COALESCE((SELECT jsonb_agg(l.label ORDER BY l.ordinal)
+            FROM youspeed.panoramax_class_labels l WHERE l.crop_id=f.crop_id
+            AND l.fingerprint=f.fingerprint AND l.mapping_sha256=%s),'[]'::jsonb),
+          'manifest',jsonb_build_object('source_kind','panoramax','source_frame_at',i.metadata#>>'{picture,ts}',
+            'decoded_width',o.width,'decoded_height',o.height,'byte_length',o.bytes,'encoding','PNG')
+          ) AS record, (i.metadata#>>'{picture,ts}')::timestamptz AS captured_at,
+          'panoramax:' || f.crop_id::text AS stable_key """ + PANORAMAX_JOIN + " WHERE " + ACTIVE_PANORAMAX
+        if clauses:
+            sql += " AND " + " AND ".join(clauses)
+        return sql, [self.mapping_digest, *params]
 
     @contextmanager
     def connection(self):
@@ -204,12 +290,26 @@ class CropStore:
           FROM youspeed.media m """ + OBSERVATION_JOIN + " WHERE " + ACTIVE_MEDIA
         if clauses:
             sql += " AND " + " AND ".join(clauses)
-        sql += " ORDER BY (m.manifest->>'source_frame_at')::timestamptz DESC, m.crop_id, m.installation, m.epoch LIMIT %s OFFSET %s"
         with self.connection() as db:
-            rows = db.execute(sql, [*params, limit + 1, offset]).fetchall()
+            if self.has_panoramax(db):
+                pan_sql, pan_params = self.panoramax_sql(query)
+                mobile_sql = """SELECT to_jsonb(mobile) AS record,
+                    (mobile.manifest->>'source_frame_at')::timestamptz AS captured_at,
+                    'mobile:' || mobile.installation || ':' || mobile.epoch || ':' || mobile.crop_id AS stable_key
+                    FROM (""" + sql + ") mobile"
+                # One global ordering/offset: neither corpus is hidden by a full first page of the other.
+                sql = "SELECT record FROM (" + mobile_sql + " UNION ALL " + pan_sql + ") gallery ORDER BY captured_at DESC NULLS LAST, stable_key LIMIT %s OFFSET %s"
+                rows = [row["record"] for row in db.execute(sql, [*params, *pan_params, limit + 1, offset]).fetchall()]
+            else:
+                sql += " ORDER BY (m.manifest->>'source_frame_at')::timestamptz DESC, m.crop_id, m.installation, m.epoch LIMIT %s OFFSET %s"
+                rows = db.execute(sql, [*params, limit + 1, offset]).fetchall()
         crops = rows[:limit]
         for row in crops:
-            row["image_url"] = f"/inspector/api/crops/{row['installation']}/{row['epoch']}/{row['crop_id']}/image"
+            if row.get("source") == "panoramax":
+                row["image_url"] = f"/inspector/api/panoramax/crops/{row['crop_id']}/image"
+            else:
+                row["source"] = "mobile"
+                row["image_url"] = f"/inspector/api/crops/{row['installation']}/{row['epoch']}/{row['crop_id']}/image"
         return {"crops": crops, "offset": offset, "has_more": len(rows) > limit}
 
     def devices(self):
@@ -221,7 +321,56 @@ class CropStore:
         sql += " GROUP BY m.installation ORDER BY m.installation"
         with self.connection() as db:
             rows = db.execute(sql).fetchall()
+            if self.has_panoramax(db):
+                sources = db.execute("SELECT f.source_id, s.canonical_url AS source_url, count(*) AS crop_count "
+                    + PANORAMAX_JOIN + " WHERE " + ACTIVE_PANORAMAX
+                    + " GROUP BY f.source_id,s.canonical_url ORDER BY f.source_id").fetchall()
+                total = sum(row["crop_count"] for row in sources)
+                rows.append({"device_id": "panoramax", "name": "Panoramax Server", "crop_count": total, "source": "panoramax"})
+                for source in sources:
+                    rows.append({"device_id": "panoramax:" + source["source_id"],
+                        "name": "Panoramax · " + source["source_id"], "source": "panoramax", **source})
         return {"devices": rows}
+
+    def panoramax_image(self, crop_id):
+        # This is a separate corpus identity, never a manufactured phone installation.
+        with self.connection() as db:
+            if not db.execute("SELECT pg_try_advisory_xact_lock_shared(hashtext('panoramax-corpus-media-v1')) AS acquired").fetchone()["acquired"]:
+                raise InspectorError("Panoramax-Bilder werden aktualisiert. Erneut versuchen.", 503)
+            row = db.execute("SELECT c.digest,o.object_key AS object_path,o.bytes " + PANORAMAX_JOIN
+                + " WHERE f.crop_id=%s AND " + ACTIVE_PANORAMAX, (crop_id,)).fetchone()
+            if not row:
+                raise InspectorError("Panoramax-Crop nicht verfügbar.", 404)
+            if self.args.panoramax_image_proxy_url:
+                parsed = urlsplit(self.args.panoramax_image_proxy_url)
+                if parsed.scheme != "http" or parsed.hostname not in ("127.0.0.1", "localhost") or parsed.username or parsed.password or parsed.query or parsed.fragment:
+                    raise InspectorError("Panoramax-Report-API muss ein privater Loopback-Tunnel sein.")
+                request = urllib.request.Request(self.args.panoramax_image_proxy_url.rstrip("/")
+                    + f"/inspector/api/panoramax/crops/{crop_id}/image")
+                # The bridge exposes only this image operation; no token leaves volz-db.
+                class NoRedirect(urllib.request.HTTPRedirectHandler):
+                    def redirect_request(self, *args):
+                        return None
+                try:
+                    with urllib.request.build_opener(NoRedirect).open(request, timeout=20) as response:
+                        data = response.read(MAX_IMAGE_BYTES + 1)
+                except (urllib.error.URLError, OSError):
+                    raise InspectorError("Panoramax-Report-Bild nicht erreichbar.", 503) from None
+                if len(data) != row["bytes"] or hashlib.sha256(data).hexdigest() != row["digest"] or not data.startswith(b"\x89PNG\r\n\x1a\n"):
+                    raise InspectorError("Panoramax-Bildintegrität fehlgeschlagen.", 422)
+                return data, "image/png"
+            row["manifest"] = {"encoding": "PNG", "encoded_sha256": row["digest"], "byte_length": row["bytes"]}
+            # Corpus object keys have a fixed digest-based subdirectory layout.
+            if self.panoramax_root is None:
+                raise InspectorError("Panoramax-Bildzugriff ist nicht eingerichtet.")
+            name = row["object_path"]
+            if not re.fullmatch(r"panoramax/crop-objects/sha256/[a-f0-9]{2}/[a-f0-9]{64}\.png", name):
+                raise InspectorError("Ungültiger Panoramax-Bildpfad.", 422)
+            directory = (self.panoramax_root / Path(name).parent).resolve()
+            if not directory.is_relative_to(self.panoramax_root):
+                raise InspectorError("Ungültiger Panoramax-Bildpfad.", 422)
+            row["object_path"] = Path(name).name
+            return read_image(directory, row)
 
     def image(self, identity):
         with self.connection() as db:
@@ -366,7 +515,17 @@ class InspectorHandler(SimpleHTTPRequestHandler):
                 elif parsed.path == "/inspector/api/crops":
                     self.json_response(self.server.store.list(parse_qs(parsed.query, keep_blank_values=True)), head=head)
                 elif parsed.path.endswith("/image"):
-                    data, content_type = self.server.store.image(crop_identity(parsed.path))
+                    if parsed.path.startswith("/inspector/api/panoramax/"):
+                        match = re.fullmatch(r"/inspector/api/panoramax/crops/([a-fA-F0-9-]{36})/image", parsed.path)
+                        if not match:
+                            raise InspectorError("Ungültige Panoramax-Crop-ID.", 400)
+                        try:
+                            crop_id = str(UUID(match[1]))
+                        except ValueError:
+                            raise InspectorError("Ungültige Panoramax-Crop-ID.", 400) from None
+                        data, content_type = self.server.store.panoramax_image(crop_id)
+                    else:
+                        data, content_type = self.server.store.image(crop_identity(parsed.path))
                     self.send_response(200)
                     self.send_header("Content-Type", content_type)
                     self.send_header("Content-Length", str(len(data)))
@@ -411,6 +570,9 @@ def arguments(argv=None):
     parser.add_argument("--db-host", default=None, help="Override the credential file's PostgreSQL host")
     parser.add_argument("--db-port", type=int, default=None)
     parser.add_argument("--media-root", type=Path, default=os.environ.get("YOUSPEED_MANAGEMENT_MEDIA_ROOT"), help="Read-only path to management-media on volz-db (or its read-only mount)")
+    parser.add_argument("--panoramax-media-root", type=Path, default=os.environ.get("YOUSPEED_PANORAMAX_CORPUS_ROOT"))
+    parser.add_argument("--panoramax-mapping-file", type=Path, default=ROOT.parent / "Woladen.de-analytics/commercial_backend/youspeed/panoramax-reverse-v1.json")
+    parser.add_argument("--panoramax-image-proxy-url", default=os.environ.get("YOUSPEED_PANORAMAX_IMAGE_PROXY_URL"), help="Loopback SSH tunnel to the Panoramax image-only bridge")
     return parser.parse_args(argv)
 
 
