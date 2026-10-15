@@ -97,3 +97,8 @@ android/**/build/
 *.provisionprofile
 *.ipa
 *.xcarchive/
+
+# Local browser captures, scratch databases and private collection evidence
+.playwright-mcp/
+:memory:.ses
+docs/collection-evidence/
