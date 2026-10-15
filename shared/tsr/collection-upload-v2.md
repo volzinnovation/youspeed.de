@@ -5,6 +5,19 @@ ordinary signs and crops. This is the sole upload protocol for the v1.4
 development branch. The old receipt/reservation protocol and its routes are
 removed; neither client has a fallback. Both mobile platforms behave identically.
 
+## Crop-interest selection — owner decision 12 October 2026
+
+[The balanced-collection specification](https://github.com/volzinnovation/youspeed.de/issues/6)
+changes which automatic contribution crops are created, not this sending
+protocol. Every qualifying sighting remains independent of crop interest.
+Both clients asynchronously fetch the daily interest plan from live-eu; ordinary
+uninterested classes produce metadata only. Exact `bad` and every anchored
+`bad:*` subclass always remain crop-eligible, including offline/missing/expired
+plan states, within existing consent, privacy and resource limits. Every selected
+crop that is actually created continues to use best-effort v2 below. This is an
+implemented contract; the API, native selectors and daily planner were activated
+on 13–15 October 2026.
+
 ## Sending
 
 - Every automatically captured crop is sent under overall sign sharing. There

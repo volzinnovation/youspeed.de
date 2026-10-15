@@ -1,5 +1,14 @@
 # YouSpeed 1.4 app integration
 
+## Collection change — 12–15 October 2026
+
+[Daily balanced crop interest](SIGN_COLLECTION_BALANCING_SPEC_2026-10-12.md)
+keeps every qualifying sighting and gates ordinary crop creation before image
+conversion/encoding/storage. `bad` and every `bad:*` subclass always remain
+eligible under existing consent/privacy/resource bounds, including without a
+valid plan. The daily API/planner and native selector were deployed on
+13–15 October; the sections below retain their original validation dates.
+
 Branch: `codex/youspeed-v1.4-app-foundations`. The sibling backend owns the API and wire contract.
 
 Both apps connect ordinary camera detections and every captured crop to the automatic sign-sharing outbox and deployed API. Camera recognition continues while consent is declined, the network is unavailable, an upload is paused, or deletion is pending. There is no synthetic observation producer, pilot screen, synthetic build setting or release switch in either app. Synthetic integration requests exist only in the separate computer-run suite.
@@ -143,3 +152,44 @@ The owner's speed/loss decision is implemented identically on both clients and t
 One final snapshot of the attached iPhone confirmed all **228 original crops uploaded**, zero retained queued bytes for them and zero review rows. Build 10038 completed that backlog through the previously deployed backend. After approved live-eu activation, the iPhone was updated to build 10040, including bounded repeated crops. Android build 10040 is ready for the detached phone. [The recorded-drive comparison](SIGN_COLLECTION_REPEAT_CROPS_2026-10-06.md) documents selection parity, native tests, simulator uploads and remaining physical-device checks.
 
 Validation: Swift host queue/transport/privacy/crop checks passed; signed iPhone build 10039 passed; Android build and test APK passed with 647 unit tests passing. Backend: 75 tests passed, 19 PostgreSQL-dependent tests skipped locally, and Ruff passed. Native Android queue tests compiled but could not run on the detached phone. All old upload routes are covered by removal assertions.
+
+## Daily crop interest (13 October 2026)
+
+Both native clients fetch plain JSON from the HTTPS crop-interest endpoint only
+when visual TSR is enabled: once at app-process startup, and on each disabled-to-
+enabled setting transition. Foreground/network/model/camera restart and upload
+timers do not request a list. No plan signatures, key pins or hash sampling are
+used. Daily production selection requests all ordinary classes below the pooled
+usable-class maximum, while exact `bad` and `bad:*` remain eligible without a plan.
+Missing/expired plans suppress only ordinary crops; sightings/corrections remain
+independent. Selection provenance is frozen at qualification and copied into
+repeated crops. Backend and full policy details: [collection spec](SIGN_COLLECTION_BALANCING_SPEC_2026-10-12.md).
+
+Validation for this amendment: final iPhone simulator build and Swift host
+collection/interest checks passed; Android collection unit tests passed (17
+tests, one optional private replay skipped). Exact shared-contract/schema parity
+passed. Analytics regression run: 248 passed, 63 optional tests skipped, including
+23 daily planner/API/inventory checks on isolated PostgreSQL (spatial columns
+substituted in that test harness). No production release or phone install was
+performed by this implementation turn.
+
+## Installed collection-interest clients (13 October 2026)
+
+Version 1.4 build 10044 was installed as an update on the attached iPhone 14 Pro
+(`de.youspeed.SpeedConsumer`) and Moto g86 5G (`de.youspeed.android.debug`).
+Both installed-version inventories and normal launch commands confirmed the
+update. Existing containers, maps and driver settings were retained.
+The physical-iPhone live settings/navigation test passed and restored the original
+mount. Android's packaged HTTPS plan/cache/activation test passed using a private
+temporary test directory, including exact matching and bad-family expiry fallback.
+The rollout originally retained evidence in `/private/tmp/youspeed-deploy-20261013/`
+(Xcode results, Android instrumentation log and `deployment.json`). Temporary
+paths are historical references and may no longer exist. Retained local
+aggregate rollout and drive reports live under `docs/collection-evidence/`;
+private evidence is excluded from this public repository.
+
+The rollout completed with backend release `d65f09b464` on both hosts and
+the daily planner active on volz-db. Both phones were subsequently updated to
+build 10046. Class-ID normalization and Inspector Panoramax source filtering
+were verified on 15 October. The earlier build-10044 results above describe
+that installation step rather than the final installed versions.

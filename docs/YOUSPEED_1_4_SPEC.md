@@ -323,8 +323,16 @@ This channel has no cross-installation evidence browsing/feedback UI.
 
 ## Automatic sign capture
 
-Ordinary detections create sightings and crops from their exact analyzed frames
-automatically. No manual entry, box selection or review action is offered.
+**Owner decision, 12 October 2026; implemented and deployed 13–15 October:**
+[daily balanced crop interest](SIGN_COLLECTION_BALANCING_SPEC_2026-10-12.md)
+supersedes unconditional crop creation. Every qualifying
+sighting remains recorded; only interested ordinary classes create contribution
+crops. Exact `bad` and every `bad:*` subclass always remain eligible, even without
+a valid plan. Existing consent, frame/encounter/resource limits and best-effort
+uploads remain in force.
+
+Ordinary detections create sightings automatically; eligible detections create
+crops from their exact analyzed frames. No manual entry, box selection or review action is offered.
 The app does not create manual observations.
 
 ## Panoramax recognized-sign capture
