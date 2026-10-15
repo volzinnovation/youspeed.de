@@ -219,6 +219,67 @@
       "title": "Classification",
       "type": "object"
     },
+    "CollectionSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "collection_key": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "pattern": "^[^\\r\\n]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Collection Key"
+        },
+        "decision": {
+          "enum": [
+            "always",
+            "selected",
+            "not_interested",
+            "sampled_out",
+            "no_valid_plan"
+          ],
+          "title": "Decision",
+          "type": "string"
+        },
+        "plan_revision": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Plan Revision"
+        },
+        "sampling_fraction": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SelectionFraction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "plan_revision",
+        "collection_key",
+        "decision",
+        "sampling_fraction"
+      ],
+      "title": "CollectionSelection",
+      "type": "object"
+    },
     "Component": {
       "additionalProperties": false,
       "properties": {
@@ -621,6 +682,29 @@
       "title": "Scores",
       "type": "object"
     },
+    "SelectionFraction": {
+      "additionalProperties": false,
+      "properties": {
+        "denominator": {
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "numerator": {
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Numerator",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator"
+      ],
+      "title": "SelectionFraction",
+      "type": "object"
+    },
     "SignPosition": {
       "additionalProperties": false,
       "properties": {
@@ -672,6 +756,17 @@
       "minLength": 1,
       "title": "Clock Quality",
       "type": "string"
+    },
+    "collection_selection": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CollectionSelection"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "collection_session_id": {
       "anyOf": [

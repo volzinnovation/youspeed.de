@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "algorithm": "uuid-u32-v1",
+  "vectors": [
+    {
+      "revision": 1,
+      "collection_key": "DE:maxspeed:30",
+      "observation_id": "00000000-0000-4000-8000-000000000000",
+      "numerator": 0,
+      "denominator": 1,
+      "draw": 0,
+      "selected": false
+    },
+    {
+      "revision": 1,
+      "collection_key": "DE:maxspeed:30",
+      "observation_id": "00000000-0000-4000-8000-000000000000",
+      "numerator": 1,
+      "denominator": 1,
+      "draw": 0,
+      "selected": true
+    },
+    {
+      "revision": 1,
+      "collection_key": "DE:maxspeed:30",
+      "observation_id": "00000000-0000-4000-8000-000000000000",
+      "numerator": 1,
+      "denominator": 2,
+      "draw": 0,
+      "selected": true
+    },
+    {
+      "revision": 1,
+      "collection_key": "DE:maxspeed:30",
+      "observation_id": "00000000-0000-4000-8000-000000000000",
+      "numerator": 333333,
+      "denominator": 1000000,
+      "draw": 0,
+      "selected": true
+    },
+    {
+      "revision": 1,
+      "collection_key": "DE:maxspeed:30",
+      "observation_id": "00000000-0000-4000-8000-000000000000",
+      "numerator": 999999,
+      "denominator": 1000000,
+      "draw": 0,
+      "selected": true
+    },
+    {
+      "revision": 42,
+      "collection_key": "CH:bad:round",
+      "observation_id": "12345678-1234-4567-89ab-123456789abc",
+      "numerator": 0,
+      "denominator": 1,
+      "draw": 1450744508,
+      "selected": false
+    },
+    {
+      "revision": 42,
+      "collection_key": "CH:bad:round",
+      "observation_id": "12345678-1234-4567-89ab-123456789abc",
+      "numerator": 1,
+      "denominator": 1,
+      "draw": 1450744508,
+      "selected": true
+    },
+    {
+      "revision": 42,
+      "collection_key": "CH:bad:round",
+      "observation_id": "12345678-1234-4567-89ab-123456789abc",
+      "numerator": 1,
+      "denominator": 2,
+      "draw": 1450744508,
+      "selected": true
+    },
+    {
+      "revision": 42,
+      "collection_key": "CH:bad:round",
+      "observation_id": "12345678-1234-4567-89ab-123456789abc",
+      "numerator": 333333,
+      "denominator": 1000000,
+      "draw": 1450744508,
+      "selected": false
+    },
+    {
+      "revision": 42,
+      "collection_key": "CH:bad:round",
+      "observation_id": "12345678-1234-4567-89ab-123456789abc",
+      "numerator": 999999,
+      "denominator": 1000000,
+      "draw": 1450744508,
+      "selected": true
+    },
+    {
+      "revision": 9007199254740991,
+      "collection_key": "FR:B14-50",
+      "observation_id": "ffffffff-ffff-4fff-bfff-ffffffffffff",
+      "numerator": 0,
+      "denominator": 1,
+      "draw": 4294967295,
+      "selected": false
+    },
+    {
+      "revision": 9007199254740991,
+      "collection_key": "FR:B14-50",
+      "observation_id": "ffffffff-ffff-4fff-bfff-ffffffffffff",
+      "numerator": 1,
+      "denominator": 1,
+      "draw": 4294967295,
+      "selected": true
+    },
+    {
+      "revision": 9007199254740991,
+      "collection_key": "FR:B14-50",
+      "observation_id": "ffffffff-ffff-4fff-bfff-ffffffffffff",
+      "numerator": 1,
+      "denominator": 2,
+      "draw": 4294967295,
+      "selected": false
+    },
+    {
+      "revision": 9007199254740991,
+      "collection_key": "FR:B14-50",
+      "observation_id": "ffffffff-ffff-4fff-bfff-ffffffffffff",
+      "numerator": 333333,
+      "denominator": 1000000,
+      "draw": 4294967295,
+      "selected": false
+    },
+    {
+      "revision": 9007199254740991,
+      "collection_key": "FR:B14-50",
+      "observation_id": "ffffffff-ffff-4fff-bfff-ffffffffffff",
+      "numerator": 999999,
+      "denominator": 1000000,
+      "draw": 4294967295,
+      "selected": false
+    },
+    {
+      "revision": 27,
+      "collection_key": "DE:\u00e4",
+      "observation_id": "00000000-0000-4000-8000-000000000001",
+      "numerator": 0,
+      "denominator": 1,
+      "draw": 1,
+      "selected": false
+    },
+    {
+      "revision": 27,
+      "collection_key": "DE:\u00e4",
+      "observation_id": "00000000-0000-4000-8000-000000000001",
+      "numerator": 1,
+      "denominator": 1,
+      "draw": 1,
+      "selected": true
+    },
+    {
+      "revision": 27,
+      "collection_key": "DE:\u00e4",
+      "observation_id": "00000000-0000-4000-8000-000000000001",
+      "numerator": 1,
+      "denominator": 2,
+      "draw": 1,
+      "selected": true
+    },
+    {
+      "revision": 27,
+      "collection_key": "DE:\u00e4",
+      "observation_id": "00000000-0000-4000-8000-000000000001",
+      "numerator": 333333,
+      "denominator": 1000000,
+      "draw": 1,
+      "selected": true
+    },
+    {
+      "revision": 27,
+      "collection_key": "DE:\u00e4",
+      "observation_id": "00000000-0000-4000-8000-000000000001",
+      "numerator": 999999,
+      "denominator": 1000000,
+      "draw": 1,
+      "selected": true
+    }
+  ]
+}

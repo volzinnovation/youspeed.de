@@ -18,8 +18,20 @@
       "sha256": "9f242fd65afd8db39119fadaf45e5be6b5f37e77938314cbffb6657731681479"
     },
     {
+      "path": "crop-interest-v1.schema.json",
+      "sha256": "89bca03c0920c00037cb5d21bef88ede1d1d37c1031d5efe0385034b30577c13"
+    },
+    {
+      "path": "crop-planner-policy-v1.schema.json",
+      "sha256": "c57454d16a70b7a43477fc54f7f4ab9a2674529403cdfbbb702602a64db1ef18"
+    },
+    {
+      "path": "crop-registry-v1.schema.json",
+      "sha256": "f209d5c4575c2acadeb29ed4034e6348a4d31b1da1b76894fce9433263172182"
+    },
+    {
       "path": "crop-v1.schema.json",
-      "sha256": "da208be452a43b58797035229e6a097a8cb9250a5e9b0ff1807d2ca50f196800"
+      "sha256": "a3abd839c4e35d3be569d6851deee42e4521e809ca7f1cafbf4638d8547c7db4"
     },
     {
       "path": "deletion-v1.schema.json",
@@ -36,6 +48,22 @@
     {
       "path": "fixtures/correction-v1.json",
       "sha256": "d7c3b0222e2dab114560a156d364d57b8cddfd73902f2f5834f58ce2c2be68b1"
+    },
+    {
+      "path": "fixtures/crop-interest-daily-maximum-v1.json",
+      "sha256": "334b0cf82b8ea5154de28a675fff7fc404c2568336d127f52a7bc51c62cdfe4d"
+    },
+    {
+      "path": "fixtures/crop-interest-sampling-v1.json",
+      "sha256": "c797346cd0646fa7b5b2f92c13e0278296f1c1811af1d29504471b3411de20dd"
+    },
+    {
+      "path": "fixtures/crop-interest-signed-v1.json",
+      "sha256": "e79fc6d3286caa0a7630c35f07a70fdc3f26abab556abec6481c21e335825924"
+    },
+    {
+      "path": "fixtures/crop-interest-v1.json",
+      "sha256": "ffa10d6bac77ed869b8fade87f68d7d3fc06f526e5390e008623b29dea38f45c"
     },
     {
       "path": "fixtures/crop-v1.json",
@@ -75,7 +103,7 @@
     },
     {
       "path": "sighting-v1.schema.json",
-      "sha256": "e028a89805869732517a7ad7f521dc51f7cb6a1670314037ef5ca68a91b20291"
+      "sha256": "72b9f2dd3d6e2a95e13b42aeb77a078d014bd4661c7732f992f6097c4f91ad2e"
     }
   ]
 }

@@ -1,0 +1,139 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "algorithm_version": {
+      "default": "waterfill-v1",
+      "enum": [
+        "waterfill-v1",
+        "daily-maximum-v1"
+      ],
+      "title": "Algorithm Version",
+      "type": "string"
+    },
+    "enabled_countries": {
+      "items": {
+        "pattern": "^[A-Z]{2}$",
+        "type": "string"
+      },
+      "title": "Enabled Countries",
+      "type": "array"
+    },
+    "history_days": {
+      "maximum": 90,
+      "minimum": 1,
+      "title": "History Days",
+      "type": "integer"
+    },
+    "max_control_age_seconds": {
+      "maximum": 900,
+      "minimum": 1,
+      "title": "Max Control Age Seconds",
+      "type": "integer"
+    },
+    "max_image_bytes": {
+      "maximum": 5242880,
+      "minimum": 1,
+      "title": "Max Image Bytes",
+      "type": "integer"
+    },
+    "max_import_lag_events": {
+      "maximum": 1000000,
+      "minimum": 0,
+      "title": "Max Import Lag Events",
+      "type": "integer"
+    },
+    "max_integrity_age_seconds": {
+      "maximum": 86400,
+      "minimum": 1,
+      "title": "Max Integrity Age Seconds",
+      "type": "integer"
+    },
+    "max_rows": {
+      "maximum": 1000000,
+      "minimum": 1,
+      "title": "Max Rows",
+      "type": "integer"
+    },
+    "max_seconds": {
+      "maximum": 900,
+      "minimum": 1,
+      "title": "Max Seconds",
+      "type": "integer"
+    },
+    "normal_bytes_per_day": {
+      "anyOf": [
+        {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Normal Bytes Per Day"
+    },
+    "normal_images_per_day": {
+      "anyOf": [
+        {
+          "maximum": 1000000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Normal Images Per Day"
+    },
+    "provisional_bootstrap_per_class": {
+      "anyOf": [
+        {
+          "maximum": 1000000,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Provisional Bootstrap Per Class"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "targets": {
+      "additionalProperties": {
+        "maximum": 1000000,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "title": "Targets",
+      "type": "object"
+    },
+    "validity_hours": {
+      "maximum": 48,
+      "minimum": 1,
+      "title": "Validity Hours",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "max_image_bytes",
+    "history_days",
+    "max_control_age_seconds",
+    "max_integrity_age_seconds",
+    "max_import_lag_events",
+    "validity_hours",
+    "max_rows",
+    "max_seconds"
+  ],
+  "title": "PlannerPolicy",
+  "type": "object"
+}

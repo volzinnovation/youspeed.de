@@ -14,7 +14,7 @@ internal object SignCollectionJson {
     fun isUuid(s: String) = runCatching { UUID.fromString(s).let { it.version() == 4 && it.variant() == 2 && it.toString() == s } }.getOrDefault(false)
     fun sha256(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
     fun digest(value: JsonElement) = sha256(canonical(value).toByteArray(Charsets.UTF_8))
-    fun canonical(value: JsonElement, depth: Int = 0): String {
+    fun canonical(value: JsonElement, depth: Int = 0, maximumCollectionCount: Int = 128): String {
         require(depth <= 16) { "nesting" }
         return when (value) {
             is JsonObject -> {
@@ -25,9 +25,9 @@ internal object SignCollectionJson {
                     for (i in 0 until minOf(aa.size, bb.size)) { comparison = aa[i].compareTo(bb[i]); if (comparison != 0) break }
                     if (comparison != 0) comparison else aa.size.compareTo(bb.size)
                 }
-                value.keys.sortedWith(order).joinToString(",", "{", "}") { canonical(JsonPrimitive(it)) + ":" + canonical(value.getValue(it), depth + 1) }
+                value.keys.sortedWith(order).joinToString(",", "{", "}") { canonical(JsonPrimitive(it)) + ":" + canonical(value.getValue(it), depth + 1, maximumCollectionCount) }
             }
-            is JsonArray -> { require(value.size <= 128); value.joinToString(",", "[", "]") { canonical(it, depth + 1) } }
+            is JsonArray -> { require(value.size <= maximumCollectionCount); value.joinToString(",", "[", "]") { canonical(it, depth + 1, maximumCollectionCount) } }
             is JsonPrimitive -> when {
                 value === JsonNull -> "null"
                 value.isString -> {
@@ -67,7 +67,7 @@ internal object SignCollectionJson {
     }
 
     /** Reject duplicate keys before the JSON library could overwrite them. */
-    fun parse(text: String): JsonElement {
+    fun parse(text: String, maximumCollectionCount: Int = 128): JsonElement {
         class Parser {
             var i = 0
             fun space() { while (i < text.length && text[i] in " \t\n\r") i++ }
@@ -87,7 +87,7 @@ internal object SignCollectionJson {
                 if (take('[')) {
                     val result = mutableListOf<JsonElement>()
                     if (take(']')) return JsonArray(result)
-                    do { result += value(depth + 1); require(result.size <= 128) } while (take(','))
+                    do { result += value(depth + 1); require(result.size <= maximumCollectionCount) } while (take(','))
                     require(take(']')); return JsonArray(result)
                 }
                 val start = i
@@ -149,7 +149,7 @@ internal class SignCollectionContractGate private constructor(val verified: Bool
         }
     }
     companion object {
-        const val MANIFEST_SHA256 = "b24c5b585b0c8d2c235f36964cbdd7cb932fd85da93a011f380055cdd6f7663f"
+        const val MANIFEST_SHA256 = "0a35325fcf66ccca6501b2f74ba3ead89a157b504ff01c4ed134962184634013"
         val blocked get() = SignCollectionContractGate(false)
     }
 }

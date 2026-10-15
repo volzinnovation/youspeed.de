@@ -7,15 +7,15 @@ enum SignCollectionError: Error { case invalidJSON, invalidContract, consentRequ
 /// Backend semantic-json-v1, deliberately distinct from RFC 8785. No Foundation
 /// dictionary serialization is used for identity digests or saved request bytes.
 enum SignCollectionJSON {
-    static func parse(_ text: String) throws -> Any {
-        var parser = Parser(bytes: Array(text.utf8))
+    static func parse(_ text: String, maximumCollectionCount: Int = 128) throws -> Any {
+        var parser = Parser(bytes: Array(text.utf8), maximumCollectionCount: maximumCollectionCount)
         let value = try parser.value(0)
         parser.space()
         guard parser.index == parser.bytes.count else { throw SignCollectionError.invalidJSON }
         return value
     }
 
-    static func canonical(_ value: Any, depth: Int = 0) throws -> String {
+    static func canonical(_ value: Any, depth: Int = 0, maximumCollectionCount: Int = 128) throws -> String {
         guard depth <= 16 else { throw SignCollectionError.invalidJSON }
         if value is NSNull { return "null" }
         if let value = value as? String {
@@ -43,13 +43,13 @@ enum SignCollectionJSON {
             return try number(n.doubleValue)
         }
         if let array = value as? [Any] {
-            guard array.count <= 128 else { throw SignCollectionError.invalidJSON }
-            return "[" + (try array.map { try canonical($0, depth: depth + 1) }).joined(separator: ",") + "]"
+            guard array.count <= maximumCollectionCount else { throw SignCollectionError.invalidJSON }
+            return "[" + (try array.map { try canonical($0, depth: depth + 1, maximumCollectionCount: maximumCollectionCount) }).joined(separator: ",") + "]"
         }
         if let object = value as? [String: Any] {
             guard object.count <= 128 else { throw SignCollectionError.invalidJSON }
             let keys = object.keys.sorted { $0.unicodeScalars.map(\.value).lexicographicallyPrecedes($1.unicodeScalars.map(\.value)) }
-            return "{" + (try keys.map { try canonical($0) + ":" + canonical(object[$0]!, depth: depth + 1) }).joined(separator: ",") + "}"
+            return "{" + (try keys.map { try canonical($0) + ":" + canonical(object[$0]!, depth: depth + 1, maximumCollectionCount: maximumCollectionCount) }).joined(separator: ",") + "}"
         }
         throw SignCollectionError.invalidJSON
     }
@@ -106,6 +106,7 @@ enum SignCollectionJSON {
 
     private struct Parser {
         let bytes: [UInt8]
+        let maximumCollectionCount: Int
         var index = 0
         mutating func space() { while index < bytes.count && [9, 10, 13, 32].contains(bytes[index]) { index += 1 } }
         mutating func take(_ byte: UInt8) -> Bool { space(); if index < bytes.count && bytes[index] == byte { index += 1; return true }; return false }
@@ -125,7 +126,7 @@ enum SignCollectionJSON {
             if take(91) {
                 var result: [Any] = []
                 if take(93) { return result }
-                repeat { result.append(try value(depth + 1)); guard result.count <= 128 else { throw SignCollectionError.invalidJSON } } while take(44)
+                repeat { result.append(try value(depth + 1)); guard result.count <= maximumCollectionCount else { throw SignCollectionError.invalidJSON } } while take(44)
                 guard take(93) else { throw SignCollectionError.invalidJSON }; return result
             }
             let start = index
@@ -173,7 +174,7 @@ struct SignCollectionClaim {
 struct SignCollectionContractGate {
     let verified: Bool
     private var schemas: [String: [String: Any]] = [:]
-    static let manifestSHA256 = "b24c5b585b0c8d2c235f36964cbdd7cb932fd85da93a011f380055cdd6f7663f"
+    static let manifestSHA256 = "0a35325fcf66ccca6501b2f74ba3ead89a157b504ff01c4ed134962184634013"
     static var blocked: SignCollectionContractGate { SignCollectionContractGate(verified: false) }
     private init(verified: Bool) { self.verified = verified }
     // Delivery additionally verifies deployed capabilities and explicit claims.

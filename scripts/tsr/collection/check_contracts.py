@@ -43,7 +43,8 @@ def main():
     assert 'path = "../shared/tsr/collection-contract-v1"' in project
     assert 'collection-contract-v1 in Resources' in project
     assert '"../../shared"' in (ROOT / "android/app/build.gradle.kts").read_text()
-    schemas = {name: json.loads((PIN / f"{name}-v1.schema.json").read_text()) for name in ["batch", "sighting", "correction", "crop", "consent", "deletion", "media-status", "extraction"]}
+    schemas = {name: json.loads((PIN / f"{name}-v1.schema.json").read_text()) for name in ["batch", "sighting", "correction", "crop", "consent", "deletion", "media-status", "extraction", "crop-interest"]}
+    assert not {"signature", "signature_version", "key_id", "purpose", "content_sha256"} & schemas["crop-interest"]["properties"].keys()
     def schema_keywords(node):
         assert not set(node) - ALLOWED, set(node) - ALLOWED
         for key in ["$defs", "properties"]:
@@ -60,6 +61,8 @@ def main():
         payloads.extend(("sighting", event) for event in value["events"])
     for name in ["correction", "crop", "consent", "deletion", "media-status", "extraction"]:
         payloads.append((name, json.loads((PIN / f"fixtures/{name}-v1.json").read_text())))
+    for name in ["crop-interest-v1", "crop-interest-daily-maximum-v1"]:
+        payloads.append(("crop-interest", json.loads((PIN / f"fixtures/{name}.json").read_text())))
     for model, value in payloads: jsonschema.validate(value, schemas[model])
     backend = None
     if args.backend:
@@ -71,6 +74,7 @@ def main():
         limits = importlib.import_module("commercial_backend.youspeed.spool").Limits()
         assert event_limits[0] == limits.event_bytes, f"backend event limit drift: clients={event_limits[0]}, backend={limits.event_bytes}"
         models = {"batch": backend.Batch, "sighting": backend.Sighting, "correction": backend.Correction, "crop": backend.Crop, "consent": backend.Consent, "deletion": backend.Deletion, "media-status": backend.MediaStatus, "extraction": processing.Extraction}
+        models["crop-interest"] = importlib.import_module("commercial_backend.youspeed.crop_interest_contracts").Plan
         for model, value in payloads: models[model].model_validate(value)
     if args.native_output:
         out = args.native_output

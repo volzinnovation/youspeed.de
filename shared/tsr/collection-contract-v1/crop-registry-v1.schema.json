@@ -1,0 +1,119 @@
+{
+  "$defs": {
+    "RegistryClass": {
+      "additionalProperties": false,
+      "properties": {
+        "class_id": {
+          "maxLength": 160,
+          "minLength": 1,
+          "pattern": "^[^\\r\\n]+$",
+          "title": "Class Id",
+          "type": "string"
+        },
+        "collection_key": {
+          "maxLength": 160,
+          "minLength": 1,
+          "pattern": "^[^\\r\\n]+$",
+          "title": "Collection Key",
+          "type": "string"
+        },
+        "country": {
+          "pattern": "^[A-Z]{2}$",
+          "title": "Country",
+          "type": "string"
+        },
+        "selectors": {
+          "items": {
+            "$ref": "#/$defs/Selector"
+          },
+          "maxItems": 64,
+          "title": "Selectors",
+          "type": "array"
+        }
+      },
+      "required": [
+        "country",
+        "class_id",
+        "collection_key",
+        "selectors"
+      ],
+      "title": "RegistryClass",
+      "type": "object"
+    },
+    "Selector": {
+      "additionalProperties": false,
+      "properties": {
+        "classifier_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Classifier Sha256",
+          "type": "string"
+        },
+        "country": {
+          "pattern": "^[A-Z]{2}$",
+          "title": "Country",
+          "type": "string"
+        },
+        "pack_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Pack Sha256",
+          "type": "string"
+        },
+        "raw_label": {
+          "maxLength": 160,
+          "minLength": 1,
+          "pattern": "^[^\\r\\n]+$",
+          "title": "Raw Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "country",
+        "pack_sha256",
+        "classifier_sha256",
+        "raw_label"
+      ],
+      "title": "Selector",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "catalogs": {
+      "additionalProperties": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "title": "Catalogs",
+      "type": "object"
+    },
+    "classes": {
+      "items": {
+        "$ref": "#/$defs/RegistryClass"
+      },
+      "maxItems": 10000,
+      "minItems": 1,
+      "title": "Classes",
+      "type": "array"
+    },
+    "revision": {
+      "maxLength": 160,
+      "minLength": 1,
+      "pattern": "^[^\\r\\n]+$",
+      "title": "Revision",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "revision",
+    "catalogs",
+    "classes"
+  ],
+  "title": "Registry",
+  "type": "object"
+}

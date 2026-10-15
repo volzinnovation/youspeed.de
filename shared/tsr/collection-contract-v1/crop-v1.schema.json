@@ -89,6 +89,136 @@
       "title": "Box",
       "type": "object"
     },
+    "CollectionSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "collection_key": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "pattern": "^[^\\r\\n]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Collection Key"
+        },
+        "decision": {
+          "enum": [
+            "always",
+            "selected",
+            "not_interested",
+            "sampled_out",
+            "no_valid_plan"
+          ],
+          "title": "Decision",
+          "type": "string"
+        },
+        "plan_revision": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Plan Revision"
+        },
+        "sampling_fraction": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SelectionFraction"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "plan_revision",
+        "collection_key",
+        "decision",
+        "sampling_fraction"
+      ],
+      "title": "CollectionSelection",
+      "type": "object"
+    },
+    "PhoneRoadMatch": {
+      "additionalProperties": false,
+      "description": "Recorded phone matcher result; neither reviewed road nor sign applicability.",
+      "properties": {
+        "bundle_db_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Bundle Db Sha256",
+          "type": "string"
+        },
+        "bundle_version": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Bundle Version",
+          "type": "string"
+        },
+        "frame_match_delta_ms": {
+          "maximum": 86400000,
+          "minimum": -86400000,
+          "title": "Frame Match Delta Ms",
+          "type": "number"
+        },
+        "matched_fix_at": {
+          "format": "date-time",
+          "title": "Matched Fix At",
+          "type": "string"
+        },
+        "matched_way_stable": {
+          "title": "Matched Way Stable",
+          "type": "boolean"
+        },
+        "osm_way_id": {
+          "pattern": "^[1-9][0-9]{0,18}$",
+          "title": "Osm Way Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "source": {
+          "const": "on_device_bundle_matcher",
+          "title": "Source",
+          "type": "string"
+        },
+        "travel_direction": {
+          "enum": [
+            "forward",
+            "reverse",
+            "unknown"
+          ],
+          "title": "Travel Direction",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "source",
+        "osm_way_id",
+        "bundle_version",
+        "bundle_db_sha256",
+        "matched_fix_at",
+        "frame_match_delta_ms",
+        "travel_direction",
+        "matched_way_stable"
+      ],
+      "title": "PhoneRoadMatch",
+      "type": "object"
+    },
     "Position": {
       "additionalProperties": false,
       "properties": {
@@ -173,6 +303,29 @@
       ],
       "title": "Position",
       "type": "object"
+    },
+    "SelectionFraction": {
+      "additionalProperties": false,
+      "properties": {
+        "denominator": {
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "numerator": {
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Numerator",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator"
+      ],
+      "title": "SelectionFraction",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -209,6 +362,17 @@
       "minimum": 0,
       "title": "Collection Epoch",
       "type": "integer"
+    },
+    "collection_selection": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CollectionSelection"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "crop_id": {
       "title": "Crop Id",
@@ -280,6 +444,17 @@
       "minItems": 4,
       "title": "Original Box",
       "type": "array"
+    },
+    "phone_road_match": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PhoneRoadMatch"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "privacy_preflight": {
       "enum": [
