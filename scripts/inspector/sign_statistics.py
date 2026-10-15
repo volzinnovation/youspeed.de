@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print and export stored crop counts per country and sign class (descending)."""
+"""Print and export stored crop counts per country and class ID (descending)."""
 from __future__ import annotations
 
 import argparse
@@ -21,15 +21,14 @@ SELECT COALESCE(
     'unknown') AS country,
   COALESCE(
     NULLIF(btrim(e.payload->'event'->'classification'->>'model_label'), ''),
-    NULLIF(btrim(e.payload->'event'->'classification'->>'canonical_code'), ''),
-    '(unclassified)') AS sign_class,
+    '(unclassified)') AS class_id,
   count(*) AS count,
   count(DISTINCT (e.installation, e.epoch, e.event_id))
     FILTER (WHERE e.event_id IS NOT NULL) AS linked_sightings
 FROM youspeed.media m
 """ + OBSERVATION_JOIN + """
 GROUP BY 1, 2
-ORDER BY count DESC, country ASC, sign_class ASC
+ORDER BY count DESC, country ASC, class_id ASC
 """
 
 
@@ -42,21 +41,32 @@ def snapshot(store):
         ).fetchone()
         if identity['database'] != 'youspeed' or identity['user'] != 'youspeed_report':
             raise InspectorError('Expected database youspeed and read-only role youspeed_report.')
+        invalid = db.execute("""
+            SELECT count(*) AS count FROM youspeed.events e
+            LEFT JOIN youspeed.class_ids c
+              ON c.country=e.payload#>>'{event,classification,country}'
+             AND c.class_id=e.payload#>>'{event,classification,model_label}'
+            WHERE e.kind='sighting'
+              AND e.payload#>>'{event,classification,model_label}' IS NOT NULL
+              AND c.class_id IS NULL
+        """).fetchone()['count']
+        if invalid:
+            raise InspectorError('Noncanonical class labels remain; apply class-ID migration 010 before reporting.')
         rows = db.execute(COUNTS_SQL).fetchall()
         total = db.execute("SELECT count(*) AS count FROM youspeed.media").fetchone()['count']
         if sum(row['count'] for row in rows) != total:
             raise InspectorError('Class counts do not match the stored crop total; report withheld.')
     return {
-        'schema': 'youspeed-sign-statistics-v2',
+        'schema': 'youspeed-sign-statistics-v3',
         'as_of': identity['as_of'].isoformat(),
         'database': identity['database'],
         'user': identity['user'],
         'scope': 'All stored crops, including inactive or expired records and replay installations.',
         'country_definition': 'Recorded classification.country, or unknown when missing; model domain, not verified journey country.',
-        'class_definition': 'model_label, falling back to canonical_code, then (unclassified).',
+        'class_definition': 'Catalog class ID stored in classification.model_label; missing predictions use (unclassified). Display labels and national sign codes are not class IDs.',
         'count_definition': 'Stored crop records; multiple crops can belong to one sighting.',
         'total_crops': total,
-        'class_count': len({row['sign_class'] for row in rows}),
+        'class_count': len({row['class_id'] for row in rows}),
         'country_count': len({row['country'] for row in rows}),
         'group_count': len(rows),
         'classes': rows,
@@ -71,11 +81,11 @@ def markdown(report):
         'Recorded labels are not reviewed ground truth or deduplicated physical signs.', '',
         f"Total: **{report['total_crops']:,} crops** across **{report['group_count']} country/class groups** "
         f"(**{report['class_count']} classes**, **{report['country_count']} countries**, including unknown if present).", '',
-        '| Country | Sign class | Count (crops) | Linked sightings |',
+        '| Country | Class ID | Count (crops) | Linked sightings |',
         '| --- | --- | ---: | ---: |',
     ]
     for row in report['classes']:
-        label = (row['sign_class'].replace('&', '&amp;').replace('<', '&lt;')
+        label = (row['class_id'].replace('&', '&amp;').replace('<', '&lt;')
                  .replace('>', '&gt;').replace('\\', '&#92;').replace('|', '&#124;')
                  .replace('`', '&#96;').replace('*', '&#42;').replace('_', '&#95;')
                  .replace('[', '&#91;').replace(']', '&#93;')
@@ -87,7 +97,7 @@ def markdown(report):
 def export(report, output_dir):
     output_dir.mkdir(parents=True, exist_ok=True)
     buffer = StringIO(newline='')
-    writer = csv.DictWriter(buffer, fieldnames=['country', 'sign_class', 'count', 'linked_sightings'])
+    writer = csv.DictWriter(buffer, fieldnames=['country', 'class_id', 'count', 'linked_sightings'])
     writer.writeheader()
     writer.writerows(report['classes'])
     contents = {

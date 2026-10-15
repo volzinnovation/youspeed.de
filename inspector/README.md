@@ -404,7 +404,12 @@ Die Statistik benötigt nur das TSR-Log, keinen Drive-Log oder Karten-Bundle.
 vorhandener privater Passwort-/DSN-Datei dieselben Zugangsdaten wie der Inspector.
 Der Report gruppiert nach Land und Zeichenklasse und zählt **alle gespeicherten Crops**, einschließlich noch gespeicherter
 inaktiver/abgelaufener Einträge und Replay-Installationen. Die Klasse ist
-`model_label`, ersatzweise `canonical_code`, sonst `(unclassified)`.
+die Katalog-Klassen-ID in `classification.model_label`; die Ausgabespalte heißt
+`class_id`. Fehlende Modellvorhersagen erscheinen als `(unclassified)`.
+Anzeigenamen und nationale Zeichencodes werden nicht als Klassen gruppiert.
+Migration `010_class_ids.sql` normalisiert historische Anzeigenamen anhand von
+Land, Pack- und Klassifikator-Identität; der Management-Import normalisiert auch
+weitere Uploads alter Clients. Der Report verweigert nicht auflösbare Klassen.
 Die separate Spalte `country` übernimmt `classification.country`; fehlende Länder
 erscheinen als `unknown`. Das ist die protokollierte Modelldomäne, kein geprüftes
 Fahrtland. Gleiche Klassen verschiedener Länder erhalten getrennte Zeilen.
@@ -420,7 +425,7 @@ python3 scripts/inspector/sign_statistics.py --output-dir /tmp/youspeed-sign-sta
 Benötigt `inspector/requirements.txt`. Gibt eine Markdown-Tabelle auf stdout aus
 und ersetzt lokal `sign-statistics.csv`, `sign-statistics.json` und
 `sign-statistics.md`, jeweils nach Crop-Anzahl absteigend und bei Gleichstand
-nach Land und Klassenname sortiert. JSON und Markdown enthalten den UTC-Snapshotzeitpunkt
+nach Land und Klassen-ID sortiert. JSON und Markdown enthalten den UTC-Snapshotzeitpunkt
 und die Zähldefinition. Ohne `--output-dir` wird ein Unterordner
 `youspeed-sign-statistics` im temporären Systemverzeichnis verwendet.
 Alle Abfragen laufen in einer Read-only-/Repeatable-read-Transaktion; die Summe

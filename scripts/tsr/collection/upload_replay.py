@@ -106,7 +106,7 @@ def prepare(report_path, pack, anchor):
             first_seen_at=stamp(elapsed(sighting["first_seen_at"])), last_seen_at=stamp(elapsed(sighting["last_seen_at"])),
             representative_frame_at=stamp(sighting["frame_seconds"]), duration_ms=sighting["duration_ms"],
             vehicle_position=None, sign_position=None, road_context=None, model=model)
-        event["classification"] = dict(country=report["country"], model_label=sighting["label"], canonical_code=None,
+        event["classification"] = dict(country=report["country"], model_label=sighting["raw_class_id"], canonical_code=None,
             family=semantic.get("kind", "unknown"), value=semantic.get("value"), unit=semantic.get("unit"),
             role="primary" if entry else "unknown", mapping_revision=None, mapping_sha256=None, alternatives=[])
         event["scores"].update(sighting["scores"])
