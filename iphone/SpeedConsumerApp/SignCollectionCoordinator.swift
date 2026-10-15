@@ -23,6 +23,10 @@ import CoreGraphics
     private let monitor = NWPathMonitor()
     private var timer: Timer?
     private var upload: Task<Void, Never>?
+    private var interestTask: Task<Void, Never>?
+    private let interestHTTP = SignCollectionInterestHTTP()
+    private var interestGeneration = 0
+    private var interestActivation = SignCollectionInterestActivation()
     private var client: SignCollectionHTTPClient?
     private var worker: SignCollectionUploadWorker?
     private var networkAvailable = false
@@ -49,7 +53,25 @@ import CoreGraphics
         }
         perform { try $0.migrateAutomaticCrops() }
     }
-    deinit { timer?.invalidate(); monitor.cancel(); upload?.cancel(); client?.close() }
+    deinit { timer?.invalidate(); monitor.cancel(); upload?.cancel(); interestTask?.cancel(); interestHTTP.close(); client?.close() }
+    /// App launch with TSR enabled, or the setting's false-to-true transition.
+    /// Foreground, model reload, network changes and timers do not refetch.
+    func visualTSRChanged(enabled: Bool) {
+        let activate = interestActivation.update(enabled)
+        if !enabled { interestGeneration += 1; interestTask?.cancel(); interestTask = nil }
+        guard activate, interestTask == nil, let interests = foundation.interests else { return }
+        interestGeneration += 1
+        let requestGeneration = interestGeneration
+        interestTask = Task { [weak self, interestHTTP] in
+            defer { if self?.interestGeneration == requestGeneration { self?.interestTask = nil } }
+            do {
+                let response = try await interestHTTP.fetch(etag: interests.etag)
+                try Task.checkCancellation()
+                if response.status == 200 { try interests.install(response.data) }
+                else if response.status != 304 || interests.etag == nil { throw SignCollectionError.invalidContract }
+            } catch { /* Keep a usable cached plan; otherwise only bad crops remain eligible. */ }
+        }
+    }
     func cameraChanged(active: Bool) {
         let becameActive = active && !cameraActive
         cameraActive = active
@@ -174,6 +196,7 @@ import CoreGraphics
         // Snapshot the fix for this analyzed frame before asynchronous storage.
         let framePosition = Self.position(location, at: emission.event.frameTimestampUtc)
         let cropRequested = cropsAuthorized, token = generation
+        let interests = foundation.interests
         let app = ["platform": "ios", "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.4",
                    "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"]
         perform(refreshAfter: false) { [capture, weak self] store in
@@ -198,7 +221,7 @@ import CoreGraphics
             let detections = eligible.map { detection -> SignCollectionObserver.Detection in
                 let box = detection.boundingBox
                 let mapping = pack.manifest.classMapping.first { $0.classId == detection.rawClassId }
-                let classification: [String: Any] = ["country": country, "model_label": detection.rawLabel, "canonical_code": NSNull(),
+                let classification: [String: Any] = ["country": country, "model_label": detection.rawClassId, "canonical_code": NSNull(),
                     "family": detection.semantic.kind.rawValue, "value": detection.semantic.value as Any? ?? NSNull(), "unit": detection.semantic.unit as Any? ?? NSNull(),
                     "role": mapping.map { $0.signRole == .supplementaryPlate ? "supplementary" : "primary" } ?? "unknown", "mapping_revision": NSNull(), "mapping_sha256": NSNull(), "alternatives": []]
                 let scores: [String: Any] = ["detector_raw": detection.detectorRawScore as Any? ?? (pack.manifest.pipeline == .directDetection ? detection.rawScore as Any : NSNull()),
@@ -215,23 +238,32 @@ import CoreGraphics
             var cropCount = 0, upright: CGImage?
             try capture.observer.observe(at: at, detections: detections, captureCrop: { candidate in
                 guard cropRequested, cropCount < 4, let frame = emission.collectionFrame,
-                      candidate.box.count == 4 else { return .skipped }
+                      candidate.box.count == 4, candidate.selection?.permits(at: Date()) != false else { return .skipped }
                 let box = Dictionary(uniqueKeysWithValues: zip(["x", "y", "width", "height"], candidate.box))
                 do {
                     cropCount += 1
                     let claim = try store.claim(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure)
                     if upright == nil { upright = try frame.image() }
                     let crop = try SignCollectionCrop.generate(upright: upright!, box: box, hashSource: false)
-                    let metadata = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: candidate.observationID,
+                    var metadata = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: candidate.observationID,
                         installationID: try store.installationID, epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: candidate.frameAt,
                         localFrameToken: frame.token, privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: claim,
                         vehiclePosition: framePosition)
+                    if let selection = candidate.selection { metadata["collection_selection"] = selection.wire }
                     try store.enqueueAutomaticCrop(metadata: metadata, bytes: crop.bytes)
                     return .stored
                 } catch {
                     Task { @MainActor [weak self] in if self?.generation == token { self?.status = "crop_capture_unavailable" } }
                     return .failed
                 }
+            }, selectCrop: { payload, observationID in
+                let c = payload["classification"] as! [String: Any]
+                let identity = SignCollectionInterestPlan.Identity(country: country, pack: hash,
+                    classifier: event.modelComponents.first { $0.role == "semantic_classifier" }?.artifactSHA256.lowercased() ?? "",
+                    label: c["model_label"] as? String ?? "")
+                return interests?.select(identity, observation: observationID)
+                    ?? .init(revision: nil, key: nil, decision: SignCollectionInterestPlan.isAlways(identity.label) ? "always" : "no_valid_plan",
+                             fraction: SignCollectionInterestPlan.isAlways(identity.label) ? ["numerator": 1, "denominator": 1] : nil, expires: nil)
             }) { observation in
                 try store.enqueue(kind: "sighting", event: observation, disclosure: SignCollectionCapabilities.metadataDisclosure)
             }

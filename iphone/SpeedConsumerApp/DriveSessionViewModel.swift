@@ -720,6 +720,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var trafficSignRecognitionEnabled: Bool {
         didSet {
             guard trafficSignRecognitionEnabled != oldValue else { return }
+            signCollection.visualTSRChanged(enabled: trafficSignRecognitionEnabled)
             UserDefaults.standard.set(trafficSignRecognitionEnabled, forKey: Self.trafficSignRecognitionEnabledDefaultsKey)
             trafficSignRecognitionState = trafficSignRecognitionEnabled ? .unavailable : .disabled
             trafficSignDebugRoadContextInvalid = false

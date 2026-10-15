@@ -367,6 +367,7 @@ struct MainView: View {
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
+            viewModel.signCollection.visualTSRChanged(enabled: viewModel.trafficSignRecognitionEnabled)
             var safeSince: Date?
             let prompt = AppReviewPrompt.shared
             let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""

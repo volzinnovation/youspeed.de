@@ -5,6 +5,7 @@ import Foundation
 final class SignCollectionFoundation {
     let store: Result<SignCollectionStore, Error>
     let contractFailure: Error?
+    let interests: SignCollectionInterestStore?
     init(bundle: Bundle = .main) {
         var failure: Error?
         let gate: SignCollectionContractGate
@@ -18,5 +19,10 @@ final class SignCollectionFoundation {
         let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("YouSpeed/SignCollection", isDirectory: true)
         store = Result { try SignCollectionStore(root: root, gate: gate) }
+        if failure == nil, let contractRoot = bundle.url(forResource: "collection-contract-v1", withExtension: nil),
+           let data = try? Data(contentsOf: contractRoot.appendingPathComponent("crop-interest-v1.schema.json")),
+           let schema = (try? SignCollectionJSON.parse(String(decoding: data, as: UTF8.self))) as? [String: Any] {
+            interests = SignCollectionInterestStore(path: root.appendingPathComponent("crop-interest.json"), schema: schema)
+        } else { interests = nil }
     }
 }

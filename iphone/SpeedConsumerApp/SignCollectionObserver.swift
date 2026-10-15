@@ -15,6 +15,7 @@ final class SignCollectionObserver {
         let observationID: String
         let frameAt: Date
         let box: [Double]
+        var selection: SignCollectionInterestSelection? = nil
     }
     enum CropCaptureResult { case stored, failed, skipped }
     // Six regular samples plus two reserved for a substantially larger view.
@@ -34,6 +35,7 @@ final class SignCollectionObserver {
         var cropCount = 0
         var lastCropAttempt: Date?
         var largestCropArea = 0.0
+        var selection: SignCollectionInterestSelection? = nil
     }
     private var tracks: [Track] = []
     private var presentations: [String: String] = [:]
@@ -42,6 +44,7 @@ final class SignCollectionObserver {
     func reset() { tracks.removeAll(); presentations.removeAll(); attempts.removeAll(); frameTime = nil }
     func observe(at: Date, detections: [Detection],
                  captureCrop: ((CropCandidate) -> CropCaptureResult)? = nil,
+                 selectCrop: (([String: Any], String) -> SignCollectionInterestSelection)? = nil,
                  commit: ([String: Any]) throws -> Void) throws {
         if let previous = frameTime, at <= previous { return }
         frameTime = at
@@ -70,10 +73,14 @@ final class SignCollectionObserver {
                 var evidence = event["evidence"] as! [String: Any]
                 evidence["track_id"] = track.id; evidence["analyzed_frames"] = track.frames
                 evidence["finalization_reason"] = "qualified_track"; event["evidence"] = evidence
+                if let selectCrop {
+                    if tracks[selected].selection == nil { tracks[selected].selection = selectCrop(detection.payload, track.id) }
+                    event["collection_selection"] = tracks[selected].selection!.wire
+                }
                 try commit(event) // Mark only after the durable transaction succeeds.
                 tracks[selected].committed = true
             }
-            if tracks[selected].committed, let captureCrop {
+            if tracks[selected].committed, let captureCrop, tracks[selected].selection?.permits(at: at) != false {
                 let saved = tracks[selected]
                 let area = detection.box[2] * detection.box[3]
                 let intervalReady = saved.lastCropAttempt.map {
@@ -81,7 +88,7 @@ final class SignCollectionObserver {
                 } ?? true
                 if intervalReady, saved.cropCount < Self.maximumCropLimit,
                    saved.cropCount < Self.regularCropLimit || area >= saved.largestCropArea * Self.improvementAreaRatio {
-                    let result = captureCrop(CropCandidate(observationID: saved.id, frameAt: at, box: detection.box))
+                    let result = captureCrop(CropCandidate(observationID: saved.id, frameAt: at, box: detection.box, selection: saved.selection))
                     // Missing frames/per-frame capacity consume neither a slot nor
                     // the interval. Actual failures retry at the bounded cadence.
                     if result != .skipped { tracks[selected].lastCropAttempt = at }

@@ -220,6 +220,7 @@ func checkEventSizeBoundary() throws {
     } catch SignCollectionError.capacity {} // Prove rejection is the byte limit, not a schema/identity error.
     try check(owner!.pendingCount() == 1, "oversized event does not enter durable queue")
 }
+try runCollectionInterestChecks(contractRoot: contractRoot, outputRoot: outputRoot, fixture: event)
 try checkEventSizeBoundary()
 print("Swift: exact 16 KiB canonical event accepted; 16 KiB + 1 byte rejected atomically")
 
