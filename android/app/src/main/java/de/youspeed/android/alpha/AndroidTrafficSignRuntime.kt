@@ -697,7 +697,7 @@ internal class AndroidLiteRtTrafficSignBackend(
     verifiedPack: AndroidTrafficSignVerifiedPack,
     private val thermalState: () -> String?,
     context: Context,
-    private val cropRequested: () -> Boolean = { false },
+    private val cropRequested: (List<String>) -> Boolean = { false },
 ) : TrafficSignRecognitionBackend<CameraXTrafficSignFrame>, AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val cropFrameOutstanding = AtomicBoolean(false)
@@ -780,7 +780,7 @@ internal class AndroidLiteRtTrafficSignBackend(
                     val primary = primaryDetection(detections)
                     TrafficSignBackendResult.Recognition(
                         detection = primary,
-                        collectionFrame = if (detections.isNotEmpty() && cropRequested() && cropFrameOutstanding.compareAndSet(false, true)) {
+                        collectionFrame = if (detections.isNotEmpty() && cropRequested(detections.map { it.candidate.rawClassId }) && cropFrameOutstanding.compareAndSet(false, true)) {
                             try {
                                 val owned = bitmap.copy(Bitmap.Config.ARGB_8888, false); owned.setHasAlpha(false)
                                 SignCollectionFrame(frame.frameId, owned) { cropFrameOutstanding.set(false) }
@@ -1066,7 +1066,9 @@ internal class AndroidTrafficSignCameraRuntime(
         startupExecutor.execute {
             val loaded = runCatching {
                     val pack = AndroidTrafficSignModelPackLoader.load(context, countryCode)
-                    val runtimeBackend = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState, context, { controller.signCollection.wantsCropFrame })
+                    val runtimeBackend = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState, context, { labels -> controller.signCollection.wantsCropFrame(
+                        pack.modelPack.countries.firstOrNull { Regex("^[A-Z]{2}$").matches(it) } ?: "unknown",
+                        pack.manifestSHA256, pack.classifierArtifact.sha256, labels) })
                     val runtimeBridge = try { TrafficSignLiveRuntimeBridge(
                         pathPreparer = { frame: CameraXTrafficSignFrame, preparation ->
                             val thermal = context.getSystemService(PowerManager::class.java)?.currentThermalStatus ?: PowerManager.THERMAL_STATUS_NONE

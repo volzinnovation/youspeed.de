@@ -106,6 +106,7 @@ class MainActivity : ComponentActivity(), ConsumerHost {
         super.onResume()
         hideNavigationBar()
         sessionController.refreshOnboardingPermissions()
+        sessionController.signCollection.visualTSRChanged(sessionController.uiState.trafficSignRecognitionEnabled)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

@@ -2651,6 +2651,7 @@ class ConsumerSessionController(
 
     fun setTrafficSignRecognitionEnabled(enabled: Boolean) {
         if (uiState.trafficSignRecognitionEnabled == enabled) return
+        signCollection.visualTSRChanged(enabled)
         feedbackGate.reset()
         preferences.edit().putBoolean(KEY_TRAFFIC_SIGN_RECOGNITION_ENABLED, enabled).apply()
         invalidateTrafficSignGeneration(

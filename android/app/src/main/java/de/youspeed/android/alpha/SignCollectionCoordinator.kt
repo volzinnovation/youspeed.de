@@ -28,6 +28,11 @@ internal class SignCollectionCoordinator(private val context: Context, private v
     private val main = Handler(Looper.getMainLooper())
     private val storage = Executors.newSingleThreadExecutor()
     private val network = Executors.newSingleThreadExecutor()
+    private val interestHTTP = SignCollectionInterestHTTP()
+    private val interestNetwork = Executors.newSingleThreadExecutor()
+    private var interestRefresh: Future<*>? = null
+    private var interestGeneration = 0
+    private val interestActivation = SignCollectionInterestActivation()
     private val observer = SignCollectionObserver()
     private val client = SignCollectionHTTPClient()
     private val worker = foundation.store.getOrNull()?.let { SignCollectionUploadWorker(it, client) }
@@ -42,6 +47,29 @@ internal class SignCollectionCoordinator(private val context: Context, private v
     private var pack: AndroidTrafficSignVerifiedPack? = null // Storage executor only.
     private val tick = object : Runnable { override fun run() { if (!closed) { deliver(); main.postDelayed(this, 60_000) } } }
     init { if (worker == null) status = "storage_unavailable"; perform { it.migrateAutomaticCrops(); main.post { deliver() } }; main.post(tick) }
+    /** Only initial enabled state or false-to-true setting changes request a plan. */
+    fun visualTSRChanged(enabled: Boolean) {
+        val activate = interestActivation.update(enabled)
+        if (!enabled) { interestGeneration++; interestRefresh?.cancel(true); interestHTTP.cancel(); interestRefresh = null }
+        val interests = foundation.interests ?: return
+        if (!activate || closed || interestRefresh != null) return
+        val requestGeneration = ++interestGeneration
+        interestRefresh = interestNetwork.submit {
+            try {
+                val response = interestHTTP.fetch(interests.etag())
+                if (!Thread.currentThread().isInterrupted) {
+                    if (response.status == 200) interests.install(response.data)
+                    else check(response.status == 304 && interests.etag() != null)
+                }
+            } catch (_: Exception) { /* Retain valid cache; no ordinary crops without one. */ }
+            finally { main.post { if (interestGeneration == requestGeneration) interestRefresh = null } }
+        }
+    }
+    fun wantsCropFrame(country: String, pack: String, classifier: String, labels: List<String>): Boolean {
+        if(!wantsCropFrame) return false
+        return labels.any { label -> SignCollectionInterestPlan.isAlways(label) ||
+            foundation.interests?.interested(SignCollectionInterestPlan.Identity(country,pack,classifier,label)) == true }
+    }
     fun cameraChanged(active: Boolean) {
         val becameActive = active && !cameraActive; cameraActive = active; if (!active) wantsCropFrame = false
         if (becameActive) {
@@ -182,7 +210,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                     put("app", buildJsonObject { put("platform", "android"); put("version", BuildConfig.VERSION_NAME); put("build", BuildConfig.VERSION_CODE.toString()) })
                     put("clock_quality", "device_unverified"); put("vehicle_position", position); put("sign_position", JsonNull)
                     put("classification", buildJsonObject {
-                        put("country", country); put("model_label", d.rawLabel); put("canonical_code", JsonNull); put("family", d.semantic.kind.wireValue)
+                        put("country", country); put("model_label", d.rawClassId); put("canonical_code", JsonNull); put("family", d.semantic.kind.wireValue)
                         put("value", d.semantic.value?.let(::JsonPrimitive) ?: JsonNull); put("unit", d.semantic.unit?.let(::JsonPrimitive) ?: JsonNull)
                         put("role", mapping?.let { if (it.signRole == TrafficSignRole.SUPPLEMENTARY_PLATE) "supplementary" else "primary" } ?: "unknown"); put("mapping_revision", JsonNull); put("mapping_sha256", JsonNull); put("alternatives", JsonArray(emptyList()))
                     })
@@ -202,21 +230,28 @@ internal class SignCollectionCoordinator(private val context: Context, private v
             }
             var cropCount = 0
             observer.observe(event.frameTimestampUtc, mapped, captureCrop = { candidate ->
-                if (!cropRequested || frame == null || cropCount >= 4) SignCollectionObserver.CropCaptureResult.SKIPPED
+                if (!cropRequested || frame == null || cropCount >= 4 || candidate.selection?.permits(Instant.now()) == false) SignCollectionObserver.CropCaptureResult.SKIPPED
                 else runCatching {
                     cropCount++
                     val claim = store.claim("crop_storage", SignCollectionCapabilities.cropDisclosure)
                     val box = listOf("x", "y", "width", "height").zip(candidate.box).toMap()
                     val crop = frame.crop(box)
-                    val metadata = crop.metadata(SignCollectionJson.uuid(), candidate.observationId,
+                    var metadata = crop.metadata(SignCollectionJson.uuid(), candidate.observationId,
                         store.installationId, store.collectionEpoch, "detector", candidate.frameAt, frame.token, "passed", "metadata-strip-1", claim,
                         vehiclePosition = framePosition)
+                    candidate.selection?.let { metadata = JsonObject(metadata + ("collection_selection" to it.wire)) }
                     store.enqueueAutomaticCrop(metadata, crop.bytes)
                     SignCollectionObserver.CropCaptureResult.STORED
                 }.getOrElse {
                     main.post { status = "crop_capture_unavailable" }
                     SignCollectionObserver.CropCaptureResult.FAILED
                 }
+            }, selectCrop = { payload, observation ->
+                val label = payload.getValue("classification").jsonObject["model_label"]?.jsonPrimitive?.content ?: ""
+                val identity = SignCollectionInterestPlan.Identity(country,modelPack.manifestSHA256,
+                    event.modelComponents.firstOrNull { it.role == "semantic_classifier" }?.artifactSha256?.lowercase() ?: "",label)
+                foundation.interests?.select(identity,observation) ?: SignCollectionInterestSelection(null,null,
+                    if(SignCollectionInterestPlan.isAlways(label)) "always" else "no_valid_plan")
             }) { observation ->
                 store.enqueue("sighting", observation, SignCollectionCapabilities.metadataDisclosure)
             }
@@ -234,7 +269,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
             closed = true
             storage.shutdown()
         }
-        main.removeCallbacks(tick); invalidateUpload(); network.shutdownNow()
+        main.removeCallbacks(tick); invalidateUpload(); interestRefresh?.cancel(true); interestHTTP.cancel(); interestNetwork.shutdownNow(); network.shutdownNow()
     }
     private fun position(fix: Location?, at: Instant): JsonElement {
         if (fix == null || !fix.hasAccuracy() || fix.accuracy !in 0f..100_000f || !fix.latitude.isFinite() || !fix.longitude.isFinite() || fix.latitude !in -90.0..90.0 || fix.longitude !in -180.0..180.0 || kotlin.math.abs(at.toEpochMilli() - fix.time) > 30_000) return JsonNull
