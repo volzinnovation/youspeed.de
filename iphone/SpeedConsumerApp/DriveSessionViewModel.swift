@@ -797,7 +797,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         switch coordinator.state {
         case .disabled, .denied, .unavailable, .failed:
             coordinator.start(dashcamEnabled: false, trafficSignRecognitionEnabled: false,
-                              panoramaxEnabled: false, purpose: .calibration)
+                              panoramaxEnabled: false, purpose: .calibration,
+                              allowCameraPermissionRequest: cameraPermissionMayBeRequested)
         default: break
         }
     }
@@ -955,6 +956,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var trafficSignRecognitionUnavailableDetail = "Traffic-sign recognition is unavailable."
     @Published private(set) var panoramaxCaptureState: PanoramaxRecorderState = .disabled
     @Published private(set) var panoramaxCaptureCount = 0
+    @Published private(set) var drivingPhotoCaptureFailed = false
     @Published private(set) var panoramaxLastCaptureAt: Date?
     @Published private(set) var panoramaxLastCaptureDetail = "Noch keine Aufnahme"
     @Published private(set) var panoramaxLastAccuracyMeters: Double?
@@ -1104,6 +1106,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var panoramaxStorageLimitTask: Task<Void, Never>?
     private var panoramaxStorageLimitGeneration: UInt64 = 0
     private var isDriving = false
+    private var latestManualPhotoLocation: CLLocation?
+#if DEBUG && targetEnvironment(simulator)
+    private var manualPhotoTestFixture = false
+#endif
     private var hasPreparedGPSLogFile = false
     private var preparedMatchLogURL: URL?
     private var preparedTSRLogURL: URL?
@@ -2363,6 +2369,43 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    var showsDrivingPhotoButton: Bool {
+        DrivingPhotoPolicy.showsButton(speedKmh: currentSpeedKmh)
+    }
+
+    func canCaptureDrivingPhoto(at now: Date = Date()) -> Bool {
+#if DEBUG && targetEnvironment(simulator)
+        if manualPhotoTestFixture {
+            return showsDrivingPhotoButton && trafficSignApplicationIsActive
+                && driveCaptureCoordinator?.canCaptureManualPhoto(location: manualPhotoFixtureLocation(at: now), now: now) == true
+        }
+#endif
+        guard isDriving, !isScreenshotMode, !visualCalibrationActive,
+              trafficSignApplicationIsActive, showsDrivingPhotoButton,
+              !panoramaxQueueMaintenanceInProgress, let location = latestManualPhotoLocation else { return false }
+        return driveCaptureCoordinator?.canCaptureManualPhoto(location: location, now: now) == true
+    }
+
+    /// This action intentionally bypasses performDriveInteraction: a still must
+    /// not finalize or interrupt the current Dashcam movie.
+    @discardableResult
+    func captureDrivingPhoto() -> Bool {
+        guard canCaptureDrivingPhoto() else { return false }
+#if DEBUG && targetEnvironment(simulator)
+        if manualPhotoTestFixture {
+            return driveCaptureCoordinator?.captureManualPhoto(location: manualPhotoFixtureLocation(at: Date()), speedKmh: currentSpeedKmh) == true
+        }
+#endif
+        guard let location = latestManualPhotoLocation else { return false }
+        return driveCaptureCoordinator?.captureManualPhoto(location: location, speedKmh: currentSpeedKmh) == true
+    }
+
+    private var cameraPermissionMayBeRequested: Bool {
+        // Preserve initial stationary setup before the first fix, without
+        // prompting when the dashboard already reports movement.
+        currentSpeedKmh == 0 && drivingControlsAllowed
+    }
+
     var isPanoramaxRecordingActive: Bool {
         driveRecorderPanoramaxActive
     }
@@ -2428,7 +2471,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             dashcamEnabled: configuration.dashcamEnabled,
             trafficSignRecognitionEnabled: configuration.trafficSignRecognitionEnabled,
             panoramaxEnabled: configuration.panoramaxEnabled,
-            purpose: .driveRecording
+            purpose: .driveRecording,
+            manualPhotosEnabled: true,
+            allowCameraPermissionRequest: cameraPermissionMayBeRequested
         )
     }
 
@@ -2558,7 +2603,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func reconcileAutomaticCapture(allowTerminalRetry: Bool = false) {
-        guard let driveCaptureCoordinator else { return }
+        guard let driveCaptureCoordinator, !isScreenshotMode else { return }
         if visualCalibrationActive { return }
         let recognition = DriveRecorderPolicy.shouldRunStandaloneTrafficSignRecognition(
             recognitionEnabled: trafficSignRecognitionEnabled,
@@ -2572,10 +2617,19 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             applicationActive: trafficSignApplicationIsActive,
             storageReady: !panoramaxQueueMaintenanceInProgress && panoramaxQueueStore != nil
         )
-        let shouldRun = recognition || photos
+        // Manual readiness never requests access, changes the user's automatic
+        // photo preference, or starts before normal driving/onboarding gates.
+        let manualPhotos = isDriving && showsDrivingPhotoButton && onboardingStateLoaded && !shouldPresentOnboarding
+            && trafficSignApplicationIsActive
+            && !panoramaxQueueMaintenanceInProgress && panoramaxQueueStore != nil
+            && AVCaptureDevice.authorizationStatus(for: .video) == .authorized
+        let shouldRun = recognition || photos || manualPhotos
+        driveCaptureCoordinator.setManualPhotoMoving(showsDrivingPhotoButton)
         if driveCaptureCoordinator.isAutomaticCaptureSession {
             if driveCaptureCoordinator.state == .recording || driveCaptureCoordinator.state == .preparing {
                 if !shouldRun || driveCaptureCoordinator.requestedPanoramaxEnabled != photos {
+                    if !shouldRun, trafficSignApplicationIsActive, isDriving,
+                       driveCaptureCoordinator.isManualPhotoInFlight { return }
                     // Photo-output changes require a new fixed camera graph. onChange
                     // restarts the automatic session after stop has finished.
                     driveCaptureCoordinator.stop()
@@ -2587,6 +2641,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
         guard shouldRun, !driveRecorderStartPending else { return }
+        guard AVCaptureDevice.authorizationStatus(for: .video) == .authorized || cameraPermissionMayBeRequested else { return }
         let canStart: Bool
         switch driveCaptureCoordinator.state {
         case .disabled: canStart = true
@@ -2596,7 +2651,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard canStart else { return }
         driveCaptureCoordinator.start(
             dashcamEnabled: false, trafficSignRecognitionEnabled: recognition,
-            panoramaxEnabled: photos, purpose: .automaticCapture
+            panoramaxEnabled: photos, purpose: .automaticCapture,
+            manualPhotosEnabled: true,
+            allowCameraPermissionRequest: (recognition || photos) && cameraPermissionMayBeRequested
         )
     }
 
@@ -4214,6 +4271,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         panoramaxCaptureState = driveRecorderPanoramaxActive ? captureState : .disabled
         panoramaxCaptureCount = driveCaptureCoordinator?.capturedImageCount ?? 0
+        drivingPhotoCaptureFailed = driveCaptureCoordinator?.manualPhotoCaptureFailed ?? false
         panoramaxLastCaptureAt = driveCaptureCoordinator?.lastCaptureAt
         panoramaxLastCaptureDetail = driveCaptureCoordinator?.lastCaptureDetail ?? "Panoramax-Speicher nicht verfuegbar"
         panoramaxLastAccuracyMeters = driveCaptureCoordinator?.lastAccuracyMeters
@@ -4519,7 +4577,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 return
             }
             panoramaxQueueStore = store
-            driveCaptureCoordinator?.setQueueStore(store)
             let publicationGeneration = nextPanoramaxBatchPublicationGeneration()
             let result = await PanoramaxQueueMaintenanceExecutor.shared.runStartup(
                 store: store,
@@ -4532,6 +4589,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             if generation == panoramaxQueueMaintenanceGeneration {
                 panoramaxQueueMaintenanceInProgress = false
                 panoramaxQueueMaintenanceTask = nil
+                if !isScreenshotMode { driveCaptureCoordinator?.setQueueStore(store) }
                 reconcileAutomaticCapture(allowTerminalRetry: true)
             }
         }
@@ -5963,7 +6021,46 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 try? data.write(to: documents.appendingPathComponent("country-review.json"), options: .atomic)
             }
         }
+#if DEBUG && targetEnvironment(simulator)
+        configureManualPhotoTestFixtureIfRequested()
+#endif
     }
+
+#if DEBUG && targetEnvironment(simulator)
+    private func manualPhotoFixtureLocation(at now: Date) -> CLLocation {
+        CLLocation(coordinate: CLLocationCoordinate2D(latitude: 49, longitude: 8),
+                   altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5,
+                   course: 90, speed: currentSpeedKmh / 3.6, timestamp: now)
+    }
+
+    private func configureManualPhotoTestFixtureIfRequested() {
+        guard isScreenshotMode,
+              let fixture = ProcessInfo.processInfo.environment["YOUSPEED_MANUAL_PHOTO_TEST"] else { return }
+        manualPhotoTestFixture = true
+        currentSpeedKmh = Double(ProcessInfo.processInfo.environment["YOUSPEED_MANUAL_PHOTO_SPEED"] ?? "30") ?? 30
+        drivingControlsAllowed = currentSpeedKmh < DrivingControlAvailability.controlsSpeedThresholdKmh
+        stationarySpeedObservedAt = currentSpeedKmh == 0 ? Date() : nil
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("manual-photo-ui-\(UUID().uuidString)", isDirectory: true)
+        guard let store = try? PanoramaxQueueStore(root: root) else { return }
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        driveCaptureCoordinator = coordinator
+        coordinator.setScreenOrientation(screenOrientation)
+        coordinator.updatePanoramaxConfiguration(PanoramaxCadenceConfiguration(recognizedSignsOnly: true), storageLimitBytes: 100_000_000)
+        coordinator.onChange = { [weak self] in self?.syncDriveRecorderState() }
+        try? coordinator.testPrepareManualPhotoSession(outputAvailable: fixture == "ready") { [weak coordinator] uniqueID, _ in
+            Task { @MainActor in
+                // Keeps the in-flight state observable in simulator UI tests.
+                try? await Task.sleep(for: .seconds(1))
+                let renderer = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8))
+                let jpeg = renderer.jpegData(withCompressionQuality: 0.8) { context in
+                    UIColor.darkGray.setFill()
+                    context.fill(CGRect(x: 0, y: 0, width: 8, height: 8))
+                }
+                coordinator?.testCompletePhoto(data: jpeg, uniqueID: uniqueID)
+            }
+        }
+    }
+#endif
 
     private func beginSyncBackgroundTask() {
         guard syncBackgroundTaskID == .invalid else {
@@ -6211,6 +6308,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignBundleContextTracker.reset()
         resetTrafficSignPictogram()
         isDriving = false
+        latestManualPhotoLocation = nil
         driveCaptureCoordinator?.stop()
         locationManager.stopUpdatingLocation()
         latestTrafficSignDetectionContext = nil
@@ -9058,6 +9156,7 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
         for location in locations {
             discoverPacks(for: location)
             guard isDriving else { continue }
+            latestManualPhotoLocation = location
             roadPathSession.recordLocation(time: location.timestamp.timeIntervalSince1970,
                 latitude: location.coordinate.latitude, longitude: location.coordinate.longitude, course: location.course,
                 speed: location.speed, accuracy: location.horizontalAccuracy, courseAccuracy: location.courseAccuracy)
@@ -9091,6 +9190,7 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
             currentLongitude = location.coordinate.longitude
             gpsHorizontalAccuracyM = location.horizontalAccuracy >= 0 ? location.horizontalAccuracy : nil
             gpsSignalBars = Self.gpsSignalBars(horizontalAccuracyM: location.horizontalAccuracy)
+            reconcileAutomaticCapture()
             driveCaptureCoordinator?.ingest(location: location, speedMetersPerSecond: displaySpeedKmh / 3.6)
             gpsFixCount += 1
             maybeSpeakOverspeedWarning()

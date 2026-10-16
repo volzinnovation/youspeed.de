@@ -14,6 +14,10 @@ internal data class DriveCameraGraphPlan(
             add(analysis)
         }
 
+    /** Only the dormant manual output may be sacrificed; preserve every other consumer. */
+    fun withoutOptionalManualPhoto(automaticPhotosEnabled: Boolean): DriveCameraGraphPlan? =
+        takeIf { photoOutput && !automaticPhotosEnabled }?.copy(photoOutput = false)
+
     companion object {
         fun resolve(recorderRequested: Boolean, photosRequested: Boolean, previous: DriveCameraGraphPlan? = null) =
             DriveCameraGraphPlan(

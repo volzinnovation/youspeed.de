@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -542,6 +543,15 @@ private fun MainScreen(
         ),
     )
     val previewVisible = previewPresentation.isVisible
+    val drivingPhotoVisible = DrivingPhotoCapturePolicy.isVisible(ui.currentSpeedKmh)
+    var photoReadinessNow by remember { mutableStateOf(Instant.now()) }
+    LaunchedEffect(drivingPhotoVisible) {
+        while (drivingPhotoVisible) {
+            photoReadinessNow = Instant.now()
+            kotlinx.coroutines.delay(250)
+        }
+    }
+    val drivingPhotoReady = controller.canCaptureDrivingPhoto(photoReadinessNow)
     val pulseTransition = rememberInfiniteTransition(label = "driving-ban-pulse")
     val pulseFraction by pulseTransition.animateFloat(
         initialValue = 0f,
@@ -568,6 +578,9 @@ private fun MainScreen(
         Modifier.fillMaxSize().background(background).testTag("main-root").safeDrawingPadding(),
     ) {
         val landscape = ui.manualOrientation.isLandscape && maxWidth > maxHeight
+        // At 1..4 km/h the ordinary controls still exist. Reserve a separate
+        // shutter row instead of overlapping or squeezing seven touch targets.
+        val drivingPhotoRowHeight = if (drivingPhotoVisible) CONTROL_BUTTON_DIAMETER + 12.dp else 0.dp
         // Portrait uses the full display width for the sign pane so the sign
         // and its camera eye are centered on the screen. Landscape keeps the
         // two fixed panes side by side.
@@ -606,9 +619,9 @@ private fun MainScreen(
         // Match the iPhone recorder layout: portrait status controls sit above
         // the bottom action row, whose overlay needs its own reserved space.
         val workspaceBottomPadding = if (!landscape && ui.driveRecorderDashcamActive && ui.drivingControlsAllowed) {
-            CONTROL_BUTTON_DIAMETER + 16.dp
+            CONTROL_BUTTON_DIAMETER + 16.dp + drivingPhotoRowHeight
         } else {
-            12.dp
+            12.dp + drivingPhotoRowHeight
         }
         val locationHeight = if (landscape) 72.dp else max(LOCATION_SLOT_MIN_HEIGHT.value, minDimension * 0.225f).dp
         val locationBadgeWidth = if (landscape) {
@@ -814,8 +827,26 @@ private fun MainScreen(
             localRecordingsTint = trafficSignBugButtonTint(ui, foreground),
             driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
             photoCaptureFeedbackVisible = photoCaptureFeedbackVisible,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp + drivingPhotoRowHeight),
         )
+        if (drivingPhotoVisible) PillIconButton(
+            onClick = { controller.captureDrivingPhoto() },
+            enabled = drivingPhotoReady,
+            background = buttonBg,
+            border = buttonBorder,
+            modifier = Modifier.align(androidx.compose.ui.AbsoluteAlignment.BottomRight)
+                .absolutePadding(right = screenInset, bottom = 8.dp),
+            buttonTestTag = "driving-photo-button",
+        ) {
+            val label = stringResource(if (drivingPhotoReady) R.string.ui_driving_photo else R.string.ui_driving_photo_unavailable)
+            val hint = stringResource(if (ui.drivingPhotoCaptureFailed) R.string.ui_driving_photo_failed else R.string.ui_driving_photo_local_only)
+            Icon(Icons.Default.CameraAlt, contentDescription = "$label. $hint",
+                tint = when {
+                    ui.drivingPhotoCaptureFailed -> Color(0xFFEF4444)
+                    photoCaptureFeedbackVisible -> Color(0xFF22C55E)
+                    else -> foreground
+                })
+        }
         if (GravityAlignmentVisibility.isVisible(landscape = landscape,
             speedKmh = ui.currentSpeedKmh, inTunnel = ui.tunnelModeState == TunnelModeState.ACTIVE,
             searchingForSignal = ConsumerMainScreenLogic.isSearchingSignal(ui))) {
@@ -1013,6 +1044,7 @@ private fun PillIconButton(
     border: Color,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    buttonTestTag: String? = null,
     content: @Composable () -> Unit,
 ) {
     Surface(
@@ -1021,7 +1053,8 @@ private fun PillIconButton(
         color = background,
         border = androidx.compose.foundation.BorderStroke(1.5.dp, border),
     ) {
-        IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(CONTROL_BUTTON_DIAMETER)) {
+        IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(CONTROL_BUTTON_DIAMETER)
+            .then(if (buttonTestTag == null) Modifier else Modifier.testTag(buttonTestTag))) {
             content()
         }
     }

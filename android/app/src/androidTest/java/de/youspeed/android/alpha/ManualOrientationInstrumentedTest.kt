@@ -141,6 +141,7 @@ class ManualOrientationInstrumentedTest {
             it.setTrafficSignRecognitionEnabled(true)
             it.setTrafficSignRecognitionIndependentEnabled(true)
             it.startDriving()
+            it.onPanoramaxPhotoOutputReadyChanged(true)
             it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Standalone recognition")
         }
         test.idle()
@@ -158,6 +159,7 @@ class ManualOrientationInstrumentedTest {
                 it.setTrafficSignRecognitionEnabled(true)
                 it.setTrafficSignRecognitionIndependentEnabled(true)
                 it.startDriving()
+                it.onPanoramaxPhotoOutputReadyChanged(true)
                 it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Standalone camera")
             }
             test.awaitBackgroundWork()
@@ -257,7 +259,9 @@ class ManualOrientationInstrumentedTest {
         test.withStorageWorkerBlocked {
             test.actResponsive {
                 it.startDriving()
+                it.onPanoramaxPhotoOutputReadyChanged(true)
                 it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Test camera active")
+                it.onPanoramaxPhotoOutputReadyChanged(true)
                 it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Repeated active callback")
                 repeat(1_000) { _ -> it.refreshPanoramaxBatches() }
                 it.performButtonAction { galleryActions++ }
@@ -283,10 +287,13 @@ class ManualOrientationInstrumentedTest {
         test.withStorageWorkerBlocked {
             test.actResponsive {
                 it.startDriving()
+                it.onPanoramaxPhotoOutputReadyChanged(true)
                 it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "First drive")
                 it.stopDriving()
                 it.startDriving()
+                it.onPanoramaxPhotoOutputReadyChanged(true)
                 it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Next drive")
+                it.onPanoramaxPhotoOutputReadyChanged(true)
                 it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Repeated active callback")
             }
         }
@@ -302,6 +309,7 @@ class ManualOrientationInstrumentedTest {
     @Test fun disposalSealsCapturesAfterQueueContentionWithoutBlockingMain() = withController { test ->
         test.act {
             it.startDriving()
+            it.onPanoramaxPhotoOutputReadyChanged(true)
             it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Test camera active")
         }
         test.awaitBackgroundWork()
@@ -462,6 +470,7 @@ class ManualOrientationInstrumentedTest {
                     it.startDriving()
                     stopSystemLocationUpdates()
                     it.toggleDriveRecorder()
+                    it.onPanoramaxPhotoOutputReadyChanged(true)
                     it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Test camera active")
                 } else if (!it.uiState.dashcamRecordingEnabled) {
                     it.toggleDriveRecorderDashcam()
