@@ -493,3 +493,10 @@
 "traffic.sign.documentation.title" = "Traffic signs";
 "data_manager.queue_count" = "%d downloads queued";
 "data_manager.queued_position" = "Queued: position %d";
+
+/* Driving manual photo shutter */
+"drive_photo.capture" = "Take photo";
+"drive_photo.unavailable" = "Photo capture unavailable";
+"drive_photo.local_hint" = "Saves one photo locally for later review. Nothing is uploaded.";
+"drive_photo.ready" = "Manual photo capture ready";
+"drive_photo.retry" = "Photo failed. Tap to try again";

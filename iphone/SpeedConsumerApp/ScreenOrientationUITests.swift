@@ -99,7 +99,10 @@ final class ScreenOrientationUITests: XCTestCase {
             XCTAssertTrue(app.otherElements["dashboard.limitPane"].waitForExistence(timeout: 15))
             XCTAssertFalse(app.buttons["dashboard.settingsButton"].exists)
             XCTAssertFalse(app.buttons["dashboard.disregardVision"].exists)
-            XCTAssertTrue(app.buttons.allElementsBoundByIndex.filter { $0.isHittable }.isEmpty)
+            let photo = app.buttons["dashboard.photoButton"]
+            XCTAssertTrue(photo.exists)
+            XCTAssertFalse(photo.isEnabled, "Ordinary screenshot fixtures never start a camera")
+            XCTAssertTrue(app.buttons.allElementsBoundByIndex.filter { $0.isHittable && $0.identifier != "dashboard.photoButton" }.isEmpty)
             XCTAssertFalse(app.descendants(matching: .any)["dashboard.gravityAlignment"].exists)
             app.terminate()
         }
@@ -634,4 +637,105 @@ extension ScreenOrientationUITests {
         }
     }
 
+}
+
+
+extension ScreenOrientationUITests {
+    func testDrivingPhotoButtonLayoutAndManualCapture() throws {
+#if !targetEnvironment(simulator)
+        throw XCTSkip("Manual photo UI fixtures are simulator-only and never access a physical camera.")
+#else
+        continueAfterFailure = false
+        for orientation in ["portrait", "landscape_camera_lower_right", "landscape_camera_upper_left"] {
+            let app = drivingPhotoApp(speed: "30", orientation: orientation, camera: "ready")
+            app.launch()
+            let photo = app.buttons["dashboard.photoButton"]
+            XCTAssertTrue(photo.waitForExistence(timeout: 20))
+            expectation(for: NSPredicate(format: "enabled == true AND hittable == true"), evaluatedWith: photo)
+            waitForExpectations(timeout: 10)
+            assertDrivingPhotoLowerRight(photo, in: app)
+            XCTAssertFalse(app.buttons["dashboard.settingsButton"].exists)
+            XCTAssertEqual(app.buttons.allElementsBoundByIndex.filter { $0.isHittable && $0.isEnabled }.count, 1)
+            XCTAssertEqual(photo.value as? String, "0")
+            photo.doubleTap()
+            expectation(for: NSPredicate(format: "value == '1'"), evaluatedWith: photo)
+            waitForExpectations(timeout: 10)
+            XCTAssertEqual(photo.value as? String, "1", "Repeated taps during capture save only one JPEG")
+            XCTAssertFalse(app.alerts.firstMatch.exists)
+            expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: photo)
+            waitForExpectations(timeout: 5)
+            photo.tap()
+            expectation(for: NSPredicate(format: "value == '2'"), evaluatedWith: photo)
+            waitForExpectations(timeout: 10)
+            let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            attachment.name = "driving-photo-\(orientation)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            app.terminate()
+        }
+#endif
+    }
+
+    func testDrivingPhotoThresholdAndDisabledCamera() throws {
+#if !targetEnvironment(simulator)
+        throw XCTSkip("Manual photo UI fixtures are simulator-only.")
+#else
+        continueAfterFailure = false
+        for orientation in ["portrait", "landscape_camera_lower_right", "landscape_camera_upper_left"] {
+            for speed in ["1", "1.01", "3.99", "4"] {
+                let app = drivingPhotoApp(speed: speed, orientation: orientation, camera: "unavailable")
+                if orientation == "landscape_camera_upper_left" {
+                    app.launchArguments += ["-AppleLanguages", "(ar)", "-AppleLocale", "ar_SA", "-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"]
+                }
+                app.launch()
+                XCTAssertTrue(app.otherElements["dashboard.limitPane"].waitForExistence(timeout: 20))
+                let photo = app.buttons["dashboard.photoButton"]
+                let moving = (Double(speed) ?? 0) > 1
+                XCTAssertEqual(photo.exists, moving)
+                let settings = app.buttons["dashboard.settingsButton"]
+                XCTAssertEqual(settings.exists, (Double(speed) ?? 0) < 4)
+                if moving {
+                    XCTAssertFalse(photo.isEnabled)
+                    assertDrivingPhotoLowerRight(photo, in: app)
+                    if settings.exists {
+                        XCTAssertTrue(settings.isHittable)
+                        XCTAssertLessThanOrEqual(settings.frame.maxY + 4, photo.frame.minY,
+                            "The ordinary footer reserves a separate row during1..4 km/h")
+                    }
+                    photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+                    XCTAssertFalse(app.alerts.firstMatch.exists)
+                    XCTAssertEqual(photo.value as? String, "0")
+                }
+                app.terminate()
+            }
+        }
+#endif
+    }
+
+    private func drivingPhotoApp(speed: String, orientation: String, camera: String) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "warn-level-0"
+        app.launchEnvironment["YOUSPEED_MANUAL_PHOTO_TEST"] = camera
+        app.launchEnvironment["YOUSPEED_MANUAL_PHOTO_SPEED"] = speed
+        app.launchArguments = ["-youspeed.screen_orientation", orientation,
+                               "-youspeed.drive_recorder.panoramax_enabled", "NO",
+                               "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        return app
+    }
+
+    private func assertDrivingPhotoLowerRight(_ photo: XCUIElement, in app: XCUIApplication,
+                                              file: StaticString = #filePath, line: UInt = #line) {
+        let safeArea = app.descendants(matching: .any)["dashboard.safeAreaGeometry"]
+        XCTAssertTrue(safeArea.exists, file: file, line: line)
+        let safeFrame = safeArea.frame
+        let frame = photo.frame
+        XCTAssertGreaterThanOrEqual(frame.width, 44, file: file, line: line)
+        XCTAssertGreaterThanOrEqual(frame.height, 44, file: file, line: line)
+        XCTAssertGreaterThanOrEqual(frame.minX, safeFrame.minX, file: file, line: line)
+        XCTAssertGreaterThanOrEqual(frame.minY, safeFrame.minY, file: file, line: line)
+        XCTAssertLessThanOrEqual(frame.maxX, safeFrame.maxX, file: file, line: line)
+        XCTAssertLessThanOrEqual(frame.maxY, safeFrame.maxY, file: file, line: line)
+        XCTAssertLessThan(safeFrame.maxX - frame.maxX, 40, file: file, line: line)
+        XCTAssertLessThan(safeFrame.maxY - frame.maxY, 40, file: file, line: line)
+    }
 }

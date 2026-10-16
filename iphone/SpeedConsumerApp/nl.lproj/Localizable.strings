@@ -493,3 +493,10 @@
 "traffic.sign.documentation.title" = "Verkeersborden";
 "data_manager.queue_count" = "%d downloads in de wachtrij";
 "data_manager.queued_position" = "Wachtrij: positie %d";
+
+/* Driving manual photo shutter */
+"drive_photo.capture" = "Foto maken";
+"drive_photo.unavailable" = "Foto maken niet beschikbaar";
+"drive_photo.local_hint" = "Slaat één foto lokaal op voor latere controle. Er wordt niets geüpload.";
+"drive_photo.ready" = "Handmatige foto-opname gereed";
+"drive_photo.retry" = "Foto mislukt. Tik om opnieuw te proberen";

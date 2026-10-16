@@ -140,4 +140,8 @@
     <string name="calibration_up">Omhoog</string>
     <string name="calibration_down">Omlaag</string>
     <string name="calibration_defaults">Concept herstellen</string>
+    <string name="ui_driving_photo">Foto maken</string>
+    <string name="ui_driving_photo_unavailable">Foto niet beschikbaar</string>
+    <string name="ui_driving_photo_local_only">Slaat één foto lokaal op voor controle. Er wordt niets geüpload.</string>
+    <string name="ui_driving_photo_failed">De foto kon niet worden opgeslagen. Probeer opnieuw zodra de camera klaar is.</string>
 </resources>
