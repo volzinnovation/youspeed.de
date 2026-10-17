@@ -31,7 +31,7 @@
     },
     {
       "path": "crop-v1.schema.json",
-      "sha256": "a3abd839c4e35d3be569d6851deee42e4521e809ca7f1cafbf4638d8547c7db4"
+      "sha256": "ac27be5cfa1a73070a372cb17c785ba74e59544a282cf1bc59049ffc8862701b"
     },
     {
       "path": "deletion-v1.schema.json",
@@ -99,11 +99,11 @@
     },
     {
       "path": "media-status-v1.schema.json",
-      "sha256": "ecb044322d000596d32983459842caf9e28e41428244264f44466e41a9edc671"
+      "sha256": "6b48346faa31c36a6a8b14d8135f2714a08e8907f6ac90d049b84c0eff06c85d"
     },
     {
       "path": "sighting-v1.schema.json",
-      "sha256": "72b9f2dd3d6e2a95e13b42aeb77a078d014bd4661c7732f992f6097c4f91ad2e"
+      "sha256": "820af1c29b8f28d37cc21de2909b597277ea18ccdfce4fca5e0edef743c46f59"
     }
   ]
 }

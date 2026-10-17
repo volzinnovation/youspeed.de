@@ -8,8 +8,8 @@ val releaseStorePassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEA
 val releaseKeyAlias = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_ALIAS").orNull
 val releaseKeyPassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_PASSWORD").orNull
 
-val releaseBaseVersionCode = providers.gradleProperty("youspeedBuildNumber").orElse("10033").get().toInt()
-val releaseVersionName = providers.gradleProperty("youspeedVersionName").orElse("1.3").get()
+val releaseBaseVersionCode = providers.gradleProperty("youspeedBuildNumber").orElse("10052").get().toInt()
+val releaseVersionName = providers.gradleProperty("youspeedVersionName").orElse("1.4").get()
 val releaseAbiCodes = linkedMapOf(
     "armeabi-v7a" to 1,
     "arm64-v8a" to 2,
@@ -110,6 +110,7 @@ android {
     }
 
     sourceSets {
+        getByName("androidTest") { assets.srcDirs("../../tests/fixtures") }
         getByName("main") {
             assets.srcDirs("src/main/assets", "../../shared")
         }
@@ -145,6 +146,9 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    // Bundled Latin OCR: available offline, without Play-services model downloads.
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.mlkit:language-id:17.0.6")
     implementation("com.google.android.play:review:2.0.2")
     implementation("com.alphacephei:vosk-android:0.3.75")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")

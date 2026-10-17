@@ -3,4 +3,4 @@
 "NSCameraUsageDescription" = "YouSpeed gebruikt een camerasessie achteraan voor lokale dashcamvideo, verkeersbordherkenning op het apparaat en Panoramax-foto's die je later beoordeelt en uploadt.";
 "NSMicrophoneUsageDescription" = "YouSpeed luistert na een herkende snelheidslimiet kort op je apparaat zodat je Fout kunt zeggen, en legt gesproken correcties vast.";
 "NSSpeechRecognitionUsageDescription" = "YouSpeed herkent gesproken snelheidscorrecties en Fout lokaal op je apparaat.";
-"NSMotionUsageDescription" = "YouSpeed gebruikt zwaartekracht lokaal om de camerakanteling bij stilstand te tonen.";
+"NSMotionUsageDescription" = "YouSpeed gebruikt zwaartekracht lokaal om de bediening beschikbaar te houden wanneer de telefoon gekanteld is en de camera-uitlijning te tonen.";

@@ -75,6 +75,31 @@ extension SignCollectionSchema {
             } else { guard !(o["model"] is NSNull) else { throw SignCollectionError.invalidContract } }
             if !(scores["calibrated_confidence"] is NSNull), scores["calibration_id"] as? String == nil || scores["calibration_sha256"] as? String == nil { throw SignCollectionError.invalidContract }
         }
+        func ocrDate(_ value: Any?) -> Date? {
+            guard let text = value as? String else { return nil }
+            let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let value = f.date(from: text) { return value }
+            f.formatOptions = [.withInternetDateTime]; return f.date(from: text)
+        }
+        if let annotation = o["supplementary_ocr"] as? [String: Any] {
+            guard let observed = ocrDate(annotation["observed_at"]),
+                  let first = ocrDate(annotation["first_seen_at"]), first <= observed,
+                  annotation["status"] as? String != "read" || annotation["raw_text"] is String else { throw SignCollectionError.invalidContract }
+        }
+        if model == "media-status" {
+            let ocr = o["status"] as? String == "supplementary_ocr_observed"
+            if ocr {
+                guard o["crop_id"] is NSNull, o["superseded_by"] == nil || o["superseded_by"] is NSNull,
+                      let annotation = o["supplementary_ocr"] as? [String: Any], o["ocr_attempt_id"] is String,
+                      let status = o["association_status"] as? String, ["exact", "unresolved"].contains(status),
+                      (o["observation_id"] is String) == (status == "exact"),
+                      let created = ocrDate(o["created_at"]),
+                      let observed = ocrDate(annotation["observed_at"]), created >= observed else { throw SignCollectionError.invalidContract }
+            } else {
+                guard o["crop_id"] is String,
+                      ["supplementary_ocr", "ocr_attempt_id", "association_status"].allSatisfy({ o[$0] == nil || o[$0] is NSNull }) else { throw SignCollectionError.invalidContract }
+            }
+        }
         if model == "correction", o["intent"] as? String == "retract_correction", o["target_kind"] as? String != "correction" { throw SignCollectionError.invalidContract }
         if model == "crop" {
             let geometry = try SignCollectionCropGeometry(width: o["source_width"] as! Int, height: o["source_height"] as! Int, box: o["supplied_box"] as! [String: Double])

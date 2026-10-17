@@ -68,6 +68,27 @@ internal fun signCollectionSemantics(value: JsonElement, model: String) {
         else require(o.getValue("model") !== JsonNull)
         if (scores.getValue("calibrated_confidence") !== JsonNull) require(scores["calibration_id"] is JsonPrimitive && scores["calibration_id"] !== JsonNull && scores["calibration_sha256"] is JsonPrimitive && scores["calibration_sha256"] !== JsonNull)
     }
+    o["supplementary_ocr"]?.takeIf { it !== JsonNull }?.jsonObject?.let { annotation ->
+        val observed = OffsetDateTime.parse(annotation.getValue("observed_at").jsonPrimitive.content).toInstant()
+        val first = OffsetDateTime.parse(annotation.getValue("first_seen_at").jsonPrimitive.content).toInstant()
+        require(first <= observed)
+        require(annotation.getValue("status").jsonPrimitive.content != "read" || annotation["raw_text"]?.jsonPrimitive?.contentOrNull != null)
+    }
+    if (model == "media-status") {
+        if (o.getValue("status").jsonPrimitive.content == "supplementary_ocr_observed") {
+            require(o["crop_id"] === JsonNull && (o["superseded_by"] == null || o["superseded_by"] === JsonNull))
+            val annotation = o.getValue("supplementary_ocr").jsonObject
+            require(o["ocr_attempt_id"] is JsonPrimitive && o["ocr_attempt_id"] !== JsonNull)
+            val association = o.getValue("association_status").jsonPrimitive.content
+            require(association in setOf("exact", "unresolved"))
+            require((o["observation_id"] != null && o["observation_id"] !== JsonNull) == (association == "exact"))
+            require(OffsetDateTime.parse(o.getValue("created_at").jsonPrimitive.content).toInstant() >=
+                OffsetDateTime.parse(annotation.getValue("observed_at").jsonPrimitive.content).toInstant())
+        } else {
+            require(o["crop_id"] is JsonPrimitive && o["crop_id"] !== JsonNull)
+            require(listOf("supplementary_ocr", "ocr_attempt_id", "association_status").all { o[it] == null || o[it] === JsonNull })
+        }
+    }
     if (model == "correction" && o.getValue("intent").jsonPrimitive.content == "retract_correction") require(o.getValue("target_kind").jsonPrimitive.content == "correction")
     if (model == "crop") {
         val geometry = SignCollectionCropGeometry.resolve(o.getValue("source_width").jsonPrimitive.int, o.getValue("source_height").jsonPrimitive.int, o.getValue("supplied_box").jsonObject.mapValues { it.value.jsonPrimitive.double })

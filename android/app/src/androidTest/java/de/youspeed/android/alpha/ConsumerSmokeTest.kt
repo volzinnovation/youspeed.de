@@ -285,7 +285,7 @@ class ConsumerSmokeTest {
         return when (tag) {
             "settings-button" -> "Einstellungen"
             "legal-button" -> "Rechtliche Hinweise"
-            "local-recordings-button" -> "Lokale Erfassungen"
+            "panoramax-capture-toggle-button" -> InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.ui_panoramax_stop)
             else -> null
         }
     }

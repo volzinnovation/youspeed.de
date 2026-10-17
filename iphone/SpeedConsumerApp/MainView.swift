@@ -142,7 +142,6 @@ struct MainView: View {
     @State private var showingSettings = false
     @State private var showingLegalInfo = false
     @State private var showingDebug = false
-    @State private var showingLocalRecordings = false
     @State private var showingPanoramaxGallery = false
     @State private var showingTrafficSignDetails = false
     @State private var showingVisualCalibration = false
@@ -181,13 +180,16 @@ struct MainView: View {
             let locationReserve = viewModel.isInSpeedCaptureMode ? CGFloat(0)
                 : (landscape ? 68 : max(cityBadgeSlotMinHeight, minDimension * 0.225))
             let signWidthBudget = min(paneWidth * 0.82, paneWidth - horizontalPadding * 2)
+            // Keep the sign and telemetry geometry stable when OCR arrives or
+            // expires. The two-line plate has a permanent slot below the circle.
+            let supplementaryTextReserve: CGFloat = 52
             let portraitSignHeight = (proxy.size.height - contentTopInset - contentBottomInset
-                - locationReserve - sectionGap * 2)
+                - locationReserve - sectionGap * 2 - supplementaryTextReserve)
                 / (1 + speedLimitNumberScale * (1.05 + secondaryTextRatio * 1.2))
             let signSize = landscape
-                ? max(60, min(signWidthBudget, proxy.size.height - contentTopInset - screenInset))
+                ? max(60, min(signWidthBudget, proxy.size.height - contentTopInset - screenInset - supplementaryTextReserve))
                 : min(signWidthBudget, max(60, portraitSignHeight))
-            let signPaneHeight = landscape ? proxy.size.height : signSize + contentTopInset
+            let signPaneHeight = landscape ? proxy.size.height : signSize + contentTopInset + supplementaryTextReserve
             let workspacePaneHeight = landscape ? proxy.size.height
                 : max(0, proxy.size.height - signPaneHeight - sectionGap)
             // GeometryReader is laid out inside the landscape safe area on
@@ -211,7 +213,7 @@ struct MainView: View {
             let eyeLeft = landscape
                 ? (paneWidth - eyeCanvasWidth) / 2 + eyeTipInset
                 : eyeTipInset
-            let signTop = landscape ? (signPaneHeight - signSize) / 2 : contentTopInset
+            let signTop = landscape ? (signPaneHeight - signSize - supplementaryTextReserve) / 2 : contentTopInset
             let workspaceBudget = max(0, workspacePaneHeight - contentBottomInset - workspaceTopInset)
             let primaryMetricFontSize = min(signSize * speedLimitNumberScale,
                 max(0, (workspaceBudget - locationReserve - sectionGap) / (1.05 + secondaryTextRatio * 1.2)))
@@ -279,6 +281,15 @@ struct MainView: View {
                         // width so its two tips can sit symmetrically outside
                         // the circle with a small inset from the display edge.
                         .frame(height: signSize)
+                        .overlay(alignment: .bottom) {
+                            if let text = viewModel.trafficSignNumericSupplementaryText {
+                                supplementaryRestrictionText(text, fontSize: min(20, max(16, signSize * 0.09)))
+                                    .frame(maxWidth: signSize, minHeight: 28, maxHeight: 48)
+                                    .offset(y: supplementaryTextReserve)
+                                    .accessibilityIdentifier("dashboard.speedSignSupplementaryText")
+                            }
+                        }
+                        .padding(.bottom, supplementaryTextReserve)
                         .frame(maxWidth: .infinity)
                         .padding(.top, landscape ? 0 : contentTopInset)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -303,6 +314,14 @@ struct MainView: View {
                                     .accessibilityIdentifier("dashboard.trafficSignPictogram")
                             }
                             .frame(width: 86, height: 86)
+                            .overlay(alignment: .bottom) {
+                                if let text = viewModel.trafficSignPictogramSupplementaryText {
+                                    supplementaryRestrictionText(text, fontSize: 14)
+                                        .frame(minWidth: 86, maxWidth: 130)
+                                        .offset(y: 28)
+                                        .accessibilityIdentifier("dashboard.pictogramSupplementaryText")
+                                }
+                            }
                                 .position(x: eyeLeft + 43, y: signTop + 43)
                         }
                     }
@@ -335,7 +354,7 @@ struct MainView: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: landscape ? .top : .bottom)
                         }
                         if landscape && viewModel.drivingControlsAllowed {
-                            bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true,
+                            bottomCornerButtons(horizontalPadding: screenInset,
                                                 buttonDiameter: controlDiameter)
                                 .padding(.bottom, bottomPadding + photoRowReserve)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
@@ -366,7 +385,7 @@ struct MainView: View {
                 }
             }
             if !landscape && viewModel.drivingControlsAllowed {
-                bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true,
+                bottomCornerButtons(horizontalPadding: screenInset,
                                     buttonDiameter: controlDiameter)
                     .padding(.bottom, bottomPadding + photoRowReserve)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
@@ -405,7 +424,6 @@ struct MainView: View {
             settingsPresentation.wrappedValue = false
             showingLegalInfo = false
             showingDebug = false
-            showingLocalRecordings = false
             showingPanoramaxGallery = false
             showingTrafficSignDetails = false
             showingVisualCalibration = false
@@ -441,11 +459,6 @@ struct MainView: View {
         .sheet(isPresented: $showingDebug) {
             DismissibleNavigationSheet {
                 DebugInformationView(viewModel: viewModel)
-            }
-        }
-        .sheet(isPresented: $showingLocalRecordings) {
-            DismissibleNavigationSheet {
-                LocalRecordingsView(viewModel: viewModel)
             }
         }
         .sheet(isPresented: $showingPanoramaxGallery) {
@@ -511,7 +524,7 @@ struct MainView: View {
                 viewModel.startupDataState == .ready && viewModel.onboardingStateLoaded &&
                 !viewModel.shouldPresentOnboarding && viewModel.gpsSignalBars > 0,
             active: scenePhase == .active,
-            interrupted: showingSettings || showingLegalInfo || showingDebug || showingLocalRecordings ||
+            interrupted: showingSettings || showingLegalInfo || showingDebug ||
                 showingPanoramaxGallery || showingTrafficSignDetails || showingVisualCalibration ||
                 viewModel.isInSpeedCaptureMode || viewModel.driveInteractionPending || viewModel.driveInteractionError != nil)
     }
@@ -529,14 +542,29 @@ struct MainView: View {
     }
 
     private var showsPedestrianZoneSign: Bool {
-        !viewModel.isInSpeedCaptureMode && viewModel.speedLimitDisplayText == "Schritt"
+        !viewModel.isInSpeedCaptureMode && viewModel.trafficSignPendingSpeedKmh == nil
+            && viewModel.speedLimitDisplayText == "Schritt"
     }
 
     private var showsActiveCameraLimitIndicator: Bool {
-        CameraSpeedLimitUsePresentation.isVisible(
+        viewModel.trafficSignPendingSpeedKmh == nil && CameraSpeedLimitUsePresentation.isVisible(
             isInSpeedCaptureMode: viewModel.isInSpeedCaptureMode,
             effectiveState: viewModel.effectiveSpeedLimitState
         )
+    }
+
+    private func supplementaryRestrictionText(_ text: String, fontSize: CGFloat) -> some View {
+        Text(text)
+            .font(.system(size: fontSize, weight: .semibold).monospacedDigit())
+            .foregroundStyle(.black)
+            .lineLimit(2)
+            .multilineTextAlignment(.center)
+            .minimumScaleFactor(0.7)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(.white, in: RoundedRectangle(cornerRadius: 3))
+            .overlay { RoundedRectangle(cornerRadius: 3).strokeBorder(.black, lineWidth: 1) }
+            .accessibilityLabel(Text(text))
     }
 
     private struct TrafficSignPictogramView: View {
@@ -554,34 +582,42 @@ struct MainView: View {
         }
     }
 
-    private func localRecordingsButton(diameter: CGFloat = 44) -> some View {
+    private func panoramaxCaptureButton(diameter: CGFloat = 44) -> some View {
         RecordingSafeButton {
-            showingLocalRecordings = true
+            viewModel.panoramaxCaptureEnabled.toggle()
         } label: {
-            Image(systemName: viewModel.isLowSpeedMatchingRuleActive ? "tortoise.fill" : "ladybug.fill")
+            Image(systemName: "camera.fill")
                 .font(.title3.weight(.semibold))
                 .frame(width: diameter, height: diameter)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(trafficSignDebugButtonColor)
+        .foregroundStyle(primaryForegroundColor)
         .background(actionButtonBackgroundColor, in: Circle())
         .overlay {
-            Circle()
-                .strokeBorder(trafficSignDebugButtonColor, lineWidth: 1.5)
+            Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
         }
-    }
-
-    private var trafficSignDebugButtonColor: Color {
-        guard viewModel.trafficSignRecognitionEnabled else { return primaryForegroundColor }
-        if viewModel.trafficSignDebugRuntimeUnhealthy
-            || viewModel.trafficSignRecognitionState == .unavailable {
-            return .red
+        .overlay {
+            if !viewModel.panoramaxCaptureEnabled {
+                GeometryReader { geometry in
+                    Path { path in
+                        // A 45° diameter reaches the circular rim at both ends.
+                        let inset: CGFloat = (1 - sqrt(0.5)) / 2
+                        path.move(to: CGPoint(x: geometry.size.width * inset, y: geometry.size.height * (1 - inset)))
+                        path.addLine(to: CGPoint(x: geometry.size.width * (1 - inset), y: geometry.size.height * inset))
+                    }
+                    .stroke(primaryForegroundColor, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                }
+                .clipShape(Circle())
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            }
         }
-        if viewModel.trafficSignDebugRoadContextInvalid
-            || viewModel.trafficSignDebugGenerationSessionContextMismatch {
-            return .yellow
-        }
-        return primaryForegroundColor
+        .contentShape(Circle())
+        .accessibilityIdentifier("dashboard.panoramaxCaptureButton")
+        .accessibilityLabel(NSLocalizedString(viewModel.panoramaxCaptureEnabled
+            ? "panoramax.capture.stop" : "panoramax.capture.start", comment: ""))
+        .accessibilityValue(NSLocalizedString(viewModel.panoramaxCaptureEnabled
+            ? "drive_recorder.status.on" : "drive_recorder.status.off", comment: ""))
     }
 
     private func drivingPhotoButton(diameter: CGFloat) -> some View {
@@ -613,7 +649,6 @@ struct MainView: View {
 
     private func bottomCornerButtons(
         horizontalPadding: CGFloat,
-        includeLocalRecordings: Bool,
         buttonDiameter: CGFloat = 44
     ) -> some View {
         let recorderControl = DriveRecorderMainControlPresentation.resolve(
@@ -642,10 +677,8 @@ struct MainView: View {
             .accessibilityLabel(NSLocalizedString(recorderControl.accessibilityLocalizationKey, comment: ""))
             .disabled(!recorderControl.isEnabled)
 
-            if includeLocalRecordings {
-                Spacer()
-                localRecordingsButton(diameter: buttonDiameter)
-            }
+            Spacer()
+            panoramaxCaptureButton(diameter: buttonDiameter)
 
             Spacer()
 
@@ -1120,7 +1153,7 @@ struct MainView: View {
                     showDetectedLanes: viewModel.showDetectedLanes,
                     legacyLanesAllowed: false,
                     previewVisible: showingPreview && !showingSettings && !showingLegalInfo
-                        && !showingDebug && !showingLocalRecordings && !showingPanoramaxGallery
+                        && !showingDebug && !showingPanoramaxGallery
                         && !showingTrafficSignDetails && !showingVisualCalibration
                 )
                     .frame(maxWidth: .infinity)
@@ -1391,6 +1424,7 @@ struct MainView: View {
         if let capture = viewModel.speedCaptureSignText {
             return capture
         }
+        if let pending = viewModel.trafficSignPendingSpeedKmh { return String(pending) }
         if let displayText = viewModel.speedLimitDisplayText {
             return displayText
         }
@@ -1401,6 +1435,9 @@ struct MainView: View {
     }
 
     private var speedLimitAccessibilityDescription: String {
+        if let pending = viewModel.trafficSignPendingSpeedKmh, !viewModel.isInSpeedCaptureMode {
+            return String(format: NSLocalizedString("limit.accessibility.value", comment: ""), String(pending))
+        }
         if viewModel.isInSpeedCaptureMode {
             return String(format: NSLocalizedString("limit.accessibility.value", comment: ""), limitText)
         }
@@ -1430,7 +1467,7 @@ struct MainView: View {
     }
 
     private var showsUnlimitedAutobahnSign: Bool {
-        viewModel.isUnlimitedSpeedLimitActive && !viewModel.isInSpeedCaptureMode
+        viewModel.trafficSignPendingSpeedKmh == nil && viewModel.isUnlimitedSpeedLimitActive && !viewModel.isInSpeedCaptureMode
     }
 
     private var shouldShowTunnelCurrentSpeedIcon: Bool {
@@ -3439,6 +3476,10 @@ private struct SettingsView: View {
                 NavigationLink(NSLocalizedString("settings.debug.open", comment: "")) {
                     DebugInformationView(viewModel: viewModel)
                 }
+                NavigationLink(NSLocalizedString("recordings.title", comment: "")) {
+                    LocalRecordingsView(viewModel: viewModel)
+                }
+                .accessibilityIdentifier("settings.localRecordings")
             }
         }
         .navigationTitle(NSLocalizedString("settings.title", comment: ""))

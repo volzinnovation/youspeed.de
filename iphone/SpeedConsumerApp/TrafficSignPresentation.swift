@@ -121,21 +121,7 @@ struct TrafficSignDisplayObservation: Equatable, Sendable {
 
     static func accepted(from primaryDetections: [TrafficSignDetection], timestamp: Date, classifierCheckpointSHA256: String?) -> Self? {
         guard let classifierCheckpointSHA256 else { return nil }
-        let accepted = primaryDetections.filter {
-            let score = $0.classifierRawScore ?? $0.rawScore
-            let detectorScore = $0.detectorRawScore ?? $0.rawScore
-            return $0.rawClassId != "bad" && !$0.rawClassId.hasPrefix("bad:")
-                && $0.boundingBox.isValid && score.isFinite && detectorScore.isFinite
-                && (0.25...1).contains(detectorScore) && (0.9...1).contains(score)
-                && $0.classThreshold.isFinite && score >= $0.classThreshold
-        }.sorted {
-            let left = $0.classifierRawScore ?? $0.rawScore
-            let right = $1.classifierRawScore ?? $1.rawScore
-            if left != right { return left > right }
-            if $0.boundingBox.area != $1.boundingBox.area { return $0.boundingBox.area > $1.boundingBox.area }
-            return $0.rawClassId < $1.rawClassId
-        }
-        guard let detection = accepted.first else { return nil }
+        guard let detection = acceptedDetection(from: primaryDetections) else { return nil }
         let candidate = TrafficSignRecognitionCandidate(
             rawClassId: detection.rawClassId, rawLabel: detection.rawLabel,
             semanticKind: detection.semantic.kind.rawValue, value: detection.semantic.value,
@@ -150,6 +136,25 @@ struct TrafficSignDisplayObservation: Equatable, Sendable {
                     affectsSpeed: action.passageEventEligible,
                     isSpeedLimitEnd: action.isSpeedLimitEnd,
                     classifierCheckpointSHA256: classifierCheckpointSHA256)
+    }
+
+    /// Shared selection keeps the OCR source attached to the exact admitted sign.
+    static func acceptedDetection(from primaryDetections: [TrafficSignDetection]) -> TrafficSignDetection? {
+        let accepted = primaryDetections.filter {
+            let score = $0.classifierRawScore ?? $0.rawScore
+            let detectorScore = $0.detectorRawScore ?? $0.rawScore
+            return $0.rawClassId != "bad" && !$0.rawClassId.hasPrefix("bad:")
+                && $0.boundingBox.isValid && score.isFinite && detectorScore.isFinite
+                && (0.25...1).contains(detectorScore) && (0.9...1).contains(score)
+                && $0.classThreshold.isFinite && score >= $0.classThreshold
+        }.sorted {
+            let left = $0.classifierRawScore ?? $0.rawScore
+            let right = $1.classifierRawScore ?? $1.rawScore
+            if left != right { return left > right }
+            if $0.boundingBox.area != $1.boundingBox.area { return $0.boundingBox.area > $1.boundingBox.area }
+            return $0.rawClassId < $1.rawClassId
+        }
+        return accepted.first
     }
 }
 
@@ -181,6 +186,16 @@ struct TrafficSignSecondarySpeechGate {
     private var spokenSinceGap = Set<String>()
     private var newestObservation = Date.distantPast
     private var lastSpoken = Date.distantPast
+
+    /// A primary announcement may already include this secondary phrase even
+    /// when the secondary-only cooldown would have deferred it.
+    mutating func recordSpoken(classID: String, observedAt: Date, now: Date) {
+        guard !classID.isEmpty else { return }
+        lastSeen[classID] = observedAt
+        spokenSinceGap.insert(classID)
+        newestObservation = max(newestObservation, observedAt)
+        lastSpoken = now
+    }
 
     mutating func shouldEmit(classID: String, observedAt: Date, now: Date, canSpeak: Bool) -> Bool {
         let age = now.timeIntervalSince(observedAt)

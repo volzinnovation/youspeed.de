@@ -1,0 +1,1 @@
+Public Panoramax native primary-plus-lower crops used by the server 32-case regression. Hashes and picture IDs are in manifest.json. These are test-only resources and must never be included in a production app. Expected text is never provided to either OCR engine. Four negative/abstention cases include a zone board, primary graphic, arrow symbol and ambiguous tiny text.

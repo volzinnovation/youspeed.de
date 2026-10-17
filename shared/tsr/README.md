@@ -49,9 +49,16 @@ The runtime rules are deliberately strict:
   bundle switch, drive stop, or TSR disable. Refreshing the local store after
   persisting that same camera event is not new road evidence and must not clear
   the active camera assertion.
-- Live mobile inference is primary-sign only. Supplementary-role detections are
-  ignored and emitted arrays remain empty; their interpretation belongs to
-  offline Panoramax/manual/VLM postprocessing.
+- The live recognition/model contract is primary-sign only. Supplementary-role
+  detections are ignored and emitted arrays remain empty. A separate
+  [on-device OCR lane](../../docs/TSR_SUPPLEMENTARY_OCR_2026-10-16.md)
+  reads native lower rectangles beneath confirmed numeric signs or accepted
+  pictograms, and retries when later views provide substantially more pixels.
+  It collects, displays and speaks restriction text in a supported local
+  language. Only the first eligible numeric read gates its publication;
+  later retries update supplementary evidence without replaying primary
+  processing or evaluating conditional speed rules. Broader
+  supplementary interpretation remains in offline Panoramax/manual/VLM processing.
 - Bounding boxes use the fully orientation-normalized image, top-left origin,
   and normalized `[0, 1]` coordinates.
 - `raw_score` is never presented as probability. `calibrated_confidence` is

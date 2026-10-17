@@ -41,4 +41,8 @@
     <string name="ui_video_save_failed">Videon kunde inte sparas</string>
     <string name="ui_video_save_timeout">Inspelaren bekräftade inte att videon sparades. Den begärda åtgärden avbröts.</string>
     <string name="ui_correct_speed_limit">Korrigera hastighetsgräns</string>
+    <string name="ui_driving_photo">Ta foto</string>
+    <string name="ui_driving_photo_unavailable">Foto är inte tillgängligt</string>
+    <string name="ui_driving_photo_local_only">Sparar ett foto lokalt för granskning. Inget laddas upp.</string>
+    <string name="ui_driving_photo_failed">Fotot kunde inte sparas. Försök igen när kameran är redo.</string>
 </resources>

@@ -1,6 +1,90 @@
 import XCTest
 
 final class ScreenOrientationUITests: XCTestCase {
+    func testPanoramaxCaptureButtonTogglesInEveryMountAndMatchesSettings() {
+        continueAfterFailure = false
+        for orientation in ["portrait", "landscape_camera_lower_right", "landscape_camera_upper_left"] {
+            let app = XCUIApplication()
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"
+            app.launchArguments = ["-youspeed.screen_orientation", orientation,
+                "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+            app.launch()
+            let capture = app.buttons["dashboard.panoramaxCaptureButton"]
+            XCTAssertTrue(capture.waitForExistence(timeout: 15))
+            XCTAssertTrue(capture.isHittable)
+            if (capture.value as? String) == "on" { capture.tap() }
+            XCTAssertEqual(capture.label, "Start photo capture")
+            XCTAssertEqual(capture.value as? String, "off")
+            for state in ["off", "on", "off"] {
+                if (capture.value as? String) != state { capture.tap() }
+                XCTAssertEqual(capture.value as? String, state)
+                let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                screenshot.name = "panoramax-capture-\(state)-\(orientation)"
+                screenshot.lifetime = .keepAlways
+                add(screenshot)
+            }
+            capture.tap()
+            XCTAssertEqual(capture.label, "Stop photo capture")
+            if orientation == "portrait" {
+                app.buttons["dashboard.settingsButton"].tap()
+                let preference = app.switches["Capture pictures"]
+                for _ in 0..<24 where !preference.isHittable { app.swipeUp() }
+                XCTAssertTrue(preference.waitForExistence(timeout: 5))
+                XCTAssertEqual(preference.value as? String, "1")
+                preference.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+                expectation(for: NSPredicate(format: "value == '0'"), evaluatedWith: preference)
+                waitForExpectations(timeout: 5)
+                app.buttons["subscreen.close"].tap()
+                XCTAssertTrue(capture.waitForExistence(timeout: 5))
+                XCTAssertEqual(capture.value as? String, "off")
+            }
+            app.terminate()
+        }
+    }
+
+    func testSupplementaryOCRPlateDoesNotResizeOrMoveSpeedCircleAndTelemetry() {
+        continueAfterFailure = false
+        for orientation in ["portrait", "landscape_camera_lower_right"] {
+            var baselineSign = CGRect.zero
+            var baselineMetric = CGRect.zero
+            for hasText in [false, true] {
+                let app = XCUIApplication()
+                app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"
+                if hasText {
+                    app.launchEnvironment["YOUSPEED_SCREENSHOT_SUPPLEMENTARY_TEXT"] = "Mo-Fr\n6³⁰–17³⁰ h"
+                }
+                app.launchArguments = ["-youspeed.screen_orientation", orientation,
+                                       "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+                app.launch()
+                let sign = app.descendants(matching: .any)["dashboard.speedSignGeometry"]
+                let metric = app.staticTexts["primary-metric"]
+                XCTAssertTrue(sign.waitForExistence(timeout: 20))
+                XCTAssertTrue(metric.exists)
+                let plate = app.staticTexts["dashboard.speedSignSupplementaryText"]
+                if hasText {
+                    XCTAssertTrue(plate.exists)
+                    XCTAssertEqual(plate.label, "Mo-Fr 6:30–17:30 h")
+                    for (actual, expected) in [(sign.frame, baselineSign), (metric.frame, baselineMetric)] {
+                        XCTAssertEqual(actual.minX, expected.minX, accuracy: 0.5)
+                        XCTAssertEqual(actual.minY, expected.minY, accuracy: 0.5)
+                        XCTAssertEqual(actual.width, expected.width, accuracy: 0.5)
+                        XCTAssertEqual(actual.height, expected.height, accuracy: 0.5)
+                    }
+                    XCTAssertGreaterThanOrEqual(plate.frame.minY, sign.frame.maxY)
+                    let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                    screenshot.name = "supplementary-plate-stable-\(orientation)"
+                    screenshot.lifetime = .keepAlways
+                    add(screenshot)
+                } else {
+                    XCTAssertFalse(plate.exists)
+                    baselineSign = sign.frame
+                    baselineMetric = metric.frame
+                }
+                app.terminate()
+            }
+        }
+    }
+
     func testSwissPenaltyUsesTwoLargeLocalizedLines() {
         continueAfterFailure = false
         let labels: [(String, String, String, String)] = [

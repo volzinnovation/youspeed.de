@@ -219,7 +219,7 @@ class ManualOrientationLayoutInstrumentedTest {
         }
         val footer = bounds("dashboard-bottom-controls")
         val footerTags = mutableListOf("drive-recorder-toggle-button")
-        footerTags += "local-recordings-button"
+        footerTags += "panoramax-capture-toggle-button"
         footerTags += listOf("panoramax-gallery-button", "visual-calibration-button", "legal-button", "settings-button")
         val buttons = footerTags.map { tag ->
             bounds(tag).also { button ->

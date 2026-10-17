@@ -863,7 +863,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                             Text("${progress.completedItems} / ${progress.totalItems}", style = MaterialTheme.typography.bodySmall)
                         }
                         if (batch.remoteUploadSetId != null && batch.state != PanoramaxBatchState.COMPLETE && batch.batchId !in ui.panoramaxActiveUploadBatchIds) {
-                            TextButton(onClick = { controller.resumePanoramaxUpload(batch.batchId) }, enabled = controller.canProcessPanoramaxUploads() && ui.panoramaxAccountConnected) {
+                            TextButton(onClick = { controller.resumePanoramaxUpload(batch.batchId) }, enabled = controller.canProcessPanoramaxUploads()) {
                                 Text(parityText("Resume upload", "Upload fortsetzen", "Reprendre l’envoi", "Upload hervatten"))
                             }
                         }
@@ -947,7 +947,8 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                     icon = Icons.Default.Upload,
                     compact = compact,
                     label = "${parityText("Upload", "Hochladen", "Envoyer", "Uploaden")} ($count)",
-                    enabled = count > 0 && controller.canProcessPanoramaxUploads() && ui.panoramaxAccountConnected,
+                    // The upload worker validates saved credentials on demand, as on iPhone.
+                    enabled = count > 0 && controller.canProcessPanoramaxUploads(),
                     onClick = { uploadConfirmation = true },
                 )
             } else {

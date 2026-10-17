@@ -65,4 +65,81 @@ final class DrivingControlAvailabilityTests: XCTestCase {
         XCTAssertTrue(result.controlsAllowed)
         XCTAssertNil(result.stationaryObservedAt)
     }
+
+    func testSpeedRestrictionOnlyAppliesWithinInclusiveUprightRange() {
+        for angle in [80.0, 90, 100] {
+            XCTAssertTrue(DrivingControlPosturePolicy.isUpright(angleDegrees: angle))
+            XCTAssertFalse(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: false, angleDegrees: angle))
+            XCTAssertTrue(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: true, angleDegrees: angle))
+        }
+        for angle in [0.0, 45, 79.999, 100.001, 135, 180] {
+            XCTAssertFalse(DrivingControlPosturePolicy.isUpright(angleDegrees: angle))
+            XCTAssertTrue(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: false, angleDegrees: angle))
+        }
+        for angle in [nil, .nan, .infinity, -.infinity] as [Double?] {
+            XCTAssertTrue(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: false, angleDegrees: angle))
+        }
+    }
+
+    func testPostureUsesScreenPlaneInPortraitAndBothLandscapeMounts() throws {
+        for angle in [0.0, 45, 79.999, 80, 90, 100, 100.001, 135, 180] {
+            let radians = angle * .pi / 180
+            for (x, y) in [(0.0, -sin(radians)), (sin(radians), 0.0), (-sin(radians), 0.0)] {
+                let measured = try XCTUnwrap(DrivingControlPosturePolicy.angleDegrees(x: x, y: y, z: -cos(radians)))
+                XCTAssertEqual(measured, angle, accuracy: 1e-9)
+                XCTAssertEqual(DrivingControlPosturePolicy.isUpright(angleDegrees: measured), (80...100).contains(angle))
+            }
+        }
+    }
+
+    func testInvalidGravityLeavesPostureUnknown() {
+        for (x, y, z) in [(0.0, 0.0, 0.0), (0, -3, 0), (.nan, -1, 0), (0, -.infinity, 0), (0, 0, .nan)] {
+            XCTAssertNil(DrivingControlPosturePolicy.angleDegrees(x: x, y: y, z: z))
+        }
+    }
+
+    func testFlatOrHandheldPostureOverridesMovingAndStaleGPSWithoutClaimingStandstill() {
+        let moving = evaluate(allowed: true, raw: 10, displayed: 36)
+        let stale = evaluate(allowed: moving.controlsAllowed, age: 4)
+        for angle in [0.0, 45, 79.999, 100.001, 180] {
+            for speed in [moving, stale] {
+                XCTAssertTrue(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: speed.controlsAllowed, angleDegrees: angle))
+                XCTAssertNil(speed.stationaryObservedAt)
+            }
+        }
+        // Returning upright still has the retained speed lock.
+        XCTAssertFalse(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: stale.controlsAllowed, angleDegrees: 90))
+    }
+
+    #if canImport(UIKit)
+    @MainActor
+    func testPostureImmediatelyRestoresControlsAndGPSDoesNotRelockOutsideUpright() {
+        let model = DriveSessionViewModel()
+        model.testSetDrivingControlAngle(90)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 10, displayedKmh: 36)
+        XCTAssertFalse(model.drivingControlsAllowed)
+
+        model.testSetDrivingControlAngle(0)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 20, displayedKmh: 72)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        XCTAssertNil(model.stationarySpeedObservedAt)
+
+        // Missing GPS while flat must not clear the speed lock retained for upright use.
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: -1, displayedKmh: 0)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        model.testSetDrivingControlAngle(90)
+        XCTAssertFalse(model.drivingControlsAllowed)
+
+        model.testSetDrivingControlAngle(110)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        model.testSetDrivingControlAngle(nil)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        XCTAssertNil(model.stationarySpeedObservedAt)
+        model.testSetDrivingControlAngle(90)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 0, displayedKmh: 0)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        XCTAssertNotNil(model.stationarySpeedObservedAt)
+    }
+    #endif
 }

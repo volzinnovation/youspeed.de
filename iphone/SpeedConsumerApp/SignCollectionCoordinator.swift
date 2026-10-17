@@ -191,11 +191,14 @@ import CoreGraphics
         }
     }
     func observe(_ emission: TrafficSignRuntimeEmission, pack: TrafficSignVerifiedModelPack?, location: CLLocation?) {
-        guard enabled, authorized, cameraActive, let session, let pack, emission.event.source == .liveFrame, !framePending else { return }
+        guard enabled, authorized, cameraActive, emission.event.source == .liveFrame else { return }
+        defer { if let actual = emission.ocrAttemptAnnotation ?? emission.ocrAnnotation { updateSupplementaryOCR(actual) } }
+        guard let session, let pack, !framePending else { return }
         framePending = true
         // Snapshot the fix for this analyzed frame before asynchronous storage.
         let framePosition = Self.position(location, at: emission.event.frameTimestampUtc)
         let cropRequested = cropsAuthorized, token = generation
+        let supplementaryOCR = (emission.ocrAttemptAnnotation ?? emission.ocrAnnotation).flatMap(Self.collectionOCRAnnotation)
         let interests = foundation.interests
         let app = ["platform": "ios", "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.4",
                    "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"]
@@ -217,6 +220,11 @@ import CoreGraphics
             let model: [String: Any] = ["pack_id": event.packId, "pack_version": "manifest-schema-\(pack.manifest.schemaVersion)", "pack_sha256": hash, "components": components]
             let position = framePosition
             let eligible = Array(emission.collectionDetections.filter { $0.boundingBox.isValid && $0.rawScore.isFinite && $0.rawScore >= $0.classThreshold }.prefix(64))
+            let annotationMatches = eligible.filter { detection in
+                let box = detection.boundingBox
+                return supplementaryOCR?.matches(modelLabel: detection.rawClassId, speedKmh: detection.semantic.value,
+                    box: [box.x, box.y, box.width, box.height]) == true
+            }.count
             let presentationMatches = event.candidate.map { candidate in eligible.filter { $0.rawLabel == candidate.rawLabel && $0.boundingBox.intersectionOverUnion(with: candidate.boundingBox) >= 0.5 }.count } ?? 0
             let detections = eligible.map { detection -> SignCollectionObserver.Detection in
                 let box = detection.boundingBox
@@ -233,10 +241,13 @@ import CoreGraphics
                     "source_kind": "detector", "app": app, "clock_quality": "device_unverified", "vehicle_position": position,
                     "sign_position": NSNull(), "classification": classification, "scores": scores, "model": model, "evidence": evidence, "road_context": NSNull(), "media_refs": []]
                 let presentation = event.candidate.flatMap { presentationMatches == 1 && $0.rawLabel == detection.rawLabel && $0.boundingBox.intersectionOverUnion(with: box) >= 0.5 ? $0.trackId : nil }
-                return .init(key: hash + ":" + detection.rawLabel, box: [box.x,box.y,box.width,box.height], payload: payload, presentationTrack: presentation)
+                let annotation = annotationMatches == 1 && supplementaryOCR?.matches(modelLabel: detection.rawClassId,
+                    speedKmh: detection.semantic.value, box: [box.x,box.y,box.width,box.height]) == true ? supplementaryOCR : nil
+                return .init(key: hash + ":" + detection.rawLabel, box: [box.x,box.y,box.width,box.height],
+                    payload: payload, presentationTrack: presentation, supplementaryOCR: annotation)
             }
             var cropCount = 0, upright: CGImage?
-            try capture.observer.observe(at: at, detections: detections, captureCrop: { candidate in
+            try capture.observer.observe(at: at, detections: detections, frameID: event.frameId, captureCrop: { candidate in
                 guard cropRequested, cropCount < 4, let frame = emission.collectionFrame,
                       candidate.box.count == 4, candidate.selection?.permits(at: Date()) != false else { return .skipped }
                 let box = Dictionary(uniqueKeysWithValues: zip(["x", "y", "width", "height"], candidate.box))
@@ -250,6 +261,7 @@ import CoreGraphics
                         localFrameToken: frame.token, privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: claim,
                         vehiclePosition: framePosition)
                     if let selection = candidate.selection { metadata["collection_selection"] = selection.wire }
+                    if let annotation = candidate.supplementaryOCR { metadata["supplementary_ocr"] = annotation.wire }
                     try store.enqueueAutomaticCrop(metadata: metadata, bytes: crop.bytes)
                     return .stored
                 } catch {
@@ -269,7 +281,29 @@ import CoreGraphics
             }
         }
     }
+    /// This lane accepts completion after the primary frame was already stored.
+    func updateSupplementaryOCR(_ source: TrafficSignSupplementaryOCRAnnotation) {
+        guard enabled, authorized, cameraActive, session != nil,
+              let annotation = Self.collectionOCRAnnotation(source) else { return }
+        perform { [capture] store in
+            guard store.isAuthorized(scope: "sign_metadata", disclosure: SignCollectionCapabilities.metadataDisclosure) else { return }
+            try capture.observer.recordSupplementaryOCR(annotation, at: Date()) { event in
+                try store.enqueue(kind: "media_status", event: event, disclosure: SignCollectionCapabilities.metadataDisclosure)
+            }
+        }
+    }
     func freezeCorrection(attempt: String, presentation: String?) { perform { [capture] _ in capture.observer.freeze(attempt: attempt, presentation: presentation) } }
+    nonisolated private static func collectionOCRAnnotation(_ source: TrafficSignSupplementaryOCRAnnotation) -> SupplementaryOCRAnnotation? {
+        let box = source.primaryBoundingBox
+        let ocrBox = source.ocrBoundingBox.map { SupplementaryOCRAnnotation.Box(x: $0.x, y: $0.y, width: $0.width, height: $0.height) }
+        guard let status = SupplementaryOCRAnnotation.Status(rawValue: source.readStatus.rawValue) else { return nil }
+        return SupplementaryOCRAnnotation(primaryClassID: source.primaryClassID, primarySpeedKmh: source.primarySpeedKmh,
+            physicalSignID: source.physicalSignID, frameID: source.frameID, observedAt: source.sourceObservedAt,
+            firstSeenAt: source.firstSeenAt, rawText: source.rawText, status: status,
+            primaryBox: .init(x: box.x, y: box.y, width: box.width, height: box.height), ocrBox: ocrBox,
+            engine: source.engine, modelVersion: source.modelVersion,
+            parsedTimeWindow: source.window.map { .init(startMinutes: $0.startMinutes, endMinutes: $0.endMinutes) })
+    }
     func correct(attempt: String, modality: String) {
         perform { [capture] store in if let correction = capture.observer.correction(attempt: attempt, modality: modality, at: Date()) {
             try store.enqueue(kind: "correction", event: correction, disclosure: SignCollectionCapabilities.metadataDisclosure)

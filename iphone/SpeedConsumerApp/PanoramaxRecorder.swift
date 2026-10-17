@@ -477,6 +477,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     func testPrepareManualPhotoSession(automaticPhotos: Bool = false,
                                       dashcamActive: Bool = false,
                                       outputAvailable: Bool = true,
+                                      purpose: DriveCaptureSessionPurpose = .automaticCapture,
                                       capture: @escaping (Int64, CGFloat) -> Void) throws {
         guard let queueStore else { throw RecorderError.sessionUnavailable }
         testPhotoCapture = capture
@@ -490,7 +491,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         manualPhotoMoving = true
         let sessionID = UUID().uuidString
         captureSessionID = sessionID
-        sessionPurpose = .automaticCapture
+        sessionPurpose = purpose
         requestedManualPhotosEnabled = true
         activeManualPhotosEnabled = true
         activePanoramaxEnabled = automaticPhotos
@@ -612,7 +613,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     func setQueueStore(_ store: PanoramaxQueueStore) {
         queueStore = store
         manualBatchPreparationFailed = false
-        prepareManualPhotoBatchIfNeeded()
+        preparePhotoBatchIfNeeded()
     }
 
     /// A manually created batch becomes reviewable at standstill. Keep an
@@ -629,13 +630,13 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             }
         } else if moving {
             activeManualPhotosEnabled = requestedManualPhotosEnabled && photoOutputAvailable && batch != nil
-            prepareManualPhotoBatchIfNeeded()
+            preparePhotoBatchIfNeeded()
         }
     }
 
-    private func prepareManualPhotoBatchIfNeeded() {
-        guard state == .recording, manualPhotoMoving, queueStore != nil,
-              requestedManualPhotosEnabled, photoOutputAvailable,
+    private func preparePhotoBatchIfNeeded() {
+        guard state == .recording, queueStore != nil,
+              requestedPanoramaxEnabled || (requestedManualPhotosEnabled && manualPhotoMoving), photoOutputAvailable,
               batch == nil, !manualBatchPreparationInFlight, !manualBatchPreparationFailed,
               let captureSessionID else { return }
         manualBatchPreparationInFlight = true
@@ -645,12 +646,46 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             await preparePanoramaxBatch(captureSessionID: captureSessionID, requestedGeneration: requestedGeneration)
             manualBatchPreparationInFlight = false
             if generation == requestedGeneration, state == .recording {
-                activeManualPhotosEnabled = batch != nil && manualPhotoMoving
+                activeManualPhotosEnabled = requestedManualPhotosEnabled && batch != nil && manualPhotoMoving
                 manualBatchPreparationFailed = batch == nil
-                if !manualPhotoMoving, !activePanoramaxEnabled { closePanoramaxBatchForReview() }
+                if !activeManualPhotosEnabled, !activePanoramaxEnabled, !photoInFlight { closePanoramaxBatchForReview() }
                 notifyChange()
             }
         }
+    }
+
+    /// Changes automatic photo admission without rebuilding the camera graph.
+    /// The caller retains the normal dashboard action/finalization ordering.
+    /// Manual stills and an exposure already accepted keep their existing batch.
+    @discardableResult
+    func setPanoramaxEnabledDuringRecording(_ enabled: Bool) -> Bool {
+        guard state == .recording, sessionPurpose != .calibration else { return false }
+        requestedPanoramaxEnabled = enabled
+        if enabled {
+            guard photoOutputAvailable, queueStore != nil else {
+                activePanoramaxEnabled = false
+                lastCaptureDetail = photoOutputAvailable
+                    ? "Panoramax-Speicher nicht verfuegbar"
+                    : "Panoramax-Fotokamera ist fuer diese Kamerakonfiguration nicht verfuegbar"
+                notifyChange()
+                return false
+            }
+            activePanoramaxEnabled = true
+            manualBatchPreparationFailed = false
+            preparePhotoBatchIfNeeded()
+            lastCaptureDetail = batch == nil
+                ? "Panoramax-Speicher wird vorbereitet"
+                : "Panoramax-Bilder werden lokal gesammelt"
+        } else {
+            activePanoramaxEnabled = false
+            if !photoInFlight, !requestedManualPhotosEnabled || !manualPhotoMoving {
+                activeManualPhotosEnabled = false
+                closePanoramaxBatchForReview()
+            }
+            lastCaptureDetail = "Automatische Panoramax-Aufnahme pausiert"
+        }
+        notifyChange()
+        return true
     }
 
     func setVideoFrameConsumer(_ consumer: (any DriveVideoFrameConsumer)?) {
@@ -1356,7 +1391,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             photoInFlight = false
             pendingSample = nil
             pendingPhotoUniqueID = nil
-            if !manualPhotoMoving {
+            if !manualPhotoMoving || !requestedManualPhotosEnabled {
                 activeManualPhotosEnabled = false
                 if !activePanoramaxEnabled { closePanoramaxBatchForReview() }
             }
@@ -1394,7 +1429,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             photoInFlight = false
             pendingSample = nil
             pendingPhotoUniqueID = nil
-            if !manualPhotoMoving {
+            if !manualPhotoMoving || !requestedManualPhotosEnabled {
                 activeManualPhotosEnabled = false
                 if !activePanoramaxEnabled { closePanoramaxBatchForReview() }
             }

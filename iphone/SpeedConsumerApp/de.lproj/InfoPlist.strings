@@ -3,4 +3,4 @@
 "NSCameraUsageDescription" = "YouSpeed nutzt eine Rueckkamera-Sitzung fuer lokale Dashcam-Videos, Verkehrszeichenerkennung auf dem Geraet und Panoramax-Bilder, die du spaeter pruefst und hochlaedst.";
 "NSMicrophoneUsageDescription" = "YouSpeed hört nach einem erkannten Tempolimit kurz lokal zu, damit du Falsch sagen kannst, und erfasst gesprochene Tempokorrekturen.";
 "NSSpeechRecognitionUsageDescription" = "YouSpeed erkennt gesprochene Tempokorrekturen und Falsch lokal auf deinem Gerät.";
-"NSMotionUsageDescription" = "YouSpeed nutzt die Schwerkraft lokal, um die Kameraneigung im Stand anzuzeigen.";
+"NSMotionUsageDescription" = "YouSpeed nutzt die Schwerkraft lokal, um Bedienelemente bei geneigtem Telefon verfügbar zu halten und die Kameraausrichtung anzuzeigen.";

@@ -9,6 +9,7 @@ import android.graphics.Bitmap
 import android.graphics.RectF
 import android.location.Location
 import android.location.LocationManager
+import android.os.SystemClock
 import android.view.WindowInsets
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -45,6 +48,64 @@ import org.junit.runner.RunWith
 class DrivingPhotoCaptureInstrumentedTest {
     @get:Rule val compose = createEmptyComposeRule()
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
+
+    @Test fun dashboardPhotoTogglePersistsAcrossControllerRecreation() {
+        assertTrue("Use the isolated testhost, never the driver's app", instrumentation.targetContext.packageName.endsWith(".testhost"))
+        withFixture { fixture, scenario ->
+            val toggle = compose.onNodeWithTag("panoramax-capture-toggle-button")
+            toggle.assertIsOn().performClick()
+            toggle.assertIsOff()
+            scenario.onActivity {
+                assertFalse(fixture.controller.uiState.panoramaxCaptureEnabled)
+                assertFalse(fixture.context.getSharedPreferences("youspeed", Context.MODE_PRIVATE)
+                    .getBoolean("youspeed.panoramax_capture_enabled", true))
+            }
+            assertTrue(UiDevice.getInstance(instrumentation).takeScreenshot(
+                File(instrumentation.targetContext.cacheDir, "panoramax-capture-toggle-off.png")))
+            scenario.onActivity { fixture.controller.dispose() }
+            fixture.awaitStorageShutdown()
+            scenario.onActivity { fixture.attach(it) }
+            compose.onNodeWithTag("panoramax-capture-toggle-button").assertIsOff().performClick()
+            compose.onNodeWithTag("panoramax-capture-toggle-button").assertIsOn()
+            scenario.onActivity {
+                assertTrue(fixture.controller.uiState.panoramaxCaptureEnabled)
+                assertTrue(fixture.context.getSharedPreferences("youspeed", Context.MODE_PRIVATE)
+                    .getBoolean("youspeed.panoramax_capture_enabled", false))
+            }
+            assertTrue(UiDevice.getInstance(instrumentation).takeScreenshot(
+                File(instrumentation.targetContext.cacheDir, "panoramax-capture-toggle-on.png")))
+        }
+    }
+
+    @Test fun handheldGpsUpdatesKeepSettingsOpenAndUprightPostureRestoresSpeedLock() {
+        assertTrue("Use the isolated testhost, never the driver's app", instrumentation.targetContext.packageName.endsWith(".testhost"))
+        withFixture { fixture, scenario ->
+            scenario.onActivity { fixture.prepareInteractionTest() }
+            compose.onNodeWithTag("settings-button").performClick()
+            compose.onNodeWithTag("settings-sheet").assertExists()
+            for (angle in listOf(0.0, 45.0, 79.999, 100.001, 135.0, 180.0)) {
+                scenario.onActivity {
+                    fixture.posture(angle)
+                    val before = fixture.controller.uiState.gpsFixCount
+                    fixture.movingGpsFix()
+                    assertEquals("Synthetic GPS fix was consumed", before + 1, fixture.controller.uiState.gpsFixCount)
+                    assertTrue("Handheld controls at $angle degrees", fixture.controller.uiState.drivingControlsAllowed)
+                    assertTrue(fixture.controller.uiState.currentSpeedKmh >= 4)
+                }
+                compose.onNodeWithTag("settings-sheet").assertExists()
+                compose.onNodeWithTag("panoramax-capture-toggle-button").assertExists()
+            }
+            scenario.onActivity { fixture.posture(90.0) }
+            compose.onNodeWithTag("settings-sheet").assertDoesNotExist()
+            compose.onNodeWithTag("settings-button").assertDoesNotExist()
+            scenario.onActivity {
+                assertFalse("Returning upright applies the held GPS lock without another fix", fixture.controller.uiState.drivingControlsAllowed)
+                fixture.posture(null)
+            }
+            compose.onNodeWithTag("settings-button").assertExists()
+            compose.onNodeWithTag("settings-sheet").assertDoesNotExist()
+        }
+    }
 
     @Test fun thresholdAndBottomRightSafeAreaHoldInBothLandscapeMountsAndNarrowPortrait() {
         withFixture { fixture, scenario ->
@@ -275,14 +336,7 @@ class DrivingPhotoCaptureInstrumentedTest {
         try {
             ActivityScenario.launch<MainActivity>(Intent(base, MainActivity::class.java)
                 .putExtra("screenshot_state", "other-sign-give-way")).use { scenario ->
-                scenario.onActivity { activity ->
-                    fixture.controller = ConsumerSessionController(fixture.context, File(fixture.root, "bundle"),
-                        fixture.context.getSharedPreferences("youspeed", Context.MODE_PRIVATE), fixture.clock,
-                        AppScreenshotState.OTHER_SIGN_GIVE_WAY)
-                    fixture.host.orientation = { activity.requestedOrientation = it.requestedOrientation }
-                    fixture.controller.bindHost(fixture.host)
-                    activity.setContent { ConsumerApp(fixture.controller) }
-                }
+                scenario.onActivity { fixture.attach(it) }
                 compose.waitUntil(10_000) { !fixture.controller.uiState.panoramaxMaintenanceInProgress }
                 block(fixture, scenario)
                 scenario.onActivity { fixture.controller.dispose() }
@@ -306,6 +360,47 @@ class DrivingPhotoCaptureInstrumentedTest {
         lateinit var controller: ConsumerSessionController
         val initialized get() = ::controller.isInitialized
         val queue get() = PanoramaxQueueStore(context)
+
+        fun attach(activity: MainActivity) {
+            controller = ConsumerSessionController(context, File(root, "bundle"),
+                context.getSharedPreferences("youspeed", Context.MODE_PRIVATE), clock,
+                AppScreenshotState.OTHER_SIGN_GIVE_WAY)
+            host.orientation = { activity.requestedOrientation = it.requestedOrientation }
+            controller.bindHost(host)
+            activity.setContent { ConsumerApp(controller) }
+        }
+
+        fun prepareInteractionTest() {
+            // Use controller-level samples only; never register an OS mock-location provider.
+            (field("drivingControlPostureMotion").get(controller) as DrivingControlPostureMotion).stop()
+            clock.freeze()
+            context.locationGranted = true
+            context.cameraGranted = false
+            field("isDriving").setBoolean(controller, true)
+            field("speedControlsAllowed").setBoolean(controller, true)
+            controller.setPanoramaxCaptureEnabled(false)
+            manualOnly()
+            state { copy(appScreenshotState = null, startupDataState = StartupDataState.READY,
+                startupLogReviewState = StartupLogReviewState.COMPLETE, onboardingCompleted = true,
+                downloadedBundleLatestVersionByRegion = mapOf("isolated-test" to "2026-10-10"),
+                driveStatus = "running", currentSpeedKmh = 0.0, drivingControlsAllowed = true,
+                trafficSignRecognitionEnabled = false, audioAlertsEnabled = false) }
+            posture(0.0)
+        }
+
+        fun posture(angleDegrees: Double?) = ConsumerSessionController::class.java
+            .getDeclaredMethod("updateDrivingControlPosture", java.lang.Double::class.java)
+            .apply { isAccessible = true }.invoke(controller, angleDegrees)
+
+        fun movingGpsFix() {
+            clock.advanceMillis(1)
+            val sample = Location(LocationManager.GPS_PROVIDER).apply {
+                latitude = 48.0; longitude = 8.0; accuracy = 5f; speed = 10f; bearing = 90f
+                time = clock.millis(); elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
+            }
+            ConsumerSessionController::class.java.getDeclaredMethod("consumeLocation", Location::class.java)
+                .apply { isAccessible = true }.invoke(controller, sample)
+        }
 
         fun state(transform: ConsumerUiState.() -> ConsumerUiState) {
             @Suppress("UNCHECKED_CAST")
@@ -379,6 +474,7 @@ class DrivingPhotoCaptureInstrumentedTest {
 
     private class IsolatedContext(val base: Context, val root: File) : ContextWrapper(base) {
         var cameraGranted = true
+        var locationGranted = false
         var freeBytes = 100_000_000L
         private val preferenceNames = mutableSetOf<String>()
         override fun getApplicationContext(): Context = this
@@ -391,6 +487,8 @@ class DrivingPhotoCaptureInstrumentedTest {
             base.getSharedPreferences("${root.name}-$name".also(preferenceNames::add), mode)
         override fun checkSelfPermission(permission: String): Int =
             if (permission == Manifest.permission.CAMERA && cameraGranted) PackageManager.PERMISSION_GRANTED
+            else if (permission in setOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION) && locationGranted)
+                PackageManager.PERMISSION_GRANTED
             else PackageManager.PERMISSION_DENIED
         fun deletePreferences() { preferenceNames.forEach { base.deleteSharedPreferences(it) } }
     }

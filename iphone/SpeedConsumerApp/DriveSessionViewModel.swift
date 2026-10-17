@@ -613,12 +613,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         penaltyCountryExpiryTask?.cancel()
         bundleMetadataTask?.cancel()
         bundleMetadataIndexTask?.cancel()
+        trafficSignSupplementaryExpiryTask?.cancel()
     }
     @Published var driveStatus: String = "stopped"
     @Published var activeBundleVersion: String = "none"
     @Published var activeDBPath: String = ""
     @Published var currentSpeedKmh: Double = 0
     @Published private(set) var drivingControlsAllowed = true
+    private var speedControlsAllowed = true
+    private var drivingControlAngleDegrees: Double?
+    private let drivingControlPostureMotion = DrivingControlPostureMotion()
     @Published private(set) var stationarySpeedObservedAt: Date?
     @Published private(set) var isVisionDismissalListening = false
     @Published var speedLimitKmh: Int?
@@ -845,10 +849,38 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var trafficSignPictogramEnabled: Bool {
         didSet {
             UserDefaults.standard.set(trafficSignPictogramEnabled, forKey: "youspeed.drive_recorder.tsr_pictogram_enabled")
-            if !trafficSignPictogramEnabled { resetTrafficSignPictogram() }
+            if !trafficSignPictogramEnabled { resetTrafficSignPictogram(resetSupplementaryText: false) }
         }
     }
     @Published private(set) var trafficSignPictogram: TrafficSignPresentationCatalog.Sign?
+    @Published private(set) var trafficSignSupplementaryText: TrafficSignSupplementaryOCRAnnotation?
+    /// Visual recognition may precede OCR; this never enters the speed resolver.
+    @Published private(set) var trafficSignPendingSpeedKmh: Int?
+    private var trafficSignSupplementaryExpiryTask: Task<Void, Never>?
+    private var supplementaryTrafficSignSpeechGate = TrafficSignSecondarySpeechGate()
+    private var lastSpokenTrafficSignSpeed: Int?
+    private var lastSpokenTrafficSignSpeedAt = Date.distantPast
+
+    var trafficSignNumericSupplementaryText: String? {
+        if appScreenshotState == .cameraLimitActive, !isInSpeedCaptureMode,
+           let text = ProcessInfo.processInfo.environment["YOUSPEED_SCREENSHOT_SUPPLEMENTARY_TEXT"] {
+            return TrafficSignOCRTextFormatting.display(text).split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        }
+        guard !isInSpeedCaptureMode, let observation = trafficSignSupplementaryText,
+              TrafficSignSupplementaryPresentation.matchesNumeric(
+                observation, displayedSpeedKmh: speedLimitKmh,
+                cameraEvidence: effectiveSpeedLimitState.source == .camera || effectiveSpeedLimitState.hasCameraEvidenceMarker,
+                now: Date()) else { return nil }
+        return observation.text
+    }
+
+    var trafficSignPictogramSupplementaryText: String? {
+        guard !isInSpeedCaptureMode, trafficSignPictogramEnabled,
+              let observation = trafficSignSupplementaryText,
+              TrafficSignSupplementaryPresentation.matchesPictogram(
+                observation, classID: trafficSignPictogram?.classID, now: Date()) else { return nil }
+        return observation.text
+    }
     @Published private(set) var trafficSignEndOverlayVisible = false
     @Published private(set) var trafficSignEndPictogram: TrafficSignPresentationCatalog.Sign?
     private var trafficSignPresentationCatalog = TrafficSignPresentationCatalog.bundled()
@@ -865,6 +897,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
             trafficSignFeedbackGate.reset()
             secondaryTrafficSignSpeechGate.reset()
+            supplementaryTrafficSignSpeechGate.reset()
+            lastSpokenTrafficSignSpeed = nil
             cancelTrafficSignSpeech()
             Self.tsrLogger.notice(
                 "timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) setting=feedback mode=\(self.trafficSignFeedbackMode.rawValue, privacy: .public)"
@@ -2078,6 +2112,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             latestPenaltyFixIsValid = false
             penaltyRulesAreApplicable = false
             penaltyCountrySelection.suspend()
+            TrafficSignOCRLanguageContext.configure(countryCode: nil)
             return
         }
         if let lastPenaltyFixTimestamp, timestamp <= lastPenaltyFixTimestamp { return }
@@ -2092,8 +2127,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let countries = Set(regionalPackCatalog.matches(longitude: longitude, latitude: latitude).map(\.country))
         guard let country = penaltyCountrySelection.update(countries: countries, timestamp: timestamp) else {
             penaltyRulesAreApplicable = false
+            TrafficSignOCRLanguageContext.configure(countryCode: nil)
             return
         }
+        TrafficSignOCRLanguageContext.configure(countryCode: country)
         if !penaltyRulesAreApplicable || !penaltyRulesUseBundledSource || normalizedCountryCode(activePenaltyRules.countryCode) != country {
             applyBundledPenaltyRules(countryCode: country)
         }
@@ -2104,6 +2141,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         latestPenaltyFixIsValid = false
         penaltyCountrySelection.suspend()
         penaltyRulesAreApplicable = false
+        TrafficSignOCRLanguageContext.configure(countryCode: nil)
     }
 
     var penaltyCountryDisplayName: String {
@@ -2171,6 +2209,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let endpointCount = manifestEndpoints.count
         Self.logger.notice("sync endpoints configured count=\(endpointCount, privacy: .public)")
         super.init()
+        TrafficSignSupplementaryOCR.warmUp()
         #if DEBUG
         if ProcessInfo.processInfo.environment["LANE_FULL_WORKLOAD_RUN_ID"] != nil { Self.testActiveInstance = self }
         #endif
@@ -2512,10 +2551,19 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     func setTrafficSignApplicationActive(_ isActive: Bool) {
         if trafficSignApplicationIsActive != isActive { trafficSignBundleContextTracker.reset() }
         trafficSignApplicationIsActive = isActive
+        if isActive && !isScreenshotMode {
+            drivingControlPostureMotion.start { [weak self] angle in
+                self?.updateDrivingControlPosture(angleDegrees: angle)
+            }
+        } else {
+            drivingControlPostureMotion.stop()
+            if !isScreenshotMode { updateDrivingControlPosture(angleDegrees: nil) }
+        }
         if !isActive {
             cancelVisionDismissalVoice()
             endVisualRoadCalibration()
             secondaryTrafficSignSpeechGate.reset()
+            resetTrafficSignSupplementaryText()
             cancelTrafficSignSpeech(secondaryOnly: true)
         }
         refreshLaneDetectionActivity()
@@ -2625,13 +2673,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             && AVCaptureDevice.authorizationStatus(for: .video) == .authorized
         let shouldRun = recognition || photos || manualPhotos
         driveCaptureCoordinator.setManualPhotoMoving(showsDrivingPhotoButton)
+        if driveCaptureCoordinator.state == .recording,
+           driveCaptureCoordinator.requestedPanoramaxEnabled != photos {
+            // Automatic and user-started sessions reserve a still output where
+            // supported. Apply the saved selection to the retained session after
+            // the normal button gate has finalized any movie.
+            _ = driveCaptureCoordinator.setPanoramaxEnabledDuringRecording(photos)
+        }
         if driveCaptureCoordinator.isAutomaticCaptureSession {
             if driveCaptureCoordinator.state == .recording || driveCaptureCoordinator.state == .preparing {
-                if !shouldRun || driveCaptureCoordinator.requestedPanoramaxEnabled != photos {
+                if !shouldRun {
                     if !shouldRun, trafficSignApplicationIsActive, isDriving,
                        driveCaptureCoordinator.isManualPhotoInFlight { return }
-                    // Photo-output changes require a new fixed camera graph. onChange
-                    // restarts the automatic session after stop has finished.
                     driveCaptureCoordinator.stop()
                 } else if driveCaptureCoordinator.state == .recording,
                           driveCaptureCoordinator.isTrafficSignRecognitionModuleActive != recognition {
@@ -3583,6 +3636,41 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // yellow because of a stale callback that arrived during a normal
         // context refresh.
         trafficSignDebugGenerationSessionContextMismatch = false
+        if let diagnostic = emission.ocrDiagnostic { appendTSRLog(diagnostic, timestamp: emission.event.frameTimestampUtc) }
+        if emission.supplementaryOCROnly {
+            // The primary event was admitted before this clearer-view retry.
+            // Store and present its auxiliary evidence without replaying rules,
+            // passages, camera assertions, capture filters, or primary feedback.
+            if let actual = emission.ocrAttemptAnnotation { signCollection.updateSupplementaryOCR(actual) }
+            let displayPermitted = TSRApplicabilityConfiguration.defaultMode == "shadow" || (
+                emission.event.permitsApplicability("display") &&
+                emission.event.applicabilityDecision?.scope.generation == trafficSignRecorderGeneration &&
+                emission.event.applicabilityDecision?.scope.contextGeneration == trafficSignContextGeneration &&
+                emission.event.roadContext?.traversalEpoch == latestTrafficSignDetectionContext?.traversalEpoch &&
+                emission.event.roadContext?.sourceSignature.bundleSHA256 == latestTrafficSignDetectionContext?.sourceSignature.bundleSHA256)
+            guard trafficSignApplicationIsActive, displayPermitted,
+                  visionDismissalGate.permits(track: emission.event.candidate?.trackId,
+                    observedAt: emission.event.frameTimestampUtc) else { return }
+            acceptTrafficSignSupplementaryText(from: emission)
+            maybeSpeakTrafficSignSupplementaryText()
+            return
+        }
+        if emission.ocrPhase == .pending {
+            // The confirmed sign may be drawn while its initial eligible read runs.
+            // Collection, feedback and authoritative publication wait for the
+            // completed callback below, so this event is never ingested twice.
+            guard trafficSignApplicationIsActive, emission.event.source == .liveFrame,
+                  emission.event.state == .confirmed,
+                  let candidate = emission.event.candidate, candidate.evidenceFrames >= 2,
+                  let speed = candidate.value, speed > 0,
+                  visionDismissalGate.permits(track: candidate.trackId,
+                    observedAt: emission.event.frameTimestampUtc),
+                  emission.event.permitsApplicability("display") else { return }
+            acceptTrafficSignSupplementaryText(from: emission)
+            trafficSignPendingSpeedKmh = speed
+            return
+        }
+        trafficSignPendingSpeedKmh = nil
         if panoramaxRecognizedSignsOnly, trafficSignApplicationIsActive, emission.event.source == .liveFrame, let location = locationManager.location {
             let detections = emission.collectionDetections.filter { $0.boundingBox.isValid && $0.rawScore.isFinite && $0.rawScore >= $0.classThreshold }.map { d in
                 SignCaptureFilter.Detection(key: emission.event.packId + ":" + d.rawLabel, label: d.rawLabel,
@@ -3645,7 +3733,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // gets first use of the audio lane, and dismissed/inapplicable frames
         // cannot announce a previously retained pictogram of the same class.
         defer {
-            if displayPermitted { maybeSpeakSecondaryTrafficSign(from: emission) }
+            if displayPermitted {
+                maybeSpeakSecondaryTrafficSign(from: emission)
+                maybeSpeakTrafficSignSupplementaryText()
+            }
         }
         if displayPermitted, let observation = emission.displayObservation, observation.isSpeedLimitEnd {
             pendingTrafficSignEndDisplay = (observation.classID, emission.event.frameTimestampUtc)
@@ -3653,6 +3744,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if displayPermitted && trafficSignPictogramEnabled {
             trafficSignDisplayState.consume(emission.displayObservation, catalog: trafficSignPresentationCatalog)
             trafficSignPictogram = trafficSignDisplayState.sign
+        }
+        if displayPermitted, emission.event.source == .liveFrame {
+            acceptTrafficSignSupplementaryText(from: emission)
+        } else {
+            resetTrafficSignSupplementaryText(resetSpeechGate: false)
         }
         driveCaptureCoordinator?.recordTrafficSignRecognition(emission)
         publishTrafficSignRecognitionState(for: emission.event)
@@ -3828,9 +3924,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         case .spokenSpeed, .spokenSpeedAndSigns:
             prepareSpeechPlaybackAudioSession()
             let format = NSLocalizedString("tsr.feedback.spoken_speed_format", comment: "")
-            let utterance = AVSpeechUtterance(
-                string: String(format: format, locale: Locale.current, speedKmh)
-            )
+            var phrase = String(format: format, locale: Locale.current, speedKmh)
+            if trafficSignFeedbackMode == .spokenSpeedAndSigns,
+               let observation = trafficSignSupplementaryText,
+               TrafficSignSupplementaryPresentation.matchesNumeric(
+                observation, displayedSpeedKmh: speedKmh, cameraEvidence: true, now: Date()),
+               observation.firstSeenAt <= passage.lastSeenTimestampUTC,
+               observation.observedAt >= passage.firstSeenTimestampUTC,
+               let signLanguage = TrafficSignOCRLanguageContext.speechLanguage(for: observation.rawText ?? observation.text ?? ""),
+               signLanguage.prefix(2) == Self.trafficSignSpeechLanguageIdentifier().prefix(2) {
+                phrase += ", " + TrafficSignSupplementaryPresentation.spokenPhrase(
+                    for: observation, languageIdentifier: signLanguage)
+                supplementaryTrafficSignSpeechGate.recordSpoken(
+                    classID: TrafficSignSupplementaryPresentation.speechKey(for: observation),
+                    observedAt: observation.observedAt, now: Date())
+            }
+            let utterance = AVSpeechUtterance(string: phrase)
             utterance.voice = AVSpeechSynthesisVoice(
                 language: Self.trafficSignSpeechLanguageIdentifier()
             ) ?? AVSpeechSynthesisVoice(language: "en")
@@ -3840,6 +3949,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             stopSpeechImmediately()
             trafficSignSpeechUtterance = utterance
             trafficSignSpeechIsSecondary = false
+            lastSpokenTrafficSignSpeed = speedKmh
+            lastSpokenTrafficSignSpeedAt = Date()
             speakTrackedUtterance(utterance)
         case .sound:
             captureConfirmationTonePlayer.play()
@@ -3863,7 +3974,111 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                       && visionDismissalVoiceTask == nil && !speechSynthesizer.isSpeaking
                       && activeSpeechUtteranceID == nil
               ) else { return }
-        let utterance = AVSpeechUtterance(string: phrase)
+        var spokenPhrase = phrase
+        if let supplementary = trafficSignSupplementaryText,
+           TrafficSignSupplementaryPresentation.matchesPictogram(supplementary, classID: sign.classID, now: Date()),
+           let signLanguage = TrafficSignOCRLanguageContext.speechLanguage(for: supplementary.rawText ?? supplementary.text ?? ""),
+           signLanguage.prefix(2) == Self.trafficSignSpeechLanguageIdentifier().prefix(2) {
+            spokenPhrase += ", " + TrafficSignSupplementaryPresentation.spokenPhrase(
+                for: supplementary, languageIdentifier: signLanguage)
+            supplementaryTrafficSignSpeechGate.recordSpoken(
+                classID: TrafficSignSupplementaryPresentation.speechKey(for: supplementary),
+                observedAt: supplementary.observedAt, now: Date())
+        }
+        let utterance = AVSpeechUtterance(string: spokenPhrase)
+        utterance.voice = voice
+        utterance.rate = 0.48
+        prepareSpeechPlaybackAudioSession()
+        trafficSignSpeechUtterance = utterance
+        trafficSignSpeechIsSecondary = true
+        speakTrackedUtterance(utterance)
+    }
+
+    private func acceptTrafficSignSupplementaryText(from emission: TrafficSignRuntimeEmission) {
+        guard let observation = emission.ocrAnnotation, observation.readStatus == .read,
+              observation.text != nil else {
+            let candidate = emission.event.candidate
+            let numeric = trafficSignSupplementaryText?.primarySpeedKmh != nil
+            let classID = emission.ocrAnnotation?.primaryClassID ?? (numeric
+                ? candidate?.rawClassId ?? emission.displayObservation?.classID
+                : emission.displayObservation?.classID ?? candidate?.rawClassId)
+            let speed: Int?
+            if let annotation = emission.ocrAnnotation {
+                speed = annotation.primarySpeedKmh
+            } else if let candidate, classID == candidate.rawClassId {
+                speed = candidate.value
+            } else {
+                speed = trafficSignSupplementaryText?.primarySpeedKmh
+            }
+            let physicalID = emission.ocrAnnotation?.physicalSignID ?? (numeric
+                ? emission.event.applicabilityDecision?.trackId ?? candidate?.trackId : nil)
+            guard let retained = TrafficSignSupplementaryPresentation.retainedAnnotation(
+                trafficSignSupplementaryText, primaryClassID: classID, primarySpeedKmh: speed,
+                physicalSignID: physicalID, evidenceAt: emission.event.frameTimestampUtc, now: Date()) else {
+                resetTrafficSignSupplementaryText(resetSpeechGate: false, resetPrimarySpeech: false)
+                return
+            }
+            presentTrafficSignSupplementaryText(retained)
+            return
+        }
+        guard TrafficSignSupplementaryPresentation.isFresh(observation, at: Date()),
+              observation.primaryClassID == emission.event.candidate?.rawClassId ||
+                observation.primaryClassID == emission.displayObservation?.classID else {
+            resetTrafficSignSupplementaryText(resetSpeechGate: false, resetPrimarySpeech: false)
+            return
+        }
+        presentTrafficSignSupplementaryText(observation)
+    }
+
+    private func presentTrafficSignSupplementaryText(_ observation: TrafficSignSupplementaryOCRAnnotation) {
+        guard trafficSignSupplementaryText != observation else { return }
+        trafficSignSupplementaryText = observation
+        trafficSignSupplementaryExpiryTask?.cancel()
+        let delay = max(0, 3 - Date().timeIntervalSince(observation.observedAt))
+        trafficSignSupplementaryExpiryTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000)) }
+            catch { return }
+            guard let self, self.trafficSignSupplementaryText == observation else { return }
+            self.trafficSignSupplementaryText = nil
+            self.trafficSignSupplementaryExpiryTask = nil
+        }
+    }
+
+    private func resetTrafficSignSupplementaryText(resetSpeechGate: Bool = true, resetPrimarySpeech: Bool = true) {
+        trafficSignSupplementaryExpiryTask?.cancel()
+        trafficSignSupplementaryExpiryTask = nil
+        trafficSignSupplementaryText = nil
+        trafficSignPendingSpeedKmh = nil
+        if resetPrimarySpeech { lastSpokenTrafficSignSpeed = nil }
+        if resetSpeechGate { supplementaryTrafficSignSpeechGate.reset() }
+    }
+
+    /// A late OCR result may follow a completed sign announcement while it is
+    /// still fresh. It never queues behind a capture prompt or another speaker.
+    private func maybeSpeakTrafficSignSupplementaryText() {
+        guard trafficSignFeedbackMode == .spokenSpeedAndSigns,
+              trafficSignProcessingIsEnabled, appScreenshotState == nil,
+              !isInSpeedCaptureMode, !isVisionDismissalListening,
+              visionDismissalVoiceTask == nil, !speechSynthesizer.isSpeaking,
+              activeSpeechUtteranceID == nil, currentSpeedKmh.isFinite, currentSpeedKmh >= 1,
+              let observation = trafficSignSupplementaryText,
+              TrafficSignSupplementaryPresentation.isFresh(observation, at: Date()) else { return }
+        let matchesNumeric = TrafficSignSupplementaryPresentation.matchesNumeric(
+            observation, displayedSpeedKmh: speedLimitKmh,
+            cameraEvidence: effectiveSpeedLimitState.source == .camera || effectiveSpeedLimitState.hasCameraEvidenceMarker,
+            now: Date()) && lastSpokenTrafficSignSpeed == observation.primarySpeedKmh
+            && lastSpokenTrafficSignSpeedAt >= observation.firstSeenAt
+        let matchesPictogram = trafficSignPictogramEnabled && TrafficSignSupplementaryPresentation.matchesPictogram(
+            observation, classID: trafficSignPictogram?.classID, now: Date())
+        guard matchesNumeric || matchesPictogram,
+              let signLanguage = TrafficSignOCRLanguageContext.speechLanguage(for: observation.rawText ?? observation.text ?? ""),
+              let voice = AVSpeechSynthesisVoice(language: signLanguage),
+              voice.language.prefix(2) == signLanguage.prefix(2),
+              supplementaryTrafficSignSpeechGate.shouldEmit(
+                classID: TrafficSignSupplementaryPresentation.speechKey(for: observation),
+                observedAt: observation.observedAt, now: Date(), canSpeak: true) else { return }
+        let utterance = AVSpeechUtterance(string: TrafficSignSupplementaryPresentation.spokenPhrase(
+            for: observation, languageIdentifier: signLanguage))
         utterance.voice = voice
         utterance.rate = 0.48
         prepareSpeechPlaybackAudioSession()
@@ -4069,9 +4284,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func resetTrafficSignPictogram(resetSpeechGate: Bool = true) {
+    private func resetTrafficSignPictogram(resetSpeechGate: Bool = true, resetSupplementaryText: Bool = true) {
         // A map-context change does not mean a continuously visible sign vanished.
         if resetSpeechGate { secondaryTrafficSignSpeechGate.reset() }
+        if resetSupplementaryText || trafficSignSupplementaryText?.primarySpeedKmh == nil {
+            resetTrafficSignSupplementaryText(resetSpeechGate: resetSpeechGate)
+        }
         cancelTrafficSignSpeech(secondaryOnly: true)
         pendingTrafficSignEndDisplay = nil
         trafficSignDisplayState.reset()
@@ -5901,7 +6119,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         activeDBPath = screenshotState.rawValue
         activeBundleDBSHA256 = nil
         currentSpeedKmh = fixture.currentSpeedKmh
-        drivingControlsAllowed = fixture.currentSpeedKmh < DrivingControlAvailability.controlsSpeedThresholdKmh
+        // Screenshot fixtures model an upright mount without live motion sensors.
+        drivingControlAngleDegrees = 90
+        speedControlsAllowed = fixture.currentSpeedKmh < DrivingControlAvailability.controlsSpeedThresholdKmh
+        refreshDrivingControlAvailability()
         stationarySpeedObservedAt = fixture.currentSpeedKmh == 0 ? Date() : nil
         speedLimitKmh = fixture.speedLimitKmh
         speedLimitDisplayText = fixture.speedLimitDisplayText
@@ -6038,7 +6259,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
               let fixture = ProcessInfo.processInfo.environment["YOUSPEED_MANUAL_PHOTO_TEST"] else { return }
         manualPhotoTestFixture = true
         currentSpeedKmh = Double(ProcessInfo.processInfo.environment["YOUSPEED_MANUAL_PHOTO_SPEED"] ?? "30") ?? 30
-        drivingControlsAllowed = currentSpeedKmh < DrivingControlAvailability.controlsSpeedThresholdKmh
+        speedControlsAllowed = currentSpeedKmh < DrivingControlAvailability.controlsSpeedThresholdKmh
+        refreshDrivingControlAvailability()
         stationarySpeedObservedAt = currentSpeedKmh == 0 ? Date() : nil
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("manual-photo-ui-\(UUID().uuidString)", isDirectory: true)
         guard let store = try? PanoramaxQueueStore(root: root) else { return }
@@ -8340,12 +8562,25 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func updateDrivingControlAvailability(from location: CLLocation) {
         let next = DrivingControlAvailability.updated(
-            previouslyAllowed: drivingControlsAllowed, rawSpeedMetersPerSecond: location.speed,
+            previouslyAllowed: speedControlsAllowed, rawSpeedMetersPerSecond: location.speed,
             displayedSpeedKmh: currentSpeedKmh, horizontalAccuracyMeters: location.horizontalAccuracy,
             observedAt: location.timestamp, now: Date()
         )
-        drivingControlsAllowed = next.controlsAllowed
+        speedControlsAllowed = next.controlsAllowed
         stationarySpeedObservedAt = next.stationaryObservedAt
+        refreshDrivingControlAvailability()
+    }
+
+    private func updateDrivingControlPosture(angleDegrees: Double?) {
+        drivingControlAngleDegrees = angleDegrees
+        refreshDrivingControlAvailability()
+    }
+
+    private func refreshDrivingControlAvailability() {
+        let allowed = DrivingControlPosturePolicy.controlsAllowed(
+            speedControlsAllowed: speedControlsAllowed, angleDegrees: drivingControlAngleDegrees)
+        guard drivingControlsAllowed != allowed else { return }
+        drivingControlsAllowed = allowed
         if !drivingControlsAllowed {
             cancelPendingDriveInteraction()
             endVisualRoadCalibration()
@@ -8842,6 +9077,30 @@ extension DriveSessionViewModel {
 
     func testDiscoverPacks(for location: CLLocation) { discoverPacks(for: location) }
 
+    func testSetDrivingControlAngle(_ degrees: Double?) {
+        updateDrivingControlPosture(angleDegrees: degrees)
+    }
+
+    func testObserveDrivingControlSpeed(rawMetersPerSecond: Double, displayedKmh: Double,
+                                       timestamp: Date = Date()) {
+        currentSpeedKmh = displayedKmh
+        updateDrivingControlAvailability(from: CLLocation(
+            coordinate: CLLocationCoordinate2D(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90,
+            speed: rawMetersPerSecond, timestamp: timestamp))
+    }
+
+    func testAttachPanoramaxCaptureCoordinator(_ coordinator: DriveCaptureCoordinator,
+                                              store: PanoramaxQueueStore) {
+        driveCaptureCoordinator?.onChange = nil
+        driveCaptureCoordinator = coordinator
+        panoramaxQueueStore = store
+        panoramaxQueueMaintenanceInProgress = false
+        isDriving = true
+        currentSpeedKmh = 36
+        coordinator.onChange = { [weak self] in self?.syncDriveRecorderState() }
+    }
+
     func testWaitForTrafficSignModelLoad(timeout: TimeInterval = 30) async throws {
         let deadline = Date().addingTimeInterval(timeout)
         while trafficSignRuntimeLoadTask != nil, Date() < deadline {
@@ -9098,10 +9357,12 @@ extension DriveSessionViewModel: AVSpeechSynthesizerDelegate {
         Task { @MainActor [weak self] in
             guard let self else { return }
             if self.activeSpeechUtteranceID == utteranceID { self.activeSpeechUtteranceID = nil }
-            if self.trafficSignSpeechUtterance.map(ObjectIdentifier.init) == utteranceID {
+            let completedTrafficSignSpeech = self.trafficSignSpeechUtterance.map(ObjectIdentifier.init) == utteranceID
+            if completedTrafficSignSpeech {
                 self.trafficSignSpeechUtterance = nil
                 self.trafficSignSpeechIsSecondary = false
             }
+            if completedTrafficSignSpeech { self.maybeSpeakTrafficSignSupplementaryText() }
             guard self.awaitingSpeedCapturePromptCompletion,
                   self.speedCapturePromptUtteranceID == utteranceID else { return }
             self.speedCapturePromptUtteranceID = nil

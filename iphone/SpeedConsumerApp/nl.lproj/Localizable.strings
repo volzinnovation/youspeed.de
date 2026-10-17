@@ -175,6 +175,8 @@
 "panoramax.recorder.camera_unavailable" = "Camera niet beschikbaar";
 "panoramax.recorder.start" = "Opname starten";
 "panoramax.recorder.stop" = "Opname stoppen";
+"panoramax.capture.start" = "Foto-opname starten";
+"panoramax.capture.stop" = "Foto-opname stoppen";
 "panoramax.recorder.ready" = "Gereed voor de volgende opname";
 "panoramax.review.title" = "Panoramax-foto’s";
 "panoramax.review.local_count" = "%d lokale foto’s controleren";

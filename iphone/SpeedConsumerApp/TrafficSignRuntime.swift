@@ -1122,6 +1122,15 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
     let shadowEventV2: TrafficSignRecognitionEventV2?
     let passageUpdate: TrafficSignPassageFinalizerUpdate
     let displayObservation: TrafficSignDisplayObservation?
+    /// Independent OCR presentation evidence; never serialized into primary recognition/rules.
+    let supplementaryText: TrafficSignSupplementaryTextObservation?
+    let ocrPhase: TrafficSignSupplementaryOCRPhase
+    let ocrAnnotation: TrafficSignSupplementaryOCRAnnotation?
+    /// Latest actual read, including empty/failure, for immutable collection provenance.
+    let ocrAttemptAnnotation: TrafficSignSupplementaryOCRAnnotation?
+    /// A retry result updates supplementary evidence, never processes primary authority twice.
+    let supplementaryOCROnly: Bool
+    let ocrDiagnostic: String?
     let applicabilityDiagnostic: TSRApplicabilityDiagnostic?
     let roadPathDiagnostic: String?
     /// Raw recognition for the independently consented, non-authoritative annotation sink only.
@@ -1139,6 +1148,12 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         shadowEventV2: TrafficSignRecognitionEventV2? = nil,
         passageUpdate: TrafficSignPassageFinalizerUpdate = .idle,
         displayObservation: TrafficSignDisplayObservation? = nil,
+        supplementaryText: TrafficSignSupplementaryTextObservation? = nil,
+        ocrPhase: TrafficSignSupplementaryOCRPhase = .notRequired,
+        ocrAnnotation: TrafficSignSupplementaryOCRAnnotation? = nil,
+        ocrAttemptAnnotation: TrafficSignSupplementaryOCRAnnotation? = nil,
+        supplementaryOCROnly: Bool = false,
+        ocrDiagnostic: String? = nil,
         applicabilityDiagnostic: TSRApplicabilityDiagnostic? = nil,
         roadPathDiagnostic: String? = nil,
         annotationEvent: TrafficSignRecognitionEvent? = nil,
@@ -1158,6 +1173,12 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         self.shadowEventV2 = shadowEventV2
         self.passageUpdate = passageUpdate
         self.displayObservation = displayObservation
+        self.supplementaryText = supplementaryText
+        self.ocrPhase = ocrPhase
+        self.ocrAnnotation = ocrAnnotation
+        self.ocrAttemptAnnotation = ocrAttemptAnnotation
+        self.supplementaryOCROnly = supplementaryOCROnly
+        self.ocrDiagnostic = ocrDiagnostic
         self.applicabilityDiagnostic = applicabilityDiagnostic
         self.roadPathDiagnostic = roadPathDiagnostic
         self.annotationEvent = annotationEvent
@@ -1266,6 +1287,11 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     private let visualCalibrationProvider: @Sendable () -> VisualRoadCalibration?
     private let inferenceCropContext = CIContext(options: [.cacheIntermediates: false])
     private var applicabilityScope: TSRApplicabilityScope?
+    private var supplementaryTextTracker = TrafficSignSupplementaryTextTracker()
+    private var supplementaryOCRDiagnostic: String?
+    private var supplementaryOCRDeferralCounts: [String: Int] = [:]
+    private lazy var supplementaryPictogramCatalog = TrafficSignPresentationCatalog.bundled(
+        countryCode: verifiedPack.manifest.countries.first ?? "DE")
     private var fusionSessionGeneration: UInt64?
     private var fusionContextGeneration: UInt64?
 
@@ -1415,6 +1441,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         schedulingState.latestPendingStill = nil
         lock.unlock()
         roadPathSession?.invalidateOverlay()
+        inferenceQueue.async { [weak self] in self?.supplementaryTextTracker.reset() }
     }
 
     var metrics: TrafficSignRuntimeMetrics {
@@ -1577,6 +1604,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                         self.passageFinalizer.reset()
                         self.applicabilitySession.reset()
                         self.shadowRuntimeV2?.reset()
+                        self.supplementaryTextTracker.reset()
                         self.fusionSessionGeneration = item.snapshot.sessionGeneration
                         self.fusionContextGeneration = item.snapshot.contextGeneration
                     }
@@ -1602,6 +1630,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                         country: self.verifiedPack.manifest.countries.count == 1 ? self.verifiedPack.manifest.countries.first : nil)
                     if TSRApplicabilityConfiguration.defaultMode != "shadow", self.applicabilityScope != scope {
                         self.fusion.reset(); self.annotationFusion.reset(); self.passageFinalizer.reset()
+                        self.supplementaryTextTracker.reset()
                     }
                     self.applicabilityScope = scope
                     let applicability = self.applicabilitySession.evaluate(batch)
@@ -1747,25 +1776,143 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     self.discardStaleWorkItem()
                     return
                 }
-                self.complete(
-                    item: item,
-                    event: processed.event,
-                    shadowEventV2: processed.shadowEventV2,
-                    passageUpdate: processed.passageUpdate,
-                    displayObservation: TrafficSignDisplayObservation.accepted(
-                        from: processed.displayDetections, timestamp: item.timestampUTC,
-                        classifierCheckpointSHA256: self.verifiedPack.manifest.classifier?.sourceCheckpoint.sha256
-                    ),
-                    applicabilityDiagnostic: processed.applicabilityDiagnostic,
-                    roadPathDiagnostic: processed.roadPathDiagnostic,
-                    annotationEvent: processed.annotationEvent,
-                    collectionDetections: processed.collectionDetections
+                let displayObservation = TrafficSignDisplayObservation.accepted(
+                    from: processed.displayDetections, timestamp: item.timestampUTC,
+                    classifierCheckpointSHA256: self.verifiedPack.manifest.classifier?.sourceCheckpoint.sha256
                 )
+                let finishPrimary = { (phase: TrafficSignSupplementaryOCRPhase, annotation: TrafficSignSupplementaryOCRAnnotation?) in
+                    self.complete(item: item, event: processed.event, shadowEventV2: processed.shadowEventV2,
+                        passageUpdate: processed.passageUpdate, displayObservation: displayObservation,
+                        supplementaryText: annotation?.supplementaryText, ocrPhase: phase, ocrAnnotation: annotation,
+                        ocrDiagnostic: self.supplementaryOCRDiagnostic, applicabilityDiagnostic: processed.applicabilityDiagnostic,
+                        roadPathDiagnostic: processed.roadPathDiagnostic, annotationEvent: processed.annotationEvent,
+                        collectionDetections: processed.collectionDetections)
+                }
+                switch self.prepareSupplementaryOCR(item: item, processed: processed) {
+                case .notRequired:
+                    finishPrimary(.notRequired, nil)
+                case .cached(let annotation):
+                    finishPrimary(.completed, annotation)
+                case .perform(let attempt):
+                    // Preserve the initial numeric read's publication boundary.
+                    // Later, clearer reads update only supplementary evidence.
+                    let waitsForInitialRead = attempt.number == 1 && attempt.primary.speedKmh != nil
+                    finishPrimary(waitsForInitialRead ? .pending : (attempt.cachedAnnotation == nil ? .notRequired : .completed),
+                        attempt.cachedAnnotation)
+                    let actualRead = self.performSupplementaryOCR(item: item, attempt: attempt)
+                    self.deliverOCRCompletion(item: item, processed: processed,
+                        displayObservation: displayObservation,
+                        annotation: self.supplementaryTextTracker.presentationAnnotation(at: item.timestampUTC),
+                        attemptAnnotation: actualRead, supplementaryOnly: !waitsForInitialRead)
+                }
             } catch {
                 self.roadPathSession?.invalidatePreparedOverlay(frameId: item.frameId)
                 self.handleInferenceFailure(item: item, error: error)
             }
         }
+    }
+
+    /// Read only a native primary-plus-lower rectangle, after primary admission.
+    /// OCR publishes a separate restriction-text annotation. It cannot modify
+    /// fusion, passages, resolver assertions, or primary traffic-sign semantics.
+    private func prepareSupplementaryOCR(
+        item: WorkItem,
+        processed: SuccessfulProcessingResult
+    ) -> TrafficSignSupplementaryTextTracker.Admission {
+        supplementaryOCRDiagnostic = nil
+        guard item.source == .liveFrame, item.snapshot.conditions.appIsActive,
+              canDeliverCallback, isWorkItemStillCurrent(item) else {
+            supplementaryTextTracker.reset()
+            return .notRequired
+        }
+        let candidate = processed.event.candidate
+        let numeric = candidate.map {
+            [TrafficSignSemanticKind.maximumSpeed.rawValue, TrafficSignSemanticKind.zoneStart.rawValue].contains($0.semanticKind)
+                && $0.unit == "km/h" && ($0.value ?? 0) > 0
+        } ?? false
+        let numericDetection = numeric ? processed.displayDetections.first { detection in
+            detection.rawClassId == candidate?.rawClassId && detection.boundingBox == candidate?.boundingBox
+                && detection.semantic.value == candidate?.value && detection.semantic.kind.rawValue == candidate?.semanticKind
+        } : nil
+        let acceptedDisplay = TrafficSignDisplayObservation.acceptedDetection(from: processed.displayDetections)
+        let pictogram = acceptedDisplay.flatMap { detection -> TrafficSignDetection? in
+            guard let catalog = supplementaryPictogramCatalog,
+                  catalog.classifierCheckpointSHA256 == verifiedPack.manifest.classifier?.sourceCheckpoint.sha256,
+                  let sign = catalog.sign(for: detection.rawClassId), sign.displayEligible,
+                  sign.imagePath != nil else { return nil }
+            return detection
+        }
+        let primary = (numericDetection ?? pictogram).map {
+            TrafficSignSupplementaryTextTracker.Primary(classID: $0.rawClassId,
+                speedKmh: numericDetection == nil ? nil : $0.semantic.value, box: $0.boundingBox,
+                physicalSignID: numericDetection == nil ? nil : (processed.event.applicabilityDecision?.trackId ?? candidate?.trackId))
+        }
+        let dimensions = Self.orientedDimensions(for: item.image, orientation: item.orientation)
+        let crop = primary.flatMap { TrafficSignSupplementaryOCRGeometry.cropRect(primaryBox: $0.box,
+            imageWidth: dimensions.width, imageHeight: dimensions.height) }
+        let thermal = ProcessInfo.processInfo.thermalState
+        let canRead = item.snapshot.conditions.thermalState != .critical && thermal != .critical
+        if let primary, !canRead || crop == nil {
+            let reason = canRead ? "native_roi_too_small_or_clipped" : "thermal_deferred"
+            let count = (supplementaryOCRDeferralCounts[reason] ?? 0) + 1
+            supplementaryOCRDeferralCounts[reason] = count
+            if count == 1 || count % 20 == 0 {
+                supplementaryOCRDiagnostic = "ocr_deferred reason=\(reason) count=\(count) class=\(primary.classID)"
+            }
+        }
+        return supplementaryTextTracker.begin(primary: primary, frameID: item.frameId, at: item.timestampUTC,
+            confirmed: processed.event.state == .confirmed, evidenceFrames: candidate?.evidenceFrames ?? 0,
+            nativeROISize: crop.map { CGSize(width: $0.width, height: $0.height / 2) }, canRead: canRead)
+    }
+
+    private func performSupplementaryOCR(item: WorkItem, attempt: TrafficSignSupplementaryTextTracker.Attempt)
+        -> TrafficSignSupplementaryOCRAnnotation? {
+        guard canDeliverCallback, isWorkItemStillCurrent(item) else { return nil }
+        let started = ProcessInfo.processInfo.systemUptime
+        let thermal = ProcessInfo.processInfo.thermalState
+        guard thermal != .critical,
+              let crop = supplementaryOCRCrop(image: item.image, orientation: item.orientation, primaryBox: attempt.primary.box) else {
+            supplementaryTextTracker.deferAttempt(attempt)
+            supplementaryOCRDiagnostic = "ocr_deferred reason=thermal_or_crop_changed attempt=\(attempt.number)"
+            return nil
+        }
+        var read = TrafficSignSupplementaryOCRRead(rawText: nil,
+            modelVersion: TrafficSignSupplementaryOCR.shared.modelVersion, readStatus: .failed)
+        do { read = try TrafficSignSupplementaryOCR.shared.read(in: crop) }
+        catch {
+            read = TrafficSignSupplementaryOCRRead(rawText: nil,
+                modelVersion: TrafficSignSupplementaryOCR.shared.modelVersion, readStatus: .failed)
+            TrafficSignRuntimeLog.recoveredAuxiliaryFailure(stage: "supplementary_text", error: error)
+        }
+        guard canDeliverCallback, isWorkItemStillCurrent(item) else { return nil }
+        let dimensions = Self.orientedDimensions(for: item.image, orientation: item.orientation)
+        let roi = TrafficSignSupplementaryOCRGeometry.cropRect(primaryBox: attempt.primary.box,
+            imageWidth: dimensions.width, imageHeight: dimensions.height).flatMap { rect -> TrafficSignNormalizedRect? in
+                guard let plate = read.plateRect else { return nil }
+                return TrafficSignNormalizedRect(x: (rect.minX + Double(plate.x)) / Double(dimensions.width),
+                    y: (rect.minY + Double(plate.y)) / Double(dimensions.height),
+                    width: Double(plate.width) / Double(dimensions.width), height: Double(plate.height) / Double(dimensions.height))
+            }
+        supplementaryOCRDiagnostic = TrafficSignSupplementaryOCRDiagnostics.attempt(read: read,
+            classID: attempt.primary.classID, frameID: item.frameId, width: crop.width, height: crop.height / 2,
+            number: attempt.number, durationMilliseconds: (ProcessInfo.processInfo.systemUptime - started) * 1000)
+        return supplementaryTextTracker.finish(attempt, read: read, ocrBoundingBox: roi)
+    }
+
+    private func supplementaryOCRCrop(image: Image, orientation: CGImagePropertyOrientation,
+                                      primaryBox: TrafficSignNormalizedRect) -> CGImage? {
+        let source: CIImage
+        switch image {
+        case .pixelBuffer(let pixel): source = CIImage(cvPixelBuffer: pixel)
+        case .cgImage(let image): source = CIImage(cgImage: image)
+        }
+        let upright = source.oriented(forExifOrientation: Int32(orientation.rawValue))
+        let extent = upright.extent
+        guard let rect = TrafficSignSupplementaryOCRGeometry.cropRect(primaryBox: primaryBox,
+            imageWidth: Int(extent.width), imageHeight: Int(extent.height)) else { return nil }
+        let native = CGRect(x: extent.minX + rect.minX, y: extent.maxY - rect.maxY,
+                            width: rect.width, height: rect.height)
+        return inferenceCropContext.createCGImage(upright, from: native)
     }
 
     private func processShadowV2(
@@ -1965,6 +2112,10 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         shadowEventV2: TrafficSignRecognitionEventV2?,
         passageUpdate: TrafficSignPassageFinalizerUpdate,
         displayObservation: TrafficSignDisplayObservation?,
+        supplementaryText: TrafficSignSupplementaryTextObservation? = nil,
+        ocrPhase: TrafficSignSupplementaryOCRPhase = .notRequired,
+        ocrAnnotation: TrafficSignSupplementaryOCRAnnotation? = nil,
+        ocrDiagnostic: String? = nil,
         applicabilityDiagnostic: TSRApplicabilityDiagnostic? = nil,
         roadPathDiagnostic: String? = nil,
         annotationEvent: TrafficSignRecognitionEvent? = nil,
@@ -2015,22 +2166,15 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 shadowEventV2: shadowEventV2,
                 passageUpdate: passageUpdate,
                 displayObservation: displayObservation,
+                supplementaryText: supplementaryText,
+                ocrPhase: ocrPhase,
+                ocrAnnotation: ocrAnnotation,
+                ocrDiagnostic: ocrDiagnostic,
                 applicabilityDiagnostic: applicabilityDiagnostic,
                 roadPathDiagnostic: roadPathDiagnostic,
                 annotationEvent: annotationEvent,
                 collectionDetections: collectionDetections,
-                collectionFrame: item.source == .liveFrame ? SignCollectionFrame(token: item.frameId) {
-                    let source: CIImage
-                    switch item.image { case .pixelBuffer(let buffer): source = CIImage(cvPixelBuffer: buffer); case .cgImage(let image): source = CIImage(cgImage: image) }
-                    let upright = source.oriented(forExifOrientation: Int32(item.orientation.rawValue))
-                    let color = CGColorSpace(name: CGColorSpace.sRGB)!
-                    let ci = CIContext(options: [.cacheIntermediates: false])
-                    guard let image = ci.createCGImage(upright, from: upright.extent, format: .RGBA8, colorSpace: color),
-                          let rgb = CGContext(data: nil, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: image.width * 4,
-                                              space: color, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else { throw SignCollectionError.storage }
-                    rgb.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
-                    guard let result = rgb.makeImage() else { throw SignCollectionError.storage }; return result
-                } : nil
+                collectionFrame: makeCollectionFrame(item)
             )
             callbackQueue.async { [weak self, eventHandler] in
                 guard self?.canDeliverCallback == true else { return }
@@ -2038,6 +2182,44 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             }
         }
         if let next { perform(next) }
+    }
+
+    private func deliverOCRCompletion(item: WorkItem, processed: SuccessfulProcessingResult,
+                                      displayObservation: TrafficSignDisplayObservation?,
+                                      annotation: TrafficSignSupplementaryOCRAnnotation?,
+                                      attemptAnnotation: TrafficSignSupplementaryOCRAnnotation?,
+                                      supplementaryOnly: Bool) {
+        guard canDeliverCallback, isWorkItemStillCurrent(item) else { return }
+        let emission = TrafficSignRuntimeEmission(event: processed.event, frameContext: item.snapshot.context,
+            frameSpeedKmh: item.snapshot.conditions.speedKmh, sessionGeneration: item.snapshot.sessionGeneration,
+            contextGeneration: item.snapshot.contextGeneration, captureSessionId: item.snapshot.captureSessionId,
+            shadowEventV2: processed.shadowEventV2, passageUpdate: processed.passageUpdate,
+            displayObservation: displayObservation, supplementaryText: annotation?.supplementaryText,
+            ocrPhase: .completed, ocrAnnotation: annotation, ocrAttemptAnnotation: attemptAnnotation,
+            supplementaryOCROnly: supplementaryOnly, ocrDiagnostic: supplementaryOCRDiagnostic,
+            applicabilityDiagnostic: processed.applicabilityDiagnostic,
+            roadPathDiagnostic: processed.roadPathDiagnostic, annotationEvent: processed.annotationEvent,
+            collectionDetections: processed.collectionDetections, collectionFrame: makeCollectionFrame(item))
+        callbackQueue.async { [weak self, eventHandler] in
+            guard let self, self.canDeliverCallback, self.isWorkItemStillCurrent(item) else { return }
+            eventHandler(emission)
+        }
+    }
+
+    private func makeCollectionFrame(_ item: WorkItem) -> SignCollectionFrame? {
+        guard item.source == .liveFrame else { return nil }
+        return SignCollectionFrame(token: item.frameId) {
+            let source: CIImage
+            switch item.image { case .pixelBuffer(let buffer): source = CIImage(cvPixelBuffer: buffer); case .cgImage(let image): source = CIImage(cgImage: image) }
+            let upright = source.oriented(forExifOrientation: Int32(item.orientation.rawValue))
+            let color = CGColorSpace(name: CGColorSpace.sRGB)!
+            let ci = CIContext(options: [.cacheIntermediates: false])
+            guard let image = ci.createCGImage(upright, from: upright.extent, format: .RGBA8, colorSpace: color),
+                  let rgb = CGContext(data: nil, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: image.width * 4,
+                      space: color, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else { throw SignCollectionError.storage }
+            rgb.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            guard let result = rgb.makeImage() else { throw SignCollectionError.storage }; return result
+        }
     }
 
     private func handleInferenceFailure(item: WorkItem, error: Error) {

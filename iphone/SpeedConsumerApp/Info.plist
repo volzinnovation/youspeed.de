@@ -32,7 +32,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>YouSpeed uses one rear-camera session for local Dashcam video, on-device traffic-sign recognition, and Panoramax pictures that you review and upload later.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>YouSpeed uses gravity locally to show camera tilt while stopped.</string>
+	<string>YouSpeed uses gravity locally to keep controls available when the phone is tilted and to show camera alignment.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>YouSpeed briefly listens on your device after recognizing a speed limit so you can say Wrong, and captures spoken speed corrections.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

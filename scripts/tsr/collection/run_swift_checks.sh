@@ -12,6 +12,7 @@ swiftc -module-cache-path "$collection_output_root/swift-module-cache" \
   "$collection_repo_root/iphone/SpeedConsumerApp/SignCollectionInterest.swift" \
   "$collection_repo_root/iphone/SpeedConsumerApp/SignCollectionInterestTransport.swift" \
   "$collection_repo_root/iphone/SpeedConsumerApp/SignCollectionObserver.swift" \
+  "$collection_repo_root/iphone/SpeedConsumerApp/SupplementaryOCRAnnotation.swift" \
   "$collection_repo_root/scripts/tsr/collection/transport_checks.swift" \
   "$collection_repo_root/scripts/tsr/collection/repeat_crop_checks.swift" \
   "$collection_repo_root/scripts/tsr/collection/interest_checks.swift" \

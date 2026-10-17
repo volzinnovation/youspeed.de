@@ -177,10 +177,13 @@ internal class SignCollectionCoordinator(private val context: Context, private v
             } }
         }
     }
-    fun observe(event: TrafficSignRecognitionEvent, detections: List<TrafficSignDetection>, location: Location?, frame: SignCollectionFrame? = null) {
-        if (closed || !enabled || !authorized || !cameraActive || event.source != TrafficSignInputSource.LIVE_FRAME || framePending) { frame?.close(); return }
+    fun observe(event: TrafficSignRecognitionEvent, detections: List<TrafficSignDetection>, location: Location?, frame: SignCollectionFrame? = null,
+        ocrAnnotation: TrafficSignSupplementaryTextAnnotation? = null) {
+        if (closed || !enabled || !authorized || !cameraActive || event.source != TrafficSignInputSource.LIVE_FRAME) { frame?.close(); return }
+        if (framePending) { frame?.close(); ocrAnnotation?.let { updateSupplementaryOCR(it) }; return }
         val id = session ?: run { frame?.close(); return }
         val cropRequested = cropsAuthorized
+        val supplementaryOCR = ocrAnnotation?.let(::collectionOCRAnnotation)
         framePending = true
         // Snapshot mutable Location data for this frame before asynchronous storage.
         val framePosition = position(location?.let { Location(it) }, event.frameTimestampUtc)
@@ -201,6 +204,10 @@ internal class SignCollectionCoordinator(private val context: Context, private v
             val country = modelPack.modelPack.countries.firstOrNull { Regex("^[A-Z]{2}$").matches(it) } ?: "unknown"
             val position = framePosition
             val eligible = detections.filter { it.candidate.rawScore.isFinite() && it.candidate.rawScore >= (modelPack.modelPack.classFor(it.candidate.rawClassId)?.threshold ?: modelPack.modelPack.thresholds.provisional) }.take(64)
+            val annotationMatches = eligible.count { detection ->
+                val candidate = detection.candidate; val box = candidate.boundingBox
+                supplementaryOCR?.matches(candidate.rawClassId, candidate.semantic.value, listOf(box.x, box.y, box.width, box.height)) == true
+            }
             val presentationMatches = event.candidate?.let { candidate -> eligible.count { it.candidate.rawLabel == candidate.rawLabel && it.candidate.boundingBox.intersectionOverUnion(candidate.boundingBox) >= 0.5 } } ?: 0
             val mapped = eligible.map { detection ->
                 val d = detection.candidate; val box = d.boundingBox
@@ -226,10 +233,13 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                     })
                 }
                 val presentation = event.candidate?.takeIf { presentationMatches == 1 && it.rawLabel == d.rawLabel && it.boundingBox.intersectionOverUnion(box) >= 0.5 }?.trackId
-                SignCollectionObserver.Detection(modelPack.manifestSHA256 + ":" + d.rawLabel, listOf(box.x,box.y,box.width,box.height), payload, presentation)
+                val annotation = supplementaryOCR?.takeIf { annotationMatches == 1 &&
+                    it.matches(d.rawClassId, d.semantic.value, listOf(box.x,box.y,box.width,box.height)) }
+                SignCollectionObserver.Detection(modelPack.manifestSHA256 + ":" + d.rawLabel,
+                    listOf(box.x,box.y,box.width,box.height), payload, presentation, annotation)
             }
             var cropCount = 0
-            observer.observe(event.frameTimestampUtc, mapped, captureCrop = { candidate ->
+            observer.observe(event.frameTimestampUtc, mapped, frameId = event.frameId, captureCrop = { candidate ->
                 if (!cropRequested || frame == null || cropCount >= 4 || candidate.selection?.permits(Instant.now()) == false) SignCollectionObserver.CropCaptureResult.SKIPPED
                 else runCatching {
                     cropCount++
@@ -240,6 +250,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                         store.installationId, store.collectionEpoch, "detector", candidate.frameAt, frame.token, "passed", "metadata-strip-1", claim,
                         vehiclePosition = framePosition)
                     candidate.selection?.let { metadata = JsonObject(metadata + ("collection_selection" to it.wire)) }
+                    candidate.supplementaryOCR?.let { metadata = JsonObject(metadata + ("supplementary_ocr" to it.wire)) }
                     store.enqueueAutomaticCrop(metadata, crop.bytes)
                     SignCollectionObserver.CropCaptureResult.STORED
                 }.getOrElse {
@@ -257,8 +268,28 @@ internal class SignCollectionCoordinator(private val context: Context, private v
             }
           } finally { frame?.close(); main.post { framePending = false } }
         }
+        ocrAnnotation?.let { updateSupplementaryOCR(it) }
+    }
+    fun updateSupplementaryOCR(annotation: TrafficSignSupplementaryTextAnnotation) {
+        if (closed || !enabled || !authorized || !cameraActive || session == null) return
+        val value = collectionOCRAnnotation(annotation) ?: return
+        perform { store ->
+            if (!store.isAuthorized("sign_metadata", SignCollectionCapabilities.metadataDisclosure)) return@perform
+            observer.recordSupplementaryOCR(value, Instant.now()) { event ->
+                store.enqueue("media_status", event, SignCollectionCapabilities.metadataDisclosure)
+            }
+        }
     }
     fun freezeCorrection(attempt: String, presentation: String?) { perform { observer.freeze(attempt, presentation) } }
+    private fun collectionOCRAnnotation(source: TrafficSignSupplementaryTextAnnotation): SupplementaryOCRAnnotation? = runCatching {
+        val box = source.primaryBoundingBox
+        SupplementaryOCRAnnotation(source.primaryClassId, source.primarySpeedKmh, source.physicalSignId, source.frameId,
+            source.sourceObservedAt, source.firstSeenAt, source.rawText, SupplementaryOCRAnnotation.Status.valueOf(source.status.name),
+            SupplementaryOCRAnnotation.Box(box.x, box.y, box.width, box.height),
+            source.ocrBoundingBox?.let { SupplementaryOCRAnnotation.Box(it.x, it.y, it.width, it.height) },
+            source.engine, source.modelVersion,
+            source.window?.let { SupplementaryOCRAnnotation.ParsedTimeWindow(it.startMinutes, it.endMinutes) })
+    }.getOrNull()
     fun correct(attempt: String, modality: String) { perform { store -> observer.correction(attempt, modality, Instant.now())?.let { store.enqueue("correction", it, SignCollectionCapabilities.metadataDisclosure) } } }
     private fun executeStorage(action: () -> Unit) = synchronized(storageLifecycle) {
         if (!closed) storage.execute(action)

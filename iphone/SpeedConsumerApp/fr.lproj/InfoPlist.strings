@@ -3,4 +3,4 @@
 "NSCameraUsageDescription" = "YouSpeed utilise une seule session de camera arriere pour la video dashcam locale, la reconnaissance des panneaux sur l'appareil et les photos Panoramax que vous verifiez et envoyez plus tard.";
 "NSMicrophoneUsageDescription" = "YouSpeed écoute brièvement sur votre appareil après une limitation reconnue pour que vous puissiez dire Faux, et saisit les corrections vocales.";
 "NSSpeechRecognitionUsageDescription" = "YouSpeed reconnaît les corrections vocales de vitesse et Faux localement sur votre appareil.";
-"NSMotionUsageDescription" = "YouSpeed utilise la gravité localement pour afficher l’inclinaison de la caméra à l’arrêt.";
+"NSMotionUsageDescription" = "YouSpeed utilise la gravité localement pour garder les commandes accessibles lorsque le téléphone est incliné et afficher l’alignement de la caméra.";

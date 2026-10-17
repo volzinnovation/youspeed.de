@@ -440,6 +440,7 @@ function renderPage(locale) {
   const nav = [...navLinks(content),
     [rootRelative(locale, referenceRoute(locale, "signs")), referenceCopy[locale].signsNav],
     [rootRelative(locale, referenceRoute(locale, "fines")), referenceCopy[locale].finesNav],
+    ["https://panoramax.youspeed.de", "Panoramax"],
   ]
     .map(([href, label]) => `<a href="${href}">${escapeHtml(label)}</a>`)
     .join("");

@@ -1,5 +1,26 @@
 import Foundation
 
+/// Screen-plane angle to horizontal, independent of the selected screen rotation.
+enum DrivingControlPosturePolicy {
+    static func angleDegrees(x: Double, y: Double, z: Double) -> Double? {
+        guard x.isFinite, y.isFinite, z.isFinite else { return nil }
+        let length = sqrt(x * x + y * y + z * z)
+        guard (0.5...1.5).contains(length) else { return nil }
+        // Core Motion points downward: face up is 0°, upright 90°, face down 180°.
+        return acos(max(-1, min(1, -z / length))) * 180 / .pi
+    }
+
+    static func isUpright(angleDegrees: Double?) -> Bool {
+        guard let angleDegrees, angleDegrees.isFinite else { return false }
+        // Include exact boundaries despite floating-point gravity conversion.
+        return angleDegrees >= 80 - 1e-9 && angleDegrees <= 100 + 1e-9
+    }
+
+    static func controlsAllowed(speedControlsAllowed: Bool, angleDegrees: Double?) -> Bool {
+        speedControlsAllowed || !isUpright(angleDegrees: angleDegrees)
+    }
+}
+
 struct DrivingControlAvailability {
     static let controlsSpeedThresholdKmh = 4.0
     let controlsAllowed: Bool

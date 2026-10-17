@@ -10,12 +10,15 @@ final class SignCollectionObserver {
         let box: [Double]
         let payload: [String: Any]
         let presentationTrack: String?
+        var supplementaryOCR: SupplementaryOCRAnnotation? = nil
+        var commitReady = true
     }
     struct CropCandidate {
         let observationID: String
         let frameAt: Date
         let box: [Double]
         var selection: SignCollectionInterestSelection? = nil
+        var supplementaryOCR: SupplementaryOCRAnnotation? = nil
     }
     enum CropCaptureResult { case stored, failed, skipped }
     // Six regular samples plus two reserved for a substantially larger view.
@@ -36,13 +39,31 @@ final class SignCollectionObserver {
         var lastCropAttempt: Date?
         var largestCropArea = 0.0
         var selection: SignCollectionInterestSelection? = nil
+        var supplementaryOCR: SupplementaryOCRAnnotation? = nil
     }
     private var tracks: [Track] = []
     private var presentations: [String: String] = [:]
     private var attempts: [String: String] = [:]
+    private struct SourceAssociation {
+        let trackID: String
+        let modelLabel: String
+        let frameAt: Date
+        let speedKmh: Int?
+        let box: [Double]
+    }
+    // Geometry/provenance only. Never retain camera buffers for late OCR.
+    private var sourceFrames: [String: [SourceAssociation]] = [:]
+    private var sourceOrder: [String] = []
+    private var committedIDs = Set<String>()
+    private var recordedOCR = Set<String>()
+    private var recordedOrder: [String] = []
     private var frameTime: Date?
-    func reset() { tracks.removeAll(); presentations.removeAll(); attempts.removeAll(); frameTime = nil }
-    func observe(at: Date, detections: [Detection],
+    func reset() {
+        tracks.removeAll(); presentations.removeAll(); attempts.removeAll(); frameTime = nil
+        sourceFrames.removeAll(); sourceOrder.removeAll(); committedIDs.removeAll()
+        recordedOCR.removeAll(); recordedOrder.removeAll()
+    }
+    func observe(at: Date, detections: [Detection], frameID: String? = nil,
                  captureCrop: ((CropCandidate) -> CropCaptureResult)? = nil,
                  selectCrop: (([String: Any], String) -> SignCollectionInterestSelection)? = nil,
                  commit: ([String: Any]) throws -> Void) throws {
@@ -63,9 +84,11 @@ final class SignCollectionObserver {
                 selected = tracks.count - 1
             }
             tracks[selected].last = at; tracks[selected].box = detection.box; tracks[selected].frames += 1
+            if let annotation = detection.supplementaryOCR { tracks[selected].supplementaryOCR = annotation }
             let track = tracks[selected]; used.insert(track.id)
-            if !track.committed, track.frames >= 2, (at.timeIntervalSince(track.first) * 1000).rounded() >= 100 {
+            if detection.commitReady, !track.committed, track.frames >= 2, (at.timeIntervalSince(track.first) * 1000).rounded() >= 100 {
                 var event = detection.payload
+                if let annotation = track.supplementaryOCR { event["supplementary_ocr"] = annotation.wire }
                 event["event_id"] = track.id; event["first_seen_at"] = SignCollectionJSON.utc(track.first)
                 event["last_seen_at"] = SignCollectionJSON.utc(at); event["representative_frame_at"] = SignCollectionJSON.utc(at)
                 event["duration_ms"] = Int((at.timeIntervalSince(track.first) * 1000).rounded())
@@ -79,6 +102,7 @@ final class SignCollectionObserver {
                 }
                 try commit(event) // Mark only after the durable transaction succeeds.
                 tracks[selected].committed = true
+                committedIDs.insert(track.id)
             }
             if tracks[selected].committed, let captureCrop, tracks[selected].selection?.permits(at: at) != false {
                 let saved = tracks[selected]
@@ -88,7 +112,8 @@ final class SignCollectionObserver {
                 } ?? true
                 if intervalReady, saved.cropCount < Self.maximumCropLimit,
                    saved.cropCount < Self.regularCropLimit || area >= saved.largestCropArea * Self.improvementAreaRatio {
-                    let result = captureCrop(CropCandidate(observationID: saved.id, frameAt: at, box: detection.box, selection: saved.selection))
+                    let result = captureCrop(CropCandidate(observationID: saved.id, frameAt: at, box: detection.box,
+                        selection: saved.selection, supplementaryOCR: saved.supplementaryOCR))
                     // Missing frames/per-frame capacity consume neither a slot nor
                     // the interval. Actual failures retry at the bounded cadence.
                     if result != .skipped { tracks[selected].lastCropAttempt = at }
@@ -98,13 +123,52 @@ final class SignCollectionObserver {
                     }
                 }
             }
+            if let frameID, let classification = detection.payload["classification"] as? [String: Any],
+               let label = classification["model_label"] as? String {
+                if sourceFrames[frameID] == nil {
+                    if sourceOrder.count >= 64 {
+                        sourceFrames.removeValue(forKey: sourceOrder.removeFirst())
+                    }
+                    sourceOrder.append(frameID); sourceFrames[frameID] = []
+                }
+                sourceFrames[frameID, default: []].append(.init(trackID: track.id, modelLabel: label, frameAt: at,
+                    speedKmh: classification["value"] as? Int, box: detection.box))
+            }
             if tracks[selected].committed, let presentation = detection.presentationTrack {
                 if presentations.count >= 512, presentations[presentation] == nil { presentations.removeAll() }
                 presentations[presentation] = track.id
             }
         }
+        committedIDs.formIntersection(Set(sourceFrames.values.flatMap { $0.map(\.trackID) } + tracks.map(\.id)))
         // A sign may leave the frame before its feedback finishes. Retain the
         // bounded association for the displayed sign until session/privacy reset.
+    }
+    /// A late completion must not count as another detection or rewrite an
+    /// immutable sighting. Keep every actual source-frame attempt separately.
+    func recordSupplementaryOCR(_ annotation: SupplementaryOCRAnnotation, at: Date,
+                                commit: ([String: Any]) throws -> Void) throws {
+        let identity = try SignCollectionJSON.canonical([annotation.physicalSignID, annotation.frameID,
+                                                        annotation.engine, annotation.modelVersion])
+        let attemptID = SignCollectionJSON.sha256(Data(identity.utf8))
+        guard !recordedOCR.contains(attemptID) else { return }
+        let matches = (sourceFrames[annotation.frameID] ?? []).filter {
+            annotation.observedAt == $0.frameAt && annotation.matches(modelLabel: $0.modelLabel, speedKmh: $0.speedKmh, box: $0.box)
+        }
+        let association = matches.count == 1 ? matches.first : nil
+        if let association, let index = tracks.firstIndex(where: { $0.id == association.trackID }) {
+            tracks[index].supplementaryOCR = annotation
+        }
+        let target = association.flatMap { committedIDs.contains($0.trackID) ? $0.trackID : nil }
+        let event: [String: Any] = ["schema_version": 1, "event_id": SignCollectionJSON.uuid(),
+            "created_at": SignCollectionJSON.utc(max(at, annotation.observedAt)), "crop_id": NSNull(),
+            "status": "supplementary_ocr_observed", "observation_id": target as Any? ?? NSNull(),
+            "association_status": target == nil ? "unresolved" : "exact", "ocr_attempt_id": attemptID,
+            "supplementary_ocr": annotation.wire]
+        try commit(event)
+        if recordedOrder.count >= 1024 { recordedOCR.remove(recordedOrder.removeFirst()) }
+        recordedOrder.append(attemptID); recordedOCR.insert(attemptID)
+        // Bound IDs together with retained source frames and active tracks.
+        committedIDs.formIntersection(Set(sourceFrames.values.flatMap { $0.map(\.trackID) } + tracks.map(\.id)))
     }
     func freeze(attempt: String, presentation: String?) {
         if attempts.count >= 32 { attempts.removeAll() }

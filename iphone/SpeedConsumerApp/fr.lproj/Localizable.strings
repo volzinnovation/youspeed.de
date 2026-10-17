@@ -175,6 +175,8 @@
 "panoramax.recorder.camera_unavailable" = "Caméra indisponible";
 "panoramax.recorder.start" = "Démarrer l’enregistrement";
 "panoramax.recorder.stop" = "Arrêter l’enregistrement";
+"panoramax.capture.start" = "Démarrer la prise de photos";
+"panoramax.capture.stop" = "Arrêter la prise de photos";
 "panoramax.recorder.ready" = "Prêt pour le prochain enregistrement";
 "panoramax.review.title" = "Images Panoramax";
 "panoramax.review.local_count" = "%d images locales à vérifier";

@@ -97,6 +97,10 @@ sealed interface TrafficSignBackendResult {
         val displayDetections: List<TrafficSignDetection> = listOfNotNull(detection),
         val diagnostics: TrafficSignInferenceDiagnostics? = null,
         val collectionFrame: SignCollectionFrame? = null,
+        val supplementaryTextRecognition: TrafficSignSupplementaryTextRecognition? = null,
+        val supplementaryImageWidth: Int? = null,
+        val supplementaryImageHeight: Int? = null,
+        val supplementaryPictogramClassIds: Set<String>? = null,
     ) : TrafficSignBackendResult
 
     data class Unavailable(
@@ -144,10 +148,18 @@ data class TrafficSignOrchestrationOutput(
     val collectionDetections: List<TrafficSignDetection> = emptyList(),
     val collectionFrame: SignCollectionFrame? = null,
     val roadPathDiagnostic: String? = null,
+    val ocrPhase: TrafficSignSupplementaryOCRPhase = TrafficSignSupplementaryOCRPhase.NOT_REQUIRED,
+    val ocrAnnotation: TrafficSignSupplementaryTextAnnotation? = null,
+    val ocrAttemptAnnotation: TrafficSignSupplementaryTextAnnotation? = ocrAnnotation,
+    val supplementaryOCROnly: Boolean = false,
+    val ocrPrimaryPresent: Boolean = false,
+    val ocrPresentationUpdate: Boolean = true,
 )
 
 interface TrafficSignRecognitionObserver {
     fun onRecognition(output: TrafficSignOrchestrationOutput)
+
+    fun onSupplementaryTextPending(event: TrafficSignRecognitionEvent, generation: Long) = Unit
 
     fun onSpeedOverrideChanged(current: TrafficSignSpeedOverride?) = Unit
 }
@@ -189,6 +201,9 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
 
     private var nextInferenceId = 1L
     private var activeInference: ActiveInference<F>? = null
+    private val supplementaryTracker = TrafficSignSupplementaryTextTracker()
+    private var supplementaryScopeEpoch: Long? = null
+    private var supplementaryOCRInFlight = false
     private var lastAcceptedTimestampNanos: Long? = null
     private var currentSourceSignature: TrafficSignRuntimeSourceSignature? = null
     private var currentRoadContextKey: RoadContextKey? = null
@@ -370,6 +385,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             fusionEngine.reset(); annotationFusion.reset()
             passageFinalizer.reset()
             applicabilitySession.reset()
+            supplementaryTracker.reset()
             hadOverride
         }
         if (clearedOverride) observer.onSpeedOverrideChanged(null)
@@ -521,6 +537,106 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
     }
 
     private fun complete(inferenceId: Long, backendResult: TrafficSignBackendResult) {
+        var prepared: CreatedEvent? = null
+        var source: ActiveInference<F>? = null
+        var admission = TrafficSignSupplementaryTextTracker.Admission(null, null, null)
+        synchronized(lock) {
+            val active = activeInference
+            if (active != null && active.inferenceId == inferenceId && !closed) {
+                source = active
+                prepared = createEventLocked(active, backendResult)
+                val created = requireNotNull(prepared)
+                val result = backendResult as? TrafficSignBackendResult.Recognition
+                if (created.contextIsCurrent && created.qualifiedAnalyzedFrame && result != null &&
+                    !active.accepted.driveSessionId.isNullOrBlank()) {
+                    if (supplementaryScopeEpoch != active.accepted.scopeEpoch) {
+                        supplementaryTracker.reset(); supplementaryScopeEpoch = active.accepted.scopeEpoch
+                    }
+                    val numeric = created.supplementaryCandidate?.takeIf {
+                        created.event.candidate?.numericSupplementarySpeed() != null
+                    }
+                    val pictogram = TrafficSignDisplayPolicy.accepted(created.displayDetections.filter {
+                        modelPack.classFor(it.candidate.rawClassId)?.signRole != TrafficSignRole.SUPPLEMENTARY_PLATE &&
+                            (result.supplementaryPictogramClassIds?.contains(it.candidate.rawClassId) != false)
+                    })
+                    val primary = numeric ?: pictogram
+                    val physical = if (numeric != null) created.event.candidate?.trackId else primary?.let { candidate ->
+                        created.applicabilityDiagnostic?.tracks?.firstOrNull { track ->
+                            track.samples.lastOrNull()?.candidate?.let {
+                                it.rawClassId == candidate.rawClassId && it.box.let { b ->
+                                    NormalizedTrafficSignBoundingBox(b.x, b.y, b.width, b.height).intersectionOverUnion(candidate.boundingBox) >= .99
+                                }
+                            } == true
+                        }?.trackId
+                    }
+                    admission = supplementaryTracker.begin(primary, physical, active.accepted.metadata.frameId,
+                        active.accepted.metadata.capturedAtUtc,
+                        TrafficSignSupplementaryScope(active.accepted.contextGeneration, requireNotNull(active.accepted.driveSessionId)),
+                        created.event.state == TrafficSignRecognitionState.CONFIRMED, created.event.candidate?.evidenceFrames ?: 0,
+                        result.supplementaryImageWidth ?: active.accepted.frame.widthPixels,
+                        result.supplementaryImageHeight ?: active.accepted.frame.heightPixels,
+                        thermallyDeferred = supplementaryOCRInFlight || result.supplementaryTextRecognition == null ||
+                            conditionsSnapshot().thermalPressure == TrafficSignThermalPressure.CRITICAL)
+                    if (admission.request != null) supplementaryOCRInFlight = true
+                }
+            }
+        }
+        val pending = admission.request
+        if (pending == null) {
+            completeAfterSupplementary(inferenceId, backendResult, prepared, admission.presentation,
+                if (admission.presentation != null) TrafficSignSupplementaryOCRPhase.COMPLETED else TrafficSignSupplementaryOCRPhase.NOT_REQUIRED,
+                admission.latestAttempt)
+            return
+        }
+        // Only the first numeric read gates its initial authority delivery. Pictograms and
+        // later quality improvements publish normal primary evidence immediately.
+        val gatePrimary = pending.attemptNumber == 1 && pending.candidate.numericSupplementarySpeed() != null
+        if (gatePrimary) observer.onSupplementaryTextPending(requireNotNull(prepared).event, pending.scope.generation)
+        val once = java.util.concurrent.atomic.AtomicBoolean(false)
+        val completionLock = Any()
+        var normalOutput: TrafficSignOrchestrationOutput? = null
+        var normalDelivered = gatePrimary
+        var earlyCompletion: TrafficSignSupplementaryTextAnnotation? = null
+        fun finish(annotation: TrafficSignSupplementaryTextAnnotation) {
+            var sourceCurrent = false
+            val update = synchronized(lock) {
+                supplementaryOCRInFlight = false
+                sourceCurrent = !closed && source?.let(::sourceIsCurrent) == true
+                if (!sourceCurrent) null
+                else supplementaryTracker.finish(pending, annotation)
+            }
+            if (gatePrimary) {
+                completeAfterSupplementary(inferenceId, backendResult, prepared, update?.presentation,
+                    TrafficSignSupplementaryOCRPhase.COMPLETED, annotation.takeIf { sourceCurrent })
+            } else if (sourceCurrent) {
+                normalOutput?.copy(collectionFrame = null, passageEvent = null, annotationEvent = null,
+                    ocrPhase = TrafficSignSupplementaryOCRPhase.COMPLETED, ocrAnnotation = update?.presentation,
+                    ocrAttemptAnnotation = annotation, supplementaryOCROnly = true, ocrPrimaryPresent = update != null,
+                    ocrPresentationUpdate = update != null)
+                    ?.let(observer::onRecognition)
+            }
+        }
+        val completion: (TrafficSignSupplementaryTextAnnotation) -> Unit = { annotation ->
+            if (once.compareAndSet(false, true)) {
+                synchronized(completionLock) {
+                    if (normalDelivered) finish(annotation) else earlyCompletion = annotation
+                }
+            }
+        }
+        try { requireNotNull((backendResult as TrafficSignBackendResult.Recognition).supplementaryTextRecognition).recognize(pending, completion) }
+        catch (_: Throwable) { completion(pending.annotation(null, failed = true)) }
+        if (!gatePrimary) synchronized(completionLock) {
+            normalOutput = completeAfterSupplementary(inferenceId, backendResult, prepared, admission.presentation,
+                if (admission.presentation != null) TrafficSignSupplementaryOCRPhase.COMPLETED else TrafficSignSupplementaryOCRPhase.NOT_REQUIRED,
+                admission.latestAttempt)
+            normalDelivered = true
+            earlyCompletion?.let(::finish)
+        }
+    }
+
+    private fun completeAfterSupplementary(inferenceId: Long, backendResult: TrafficSignBackendResult,
+        prepared: CreatedEvent?, annotation: TrafficSignSupplementaryTextAnnotation?, phase: TrafficSignSupplementaryOCRPhase,
+        attemptAnnotation: TrafficSignSupplementaryTextAnnotation? = annotation): TrafficSignOrchestrationOutput? {
         var output: TrafficSignOrchestrationOutput? = null
         var dispatch: Dispatch? = null
         var overrideNotification: OverrideNotification? = null
@@ -529,7 +645,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             val active = activeInference
             if (active == null || active.inferenceId != inferenceId) {
                 (backendResult as? TrafficSignBackendResult.Recognition)?.collectionFrame?.close()
-                return
+                return null
             }
             activeInference = null
             frameSlot.markAnalysisComplete()
@@ -542,8 +658,13 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     active.accepted.contextGeneration == currentContextGeneration &&
                     active.accepted.scopeEpoch == currentScopeEpoch
                 ) pathInvalidated?.invoke()
-                val created = try { createEventLocked(active, backendResult) }
-                    finally { active.accepted.frame.releaseSafely() }
+                val created = try {
+                    val value = prepared ?: createEventLocked(active, backendResult)
+                    if (value.contextIsCurrent && !sourceIsCurrent(active)) value.copy(contextIsCurrent = false,
+                        qualifiedAnalyzedFrame = false, event = value.event.copy(state = TrafficSignRecognitionState.NO_RECOGNITION, candidate = null),
+                        displayDetections = emptyList(), annotationEvent = null)
+                    else value.copy(event = value.event.copy(latencyMs = (monotonicClockNanos() - active.dispatchedAtNanos).coerceAtLeast(0L) / 1_000_000.0))
+                } finally { active.accepted.frame.releaseSafely() }
                 val event = created.event
                 if (created.contextIsCurrent && backendResult is TrafficSignBackendResult.Unavailable) {
                     consecutiveBackendFailures += 1
@@ -648,6 +769,10 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     collectionDetections = created.collectionDetections,
                     collectionFrame = (backendResult as? TrafficSignBackendResult.Recognition)?.collectionFrame,
                     roadPathDiagnostic = created.roadPathDiagnostic,
+                    ocrPhase = phase,
+                    ocrAnnotation = annotation.takeIf { created.contextIsCurrent },
+                    ocrAttemptAnnotation = attemptAnnotation.takeIf { created.contextIsCurrent },
+                    ocrPrimaryPresent = event.candidate != null || TrafficSignDisplayPolicy.accepted(created.displayDetections) != null,
                 )
                 dispatch = takeDispatchLocked()
             }
@@ -657,6 +782,15 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         if (output == null) (backendResult as? TrafficSignBackendResult.Recognition)?.collectionFrame?.close()
         output?.let(observer::onRecognition)
         dispatch?.start()
+        return output
+    }
+
+    private fun sourceIsCurrent(active: ActiveInference<F>): Boolean {
+        val currentContext = currentRoadContext ?: return false
+        return active.accepted.contextGeneration == currentContextGeneration && active.accepted.scopeEpoch == currentScopeEpoch &&
+            active.accepted.context.hasVerifiedBundle && contextsShareScope(active.accepted.context, currentContext,
+                active.accepted.eligibleRouteRelationGroupIds) &&
+            active.accepted.context.sourceSignature.bundleRevision == currentSourceSignature?.bundleRevision
     }
 
     private fun createEventLocked(
@@ -664,17 +798,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         backendResult: TrafficSignBackendResult,
     ): CreatedEvent {
         val latencyNanos = (monotonicClockNanos() - active.dispatchedAtNanos).coerceAtLeast(0L)
-        val currentContext = currentRoadContext
-        val sourceIsCurrent = active.accepted.contextGeneration == currentContextGeneration &&
-            active.accepted.scopeEpoch == currentScopeEpoch &&
-            currentContext != null &&
-            active.accepted.context.hasVerifiedBundle &&
-            contextsShareScope(
-                previous = active.accepted.context,
-                next = currentContext,
-                eligibleRouteRelationGroupIds = active.accepted.eligibleRouteRelationGroupIds,
-            ) &&
-            active.accepted.context.sourceSignature.bundleRevision == currentSourceSignature?.bundleRevision
+        val sourceIsCurrent = sourceIsCurrent(active)
         if (sourceIsCurrent && startupTimingVerified &&
             active.accepted.metadata.source == TrafficSignInputSource.LIVE_FRAME &&
             backendResult is TrafficSignBackendResult.Recognition
@@ -838,6 +962,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             annotationEvent = annotationEvent,
             collectionDetections = rawDetections.toList(),
             selectedTrackId = selectedTrack?.trackId,
+            supplementaryCandidate = selectedDetection?.candidate,
             displayDetections = if (enforcing) listOfNotNull(selectedDetection) else exitEligibleDetections,
             contextIsCurrent = sourceIsCurrent,
             qualifiedAnalyzedFrame = backendResult is TrafficSignBackendResult.Recognition &&
@@ -932,6 +1057,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         val displayDetections: List<TrafficSignDetection>,
         val annotationEvent: TrafficSignRecognitionEvent?,
         val collectionDetections: List<TrafficSignDetection>,
+        val supplementaryCandidate: TrafficSignCandidate? = null,
     )
 
     private data class ActiveInference<T : TrafficSignNormalizedFrameHandle>(

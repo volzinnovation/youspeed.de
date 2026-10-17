@@ -326,6 +326,157 @@
       ],
       "title": "SelectionFraction",
       "type": "object"
+    },
+    "SupplementaryOCRAnnotation": {
+      "additionalProperties": false,
+      "description": "Original on-device read provenance, independent of model classification.",
+      "properties": {
+        "engine": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Engine",
+          "type": "string"
+        },
+        "first_seen_at": {
+          "format": "date-time",
+          "title": "First Seen At",
+          "type": "string"
+        },
+        "frame_id": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Frame Id",
+          "type": "string"
+        },
+        "model_version": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Model Version",
+          "type": "string"
+        },
+        "normalized_ocr_box": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Box"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "normalized_primary_box": {
+          "$ref": "#/$defs/Box"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "parsed_time_window": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SupplementaryOCRTimeWindow"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "physical_sign_id": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Physical Sign Id",
+          "type": "string"
+        },
+        "primary_class_id": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Primary Class Id",
+          "type": "string"
+        },
+        "primary_speed_kmh": {
+          "anyOf": [
+            {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Primary Speed Kmh"
+        },
+        "raw_text": {
+          "anyOf": [
+            {
+              "maxLength": 4096,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Raw Text"
+        },
+        "schema_version": {
+          "const": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "status": {
+          "enum": [
+            "read",
+            "no_text",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "primary_class_id",
+        "primary_speed_kmh",
+        "physical_sign_id",
+        "frame_id",
+        "observed_at",
+        "first_seen_at",
+        "raw_text",
+        "status",
+        "normalized_primary_box",
+        "engine",
+        "model_version"
+      ],
+      "title": "SupplementaryOCRAnnotation",
+      "type": "object"
+    },
+    "SupplementaryOCRTimeWindow": {
+      "additionalProperties": false,
+      "description": "Parsed transcription only; no date, location or applicability evaluation.",
+      "properties": {
+        "end_minutes": {
+          "maximum": 1439,
+          "minimum": 0,
+          "title": "End Minutes",
+          "type": "integer"
+        },
+        "start_minutes": {
+          "maximum": 1439,
+          "minimum": 0,
+          "title": "Start Minutes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_minutes",
+        "end_minutes"
+      ],
+      "title": "SupplementaryOCRTimeWindow",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -544,6 +695,17 @@
       "maximum": 32768,
       "title": "Source Width",
       "type": "integer"
+    },
+    "supplementary_ocr": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SupplementaryOCRAnnotation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "supplied_box": {
       "$ref": "#/$defs/Box"

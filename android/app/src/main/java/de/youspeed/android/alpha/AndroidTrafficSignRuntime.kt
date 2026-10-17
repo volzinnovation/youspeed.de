@@ -700,6 +700,9 @@ internal class AndroidLiteRtTrafficSignBackend(
     private val cropRequested: (List<String>) -> Boolean = { false },
 ) : TrafficSignRecognitionBackend<CameraXTrafficSignFrame>, AutoCloseable {
     private val closed = AtomicBoolean(false)
+    private val supplementaryPictogramClassIds = verifiedPack.displayCatalog.classLabels.filter {
+        verifiedPack.displayCatalog.pictogram(it)?.imagePath != null
+    }.toSet()
     private val cropFrameOutstanding = AtomicBoolean(false)
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
     // GPU delegates require initialization, every invocation and disposal on one thread.
@@ -762,7 +765,8 @@ internal class AndroidLiteRtTrafficSignBackend(
             beforeInference()
             frame.roadPathInferenceStartedNanos = System.nanoTime()
             val conversionStartedAtNanos = System.nanoTime()
-            val result = runCatching {
+            var delivered = false
+            runCatching {
                 frame.withOrientedBitmap(rotationBuffer) { bitmap ->
                     val conversionMs = (System.nanoTime() - conversionStartedAtNanos) / 1_000_000.0
                     val calibration = frame.visualCalibration
@@ -778,8 +782,12 @@ internal class AndroidLiteRtTrafficSignBackend(
                         }, sourceWidthPixels = bitmap.width, sourceHeightPixels = bitmap.height) else croppedInference
                     val detections = inference.detections
                     val primary = primaryDetection(detections)
-                    TrafficSignBackendResult.Recognition(
+                    val result = TrafficSignBackendResult.Recognition(
                         detection = primary,
+                        supplementaryTextRecognition = AndroidTrafficSignSupplementaryOCR.fromBitmap(bitmap),
+                        supplementaryImageWidth = bitmap.width,
+                        supplementaryImageHeight = bitmap.height,
+                        supplementaryPictogramClassIds = supplementaryPictogramClassIds,
                         collectionFrame = if (detections.isNotEmpty() && cropRequested(detections.map { it.candidate.rawClassId }) && cropFrameOutstanding.compareAndSet(false, true)) {
                             try {
                                 val owned = bitmap.copy(Bitmap.Config.ARGB_8888, false); owned.setHasAlpha(false)
@@ -814,14 +822,17 @@ internal class AndroidLiteRtTrafficSignBackend(
                             cameraReceiptToResultMs = (System.nanoTime() - frame.receivedAtNanos) / 1_000_000.0,
                         ),
                     )
+                    // Fusion may request a native crop synchronously. Keep these pixels alive until
+                    // completion returns; OCR then owns its independent sub-bitmap on its worker.
+                    delivered = true
+                    completion(result)
                 }
-            }.getOrElse { failure ->
-                TrafficSignBackendResult.Unavailable(
+            }.onFailure { failure ->
+                if (!delivered) completion(TrafficSignBackendResult.Unavailable(
                     reason = failure.message?.takeIf(String::isNotBlank) ?: failure.javaClass.simpleName,
                     thermalState = thermalState(),
-                )
+                ))
             }
-            completion(result)
         }
     }
 

@@ -7,8 +7,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.10"
-    CURRENT_PROJECT_VERSION: 10032
-    MARKETING_VERSION: "1.3"
+    CURRENT_PROJECT_VERSION: 10052
+    MARKETING_VERSION: "1.4"
 targets:
   SpeedConsumer:
     type: application
@@ -143,6 +143,9 @@ targets:
     type: bundle.unit-test
     platform: iOS
     sources:
+      - path: ../tests/fixtures/tsr-ocr-32
+        type: folder
+        buildPhase: resources
       - path: SpeedConsumerApp/SpeedConsumerTests.swift
       - path: SpeedConsumerApp/TrafficSignApplicabilityTests.swift
       - path: SpeedConsumerApp/SpeedLimitReferenceModelTests.swift
