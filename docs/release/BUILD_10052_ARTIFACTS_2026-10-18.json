@@ -203,5 +203,26 @@
       "play_UI_blocker": "Mac locked; manual unlock required"
     }
   },
-  "gallery_plan": "store/artwork/gallery-plan.json"
+  "gallery_plan": "store/artwork/gallery-plan.json",
+  "student_accounts": {
+    "count": 8,
+    "usernames": [
+      "student01",
+      "student02",
+      "student03",
+      "student04",
+      "student05",
+      "student06",
+      "student07",
+      "student08"
+    ],
+    "login_url": "https://panoramax.youspeed.de",
+    "server_export_completed": "2026-10-18T17:51:10+02:00",
+    "helper_verified_enabled_users": true,
+    "unique_temporary_passwords": true,
+    "first_login_password_change_required": true,
+    "server_local_export_match": true,
+    "credential_file_mode": "0600",
+    "credentials_committed": false
+  }
 }

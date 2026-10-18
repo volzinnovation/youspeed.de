@@ -45,11 +45,11 @@ A review ZIP can be recreated with `python3 scripts/release/package_store_submis
 
 ## Eight Panoramax student accounts
 
-Approved names: `student01` through `student08` on **https://panoramax.youspeed.de**.
+**Created and verified:** `student01` through `student08` on **https://panoramax.youspeed.de**. The server export completed on 18 October at **17:51 CEST**; its hash matches the local private CSV. All eight temporary passwords are unique and 24 characters long.
 
 The instance uses private Keycloak administration on volz-db. Interactive sudo is required. The ignored local launcher `tmp/release-1.4-20261018/CREATE_STUDENT_ACCOUNTS.command` stages the reviewed helper and asks the operator to authenticate. It selects the existing `panoramax-backend_auth` network, creates ordinary users with unique temporary passwords and a first-login password-change requirement, and verifies enabled accounts. It grants no administrator roles, does not accept terms for the students, and does not change an existing account's password.
 
-The first attempt stopped before account creation because the helper expected one attached Keycloak network; that assumption was corrected to the documented auth network. Successful completion produces a **mode-0600** `student-accounts.csv` beside the launcher. Credentials and root-only provisioning receipts must remain outside Git. Do not report eight accounts as created until the CSV and server creation checks succeed.
+The first attempt stopped before account creation because the helper expected one attached Keycloak network; that assumption was corrected to the documented auth network. The completed run produced a **mode-0600** `student-accounts.csv` beside the launcher, with exactly the eight approved names and the correct login URL. The helper printed the export only after verifying every account was enabled and checking for administrator roles. Credentials and root-only provisioning receipts remain outside Git. Each student must change the temporary password at first login.
 
 ## Before production 1.4
 
