@@ -36,16 +36,17 @@ Unknown saved values fall back to portrait.
 ## Phone posture and controls
 
 Both clients use gravity to measure the angle of the screen plane relative to
-horizontal, independently of the saved screen orientation. Only an upright phone
-between 80° and 100°, inclusive, applies the driving speed lock: controls hide at
-4 km/h or above and fresh GPS speed below 4 km/h restores them.
+horizontal, independently of the saved screen orientation. Ordinary controls are
+available only with the phone face up within 10° of horizontal and speed at or
+below 20 km/h. Either raw or displayed speed above 20 km/h hides them regardless
+of posture. Unknown posture cannot establish that the phone is flat. Inclines,
+declines and acceleration must not unlock controls in a mounted phone.
 
-Outside that upright range, or when gravity is unavailable, dashboard controls
-stay visible and GPS speed updates do not close open dialogs. Posture changes
-update this behavior immediately without waiting for another GPS fix. Returning
-upright reapplies the current GPS speed restriction. This does not establish
-standstill: permission and review prompts still require fresh GPS evidence of
-exactly zero speed.
+Posture changes update availability immediately; fresh low-speed GPS evidence
+restores the speed gate. Permission and review prompts still require fresh GPS
+evidence of exactly zero speed. The manual driving shutter remains the sole
+moving control, replacing Settings in the same bottom-right action-row slot.
+Showing it never adds a second row or moves the other controls upward.
 
 ## Portrait layout
 

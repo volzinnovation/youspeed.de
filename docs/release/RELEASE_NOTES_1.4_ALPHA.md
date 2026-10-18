@@ -1,3 +1,15 @@
+# Build 10053 — 19 October 2026
+
+This update fixes driving-control visibility, the manual-photo layout and the iPhone speed-limit sign size. Ordinary controls require the phone to be face-up within ±10° of horizontal and speed at or below 20 km/h. The driving photo occupies the Settings position without shifting the action row.
+
+Camera traffic-sign recognition now pauses after sunset and uses the installed map bundles; daylight is calculated offline from location and UTC time. The Gernsbach tunnel matcher now follows normalized tunnel portal connections in existing bundles.
+
+Bitte bei der nächsten Testfahrt prüfen: Bedienelemente nur bei flach liegendem Telefon und höchstens 20 km/h, Foto anstelle von Einstellungen, große Geschwindigkeitsanzeige auf dem iPhone, Gernsbacher Tunnel sowie Karten-Fallback bei Nacht. Einstellungen vor der Fahrt vornehmen; Aufnahmen und Logs nach sicherem Anhalten prüfen.
+
+Validation: Android unit tests (715, one existing skip), 18 attached-device tests, 18 focused iPhone unit/controller tests and three iPhone UI test methods passed. Protected reference-policy checks passed (39 scenarios, 171 steps). Recorded Gernsbach replay recovered 86 tunnel matches. Fresh drive verification remains pending.
+
+---
+
 # YouSpeed 1.4 alpha
 
 18 October 2026 · iPhone **1.4 (10052)** · Android **1.4-alpha**, base build **10052**

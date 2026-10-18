@@ -15,10 +15,12 @@
 		0754339087F440D596E5276B /* TrafficSignSupplementaryPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5B64576B536DFA088F114A0 /* TrafficSignSupplementaryPresentation.swift */; };
 		0877B38BCBB3A222562BF7DA /* GravityAlignmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4826C8F9A12638E5A048AE62 /* GravityAlignmentTests.swift */; };
 		0A0D6E44B30C0B7BD65F3D08 /* fixtures in Resources */ = {isa = PBXBuildFile; fileRef = 8DA8A50580E5A6ABCFE5BF15 /* fixtures */; };
+		0AB728056220D5CE33553FC6 /* SolarDaylightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC99D3F7C2764EF36C720738 /* SolarDaylightTests.swift */; };
 		0B40049C2440D677338FE301 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AB92E272687221B6BEE64B1 /* ContentView.swift */; };
 		0BC239718862833C7DC2A53B /* SignCollectionTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB9EB8B9880DECEC87EDC776 /* SignCollectionTransport.swift */; };
 		0E2EC469069622230A7B0A72 /* LaneBoundaryBezier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50B9F9477677BC3AD0EE7F74 /* LaneBoundaryBezier.swift */; };
 		10ACA8C8418BC0D1F9D11224 /* fr.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 881D085EDE2D348B7DF817C8 /* fr.lproj */; };
+		116F9850B4B42CC3564C2D69 /* SolarDaylight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E6DA7DCF62C05CB4F456965 /* SolarDaylight.swift */; };
 		1211E93B1CB861C6794A1586 /* DebugLogPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EE7FBD20C2C207434E0A6A0 /* DebugLogPersistenceTests.swift */; };
 		12AAEB7F03C75A9818CE11F3 /* DEU-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 15C14A293D1DC2FB976661DF /* DEU-rules.json */; };
 		1828C8976EB0DD8023057E03 /* replay_expected.json in Resources */ = {isa = PBXBuildFile; fileRef = 8DEC815A724E0702C9E8EC7B /* replay_expected.json */; };
@@ -373,6 +375,7 @@
 		9C00B7D4BAE2E00537C6B0B6 /* legal.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = legal.txt; sourceTree = "<group>"; };
 		9C7EC41B2369882B24D01C21 /* AppReviewPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppReviewPromptTests.swift; sourceTree = "<group>"; };
 		9DBEBD28290F598DC72E8DFB /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		9E6DA7DCF62C05CB4F456965 /* SolarDaylight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolarDaylight.swift; sourceTree = "<group>"; };
 		9EE7FBD20C2C207434E0A6A0 /* DebugLogPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogPersistenceTests.swift; sourceTree = "<group>"; };
 		A10A47E6F78B1DFA38EBE5F7 /* collection-contract-v1 */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "collection-contract-v1"; path = "../shared/tsr/collection-contract-v1"; sourceTree = SOURCE_ROOT; };
 		A129C77B2BC1F748E0F0EA74 /* PanoramaxQueueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanoramaxQueueStore.swift; sourceTree = "<group>"; };
@@ -383,6 +386,7 @@
 		A96FDED162AC60D59BE6F74F /* karlsruhe_variants.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = karlsruhe_variants.json; sourceTree = "<group>"; };
 		AA6714BC0E2B255C7AB5618D /* SpeedDBBenchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedDBBenchApp.swift; sourceTree = "<group>"; };
 		AB3B96CF54D1947EC2CE1151 /* NLD-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "NLD-rules.json"; sourceTree = "<group>"; };
+		AC99D3F7C2764EF36C720738 /* SolarDaylightTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolarDaylightTests.swift; sourceTree = "<group>"; };
 		ACC246DEFF0D2E1BB0EE2AD1 /* LaneDetectionRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneDetectionRuntime.swift; sourceTree = "<group>"; };
 		ACE882500C0D3542FE44BB6C /* paca-exit-topology-v1.sql */ = {isa = PBXFileReference; path = "paca-exit-topology-v1.sql"; sourceTree = "<group>"; };
 		AD0551D5A2A80CF4977A8C71 /* replay_track.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = replay_track.gpx; sourceTree = "<group>"; };
@@ -506,6 +510,7 @@
 				3F9C534BBF22F8C6B5DB1D10 /* SignCollectionStore.swift */,
 				FB9EB8B9880DECEC87EDC776 /* SignCollectionTransport.swift */,
 				E28DFD331C3E008787B72552 /* SignCollectionViews.swift */,
+				9E6DA7DCF62C05CB4F456965 /* SolarDaylight.swift */,
 				6E3C55C0CB5CEEEF45D3AEBA /* SourceAttributions.swift */,
 				4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */,
 				08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */,
@@ -655,6 +660,7 @@
 				C21A9ACAE299BC122BBC183E /* RoadPathEvidenceTests.swift */,
 				EC71FB24B2C74A9B05675E17 /* RoadPathSessionTests.swift */,
 				570DF554C70810252C40393F /* SignCollectionFoundationTests.swift */,
+				AC99D3F7C2764EF36C720738 /* SolarDaylightTests.swift */,
 				BF45815ACDF05E5392886F6E /* SupplementaryOCRAnnotationTests.swift */,
 				414763A09BE57A810C9A1F9A /* TrafficSignCameraReferenceOfferTests.swift */,
 				E4F90C183F635778082F98C2 /* TrafficSignDocumentationTests.swift */,
@@ -1124,6 +1130,7 @@
 				9342A71A11B815BBA3156A01 /* SignCollectionStore.swift in Sources */,
 				0BC239718862833C7DC2A53B /* SignCollectionTransport.swift in Sources */,
 				FC1D713B302F1D0270F33580 /* SignCollectionViews.swift in Sources */,
+				116F9850B4B42CC3564C2D69 /* SolarDaylight.swift in Sources */,
 				3C73A3DCE26AB7A90E4EA23C /* SourceAttributions.swift in Sources */,
 				F5FB0BA9CF92051C17E8285A /* SpeedConsumerApp.swift in Sources */,
 				260CAE5EB44878D86FBB618F /* SpeedConsumerAppDelegate.swift in Sources */,
@@ -1187,6 +1194,7 @@
 				E59DF7E1FC536928DBF4394F /* RoadPathEvidenceTests.swift in Sources */,
 				2C54920BFD153D152CFF0258 /* RoadPathSessionTests.swift in Sources */,
 				A1083550D6CD085D33519977 /* SignCollectionFoundationTests.swift in Sources */,
+				0AB728056220D5CE33553FC6 /* SolarDaylightTests.swift in Sources */,
 				197A06403B8311B89F11D4D6 /* SpeedConsumerTests.swift in Sources */,
 				4BB377309057ED673B835A3B /* SpeedLimitReferenceModelTests.swift in Sources */,
 				C311B51AB053A0342289279F /* SupplementaryOCRAnnotationTests.swift in Sources */,
@@ -1360,7 +1368,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10052;
+				CURRENT_PROJECT_VERSION = 10053;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1500,7 +1508,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10052;
+				CURRENT_PROJECT_VERSION = 10053;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;

@@ -17,26 +17,26 @@ class DrivingInteractionMotionPolicyTests {
         assertEquals(DrivingInteractionMotion(false, null), observe(observed = now.plusMillis(1)))
     }
 
-    @Test fun freshSpeedsBelowFourUnlockControlsWithoutClaimingStandstill() {
-        for (speed in listOf(0.001, 0.5, 1.0, 3.0, 3.99)) {
+    @Test fun freshSpeedsAtOrBelowTwentyUnlockControlsWithoutClaimingStandstill() {
+        for (speed in listOf(0.001, 0.5, 1.0, 3.0, 19.99, 20.0)) {
             assertEquals(DrivingInteractionMotion(true, null), observe(raw = speed / 3.6, filtered = speed))
         }
         assertEquals(DrivingInteractionMotion(true, null), observe(raw = 0.01))
         assertEquals(DrivingInteractionMotion(true, null), observe(filtered = 3.99))
     }
 
-    @Test fun fourOrFasterLocksForRawAndDisplayedSpeed() {
-        for (speed in listOf(4.0, 4.01, 30.0)) {
+    @Test fun aboveTwentyLocksForRawAndDisplayedSpeed() {
+        for (speed in listOf(20.001, 20.01, 30.0)) {
             assertEquals(DrivingInteractionMotion(false, null), observe(previous = true, raw = speed / 3.6))
             assertEquals(DrivingInteractionMotion(false, null), observe(previous = true, filtered = speed))
             assertEquals(DrivingInteractionMotion(false, null), observe(previous = true, raw = null, filtered = speed))
         }
     }
 
-    @Test fun deceleratingBelowFourRestoresControlsAndAcceleratingLocksAgain() {
+    @Test fun deceleratingAtOrBelowTwentyRestoresControlsAndAcceleratingLocksAgain() {
         val moving = observe(previous = true, raw = 10.0, filtered = 36.0)
         val slow = observe(previous = moving.controlsAllowed, raw = 3 / 3.6, filtered = 3.0)
-        val movingAgain = observe(previous = slow.controlsAllowed, raw = 4 / 3.6, filtered = 4.0)
+        val movingAgain = observe(previous = slow.controlsAllowed, raw = 20.01 / 3.6, filtered = 20.01)
         assertFalse(moving.controlsAllowed)
         assertTrue(slow.controlsAllowed)
         assertFalse(movingAgain.controlsAllowed)

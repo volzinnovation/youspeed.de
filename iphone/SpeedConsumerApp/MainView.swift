@@ -167,29 +167,25 @@ struct MainView: View {
             let bottomButtonGapWidth = max(0, paneWidth - screenInset * 2 - controlDiameter * 2)
             let topPadding = max(screenInset, proxy.safeAreaInsets.top * 0.28)
             let bottomPadding = max(screenInset, proxy.safeAreaInsets.bottom * 0.45)
-            let photoButtonDiameter = max(44, controlDiameter)
-            let photoRowReserve: CGFloat = viewModel.showsDrivingPhotoButton && viewModel.drivingControlsAllowed
-                ? photoButtonDiameter + 8 : 0
             let contentTopInset = topPadding + (landscape ? 76 : 72)
             let recorderStatusReserve: CGFloat = showsDriveRecorderStatusStrip ? 68 : 0
             // The recorder strip sits above landscape content and below portrait
             // content. Both modes reserve the bottom action row outside it.
-            let contentBottomInset = bottomPadding + controlDiameter + photoRowReserve + 10
+            let contentBottomInset = bottomPadding + controlDiameter + 10
                 + (landscape ? 0 : recorderStatusReserve)
-            let workspaceTopInset = landscape ? screenInset + recorderStatusReserve : 0
+            let workspaceTopInset = landscape ? screenInset + recorderStatusReserve
+                : 52
             let locationReserve = viewModel.isInSpeedCaptureMode ? CGFloat(0)
                 : (landscape ? 68 : max(cityBadgeSlotMinHeight, minDimension * 0.225))
             let signWidthBudget = min(paneWidth * 0.82, paneWidth - horizontalPadding * 2)
-            // Keep the sign and telemetry geometry stable when OCR arrives or
-            // expires. The two-line plate has a permanent slot below the circle.
-            let supplementaryTextReserve: CGFloat = 52
+            // Preserve the pre-OCR circle size; the workspace accommodates visible text.
             let portraitSignHeight = (proxy.size.height - contentTopInset - contentBottomInset
-                - locationReserve - sectionGap * 2 - supplementaryTextReserve)
+                - locationReserve - sectionGap * 2)
                 / (1 + speedLimitNumberScale * (1.05 + secondaryTextRatio * 1.2))
             let signSize = landscape
-                ? max(60, min(signWidthBudget, proxy.size.height - contentTopInset - screenInset - supplementaryTextReserve))
+                ? max(60, min(signWidthBudget, proxy.size.height - contentTopInset - screenInset))
                 : min(signWidthBudget, max(60, portraitSignHeight))
-            let signPaneHeight = landscape ? proxy.size.height : signSize + contentTopInset + supplementaryTextReserve
+            let signPaneHeight = landscape ? proxy.size.height : signSize + contentTopInset
             let workspacePaneHeight = landscape ? proxy.size.height
                 : max(0, proxy.size.height - signPaneHeight - sectionGap)
             // GeometryReader is laid out inside the landscape safe area on
@@ -213,7 +209,7 @@ struct MainView: View {
             let eyeLeft = landscape
                 ? (paneWidth - eyeCanvasWidth) / 2 + eyeTipInset
                 : eyeTipInset
-            let signTop = landscape ? (signPaneHeight - signSize - supplementaryTextReserve) / 2 : contentTopInset
+            let signTop = landscape ? (signPaneHeight - signSize) / 2 : contentTopInset
             let workspaceBudget = max(0, workspacePaneHeight - contentBottomInset - workspaceTopInset)
             let primaryMetricFontSize = min(signSize * speedLimitNumberScale,
                 max(0, (workspaceBudget - locationReserve - sectionGap) / (1.05 + secondaryTextRatio * 1.2)))
@@ -285,11 +281,10 @@ struct MainView: View {
                             if let text = viewModel.trafficSignNumericSupplementaryText {
                                 supplementaryRestrictionText(text, fontSize: min(20, max(16, signSize * 0.09)))
                                     .frame(maxWidth: signSize, minHeight: 28, maxHeight: 48)
-                                    .offset(y: supplementaryTextReserve)
+                                    .offset(y: 48)
                                     .accessibilityIdentifier("dashboard.speedSignSupplementaryText")
                             }
                         }
-                        .padding(.bottom, supplementaryTextReserve)
                         .frame(maxWidth: .infinity)
                         .padding(.top, landscape ? 0 : contentTopInset)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -350,15 +345,10 @@ struct MainView: View {
                                 .accessibilityIdentifier("dashboard.recorderStatus")
                                 .padding(.horizontal, max(8, horizontalPadding * 0.72))
                                 .padding(.top, landscape ? screenInset : 0)
-                                .padding(.bottom, landscape ? 0 : bottomPadding + controlDiameter + photoRowReserve + 8)
+                                .padding(.bottom, landscape ? 0 : bottomPadding + controlDiameter + 8)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: landscape ? .top : .bottom)
                         }
-                        if landscape && viewModel.drivingControlsAllowed {
-                            bottomCornerButtons(horizontalPadding: screenInset,
-                                                buttonDiameter: controlDiameter)
-                                .padding(.bottom, bottomPadding + photoRowReserve)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                        }
+
                     }
                     .frame(width: paneWidth, height: workspacePaneHeight, alignment: .top)
                     .environment(\.layoutDirection, textLayoutDirection)
@@ -384,21 +374,15 @@ struct MainView: View {
                         .accessibilityIdentifier("dashboard.visionDismissalListening")
                 }
             }
-            if !landscape && viewModel.drivingControlsAllowed {
+            if viewModel.drivingControlsAllowed || viewModel.showsDrivingPhotoButton {
                 bottomCornerButtons(horizontalPadding: screenInset,
                                     buttonDiameter: controlDiameter)
-                    .padding(.bottom, bottomPadding + photoRowReserve)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            }
-            // A sibling of the locked dashboard subtree. This is the sole
-            // actionable control at >=4 km/h, anchored inside the safe area.
-            if viewModel.showsDrivingPhotoButton {
-                drivingPhotoButton(diameter: photoButtonDiameter)
-                    .padding(.trailing, screenInset)
+                    .frame(width: landscape ? paneWidth : proxy.size.width)
                     .padding(.bottom, bottomPadding)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: landscape ? .bottomTrailing : .bottom)
                     .environment(\.layoutDirection, .leftToRight)
             }
+
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
@@ -658,96 +642,107 @@ struct MainView: View {
             for: viewModel.driveRecorderState
         )
 
-        return HStack {
-            RecordingSafeButton {
-                viewModel.toggleDriveRecorder()
-            } label: {
-                Image(systemName: recorderControl.systemImageName)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(recorderControl.usesRedIcon ? Color.red : Color.white)
-                    .frame(width: buttonDiameter, height: buttonDiameter)
-            }
-            .buttonStyle(.plain)
-            .background(Color.black, in: Circle())
-            .overlay {
-                Circle()
-                    .strokeBorder(Color.white, lineWidth: 1.5)
-            }
-            .contentShape(Circle())
-            .accessibilityLabel(NSLocalizedString(recorderControl.accessibilityLocalizationKey, comment: ""))
-            .disabled(!recorderControl.isEnabled)
+        return HStack(alignment: .bottom) {
+            if viewModel.drivingControlsAllowed {
+                RecordingSafeButton {
+                    viewModel.toggleDriveRecorder()
+                } label: {
+                    Image(systemName: recorderControl.systemImageName)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(recorderControl.usesRedIcon ? Color.red : Color.white)
+                        .frame(width: buttonDiameter, height: buttonDiameter)
+                }
+                .buttonStyle(.plain)
+                .background(Color.black, in: Circle())
+                .overlay {
+                    Circle()
+                        .strokeBorder(Color.white, lineWidth: 1.5)
+                }
+                .contentShape(Circle())
+                .accessibilityLabel(NSLocalizedString(recorderControl.accessibilityLocalizationKey, comment: ""))
+                .disabled(!recorderControl.isEnabled)
 
-            Spacer()
-            panoramaxCaptureButton(diameter: buttonDiameter)
+                Spacer()
+                panoramaxCaptureButton(diameter: buttonDiameter)
 
-            Spacer()
+                Spacer()
 
-            RecordingSafeButton {
-                guard galleryControl.isEnabled else { return }
-                showingPanoramaxGallery = true
-            } label: {
-                Image(systemName: "photo.on.rectangle")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(photoCaptureFeedbackVisible ? Color.green : (galleryControl.isEnabled ? primaryForegroundColor : Color.gray))
-                    .frame(width: buttonDiameter, height: buttonDiameter)
-            }
-            .buttonStyle(.plain)
-            .background(
-                galleryControl.isEnabled ? actionButtonBackgroundColor : Color.gray.opacity(0.16),
-                in: Circle()
-            )
-            .overlay {
-                Circle().strokeBorder(
-                    galleryControl.isEnabled ? actionButtonBorderColor : Color.gray.opacity(0.6),
-                    lineWidth: 1.5
+                RecordingSafeButton {
+                    guard galleryControl.isEnabled else { return }
+                    showingPanoramaxGallery = true
+                } label: {
+                    Image(systemName: "photo.on.rectangle")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(photoCaptureFeedbackVisible ? Color.green : (galleryControl.isEnabled ? primaryForegroundColor : Color.gray))
+                        .frame(width: buttonDiameter, height: buttonDiameter)
+                }
+                .buttonStyle(.plain)
+                .background(
+                    galleryControl.isEnabled ? actionButtonBackgroundColor : Color.gray.opacity(0.16),
+                    in: Circle()
                 )
+                .overlay {
+                    Circle().strokeBorder(
+                        galleryControl.isEnabled ? actionButtonBorderColor : Color.gray.opacity(0.6),
+                        lineWidth: 1.5
+                    )
+                }
+                .contentShape(Circle())
+                .opacity(galleryControl.opacity)
+                .accessibilityLabel(NSLocalizedString("panoramax.gallery.open", comment: ""))
+                .disabled(!galleryControl.isEnabled)
+
+                Spacer()
+
+                RecordingSafeButton {
+                    guard viewModel.drivingControlsAllowed else { return }
+                    showingVisualCalibration = true
+                } label: {
+                    Image(systemName: "viewfinder").font(.title3.weight(.semibold))
+                        .frame(width: buttonDiameter, height: buttonDiameter)
+                }
+                .accessibilityLabel(Text("calibration.title"))
+                .accessibilityIdentifier("dashboard.calibrationButton")
+                .buttonStyle(.plain)
+                .background(actionButtonBackgroundColor, in: Circle())
+                .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
+
+                Spacer()
+
+                RecordingSafeButton { showingLegalInfo = true } label: {
+                    Image(systemName: "info.circle.fill")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: buttonDiameter, height: buttonDiameter)
+                }
+                .accessibilityLabel(Text("legal.title"))
+                .accessibilityIdentifier("dashboard.infoButton")
+                .buttonStyle(.plain)
+                .background(actionButtonBackgroundColor, in: Circle())
+                .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
+
+                Spacer()
+            } else {
+                Spacer()
             }
-            .contentShape(Circle())
-            .opacity(galleryControl.opacity)
-            .accessibilityLabel(NSLocalizedString("panoramax.gallery.open", comment: ""))
-            .disabled(!galleryControl.isEnabled)
 
-            Spacer()
-
-            RecordingSafeButton {
-                guard viewModel.drivingControlsAllowed else { return }
-                showingVisualCalibration = true
-            } label: {
-                Image(systemName: "viewfinder").font(.title3.weight(.semibold))
-                    .frame(width: buttonDiameter, height: buttonDiameter)
+            if viewModel.showsDrivingPhotoButton {
+                drivingPhotoButton(diameter: max(44, buttonDiameter))
+                    .frame(width: max(44, buttonDiameter), height: max(44, buttonDiameter))
+            } else {
+                RecordingSafeButton { settingsPresentation.wrappedValue = true } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: buttonDiameter, height: buttonDiameter)
+                }
+                .accessibilityLabel(NSLocalizedString("settings.title", comment: ""))
+                .accessibilityIdentifier("dashboard.settingsButton")
+                .buttonStyle(.plain)
+                .background(actionButtonBackgroundColor, in: Circle())
+                .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
             }
-            .accessibilityLabel(Text("calibration.title"))
-            .accessibilityIdentifier("dashboard.calibrationButton")
-            .buttonStyle(.plain)
-            .background(actionButtonBackgroundColor, in: Circle())
-            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
-
-            Spacer()
-
-            RecordingSafeButton { showingLegalInfo = true } label: {
-                Image(systemName: "info.circle.fill")
-                    .font(.title3.weight(.semibold))
-                    .frame(width: buttonDiameter, height: buttonDiameter)
-            }
-            .accessibilityLabel(Text("legal.title"))
-            .accessibilityIdentifier("dashboard.infoButton")
-            .buttonStyle(.plain)
-            .background(actionButtonBackgroundColor, in: Circle())
-            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
-
-            Spacer()
-
-            RecordingSafeButton { settingsPresentation.wrappedValue = true } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.title3.weight(.semibold))
-                    .frame(width: buttonDiameter, height: buttonDiameter)
-            }
-            .accessibilityLabel(NSLocalizedString("settings.title", comment: ""))
-            .accessibilityIdentifier("dashboard.settingsButton")
-            .buttonStyle(.plain)
-            .background(actionButtonBackgroundColor, in: Circle())
-            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
         }
+        .frame(height: max(44, buttonDiameter), alignment: .bottom)
+        .environment(\.layoutDirection, .leftToRight)
         .padding(.horizontal, horizontalPadding)
         .foregroundStyle(primaryForegroundColor)
     }

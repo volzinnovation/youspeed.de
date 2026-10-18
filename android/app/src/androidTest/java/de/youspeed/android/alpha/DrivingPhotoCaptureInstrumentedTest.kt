@@ -77,33 +77,48 @@ class DrivingPhotoCaptureInstrumentedTest {
         }
     }
 
-    @Test fun handheldGpsUpdatesKeepSettingsOpenAndUprightPostureRestoresSpeedLock() {
-        assertTrue("Use the isolated testhost, never the driver's app", instrumentation.targetContext.packageName.endsWith(".testhost"))
+    @Test fun onlyFlatPostureAtLowSpeedAllowsSettingsAndMovingNeverUnlocks() {
+        assertTrue(instrumentation.targetContext.packageName.endsWith(".testhost"))
         withFixture { fixture, scenario ->
             scenario.onActivity { fixture.prepareInteractionTest() }
             compose.onNodeWithTag("settings-button").performClick()
             compose.onNodeWithTag("settings-sheet").assertExists()
-            for (angle in listOf(0.0, 45.0, 79.999, 100.001, 135.0, 180.0)) {
+            scenario.onActivity { fixture.posture(11.0) }
+            compose.onNodeWithTag("settings-sheet").assertDoesNotExist()
+            for (angle in listOf(0.0, 10.0, 45.0, 79.0, 101.0, 180.0)) {
                 scenario.onActivity {
                     fixture.posture(angle)
-                    val before = fixture.controller.uiState.gpsFixCount
                     fixture.movingGpsFix()
-                    assertEquals("Synthetic GPS fix was consumed", before + 1, fixture.controller.uiState.gpsFixCount)
-                    assertTrue("Handheld controls at $angle degrees", fixture.controller.uiState.drivingControlsAllowed)
-                    assertTrue(fixture.controller.uiState.currentSpeedKmh >= 4)
+                    assertFalse(fixture.controller.uiState.drivingControlsAllowed)
+                    assertTrue(fixture.controller.uiState.currentSpeedKmh > 20)
                 }
-                compose.onNodeWithTag("settings-sheet").assertExists()
-                compose.onNodeWithTag("panoramax-capture-toggle-button").assertExists()
+                compose.onNodeWithTag("settings-button").assertDoesNotExist()
             }
-            scenario.onActivity { fixture.posture(90.0) }
-            compose.onNodeWithTag("settings-sheet").assertDoesNotExist()
+            scenario.onActivity { fixture.posture(null) }
             compose.onNodeWithTag("settings-button").assertDoesNotExist()
+        }
+    }
+
+    @Test fun nightPausesRecognitionAndRestoresBundleWithoutChangingSelection() {
+        withFixture { fixture, scenario ->
             scenario.onActivity {
-                assertFalse("Returning upright applies the held GPS lock without another fix", fixture.controller.uiState.drivingControlsAllowed)
-                fixture.posture(null)
+                fixture.prepareInteractionTest()
+                fixture.state { copy(currentLatitude = 48.76, currentLongitude = 8.34, trafficSignRecognitionEnabled = true) }
+                fixture.refreshDaylight(Instant.parse("2026-10-18T10:00:00Z"))
+                val reference = fixture.reference()
+                reference.context("way", "B462", emptySet(), "forward", true)
+                fixture.bundleReference(SpeedReferenceValue("numeric", 50))
+                reference.camera("daylight-zone", SpeedReferenceValue("numeric", 30), true)
+                assertEquals("CAMERA", reference.output()?.state)
+                fixture.refreshDaylight(Instant.parse("2026-10-18T17:05:00Z"))
+                assertFalse(fixture.controller.isTrafficSignRecognitionRuntimeEnabled())
+                assertTrue(fixture.controller.uiState.trafficSignRecognitionEnabled)
+                assertEquals("BUNDLE", reference.output()?.state)
+                assertEquals(50, reference.output()?.value?.kmh)
+                fixture.refreshDaylight(Instant.parse("2026-10-19T10:00:00Z"))
+                assertTrue(fixture.controller.uiState.trafficSignRecognitionEnabled)
+                assertEquals("BUNDLE", reference.output()?.state)
             }
-            compose.onNodeWithTag("settings-button").assertExists()
-            compose.onNodeWithTag("settings-sheet").assertDoesNotExist()
         }
     }
 
@@ -116,15 +131,15 @@ class DrivingPhotoCaptureInstrumentedTest {
                 }
                 val device = UiDevice.getInstance(instrumentation)
                 compose.waitUntil(15_000) { device.displayRotation == orientation.targetRotation }
-                for (speed in listOf(0.0, 1.0, 1.001, 1.5, 3.99, 4.0, 35.0)) {
+                for (speed in listOf(0.0, 1.0, 1.001, 1.5, 3.99, 4.0, 20.0, 20.01, 35.0)) {
                     scenario.onActivity {
-                        fixture.state { copy(currentSpeedKmh = speed, drivingControlsAllowed = speed < 4.0) }
+                        fixture.state { copy(currentSpeedKmh = speed, drivingControlsAllowed = speed <= 20.0) }
                     }
                     compose.waitForIdle()
                     if (speed <= 1.0) compose.onNodeWithTag("driving-photo-button").assertDoesNotExist()
                     else {
                         compose.onNodeWithTag("driving-photo-button").assertExists()
-                        scenario.onActivity { assertBottomRight(it, device, speed < 4.0) }
+                        scenario.onActivity { assertBottomRight(it, device, speed <= 20.0) }
                         verifyPendingBounds()
                     }
                 }
@@ -134,8 +149,12 @@ class DrivingPhotoCaptureInstrumentedTest {
                     currentSpeedKmh = 1.5, drivingControlsAllowed = true) }
                 activity.requestedOrientation = ManualOrientation.PORTRAIT.requestedOrientation
                 activity.setContent {
-                    Box(Modifier.fillMaxSize()) {
-                        Box(Modifier.width(320.dp).fillMaxHeight()) { ConsumerApp(fixture.controller) }
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Rtl,
+                    ) {
+                        Box(Modifier.fillMaxSize()) {
+                            Box(Modifier.width(320.dp).fillMaxHeight()) { ConsumerApp(fixture.controller) }
+                        }
                     }
                 }
             }
@@ -145,7 +164,10 @@ class DrivingPhotoCaptureInstrumentedTest {
             compose.waitForIdle()
             val footer = compose.onNodeWithTag("dashboard-bottom-controls").fetchSemanticsNode().boundsInWindow
             val shutter = compose.onNodeWithTag("driving-photo-button").fetchSemanticsNode().boundsInWindow
-            assertTrue("A separate row avoids a seventh narrow touch target", footer.bottom < shutter.top)
+            assertEquals("Shutter replaces Settings on the same baseline", footer.bottom, shutter.bottom, 2f)
+            val recorder = compose.onNodeWithTag("drive-recorder-toggle-button").fetchSemanticsNode().boundsInWindow
+            assertTrue("RTL text does not mirror physical button slots", recorder.right <= shutter.left)
+            compose.onNodeWithTag("settings-button").assertDoesNotExist()
             assertTrue(shutter.right <= compose.onNodeWithTag("main-root").fetchSemanticsNode().boundsInWindow.right)
         }
     }
@@ -324,7 +346,8 @@ class DrivingPhotoCaptureInstrumentedTest {
         assertEquals("Bottom inset is eight dp", 8 * pendingDensity, pendingSafe.bottom - shutter.bottom, 2f)
         if (pendingOrdinaryControls) {
             val footer = compose.onNodeWithTag("dashboard-bottom-controls").fetchSemanticsNode().boundsInWindow
-            assertTrue("Ordinary controls cannot overlap shutter", footer.bottom < shutter.top)
+            assertEquals("Shutter stays on the action-row baseline", footer.bottom, shutter.bottom, 2f)
+            compose.onNodeWithTag("settings-button").assertDoesNotExist()
         } else compose.onNodeWithTag("dashboard-bottom-controls").assertDoesNotExist()
     }
 
@@ -392,6 +415,16 @@ class DrivingPhotoCaptureInstrumentedTest {
             .getDeclaredMethod("updateDrivingControlPosture", java.lang.Double::class.java)
             .apply { isAccessible = true }.invoke(controller, angleDegrees)
 
+        fun refreshDaylight(at: Instant) {
+            clock.setInstant(at)
+            ConsumerSessionController::class.java.getDeclaredMethod("refreshCameraDaylight")
+                .apply { isAccessible = true }.invoke(controller)
+        }
+        fun reference() = field("speedReference").get(controller) as SpeedReferenceRuntime
+        fun bundleReference(value: SpeedReferenceValue) = ConsumerSessionController::class.java
+            .getDeclaredMethod("updateBundledSpeedReference", String::class.java, SpeedReferenceValue::class.java)
+            .apply { isAccessible = true }.invoke(controller, "installed-bundle:way", value)
+
         fun movingGpsFix() {
             clock.advanceMillis(1)
             val sample = Location(LocationManager.GPS_PROVIDER).apply {
@@ -437,7 +470,7 @@ class DrivingPhotoCaptureInstrumentedTest {
                 state { copy(appScreenshotState = null, startupDataState = StartupDataState.READY,
                     startupLogReviewState = StartupLogReviewState.COMPLETE, onboardingCompleted = true,
                     downloadedBundleLatestVersionByRegion = mapOf("isolated-test" to "2026-10-10"),
-                    driveStatus = "running", currentSpeedKmh = speed, drivingControlsAllowed = speed < 4.0,
+                    driveStatus = "running", currentSpeedKmh = speed, drivingControlsAllowed = speed <= 20.0,
                     panoramaxCaptureEnabled = false, panoramaxRecognizedSignsOnly = true,
                     panoramaxUnlimitedStorage = true, panoramaxDeleteUploadedImages = false,
                     trafficSignRecognitionEnabled = false, driveRecorderState = DriveRecorderState.RECORDING,
@@ -469,6 +502,7 @@ class DrivingPhotoCaptureInstrumentedTest {
         override fun withZone(zone: ZoneId): Clock = if (zone == ZoneOffset.UTC) this else Clock.fixed(instant(), zone)
         override fun instant(): Instant = frozenInstant ?: Instant.now()
         fun freeze() { frozenInstant = instant() }
+        fun setInstant(at: Instant) { frozenInstant = at }
         fun advanceMillis(millis: Long) { frozenInstant = instant().plusMillis(millis) }
     }
 

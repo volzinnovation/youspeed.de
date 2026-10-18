@@ -568,9 +568,7 @@ private fun MainScreen(
         Modifier.fillMaxSize().background(background).testTag("main-root").safeDrawingPadding(),
     ) {
         val landscape = ui.manualOrientation.isLandscape && maxWidth > maxHeight
-        // At 1..4 km/h the ordinary controls still exist. Reserve a separate
-        // shutter row instead of overlapping or squeezing seven touch targets.
-        val drivingPhotoRowHeight = if (drivingPhotoVisible) CONTROL_BUTTON_DIAMETER + 12.dp else 0.dp
+        // The shutter replaces Settings without changing the action-row baseline.
         // Portrait uses the full display width for the sign pane so the sign
         // and its camera eye are centered on the screen. Landscape keeps the
         // two fixed panes side by side.
@@ -608,11 +606,7 @@ private fun MainScreen(
         val horizontalPadding = max(12f, workspaceWidth.value * 0.04f).dp
         // Match the iPhone recorder layout: portrait status controls sit above
         // the bottom action row, whose overlay needs its own reserved space.
-        val workspaceBottomPadding = if (!landscape && ui.driveRecorderDashcamActive && ui.drivingControlsAllowed) {
-            CONTROL_BUTTON_DIAMETER + 16.dp + drivingPhotoRowHeight
-        } else {
-            12.dp + drivingPhotoRowHeight
-        }
+        val workspaceBottomPadding = CONTROL_BUTTON_DIAMETER + 16.dp
         val locationHeight = if (landscape) 72.dp else max(LOCATION_SLOT_MIN_HEIGHT.value, minDimension * 0.225f).dp
         val locationBadgeWidth = if (landscape) {
             (workspaceWidth.value * 0.78f).coerceAtLeast(180f).dp
@@ -791,18 +785,7 @@ private fun MainScreen(
                         controller, Modifier.padding(top = 6.dp).testTag("drive-recorder-status"),
                         onPreviewRequested = { previewSelected = true },
                     )
-                    if (landscape && ui.drivingControlsAllowed) BottomCornerButtons(
-                        horizontalPadding = screenInset, foreground = foreground,
-                        buttonBg = buttonBg, buttonBorder = buttonBorder,
-                        onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings, onOpenCalibration = onOpenCalibration,
-                        onOpenPanoramaxGallery = onOpenPanoramaxGallery,
-                        onToggleDriveRecorder = onToggleDriveRecorder,
-                        onTogglePanoramaxCapture = onTogglePanoramaxCapture,
-                        panoramaxCaptureEnabled = ui.panoramaxCaptureEnabled,
-                        driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
-            photoCaptureFeedbackVisible = photoCaptureFeedbackVisible,
-                        modifier = Modifier.padding(top = if (recorderVisible) 8.dp else 16.dp),
-                    )
+
                 }
             },
         ) { measurables, constraints ->
@@ -822,7 +805,7 @@ private fun MainScreen(
                 lower.place(if (landscape) upperWidth else 0, if (landscape) 0 else upperHeight)
             }
         }
-        if (!landscape && ui.drivingControlsAllowed) BottomCornerButtons(
+        if (ui.drivingControlsAllowed) BottomCornerButtons(
             horizontalPadding = screenInset, foreground = foreground,
             buttonBg = buttonBg, buttonBorder = buttonBorder,
             onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings, onOpenCalibration = onOpenCalibration,
@@ -830,9 +813,11 @@ private fun MainScreen(
             onToggleDriveRecorder = onToggleDriveRecorder,
             onTogglePanoramaxCapture = onTogglePanoramaxCapture,
             panoramaxCaptureEnabled = ui.panoramaxCaptureEnabled,
+            reservePhotoSlot = drivingPhotoVisible,
             driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
             photoCaptureFeedbackVisible = photoCaptureFeedbackVisible,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp + drivingPhotoRowHeight),
+            modifier = Modifier.width(if (landscape) workspaceWidth else maxWidth)
+                .align(androidx.compose.ui.AbsoluteAlignment.BottomRight).padding(bottom = 8.dp),
         )
         if (drivingPhotoVisible) PillIconButton(
             onClick = { controller.captureDrivingPhoto() },
@@ -908,85 +893,94 @@ private fun BottomCornerButtons(
     onToggleDriveRecorder: () -> Unit,
     onTogglePanoramaxCapture: () -> Unit,
     panoramaxCaptureEnabled: Boolean,
+    reservePhotoSlot: Boolean,
     driveRecorderState: DriveRecorderState,
     panoramaxCaptureCount: Int,
     photoCaptureFeedbackVisible: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = horizontalPadding)
-            .testTag("dashboard-bottom-controls"),
-        horizontalArrangement = Arrangement.SpaceBetween,
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr,
     ) {
-        PillIconButton(
-            onClick = { if (driveRecorderState != DriveRecorderState.STOPPING) onToggleDriveRecorder() },
-            background = if (driveRecorderState == DriveRecorderState.RECORDING) Color(0x3321C55D) else buttonBg,
-            border = if (driveRecorderState == DriveRecorderState.RECORDING) Color(0xFFEF4444) else buttonBorder,
-            modifier = Modifier.testTag("drive-recorder-toggle-button"),
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalPadding)
+                .testTag("dashboard-bottom-controls"),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Icon(
-                imageVector = if (DriveRecorderPolicy.isActive(driveRecorderState)) Icons.Default.Stop else Icons.Default.RadioButtonUnchecked,
-                contentDescription = stringResource(
-                    if (DriveRecorderPolicy.isActive(driveRecorderState)) R.string.ui_drive_recorder_stop else R.string.ui_drive_recorder_start,
-                ),
-                tint = Color(0xFFEF4444),
-            )
-        }
-        PanoramaxCaptureToggleButton(
-            onClick = onTogglePanoramaxCapture,
-            captureEnabled = panoramaxCaptureEnabled,
-            foreground = foreground,
-            buttonBg = buttonBg,
-            buttonBorder = buttonBorder,
-        )
-        PillIconButton(
-            onClick = { if (DriveRecorderPolicy.canProcessPanoramaxUploads(driveRecorderState)) onOpenPanoramaxGallery() },
-            enabled = DriveRecorderPolicy.canProcessPanoramaxUploads(driveRecorderState),
-            background = buttonBg,
-            border = buttonBorder,
-            modifier = Modifier.testTag("panoramax-gallery-button"),
-        ) {
-            Box {
+            PillIconButton(
+                onClick = { if (driveRecorderState != DriveRecorderState.STOPPING) onToggleDriveRecorder() },
+                background = if (driveRecorderState == DriveRecorderState.RECORDING) Color(0x3321C55D) else buttonBg,
+                border = if (driveRecorderState == DriveRecorderState.RECORDING) Color(0xFFEF4444) else buttonBorder,
+                modifier = Modifier.testTag("drive-recorder-toggle-button"),
+            ) {
                 Icon(
-                    Icons.Default.PhotoLibrary,
-                    contentDescription = stringResource(R.string.ui_panoramax_gallery),
-                    tint = if (photoCaptureFeedbackVisible) Color(0xFF22C55E) else foreground,
+                    imageVector = if (DriveRecorderPolicy.isActive(driveRecorderState)) Icons.Default.Stop else Icons.Default.RadioButtonUnchecked,
+                    contentDescription = stringResource(
+                        if (DriveRecorderPolicy.isActive(driveRecorderState)) R.string.ui_drive_recorder_stop else R.string.ui_drive_recorder_start,
+                    ),
+                    tint = Color(0xFFEF4444),
                 )
-                if (panoramaxCaptureCount > 0) {
-                    Text(
-                        panoramaxCaptureCount.toString(),
-                        color = Color.White,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .background(Color(0xFFEF4444), CircleShape)
-                            .padding(horizontal = 4.dp, vertical = 1.dp),
+            }
+            PanoramaxCaptureToggleButton(
+                onClick = onTogglePanoramaxCapture,
+                captureEnabled = panoramaxCaptureEnabled,
+                foreground = foreground,
+                buttonBg = buttonBg,
+                buttonBorder = buttonBorder,
+            )
+            PillIconButton(
+                onClick = { if (DriveRecorderPolicy.canProcessPanoramaxUploads(driveRecorderState)) onOpenPanoramaxGallery() },
+                enabled = DriveRecorderPolicy.canProcessPanoramaxUploads(driveRecorderState),
+                background = buttonBg,
+                border = buttonBorder,
+                modifier = Modifier.testTag("panoramax-gallery-button"),
+            ) {
+                Box {
+                    Icon(
+                        Icons.Default.PhotoLibrary,
+                        contentDescription = stringResource(R.string.ui_panoramax_gallery),
+                        tint = if (photoCaptureFeedbackVisible) Color(0xFF22C55E) else foreground,
                     )
+                    if (panoramaxCaptureCount > 0) {
+                        Text(
+                            panoramaxCaptureCount.toString(),
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .background(Color(0xFFEF4444), CircleShape)
+                                .padding(horizontal = 4.dp, vertical = 1.dp),
+                        )
+                    }
                 }
             }
-        }
-        PillIconButton(onClick = onOpenCalibration, background = buttonBg, border = buttonBorder,
-            modifier = Modifier.testTag("visual-calibration-button")) {
-            Icon(Icons.Default.CenterFocusStrong, contentDescription = stringResource(R.string.calibration_title), tint = foreground)
-        }
-        PillIconButton(
-            onClick = onOpenLegal,
-            background = buttonBg,
-            border = buttonBorder,
-            modifier = Modifier.testTag("legal-button"),
-        ) {
-            Icon(Icons.Default.Info, contentDescription = stringResource(R.string.ui_legal_title), tint = foreground)
-        }
-        PillIconButton(
-            onClick = onOpenSettings,
-            background = buttonBg,
-            border = buttonBorder,
-            modifier = Modifier.testTag("settings-button"),
-        ) {
-            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.ui_settings_title), tint = foreground)
+            PillIconButton(onClick = onOpenCalibration, background = buttonBg, border = buttonBorder,
+                modifier = Modifier.testTag("visual-calibration-button")) {
+                Icon(Icons.Default.CenterFocusStrong, contentDescription = stringResource(R.string.calibration_title), tint = foreground)
+            }
+            PillIconButton(
+                onClick = onOpenLegal,
+                background = buttonBg,
+                border = buttonBorder,
+                modifier = Modifier.testTag("legal-button"),
+            ) {
+                Icon(Icons.Default.Info, contentDescription = stringResource(R.string.ui_legal_title), tint = foreground)
+            }
+            if (reservePhotoSlot) {
+                Spacer(Modifier.size(CONTROL_BUTTON_DIAMETER))
+            } else {
+                PillIconButton(
+                    onClick = onOpenSettings,
+                    background = buttonBg,
+                    border = buttonBorder,
+                    modifier = Modifier.testTag("settings-button"),
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.ui_settings_title), tint = foreground)
+                }
+            }
         }
     }
 }

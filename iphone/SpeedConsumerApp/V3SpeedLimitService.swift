@@ -6948,7 +6948,8 @@ final class V3SpeedLimitService: @unchecked Sendable {
         candidates: [WayCandidate],
         matchContext: NormalizedMatchContext
     ) -> WayLinksContext {
-        guard tableExists(db: db, name: "way_links") else {
+        let hasLinks = tableExists(db: db, name: "way_links")
+        guard hasLinks || tableExists(db: db, name: "way_endpoints") else {
             return WayLinksContext(available: false, byWayID: [:])
         }
 
@@ -6963,6 +6964,9 @@ final class V3SpeedLimitService: @unchecked Sendable {
             return WayLinksContext(available: true, byWayID: [:])
         }
 
+        if !hasLinks {
+            return loadEndpointWayLinksContext(db: db, wayIDs: orderedWayIDs)
+        }
         let placeholders = Array(repeating: "?", count: orderedWayIDs.count).joined(separator: ",")
         let hasSharedRef = columnExists(db: db, table: "way_links", column: "shared_ref")
         let hasSharedNodeKey = columnExists(db: db, table: "way_links", column: "shared_node_key")
@@ -7007,6 +7011,39 @@ final class V3SpeedLimitService: @unchecked Sendable {
             byWayID[sourceWayID] = info
         }
         return WayLinksContext(available: true, byWayID: byWayID)
+    }
+
+    /// Normalized bundles store the same topology as endpoint keys instead of
+    /// materialized way_links. Recover exact tunnel portal connections only;
+    /// leave surface-only diagnostic matcher behavior unchanged.
+    private func loadEndpointWayLinksContext(db: OpaquePointer, wayIDs: [Int64]) -> WayLinksContext {
+        let placeholders = Array(repeating: "?", count: wayIDs.count).joined(separator: ",")
+        var stmt: OpaquePointer?
+        defer { resources.release(stmt) }
+        let tunnelColumn = columnExists(db: db, table: "way_endpoints", column: "tunnel_flag") ? "tunnel_flag" : "0"
+        guard resources.prepare(db, "SELECT way_id,ref_norm,start_node_key,end_node_key,\(tunnelColumn) FROM way_endpoints WHERE way_id IN (\(placeholders))", -1, &stmt, nil) == SQLITE_OK,
+              let stmt else { return WayLinksContext(available: false, byWayID: [:]) }
+        for (index, id) in wayIDs.enumerated() { sqlite3_bind_int64(stmt, Int32(index + 1), id) }
+        var byNode: [String: [(id: String, refs: Set<String>, tunnel: Bool)]] = [:]
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            let id = String(sqlite3_column_int64(stmt, 0))
+            let refs = Set(Self.normalizedRefTokens(cStringOptional(sqlite3_column_text(stmt, 1))))
+            let nodes = Set([cStringOptional(sqlite3_column_text(stmt, 2)), cStringOptional(sqlite3_column_text(stmt, 3))].compactMap { $0 }.filter { !$0.isEmpty })
+            for node in nodes { byNode[node, default: []].append((id, refs, sqlite3_column_int(stmt, 4) != 0)) }
+        }
+        var byWayID: [String: WayLinkInfo] = [:]
+        for (node, members) in byNode {
+            for from in members {
+                for to in members where from.id != to.id && (from.tunnel || to.tunnel) {
+                    var info = byWayID[from.id] ?? WayLinkInfo()
+                    info.linkedWayIDs.insert(to.id)
+                    if !from.refs.isDisjoint(with: to.refs) { info.sharedRefWayIDs.insert(to.id) }
+                    info.sharedNodeKeysByLinkedWayID[to.id, default: []].insert(node)
+                    byWayID[from.id] = info
+                }
+            }
+        }
+        return WayLinksContext(available: !byWayID.isEmpty, byWayID: byWayID)
     }
 
     private func loadCorridorProgressContext(

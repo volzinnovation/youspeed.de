@@ -94,6 +94,29 @@ class MatcherParityInstrumentedTest {
         }
     }
 
+    @Test fun normalizedEndpointBundleSupportsTunnelPortalWithoutLegacyLinks() = fixture("tunnel-transition.sql") { file ->
+        SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            DeltaUpdatePolicy.sqlStatements("""
+DROP TABLE way_links;
+CREATE TABLE way_endpoints (way_id INTEGER PRIMARY KEY, ref_norm TEXT, highway TEXT, tunnel_flag INTEGER, start_node_key TEXT, start_lon REAL, start_lat REAL, end_node_key TEXT, end_lon REAL, end_lat REAL, way_length_m REAL);
+INSERT INTO way_endpoints VALUES (7001,'B10','primary',0,'approach',13.0,52.0,'portal',13.0010,52.0,68.5),(7002,'B10','primary',1,'portal',13.0010,52.0,'exit',13.0020,52.0,68.5),(7003,'B36','primary',0,'parallel-start',13.0010,52.00025,'parallel-end',13.0020,52.00025,68.5);
+UPDATE way_geom SET points_json='[[52.0,13.0],[52.0,13.0010]]' WHERE way_id=7001;
+            """.trimIndent()).forEach(db::execSQL)
+        }
+        val approach = WayMatchContext(preferredWayId = "7001", preferredHighway = "primary", preferredEndpointProximityM = 0.0,
+            recentWayIds = listOf("7001"), preferredStreetRef = "B 10", recentStreetRefs = listOf("B 10"))
+        V3SpeedLimitLookup(file.path, matchingModel = MatcherDebugProfile.M7.lookupModel).use { lookup ->
+            val entry = lookup.lookup(52.0, 13.0010, 80.0, 32, 90.0, 20.0, 5.0, matchContext = approach)
+            assertEquals("7002", entry.wayId)
+            assertTrue(entry.isTunnelSegment)
+            assertNotEquals("7002", lookup.lookup(52.0, 13.0015, 80.0, 32, 90.0, 20.0, 5.0, matchContext = approach).wayId)
+            SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use {
+                it.execSQL("UPDATE way_endpoints SET start_node_key='unconnected' WHERE way_id=7002")
+            }
+            assertNotEquals("7002", lookup.lookup(52.0, 13.0010, 80.0, 32, 90.0, 20.0, 5.0, matchContext = approach).wayId)
+        }
+    }
+
     @Test fun m11UsesParticleMotionHeadingWithoutWayLinks() = fixture("curved-unlinked.sql") { file ->
         assertEquals("12002", lookup(file, MatcherDebugProfile.M10, context()).wayId)
         val result = lookup(file, MatcherDebugProfile.M11, context())

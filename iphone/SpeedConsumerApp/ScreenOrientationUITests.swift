@@ -766,7 +766,8 @@ extension ScreenOrientationUITests {
 #else
         continueAfterFailure = false
         for orientation in ["portrait", "landscape_camera_lower_right", "landscape_camera_upper_left"] {
-            for speed in ["1", "1.01", "3.99", "4"] {
+            var settingsSlot: CGRect?
+            for speed in ["1", "1.01", "3.99", "4", "20", "20.01"] {
                 let app = drivingPhotoApp(speed: speed, orientation: orientation, camera: "unavailable")
                 if orientation == "landscape_camera_upper_left" {
                     app.launchArguments += ["-AppleLanguages", "(ar)", "-AppleLocale", "ar_SA", "-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"]
@@ -777,14 +778,25 @@ extension ScreenOrientationUITests {
                 let moving = (Double(speed) ?? 0) > 1
                 XCTAssertEqual(photo.exists, moving)
                 let settings = app.buttons["dashboard.settingsButton"]
-                XCTAssertEqual(settings.exists, (Double(speed) ?? 0) < 4)
+                XCTAssertEqual(settings.exists, !moving)
+                if settings.exists { settingsSlot = settings.frame }
                 if moving {
                     XCTAssertFalse(photo.isEnabled)
                     assertDrivingPhotoLowerRight(photo, in: app)
-                    if settings.exists {
-                        XCTAssertTrue(settings.isHittable)
-                        XCTAssertLessThanOrEqual(settings.frame.maxY + 4, photo.frame.minY,
-                            "The ordinary footer reserves a separate row during1..4 km/h")
+                    let info = app.buttons["dashboard.infoButton"]
+                    XCTAssertEqual(info.exists, (Double(speed) ?? 0) <= 20)
+                    let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                    screenshot.name = "photo-slot-\(orientation)-\(speed)"
+                    screenshot.lifetime = .keepAlways
+                    add(screenshot)
+                    if info.exists {
+                        // Wrapped buttons expose their icon glyph bounds; the shutter
+                        // exposes its full 44pt target. Compare centers, not glyph edges.
+                        XCTAssertEqual(photo.frame.midY, info.frame.midY, accuracy: 2.5,
+                            "Shutter shares the current action-row center")
+                    }
+                    if let slot = settingsSlot {
+                        XCTAssertEqual(photo.frame.midX, slot.midX, accuracy: 2.5, "Shutter uses the Settings slot")
                     }
                     photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
                     XCTAssertFalse(app.alerts.firstMatch.exists)

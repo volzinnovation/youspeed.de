@@ -22113,7 +22113,7 @@ extension SpeedConsumerTests {
         for speed in [1.001, 1.79, 3.99, 4, 80] {
             XCTAssertTrue(DrivingPhotoPolicy.showsButton(speedKmh: speed))
         }
-        XCTAssertEqual(DrivingControlAvailability.controlsSpeedThresholdKmh, 4)
+        XCTAssertEqual(DrivingControlAvailability.controlsSpeedThresholdKmh, 20)
         let now = Date(timeIntervalSince1970: 10_000)
         func location(latitude: Double = 49, longitude: Double = 8,
                       accuracy: Double = 5, age: Double = 0) -> Bool {
@@ -22433,5 +22433,60 @@ final class PanoramaxCaptureToggleTests: XCTestCase {
     private func movingLocation(longitude: Double = 8) -> CLLocation {
         CLLocation(coordinate: .init(latitude: 49, longitude: longitude), altitude: 0,
             horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 10, timestamp: Date())
+    }
+}
+
+extension SpeedConsumerTests {
+    func testNormalizedEndpointBundleSupportsTunnelPortalWithoutLegacyLinks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let db = root.appendingPathComponent("normalized.sqlite")
+        try createTunnelTransitionFixtureDB(at: db)
+        try executeSQL(at: db, sql: """
+            DROP TABLE way_links;
+            CREATE TABLE way_endpoints (way_id INTEGER PRIMARY KEY, ref_norm TEXT, highway TEXT, tunnel_flag INTEGER, start_node_key TEXT, start_lon REAL, start_lat REAL, end_node_key TEXT, end_lon REAL, end_lat REAL, way_length_m REAL);
+            INSERT INTO way_endpoints VALUES (7001,'B10','primary',0,'approach',13.0,52.0,'portal',13.0010,52.0,68.5),(7002,'B10','primary',1,'portal',13.0010,52.0,'exit',13.0020,52.0,68.5),(7003,'B36','primary',0,'parallel-start',13.0010,52.00025,'parallel-end',13.0020,52.00025,68.5);
+            UPDATE way_geom SET points_json='[[52.0,13.0],[52.0,13.0010]]' WHERE way_id=7001;
+        """)
+        let service = V3SpeedLimitService(dbPath: db.path, matchingModel: .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic)
+        let approach = WayMatchContext(preferredWayID: "7001", preferredHighway: "primary",
+            preferredEndpointProximityM: 0, recentWayIDs: ["7001"], preferredStreetRef: "B 10", recentStreetRefs: ["B 10"])
+        let entry = try service.lookupSpeedLimit(lat: 52, lon: 13.0010, radiusM: 80, maxCandidates: 32,
+            matchContext: approach, headingDeg: 90, speedKmh: 20, horizontalAccuracyM: 5)
+        XCTAssertEqual(entry.wayID, "7002")
+        XCTAssertTrue(entry.isTunnelSegment)
+        let middle = try service.lookupSpeedLimit(lat: 52, lon: 13.0015, radiusM: 80, maxCandidates: 32,
+            matchContext: approach, headingDeg: 90, speedKmh: 20, horizontalAccuracyM: 5)
+        XCTAssertNotEqual(middle.wayID, "7002")
+        // A shared ref without an exact endpoint connection must remain rejected.
+        try executeSQL(at: db, sql: "UPDATE way_endpoints SET start_node_key='unconnected' WHERE way_id=7002;")
+        let disconnected = try service.lookupSpeedLimit(lat: 52, lon: 13.0010, radiusM: 80, maxCandidates: 32,
+            matchContext: approach, headingDeg: 90, speedKmh: 20, horizontalAccuracyM: 5)
+        XCTAssertNotEqual(disconnected.wayID, "7002")
+    }
+}
+
+extension TrafficSignPassageEvaluationTests {
+    @MainActor
+    func testNightWithdrawsCameraAuthorityAndRestoresBundledLimit() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .zoneStart(30), context: context))
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .camera)
+        let selected = model.trafficSignRecognitionEnabled
+        model.testRefreshCameraDaylight(latitude: 48.76, longitude: 8.34,
+            at: ISO8601DateFormatter().date(from: "2026-10-18T17:05:00Z")!)
+        XCTAssertFalse(model.cameraTSRDaylightAllowed)
+        XCTAssertEqual(model.trafficSignRecognitionEnabled, selected)
+        XCTAssertEqual(model.speedLimitKmh, 50)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+        XCTAssertFalse(model.effectiveSpeedLimitState.hasCameraEvidenceMarker)
+        model.testRefreshCameraDaylight(latitude: 48.76, longitude: 8.34,
+            at: ISO8601DateFormatter().date(from: "2026-10-19T10:00:00Z")!)
+        XCTAssertTrue(model.cameraTSRDaylightAllowed)
+        XCTAssertEqual(model.speedLimitKmh, 50)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
     }
 }

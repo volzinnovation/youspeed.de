@@ -12,7 +12,7 @@ class DrivingPhotoCapturePolicyTests {
         location: PanoramaxLocationSample? = sample, previous: Instant? = null) = DrivingPhotoCapturePolicy.isReady(
         speed, session, camera, output, batch, storage, inFlight, location, now, previous)
 
-    @Test fun strictOneKmhThresholdDoesNotChangeOrdinaryFourKmhSafetyPolicy() {
+    @Test fun strictOneKmhPhotoThresholdIsIndependentOfTwentyKmhControlGate() {
         for (speed in listOf(-1.0, 0.0, 0.99, 1.0, Double.NaN, Double.POSITIVE_INFINITY)) {
             assertFalse("Hidden at $speed", DrivingPhotoCapturePolicy.isVisible(speed))
             assertFalse(ready(speed = speed))
@@ -21,7 +21,7 @@ class DrivingPhotoCapturePolicyTests {
             assertTrue(DrivingPhotoCapturePolicy.isVisible(speed))
             assertTrue(ready(speed = speed))
         }
-        assertEquals(4.0, DrivingInteractionMotionPolicy.CONTROLS_SPEED_THRESHOLD_KMH, 0.0)
+        assertEquals(20.0, DrivingInteractionMotionPolicy.CONTROLS_SPEED_THRESHOLD_KMH, 0.0)
         assertFalse("Automatic minimum speed stays unchanged", PanoramaxCapturePolicy.isMoving(1.5 / 3.6))
     }
 

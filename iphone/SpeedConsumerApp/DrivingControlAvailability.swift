@@ -10,19 +10,19 @@ enum DrivingControlPosturePolicy {
         return acos(max(-1, min(1, -z / length))) * 180 / .pi
     }
 
-    static func isUpright(angleDegrees: Double?) -> Bool {
+    static func isFlat(angleDegrees: Double?) -> Bool {
         guard let angleDegrees, angleDegrees.isFinite else { return false }
         // Include exact boundaries despite floating-point gravity conversion.
-        return angleDegrees >= 80 - 1e-9 && angleDegrees <= 100 + 1e-9
+        return angleDegrees >= 0 && angleDegrees <= 10 + 1e-9
     }
 
     static func controlsAllowed(speedControlsAllowed: Bool, angleDegrees: Double?) -> Bool {
-        speedControlsAllowed || !isUpright(angleDegrees: angleDegrees)
+        speedControlsAllowed && isFlat(angleDegrees: angleDegrees)
     }
 }
 
 struct DrivingControlAvailability {
-    static let controlsSpeedThresholdKmh = 4.0
+    static let controlsSpeedThresholdKmh = 20.0
     let controlsAllowed: Bool
     let stationaryObservedAt: Date?
 
@@ -30,8 +30,8 @@ struct DrivingControlAvailability {
                         displayedSpeedKmh: Double, horizontalAccuracyMeters: Double,
                         observedAt: Date, now: Date) -> Self {
         let validSpeed = rawSpeedMetersPerSecond.isFinite && rawSpeedMetersPerSecond >= 0
-        if displayedSpeedKmh >= controlsSpeedThresholdKmh ||
-            (validSpeed && rawSpeedMetersPerSecond >= controlsSpeedThresholdKmh / 3.6) {
+        if displayedSpeedKmh > controlsSpeedThresholdKmh ||
+            (validSpeed && rawSpeedMetersPerSecond > controlsSpeedThresholdKmh / 3.6) {
             return Self(controlsAllowed: false, stationaryObservedAt: nil)
         }
         let age = now.timeIntervalSince(observedAt)
@@ -46,7 +46,7 @@ struct DrivingControlAvailability {
     }
 }
 
-/// Independent of the four-km/h lock for navigation/settings. Manual capture
+/// Independent of the twenty-km/h lock for navigation/settings. Manual capture
 /// never changes that lock or opens a permission/settings sheet.
 enum DrivingPhotoPolicy {
     static let speedThresholdKmh = 1.0

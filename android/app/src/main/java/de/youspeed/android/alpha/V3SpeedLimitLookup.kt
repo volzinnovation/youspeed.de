@@ -1410,7 +1410,7 @@ internal class V3SpeedLimitLookup(
         matchContext: WayMatchContext,
         candidates: List<WayCandidate>,
     ): WayLinksContext {
-        if (!hasWayLinksTable) {
+        if (!hasWayLinksTable && !tableExists("way_endpoints")) {
             return WayLinksContext(available = false)
         }
         val wayIds = linkedSetOf<String>()
@@ -1421,6 +1421,7 @@ internal class V3SpeedLimitLookup(
         if (wayIds.isEmpty()) {
             return WayLinksContext(available = true)
         }
+        if (!hasWayLinksTable) return loadEndpointWayLinksContext(wayIds)
         val placeholders = wayIds.joinToString(",") { "?" }
         val linkedByFrom = linkedMapOf<String, MutableSet<String>>()
         val sharedRefByFrom = linkedMapOf<String, MutableSet<String>>()
@@ -1453,6 +1454,36 @@ internal class V3SpeedLimitLookup(
             sharedRefByFrom = sharedRefByFrom.mapValues { it.value.toSet() },
             sharedNodeKeysByPair = sharedNodeKeysByPair.mapValues { it.value.toSet() },
         )
+    }
+
+    /** Recover exact tunnel portals from normalized endpoints; preserve surface-only diagnostic matching. */
+    private fun loadEndpointWayLinksContext(wayIds: Set<String>): WayLinksContext {
+        data class Endpoint(val id: String, val refs: Set<String>, val tunnel: Boolean)
+        val byNode = linkedMapOf<String, MutableList<Endpoint>>()
+        val tunnelColumn = if (columnExists("way_endpoints", "tunnel_flag")) "tunnel_flag" else "0"
+        db.rawQuery("SELECT way_id,ref_norm,start_node_key,end_node_key,$tunnelColumn FROM way_endpoints WHERE way_id IN (${wayIds.joinToString(",") { "?" }})",
+            wayIds.toTypedArray()).use { cursor ->
+            while (cursor.moveToNext()) {
+                val id = cursor.getString(0)
+                val refs = normalizedRefTokens(cursor.stringOrNull(1)).toSet()
+                setOfNotNull(cursor.stringOrNull(2), cursor.stringOrNull(3)).filter { it.isNotEmpty() }.forEach { node ->
+                    byNode.getOrPut(node) { mutableListOf() }.add(Endpoint(id, refs, cursor.getInt(4) != 0))
+                }
+            }
+        }
+        val linked = linkedMapOf<String, MutableSet<String>>()
+        val shared = linkedMapOf<String, MutableSet<String>>()
+        val nodes = linkedMapOf<Pair<String, String>, MutableSet<String>>()
+        byNode.forEach { (node, members) ->
+            members.forEach { from -> members.forEach { to ->
+                if (from.id != to.id && (from.tunnel || to.tunnel)) {
+                    linked.getOrPut(from.id) { linkedSetOf() }.add(to.id)
+                    if (from.refs.any(to.refs::contains)) shared.getOrPut(from.id) { linkedSetOf() }.add(to.id)
+                    nodes.getOrPut(from.id to to.id) { linkedSetOf() }.add(node)
+                }
+            } }
+        }
+        return WayLinksContext(available = linked.isNotEmpty(), linkedByFrom = linked, sharedRefByFrom = shared, sharedNodeKeysByPair = nodes)
     }
 
     private fun loadCorridorProgressContext(candidates: List<WayCandidate>): CorridorProgressContext {

@@ -619,7 +619,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var activeBundleVersion: String = "none"
     @Published var activeDBPath: String = ""
     @Published var currentSpeedKmh: Double = 0
-    @Published private(set) var drivingControlsAllowed = true
+    @Published private(set) var drivingControlsAllowed = false
+    @Published private(set) var cameraTSRDaylightAllowed = false
+    private var daylightTransitionGeneration = 0
     private var speedControlsAllowed = true
     private var drivingControlAngleDegrees: Double?
     private let drivingControlPostureMotion = DrivingControlPostureMotion()
@@ -2498,7 +2500,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             prepareTrafficSignRecognitionRuntime()
         }
         let configuration = DriveRecorderPolicy.mainControlStartConfiguration(
-            trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
+            trafficSignRecognitionEnabled: trafficSignRecognitionEnabled && cameraTSRDaylightAllowed,
             panoramaxEnabled: panoramaxCaptureEnabled
         )
         // The main recorder control owns the Dashcam start. Persist that
@@ -2566,10 +2568,32 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             resetTrafficSignSupplementaryText()
             cancelTrafficSignSpeech(secondaryOnly: true)
         }
+        refreshCameraDaylight()
         refreshLaneDetectionActivity()
         updateTrafficSignWriteGate()
         refreshTrafficSignFrameSnapshot()
         reconcileAutomaticCapture(allowTerminalRetry: isActive)
+    }
+
+    /// Re-evaluate with wall-clock time, even without a new GPS fix (e.g. at sunset).
+    private func refreshCameraDaylight(now: Date = Date()) {
+        guard !isScreenshotMode else { return }
+        let allowed = SolarDaylight.permitsCameraTSR(latitude: currentLatitude, longitude: currentLongitude, at: now)
+        guard allowed != cameraTSRDaylightAllowed else { return }
+        cameraTSRDaylightAllowed = allowed
+        daylightTransitionGeneration += 1
+        trafficSignOverridePolicy.clear()
+        handleTrafficSignRecognitionSettingChange()
+        if !allowed {
+            // Existing authority-withdrawal event; the shared policy is unchanged.
+            speedReference.pipelineAuthorityWithdrawn(evidenceID: "night-\(daylightTransitionGeneration)")
+            let bundle = EffectiveSpeedLimitState.base(localValue: nil,
+                bundledSpeedKmh: currentBundledSpeedLimitKmh, bundledUnlimited: currentBaseUnlimitedSpeedLimitActive)
+            speedReference.bundle(id: "\(activeBundleVersion):\(limitWayID ?? "none")",
+                value: limitWayID == nil ? nil : SpeedReferenceValue(bundle.value))
+            publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
+        }
+        appendTSRLog("camera_daylight allowed=\(allowed) reason=\(allowed ? "daylight" : "night_or_unknown_location")", timestamp: now)
     }
 
     private var trafficSignProcessingIsEnabled: Bool {
@@ -2614,6 +2638,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private var trafficSignMutationIsEnabled: Bool {
         trafficSignRecognitionEnabled
+            && cameraTSRDaylightAllowed
             && isDriving
             && driveCaptureCoordinator?.state == .recording
             && driveRecorderTrafficSignRecognitionActive
@@ -2653,8 +2678,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private func reconcileAutomaticCapture(allowTerminalRetry: Bool = false) {
         guard let driveCaptureCoordinator, !isScreenshotMode else { return }
         if visualCalibrationActive { return }
+        if driveCaptureCoordinator.state == .recording && !driveCaptureCoordinator.isAutomaticCaptureSession {
+            _ = driveCaptureCoordinator.setTrafficSignRecognitionEnabledDuringRecording(
+                trafficSignRecognitionEnabled && cameraTSRDaylightAllowed && isDriving && trafficSignApplicationIsActive)
+        }
         let recognition = DriveRecorderPolicy.shouldRunStandaloneTrafficSignRecognition(
-            recognitionEnabled: trafficSignRecognitionEnabled,
+            recognitionEnabled: trafficSignRecognitionEnabled && cameraTSRDaylightAllowed,
             independentRecognitionEnabled: trafficSignRecognitionIndependentEnabled,
             runtimeReady: trafficSignRuntime != nil,
             isDriving: isDriving,
@@ -2797,7 +2826,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             if presentedState.hasCameraEvidenceMarker && presentedState.value == .unknown {
                 speedReference.pipelineAuthorityWithdrawn(evidenceID: trafficSignEffectiveLimitResolver.activePassage?.physicalTrackID ?? presentedState.presentationReason)
             }
-            if presentedState.source == .camera, let value = SpeedReferenceValue(presentedState.value) {
+            if cameraTSRDaylightAllowed, presentedState.source == .camera, let value = SpeedReferenceValue(presentedState.value) {
                 let passage = trafficSignEffectiveLimitResolver.activePassage
                 let immediate = trafficSignOverridePolicy.activeOverride
                 if let offer = TrafficSignCameraReferenceOffer.select(
@@ -3003,7 +3032,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 self.trafficSignRecognitionUnavailableDetail = ""
                 if let driveCaptureCoordinator = self.driveCaptureCoordinator {
                     driveCaptureCoordinator.setVideoFrameConsumer(runtime)
-                    if self.trafficSignRecognitionEnabled,
+                    if self.trafficSignRecognitionEnabled, self.cameraTSRDaylightAllowed,
                        driveCaptureCoordinator.sessionPurpose != .calibration,
                        driveCaptureCoordinator.state == .recording {
                         _ = driveCaptureCoordinator
@@ -4358,6 +4387,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard canToggleDriveRecorderModules,
               let driveCaptureCoordinator else { return false }
 
+        if !cameraTSRDaylightAllowed && !isScreenshotMode {
+            // Preserve the selection for sunrise while keeping the consumer paused.
+            trafficSignRecognitionEnabled.toggle()
+            syncDriveRecorderState()
+            return true
+        }
+
         if driveRecorderTrafficSignRecognitionActive {
             trafficSignRecognitionEnabled = false
             if !driveRecorderPanoramaxActive
@@ -4445,7 +4481,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if captureState == .recording,
            capturePurpose != .calibration,
            capturePurpose == .driveRecording || trafficSignRecognitionIndependentEnabled,
-           trafficSignRecognitionEnabled,
+           trafficSignRecognitionEnabled, cameraTSRDaylightAllowed,
            trafficSignRuntime != nil,
            !driveRecorderTrafficSignRecognitionActive,
            driveRecorderTrafficSignRecognitionAvailable,
@@ -6127,9 +6163,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         activeDBPath = screenshotState.rawValue
         activeBundleDBSHA256 = nil
         currentSpeedKmh = demonstrationSpeed
-        // Screenshot fixtures model an upright mount without live motion sensors.
-        drivingControlAngleDegrees = 90
-        speedControlsAllowed = demonstrationSpeed < DrivingControlAvailability.controlsSpeedThresholdKmh
+        // Deterministic fixtures model a flat phone without live motion sensors.
+        drivingControlAngleDegrees = 0
+        speedControlsAllowed = demonstrationSpeed <= DrivingControlAvailability.controlsSpeedThresholdKmh
         refreshDrivingControlAvailability()
         stationarySpeedObservedAt = demonstrationSpeed == 0 ? Date() : nil
         speedLimitKmh = fixture.speedLimitKmh
@@ -6267,7 +6303,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
               let fixture = ProcessInfo.processInfo.environment["YOUSPEED_MANUAL_PHOTO_TEST"] else { return }
         manualPhotoTestFixture = true
         currentSpeedKmh = Double(ProcessInfo.processInfo.environment["YOUSPEED_MANUAL_PHOTO_SPEED"] ?? "30") ?? 30
-        speedControlsAllowed = currentSpeedKmh < DrivingControlAvailability.controlsSpeedThresholdKmh
+        speedControlsAllowed = currentSpeedKmh <= DrivingControlAvailability.controlsSpeedThresholdKmh
         refreshDrivingControlAvailability()
         stationarySpeedObservedAt = currentSpeedKmh == 0 ? Date() : nil
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("manual-photo-ui-\(UUID().uuidString)", isDirectory: true)
@@ -6484,6 +6520,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 guard !Task.isCancelled, let self, self.isDriving else { return }
+                self.refreshCameraDaylight()
                 self.speedReference.tick()
                 self.publishEffectiveSpeedLimitState(self.effectiveSpeedLimitState)
             }
@@ -9085,6 +9122,12 @@ extension DriveSessionViewModel {
 
     func testDiscoverPacks(for location: CLLocation) { discoverPacks(for: location) }
 
+    func testRefreshCameraDaylight(latitude: Double?, longitude: Double?, at date: Date) {
+        currentLatitude = latitude
+        currentLongitude = longitude
+        refreshCameraDaylight(now: date)
+    }
+
     func testSetDrivingControlAngle(_ degrees: Double?) {
         updateDrivingControlPosture(angleDegrees: degrees)
     }
@@ -9184,6 +9227,7 @@ extension DriveSessionViewModel {
         trafficSignEffectiveLimitResolver.clear(base: currentBaseEffectiveSpeedLimitState())
         speedReference.context(way: context.wayId, road: context.roadIdentity,
             relations: Set(context.routeRelationMemberships.compactMap { $0.sourceRelationID.map(String.init) }), direction: context.travelDirection.rawValue, stable: true)
+        cameraTSRDaylightAllowed = true
         speedReference.bundle(id: "test-bundle", value: bundledSpeedKmh.map { SpeedReferenceValue(kind: "numeric", kmh: $0) })
         publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
     }
@@ -9235,6 +9279,7 @@ extension DriveSessionViewModel {
 
     func testClearTrafficSignAssertionKeepingCurrentBase() {
         speedReference.boundary("applicable_end")
+        cameraTSRDaylightAllowed = true
         speedReference.bundle(id: "test-bundle", value: currentBundledSpeedLimitKmh.map { SpeedReferenceValue(kind: "numeric", kmh: $0) })
         trafficSignEffectiveLimitResolver.clear(base: currentBaseEffectiveSpeedLimitState())
         publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
@@ -9459,6 +9504,7 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
             currentLongitude = location.coordinate.longitude
             gpsHorizontalAccuracyM = location.horizontalAccuracy >= 0 ? location.horizontalAccuracy : nil
             gpsSignalBars = Self.gpsSignalBars(horizontalAccuracyM: location.horizontalAccuracy)
+            refreshCameraDaylight()
             reconcileAutomaticCapture()
             driveCaptureCoordinator?.ingest(location: location, speedMetersPerSecond: displaySpeedKmh / 3.6)
             gpsFixCount += 1

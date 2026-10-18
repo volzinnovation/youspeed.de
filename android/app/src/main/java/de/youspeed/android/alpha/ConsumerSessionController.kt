@@ -261,7 +261,7 @@ data class ConsumerUiState(
     val audioAlertThresholdKmh: Int = 8,
     val hideWelcomeScreen: Boolean = false,
     val manualOrientation: ManualOrientation = ManualOrientation.PORTRAIT,
-    val drivingControlsAllowed: Boolean = true,
+    val drivingControlsAllowed: Boolean = false,
     val stationarySpeedObservedAt: Instant? = null,
     val dashcamButtonActionPending: Boolean = false,
     val dashcamButtonActionError: String? = null,
@@ -596,10 +596,14 @@ class ConsumerSessionController(
     private val speedReference = SpeedReferenceRuntime(runCatching {
         SpeedLimitReferenceModel.load { name -> appContext.assets.open("${SpeedLimitReferenceModel.DIRECTORY}/$name").use { it.readBytes() } }
     }.getOrNull())
+    @Volatile private var cameraTSRDaylightAllowed = false
+    private var daylightTransitionGeneration = 0
+    @Volatile private var latestBundleReference: Pair<String, SpeedReferenceValue?> = "none" to null
     private var speedReferenceLastLocation: Location? = null
     private val speedReferenceTick = object : Runnable {
         override fun run() {
             if (!isDriving || isDisposed.get()) return
+            refreshCameraDaylight()
             speedReference.tick()
             updateState { this }
             mainHandler.postDelayed(this, 1_000)
@@ -1260,7 +1264,30 @@ class ConsumerSessionController(
         }
     }
 
-    internal fun isTrafficSignRecognitionRuntimeEnabled(): Boolean = !shouldPresentOnboarding() && DriveRecorderPolicy.shouldRunRecognition(
+    private fun updateBundledSpeedReference(id: String, value: SpeedReferenceValue?) {
+        latestBundleReference = id to value
+        speedReference.bundle(id, value)
+    }
+
+    private fun refreshCameraDaylight() {
+        if (uiState.appScreenshotState != null) return
+        val allowed = SolarDaylight.permitsCameraTSR(uiState.currentLatitude, uiState.currentLongitude, clock.instant())
+        if (allowed == cameraTSRDaylightAllowed) return
+        cameraTSRDaylightAllowed = allowed
+        daylightTransitionGeneration++
+        if (!allowed) {
+            speedReference.pipelineAuthorityWithdrawn("night-$daylightTransitionGeneration")
+            val (id, value) = latestBundleReference
+            speedReference.bundle(id, value)
+        }
+        invalidateTrafficSignGeneration(clearAssertion = true, reason = if (allowed) "daylight_resumed" else "night_paused",
+            permitWrites = isTrafficSignRecognitionRuntimeEnabled())
+        reconcileTrafficSignCamera("daylight_changed")
+        appendRuntimeDiagnosticEvent("camera_daylight", mapOf("allowed" to allowed,
+            "reason" to if (allowed) "daylight" else "night_or_unknown_location"))
+    }
+
+    internal fun isTrafficSignRecognitionRuntimeEnabled(): Boolean = cameraTSRDaylightAllowed && !shouldPresentOnboarding() && DriveRecorderPolicy.shouldRunRecognition(
         uiState.trafficSignRecognitionEnabled, uiState.trafficSignRecognitionIndependentEnabled,
         driveRecorderEnabled, isDriving, applicationActive,
     )
@@ -1484,6 +1511,7 @@ class ConsumerSessionController(
             refreshOnboardingPermissions()
             if (uiState.onboardingLocating) requestFirstLocation()
         }
+        if (active) refreshCameraDaylight()
         if (wasActive == active) return
         // Deterministic screenshot signs survive foreground transitions, as on iPhone.
         if (uiState.appScreenshotState != null) return
@@ -3569,7 +3597,7 @@ class ConsumerSessionController(
         if (effective.cameraEvidence && (effective.resolution == null || effective.resolution.kind == TrafficSignResolvedLimitKind.UNKNOWN)) {
             speedReference.pipelineAuthorityWithdrawn(passage?.physicalTrackId ?: synchronized(trafficSignStateLock) { trafficSignResolver.activeAssertion()?.event?.physicalTrackId } ?: effective.presentationReason)
         }
-        if (effective.source != EffectiveSpeedLimitSource.CAMERA) return
+        if (!cameraTSRDaylightAllowed || effective.source != EffectiveSpeedLimitSource.CAMERA) return
         synchronized(trafficSignStateLock) {
             val active = trafficSignResolver.activeAssertion()?.event
             val offer = TrafficSignCameraReferenceOffer.select(
@@ -3987,7 +4015,7 @@ class ConsumerSessionController(
         synchronized(trafficSignStateLock) {
             latestTrafficSignBase = TrafficSignBaseLimit(null, EffectiveSpeedLimitSource.NONE, "bundle_removed")
             latestTrafficSignMapFix = null
-            speedReference.bundle("bundle_removed", null)
+            updateBundledSpeedReference("bundle_removed", null)
             speedReference.context(null, null, emptySet(), "unknown", false)
         }
         invalidateTrafficSignGeneration(clearAssertion = true, reason = "bundle_removed",
@@ -4680,9 +4708,9 @@ class ConsumerSessionController(
         // Match iPhone's optional DEBUG capture input; stationary test defaults stay intact.
         val demonstrationSpeed = launchScreenshotSpeedKmh?.takeIf { BuildConfig.DEBUG && it.isFinite() && it in 0.0..300.0 }
         val fixture = demonstrationSpeed?.let { baseFixture.copy(currentSpeedKmh = it) } ?: baseFixture
-        // Screenshot fixtures model a mounted phone and never depend on live sensors.
-        phoneScreenAngleDegrees = 90.0
-        speedControlsAllowed = fixture.currentSpeedKmh < DrivingInteractionMotionPolicy.CONTROLS_SPEED_THRESHOLD_KMH
+        // Deterministic fixtures model a flat phone without live motion sensors.
+        phoneScreenAngleDegrees = 0.0
+        speedControlsAllowed = fixture.currentSpeedKmh <= DrivingInteractionMotionPolicy.CONTROLS_SPEED_THRESHOLD_KMH
         val selectedCountry = penaltyCountrySelection.update(regionalPackCatalog, fixture.latitude, fixture.longitude,
             fixture.gpsHorizontalAccuracyM, clock.millis() / 1000.0, clock.millis() / 1000.0)
         check(scenario == null || selectedCountry == scenario.countryCode) { "Screenshot GPS country did not resolve" }
@@ -5161,6 +5189,7 @@ class ConsumerSessionController(
         if (!controlsAllowed && uiState.speedCaptureMode != SpeedCaptureModeState.IDLE) {
             cancelSpeedCapture(reason = null)
         }
+        refreshCameraDaylight()
         reconcilePhotoCaptureSession()
         maybeSpeakOverspeedWarning()
         maybeCapturePanoramaxPhoto()
@@ -5423,7 +5452,7 @@ class ConsumerSessionController(
                     synchronized(trafficSignStateLock) {
                         latestTrafficSignBase = TrafficSignBaseLimit(null, EffectiveSpeedLimitSource.NONE, "no_coverage")
                         latestTrafficSignMapFix = null
-                        speedReference.bundle("none", null)
+                        updateBundledSpeedReference("none", null)
                         speedReference.context(null, null, emptySet(), "unknown", false)
                     }
                     invalidateTrafficSignGeneration(clearAssertion = true, reason = "no_coverage",
@@ -6347,7 +6376,7 @@ class ConsumerSessionController(
         }
         latestTrafficSignInsideCity = result.insideCity
         latestTrafficSignCitySource = result.citySource
-        val tsrEnabledForEvaluation = writePermitActive && uiState.trafficSignRecognitionEnabled && isDriving
+        val tsrEnabledForEvaluation = cameraTSRDaylightAllowed && writePermitActive && uiState.trafficSignRecognitionEnabled && isDriving
         val previousContext = latestTrafficSignContext
         val previousWayId = normalizeTrafficSignWayId(previousContext?.wayId)
         val reversed = previousWayId != null &&
@@ -6412,7 +6441,7 @@ class ConsumerSessionController(
         latestTrafficSignDirection = result.travelDirection
         updateTrafficSignRoadContextDebugStateLocked(context)
         val bundleOnly = trafficSignBaseLimit(null, null, result, countryCode)
-        speedReference.bundle("$bundleVersion:${result.wayId ?: "none"}",
+        updateBundledSpeedReference("$bundleVersion:${result.wayId ?: "none"}",
             if (result.wayId == null) null else bundleOnly.resolution?.referenceValue())
         val effective = if (tsrEnabledForEvaluation || trafficSignResolver.activeAssertion() != null) {
             trafficSignResolver.reconcile(
