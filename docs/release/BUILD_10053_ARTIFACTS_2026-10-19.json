@@ -1,6 +1,6 @@
 {
   "format": "youspeed.alpha-release-artifacts.v1",
-  "checked_at": "2026-10-18T22:39:27.193225+00:00",
+  "checked_at": "2026-10-19T01:29:46.400263+02:00",
   "app_source_commit": "6283797620d039419bd0b9688162ad7399a61d5c",
   "android": {
     "version": "1.4-alpha",
@@ -64,15 +64,23 @@
     "upload_confirmed_at": "2026-10-19T00:16:51+02:00",
     "processing_state": "VALID",
     "testflight_internal": "IN_BETA_TESTING",
-    "testflight_external": "READY_FOR_BETA_SUBMISSION",
-    "external_submission_blocker": "Apple still has build 10052 in beta review",
+    "testflight_external": "WAITING_FOR_BETA_REVIEW",
     "testflight_groups_verified": true,
     "test_instructions_locale": "de-DE",
     "testflight_url": "https://testflight.apple.com/join/k3a1pgce",
     "production_submission": false,
-    "external_review_authorization": "User explicitly approved external beta-review submission on 19 October 2026",
-    "external_submission_last_attempt_at": "2026-10-18T22:39:27.193225+00:00",
-    "external_submission_last_result": "Apple 422 ENTITY_UNPROCESSABLE.ANOTHER_BUILD_IN_REVIEW"
+    "external_review_authorization": "User explicitly instructed permanent expiration of 10052 and external beta-review submission of 10053 on 19 October 2026",
+    "external_submission_last_attempt_at": "2026-10-18T16:29:22-07:00",
+    "external_submission_last_result": "Accepted by Apple; WAITING_FOR_BETA_REVIEW",
+    "external_review_submission_id": "3e818c45-d946-46b6-a031-a7df5b6f9b7b",
+    "external_review_state": "WAITING_FOR_REVIEW",
+    "superseded_build_10052": {
+      "build_id": "1d85c9a1-3026-417c-b934-c24240eced95",
+      "expired": true,
+      "testflight_internal": "EXPIRED",
+      "testflight_external": "EXPIRED",
+      "verified_at": "2026-10-19T01:29:46.400263+02:00"
+    }
   },
   "checks": {
     "android_unit": {
