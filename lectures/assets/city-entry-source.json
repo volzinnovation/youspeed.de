@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "file": "tsr-city310-bernbach.jpg",
+  "source_item_url": "https://panoramax.woladen.de/api/collections/5a7cc6bf-3fa4-474a-be4d-6d08cdd2abc8/items/a458609a-bbf1-413a-a039-5e0f685e9923",
+  "source_image_url": "https://panoramax.woladen.de/permanent/a4/58/60/9a/bbf1-413a-a039-5e0f685e9923.jpg",
+  "author": "admin",
+  "provider": "panoramax.woladen.de",
+  "license": "CC-BY-SA-4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "sha256": "11c4eb3729167234ec35474192e301b0e74b9f4fd68582d4ccc959e80b43e9ae",
+  "width": 2376,
+  "height": 4224,
+  "modifications": "None: unchanged downloaded HD image. Crops are created in memory during the diagnostic test.",
+  "annotation_xyxy": [
+    1827,
+    2244,
+    2039,
+    2392
+  ],
+  "ground_truth": "User-identified DE:310 city-entry sign for Bernbach. The source annotation supplies generic traffic-sign bounds, not a city-entry classifier label.",
+  "capability_expectation": "Current pinned134-class classifier has no city-entry class. The test measures and records its actual result; passing does not mean310 recognition works."
+}

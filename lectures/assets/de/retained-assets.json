@@ -1,0 +1,44 @@
+[
+  {
+    "asset": "lane-bezier-comparison.png",
+    "source": "inspector/logs/2026-09-30-lane-shadow-review/bezier-before-after.png",
+    "sha256": "609c9207f9d8b9f4f371d54900518004013322fc999e705e86dae8d4486ee035",
+    "bytes": 807011
+  },
+  {
+    "asset": "lane-live-overlay-contact.jpg",
+    "source": "inspector/logs/2026-10-01-drive-review/live-overlay-contact.jpg",
+    "sha256": "35a84f6039c2ef27fda65991a33b6d3b69703b5229b5277f8057c64f631fdbc6",
+    "bytes": 2499878
+  },
+  {
+    "asset": "lane-holdout-failure.jpg",
+    "source": "inspector/logs/2026-10-01-lane-fragments/heldout-comparison/holdout-dawn-dashed-0085.jpg",
+    "sha256": "dcf2c09a78a826aeba016c9959a102e2f695e24c4fb6d4ddc69e35057d98d8c5",
+    "bytes": 356056
+  },
+  {
+    "asset": "lane-heldout-six-arm.jpg",
+    "source": "inspector/logs/2026-10-01-lane-next/heldout-comparison/fresh-day-marked-0035.jpg",
+    "sha256": "4f45491028e18fb666a1e0a17c5fdcd1c8d9c748d8188c2f00419f4a29592929",
+    "bytes": 1053502
+  },
+  {
+    "asset": "ocr-laermschutz.png",
+    "source": "tests/fixtures/tsr-ocr-32/32a1fdaa-1e36-5f04-8482-7d34a5a32ae1.png",
+    "sha256": "8940ca79c70b356b88a2c547514d25b0303f78a991a9485a2cd3e23a660b153a",
+    "bytes": 59626
+  },
+  {
+    "asset": "ocr-time.png",
+    "source": "tests/fixtures/tsr-ocr-32/1704dcb7-16e0-58cf-a519-9b44091cf58d.png",
+    "sha256": "592c715d09304581eb1e4bb7436f3ff3e87c0d82d701d5088ae4383bc5b969c3",
+    "bytes": 71280
+  },
+  {
+    "asset": "ocr-distance.png",
+    "source": "tests/fixtures/tsr-ocr-32/2e6d6ec7-eb3d-5c53-a3d4-476815d72a87.png",
+    "sha256": "2ec57424dc3cec2ec920af7c0b26d88b6063bcee2ef3ab4cfedecc77bbdd9e9b",
+    "bytes": 81194
+  }
+]
