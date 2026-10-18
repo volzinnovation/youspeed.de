@@ -55,20 +55,20 @@
       "gallery": [
         [
           "recognition",
-          "YouSpeed 1.3 auf dem iPhone: automatische Verkehrszeichenerkennung"
+          "YouSpeed 1.4-alpha auf dem iPhone: automatische Verkehrszeichenerkennung"
         ],
         [
           "signs",
-          "YouSpeed 1.3 auf dem iPhone: weitere Verkehrszeichen mit Ton oder Sprache"
+          "YouSpeed 1.4-alpha auf dem iPhone: weitere Verkehrszeichen mit Ton oder Sprache"
         ],
         [
           "dashcam",
-          "YouSpeed 1.3 auf dem iPhone: lokale Dashcam-Aufnahme"
+          "YouSpeed 1.4-alpha auf dem iPhone: lokale Dashcam-Aufnahme"
         ]
       ],
-      "artworkNote": "iPhone-Demonstrationsansichten aus dem 1.3-Release-Artwork. Die Dashcam-Illustration kombiniert die App-Oberfläche mit einem echten Aufnahmebild.",
-      "androidAlt": "Android-Dashcam in YouSpeed 1.3 mit einem echten Straßenbild in der Demonstrationsansicht",
-      "androidCaption": "YouSpeed 1.3 · Dashcam auf Android",
+      "artworkNote": "Aktuelle iPhone-Demonstrationsansichten aus 1.4-alpha. Die Dashcam-Illustration kombiniert die native App-Oberfläche mit einem echten Aufnahmebild. Die Store-Links öffnen die dort verfügbare Version.",
+      "androidAlt": "Android-Dashcam in YouSpeed 1.4-alpha mit einem echten Straßenbild in der Demonstrationsansicht",
+      "androidCaption": "YouSpeed 1.4-alpha · Dashcam auf Android",
       "artworkAlt": "YouSpeed 1.3: Fahr sicher. In jedem Auto. Release-Artwork mit fünf Verkehrszeichen im Kreis."
     },
     "download": {
@@ -138,20 +138,20 @@
       "gallery": [
         [
           "recognition",
-          "YouSpeed 1.3 on iPhone: automatic traffic sign recognition"
+          "YouSpeed 1.4-alpha on iPhone: automatic traffic sign recognition"
         ],
         [
           "signs",
-          "YouSpeed 1.3 on iPhone: additional signs with sound or spoken feedback"
+          "YouSpeed 1.4-alpha on iPhone: additional signs with sound or spoken feedback"
         ],
         [
           "dashcam",
-          "YouSpeed 1.3 on iPhone: local dashcam recording"
+          "YouSpeed 1.4-alpha on iPhone: local dashcam recording"
         ]
       ],
-      "artworkNote": "iPhone demonstration views from the 1.3 release artwork. The dashcam illustration combines the app interface with a genuine recording frame.",
-      "androidAlt": "YouSpeed 1.3 Android dashcam demonstration with a genuine road recording frame",
-      "androidCaption": "YouSpeed 1.3 · Dashcam on Android",
+      "artworkNote": "Current iPhone demonstration screens from 1.4-alpha. The dashcam illustration combines the native interface with a genuine recording frame. Store links open the version currently available there.",
+      "androidAlt": "YouSpeed 1.4-alpha Android dashcam demonstration with a genuine road recording frame",
+      "androidCaption": "YouSpeed 1.4-alpha · Dashcam on Android",
       "artworkAlt": "YouSpeed 1.3: Drive safely. In any car. Release artwork with five traffic signs arranged in a circle."
     },
     "download": {
@@ -221,20 +221,20 @@
       "gallery": [
         [
           "recognition",
-          "YouSpeed 1.3 sur iPhone : reconnaissance automatique des panneaux"
+          "YouSpeed 1.4-alpha sur iPhone : reconnaissance automatique des panneaux"
         ],
         [
           "signs",
-          "YouSpeed 1.3 sur iPhone : panneaux supplémentaires avec son ou voix"
+          "YouSpeed 1.4-alpha sur iPhone : panneaux supplémentaires avec son ou voix"
         ],
         [
           "dashcam",
-          "YouSpeed 1.3 sur iPhone : enregistrement local avec la dashcam"
+          "YouSpeed 1.4-alpha sur iPhone : enregistrement local avec la dashcam"
         ]
       ],
-      "artworkNote": "Vues de démonstration iPhone issues des visuels de la version 1.3. L’illustration de la dashcam associe l’interface à une image d’un véritable enregistrement.",
-      "androidAlt": "Démonstration de la dashcam Android YouSpeed 1.3 avec une véritable image de route",
-      "androidCaption": "YouSpeed 1.3 · Dashcam sur Android",
+      "artworkNote": "Vues de démonstration iPhone actuelles de la version 1.4-alpha. L’illustration dashcam associe l’interface native à une image réelle enregistrée. Les liens des boutiques ouvrent leur version disponible.",
+      "androidAlt": "Démonstration de la dashcam Android YouSpeed 1.4-alpha avec une véritable image de route",
+      "androidCaption": "YouSpeed 1.4-alpha · Dashcam sur Android",
       "artworkAlt": "YouSpeed 1.3 : Roulez prudemment. Dans toute voiture. Visuel avec cinq panneaux disposés en cercle."
     },
     "download": {
@@ -304,20 +304,20 @@
       "gallery": [
         [
           "recognition",
-          "YouSpeed 1.3 op iPhone: automatische verkeersbordherkenning"
+          "YouSpeed 1.4-alpha op iPhone: automatische verkeersbordherkenning"
         ],
         [
           "signs",
-          "YouSpeed 1.3 op iPhone: extra verkeersborden met geluid of spraak"
+          "YouSpeed 1.4-alpha op iPhone: extra verkeersborden met geluid of spraak"
         ],
         [
           "dashcam",
-          "YouSpeed 1.3 op iPhone: lokale dashcam-opname"
+          "YouSpeed 1.4-alpha op iPhone: lokale dashcam-opname"
         ]
       ],
-      "artworkNote": "iPhone-demonstratieweergaven uit het artwork van versie 1.3. De dashcam-illustratie combineert de app-interface met een beeld uit een echte opname.",
-      "androidAlt": "Android-dashcamdemonstratie in YouSpeed 1.3 met een echt beeld van de weg",
-      "androidCaption": "YouSpeed 1.3 · Dashcam op Android",
+      "artworkNote": "Actuele iPhone-demonstratieschermen van 1.4-alpha. De dashcamillustratie combineert de native interface met een echt opnamebeeld. De storelinks openen de daar beschikbare versie.",
+      "androidAlt": "Android-dashcamdemonstratie in YouSpeed 1.4-alpha met een echt beeld van de weg",
+      "androidCaption": "YouSpeed 1.4-alpha · Dashcam op Android",
       "artworkAlt": "YouSpeed 1.3: Rijd veilig. In elke auto. Release-artwork met vijf verkeersborden in een cirkel."
     },
     "download": {

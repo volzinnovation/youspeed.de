@@ -58,7 +58,7 @@ def circle_mask(size: int, radius_ratio: float = 0.388) -> Image.Image:
 
 
 def render_release_artwork() -> None:
-    """Reuse approved 1.3 store artwork; scale for the web without cropping."""
+    """Reuse current store screenshots; scale for the web without cropping."""
     release_root = WEB_ROOT / "assets" / "release-1.3"
     release_root.mkdir(parents=True, exist_ok=True)
     copyfile(REPO_ROOT / "store/videos/feature-film/en-US/youspeed-feature-film-poster.jpg", release_root / "feature-film-poster.jpg")
