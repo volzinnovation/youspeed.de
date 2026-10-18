@@ -32,16 +32,16 @@
           "Die Smartphone-Kamera erkennt Tempolimits und weitere Schilder auf dem Gerät. Wähle Tonhinweise oder Sprachausgabe. Verfügbare Zeichen hängen von Land und installiertem Modell ab."
         ],
         [
+          "Liveassistenz und Bußgeldschätzung",
+          "Behalte dein Tempo neben dem Referenz-Tempolimit im Blick. Tempohinweise und länderspezifische Bußgeldschätzungen zeigen, welche Folgen eine Überschreitung haben könnte."
+        ],
+        [
           "Fahrten mit der Dashcam aufnehmen",
           "Speichere Videos lokal und sieh sie im Stand an. Du kannst Aufnahmen teilen oder löschen und entscheidest, was du behältst."
         ],
         [
-          "Straßenfotos prüfen und teilen",
+          "Fotos prüfen und zu Panoramax hochladen",
           "Prüfe Fotos mit Standortdaten in der Galerie. Ein optionaler Panoramax-Upload startet erst nach deiner Auswahl und benötigt ein verbundenes Konto und Internet."
-        ],
-        [
-          "Bußgelder und Verkehrszeichen nachschlagen",
-          "Unter Info findest du länderspezifische Bußgeldtabellen und einen Verkehrszeichenkatalog mit Piktogrammen und gesprochenen Namen. Offline verfügbar, ohne Rechtsberatung."
         ],
         [
           "Kartenpakete einfacher verwalten",
@@ -50,6 +50,10 @@
         [
           "Über Grenzen hinweg unterwegs",
           "1.3 verbessert den Kartenwechsel an Landesgrenzen, die GPS-Verarbeitung und die kontinuierliche Zuordnung zur Straße. Die App ist auf Deutsch, Englisch, Französisch und Niederländisch verfügbar."
+        ],
+        [
+          "Bußgelder und Verkehrszeichen nachschlagen",
+          "Unter Info findest du länderspezifische Bußgeldtabellen und einen Verkehrszeichenkatalog mit Piktogrammen und gesprochenen Namen. Offline verfügbar, ohne Rechtsberatung."
         ]
       ],
       "gallery": [
@@ -62,8 +66,16 @@
           "YouSpeed 1.4-alpha auf dem iPhone: weitere Verkehrszeichen mit Ton oder Sprache"
         ],
         [
+          "fine-calculation",
+          "YouSpeed 1.4-alpha: Bußgeldschätzung während der Fahrt"
+        ],
+        [
           "dashcam",
           "YouSpeed 1.4-alpha auf dem iPhone: lokale Dashcam-Aufnahme"
+        ],
+        [
+          "panoramax",
+          "YouSpeed 1.4-alpha: Fotos prüfen und zu Panoramax hochladen"
         ]
       ],
       "artworkNote": "Aktuelle iPhone-Demonstrationsansichten aus 1.4-alpha. Die Dashcam-Illustration kombiniert die native App-Oberfläche mit einem echten Aufnahmebild. Die Store-Links öffnen die dort verfügbare Version.",
@@ -115,16 +127,16 @@
           "Your phone’s camera recognizes speed limits and additional road signs on your device. Choose sound or spoken feedback. Supported signs depend on the country and installed model."
         ],
         [
+          "Live assistance and fine estimates",
+          "See your speed alongside the speed-limit reference. Speed alerts and country-specific fine estimates show what exceeding the limit could mean."
+        ],
+        [
           "Record your drive with the dashcam",
           "Keep videos locally and play them back when parked. Share or delete recordings and choose what to keep."
         ],
         [
-          "Review and share street photos",
+          "Review photos and upload to Panoramax",
           "Review geolocated photos in the gallery. Optional Panoramax uploads start only after your selection and require a connected account and internet access."
-        ],
-        [
-          "Look up fines and traffic signs",
-          "Behind Info, browse country-specific speeding fine tables and a traffic-sign catalogue with pictograms and spoken names. Available offline; the information is advisory."
         ],
         [
           "Manage map packages more easily",
@@ -133,6 +145,10 @@
         [
           "Travel across borders",
           "1.3 improves cross-border map switching, GPS fix handling and road-matching continuity. The app is available in English, German, French and Dutch."
+        ],
+        [
+          "Look up fines and traffic signs",
+          "Behind Info, browse country-specific speeding fine tables and a traffic-sign catalogue with pictograms and spoken names. Available offline; the information is advisory."
         ]
       ],
       "gallery": [
@@ -145,8 +161,16 @@
           "YouSpeed 1.4-alpha on iPhone: additional signs with sound or spoken feedback"
         ],
         [
+          "fine-calculation",
+          "YouSpeed 1.4-alpha: live speeding penalty estimate"
+        ],
+        [
           "dashcam",
           "YouSpeed 1.4-alpha on iPhone: local dashcam recording"
+        ],
+        [
+          "panoramax",
+          "YouSpeed 1.4-alpha: review photos and upload to Panoramax"
         ]
       ],
       "artworkNote": "Current iPhone demonstration screens from 1.4-alpha. The dashcam illustration combines the native interface with a genuine recording frame. Store links open the version currently available there.",
@@ -198,16 +222,16 @@
           "La caméra reconnaît les limitations et d’autres panneaux sur votre appareil. Choisissez un son ou une annonce vocale. Les panneaux pris en charge dépendent du pays et du modèle installé."
         ],
         [
+          "Assistance en direct et estimation des amendes",
+          "Gardez votre vitesse et la limitation de référence en vue. Les alertes et les estimations selon le pays indiquent les conséquences possibles d’un dépassement."
+        ],
+        [
           "Enregistrer vos trajets avec la dashcam",
           "Conservez les vidéos localement et regardez-les à l’arrêt. Partagez ou supprimez les enregistrements et choisissez ce que vous gardez."
         ],
         [
-          "Vérifier et partager les photos de route",
+          "Vérifier les photos et envoyer vers Panoramax",
           "Vérifiez les photos géolocalisées dans la galerie. L’envoi optionnel vers Panoramax ne démarre qu’après votre sélection et nécessite un compte connecté et internet."
-        ],
-        [
-          "Consulter les sanctions et les panneaux",
-          "Dans Info, consultez les barèmes d’amendes par pays et un catalogue de panneaux avec pictogrammes et noms prononcés. Disponibles hors ligne, à titre indicatif."
         ],
         [
           "Gérer les cartes plus facilement",
@@ -216,6 +240,10 @@
         [
           "Voyager au-delà des frontières",
           "La 1.3 améliore le changement de cartes aux frontières, le traitement GPS et la continuité du positionnement sur la route. L’app est disponible en français, allemand, anglais et néerlandais."
+        ],
+        [
+          "Consulter les sanctions et les panneaux",
+          "Dans Info, consultez les barèmes d’amendes par pays et un catalogue de panneaux avec pictogrammes et noms prononcés. Disponibles hors ligne, à titre indicatif."
         ]
       ],
       "gallery": [
@@ -228,8 +256,16 @@
           "YouSpeed 1.4-alpha sur iPhone : panneaux supplémentaires avec son ou voix"
         ],
         [
+          "fine-calculation",
+          "YouSpeed 1.4-alpha : estimation des amendes pendant le trajet"
+        ],
+        [
           "dashcam",
           "YouSpeed 1.4-alpha sur iPhone : enregistrement local avec la dashcam"
+        ],
+        [
+          "panoramax",
+          "YouSpeed 1.4-alpha : vérifier les photos et envoyer vers Panoramax"
         ]
       ],
       "artworkNote": "Vues de démonstration iPhone actuelles de la version 1.4-alpha. L’illustration dashcam associe l’interface native à une image réelle enregistrée. Les liens des boutiques ouvrent leur version disponible.",
@@ -281,16 +317,16 @@
           "Je camera herkent snelheidslimieten en andere borden op je toestel. Kies geluid of gesproken feedback. Ondersteunde borden hangen af van het land en het geïnstalleerde model."
         ],
         [
+          "Live rijhulp en boeteschattingen",
+          "Bekijk je snelheid naast de referentielimiet. Snelheidswaarschuwingen en boeteschattingen per land tonen de mogelijke gevolgen van een overschrijding."
+        ],
+        [
           "Je rit opnemen met de dashcam",
           "Bewaar video’s lokaal en bekijk ze wanneer je stilstaat. Deel of verwijder opnamen en kies wat je bewaart."
         ],
         [
-          "Straatfoto’s bekijken en delen",
+          "Foto’s controleren en naar Panoramax uploaden",
           "Bekijk foto’s met locatiegegevens in de galerij. Een optionele Panoramax-upload begint pas na jouw selectie en vereist een gekoppeld account en internet."
-        ],
-        [
-          "Boetes en verkeersborden opzoeken",
-          "Onder Info vind je boetetabellen per land en een verkeersbordencatalogus met pictogrammen en gesproken namen. Offline beschikbaar; de informatie is adviserend."
         ],
         [
           "Kaartpakketten eenvoudiger beheren",
@@ -299,6 +335,10 @@
         [
           "Over grenzen reizen",
           "1.3 verbetert het wisselen van kaarten bij grenzen, de GPS-verwerking en de doorlopende koppeling aan de weg. De app is beschikbaar in Nederlands, Duits, Engels en Frans."
+        ],
+        [
+          "Boetes en verkeersborden opzoeken",
+          "Onder Info vind je boetetabellen per land en een verkeersbordencatalogus met pictogrammen en gesproken namen. Offline beschikbaar; de informatie is adviserend."
         ]
       ],
       "gallery": [
@@ -311,8 +351,16 @@
           "YouSpeed 1.4-alpha op iPhone: extra verkeersborden met geluid of spraak"
         ],
         [
+          "fine-calculation",
+          "YouSpeed 1.4-alpha: boeteschatting tijdens de rit"
+        ],
+        [
           "dashcam",
           "YouSpeed 1.4-alpha op iPhone: lokale dashcam-opname"
+        ],
+        [
+          "panoramax",
+          "YouSpeed 1.4-alpha: foto’s controleren en naar Panoramax uploaden"
         ]
       ],
       "artworkNote": "Actuele iPhone-demonstratieschermen van 1.4-alpha. De dashcamillustratie combineert de native interface met een echt opnamebeeld. De storelinks openen de daar beschikbare versie.",

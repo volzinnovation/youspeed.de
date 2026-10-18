@@ -72,10 +72,12 @@ def render_release_artwork() -> None:
         target = release_root / locale
         target.mkdir(parents=True, exist_ok=True)
         sources = {
-            "recognition": REPO_ROOT / f"store/apple/screenshots/{store_locale}/iphone-6.9/02-camera-speed-limit.png",
-            "signs": REPO_ROOT / f"store/apple/screenshots/{store_locale}/iphone-6.9/03-secondary-sign.png",
+            "recognition": REPO_ROOT / f"store/apple/screenshots/{store_locale}/iphone-6.9/01-camera-speed-limit.png",
+            "signs": REPO_ROOT / f"store/apple/screenshots/{store_locale}/iphone-6.9/02-live-assistance.png",
+            "fine-calculation": REPO_ROOT / f"store/apple/screenshots/{store_locale}/iphone-6.9/03-fine-calculation.png",
+            "panoramax": REPO_ROOT / f"store/apple/screenshots/{store_locale}/iphone-6.9/05-panoramax-upload.png",
             "dashcam": REPO_ROOT / f"store/apple/screenshots/{store_locale}/iphone-6.9/04-dashcam.png",
-            "android-dashcam": REPO_ROOT / f"store/android/listing/{store_locale}/phone-screenshots/02-dashcam.png",
+            "android-dashcam": REPO_ROOT / f"store/android/listing/{store_locale}/phone-screenshots/04-dashcam.png",
         }
         for name, source in sources.items():
             image = Image.open(source).convert("RGB")
