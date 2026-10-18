@@ -1,6 +1,6 @@
 {
   "format": "youspeed.alpha-release-artifacts.v1",
-  "checked_at": "2026-10-18T22:36:58.122374+00:00",
+  "checked_at": "2026-10-18T22:39:27.193225+00:00",
   "app_source_commit": "6283797620d039419bd0b9688162ad7399a61d5c",
   "android": {
     "version": "1.4-alpha",
@@ -65,12 +65,14 @@
     "processing_state": "VALID",
     "testflight_internal": "IN_BETA_TESTING",
     "testflight_external": "READY_FOR_BETA_SUBMISSION",
-    "external_submission_blocker": "ENTITY_UNPROCESSABLE.ANOTHER_BUILD_IN_REVIEW: build 10052 is WAITING_FOR_REVIEW",
+    "external_submission_blocker": "Apple still has build 10052 in beta review",
     "testflight_groups_verified": true,
     "test_instructions_locale": "de-DE",
     "testflight_url": "https://testflight.apple.com/join/k3a1pgce",
     "production_submission": false,
-    "external_review_authorization": "Automatic approval review rejected external beta submission pending explicit user approval"
+    "external_review_authorization": "User explicitly approved external beta-review submission on 19 October 2026",
+    "external_submission_last_attempt_at": "2026-10-18T22:39:27.193225+00:00",
+    "external_submission_last_result": "Apple 422 ENTITY_UNPROCESSABLE.ANOTHER_BUILD_IN_REVIEW"
   },
   "checks": {
     "android_unit": {
