@@ -27,7 +27,7 @@ The [artifact receipt](BUILD_10052_ARTIFACTS_2026-10-18.json) records all APK si
 - Native captures remain in `store/artwork/raw-screenshots/`. `store/artwork/screenshot-layouts.json` records input/output hashes. The dashcam creative uses the existing genuine recording frame; it is an explicitly documented composition, not a claim of a live simulator road scene.
 - Capture scripts now use the selected gallery filenames and wait for the native UI. Android rejects splash/tutorial overlays and verifies portrait/landscape dimensions before accepting a capture. Website captures explicitly use German portrait mode.
 - Website warning screenshots and four localized store-image derivatives are refreshed. Captions identify 1.4-alpha demonstration screens while retaining the stable 1.3 download destination.
-- The website's GitHub Pages environment permits **only `main`**. The updated website source/output is prepared in website-only commit `4273698`; publication requires applying that reviewed commit to `main`. The environment policy was not changed.
+- The website's GitHub Pages environment permits **only `main`**. The updated website source/output is prepared in website-only commit `4273698`; the owner explicitly chose to keep this change on the branch on 18 October. No website publication or application to `main` is authorized. The environment policy was not changed.
 - Play gallery/metadata sources and Fastlane mirrors are prepared. The operator supplied an authenticated Chrome Console session, but native UI control repeatedly stopped as the active Chrome profile/window changed. Play upload remains pending a stable idle YouSpeed Console window; this is separate from the completed GitHub APK prerelease.
 
 ## Validation
