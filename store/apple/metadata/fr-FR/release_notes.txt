@@ -1,10 +1,1 @@
-Nouveautés de la version 1.3 :
-
-• Filmez vos trajets avec la dashcam intégrée, puis regardez, partagez ou supprimez vos vidéos.
-• Écoutez un son ou une annonce vocale lorsque la caméra reconnaît un panneau pris en charge.
-• Prenez des photos de rues et vérifiez-les avant un envoi facultatif à Panoramax.
-• Gérez les cartes hors ligne et le stockage dans le nouveau gestionnaire de données.
-• Consultez les catalogues de panneaux et les barèmes d’amendes dans Info, avec les noms des panneaux prononcés en quatre langues.
-• Commandes d’enregistrement, configuration et informations sur les sources améliorées.
-
-La reconnaissance et les cartes peuvent être erronées. Respectez toujours les panneaux et le code de la route.
+Nouveautés de la version 1.4 : OCR des panonceaux, commandes de caméra et d’enregistrement plus claires, photos manuelles et sélection et envoi Panoramax améliorés. Fonctions de capture harmonisées sur iPhone et Android. La reconnaissance et les cartes peuvent contenir des erreurs. Respectez la signalisation et le code de la route.

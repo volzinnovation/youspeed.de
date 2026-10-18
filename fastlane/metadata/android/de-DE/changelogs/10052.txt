@@ -1,0 +1,1 @@
+Neu in 1.4: OCR für Zusatzschilder, klarere Kamera- und Aufnahmesteuerung, manuelle Straßenfotos sowie verbesserte Auswahl und Panoramax-Uploads. iPhone und Android bieten abgestimmte Aufnahmefunktionen. Schilderkennung und Kartendaten können Fehler enthalten. Verkehrszeichen und Verkehrsregeln haben Vorrang.
