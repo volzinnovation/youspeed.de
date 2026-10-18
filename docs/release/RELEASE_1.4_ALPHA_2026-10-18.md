@@ -1,5 +1,7 @@
 # YouSpeed 1.4 alpha release handoff — 18 October 2026
 
+Build 10052 has been superseded by [build 10053](RELEASE_1.4_ALPHA_2026-10-19.md). This document retains the earlier release record.
+
 The intended alpha uses the current application code for three additional test drives in daylight and at night. See [English/German release notes and drive checks](RELEASE_NOTES_1.4_ALPHA.md).
 
 ## Source and binaries
