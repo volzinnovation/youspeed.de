@@ -457,6 +457,7 @@ class ConsumerSessionController(
     launchScreenshotState: AppScreenshotState?,
     private val countryScreenshotScenario: CountryPenaltyScreenshotScenario? = null,
     private val launchScreenshotDashcam: Boolean = false,
+    private val launchScreenshotSpeedKmh: Double? = null,
 ) {
     private val debugLogPersistence = DebugLogPersistence(
         preferences.getBoolean(DebugLogPersistence.PREFERENCE_KEY, true),
@@ -4672,10 +4673,13 @@ class ConsumerSessionController(
 
     private fun configureForScreenshotMode(state: AppScreenshotState) {
         val scenario = countryScreenshotScenario
-        val fixture = scenario?.let {
+        val baseFixture = scenario?.let {
             state.fixture.copy(currentSpeedKmh = (it.limitKmh + it.deltaKmh).toDouble(), speedLimitKmh = it.limitKmh,
                 streetName = it.street, cityName = it.city, latitude = it.latitude, longitude = it.longitude, insideCity = it.insideCity)
         } ?: state.fixture
+        // Match iPhone's optional DEBUG capture input; stationary test defaults stay intact.
+        val demonstrationSpeed = launchScreenshotSpeedKmh?.takeIf { BuildConfig.DEBUG && it.isFinite() && it in 0.0..300.0 }
+        val fixture = demonstrationSpeed?.let { baseFixture.copy(currentSpeedKmh = it) } ?: baseFixture
         // Screenshot fixtures model a mounted phone and never depend on live sensors.
         phoneScreenAngleDegrees = 90.0
         speedControlsAllowed = fixture.currentSpeedKmh < DrivingInteractionMotionPolicy.CONTROLS_SPEED_THRESHOLD_KMH

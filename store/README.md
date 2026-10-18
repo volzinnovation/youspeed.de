@@ -8,8 +8,8 @@ The listings lead with **Drive safely. Driver assistance for every car.** Automa
 
 | Destination | Text | Upload imagery |
 | --- | --- | --- |
-| App Store Connect | `apple/metadata/<locale>/` | Ten ordered PNGs per locale in `apple/screenshots/<locale>/iphone-6.9/` |
-| Google Play Console | `android/metadata/<locale>/` | Eight ordered PNGs, 512px icon and 1024×500 feature graphic in `android/listing/<locale>/` |
+| App Store Connect | `apple/metadata/<locale>/` | Six ordered PNGs per locale in `apple/screenshots/<locale>/iphone-6.9/` |
+| Google Play Console | `android/metadata/<locale>/` | Six ordered PNGs, 512px icon and 1024×500 feature graphic in `android/listing/<locale>/` |
 | Fastlane Android handoff | `../fastlane/metadata/android/<locale>/` | Byte-identical mirrors; candidate changelog `10033.txt` |
 
 Apple locales: German, English, French and Dutch. Android locales: those four plus Spanish, Italian, Polish, Brazilian Portuguese and Swedish. French and Dutch localization serve the named countries; Switzerland also has German coverage. Preserve existing store territories and add France, Switzerland, Belgium and the Netherlands using `country-availability-1.3.json` as a proposed configuration.
@@ -30,4 +30,10 @@ App Store Connect version 1.3 exists, with saved descriptions in four languages.
 
 Dutch tariffs were reviewed anew on 2 October 2026 and are now implemented in both apps. The refreshed Dutch examples show 140 EUR for ordinary urban displayed +12 km/h; 9 EUR administration costs are separate. See [Dutch review](../docs/DUTCH_PENALTY_REVIEW_2026-10-02.md). The iPhone 10032 and Android 10033 store binaries include the tariff review and both Info references. The recorded Play AAB predates the later cross-border fix in the GitHub Android release; a replacement must use a fresh Play version code.
 
-The full native reference collection is in `reference-screenshots/`: 68 iPhone captures (four languages) and 153 Android captures (nine languages), covering five national sign catalogs and all twelve bundled penalty countries. The upload galleries use all five sign catalogs and the Dutch fine table, alongside camera/dashcam feature captures. `docs/release/REFERENCE_SCREENSHOT_VALIDATION_2026-10-02.json` records capture hashes, dimensions and Android country-selector checks.
+The full native reference collection is in `reference-screenshots/`: 68 iPhone captures (four languages) and 153 Android captures (nine languages), covering five national sign catalogs and all twelve bundled penalty countries. The upload galleries prioritize traffic-sign display, live assistance, a live fine estimate, Dashcam and Panoramax review/upload. A single sign-catalog screen follows these five core features. The complete country reference collection remains available separately. `docs/release/REFERENCE_SCREENSHOT_VALIDATION_2026-10-02.json` records capture hashes, dimensions and Android country-selector checks.
+
+## Feature-first gallery for 1.4
+
+`artwork/gallery-plan.json` is the ordered source of truth for both platforms. Driving demonstrations use nonzero speeds (27 or 47 km/h; the fine example runs at 52 km/h). Camera captures are recaptured from the native app, not repainted. iPhone uses a DEBUG-only speed override; existing stationary UI-test fixtures retain their defaults. Android uses the matching DEBUG-only speed input; existing country-scenario inputs supply the monetary-fine example.
+
+Panoramax is image 5, before reference material. Its retained native English gallery shows photo selection and the upload control with a synthetic test thumbnail; it does not represent a completed upload. Android correctly shows upload disabled without a connected account. This source limitation is retained in screenshot provenance for every locale.

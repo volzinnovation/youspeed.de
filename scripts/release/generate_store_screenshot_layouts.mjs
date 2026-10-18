@@ -13,6 +13,7 @@ const require = createRequire(import.meta.url);
 const sharp = require(process.env.YOUSPEED_SHARP_MODULE || 'sharp');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const copy = JSON.parse(fs.readFileSync(path.join(root, 'store/artwork/marketing-copy.json'), 'utf8'));
+const gallery = JSON.parse(fs.readFileSync(path.join(root, 'store/artwork/gallery-plan.json'), 'utf8'));
 const options = process.argv.slice(2);
 const platform = options.find(value => ['apple', 'android'].includes(value));
 const refresh = options.includes('--capture-source');
@@ -38,21 +39,21 @@ for (const target of platform ? [platform] : ['apple', 'android']) {
     const relative = target === 'apple' ? `store/apple/screenshots/${locale}/iphone-6.9` : `store/android/listing/${locale}/phone-screenshots`;
     const directory = path.join(root, relative);
     if (!fs.existsSync(directory)) continue;
-    for (const name of fs.readdirSync(directory).filter(name => name.endsWith('.png')).sort()) {
-      if (onlyDashcam && name !== (target === 'apple' ? '04-dashcam.png' : '02-dashcam.png')) continue;
+    const entries = gallery.platforms[target];
+    for (const entry of entries) {
+      const name = entry.file;
+      if (onlyDashcam && name !== '04-dashcam.png') continue;
       const output = path.join(directory, name);
       const signCountry = name.match(/reference-signs-(\w+)\.png$/)?.[1];
       const fineCountry = name.match(/reference-penalties-(\w+)\.png$/)?.[1];
       const referenceCountry = signCountry || fineCountry;
-      const capture = referenceCountry
-        ? path.join(root, `store/reference-screenshots/${target}/${locale}/${signCountry ? 'signs' : 'penalties'}/${referenceCountry}.png`)
-        : path.join(root, `store/artwork/raw-screenshots/${target}/${locale}/${name}`);
+      const capture = path.join(root, entry.source.replace('{locale}', locale));
       fs.mkdirSync(path.dirname(capture), { recursive: true });
       const key = `${relative}/${name}`;
-      const alreadyComposed = provenance.images[key]?.output_sha256 === hash(fs.readFileSync(output));
+      const alreadyComposed = fs.existsSync(output) && provenance.images[key]?.output_sha256 === hash(fs.readFileSync(output));
       if (referenceCountry && !fs.existsSync(capture)) throw new Error(`Native reference capture missing: ${capture}`);
       if (!fs.existsSync(capture) && alreadyComposed) throw new Error(`Retained native source missing: ${capture}`);
-      if (!referenceCountry && (!fs.existsSync(capture) || (refresh && !alreadyComposed))) fs.copyFileSync(output, capture);
+      if (!entry.source_locale && !referenceCountry && (!fs.existsSync(capture) || (refresh && !alreadyComposed))) fs.copyFileSync(output, capture);
       const raw = fs.readFileSync(capture);
       const meta = await sharp(raw).metadata();
       const composite = await compositeDashcamPreview({ sharp, root, target, locale, name, raw });
@@ -68,15 +69,13 @@ for (const target of platform ? [platform] : ['apple', 'android']) {
       const scale = width / 1320;
       const pad = 85 * scale;
       const index = Number(name.slice(0, 2)) - 1;
-      // Android places dashcam second; the other benefit captions follow native order.
-      const story = target === 'android' ? [0, 3, 1, 2, 4, 5, 6, 7][index] : index;
       const language = locale.split('-')[0];
       const referenceText = signCountry ? signTexts[language] : fineTexts[language];
       const countryAlpha2 = { NLD: 'NL' }[referenceCountry] || referenceCountry;
       const countryName = referenceCountry ? new Intl.DisplayNames([locale], { type: 'region' }).of(countryAlpha2) : '';
       const [line1, line2, detail] = referenceCountry
         ? [referenceText.title, countryName, signCountry ? 'English · Français · Deutsch · Nederlands' : referenceText.disclaimer]
-        : copy[locale].gallery[name === '01-camera-recognition.png' ? 1 : story];
+        : entry.caption === 'panoramax' ? copy[locale].panoramax : copy[locale].gallery[entry.caption];
       const headlineBase = landscape ? 66 : 110 * scale;
       const font = Math.min(await fitted(line1, width - 2 * pad, headlineBase, true), await fitted(line2, width - 2 * pad, headlineBase, true));
       const brandY = landscape ? 72 : 140 * scale;
@@ -118,7 +117,18 @@ for (const target of platform ? [platform] : ['apple', 'android']) {
       provenance.images[key] = { source: path.relative(root, capture), source_sha256: hash(raw), output_sha256: hash(fs.readFileSync(output)), width, height,
         content: composite ? 'User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.' : 'Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.',
         ...(composite ? { composite: composite.provenance } : {}),
+        ...(entry.demonstration_speed_kmh ? { demonstration_speed_kmh: entry.demonstration_speed_kmh } : {}),
+        ...(entry.source_locale ? { source_locale: entry.source_locale, notes: entry.notes } : {}),
       };
+    }
+    if (!onlyDashcam) {
+      const selected = new Set(entries.map(entry => entry.file));
+      for (const name of fs.readdirSync(directory).filter(name => name.endsWith('.png') && !selected.has(name))) fs.unlinkSync(path.join(directory, name));
+      if (target === 'android') {
+        const mirror = path.join(root, `fastlane/metadata/android/${locale}/images/phoneScreenshots`);
+        for (const name of fs.readdirSync(mirror).filter(name => name.endsWith('.png') && !selected.has(name))) fs.unlinkSync(path.join(mirror, name));
+      }
+      for (const key of Object.keys(provenance.images)) if (key.startsWith(relative + '/') && !selected.has(path.basename(key))) delete provenance.images[key];
     }
     console.log(`${target} ${locale}: composed gallery from retained native captures`);
   }

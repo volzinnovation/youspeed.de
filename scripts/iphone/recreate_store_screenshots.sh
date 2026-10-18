@@ -124,10 +124,10 @@ for locale in "${locales[@]}"; do
     fi
   }
 
-  capture "01-safe-speed.png" "warn-level-0" "portrait"
-  capture "02-camera-speed-limit.png" "camera-limit-active" "portrait"
-  capture "03-secondary-sign.png" "traffic-sign-pictogram" "portrait" "YOUSPEED_SCREENSHOT_SIGNS=give_way"
-  capture "04-dashcam.png" "camera-limit-active" "portrait" "YOUSPEED_SCREENSHOT_DASHCAM=1"
+  capture "01-camera-speed-limit.png" "camera-limit-active" "portrait" "YOUSPEED_SCREENSHOT_SPEED_KMH=27"
+  capture "02-live-assistance.png" "traffic-sign-pictogram" "portrait" "YOUSPEED_SCREENSHOT_SIGNS=give_way"
+  capture "03-fine-calculation.png" "country-penalty" "portrait" "YOUSPEED_SCREENSHOT_COUNTRY=FR" "YOUSPEED_SCREENSHOT_LIMIT=50" "YOUSPEED_SCREENSHOT_DELTA=2"
+  capture "04-dashcam.png" "camera-limit-active" "portrait" "YOUSPEED_SCREENSHOT_DASHCAM=1" "YOUSPEED_SCREENSHOT_SPEED_KMH=27"
 
 done
 

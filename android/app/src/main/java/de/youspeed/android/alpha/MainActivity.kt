@@ -42,6 +42,8 @@ class MainActivity : ComponentActivity(), ConsumerHost {
                 intent?.getStringExtra("screenshot_state") ?: System.getenv("YOUSPEED_SCREENSHOT_STATE"),
             ) else null,
             launchScreenshotDashcam = BuildConfig.DEBUG && intent?.getBooleanExtra("screenshot_dashcam", false) == true,
+            launchScreenshotSpeedKmh = if (BuildConfig.DEBUG && intent?.hasExtra("screenshot_speed") == true)
+                intent.getIntExtra("screenshot_speed", -1).toDouble() else null,
         )
     }
     private val locationPermissionLauncher = registerForActivityResult(

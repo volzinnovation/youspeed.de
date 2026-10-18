@@ -64,6 +64,11 @@
         "On the motorway.",
         "Your speed and its reference, at a glance."
       ]
+    ],
+    "panoramax": [
+      "Review photos.",
+      "Upload to Panoramax.",
+      "Choose photos, connect your account and approve the upload."
     ]
   },
   "de-DE": {
@@ -131,6 +136,11 @@
         "Auf der Autobahn.",
         "Tempo und Referenz auf einen Blick."
       ]
+    ],
+    "panoramax": [
+      "Fotos prüfen.",
+      "Zu Panoramax hochladen.",
+      "Fotos auswählen, Konto verbinden und Upload bestätigen."
     ]
   },
   "fr-FR": {
@@ -198,6 +208,11 @@
         "Sur l'autoroute.",
         "Vitesse et référence en un coup d'œil."
       ]
+    ],
+    "panoramax": [
+      "Vérifiez vos photos.",
+      "Publiez sur Panoramax.",
+      "Sélectionnez les photos, connectez votre compte et confirmez."
     ]
   },
   "nl-NL": {
@@ -265,6 +280,11 @@
         "Op de snelweg.",
         "Snelheid en referentie in één oogopslag."
       ]
+    ],
+    "panoramax": [
+      "Controleer foto’s.",
+      "Upload naar Panoramax.",
+      "Kies foto’s, verbind je account en bevestig de upload."
     ]
   },
   "es-ES": {
@@ -320,6 +340,11 @@
         "Más allá de fronteras.",
         "Estimaciones de sanciones · Países Bajos"
       ]
+    ],
+    "panoramax": [
+      "Revisa las fotos.",
+      "Sube a Panoramax.",
+      "Elige fotos, conecta tu cuenta y confirma la subida."
     ]
   },
   "it-IT": {
@@ -375,6 +400,11 @@
         "Oltre i confini.",
         "Stime delle sanzioni · Paesi Bassi"
       ]
+    ],
+    "panoramax": [
+      "Controlla le foto.",
+      "Carica su Panoramax.",
+      "Scegli le foto, collega il tuo account e conferma il caricamento."
     ]
   },
   "pl-PL": {
@@ -430,6 +460,11 @@
         "Za granicą.",
         "Szacowane kary · Holandia"
       ]
+    ],
+    "panoramax": [
+      "Sprawdź zdjęcia.",
+      "Wyślij do Panoramax.",
+      "Wybierz zdjęcia, połącz konto i potwierdź przesyłanie."
     ]
   },
   "pt-BR": {
@@ -485,6 +520,11 @@
         "Além das fronteiras.",
         "Estimativas de penalidades · Países Baixos"
       ]
+    ],
+    "panoramax": [
+      "Revise as fotos.",
+      "Envie ao Panoramax.",
+      "Escolha fotos, conecte sua conta e confirme o envio."
     ]
   },
   "sv-SE": {
@@ -540,6 +580,11 @@
         "Över gränserna.",
         "Uppskattade påföljder · Nederländerna"
       ]
+    ],
+    "panoramax": [
+      "Granska foton.",
+      "Ladda upp till Panoramax.",
+      "Välj foton, anslut ditt konto och godkänn uppladdningen."
     ]
   }
 }

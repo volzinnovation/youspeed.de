@@ -28,81 +28,57 @@
       ],
       "viewport": [
         54,
-        1311,
+        1383,
         1212,
-        1043
+        971
       ],
       "mask": "enclosed-black-component",
       "protected_capsules": {
         "de-DE": [
           [
             90,
-            1348,
+            1420,
             379,
             78
-          ],
-          [
-            214,
-            2242,
-            891,
-            76
           ]
         ],
         "en-US": [
           [
             90,
-            1348,
+            1420,
             379,
             78
-          ],
-          [
-            328,
-            2242,
-            664,
-            76
           ]
         ],
         "fr-FR": [
           [
             90,
-            1348,
+            1420,
             460,
             78
-          ],
-          [
-            270,
-            2242,
-            778,
-            76
           ]
         ],
         "nl-NL": [
           [
             90,
-            1348,
+            1420,
             379,
             78
-          ],
-          [
-            294,
-            2242,
-            731,
-            76
           ]
         ]
       }
     },
     "android": {
-      "filename": "02-dashcam.png",
+      "filename": "04-dashcam.png",
       "native_size": [
         1920,
         1080
       ],
       "viewport": [
         906,
-        264,
+        194,
         972,
-        638
+        697
       ],
       "mask": "rounded-black-pixels",
       "corner_radius": 42

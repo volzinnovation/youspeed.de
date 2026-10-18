@@ -51,7 +51,7 @@ def main() -> int:
         native_composite = args.native_composites / target / f"{locale}.png"
         expected_changes.add(relative)
         if target == "android":
-            mirror = ROOT / "fastlane/metadata/android" / locale / "images/phoneScreenshots/02-dashcam.png"
+            mirror = ROOT / "fastlane/metadata/android" / locale / "images/phoneScreenshots/04-dashcam.png"
             expected_changes.add(str(mirror.relative_to(ROOT)))
             if output.read_bytes() != mirror.read_bytes():
                 errors.append(f"{relative}: Fastlane mirror differs")

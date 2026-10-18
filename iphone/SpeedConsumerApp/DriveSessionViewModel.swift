@@ -6098,6 +6098,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func configureForScreenshotMode(_ screenshotState: AppScreenshotState) {
         let fixture = screenshotState.fixture
+        var demonstrationSpeed = fixture.currentSpeedKmh
+#if DEBUG
+        // Store captures can show motion without changing the stationary test fixture.
+        if let value = ProcessInfo.processInfo.environment["YOUSPEED_SCREENSHOT_SPEED_KMH"],
+           let speed = Double(value), speed.isFinite, (0...300).contains(speed) {
+            demonstrationSpeed = speed
+        }
+#endif
         if screenshotState != .countryPenalty { applyBundledPenaltyRules(countryCode: "DEU") }
         appScreenshotState = screenshotState
         // Exercise the real recorder layout in simulator screenshots without
@@ -6118,12 +6126,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         activeBundleVersion = "screenshot"
         activeDBPath = screenshotState.rawValue
         activeBundleDBSHA256 = nil
-        currentSpeedKmh = fixture.currentSpeedKmh
+        currentSpeedKmh = demonstrationSpeed
         // Screenshot fixtures model an upright mount without live motion sensors.
         drivingControlAngleDegrees = 90
-        speedControlsAllowed = fixture.currentSpeedKmh < DrivingControlAvailability.controlsSpeedThresholdKmh
+        speedControlsAllowed = demonstrationSpeed < DrivingControlAvailability.controlsSpeedThresholdKmh
         refreshDrivingControlAvailability()
-        stationarySpeedObservedAt = fixture.currentSpeedKmh == 0 ? Date() : nil
+        stationarySpeedObservedAt = demonstrationSpeed == 0 ? Date() : nil
         speedLimitKmh = fixture.speedLimitKmh
         speedLimitDisplayText = fixture.speedLimitDisplayText
         limitWayID = fixture.wayID

@@ -49,6 +49,9 @@ def main() -> int:
                "PLAY_RELEASE_DRAFT_2026-10-02.json")
     files.update(ROOT / "docs/release" / name for name in reports)
     files.add(validation)
+    gallery_proof = ROOT / f"docs/release/STORE_GALLERY_COMPOSITES_{args.release_date.isoformat()}.json"
+    if gallery_proof.is_file():
+        files.add(gallery_proof)
     files.update(path for path in (ROOT / "docs/release").glob("*1.4_ALPHA*.md"))
     artifact_receipt = ROOT / f"docs/release/BUILD_{source_build}_ARTIFACTS_{args.release_date.isoformat()}.json"
     if artifact_receipt.is_file():

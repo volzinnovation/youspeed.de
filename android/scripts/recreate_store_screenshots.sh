@@ -20,11 +20,13 @@ adb_target() { "$ADB" -s "$ANDROID_SERIAL" "$@"; }
 # with deterministic debug fixtures; no camera, recording, or upload is started.
 captures=(
   "01-camera-recognition.png:camera-limit-active"
-  "02-dashcam.png:camera-limit-active:dashcam"
+  "02-live-assistance.png:other-sign-give-way"
+  "03-fine-calculation.png:warn-level-1:FR:2"
+  "04-dashcam.png:camera-limit-active:dashcam"
 )
 capture_kind="${SCREENSHOT_CAPTURE_KIND:-all}"
 if [[ "$capture_kind" == dashcam ]]; then
-  captures=("02-dashcam.png:camera-limit-active:dashcam")
+  captures=("04-dashcam.png:camera-limit-active:dashcam")
 elif [[ "$capture_kind" != all ]]; then
   echo 'SCREENSHOT_CAPTURE_KIND must be all or dashcam.' >&2
   exit 1
@@ -127,6 +129,10 @@ for locale in "${locales[@]}"; do
   for capture in "${captures[@]}"; do
     IFS=: read -r file_name screenshot_state scenario delta <<< "$capture"
     launch=(-n "$PACKAGE_ID/de.youspeed.android.alpha.MainActivity" --es screenshot_state "$screenshot_state")
+    # Match the iPhone's moving demonstration without changing stationary test defaults.
+    if [[ "$screenshot_state" == camera-limit-active || "$screenshot_state" == other-sign-give-way ]]; then
+      launch+=(--ei screenshot_speed 27)
+    fi
     if [[ "${scenario:-}" == dashcam ]]; then
       launch+=(--ez screenshot_dashcam true)
     elif [[ -n "${scenario:-}" ]]; then
@@ -169,7 +175,8 @@ for locale in "${locales[@]}"; do
         tutorial_bounds="$(printf '%s' "$ui_tree" | python3 -c 'import sys,re,xml.etree.ElementTree as E; n=next(n for n in E.fromstring(sys.stdin.read()).iter("node") if n.get("resource-id")=="com.android.systemui:id/ok"); x1,y1,x2,y2=map(int,re.findall(r"[0-9]+",n.get("bounds"))); print((x1+x2)//2,(y1+y2)//2)')"
         read -r tutorial_x tutorial_y <<< "$tutorial_bounds"
         adb_target shell input tap "$tutorial_x" "$tutorial_y"
-      elif [[ "$ui_tree" == *'clickable="true"'* && "$ui_tree" == *"$PACKAGE_ID"* && "$ui_tree" != *'splashscreen'* ]]; then
+      elif [[ "$ui_tree" == *"$PACKAGE_ID"* && "$ui_tree" != *'splashscreen'* &&
+        ( "$ui_tree" == *'clickable="true"'* || "$ui_tree" == *'km/h'* || "$ui_tree" == *'km/u'* || "$ui_tree" == *EUR* || "$ui_tree" == *CHF* ) ]]; then
         ready=1
         break
       fi

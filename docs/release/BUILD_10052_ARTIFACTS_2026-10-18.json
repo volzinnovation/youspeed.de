@@ -1,6 +1,6 @@
 {
   "format": "youspeed.alpha-release-artifacts.v1",
-  "checked_at": "2026-10-18T17:43:11.722364+02:00",
+  "checked_at": "2026-10-18T18:05:46.660464+02:00",
   "app_source_commit": "c1ee94a68c6e13b9371d64b15aa758379746896d",
   "android": {
     "version": "1.4-alpha",
@@ -69,12 +69,8 @@
     "screenshots": [
       {
         "locale": "en-US",
-        "count": 10,
+        "count": 6,
         "states": [
-          "COMPLETE",
-          "COMPLETE",
-          "COMPLETE",
-          "COMPLETE",
           "COMPLETE",
           "COMPLETE",
           "COMPLETE",
@@ -82,16 +78,20 @@
           "COMPLETE",
           "COMPLETE"
         ],
-        "checksums_match": true
+        "checksums_match": true,
+        "ordered_files": [
+          "01-camera-speed-limit.png",
+          "02-live-assistance.png",
+          "03-fine-calculation.png",
+          "04-dashcam.png",
+          "05-panoramax-upload.png",
+          "06-reference-signs-DE.png"
+        ]
       },
       {
         "locale": "de-DE",
-        "count": 10,
+        "count": 6,
         "states": [
-          "COMPLETE",
-          "COMPLETE",
-          "COMPLETE",
-          "COMPLETE",
           "COMPLETE",
           "COMPLETE",
           "COMPLETE",
@@ -99,16 +99,20 @@
           "COMPLETE",
           "COMPLETE"
         ],
-        "checksums_match": true
+        "checksums_match": true,
+        "ordered_files": [
+          "01-camera-speed-limit.png",
+          "02-live-assistance.png",
+          "03-fine-calculation.png",
+          "04-dashcam.png",
+          "05-panoramax-upload.png",
+          "06-reference-signs-DE.png"
+        ]
       },
       {
         "locale": "fr-FR",
-        "count": 10,
+        "count": 6,
         "states": [
-          "COMPLETE",
-          "COMPLETE",
-          "COMPLETE",
-          "COMPLETE",
           "COMPLETE",
           "COMPLETE",
           "COMPLETE",
@@ -116,16 +120,20 @@
           "COMPLETE",
           "COMPLETE"
         ],
-        "checksums_match": true
+        "checksums_match": true,
+        "ordered_files": [
+          "01-camera-speed-limit.png",
+          "02-live-assistance.png",
+          "03-fine-calculation.png",
+          "04-dashcam.png",
+          "05-panoramax-upload.png",
+          "06-reference-signs-DE.png"
+        ]
       },
       {
         "locale": "nl-NL",
-        "count": 10,
+        "count": 6,
         "states": [
-          "COMPLETE",
-          "COMPLETE",
-          "COMPLETE",
-          "COMPLETE",
           "COMPLETE",
           "COMPLETE",
           "COMPLETE",
@@ -133,13 +141,21 @@
           "COMPLETE",
           "COMPLETE"
         ],
-        "checksums_match": true
+        "checksums_match": true,
+        "ordered_files": [
+          "01-camera-speed-limit.png",
+          "02-live-assistance.png",
+          "03-fine-calculation.png",
+          "04-dashcam.png",
+          "05-panoramax-upload.png",
+          "06-reference-signs-DE.png"
+        ]
       }
     ]
   },
   "checks": {
     "store_package": {
-      "files": 220,
+      "files": 186,
       "errors": 0
     },
     "android_unit": {
@@ -173,6 +189,19 @@
       "transitions": 16,
       "states": 5,
       "status": "passed"
+    },
+    "gallery_followup": {
+      "android_focused_unit_tests": 52,
+      "failures": 0,
+      "moving_recorder_geometry_tests": 1,
+      "geometry_failures": 0,
+      "native_composites_verified": 13,
+      "changed_native_UI_pixels": 0,
+      "apple_screenshots_verified": 24,
+      "play_screenshots_prepared": 54,
+      "play_upload_confirmed": false,
+      "play_UI_blocker": "Mac locked; manual unlock required"
     }
-  }
+  },
+  "gallery_plan": "store/artwork/gallery-plan.json"
 }
