@@ -60,8 +60,10 @@ for capture in "${captures[@]}"; do
   echo "Capturing $file_name"
   xcrun simctl terminate "$DEVICE_NAME" "$BUNDLE_ID" >/dev/null 2>&1 || true
   SIMCTL_CHILD_YOUSPEED_SCREENSHOT_STATE="$screenshot_state" \
-    xcrun simctl launch "$DEVICE_NAME" "$BUNDLE_ID" >/dev/null
-  sleep 1.5
+    xcrun simctl launch "$DEVICE_NAME" "$BUNDLE_ID" \
+      -AppleLanguages "(de)" -AppleLocale de_DE \
+      -youspeed.screen_orientation portrait >/dev/null
+  sleep 4
   xcrun simctl io "$DEVICE_NAME" screenshot "$output_path" >/dev/null
 done
 

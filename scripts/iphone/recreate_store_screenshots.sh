@@ -105,7 +105,7 @@ for locale in "${locales[@]}"; do
     env "${child_environment[@]}" xcrun simctl launch "$DEVICE_ID" "$BUNDLE_ID" \
       -AppleLanguages "($apple_language)" -AppleLocale "$apple_locale" \
       -youspeed.screen_orientation "$orientation" >/dev/null
-    sleep 2
+    sleep 4
     xcrun simctl io "$DEVICE_ID" screenshot "$output_path" >/dev/null
     "$SCREENSHOT_PYTHON" "$ROOT_DIR/scripts/iphone/normalize_store_screenshot.py" \
       --backup-root "$RAW_CAPTURE_BACKUP_DIR" "$output_path"
@@ -128,20 +128,7 @@ for locale in "${locales[@]}"; do
   capture "02-camera-speed-limit.png" "camera-limit-active" "portrait"
   capture "03-secondary-sign.png" "traffic-sign-pictogram" "portrait" "YOUSPEED_SCREENSHOT_SIGNS=give_way"
   capture "04-dashcam.png" "camera-limit-active" "portrait" "YOUSPEED_SCREENSHOT_DASHCAM=1"
-  capture "05-france-fine.png" "country-penalty" "portrait" \
-    "YOUSPEED_SCREENSHOT_COUNTRY=FR" "YOUSPEED_SCREENSHOT_LIMIT=50" "YOUSPEED_SCREENSHOT_DELTA=3" \
-    "YOUSPEED_SCREENSHOT_INSIDE_CITY=1" "YOUSPEED_SCREENSHOT_HIGHWAY=residential"
-  capture "06-switzerland-fine.png" "country-penalty" "portrait" \
-    "YOUSPEED_SCREENSHOT_COUNTRY=CH" "YOUSPEED_SCREENSHOT_LIMIT=50" "YOUSPEED_SCREENSHOT_DELTA=11" \
-    "YOUSPEED_SCREENSHOT_INSIDE_CITY=1" "YOUSPEED_SCREENSHOT_HIGHWAY=residential"
-  capture "07-belgium-fine.png" "country-penalty" "portrait" \
-    "YOUSPEED_SCREENSHOT_COUNTRY=BE" "YOUSPEED_SCREENSHOT_LIMIT=50" "YOUSPEED_SCREENSHOT_DELTA=5" \
-    "YOUSPEED_SCREENSHOT_INSIDE_CITY=1" "YOUSPEED_SCREENSHOT_HIGHWAY=residential"
-  capture "08-netherlands-fine.png" "country-penalty" "portrait" \
-    "YOUSPEED_SCREENSHOT_COUNTRY=NL" "YOUSPEED_SCREENSHOT_LIMIT=50" "YOUSPEED_SCREENSHOT_DELTA=12" \
-    "YOUSPEED_SCREENSHOT_INSIDE_CITY=1" "YOUSPEED_SCREENSHOT_HIGHWAY=residential"
-  capture "09-pedestrian-zone.png" "pedestrian-zone" "portrait"
-  capture "10-autobahn-unlimited.png" "autobahn-unlimited-above-130" "portrait"
+
 done
 
 xcrun simctl terminate "$DEVICE_ID" "$BUNDLE_ID" >/dev/null 2>&1 || true
