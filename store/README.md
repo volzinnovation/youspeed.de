@@ -1,4 +1,8 @@
-# YouSpeed 1.3 store handoff
+# YouSpeed store handoff
+
+Current preparation: **1.4 alpha (18 October 2026)**. See the [release handoff](../docs/release/RELEASE_1.4_ALPHA_2026-10-18.md) and [English/German release notes](../docs/release/RELEASE_NOTES_1.4_ALPHA.md). Apple 1.4 (10052) is uploaded, internally testable, and submitted for external beta review. The manual-release 1.4 draft contains the refreshed four-language galleries. Android uses the valid version string `1.4-alpha` for GitHub prerelease testing.
+
+## Historical 1.3 handoff (2–4 October 2026)
 
 The listings lead with **Drive safely. Driver assistance for every car.** Automatic traffic-sign recognition, speed alerts, penalty estimates and dashcam recording support the road-safety purpose. The car's age does not matter because the app needs no vehicle integration. Camera recognition is presented as a standard feature, with country/model availability explained. The signed iPhone **1.3 (10032)** binary has uploaded to Apple; signed Android **1.3 (10033)** is saved in Play. The [4 October Android submission audit](../docs/release/ANDROID_SUBMISSION_1.3_2026-10-04.md) records remaining privacy, deletion, reviewer-access and source-alignment work.
 

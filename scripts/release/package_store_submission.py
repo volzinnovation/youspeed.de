@@ -50,6 +50,9 @@ def main() -> int:
     files.update(ROOT / "docs/release" / name for name in reports)
     files.add(validation)
     files.update(path for path in (ROOT / "docs/release").glob("*1.4_ALPHA*.md"))
+    artifact_receipt = ROOT / f"docs/release/BUILD_{source_build}_ARTIFACTS_{args.release_date.isoformat()}.json"
+    if artifact_receipt.is_file():
+        files.add(artifact_receipt)
     files.update(ROOT / name for name in ("store/country-availability-1.3.json", "store/README.md",
                   "Web/datenschutz.html", "Web/support/index.html",
                   "scripts/release/validate_store_package.py", "scripts/release/generate_store_graphics.mjs",

@@ -115,6 +115,10 @@ Weiterführend: [Forks](https://docs.github.com/en/get-started/quickstart/fork-a
 
 ## 4. Apps installieren und einrichten
 
+Für die **1.4-alpha-Testfahrten** verwendet ihr die [signierten Android-APKs](https://github.com/volzinnovation/youspeed.de/releases/tag/android-v1.4-alpha) oder den [TestFlight-Einladungslink fürs iPhone](https://testflight.apple.com/join/k3a1pgce). Zielstände: Android **1.4-alpha** (Basisbuild 10052), iPhone **1.4 (10052)**. Die externe TestFlight-Freigabe muss Apple bestätigen; bis dahin kann der Link den bisherigen freigegebenen Build anbieten. Die [Release Notes mit Testfahrten-Checkliste](../docs/release/RELEASE_NOTES_1.4_ALPHA.md) beschreiben den Umfang und die noch offenen Prüfungen.
+
+Die Lehrperson teilt die persönlichen Kurszugänge `student01` bis `student08` für Panoramax separat zu. Ändert euer temporäres Passwort bei der ersten Anmeldung. Zugangsdaten nicht untereinander teilen und nicht in Git speichern.
+
 Verwendet den ausgewählten vorhandenen App-Build:
 
 - [iPhone im App Store](https://apps.apple.com/de/app/youspeed-de/id6787469256)

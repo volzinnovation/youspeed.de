@@ -1,5 +1,7 @@
 # YouSpeed Store Release Checklist
 
+Current alpha preparation: **1.4, 18 October 2026**. Use the [dated handoff](RELEASE_1.4_ALPHA_2026-10-18.md) for current build, TestFlight, screenshot and test-drive status. The 1.3 records below are historical and must not be treated as the current Console state.
+
 Current Android preparation: **1.3 (10033), checked 4 October 2026**, saved in Play and awaiting review. See the [current Android audit](ANDROID_SUBMISSION_1.3_2026-10-04.md), [dated submission dossier](STORE_SUBMISSION_1.3_2026-10-02.md) and [store handoff](../../store/README.md). Historical public launch: 29 August 2026.
 
 ## Current release gates

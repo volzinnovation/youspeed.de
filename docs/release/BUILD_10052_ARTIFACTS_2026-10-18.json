@@ -1,0 +1,178 @@
+{
+  "format": "youspeed.alpha-release-artifacts.v1",
+  "checked_at": "2026-10-18T17:43:11.722364+02:00",
+  "app_source_commit": "c1ee94a68c6e13b9371d64b15aa758379746896d",
+  "android": {
+    "version": "1.4-alpha",
+    "base_build": 10052,
+    "build_checkout": "2bab2e6224c5178ba934e176ad8d99acf92515ec",
+    "release_tag_commit": "42736988e13e3551f923cf26d89c6417a7e94510",
+    "tag_runtime_files_match_build": true,
+    "workflow": "https://github.com/volzinnovation/youspeed.de/actions/runs/39140274853",
+    "release_url": "https://github.com/volzinnovation/youspeed.de/releases/tag/android-v1.4-alpha",
+    "prerelease": true,
+    "stable_latest": "android-v1.3",
+    "assets": [
+      {
+        "name": "YouSpeed-1.4-alpha-100521.apk",
+        "bytes": 354274993,
+        "sha256": "5a0934c457f27185babea5237035912d59479965d8186b2818584232c00cd35e",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.4-alpha/YouSpeed-1.4-alpha-100521.apk",
+        "hash_evidence": "GitHub upload digest; arm64 also downloaded and independently hashed"
+      },
+      {
+        "name": "YouSpeed-1.4-alpha-100522.apk",
+        "bytes": 362901557,
+        "sha256": "accd8ec364b52167d719216792f1af6e3f3ab22fe45148dc68d7b0e170d71d59",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.4-alpha/YouSpeed-1.4-alpha-100522.apk",
+        "hash_evidence": "GitHub upload digest; arm64 also downloaded and independently hashed"
+      },
+      {
+        "name": "YouSpeed-1.4-alpha-100523.apk",
+        "bytes": 366418373,
+        "sha256": "cb5979e634f4299505a33f5c8baceb8c01e9e87e4d09c28116a34cd8e46d6c03",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.4-alpha/YouSpeed-1.4-alpha-100523.apk",
+        "hash_evidence": "GitHub upload digest; arm64 also downloaded and independently hashed"
+      },
+      {
+        "name": "YouSpeed-1.4-alpha-100524.apk",
+        "bytes": 365946365,
+        "sha256": "ea6e15505d39e2cd1e7ed713cf06a1cc6cba1d7bed0c8905dbe03fb9ed8acf93",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.4-alpha/YouSpeed-1.4-alpha-100524.apk",
+        "hash_evidence": "GitHub upload digest; arm64 also downloaded and independently hashed"
+      }
+    ],
+    "arm64_validation": {
+      "signature": "APK Signature Scheme v2 verified",
+      "certificate_sha256": "79b38431153de1b1776ea83e1970662d0a40c6a41aecbca958d73e3fe509e08a",
+      "certificate_matches_signed_10033": true,
+      "package": "de.youspeed.android",
+      "version_code": 100522,
+      "version_name": "1.4-alpha",
+      "min_sdk": 34,
+      "target_sdk": 36
+    }
+  },
+  "apple": {
+    "version": "1.4",
+    "build": "10052",
+    "build_id": "1d85c9a1-3026-417c-b934-c24240eced95",
+    "ipa_bytes": 248827522,
+    "ipa_sha256": "c9a85eb8431c274232fe80af54786909307da8f760dcc20fa3bf104f4ac9c99a",
+    "upload_succeeded": true,
+    "processing_state": "VALID",
+    "testflight_internal": "IN_BETA_TESTING",
+    "testflight_external": "WAITING_FOR_BETA_REVIEW",
+    "testflight_url": "https://testflight.apple.com/join/k3a1pgce",
+    "store_draft_id": "6e138df5-32ab-4050-919f-8b574159133b",
+    "production_submission": false,
+    "screenshots": [
+      {
+        "locale": "en-US",
+        "count": 10,
+        "states": [
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE"
+        ],
+        "checksums_match": true
+      },
+      {
+        "locale": "de-DE",
+        "count": 10,
+        "states": [
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE"
+        ],
+        "checksums_match": true
+      },
+      {
+        "locale": "fr-FR",
+        "count": 10,
+        "states": [
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE"
+        ],
+        "checksums_match": true
+      },
+      {
+        "locale": "nl-NL",
+        "count": 10,
+        "states": [
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE",
+          "COMPLETE"
+        ],
+        "checksums_match": true
+      }
+    ]
+  },
+  "checks": {
+    "store_package": {
+      "files": 220,
+      "errors": 0
+    },
+    "android_unit": {
+      "tests": 716,
+      "failures": 0,
+      "skipped": 1
+    },
+    "map": {
+      "passed": 122,
+      "skipped": 25,
+      "passing_subtests": 58
+    },
+    "iphone_unit": {
+      "passed": 657,
+      "failed": 2,
+      "skipped": 27,
+      "focused_rerun_failed_tests": {
+        "passed": 2,
+        "failed": 0
+      },
+      "live_country_download_excluded": true
+    },
+    "static_site": {
+      "html": 82,
+      "css": 1,
+      "status": "passed"
+    },
+    "speed_reference": {
+      "scenarios": 39,
+      "steps": 171,
+      "transitions": 16,
+      "states": 5,
+      "status": "passed"
+    }
+  }
+}
