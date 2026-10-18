@@ -42,6 +42,10 @@ jobs:
         with:
           ref: ${{ inputs.source_ref }}
 
+      - name: Record immutable source revision
+        id: source
+        run: printf 'sha=%s\n' "$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -113,7 +117,7 @@ jobs:
             fi
             gh release create "${RELEASE_TAG}" "${assets[@]}" \
               --repo "${GITHUB_REPOSITORY}" \
-              --target "${{ inputs.source_ref }}" \
+              --target "${{ steps.source.outputs.sha }}" \
               --title "YouSpeed Android ${{ inputs.version_name }}" \
               --notes "Signed Android APK release for version ${{ inputs.version_name }} (base build number ${{ inputs.build_number }}), split by ABI." \
               "${release_options[@]}"
