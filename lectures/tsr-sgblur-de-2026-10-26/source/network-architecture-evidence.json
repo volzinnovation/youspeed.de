@@ -1,0 +1,700 @@
+{
+  "schema_version": "lecture-network-architecture-evidence-v1",
+  "reviewed_at": "2026-10-19",
+  "method": "Read SHA-verified checkpoint YAML/parameter metadata already independently counted on CPU; cross-check actual compiled Core ML MIL operations. Read official Ultralytics sources/documentation and primary papers. No new model loading, inference, training, installation or device changes in this architecture audit.",
+  "classifier": {
+    "name": "Panoramax German YOLO26l-cls, 134 classes",
+    "checkpoint_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+    "checkpoint_saved_ultralytics_version": "8.4.13",
+    "runtime_source_versions_reviewed": [
+      "8.4.49",
+      "8.4.56"
+    ],
+    "parameter_elements": 13006278,
+    "checkpoint_model_yaml": {
+      "nc": 134,
+      "scales": {
+        "n": [
+          0.5,
+          0.25,
+          1024
+        ],
+        "s": [
+          0.5,
+          0.5,
+          1024
+        ],
+        "m": [
+          0.5,
+          1.0,
+          512
+        ],
+        "l": [
+          1.0,
+          1.0,
+          512
+        ],
+        "x": [
+          1.0,
+          1.5,
+          512
+        ]
+      },
+      "backbone": [
+        [
+          -1,
+          1,
+          "Conv",
+          [
+            64,
+            3,
+            2
+          ]
+        ],
+        [
+          -1,
+          1,
+          "Conv",
+          [
+            128,
+            3,
+            2
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C3k2",
+          [
+            256,
+            false,
+            0.25
+          ]
+        ],
+        [
+          -1,
+          1,
+          "Conv",
+          [
+            256,
+            3,
+            2
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C3k2",
+          [
+            512,
+            false,
+            0.25
+          ]
+        ],
+        [
+          -1,
+          1,
+          "Conv",
+          [
+            512,
+            3,
+            2
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C3k2",
+          [
+            512,
+            true
+          ]
+        ],
+        [
+          -1,
+          1,
+          "Conv",
+          [
+            1024,
+            3,
+            2
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C3k2",
+          [
+            1024,
+            true
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C2PSA",
+          [
+            1024
+          ]
+        ]
+      ],
+      "head": [
+        [
+          -1,
+          1,
+          "Classify",
+          [
+            "nc"
+          ]
+        ]
+      ],
+      "scale": "l",
+      "yaml_file": "yolo26l-cls.yaml",
+      "ch": 3,
+      "channels": 3
+    },
+    "effective_l_scale": {
+      "depth": 1.0,
+      "width": 1.0,
+      "max_channels": 512
+    },
+    "input_shape_nchw": [
+      1,
+      3,
+      224,
+      224
+    ],
+    "backbone_modules": [
+      "Conv",
+      "Conv",
+      "C3k2",
+      "Conv",
+      "C3k2",
+      "Conv",
+      "C3k2",
+      "Conv",
+      "C3k2",
+      "C2PSA"
+    ],
+    "backbone_explanation_de": "Faltungen und wiederverwendete Merkmalsblöcke; C2PSA ergänzt räumliche Attention. Die konkrete Klassifikationsvariante besitzt keinen FPN/PAN-Detektionsneck.",
+    "backbone_last_shape_nchw": [
+      1,
+      512,
+      7,
+      7
+    ],
+    "classify_head": {
+      "conv_1x1_in_out_channels": [
+        512,
+        1280
+      ],
+      "conv_activation": "SiLU; BatchNorm is fused in the compiled inference graph",
+      "spatial_shape_after_conv": [
+        1,
+        1280,
+        7,
+        7
+      ],
+      "pool": "Global Average Pooling (AdaptiveAvgPool2d(1); MIL reduce_mean)",
+      "pooled_shape": [
+        1,
+        1280
+      ],
+      "dropout": "nn.Dropout(p=0.0) in the standard reviewed Classify implementation; absent as an active inference operation",
+      "linear_weight_shape": [
+        134,
+        1280
+      ],
+      "linear_bias_shape": [
+        134
+      ],
+      "inference": "Softmax over class dimension",
+      "training": "Cross-entropy consumes logits; no second softmax before that loss",
+      "new_city_head_weight_shape": [
+        136,
+        1280
+      ],
+      "new_city_head_bias_shape": [
+        136
+      ],
+      "additional_parameters_for_two_classes": 2562
+    },
+    "local_evidence": [
+      {
+        "path": "iphone/SpeedConsumerApp/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/classify_de_road_signs.mlmodelc/model.mil",
+        "sha256": "e359580d097a831c563f7b689cc756ce9159dbc7a0ef71cd17c7a726ed6d5a71",
+        "lines": [
+          4,
+          13,
+          16,
+          833,
+          841,
+          843,
+          847,
+          849,
+          850,
+          851,
+          852,
+          853
+        ]
+      },
+      {
+        "path": "iphone/SpeedConsumerApp/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/classify_de_road_signs.mlmodelc/metadata.json",
+        "sha256": "ddd6abfe4a2036fca7f282d34026a17c611cdba74be2cae045beaecbcb4c0889",
+        "lines": []
+      },
+      {
+        "path": "lectures/tsr-sgblur-de-2026-10-26/source/model-weights-evidence.json",
+        "scope": "Independent parameter/head count; full checkpoint YAML also retained in temporary metadata-only research."
+      }
+    ],
+    "diagram_de": [
+      "Schild-Crop: RGB 224 × 224",
+      "CNN-Backbone: Conv/C3k2 + C2PSA",
+      "512 Merkmalskarten à 7 × 7",
+      "ClassificationHead: 1×1-Conv → räumliches Mitteln → 1280 Zahlen",
+      "Lineare Schicht: 134 Klassen → für Ortstafeln 136 Klassen",
+      "Softmax: ein Score pro Klasse"
+    ]
+  },
+  "detector": {
+    "name": "SGBlur YOLO11n, sign/plate/face",
+    "checkpoint_sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+    "checkpoint_saved_ultralytics_version": "8.3.86",
+    "parameter_elements": 2590425,
+    "checkpoint_model_yaml": {
+      "nc": 3,
+      "scales": {
+        "n": [
+          0.5,
+          0.25,
+          1024
+        ],
+        "s": [
+          0.5,
+          0.5,
+          1024
+        ],
+        "m": [
+          0.5,
+          1.0,
+          512
+        ],
+        "l": [
+          1.0,
+          1.0,
+          512
+        ],
+        "x": [
+          1.0,
+          1.5,
+          512
+        ]
+      },
+      "backbone": [
+        [
+          -1,
+          1,
+          "Conv",
+          [
+            64,
+            3,
+            2
+          ]
+        ],
+        [
+          -1,
+          1,
+          "Conv",
+          [
+            128,
+            3,
+            2
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C3k2",
+          [
+            256,
+            false,
+            0.25
+          ]
+        ],
+        [
+          -1,
+          1,
+          "Conv",
+          [
+            256,
+            3,
+            2
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C3k2",
+          [
+            512,
+            false,
+            0.25
+          ]
+        ],
+        [
+          -1,
+          1,
+          "Conv",
+          [
+            512,
+            3,
+            2
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C3k2",
+          [
+            512,
+            true
+          ]
+        ],
+        [
+          -1,
+          1,
+          "Conv",
+          [
+            1024,
+            3,
+            2
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C3k2",
+          [
+            1024,
+            true
+          ]
+        ],
+        [
+          -1,
+          1,
+          "SPPF",
+          [
+            1024,
+            5
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C2PSA",
+          [
+            1024
+          ]
+        ]
+      ],
+      "head": [
+        [
+          -1,
+          1,
+          "nn.Upsample",
+          [
+            "None",
+            2,
+            "nearest"
+          ]
+        ],
+        [
+          [
+            -1,
+            6
+          ],
+          1,
+          "Concat",
+          [
+            1
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C3k2",
+          [
+            512,
+            false
+          ]
+        ],
+        [
+          -1,
+          1,
+          "nn.Upsample",
+          [
+            "None",
+            2,
+            "nearest"
+          ]
+        ],
+        [
+          [
+            -1,
+            4
+          ],
+          1,
+          "Concat",
+          [
+            1
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C3k2",
+          [
+            256,
+            false
+          ]
+        ],
+        [
+          -1,
+          1,
+          "Conv",
+          [
+            256,
+            3,
+            2
+          ]
+        ],
+        [
+          [
+            -1,
+            13
+          ],
+          1,
+          "Concat",
+          [
+            1
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C3k2",
+          [
+            512,
+            false
+          ]
+        ],
+        [
+          -1,
+          1,
+          "Conv",
+          [
+            512,
+            3,
+            2
+          ]
+        ],
+        [
+          [
+            -1,
+            10
+          ],
+          1,
+          "Concat",
+          [
+            1
+          ]
+        ],
+        [
+          -1,
+          2,
+          "C3k2",
+          [
+            1024,
+            true
+          ]
+        ],
+        [
+          [
+            16,
+            19,
+            22
+          ],
+          1,
+          "Detect",
+          [
+            "nc"
+          ]
+        ]
+      ],
+      "scale": "n",
+      "yaml_file": "yolo11n.yaml",
+      "ch": 3
+    },
+    "effective_n_scale": {
+      "depth": 0.5,
+      "width": 0.25,
+      "max_channels": 1024
+    },
+    "first_conv_weight_shape": [
+      16,
+      3,
+      3,
+      3
+    ],
+    "input_mobile_shape_nchw": [
+      1,
+      3,
+      1280,
+      1280
+    ],
+    "backbone": [
+      "Conv/C3k2",
+      "SPPF",
+      "C2PSA"
+    ],
+    "neck": "Top-down upsample+concat and bottom-up stride-2-conv+concat; official architecture guide identifies FPN+PAN.",
+    "fused_feature_maps_for_1280_input": [
+      {
+        "name": "P3",
+        "stride": 8,
+        "shape_nchw": [
+          1,
+          64,
+          160,
+          160
+        ]
+      },
+      {
+        "name": "P4",
+        "stride": 16,
+        "shape_nchw": [
+          1,
+          128,
+          80,
+          80
+        ]
+      },
+      {
+        "name": "P5",
+        "stride": 32,
+        "shape_nchw": [
+          1,
+          256,
+          40,
+          40
+        ]
+      }
+    ],
+    "head": {
+      "type": "Anchor-free decoupled Detect",
+      "box_branch": "4 × 16 regression-bin logits then fixed DFL expectation/decoding",
+      "class_branch": "3 scores: sign, plate, face",
+      "decoded_output_nchw": [
+        1,
+        7,
+        33600
+      ],
+      "candidate_count_formula": "160×160 + 80×80 + 40×40 = 33600",
+      "postprocessing": "NMS; no YOLO26 NMS-free detection claim applies to this YOLO11 checkpoint"
+    },
+    "coreml_wrapper_note": "The compiled detection MIL has three genuine class-score channels. Export appends 77 zero columns for an 80-column NMS interface. The metadata 80-column shape is not 80 learned sign classes.",
+    "local_evidence": [
+      {
+        "path": "iphone/SpeedConsumerApp/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/yolo11n_panoramax.mlmodelc/model0/model.mil",
+        "sha256": "dd61ce5d88307a0907e8c71dbae81892c7829c26df97d853b1de48ff90787041",
+        "lines": [
+          916,
+          931,
+          945,
+          947,
+          961
+        ]
+      }
+    ],
+    "diagram_de": [
+      "Vollbild: RGB 1280 × 1280",
+      "Backbone: Conv/C3k2, Pooling, Attention",
+      "Neck: Merkmale aus drei Größen zusammenführen",
+      "DetectionHead: Boxkoordinaten + Schild/Kennzeichen/Gesicht",
+      "NMS: überlappende Vorschläge zusammenführen"
+    ]
+  },
+  "primary_sources": [
+    {
+      "title": "Ultralytics YOLO26: Unified Real-Time End-to-End Vision Models",
+      "authors": "Glenn Jocher, Jing Qiu, Mengyu Liu, Shuai Lyu, Fatih Cagatay Akyon, Muhammet Esat Kalfaoglu",
+      "year": 2026,
+      "url": "https://arxiv.org/abs/2606.03748v1",
+      "read_url": "https://arxiv.org/html/2606.03748v1",
+      "relevant_section": "3.4 Image Classification",
+      "claim_de": "Das offizielle Familienpaper beschreibt Klassifikation als Standard-Classify-Kopf auf dem gemeinsamen Backbone. Detektorspezifische Beiträge sind nicht automatisch Eigenschaften des deutschen Crop-Klassifikators."
+    },
+    {
+      "title": "You Only Look Once: Unified, Real-Time Object Detection",
+      "authors": "Joseph Redmon, Santosh Divvala, Ross Girshick, Ali Farhadi",
+      "year": 2016,
+      "venue": "CVPR 2016",
+      "url": "https://arxiv.org/abs/1506.02640",
+      "claim_de": "Historischer Ursprung des YOLO-Ansatzes; beschreibt nicht die konkrete YOLO11-/YOLO26-Implementierung."
+    },
+    {
+      "title": "Ultralytics YOLO11 official documentation",
+      "url": "https://docs.ultralytics.com/models/yolo11/",
+      "section": "Citations and Acknowledgments",
+      "claim_de": "Ultralytics erklärt dort ausdrücklich, kein formales YOLO11-Forschungspaper veröffentlicht zu haben. Software und konkrete Konfiguration zitieren."
+    },
+    {
+      "title": "YOLO11 detector configuration at v8.4.49",
+      "url": "https://raw.githubusercontent.com/ultralytics/ultralytics/v8.4.49/ultralytics/cfg/models/11/yolo11.yaml",
+      "claim_de": "Abgleich der im Checkpoint gespeicherten Backbone-/Neck-/Detect-Blöcke. Das Standard-nc=80 gilt nicht für den auf drei Klassen angepassten SGBlur-Checkpoint."
+    },
+    {
+      "title": "Classify module at v8.4.49",
+      "url": "https://raw.githubusercontent.com/ultralytics/ultralytics/v8.4.49/ultralytics/nn/modules/head.py",
+      "lines": [
+        698,
+        744
+      ],
+      "claim_de": "1×1-Conv auf 1280 Kanäle, AdaptiveAvgPool, Dropout, Linear und Softmax. Exakte 134 Klassen und konkrete Kanäle durch den lokalen Export belegt."
+    },
+    {
+      "title": "YOLO26 classification configuration, current official source",
+      "url": "https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/models/26/yolo26-cls.yaml",
+      "claim_de": "Aktuelle Hauptversion mit derselben gespeicherten Blockfolge verglichen; kein Ersatz für den exakten Checkpoint. Gepinnter v8.4.56-YAML-Abruf war über das Webtool nicht verfügbar."
+    },
+    {
+      "title": "Official YOLO architecture guide",
+      "url": "https://docs.ultralytics.com/guides/yolo-architecture",
+      "claim_de": "Hersteller ordnet den Detektionsneck FPN+PAN und die Bausteine Conv/C3k2/SPPF/C2PSA ein. Die allgemeine Detektorskizze gilt nicht unverändert für den Crop-Klassifikator."
+    },
+    {
+      "title": "Feature Pyramid Networks for Object Detection",
+      "authors": "Tsung-Yi Lin et al.",
+      "year": 2017,
+      "venue": "CVPR 2017",
+      "url": "https://arxiv.org/abs/1612.03144",
+      "claim_de": "Primärquelle der Top-down-Merkmalspyramide; als Architekturidee des Detektionsnecks einordnen, nicht als identisches Gesamtmodell."
+    },
+    {
+      "title": "Path Aggregation Network for Instance Segmentation",
+      "authors": "Shu Liu et al.",
+      "year": 2018,
+      "venue": "CVPR 2018",
+      "url": "https://arxiv.org/abs/1803.01534",
+      "claim_de": "Primärquelle der Bottom-up-Pfadaggregation; die Vorlesung nutzt daraus ausschließlich die dokumentierte Neck-Einordnung, keine zusätzliche Lernaufgabe."
+    }
+  ],
+  "teaching_recommendation_de": "Für Studierende ohne ML-Vorkenntnisse zuerst die zwei Aufgaben zeigen. Anschließend den Klassifikator anhand Crop → Merkmalskarten → 1280 Zahlen → 134/136 Klassenscores erklären; Conv/C3k2/C2PSA nur als konkrete Umsetzung darunter nennen. Im zweiten Bild den Detektor mit drei Maßstäben zeigen. Keine zusätzliche Detailvorlesung über Attention, DFL oder neue Aufgaben.",
+  "do_not_claim_de": [
+    "Keine Darknet-53-, ResNet-, EfficientNet- oder LeNet-Architektur für diese konkreten Checkpoints behaupten. Der Classify-Codekommentar efficientnet_b0 size bezeichnet die 1280 Breite, nicht den Backbone.",
+    "Kein YOLO11-Paper erfinden; ein tatsächliches YOLO26-Paper liegt seit 2.6.2026 vor.",
+    "Keine NMS-freie YOLO26-Detektion für den YOLO11n-SGBlur-Detektor oder den Crop-Klassifikator behaupten.",
+    "Keine FPN/PAN-Neckstufe in die tatsächliche YOLO26l-cls-Klassifikationsarchitektur einzeichnen."
+  ]
+}

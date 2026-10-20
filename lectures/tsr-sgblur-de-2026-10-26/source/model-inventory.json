@@ -1,0 +1,793 @@
+{
+  "schema_version": 1,
+  "title": "TSR / SGBlur: Quellen-, Modell- und Inferenzinventar zur Vorlesung",
+  "reviewed_date": "2026-10-19",
+  "review_timezone": "Europe/Berlin",
+  "scope": "Dokumentation und vorhandene Artefakte; keine Installation, kein Modelltraining, kein Deployment und keine neue Hardwaremessung.",
+  "size_units": {
+    "MB": "1 000 000 Bytes",
+    "MiB": "1 048 576 Bytes",
+    "caveat": "Dateigrößen messen weder RAM/VRAM-Bedarf noch Latenz."
+  },
+  "repositories": {
+    "youspeed_head": "917de04668100f2b48dadd5ed35391535cabd5ec",
+    "analytics_head": "614f0950086e009b7af6356518fa05aa07d5aa55",
+    "snapshot_note": "URL ist auf Repository-HEAD gepinnt; working_tree_file_sha256 dokumentiert den tatsächlich gelesenen lokalen Stand, auch wenn andere Arbeiten uncommitted sind."
+  },
+  "models": [
+    {
+      "id": "sgblur-yolo11n-panoramax-169451970702aca0",
+      "role": "detector",
+      "architecture": "YOLO11n Panoramax",
+      "parameter_count": 2590425,
+      "parameter_count_note": "Unabhängig gezählte skalare nn.Parameter-Elemente einschließlich Bias; SHA-geprüfter Original-Checkpoint. Siehe model-weights-evidence.json.",
+      "class_count": 3,
+      "class_labels": [
+        "sign",
+        "plate",
+        "face"
+      ],
+      "city_310_311_supported": null,
+      "city_support_note": "Generische Klasse sign kann Ortstafeln lokalisieren; sie unterscheidet DE:310 und DE:311 nicht.",
+      "original_checkpoint": {
+        "uri": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt",
+        "revision": "169451970702aca0dde9ff3106dba0f67e0b88a8",
+        "sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+        "size_bytes": 5979923,
+        "size_evidence": "Gepinnte Quellinventare; Originaldatei in dieser Vorlesung nicht erneut heruntergeladen."
+      },
+      "artifacts": [
+        {
+          "platform": "iphone",
+          "path": "iphone/SpeedConsumerApp/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/yolo11n_panoramax.mlmodelc",
+          "format": "coreml",
+          "weight_precision_declared": "float16",
+          "manifest_declared_sha256": "96c782afde62e1ede1d47d9d51b64359102170ed3ab6604838609869fcbd4589",
+          "measured_date": "2026-10-19",
+          "input_shape_declared_by_manifest": [
+            1,
+            3,
+            1280,
+            1280
+          ],
+          "output_schema": "vision_recognized_objects_v1",
+          "exporter": {
+            "name": "ultralytics+coremltools",
+            "version": "8.4.56+9.0",
+            "configuration": "imgsz=1280,batch=1,half=true,nms=true"
+          },
+          "size_bytes": 5576860,
+          "size_method": "Summe logischer Bytes aller regulären Dateien, keine Dateisystem-Belegung.",
+          "file_count": 8,
+          "external_input": [
+            {
+              "height": "1280",
+              "colorspace": "RGB",
+              "isOptional": "0",
+              "width": "1280",
+              "isColor": "1",
+              "formattedType": "Image (Color 1280 × 1280)",
+              "hasSizeFlexibility": "0",
+              "type": "Image",
+              "shortDescription": "Input image",
+              "name": "image"
+            },
+            {
+              "isOptional": "0",
+              "formattedType": "Double",
+              "type": "Double",
+              "name": "iouThreshold",
+              "shortDescription": "(optional) IoU threshold override (default: 0.7)"
+            },
+            {
+              "isOptional": "0",
+              "formattedType": "Double",
+              "type": "Double",
+              "name": "confidenceThreshold",
+              "shortDescription": "(optional) Confidence threshold override (default: 0.25)"
+            }
+          ],
+          "external_output": [
+            {
+              "dataType": "Float32",
+              "hasShapeFlexibility": "1",
+              "isOptional": "0",
+              "shapeFlexibility": "0... × 80",
+              "shapeRange": "[[0, -1], [80, 80]]",
+              "formattedType": "MultiArray (Float32 0 × 80)",
+              "type": "MultiArray",
+              "shape": "[0, 80]",
+              "name": "confidence",
+              "shortDescription": "Boxes × Class confidence (see user-defined metadata \"classes\")"
+            },
+            {
+              "dataType": "Float32",
+              "hasShapeFlexibility": "1",
+              "isOptional": "0",
+              "shapeFlexibility": "0... × 4",
+              "shapeRange": "[[0, -1], [4, 4]]",
+              "formattedType": "MultiArray (Float32 0 × 4)",
+              "type": "MultiArray",
+              "shape": "[0, 4]",
+              "name": "coordinates",
+              "shortDescription": "Boxes × [x, y, width, height] (relative to image size)"
+            }
+          ],
+          "storage_precision_metadata": "Float16",
+          "compute_precision_metadata": "Mixed (Float16, Float32, Int32)",
+          "per_file_sha256": [
+            {
+              "path": "analytics/coremldata.bin",
+              "size_bytes": 202,
+              "sha256": "276bc8f90dda03823dd6a0ce57e41e4ce81a4adb288adf1919f7677f5fdb3d0e"
+            },
+            {
+              "path": "coremldata.bin",
+              "size_bytes": 593,
+              "sha256": "4233ef2681d886016b70913af45f6c7bebba5a213bdac1439154deaf2d34983b"
+            },
+            {
+              "path": "metadata.json",
+              "size_bytes": 3989,
+              "sha256": "14be25db6a6cb7dadb6f6891aff5249810d554ca63137d043d2babf05c5e7da4"
+            },
+            {
+              "path": "model0/analytics/coremldata.bin",
+              "size_bytes": 108,
+              "sha256": "5a8281049b2a65a3be541cfd9f949e84b8fe1c5251ce90e46da1626fed54e58a"
+            },
+            {
+              "path": "model0/coremldata.bin",
+              "size_bytes": 836,
+              "sha256": "b9ffc5d8ad06e7257bc6e56cb246ec1a7e81cefa3d1c04c5d06294511f864d49"
+            },
+            {
+              "path": "model0/model.mil",
+              "size_bytes": 192108,
+              "sha256": "dd61ce5d88307a0907e8c71dbae81892c7829c26df97d853b1de48ff90787041"
+            },
+            {
+              "path": "model0/weights/weight.bin",
+              "size_bytes": 5378368,
+              "sha256": "faa6f7a49882d57f12fc5f58c723b8b6a4bf2c0a07b1ff68f8471d656a8e8ddb"
+            },
+            {
+              "path": "model1/coremldata.bin",
+              "size_bytes": 656,
+              "sha256": "43a8934e7062a9312596716256240787d86285fba3fce501854cd8c8157f9e1d"
+            }
+          ],
+          "manifest_hash_verification": "Nur aus Manifest übernommen. Der ursprüngliche deutsche Verzeichnis-Hashalgorithmus wurde nicht unabhängig rekonstruiert; aktuelle Dateihashes stehen separat."
+        },
+        {
+          "platform": "android",
+          "path": "android/app/src/main/assets/tsr/DE.panoramax-bootstrap.tsrmodelpack/yolo11n_panoramax_float16.tflite",
+          "format": "tflite",
+          "weight_precision_declared": "float16",
+          "manifest_declared_sha256": "e5490acd60ceb015336bed487b5e247c2728b2b98b6336790bf6ffe02a6f7207",
+          "measured_date": "2026-10-19",
+          "input_shape_declared_by_manifest": [
+            1,
+            1280,
+            1280,
+            3
+          ],
+          "output_schema": "yolo_raw_xywh_class_scores_v1",
+          "exporter": {
+            "name": "ultralytics+onnx2tf+litert",
+            "version": "8.4.56+1.17.0+1.28.8+2.19.0",
+            "configuration": "imgsz=1280,batch=1,half=true,nms=false"
+          },
+          "size_bytes": 5669818,
+          "size_method": "Logische Dateibytes.",
+          "measured_file_sha256": "e5490acd60ceb015336bed487b5e247c2728b2b98b6336790bf6ffe02a6f7207",
+          "manifest_hash_verified": true,
+          "external_tensor_dtype": "float32",
+          "external_input_shape": [
+            1,
+            1280,
+            1280,
+            3
+          ],
+          "external_output_shape": [
+            1,
+            7,
+            33600
+          ],
+          "precision_note": "FP16-Gewichte; externe I/O-Tensoren sind Float32."
+        }
+      ]
+    },
+    {
+      "id": "panoramax-classify-de-road-signs-5360aa6f4ef6c7b1",
+      "role": "classifier",
+      "architecture": "YOLO26l-cls German road signs",
+      "parameter_count": 13006278,
+      "parameter_count_note": "Unabhängig gezählte skalare nn.Parameter-Elemente einschließlich Bias; SHA-geprüfter Original-Checkpoint. Siehe model-weights-evidence.json.",
+      "class_count": 134,
+      "class_labels": [
+        "arrow:red",
+        "arrow_left_down",
+        "arrow_right",
+        "arrow_right_down",
+        "arrow_through",
+        "arrow_turn_left",
+        "arrow_turn_left_right",
+        "arrow_turn_left_through",
+        "arrow_turn_right",
+        "arrow_turn_right_through",
+        "arrow_u_turn",
+        "bad",
+        "bad:back",
+        "bad:buildings",
+        "bad:round",
+        "bad:windows",
+        "bicycle:priority",
+        "bicycle:start",
+        "bus:start",
+        "exit",
+        "give_way",
+        "hazard",
+        "hazard:airport",
+        "hazard:animals",
+        "hazard:bicycle",
+        "hazard:bothways",
+        "hazard:bumps",
+        "hazard:crossing",
+        "hazard:gravel",
+        "hazard:horse",
+        "hazard:ice",
+        "hazard:incline",
+        "hazard:intersection",
+        "hazard:left_turn",
+        "hazard:level_crossing",
+        "hazard:moving_bridge",
+        "hazard:narrow_both",
+        "hazard:narrow_left",
+        "hazard:narrow_right",
+        "hazard:other",
+        "hazard:pedestrian_crossing",
+        "hazard:right_turn",
+        "hazard:road_works",
+        "hazard:rocks",
+        "hazard:school",
+        "hazard:slippery",
+        "hazard:traffic_jam",
+        "hazard:traffic_signal",
+        "hazard:train",
+        "hazard:train2",
+        "hazard:wild_animals",
+        "hazard:wind",
+        "hazard:zigzag",
+        "hazard:zigzag:left",
+        "horse:start",
+        "lanes",
+        "maxaxleweight",
+        "maxheight",
+        "maxlength",
+        "maxspeed:10",
+        "maxspeed:100",
+        "maxspeed:120",
+        "maxspeed:130",
+        "maxspeed:20",
+        "maxspeed:25",
+        "maxspeed:30",
+        "maxspeed:40",
+        "maxspeed:5",
+        "maxspeed:50",
+        "maxspeed:60",
+        "maxspeed:70",
+        "maxspeed:80",
+        "maxspeed:end",
+        "maxweight",
+        "maxwidth",
+        "min_distance",
+        "motorway:end",
+        "motorway:start",
+        "no:end",
+        "no:other",
+        "no:other:dog",
+        "no_bicycle",
+        "no_bus",
+        "no_car",
+        "no_car_bicycle",
+        "no_car_motorcycle",
+        "no_dangerous",
+        "no_dangerous_liquid",
+        "no_entry",
+        "no_exit",
+        "no_exit:car",
+        "no_hgv",
+        "no_horse",
+        "no_motorcycle",
+        "no_overtaking",
+        "no_overtaking:end",
+        "no_overtaking:hgv",
+        "no_parking",
+        "no_pedestrian",
+        "no_stop",
+        "no_u_turn",
+        "no_way",
+        "oneway",
+        "other",
+        "other:charging",
+        "other:motorhome",
+        "other:multi",
+        "park_ride",
+        "parking",
+        "parking:covered",
+        "parking:disabled",
+        "parking:pedestrian",
+        "parking:perpendicular",
+        "parking:sidewalk",
+        "pedestrian:start",
+        "pedestrian_bicycle:designated",
+        "pedestrian_bicycle:start",
+        "pedestrian_crossing",
+        "priority:backward",
+        "priority:end",
+        "priority:forward",
+        "priority:start",
+        "roundabout",
+        "stop",
+        "traffic_signal",
+        "trunk:end",
+        "trunk:start",
+        "tunnel:start",
+        "zone:20",
+        "zone:30",
+        "zone:30:end",
+        "zone:end",
+        "zone:no_parking",
+        "zone:pedestrian"
+      ],
+      "city_310_311_supported": false,
+      "city_support_note": "Keine eigenen Ortseingangs-/Ortsausgangsausgaben in den 134 trainierten Labels.",
+      "original_checkpoint": {
+        "uri": "https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/classify_de_road_signs.pt",
+        "revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+        "sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+        "size_bytes": 26282865,
+        "size_evidence": "Gepinnte Quellinventare; Originaldatei in dieser Vorlesung nicht erneut heruntergeladen."
+      },
+      "artifacts": [
+        {
+          "platform": "iphone",
+          "path": "iphone/SpeedConsumerApp/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/classify_de_road_signs.mlmodelc",
+          "format": "coreml",
+          "weight_precision_declared": "float16",
+          "manifest_declared_sha256": "7a9b6d96fef76ee6ba99403591d6861f05f712008c0be69ff1c1a7376c1f21be",
+          "measured_date": "2026-10-19",
+          "input_shape_declared_by_manifest": [
+            1,
+            3,
+            224,
+            224
+          ],
+          "output_schema": "vision_classifications_v1",
+          "exporter": {
+            "name": "ultralytics+coremltools",
+            "version": "8.4.56+9.0",
+            "configuration": "imgsz=224,batch=1,half=true,nms=false"
+          },
+          "size_bytes": 26175294,
+          "size_method": "Summe logischer Bytes aller regulären Dateien, keine Dateisystem-Belegung.",
+          "file_count": 5,
+          "external_input": [
+            {
+              "height": "224",
+              "colorspace": "RGB",
+              "isOptional": "0",
+              "width": "224",
+              "isColor": "1",
+              "formattedType": "Image (Color 224 × 224)",
+              "hasSizeFlexibility": "0",
+              "type": "Image",
+              "shortDescription": "",
+              "name": "image"
+            }
+          ],
+          "external_output": [
+            {
+              "isOptional": "0",
+              "formattedType": "String",
+              "type": "String",
+              "name": "classLabel",
+              "shortDescription": ""
+            },
+            {
+              "isOptional": "0",
+              "keyType": "String",
+              "formattedType": "Dictionary (String → Double)",
+              "type": "Dictionary",
+              "name": "classLabel_probs",
+              "shortDescription": ""
+            }
+          ],
+          "storage_precision_metadata": "Float16",
+          "compute_precision_metadata": "Mixed (Float16, Float32, Float64, Int32)",
+          "per_file_sha256": [
+            {
+              "path": "analytics/coremldata.bin",
+              "size_bytes": 243,
+              "sha256": "e5770b289629524dc6c969ac3fbe64bb63a8c1427fc20368167449a6305ab42a"
+            },
+            {
+              "path": "coremldata.bin",
+              "size_bytes": 6499,
+              "sha256": "c95b2f36759fd9f5a5468610e0cd7170ddbfc288537c516dc27067f4bc33f857"
+            },
+            {
+              "path": "metadata.json",
+              "size_bytes": 8475,
+              "sha256": "ddd6abfe4a2036fca7f282d34026a17c611cdba74be2cae045beaecbcb4c0889"
+            },
+            {
+              "path": "model.mil",
+              "size_bytes": 169217,
+              "sha256": "e359580d097a831c563f7b689cc756ce9159dbc7a0ef71cd17c7a726ed6d5a71"
+            },
+            {
+              "path": "weights/weight.bin",
+              "size_bytes": 25990860,
+              "sha256": "393a329d33255dc64608757b45b0d0f9aed062cdcc135fb2594a053588fbb4cf"
+            }
+          ],
+          "manifest_hash_verification": "Nur aus Manifest übernommen. Der ursprüngliche deutsche Verzeichnis-Hashalgorithmus wurde nicht unabhängig rekonstruiert; aktuelle Dateihashes stehen separat."
+        },
+        {
+          "platform": "android",
+          "path": "android/app/src/main/assets/tsr/DE.panoramax-bootstrap.tsrmodelpack/classify_de_road_signs_float16.tflite",
+          "format": "tflite",
+          "weight_precision_declared": "float16",
+          "manifest_declared_sha256": "28d2ce40455d0f9cac2f7c61a51b5a5f95f17fa57fc5706a56f64fa9f8bd7df0",
+          "measured_date": "2026-10-19",
+          "input_shape_declared_by_manifest": [
+            1,
+            224,
+            224,
+            3
+          ],
+          "output_schema": "classification_probabilities_v1",
+          "exporter": {
+            "name": "ultralytics+onnx2tf+litert",
+            "version": "8.4.56+1.17.0+1.28.8+2.19.0",
+            "configuration": "imgsz=224,batch=1,half=true,nms=false"
+          },
+          "size_bytes": 26080976,
+          "size_method": "Logische Dateibytes.",
+          "measured_file_sha256": "28d2ce40455d0f9cac2f7c61a51b5a5f95f17fa57fc5706a56f64fa9f8bd7df0",
+          "manifest_hash_verified": true,
+          "external_tensor_dtype": "float32",
+          "external_input_shape": [
+            1,
+            224,
+            224,
+            3
+          ],
+          "external_output_shape": [
+            1,
+            134
+          ],
+          "precision_note": "FP16-Gewichte; externe I/O-Tensoren sind Float32."
+        }
+      ]
+    }
+  ],
+  "sgblur": {
+    "task": "bounding_box_detection_then_jpeg_blur",
+    "is_pixel_segmentation_model": false,
+    "source_repository": "https://gitlab.com/panoramax/server/sgblur",
+    "pinned_mobile_origin": "https://github.com/cquest/sgblur/tree/169451970702aca0dde9ff3106dba0f67e0b88a8",
+    "pinned_source_files": {
+      "readme": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/README.md",
+      "detect": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/src/detect/detect.py",
+      "blur": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/src/blur/blur.py"
+    },
+    "checkpoint_inventory": [
+      {
+        "name": "yolo11n_panoramax.pt",
+        "size_bytes": 5979923,
+        "revision": "169451970702aca0dde9ff3106dba0f67e0b88a8",
+        "git_blob_sha1": "33ed138b791e6ed3e769802cd809815f907393e8",
+        "sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+        "url": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt",
+        "verification": "GitHub Contents API metadata read on 2026-10-19; no checkpoint download.",
+        "selected_in_pinned_server_code": true
+      },
+      {
+        "name": "yolo11s_panoramax.pt",
+        "size_bytes": 19524947,
+        "revision": "169451970702aca0dde9ff3106dba0f67e0b88a8",
+        "git_blob_sha1": "0515f99de34201a1206aa55b22dcc747bcda8f56",
+        "sha256": null,
+        "url": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11s_panoramax.pt",
+        "verification": "GitHub Contents API metadata read on 2026-10-19; no checkpoint download.",
+        "selected_in_pinned_server_code": true
+      },
+      {
+        "name": "yolo11m_panoramax.pt",
+        "size_bytes": 40886949,
+        "revision": "169451970702aca0dde9ff3106dba0f67e0b88a8",
+        "git_blob_sha1": "c722b1066912799df00b4f248610af540e260aee",
+        "sha256": null,
+        "url": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11m_panoramax.pt",
+        "verification": "GitHub Contents API metadata read on 2026-10-19; no checkpoint download.",
+        "selected_in_pinned_server_code": true
+      },
+      {
+        "name": "yolo11l_panoramax.pt",
+        "size_bytes": 51562194,
+        "revision": "169451970702aca0dde9ff3106dba0f67e0b88a8",
+        "git_blob_sha1": "0e3d9ccfd86db1a7ed410f8aa12849086778bcad",
+        "sha256": null,
+        "url": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11l_panoramax.pt",
+        "verification": "GitHub Contents API metadata read on 2026-10-19; no checkpoint download.",
+        "selected_in_pinned_server_code": false
+      },
+      {
+        "name": "yolov8s_panoramax.pt",
+        "size_bytes": 22998735,
+        "revision": "169451970702aca0dde9ff3106dba0f67e0b88a8",
+        "git_blob_sha1": "47e3a776b8e67861bd395b107f6044133620552f",
+        "sha256": null,
+        "url": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolov8s_panoramax.pt",
+        "verification": "GitHub Contents API metadata read on 2026-10-19; no checkpoint download.",
+        "selected_in_pinned_server_code": false
+      }
+    ],
+    "pinned_detector_configuration": {
+      "evidence_kind": "source_code_behavior",
+      "override": "MODEL_NAME",
+      "default_selection": {
+        "no_cuda_vram": "yolo11n",
+        "available_vram_below_6_GiB": "yolo11s",
+        "otherwise": "yolo11m"
+      },
+      "minimum_confidence": 0.3,
+      "requested_half_precision": true,
+      "standard_imgsz_passes": [
+        1024,
+        2048
+      ],
+      "panorama_extra_pass": "Ab Bildbreite 5760 zusätzliche Ausschnitte, imgsz bis 4096.",
+      "output": "bbox, class, confidence, JPEG-aligned crop rectangle; keine Pixelmaske.",
+      "lines": "detect.py:14-16,42-67,105-106,153-179"
+    },
+    "blur_runtime": {
+      "device": "CPU",
+      "method": "Pixelate, BoxBlur, JPEG-MCU crop/drop; sign-Boxen werden nicht verwischt.",
+      "caveat": "Fehlerpfade können Rekodierung auslösen; keine absolute Zusage, dass jeder Pfad ohne Rekodierung bleibt."
+    }
+  },
+  "runtimes": {
+    "linux_prolix": {
+      "evidence_kind": "committed_configuration_plus_recorded_canary",
+      "orchestrator": {
+        "repository": "https://gitlab.com/panoramax/clients/prolix",
+        "revision": "36bb92bed7d8aba1d87c1fd10fcdf8ec7f06046f"
+      },
+      "source_classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+      "framework": "Ultralytics/PyTorch",
+      "device_selection": "cuda:0 wenn torch.cuda.is_available(), sonst cpu.",
+      "configured_default_visible_host_gpu": "1",
+      "logical_device_note": "CUDA_VISIBLE_DEVICES=1 remappt Host-GPU1 auf Prozess-cuda:0; externes .env kann überschreiben.",
+      "pipeline": "Aktueller Adapter konsumiert vorhandene SGBlur-Boxen, croppt öffentliche verwischte Bilder mit 15% Padding und klassifiziert das Land.",
+      "registry_detector_caveat": "Registry pinnt yolo11l; dessen Eintrag belegt keine Detektorausführung im box-konsumierenden Worker.",
+      "canary_observed": {
+        "date": "2026-10-16",
+        "device": "cuda:0",
+        "count": 6,
+        "kind": "nicht schreibende Länderklassifikator-Canaries"
+      },
+      "sources": [
+        {
+          "repository": "volzinnovation/Woladen.de-analytics",
+          "repository_head": "614f0950086e009b7af6356518fa05aa07d5aa55",
+          "path": "deploy/prolix/models.json",
+          "working_tree_file_sha256": "eae0f8dd0e28630021b4562e20e35fb0dee6d82b8da88c543af661d41c736138",
+          "url": "https://github.com/volzinnovation/Woladen.de-analytics/blob/614f0950086e009b7af6356518fa05aa07d5aa55/deploy/prolix/models.json"
+        },
+        {
+          "repository": "volzinnovation/Woladen.de-analytics",
+          "repository_head": "614f0950086e009b7af6356518fa05aa07d5aa55",
+          "path": "prolix_pipeline/classifier.py",
+          "working_tree_file_sha256": "e0ce5bc1d6f2258284e56b76cf6ce1789b364bf72f097fe14ad4a46b58ab8749",
+          "url": "https://github.com/volzinnovation/Woladen.de-analytics/blob/614f0950086e009b7af6356518fa05aa07d5aa55/prolix_pipeline/classifier.py",
+          "lines": "45-58"
+        },
+        {
+          "repository": "volzinnovation/Woladen.de-analytics",
+          "repository_head": "614f0950086e009b7af6356518fa05aa07d5aa55",
+          "path": "prolix_pipeline/worker.py",
+          "working_tree_file_sha256": "d937b384e8b910ced4792c6a136364ee209ce572c350c9dda3b9916dc0e456a2",
+          "url": "https://github.com/volzinnovation/Woladen.de-analytics/blob/614f0950086e009b7af6356518fa05aa07d5aa55/prolix_pipeline/worker.py",
+          "lines": "153-168"
+        },
+        {
+          "repository": "volzinnovation/Woladen.de-analytics",
+          "repository_head": "614f0950086e009b7af6356518fa05aa07d5aa55",
+          "path": "deploy/prolix/compose.yml",
+          "working_tree_file_sha256": "0799943f76bb3a44528ca2e894e4960c3c10899366f5ce3bbe9e2b9422282b92",
+          "url": "https://github.com/volzinnovation/Woladen.de-analytics/blob/614f0950086e009b7af6356518fa05aa07d5aa55/deploy/prolix/compose.yml",
+          "lines": "35"
+        },
+        {
+          "repository": "volzinnovation/Woladen.de-analytics",
+          "repository_head": "614f0950086e009b7af6356518fa05aa07d5aa55",
+          "path": "docs/youspeed/collection-evidence/2026-10-16/country-enrichment/rollout/gpu-canaries.json",
+          "working_tree_file_sha256": "8ed1ee84a140e4ebf762e049ebfba20f42f39fcf2e9e7cec4012b9b475ebafc1",
+          "url": "https://github.com/volzinnovation/Woladen.de-analytics/blob/614f0950086e009b7af6356518fa05aa07d5aa55/docs/youspeed/collection-evidence/2026-10-16/country-enrichment/rollout/gpu-canaries.json"
+        }
+      ]
+    },
+    "android": {
+      "evidence_kind": "source_code_plus_historical_device_measurement",
+      "framework": "Google AI Edge LiteRT 1.4.2",
+      "acceleration": "GPU delegate nach CompatibilityList; erlaubte reduzierte Präzision; FAST_SINGLE_ANSWER.",
+      "fallback": "CPU, 4 Threads, XNNPACK bei fehlender Kompatibilität, Delegatenerzeugungs- oder Aufruffehler.",
+      "recorded_device": {
+        "model": "Moto g86 5G",
+        "gpu": "ARM Mali-G615 MC2",
+        "chipset": "MT6878",
+        "evidence_date": "2026-09-14"
+      },
+      "recorded_fixture_timing": {
+        "evidence_date": "2026-09-14",
+        "gpu_warm_median_ms": 521.59,
+        "forced_cpu_ms": 1419.33,
+        "caveat": "Historische Referenzfixture; kein allgemeiner FPS-/Modellbenchmark."
+      },
+      "sources": [
+        {
+          "repository": "volzinnovation/youspeed.de",
+          "repository_head": "917de04668100f2b48dadd5ed35391535cabd5ec",
+          "path": "android/app/src/main/java/de/youspeed/android/alpha/AndroidTrafficSignRuntime.kt",
+          "working_tree_file_sha256": "8bbb7ca523408f994b319e8883180a2db70f39d655dbb9cc9a2436d6a7c49f81",
+          "url": "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/android/app/src/main/java/de/youspeed/android/alpha/AndroidTrafficSignRuntime.kt",
+          "lines": "380-475"
+        },
+        {
+          "repository": "volzinnovation/youspeed.de",
+          "repository_head": "917de04668100f2b48dadd5ed35391535cabd5ec",
+          "path": "docs/ANDROID_TSR_DEVICE_DIAGNOSIS_2026-09-14.md",
+          "working_tree_file_sha256": "3c74857f191654c73997f50028aaa5e4f11aebe63b0954c0c60694d28dfb4e2d",
+          "url": "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/ANDROID_TSR_DEVICE_DIAGNOSIS_2026-09-14.md",
+          "lines": "95,144-166"
+        }
+      ]
+    },
+    "iphone": {
+      "evidence_kind": "source_code_configuration",
+      "framework": "Core ML / Vision",
+      "compute_units": "MLComputeUnits.all",
+      "eligible_processors": [
+        "CPU",
+        "Apple GPU",
+        "Apple Neural Engine"
+      ],
+      "placement_caveat": "Core ML wählt Platzierung pro Modell/Operation. Keine beobachtete GPU-/Neural-Engine-Aufteilung und kein universeller Laufzeitwert behauptet.",
+      "cuda": false,
+      "sources": [
+        {
+          "repository": "volzinnovation/youspeed.de",
+          "repository_head": "917de04668100f2b48dadd5ed35391535cabd5ec",
+          "path": "iphone/SpeedConsumerApp/TrafficSignRuntime.swift",
+          "working_tree_file_sha256": "bac235244283f5cb9afd140621ea486147d833bd1bb8590a6551c2dac19c428c",
+          "url": "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/iphone/SpeedConsumerApp/TrafficSignRuntime.swift",
+          "lines": "484,520-521,648-650,1042-1043"
+        }
+      ],
+      "official_runtime_documentation": "https://developer.apple.com/documentation/coreml/mlcomputeunits"
+    }
+  },
+  "server_gpu_inventory": {
+    "evidence_kind": "recorded_host_inventory",
+    "observed_date": "2026-10-18",
+    "not_live_utilization": true,
+    "devices": [
+      {
+        "host_index": 0,
+        "name": "NVIDIA RTX A5000",
+        "memory_total_mib": 24564
+      },
+      {
+        "host_index": 1,
+        "name": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+        "memory_total_mib": 97887
+      },
+      {
+        "host_index": 2,
+        "name": "NVIDIA RTX A5000",
+        "memory_total_mib": 24564
+      }
+    ],
+    "sgblur_assignment": {
+      "status": "not_confirmed_from_committed_evidence",
+      "note": "Gesunde SGBlur/SGBlur-detect-Container und GPU-Prozesse beobachtet; keine sichere PID-zu-Container-zu-GPU-Zuordnung im Inventar."
+    },
+    "ocr_assignment": {
+      "status": "explicitly_approved_and_recorded",
+      "host_index": 2,
+      "name": "NVIDIA RTX A5000",
+      "note": "Separater OCR-Dienst; kein Beleg für die SGBlur-Zuordnung."
+    },
+    "sources": [
+      {
+        "repository": "volzinnovation/Woladen.de-analytics",
+        "repository_head": "614f0950086e009b7af6356518fa05aa07d5aa55",
+        "path": "docs/youspeed/operations-evidence/2026-10-18-ki-ocr/server-status.json",
+        "working_tree_file_sha256": "206e512a718d29eefcae5e36f548c3e46a5ff11873aca04b645228a9b7f809fb",
+        "url": "https://github.com/volzinnovation/Woladen.de-analytics/blob/614f0950086e009b7af6356518fa05aa07d5aa55/docs/youspeed/operations-evidence/2026-10-18-ki-ocr/server-status.json",
+        "lines": "37-92"
+      },
+      {
+        "repository": "volzinnovation/Woladen.de-analytics",
+        "repository_head": "614f0950086e009b7af6356518fa05aa07d5aa55",
+        "path": "docs/youspeed/KI_OCR_SERVICE.md",
+        "working_tree_file_sha256": "049a4634e4953eea453d4a610eb7bb57b4653ebf1cb0945fd2a7d7f5a5e587f7",
+        "url": "https://github.com/volzinnovation/Woladen.de-analytics/blob/614f0950086e009b7af6356518fa05aa07d5aa55/docs/youspeed/KI_OCR_SERVICE.md",
+        "lines": "3-7"
+      }
+    ]
+  },
+  "cross_platform_identity": {
+    "same_source_classifier": true,
+    "same_binary": false,
+    "same_complete_pipeline": false,
+    "note": "Gleiche Quellgewichte und Labelreihenfolge; Core ML/LiteRT-Exporte unterscheiden Dateiformat, NMS und Präzision. Server-/Mobil-Cropping und Detektorauflösung unterscheiden sich.",
+    "must_validate": [
+      "RGB/Normierung",
+      "Crop/Letterbox/Orientierung",
+      "Klassenindex-Reihenfolge",
+      "Box-Koordinaten und NMS",
+      "numerische Abweichungen",
+      "End-to-End-Qualität",
+      "Warm-/Kaltlaufzeit und Speicher auf Zielhardware"
+    ]
+  },
+  "source_inventory": [
+    {
+      "repository": "volzinnovation/youspeed.de",
+      "repository_head": "917de04668100f2b48dadd5ed35391535cabd5ec",
+      "path": "iphone/SpeedConsumerApp/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/manifest.json",
+      "working_tree_file_sha256": "e80bd96c659988889433924793d5a2a1eac3701713252099dee092a1ef56c442",
+      "url": "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/iphone/SpeedConsumerApp/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/manifest.json"
+    },
+    {
+      "repository": "volzinnovation/youspeed.de",
+      "repository_head": "917de04668100f2b48dadd5ed35391535cabd5ec",
+      "path": "android/app/src/main/assets/tsr/DE.panoramax-bootstrap.tsrmodelpack/manifest.json",
+      "working_tree_file_sha256": "78f58c661a33a7e13e14606ec26270b06735f1fc258b8ce83279f3cdbbb7853a",
+      "url": "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/android/app/src/main/assets/tsr/DE.panoramax-bootstrap.tsrmodelpack/manifest.json"
+    },
+    {
+      "repository": "volzinnovation/youspeed.de",
+      "repository_head": "917de04668100f2b48dadd5ed35391535cabd5ec",
+      "path": "android/app/src/main/assets/tsr/DE.panoramax-bootstrap.tsrmodelpack/provenance/android-export-report.json",
+      "working_tree_file_sha256": "5023e114306b4e64b464bb2bc94940f0d8bed433710cc2e297d7133a02ee039e",
+      "url": "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/android/app/src/main/assets/tsr/DE.panoramax-bootstrap.tsrmodelpack/provenance/android-export-report.json"
+    },
+    {
+      "repository": "volzinnovation/youspeed.de",
+      "repository_head": "917de04668100f2b48dadd5ed35391535cabd5ec",
+      "path": "shared/tsr/training-sources-v1.json",
+      "working_tree_file_sha256": "f36719320f9daaf83703a090219bcdf089ac5138770e717f2320569f2a34d12e",
+      "url": "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/shared/tsr/training-sources-v1.json"
+    },
+    {
+      "repository": "volzinnovation/youspeed.de",
+      "repository_head": "917de04668100f2b48dadd5ed35391535cabd5ec",
+      "path": "shared/tsr/end-sign-review-2026-09-24.md",
+      "working_tree_file_sha256": "cb38ffd3aea5a6fa839e0f6ee1ba56dddfc28a16d3280e03ccd84c5c4c472659",
+      "url": "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/shared/tsr/end-sign-review-2026-09-24.md"
+    },
+    {
+      "repository": "volzinnovation/youspeed.de",
+      "repository_head": "917de04668100f2b48dadd5ed35391535cabd5ec",
+      "path": "docs/TSR_PROLIX_ALIGNMENT_2026-09-10.md",
+      "working_tree_file_sha256": "62ef7b4eac146d13551925f09b674d4fb955c2e8bb4669f8e38e337a09e3a849",
+      "url": "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_PROLIX_ALIGNMENT_2026-09-10.md"
+    }
+  ]
+}

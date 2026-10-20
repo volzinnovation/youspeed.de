@@ -1,0 +1,150 @@
+{
+  "schema_version": "youspeed-hf-de-model-card-review-v1",
+  "checked_at": "2026-10-20T11:59:04.793767+00:00",
+  "scope": "Read-only model-card/repository metadata and cached dataset audit. No model download, training or inference.",
+  "model_repository": {
+    "url": "https://huggingface.co/Panoramax/classify_de_road_signs",
+    "api_url": "https://huggingface.co/api/models/Panoramax/classify_de_road_signs?blobs=true",
+    "current_main_revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+    "last_modified": "2026-06-13T08:51:24.000Z",
+    "same_as_existing_course_baseline_revision": true,
+    "checkpoint": {
+      "filename": "classify_de_road_signs.pt",
+      "size_bytes": 26282865,
+      "lfs_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+      "matches_actual_training_baseline": true
+    },
+    "card": {
+      "pinned_url": "https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/README.md",
+      "size_bytes": 571,
+      "sha256": "a50008b799cb24ccfe2126ac5457f7a99181ebfe117b6f67e68beb986c1e4be5",
+      "declared_architecture": "YOLOv26",
+      "declared_type_count": "130+",
+      "reported_accuracy": 0.986,
+      "metric_verified_field": false,
+      "declared_license": "etalab-2.0",
+      "linked_dataset": "Panoramax/classified_de_road_signs"
+    },
+    "checkpoint_facts_verified_earlier": {
+      "classification_architecture": "YOLO26l",
+      "outputs": 134,
+      "parameters": 13006278,
+      "city_start_output_present": false,
+      "city_end_output_present": false,
+      "evidence_files": [
+        "source/model-weights-evidence.json",
+        "source/network-architecture-evidence.json",
+        "praktikum/class-index.json"
+      ]
+    }
+  },
+  "dataset": {
+    "url": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs",
+    "revision": "b4856947ed7cb6312587258acc90e8cf88a4aa13",
+    "card_license": "cc-by-sa-4.0",
+    "pinned_card_url": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/blob/b4856947ed7cb6312587258acc90e8cf88a4aa13/README.md",
+    "source_description": "Detected sign crops with bad/other classes; some visually similar European-country examples are included according to the dataset card.",
+    "archives": [
+      {
+        "filename": "train.zip",
+        "size_bytes": 59887779,
+        "sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+        "entries": 13287,
+        "unique_image_hashes": 13287,
+        "within_archive_exact_duplicates": 0
+      },
+      {
+        "filename": "val.zip",
+        "size_bytes": 29740678,
+        "sha256": "13ca882129a4e024fc865fc4a3187514a4554f8e323f612e338144fd1ff189ea",
+        "entries": 6944,
+        "unique_image_hashes": 6944,
+        "within_archive_exact_duplicates": 0
+      }
+    ],
+    "read_only_reaudit": {
+      "train_val_exact_image_sha256_intersection": 522,
+      "combined_unique_images": 19709,
+      "method": "SHA256 of every non-directory ZIP member from the two already cached pinned archives; no inference.",
+      "limitation": "Original validation is not independent of original training; published accuracy is not an independent course acceptance metric."
+    }
+  },
+  "license_layers": [
+    {
+      "component": "Panoramax model-card declaration",
+      "license": "Etalab Open Licence 2.0",
+      "primary_url": "https://github.com/etalab/licence-ouverte/blob/master/LO.md",
+      "teaching_note": "Namens-/Quellenangabe und Aktualisierungsdatum nach dem veröffentlichten Lizenztext beachten."
+    },
+    {
+      "component": "Classified crop dataset and image sources",
+      "license": "CC BY-SA 4.0 declared by dataset card",
+      "primary_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "teaching_note": "Bild-/Datenherkunft, Namensnennung und gegebenenfalls Share-Alike bei Weitergabe von bearbeitetem Material getrennt dokumentieren."
+    },
+    {
+      "component": "Ultralytics software/model lineage",
+      "license": "Ultralytics publishes AGPL-3.0 or Enterprise licensing",
+      "primary_url": "https://www.ultralytics.com/license",
+      "teaching_note": "Die Etalab-Angabe der Modellkarte ersetzt nicht die gesonderte Betrachtung der verwendeten Software-/Modelllinie."
+    }
+  ],
+  "legal_interpretation_limit": "This record reports published license declarations and primary texts, not a blanket legal clearance or a determination that training automatically makes every weight a CC BY-SA derivative. Existing project release review remains unchanged.",
+  "actual_example": {
+    "baseline_repository_is_user_requested_repository": true,
+    "baseline_revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+    "baseline_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+    "epochs": 20,
+    "validation_selected_epoch": 4,
+    "classes_after_extension": 136,
+    "parameters_after_extension": 13008840,
+    "added_parameters": 2562,
+    "candidate_sha256": "8991ee8127f50bfb88755b2bb8b293a08433c4787c6cf96d81539e087cd87a67",
+    "candidate_checkpoint_bytes": 52290944,
+    "new_classes": {
+      "city:start": {
+        "support": 3,
+        "correct": 2,
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "f1": 0.8
+      },
+      "city:end": {
+        "support": 12,
+        "correct": 12,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      }
+    },
+    "old_test": {
+      "samples": 3029,
+      "baseline_correct": 3015,
+      "candidate_correct": 3010,
+      "f1_declining_classes": 20,
+      "recall_declining_classes": 11,
+      "gate": "REGRESSION",
+      "retrospective_pretraining_exposure_possible": true
+    },
+    "evidence_files": [
+      ".build/real-training-2026-10-20/tsr/results/config.json",
+      ".build/real-training-2026-10-20/tsr/results/results-summary.json",
+      ".build/real-training-2026-10-20/tsr/results/reports/joint-final/metrics.json"
+    ]
+  },
+  "recommended_german_slide_text": {
+    "title": "Unser Ausgangsmodell: Panoramax/classify_de_road_signs",
+    "bullets": [
+      "Gewichte: Panoramax auf Hugging Face. Prolix bindet den Klassifikator in die Verarbeitung ein.",
+      "Gepinnter Stand 5360aa6…: YOLO26l, 134 Ausgaben, 13.006.278 Parameter, 26,3 MB Checkpoint.",
+      "Der neue Kopf ergänzt city:start und city:end: aus 134 werden 136 Klassen.",
+      "Dieser Checkpoint war die Basis unseres dokumentierten Trainings mit 20 Epochen."
+    ],
+    "notes": [
+      "Die aktuelle Hauptversion ist beim Abruf am 20. Oktober 2026 identisch mit unserem gepinnten Stand. Ein anderer Ausgangscheckpoint oder ein neuer Trainingslauf ist dafür nicht nötig.",
+      "98,6 % Accuracy sind eine unverifizierte Herausgeberangabe auf der Modellkarte. Unser Audit findet 522 identische Bilder in den beiden veröffentlichten Archivsplits. Der Wert ist kein Nachweis für die neuen Ortstafelklassen und nicht direkt mit unseren neu aufgeteilten Prüfbeständen vergleichbar.",
+      "Das echte Beispiel erkennt 14 von 15 geprüften Ortstafel-Crops, besteht aber wegen Rückgängen bei 20 alten Klassen das Einzelklassen-Gate nicht. Modellkarte, eigener Messwert und Freigabeentscheidung getrennt darstellen.",
+      "Modellkarte: Etalab 2.0; Bild-/Datenkorpus: CC BY-SA 4.0; Ultralytics-Linie: AGPL-3.0 oder Enterprise. Quellen und Pflichten komponentenweise dokumentieren."
+    ]
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "schema_version": "lecture-exact-model-weight-counts-v1",
+  "recorded_at": "2026-10-19",
+  "method": "SHA-256 verified existing official checkpoints loaded on CPU in existing server containers; sum(p.numel() for p in model.parameters()); no inference, training, install, container start, or checkpoint modification.",
+  "definitions": {
+    "parameter_elements": "All scalar nn.Parameter elements, including biases and frozen parameters; distinct from trainable-as-saved flags.",
+    "fp16_parameter_bytes": "2 × parameter_elements, excluding buffers, activations, runtime workspace and metadata.",
+    "fp32_parameter_bytes": "4 × parameter_elements; theoretical storage if all registered parameters are float32.",
+    "ram": "These counts do not measure process RAM or GPU peak memory."
+  },
+  "models": [
+    {
+      "method": "torch.load CPU after pinned SHA256 verification; sum(p.numel() for p in model.parameters()); no inference/training",
+      "torch": "2.6.0+cu126",
+      "ultralytics": "8.4.49",
+      "checkpoint_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+      "checkpoint_bytes": 26282865,
+      "model_class": "ClassificationModel",
+      "class_count": 134,
+      "parameter_elements": 13006278,
+      "trainable_parameter_elements_as_saved": 0,
+      "parameter_tensor_count": 248,
+      "parameter_storage_bytes_as_saved": 26012556,
+      "parameter_dtype_elements": {
+        "torch.float16": 13006278
+      },
+      "buffer_elements": 32466,
+      "buffer_storage_bytes_as_saved": 65424,
+      "head_parameters": [
+        {
+          "name": "model.10.linear.weight",
+          "shape": [
+            134,
+            1280
+          ],
+          "numel": 171520
+        },
+        {
+          "name": "model.10.linear.bias",
+          "shape": [
+            134
+          ],
+          "numel": 134
+        }
+      ],
+      "id": "panoramax-de-yolo26l-cls-134",
+      "source_url": "https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/classify_de_road_signs.pt",
+      "fp16_parameter_bytes": 26012556,
+      "fp32_parameter_bytes": 52025112
+    },
+    {
+      "method": "torch.load CPU after pinned SHA256 verification; sum(p.numel() for p in model.parameters()); no inference/training",
+      "torch": "2.12.0+cu130",
+      "ultralytics": "8.3.121",
+      "checkpoint_sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+      "checkpoint_bytes": 5979923,
+      "model_class": "DetectionModel",
+      "class_count": 3,
+      "parameter_elements": 2590425,
+      "trainable_parameter_elements_as_saved": 0,
+      "parameter_tensor_count": 256,
+      "parameter_storage_bytes_as_saved": 5180850,
+      "parameter_dtype_elements": {
+        "torch.float16": 2590425
+      },
+      "buffer_elements": 15457,
+      "buffer_storage_bytes_as_saved": 31400,
+      "fixed_dfl_parameters": [
+        {
+          "name": "model.23.dfl.conv.weight",
+          "shape": [
+            1,
+            16,
+            1,
+            1
+          ],
+          "numel": 16
+        }
+      ],
+      "id": "sgblur-yolo11n-three-class",
+      "source_url": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt",
+      "fp16_parameter_bytes": 5180850,
+      "fp32_parameter_bytes": 10361700
+    }
+  ],
+  "cross_check": "Independent metadata-only local checkpoint inspection gave identical parameter tensor counts, scalar counts, storage dtypes, buffer counts and bytes; no imported model code in that cross-check.",
+  "de_136_extension": {
+    "existing_classifier_parameters": 13006278,
+    "old_head": [
+      134,
+      1280
+    ],
+    "new_head": [
+      136,
+      1280
+    ],
+    "additional_parameters": 2562,
+    "new_total_if_other_parameters_unchanged": 13008840
+  },
+  "checkpoint_caveat": "The distributed inference checkpoints store all parameter requires_grad flags as false; this does not prohibit subsequent fine-tuning. Detector total includes 16 fixed DFL projection parameters."
+}

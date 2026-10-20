@@ -1,0 +1,71 @@
+Applications Memory Usage (in Kilobytes):
+Uptime: 65756549 Realtime: 213862741
+
+** MEMINFO in pid 21008 [de.youspeed.android.debug] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap   326091   326044       24       29   328460   529132   211837   312049
+  Dalvik Heap   102824    27824    74952       60   106388    92804    23201    69603
+ Dalvik Other    23194     6728        0        0    39996                           
+        Stack     2420     2420        0        0     2428                           
+       Ashmem     8203        0        0        0    17012                           
+    Other dev       38        4       28        0      560                           
+     .so mmap    27341      356    21548       13    65488                           
+    .jar mmap     3638        0      984        0    49836                           
+    .apk mmap    79191      968    77976        0    80824                           
+    .ttf mmap      889        0      788        0     1120                           
+    .dex mmap       16        0        0        0      772                           
+    .oat mmap       33        0        0        0     2128                           
+    .art mmap     8619     8032      380       31    21084                           
+   Other mmap      161        4       80        0     1020                           
+   EGL mtrack    35245    35245        0        0    35245                           
+    GL mtrack    10828    10828        0        0    10828                           
+      Unknown     1672     1308      360        1     2288                           
+        TOTAL   630537   419761   177120      134   765477   621936   235038   381652
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    36236                         127472
+         Native Heap:   326044                         328460
+                Code:   102864                         233340
+               Stack:     2420                           2428
+            Graphics:    46073                          46073
+       Private Other:    83244
+              System:    33656
+             Unknown:                                   27704
+ 
+           TOTAL PSS:   630537            TOTAL RSS:   765477       TOTAL SWAP PSS:      134
+ 
+ Objects
+               Views:        9         ViewRootImpl:        1
+         AppContexts:        5           Activities:        1
+              Assets:       71        AssetManagers:        0
+       Local Binders:       28        Proxy Binders:       72
+       Parcel memory:       12         Parcel count:       52
+    Death Recipients:        3             WebViews:        0
+ 
+ Native Allocations
+                         Count                       Total(kB)
+                        ------                         ------
+    Other (malloced):      558                             51
+ Other (nonmalloced):       96                             69
+   Bitmap (malloced):       12                             54
+ 
+ SQL
+         MEMORY_USED:     2595
+  PAGECACHE_OVERFLOW:     2151          MALLOC_SIZE:       73
+ 
+ DATABASES
+      pgsz     dbsz   Lookaside(b) cache hits cache misses cache size  Dbname
+PER CONNECTION STATS
+         4     4560             98  1468   416    11  /data/user/0/de.youspeed.android.debug/no_backup/SignCollection/collection.sqlite
+         4     4560             59  2286    16     5  /data/user/0/de.youspeed.android.debug/no_backup/SignCollection/collection.sqlite (2)
+                                   75780    30    20  /data/user/0/de.youspeed.android.debug/files/bundle/bundles/baden-wuerttemberg/2026-10-19-directional-speeds/baden-wuerttemberg_2026-10-19-directional-speeds_speeds.sqlite
+         4       68            115   249    79    12  /data/user/0/de.youspeed.android.debug/databases/com.google.android.datatransport.events
+POOL STATS
+     cache hits  cache misses    cache size  Dbname
+           3754           448          4202  /data/user/0/de.youspeed.android.debug/no_backup/SignCollection/collection.sqlite
+          75780            30         75810  /data/user/0/de.youspeed.android.debug/files/bundle/bundles/baden-wuerttemberg/2026-10-19-directional-speeds/baden-wuerttemberg_2026-10-19-directional-speeds_speeds.sqlite
+            249            80           329  /data/user/0/de.youspeed.android.debug/databases/com.google.android.datatransport.events

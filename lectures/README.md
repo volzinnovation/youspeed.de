@@ -1,5 +1,7 @@
 # KI für intelligente Mobilität
 
+Neue Vertiefung für **Montag, 26. Oktober 2026**: [Bildklassifikation mit KI – Wie verbessere ich ein vorhandenes KI-Modell?](tsr-sgblur-de-2026-10-26/README.md), 45 Minuten zu NN/CNN/YOLO, TSR/SGBlur, Prolix und dem Training von DE:310/DE:311 mit Panoramax-Boxen und Crops.
+
 **Profilprojekt IMo WS27-28 HSPF**  
 **Prof. Dr. Raphael Volz**  
 19. Oktober 2026 · 42 Folien · 90 Minuten · Deutsch · Neufassung v6

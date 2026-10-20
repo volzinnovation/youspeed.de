@@ -1,0 +1,113 @@
+{
+  "schema_version": "lecture-panoramax-image-evidence-v1",
+  "retrieved_at_utc": "2026-10-19T20:52:05.336010+00:00",
+  "request_method": "GET",
+  "service_mutation": false,
+  "item_url": "https://panoramax.youspeed.de/api/collections/1cde254e-daab-4de3-b256-813984ea9620/items/965b93dc-e04d-45aa-a4bf-a8bc20c9a106",
+  "viewer_url": "https://panoramax.youspeed.de/?focus=pic&pic=965b93dc-e04d-45aa-a4bf-a8bc20c9a106&seq=1cde254e-daab-4de3-b256-813984ea9620",
+  "picture_id": "965b93dc-e04d-45aa-a4bf-a8bc20c9a106",
+  "collection_id": "1cde254e-daab-4de3-b256-813984ea9620",
+  "asset_url": "https://panoramax.youspeed.de/permanent/96/5b/93/dc/e04d-45aa-a4bf-a8bc20c9a106.jpg",
+  "asset_relative_path": "assets/panoramax-dobel-965b93dc.jpg",
+  "asset_sha256": "6e4e220ef4f0faeaaefee0e4bb3e2bf5c7375122842a0c513edecf78cffeddc9",
+  "asset_bytes": 2763931,
+  "asset_dimensions_pixels": [
+    4096,
+    3072
+  ],
+  "asset_exif_orientation": 1,
+  "raw_item_relative_path": "source/panoramax-dobel-965b93dc-item.json",
+  "raw_item_sha256": "4a5825913f09e0739a84dc4c87ce7e88e4076ca69a184c2278ada2feb8749e00",
+  "producer": "admin",
+  "providers": [
+    {
+      "id": "a4450489-7639-4de6-a4a5-52b79546dbcb",
+      "name": "admin",
+      "roles": [
+        "producer"
+      ]
+    }
+  ],
+  "license": "CC-BY-SA-4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "captured_at_utc": "2026-10-19T07:29:59.236000+00:00",
+  "captured_at_europe_berlin": "2026-10-19T09:29:59.236+02:00",
+  "visibility": "anyone",
+  "attribution_text": "admin / Panoramax · CC BY-SA 4.0 · Aufnahme 19.10.2026 · Ausschnitt/Markierung ggf. kenntlich machen",
+  "annotation_count": 1,
+  "annotation_summary": [
+    {
+      "annotation_id": "f218a0f0-3b00-49ca-b6e1-eda3927364ee",
+      "shape": {
+        "coordinates": [
+          [
+            [
+              2884,
+              926
+            ],
+            [
+              3340,
+              926
+            ],
+            [
+              3340,
+              1374
+            ],
+            [
+              2884,
+              1374
+            ],
+            [
+              2884,
+              926
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "semantics": [
+        {
+          "key": "classification_artifact_sha256[osm|traffic_sign=DE:101]",
+          "value": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7"
+        },
+        {
+          "key": "classification_code_revision[osm|traffic_sign=DE:101]",
+          "value": "40a856c09038afdf637046158c9206a0515b105e"
+        },
+        {
+          "key": "classification_confidence[osm|traffic_sign=DE:101]",
+          "value": "1.000000"
+        },
+        {
+          "key": "classification_mapping_revision[osm|traffic_sign=DE:101]",
+          "value": "woladen-reviewed-model-labels-2026-10-16-75a754728246a632"
+        },
+        {
+          "key": "classification_model[osm|traffic_sign=DE:101]",
+          "value": "Panoramax/classify_de_road_signs@5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790"
+        },
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.943"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11n/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "DE:101"
+        }
+      ]
+    }
+  ],
+  "visual_review": {
+    "image_reviewed": true,
+    "visible_target": "Gelbe Ortseingangstafel Dobel (DE:310), mittig rechts im Bild",
+    "existing_box_target": "Großes dreieckiges Gefahrzeichen rechts (DE:101)",
+    "missing_annotation_for_target": true,
+    "assessment": "Der zum Abrufzeitpunkt gelieferte STAC-Item enthält nur die Annotation des Gefahrzeichens. Für die visuell sichtbare Dobel-Ortstafel ist keine Box in properties.annotations vorhanden.",
+    "scope_limit": "Belegt fehlende veröffentlichte Annotation am abgerufenen Bild, keine frische Inferenz und keine Aussage über alle Pipeline-Zwischenergebnisse oder Nachbarbilder.",
+    "human_ground_truth_written_to_service": false
+  }
+}

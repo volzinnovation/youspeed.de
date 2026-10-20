@@ -1,0 +1,274 @@
+{
+  "schema_version": 1,
+  "reviewed_date": "2026-10-19",
+  "timezone": "Europe/Berlin",
+  "purpose": "Separate calculated Android app buffer capacities, observed whole-process memory and unmeasured per-model footprint.",
+  "measurement_scope": {
+    "model_installs_or_training": false,
+    "app_state_changed": false,
+    "archive_downloads": false,
+    "new_device_reads": "ADB dumpsys meminfo, package, activities, camera ownership; existing app process only."
+  },
+  "units": {
+    "MB": 1000000,
+    "MiB": 1048576,
+    "android_meminfo_KB_treated_as_bytes": 1024
+  },
+  "per_model_measured_ram": {
+    "detector": null,
+    "classifier": null,
+    "note": "Neither separate resident/incremental RAM nor an isolated inference peak was measured. File size must not be substituted."
+  },
+  "calculated_android_app_buffers": {
+    "evidence_kind": "source_calculated_capacity_not_resident_measurement",
+    "classes": 134,
+    "entries": [
+      {
+        "id": "detector_input",
+        "owner": "detector",
+        "description": "Direct Float32 input ByteBuffer",
+        "formula": "1 * 1280 * 1280 * 3 * 4",
+        "bytes": 19660800,
+        "source_lines": "426",
+        "MB": 19.6608,
+        "MiB": 18.75
+      },
+      {
+        "id": "detector_output",
+        "owner": "detector",
+        "description": "Direct Float32 output ByteBuffer",
+        "formula": "1 * 7 * 33600 * 4",
+        "bytes": 940800,
+        "source_lines": "427",
+        "MB": 0.9408,
+        "MiB": 0.897216796875
+      },
+      {
+        "id": "detector_output_copy",
+        "owner": "detector",
+        "description": "FloatArray copy of output",
+        "formula": "1 * 7 * 33600 * 4",
+        "bytes": 940800,
+        "source_lines": "428",
+        "MB": 0.9408,
+        "MiB": 0.897216796875
+      },
+      {
+        "id": "detector_bitmap",
+        "owner": "detector",
+        "description": "ARGB_8888 Bitmap pixel capacity",
+        "formula": "1280 * 1280 * 4",
+        "bytes": 6553600,
+        "source_lines": "432",
+        "MB": 6.5536,
+        "MiB": 6.25
+      },
+      {
+        "id": "detector_pixels",
+        "owner": "detector",
+        "description": "IntArray pixel copy",
+        "formula": "1280 * 1280 * 4",
+        "bytes": 6553600,
+        "source_lines": "434",
+        "MB": 6.5536,
+        "MiB": 6.25
+      },
+      {
+        "id": "classifier_input",
+        "owner": "classifier",
+        "description": "Direct Float32 input ByteBuffer",
+        "formula": "1 * 224 * 224 * 3 * 4",
+        "bytes": 602112,
+        "source_lines": "429",
+        "MB": 0.602112,
+        "MiB": 0.57421875
+      },
+      {
+        "id": "classifier_output",
+        "owner": "classifier",
+        "description": "Direct Float32 output ByteBuffer, DE baseline 134 classes",
+        "formula": "1 * 134 * 4",
+        "bytes": 536,
+        "source_lines": "430-431",
+        "MB": 0.000536,
+        "MiB": 0.00051116943359375
+      },
+      {
+        "id": "classifier_bitmap",
+        "owner": "classifier",
+        "description": "ARGB_8888 Bitmap pixel capacity",
+        "formula": "224 * 224 * 4",
+        "bytes": 200704,
+        "source_lines": "433",
+        "MB": 0.200704,
+        "MiB": 0.19140625
+      },
+      {
+        "id": "classifier_pixels",
+        "owner": "classifier",
+        "description": "IntArray pixel copy",
+        "formula": "224 * 224 * 4",
+        "bytes": 200704,
+        "source_lines": "435",
+        "MB": 0.200704,
+        "MiB": 0.19140625
+      },
+      {
+        "id": "rgb_encoder",
+        "owner": "shared",
+        "description": "FloatArray encoding chunk",
+        "formula": "4096 * 3 * 4",
+        "bytes": 49152,
+        "source_lines": "TrafficSignRgbTensorEncoder.kt:6-7; engine construction:437",
+        "MB": 0.049152,
+        "MiB": 0.046875
+      }
+    ],
+    "totals": {
+      "detector": {
+        "bytes": 34649600,
+        "MB": 34.6496,
+        "MiB": 33.04443359375
+      },
+      "classifier": {
+        "bytes": 1004056,
+        "MB": 1.004056,
+        "MiB": 0.9575424194335938
+      },
+      "shared": {
+        "bytes": 49152,
+        "MB": 0.049152,
+        "MiB": 0.046875
+      },
+      "both_plus_shared": {
+        "bytes": 35702808,
+        "MB": 35.702808,
+        "MiB": 34.048851013183594
+      }
+    },
+    "excluded": [
+      "weight mappings",
+      "interpreter tensor arenas",
+      "activations and workspaces",
+      "GPU delegate copies",
+      "runtime and object overhead",
+      "source bitmaps",
+      "camera surfaces",
+      "maps",
+      "video and UI"
+    ],
+    "caveats": [
+      "Capacities can be lazily committed and are not measured RSS/PSS lower bounds.",
+      "These explicit Android buffers do not describe iPhone memory.",
+      "Classifier output allocation grows by 8 bytes if only two Float32 class outputs are added."
+    ],
+    "sources": [
+      {
+        "path": "android/app/src/main/java/de/youspeed/android/alpha/AndroidTrafficSignRuntime.kt",
+        "sha256": "8bbb7ca523408f994b319e8883180a2db70f39d655dbb9cc9a2436d6a7c49f81",
+        "lines": "426-437,467-477"
+      },
+      {
+        "path": "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignRgbTensorEncoder.kt",
+        "sha256": "8c4f6c7d2ef987c429875f01ff7dc832a670eccff8a42f09950b74342788eeec",
+        "lines": "6-7"
+      },
+      {
+        "path": "docs/LANE_ANDROID_MEMORY_REVIEW_2026-10-01.md",
+        "sha256": "eeb668c2b09181f3c42c0a318c34bd164f20d4cf4fc9b8d0adaefc1836d75681"
+      }
+    ]
+  },
+  "whole_app_observations": [
+    {
+      "platform": "Android",
+      "evidence_kind": "fresh_single_read_only_snapshot",
+      "date": "2026-10-19",
+      "local_time_minute": "23:03",
+      "timezone": "Europe/Berlin",
+      "device": "Moto g86 5G",
+      "package": "de.youspeed.android.debug",
+      "version": "1.4-debug",
+      "build": 10055,
+      "pid": 21008,
+      "condition": "Already running foreground app; same PID registered as active camera client. No controlled isolation of detector/classifier, no workload change.",
+      "metrics": [
+        {
+          "name": "TOTAL PSS",
+          "raw_KiB": 630537,
+          "bytes": 645669888,
+          "MB": 645.669888,
+          "is_peak": false
+        },
+        {
+          "name": "TOTAL RSS",
+          "raw_KiB": 765477,
+          "bytes": 783848448,
+          "MB": 783.848448,
+          "is_peak": false
+        },
+        {
+          "name": "Graphics",
+          "raw_KiB": 46073,
+          "bytes": 47178752,
+          "MB": 47.178752,
+          "is_peak": false
+        }
+      ],
+      "raw_files": [
+        {
+          "path": "lectures/tsr-sgblur-de-2026-10-26/source/memory-evidence/android-meminfo-2026-10-19.txt",
+          "sha256": "1ab742f74fd9e71955ffe3a8d73a532e3764dc2f38b54a98f1635252c7873c7c"
+        },
+        {
+          "path": "lectures/tsr-sgblur-de-2026-10-26/source/memory-evidence/android-version-2026-10-19.txt",
+          "sha256": "ba24910a21900ca2069bff32d72617be9ee0247b9345cb3f6b323d04ebeeb61e"
+        },
+        {
+          "path": "lectures/tsr-sgblur-de-2026-10-26/source/memory-evidence/android-foreground-2026-10-19.txt",
+          "sha256": "747f0d10c66cc04b7c6fb37858f32aa2be04040d9032ba7551be45d326c65725"
+        }
+      ],
+      "attribution": "Whole process; includes models and other app/runtime/camera/UI resources; cannot allocate numbers to each model."
+    },
+    {
+      "platform": "iPhone",
+      "evidence_kind": "historical_sampled_normal_app_workload",
+      "date": "2026-10-01",
+      "device_hardware_identifier": "iPhone15,2",
+      "os": "26.6.2",
+      "build": 10028,
+      "condition": "Normal app camera + TSR + lanes + dashboard + 3840x2160 video; no photo capture load observed. 229.187 seconds, 221 memory samples; run ended on background/camera interruption.",
+      "metrics": [
+        {
+          "name": "highest sampled physical footprint",
+          "bytes": 231933184,
+          "MB": 231.933184,
+          "is_exact_peak": false
+        },
+        {
+          "name": "highest sampled RSS",
+          "bytes": 327401472,
+          "MB": 327.401472,
+          "is_exact_peak": false
+        }
+      ],
+      "source": {
+        "path": "inspector/logs/2026-10-01-lane-next/ios-device10028-runB/summary.json",
+        "sha256": "64727ddbf511a412e87a2f6a32ce7eb1939fec30c45589810627f10e4e856241"
+      },
+      "documentation": {
+        "path": "docs/LANE_DEVICE_VALIDATION_2026-10-01.md",
+        "sha256": "80e0aa672a251e9cdf901c6918a06e1cd3fdeeb98fe36e1890ee33e97444d734",
+        "lines": "48-62"
+      },
+      "attribution": "Whole process; no separate model baseline/delta and no claim that classifier load was isolated."
+    }
+  ],
+  "comparison_caveat": "Android PSS snapshot and iOS sampled physical footprint differ by metric, build, date, duration and workload. They are not a direct device/model benchmark.",
+  "recommended_slide_label": "App-Puffer (Android, berechnet); vollständiger zusätzlicher RAM pro Modell nicht separat gemessen.",
+  "official_metric_sources": [
+    "https://developer.android.com/tools/dumpsys#meminfo",
+    "https://developer.apple.com/documentation/xcode/gathering-information-about-memory-use"
+  ]
+}
