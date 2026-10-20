@@ -1,0 +1,659 @@
+{
+  "schema_version": "pipeline-city15-source-provenance-v1",
+  "frozen_manifest_sha256": "01f6701be9fcc86f089709a24901a91285386467413224a290c8f97e245fcddc",
+  "provenance_manifest_sha256": {
+    "external": "47c229eada4444952f92362688549573419d4fdd91b0dfdac9edcc52947ec54a",
+    "own": "bd8b1aa97a3a442118db6e60d13868ee7dde6ef90a3ea9ba5e4a57309a5d8f7c"
+  },
+  "derivative_image_license": "CC-BY-SA-4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "image_changes": "Previously registered native or pinhole-projected RGB rasters cropped at actual model-predicted boxes; floor/ceil/clamped. Clean lossless RGB PNG. No new source annotations or uploads.",
+  "rows": [
+    {
+      "sample_id": "fulda-local-perspective-target-2fe1e15a-301c-4629-8553-48a8bb7cd3fd-0bee0ebdb967",
+      "picture_id": "2fe1e15a-301c-4629-8553-48a8bb7cd3fd",
+      "sequence_id": "099b2388-f75d-4db7-9e05-44cfc35bd2cd",
+      "label": "city:start",
+      "site_id": "fulda-other-entry-9.6226-50.5461",
+      "group_id": "candidate-split-fulda-2026-06-11-possible-common-drive",
+      "subset": "projected",
+      "bbox_xyxy": [
+        924,
+        506,
+        996,
+        574
+      ],
+      "input_sha256": "373d89ccc63cb2d54cd22efa3f31d7df19b93f1d2792573b9986a0f6bba221f4",
+      "source_url": "https://panorama.osm-fulda.de/api/collections/099b2388-f75d-4db7-9e05-44cfc35bd2cd/items/2fe1e15a-301c-4629-8553-48a8bb7cd3fd",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "local spherical-to-pinhole perspective projection",
+      "author": "m_fuhrmann",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.706"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11s/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "yes"
+        }
+      ],
+      "original_source_metadata_sha256": "9e24eade78f9cd5dd6d017a722cb7866a24cce4353478a2ae72411515a59fd1b",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "fulda-local-perspective-target-76ebc933-6e98-4ccd-bc08-1760116981b9-78c3877c2a68",
+      "picture_id": "76ebc933-6e98-4ccd-bc08-1760116981b9",
+      "sequence_id": "24677bd2-090b-4fc1-b104-85fa0b3afae6",
+      "label": "city:end",
+      "site_id": "fulda-east-9.7685-50.5660",
+      "group_id": "candidate-split-fulda-east-2026-06-05",
+      "subset": "projected",
+      "bbox_xyxy": [
+        913,
+        508,
+        1007,
+        572
+      ],
+      "input_sha256": "aaa16e7acfe1d7e1819c578e4a683d0ea006ddeb4252ce9628f620fe2744a4ed",
+      "source_url": "https://panorama.osm-fulda.de/api/collections/24677bd2-090b-4fc1-b104-85fa0b3afae6/items/76ebc933-6e98-4ccd-bc08-1760116981b9",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "local spherical-to-pinhole perspective projection",
+      "author": "m_fuhrmann",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.736"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11s/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "yes"
+        }
+      ],
+      "original_source_metadata_sha256": "466e437839f6ff4c5fe76092f85c31b0c68611b0223a428789745be91387b95a",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "fulda-local-perspective-target-7aaa9bcc-c466-46b8-8881-09370595a2f9-37b9d2d16a87",
+      "picture_id": "7aaa9bcc-c466-46b8-8881-09370595a2f9",
+      "sequence_id": "8eab3467-d6e1-46fd-a6a2-397f413e6111",
+      "label": "city:start",
+      "site_id": "fulda-rodges-boundary",
+      "group_id": "candidate-split-fulda-2026-06-11-possible-common-drive",
+      "subset": "projected",
+      "bbox_xyxy": [
+        875,
+        485,
+        1045,
+        596
+      ],
+      "input_sha256": "b6ede3c66989db2eaa452171bd9778a3d3c16454951f81c9d46db95a04c30d49",
+      "source_url": "https://panorama.osm-fulda.de/api/collections/8eab3467-d6e1-46fd-a6a2-397f413e6111/items/7aaa9bcc-c466-46b8-8881-09370595a2f9",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "local spherical-to-pinhole perspective projection",
+      "author": "m_fuhrmann",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.84"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11s/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "yes"
+        }
+      ],
+      "original_source_metadata_sha256": "9398d14ba5adbc40cef6e97764ced0540dac8427fe97b5b2a8654d3f2eed890f",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "osmfr-044d7874-70ce-516b-a462-af16fe54ef6f",
+      "picture_id": "06654136-12af-460f-8892-9bccf483a505",
+      "sequence_id": "dbb48058-e2a9-4509-9767-a2ce3ab1ac0e",
+      "label": "city:end",
+      "site_id": "osmfr-location-candidate-006",
+      "group_id": "candidate-split-osmfr-location-candidate-006",
+      "subset": "native",
+      "bbox_xyxy": [
+        1951.0,
+        828.0,
+        2004.0,
+        871.0
+      ],
+      "input_sha256": "81854369acff8ad5eedf8218f45769ddd402acb4fc2c37ce6fd0044544847ffb",
+      "source_url": "https://panoramax.openstreetmap.fr/api/collections/dbb48058-e2a9-4509-9767-a2ce3ab1ac0e/items/06654136-12af-460f-8892-9bccf483a505",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "native registered raster",
+      "author": "StreetCamMap",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "classification_confidence[osm|traffic_sign=FR:EB20]",
+          "value": "1.0"
+        },
+        {
+          "key": "classification_model[osm|traffic_sign=FR:EB20]",
+          "value": "classify_fr_road_signs/26.08.11"
+        },
+        {
+          "key": "detection_confidence[osm|traffic_sign=FR:EB20]",
+          "value": "0.617"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=FR:EB20]",
+          "value": "SGBlur-yolo11s/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "FR:EB20"
+        }
+      ],
+      "original_source_metadata_sha256": "b993205b74ac3c7886750affd7871308da139e8d743d3ffed799098ca074361d",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "osmfr-3784dad5-d81a-569c-8602-352ee146a244",
+      "picture_id": "aab21323-8297-4778-b565-f8e42c497ac4",
+      "sequence_id": "c08d4807-614e-4374-bd8a-73b9800c9bcf",
+      "label": "city:end",
+      "site_id": "osmfr-location-candidate-003",
+      "group_id": "candidate-split-osmfr-location-candidate-003",
+      "subset": "native",
+      "bbox_xyxy": [
+        1409.0,
+        1908.0,
+        1465.0,
+        1953.0
+      ],
+      "input_sha256": "be6a29a4bd8bffcbdeb5eeeafbcf0d95c42eaec2293452a5ecc1c025d2fdd8d2",
+      "source_url": "https://panoramax.openstreetmap.fr/api/collections/c08d4807-614e-4374-bd8a-73b9800c9bcf/items/aab21323-8297-4778-b565-f8e42c497ac4",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "native registered raster",
+      "author": "!i!",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "classification_confidence[osm|traffic_sign=FR:EB20]",
+          "value": "0.9"
+        },
+        {
+          "key": "classification_model[osm|traffic_sign=FR:EB20]",
+          "value": "classify_fr_road_signs/0.13"
+        },
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.602"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11s/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "FR:EB20"
+        }
+      ],
+      "original_source_metadata_sha256": "dda7fae8fedbb30e0418cf3339e37c49002bfe95245c2702cdef51125f46fa32",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "osmfr-4ae2a51c-b4a5-5ded-a450-54181e9657e2",
+      "picture_id": "17a46b2d-97c4-4db7-bfe4-1c2cf3d95202",
+      "sequence_id": "b91f4cbc-f313-438f-8647-9e5170be3c31",
+      "label": "city:end",
+      "site_id": "osmfr-location-candidate-005",
+      "group_id": "candidate-split-osmfr-location-candidate-005",
+      "subset": "native",
+      "bbox_xyxy": [
+        639.0,
+        1156.0,
+        745.0,
+        1275.0
+      ],
+      "input_sha256": "96a059fe91362a1fb624a61c2d08c5bc717d52567ec11e9e3c14e2ac1b8045ce",
+      "source_url": "https://panoramax.openstreetmap.fr/api/collections/b91f4cbc-f313-438f-8647-9e5170be3c31/items/17a46b2d-97c4-4db7-bfe4-1c2cf3d95202",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "native registered raster",
+      "author": "Macsico",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "classification_confidence[osm|traffic_sign=FR:EB20]",
+          "value": "0.91"
+        },
+        {
+          "key": "classification_model[osm|traffic_sign=FR:EB20]",
+          "value": "classify_fr_road_signs/0.13"
+        },
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.633"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11s/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "FR:EB20"
+        }
+      ],
+      "original_source_metadata_sha256": "03c2898345f28f92e1488cd55a644865b37650fa51f6b1fa3b3809896176c0a3",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "osmfr-627d162c-0d00-59d7-bd34-79a481fa8420",
+      "picture_id": "305f4e49-ecb6-4d7f-ae64-923899497e98",
+      "sequence_id": "59e9f7ce-c9a4-44ab-b92c-9bddf1dd581d",
+      "label": "city:end",
+      "site_id": "osmfr-location-candidate-001",
+      "group_id": "candidate-split-osmfr-location-candidate-001",
+      "subset": "native",
+      "bbox_xyxy": [
+        2527.0,
+        1660.0,
+        2746.0,
+        1818.0
+      ],
+      "input_sha256": "07ceb78dd1ba5d2b98b6f1abc0ffbddc47bd3e4712baa7e436a1e1f22751bea3",
+      "source_url": "https://panoramax.openstreetmap.fr/api/collections/59e9f7ce-c9a4-44ab-b92c-9bddf1dd581d/items/305f4e49-ecb6-4d7f-ae64-923899497e98",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "native registered raster",
+      "author": "!i!",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "classification_confidence[osm|traffic_sign=FR:EB20]",
+          "value": "1.0"
+        },
+        {
+          "key": "classification_model[osm|traffic_sign=FR:EB20]",
+          "value": "classify_fr_road_signs/0.13"
+        },
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.725"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11s/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "FR:EB20"
+        }
+      ],
+      "original_source_metadata_sha256": "bffd23f955b4db4a6c85aa530227045b76f316a570728819596d7937defea300",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "osmfr-7b289b05-fb97-530f-8dcc-909e9c09bba3",
+      "picture_id": "dce804bb-27ab-4504-8e61-e00b4d36344c",
+      "sequence_id": "734a2de0-3133-42b0-8165-03f5572f63dd",
+      "label": "city:end",
+      "site_id": "osmfr-location-candidate-002",
+      "group_id": "candidate-split-osmfr-location-candidate-002",
+      "subset": "native",
+      "bbox_xyxy": [
+        3771.0,
+        1378.0,
+        3928.0,
+        1493.0
+      ],
+      "input_sha256": "f4d9ed06bb07ca1a83a3ba958bd3be1e470ea1c2fe85b534c66deb676d7f2e5d",
+      "source_url": "https://panoramax.openstreetmap.fr/api/collections/734a2de0-3133-42b0-8165-03f5572f63dd/items/dce804bb-27ab-4504-8e61-e00b4d36344c",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "native registered raster",
+      "author": "CaptainCarte",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "classification_confidence[osm|traffic_sign=FR:EB20]",
+          "value": "1.0"
+        },
+        {
+          "key": "classification_model[osm|traffic_sign=FR:EB20]",
+          "value": "classify_fr_road_signs/0.13"
+        },
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.822"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11s/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "FR:EB20"
+        }
+      ],
+      "original_source_metadata_sha256": "1b2a1cf8c1b17472d0da149f0828457a71fbf0c54aa5824221a15c7f81908d10",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "osmfr-a3cc3e39-0b9a-5148-a207-c38ab4233f44",
+      "picture_id": "dc01103e-6f86-444c-87b9-7ef02008bfe5",
+      "sequence_id": "52997cd3-02b5-4bab-8bf3-059d14cd4256",
+      "label": "city:end",
+      "site_id": "osmfr-location-candidate-007",
+      "group_id": "candidate-split-osmfr-location-candidate-007",
+      "subset": "native",
+      "bbox_xyxy": [
+        1626.0,
+        1369.0,
+        1716.0,
+        1427.0
+      ],
+      "input_sha256": "6399ad78f9463f32d342a01da0d90798cf26a8675b965deba0d1e60ea39ac3cb",
+      "source_url": "https://panoramax.openstreetmap.fr/api/collections/52997cd3-02b5-4bab-8bf3-059d14cd4256/items/dc01103e-6f86-444c-87b9-7ef02008bfe5",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "native registered raster",
+      "author": "u14183",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "classification_confidence[osm|traffic_sign=FR:EB20]",
+          "value": "1.0"
+        },
+        {
+          "key": "classification_model[osm|traffic_sign=FR:EB20]",
+          "value": "classify_fr_road_signs/0.13"
+        },
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.334"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11s/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "FR:EB20"
+        }
+      ],
+      "original_source_metadata_sha256": "1c2f6e1efd85d18e8514b04dc4018675648dc5dfeaf5aa57b485e8bd878a53ff",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "osmfr-d036ca40-e69b-5320-a07c-d6fec814f2da",
+      "picture_id": "89664fe3-9cdf-4031-89ff-2cd5cf898b30",
+      "sequence_id": "fcf1a227-d8d2-49ac-9d55-925dbef114e9",
+      "label": "city:end",
+      "site_id": "osmfr-location-candidate-004",
+      "group_id": "candidate-split-osmfr-location-candidate-004",
+      "subset": "native",
+      "bbox_xyxy": [
+        467.0,
+        2066.0,
+        644.0,
+        2222.0
+      ],
+      "input_sha256": "fb2eb1562e8d350e333e3ef36f009d6a0ead331374a102557c48235e21083f02",
+      "source_url": "https://panoramax.openstreetmap.fr/api/collections/fcf1a227-d8d2-49ac-9d55-925dbef114e9/items/89664fe3-9cdf-4031-89ff-2cd5cf898b30",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "native registered raster",
+      "author": "!i!",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "classification_confidence[osm|traffic_sign=FR:EB20]",
+          "value": "1.0"
+        },
+        {
+          "key": "classification_model[osm|traffic_sign=FR:EB20]",
+          "value": "classify_fr_road_signs/0.13"
+        },
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.604"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11s/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "FR:EB20"
+        }
+      ],
+      "original_source_metadata_sha256": "ddd9938839ec468b89f7e22d135b578859234b5987bfa46e8d53c8fd986fdbe7",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "osmfr-df8a0dab-6a93-5ba7-9eb8-99c017d8a1da",
+      "picture_id": "208c630c-fc41-47de-ae7b-1df5e506b69c",
+      "sequence_id": "a0fd5746-4d91-47a7-9b22-1a5801ffb9da",
+      "label": "city:end",
+      "site_id": "osmfr-location-candidate-009",
+      "group_id": "candidate-split-osmfr-location-candidate-009",
+      "subset": "native",
+      "bbox_xyxy": [
+        1901.0,
+        2564.0,
+        1988.0,
+        2619.0
+      ],
+      "input_sha256": "0224ae00e61c4d961b15b4caa66675a3942191aca578aed95c415d49dfe0e58b",
+      "source_url": "https://panoramax.openstreetmap.fr/api/collections/a0fd5746-4d91-47a7-9b22-1a5801ffb9da/items/208c630c-fc41-47de-ae7b-1df5e506b69c",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "native registered raster",
+      "author": "thetornado76",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "classification_confidence[osm|traffic_sign=FR:EB20]",
+          "value": "1.0"
+        },
+        {
+          "key": "classification_model[osm|traffic_sign=FR:EB20]",
+          "value": "classify_fr_road_signs/0.13"
+        },
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.676"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11s/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "FR:EB20"
+        }
+      ],
+      "original_source_metadata_sha256": "dff6e1eb3a48b59ce0f515dc4f19cc3bb168cf759d0211c8916ad1aa4e856f31",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "osmfr-fccfb9c1-2910-5580-8c86-30a511745bde",
+      "picture_id": "9f99daff-425f-4fdf-8985-5ac272f0c881",
+      "sequence_id": "0be7e54a-ea86-4f94-a796-e2dc0f119f91",
+      "label": "city:end",
+      "site_id": "osmfr-location-candidate-008",
+      "group_id": "candidate-split-osmfr-location-candidate-008",
+      "subset": "native",
+      "bbox_xyxy": [
+        909.0,
+        1425.0,
+        1039.0,
+        1515.0
+      ],
+      "input_sha256": "251306f4ab3f4eeae2108bc45bf6524b3a5843baef909c5b4fb50927bc9d0b9f",
+      "source_url": "https://panoramax.openstreetmap.fr/api/collections/0be7e54a-ea86-4f94-a796-e2dc0f119f91/items/9f99daff-425f-4fdf-8985-5ac272f0c881",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "native registered raster",
+      "author": "u14183",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "classification_confidence[osm|traffic_sign=FR:EB20]",
+          "value": "1.0"
+        },
+        {
+          "key": "classification_model[osm|traffic_sign=FR:EB20]",
+          "value": "classify_fr_road_signs/0.13"
+        },
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.482"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11s/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "FR:EB20"
+        }
+      ],
+      "original_source_metadata_sha256": "085a5e3aacc3752432305f524fe99047faecc8ca5e7b2e7d2732c3640e8c4586",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "ulm-local-visual-putlitz-city-end-164c3432-567f-41ae-ae7b-9afafbf55176-v1",
+      "picture_id": "164c3432-567f-41ae-ae7b-9afafbf55176",
+      "sequence_id": "7699ecb0-cfc3-43f0-ae2b-087ffca6c65b",
+      "label": "city:end",
+      "site_id": "ulm-putlitz-north-exit-frehne-road",
+      "group_id": "candidate-split-ulm-putlitz-north-exit-frehne-road",
+      "subset": "native",
+      "bbox_xyxy": [
+        1276,
+        263,
+        1364,
+        328
+      ],
+      "input_sha256": "06119f96435c04ff66a689a3baea4a7277d7888e30ac2b2b0f25808d80e913ae",
+      "source_url": "https://panoramax-ulm.jjbaur.de/api/collections/7699ecb0-cfc3-43f0-ae2b-087ffca6c65b/items/164c3432-567f-41ae-ae7b-9afafbf55176",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "native registered raster",
+      "author": "Niels Elgaard Larsen",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [],
+      "original_source_metadata_sha256": "73142ad737f4b3571ff5758c9da5ed9b9372d126b3f327be4743c641025e9a6f",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "ulm-local-visual-putlitz-city-end-585083d3-2cda-45c6-95f8-79513685cca8-v1",
+      "picture_id": "585083d3-2cda-45c6-95f8-79513685cca8",
+      "sequence_id": "7699ecb0-cfc3-43f0-ae2b-087ffca6c65b",
+      "label": "city:end",
+      "site_id": "ulm-putlitz-north-exit-frehne-road",
+      "group_id": "candidate-split-ulm-putlitz-north-exit-frehne-road",
+      "subset": "native",
+      "bbox_xyxy": [
+        1775,
+        312,
+        1825,
+        351
+      ],
+      "input_sha256": "c9927633c0906962b07835e1decad118643f02067833bba52dc8528b81e5f5ef",
+      "source_url": "https://panoramax-ulm.jjbaur.de/api/collections/7699ecb0-cfc3-43f0-ae2b-087ffca6c65b/items/585083d3-2cda-45c6-95f8-79513685cca8",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "native registered raster",
+      "author": "Niels Elgaard Larsen",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [],
+      "original_source_metadata_sha256": "8bf76085490d5b4f835ca51b01f5ab08ae7249361d9cbc09481a95e7b1bcc7bf",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    },
+    {
+      "sample_id": "p61108145-0fdf-4d7c-8ba5-156624fe49f0_a9dae477a-54de-4a72-823f-a65d734f1889",
+      "picture_id": "61108145-0fdf-4d7c-8ba5-156624fe49f0",
+      "sequence_id": "98c1a562-454e-4742-9a2b-4e5249a34fe6",
+      "label": "city:start",
+      "site_id": "birkenfeld-entry-8.64536-48.87639",
+      "group_id": "own-drive-2026-10-14-reserved",
+      "subset": "own_native",
+      "bbox_xyxy": [
+        2359.0,
+        1102.0,
+        2516.0,
+        1209.0
+      ],
+      "input_sha256": "ae7ed04b18b38af50376c62a191886a6b57f32b4f5127bc9b003fd4f50dd0e3a",
+      "source_url": "https://panoramax.youspeed.de/api/collections/98c1a562-454e-4742-9a2b-4e5249a34fe6/items/61108145-0fdf-4d7c-8ba5-156624fe49f0",
+      "review_type": "assistant_visual",
+      "human_reviewed": false,
+      "all_objects_complete": false,
+      "input_raster_transform": "native registered raster",
+      "author": "admin",
+      "license": "CC-BY-SA-4.0",
+      "original_annotation_semantics": [
+        {
+          "key": "detection_confidence[osm|traffic_sign=yes]",
+          "value": "0.817"
+        },
+        {
+          "key": "detection_model[osm|traffic_sign=yes]",
+          "value": "SGBlur-yolo11n/0.1.0"
+        },
+        {
+          "key": "osm|traffic_sign",
+          "value": "yes"
+        }
+      ],
+      "original_source_metadata_sha256": "76ff79bb1a701d15d75d7b176adcbce2e37aa0654f7105e1df298f1e0d08fafe",
+      "source_tags_changed_by_this_experiment": false,
+      "new_predicted_crops": "All post-NMS sign crops of this source frame, including unmatched detections; these are model predictions, not complete GT."
+    }
+  ]
+}

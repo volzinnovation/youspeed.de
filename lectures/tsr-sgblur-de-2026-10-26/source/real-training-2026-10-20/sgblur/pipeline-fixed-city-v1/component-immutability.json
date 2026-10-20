@@ -1,0 +1,9 @@
+{
+  "schema_version": "component-immutability-after-pipeline-v1",
+  "captured_at_utc": "2026-10-20T11:07:56.162371+00:00",
+  "component_inventory_sha256": "d1f45d0358eeef8e03654afb26635bc1fc3484dc15365c9d59351cf0b53d8c63",
+  "verified_original_component_files": 71,
+  "verified_original_component_bytes": 40110155,
+  "all_original_files_byte_identical": true,
+  "no_component_inference_rerun_or_report_mutation": true
+}

@@ -1,0 +1,671 @@
+{
+  "schema_version": "fixed-pipeline-city15-summary-v1",
+  "analysis_only_no_new_inference": true,
+  "source_result_sha256": "7aed55e1d0cabc673a610bf53c5289fd141c235c0898001147fbf16dbafdab5f",
+  "execution_started_at": "2026-10-20T11:03:46.613088152Z",
+  "execution_finished_at": "2026-10-20T11:04:03.504434197Z",
+  "single_scoring_event_exit_code": 0,
+  "component_detector_consistency": {
+    "baseline_pair": {
+      "component_report_sha256": "38f9ab5780d6af8bda65924cdc9a60bfa93f223cf9b83e25703e014d82f09616",
+      "all_15_match_flags_identical": true,
+      "matched_targets": 4
+    },
+    "candidate_pair": {
+      "component_report_sha256": "206167b428a4d3a985e6c6a10f7bfde9d8a8b8e80d6a8aa278a30ea62590087c",
+      "all_15_match_flags_identical": true,
+      "matched_targets": 9
+    }
+  },
+  "arms": {
+    "baseline_pair": {
+      "summary": {
+        "known_targets": 15,
+        "detector_misses": 11,
+        "detected_but_wrong_tsr_class": 4,
+        "correct_city_known_targets": 0,
+        "detected_known_targets": 4,
+        "known_target_pipeline_recall": 0.0,
+        "conditional_tsr_accuracy_on_matched_detections": 0.0
+      },
+      "by_label": {
+        "city:start": {
+          "known_targets": 3,
+          "detector_misses": 1,
+          "detected_but_wrong_tsr_class": 2,
+          "correct_city_known_targets": 0,
+          "detected_known_targets": 2,
+          "known_target_pipeline_recall": 0.0,
+          "conditional_tsr_accuracy_on_matched_detections": 0.0
+        },
+        "city:end": {
+          "known_targets": 12,
+          "detector_misses": 10,
+          "detected_but_wrong_tsr_class": 2,
+          "correct_city_known_targets": 0,
+          "detected_known_targets": 2,
+          "known_target_pipeline_recall": 0.0,
+          "conditional_tsr_accuracy_on_matched_detections": 0.0
+        }
+      },
+      "by_subset": {
+        "native": {
+          "known_targets": 11,
+          "detector_misses": 9,
+          "detected_but_wrong_tsr_class": 2,
+          "correct_city_known_targets": 0,
+          "detected_known_targets": 2,
+          "known_target_pipeline_recall": 0.0,
+          "conditional_tsr_accuracy_on_matched_detections": 0.0
+        },
+        "own_native": {
+          "known_targets": 1,
+          "detector_misses": 0,
+          "detected_but_wrong_tsr_class": 1,
+          "correct_city_known_targets": 0,
+          "detected_known_targets": 1,
+          "known_target_pipeline_recall": 0.0,
+          "conditional_tsr_accuracy_on_matched_detections": 0.0
+        },
+        "projected": {
+          "known_targets": 3,
+          "detector_misses": 2,
+          "detected_but_wrong_tsr_class": 1,
+          "correct_city_known_targets": 0,
+          "detected_known_targets": 1,
+          "known_target_pipeline_recall": 0.0,
+          "conditional_tsr_accuracy_on_matched_detections": 0.0
+        }
+      },
+      "site_balanced": {
+        "units": 14,
+        "unit_field": "site_id",
+        "definition": "Mean of within-unit known-target pipeline recall; equal weight per conservative candidate unit, not proof of independence.",
+        "macro_known_target_pipeline_recall": 0.0,
+        "per_unit": {
+          "birkenfeld-entry-8.64536-48.87639": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 1,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": 0.0
+          },
+          "fulda-east-9.7685-50.5660": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "fulda-other-entry-9.6226-50.5461": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "fulda-rodges-boundary": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 1,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": 0.0
+          },
+          "osmfr-location-candidate-001": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "osmfr-location-candidate-002": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "osmfr-location-candidate-003": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "osmfr-location-candidate-004": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "osmfr-location-candidate-005": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "osmfr-location-candidate-006": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "osmfr-location-candidate-007": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 1,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": 0.0
+          },
+          "osmfr-location-candidate-008": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 1,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": 0.0
+          },
+          "osmfr-location-candidate-009": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "ulm-putlitz-north-exit-frehne-road": {
+            "known_targets": 2,
+            "detector_misses": 2,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          }
+        }
+      },
+      "group_balanced": {
+        "units": 13,
+        "unit_field": "group_id",
+        "definition": "Mean of within-unit known-target pipeline recall; equal weight per conservative candidate unit, not proof of independence.",
+        "macro_known_target_pipeline_recall": 0.0,
+        "per_unit": {
+          "candidate-split-fulda-2026-06-11-possible-common-drive": {
+            "known_targets": 2,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 1,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": 0.0
+          },
+          "candidate-split-fulda-east-2026-06-05": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "candidate-split-osmfr-location-candidate-001": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "candidate-split-osmfr-location-candidate-002": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "candidate-split-osmfr-location-candidate-003": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "candidate-split-osmfr-location-candidate-004": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "candidate-split-osmfr-location-candidate-005": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "candidate-split-osmfr-location-candidate-006": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "candidate-split-osmfr-location-candidate-007": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 1,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": 0.0
+          },
+          "candidate-split-osmfr-location-candidate-008": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 1,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": 0.0
+          },
+          "candidate-split-osmfr-location-candidate-009": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "candidate-split-ulm-putlitz-north-exit-frehne-road": {
+            "known_targets": 2,
+            "detector_misses": 2,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "own-drive-2026-10-14-reserved": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 1,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": 0.0
+          }
+        }
+      }
+    },
+    "candidate_pair": {
+      "summary": {
+        "known_targets": 15,
+        "detector_misses": 6,
+        "detected_but_wrong_tsr_class": 0,
+        "correct_city_known_targets": 9,
+        "detected_known_targets": 9,
+        "known_target_pipeline_recall": 0.6,
+        "conditional_tsr_accuracy_on_matched_detections": 1.0
+      },
+      "by_label": {
+        "city:start": {
+          "known_targets": 3,
+          "detector_misses": 1,
+          "detected_but_wrong_tsr_class": 0,
+          "correct_city_known_targets": 2,
+          "detected_known_targets": 2,
+          "known_target_pipeline_recall": 0.6666666666666666,
+          "conditional_tsr_accuracy_on_matched_detections": 1.0
+        },
+        "city:end": {
+          "known_targets": 12,
+          "detector_misses": 5,
+          "detected_but_wrong_tsr_class": 0,
+          "correct_city_known_targets": 7,
+          "detected_known_targets": 7,
+          "known_target_pipeline_recall": 0.5833333333333334,
+          "conditional_tsr_accuracy_on_matched_detections": 1.0
+        }
+      },
+      "by_subset": {
+        "native": {
+          "known_targets": 11,
+          "detector_misses": 4,
+          "detected_but_wrong_tsr_class": 0,
+          "correct_city_known_targets": 7,
+          "detected_known_targets": 7,
+          "known_target_pipeline_recall": 0.6363636363636364,
+          "conditional_tsr_accuracy_on_matched_detections": 1.0
+        },
+        "own_native": {
+          "known_targets": 1,
+          "detector_misses": 0,
+          "detected_but_wrong_tsr_class": 0,
+          "correct_city_known_targets": 1,
+          "detected_known_targets": 1,
+          "known_target_pipeline_recall": 1.0,
+          "conditional_tsr_accuracy_on_matched_detections": 1.0
+        },
+        "projected": {
+          "known_targets": 3,
+          "detector_misses": 2,
+          "detected_but_wrong_tsr_class": 0,
+          "correct_city_known_targets": 1,
+          "detected_known_targets": 1,
+          "known_target_pipeline_recall": 0.3333333333333333,
+          "conditional_tsr_accuracy_on_matched_detections": 1.0
+        }
+      },
+      "site_balanced": {
+        "units": 14,
+        "unit_field": "site_id",
+        "definition": "Mean of within-unit known-target pipeline recall; equal weight per conservative candidate unit, not proof of independence.",
+        "macro_known_target_pipeline_recall": 0.6428571428571429,
+        "per_unit": {
+          "birkenfeld-entry-8.64536-48.87639": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "fulda-east-9.7685-50.5660": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "fulda-other-entry-9.6226-50.5461": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "fulda-rodges-boundary": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "osmfr-location-candidate-001": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "osmfr-location-candidate-002": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "osmfr-location-candidate-003": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "osmfr-location-candidate-004": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "osmfr-location-candidate-005": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "osmfr-location-candidate-006": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "osmfr-location-candidate-007": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "osmfr-location-candidate-008": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "osmfr-location-candidate-009": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "ulm-putlitz-north-exit-frehne-road": {
+            "known_targets": 2,
+            "detector_misses": 2,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          }
+        }
+      },
+      "group_balanced": {
+        "units": 13,
+        "unit_field": "group_id",
+        "definition": "Mean of within-unit known-target pipeline recall; equal weight per conservative candidate unit, not proof of independence.",
+        "macro_known_target_pipeline_recall": 0.6538461538461539,
+        "per_unit": {
+          "candidate-split-fulda-2026-06-11-possible-common-drive": {
+            "known_targets": 2,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 0.5,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "candidate-split-fulda-east-2026-06-05": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "candidate-split-osmfr-location-candidate-001": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "candidate-split-osmfr-location-candidate-002": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "candidate-split-osmfr-location-candidate-003": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "candidate-split-osmfr-location-candidate-004": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "candidate-split-osmfr-location-candidate-005": {
+            "known_targets": 1,
+            "detector_misses": 1,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "candidate-split-osmfr-location-candidate-006": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "candidate-split-osmfr-location-candidate-007": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "candidate-split-osmfr-location-candidate-008": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "candidate-split-osmfr-location-candidate-009": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          },
+          "candidate-split-ulm-putlitz-north-exit-frehne-road": {
+            "known_targets": 2,
+            "detector_misses": 2,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 0,
+            "detected_known_targets": 0,
+            "known_target_pipeline_recall": 0.0,
+            "conditional_tsr_accuracy_on_matched_detections": null
+          },
+          "own-drive-2026-10-14-reserved": {
+            "known_targets": 1,
+            "detector_misses": 0,
+            "detected_but_wrong_tsr_class": 0,
+            "correct_city_known_targets": 1,
+            "detected_known_targets": 1,
+            "known_target_pipeline_recall": 1.0,
+            "conditional_tsr_accuracy_on_matched_detections": 1.0
+          }
+        }
+      }
+    }
+  },
+  "all_post_nms_predicted_sign_crops": {
+    "baseline_pair": 22,
+    "candidate_pair": 37
+  },
+  "limitations": [
+    "Known-target pipeline recall only. Incomplete full-frame GT prevents precision/AP.",
+    "Baseline134 has no city outputs; baseline-pair zero is expected by vocabulary, not a universal quality comparison.",
+    "Actual detected crops can differ from reviewed GT crops; this is a separate frozen pipeline score.",
+    "Small assistant-reviewed purposive set; native/projected and grouping support retained; no app/device/general deployment claim.",
+    "The independently measured old-134-class TSR regression gate remains REGRESSION; this city-only pipeline score does not override that failure."
+  ]
+}

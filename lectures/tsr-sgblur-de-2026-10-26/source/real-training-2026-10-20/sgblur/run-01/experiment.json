@@ -1,0 +1,40 @@
+{
+  "training_manifest_sha256": "bf2cb432ca7b144e0c7c9822f065ac964d1f9ae579059234bf5f9129a281137e",
+  "script_sha256": "4d8d9b6480cddbdd3357776d133b5eafa972a3dcca668378abaf8ca0b5d0d0a1",
+  "baseline_sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+  "epochs": 20,
+  "imgsz": 1280,
+  "batch": 2,
+  "optimizer": "AdamW",
+  "lr": 0.001,
+  "seed": 20261026,
+  "weight_decay": 0.0,
+  "teacher_nonpositive_weight": 1.0,
+  "sign_delta_l2_weight": 0.0001,
+  "augmentation": "none; square RGB letterbox only; all source geometry preserved",
+  "selection": "validation target recall, then mean best IoU, then minimum sign probability drift; baseline epoch0 eligible",
+  "training_frames": 9,
+  "validation_frames": 4,
+  "excluded_reserved_frames": 7,
+  "excluded_reserved_picture_ids": [
+    "286f86c6-dc42-49ba-a534-711cadb5156f",
+    "a5de2505-7dcf-4124-9867-0f6e8839bec6",
+    "c1adf4ca-124a-44ca-b464-511d3fcff574",
+    "d0c70f29-496a-4002-9a53-d948fec55314",
+    "da5ccc20-fe1d-4479-805e-1939cabc940d",
+    "dbfd3c63-a8ad-4487-b649-384dbe2886c9",
+    "fb4bd89f-50d9-4da3-8f4c-bb0bf95775b1"
+  ],
+  "shared_split_sha256": "b44f2a22edb8fac41d569f1b7329f18d9b1b9045ea31d5209fc4baab3ffc4ca6",
+  "train_groups": [
+    "learning-herrenalb-dobel-20261019",
+    "learning-marxzell-20260905-20260908",
+    "learning-murgtal-20260909-20261013"
+  ],
+  "val_groups": [
+    "learning-gernsbach-loffenau-20261015"
+  ],
+  "all_visible_object_annotation_complete": false,
+  "human_approved": false,
+  "claim": "195-scalar sign output adaptation with partial assistant-reviewed GT, not full detector retraining"
+}

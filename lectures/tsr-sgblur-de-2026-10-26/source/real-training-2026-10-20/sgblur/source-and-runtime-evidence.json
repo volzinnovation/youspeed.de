@@ -1,0 +1,55 @@
+{
+  "schema_version": "sgblur-source-and-runtime-evidence-v1",
+  "observed_date": "2026-10-20",
+  "host": "wingki01",
+  "experiment_directory": "/home/raphael/youspeed-training-20261020/sgblur",
+  "official_checkpoint_source": "https://github.com/cquest/sgblur/tree/169451970702aca0dde9ff3106dba0f67e0b88a8/models",
+  "copied_from_existing_container": "woladen-prolix-sgblur-detect-1:/opt/blur/models/yolo11n_panoramax.pt",
+  "baseline": {
+    "filename": "yolo11n_panoramax.pt",
+    "bytes": 5979923,
+    "sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+    "classes": {"0": "sign", "1": "plate", "2": "face"},
+    "head": "Three Detect.cv3 final Conv2d(64,3,kernel=1) layers",
+    "adaptable_sign_scalars": 195
+  },
+  "other_existing_detector_hashes": {
+    "yolo11s_panoramax.pt": {"bytes": 19524947, "sha256": "28222165ec8fd01dd7e377b2e9f4e2a7d937a15e4a3aa545d2431f317532e774"},
+    "yolo11m_panoramax.pt": {"bytes": 40886949, "sha256": "ae318d739ce16c51e4136b98a04c8ad87e09a5b6feca4387a84a2e279b22dde9"},
+    "yolo11l_panoramax.pt": {"bytes": 51562194, "sha256": "a3205e4a92b3acdaa883c02e09dba439c48f6c5bc8c89aff44da7c2e79f140e7"},
+    "yolov8s_panoramax.pt": {"bytes": 22998735, "sha256": "d13481beb1d5fc8c5c494b72560a00562ec31de6d9137f85e21ea013313bc7eb"}
+  },
+  "original_dataset_search": {
+    "method": "Bounded read-only path inventory, static pickletools checkpoint inspection, public model card/tree and SGBlur source documentation. No original dataset archive downloaded.",
+    "checkpoint_recorded_data_yaml": "smartphones.yaml",
+    "checkpoint_recorded_training_author_path": "/bigpool/data/panoramax/yolo",
+    "recorded_original_train_args_not_proof_of_completion": {"epochs": 500, "imgsz": 2048, "batch": 12, "optimizer": "auto", "fliplr": 0, "flipud": 0, "degrees": 10, "translate": 0.1, "scale": 0.5, "shear": 15, "mosaic": 1.0, "mixup": 0.0, "close_mosaic": 10},
+    "author_path_present_on_host_or_sgblur_container": false,
+    "examined_host_paths": ["/mnt/nvme/prolix", "/mnt/nvme/woladen-prolix/models", "/mnt/nvme/youspeed-tsr-fr-end-signs-20260924/data", "/mnt/nvme/youspeed-tsr-fr-end-signs-20260924/data-v2", "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run"],
+    "identified_original_complete_three_class_corpus": false,
+    "owner_confirmed_no_additional_fully_annotated_unmasked_server_corpus": true,
+    "existing_sgblur_data_crops_directory_empty": true,
+    "public_sources_checked": ["https://huggingface.co/Panoramax/detect_face_plate_sign", "https://huggingface.co/Panoramax/detect_face_plate_sign/tree/main", "https://github.com/cquest/sgblur"],
+    "public_model_tree_observation": "README, metrics/validation montage and model checkpoints; no downloadable original image/label train/val corpus identified.",
+    "limitation": "This bounded search does not establish that no original corpus exists elsewhere. The owner confirmed that no additional fully annotated unmasked corpus is available on this server. No original unmasked face/plate heldout GT was available to this experiment."
+  },
+  "input_annotation_inventory": {"source_images": 100, "source_sign_boxes": 214, "source_plate_boxes": 0, "source_face_boxes": 0, "unreviewed_city_start_proposals": 46, "unreviewed_city_end_proposals": 19},
+  "reviewed_experiment_input": {"reviewed_candidate_frames": 20, "known_sign_boxes": 37, "training_frames": 9, "training_known_sign_boxes": 15, "validation_frames": 4, "validation_known_sign_boxes": 8, "reserved_frames_not_used": 7, "reserved_boxes_not_used": 14, "all_visible_object_annotation_complete": false, "human_reviewed": false},
+  "isolated_training_environment": {
+    "existing_image": "youspeed-tsr-fr-end-training:20260924",
+    "image_id": "sha256:886be2a4e18d52e587acf3ebfeaa7cbf2da92c1c26d2355e83b94217c474faca",
+    "python": "3.12.3", "torch": "2.6.0+cu126", "torchvision": "0.21.0+cu126", "ultralytics": "8.4.56", "numpy": "2.4.4", "Pillow": "11.1.0",
+    "packages_installed_for_this_experiment": false,
+    "gpu_host_index": 2,
+    "gpu_name": "NVIDIA RTX A5000",
+    "gpu_uuid": "GPU-adb614d2-9deb-869b-8b35-a789c7e95cf4",
+    "gpu_total_mib": 24564,
+    "inside_container_device": "cuda:0",
+    "network": "none", "read_only_root_filesystem": true, "cpus": 4, "memory_limit_gib": 12,
+    "production_services_or_models_changed": false
+  },
+  "production_sgblur_environment_separately_observed": {"image_digest": "sha256:4fd8f3becc0bffd4c20f83fa30a70e89222cbdffe8ea157a87c6c7ee70a74054", "torch": "2.12.0", "ultralytics": "8.3.121", "torchvision": "0.27.0", "numpy": "2.4.5", "Pillow": "11.1.0", "detector_model_name": "yolo11n"},
+  "training_state": {"status": "exited", "exit_code": 0, "oom_killed": false, "started_at": "2026-10-20T10:44:34.467652148Z", "finished_at": "2026-10-20T10:45:09.49354714Z", "epochs_completed": 20, "best_epoch_selected_before_test": 9},
+  "evaluation_state": {"status": "exited", "exit_code": 0, "oom_killed": false, "started_at": "2026-10-20T10:46:05.153415504Z", "finished_at": "2026-10-20T10:46:28.671458117Z", "single_final_baseline_candidate_comparison": true},
+  "final_gpu2_snapshot": {"observed_at": "2026-10-20T10:50:06.822633+00:00", "memory_used_mib": 499, "utilization_percent": 0, "experiment_containers_running": false}
+}

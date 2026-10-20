@@ -1,0 +1,91 @@
+{
+  "source_test_review_sha256": "01f6701be9fcc86f089709a24901a91285386467413224a290c8f97e245fcddc",
+  "source_exclusion_sha256": "f430c31e04fd3b05bdd4c05573c2c23f14b1157d47fadbbe6b439611264c0cf6",
+  "selection": "Fixedseed20261020 ten noncitytargets plusbothprojectedentrytargets andbus:starttaxonomyspotcheck; nopredictionsread",
+  "rows": [
+    {
+      "blind_index": 1,
+      "sample_id": "p8988d815-89ae-4760-b06a-129659b86f3d_a8cf14c9c-0232-492a-9e72-8f86767e8344",
+      "source_label": "priority:start",
+      "crop_local_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/holdout-2026-10-20/collection/inbox/classifier/p8988d815-89ae-4760-b06a-129659b86f3d_a8cf14c9c-0232-492a-9e72-8f86767e8344.png",
+      "crop_sha256": "a13324b341e160acadab4f7fa651df3fbbe3279285fed1904b2be932227344a0"
+    },
+    {
+      "blind_index": 2,
+      "sample_id": "p39949055-f2ff-4227-b744-06469117e1e5_abb626937-6c79-4c45-adb2-06e29bd6a456",
+      "source_label": "bus:start",
+      "crop_local_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/holdout-2026-10-20/collection/inbox/classifier/p39949055-f2ff-4227-b744-06469117e1e5_abb626937-6c79-4c45-adb2-06e29bd6a456.png",
+      "crop_sha256": "9eb6818a991bc436029c7341dc3bfe4c62a1020447558216684b8c0789c322dd"
+    },
+    {
+      "blind_index": 3,
+      "sample_id": "p8988d815-89ae-4760-b06a-129659b86f3d_a484064a8-9e68-4cd1-80f4-f385f3583847",
+      "source_label": "give_way",
+      "crop_local_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/holdout-2026-10-20/collection/inbox/classifier/p8988d815-89ae-4760-b06a-129659b86f3d_a484064a8-9e68-4cd1-80f4-f385f3583847.png",
+      "crop_sha256": "6f181b9fd8648c1bf25d210899290e0aa400d3642abd5a3138e33071c257e02b"
+    },
+    {
+      "blind_index": 4,
+      "sample_id": "p81aaa844-e28c-42a5-8bef-d3f5966602f6_af4e60d49-5264-4c8b-bcf4-0f1a92036fe7",
+      "source_label": "arrow_through",
+      "crop_local_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/holdout-2026-10-20/collection/inbox/classifier/p81aaa844-e28c-42a5-8bef-d3f5966602f6_af4e60d49-5264-4c8b-bcf4-0f1a92036fe7.png",
+      "crop_sha256": "e58b9705acd63fb984744f03326432df571618c61c4d0c50ccf48a66b924beba"
+    },
+    {
+      "blind_index": 5,
+      "sample_id": "pcdcee584-4a12-4112-9ea9-8167b6957c3a_aa74203ac-2b0b-45f2-b7fc-3aafb6075067",
+      "source_label": "no_parking",
+      "crop_local_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/holdout-2026-10-20/collection/inbox/classifier/pcdcee584-4a12-4112-9ea9-8167b6957c3a_aa74203ac-2b0b-45f2-b7fc-3aafb6075067.png",
+      "crop_sha256": "7b22148f6ca6ab2512a80ef15f3999e95515b5dba12a87d77b58e3f3e50452b2"
+    },
+    {
+      "blind_index": 6,
+      "sample_id": "p59eb512d-6fa1-4027-aade-82b688618840_ae9f2a834-8e4f-4bd5-b926-151f155339a3",
+      "source_label": "pedestrian_bicycle:start",
+      "crop_local_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/holdout-2026-10-20/collection/inbox/classifier/p59eb512d-6fa1-4027-aade-82b688618840_ae9f2a834-8e4f-4bd5-b926-151f155339a3.png",
+      "crop_sha256": "dd96a8699294eac21a72a351338ac58a81cf93ebf9a26669395272c43000d6da"
+    },
+    {
+      "blind_index": 7,
+      "sample_id": "p3c448800-f60b-49f6-83bb-183892d62057_a1f4b28d3-9fe5-42d5-a002-a250072d7740",
+      "source_label": "give_way",
+      "crop_local_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/holdout-2026-10-20/collection/inbox/classifier/p3c448800-f60b-49f6-83bb-183892d62057_a1f4b28d3-9fe5-42d5-a002-a250072d7740.png",
+      "crop_sha256": "6f4cb2a3820e672d50e8345420e22352c48c8a22c2c3aac9c9d010e9020d64e3"
+    },
+    {
+      "blind_index": 8,
+      "sample_id": "p259dae8c-b3a0-4eca-887d-6a94934c59f7_aa6e43de3-77eb-471d-bc77-ff42f6b4e9b9",
+      "source_label": "give_way",
+      "crop_local_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/holdout-2026-10-20/collection/inbox/classifier/p259dae8c-b3a0-4eca-887d-6a94934c59f7_aa6e43de3-77eb-471d-bc77-ff42f6b4e9b9.png",
+      "crop_sha256": "719be7a1ea71d53240cd555a80159e2b473355c0747c660ffe76e8c26ed70c74"
+    },
+    {
+      "blind_index": 9,
+      "sample_id": "pee3213a3-b967-4f16-ac1b-24da883eb141_a01af0683-de30-4a96-afdc-decc0875afe7",
+      "source_label": "maxspeed:50",
+      "crop_local_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/holdout-2026-10-20/collection/inbox/classifier/pee3213a3-b967-4f16-ac1b-24da883eb141_a01af0683-de30-4a96-afdc-decc0875afe7.png",
+      "crop_sha256": "34d243ddea74e05c46f03f8933ea8890e20255da1f03472ca90b891d35438aa2"
+    },
+    {
+      "blind_index": 10,
+      "sample_id": "p8988d815-89ae-4760-b06a-129659b86f3d_a2f44a7c2-8902-4fa8-aecc-108d23fdbd2a",
+      "source_label": "maxspeed:50",
+      "crop_local_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/holdout-2026-10-20/collection/inbox/classifier/p8988d815-89ae-4760-b06a-129659b86f3d_a2f44a7c2-8902-4fa8-aecc-108d23fdbd2a.png",
+      "crop_sha256": "258fe14aa25045547ccd7c409200eef26bacd87a36bb498c2c98b15e59633271"
+    },
+    {
+      "blind_index": 11,
+      "sample_id": "fulda-local-perspective-target-2fe1e15a-301c-4629-8553-48a8bb7cd3fd-0bee0ebdb967",
+      "source_label": "city:start",
+      "crop_local_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/external-holdout-2026-10-20/projected-candidates/2fe1e15a-301c-4629-8553-48a8bb7cd3fd/target-crop-proposal.png",
+      "crop_sha256": "933f5d335ea25e91aaa475ade95c87fd10278cb3aa9c95f39474f0b8fa9bc2bd"
+    },
+    {
+      "blind_index": 12,
+      "sample_id": "fulda-local-perspective-target-7aaa9bcc-c466-46b8-8881-09370595a2f9-37b9d2d16a87",
+      "source_label": "city:start",
+      "crop_local_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/external-holdout-2026-10-20/projected-candidates/7aaa9bcc-c466-46b8-8881-09370595a2f9/target-crop-proposal.png",
+      "crop_sha256": "6b6715e68d0666cd0ab7623574c67cbfc3ce16d5e47712f0740ce3446a95912e"
+    }
+  ]
+}

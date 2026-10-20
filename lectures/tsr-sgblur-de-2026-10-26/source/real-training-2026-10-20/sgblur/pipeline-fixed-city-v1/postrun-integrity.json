@@ -1,0 +1,13 @@
+{
+  "schema_version": "fixed-pipeline-postrun-integrity-v1",
+  "captured_at_utc": "2026-10-20T11:07:44.713012+00:00",
+  "model_sha256_after_run": {
+    "sg_baseline": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+    "sg_candidate": "63cebe1bc4372ccdd9a4f3bdb525ed6a8094d8b05f0a27a39dfbb46fa0e1b5dd",
+    "tsr_baseline": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+    "tsr_candidate": "8991ee8127f50bfb88755b2bb8b293a08433c4787c6cf96d81539e087cd87a67"
+  },
+  "all_four_model_hashes_equal_plan": true,
+  "gpu_snapshot_csv": "0, GPU-58a2466e-517c-8d67-8aba-02f8a22b96b0, NVIDIA RTX A5000, 419 MiB, 0 %\n1, GPU-03ea5ac0-9b30-710c-289e-46757f9019e2, NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition, 1434 MiB, 0 %\n2, GPU-adb614d2-9deb-869b-8b35-a789c7e95cf4, NVIDIA RTX A5000, 499 MiB, 0 %\n",
+  "no_additional_inference_performed": true
+}

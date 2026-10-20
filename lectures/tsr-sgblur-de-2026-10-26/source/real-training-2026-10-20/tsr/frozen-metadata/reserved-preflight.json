@@ -1,0 +1,45 @@
+{
+  "status": "PASS",
+  "model_inference": false,
+  "rows": 44,
+  "labels": {
+    "city:start": 3,
+    "city:end": 12,
+    "hazard:rocks": 1,
+    "give_way": 7,
+    "priority:start": 3,
+    "traffic_signal": 1,
+    "pedestrian_bicycle:start": 1,
+    "maxspeed:50": 4,
+    "arrow_right_down": 1,
+    "no_parking": 2,
+    "parking": 2,
+    "bus:start": 1,
+    "no_overtaking": 3,
+    "arrow_through": 1,
+    "maxspeed:30": 1,
+    "maxspeed:80": 1
+  },
+  "subsets": {
+    "projected": 3,
+    "native": 11,
+    "own_native": 30
+  },
+  "site_ids": 43,
+  "groups": 20,
+  "training_manifest_sha256": "e67c8699a705371b79d68ea534371e2ae0c5e74ce83be7fd62fce671a1cac9eb",
+  "original_test_sha256": "01f6701be9fcc86f089709a24901a91285386467413224a290c8f97e245fcddc",
+  "exclusion_overlay_sha256": "f430c31e04fd3b05bdd4c05573c2c23f14b1157d47fadbbe6b439611264c0cf6",
+  "checks": [
+    "training-manifest binding",
+    "parent overlay and pre-prediction flags",
+    "crop+input SHA256",
+    "native PNG crop-pixel equality",
+    "no train-val RGB/byte/source/group overlap"
+  ],
+  "excluded_sample_ids": [
+    "p259dae8c-b3a0-4eca-887d-6a94934c59f7_a8d259c06-3855-42e9-9e0b-0f235216241b",
+    "p2ff42c63-099a-4bbf-bc62-e333337778b1_af27d4feb-04eb-4bb8-804f-14eba707f65d",
+    "p0952c79c-96ff-4e51-8fa9-cfc18d629308_a96dc6a26-eccf-4111-a789-7989a032ffc1"
+  ]
+}

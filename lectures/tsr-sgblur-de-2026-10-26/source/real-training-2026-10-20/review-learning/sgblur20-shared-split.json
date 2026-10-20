@@ -1,0 +1,275 @@
+{
+  "schema_version": "youspeed-sgblur20-shared-split-v1",
+  "source_sgblur_review_file": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/real-training-2026-10-20/sgblur/review-candidates.json",
+  "source_sgblur_review_sha256": "9f656d4b4e3f22bc1304d21fb85f040562502f5705bc9d4b7be8745cdcf013ac",
+  "source_city_review_sha256": "f4a917ec70e9df59d363ddd7952742ba0b713ef55f640572a3eb8bee7dc4f301",
+  "rows": [
+    {
+      "picture_id": "0f1a8cab-0f5c-4168-9d7d-1b25b59d4bf5",
+      "sequence_id": "64b10dcb-f9ba-4b11-8c33-ea0ba7716ebb",
+      "capture_datetime": "2026-10-15T08:30:48.457000+00:00",
+      "group_id": "learning-gernsbach-loffenau-20261015",
+      "subset": "val",
+      "accepted_city_sample_ids": [
+        "p0f1a8cab-0f5c-4168-9d7d-1b25b59d4bf5_afa71841d-ccb4-46d8-8433-1b810682f626"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/0f1a8cab-0f5c-4168-9d7d-1b25b59d4bf5/image.png",
+      "image_sha256": "df9008683680a3ff904020d26c58bf9836e9811066b9f072e759cabd4b0efab6",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "0fa782f2-070d-43ab-9620-1a7318cbf545",
+      "sequence_id": "5cd77255-d817-4a83-8029-3d58ec5e634f",
+      "capture_datetime": "2026-09-08T15:04:05.468000+00:00",
+      "group_id": "learning-marxzell-20260905-20260908",
+      "subset": "train",
+      "accepted_city_sample_ids": [
+        "p0fa782f2-070d-43ab-9620-1a7318cbf545_af9206fdc-9c38-420d-bbec-4146d1d9e0cd"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/0fa782f2-070d-43ab-9620-1a7318cbf545/image.png",
+      "image_sha256": "2b0dedeb49cffc87b511efe4680ecd5c26697189b9d438134cab051f2b05a490",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "16c6e3a2-64c1-4a05-b1b5-77391c2ac42c",
+      "sequence_id": "b23c42f0-217d-4a50-96ad-0ed96ab0dbab",
+      "capture_datetime": "2026-10-19T07:30:01.408000+00:00",
+      "group_id": "learning-herrenalb-dobel-20261019",
+      "subset": "train",
+      "accepted_city_sample_ids": [
+        "p16c6e3a2-64c1-4a05-b1b5-77391c2ac42c_adc0ece3b-2e40-4e8c-9ba6-c8a4c26c4f09"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/16c6e3a2-64c1-4a05-b1b5-77391c2ac42c/image.png",
+      "image_sha256": "dcd95f0af5812115dfccbdc75378c4050734d37bd4fe0cb8f7ec303357ecbd99",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "286f86c6-dc42-49ba-a534-711cadb5156f",
+      "sequence_id": "d3fccc17-4e10-4de4-9dc5-453bb482dd7b",
+      "capture_datetime": "2026-10-17T12:33:28.630000+00:00",
+      "group_id": "reserved-20261014-20261017-baden-overlap",
+      "subset": "reserved",
+      "accepted_city_sample_ids": [
+        "p286f86c6-dc42-49ba-a534-711cadb5156f_a2921cb25-d9a7-4e0d-ab20-f8a9a0e38e30"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/286f86c6-dc42-49ba-a534-711cadb5156f/image.png",
+      "image_sha256": "099435d23486bba50081777b5fcdf6b7b127215fa7e30d8048ee429cfd3b1561",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "345d8ad6-919f-45cd-9f22-5c94166cc4d8",
+      "sequence_id": "5a7cc6bf-3fa4-474a-be4d-6d08cdd2abc8",
+      "capture_datetime": "2026-09-09T16:27:00.453000+00:00",
+      "group_id": "learning-murgtal-20260909-20261013",
+      "subset": "train",
+      "accepted_city_sample_ids": [
+        "p345d8ad6-919f-45cd-9f22-5c94166cc4d8_a06cfabb1-87eb-47c5-b205-22cfbda5a658"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/345d8ad6-919f-45cd-9f22-5c94166cc4d8/image.png",
+      "image_sha256": "dc0810201ad16b318493e0492a156cef33e33a06667a73ee228e09d94fd6639e",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "5cd5f662-88ce-4d5d-a1c4-55b240d20d6d",
+      "sequence_id": "041bf9e2-2f59-42b2-9d23-c8e1db1d1c5f",
+      "capture_datetime": "2026-10-15T08:04:09.445000+00:00",
+      "group_id": "learning-gernsbach-loffenau-20261015",
+      "subset": "val",
+      "accepted_city_sample_ids": [
+        "p5cd5f662-88ce-4d5d-a1c4-55b240d20d6d_a50a7c27c-48f9-4253-9cbf-e542a8543cbc"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/5cd5f662-88ce-4d5d-a1c4-55b240d20d6d/image.png",
+      "image_sha256": "8d4f03093af18f3c3c356df2c3c7990f9a16cf6ef462bda12e16fa7ce3f7bf52",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "684e8b35-af08-4c7d-aecd-4a885ce515d9",
+      "sequence_id": "fbc7233e-5f27-44da-a034-7c9656d48050",
+      "capture_datetime": "2026-10-13T07:52:47.826000+00:00",
+      "group_id": "learning-murgtal-20260909-20261013",
+      "subset": "train",
+      "accepted_city_sample_ids": [
+        "p684e8b35-af08-4c7d-aecd-4a885ce515d9_a382f0488-e693-47c0-ae7a-4703d1ebb963"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/684e8b35-af08-4c7d-aecd-4a885ce515d9/image.png",
+      "image_sha256": "9f4da6586754ba5f9af82d8e49272535f8ae85122d3e668618b7762e1f6c3cb5",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "74824d9d-27b0-4b08-8e1b-fc3198331b17",
+      "sequence_id": "5a7cc6bf-3fa4-474a-be4d-6d08cdd2abc8",
+      "capture_datetime": "2026-09-09T16:34:26.479000+00:00",
+      "group_id": "learning-murgtal-20260909-20261013",
+      "subset": "train",
+      "accepted_city_sample_ids": [
+        "p74824d9d-27b0-4b08-8e1b-fc3198331b17_a3892aad1-b140-4baf-9dfb-fb021efe3322"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/74824d9d-27b0-4b08-8e1b-fc3198331b17/image.png",
+      "image_sha256": "b375065a899a95f3f8cef675ba9d018176c97063a98486b0649484ecff82d4b0",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "93f25a06-1d12-419c-856b-89ead7abb3bb",
+      "sequence_id": "fbc7233e-5f27-44da-a034-7c9656d48050",
+      "capture_datetime": "2026-10-13T07:34:26.742000+00:00",
+      "group_id": "learning-murgtal-20260909-20261013",
+      "subset": "train",
+      "accepted_city_sample_ids": [
+        "p93f25a06-1d12-419c-856b-89ead7abb3bb_ae49ace27-e4c0-44cd-9db5-91904a92b10a"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/93f25a06-1d12-419c-856b-89ead7abb3bb/image.png",
+      "image_sha256": "f3c583844c19a5fdca9bd7a019006e8d517d2099bd8eea4f088b59cbbd7cae84",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "9d3f0e3a-f0f4-477e-9036-9280ddebd089",
+      "sequence_id": "b23c42f0-217d-4a50-96ad-0ed96ab0dbab",
+      "capture_datetime": "2026-10-19T07:25:22.451000+00:00",
+      "group_id": "learning-herrenalb-dobel-20261019",
+      "subset": "train",
+      "accepted_city_sample_ids": [
+        "p9d3f0e3a-f0f4-477e-9036-9280ddebd089_a75642fa6-266e-412c-93cb-f0a77720bd1b"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/9d3f0e3a-f0f4-477e-9036-9280ddebd089/image.png",
+      "image_sha256": "675db0efa6b7ceabf1f2bff43b69b2c59aca07d01df18a19a5e341c73aeb1719",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "a3597745-44c3-48a5-82cd-7472e3cd8b63",
+      "sequence_id": "fbc7233e-5f27-44da-a034-7c9656d48050",
+      "capture_datetime": "2026-10-13T07:51:51.798000+00:00",
+      "group_id": "learning-murgtal-20260909-20261013",
+      "subset": "train",
+      "accepted_city_sample_ids": [
+        "pa3597745-44c3-48a5-82cd-7472e3cd8b63_a66203e1e-6b68-4873-8e9b-4d7d9deb885b"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/a3597745-44c3-48a5-82cd-7472e3cd8b63/image.png",
+      "image_sha256": "f28c72741233cbf7478a8ce9a47939c9609684e0b1154f334cddcb5f994bab49",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "a5de2505-7dcf-4124-9867-0f6e8839bec6",
+      "sequence_id": "d3fccc17-4e10-4de4-9dc5-453bb482dd7b",
+      "capture_datetime": "2026-10-17T12:36:32.436000+00:00",
+      "group_id": "reserved-20261014-20261017-baden-overlap",
+      "subset": "reserved",
+      "accepted_city_sample_ids": [
+        "pa5de2505-7dcf-4124-9867-0f6e8839bec6_aafbff265-96d8-4495-9eb4-64bdd48376fc"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/a5de2505-7dcf-4124-9867-0f6e8839bec6/image.png",
+      "image_sha256": "f65c8c92041378cfb136f524997ca77e3ce9a5d18c0f00296210207e80c592d1",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "c1adf4ca-124a-44ca-b464-511d3fcff574",
+      "sequence_id": "2b34ee77-b613-4a70-bb7c-190db3d9811e",
+      "capture_datetime": "2026-10-17T14:47:39.440000+00:00",
+      "group_id": "reserved-20261014-20261017-baden-overlap",
+      "subset": "reserved",
+      "accepted_city_sample_ids": [
+        "pc1adf4ca-124a-44ca-b464-511d3fcff574_a5b2c4b21-ad26-4cfe-bc18-b9ebd957e174"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/c1adf4ca-124a-44ca-b464-511d3fcff574/image.png",
+      "image_sha256": "0d60d8a786fd0ce1781e60697fdb9778f31fd120156054c1bd4400471c1c3380",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "d0c70f29-496a-4002-9a53-d948fec55314",
+      "sequence_id": "d3fccc17-4e10-4de4-9dc5-453bb482dd7b",
+      "capture_datetime": "2026-10-17T12:38:02.443000+00:00",
+      "group_id": "reserved-20261014-20261017-baden-overlap",
+      "subset": "reserved",
+      "accepted_city_sample_ids": [
+        "pd0c70f29-496a-4002-9a53-d948fec55314_a6c63b262-f7d2-4747-8475-b629fa55eaea"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/d0c70f29-496a-4002-9a53-d948fec55314/image.png",
+      "image_sha256": "619b918d56a74ed98e0b7d583b5721f964f2bcd434e00e7a8c519f9c42973b0e",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "d772ca99-cf35-44f9-8eb9-156911873c8b",
+      "sequence_id": "5cd77255-d817-4a83-8029-3d58ec5e634f",
+      "capture_datetime": "2026-09-08T14:57:44.785000+00:00",
+      "group_id": "learning-marxzell-20260905-20260908",
+      "subset": "train",
+      "accepted_city_sample_ids": [
+        "pd772ca99-cf35-44f9-8eb9-156911873c8b_ac4f13b9b-6e4d-475d-8b66-3c8ed293230b"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/d772ca99-cf35-44f9-8eb9-156911873c8b/image.png",
+      "image_sha256": "dff1339aeb2bf77db635237edd4295041d2503e75f6599f6b727611a35ea451b",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "da5ccc20-fe1d-4479-805e-1939cabc940d",
+      "sequence_id": "80064e15-f3ff-4716-a85c-846accf0af65",
+      "capture_datetime": "2026-10-17T12:36:30.282000+00:00",
+      "group_id": "reserved-20261014-20261017-baden-overlap",
+      "subset": "reserved",
+      "accepted_city_sample_ids": [
+        "pda5ccc20-fe1d-4479-805e-1939cabc940d_a37fe77f6-2e0e-4b40-b909-063edad2152b"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/da5ccc20-fe1d-4479-805e-1939cabc940d/image.png",
+      "image_sha256": "227ee97a5f3ed2d28e26fe0081bd9f5bd009990f8c6edfbc9fd7aa465e7f00e5",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "dbfd3c63-a8ad-4487-b649-384dbe2886c9",
+      "sequence_id": "4ec8407b-d2f8-4780-be2a-9e2836c1201a",
+      "capture_datetime": "2026-10-14T08:21:01.432000+00:00",
+      "group_id": "reserved-20261014-20261017-baden-overlap",
+      "subset": "reserved",
+      "accepted_city_sample_ids": [
+        "pdbfd3c63-a8ad-4487-b649-384dbe2886c9_ae5c39fe2-001f-4482-8e56-95b29c4da93d"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/dbfd3c63-a8ad-4487-b649-384dbe2886c9/image.png",
+      "image_sha256": "f63aaa9d708d9751cc196a3e2fe48c3ea5fb23c837e11986799f43fcffa0e93e",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "dccb60fc-3027-4057-9718-ae65a700d52f",
+      "sequence_id": "041bf9e2-2f59-42b2-9d23-c8e1db1d1c5f",
+      "capture_datetime": "2026-10-15T08:00:37.688000+00:00",
+      "group_id": "learning-gernsbach-loffenau-20261015",
+      "subset": "val",
+      "accepted_city_sample_ids": [
+        "pdccb60fc-3027-4057-9718-ae65a700d52f_a8de22ac1-fbfc-48fc-b36f-f0e3a530f8c8"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/dccb60fc-3027-4057-9718-ae65a700d52f/image.png",
+      "image_sha256": "82807d8abf719c987872218c607f5bb49937b4c8dd16eb6ab8f2c3a858d5d09b",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "ef33b9fb-e118-4a7a-a3da-cb84cebefd48",
+      "sequence_id": "64b10dcb-f9ba-4b11-8c33-ea0ba7716ebb",
+      "capture_datetime": "2026-10-15T08:24:39.438000+00:00",
+      "group_id": "learning-gernsbach-loffenau-20261015",
+      "subset": "val",
+      "accepted_city_sample_ids": [
+        "pef33b9fb-e118-4a7a-a3da-cb84cebefd48_a9ff08ffa-5350-4a8d-b47c-e7d421e949b7"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/ef33b9fb-e118-4a7a-a3da-cb84cebefd48/image.png",
+      "image_sha256": "f7bffde4d25cdeab1eb4c61e72a0e9246f8c617754f3231fcbcec74833cf2f70",
+      "all_visible_object_annotation_complete": false
+    },
+    {
+      "picture_id": "fb4bd89f-50d9-4da3-8f4c-bb0bf95775b1",
+      "sequence_id": "80064e15-f3ff-4716-a85c-846accf0af65",
+      "capture_datetime": "2026-10-17T12:51:58.153000+00:00",
+      "group_id": "reserved-20261014-20261017-baden-overlap",
+      "subset": "reserved",
+      "accepted_city_sample_ids": [
+        "pfb4bd89f-50d9-4da3-8f4c-bb0bf95775b1_aebbccf68-bbd6-419a-bfc6-f83d53281c80"
+      ],
+      "image_absolute_path": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum/data/collection/inbox/detector/fb4bd89f-50d9-4da3-8f4c-bb0bf95775b1/image.png",
+      "image_sha256": "48579c9e53f6616854e288f935bedbcc94ecefe2c7add196d4c57bdf4168010a",
+      "all_visible_object_annotation_complete": false
+    }
+  ],
+  "counts": {
+    "val": 4,
+    "train": 9,
+    "reserved": 7
+  },
+  "all_visible_object_annotation_complete": false,
+  "lock_sha256": "53db227b3c98cd149edffb41684aa19d35c47910455d3e0001e67c256bbf03b3"
+}

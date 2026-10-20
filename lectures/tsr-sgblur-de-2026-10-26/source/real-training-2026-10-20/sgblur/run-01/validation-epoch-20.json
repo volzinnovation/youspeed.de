@@ -1,0 +1,125 @@
+{
+  "metric": "known-target recall only; partial full-frame annotations",
+  "iou_threshold": 0.5,
+  "confidence_threshold": 0.25,
+  "nms_iou": 0.7,
+  "imgsz": 1280,
+  "overall": {
+    "targets": 8,
+    "matched": 4,
+    "target_recall": 0.5
+  },
+  "by_label": {
+    "city:end": {
+      "targets": 2,
+      "matched": 0,
+      "target_recall": 0.0
+    },
+    "city:start": {
+      "targets": 2,
+      "matched": 0,
+      "target_recall": 0.0
+    },
+    "other_known_sign": {
+      "targets": 4,
+      "matched": 4,
+      "target_recall": 1.0
+    }
+  },
+  "city_all": {
+    "targets": 4,
+    "matched": 0,
+    "target_recall": 0.0
+  },
+  "old_sign_targets": {
+    "targets": 4,
+    "matched": 4,
+    "target_recall": 1.0
+  },
+  "by_subset": {
+    "learning_validation": {
+      "targets": 8,
+      "matched": 4,
+      "target_recall": 0.5
+    }
+  },
+  "pre_nms_regression_and_face_plate_logits_bitwise_unchanged": true,
+  "post_nms_plate_face_changed_frames": [],
+  "mean_absolute_sign_probability_drift": 5.561013395587603e-05,
+  "unmasked_face_plate_regression": "NOT_EVALUABLE_NO_UNMASKED_GROUND_TRUTH",
+  "full_image_precision_and_ap": "NOT_EVALUABLE_INCOMPLETE_ANNOTATIONS",
+  "predictions": [
+    {
+      "sample_id": "dccb60fc-3027-4057-9718-ae65a700d52f:0",
+      "picture_id": "dccb60fc-3027-4057-9718-ae65a700d52f",
+      "label": "city:start",
+      "subset": "learning_validation",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "dccb60fc-3027-4057-9718-ae65a700d52f:1",
+      "picture_id": "dccb60fc-3027-4057-9718-ae65a700d52f",
+      "label": "other_known_sign",
+      "subset": "learning_validation",
+      "matched": true,
+      "best_sign_iou": 0.8721725599050161,
+      "matched_confidence": 0.998967170715332
+    },
+    {
+      "sample_id": "5cd5f662-88ce-4d5d-a1c4-55b240d20d6d:0",
+      "picture_id": "5cd5f662-88ce-4d5d-a1c4-55b240d20d6d",
+      "label": "city:end",
+      "subset": "learning_validation",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "5cd5f662-88ce-4d5d-a1c4-55b240d20d6d:1",
+      "picture_id": "5cd5f662-88ce-4d5d-a1c4-55b240d20d6d",
+      "label": "other_known_sign",
+      "subset": "learning_validation",
+      "matched": true,
+      "best_sign_iou": 0.841671452962473,
+      "matched_confidence": 0.9993665814399719
+    },
+    {
+      "sample_id": "0f1a8cab-0f5c-4168-9d7d-1b25b59d4bf5:0",
+      "picture_id": "0f1a8cab-0f5c-4168-9d7d-1b25b59d4bf5",
+      "label": "other_known_sign",
+      "subset": "learning_validation",
+      "matched": true,
+      "best_sign_iou": 0.7396121084095749,
+      "matched_confidence": 0.9657255411148071
+    },
+    {
+      "sample_id": "0f1a8cab-0f5c-4168-9d7d-1b25b59d4bf5:1",
+      "picture_id": "0f1a8cab-0f5c-4168-9d7d-1b25b59d4bf5",
+      "label": "city:start",
+      "subset": "learning_validation",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "ef33b9fb-e118-4a7a-a3da-cb84cebefd48:0",
+      "picture_id": "ef33b9fb-e118-4a7a-a3da-cb84cebefd48",
+      "label": "other_known_sign",
+      "subset": "learning_validation",
+      "matched": true,
+      "best_sign_iou": 0.8396618520502452,
+      "matched_confidence": 0.9988069534301758
+    },
+    {
+      "sample_id": "ef33b9fb-e118-4a7a-a3da-cb84cebefd48:1",
+      "picture_id": "ef33b9fb-e118-4a7a-a3da-cb84cebefd48",
+      "label": "city:end",
+      "subset": "learning_validation",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "schema_version": "fixed-city-pipeline-prescoring-plan-v1",
+  "purpose": "One additional frozen pipeline scoring event on actual predicted crops; no adaptive selection or tuning",
+  "no_tuning_or_selection": true,
+  "human_reviewed": false,
+  "script_sha256": "228213f3ccee0d924ce6867ba52d329941f8cb896afd4526878e3a095a340684",
+  "sg_helper_sha256": "4d8d9b6480cddbdd3357776d133b5eafa972a3dcca668378abaf8ca0b5d0d0a1",
+  "tsr_helper_sha256": "50e2c478161e13c8b1b67c0dcd8cfbbc7db9d1ce90398c9c5f9f915280b787f7",
+  "frozen_target_manifest_sha256": "01f6701be9fcc86f089709a24901a91285386467413224a290c8f97e245fcddc",
+  "blind_peer_label_manifest_sha256": "58430cb5760fee0fb1dd6e47a1ad2edab61e426152eaf127cbe3a5a27310981e",
+  "tsr_training_manifest_sha256": "e67c8699a705371b79d68ea534371e2ae0c5e74ce83be7fd62fce671a1cac9eb",
+  "known_city_targets": 15,
+  "city_target_labels": {
+    "fulda-local-perspective-target-2fe1e15a-301c-4629-8553-48a8bb7cd3fd-0bee0ebdb967": "city:start",
+    "fulda-local-perspective-target-76ebc933-6e98-4ccd-bc08-1760116981b9-78c3877c2a68": "city:end",
+    "fulda-local-perspective-target-7aaa9bcc-c466-46b8-8881-09370595a2f9-37b9d2d16a87": "city:start",
+    "osmfr-044d7874-70ce-516b-a462-af16fe54ef6f": "city:end",
+    "osmfr-3784dad5-d81a-569c-8602-352ee146a244": "city:end",
+    "osmfr-4ae2a51c-b4a5-5ded-a450-54181e9657e2": "city:end",
+    "osmfr-627d162c-0d00-59d7-bd34-79a481fa8420": "city:end",
+    "osmfr-7b289b05-fb97-530f-8dcc-909e9c09bba3": "city:end",
+    "osmfr-a3cc3e39-0b9a-5148-a207-c38ab4233f44": "city:end",
+    "osmfr-d036ca40-e69b-5320-a07c-d6fec814f2da": "city:end",
+    "osmfr-df8a0dab-6a93-5ba7-9eb8-99c017d8a1da": "city:end",
+    "osmfr-fccfb9c1-2910-5580-8c86-30a511745bde": "city:end",
+    "ulm-local-visual-putlitz-city-end-164c3432-567f-41ae-ae7b-9afafbf55176-v1": "city:end",
+    "ulm-local-visual-putlitz-city-end-585083d3-2cda-45c6-95f8-79513685cca8-v1": "city:end",
+    "p61108145-0fdf-4d7c-8ba5-156624fe49f0_a9dae477a-54de-4a72-823f-a65d734f1889": "city:start"
+  },
+  "class_support": {
+    "city:start": 3,
+    "city:end": 12
+  },
+  "model_sha256": {
+    "sg_baseline": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+    "sg_candidate": "63cebe1bc4372ccdd9a4f3bdb525ed6a8094d8b05f0a27a39dfbb46fa0e1b5dd",
+    "tsr_baseline": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+    "tsr_candidate": "8991ee8127f50bfb88755b2bb8b293a08433c4787c6cf96d81539e087cd87a67"
+  },
+  "selected_epochs_before_pipeline": {
+    "sg_candidate": 9,
+    "tsr_candidate": 4
+  },
+  "arms": {
+    "baseline_pair": [
+      "sg_baseline",
+      "tsr_baseline134"
+    ],
+    "candidate_pair": [
+      "sg_candidate",
+      "tsr_candidate136"
+    ]
+  },
+  "detector_fixed": {
+    "imgsz": 1280,
+    "input": "RGB square letterbox via unchanged SG helper",
+    "confidence_threshold": 0.25,
+    "nms_iou": 0.7,
+    "max_det": 300,
+    "class_agnostic_nms": false,
+    "sign_class_index": 0,
+    "gt_matching_iou": 0.5,
+    "matching": "one-to-one greedy descending IoU, same as component SG evaluation"
+  },
+  "crop_fixed": {
+    "source": "actual post-NMS sign bbox in original registered RGB raster; GT boxes only consulted after classification",
+    "rounding": "floor x1/y1, ceil x2/y2, clamp to [0,width]/[0,height]; right/bottom exclusive",
+    "exif": "do not rotate full raster; output PNG has fresh RGB pixels without inherited metadata",
+    "save": "all detected sign crops, lossless PNG + file and decoded-RGB SHA256"
+  },
+  "classifier_fixed": {
+    "preprocessing": "RGB-Pillow-bilinear-resize-224x224-float32-div255-v1",
+    "decision": "argmax over original134 or candidate136 logits; no threshold or calibration tuning",
+    "GT_crop_files_read": false
+  },
+  "metrics": [
+    "Known-city-target pipeline recall",
+    "detector miss vs detected-but-wrong-TSR-class vs correct-city-target",
+    "conditional TSR accuracy on matched detections",
+    "class/native/projected/own-native breakdown",
+    "site-balanced and conservative-group-balanced target recall"
+  ],
+  "retention": [
+    "All post-NMS boxes, including non-signs",
+    "All predicted native crop pixel boxes/file and pixel SHA/input tensor SHA",
+    "All classified sign logits/probabilities and labels",
+    "GT-to-prediction one-to-one matches and model/helper/manifest hashes"
+  ],
+  "execution": {
+    "gpu_uuid": "GPU-adb614d2-9deb-869b-8b35-a789c7e95cf4",
+    "host_gpu_index": 2,
+    "container_device": "cuda:0",
+    "image_id": "sha256:886be2a4e18d52e587acf3ebfeaa7cbf2da92c1c26d2355e83b94217c474faca",
+    "network": "none",
+    "source_mounts_read_only": true,
+    "new_output_only": true,
+    "root_code_audit_required_before_execution": true
+  },
+  "limitations": [
+    "The baseline classifier lacks city labels; its expected zero is a vocabulary constraint.",
+    "Known-target recall only: no full-image precision/AP, unseen-distribution guarantee or mobile/app-quality claim.",
+    "Additional frozen pipeline score after component tests; no model/threshold choice may use these results.",
+    "Incomplete assistant-reviewed scene annotations, not human-certified GT."
+  ]
+}

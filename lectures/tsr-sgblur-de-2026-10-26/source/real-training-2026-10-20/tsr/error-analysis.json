@@ -1,0 +1,278 @@
+{
+  "role": "posttest_error_inspection_no_label_changes_no_tuning",
+  "new_inference": false,
+  "rows": [
+    {
+      "change": "newly_lost",
+      "sample_id": "old-3efb88c6ffab599caff18d2d",
+      "group_id": "old-source-image-60f809af-11e4-4133-856d-8d504f9fb8c2",
+      "true_label": "hazard:narrow_both",
+      "baseline_label": "hazard:narrow_both",
+      "candidate_label": "hazard:narrow_right",
+      "display_index": 1,
+      "source_dataset_path": "test/hazard:narrow_both/old-3efb88c6ffab599caff18d2d.jpg",
+      "source_sha256": "3efb88c6ffab599caff18d2de1fb7ac8ceabfa5a403153ff67f574302a6a945f",
+      "upstream_label_support": 41,
+      "native_dimensions": [
+        36,
+        32
+      ]
+    },
+    {
+      "change": "newly_lost",
+      "sample_id": "old-f514109717651b825cb8a49b",
+      "group_id": "old-source-image-6a5af72a-bb7a-43e1-bb3e-d1f80fdb5809",
+      "true_label": "oneway",
+      "baseline_label": "oneway",
+      "candidate_label": "arrow_through",
+      "display_index": 2,
+      "source_dataset_path": "test/oneway/old-f514109717651b825cb8a49b.jpg",
+      "source_sha256": "f514109717651b825cb8a49ba4653334329c060b6ce7f5f007b6770253117f98",
+      "upstream_label_support": 11,
+      "native_dimensions": [
+        48,
+        49
+      ]
+    },
+    {
+      "change": "newly_lost",
+      "sample_id": "old-2597116ca885111e944b2ee9",
+      "group_id": "old-source-image-7cfca276-ec32-48d5-a752-b5524528c75d",
+      "true_label": "bad:buildings",
+      "baseline_label": "bad:buildings",
+      "candidate_label": "bad",
+      "display_index": 3,
+      "source_dataset_path": "test/bad:buildings/old-2597116ca885111e944b2ee9.jpg",
+      "source_sha256": "2597116ca885111e944b2ee9a3214d03e0804b67cbf10a78f8bbf162470c3a16",
+      "upstream_label_support": 40,
+      "native_dimensions": [
+        79,
+        60
+      ]
+    },
+    {
+      "change": "newly_lost",
+      "sample_id": "old-0be480b3fe020d34f12b21c8",
+      "group_id": "old-source-image-a96ec679-e8b0-459c-864d-3fa2fe316342",
+      "true_label": "arrow_through",
+      "baseline_label": "arrow_through",
+      "candidate_label": "no_exit",
+      "display_index": 4,
+      "source_dataset_path": "test/arrow_through/old-0be480b3fe020d34f12b21c8.jpg",
+      "source_sha256": "0be480b3fe020d34f12b21c8a156d14f6a419ea409ede691b66dcd66b4bb981b",
+      "upstream_label_support": 36,
+      "native_dimensions": [
+        52,
+        53
+      ]
+    },
+    {
+      "change": "newly_lost",
+      "sample_id": "old-27d5bd3ad2560f03dd3473a6",
+      "group_id": "old-source-image-62b0315f-afa9-4bf2-8cd8-06a4560e0195",
+      "true_label": "hazard:narrow_left",
+      "baseline_label": "hazard:narrow_left",
+      "candidate_label": "hazard:narrow_right",
+      "display_index": 5,
+      "source_dataset_path": "test/hazard:narrow_left/old-27d5bd3ad2560f03dd3473a6.jpg",
+      "source_sha256": "27d5bd3ad2560f03dd3473a64392c4b59a2be20470f5f0ecfacb7c8ed1b5ec90",
+      "upstream_label_support": 13,
+      "native_dimensions": [
+        33,
+        35
+      ]
+    },
+    {
+      "change": "newly_lost",
+      "sample_id": "old-4edbe6ae61ca933604c513ea",
+      "group_id": "old-source-image-70d149d2-e5a4-48a0-80ca-9b5832931b80",
+      "true_label": "lanes",
+      "baseline_label": "lanes",
+      "candidate_label": "bad",
+      "display_index": 6,
+      "source_dataset_path": "test/lanes/old-4edbe6ae61ca933604c513ea.jpg",
+      "source_sha256": "4edbe6ae61ca933604c513ea633bafd214a870bb9e33770b71d2d89028edc980",
+      "upstream_label_support": 7,
+      "native_dimensions": [
+        84,
+        156
+      ]
+    },
+    {
+      "change": "newly_lost",
+      "sample_id": "old-e40b814594be4c6afd1090dc",
+      "group_id": "old-source-image-d05d3546-7b76-49b4-b3f9-739d768e3b71",
+      "true_label": "maxspeed:130",
+      "baseline_label": "maxspeed:130",
+      "candidate_label": "maxspeed:100",
+      "display_index": 7,
+      "source_dataset_path": "test/maxspeed:130/old-e40b814594be4c6afd1090dc.jpg",
+      "source_sha256": "e40b814594be4c6afd1090dc0c03a17c643f042554c2f362ed74b4d574b15c09",
+      "upstream_label_support": 8,
+      "native_dimensions": [
+        35,
+        36
+      ]
+    },
+    {
+      "change": "newly_lost",
+      "sample_id": "old-112718be005f4c07334c9f84",
+      "group_id": "old-source-image-13be2a93-b6c0-4b6d-a4a1-abbd802518b3",
+      "true_label": "maxspeed:50",
+      "baseline_label": "maxspeed:50",
+      "candidate_label": "no_bicycle",
+      "display_index": 8,
+      "source_dataset_path": "test/maxspeed:50/old-112718be005f4c07334c9f84.jpg",
+      "source_sha256": "112718be005f4c07334c9f84785277f0be6450a91410b23ee86e45871d42d94b",
+      "upstream_label_support": 30,
+      "native_dimensions": [
+        38,
+        40
+      ]
+    },
+    {
+      "change": "newly_lost",
+      "sample_id": "old-22e2801836fb7b299a3e80ad",
+      "group_id": "old-source-image-7f4077db-adef-4686-bd31-ed89f3ef4c9a",
+      "true_label": "maxspeed:60",
+      "baseline_label": "maxspeed:60",
+      "candidate_label": "maxspeed:40",
+      "display_index": 9,
+      "source_dataset_path": "test/maxspeed:60/old-22e2801836fb7b299a3e80ad.jpg",
+      "source_sha256": "22e2801836fb7b299a3e80adb425cd28dc99ab6c26b73d85a489f10be2504eb7",
+      "upstream_label_support": 49,
+      "native_dimensions": [
+        42,
+        42
+      ]
+    },
+    {
+      "change": "newly_lost",
+      "sample_id": "old-1086ac5a6591a134a574af46",
+      "group_id": "old-source-image-2ec735cb-e69d-4cce-af43-96ec6bf59640",
+      "true_label": "no_overtaking",
+      "baseline_label": "no_overtaking",
+      "candidate_label": "no_car",
+      "display_index": 10,
+      "source_dataset_path": "test/no_overtaking/old-1086ac5a6591a134a574af46.jpg",
+      "source_sha256": "1086ac5a6591a134a574af46d77c35027eee0e1c8907339a419cf9b0dcad7306",
+      "upstream_label_support": 29,
+      "native_dimensions": [
+        132,
+        108
+      ]
+    },
+    {
+      "change": "newly_lost",
+      "sample_id": "old-7f11ee7d02116c5644dc88a3",
+      "group_id": "old-source-image-53450bb4-ea39-413b-859f-9f5ce64e9fb1",
+      "true_label": "priority:end",
+      "baseline_label": "priority:end",
+      "candidate_label": "priority:start",
+      "display_index": 11,
+      "source_dataset_path": "test/priority:end/old-7f11ee7d02116c5644dc88a3.jpg",
+      "source_sha256": "7f11ee7d02116c5644dc88a38066ac4666890787a27715a10824b84ec2973e7e",
+      "upstream_label_support": 3,
+      "native_dimensions": [
+        109,
+        108
+      ]
+    },
+    {
+      "change": "fixed",
+      "sample_id": "old-656e10b7d128c6c308f630c0",
+      "group_id": "old-source-image-aae95125-7070-44a6-8686-dfd3e4f4d84a",
+      "true_label": "no:other:dog",
+      "baseline_label": "no:other",
+      "candidate_label": "no:other:dog",
+      "display_index": 12,
+      "source_dataset_path": "test/no:other:dog/old-656e10b7d128c6c308f630c0.jpg",
+      "source_sha256": "656e10b7d128c6c308f630c09ec8645e5c96df7614c124a1af2ff4c4c05ca16c",
+      "upstream_label_support": 10,
+      "native_dimensions": [
+        41,
+        44
+      ]
+    },
+    {
+      "change": "fixed",
+      "sample_id": "old-a9a60d1de6b5c9eb161355ed",
+      "group_id": "old-source-image-2e35dc23-9118-45d0-ba50-ce96e972f8a7",
+      "true_label": "hazard:crossing",
+      "baseline_label": "hazard:horse",
+      "candidate_label": "hazard:crossing",
+      "display_index": 13,
+      "source_dataset_path": "test/hazard:crossing/old-a9a60d1de6b5c9eb161355ed.jpg",
+      "source_sha256": "a9a60d1de6b5c9eb161355edd9b75d539fc609f07c06e72a85f0712fa648da9c",
+      "upstream_label_support": 15,
+      "native_dimensions": [
+        45,
+        44
+      ]
+    },
+    {
+      "change": "fixed",
+      "sample_id": "old-af7732b87c5380c147219e7c",
+      "group_id": "old-source-image-2e4f3f7b-6582-4616-b60f-22406eb541eb",
+      "true_label": "hazard:narrow_right",
+      "baseline_label": "hazard:narrow_both",
+      "candidate_label": "hazard:narrow_right",
+      "display_index": 14,
+      "source_dataset_path": "test/hazard:narrow_right/old-af7732b87c5380c147219e7c.jpg",
+      "source_sha256": "af7732b87c5380c147219e7c0baaf1efca783071713e90cb7860f40f035b48f3",
+      "upstream_label_support": 31,
+      "native_dimensions": [
+        34,
+        33
+      ]
+    },
+    {
+      "change": "fixed",
+      "sample_id": "old-b6973b0482cbccf2ea7d947a",
+      "group_id": "old-source-image-b2bdfb2e-6fd3-4eb5-9744-85ec1c9d1732",
+      "true_label": "hazard:right_turn",
+      "baseline_label": "hazard:train2",
+      "candidate_label": "hazard:right_turn",
+      "display_index": 15,
+      "source_dataset_path": "test/hazard:right_turn/old-b6973b0482cbccf2ea7d947a.jpg",
+      "source_sha256": "b6973b0482cbccf2ea7d947a9964ba20dc3375a14f534f024f00b917dd1a48f5",
+      "upstream_label_support": 30,
+      "native_dimensions": [
+        30,
+        32
+      ]
+    },
+    {
+      "change": "fixed",
+      "sample_id": "old-2b683a51aad3da1153a63aeb",
+      "group_id": "old-source-image-65fb0fba-237b-4717-83ec-158fb63d4b19",
+      "true_label": "no_entry",
+      "baseline_label": "bad:round",
+      "candidate_label": "no_entry",
+      "display_index": 16,
+      "source_dataset_path": "test/no_entry/old-2b683a51aad3da1153a63aeb.jpg",
+      "source_sha256": "2b683a51aad3da1153a63aeb0632f91c8e41107e95f4b4f581acc32ae67bbcfa",
+      "upstream_label_support": 36,
+      "native_dimensions": [
+        42,
+        46
+      ]
+    },
+    {
+      "change": "fixed",
+      "sample_id": "old-2730d59e634b9668835d5cd6",
+      "group_id": "old-source-image-88020317-ea74-488a-9def-a3e69bb104b1",
+      "true_label": "parking:covered",
+      "baseline_label": "bad",
+      "candidate_label": "parking:covered",
+      "display_index": 17,
+      "source_dataset_path": "test/parking:covered/old-2730d59e634b9668835d5cd6.jpg",
+      "source_sha256": "2730d59e634b9668835d5cd6d313d5d18d5698522e7d402ff4fd7559266a4b34",
+      "upstream_label_support": 15,
+      "native_dimensions": [
+        90,
+        121
+      ]
+    }
+  ]
+}

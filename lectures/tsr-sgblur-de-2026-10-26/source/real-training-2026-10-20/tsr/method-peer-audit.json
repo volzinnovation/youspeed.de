@@ -1,0 +1,155 @@
+{
+  "schema_version": "tsr-independent-static-method-peer-audit-v1",
+  "audited_at": "2026-10-20T10:56:17.800148+00:00",
+  "reviewer": "Codex sgblur_models independent of TSR implementation; assistant, not human",
+  "status": "PASS_STATIC_PROTOCOL_AND_MANIFEST_METADATA",
+  "model_quality_or_training_completion_claim": false,
+  "claim_boundary": "Read source code, file hashes, pinned label manifests, existing server dataset-manifest metadata and container state only. No tensor/checkpoint load, training, inference, test execution, code edits or job launch performed by this audit.",
+  "files": [
+    {
+      "path": "prepare_experiment.py",
+      "sha256": "8e549b930e7595121920aebe115e18960c984c7fbb56b06bc43f5511e00e17d3",
+      "local_matches_read_only_server_hash": true
+    },
+    {
+      "path": "evaluate_reserved.py",
+      "sha256": "d6275208f1f7e31c8b237058d1f674b6ee4906a8b2fccf56986e101a08d2efca",
+      "local_matches_read_only_server_hash": true
+    },
+    {
+      "path": "evaluate_retrospective.py",
+      "sha256": "344976aad5d2f7c45f210e3739e401bb44fdb89b6a5901b1dad3dee1c51a3089",
+      "local_matches_read_only_server_hash": true
+    },
+    {
+      "path": "combine_predictions.py",
+      "sha256": "61dc3425b230a5cd54442f01502b0e837895b7ae487d23a50c628c7ee9537906",
+      "local_matches_read_only_server_hash": true
+    },
+    {
+      "path": "launch_final_eval.py",
+      "sha256": "4cac14fd8982bef8d5aaa79b3500bae9adfb4e0cadfaf67c95f81a2f1e643b18",
+      "local_matches_read_only_server_hash": true
+    },
+    {
+      "path": "code/train.py",
+      "sha256": "914b7e36d95560a114f263c8041d58d4ee8cfc2ce2d9893dafa32f21f40c7928",
+      "local_matches_read_only_server_hash": true
+    },
+    {
+      "path": "code/evaluate.py",
+      "sha256": "df74c2fdaeba726df9bf8ff32e2f5b1df8142145719b4be39e499808b8d8cb5e",
+      "local_matches_read_only_server_hash": true
+    },
+    {
+      "path": "code/model_utils.py",
+      "sha256": "50e2c478161e13c8b1b67c0dcd8cfbbc7db9d1ce90398c9c5f9f915280b787f7",
+      "local_matches_read_only_server_hash": true
+    }
+  ],
+  "prospective_primary": {
+    "frozen_original_rows": 47,
+    "withdrawn_before_TSR_predictions": 5,
+    "primary_rows": 42,
+    "city_rows": 15,
+    "old_rows": 27,
+    "exact_peer_id_and_label_mapping_matches": true,
+    "reviewed_test_sha256": "01f6701be9fcc86f089709a24901a91285386467413224a290c8f97e245fcddc",
+    "overlay_v3_sha256": "b719af8f1a29b378ddd946cdc0d340405157e0fce206f038438760b94e94a17c",
+    "independent_label_peer_sha256": "58430cb5760fee0fb1dd6e47a1ad2edab61e426152eaf127cbe3a5a27310981e",
+    "assistant_review_only": true
+  },
+  "dataset_manifest_read_only_server_check": {
+    "sha256": "e67c8699a705371b79d68ea534371e2ae0c5e74ce83be7fd62fce671a1cac9eb",
+    "canonical_lock_valid": true,
+    "sample_counts": {
+      "train": 13641,
+      "val": 3085,
+      "test": 3029
+    },
+    "old_class_support": {
+      "train": 134,
+      "val": 134,
+      "test": 134
+    },
+    "city_support": {
+      "train": {
+        "city:start": 28,
+        "city:end": 10
+      },
+      "val": {
+        "city:start": 5,
+        "city:end": 3
+      },
+      "test": {
+        "city:start": 0,
+        "city:end": 0
+      }
+    },
+    "cross_split_group_ids": 0,
+    "cross_split_file_hashes": 0,
+    "cross_split_decoded_rgb_hashes": 0,
+    "development_vs_original_reserved47_source_uuid_overlaps": 0,
+    "development_vs_original_reserved47_crop_hash_overlaps": 0,
+    "development_vs_original_reserved47_group_overlaps": 0,
+    "freshly_rehashed_all_image_bytes_in_this_audit": false
+  },
+  "protocol_checks": [
+    {
+      "name": "training selection uses only train+val",
+      "result": "PASS",
+      "evidence": "code/train.py:35-42,53-57,77-100; candidate selected by validation macro-F1 only."
+    },
+    {
+      "name": "baseline and fixed136-index lineage preserved",
+      "result": "PASS",
+      "evidence": "code/model_utils.py:28-35,202-227,249-261; SHA, class order, preprocessing and original training-manifest binding checked."
+    },
+    {
+      "name": "reserved42 blind labels pinned without weakening original47 training binding",
+      "result": "PASS",
+      "evidence": "evaluate_reserved.py:28-71; launch_final_eval.py:16-19,45-53; exact primary ID→label dictionary matches independent peer JSON."
+    },
+    {
+      "name": "old134 class-by-class zero-tolerance gate",
+      "result": "PASS",
+      "evidence": "code/model_utils.py:129-165; identical old-target subset, all134 support required, any per-class recall/F1 decline or old aggregate decline triggers failure; missing support never passes."
+    },
+    {
+      "name": "quality failure remains visible while reports complete",
+      "result": "PASS",
+      "evidence": "code/evaluate.py:130-139; evaluate_retrospective.py:12-23 propagates exit3; launch_final_eval.py:57-61 continues only exit0/3; reports retain model_accepted=false."
+    },
+    {
+      "name": "all20 epochs and fixed checkpoint required before final evaluation",
+      "result": "PASS_FOR_GUARD_LOGIC_NOT_YET_COMPLETION",
+      "evidence": "launch_final_eval.py:39-47 requires exited/0, exact immutable image,20 progress rows,last epoch20 and checkpoint SHA; observed training was still running with19 completed rows during this read-only audit."
+    },
+    {
+      "name": "single final evaluation and no posthoc tuning path",
+      "result": "PASS_FOR_FIXED_LAUNCH_PROTOCOL",
+      "evidence": "launch_final_eval.py:42,54-55 refuses existing evaluation container/reports; trainer is separate and does not read reserved test; inputs hard-pinned before launch."
+    },
+    {
+      "name": "combined denominators include old-to-city false positives without new inference",
+      "result": "PASS",
+      "evidence": "combine_predictions.py:21-39 validates same model hashes and unique sample IDs, computes only from saved predictions; separate domain provenance retained."
+    }
+  ],
+  "runtime_observation": {
+    "training_container": "youspeed-course-tsr-20261020-v1",
+    "image": "sha256:886be2a4e18d52e587acf3ebfeaa7cbf2da92c1c26d2355e83b94217c474faca",
+    "state": "running",
+    "completed_progress_rows": 19,
+    "last_completed_epoch": 19,
+    "final_evaluation_started_by_auditor": false
+  },
+  "findings": [],
+  "limitations": [
+    "This is a protocol/code/metadata audit, not independent execution or tensor verification.",
+    "Public upstream old replay corpus may have been seen by baseline;3029-case old comparison is explicitly retrospective, not independent absolute generalization.",
+    "Old source-image UUID/exact-duplicate groups do not establish physical site/sequence independence.",
+    "Prospective42 targets are purposive assistant-reviewed examples, not human-certified representative ground truth.",
+    "Any future training or evaluation execution must separately satisfy the checked guards; this audit does not assert that the final20th epoch or evaluations had completed."
+  ]
+}

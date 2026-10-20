@@ -1,0 +1,561 @@
+{
+  "metric": "known-target recall only; partial full-frame annotations",
+  "iou_threshold": 0.5,
+  "confidence_threshold": 0.25,
+  "nms_iou": 0.7,
+  "imgsz": 1280,
+  "overall": {
+    "targets": 47,
+    "matched": 35,
+    "target_recall": 0.7446808510638298
+  },
+  "by_label": {
+    "arrow_right_down": {
+      "targets": 1,
+      "matched": 1,
+      "target_recall": 1.0
+    },
+    "arrow_through": {
+      "targets": 1,
+      "matched": 1,
+      "target_recall": 1.0
+    },
+    "bus:start": {
+      "targets": 1,
+      "matched": 0,
+      "target_recall": 0.0
+    },
+    "city:end": {
+      "targets": 12,
+      "matched": 7,
+      "target_recall": 0.5833333333333334
+    },
+    "city:start": {
+      "targets": 3,
+      "matched": 2,
+      "target_recall": 0.6666666666666666
+    },
+    "give_way": {
+      "targets": 7,
+      "matched": 7,
+      "target_recall": 1.0
+    },
+    "hazard:gravel": {
+      "targets": 2,
+      "matched": 2,
+      "target_recall": 1.0
+    },
+    "hazard:intersection": {
+      "targets": 1,
+      "matched": 1,
+      "target_recall": 1.0
+    },
+    "hazard:rocks": {
+      "targets": 1,
+      "matched": 1,
+      "target_recall": 1.0
+    },
+    "maxspeed:30": {
+      "targets": 1,
+      "matched": 1,
+      "target_recall": 1.0
+    },
+    "maxspeed:50": {
+      "targets": 4,
+      "matched": 1,
+      "target_recall": 0.25
+    },
+    "maxspeed:80": {
+      "targets": 1,
+      "matched": 1,
+      "target_recall": 1.0
+    },
+    "no_overtaking": {
+      "targets": 3,
+      "matched": 2,
+      "target_recall": 0.6666666666666666
+    },
+    "no_parking": {
+      "targets": 2,
+      "matched": 2,
+      "target_recall": 1.0
+    },
+    "parking": {
+      "targets": 2,
+      "matched": 2,
+      "target_recall": 1.0
+    },
+    "pedestrian_bicycle:start": {
+      "targets": 1,
+      "matched": 1,
+      "target_recall": 1.0
+    },
+    "priority:start": {
+      "targets": 3,
+      "matched": 2,
+      "target_recall": 0.6666666666666666
+    },
+    "traffic_signal": {
+      "targets": 1,
+      "matched": 1,
+      "target_recall": 1.0
+    }
+  },
+  "city_all": {
+    "targets": 15,
+    "matched": 9,
+    "target_recall": 0.6
+  },
+  "old_sign_targets": {
+    "targets": 32,
+    "matched": 26,
+    "target_recall": 0.8125
+  },
+  "by_subset": {
+    "native": {
+      "targets": 11,
+      "matched": 7,
+      "target_recall": 0.6363636363636364
+    },
+    "own_native": {
+      "targets": 33,
+      "matched": 27,
+      "target_recall": 0.8181818181818182
+    },
+    "projected": {
+      "targets": 3,
+      "matched": 1,
+      "target_recall": 0.3333333333333333
+    }
+  },
+  "pre_nms_regression_and_face_plate_logits_bitwise_unchanged": true,
+  "post_nms_plate_face_changed_frames": [],
+  "mean_absolute_sign_probability_drift": 0.00013468467987699326,
+  "unmasked_face_plate_regression": "NOT_EVALUABLE_NO_UNMASKED_GROUND_TRUTH",
+  "full_image_precision_and_ap": "NOT_EVALUABLE_INCOMPLETE_ANNOTATIONS",
+  "predictions": [
+    {
+      "sample_id": "fulda-local-perspective-target-2fe1e15a-301c-4629-8553-48a8bb7cd3fd-0bee0ebdb967",
+      "picture_id": "2fe1e15a-301c-4629-8553-48a8bb7cd3fd",
+      "label": "city:start",
+      "subset": "projected",
+      "matched": false,
+      "best_sign_iou": 0.06029060281070654,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "fulda-local-perspective-target-76ebc933-6e98-4ccd-bc08-1760116981b9-78c3877c2a68",
+      "picture_id": "76ebc933-6e98-4ccd-bc08-1760116981b9",
+      "label": "city:end",
+      "subset": "projected",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "fulda-local-perspective-target-7aaa9bcc-c466-46b8-8881-09370595a2f9-37b9d2d16a87",
+      "picture_id": "7aaa9bcc-c466-46b8-8881-09370595a2f9",
+      "label": "city:start",
+      "subset": "projected",
+      "matched": true,
+      "best_sign_iou": 0.9457841694611855,
+      "matched_confidence": 0.9238453507423401
+    },
+    {
+      "sample_id": "osmfr-044d7874-70ce-516b-a462-af16fe54ef6f",
+      "picture_id": "06654136-12af-460f-8892-9bccf483a505",
+      "label": "city:end",
+      "subset": "native",
+      "matched": true,
+      "best_sign_iou": 0.7137829019403008,
+      "matched_confidence": 0.615684449672699
+    },
+    {
+      "sample_id": "osmfr-3784dad5-d81a-569c-8602-352ee146a244",
+      "picture_id": "aab21323-8297-4778-b565-f8e42c497ac4",
+      "label": "city:end",
+      "subset": "native",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "osmfr-4ae2a51c-b4a5-5ded-a450-54181e9657e2",
+      "picture_id": "17a46b2d-97c4-4db7-bfe4-1c2cf3d95202",
+      "label": "city:end",
+      "subset": "native",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "osmfr-627d162c-0d00-59d7-bd34-79a481fa8420",
+      "picture_id": "305f4e49-ecb6-4d7f-ae64-923899497e98",
+      "label": "city:end",
+      "subset": "native",
+      "matched": true,
+      "best_sign_iou": 0.860190788288165,
+      "matched_confidence": 0.5881984233856201
+    },
+    {
+      "sample_id": "osmfr-7b289b05-fb97-530f-8dcc-909e9c09bba3",
+      "picture_id": "dce804bb-27ab-4504-8e61-e00b4d36344c",
+      "label": "city:end",
+      "subset": "native",
+      "matched": true,
+      "best_sign_iou": 0.8438975710315462,
+      "matched_confidence": 0.35356441140174866
+    },
+    {
+      "sample_id": "osmfr-a3cc3e39-0b9a-5148-a207-c38ab4233f44",
+      "picture_id": "dc01103e-6f86-444c-87b9-7ef02008bfe5",
+      "label": "city:end",
+      "subset": "native",
+      "matched": true,
+      "best_sign_iou": 0.8733750668900518,
+      "matched_confidence": 0.7164961099624634
+    },
+    {
+      "sample_id": "osmfr-d036ca40-e69b-5320-a07c-d6fec814f2da",
+      "picture_id": "89664fe3-9cdf-4031-89ff-2cd5cf898b30",
+      "label": "city:end",
+      "subset": "native",
+      "matched": true,
+      "best_sign_iou": 0.8746421423517562,
+      "matched_confidence": 0.3908631503582001
+    },
+    {
+      "sample_id": "osmfr-df8a0dab-6a93-5ba7-9eb8-99c017d8a1da",
+      "picture_id": "208c630c-fc41-47de-ae7b-1df5e506b69c",
+      "label": "city:end",
+      "subset": "native",
+      "matched": true,
+      "best_sign_iou": 0.7709596199872206,
+      "matched_confidence": 0.40007394552230835
+    },
+    {
+      "sample_id": "osmfr-fccfb9c1-2910-5580-8c86-30a511745bde",
+      "picture_id": "9f99daff-425f-4fdf-8985-5ac272f0c881",
+      "label": "city:end",
+      "subset": "native",
+      "matched": true,
+      "best_sign_iou": 0.8867500887678251,
+      "matched_confidence": 0.9139850735664368
+    },
+    {
+      "sample_id": "ulm-local-visual-putlitz-city-end-164c3432-567f-41ae-ae7b-9afafbf55176-v1",
+      "picture_id": "164c3432-567f-41ae-ae7b-9afafbf55176",
+      "label": "city:end",
+      "subset": "native",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "ulm-local-visual-putlitz-city-end-585083d3-2cda-45c6-95f8-79513685cca8-v1",
+      "picture_id": "585083d3-2cda-45c6-95f8-79513685cca8",
+      "label": "city:end",
+      "subset": "native",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "pf1ca51cf-5d09-44e7-9f0a-8c6de9b25a82_a727d0843-d1b6-41d1-b602-1a51323d867c",
+      "picture_id": "f1ca51cf-5d09-44e7-9f0a-8c6de9b25a82",
+      "label": "hazard:rocks",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.896324384081586,
+      "matched_confidence": 0.9932441115379333
+    },
+    {
+      "sample_id": "p259dae8c-b3a0-4eca-887d-6a94934c59f7_a8d259c06-3855-42e9-9e0b-0f235216241b",
+      "picture_id": "259dae8c-b3a0-4eca-887d-6a94934c59f7",
+      "label": "hazard:intersection",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.8519411877617284,
+      "matched_confidence": 0.7087646126747131
+    },
+    {
+      "sample_id": "p259dae8c-b3a0-4eca-887d-6a94934c59f7_aa6e43de3-77eb-471d-bc77-ff42f6b4e9b9",
+      "picture_id": "259dae8c-b3a0-4eca-887d-6a94934c59f7",
+      "label": "give_way",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.8812049486080865,
+      "matched_confidence": 0.9905344247817993
+    },
+    {
+      "sample_id": "p259dae8c-b3a0-4eca-887d-6a94934c59f7_ae293ef4d-9527-40b7-9c93-eccefcd8c93b",
+      "picture_id": "259dae8c-b3a0-4eca-887d-6a94934c59f7",
+      "label": "give_way",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.9287898328508664,
+      "matched_confidence": 0.9873359799385071
+    },
+    {
+      "sample_id": "p61108145-0fdf-4d7c-8ba5-156624fe49f0_a9dae477a-54de-4a72-823f-a65d734f1889",
+      "picture_id": "61108145-0fdf-4d7c-8ba5-156624fe49f0",
+      "label": "city:start",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.7299191340162091,
+      "matched_confidence": 0.8728867173194885
+    },
+    {
+      "sample_id": "p2eb7bb03-8524-4eb2-ba9f-5f255551ae94_a45b71d0f-f3aa-4652-a90e-39717fc94186",
+      "picture_id": "2eb7bb03-8524-4eb2-ba9f-5f255551ae94",
+      "label": "priority:start",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.9058662158585205,
+      "matched_confidence": 0.9812716841697693
+    },
+    {
+      "sample_id": "p59eb512d-6fa1-4027-aade-82b688618840_a568508f4-9e5d-4bcd-86db-e73e3b40d150",
+      "picture_id": "59eb512d-6fa1-4027-aade-82b688618840",
+      "label": "priority:start",
+      "subset": "own_native",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "p59eb512d-6fa1-4027-aade-82b688618840_ab369fac1-a2f9-429c-9b06-527f8b470056",
+      "picture_id": "59eb512d-6fa1-4027-aade-82b688618840",
+      "label": "traffic_signal",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.9197119683885918,
+      "matched_confidence": 0.7657521367073059
+    },
+    {
+      "sample_id": "p59eb512d-6fa1-4027-aade-82b688618840_ae9f2a834-8e4f-4bd5-b926-151f155339a3",
+      "picture_id": "59eb512d-6fa1-4027-aade-82b688618840",
+      "label": "pedestrian_bicycle:start",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.8305053253173896,
+      "matched_confidence": 0.9543627500534058
+    },
+    {
+      "sample_id": "p59eb512d-6fa1-4027-aade-82b688618840_af8591849-bb32-4c70-af25-0aada89ceca8",
+      "picture_id": "59eb512d-6fa1-4027-aade-82b688618840",
+      "label": "maxspeed:50",
+      "subset": "own_native",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "p19827869-072e-49fd-b097-bd81e47e35bc_a2a001437-7412-498c-acae-655203ee3a10",
+      "picture_id": "19827869-072e-49fd-b097-bd81e47e35bc",
+      "label": "arrow_right_down",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.7523927668180472,
+      "matched_confidence": 0.8363913297653198
+    },
+    {
+      "sample_id": "pcdcee584-4a12-4112-9ea9-8167b6957c3a_aa0930861-41a9-4b7b-9104-6a7f64ae394b",
+      "picture_id": "cdcee584-4a12-4112-9ea9-8167b6957c3a",
+      "label": "give_way",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.8135024335269324,
+      "matched_confidence": 0.9853175282478333
+    },
+    {
+      "sample_id": "pcdcee584-4a12-4112-9ea9-8167b6957c3a_aa74203ac-2b0b-45f2-b7fc-3aafb6075067",
+      "picture_id": "cdcee584-4a12-4112-9ea9-8167b6957c3a",
+      "label": "no_parking",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.9025068763144927,
+      "matched_confidence": 0.9765497446060181
+    },
+    {
+      "sample_id": "pdae7c936-106b-4025-9226-df56c354841e_a7ebee070-7dea-413d-986a-5113877786ba",
+      "picture_id": "dae7c936-106b-4025-9226-df56c354841e",
+      "label": "no_parking",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.8970348736081326,
+      "matched_confidence": 0.9916660189628601
+    },
+    {
+      "sample_id": "p39949055-f2ff-4227-b744-06469117e1e5_a51936412-5b82-48fb-aaad-16ee4c2206a3",
+      "picture_id": "39949055-f2ff-4227-b744-06469117e1e5",
+      "label": "parking",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.7949433624878602,
+      "matched_confidence": 0.9657689332962036
+    },
+    {
+      "sample_id": "p39949055-f2ff-4227-b744-06469117e1e5_aa05008d7-e06f-4a01-bc17-07904e7addcb",
+      "picture_id": "39949055-f2ff-4227-b744-06469117e1e5",
+      "label": "parking",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.8796777460828188,
+      "matched_confidence": 0.9783299565315247
+    },
+    {
+      "sample_id": "p39949055-f2ff-4227-b744-06469117e1e5_abb626937-6c79-4c45-adb2-06e29bd6a456",
+      "picture_id": "39949055-f2ff-4227-b744-06469117e1e5",
+      "label": "bus:start",
+      "subset": "own_native",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "p3c448800-f60b-49f6-83bb-183892d62057_a1f4b28d3-9fe5-42d5-a002-a250072d7740",
+      "picture_id": "3c448800-f60b-49f6-83bb-183892d62057",
+      "label": "give_way",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.87107484601274,
+      "matched_confidence": 0.9873219132423401
+    },
+    {
+      "sample_id": "p128814f7-061e-49e6-a329-32c1f51dfa2c_a58f93456-3786-47b4-aa47-6f5722eb24e1",
+      "picture_id": "128814f7-061e-49e6-a329-32c1f51dfa2c",
+      "label": "give_way",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.8222271903534957,
+      "matched_confidence": 0.9921899437904358
+    },
+    {
+      "sample_id": "p128814f7-061e-49e6-a329-32c1f51dfa2c_a79467c36-2031-4873-94f9-77edcd0d4810",
+      "picture_id": "128814f7-061e-49e6-a329-32c1f51dfa2c",
+      "label": "give_way",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.8300250778198244,
+      "matched_confidence": 0.9810851812362671
+    },
+    {
+      "sample_id": "p99057740-9650-421b-a42f-13557a39caa2_a27fe1128-fedd-49c6-b7bd-cff063f44383",
+      "picture_id": "99057740-9650-421b-a42f-13557a39caa2",
+      "label": "no_overtaking",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.6574712409670013,
+      "matched_confidence": 0.3774931728839874
+    },
+    {
+      "sample_id": "pab75a5d3-cbb0-4df1-a8fe-39d107d338c0_a33b7ffde-92f0-4169-9f17-07d9aa5d56b5",
+      "picture_id": "ab75a5d3-cbb0-4df1-a8fe-39d107d338c0",
+      "label": "no_overtaking",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.8807599391219896,
+      "matched_confidence": 0.9480876922607422
+    },
+    {
+      "sample_id": "p81aaa844-e28c-42a5-8bef-d3f5966602f6_af4e60d49-5264-4c8b-bcf4-0f1a92036fe7",
+      "picture_id": "81aaa844-e28c-42a5-8bef-d3f5966602f6",
+      "label": "arrow_through",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.7655337676667551,
+      "matched_confidence": 0.9767257571220398
+    },
+    {
+      "sample_id": "p9aaf4945-cbc8-4efa-80ac-ced278f33b2c_a1888263b-6034-4cd9-b783-8109862f2ad9",
+      "picture_id": "9aaf4945-cbc8-4efa-80ac-ced278f33b2c",
+      "label": "no_overtaking",
+      "subset": "own_native",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "p2ff42c63-099a-4bbf-bc62-e333337778b1_af27d4feb-04eb-4bb8-804f-14eba707f65d",
+      "picture_id": "2ff42c63-099a-4bbf-bc62-e333337778b1",
+      "label": "hazard:gravel",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.8189453800893893,
+      "matched_confidence": 0.9428367614746094
+    },
+    {
+      "sample_id": "p8988d815-89ae-4760-b06a-129659b86f3d_a2f44a7c2-8902-4fa8-aecc-108d23fdbd2a",
+      "picture_id": "8988d815-89ae-4760-b06a-129659b86f3d",
+      "label": "maxspeed:50",
+      "subset": "own_native",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "p8988d815-89ae-4760-b06a-129659b86f3d_a484064a8-9e68-4cd1-80f4-f385f3583847",
+      "picture_id": "8988d815-89ae-4760-b06a-129659b86f3d",
+      "label": "give_way",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.7950213079791539,
+      "matched_confidence": 0.3125177025794983
+    },
+    {
+      "sample_id": "p8988d815-89ae-4760-b06a-129659b86f3d_a8cf14c9c-0232-492a-9e72-8f86767e8344",
+      "picture_id": "8988d815-89ae-4760-b06a-129659b86f3d",
+      "label": "priority:start",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.968875891308249,
+      "matched_confidence": 0.9916079044342041
+    },
+    {
+      "sample_id": "pee3213a3-b967-4f16-ac1b-24da883eb141_a01af0683-de30-4a96-afdc-decc0875afe7",
+      "picture_id": "ee3213a3-b967-4f16-ac1b-24da883eb141",
+      "label": "maxspeed:50",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.9108305965635517,
+      "matched_confidence": 0.992137610912323
+    },
+    {
+      "sample_id": "p89e2666c-1cea-4ed5-a309-95c3c54712a2_a6c66a433-7e72-4896-986c-27be2d1a175c",
+      "picture_id": "89e2666c-1cea-4ed5-a309-95c3c54712a2",
+      "label": "maxspeed:30",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.8300245327578178,
+      "matched_confidence": 0.9844362735748291
+    },
+    {
+      "sample_id": "pbae308ff-7ab7-41b4-b4a8-a3f2f4ccbe22_a91967332-728b-4211-a80e-278271624c3c",
+      "picture_id": "bae308ff-7ab7-41b4-b4a8-a3f2f4ccbe22",
+      "label": "maxspeed:80",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.589606250633587,
+      "matched_confidence": 0.30708643794059753
+    },
+    {
+      "sample_id": "p087098bf-612c-41c5-806d-e629c5216288_aed526f8d-62c9-440b-953b-51f3c2045443",
+      "picture_id": "087098bf-612c-41c5-806d-e629c5216288",
+      "label": "maxspeed:50",
+      "subset": "own_native",
+      "matched": false,
+      "best_sign_iou": 0.0,
+      "matched_confidence": null
+    },
+    {
+      "sample_id": "p0952c79c-96ff-4e51-8fa9-cfc18d629308_a96dc6a26-eccf-4111-a789-7989a032ffc1",
+      "picture_id": "0952c79c-96ff-4e51-8fa9-cfc18d629308",
+      "label": "hazard:gravel",
+      "subset": "own_native",
+      "matched": true,
+      "best_sign_iou": 0.7777053760755944,
+      "matched_confidence": 0.9265832304954529
+    }
+  ]
+}

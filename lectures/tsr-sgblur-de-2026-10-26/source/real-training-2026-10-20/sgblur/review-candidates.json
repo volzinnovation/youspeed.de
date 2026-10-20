@@ -1,0 +1,996 @@
+{
+  "schema_version": "sgblur-fullframe-review-v1",
+  "source_manifest": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/manifest.json",
+  "source_manifest_sha256": "5e304ced547b0ee0f5a8bd8ab35ceb7e21dea087968d27688fca26b9482610ac",
+  "seed": "20261026",
+  "class_names": [
+    "sign",
+    "plate",
+    "face"
+  ],
+  "selection": "Five largest source-city-sign proposals per train/val and city label, round-robin sequence diversity. No seed or original split change.",
+  "public_masking_limit": "Public images may already mask faces/plates. Evaluation cannot establish performance on unmasked originals.",
+  "frames": [
+    {
+      "review_number": 1,
+      "picture_id": "dccb60fc-3027-4057-9718-ae65a700d52f",
+      "sequence_id": "041bf9e2-2f59-42b2-9d23-c8e1db1d1c5f",
+      "group_id": "sequence-041bf9e2-2f59-42b2-9d23-c8e1db1d1c5f",
+      "split": "train",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/dccb60fc-3027-4057-9718-ae65a700d52f/image.png",
+      "image_sha256": "82807d8abf719c987872218c607f5bb49937b4c8dd16eb6ab8f2c3a858d5d09b",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/041bf9e2-2f59-42b2-9d23-c8e1db1d1c5f/items/dccb60fc-3027-4057-9718-ae65a700d52f",
+      "asset_url": "https://panoramax.youspeed.de/permanent/dc/cb/60/fc/3027-4057-9718-ae65a700d52f.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "8de22ac1-fbfc-48fc-b36f-f0e3a530f8c8",
+      "target_city_label_proposal": "city:start",
+      "boxes": [
+        {
+          "source_annotation_id": "8de22ac1-fbfc-48fc-b36f-f0e3a530f8c8",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2933.0,
+            1016.0,
+            3158.0,
+            1173.0
+          ],
+          "city_label_proposal": "city:start",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "ef2b8fd7-9a27-405e-b043-9f8d085c1f89",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1909.0,
+            1195.0,
+            1971.0,
+            1261.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-01.jpg"
+    },
+    {
+      "review_number": 2,
+      "picture_id": "345d8ad6-919f-45cd-9f22-5c94166cc4d8",
+      "sequence_id": "5a7cc6bf-3fa4-474a-be4d-6d08cdd2abc8",
+      "group_id": "sequence-5a7cc6bf-3fa4-474a-be4d-6d08cdd2abc8",
+      "split": "train",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/345d8ad6-919f-45cd-9f22-5c94166cc4d8/image.png",
+      "image_sha256": "dc0810201ad16b318493e0492a156cef33e33a06667a73ee228e09d94fd6639e",
+      "width": 2376,
+      "height": 4224,
+      "source_url": "https://panoramax.youspeed.de/api/collections/5a7cc6bf-3fa4-474a-be4d-6d08cdd2abc8/items/345d8ad6-919f-45cd-9f22-5c94166cc4d8",
+      "asset_url": "https://panoramax.youspeed.de/permanent/34/5d/8a/d6/919f-45cd-9f22-5c94166cc4d8.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "06cfabb1-87eb-47c5-b205-22cfbda5a658",
+      "target_city_label_proposal": "city:start",
+      "boxes": [
+        {
+          "source_annotation_id": "06cfabb1-87eb-47c5-b205-22cfbda5a658",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2158.0,
+            2451.0,
+            2338.0,
+            2562.0
+          ],
+          "city_label_proposal": "city:start",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-02.jpg"
+    },
+    {
+      "review_number": 3,
+      "picture_id": "a3597745-44c3-48a5-82cd-7472e3cd8b63",
+      "sequence_id": "fbc7233e-5f27-44da-a034-7c9656d48050",
+      "group_id": "sequence-fbc7233e-5f27-44da-a034-7c9656d48050",
+      "split": "train",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/a3597745-44c3-48a5-82cd-7472e3cd8b63/image.png",
+      "image_sha256": "f28c72741233cbf7478a8ce9a47939c9609684e0b1154f334cddcb5f994bab49",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/fbc7233e-5f27-44da-a034-7c9656d48050/items/a3597745-44c3-48a5-82cd-7472e3cd8b63",
+      "asset_url": "https://panoramax.youspeed.de/permanent/a3/59/77/45/44c3-48a5-82cd-7472e3cd8b63.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "66203e1e-6b68-4873-8e9b-4d7d9deb885b",
+      "target_city_label_proposal": "city:start",
+      "boxes": [
+        {
+          "source_annotation_id": "66203e1e-6b68-4873-8e9b-4d7d9deb885b",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2036.0,
+            976.0,
+            2171.0,
+            1076.0
+          ],
+          "city_label_proposal": "city:start",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "9f0603d4-4aa2-4bfa-81cc-15e0fc3f17bb",
+          "class_id": 0,
+          "bbox_xyxy": [
+            912.0,
+            1132.0,
+            962.0,
+            1194.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-03.jpg"
+    },
+    {
+      "review_number": 4,
+      "picture_id": "dbfd3c63-a8ad-4487-b649-384dbe2886c9",
+      "sequence_id": "4ec8407b-d2f8-4780-be2a-9e2836c1201a",
+      "group_id": "sequence-4ec8407b-d2f8-4780-be2a-9e2836c1201a",
+      "split": "train",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/dbfd3c63-a8ad-4487-b649-384dbe2886c9/image.png",
+      "image_sha256": "f63aaa9d708d9751cc196a3e2fe48c3ea5fb23c837e11986799f43fcffa0e93e",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/4ec8407b-d2f8-4780-be2a-9e2836c1201a/items/dbfd3c63-a8ad-4487-b649-384dbe2886c9",
+      "asset_url": "https://panoramax.youspeed.de/permanent/db/fd/3c/63/a8ad-4487-b649-384dbe2886c9.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "e5c39fe2-001f-4482-8e56-95b29c4da93d",
+      "target_city_label_proposal": "city:start",
+      "boxes": [
+        {
+          "source_annotation_id": "781eb0fc-bdd1-4a64-a98a-df608088c7f7",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2161.0,
+            1243.0,
+            2194.0,
+            1280.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "cea9b4fb-478b-4beb-a3c3-1827f30a1bb0",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2891.0,
+            1125.0,
+            2941.0,
+            1176.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "e5c39fe2-001f-4482-8e56-95b29c4da93d",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2464.0,
+            973.0,
+            2581.0,
+            1072.0
+          ],
+          "city_label_proposal": "city:start",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-04.jpg"
+    },
+    {
+      "review_number": 5,
+      "picture_id": "16c6e3a2-64c1-4a05-b1b5-77391c2ac42c",
+      "sequence_id": "b23c42f0-217d-4a50-96ad-0ed96ab0dbab",
+      "group_id": "sequence-b23c42f0-217d-4a50-96ad-0ed96ab0dbab",
+      "split": "train",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/16c6e3a2-64c1-4a05-b1b5-77391c2ac42c/image.png",
+      "image_sha256": "dcd95f0af5812115dfccbdc75378c4050734d37bd4fe0cb8f7ec303357ecbd99",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/b23c42f0-217d-4a50-96ad-0ed96ab0dbab/items/16c6e3a2-64c1-4a05-b1b5-77391c2ac42c",
+      "asset_url": "https://panoramax.youspeed.de/permanent/16/c6/e3/a2/64c1-4a05-b1b5-77391c2ac42c.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "dc0ece3b-2e40-4e8c-9ba6-c8a4c26c4f09",
+      "target_city_label_proposal": "city:start",
+      "boxes": [
+        {
+          "source_annotation_id": "80b7afbc-610b-4b3d-b772-b9efd6260175",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2763.0,
+            925.0,
+            3044.0,
+            1147.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "dc0ece3b-2e40-4e8c-9ba6-c8a4c26c4f09",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2257.0,
+            1110.0,
+            2378.0,
+            1194.0
+          ],
+          "city_label_proposal": "city:start",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-05.jpg"
+    },
+    {
+      "review_number": 6,
+      "picture_id": "93f25a06-1d12-419c-856b-89ead7abb3bb",
+      "sequence_id": "fbc7233e-5f27-44da-a034-7c9656d48050",
+      "group_id": "sequence-fbc7233e-5f27-44da-a034-7c9656d48050",
+      "split": "train",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/93f25a06-1d12-419c-856b-89ead7abb3bb/image.png",
+      "image_sha256": "f3c583844c19a5fdca9bd7a019006e8d517d2099bd8eea4f088b59cbbd7cae84",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/fbc7233e-5f27-44da-a034-7c9656d48050/items/93f25a06-1d12-419c-856b-89ead7abb3bb",
+      "asset_url": "https://panoramax.youspeed.de/permanent/93/f2/5a/06/1d12-419c-856b-89ead7abb3bb.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "e49ace27-e4c0-44cd-9db5-91904a92b10a",
+      "target_city_label_proposal": "city:end",
+      "boxes": [
+        {
+          "source_annotation_id": "e49ace27-e4c0-44cd-9db5-91904a92b10a",
+          "class_id": 0,
+          "bbox_xyxy": [
+            570.0,
+            1118.0,
+            728.0,
+            1217.0
+          ],
+          "city_label_proposal": "city:end",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "e4d35efc-9bca-41b0-912b-8d73af872c3d",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1819.0,
+            1200.0,
+            1881.0,
+            1266.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-06.jpg"
+    },
+    {
+      "review_number": 7,
+      "picture_id": "74824d9d-27b0-4b08-8e1b-fc3198331b17",
+      "sequence_id": "5a7cc6bf-3fa4-474a-be4d-6d08cdd2abc8",
+      "group_id": "sequence-5a7cc6bf-3fa4-474a-be4d-6d08cdd2abc8",
+      "split": "train",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/74824d9d-27b0-4b08-8e1b-fc3198331b17/image.png",
+      "image_sha256": "b375065a899a95f3f8cef675ba9d018176c97063a98486b0649484ecff82d4b0",
+      "width": 2376,
+      "height": 4224,
+      "source_url": "https://panoramax.youspeed.de/api/collections/5a7cc6bf-3fa4-474a-be4d-6d08cdd2abc8/items/74824d9d-27b0-4b08-8e1b-fc3198331b17",
+      "asset_url": "https://panoramax.youspeed.de/permanent/74/82/4d/9d/27b0-4b08-8e1b-fc3198331b17.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "f807d390-fd1f-4821-a12c-9954087f5703",
+      "target_city_label_proposal": "city:end",
+      "boxes": [
+        {
+          "source_annotation_id": "3892aad1-b140-4baf-9dfb-fb021efe3322",
+          "class_id": 0,
+          "bbox_xyxy": [
+            75.0,
+            2380.0,
+            224.0,
+            2487.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "f807d390-fd1f-4821-a12c-9954087f5703",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1489.0,
+            2484.0,
+            1588.0,
+            2564.0
+          ],
+          "city_label_proposal": "city:end",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-07.jpg"
+    },
+    {
+      "review_number": 8,
+      "picture_id": "9d3f0e3a-f0f4-477e-9036-9280ddebd089",
+      "sequence_id": "b23c42f0-217d-4a50-96ad-0ed96ab0dbab",
+      "group_id": "sequence-b23c42f0-217d-4a50-96ad-0ed96ab0dbab",
+      "split": "train",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/9d3f0e3a-f0f4-477e-9036-9280ddebd089/image.png",
+      "image_sha256": "675db0efa6b7ceabf1f2bff43b69b2c59aca07d01df18a19a5e341c73aeb1719",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/b23c42f0-217d-4a50-96ad-0ed96ab0dbab/items/9d3f0e3a-f0f4-477e-9036-9280ddebd089",
+      "asset_url": "https://panoramax.youspeed.de/permanent/9d/3f/0e/3a/f0f4-477e-9036-9280ddebd089.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "75642fa6-266e-412c-93cb-f0a77720bd1b",
+      "target_city_label_proposal": "city:end",
+      "boxes": [
+        {
+          "source_annotation_id": "2f883c15-4777-4434-93c3-5d2cc463bfef",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1887.0,
+            1225.0,
+            1942.0,
+            1274.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "75642fa6-266e-412c-93cb-f0a77720bd1b",
+          "class_id": 0,
+          "bbox_xyxy": [
+            776.0,
+            1086.0,
+            891.0,
+            1160.0
+          ],
+          "city_label_proposal": "city:end",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "f68d5736-991f-4bfc-b298-14d909f5d129",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2041.0,
+            1179.0,
+            2107.0,
+            1256.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-08.jpg"
+    },
+    {
+      "review_number": 9,
+      "picture_id": "5cd5f662-88ce-4d5d-a1c4-55b240d20d6d",
+      "sequence_id": "041bf9e2-2f59-42b2-9d23-c8e1db1d1c5f",
+      "group_id": "sequence-041bf9e2-2f59-42b2-9d23-c8e1db1d1c5f",
+      "split": "train",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/5cd5f662-88ce-4d5d-a1c4-55b240d20d6d/image.png",
+      "image_sha256": "8d4f03093af18f3c3c356df2c3c7990f9a16cf6ef462bda12e16fa7ce3f7bf52",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/041bf9e2-2f59-42b2-9d23-c8e1db1d1c5f/items/5cd5f662-88ce-4d5d-a1c4-55b240d20d6d",
+      "asset_url": "https://panoramax.youspeed.de/permanent/5c/d5/f6/62/88ce-4d5d-a1c4-55b240d20d6d.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "50a7c27c-48f9-4253-9cbf-e542a8543cbc",
+      "target_city_label_proposal": "city:end",
+      "boxes": [
+        {
+          "source_annotation_id": "50a7c27c-48f9-4253-9cbf-e542a8543cbc",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1264.0,
+            1072.0,
+            1367.0,
+            1135.0
+          ],
+          "city_label_proposal": "city:end",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "6189ec0c-2990-4e8e-b5a7-3eb48a1621a3",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2479.0,
+            1135.0,
+            2553.0,
+            1211.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-09.jpg"
+    },
+    {
+      "review_number": 10,
+      "picture_id": "684e8b35-af08-4c7d-aecd-4a885ce515d9",
+      "sequence_id": "fbc7233e-5f27-44da-a034-7c9656d48050",
+      "group_id": "sequence-fbc7233e-5f27-44da-a034-7c9656d48050",
+      "split": "train",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/684e8b35-af08-4c7d-aecd-4a885ce515d9/image.png",
+      "image_sha256": "9f4da6586754ba5f9af82d8e49272535f8ae85122d3e668618b7762e1f6c3cb5",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/fbc7233e-5f27-44da-a034-7c9656d48050/items/684e8b35-af08-4c7d-aecd-4a885ce515d9",
+      "asset_url": "https://panoramax.youspeed.de/permanent/68/4e/8b/35/af08-4c7d-aecd-4a885ce515d9.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "382f0488-e693-47c0-ae7a-4703d1ebb963",
+      "target_city_label_proposal": "city:end",
+      "boxes": [
+        {
+          "source_annotation_id": "382f0488-e693-47c0-ae7a-4703d1ebb963",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1057.0,
+            1128.0,
+            1145.0,
+            1190.0
+          ],
+          "city_label_proposal": "city:end",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-10.jpg"
+    },
+    {
+      "review_number": 11,
+      "picture_id": "da5ccc20-fe1d-4479-805e-1939cabc940d",
+      "sequence_id": "80064e15-f3ff-4716-a85c-846accf0af65",
+      "group_id": "sequence-80064e15-f3ff-4716-a85c-846accf0af65",
+      "split": "val",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/da5ccc20-fe1d-4479-805e-1939cabc940d/image.png",
+      "image_sha256": "227ee97a5f3ed2d28e26fe0081bd9f5bd009990f8c6edfbc9fd7aa465e7f00e5",
+      "width": 4096,
+      "height": 3072,
+      "source_url": "https://panoramax.youspeed.de/api/collections/80064e15-f3ff-4716-a85c-846accf0af65/items/da5ccc20-fe1d-4479-805e-1939cabc940d",
+      "asset_url": "https://panoramax.youspeed.de/permanent/da/5c/cc/20/fe1d-4479-805e-1939cabc940d.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "37fe77f6-2e0e-4b40-b909-063edad2152b",
+      "target_city_label_proposal": "city:start",
+      "boxes": [
+        {
+          "source_annotation_id": "37fe77f6-2e0e-4b40-b909-063edad2152b",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2571.0,
+            1438.0,
+            2912.0,
+            1633.0
+          ],
+          "city_label_proposal": "city:start",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "b706e254-61b4-4155-8900-1a1eff9aea52",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2112.0,
+            1722.0,
+            2232.0,
+            1846.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-11.jpg"
+    },
+    {
+      "review_number": 12,
+      "picture_id": "a5de2505-7dcf-4124-9867-0f6e8839bec6",
+      "sequence_id": "d3fccc17-4e10-4de4-9dc5-453bb482dd7b",
+      "group_id": "sequence-d3fccc17-4e10-4de4-9dc5-453bb482dd7b",
+      "split": "val",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/a5de2505-7dcf-4124-9867-0f6e8839bec6/image.png",
+      "image_sha256": "f65c8c92041378cfb136f524997ca77e3ce9a5d18c0f00296210207e80c592d1",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/d3fccc17-4e10-4de4-9dc5-453bb482dd7b/items/a5de2505-7dcf-4124-9867-0f6e8839bec6",
+      "asset_url": "https://panoramax.youspeed.de/permanent/a5/de/25/05/7dcf-4124-9867-0f6e8839bec6.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "afbff265-96d8-4495-9eb4-64bdd48376fc",
+      "target_city_label_proposal": "city:start",
+      "boxes": [
+        {
+          "source_annotation_id": "afbff265-96d8-4495-9eb4-64bdd48376fc",
+          "class_id": 0,
+          "bbox_xyxy": [
+            3108.0,
+            1058.0,
+            3396.0,
+            1222.0
+          ],
+          "city_label_proposal": "city:start",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "be073a09-22be-48a9-8bf8-5de2f37a7032",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2689.0,
+            1260.0,
+            2788.0,
+            1367.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-12.jpg"
+    },
+    {
+      "review_number": 13,
+      "picture_id": "0f1a8cab-0f5c-4168-9d7d-1b25b59d4bf5",
+      "sequence_id": "64b10dcb-f9ba-4b11-8c33-ea0ba7716ebb",
+      "group_id": "sequence-64b10dcb-f9ba-4b11-8c33-ea0ba7716ebb",
+      "split": "val",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/0f1a8cab-0f5c-4168-9d7d-1b25b59d4bf5/image.png",
+      "image_sha256": "df9008683680a3ff904020d26c58bf9836e9811066b9f072e759cabd4b0efab6",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/64b10dcb-f9ba-4b11-8c33-ea0ba7716ebb/items/0f1a8cab-0f5c-4168-9d7d-1b25b59d4bf5",
+      "asset_url": "https://panoramax.youspeed.de/permanent/0f/1a/8c/ab/0f5c-4168-9d7d-1b25b59d4bf5.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "fa71841d-ccb4-46d8-8433-1b810682f626",
+      "target_city_label_proposal": "city:start",
+      "boxes": [
+        {
+          "source_annotation_id": "ef441d15-3f5d-41b5-beb8-a5bcd7fcde6c",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2074.0,
+            1318.0,
+            2112.0,
+            1356.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "fa71841d-ccb4-46d8-8433-1b810682f626",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2819.0,
+            1038.0,
+            2989.0,
+            1151.0
+          ],
+          "city_label_proposal": "city:start",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-13.jpg"
+    },
+    {
+      "review_number": 14,
+      "picture_id": "c1adf4ca-124a-44ca-b464-511d3fcff574",
+      "sequence_id": "2b34ee77-b613-4a70-bb7c-190db3d9811e",
+      "group_id": "sequence-2b34ee77-b613-4a70-bb7c-190db3d9811e",
+      "split": "val",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/c1adf4ca-124a-44ca-b464-511d3fcff574/image.png",
+      "image_sha256": "0d60d8a786fd0ce1781e60697fdb9778f31fd120156054c1bd4400471c1c3380",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/2b34ee77-b613-4a70-bb7c-190db3d9811e/items/c1adf4ca-124a-44ca-b464-511d3fcff574",
+      "asset_url": "https://panoramax.youspeed.de/permanent/c1/ad/f4/ca/124a-44ca-b464-511d3fcff574.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "5b2c4b21-ad26-4cfe-bc18-b9ebd957e174",
+      "target_city_label_proposal": "city:start",
+      "boxes": [
+        {
+          "source_annotation_id": "49eecb62-b83b-4a6b-b6bb-f36536d47877",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1832.0,
+            1434.0,
+            1861.0,
+            1461.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "5b2c4b21-ad26-4cfe-bc18-b9ebd957e174",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2417.0,
+            1130.0,
+            2567.0,
+            1241.0
+          ],
+          "city_label_proposal": "city:start",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "5dae362a-d371-427d-a17a-382b411ce212",
+          "class_id": 0,
+          "bbox_xyxy": [
+            250.0,
+            1021.0,
+            329.0,
+            1083.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-14.jpg"
+    },
+    {
+      "review_number": 15,
+      "picture_id": "0fa782f2-070d-43ab-9620-1a7318cbf545",
+      "sequence_id": "5cd77255-d817-4a83-8029-3d58ec5e634f",
+      "group_id": "sequence-5cd77255-d817-4a83-8029-3d58ec5e634f",
+      "split": "val",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/0fa782f2-070d-43ab-9620-1a7318cbf545/image.png",
+      "image_sha256": "2b0dedeb49cffc87b511efe4680ecd5c26697189b9d438134cab051f2b05a490",
+      "width": 2376,
+      "height": 4224,
+      "source_url": "https://panoramax.youspeed.de/api/collections/5cd77255-d817-4a83-8029-3d58ec5e634f/items/0fa782f2-070d-43ab-9620-1a7318cbf545",
+      "asset_url": "https://panoramax.youspeed.de/permanent/0f/a7/82/f2/070d-43ab-9620-1a7318cbf545.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "f9206fdc-9c38-420d-bbec-4146d1d9e0cd",
+      "target_city_label_proposal": "city:start",
+      "boxes": [
+        {
+          "source_annotation_id": "f9206fdc-9c38-420d-bbec-4146d1d9e0cd",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1661.0,
+            2055.0,
+            1778.0,
+            2126.0
+          ],
+          "city_label_proposal": "city:start",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-15.jpg"
+    },
+    {
+      "review_number": 16,
+      "picture_id": "d0c70f29-496a-4002-9a53-d948fec55314",
+      "sequence_id": "d3fccc17-4e10-4de4-9dc5-453bb482dd7b",
+      "group_id": "sequence-d3fccc17-4e10-4de4-9dc5-453bb482dd7b",
+      "split": "val",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/d0c70f29-496a-4002-9a53-d948fec55314/image.png",
+      "image_sha256": "619b918d56a74ed98e0b7d583b5721f964f2bcd434e00e7a8c519f9c42973b0e",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/d3fccc17-4e10-4de4-9dc5-453bb482dd7b/items/d0c70f29-496a-4002-9a53-d948fec55314",
+      "asset_url": "https://panoramax.youspeed.de/permanent/d0/c7/0f/29/496a-4002-9a53-d948fec55314.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "6c63b262-f7d2-4747-8475-b629fa55eaea",
+      "target_city_label_proposal": "city:end",
+      "boxes": [
+        {
+          "source_annotation_id": "6c63b262-f7d2-4747-8475-b629fa55eaea",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1010.0,
+            1038.0,
+            1200.0,
+            1198.0
+          ],
+          "city_label_proposal": "city:end",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-16.jpg"
+    },
+    {
+      "review_number": 17,
+      "picture_id": "ef33b9fb-e118-4a7a-a3da-cb84cebefd48",
+      "sequence_id": "64b10dcb-f9ba-4b11-8c33-ea0ba7716ebb",
+      "group_id": "sequence-64b10dcb-f9ba-4b11-8c33-ea0ba7716ebb",
+      "split": "val",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/ef33b9fb-e118-4a7a-a3da-cb84cebefd48/image.png",
+      "image_sha256": "f7bffde4d25cdeab1eb4c61e72a0e9246f8c617754f3231fcbcec74833cf2f70",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/64b10dcb-f9ba-4b11-8c33-ea0ba7716ebb/items/ef33b9fb-e118-4a7a-a3da-cb84cebefd48",
+      "asset_url": "https://panoramax.youspeed.de/permanent/ef/33/b9/fb/e118-4a7a-a3da-cb84cebefd48.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "9ff08ffa-5350-4a8d-b47c-e7d421e949b7",
+      "target_city_label_proposal": "city:end",
+      "boxes": [
+        {
+          "source_annotation_id": "0a0478e6-3d5b-4083-99b5-e3e031cf2b50",
+          "class_id": 0,
+          "bbox_xyxy": [
+            2343.0,
+            1189.0,
+            2400.0,
+            1246.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "9ff08ffa-5350-4a8d-b47c-e7d421e949b7",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1625.0,
+            1163.0,
+            1692.0,
+            1208.0
+          ],
+          "city_label_proposal": "city:end",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-17.jpg"
+    },
+    {
+      "review_number": 18,
+      "picture_id": "fb4bd89f-50d9-4da3-8f4c-bb0bf95775b1",
+      "sequence_id": "80064e15-f3ff-4716-a85c-846accf0af65",
+      "group_id": "sequence-80064e15-f3ff-4716-a85c-846accf0af65",
+      "split": "val",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/fb4bd89f-50d9-4da3-8f4c-bb0bf95775b1/image.png",
+      "image_sha256": "48579c9e53f6616854e288f935bedbcc94ecefe2c7add196d4c57bdf4168010a",
+      "width": 4096,
+      "height": 3072,
+      "source_url": "https://panoramax.youspeed.de/api/collections/80064e15-f3ff-4716-a85c-846accf0af65/items/fb4bd89f-50d9-4da3-8f4c-bb0bf95775b1",
+      "asset_url": "https://panoramax.youspeed.de/permanent/fb/4b/d8/9f/50d9-4da3-8f4c-bb0bf95775b1.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "ebbccf68-bbd6-419a-bfc6-f83d53281c80",
+      "target_city_label_proposal": "city:end",
+      "boxes": [
+        {
+          "source_annotation_id": "9ba5b648-8a85-48a9-9152-b12a0e891677",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1948.0,
+            1851.0,
+            1988.0,
+            1891.0
+          ],
+          "city_label_proposal": null,
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        },
+        {
+          "source_annotation_id": "ebbccf68-bbd6-419a-bfc6-f83d53281c80",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1251.0,
+            1840.0,
+            1321.0,
+            1871.0
+          ],
+          "city_label_proposal": "city:end",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-18.jpg"
+    },
+    {
+      "review_number": 19,
+      "picture_id": "d772ca99-cf35-44f9-8eb9-156911873c8b",
+      "sequence_id": "5cd77255-d817-4a83-8029-3d58ec5e634f",
+      "group_id": "sequence-5cd77255-d817-4a83-8029-3d58ec5e634f",
+      "split": "val",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/d772ca99-cf35-44f9-8eb9-156911873c8b/image.png",
+      "image_sha256": "dff1339aeb2bf77db635237edd4295041d2503e75f6599f6b727611a35ea451b",
+      "width": 2376,
+      "height": 4224,
+      "source_url": "https://panoramax.youspeed.de/api/collections/5cd77255-d817-4a83-8029-3d58ec5e634f/items/d772ca99-cf35-44f9-8eb9-156911873c8b",
+      "asset_url": "https://panoramax.youspeed.de/permanent/d7/72/ca/99/cf35-44f9-8eb9-156911873c8b.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "c4f13b9b-6e4d-475d-8b66-3c8ed293230b",
+      "target_city_label_proposal": "city:end",
+      "boxes": [
+        {
+          "source_annotation_id": "c4f13b9b-6e4d-475d-8b66-3c8ed293230b",
+          "class_id": 0,
+          "bbox_xyxy": [
+            611.0,
+            2094.0,
+            682.0,
+            2119.0
+          ],
+          "city_label_proposal": "city:end",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-19.jpg"
+    },
+    {
+      "review_number": 20,
+      "picture_id": "286f86c6-dc42-49ba-a534-711cadb5156f",
+      "sequence_id": "d3fccc17-4e10-4de4-9dc5-453bb482dd7b",
+      "group_id": "sequence-d3fccc17-4e10-4de4-9dc5-453bb482dd7b",
+      "split": "val",
+      "image_path": "/Users/raphaelvolz/Github/youspeed.de/lectures/tsr-sgblur-de-2026-10-26/.build/student-collection-2026-10-19/collection/inbox/detector/286f86c6-dc42-49ba-a534-711cadb5156f/image.png",
+      "image_sha256": "099435d23486bba50081777b5fcdf6b7b127215fa7e30d8048ee429cfd3b1561",
+      "width": 4224,
+      "height": 2376,
+      "source_url": "https://panoramax.youspeed.de/api/collections/d3fccc17-4e10-4de4-9dc5-453bb482dd7b/items/286f86c6-dc42-49ba-a534-711cadb5156f",
+      "asset_url": "https://panoramax.youspeed.de/permanent/28/6f/86/c6/dc42-49ba-a534-711cadb5156f.jpg",
+      "license": "CC-BY-SA-4.0",
+      "author": "admin",
+      "target_annotation_id": "2921cb25-d9a7-4e0d-ab20-f8a9a0e38e30",
+      "target_city_label_proposal": "city:end",
+      "boxes": [
+        {
+          "source_annotation_id": "2921cb25-d9a7-4e0d-ab20-f8a9a0e38e30",
+          "class_id": 0,
+          "bbox_xyxy": [
+            1489.0,
+            1278.0,
+            1643.0,
+            1384.0
+          ],
+          "city_label_proposal": "city:end",
+          "city_label_verified": false,
+          "box_source": "unchanged_source_annotation"
+        }
+      ],
+      "review_status": "pending",
+      "reviewer": "",
+      "complete_all_visible_classes": false,
+      "source_is_public_blurred_derivative": true,
+      "review_note": "",
+      "preview_path": "review/frame-20.jpg"
+    }
+  ]
+}
