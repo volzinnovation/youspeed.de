@@ -59,10 +59,15 @@ detector and classifier.
 - LiteRT versus float32 ONNX on seeded RGB input: maximum sign-score difference
   was 0.00001325; maximum normalized coordinate difference was 0.0004373.
 
-The distant portrait reference `tsr-panoramax-49e25e66.jpg` yields a proposal
-score around 0.29 at 1024, below the existing 0.70 confirmation threshold. The
-nearer `0906fc23` reference remains above that threshold. Reduced distant-sign
-confidence is retained as a measured limitation; thresholds were not lowered.
+The distant portrait reference `tsr-panoramax-49e25e66.jpg` yields a 70 km/h
+proposal around 0.29 in the simulator/export comparison, below the existing
+0.70 confirmation threshold. On the physical iPhone 14 Pro (CPU Core ML), its
+top classification was instead 120 km/h at 0.44767, also below confirmation.
+It is therefore not a reliable positive recognition fixture at 1024. The nearer
+`0906fc23` reference correctly produced 70 km/h at 0.89502 on that phone.
+The device regression requires the clear positive and rejects any confirmed
+wrong class on the distant reference. This measured distant-sign limitation is
+retained explicitly; production thresholds were not lowered.
 
 Each mobile pack includes `provenance/mobile-detector-1024.json` with checkpoint,
 export-environment identities, artifact hashes and parity measurements. The

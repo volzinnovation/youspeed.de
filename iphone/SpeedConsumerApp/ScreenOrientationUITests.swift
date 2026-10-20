@@ -10,13 +10,36 @@ final class LiveDeviceRecordingUITests: XCTestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        func cancelExchangePrompt(_ alert: XCUIElement) -> Bool {
+            let exchange = alert.staticTexts.matching(
+                NSPredicate(format: "label CONTAINS[cd] 'Exchange'"))
+            guard alert.label.localizedCaseInsensitiveContains("Exchange") || exchange.count > 0 else { return false }
+            let cancel = alert.buttons["Abbrechen"].exists
+                ? alert.buttons["Abbrechen"] : alert.buttons["Cancel"]
+            guard cancel.exists else { return false }
+            cancel.tap()
+            return true
+        }
+        addUIInterruptionMonitor(withDescription: "Cancel unrelated Exchange reauthentication") { alert in
+            cancelExchangePrompt(alert)
+        }
         func openDashboard() {
+            // iOS can fail to construct the automatic interruption query for
+            // an existing account alert; address SpringBoard directly as well.
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            for alert in springboard.alerts.allElementsBoundByIndex {
+                _ = cancelExchangePrompt(alert)
+            }
             let keep = app.buttons["startup.logs.keep"]
             let start = app.buttons["Start drive recording"]
             let ready = NSPredicate { _, _ in keep.exists || start.exists }
             expectation(for: ready, evaluatedWith: nil)
             waitForExpectations(timeout: 90)
-            if keep.exists { keep.tap() }
+            if keep.exists {
+                keep.tap()
+                // A system interruption may consume the first tap.
+                if keep.exists { keep.tap() }
+            }
             expectation(for: NSPredicate(format: "exists == true AND enabled == true"), evaluatedWith: start)
             waitForExpectations(timeout: 90)
         }
@@ -29,6 +52,17 @@ final class LiveDeviceRecordingUITests: XCTestCase {
         for cycle in 1...3 {
             app.buttons["Start drive recording"].tap()
             let stop = app.buttons["Stop drive recording"]
+            let contribution = app.navigationBars["Share detected signs"]
+            expectation(for: NSPredicate { _, _ in stop.exists || contribution.exists }, evaluatedWith: nil)
+            waitForExpectations(timeout: 30)
+            if contribution.exists {
+                // Recording does not require opting in to sign uploads.
+                contribution.buttons["Close"].tap()
+                // The asynchronously presented sheet may have intercepted the
+                // start tap before it reached the dashboard.
+                let start = app.buttons["Start drive recording"]
+                if !stop.exists && start.exists && start.isHittable { start.tap() }
+            }
             XCTAssertTrue(stop.waitForExistence(timeout: 30))
             // The combined SwiftUI module button does not consistently expose
             // accessibilityValue. Verify the actual recording-state indicator.
