@@ -26,7 +26,8 @@ from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 from v3_context_delta import assert_context_equivalence, build_context_delta, context_metadata
 
 
-MAXSPEED_KEYS = {"maxspeed", "zone:maxspeed", "maxspeed:type", "source:maxspeed", "max:speed"}
+MAXSPEED_KEYS = {"maxspeed", "maxspeed:forward", "maxspeed:backward", "zone:maxspeed", "maxspeed:type", "source:maxspeed", "max:speed"}
+DIRECTIONAL_SPEED_COLUMNS = ("maxspeed_forward", "maxspeed_backward")
 DRIVABLE_HIGHWAYS_CAR = {
     "motorway",
     "trunk",
@@ -243,6 +244,25 @@ def _parse_daily_diff(path: Path) -> DiffParseResult:
     )
 
 
+def _directional_columns(conn: sqlite3.Connection, alias: str) -> Tuple[str, ...]:
+    columns = {row[1] for row in conn.execute(f"PRAGMA {alias}.table_info(ways)")}
+    return tuple(column for column in DIRECTIONAL_SPEED_COLUMNS if column in columns)
+
+
+def _directional_select(conn: sqlite3.Connection, alias: str) -> str:
+    present = _directional_columns(conn, alias)
+    return ", ".join(f"w.{column}" if column in present else f"NULL AS {column}"
+                     for column in DIRECTIONAL_SPEED_COLUMNS)
+
+
+def _directional_difference(conn: sqlite3.Connection, left_db: str, right_db: str, left: str, right: str) -> str:
+    columns = _directional_columns(conn, left_db)
+    if columns != _directional_columns(conn, right_db):
+        raise SystemExit("Directional speed columns changed; deliver a full rebuilt bundle")
+    return "".join(f"COALESCE({left}.{column},'') != COALESCE({right}.{column},'') OR\n"
+                   for column in columns)
+
+
 def _fetch_existing_rows(conn: sqlite3.Connection, way_ids: Sequence[str]) -> Dict[str, sqlite3.Row]:
     out: Dict[str, sqlite3.Row] = {}
     if not way_ids:
@@ -265,7 +285,8 @@ def _fetch_existing_rows(conn: sqlite3.Connection, way_ids: Sequence[str]) -> Di
           w.min_lat,
           w.max_lon,
           w.max_lat,
-          g.points_json
+          g.points_json,
+          {_directional_select(conn, 'main')}
         FROM ways w
         LEFT JOIN way_geom g ON g.way_id = w.way_id
         WHERE w.way_id IN ({placeholders})
@@ -297,7 +318,8 @@ def _fetch_way_payload_rows(conn: sqlite3.Connection, db_alias: str, way_ids: Se
           w.min_lat,
           w.max_lon,
           w.max_lat,
-          g.points_json
+          g.points_json,
+          {_directional_select(conn, db_alias)}
         FROM {db_alias}.ways w
         LEFT JOIN {db_alias}.way_geom g ON g.way_id = w.way_id
         WHERE w.way_id IN ({placeholders})
@@ -320,6 +342,8 @@ def _fetch_way_payload_rows(conn: sqlite3.Connection, db_alias: str, way_ids: Se
                     "max_lon": float(row[12]),
                     "max_lat": float(row[13]),
                     "points_json": row[14] if row[14] is not None else "[]",
+                    "maxspeed_forward": row[15],
+                    "maxspeed_backward": row[16],
                 }
             )
     return out
@@ -374,6 +398,9 @@ def _build_insert_payload(
         "street_name": tags.get("name", existing["street_name"] if existing is not None else None),
         "ref": tags.get("ref", existing["ref"] if existing is not None else None),
         "maxspeed": tags.get("maxspeed", existing["maxspeed"] if existing is not None else None),
+        # OSC ways contain complete tag sets: absence removes an old direction.
+        "maxspeed_forward": tags.get("maxspeed:forward"),
+        "maxspeed_backward": tags.get("maxspeed:backward"),
         "maxspeed_type": tags.get("maxspeed:type", existing["maxspeed_type"] if existing is not None else None),
         "source_maxspeed": tags.get("source:maxspeed", existing["source_maxspeed"] if existing is not None else None),
         "approx_heading_deg": existing["approx_heading_deg"] if existing is not None else None,
@@ -440,6 +467,7 @@ def _compute_heuristic_delta(
 
 
 def _compute_exact_way_delta(base_conn: sqlite3.Connection, target_alias: str) -> Tuple[List[str], List[dict], dict]:
+    directional_difference = _directional_difference(base_conn, "main", target_alias, "b", "t")
     base_only_ids = [
         str(r[0])
         for r in base_conn.execute(
@@ -467,6 +495,7 @@ def _compute_exact_way_delta(base_conn: sqlite3.Connection, target_alias: str) -
               COALESCE(b.street_name,'') != COALESCE(t.street_name,'') OR
               COALESCE(b.ref,'') != COALESCE(t.ref,'') OR
               COALESCE(b.maxspeed,'') != COALESCE(t.maxspeed,'') OR
+              {directional_difference}
               COALESCE(b.maxspeed_type,'') != COALESCE(t.maxspeed_type,'') OR
               COALESCE(b.source_maxspeed,'') != COALESCE(t.source_maxspeed,'') OR
               ABS(COALESCE(b.approx_heading_deg,0.0) - COALESCE(t.approx_heading_deg,0.0)) > 1e-9 OR
@@ -657,6 +686,7 @@ def _build_sql_patch(
     diff_file: Path,
     generation_mode: str,
     context_statements: Sequence[str] = (),
+    directional_columns: Sequence[str] = (),
 ) -> str:
     lines: List[str] = []
     lines.append("-- youspeed v3 delta patch")
@@ -679,28 +709,9 @@ def _build_sql_patch(
 
     for ins in inserts:
         way_lit = _sql_literal(ins["way_id"])
-        lines.append(
-            "INSERT INTO ways("
-            "way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, "
-            "approx_heading_deg, service, tunnel, "
-            "min_lon, min_lat, max_lon, max_lat"
-            ") VALUES("
-            f"{way_lit}, "
-            f"{_sql_literal(ins['highway'])}, "
-            f"{_sql_literal(ins['street_name'])}, "
-            f"{_sql_literal(ins['ref'])}, "
-            f"{_sql_literal(ins['maxspeed'])}, "
-            f"{_sql_literal(ins['maxspeed_type'])}, "
-            f"{_sql_literal(ins['source_maxspeed'])}, "
-            f"{_sql_literal(ins['approx_heading_deg'])}, "
-            f"{_sql_literal(ins['service'])}, "
-            f"{_sql_literal(ins['tunnel'])}, "
-            f"{_sql_literal(ins['min_lon'])}, "
-            f"{_sql_literal(ins['min_lat'])}, "
-            f"{_sql_literal(ins['max_lon'])}, "
-            f"{_sql_literal(ins['max_lat'])}"
-            ");"
-        )
+        columns = WAY_COLS + list(directional_columns)
+        lines.append("INSERT INTO ways(" + ",".join(columns) + ") VALUES(" +
+                     ",".join(_sql_literal(ins.get(column)) for column in columns) + ");")
         lines.append(
             "INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat) "
             f"VALUES({way_lit}, {_sql_literal(ins['min_lon'])}, {_sql_literal(ins['max_lon'])}, "
@@ -792,6 +803,7 @@ def _assert_target_equivalence(patched_db: Path, target_db: Path) -> None:
         conn.execute("ATTACH DATABASE ? AS t", (str(target_db),))
 
         assert_context_equivalence(conn)
+        directional_difference = _directional_difference(conn, "p", "t", "pw", "tw")
 
         way_extra = conn.execute(
             "SELECT COUNT(*) FROM p.ways pw LEFT JOIN t.ways tw USING(way_id) WHERE tw.way_id IS NULL"
@@ -800,7 +812,7 @@ def _assert_target_equivalence(patched_db: Path, target_db: Path) -> None:
             "SELECT COUNT(*) FROM t.ways tw LEFT JOIN p.ways pw USING(way_id) WHERE pw.way_id IS NULL"
         ).fetchone()[0]
         way_attr_diff = conn.execute(
-            """
+            f"""
             SELECT COUNT(*)
             FROM p.ways pw JOIN t.ways tw USING(way_id)
             WHERE
@@ -808,6 +820,7 @@ def _assert_target_equivalence(patched_db: Path, target_db: Path) -> None:
               COALESCE(pw.street_name,'') != COALESCE(tw.street_name,'') OR
               COALESCE(pw.ref,'') != COALESCE(tw.ref,'') OR
               COALESCE(pw.maxspeed,'') != COALESCE(tw.maxspeed,'') OR
+              {directional_difference}
               COALESCE(pw.maxspeed_type,'') != COALESCE(tw.maxspeed_type,'') OR
               COALESCE(pw.source_maxspeed,'') != COALESCE(tw.source_maxspeed,'') OR
               ABS(COALESCE(pw.approx_heading_deg,0.0) - COALESCE(tw.approx_heading_deg,0.0)) > 1e-9 OR
@@ -904,6 +917,8 @@ def main() -> int:
 
     parsed = _parse_daily_diff(diff_file)
     context_statements = []
+    with sqlite3.connect(base_db) as base:
+        directional_columns = _directional_columns(base, "main")
 
     if target_db is not None:
         context_statements, context_stats = build_context_delta(base_db, target_db)
@@ -915,6 +930,11 @@ def main() -> int:
         stats["insert_way_link_count"] = links["inserted"] if links else 0
         generation_mode = "exact_db_diff"
     else:
+        if not directional_columns and any(
+            key in op.tags for op in parsed.ops_by_way.values()
+            for key in ("maxspeed:forward", "maxspeed:backward")
+        ):
+            raise SystemExit("Directional speed data requires a full rebuilt bundle with directional columns")
         conn = sqlite3.connect(str(base_db))
         conn.row_factory = sqlite3.Row
         try:
@@ -947,6 +967,7 @@ def main() -> int:
         diff_file=diff_file,
         generation_mode=generation_mode,
         context_statements=context_statements,
+        directional_columns=directional_columns,
     )
 
     if args.validate_on_copy:

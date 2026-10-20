@@ -38,6 +38,8 @@ CITY_SIGN_EXIT = "DE:311"
 CITY_SIGN_PATTERN = re.compile(r"(?:^|[;|,\s])de:(310|311)(?:[^0-9]|$)", re.IGNORECASE)
 SPEED_TAG_KEYS = (
     "maxspeed",
+    "maxspeed:forward",
+    "maxspeed:backward",
     "maxspeed:type",
     "source:maxspeed",
     "maxspeed:conditional",
@@ -262,6 +264,8 @@ class ArtifactHandler(osmium.SimpleHandler):
                 "street_name": tags.get("name"),
                 "ref": tags.get("ref"),
                 "maxspeed": tags.get("maxspeed"),
+                "maxspeed_forward": tags.get("maxspeed:forward"),
+                "maxspeed_backward": tags.get("maxspeed:backward"),
                 "maxspeed_type": tags.get("maxspeed:type"),
                 "source_maxspeed": tags.get("source:maxspeed"),
                 "zone_traffic": tags.get("zone:traffic"),

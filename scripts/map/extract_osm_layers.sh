@@ -28,6 +28,8 @@ osmium tags-filter \
   "$input_pbf" \
   w/highway \
   w/maxspeed \
+  w/maxspeed:forward \
+  w/maxspeed:backward \
   w/maxspeed:type \
   w/source:maxspeed \
   w/maxspeed:conditional \

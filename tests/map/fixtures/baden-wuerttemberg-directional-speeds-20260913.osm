@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='utf-8'?>
+<osm version="0.6" generator="YouSpeed historical source regression fixture">
+  <node id="29923194" version="7" timestamp="2008-12-13T22:54:04Z" changeset="0" uid="0" user="" visible="true" lon="8.3498417" lat="48.8173509" />
+  <node id="61318014" version="6" timestamp="2026-07-13T17:12:33Z" changeset="0" uid="0" user="" visible="true" lon="8.3968361" lat="48.8298602" />
+  <node id="61318015" version="6" timestamp="2026-07-13T17:12:33Z" changeset="0" uid="0" user="" visible="true" lon="8.3971874" lat="48.8298553" />
+  <node id="61318018" version="6" timestamp="2026-07-13T17:12:33Z" changeset="0" uid="0" user="" visible="true" lon="8.3979613" lat="48.8299011" />
+  <node id="183446744" version="5" timestamp="2020-06-08T22:07:06Z" changeset="0" uid="0" user="" visible="true" lon="8.411167" lat="48.8283042" />
+  <node id="183446750" version="5" timestamp="2020-06-08T22:07:06Z" changeset="0" uid="0" user="" visible="true" lon="8.4121514" lat="48.8276295" />
+  <node id="183446760" version="6" timestamp="2021-08-30T11:36:06Z" changeset="0" uid="0" user="" visible="true" lon="8.4123483" lat="48.8275275" />
+  <node id="183446769" version="6" timestamp="2021-08-30T11:36:06Z" changeset="0" uid="0" user="" visible="true" lon="8.4131656" lat="48.827188" />
+  <node id="299895022" version="4" timestamp="2026-03-16T10:58:30Z" changeset="0" uid="0" user="" visible="true" lon="8.3493412" lat="48.8169234" />
+  <node id="3366776779" version="3" timestamp="2026-07-13T17:12:33Z" changeset="0" uid="0" user="" visible="true" lon="8.397529" lat="48.8298638" />
+  <node id="6764880274" version="2" timestamp="2020-06-08T22:07:06Z" changeset="0" uid="0" user="" visible="true" lon="8.4118008" lat="48.8278624" />
+  <node id="6764880275" version="3" timestamp="2021-08-30T11:36:06Z" changeset="0" uid="0" user="" visible="true" lon="8.4127701" lat="48.8273498" />
+  <node id="7603849723" version="2" timestamp="2021-08-30T11:36:06Z" changeset="0" uid="0" user="" visible="true" lon="8.4125487" lat="48.8274405" />
+  <way id="81302142" version="6" timestamp="2021-08-30T11:36:06Z" changeset="0" uid="0" user="" visible="true">
+    <nd ref="183446744" />
+    <nd ref="6764880274" />
+    <nd ref="183446750" />
+    <nd ref="183446760" />
+    <nd ref="7603849723" />
+    <nd ref="6764880275" />
+    <nd ref="183446769" />
+    <tag k="highway" v="tertiary" />
+    <tag k="lanes" v="2" />
+    <tag k="maxspeed:backward" v="100" />
+    <tag k="maxspeed:forward" v="70" />
+    <tag k="name" v="Moosbronner Straße" />
+    <tag k="ref" v="K 4331" />
+    <tag k="surface" v="asphalt" />
+  </way>
+  <way id="1248904506" version="3" timestamp="2024-11-18T07:01:13Z" changeset="0" uid="0" user="" visible="true">
+    <nd ref="299895022" />
+    <nd ref="29923194" />
+    <tag k="cycleway:both" v="no" />
+    <tag k="highway" v="secondary" />
+    <tag k="lanes" v="2" />
+    <tag k="lit" v="yes" />
+    <tag k="maxspeed:backward" v="50" />
+    <tag k="maxspeed:forward" v="30" />
+    <tag k="name" v="Gaggenauer Straße" />
+    <tag k="ref" v="L 613" />
+    <tag k="sidewalk" v="both" />
+    <tag k="surface" v="asphalt" />
+  </way>
+  <way id="1302655171" version="1" timestamp="2024-07-20T08:49:33Z" changeset="0" uid="0" user="" visible="true">
+    <nd ref="61318014" />
+    <nd ref="61318015" />
+    <nd ref="3366776779" />
+    <nd ref="61318018" />
+    <tag k="cycleway:both" v="no" />
+    <tag k="highway" v="tertiary" />
+    <tag k="lanes" v="2" />
+    <tag k="maxspeed:backward" v="70" />
+    <tag k="maxspeed:forward" v="100" />
+    <tag k="name" v="Moosbronner Straße" />
+    <tag k="ref" v="K 4331" />
+    <tag k="smoothness" v="excellent" />
+    <tag k="surface" v="asphalt" />
+  </way>
+</osm>

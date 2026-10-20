@@ -92,6 +92,8 @@ jq -c '
       street_name: (.properties.name // null),
       ref: (.properties.ref // null),
       maxspeed: (.properties.maxspeed // null),
+      maxspeed_forward: (.properties["maxspeed:forward"] // null),
+      maxspeed_backward: (.properties["maxspeed:backward"] // null),
       maxspeed_type: (.properties["maxspeed:type"] // null),
       source_maxspeed: (.properties["source:maxspeed"] // null),
       maxspeed_conditional: (.properties["maxspeed:conditional"] // null),

@@ -1,0 +1,16 @@
+{
+  "source": "mapdata/raw/baden-wuerttemberg-260913.osm.pbf",
+  "source_url": "https://download.geofabrik.de/europe/germany/baden-wuerttemberg-260913.osm.pbf",
+  "source_timestamp": "2026-09-13T20:21:20Z",
+  "source_sha256": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3",
+  "source_bytes": 647326315,
+  "fixture_sha256": "0cfd1e6f296961f8a5f94aca7f83896403a6270e2c90ee5625eaf4bddee3bb2a",
+  "way_ids": [
+    81302142,
+    1248904506,
+    1302655171
+  ],
+  "node_count": 13,
+  "license": "OpenStreetMap contributors, ODbL 1.0; https://www.openstreetmap.org/copyright",
+  "handling": "Exact source node coordinates, versions, metadata, way node order and tags. No inferred settlement state."
+}
