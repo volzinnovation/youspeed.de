@@ -10,14 +10,14 @@ Ein **Klassifikator** bekommt ein ausgeschnittenes Schildbild und ordnet ihm ein
 
 ## Was vor Beginn bereitstehen muss
 
-Die Lehrperson stellt eine eingerichtete Python-/GPU-Arbeitsumgebung auf dem KI-Server bereit. Die Skripte erwarten darin Ultralytics 8.4.56 und die passenden PyTorch-Abhängigkeiten. Sie erhalten außerdem:
+Der Dozent stellt eine eingerichtete Python-/GPU-Arbeitsumgebung auf dem KI-Server bereit. Die Skripte erwarten darin Ultralytics 8.4.56 und die passenden PyTorch-Abhängigkeiten. Sie erhalten außerdem:
 
 - `models/baseline.pt`: das geprüfte deutsche Ausgangsmodell mit 134 Klassen;
 - geprüfte Crops und Klassenangaben für diese 134 Bestandsklassen;
 - eine Zuordnung zusammengehörender Bilder zu Gruppen;
 - einen Arbeitsordner mit den bereitgestellten Sammel-, Import- und Trainingsskripten.
 
-Sie ergänzen geprüfte Beispiele für die zwei neuen Klassen. Der Code und die feste Klassentabelle sind enthalten. Die ungeprüften Panoramax-Pakete sind öffentlich unter [loffenauer/ws26_hspf_imo](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo) verfügbar. **Der Modellcheckpoint und der vollständige geprüfte Korpus der 134 Bestandsklassen werden weiterhin separat von der Lehrperson bereitgestellt.** Ohne sie ist kein vollständiger Trainingslauf möglich.
+Sie ergänzen geprüfte Beispiele für die zwei neuen Klassen. Der Code und die feste Klassentabelle sind enthalten. Die ungeprüften Panoramax-Pakete sind öffentlich unter [loffenauer/ws26_hspf_imo](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo) verfügbar. **Der Modellcheckpoint und der vollständige geprüfte Korpus der 134 Bestandsklassen werden weiterhin separat vom Dozenten bereitgestellt.** Ohne sie ist kein vollständiger Trainingslauf möglich.
 
 Der Crawler ergänzt den bereitgestellten Korpus; er garantiert weder Beispiele aller 134 Bestandsklassen noch ausreichend unabhängige Ortstafeln. Sein begrenzter Suchlauf ist kein vollständiges Inventar der Instanz.
 
@@ -31,7 +31,7 @@ Die Bestandsklassen bleiben erhalten: Das neue Modell soll 136 Klassen untersche
 cd lectures/tsr-sgblur-de-2026-10-26/praktikum
 ```
 
-Die folgenden Befehle setzen voraus, dass Sie in diesem Ordner bleiben. Die Lehrperson aktiviert die passende Python-Umgebung; die Beispiele verwenden darin den Befehl `python`.
+Die folgenden Befehle setzen voraus, dass Sie in diesem Ordner bleiben. Der Dozent aktiviert die passende Python-Umgebung; die Beispiele verwenden darin den Befehl `python`.
 
 ```text
 praktikum/
@@ -52,7 +52,7 @@ praktikum/
 
 Folgen Sie zuerst der [Downloadanleitung für den KI-Server](DATEN_HERUNTERLADEN.md). Sie enthält die isolierte Installation von `huggingface_hub==1.10.2` mit den festgelegten CLI-Abhängigkeiten `typer==0.24.1` und `click==8.3.2`, einen HTTPS-Alternativweg und die Prüfsummenprüfung **vor** dem Entpacken. Ein Hugging-Face-Login ist nicht nötig. Der feste Datensatzstand lautet `6837ae4fae0d1d216612afa739c9dfefd6b277ab`.
 
-Die Lernsammlung mit **100 Vollbildern und 214 Crops** wird nach `data/collection/` übernommen. Das kleine Demo enthält zwei bereits darin enthaltene Bilder und wird getrennt unter `data/demo/` geöffnet. Die beiden anderen Pakete sind **reservierte Testkandidaten für die Lehrperson**; sie gehören nicht in den nachfolgenden Import, in Training oder Validierung. Die ursprünglichen Gruppen der Lernsammlung haben keine Ortstafel-Testabdeckung. Klären Sie deshalb vor dem Modellversuch zusätzliche unabhängige Prüfgruppen und die Bestandsabdeckung mit der Lehrperson.
+Die Lernsammlung mit **100 Vollbildern und 214 Crops** wird nach `data/collection/` übernommen. Das kleine Demo enthält zwei bereits darin enthaltene Bilder und wird getrennt unter `data/demo/` geöffnet. Die beiden anderen Pakete sind **reservierte Testkandidaten für den Dozenten**; sie gehören nicht in den nachfolgenden Import, in Training oder Validierung. Die ursprünglichen Gruppen der Lernsammlung haben keine Ortstafel-Testabdeckung. Klären Sie deshalb vor dem Modellversuch zusätzliche unabhängige Prüfgruppen und die Bestandsabdeckung mit dem Dozenten.
 
 Für die heruntergeladene Lernsammlung ist kein erneuter Crawl nötig. Wenn Sie später zusätzlich neue Annotationen sammeln, wählen Sie einen neuen Ausgabeordner:
 
@@ -81,7 +81,7 @@ python import_sorted_folders.py \
   --include-images data/raw/images
 ```
 
-Der Importer erzeugt `data/reviewed/classifier/annotations.csv` und `data/reviewed/classifier/images/`. Er verwendet ganze Sequenzen als Gruppen; zugehörige Vollbilder und Crops bleiben zusammen. Gleiche physische Tafeln, Fahrten und Nahe-Duplikate über mehrere Sequenzen müssen Sie mit der Lehrperson vorher zusammenfassen. Geben Sie dafür zusätzlich `--groups data/groups.csv` an; das Format steht in der Sammelanleitung. Das Skript erkennt diese Beziehungen nicht selbst. `data/reviewed/` muss für den Import ein neuer Ausgabeordner sein.
+Der Importer erzeugt `data/reviewed/classifier/annotations.csv` und `data/reviewed/classifier/images/`. Er verwendet ganze Sequenzen als Gruppen; zugehörige Vollbilder und Crops bleiben zusammen. Gleiche physische Tafeln, Fahrten und Nahe-Duplikate über mehrere Sequenzen müssen Sie mit dem Dozenten vorher zusammenfassen. Geben Sie dafür zusätzlich `--groups data/groups.csv` an; das Format steht in der Sammelanleitung. Das Skript erkennt diese Beziehungen nicht selbst. `data/reviewed/` muss für den Import ein neuer Ausgabeordner sein.
 
 ## 3. Trainings-, Validierungs- und Testdaten erzeugen
 
@@ -104,7 +104,7 @@ data/dataset/
 
 Die Zielaufteilung beträgt **70 % Training, 15 % Validierung und 15 % Test**. Sie wird mit einem festen Seed auf ganze Gruppen angewandt. Deshalb können die tatsächlichen Bildanteile abweichen. Ein Crop wird nicht in mehrere Teile kopiert, um die Prozentwerte zu erreichen.
 
-`manifest.json` dokumentiert Bilder, Klassen, Gruppen, Aufteilung und Prüfsummen. Alle 136 Klassen müssen im Training vertreten sein; die Validierungs- und Testpartition dürfen insgesamt nicht leer sein. Ein Fehler stoppt den Ablauf. Fehlende Beispiele einzelner Klassen in `val` oder `test` werden als Warnung sichtbar. Das bedeutet noch keine Freigabe: Für den vollständigen Bestandsvergleich benötigt jede der 134 alten Klassen geeignete unabhängige Prüfbeispiele. Klären Sie fehlende Abdeckung mit der Lehrperson. Verschieben Sie nicht nachträglich Testbilder ins Training.
+`manifest.json` dokumentiert Bilder, Klassen, Gruppen, Aufteilung und Prüfsummen. Alle 136 Klassen müssen im Training vertreten sein; die Validierungs- und Testpartition dürfen insgesamt nicht leer sein. Ein Fehler stoppt den Ablauf. Fehlende Beispiele einzelner Klassen in `val` oder `test` werden als Warnung sichtbar. Das bedeutet noch keine Freigabe: Für den vollständigen Bestandsvergleich benötigt jede der 134 alten Klassen geeignete unabhängige Prüfbeispiele. Klären Sie fehlende Abdeckung mit dem Dozenten. Verschieben Sie nicht nachträglich Testbilder ins Training.
 
 ## 4. Das Modell trainieren
 
@@ -124,7 +124,7 @@ runs/versuch-01/weights/best.pt
 
 Diese Datei enthält die trainierten Gewichte und Metadaten im Format dieses Praktikums. Verwenden Sie zum Laden und Vergleichen das zugehörige `evaluate.py`; sie ist kein gewöhnlicher Ultralytics-CLI-Checkpoint.
 
-Die Validierungsdaten helfen bei der Auswahl. Die Testdaten bleiben dabei unangetastet. 20 Epochen sind ein einfacher Startwert für den Kurs, keine Garantie für ein gutes Modell. Wenn die GPU oder eine Quelldatei fehlt, lesen Sie die Fehlermeldung und prüfen Sie den Kurszugang mit der Lehrperson.
+Die Validierungsdaten helfen bei der Auswahl. Die Testdaten bleiben dabei unangetastet. 20 Epochen sind ein einfacher Startwert für den Kurs, keine Garantie für ein gutes Modell. Wenn die GPU oder eine Quelldatei fehlt, lesen Sie die Fehlermeldung und prüfen Sie den Kurszugang mit dem Dozenten.
 
 ## 5. Mit dem Ausgangsmodell vergleichen
 
@@ -181,7 +181,7 @@ Die Kennzahlen werden **je Klasse** berechnet. Beim tatsächlichen Modell mit 13
 | DE:310 | … | … | … | … | … | … |
 | DE:311 | … | … | … | … | … | … |
 
-Halten Sie die ausgefüllte Tabelle und Ihre kurze Begründung als Teil Ihrer Abgabe fest. Die Lehrperson bespricht die Lösung anschließend mit Ihnen.
+Halten Sie die ausgefüllte Tabelle und Ihre kurze Begründung als Teil Ihrer Abgabe fest. Der Dozent bespricht die Lösung anschließend mit Ihnen.
 
 ### Die Modellberichte lesen
 
@@ -207,7 +207,7 @@ Für den Bestandsvergleich verwendet das Auswerteskript bei beiden Modellen **di
 - **UNVOLLSTAENDIG:** Für mindestens eine alte Klasse fehlen Prüfbeispiele. Dann ist eine vollständige Aussage zur Bestandsqualität nicht möglich; der Kandidat besteht diese Prüfung ebenfalls nicht.
 - **BESTANDEN:** Alle alten Klassen sind im Vergleich vertreten, und keine fällt unter die festgelegten Recall-/F1-Werte der Baseline. Die Qualität der beiden neuen Klassen ist zusätzlich im Bericht zu beurteilen.
 
-Bei `REGRESSION` oder `UNVOLLSTAENDIG` endet das Programm mit Rückgabecode 3, nachdem es alle Berichte geschrieben hat. Ein Vergleich ohne gemessenen Rückgang gilt für diesen dokumentierten Testsatz. Er garantiert keine Fehlerfreiheit auf allen zukünftigen Straßenbildern. Zeigen Sie deshalb auch die Beispielzahlen und konkrete Fehlbilder. Die Lehrperson legt die erforderliche Datenabdeckung vor dem Training fest.
+Bei `REGRESSION` oder `UNVOLLSTAENDIG` endet das Programm mit Rückgabecode 3, nachdem es alle Berichte geschrieben hat. Ein Vergleich ohne gemessenen Rückgang gilt für diesen dokumentierten Testsatz. Er garantiert keine Fehlerfreiheit auf allen zukünftigen Straßenbildern. Zeigen Sie deshalb auch die Beispielzahlen und konkrete Fehlbilder. Der Dozent legt die erforderliche Datenabdeckung vor dem Training fest.
 
 Wenn Sie eine weitere Variante erproben, wählen Sie einen neuen Ausgabeordner und dokumentieren Sie die Änderung. Wählen Sie den endgültigen Kandidaten anhand der Validierung. Führen Sie erst danach den Abschlusstest aus:
 

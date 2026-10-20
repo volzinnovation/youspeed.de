@@ -2,12 +2,11 @@
 
 ## Wie verbessere ich ein vorhandenes KI-Modell?
 
-**Montag, 26. Oktober 2026 · 45 Minuten · Deutsch · 27 Folien · Folien v9.1, Praktikum v7.3**
+**Montag, 26. Oktober 2026 · 45 Minuten · Deutsch · 27 Folien · Folien v9.2, Praktikum v7.4**
 Prof. Dr. Raphael Volz · HSPF · Einstieg im 3. Semester ohne ML-Vorkenntnisse
 
-- [Bearbeitbare PowerPoint mit Sprechernotizen · v9.1](output/tsr-sgblur-de-2026-10-26-v9.1.pptx)
-- [PDF zur Projektion · v9.1](output/tsr-sgblur-de-2026-10-26-v9.1.pdf)
-- [Dozentenleitfaden mit Zeitplan und Übungslösungen](DOZENTENLEITFADEN.md)
+- [Bearbeitbare PowerPoint mit Sprechernotizen · v9.2](output/tsr-sgblur-de-2026-10-26-v9.2.pptx)
+- [PDF zur Projektion · v9.2](output/tsr-sgblur-de-2026-10-26-v9.2.pdf)
 - [Sprechernotizen und Quellen je Folie](SPRECHERNOTIZEN.md)
 - [Praktikum: Überblick und konkrete Befehle](PRAKTIKUM.md)
 - [Praktikum: Schritt-für-Schritt-Anleitung und Code](praktikum/README.md)
@@ -16,7 +15,7 @@ Prof. Dr. Raphael Volz · HSPF · Einstieg im 3. Semester ohne ML-Vorkenntnisse
 - [Datenpakete direkt auf den KI-Server herunterladen](praktikum/DATEN_HERUNTERLADEN.md)
 - [Echte Trainings- und Testergebnisse vom 20. Oktober](TRAININGSERGEBNISSE-2026-10-20.md)
 - [Messbelege, Reviews, Skripte und tatsächliche Pipeline-Bildausschnitte als ZIP](output/trainingsbelege-2026-10-20.zip)
-- [Praktikum mit Kennzahlenübung und servergeprüfter Downloadanleitung als ZIP herunterladen](output/praktikum-de310-de311-v7.3.zip)
+- [Praktikum mit Kennzahlenübung und servergeprüfter Downloadanleitung als ZIP herunterladen](output/praktikum-de310-de311-v7.4.zip)
 - [Kleiner Panoramax-Beispielsatz zum Prüfen und Einsortieren](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/6837ae4fae0d1d216612afa739c9dfefd6b277ab/packages/panoramax-beispiele-v6.zip?download=true)
 - [Alle vier Datenpakete öffentlich auf Hugging Face herunterladen](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo)
 - [Publikationsbeleg: öffentlicher Zugriff und SHA-256 geprüft](source/huggingface-publication.json)
@@ -45,7 +44,7 @@ Folie 19 und die [Downloadanleitung](praktikum/DATEN_HERUNTERLADEN.md) zeigen di
 
 Am **20. Oktober 2026** wurden beide Modelle auf den RTX-A5000-GPUs des KI-Servers tatsächlich trainiert und ausgewertet. TSR klassifiziert 14/15 geprüfte Ortstafel-Bildausschnitte richtig; der F1 sinkt jedoch bei 20 der 134 Bestandsklassen, sodass der Kandidat das Bestandsklassen-Gate nicht besteht. Die vollständige Kette aus SGBlur-Box und TSR-Klasse erkennt 9/15 Ortstafeln. Für SGBlur wurde wegen unvollständiger Vollbildannotation nur der Schild-Ausgang angepasst; Precision/mAP und Qualität auf unverpixelten Gesichtern/Kennzeichen bleiben ungeprüft. [Ergebnisse, Methodik und Artefakte](TRAININGSERGEBNISSE-2026-10-20.md).
 
-Die **Lehrperson stellt Kursumgebung, GPU-Zugang, den geprüften Modellcheckpoint und kuratierte Bildausschnitte der 134 Bestandsklassen mit Labels und Gruppenkennungen bereit**. Diese Dateien sind nicht Bestandteil des neuen Praktikumsordners. Die Studierenden ergänzen geprüfte Ortstafel-Bildausschnitte. Die [Lehrvorbereitung](LEHRVORBEREITUNG.md) und die [Praktikumsanleitung](praktikum/README.md) machen diese Voraussetzung konkret.
+Der **Dozent stellt Kursumgebung, GPU-Zugang, den geprüften Modellcheckpoint und kuratierte Bildausschnitte der 134 Bestandsklassen mit Labels und Gruppenkennungen bereit**. Diese Dateien sind nicht Bestandteil des neuen Praktikumsordners. Die Studierenden ergänzen geprüfte Ortstafel-Bildausschnitte. Die [Lehrvorbereitung](LEHRVORBEREITUNG.md) und die [Praktikumsanleitung](praktikum/README.md) machen diese Voraussetzung konkret. Der Dozent verwahrt Zeitplan und Übungslösungen im lokalen Dozentenleitfaden.
 
 Die Downloadanleitung wurde am **20. Oktober 2026 als `raphael` auf `wingki01` mit Python 3.12.3** vollständig ausgeführt: frische CLI-Installation, alle vier Originalpakete, zusätzlicher HTTPS-Download, SHA-256-/ZIP-Prüfungen, Entpackpfade und Wiederholschutz. Der erste Versuch fand eine fehlende `click`-Abhängigkeit. Die korrigierte Anleitung pinnt deshalb gemeinsam `huggingface_hub==1.10.2`, `typer==0.24.1` und `click==8.3.2`; der anschließende frische Serverlauf bestand. [Server-Prüfbeleg](source/ai-server-download-test-2026-10-20.json). Dies prüft den Datenzugang und die Ordnerstruktur, keine Modellqualität.
 

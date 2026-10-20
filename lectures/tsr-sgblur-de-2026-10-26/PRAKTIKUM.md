@@ -10,11 +10,11 @@ Beginnen Sie mit der [Schritt-für-Schritt-Anleitung im Praktikumsordner](prakti
 
 Vor dem Modellvergleich bearbeiten Sie das [Rechenbeispiel und die kurze Übung zu Precision, Recall und F1](praktikum/README.md#precision-recall-und-f1-verstehen). Sie berechnen die Werte für DE:310 und DE:311 und untersuchen, warum dieselbe Gesamtzahl richtiger Vorhersagen unterschiedliche Klassenqualität verdecken kann. Die Zahlen sind erfunden und von den tatsächlichen Trainingsmessungen getrennt.
 
-## Was die Lehrperson vorher bereitstellt
+## Was der Dozent vorher bereitstellt
 
-Benötigt werden die eingerichtete Kursumgebung, eine zugewiesene GPU, das geprüfte Ausgangsmodell unter `praktikum/models/baseline.pt` sowie kuratierte Crops, Labels und Gruppenkennungen der **134 Bestandsklassen**. Sie ergänzen menschlich geprüfte Beispiele für die zwei Ortstafelklassen. Die öffentlichen Panoramax-Pakete sind jetzt herunterladbar; Modellcheckpoint und vollständiger geprüfter Bestandskorpus werden weiterhin separat von der Lehrperson bereitgestellt. Ihre Zusammenstellung ist Teil der [Lehrvorbereitung](LEHRVORBEREITUNG.md).
+Benötigt werden die eingerichtete Kursumgebung, eine zugewiesene GPU, das geprüfte Ausgangsmodell unter `praktikum/models/baseline.pt` sowie kuratierte Crops, Labels und Gruppenkennungen der **134 Bestandsklassen**. Sie ergänzen menschlich geprüfte Beispiele für die zwei Ortstafelklassen. Die öffentlichen Panoramax-Pakete sind jetzt herunterladbar; Modellcheckpoint und vollständiger geprüfter Bestandskorpus werden weiterhin separat vom Dozenten bereitgestellt. Ihre Zusammenstellung ist Teil der [Lehrvorbereitung](LEHRVORBEREITUNG.md).
 
-Der bereitgestellte Bestandskorpus liegt als `data/annotations.csv` und geprüfte Schild-Crops unter `data/raw/images/` vor. Der Crawler ergänzt diesen Bestand; er garantiert keine Abdeckung aller Klassen. `group_id` hält dieselbe physische Tafel, zusammengehörende Fahrten und geprüfte Nahe-Duplikate gemeinsam. Sequenzen bleiben beim Import zusammen; Beziehungen über mehrere Sequenzen legen Sie vorher mit der Lehrperson fest. Die Skripte erkennen diese Beziehungen nicht selbst.
+Der bereitgestellte Bestandskorpus liegt als `data/annotations.csv` und geprüfte Schild-Crops unter `data/raw/images/` vor. Der Crawler ergänzt diesen Bestand; er garantiert keine Abdeckung aller Klassen. `group_id` hält dieselbe physische Tafel, zusammengehörende Fahrten und geprüfte Nahe-Duplikate gemeinsam. Sequenzen bleiben beim Import zusammen; Beziehungen über mehrere Sequenzen legen Sie vorher mit dem Dozenten fest. Die Skripte erkennen diese Beziehungen nicht selbst.
 
 ## Der konkrete Ablauf
 
@@ -26,7 +26,7 @@ cd lectures/tsr-sgblur-de-2026-10-26/praktikum
 
 Laden Sie nach der [Downloadanleitung](praktikum/DATEN_HERUNTERLADEN.md) die Lernsammlung mit **100 Vollbildern und 214 Crops** auf den KI-Server. Verwenden Sie den festgelegten Datensatzstand `6837ae4fae0d1d216612afa739c9dfefd6b277ab`, prüfen Sie die ZIP-Prüfsumme und übernehmen Sie den tatsächlichen Archivordner nach `data/collection/`. Der Download benötigt keinen Hugging-Face-Login. Alle Beispiele bleiben zunächst ungeprüft.
 
-Die dort getrennt beschriebenen Pakete mit eigenen und externen **Testkandidaten sind für die Lehrperson reserviert**. Geben Sie diese nicht an den normalen Importer und verwenden Sie sie nicht für Training oder Validierung. Auch die Lernsammlung benötigt zusätzliche unabhängige Ortstafel-Testgruppen; unter ihren ursprünglichen Sequenzgruppen besteht keine Ortstafel-Testabdeckung.
+Die dort getrennt beschriebenen Pakete mit eigenen und externen **Testkandidaten sind für den Dozenten reserviert**. Geben Sie diese nicht an den normalen Importer und verwenden Sie sie nicht für Training oder Validierung. Auch die Lernsammlung benötigt zusätzliche unabhängige Ortstafel-Testgruppen; unter ihren ursprünglichen Sequenzgruppen besteht keine Ortstafel-Testabdeckung.
 
 Wenn Sie später zusätzlich neue vorhandene Annotationen sammeln, verwenden Sie einen **neuen** Ausgabeordner:
 
@@ -68,7 +68,7 @@ Verwenden Sie für eine weitere Variante einen neuen Versuchsordner. Die vollst�
 
 ## Getrennter Versuch für fehlende Detektorboxen
 
-Der Importer erzeugt außerdem `data/reviewed/detector/data.yaml` mit Vollbildern, Boxdateien und der festen Belegung `0=sign`, `1=plate`, `2=face`. Ein optionales Detektortraining verwendet den von der Lehrperson bereitgestellten Drei-Klassen-Checkpoint `models/detector-baseline.pt`, nicht das Klassifikator-Ausgangsmodell. Die [Sammelanleitung](praktikum/SAMMELN_UND_SORTIEREN.md) enthält die konkreten YOLO-Befehle und den unabhängigen Vergleich aller drei Klassen. Öffentliche Bilder sind häufig bereits verwischt und belegen keine Gesichts-/Kennzeichendetektion auf unverpixelten Bildern.
+Der Importer erzeugt außerdem `data/reviewed/detector/data.yaml` mit Vollbildern, Boxdateien und der festen Belegung `0=sign`, `1=plate`, `2=face`. Ein optionales Detektortraining verwendet den vom Dozenten bereitgestellten Drei-Klassen-Checkpoint `models/detector-baseline.pt`, nicht das Klassifikator-Ausgangsmodell. Die [Sammelanleitung](praktikum/SAMMELN_UND_SORTIEREN.md) enthält die konkreten YOLO-Befehle und den unabhängigen Vergleich aller drei Klassen. Öffentliche Bilder sind häufig bereits verwischt und belegen keine Gesichts-/Kennzeichendetektion auf unverpixelten Bildern.
 
 ## Was bereits geprüft wurde
 

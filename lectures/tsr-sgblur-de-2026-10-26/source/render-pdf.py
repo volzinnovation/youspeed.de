@@ -6,7 +6,7 @@ from reportlab.lib.utils import ImageReader
 from pypdf import PdfReader
 
 root = Path(__file__).resolve().parents[1]
-revision = os.environ.get('LECTURE_REVISION', 'v9.1')
+revision = os.environ.get('LECTURE_REVISION', 'v9.2')
 work = root / '.build' / revision
 data = json.loads((work / 'slides.json').read_text())
 pages = sorted((work / 'final-renders').glob('slide-*.png'))

@@ -202,7 +202,7 @@ def dataset(torch, np, Image, ImageOps, rows):
 def load_baseline(torch, ultralytics, path, classes):
     path = Path(path)
     if not path.is_file():
-        raise ValueError(f"Baseline fehlt: {path}. Die Lehrperson stellt models/baseline.pt bereit.")
+        raise ValueError(f"Baseline fehlt: {path}. Der Dozent stellt models/baseline.pt bereit.")
     if sha256(path) != BASELINE_SHA256:
         raise ValueError("Baseline-SHA256 stimmt nicht mit dem gepinnten Panoramax-Checkpoint überein.")
     model = ultralytics.YOLO(str(path), task="classify").model.float()

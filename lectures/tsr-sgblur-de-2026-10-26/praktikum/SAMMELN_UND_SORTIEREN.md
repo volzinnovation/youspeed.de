@@ -6,7 +6,7 @@ Sie können vorhandene Panoramax-Annotationen für zwei unterschiedliche Aufgabe
 
 **Eine vorhandene Annotation ist zunächst ein Vorschlag.** Auch eine sehr hohe gespeicherte Modellbewertung kann falsch sein. Das Herunterladen oder Verschieben trainiert noch kein Modell. Die Gewichte ändern sich erst beim späteren Training.
 
-Diese Anleitung setzt den vorbereiteten Kurszugang voraus. Öffnen Sie ein Terminal im Ordner `lectures/tsr-sgblur-de-2026-10-26/praktikum/`. Verwenden Sie die aktivierte Python-Umgebung der Lehrperson. Sie benötigen für das Sammeln keine GPU und keinen selbst geschriebenen Trainingscode.
+Diese Anleitung setzt den vorbereiteten Kurszugang voraus. Öffnen Sie ein Terminal im Ordner `lectures/tsr-sgblur-de-2026-10-26/praktikum/`. Verwenden Sie die aktivierte Python-Umgebung des Dozenten. Sie benötigen für das Sammeln keine GPU und keinen selbst geschriebenen Trainingscode.
 
 ## 1. Mit der veröffentlichten Lernsammlung beginnen
 
@@ -14,7 +14,7 @@ Die vier Panoramax-Pakete sind im öffentlichen Datensatz [loffenauer/ws26_hspf_
 
 Übernehmen Sie die **Lernsammlung mit 100 Vollbildern und 214 Crops nach `data/collection/`**. Alle Beispiele sind ungeprüft. Lesen Sie deren `BITTE_ZUERST_LESEN.txt` und setzen Sie anschließend direkt bei Abschnitt 2 dieser Anleitung fort. Die folgenden Standardpfade und Importbefehle passen zu dieser Sammlung. Das kleine Demo liegt getrennt unter `data/demo/collection-demo/` und enthält zwei bereits in der Lernsammlung enthaltene Bilder.
 
-Die zwei weiteren Pakete sind **Testkandidaten für die Lehrperson**. Sie bleiben unter `data/teacher-reserved/` und werden nicht in den normalen Import, ins Training oder in die Validierung übernommen. Kein Paket enthält bereits menschlich freigegebene Ground Truth. Die ursprünglichen Gruppen der Lernsammlung haben außerdem keine Ortstafel-Testabdeckung. Zusätzliche geeignete unabhängige Gruppen und der kuratierte Korpus der 134 Bestandsklassen müssen vor dem Modellversuch mit der Lehrperson bereitgestellt werden.
+Die zwei weiteren Pakete sind **Testkandidaten für den Dozenten**. Sie bleiben unter `data/teacher-reserved/` und werden nicht in den normalen Import, ins Training oder in die Validierung übernommen. Kein Paket enthält bereits menschlich freigegebene Ground Truth. Die ursprünglichen Gruppen der Lernsammlung haben außerdem keine Ortstafel-Testabdeckung. Zusätzliche geeignete unabhängige Gruppen und der kuratierte Korpus der 134 Bestandsklassen müssen vor dem Modellversuch mit dem Dozenten bereitgestellt werden.
 
 ### Optional: einen neuen begrenzten Bestand crawlen
 
@@ -81,7 +81,7 @@ mv 'data/collection/inbox/classifier/BEISPIEL-CROP-ID.png' \
   'data/collection/approved/classifier/city__start/'
 ```
 
-Verschieben Sie die Datei, statt sie in mehrere Klassen zu kopieren. Ein ungeeigneter Crop kann aus der Eingangsablage nach `rejected/classifier/` verschoben werden. Entfernen Sie keinen Quellnachweis aus dem Manifest. Wenn Sie sich bei einem Bild noch nicht sicher sind, lassen Sie es zunächst in `inbox` und besprechen Sie es mit der Lehrperson.
+Verschieben Sie die Datei, statt sie in mehrere Klassen zu kopieren. Ein ungeeigneter Crop kann aus der Eingangsablage nach `rejected/classifier/` verschoben werden. Entfernen Sie keinen Quellnachweis aus dem Manifest. Wenn Sie sich bei einem Bild noch nicht sicher sind, lassen Sie es zunächst in `inbox` und besprechen Sie es mit dem Dozenten.
 
 ## 3. Vollbilder und Boxen als zusammengehörendes Paket prüfen
 
@@ -108,13 +108,13 @@ Verschieben Sie keine einzelne Bild- oder Labeldatei. Erzeugen Sie keine leeren 
 
 Sind Boxen falsch oder fehlen sie, geben Sie das Paket nicht frei. Korrigieren Sie den Quellstand in Panoramax und lassen Sie einen neuen Export erstellen. Bewahren Sie ältere Sammlungen getrennt auf. Die vorhandene Sammlung dient als unveränderter Herkunftsbeleg; der Importer akzeptiert keine still veränderten Bild- oder Boxdateien.
 
-Die öffentlich verfügbaren HD-Bilder sind häufig bereits an Gesichtern und Kennzeichen verwischt. Boxen können dort noch geprüft werden. Eine solche Sammlung belegt jedoch **keine Detektionsqualität auf unverpixelten Gesichtern und Kennzeichen**. Für einen aussagekräftigen SGBlur-Vergleich muss die Lehrperson einen geeigneten unabhängigen Prüfbestand und dessen Grenzen festlegen.
+Die öffentlich verfügbaren HD-Bilder sind häufig bereits an Gesichtern und Kennzeichen verwischt. Boxen können dort noch geprüft werden. Eine solche Sammlung belegt jedoch **keine Detektionsqualität auf unverpixelten Gesichtern und Kennzeichen**. Für einen aussagekräftigen SGBlur-Vergleich muss der Dozent einen geeigneten unabhängigen Prüfbestand und dessen Grenzen festlegen.
 
 ## 4. Zusammengehörende Bilder in derselben Gruppe halten
 
 Mehrere Ansichten derselben Tafel sind keine unabhängigen Testfälle. Alle Bilder einer Panoramax-Sequenz und sämtliche daraus erzeugten Crops bleiben deshalb standardmäßig in derselben Gruppe. Detektor und Klassifikator verwenden für diese Gruppe denselben Seed `20261026` und dieselbe Zielaufteilung von ungefähr **70 % Training, 15 % Validierung und 15 % Test**.
 
-Dieselbe physische Tafel oder dieselbe Fahrt kann trotzdem in mehreren Sequenzen vorkommen. Prüfen Sie diese Beziehungen gemeinsam mit der Lehrperson, **bevor Sie importieren oder trainieren**. In `data/groups.csv` können zusammengehörende Sequenzen dieselbe Gruppenkennung erhalten:
+Dieselbe physische Tafel oder dieselbe Fahrt kann trotzdem in mehreren Sequenzen vorkommen. Prüfen Sie diese Beziehungen gemeinsam mit dem Dozenten, **bevor Sie importieren oder trainieren**. In `data/groups.csv` können zusammengehörende Sequenzen dieselbe Gruppenkennung erhalten:
 
 ```csv
 sequence_id,group_id
@@ -140,7 +140,7 @@ python import_sorted_folders.py --groups data/groups.csv
 
 `data/reviewed/` muss ein neuer Ausgabeordner sein. Falls Sie später erneut sortieren oder Annotationen neu exportieren, verwenden Sie für den nächsten Import einen anderen Ausgabeordner. Der Importer friert den geprüften Stand ein, statt ein früheres Experiment still zu verändern.
 
-Eine kleine Ortstafelsammlung ersetzt **nicht** die Beispiele der 134 Bestandsklassen. Für den vollständigen Klassifikatorversuch verbinden Sie Ihre Auswahl mit dem von der Lehrperson bereitgestellten geprüften Korpus:
+Eine kleine Ortstafelsammlung ersetzt **nicht** die Beispiele der 134 Bestandsklassen. Für den vollständigen Klassifikatorversuch verbinden Sie Ihre Auswahl mit dem vom Dozenten bereitgestellten geprüften Korpus:
 
 ```sh
 python import_sorted_folders.py \
@@ -181,7 +181,7 @@ python train.py --epochs 20
 python evaluate.py --candidate runs/versuch-01/weights/best.pt
 ```
 
-Fehlen nach dem Import Bestandsklassen, ist die Sammlung noch nicht vollständig. `prepare_dataset.py` verlangt alle 136 Klassen im Training. Außerdem benötigen Sie geeignete unabhängige Validierungs- und Testbeispiele. Leere Ordner oder viele nahezu gleiche Fotos derselben Tafel ersetzen diese Abdeckung nicht. Lesen Sie die Warnungen zur Klassenverteilung und ergänzen Sie die fehlenden Daten mit der Lehrperson.
+Fehlen nach dem Import Bestandsklassen, ist die Sammlung noch nicht vollständig. `prepare_dataset.py` verlangt alle 136 Klassen im Training. Außerdem benötigen Sie geeignete unabhängige Validierungs- und Testbeispiele. Leere Ordner oder viele nahezu gleiche Fotos derselben Tafel ersetzen diese Abdeckung nicht. Lesen Sie die Warnungen zur Klassenverteilung und ergänzen Sie die fehlenden Daten mit dem Dozenten.
 
 Die weiteren Schritte für Kandidatenwahl, Bestandsvergleich, Abschlusstest und Abgabe stehen in der [Praktikumsanleitung](README.md).
 
@@ -189,9 +189,9 @@ Die weiteren Schritte für Kandidatenwahl, Bestandsvergleich, Abschlusstest und 
 
 Ein zusätzliches Detektortraining ist sinnvoll, wenn Boxen fehlen. **`train.py` aus diesem Praktikum trainiert den Crop-Klassifikator, keinen Detektor.** Für den Detektor verwenden Sie die Ultralytics-Befehle und vollständig geprüfte Vollbilder. Nur Ortstafel-Crops an das Detektortraining zu übergeben ist kein Ersatz dafür.
 
-Die Lehrperson stellt `models/detector-baseline.pt` bereit: den ursprünglichen SGBlur-YOLO11n mit der Belegung `0=sign`, `1=plate`, `2=face`. Dieser Checkpoint ist eine andere Datei als `models/baseline.pt` für die deutsche Klassifikation. Verwechseln Sie die beiden Modelle nicht.
+Der Dozent stellt `models/detector-baseline.pt` bereit: den ursprünglichen SGBlur-YOLO11n mit der Belegung `0=sign`, `1=plate`, `2=face`. Dieser Checkpoint ist eine andere Datei als `models/baseline.pt` für die deutsche Klassifikation. Verwechseln Sie die beiden Modelle nicht.
 
-Prüfen Sie vor dem Start mit der Lehrperson die Verteilung der freigegebenen Vollbilder. Training, Validierung und Test müssen geeignete unabhängige Gruppen enthalten. Alle drei Klassen benötigen eine ausreichende Abdeckung, damit bestehende Fähigkeiten beurteilt werden können. Sind `val` oder `test` leer oder unvollständig, ergänzen Sie weitere unabhängige, vollständig annotierte Bilder. Würfeln Sie den Split nicht mit anderen Seeds neu aus und verschieben Sie keine Testbilder ins Training.
+Prüfen Sie vor dem Start mit dem Dozenten die Verteilung der freigegebenen Vollbilder. Training, Validierung und Test müssen geeignete unabhängige Gruppen enthalten. Alle drei Klassen benötigen eine ausreichende Abdeckung, damit bestehende Fähigkeiten beurteilt werden können. Sind `val` oder `test` leer oder unvollständig, ergänzen Sie weitere unabhängige, vollständig annotierte Bilder. Würfeln Sie den Split nicht mit anderen Seeds neu aus und verschieben Sie keine Testbilder ins Training.
 
 Der Trainingsaufruf in der vorbereiteten GPU-Umgebung lautet:
 
@@ -201,7 +201,7 @@ yolo detect train model=models/detector-baseline.pt \
   epochs=20 imgsz=1280 device=0 seed=20261026
 ```
 
-`imgsz=1280` legt die Eingabegröße des Detektors fest; der Klassifikator arbeitet dagegen mit 224 × 224 Pixeln. `device=0` bezeichnet das im Kurszugang sichtbare CUDA-Gerät. Verwenden Sie nur das von der Lehrperson zugewiesene Gerät. Die Epochenzahl ist ein Startwert und keine Qualitätsgarantie.
+`imgsz=1280` legt die Eingabegröße des Detektors fest; der Klassifikator arbeitet dagegen mit 224 × 224 Pixeln. `device=0` bezeichnet das im Kurszugang sichtbare CUDA-Gerät. Verwenden Sie nur das vom Dozenten zugewiesene Gerät. Die Epochenzahl ist ein Startwert und keine Qualitätsgarantie.
 
 Die Trainingsausgabe nennt den tatsächlichen Versuchsordner und den Kandidaten `weights/best.pt`. Beim ersten Standardlauf ist dies gewöhnlich `runs/detect/train/weights/best.pt`; bei weiteren Läufen kann der Ordnername abweichen. Wählen Sie den Kandidaten anhand der Validierung. Öffnen Sie erst danach den Test und bewerten Sie **Ausgangsmodell und Kandidat auf denselben zurückgehaltenen Vollbildern**:
 

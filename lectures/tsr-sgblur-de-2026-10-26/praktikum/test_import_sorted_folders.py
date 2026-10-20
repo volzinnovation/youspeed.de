@@ -53,7 +53,7 @@ class ReviewImportTests(unittest.TestCase):
                 "width": 100, "height": 80, "image_sha256": sha256_file(bundle / "image.png"),
                 "labels_sha256": sha256_file(bundle / "labels.txt"), "metadata_sha256": sha256_file(bundle / "metadata.json"),
                 "bundle_path": "inbox/detector/" + pid, "source_url": "https://example.org/api/items/" + pid,
-                "asset_url": "https://example.org/image/" + pid, "license": "CC-BY-SA-4.0", "author": "Lehrperson",
+                "asset_url": "https://example.org/image/" + pid, "license": "CC-BY-SA-4.0", "author": "Dozent",
                 "annotations": annotations}
         self.manifest["items"].append(item)
         crop = None

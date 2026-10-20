@@ -66,7 +66,7 @@ Mathetests und Prüfnachweise sind für die Reproduktion beigefügt.
 FÜR DEN ABSCHLUSSTEST RESERVIEREN
 
 Halten Sie diesen Bestand von Training, Validierung, Epochenwahl und sonstiger
-Modellauswahl getrennt. Die Lehrperson prüft Auswahl, Klassen, Boxen und Gruppen
+Modellauswahl getrennt. Der Dozent prüft Auswahl, Klassen, Boxen und Gruppen
 und friert danach ein eigenes Testmanifest ein. Alle Ansichten einer Tafel und
 mögliche zusammengehörige Fahrten bleiben auf derselben Seite der Aufteilung.
 Dokumentieren Sie nachträgliche Ausschlüsse, ohne das Modell am Test zu optimieren.

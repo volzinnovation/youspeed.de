@@ -8,7 +8,7 @@ import {drawSlide,addSourceLink} from './author.mjs';
 import {meta,slides} from './slides.mjs';
 import {studentText} from './student-wording.mjs';
 const root=path.resolve(import.meta.dirname,'..');
-const revision=process.env.LECTURE_REVISION ?? 'v9.1';
+const revision=process.env.LECTURE_REVISION ?? 'v9.2';
 const work=path.join(root,'.build',revision);
 const out=path.join(root,'output');
 const skill='/Users/raphaelvolz/.codex/plugins/cache/openai-primary-runtime/presentations/26.1017.22136/skills/presentations';

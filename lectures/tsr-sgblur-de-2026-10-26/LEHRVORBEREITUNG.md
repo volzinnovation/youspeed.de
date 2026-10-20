@@ -138,7 +138,7 @@ Der Bestandsvergleich verwendet für beide Modelle dieselben zurückgehaltenen a
 
 ## 6. Vortrag bereitlegen
 
-Öffnen Sie die PowerPoint und [praktikum/README.md](praktikum/README.md). Prüfen Sie Panoramax-Kurskonto und Annotationsrechte; die gespeicherten Dobel-/Bernbach-Bilder stehen als Reserve bereit. Zeitplan und Übungslösungen: [DOZENTENLEITFADEN.md](DOZENTENLEITFADEN.md).
+Öffnen Sie die PowerPoint und [praktikum/README.md](praktikum/README.md). Prüfen Sie Panoramax-Kurskonto und Annotationsrechte; die gespeicherten Dobel-/Bernbach-Bilder stehen als Reserve bereit. Zeitplan und Übungslösungen hält der Dozent im lokalen Dozentenleitfaden bereit.
 
 Die tatsächlichen Backbone-/Kopfstrukturen sind in [network-architecture-evidence.json](source/network-architecture-evidence.json) belegt. Die 35/1 MB der Modellfolie sind **berechnete Android-App-Puffer**, kein vollständiger RAM je Modell. Android-PSS rund 646 MB und historischer iPhone-Footprint rund 232 MB betreffen unterschiedliche Gesamtapp-Lasten und Messgrößen; siehe [RAM-Belege](source/model-memory-evidence.json).
 

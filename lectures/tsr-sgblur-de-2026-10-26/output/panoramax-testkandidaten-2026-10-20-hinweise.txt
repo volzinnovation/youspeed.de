@@ -15,7 +15,7 @@ Diese Übersichtssichtung belegt keine Abwesenheit kleiner, verdeckter oder übe
 Es sind 0 menschlich freigegebene Testfälle enthalten.
 
 VERWENDUNG:
-Reservieren Sie diese Sammlung für die Lehrperson als Testkandidaten. Verwenden Sie die Bilder nicht
+Reservieren Sie diese Sammlung für den Dozenten als Testkandidaten. Verwenden Sie die Bilder nicht
 für Training, Validierung, Epochenwahl oder Hyperparameterwahl. Die bestehende Sammlung und ihr Seed
 bleiben unverändert. Acht neue Sequenz-IDs sind kein Beleg für acht unabhängige Fahrten oder Tafeln.
 Die drei aufeinanderfolgenden Abschnitte vom 19. September müssen insbesondere als mögliche gemeinsame

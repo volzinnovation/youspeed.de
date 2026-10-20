@@ -2,7 +2,7 @@
 
 Diese Anleitung verwendet den öffentlichen Datensatz [loffenauer/ws26_hspf_imo](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo). Sie benötigen dafür weder ein Hugging-Face-Konto noch einen Token. Sie laden die Daten direkt im Terminal Ihres KI-Server-Zugangs herunter; ein vorheriger Download auf Ihren eigenen Rechner ist nicht erforderlich.
 
-Alle Befehle verwenden den festgelegten Datensatzstand **`6837ae4fae0d1d216612afa739c9dfefd6b277ab`**. Damit beziehen alle Kursteilnehmenden dieselben Dateien. Die Pakete enthalten **ungeprüfte Beispiele und Vorschläge, keine menschlich freigegebene Ground Truth**. Der Modellcheckpoint und der kuratierte Korpus der 134 Bestandsklassen werden zusätzlich von der Lehrperson bereitgestellt.
+Alle Befehle verwenden den festgelegten Datensatzstand **`6837ae4fae0d1d216612afa739c9dfefd6b277ab`**. Damit beziehen alle Kursteilnehmenden dieselben Dateien. Die Pakete enthalten **ungeprüfte Beispiele und Vorschläge, keine menschlich freigegebene Ground Truth**. Der Modellcheckpoint und der kuratierte Korpus der 134 Bestandsklassen werden zusätzlich vom Dozenten bereitgestellt.
 
 ## 1. Paket auswählen und Arbeitsordner öffnen
 
@@ -10,7 +10,7 @@ Alle Befehle verwenden den festgelegten Datensatzstand **`6837ae4fae0d1d216612af
 | --- | --- | --- |
 | `panoramax-studenten-2026-10-19.zip` | 100 Vollbilder, 214 Schild-Crops, 27 Sequenzen | Lernsammlung: herunterladen, prüfen und einsortieren; anschließend mit dem bereitgestellten Bestandskorpus zusammenführen. |
 | `panoramax-beispiele-v6.zip` | 2 Vollbilder und 6 Crops; Teilmenge der Lernsammlung | Kleiner technischer Einstieg. Die Ortstafel-Crops sind nur 27 × 22 beziehungsweise 27 × 17 Pixel groß. |
-| `panoramax-testkandidaten-2026-10-20.zip` | 39 HD-Vollbilder, 77 Crops; außerdem 246 SD-Bilder derselben acht Sequenzen | Für die Lehrperson und einen späteren gesonderten Abschlusstest reserviert. Die 39 HD-Bilder sind eine Teilmenge der 246 SD-Bilder. |
+| `panoramax-testkandidaten-2026-10-20.zip` | 39 HD-Vollbilder, 77 Crops; außerdem 246 SD-Bilder derselben acht Sequenzen | Für den Dozenten und einen späteren gesonderten Abschlusstest reserviert. Die 39 HD-Bilder sind eine Teilmenge der 246 SD-Bilder. |
 | `panoramax-externe-testkandidaten-2026-10-20.zip` | 15 Zielansichten: 2 Ortseingangs- und 13 Ortsausgangsvorschläge; 13 Standortkandidaten, 12 konservative Gruppen | Ebenfalls reserviert. 11 native 2D-Ansichten und 4 Perspektivansichten aus Panoramen; keine bestätigten unabhängigen Testfälle. |
 
 Für die normale Studierendenübung benötigen Sie zunächst **nur die Lernsammlung**. Die beiden reservierten Pakete gehören nicht in Training, Validierung, Epochenwahl oder den normalen 70/15/15-Import. Für alle vier ZIP-Dateien zusammen werden bereits etwa 2,3 GB benötigt; entpackte Daten und spätere Arbeitskopien benötigen zusätzlichen Speicherplatz.
@@ -36,7 +36,7 @@ python3 -m venv .venv-hf
 .venv-hf/bin/hf download --help
 ```
 
-Die CLI heißt `hf`. Installieren Sie die drei festgelegten Versionen gemeinsam. Damit steht auch die von dieser CLI benötigte `click`-Abhängigkeit bereit. Aktivieren Sie diese Download-Umgebung nicht anstelle der von der Lehrperson vorbereiteten Trainingsumgebung. Hintergrund: [offizielle Hugging-Face-CLI-Dokumentation](https://huggingface.co/docs/huggingface_hub/guides/cli).
+Die CLI heißt `hf`. Installieren Sie die drei festgelegten Versionen gemeinsam. Damit steht auch die von dieser CLI benötigte `click`-Abhängigkeit bereit. Aktivieren Sie diese Download-Umgebung nicht anstelle der vom Dozenten vorbereiteten Trainingsumgebung. Hintergrund: [offizielle Hugging-Face-CLI-Dokumentation](https://huggingface.co/docs/huggingface_hub/guides/cli).
 
 ## 3. Die Lernsammlung herunterladen
 
@@ -71,7 +71,7 @@ awk '$2 == "packages/panoramax-studenten-2026-10-19.zip" {print; n++} END {if (n
   (cd data/downloads && sha256sum --strict -c SHA256SUMS-lern.txt)
 ```
 
-Erwartet wird `packages/panoramax-studenten-2026-10-19.zip: OK`. Nur dann dürfen Sie entpacken. Bei einer Abweichung oder einem Downloadfehler stoppen Sie und klären die Ursache mit der Lehrperson. Fehlermeldungen werden nicht mit `--ignore-missing` oder ähnlichen Optionen unterdrückt.
+Erwartet wird `packages/panoramax-studenten-2026-10-19.zip: OK`. Nur dann dürfen Sie entpacken. Bei einer Abweichung oder einem Downloadfehler stoppen Sie und klären die Ursache mit dem Dozenten. Fehlermeldungen werden nicht mit `--ignore-missing` oder ähnlichen Optionen unterdrückt.
 
 ## 5. Die Lernsammlung nach `data/collection/` entpacken
 
@@ -105,7 +105,7 @@ python import_sorted_folders.py \
   --include-images data/raw/images
 ```
 
-Die beiden Bestandskorpuspfade stammen von der Lehrperson, nicht aus den ZIP-Paketen. Ergänzen Sie `--groups data/groups.csv`, wenn zusammengehörende Sequenzen festgelegt wurden. Unter den ursprünglichen Sequenzgruppen und dem unveränderten Seed `20261026` hat die Lernsammlung **keine Ortstafel-Testabdeckung**. Vor dem Modellversuch sind daher zusätzlich geeignete unabhängige Gruppen und die Abdeckung aller 134 Bestandsklassen zu klären. Ein erfolgreicher Download ist keine Trainings- oder Testfreigabe.
+Die beiden Bestandskorpuspfade stammen vom Dozenten, nicht aus den ZIP-Paketen. Ergänzen Sie `--groups data/groups.csv`, wenn zusammengehörende Sequenzen festgelegt wurden. Unter den ursprünglichen Sequenzgruppen und dem unveränderten Seed `20261026` hat die Lernsammlung **keine Ortstafel-Testabdeckung**. Vor dem Modellversuch sind daher zusätzlich geeignete unabhängige Gruppen und die Abdeckung aller 134 Bestandsklassen zu klären. Ein erfolgreicher Download ist keine Trainings- oder Testfreigabe.
 
 ## 6. Optional: das kleine Demo getrennt öffnen
 
@@ -131,7 +131,7 @@ test ! -e data/demo &&
 
 Die Sammlung liegt tatsächlich unter **`data/demo/collection-demo/`**; daneben liegt `BEISPIELE_LESEN.txt`. Für einen getrennten technischen Ordnerimport nach erfolgter Prüfung lautet der Quellpfad daher `--source data/demo/collection-demo` und beispielsweise der neue Ausgabepfad `--output data/reviewed-demo`. Die beiden Demo-Bilder sind bereits Teil der großen Lernsammlung. Übernehmen Sie sie nicht ein zweites Mal in denselben Versuch.
 
-## 7. Nur Lehrperson: Testkandidaten getrennt reservieren
+## 7. Nur für den Dozenten: Testkandidaten getrennt reservieren
 
 Die folgenden Befehle laden die zwei Testkandidatenpakete. Verwenden Sie dafür ausschließlich den hier benannten reservierten Ordner; er wird nicht als Quelle an den normalen Importer übergeben:
 
