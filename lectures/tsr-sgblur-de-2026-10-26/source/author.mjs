@@ -14,6 +14,12 @@ function arrow(s,a,b,from='right',to='left',color=C.muted,width=2){return s.shap
 function image(s,rel,x,y,w,h,fit='contain'){const bytes=fs.readFileSync(path.resolve(root,rel));return s.images.add({blob:new Uint8Array(bytes),contentType:/\.jpe?g$/i.test(rel)?'image/jpeg':'image/png',alt:path.basename(rel),position:{left:x,top:y,width:w,height:h},fit});}
 function lines(s,items,x=64,y=194,w=1152,size=29,gap=88){items.forEach((t,i)=>text(s,t,x,y+i*gap,w,gap-10,size));}
 function link(s,label,url,x,y,w,size=21){const a=text(s,label,x,y,w,40,size,'#12647B');a.text.get(label).link={uri:url,isExternal:true};a.text.get(label).underline='sng';return a;}
+export function addDetectorBaselineLink(s,d){
+ if(!d.baselineLink)return;
+ const [label,url]=d.baselineLink;
+ const a=text(s,label,64,650,1152,30,20,'#12647B');
+ a.text.get(label).link={uri:url,isExternal:true};a.text.get(label).underline='sng';
+}
 function takeaway(s,t){if(t)text(s,t,64,638,1152,57,22,C.muted);}
 function chain(s,labels,y=205,h=125){const gap=32,w=(1152-gap*(labels.length-1))/labels.length;const ns=labels.map((v,i)=>block(s,v,64+i*(w+gap),y,w,h,i===labels.length-1,labels.length>3?24:25));for(let i=1;i<ns.length;i++)arrow(s,ns[i-1],ns[i]);return ns;}
 function nativeTable(s,headers,rows,x,y,width,colWidths,rowH=86,fontSize=25,headerH=54){
@@ -62,6 +68,13 @@ function draw(p,d,i,target){const s=base(p,d,i,target);
   text(s,'2 × P × R / (P + R)',640,460,576,35,25);
   text(s,'Nur hoch, wenn beide Werte hoch sind.',640,496,576,28,21,C.muted);
   nativeTable(s,d.headers,d.rows,64,536,1152,[330,274,274,274],46,24,44);
+ }else if(d.type==='detectorCandidate'){
+  text(s,d.intro,64,170,1152,48,27,C.accent,true);
+  nativeTable(s,d.headers,d.rows,64,245,1152,[350,300,250,252],84,25,60);
+  text(s,d.body[0],64,505,1152,43,22,C.muted);
+  text(s,d.body[1],64,551,1152,43,22,C.muted);
+  link(s,d.link[0],d.link[1],64,602,1152,21);
+  text(s,d.takeaway,64,650,1152,39,21,C.muted);
  }else if(d.type==='modelTable'){
   nativeTable(s,d.headers,d.rows,64,182,1152,[350,192,300,310],105,24,74);d.links.forEach(([label,url],j)=>link(s,label,url,64+j*602,486,550,23));text(s,d.memoryNotes[0],64,543,1152,44,20,C.muted);text(s,d.memoryNotes[1],64,585,1152,44,20,C.muted);text(s,d.takeaway,64,642,1152,42,19,C.muted);
  }else if(d.type==='platforms'){
@@ -95,7 +108,7 @@ function draw(p,d,i,target){const s=base(p,d,i,target);
  }else if(d.type==='training'){
   text(s,d.code,64,179,1152,235,26,C.ink,false,'left','Courier New');lines(s,d.body,64,452,1152,27,62);takeaway(s,d.takeaway);
  }else if(d.type==='detector'){
-  lines(s,d.body,64,184,1152,29,88);text(s,d.code,64,532,1152,114,22,C.muted,false,'left','Courier New');
+  lines(s,d.body,64,184,1152,29,88);text(s,d.code,64,532,1152,114,22,C.muted,false,'left','Courier New');addDetectorBaselineLink(s,d);
  }else if(d.type==='evaluation'){
   nativeTable(s,d.headers,d.rows,64,174,1152,[244,462,446],103,24);
  }else if(d.type==='beginnerEvaluation'){

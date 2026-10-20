@@ -789,5 +789,28 @@
       "working_tree_file_sha256": "62ef7b4eac146d13551925f09b674d4fb955c2e8bb4669f8e38e337a09e3a849",
       "url": "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_PROLIX_ALIGNMENT_2026-09-10.md"
     }
-  ]
+  ],
+  "supplement_2026_10_20": {
+    "scope": "Current mobile detector size and separately evaluated YOLO26s candidate; historical 19 October inventory retained above",
+    "current_mobile_size": 1024,
+    "current_raw_android_output_shape": [
+      1,
+      7,
+      21504
+    ],
+    "baseline_source_checkpoint_sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+    "candidate_source_checkpoint_sha256": "86e2380d9dd13541280f74fac9e416618a4cdd1541ada02ae93d103195c524be",
+    "candidate_status": "evaluation_only_not_bundled",
+    "candidate_evidence": "yolo26-candidate-review-2026-10-20.json",
+    "current_buffer_evidence": "model-memory-evidence.json#/current_mobile_1024_app_buffers"
+  },
+  "dashcam_review_2026_10_20": {
+    "evidence": "../../../docs/sgblur-yolo26-dashcam-2026-10-20.evidence.json",
+    "scored_frames": 65,
+    "sign_instances": 48,
+    "input_size": 1024,
+    "sampled_frames": 3814,
+    "decision": "retain_yolo11n_pending_quality_and_device_validation",
+    "app_pack_manifests_unchanged": 10
+  }
 }

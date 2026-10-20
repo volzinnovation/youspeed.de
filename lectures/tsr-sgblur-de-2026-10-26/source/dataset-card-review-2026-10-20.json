@@ -49,7 +49,7 @@
     }
   },
   "verified_local_audit": {
-    "evidence": "source/hf-model-card-review-2026-10-20.json and .build/real-training-2026-10-20/tsr/old-corpus-audit/{inventory,summary}.json",
+    "evidence": "source/hf-model-card-review-2026-10-20.json; pinned archive hashes and counts recorded in this document",
     "archive_entries": 20231,
     "train_entries": 13287,
     "val_entries": 6944,
@@ -60,18 +60,6 @@
     "city_start_or_end_label_present": false,
     "interpretation": "522 byte-identical images occur in both original archives; the published split cannot be treated unchanged as an independent course evaluation split.",
     "limits": "Exact-hash deduplication alone does not establish physical-sign, route, sequence or pretraining independence. The published baseline may have used this corpus."
-  },
-  "relation_to_actual_course_run": {
-    "weights_repository": "https://huggingface.co/Panoramax/classify_de_road_signs",
-    "weights_revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
-    "weights_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
-    "dataset_revision_changed": false,
-    "baseline_changed": false,
-    "prolix_role": "Inference pipeline consuming the detector/classifier weights; distinguish it from the original model and dataset repositories.",
-    "actual_rebuilt_split": "The experiment grouped source-image IDs and exact duplicate crops and rebuilt predeclared train/val/test splits. It retained all 134 old classes and added separately reviewed city:start/city:end train/val examples.",
-    "old_test_role": "3029 old-class crops are a retrospective regression comparison, not a guaranteed pretraining-free absolute-quality test.",
-    "new_city_test_role": "The separate frozen, reviewed and grouped reserved candidate set assesses the new classes; small and targeted, not representative of all German signs.",
-    "class_extension": "134 old model outputs become136 with city:start (DE:310) and city:end (DE:311)."
   },
   "recommended_slide04_source_labels": [
     {
@@ -102,8 +90,7 @@
       "Ein Datensatz enthält Beispiele und die zugehörigen Klassenlabels. Ein Modell enthält Zahlenwerte, die beim Training verändert werden. Die Prolix-Verarbeitung lädt das Modell für Vorhersagen.",
       "Die Herausgeberkarte nennt mehr als20.000 Bilder und mehr als130 Klassen. Unser eigener Audit der gepinnten Archive zählt20.231 Einträge und134 Klassenverzeichnisse. Das sind unterschiedliche Genauigkeitsstufen derselben Beschreibung.",
       "Die Klassenzuordnung steckt im Ordnernamen. Die Bilder wurden zuvor aus Panoramax-Aufnahmen mithilfe eines Detektors ausgeschnitten. bad/other und Unterklassen erfassen Fehlfunde oder andere Objekte; einige ähnliche Verkehrszeichen stammen laut Karte aus weiteren europäischen Ländern.",
-      "Die vorhandenen train/val-Namen bestimmen die beabsichtigte Rolle, garantieren aber keine Unabhängigkeit:522 Bilder sind byteidentisch in beiden Archiven. Nach Entfernen dieser Überschneidungen bleiben19.709 eindeutige Bilder. Deshalb haben wir im Beispiel die Aufteilung gruppenweise neu erstellt und einen eigenen reservierten Test getrennt geführt.",
-      "Ein neu aufgeteilter alter Korpus ist gegenüber dem vortrainierten Basismodell nicht automatisch unbekannt. Die3029 alten Test-Crops belegen deshalb den rückblickenden Vergleich der alten Klassen; sie sind kein garantiert vortrainingsfreier Abschlusstest.",
+      "Die vorhandenen train/val-Namen bestimmen die beabsichtigte Rolle, garantieren aber keine Unabhängigkeit:522 Bilder sind byteidentisch in beiden Archiven. Nach Entfernen dieser Überschneidungen bleiben19.709 eindeutige Bilder. Erstellen Sie die Aufteilung deshalb gruppenweise neu und führen Sie einen eigenen reservierten Test getrennt.",
       "Dieser Datensatz lehrt die Klassifikation eines bereits ausgeschnittenen Schildes. Für SGBlur benötigen Sie zusätzlich geprüfte vollständige Boxannotationen auf Vollbildern; aus diesem Klassenordnerkorpus entstehen keine vollständigen Lokalisierungs- oder Segmentierungslabels.",
       "Dokumentieren Sie Datensatzrevision, Bildherkunft, Lizenz, Änderungen und Aufteilung. CC BY-SA 4.0 ist die veröffentlichte Datensatzlizenz; die Modellkarte nennt gesondert Etalab2.0 und die verwendete Ultralytics-Software-/Modelllinie hat eigene Lizenzbedingungen. Das ist keine pauschale Freigabe sämtlicher Komponenten."
     ]
@@ -114,5 +101,17 @@
     "https://huggingface.co/Panoramax/classify_de_road_signs",
     "https://huggingface.co/Panoramax/detect_face_plate_sign",
     "https://creativecommons.org/licenses/by-sa/4.0/"
-  ]
+  ],
+  "relation_to_course_assignment": {
+    "weights_repository": "https://huggingface.co/Panoramax/classify_de_road_signs",
+    "weights_revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+    "weights_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+    "dataset_revision_changed": false,
+    "baseline_changed": false,
+    "prolix_role": "Inference pipeline consuming the detector/classifier weights; distinguish it from the original model and dataset repositories.",
+    "old_test_role": "Any old-class comparison remains retrospective unless pretraining independence is established.",
+    "new_city_test_role": "Collect and manually approve independent examples of both new classes before freezing a final test.",
+    "class_extension": "134 old model outputs become136 with city:start (DE:310) and city:end (DE:311).",
+    "required_split": "Group source-image IDs, exact duplicates, physical sites and journeys before assigning training/validation/test roles. Preserve the old classes and add reviewed city:start/city:end examples."
+  }
 }

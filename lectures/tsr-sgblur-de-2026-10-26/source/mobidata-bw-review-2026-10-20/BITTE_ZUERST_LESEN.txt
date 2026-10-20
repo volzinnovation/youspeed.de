@@ -1,0 +1,51 @@
+MobiData-BW-gestützte Ortstafelsuche – Sichtungseingang, 20. Oktober 2026
+
+13 neue native Vollbilder und 13 Zielausschnitte aus 13 Panoramax-Sequenzen:
+7 visuelle DE:310-Vorschläge und 6 DE:311-Vorschläge. Es liegt keine menschliche
+Klassen- oder Boxfreigabe vor. Prüfen Sie SICHTUNG_CROPS.csv und
+SICHTUNG_VOLLBILDER.csv, bevor Sie Beispiele für Training oder Evaluation nutzen.
+
+inbox/classifier enthält die PNG-Ausschnitte; inbox/detector die unveränderten
+Original-JPEGs mit getrennten box-proposals.json. Diese enthalten ausschließlich
+Zielboxvorschläge: Prüfen und ergänzen Sie alle Schild-, Gesichts- und
+Kennzeichenboxen. Die 136 Klassenordner in approved/classifier und der
+Detektor-Freigabeordner sind leer. Der normale Kursimporter darf diesen Bestand
+noch nicht importieren (normal_course_importer_compatible=false).
+
+Das Kataster beschreibt Standorte und Schildseiten. In zwei Beispielen stimmt
+die nächstgelegene Katasterklasse nicht mit der sichtbaren Vorderseite überein.
+Übernehmen Sie deshalb die Katasterklasse nicht automatisch als Bildlabel.
+Die Original-Panoramax-Annotationen bleiben unverändert unter metadata erhalten.
+12 Ziele haben dort keine gespeicherte Zielbox; eines ist nur als traffic_sign=yes
+annotiert. Alle Klassen und ergänzten Boxen sind lokale visuelle Vorschläge.
+
+Das feste SGBlur-YOLO11n-Ausgangsmodell findet bei conf=0,25, NMS=0,7,
+imgsz=1280 und Ziel-IoU>=0,5 zwei der 13 vorgeschlagenen Zielboxen.
+Das sind ausgewählte Suchbeispiele, keine populationsbezogene Recall-Messung;
+Gesichts-/Kennzeichenschutz und Fehlalarmraten werden damit nicht bewertet.
+Es wurde kein Klassifikator ausgeführt. Da die Beispiele bereits mit der
+Baseline gesichtet wurden, bleiben sie exploratives Lehr-/Reviewmaterial.
+Verwenden Sie diesen Bestand nicht als Blindtest und mischen Sie ihn nicht in
+die bereits reservierten Testkandidaten. Prüfen Sie vor einer späteren
+Aufteilung physische Tafeln und Fahrtgruppen gegen den vollständigen Lernbestand.
+
+Novität: keine gleichen Bild-/Sequenz-IDs oder exakten Bild-/Ausschnitt-Hashes
+gegen die dokumentierte bisherige Lehrsammlung und Suchhistorie. Das ist kein
+Audit sämtlicher Vortrainingsdaten. Einzelheiten: novelty-audit.json.
+
+Herkunft der Bilder: öffentliche Panoramax-Instanzen; Autor, Lizenz,
+Original-URL, Abrufzeit und SHA-256 je Bild in manifest.json und HERKUNFT.csv.
+Bildlizenz: Creative Commons Attribution-ShareAlike 4.0 International,
+https://creativecommons.org/licenses/by-sa/4.0/ . Original-JPEGs unverändert;
+Änderungen: Zielausschnitte, lokale Vorschläge und SGBlur-Prüfüberlagerungen.
+
+Standortquelle: Verkehrsministerium Baden-Württemberg / MobiData BW,
+https://mobidata-bw.de/dataset/verkehrszeichen-baden-wurttemberg ,
+https://mobidata-bw.de/daten/portal/VZ-Daten/signs.geojson .
+Lizenz: Datenlizenz Deutschland – Namensnennung – Version 2.0,
+https://www.govdata.de/dl-de/by-2-0 . Standortdaten wurden für die Suche
+räumlich mit öffentlichen Fotometadaten verknüpft; sie sind keine Bildlabels.
+Quellstand und Prüfsumme sind im Manifest dokumentiert.
+
+SHA256SUMS.json prüft alle Paketdateien. Dieses Paket wurde lokal erstellt;
+es wurde weder in einen öffentlichen Kursdatensatz hochgeladen noch trainiert.

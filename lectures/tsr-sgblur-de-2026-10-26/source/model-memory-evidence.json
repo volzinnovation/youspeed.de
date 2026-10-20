@@ -270,5 +270,156 @@
   "official_metric_sources": [
     "https://developer.android.com/tools/dumpsys#meminfo",
     "https://developer.apple.com/documentation/xcode/gathering-information-about-memory-use"
-  ]
+  ],
+  "current_mobile_1024_app_buffers": {
+    "evidence_kind": "source_calculated_capacity_not_resident_measurement",
+    "classes": 134,
+    "entries": [
+      {
+        "id": "detector_input",
+        "owner": "detector",
+        "description": "Direct Float32 input ByteBuffer",
+        "formula": "1 * 1024 * 1024 * 3 * 4",
+        "bytes": 12582912,
+        "MB": 12.582912,
+        "MiB": 12.0
+      },
+      {
+        "id": "detector_output",
+        "owner": "detector",
+        "description": "Direct Float32 output ByteBuffer",
+        "formula": "1 * 7 * 21504 * 4",
+        "bytes": 602112,
+        "MB": 0.602112,
+        "MiB": 0.57421875
+      },
+      {
+        "id": "detector_output_copy",
+        "owner": "detector",
+        "description": "FloatArray copy of output",
+        "formula": "1 * 7 * 21504 * 4",
+        "bytes": 602112,
+        "MB": 0.602112,
+        "MiB": 0.57421875
+      },
+      {
+        "id": "detector_bitmap",
+        "owner": "detector",
+        "description": "ARGB_8888 Bitmap pixel capacity",
+        "formula": "1024 * 1024 * 4",
+        "bytes": 4194304,
+        "MB": 4.194304,
+        "MiB": 4.0
+      },
+      {
+        "id": "detector_pixels",
+        "owner": "detector",
+        "description": "IntArray pixel copy",
+        "formula": "1024 * 1024 * 4",
+        "bytes": 4194304,
+        "MB": 4.194304,
+        "MiB": 4.0
+      },
+      {
+        "id": "classifier_input",
+        "owner": "classifier",
+        "description": "Direct Float32 input ByteBuffer",
+        "formula": "1 * 224 * 224 * 3 * 4",
+        "bytes": 602112,
+        "MB": 0.602112,
+        "MiB": 0.57421875
+      },
+      {
+        "id": "classifier_output",
+        "owner": "classifier",
+        "description": "Direct Float32 output ByteBuffer, DE baseline 134 classes",
+        "formula": "1 * 134 * 4",
+        "bytes": 536,
+        "MB": 0.000536,
+        "MiB": 0.00051116943359375
+      },
+      {
+        "id": "classifier_bitmap",
+        "owner": "classifier",
+        "description": "ARGB_8888 Bitmap pixel capacity",
+        "formula": "224 * 224 * 4",
+        "bytes": 200704,
+        "MB": 0.200704,
+        "MiB": 0.19140625
+      },
+      {
+        "id": "classifier_pixels",
+        "owner": "classifier",
+        "description": "IntArray pixel copy",
+        "formula": "224 * 224 * 4",
+        "bytes": 200704,
+        "MB": 0.200704,
+        "MiB": 0.19140625
+      },
+      {
+        "id": "rgb_encoder",
+        "owner": "shared",
+        "description": "FloatArray encoding chunk",
+        "formula": "4096 * 3 * 4",
+        "bytes": 49152,
+        "MB": 0.049152,
+        "MiB": 0.046875
+      }
+    ],
+    "totals": {
+      "detector": {
+        "bytes": 22175744,
+        "MB": 22.175744,
+        "MiB": 21.1484375
+      },
+      "classifier": {
+        "bytes": 1004056,
+        "MB": 1.004056,
+        "MiB": 0.9575424194335938
+      },
+      "shared": {
+        "bytes": 49152,
+        "MB": 0.049152,
+        "MiB": 0.046875
+      },
+      "both_plus_shared": {
+        "bytes": 23228952,
+        "MB": 23.228952,
+        "MiB": 22.152854919433594
+      }
+    },
+    "excluded": [
+      "weight mappings",
+      "interpreter tensor arenas",
+      "activations and workspaces",
+      "GPU delegate copies",
+      "runtime and object overhead",
+      "source bitmaps",
+      "camera surfaces",
+      "maps",
+      "video and UI"
+    ],
+    "caveats": [
+      "Capacities can be lazily committed and are not measured RSS/PSS lower bounds.",
+      "These explicit Android buffers do not describe iPhone memory.",
+      "Classifier output allocation grows by 8 bytes if only two Float32 class outputs are added."
+    ],
+    "sources": [
+      {
+        "path": "android/app/src/main/java/de/youspeed/android/alpha/AndroidTrafficSignRuntime.kt",
+        "sha256": "21907623f331fb246932dae31fa836dbd4f07ff2f6a17d9de64498f1b46f16af"
+      },
+      {
+        "path": "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignRgbTensorEncoder.kt",
+        "sha256": "8c4f6c7d2ef987c429875f01ff7dc832a670eccff8a42f09950b74342788eeec"
+      }
+    ],
+    "reviewed_date": "2026-10-20",
+    "input_size": 1024,
+    "raw_output_shape": [
+      1,
+      7,
+      21504
+    ]
+  }
 }

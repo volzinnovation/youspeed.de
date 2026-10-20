@@ -1,0 +1,415 @@
+{
+  "scope": "Original 154-image lecture inventory, earlier 3745-picture/298-sequence discovery inventory, and initial 13 MobiData review records. Not all model pretraining data.",
+  "initial_records_retained": 13,
+  "additional_records": 44,
+  "additional_exact_picture_id_overlaps": 0,
+  "additional_exact_hd_rgb_crop_hash_overlaps": 0,
+  "additional_sequences": 40,
+  "additional_sequence_overlap_with_initial_review": 0,
+  "minimum_additional_camera_distance_to_scoped_prior_cameras_m": 1382.4417501914777,
+  "minimum_additional_registry_distance_to_initial_review_sites_m": 582.75,
+  "conservative_split_group_method": "Connected components of shared sequence, shared registry location ID, or registry points at most 150m apart; proposals only, no split assigned.",
+  "conservative_split_groups": 53,
+  "physical_independence_approved": false,
+  "rows": [
+    {
+      "picture_id": "3f939665-b68e-4ffe-8d07-b43944d3ff92",
+      "sequence_id": "55f84923-8668-4055-9148-22f6886021ae",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:bb29d186e46a8ca6",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "5d841594-5af4-43b0-b3d3-00b270a70cd9",
+      "sequence_id": "8ee75ea5-9a8a-4fe4-a6c4-fae8dd342806",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:682c5ca5f74df480",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "9a1c7b60-497a-487e-9230-c746e3f9e171",
+      "sequence_id": "a047b65a-9377-4d73-a967-a55897e88568",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:817536f12b46ea4c",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "a20dee5c-3cec-4004-afd0-e74db85ff8c0",
+      "sequence_id": "f9dfa7b4-c690-478f-86bc-a39290dc6858",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:b3e82491fb6fe370",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "962602dc-c154-4431-9120-6c3f84305919",
+      "sequence_id": "e3619bc8-a14f-42ca-84f7-26974917f57c",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:18a2a45727c521cf",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "21879e8b-3d68-4fd9-919d-391b04141649",
+      "sequence_id": "5bda8280-4c64-4ab2-a054-d3a338086e86",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:25ec16bc9fc545e8",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "b070f06e-b24e-44f7-b1ad-30074e79cb49",
+      "sequence_id": "2214620e-db60-4ed2-ac7f-ed014e38ba6e",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:3b21ef729024a086",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "415afdb5-20d3-4c01-9133-8e8c2d0a60a1",
+      "sequence_id": "a5695dbe-8a33-47f0-8292-52a2044cd08a",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:1da8ac564e2cfe4d",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "9e6706da-b3ca-4f2b-a24a-bf3c20e9de93",
+      "sequence_id": "730bf312-45c1-462a-9f3c-f0abaf2b8ada",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:e809b6d8636d55ad",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "ff37ca29-5ac3-421f-882c-d1bce638b205",
+      "sequence_id": "11ad9edc-9a9e-4849-868e-03db506dfa08",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:ad02927b1757dc28",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "bf8e082f-870b-41f3-9966-89bae9bb5b48",
+      "sequence_id": "afc8cec2-5564-4e42-b451-0365cae4f427",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:f9a45f85a2bb07a1",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "7023219b-9ac1-4042-ba60-e5a58799247e",
+      "sequence_id": "0496c7f4-6e8c-4e2c-a369-719b54f8297a",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:3980ef9ededc6b20",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "ba821df0-8bdd-49c4-8b4b-4e71c5a78b9b",
+      "sequence_id": "26a3e9f7-05dd-4f93-82d5-c6dfdfda4b1a",
+      "discovery_batch": "initial-144-views",
+      "conservative_split_group_id": "bw-review:125a8b7901519e43",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "003cf395-813e-44bc-b512-756ac94d10cd",
+      "sequence_id": "d1bf033f-ba1e-4d60-beeb-606ae7934c4c",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:92b5970ba474da31",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "f9b2e5be-7e22-4cda-98ed-70e33952083c",
+      "sequence_id": "5f2a94cb-4358-4fa7-af6f-080a746376a3",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:93833ca445f3f1fb",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "dffabc6d-da6b-44bc-897d-3b38b4e4a6df",
+      "sequence_id": "75017c89-d0f8-4372-8110-da4486ca5c5f",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:e1b37e26f2c6690b",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "d9bfebf5-a65f-46f8-ae7e-5ce97957b4fd",
+      "sequence_id": "88f9296d-dba6-4da5-b649-6fee25529400",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:a023052409d44d65",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "dceadae6-0a90-4ac4-883e-f90db6c93040",
+      "sequence_id": "9c20875e-1408-417f-8513-c6316cc36e7c",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:1a269072517d1c16",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "c499dba5-ff9f-4785-9dab-e09eca5da312",
+      "sequence_id": "36d5c0a2-bd2e-4fc8-9f4c-484a1254ed45",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:01ef7ef4c8bd8c35",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "36248527-b6f6-4ca3-963a-f01cb55e0bda",
+      "sequence_id": "73c282c7-3387-4f7a-b11b-275c8e54e28d",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:6d5b1c9355cb862f",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "8c4b1e69-16e8-4730-99ad-76de29d5f64a",
+      "sequence_id": "353a6cac-ca5d-437b-b7db-be67a803c753",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:5be650b6406da7af",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "afbd1d3f-bb2d-4041-8092-2355bee3627f",
+      "sequence_id": "e289fbea-02a4-45c6-b897-92567cd3c865",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:1505567d409f5223",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "f414acee-6ccc-4fce-bbf8-0613644dae98",
+      "sequence_id": "fa80ca5f-b0f6-4086-a41e-ad3fd58289b7",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:327a59aea75b88aa",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "296bc205-c512-4a93-bb05-38a15eecd0bc",
+      "sequence_id": "b9263b8d-7b2c-40e9-b9d5-243f7372ebbc",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:202b8b32d7e14ed6",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "92e10730-211c-4fc1-8f57-5a91e3010688",
+      "sequence_id": "c31bfff3-94bb-4f6f-b640-8caa0320d583",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:20808aac6e626291",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "fd0c6e59-3009-4677-89ed-180a1646991f",
+      "sequence_id": "04137089-425f-4457-b9a5-338cf069d1a4",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:f2151864d1b85220",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "2e0a5397-ede9-40ff-aabc-49c050e2c3a6",
+      "sequence_id": "ab06faf4-cf5a-4f1d-a85f-49a1c54888c3",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:3c2affd869a6e555",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "40528590-f8ef-402a-a250-93b0158b7fd2",
+      "sequence_id": "24d89c32-42e3-4295-b23e-90ef40ad3da8",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:c9273938d01d8dcf",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "a3c8d151-75c8-4a56-85fa-dbc197d8c828",
+      "sequence_id": "6262100f-1ca9-40c7-aa74-6a7ffae859d3",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:a0dc707e228a269d",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "45ef8943-6371-444e-b231-c7196fdd2d2f",
+      "sequence_id": "31b43edb-96ca-4dfa-99c5-fc4ff500e8d5",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:e191c1af3755a51d",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "cb855625-312d-47c1-8760-b8c3e79ae06f",
+      "sequence_id": "e062a9ff-5b7e-44b6-a542-e071f15bbec4",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:41197d89cfff59c2",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "84f5a84f-c4b0-4afe-9ddb-e85726980e6f",
+      "sequence_id": "ac087470-c5b2-4bcc-9e69-a01f1d892938",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:c8b58f8139488899",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "da621ed2-4ce1-4c47-a466-2fba8098dd18",
+      "sequence_id": "1a7a8cd6-eb6b-47a3-ba48-1e8279924740",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:c1f142d1b1f52b2e",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "101748f6-1824-4b55-b84d-06e0c84605a4",
+      "sequence_id": "e9f7ea8e-d5ec-432d-9d38-49cfb0782466",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:494803b95a67855e",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "537a0280-748d-496d-81ba-36430018f9f3",
+      "sequence_id": "b5235ee6-eb21-4c2f-b6b3-54c7b878335e",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:15cd728ebd3f08c5",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "b7c244e4-aec9-4963-8822-6358ad10e774",
+      "sequence_id": "6d54f24b-a302-428f-8b5c-5d4019504a5a",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:c7adc1f5da64879b",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "933eba3c-ac6a-4345-b64d-50480d1de8de",
+      "sequence_id": "c8a159dc-b842-45b9-b4ef-ef5376563a84",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:7a7ced0de44489ac",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "26b16814-cfc7-40b1-8680-aad85c88f165",
+      "sequence_id": "6d54f24b-a302-428f-8b5c-5d4019504a5a",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:c7adc1f5da64879b",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "cd4e3d44-ff9d-440a-9b74-000707ae9935",
+      "sequence_id": "6dac9d14-a68b-4a8a-802c-da64a23a4fec",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:71915b49b80586c4",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "312b0566-d394-4623-b2bd-519fe27f38ea",
+      "sequence_id": "da9a7989-1344-42aa-a619-306f845d5e3f",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:a9d80fd4143f5c51",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "655af494-0839-40ab-b293-af7e8ae2c7e5",
+      "sequence_id": "ed22521a-e335-4e55-8fd5-65d4bac5e82e",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:ec67698bd7fdbe30",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "ddb49a97-573f-4297-be5c-79e601c6dac3",
+      "sequence_id": "2721f08a-49d0-498c-9264-f63626323fcc",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:f827e69f48a3c903",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "f507351a-8a81-48f9-a282-a581a1c7f1c5",
+      "sequence_id": "56ed4e27-234d-4aca-b25f-8f85e6a458ec",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:2baf8e96769d320b",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "ecb42fa5-b269-4baf-a764-cfc05c4a499d",
+      "sequence_id": "b9263b8d-7b2c-40e9-b9d5-243f7372ebbc",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:202b8b32d7e14ed6",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "efd15c57-c7b4-49a5-b63c-df946fd63402",
+      "sequence_id": "25398308-9114-4b90-9a4f-0bdaa387f6ce",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:2d19c1b5fc0e7d06",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "82af5736-4277-4368-a6cf-33bf0ce3f641",
+      "sequence_id": "be7661af-1d47-4b52-9daf-147787478a68",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:964a96bea45d9e18",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "c61d50a4-0264-4a60-ba9d-5379d15ca54f",
+      "sequence_id": "b9263b8d-7b2c-40e9-b9d5-243f7372ebbc",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:202b8b32d7e14ed6",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "ef9a0456-87de-420d-9fe6-68c2c045d88e",
+      "sequence_id": "ca92a651-65ef-4e39-8e2e-1c93cda98a81",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:73658c3fbadce850",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "7fc19bf5-be92-47a9-938c-5e9ac3c68627",
+      "sequence_id": "5f526010-db19-4839-9760-5cf8da797237",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:bcbf50fc70db57ad",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "6f988282-e8cc-4ac0-9094-07ebb305b593",
+      "sequence_id": "b25f1276-0510-4865-8cc4-5834a21cf4bc",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:b7bac4a386b2bc69",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "0c3cc90a-75be-4d81-8f35-9885b165aa3c",
+      "sequence_id": "d366559e-ba64-468c-bac5-fcc84905f571",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:91d83ef8bd721f38",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "4fb1de20-54c8-4e7d-a613-f93febbf530f",
+      "sequence_id": "1064be9c-c7df-4f55-908e-088188d988a8",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:ce5423df81abd9e9",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "1be0fbba-3b47-43ff-b9a7-1a84dd2d27ce",
+      "sequence_id": "ef67ca74-f0ff-49bb-a09b-4843cca550c8",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:f1e5216e7835cca5",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "9cf4fae2-0089-4838-8dd8-9628c32eda74",
+      "sequence_id": "fb2fd93e-81f8-45ec-97bc-5513116ee28d",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:42470ab5dbfea5e9",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "eda5a500-d56b-405c-87c6-35bbea6b3651",
+      "sequence_id": "ab06faf4-cf5a-4f1d-a85f-49a1c54888c3",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:3c2affd869a6e555",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "bb2980e5-72fc-4fe7-a741-78613c609d99",
+      "sequence_id": "75b0a937-6364-4e21-a3c2-3f62fce405e2",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:f579e304f83618a2",
+      "exact_hash_overlap_with_prior_inventory": false
+    },
+    {
+      "picture_id": "b62bd47f-100c-4e91-9eca-fcc4c6c277d9",
+      "sequence_id": "ecac2797-6601-439f-94c6-ad1c4d590f84",
+      "discovery_batch": "near10-180-native-views",
+      "conservative_split_group_id": "bw-review:ea243742c407fbce",
+      "exact_hash_overlap_with_prior_inventory": false
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "repository_id": "loffenauer/ws26_hspf_imo",
+  "revision": "b0ca662f0131a401dd86db2860aeeb52b2461a6b",
+  "public": true,
+  "gated": false,
+  "path": "packages/panoramax-mobidata-bw-review-2026-10-20-v2.zip",
+  "bytes": 114226639,
+  "sha256": "935e5aeceff8b55764fa5ff076777e391ad330a3ed6af74c1111b59c89626729",
+  "anonymous_full_download_sha256_verified": true,
+  "student_role": "second_learning_dataset_manual_review_required",
+  "normal_course_importer_compatible": false,
+  "full_images": 57,
+  "crops": 57,
+  "visual_proposals": {
+    "DE:310": 37,
+    "DE:311": 20
+  },
+  "trained_model_results_uploaded": false
+}

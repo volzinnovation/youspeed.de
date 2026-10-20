@@ -15,7 +15,8 @@ export const slides = [
     "sources": [
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_PROLIX_ALIGNMENT_2026-09-10.md"
     ],
-    "sourceSlide": 1
+    "sourceSlide": 1,
+    "sourcePptxSlide": 1
   },
   {
     "title": "Am Ende können Sie einen Modellversuch aufsetzen",
@@ -43,7 +44,8 @@ export const slides = [
     "sources": [
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_TRAINING_ROUND_TRIP.md"
     ],
-    "sourceSlide": 2
+    "sourceSlide": 2,
+    "sourcePptxSlide": 2
   },
   {
     "title": "Zwei Situationen: Box fehlt oder Klasse falsch",
@@ -62,7 +64,8 @@ export const slides = [
       "https://panoramax.youspeed.de/api/collections/1cde254e-daab-4de3-b256-813984ea9620/items/965b93dc-e04d-45aa-a4bf-a8bc20c9a106",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_PROLIX_ALIGNMENT_2026-09-10.md#bernbach-zeichen-310-experiment"
     ],
-    "sourceSlide": 3
+    "sourceSlide": 3,
+    "sourcePptxSlide": 3
   },
   {
     "title": "Die Box stimmt – die neue Klasse fehlt",
@@ -94,7 +97,8 @@ export const slides = [
         "https://huggingface.co/Panoramax/classify_de_road_signs"
       ]
     ],
-    "evidenceDate": "20. Oktober 2026"
+    "evidenceDate": "20. Oktober 2026",
+    "sourcePptxSlide": 4
   },
   {
     "title": "Ein neuronales Netz lernt Gewichte aus Beispielen",
@@ -113,7 +117,8 @@ export const slides = [
       "https://docs.pytorch.org/tutorials/beginner/basics/optimization_tutorial.html"
     ],
     "subtitle": "Überwachtes Lernen",
-    "sourceSlide": 5
+    "sourceSlide": 5,
+    "sourcePptxSlide": 5
   },
   {
     "title": "CNNs lernen lokale Merkmale im Bild",
@@ -141,7 +146,8 @@ export const slides = [
         "https://arxiv.org/abs/2606.03748v1"
       ]
     ],
-    "sourceSlide": 6
+    "sourceSlide": 6,
+    "sourcePptxSlide": 6
   },
   {
     "title": "Zwei Lernaufgaben hinter einer Erkennung",
@@ -163,12 +169,13 @@ export const slides = [
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/iphone/SpeedConsumerApp/TrafficSignRuntime.swift",
       "https://github.com/volzinnovation/Woladen.de-analytics/blob/614f0950086e009b7af6356518fa05aa07d5aa55/prolix_pipeline/worker.py"
     ],
-    "sourceSlide": 7
+    "sourceSlide": 7,
+    "sourcePptxSlide": 7
   },
   {
     "title": "YOLO: eine Modellfamilie für verschiedene Aufgaben",
     "type": "yolo",
-    "minutes": 2,
+    "minutes": 1.5,
     "headers": [
       "Variante",
       "Eingabe",
@@ -211,7 +218,8 @@ export const slides = [
         "https://arxiv.org/abs/1506.02640v5"
       ]
     ],
-    "sourceSlide": 8
+    "sourceSlide": 8,
+    "sourcePptxSlide": 8
   },
   {
     "title": "Trainingsbilder und Modellgewichte",
@@ -242,16 +250,17 @@ export const slides = [
     ],
     "body": "Für unseren Versuch bleiben alte Beispiele erhalten. Neue Ortstafeln kommen hinzu.",
     "takeaway": "Vor der Kursaufteilung Dopplungen prüfen und zusammengehörende Bilder gruppieren.",
-    "notes": "Der Datensatz enthält beschriftete Bildausschnitte, das Modell enthält gelernte Gewichte. Die Dataset Card beschreibt über 20.000 Zeichenbilder in über 130 Klassen, darunter bad und other. Die Bilder stammen überwiegend aus deutschen Panoramax-Aufnahmen, ergänzt um ähnliche Zeichen aus anderen europäischen Ländern mit Länderpräfix im Dateinamen. Lizenz laut Dataset Card: CC BY-SA 4.0. Für den Kurs werden Herkunft und Urheber beibehalten. Der verwendete Datenstand ist b4856947ed7cb6312587258acc90e8cf88a4aa13. Die geprüften Archive enthalten 13.287 beziehungsweise 6.944 Bilddateien, davon 522 exakt gleiche Bilder in beiden Archiven. Nach Deduplizierung verbleiben 19.709 Bilder. Diese ursprüngliche Aufteilung ist deshalb kein unabhängiger Abschlusstest. Im dokumentierten Kursversuch wurden Duplikate und zusammengehörende Bildquellen vor der neuen Aufteilung berücksichtigt. Der Ausgangscheckpoint kann die alten Bilder dennoch bereits kennen. Seine Prüfung bleibt ein rückblickender Regressionstest. Die beiden neuen Ortstafelklassen und neue unabhängige Prüfgruppen kommen aus unserer geprüften Sammlung hinzu. Es wird ein vorhandener Datensatz erweitert und ein vorhandenes Modell weitergelernt. Nicht jedes Datenrepository enthält Gewichte. Quellenprüfung: source/hf-model-card-review-2026-10-20.json. Ergänzender Kartenbeleg: source/dataset-card-review-2026-10-20.json.",
+    "notes": "Der Datensatz enthält beschriftete Bildausschnitte, das Modell enthält gelernte Gewichte. Die Dataset Card beschreibt über 20.000 Zeichenbilder in über 130 Klassen, darunter bad und other. Die Bilder stammen überwiegend aus deutschen Panoramax-Aufnahmen, ergänzt um ähnliche Zeichen aus anderen europäischen Ländern mit Länderpräfix im Dateinamen. Lizenz laut Dataset Card: CC BY-SA 4.0. Für den Kurs werden Herkunft und Urheber beibehalten. Der verwendete Datenstand ist b4856947ed7cb6312587258acc90e8cf88a4aa13. Die geprüften Archive enthalten 13.287 beziehungsweise 6.944 Bilddateien, davon 522 exakt gleiche Bilder in beiden Archiven. Nach Deduplizierung verbleiben 19.709 Bilder. Diese ursprüngliche Aufteilung ist deshalb kein unabhängiger Abschlusstest. Gruppieren Sie Duplikate und zusammengehörende Bildquellen vor der neuen Aufteilung. Der Ausgangscheckpoint kann die alten Bilder dennoch bereits kennen. Seine Prüfung bleibt ein rückblickender Regressionstest. Die beiden neuen Ortstafelklassen und neue unabhängige Prüfgruppen kommen aus unserer geprüften Sammlung hinzu. Es wird ein vorhandener Datensatz erweitert und ein vorhandenes Modell weitergelernt. Nicht jedes Datenrepository enthält Gewichte. Quellenprüfung: source/hf-model-card-review-2026-10-20.json. Ergänzender Kartenbeleg: source/dataset-card-review-2026-10-20.json.",
     "sources": [
       "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/blob/b4856947ed7cb6312587258acc90e8cf88a4aa13/README.md",
       "https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/README.md"
-    ]
+    ],
+    "sourcePptxSlide": 9
   },
   {
     "title": "Modelle: Gewichte, Dateien und App-Speicher",
     "type": "modelTable",
-    "minutes": 1.5,
+    "minutes": 1,
     "headers": [
       "Modell",
       "Parameter",
@@ -260,10 +269,10 @@ export const slides = [
     ],
     "rows": [
       [
-        "YOLO11n · Detektor\n3 Klassen · 1280²",
+        "YOLO11n · Detektor\n3 Klassen · 1024²",
         "2.590.425",
         "6 / 6 / 6",
-        "35 MB"
+        "22 MB"
       ],
       [
         "YOLO26l-cls · DE\n134 Klassen · 224²",
@@ -273,11 +282,11 @@ export const slides = [
       ]
     ],
     "body": [
-      "Detektor: SGBlur · 1280 × 1280 mobil · 3 Objektklassen",
+      "Detektor: SGBlur · 1024 × 1024 mobil · 3 Objektklassen",
       "Klassifikator: Panoramax / Prolix · 224 × 224 · 134 Zeichenklassen"
     ],
     "takeaway": "Volle MB gerundet. Gesamtapp: unterschiedliche Last und Messgrößen; kein isolierter Modell-RAM.",
-    "notes": "Die Parameter wurden tatsächlich in den SHA-256-geprüften Originalcheckpoints auf der CPU gezählt: sum(p.numel() for p in model.parameters()). Detektor 2.590.425, deutscher Klassifikator 13.006.278 Parameter einschließlich Bias und eingefrorener Parameter. Der Detektor enthält 16 feste DFL-Projektionsparameter. FP16-Parameterbytes sind 5.180.850 beziehungsweise 26.012.556; Dateiverpackung und Puffer zählen zusätzlich. Die Dateigrößen werden auf volle dezimale MB gerundet. Detektor: Original 5.979.923 Byte, Core ML 5.576.860, LiteRT 5.669.818 → jeweils 6 MB. Klassifikator: 26.282.865, 26.175.294, 26.080.976 → jeweils 26 MB. Die sichtbaren Android-App-Puffer sind aus dem aktuellen Quellcode berechnete Kapazitäten: 34.649.600 Byte für den Detektor und 1.004.056 Byte für den Klassifikator. Diese Werte sind keine Messung des vollständigen RAM-Bedarfs; Gewichte, Runtime-Arenen, Zwischenaktivierungen, GPU-Kopien, Kamera und Karte kommen hinzu. Eine getrennte RAM-Messung je Modell liegt nicht vor. Als App-Gesamtbeispiele stehen ein neuer Android-PSS-Snapshot von 645,67 MB am 19.10.2026 und ein historischer iPhone-physical-footprint-Sample von 231,93 MB am 01.10.2026 zur Verfügung. Unterschiedliche Last, Versionen und Messgrößen: daraus keinen Plattformvergleich ableiten. Rohbelege und Berechnung stehen in source/model-weights-evidence.json und source/model-memory-evidence.json. Die Links öffnen die gepinnten tatsächlichen Modellquellen. Die sichtbare HF-Quelle benennt Panoramax/classify_de_road_signs ausdrücklich. Dieser exakt gepinnte Checkpoint ist die Ausgangsbasis des Fine-Tuning-Beispiels auf Folie 20. Die Modellkarte nennt das Training mit Panoramax/classified_de_road_signs. Ihre 98,6 Prozent Accuracy sind eine selbst berichtete Herausgeberangabe und nicht unser Testergebnis. Lizenzangaben getrennt lesen: Modellkarte Etalab 2.0, Bilddatensatz CC BY-SA 4.0 und Ultralytics-Software AGPL-3.0 beziehungsweise Enterprise. Prüfbeleg: source/hf-model-card-review-2026-10-20.json.",
+    "notes": "Die Parameter wurden tatsächlich in den SHA-256-geprüften Originalcheckpoints auf der CPU gezählt: sum(p.numel() for p in model.parameters()). Detektor 2.590.425, deutscher Klassifikator 13.006.278 Parameter einschließlich Bias und eingefrorener Parameter. Der Detektor enthält 16 feste DFL-Projektionsparameter. FP16-Parameterbytes sind 5.180.850 beziehungsweise 26.012.556; Dateiverpackung und Puffer zählen zusätzlich. Die Dateigrößen werden auf volle dezimale MB gerundet. Detektor: Original 5.979.923 Byte, aktuelles Core ML 5.504.286, aktuelles LiteRT 5.524.669 → jeweils 6 MB. Klassifikator: 26.282.865, 26.175.294, 26.080.976 → jeweils 26 MB. Die sichtbaren Android-App-Puffer sind aus dem Quellcode vom 20. Oktober berechnete Kapazitäten: 22.175.744 Byte für den Detektor bei 1024² und 21.504 Vorschlägen und 1.004.056 Byte für den Klassifikator. Diese Werte sind keine Messung des vollständigen RAM-Bedarfs; Gewichte, Runtime-Arenen, Zwischenaktivierungen, GPU-Kopien, Kamera und Karte kommen hinzu. Eine getrennte RAM-Messung je Modell liegt nicht vor. Als App-Gesamtbeispiele stehen ein neuer Android-PSS-Snapshot von 645,67 MB am 19.10.2026 und ein historischer iPhone-physical-footprint-Sample von 231,93 MB am 01.10.2026 zur Verfügung. Unterschiedliche Last, Versionen und Messgrößen: daraus keinen Plattformvergleich ableiten. Rohbelege und Berechnung stehen in source/model-weights-evidence.json und source/model-memory-evidence.json. Die Links öffnen die gepinnten tatsächlichen Modellquellen. Die sichtbare HF-Quelle benennt Panoramax/classify_de_road_signs ausdrücklich. Dieser exakt gepinnte Checkpoint ist die Ausgangsbasis des Fine-Tuning-Beispiels auf Folie 22. Die Modellkarte nennt das Training mit Panoramax/classified_de_road_signs. Ihre 98,6 Prozent Accuracy sind eine selbst berichtete Herausgeberangabe und nicht unser Testergebnis. Lizenzangaben getrennt lesen: Modellkarte Etalab 2.0, Bilddatensatz CC BY-SA 4.0 und Ultralytics-Software AGPL-3.0 beziehungsweise Enterprise. Prüfbeleg: source/hf-model-card-review-2026-10-20.json.",
     "sources": [
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/shared/tsr/training-sources-v1.json",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/shared/tsr/end-sign-review-2026-09-24.md",
@@ -296,10 +305,52 @@ export const slides = [
     ],
     "memoryNotes": [
       "¹ Berechnete Puffer; Gewichte, Aktivierungen und GPU-Speicher kommen hinzu.",
-      "Gesamtapp-Beispiele: Android 646 MB PSS · iPhone 232 MB phys. Footprint."
+      "Historische Gesamtapp-Beispiele: Android 646 MB PSS · iPhone 232 MB phys. Footprint."
     ],
     "evidenceDate": "20. Oktober 2026",
-    "sourceSlide": 9
+    "sourceSlide": 9,
+    "sourcePptxSlide": 10
+  },
+  {
+    "title": "YOLO26s im Dashcam-Vergleich",
+    "type": "detectorCandidate",
+    "minutes": 1,
+    "intro": "3 Fahrten · 31:47 Minuten · 65 feste Prüfbilder · 1024 × 1024",
+    "headers": [
+      "Detektor",
+      "Gefundene Boxen¹",
+      "Fehlvorschläge¹",
+      "Mac-CPU²"
+    ],
+    "rows": [
+      [
+        "YOLO11n · aktuell",
+        "17 / 48",
+        "1",
+        "68 ms"
+      ],
+      [
+        "YOLO26s · Kandidat",
+        "14 / 48",
+        "0",
+        "128 ms"
+      ]
+    ],
+    "body": [
+      "¹ Assistentenannotation: erkennbare Schildfronten ab 20 px · keine App-Fehlalarmrate",
+      "² Median über 3.814 Videobilder · One-to-many-Zweig · keine Telefonmessung"
+    ],
+    "takeaway": "Die Videoprüfung rechtfertigt noch keinen Modellwechsel in den Apps.",
+    "link": [
+      "SGBlur: gepinnter YOLO26s-Checkpoint",
+      "https://github.com/cquest/sgblur/blob/fa83262033b6addb9c8085caa5a0fd82d212f16a/models/yolo26s_face_plate_sign.pt"
+    ],
+    "notes": "Der Commit vom 6. Oktober 2026 ergänzt die Datei yolo26s_face_plate_sign.pt, schaltet den Dienst aber nicht automatisch um. Beide Checkpoints speichern imgsz=2048 als Trainingsgröße; die Inferenzgröße bleibt wählbar. Die Apps verwenden aktuell 1024×1024. Der frühere Vergleich mit 13 Lern-/Validierungsbildern und Teilannotation bleibt separat dokumentiert: 10/16 bekannte Boxen für YOLO11n und 13/16 für YOLO26s. Die Folie zeigt jetzt den zusätzlichen Videoversuch. Drei vollständige archivierte Fahrten wurden vor der Inferenz ausgewählt und gegen den privaten HF-Backupstand bd12056313e00acc790d25ebe5486aac11f4cf79 gehasht: iPhone bei Tag, Android in der Morgendämmerung und Android bei Sonnenuntergang. Zusammen 31 Minuten 47 Sekunden, bei zwei Einzelbildern pro Sekunde 3814 Eingaben. Die Android-Videos haben variable Bildraten. Einzelne OpenCV-Seeks weichen bis zu 0,79 Sekunden vom angeforderten Zeitpunkt ab; einmal sind zwei Nachbarbilder um 0,10 Sekunden zeitlich vertauscht. Modellvergleich und Annotation verwenden dennoch exakt dieselben gespeicherten Pixel. Das ist kein lückenloser Trackingtest. Die gleichen aufrechten Fenster werden proportional auf 1024 Pixel Höhe skaliert und rechts auf 1024 Spalten begrenzt. Native Interpolation ist damit angenähert, nicht bitgenau nachgewiesen. Alle 30 Sekunden wurde ab Sekunde null ein festes Prüfbild gewählt. 65 Bilder enthalten nach der quellbildbasierten Prüfung 48 Schildinstanzen; wiederholte Sichtungen desselben Schilds zählen mehrfach. Die Annotation wurde ohne Kenntnis der Modellvorschläge eingefroren und stammt von einem Assistenten, nicht von einer unabhängigen menschlichen Prüfstelle. Gezählt werden erkennbare Schildfronten mit mindestens 20 Pixeln kürzerer Boxkante, einschließlich Wegweisern, Park-, Haltestellen- und Zusatztafeln. Rückseiten, angeschnittene und unklare oder kleine Schilder werden markiert ausgeschlossen. Confidence ist 0,25, NMS-IoU 0,7, Zuordnungs-IoU 0,5, Eins-zu-eins-Zuordnung. YOLO11n findet 17 von 48 Instanzen mit 1 bewerteten Fehlvorschlägen; YOLO26s findet 14 mit 0. Der Kandidat gewinnt 1 und verliert 4 Treffer gegenüber dem alten Modell. Das sind Detektorwerte auf den fest beschrifteten Bildern. Aus den Rohvorschlägen aller 3814 Bilder lässt sich keine Genauigkeit ableiten. Eine verfehlte Momentaufnahme bedeutet auch keinen vollständig verpassten Schildkontakt: Der Kandidat erkennt die bei Sekunde 510 verfehlte Nässe-Zusatztafel bereits bei Sekunde 506 und die bei Sekunde 150 verfehlte Kurventafel bei Sekunde 150,5. Diese nachträglich ausgewählten Nachbarbilder gehören nicht zu den festen Kennzahlen. Der Median der Python-predict-Wandzeit beträgt 68.0 beziehungsweise 128.5 ms auf der Mac-CPU mit vier Threads, einschließlich predict-Vor-/Nachverarbeitung, aber ohne Videodekodierung und Fensterbildung. Das ist keine iPhone-/Android-Laufzeit- oder Thermikmessung. Der ursprüngliche End-to-end-Zweig des YOLO26s wurde danach separat auf denselben 65 Prüfbildern geprüft: 13/48 Treffer und 0 bewertete Fehlvorschläge. Dieser Zusatzlauf hat keine vergleichbare 3814-Bilder-Laufzeitmessung. Der Standardzweig liefert [1,300,6] mit xyxy, Score und Klassenindex und benötigt auf beiden Plattformen eine gesonderte Integration. Der kompatible Kandidatenexport wählt ausdrücklich end2end=false; er liefert vor NMS [1,7,21504], mit Core-ML-NMS für Vision und nativer Android-NMS. Die Python-NMS mit IoU 0,7 und bis zu 300 Vorschlägen ist nicht der vollständige Android-Ablauf mit IoU 0,45 und maximal zwölf Vorschlägen. Die zehn aktuellen Länderpaket-Manifeste bleiben bytegleich und die Apps behalten YOLO11n. Es gibt noch keine Freigabe für einen Wechsel, keine Messung der Folgeklassifikation/OCR und keine Änderung der gemeinsamen Speed-Reference-Policy. Der deutsche 134-Klassen-Klassifikator und die historischen Trainingsresultate bleiben unverändert. Quellen und Grenzen: docs/SGBLUR_YOLO26_DASHCAM_REPLAY_2026-10-20.md sowie docs/sgblur-yolo26-dashcam-2026-10-20.evidence.json und die eingefrorenen Labels. Die Daten sind kein unabhängiger Test mit nachgewiesen unbekannten Trainingsorten.",
+    "sources": [
+      "https://github.com/cquest/sgblur/commit/fa83262033b6addb9c8085caa5a0fd82d212f16a",
+      "https://huggingface.co/datasets/loffenauer/youspeed.de/tree/bd12056313e00acc790d25ebe5486aac11f4cf79"
+    ],
+    "evidenceDate": "20. Oktober 2026"
   },
   {
     "title": "SGBlur erkennt Boxen; Prolix ergänzt die Bedeutung",
@@ -342,7 +393,8 @@ export const slides = [
       "https://github.com/volzinnovation/Woladen.de-analytics/blob/614f0950086e009b7af6356518fa05aa07d5aa55/prolix_pipeline/worker.py",
       "https://github.com/volzinnovation/Woladen.de-analytics/blob/614f0950086e009b7af6356518fa05aa07d5aa55/docs/prolix-ki-server-runbook.md"
     ],
-    "sourceSlide": 10
+    "sourceSlide": 10,
+    "sourcePptxSlide": 11
   },
   {
     "title": "Ein Klassifikator-Checkpoint, drei Laufzeitformate",
@@ -355,14 +407,15 @@ export const slides = [
       "iPhone\nCore ML .mlmodelc"
     ],
     "takeaway": "Gemeinsame Gewichte sind die Basis; gleiche Ergebnisse müssen wir nachweisen.",
-    "notes": "Die Quellhashes in den Modellmanifesten und im Serverregister verweisen auf denselben deutschen Klassifikator. Linux verwendet den PyTorch-Checkpoint, Android einen LiteRT-Export und iPhone das Core-ML-Artefakt. Es sind unterschiedliche Dateien. Die gesamte Detektionspipeline ist nicht identisch: SGBlur kann andere Modellgrößen und mehrere Bildauflösungen verwenden; mobil läuft nano bei 1280. Die Croprandzugabe ist im Serveradapter 15 Prozent rundum, mobil asymmetrisch. Auch Rundungen und Nachverarbeitung können Ergebnisse ändern. Nach dem Training frieren wir einen ausgewählten Checkpoint ein, exportieren ihn und vergleichen denselben Korpus mit expliziten numerischen Toleranzen und gleicher Klassensemantik.",
+    "notes": "Die Quellhashes in den Modellmanifesten und im Serverregister verweisen auf denselben deutschen Klassifikator. Linux verwendet den PyTorch-Checkpoint, Android einen LiteRT-Export und iPhone das Core-ML-Artefakt. Es sind unterschiedliche Dateien. Die gesamte Detektionspipeline ist nicht identisch: SGBlur kann andere Modellgrößen und mehrere Bildauflösungen verwenden; mobil läuft YOLO11n im festen rechten 1024 × 1024-Fenster bei voller Bildhöhe. Die Croprandzugabe ist im Serveradapter 15 Prozent rundum, mobil asymmetrisch. Auch Rundungen und Nachverarbeitung können Ergebnisse ändern. Nach dem Training frieren wir einen ausgewählten Checkpoint ein, exportieren ihn und vergleichen denselben Korpus mit expliziten numerischen Toleranzen und gleicher Klassensemantik.",
     "sources": [
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_EXPORT_AND_SOURCE_PROVENANCE.md",
       "https://github.com/volzinnovation/Woladen.de-analytics/blob/614f0950086e009b7af6356518fa05aa07d5aa55/deploy/prolix/models.json",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/iphone/SpeedConsumerApp/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/manifest.json",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/android/app/src/main/assets/tsr/DE.panoramax-bootstrap.tsrmodelpack/manifest.json"
     ],
-    "sourceSlide": 11
+    "sourceSlide": 11,
+    "sourcePptxSlide": 12
   },
   {
     "title": "Welche Hardware rechnet die Inferenz?",
@@ -400,7 +453,8 @@ export const slides = [
       "https://developer.apple.com/documentation/coreml/mlcomputeunits/all",
       "https://developers.google.com/edge/litert/android/gpu"
     ],
-    "sourceSlide": 12
+    "sourceSlide": 12,
+    "sourcePptxSlide": 13
   },
   {
     "title": "Die Vorverarbeitung gehört zum Modellvertrag",
@@ -413,7 +467,7 @@ export const slides = [
       ],
       [
         "Detektor",
-        "RGB · Letterbox · 1280 × 1280 mobil"
+        "RGB · rechtes 1024²-Fenster, volle Höhe"
       ],
       [
         "Klassifikator",
@@ -421,17 +475,18 @@ export const slides = [
       ],
       [
         "Vergleich",
-        "Labelreihenfolge, Boxrückrechnung und Scores kontrollieren"
+        "Labelreihenfolge, Fensterkoordinaten und Scores kontrollieren"
       ]
     ],
-    "notes": "Die mobile Klassifikation skaliert den vorgesehenen Bildausschnitt auf 224 × 224. Ein Default-CenterCrop kann bei einer breiten Ortstafel den Rand oder den Ausgangsstrich entfernen. Der Lernentwurf im Praktikum ersetzt deshalb die Standardtransformationen und verwendet den passenden Validator. Die exakte Interpolation und Pixelwerte müssen für strenge Parität dennoch geprüft werden. Bei Android heißt das Gewichtsartefakt float16, seine äußeren Eingabe-/Ausgabetensoren sind aber float32. Der Detektor hat NHWC [1,1280,1280,3] und Ausgabe [1,7,33600]; die sieben Werte sind vier Boxkoordinaten plus drei Objektklassen. Der Klassifikator hat [1,224,224,3] zu [1,134]. NMS ist in der Core-ML-Pipeline enthalten und auf Android nativ implementiert.",
+    "notes": "Beide Apps orientieren das Bild aufrecht, skalieren proportional auf 1024 Pixel Höhe und behalten die rechten 1024 Spalten. Schmale Hochformatbilder erhalten links RGB-114-Padding. Detektion, Klassifikation und lokale OCR arbeiten in diesen Fensterkoordinaten. Die mobile Klassifikation skaliert den vorgesehenen Bildausschnitt auf 224 × 224. Ein Default-CenterCrop kann bei einer breiten Ortstafel den Rand oder den Ausgangsstrich entfernen. Der Lernentwurf im Praktikum ersetzt deshalb die Standardtransformationen und verwendet den passenden Validator. Die exakte Interpolation und Pixelwerte müssen für strenge Parität dennoch geprüft werden. Bei Android heißt das Gewichtsartefakt float16, seine äußeren Eingabe-/Ausgabetensoren sind aber float32. Der Detektor hat NHWC [1,1024,1024,3] und Ausgabe [1,7,21504]; die sieben Werte sind vier Boxkoordinaten plus drei Objektklassen. Der Klassifikator hat [1,224,224,3] zu [1,134]. NMS ist in der Core-ML-Pipeline enthalten und auf Android nativ implementiert. Der YOLO26s-Kandidatenexport wählt ausdrücklich auf beiden Plattformen den One-to-many-Zweig, damit diese Verträge bestehen bleiben.",
     "sources": [
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/iphone/SpeedConsumerApp/TrafficSignRuntime.swift",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/android/app/src/main/java/de/youspeed/android/alpha/AndroidTrafficSignRuntime.kt",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/android/app/src/main/assets/tsr/DE.panoramax-bootstrap.tsrmodelpack/provenance/android-export-report.json",
       "https://docs.ultralytics.com/tasks/classify/#custom-transforms"
     ],
-    "sourceSlide": 13
+    "sourceSlide": 13,
+    "sourcePptxSlide": 14
   },
   {
     "title": "Panoramax: Box zeichnen, Bedeutung prüfen",
@@ -450,7 +505,8 @@ export const slides = [
       "https://docs.panoramax.fr/backend/install/deep_dive/semantics/",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/lectures/ASSET_CREDITS.md"
     ],
-    "sourceSlide": 14
+    "sourceSlide": 14,
+    "sourcePptxSlide": 15
   },
   {
     "title": "Der Crawler sammelt Beispiele für beide Modelle",
@@ -475,17 +531,18 @@ export const slides = [
       ]
     ],
     "takeaway": "Datenpakete: huggingface.co/datasets/loffenauer/ws26_hspf_imo",
-    "notes": "Das bereitgestellte Skript praktikum/crawl_panoramax.py liest vorhandene Panoramax-Objektannotationen und lädt die verfügbaren HD-Bildableitungen. Es führt keinen Detektor oder Klassifikator aus und verändert die Instanz nicht. Es sammelt zwei ungeprüfte Sätze unter data/collection/inbox: vollständige Bilder samt allen erkannten vorhandenen Boxannotationen für den Detektor sowie einen Bildausschnitt je Schildannotation für den Klassifikator. Die Studierenden prüfen die Beispiele und verschieben die Bildausschnitte in approved/classifier/<klassenordner>; der Ordner bestimmt das korrigierte Klassenlabel. Die Ordner city__start und city__end entsprechen intern city:start beziehungsweise city:end. Unbekannte Schildklassen können ebenfalls den bereitgestellten Bestandsordnern zugeordnet werden. Für den Detektor wird der komplette Ordner mit image.png, labels.txt und metadata.json nach approved/detector/<bild-ID> verschoben. Dies bestätigt ausdrücklich die vollständige Prüfung aller drei Klassen sign, plate und face; eine vorhandene Schildannotation allein beweist diese Vollständigkeit nicht. Fehlende oder falsche Boxen müssen zunächst in Panoramax korrigiert und erneut abgerufen werden. Verschieben korrigiert keine Boxgeometrie. Öffentliche HD-Ableitungen können bereits anonymisiert sein; sie belegen keine Erkennung ungeblurter Gesichter und Kennzeichen. Metadaten, Lizenz, Autor, IDs und SHA-256 bleiben im Manifest erhalten. Der Crawler nutzt nur GET, folgt ausschließlich den next-Links der Seiten und dokumentiert Limits oder unvollständige Abrufe. Panoramen werden im Einstieg übersprungen; HD-Boxen werden nicht unverändert auf SD-Bilder übertragen. Einzelheiten und Verschiebebeispiele stehen in praktikum/SAMMELN_UND_SORTIEREN.md. Als vorbereiteten Einstieg verwenden Sie die vier veröffentlichten Datenpakete unter https://huggingface.co/datasets/loffenauer/ws26_hspf_imo. Der Crawler bleibt für eigene Ergänzungen verfügbar. Die große Lernsammlung enthält 100 Vollbilder und 214 Bildausschnitte. Die beiden kleinen Demobilder sind bereits darin enthalten. Die zwei zusätzlichen Kandidatenpakete bleiben für den Dozenten reserviert und gelangen nicht in den normalen Trainingsimport. Die Downloadanleitung praktikum/DATEN_HERUNTERLADEN.md nennt den unveränderlichen Dataset-Commit 6837ae4fae0d1d216612afa739c9dfefd6b277ab, Prüfsummen und die tatsächlichen Archivwurzeln. Alle Dateien bleiben bis zur menschlichen Prüfung ungeprüft.",
+    "notes": "Das bereitgestellte Skript praktikum/crawl_panoramax.py liest vorhandene Panoramax-Objektannotationen und lädt die verfügbaren HD-Bildableitungen. Es führt keinen Detektor oder Klassifikator aus und verändert die Instanz nicht. Es sammelt zwei ungeprüfte Sätze unter data/collection/inbox: vollständige Bilder samt allen erkannten vorhandenen Boxannotationen für den Detektor sowie einen Bildausschnitt je Schildannotation für den Klassifikator. Die Studierenden prüfen die Beispiele und verschieben die Bildausschnitte in approved/classifier/<klassenordner>; der Ordner bestimmt das korrigierte Klassenlabel. Die Ordner city__start und city__end entsprechen intern city:start beziehungsweise city:end. Unbekannte Schildklassen können ebenfalls den bereitgestellten Bestandsordnern zugeordnet werden. Für den Detektor wird der komplette Ordner mit image.png, labels.txt und metadata.json nach approved/detector/<bild-ID> verschoben. Dies bestätigt ausdrücklich die vollständige Prüfung aller drei Klassen sign, plate und face; eine vorhandene Schildannotation allein beweist diese Vollständigkeit nicht. Fehlende oder falsche Boxen müssen zunächst in Panoramax korrigiert und erneut abgerufen werden. Verschieben korrigiert keine Boxgeometrie. Öffentliche HD-Ableitungen können bereits anonymisiert sein; sie belegen keine Erkennung ungeblurter Gesichter und Kennzeichen. Metadaten, Lizenz, Autor, IDs und SHA-256 bleiben im Manifest erhalten. Der Crawler nutzt nur GET, folgt ausschließlich den next-Links der Seiten und dokumentiert Limits oder unvollständige Abrufe. Panoramen werden im Einstieg übersprungen; HD-Boxen werden nicht unverändert auf SD-Bilder übertragen. Einzelheiten und Verschiebebeispiele stehen in praktikum/SAMMELN_UND_SORTIEREN.md. Als vorbereiteten Einstieg verwenden Sie die sechs veröffentlichten Datenpakete unter https://huggingface.co/datasets/loffenauer/ws26_hspf_imo. Der Crawler bleibt für eigene Ergänzungen verfügbar. Die große Lernsammlung enthält 100 Vollbilder und 214 Bildausschnitte. Die beiden kleinen Demobilder sind bereits darin enthalten. Die zwei zusätzlichen Kandidatenpakete bleiben für den Dozenten reserviert und gelangen nicht in den normalen Trainingsimport. Die Downloadanleitung praktikum/DATEN_HERUNTERLADEN.md nennt den unveränderlichen Dataset-Commit e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8, Prüfsummen und die tatsächlichen Archivwurzeln. Alle Dateien bleiben bis zur menschlichen Prüfung ungeprüft.",
     "sources": [
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/scripts/tsr/select_panoramax_end_signs.py",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/scripts/tsr/diagnostic_dataset.py",
       "https://docs.panoramax.fr/backend/install/deep_dive/semantics/",
       "https://docs.panoramax.fr/backend/dev/STAC_compatibility/",
       "https://docs.panoramax.fr/cli/COMMANDS/#panoramax_cli-download",
-      "https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/tree/6837ae4fae0d1d216612afa739c9dfefd6b277ab"
+      "https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/tree/e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8"
     ],
     "datasetUrl": "https://huggingface.co/datasets/loffenauer/ws26_hspf_imo",
-    "sourceSlide": 15
+    "sourceSlide": 15,
+    "sourcePptxSlide": 16
   },
   {
     "title": "Eine feste Struktur für Training, Validierung und Test",
@@ -520,7 +577,8 @@ export const slides = [
       ]
     ],
     "command": "python import_sorted_folders.py",
-    "sourceSlide": 16
+    "sourceSlide": 16,
+    "sourcePptxSlide": 17
   },
   {
     "title": "Prolix einrichten und seine Rolle verstehen",
@@ -540,29 +598,58 @@ export const slides = [
       "https://gitlab.com/panoramax/clients/prolix/-/blob/main/docs/Commands.md",
       "https://github.com/volzinnovation/Woladen.de-analytics/blob/614f0950086e009b7af6356518fa05aa07d5aa55/deploy/prolix/requirements.txt"
     ],
-    "sourceSlide": 17
+    "sourceSlide": 17,
+    "sourcePptxSlide": 18
   },
   {
     "title": "Datenpakete auf dem KI-Server herunterladen",
     "type": "serverDownload",
     "minutes": 3,
-    "evidenceDate": "20. Oktober 2026",
+    "evidenceDate": "21. Oktober 2026",
     "datasetUrl": "https://huggingface.co/datasets/loffenauer/ws26_hspf_imo",
     "datasetLabel": "huggingface.co/datasets/loffenauer/ws26_hspf_imo",
-    "intro": "Lernsammlung: 100 Vollbilder und 214 Bildausschnitte",
-    "code": ".venv-hf/bin/hf download loffenauer/ws26_hspf_imo \\\n  packages/panoramax-studenten-2026-10-19.zip \\\n  SHA256SUMS.txt --type dataset \\\n  --revision 6837ae4fae0d1d216612afa739c9dfefd6b277ab \\\n  --local-dir data/downloads",
+    "intro": "Vollständige Lernsammlung: 220 Vollbilder und 334 Bildausschnitte",
+    "code": ".venv-hf/bin/hf download loffenauer/ws26_hspf_imo \\\n  --include 'packages/panoramax-studenten-*' \\\n  --include 'packages/panoramax-mobidata-*' --include LEARNING_COLLECTION.json \\\n  --include SHA256SUMS.txt --type dataset \\\n  --revision e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8 --local-dir data/downloads",
     "body": [
-      "SHA-256 vor dem Entpacken prüfen",
-      "Zusätzliche Testkandidaten gesondert aufbewahren"
+      "MobiData BW: 57 + 63 Paare; drei Lernarchive insgesamt",
+      "Klassen und Boxen prüfen; Testkandidaten getrennt aufbewahren"
     ],
     "takeaway": "Vollständige Befehle: praktikum/DATEN_HERUNTERLADEN.md",
-    "notes": "Der Dozent stellt den KI-Server-Zugang, den Kursordner und die Trainingsumgebung bereit. Beginnen Sie im Ordner praktikum. Die öffentliche Quelle lautet https://huggingface.co/datasets/loffenauer/ws26_hspf_imo. Ein Hugging-Face-Konto oder Token ist für diese Downloads nicht erforderlich. Die getestete Anleitung installiert huggingface_hub==1.10.2, typer==0.24.1 und click==8.3.2 im separaten Venv .venv-hf. Der sichtbare Pfad .venv-hf/bin/hf verändert die Torch-Trainingsumgebung nicht. Der sichtbare Befehl lädt die große Lernsammlung und die zugehörige Prüfsummenliste nach data/downloads. Der volle Commit 6837ae4fae0d1d216612afa739c9dfefd6b277ab fixiert den geprüften Datenstand. Er ist ein Versionsbezeichner und kein Passwort. Laden Sie zusätzlich SHA256SUMS.txt aus derselben Revision und vergleichen Sie die relevante Prüfsumme vor dem Entpacken. Die Anleitung zeigt auch den kleinen Demo-Download, den HTTPS-Weg und die korrekten Archivpfade. Beide Demo-Bilder sind eine Teilmenge der 100er-Sammlung. Die zwei weiteren Pakete sind reservierte Testkandidaten: eigene Instanz mit 39 HD-Bildern und 77 Bildausschnitte samt 246 SD-Vorschauen sowie externe Quellen mit 15 Zielansichten, davon zwei DE:310- und 13 DE:311-Vorschläge. Die 39 HD-Bilder sind eine Teilmenge der SD-Bilder, mehrere Zielansichten können dieselbe Tafel zeigen. Alle Pakete enthalten ungeprüfte Vorschläge. Kopieren Sie die Testkandidaten nicht in data/collection, verwenden Sie sie nicht für Epochen- oder Hyperparameterwahl und wenden Sie darauf nicht den normalen 70/15/15-Importer an. Vor dem Training müssen die Studierenden die Lernsammlung prüfen und einsortieren. Vollständige sign-, plate- und face-Boxen sind für eine Detektorfreigabe nötig. Der 134-Klassen-Bestandskorpus und der Baselinecheckpoint kommen weiterhin separat vom Dozenten. Die Quelle ist öffentlich unter CC BY-SA 4.0 mit bildbezogenen Urhebern dokumentiert; Quellmetadaten und Lizenz bleiben erhalten.",
+    "notes": "Laden Sie die vollständige Lernsammlung aus drei Archiven herunter: die 100er-Sammlung mit 214 Crops, MobiData BW v2 mit 57 Paaren und die zusätzliche MobiData-Sammlung mit 63 Paaren. Zusammen stehen 220 Vollbilder und 334 unterschiedliche Crop-Dateien zur Prüfung bereit. 190 Ortstafel-Kandidaten tragen Quell-Tags beziehungsweise visuelle Vorschläge, davon 144 DE:310 und 46 DE:311. Diese Zahlen belegen weder bestätigte Klassen noch unabhängige physische Tafeln; fünf Ortstafel-Crops der ersten Sammlung haben gemischte Quell-Tags. Der sichtbare Befehl nutzt wiederholte --include-Optionen und lädt genau die drei Lernarchive, LEARNING_COLLECTION.json und SHA256SUMS.txt. Die Optionen werden jeweils wiederholt; weitere Muster werden nicht als freie Dateinamen angehängt. Der feste Commit e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8 fixiert den geprüften Datenstand. Die Download-CLI liegt getrennt in .venv-hf; installieren Sie huggingface_hub==1.10.2, typer==0.24.1 und click==8.3.2 nach der Anleitung. Ein Hugging-Face-Konto oder Token ist für den öffentlichen Download nicht nötig. Prüfen Sie alle drei ZIP-Dateien und den Sammlungsindex vor dem Entpacken. Der Index nennt Archivwurzeln, Prüfsummen und Zielordner. Entpacken Sie nach data/collection, data/collection-mobidata-bw und data/collection-mobidata-bw-additions, ohne bestehende Reviews zu überschreiben. Öffnen Sie beide MobiData-SICHTUNG.html. Prüfen Sie die Klassen und alle Vollbildboxen. Die MobiData-Archive enthalten Teilannotation und benötigen einen passenden Kurs-Export; der Standardimporter kann sie nicht unverändert übernehmen. Erhalten Sie Vollbilder, Quellmetadaten, Urheber, Lizenz und Hashes. Gruppieren Sie gleiche Tafeln und mögliche Fahrten über alle drei Lernarchive hinweg. Die zwei ausdrücklich reservierten Testkandidatenpakete bleiben beim Dozenten und werden weder für Training noch Validierung oder Epochenwahl verwendet. Das kleine Demo ist schon in der 100er-Sammlung enthalten. Der ursprüngliche 134-Klassen-Korpus und der Baselinecheckpoint werden separat bereitgestellt. Die Studierenden führen Training und Modellauswertung selbst durch.",
     "sources": [
-      "https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/tree/6837ae4fae0d1d216612afa739c9dfefd6b277ab",
-      "https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/6837ae4fae0d1d216612afa739c9dfefd6b277ab/SHA256SUMS.txt",
-      "https://huggingface.co/docs/huggingface_hub/guides/cli#download-files"
+      "https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/tree/e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8",
+      "https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8/SHA256SUMS.txt",
+      "https://huggingface.co/docs/huggingface_hub/guides/cli#download-files",
+      "https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8/LEARNING_COLLECTION.json"
     ],
-    "sourceSlide": 18
+    "sourceSlide": 18,
+    "sourcePptxSlide": 19
+  },
+  {
+    "title": "Nur bei fehlenden Boxen den Detektor nachtrainieren",
+    "type": "detector",
+    "minutes": 1,
+    "body": [
+      "Vollbilder mit vollständigen Boxen aller drei Klassen prüfen",
+      "DE:310 und DE:311 bleiben beim Detektor generisch sign",
+      "Import schreibt YOLO-Bilder, Labels und feste Gruppensplits",
+      "Gesicht / Kennzeichen im unabhängigen Vergleich mitprüfen"
+    ],
+    "code": "yolo detect train model=models/detector-baseline.pt \\\n  data=data/reviewed/detector/data.yaml \\\n  epochs=20 imgsz=1280 device=0 seed=20261026",
+    "notes": "Das Ortstafelprojekt benötigt nicht zwingend zwei neue Detektorklassen. Wenn die generische Lokalisierung bereits funktioniert, liegt der erste Hebel beim Klassifikator. Falls auf einem unabhängigen Vollbildsatz Tafelboxen fehlen, können zusätzliche Boxannotationen und ein Detektorversuch nötig sein. Aus Pixelbox [xmin,ymin,xmax,ymax] entstehen normierter Mittelpunkt cx,cy und Breite/Höhe. Zur Prüfung die Labels wieder auf das Bild zeichnen. Für Vollbilder alle relevanten Objekte vollständig annotieren; unvollständige Ziele erzeugen falsches Hintergrundtraining. Beim gemeinsamen SGBlur-Modell gehören face und plate zum Regressionstest, weil diese Ausgänge der Anonymisierung dienen. Das neue Importskript liefert data/reviewed/detector/data.yaml mit der festen Klassenreihenfolge 0=sign, 1=plate, 2=face. Der Dozent stellt models/detector-baseline.pt als unveränderte lokale Kopie von yolo11n_panoramax.pt aus cquest/sgblur bereit, Revision 169451970702aca0dde9ff3106dba0f67e0b88a8. SHA-256: 698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a. Dieser ursprüngliche SGBlur-YOLO11n hat 0=sign, 1=plate, 2=face. Der lokale Dateiname ist nur ein Alias für genau diese Gewichte. imgsz=1280 im gezeigten Befehl ist eine gewählte Größe für diesen Trainingsversuch; der gespeicherte Original-Trainingswert ist 2048, und die aktuelle App-Inferenz verwendet 1024×1024. Ein Vollbild wird erst nach vollständiger Prüfung aller Klassen in den Trainingssatz übernommen. Wenn Validierung oder Test mangels unabhängiger Gruppen leer sind, sind weitere Daten nötig; die Gruppen werden nicht neu gewürfelt. Ultralytics verwendet die vorbereiteten Pfade und wählt den Trainingskandidaten anhand der Validierung. Der Test wird erst nach Auswahl mit yolo detect val ... split=test ausgeführt. Für den Detektor werden die per-class Metriken von Ausgangsmodell und Kandidat auf denselben zurückgehaltenen Vollbildern verglichen. Der technische Crawler-Test ist keine echte Trainings- oder Qualitätsmessung. Fine-Tuning kann auf ausgewählte Teile beschränkt werden.",
+    "sources": [
+      "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt",
+      "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/src/detect/detect.py",
+      "https://docs.ultralytics.com/datasets/detect/",
+      "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_PROLIX_ALIGNMENT_2026-09-10.md"
+    ],
+    "evidenceDate": "20. Oktober 2026",
+    "sourceSlide": 20,
+    "sourcePptxSlide": 21,
+    "baselineLink": [
+      "SGBlur-YOLO11n: yolo11n_panoramax.pt → models/detector-baseline.pt",
+      "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt"
+    ]
   },
   {
     "title": "Fine-Tuning mit dem Panoramax-Modell",
@@ -579,8 +666,8 @@ export const slides = [
       "Mit alten Schildern und geprüften Ortstafeln gemeinsam weiterlernen",
       "Validierung wählt best.pt. Der Abschlusstest folgt danach."
     ],
-    "takeaway": "Eine Epoche = ein Durchlauf. Unser Versuch: 20 Epochen, Kandidat aus Epoche 4.",
-    "notes": "Fine-Tuning bedeutet, die Gewichte eines bereits trainierten Modells mit passenden beschrifteten Beispielen weiter zu optimieren. Die vorhandenen Bildmerkmale dienen als Ausgangspunkt. Beim Training von Grund auf wären die Gewichte zunächst zufällig. In unserem TSR-Versuch optimiert der Trainingsloop alle Modellgewichte weiter. Eine Variante friert einige Schichten ein und lernt nur die übrigen weiter. Das ist eine bewusste Trainingsentscheidung, keine automatische Eigenschaft des Begriffs. Prolix bindet den Klassifikator ein; der konkrete Gewichteanbieter ist Panoramax auf Hugging Face. Die Modellkarte nennt eine Feinabstimmung auf Panoramax/classified_de_road_signs und YOLOv26. Unser tatsächlich geprüfter Checkpoint ist YOLO26l-cls mit 134 Klassen und 13.006.278 Parametern. Ausgangsdatei classify_de_road_signs.pt, Revision 5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790, SHA-256 f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7, 26.282.865 Byte. Genau diese Basis wurde am 20.10.2026 auf dem KI-Server verwendet. Der Dozent legt sie nach Prüfung unter models/baseline.pt ab. praktikum/train.py liest den festen Datensatz und erweitert den Classification Head: Die 134 alten Zeilen bleiben anfangs namens- und indexgetreu erhalten, zwei neue Zeilen für city:start und city:end werden initialisiert. Das ergänzt 2.562 Parameter und ergibt 13.008.840 Parameter. Die Studierenden verwenden den bereitgestellten PyTorch-Trainingsloop. RGB-Bildausschnitte werden vollständig auf 224×224 skaliert und mit 1/255 normalisiert. Im dokumentierten Lauf enthielt das Training 13.603 alte Bildausschnitte plus 38 Ortstafeln, die Validierung 3.077 alte Bildausschnitte plus acht Ortstafeln. AdamW, Lernrate 0,0001, Seed 20261026, RTX A5000. Die Validierung wählte nach 20 Epochen den Stand aus Epoche 4 anhand des Macro-F1. Der Test blieb bis zur Auswahl zurückgehalten. Eine Epoche ist ein Durchlauf durch die Trainingsbilder. runs/versuch-01 enthält Konfiguration, progress.csv und weights/best.pt. Die 98,6 Prozent Accuracy auf der Modellkarte sind eine selbst berichtete Herausgeberangabe. Sie stammen nicht aus unserem Prüfbestand und belegen keine Qualität für DE:310/311. Zusätzlich überlappen die veröffentlichten train/val-Archive um 522 exakt gleiche Bilder. Unser dokumentierter Vergleich gruppiert solche Duplikate vor der Aufteilung. Die alten Bilder können dem Ausgangsmodell dennoch bekannt sein, daher bleibt dieser Teil ein rückblickender Regressionstest. Siehe source/hf-model-card-review-2026-10-20.json und TRAININGSERGEBNISSE-2026-10-20.md. Der neue Kandidat enthält state_dict und Metadaten und benötigt model_utils.load_candidate(). Der Core-ML-/LiteRT-Export dieses Kandidaten ist noch nicht getestet.",
+    "takeaway": "Eine Epoche = ein Durchlauf. Beginnen Sie mit 20 Epochen und prüfen Sie die Validierung.",
+    "notes": "Fine-Tuning bedeutet, die Gewichte eines bereits trainierten Modells mit passenden beschrifteten Beispielen weiter zu optimieren. Die vorhandenen Bildmerkmale dienen als Ausgangspunkt. Beim Training von Grund auf wären die Gewichte zunächst zufällig. Das bereitgestellte Trainingsskript optimiert alle Modellgewichte weiter. Eine Variante friert einige Schichten ein und lernt nur die übrigen weiter. Das ist eine bewusste Trainingsentscheidung, keine automatische Eigenschaft des Begriffs. Prolix bindet den Klassifikator ein; der konkrete Gewichteanbieter ist Panoramax auf Hugging Face. Die Modellkarte nennt eine Feinabstimmung auf Panoramax/classified_de_road_signs und YOLOv26. Unser tatsächlich geprüfter Checkpoint ist YOLO26l-cls mit 134 Klassen und 13.006.278 Parametern. Ausgangsdatei classify_de_road_signs.pt, Revision 5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790, SHA-256 f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7, 26.282.865 Byte. Der Dozent legt sie nach Prüfung unter models/baseline.pt ab. praktikum/train.py liest den festen Datensatz und erweitert den Classification Head: Die 134 alten Zeilen bleiben anfangs namens- und indexgetreu erhalten, zwei neue Zeilen für city:start und city:end werden initialisiert. Das ergänzt 2.562 Parameter und ergibt 13.008.840 Parameter. Die Studierenden verwenden den bereitgestellten PyTorch-Trainingsloop. RGB-Bildausschnitte werden vollständig auf 224×224 skaliert und mit 1/255 normalisiert. Eine Epoche ist ein Durchlauf durch die Trainingsbilder. runs/versuch-01 enthält Konfiguration, progress.csv und weights/best.pt. Die 98,6 Prozent Accuracy auf der Modellkarte sind eine selbst berichtete Herausgeberangabe. Sie stammen nicht aus unserem Prüfbestand und belegen keine Qualität für DE:310/311. Zusätzlich überlappen die veröffentlichten train/val-Archive um 522 exakt gleiche Bilder. Gruppieren Sie solche Duplikate vor der Aufteilung. Die alten Bilder können dem Ausgangsmodell dennoch bekannt sein, daher bleibt dieser Teil ein rückblickender Regressionstest. Siehe source/hf-model-card-review-2026-10-20.json. Der neue Kandidat enthält state_dict und Metadaten und benötigt model_utils.load_candidate(). Der Core-ML-/LiteRT-Export dieses Kandidaten ist noch nicht getestet.",
     "sources": [
       "https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/README.md",
       "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/tree/b4856947ed7cb6312587258acc90e8cf88a4aa13",
@@ -590,27 +677,8 @@ export const slides = [
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/shared/tsr/prolix-de-class-catalog-v1.json",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/scripts/tsr/bootstrap_sources.py"
     ],
-    "sourceSlide": 19
-  },
-  {
-    "title": "Nur bei fehlenden Boxen den Detektor nachtrainieren",
-    "type": "detector",
-    "minutes": 1,
-    "body": [
-      "Vollbilder mit vollständigen Boxen aller drei Klassen prüfen",
-      "DE:310 und DE:311 bleiben beim Detektor generisch sign",
-      "Import schreibt YOLO-Bilder, Labels und feste Gruppensplits",
-      "Gesicht / Kennzeichen im unabhängigen Vergleich mitprüfen"
-    ],
-    "code": "yolo detect train model=models/detector-baseline.pt \\\n  data=data/reviewed/detector/data.yaml \\\n  epochs=20 imgsz=1280 device=0 seed=20261026",
-    "notes": "Das Ortstafelprojekt benötigt nicht zwingend zwei neue Detektorklassen. Wenn die generische Lokalisierung bereits funktioniert, liegt der erste Hebel beim Klassifikator. Falls auf einem unabhängigen Vollbildsatz Tafelboxen fehlen, können zusätzliche Boxannotationen und ein Detektorversuch nötig sein. Aus Pixelbox [xmin,ymin,xmax,ymax] entstehen normierter Mittelpunkt cx,cy und Breite/Höhe. Zur Prüfung die Labels wieder auf das Bild zeichnen. Für Vollbilder alle relevanten Objekte vollständig annotieren; unvollständige Ziele erzeugen falsches Hintergrundtraining. Beim gemeinsamen SGBlur-Modell gehören face und plate zum Regressionstest, weil diese Ausgänge der Anonymisierung dienen. Das neue Importskript liefert data/reviewed/detector/data.yaml mit der festen Klassenreihenfolge 0=sign, 1=plate, 2=face. Der Dozent stellt models/detector-baseline.pt als geprüften SGBlur-YOLO11n-Checkpoint bereit. Ein Vollbild wird erst nach vollständiger Prüfung aller Klassen in den Trainingssatz übernommen. Wenn Validierung oder Test mangels unabhängiger Gruppen leer sind, sind weitere Daten nötig; die Gruppen werden nicht neu gewürfelt. Ultralytics verwendet die vorbereiteten Pfade und wählt den Trainingskandidaten anhand der Validierung. Der Test wird erst nach Auswahl mit yolo detect val ... split=test ausgeführt. Für den Detektor werden die per-class Metriken von Ausgangsmodell und Kandidat auf denselben zurückgehaltenen Vollbildern verglichen. Der technische Crawler-Test ist keine echte Trainings- oder Qualitätsmessung. Fine-Tuning kann auf ausgewählte Teile beschränkt werden. Unser dokumentierter SGBlur-Versuch vom 20.10.2026 war eine solche begrenzte Anpassung: 195 Skalare der finalen sign-Ausgänge wurden weitergelernt, alle übrigen Gewichte und BatchNorm-Zustände blieben eingefroren. Er ist nicht mit dem gezeigten allgemeinen Volltraining gleichzusetzen. Weil vollständige ungeblurte face-/plate-Annotationen fehlen, belegen die verbesserten bekannten Schildboxen keine vollständige Anonymisierungsqualität. Einzelheiten stehen in TRAININGSERGEBNISSE-2026-10-20.md.",
-    "sources": [
-      "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/src/detect/detect.py",
-      "https://docs.ultralytics.com/datasets/detect/",
-      "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_PROLIX_ALIGNMENT_2026-09-10.md"
-    ],
-    "evidenceDate": "20. Oktober 2026",
-    "sourceSlide": 20
+    "sourceSlide": 19,
+    "sourcePptxSlide": 20
   },
   {
     "title": "Precision, Recall und F1 beim Klassifizieren",
@@ -656,10 +724,11 @@ export const slides = [
         "6/9 ≈ 67 %"
       ]
     ],
-    "notes": "Alle Zahlen dieser Folie sind frei erfunden und dienen ausschließlich zum Rechnen. Die echten Messwerte folgen erst auf der nächsten Folie. Jeder Bildausschnitt enthält genau eine Tafel und das Spielzeugmodell kann nur DE:310 oder DE:311 vorhersagen. Die Box ist bereits vorgegeben. Hier wird die richtige Klasse bewertet, nicht das Finden einer Box. Beginnen Sie mit den tatsächlichen Klassen in den Zeilen: sechs Ortseingänge, vier Ortsausgänge. In den Spalten steht die Modellvorhersage. Für DE:310 liegen vier richtige Zuordnungen vor. Ein echter Ortsausgang wurde fälschlich als Ortseingang gemeldet. Zwei echte Ortseingänge wurden als Ortsausgang eingeordnet. Precision fragt: Wie viele der fünf DE:310-Vorhersagen stimmen? Vier von fünf, also 80 Prozent. Recall fragt: Wie viele der sechs echten Ortseingänge wurden richtig zugeordnet? Vier von sechs, etwa 67 Prozent. Precision hat alle Vorhersagen dieser Klasse im Nenner, Recall alle tatsächlich vorhandenen Beispiele dieser Klasse. Ein hoher Recall alleine verhindert keine falschen Meldungen; eine hohe Precision alleine verhindert keine ausgelassenen richtigen Ziele. F1 verbindet beide durch das harmonische Mittel, 2×P×R/(P+R), mit P und R als Anteilen zwischen null und eins. Für DE:310 ergibt sich 8/11, etwa 73 Prozent. Das ist nicht das einfache arithmetische Mittel. Mit Trefferzahlen lautet dieselbe Formel 2×richtig/(2×richtig+falsch gemeldet+falsch als andere Klasse eingeordnet). Für DE:311 wechseln wir den Blick auf die andere Klasse: drei richtige, zwei falsch gemeldete und ein als DE:310 eingeordneter Ortsausgang. Precision 3/5=60 Prozent, Recall 3/4=75 Prozent und F1 6/9≈67 Prozent. Lassen Sie die Studierenden die Nenner fünf und vier an der Matrix zeigen. Im realen 136-Klassen-Modell zählt jede andere Klasse als Gegenklasse der betrachteten Klasse. Die drei Werte werden je Klasse berechnet. Werte von 0,80 in der Ergebnisfolie bedeuten 80 Prozent. Zum Einstieg sind die Kürzel TP, FP und FN nicht erforderlich.",
+    "notes": "Alle Zahlen dieser Folie sind frei erfunden und dienen ausschließlich zum Rechnen. Die nächste Folie zeigt, welche Werte Sie selbst ermitteln und vergleichen. Jeder Bildausschnitt enthält genau eine Tafel und das Spielzeugmodell kann nur DE:310 oder DE:311 vorhersagen. Die Box ist bereits vorgegeben. Hier wird die richtige Klasse bewertet, nicht das Finden einer Box. Beginnen Sie mit den tatsächlichen Klassen in den Zeilen: sechs Ortseingänge, vier Ortsausgänge. In den Spalten steht die Modellvorhersage. Für DE:310 liegen vier richtige Zuordnungen vor. Ein echter Ortsausgang wurde fälschlich als Ortseingang gemeldet. Zwei echte Ortseingänge wurden als Ortsausgang eingeordnet. Precision fragt: Wie viele der fünf DE:310-Vorhersagen stimmen? Vier von fünf, also 80 Prozent. Recall fragt: Wie viele der sechs echten Ortseingänge wurden richtig zugeordnet? Vier von sechs, etwa 67 Prozent. Precision hat alle Vorhersagen dieser Klasse im Nenner, Recall alle tatsächlich vorhandenen Beispiele dieser Klasse. Ein hoher Recall alleine verhindert keine falschen Meldungen; eine hohe Precision alleine verhindert keine ausgelassenen richtigen Ziele. F1 verbindet beide durch das harmonische Mittel, 2×P×R/(P+R), mit P und R als Anteilen zwischen null und eins. Für DE:310 ergibt sich 8/11, etwa 73 Prozent. Das ist nicht das einfache arithmetische Mittel. Mit Trefferzahlen lautet dieselbe Formel 2×richtig/(2×richtig+falsch gemeldet+falsch als andere Klasse eingeordnet). Für DE:311 wechseln wir den Blick auf die andere Klasse: drei richtige, zwei falsch gemeldete und ein als DE:310 eingeordneter Ortsausgang. Precision 3/5=60 Prozent, Recall 3/4=75 Prozent und F1 6/9≈67 Prozent. Lassen Sie die Studierenden die Nenner fünf und vier an der Matrix zeigen. Im realen 136-Klassen-Modell zählt jede andere Klasse als Gegenklasse der betrachteten Klasse. Die drei Werte werden je Klasse berechnet. Ein F1-Wert von 0,80 entspricht 80 Prozent. Zum Einstieg sind die Kürzel TP, FP und FN nicht erforderlich.",
     "sources": [
       "https://scikit-learn.org/stable/modules/model_evaluation.html#precision-recall-f-measure-metrics"
-    ]
+    ],
+    "sourcePptxSlide": 22
   },
   {
     "title": "Fortschritt messen – und alte Klassen bewahren",
@@ -667,32 +736,33 @@ export const slides = [
     "minutes": 2,
     "headers": [
       "Prüfung",
-      "TSR-Versuch vom 20. Oktober 2026"
+      "Ihre Auswertung nach der Kandidatenwahl"
     ],
     "rows": [
       [
         "Neue Klassen:\nBildausschnitte",
-        "DE:310: 2/3 (F1 0,80) · DE:311: 12/12 (F1 1,00)"
+        "DE:310 / DE:311: Support, Precision, Recall und F1"
       ],
       [
         "134 Bestandsklassen",
-        "3.015 zu 3.010 richtig / 3.029 Bildausschnitte"
+        "Jede Klasse auf denselben Prüfbeispielen vergleichen"
       ],
       [
         "Recall / F1 je Klasse",
-        "20 Klassen mit schlechterem F1: REGRESSION"
+        "Rückgänge melden; fehlende Abdeckung kennzeichnen"
       ]
     ],
-    "notes": "Das Skript evaluate.py vergleicht unveränderte Baseline und Kandidat standardmäßig auf val. Es schreibt einen lesbaren Bericht, JSON-Metriken und Konfusions-/Klassen-CSV. Für die alten 134 Klassen werden dieselben zurückgehaltenen Beispiele alter Klassen verwendet, ohne neue Ortstafel-Beispiele in diesen Teilvergleich einzumischen. Für jede alte Klasse werden Recall und F1 gegenüber dem Ausgangsmodell geprüft. Ein Rückgang über reine numerische Rundung hinaus führt zu REGRESSION und einem Fehlerstatus. Fehlt eine alte Klasse im Prüfbestand, lautet das Ergebnis UNVOLLSTAENDIG; eine fehlende Klasse wird nicht als bestanden gewertet. Der Gewinn bei zwei neuen Klassen kompensiert keine Verschlechterung bei Bestandsklassen. BESTANDEN und Exitcode 0 beziehen sich nur auf das Bestandsklassen-Gate. Die Precision-, Recall- und F1-Werte der neuen Klassen sind zusätzlich zu beurteilen; dies ist keine automatische Gesamtfreigabe. Gesamtgenauigkeit allein reicht nicht. Erst nach der Kandidatenauswahl wird derselbe Befehl mit --split test --output reports/abschluss ausgeführt. Aussagen gelten für den dokumentierten, endlichen Prüfbestand und sind keine Garantie für alle zukünftigen Straßenbilder. Konkretes Fine-Tuning-Ergebnis vom 20.10.2026: Der nach Validierung ausgewählte Kandidat aus Epoche 4 klassifizierte die 15 zurückgehaltenen manuell ausgeschnittenen Ortstafeln mit 14 richtigen Zuordnungen. DE:310: zwei von drei richtig, Precision 1,00, Recall 0,6667, F1 0,80. DE:311: zwölf von zwölf richtig, Precision/Recall/F1 jeweils 1,00. Die große Unsicherheit von nur drei Ortseingängen ausdrücklich erklären. Der vollständige Detektor-Klassifikator-Ablauf erkannte dagegen neun von 15 Ortstafeln korrekt (DE:310 zwei von drei, DE:311 sieben von zwölf). Die Cropzahlen auf dieser Folie messen daher ausschließlich den TSR-Klassifikator bei vorgegebener Box. Recall meint den Anteil der tatsächlich vorhandenen Zielklasse, den das Modell richtig findet. Precision meint den Anteil richtiger Treffer unter allen Vorhersagen dieser Klasse. F1 ist das harmonische Mittel aus beiden. Auf denselben 3.029 alten Bildausschnitten mit allen 134 Klassen sank die Anzahl korrekter Zuordnungen von 3.015 auf 3.010. Elf vormals richtige Beispiele wurden falsch und sechs Fehler wurden korrigiert. Bei 20 Klassen sank F1, bei elf der Recall. Trotz leicht gestiegenem Macro-F1 scheitert das Bestandsklassen-Gate: REGRESSION. Die alten Bilder stammen aus dem öffentlichen Panoramax-Bestand und können dem Ausgangsmodell schon bekannt sein. Der Vergleich misst rückblickend Veränderungen, keine unabhängige absolute Genauigkeit. Neue Ortstafeln: 15 Ansichten, 14 mögliche Standorte in 13 konservativen Gruppen, darunter projizierte Ansichten. Sie tragen nur eine begrenzte Schlussfolgerung. Der Kandidat erhält keine produktive Freigabe. Vollständige Belege: TRAININGSERGEBNISSE-2026-10-20.md, source/real-training-2026-10-20/tsr/results-summary.json und source/real-training-2026-10-20/tsr/reports/retrospective-old/regression-gate.json. Nach dem Abschlusstest folgte keine Parameterwahl anhand dieser Testdaten.",
+    "notes": "Das Skript evaluate.py vergleicht unveränderte Baseline und Kandidat standardmäßig auf val. Es schreibt einen lesbaren Bericht, JSON-Metriken und Konfusions-/Klassen-CSV. Für die alten 134 Klassen werden dieselben zurückgehaltenen Beispiele alter Klassen verwendet, ohne neue Ortstafel-Beispiele in diesen Teilvergleich einzumischen. Für jede alte Klasse werden Recall und F1 gegenüber dem Ausgangsmodell geprüft. Ein Rückgang über reine numerische Rundung hinaus führt zu REGRESSION und einem Fehlerstatus. Fehlt eine alte Klasse im Prüfbestand, lautet das Ergebnis UNVOLLSTAENDIG; eine fehlende Klasse wird nicht als bestanden gewertet. Der Gewinn bei zwei neuen Klassen kompensiert keine Verschlechterung bei Bestandsklassen. BESTANDEN und Exitcode 0 beziehen sich nur auf das Bestandsklassen-Gate. Die Precision-, Recall- und F1-Werte der neuen Klassen sind zusätzlich zu beurteilen; dies ist keine automatische Gesamtfreigabe. Gesamtgenauigkeit allein reicht nicht. Erst nach der Kandidatenauswahl wird derselbe Befehl mit --split test --output reports/abschluss ausgeführt. Aussagen gelten für den dokumentierten, endlichen Prüfbestand und sind keine Garantie für alle zukünftigen Straßenbilder. Berechnen Sie Ihre Ergebnisse selbst und erklären Sie Fehlbilder. Eine höhere Gesamtgenauigkeit kann einzelne Klassenrückgänge verdecken.",
     "sources": [
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/scripts/tsr/evaluate_ch_classifier.py",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_TRAINING_ROUND_TRIP.md",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_FR_END_SIGN_TRAINING.md"
     ],
     "command": "python evaluate.py \\\n  --candidate runs/versuch-01/weights/best.pt",
-    "takeaway": "Ortstafeltest: 3 DE:310- und 12 DE:311-Bildausschnitte. Altbestand: rückblickend.\nWegen Regression keine Freigabe.",
+    "takeaway": "Kandidaten mit Validierung wählen. Erst danach den Test auswerten.\nNeue und bestehende Klassen getrennt beurteilen.",
     "evidenceDate": "20. Oktober 2026",
-    "sourceSlide": 21
+    "sourceSlide": 21,
+    "sourcePptxSlide": 23
   },
   {
     "title": "Denselben Kandidaten auf allen Zielen prüfen",
@@ -728,7 +798,8 @@ export const slides = [
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/scripts/tsr/foreign-export/export_classifier.py",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/shared/speed-limit-reference/AGENTS.md"
     ],
-    "sourceSlide": 22
+    "sourceSlide": 22,
+    "sourcePptxSlide": 24
   },
   {
     "title": "Partnerübung: drei Fehler, drei nächste Schritte",
@@ -754,7 +825,8 @@ export const slides = [
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_PROLIX_ALIGNMENT_2026-09-10.md",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/scripts/tsr/group_splits_v2.py"
     ],
-    "sourceSlide": 23
+    "sourceSlide": 23,
+    "sourcePptxSlide": 25
   },
   {
     "title": "Ihr Ergebnis ist ein reproduzierbarer Modellversuch",
@@ -782,7 +854,8 @@ export const slides = [
     "sources": [
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_TRAINING_ROUND_TRIP.md"
     ],
-    "sourceSlide": 24
+    "sourceSlide": 24,
+    "sourcePptxSlide": 26
   },
   {
     "title": "Fragen?",
@@ -796,6 +869,7 @@ export const slides = [
       "https://gitlab.com/panoramax/clients/prolix/-/blob/36bb92bed7d8aba1d87c1fd10fcdf8ec7f06046f/README.md",
       "https://github.com/volzinnovation/youspeed.de/blob/917de04668100f2b48dadd5ed35391535cabd5ec/docs/TSR_TRAINING_ROUND_TRIP.md"
     ],
-    "sourceSlide": 25
+    "sourceSlide": 25,
+    "sourcePptxSlide": 27
   }
 ];

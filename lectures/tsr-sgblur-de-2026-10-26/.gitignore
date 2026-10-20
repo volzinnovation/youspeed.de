@@ -2,6 +2,28 @@ source/node_modules/
 
 # Dozentenleitfaden und Musterlösungen bleiben ausschließlich lokal.
 /DOZENTENLEITFADEN.md
+/TRAININGSERGEBNISSE-*.md
+/MOBIDATA-TRAININGSERGEBNISSE-*.md
+/source/real-training-*/
+/source/mobidata-training-*/
+/source/*-training-*/
+/training-results*/
+/runs/
+/reports/
+/models/
+/checkpoints/
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.mlpackage/
+/output/trainingsbelege-*.zip
+/output/praktikum-mobidata-training-*.zip
+/source/OUTPUT-HISTORY-SHA256SUMS.txt
+/source/lecture-cleanup-verification.json
+/source/presentation-validation-v*.json
+/output/praktikum/
+/output/panoramax-*/
 
 # Public datasets are pinned and checksummed in source/huggingface-publication.json.
 /output/panoramax-*.zip
@@ -9,11 +31,7 @@ source/node_modules/
 # Preserve earlier exports locally; commit the current handout and build input.
 /output/tsr-sgblur-de-2026-10-26-v*.pdf
 /output/tsr-sgblur-de-2026-10-26-v*.pptx
-!/output/tsr-sgblur-de-2026-10-26-v9.1.pdf
-!/output/tsr-sgblur-de-2026-10-26-v9.1.pptx
-!/output/tsr-sgblur-de-2026-10-26-v9.2.pdf
-!/output/tsr-sgblur-de-2026-10-26-v9.2.pptx
-!/output/tsr-sgblur-de-2026-10-26-v8.pptx
+!/output/tsr-sgblur-de-2026-10-26-v15.pdf
+!/output/tsr-sgblur-de-2026-10-26-v15.pptx
 /output/praktikum-de310-de311-v*.zip
-!/output/praktikum-de310-de311-v7.3.zip
-!/output/praktikum-de310-de311-v7.4.zip
+!/output/praktikum-de310-de311-v7.6.zip

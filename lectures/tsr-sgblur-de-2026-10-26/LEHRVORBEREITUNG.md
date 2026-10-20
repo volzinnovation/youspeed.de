@@ -6,8 +6,6 @@ Bereiten Sie Daten, Originalmodelle und eine eigene Lehrumgebung vor dem Kurs vo
 
 **Code und Klassentabelle sind enthalten. Die vier ungeprüften Panoramax-Pakete sind öffentlich verfügbar; der vollständige kuratierte Korpus der 134 Bestandsklassen und der Originalcheckpoint müssen zusätzlich bereitgestellt werden.** Die folgende Anleitung beschreibt diese Lehrvorbereitung.
 
-Die [tatsächlich ausgeführten Trainings- und Evaluationsversuche vom 20. Oktober](TRAININGSERGEBNISSE-2026-10-20.md) liefern ein Unterrichtsbeispiel: Neue Ortstafelklassen können gelernt werden, während einzelne Bestandsklassen schlechter abschneiden. Der dortige TSR-Kandidat besteht das Bestandsklassen-Gate nicht. Die Assistentenreviews und der retrospektive öffentliche Altklassenkorpus sind ausdrücklich von einer menschlich freigegebenen Kurs-Ground-Truth zu unterscheiden.
-
 ## 1. Daten bereitstellen
 
 Sie benötigen geprüfte Schild-Crops für **alle 134 Bestandsklassen** und für die neuen Klassen `city:start` (DE:310, Ortseingang) und `city:end` (DE:311, Ortsausgang). Stellen Sie bereit:
@@ -25,7 +23,7 @@ Der publizierte Panoramax-DE-Train/Val-Split enthält dokumentierte Überschneid
 
 ### Öffentliche Pakete auf den KI-Server laden
 
-Die [kanonische Downloadanleitung](praktikum/DATEN_HERUNTERLADEN.md) enthält ausführbare Befehle für [loffenauer/ws26_hspf_imo](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo), festgelegt auf Revision **`6837ae4fae0d1d216612afa739c9dfefd6b277ab`**. Der öffentliche Download benötigt keinen Login. Installieren Sie die Download-CLI bei Bedarf in `.venv-hf/` mit `huggingface_hub==1.10.2`, `typer==0.24.1` und `click==8.3.2`, getrennt von der gepinnten Trainingsumgebung. Der Serverversuch zeigte bei einer frischen Installation ohne diese zusätzlichen Pins eine fehlende `click`-Abhängigkeit. Die Anleitung bietet auch HTTPS mit `curl` und verlangt die gezielte SHA-256-Prüfung vor dem Entpacken.
+Die [kanonische Downloadanleitung](praktikum/DATEN_HERUNTERLADEN.md) enthält ausführbare Befehle für [loffenauer/ws26_hspf_imo](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo), festgelegt auf Revision **`e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8`**. Der öffentliche Download benötigt keinen Login. Installieren Sie die Download-CLI bei Bedarf in `.venv-hf/` mit `huggingface_hub==1.10.2`, `typer==0.24.1` und `click==8.3.2`, getrennt von der gepinnten Trainingsumgebung. Der Serverversuch zeigte bei einer frischen Installation ohne diese zusätzlichen Pins eine fehlende `click`-Abhängigkeit. Die Anleitung bietet auch HTTPS mit `curl` und verlangt die gezielte SHA-256-Prüfung vor dem Entpacken.
 
 Stellen Sie die Lernsammlung mit **100 Vollbildern und 214 Crops** nach `praktikum/data/collection/`. Das ZIP enthält zunächst den Ordner `panoramax-studenten-2026-10-19/`, der als Ganzes übernommen wird. Das kleine Demo mit zwei Vollbildern und sechs Crops liegt getrennt unter `data/demo/collection-demo/`; diese beiden Bilder sind bereits Teil der Lernsammlung. Überschreiben oder vermischen Sie keine vorhandene Sammlung.
 
@@ -68,7 +66,14 @@ python3 scripts/tsr/bootstrap_sources.py verify --root /ABSOLUT/kurs-bootstrap \
 
 Kopieren Sie die ausgegebene geprüfte Datei nach `models/baseline.pt`. Der Trainingscode prüft den Hash erneut. Für dieses Crop-Praktikum ist kein zusätzlicher Detektorcheckpoint nötig.
 
-Für einen zusätzlichen Detektorversuch stellen Sie getrennt `praktikum/models/detector-baseline.pt` bereit: den ursprünglichen **SGBlur-YOLO11n mit den drei Klassen `sign`, `plate`, `face`**. Sein SHA-256 lautet `698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a`; die Quelle ist in [model-inventory.json](source/model-inventory.json) dokumentiert. Verwechseln Sie diesen Checkpoint nicht mit dem deutschen 134-Klassen-Cropmodell. Prüfen Sie Hash und Klassenbelegung vor der Übung.
+Für einen zusätzlichen Detektorversuch stellen Sie getrennt `praktikum/models/detector-baseline.pt` bereit: den ursprünglichen **SGBlur-YOLO11n mit den drei Klassen `sign`, `plate`, `face`**. Sein SHA-256 lautet `698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a`; die Quelle ist der gepinnte [SGBlur-Checkpoint `yolo11n_panoramax.pt`](https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt), auch in [model-inventory.json](source/model-inventory.json) dokumentiert. Folie 21 nennt diesen Checkpoint ausdrücklich. Verwechseln Sie diesen Checkpoint nicht mit dem deutschen 134-Klassen-Cropmodell. Prüfen Sie Hash und Klassenbelegung vor der Übung.
+
+**Ergänzung vom 20. Oktober:** SGBlur bietet inzwischen einen YOLO26s-Detektor
+mit denselben drei Objektklassen an. Folie 11 der Fassung v13 zeigt den zusätzlichen
+Vergleich auf drei archivierten Dashcam-Fahrten. Die 65 festen Prüfbilder sind
+durch einen Assistenten annotiert und keine mobile Freigabe. Verwenden Sie den neuen Checkpoint als
+getrennten Kandidaten, wenn Sie ihn untersuchen möchten. Die dokumentierten
+Verwenden Sie für den Kursversuch weiterhin die dokumentierte YOLO11n-Baseline; tauschen Sie deren Ausgangsgewichte nicht stillschweigend aus. [Quellen, Exporte und Grenzen des Kandidaten](../../docs/SGBLUR_YOLO26_CANDIDATE_2026-10-20.md).
 
 ## 3. Lehrumgebung vorbereiten
 
@@ -138,6 +143,23 @@ Der Bestandsvergleich verwendet für beide Modelle dieselben zurückgehaltenen a
 
 ## 6. Vortrag bereitlegen
 
+Der zusätzliche [MobiData-BW-Sichtungseingang v2 auf Hugging Face](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8/packages/panoramax-mobidata-bw-review-2026-10-20-v2.zip?download=true)
+enthält 57 Original-Vollbilder, 57 Ortstafel-Crops und Zielboxvorschläge (37 DE:310,
+20 DE:311), darunter 44 zusätzliche Zielansichten aus dem 10-m-Abgleich.
+Öffnen Sie `SICHTUNG.html` im entpackten Ordner. Verwenden Sie ihn als exploratives Lehr-/Reviewmaterial außerhalb
+der reservierten Testkandidaten. Klassen und sämtliche Vollbildboxen müssen
+noch menschlich geprüft werden; die normalen Kursimporter dürfen die
+Teilannotation noch nicht übernehmen. Beginnen Sie mit den
+[Sichtungshinweisen](source/mobidata-bw-review-2026-10-20-v2/BITTE_ZUERST_LESEN.txt).
+
+Der neue Nonnenweier-Fall trennt Detektion und Klassifikation: Die Quellbox
+stammt von `SGBlur-yolo11s/0.1.0`; das Label `FR:C50` mit Score 0,92 stammt von
+`classify_fr_road_signs/0.13`, obwohl die sichtbare Tafel DE:310 nahelegt.
+Der feste lokale YOLO11n-Replay verfehlt dieselbe Zieltafel. Verwenden Sie
+Nachbarlabels nur bei passender Boxüberschneidung; pauschale Bildtags reichen
+für diese Zuordnung nicht. Die 37 verfehlten neuen Zielvorschläge sind eine
+gezielte Auswahl und keine populationsbezogene Recall-Schätzung.
+
 Öffnen Sie die PowerPoint und [praktikum/README.md](praktikum/README.md). Prüfen Sie Panoramax-Kurskonto und Annotationsrechte; die gespeicherten Dobel-/Bernbach-Bilder stehen als Reserve bereit. Zeitplan und Übungslösungen hält der Dozent im lokalen Dozentenleitfaden bereit.
 
 Die tatsächlichen Backbone-/Kopfstrukturen sind in [network-architecture-evidence.json](source/network-architecture-evidence.json) belegt. Die 35/1 MB der Modellfolie sind **berechnete Android-App-Puffer**, kein vollständiger RAM je Modell. Android-PSS rund 646 MB und historischer iPhone-Footprint rund 232 MB betreffen unterschiedliche Gesamtapp-Lasten und Messgrößen; siehe [RAM-Belege](source/model-memory-evidence.json).
@@ -145,3 +167,8 @@ Die tatsächlichen Backbone-/Kopfstrukturen sind in [network-architecture-eviden
 Der [exakte CLI-Smoke-Test](source/praktikum-exact-cli-smoke.json) mit Ultralytics 8.4.56 auf CPU, künstlichen Farb-Crops und einer Epoche sowie 27 lokale Tests sind dokumentiert. Das belegt den technischen Ablauf einschließlich `UNVOLLSTAENDIG`/Exit 3; es ersetzt keinen echten Kurskorpus, keine Qualitätsmessung und keinen GPU-Probelauf.
 
 Die erweiterte Sammlung und Ordnerprüfung sind mit **70 lokalen Tests** sowie einem begrenzten Live-Crawl mit zwei Vollbildern und sechs ungeprüften Crops geprüft. Der zusätzliche synthetische Ablauf verwendet alle 136 Klassen und hält Vollbild und Crops im gleichen Split. [Prüfbeleg](source/collection-smoke-evidence.json). Die kleine Live-Sammlung ist eine Übungsreserve für die Prüfung und das Einsortieren; sie ersetzt keinen vollständigen Kursdatensatz.
+
+
+Die Studierenden erhalten außerdem [MobiData BW als zweiten Lerndatensatz](praktikum/DATEN_HERUNTERLADEN.md#5a-zweiter-lerndatensatz-mobidata-bw). Beide MobiData-Archive sind im öffentlichen Kursdatensatz am festen Stand `e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8` verfügbar. Vor der Übernahme benötigen die vorgeschlagenen Klassen und Zielboxen menschlichen Review, eine gruppierte Aufteilung und einen passenden Export. Ergebnisse vorweggenommener Trainingsversuche bleiben ausschließlich lokal.
+
+Die vollständige Lernsammlung am oben festgelegten Stand besteht aus drei Archiven: 100er-Sammlung (214 Crops), MobiData BW v2 (57 Paare) und der [zusätzlichen 63er-Sammlung](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8/packages/panoramax-mobidata-bw-review-2026-10-20-additions.zip?download=true). Stellen Sie **220 Vollbilder und 334 Crops** zur Prüfung bereit; **190 Ortstafel-Kandidaten** verteilen sich nach Tags beziehungsweise Vorschlägen auf **144 DE:310 und 46 DE:311**. Bewahren Sie die drei Sichtungsordner getrennt und prüfen Sie gemeinsame Tafeln und Fahrten vor dem Split. Die vollständigen Download-, Prüfsummen- und Entpackbefehle stehen in der kanonischen Anleitung.

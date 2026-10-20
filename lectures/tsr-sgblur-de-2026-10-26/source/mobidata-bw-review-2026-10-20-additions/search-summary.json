@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "near10_registry_records": 2730,
+  "new_previews_screened": 360,
+  "screening_method": "Color-ROI-assisted preview contact sheets; not exhaustive full-scene annotation.",
+  "municipalities_screened": 156,
+  "sequences_screened": 360,
+  "sequences_new_to_final_prior_inventory": 352,
+  "hd_candidates_inspected": 80,
+  "retained_full_images": 63,
+  "retained_crops": 63,
+  "excluded_hd_candidates": 17,
+  "visible_class_proposals": {
+    "DE:310": 58,
+    "DE:311": 5
+  },
+  "source_target_status": {
+    "no_stored_target_box": 62,
+    "detected_but_unclassified_yes": 1
+  },
+  "registry_face_disagreements": 25,
+  "all_human_approvals": false,
+  "training_performed": false,
+  "model_replay_performed": false,
+  "prior_v2_images": 57,
+  "cumulative_review_images": 120,
+  "full_cohort_visually_reviewed": false,
+  "exact_image_novelty_checked": true
+}

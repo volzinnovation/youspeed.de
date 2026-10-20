@@ -1,0 +1,1599 @@
+{
+  "schema_version": 1,
+  "annotation_origin": "Assistant visual annotation of source-only images; not independent human ground truth",
+  "blind_to_model_outputs": true,
+  "scope": "All 65 preselected 30-second frames, within upright rightmost full-height 1024 window",
+  "target_rule": "Recognizable physical traffic-sign faces, including direction, parking, supplementary and bus-stop faces; shorter bounding-box edge at least 20 pixels. Separate physical panels are separate targets; one printed composite face is one target. Commercial signs, lamp plates, vehicle speed decals, road lights and vehicle hazard decals are background. Delineator posts are background.",
+  "ignore_rule": "Explicit regions for backs, clipped or ambiguous signs and tiny sign clusters. After target matching, unmatched predictions shorter than 20 pixels are outside scope. Other unmatched predictions overlapping ignore regions by at least 0.5 of prediction area are ignored.",
+  "matching_rule": "Class sign only, confidence >=0.25, IoU>=0.5, confidence-sorted greedy one-to-one. Also report IoU 0.3 sensitivity without tuning.",
+  "annotation_method": "Visual source contact sheets and native-resolution bands; source-only color components used as coordinate aids; no detector outputs opened.",
+  "frames": [
+    {
+      "frame_id": "iphone_day-0000000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 0,
+      "window_rgb_sha256": "fe07b7fb96a5db5e3e53084b38d37defa506e55c565221f5e7154121c5ea70f6",
+      "image_sha256": "52ab24ebb826a21a9f99554f68f7621f75dd9d8077608357fa328dcb4eb83dbc",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "iphone_day-0030000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 30,
+      "window_rgb_sha256": "7b926f68f070aef87304dc211e13c8b10cec3501840af838d00f5a759ea6d630",
+      "image_sha256": "4dbbe54ccc5a307f26c6ce2c7361c7c437ed2ad01a98e2c41bea3983c3d92710",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "iphone_day-0060000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 60,
+      "window_rgb_sha256": "6a57568057263316a07d9da274d5b519331fa056715ae9c563937bd1d9259fd2",
+      "image_sha256": "b247163ff6a02ab0b38f6e78c9cb11ba8c0f31418d8adf1055be2c969e519f01",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            87,
+            478,
+            116,
+            507
+          ],
+          "description": "yellow direction panel"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            115,
+            450,
+            184,
+            540
+          ],
+          "reason": "backs of direction panels"
+        },
+        {
+          "box": [
+            45,
+            492,
+            83,
+            514
+          ],
+          "reason": "tiny distant panels"
+        }
+      ]
+    },
+    {
+      "frame_id": "iphone_day-0090000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 90,
+      "window_rgb_sha256": "1133214c8354bf8ebd75a1631c16a8d0c5ccedc6fe4c2df0c1822112b422ec64",
+      "image_sha256": "dd096450779729be53c4db4f9337304917afb1571002a62cae1f029eee50fe14",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "iphone_day-0120000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 120,
+      "window_rgb_sha256": "913795f4abaa35a9f9d53af6d878c87093950a48fc498e64ce04e07c9b5c01f7",
+      "image_sha256": "570120e51d118b329b3cc74e360a81600926802d6a52d1c0e7239e950a04f837",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            237,
+            441,
+            276,
+            478
+          ],
+          "description": "traffic-light warning triangle"
+        },
+        {
+          "box": [
+            241,
+            478,
+            271,
+            507
+          ],
+          "description": "70 speed limit"
+        }
+      ],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "iphone_day-0150000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 150,
+      "window_rgb_sha256": "ae075576e99193dbce60bb95494f896b907c8b06539329edbf5f312fe84dacd7",
+      "image_sha256": "1b3b712c0716c33da4a9dd907091f34d0cb3c211e8f8c2be2eb167e0fee50ea7",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            557,
+            440,
+            623,
+            496
+          ],
+          "description": "yield"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            560,
+            383,
+            609,
+            440
+          ],
+          "reason": "triangle back"
+        },
+        {
+          "box": [
+            424,
+            403,
+            479,
+            440
+          ],
+          "reason": "small street-arrow stack"
+        },
+        {
+          "box": [
+            409,
+            544,
+            424,
+            574
+          ],
+          "reason": "narrow keep-right face"
+        },
+        {
+          "box": [
+            156,
+            498,
+            176,
+            520
+          ],
+          "reason": "tiny priority diamond"
+        },
+        {
+          "box": [
+            121,
+            515,
+            139,
+            535
+          ],
+          "reason": "tiny circular sign"
+        },
+        {
+          "box": [
+            911,
+            480,
+            944,
+            506
+          ],
+          "reason": "rectangular sign back"
+        }
+      ]
+    },
+    {
+      "frame_id": "iphone_day-0180000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 180,
+      "window_rgb_sha256": "01e440e405531b3a142e54e5fc9d6b8b7094d43988d3259fa13f96a71589b397",
+      "image_sha256": "ae5bfabb57d942d001e7ac2b0dfbc6503a2d749763e3ca32695dbd4f4e922825",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": [
+        {
+          "box": [
+            899,
+            601,
+            921,
+            624
+          ],
+          "reason": "circle with shorter visible edge below 20px"
+        },
+        {
+          "box": [
+            136,
+            506,
+            155,
+            535
+          ],
+          "reason": "narrow direction panel"
+        },
+        {
+          "box": [
+            875,
+            602,
+            901,
+            621
+          ],
+          "reason": "short cycle/walking panel"
+        }
+      ]
+    },
+    {
+      "frame_id": "iphone_day-0210000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 210,
+      "window_rgb_sha256": "a49948f06a116eff417e13d94b5c7ebae08a484bf354c05392d8e8ee8a184662",
+      "image_sha256": "3fa304c25d4d524839d6922c2dbc6448452574ea1ee483193dfe4746ffed8d42",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": [
+        {
+          "box": [
+            803,
+            387,
+            874,
+            453
+          ],
+          "reason": "round back"
+        },
+        {
+          "box": [
+            207,
+            539,
+            244,
+            580
+          ],
+          "reason": "round back"
+        },
+        {
+          "box": [
+            853,
+            474,
+            883,
+            505
+          ],
+          "reason": "rectangular back"
+        },
+        {
+          "box": [
+            696,
+            500,
+            722,
+            525
+          ],
+          "reason": "small rectangular back"
+        }
+      ]
+    },
+    {
+      "frame_id": "iphone_day-0240000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 240,
+      "window_rgb_sha256": "59f6eba7ac5426b702757bd7cd1ec3feed93018b686ffdd2bd0e52ee99dc430b",
+      "image_sha256": "949a330edaa830e99a23f7ab850867e51fc8064062fdfec7b507305972b36830",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": [
+        {
+          "box": [
+            197,
+            496,
+            219,
+            520
+          ],
+          "reason": "speed circle below 20px shorter edge"
+        }
+      ]
+    },
+    {
+      "frame_id": "iphone_day-0270000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 270,
+      "window_rgb_sha256": "7d514d6409e3b98d8255be36980624edfc15d2ec93538908ce6fdc1430d9d06d",
+      "image_sha256": "3cae39178ca255ebf068afef636162eeeadde37ef01732256dafdd7a6c2c0368",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            134,
+            486,
+            177,
+            530
+          ],
+          "description": "blue direction board with yellow insert"
+        }
+      ],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "iphone_day-0300000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 300,
+      "window_rgb_sha256": "556f3746e4ad42a16881ff18ee037e1fe2a6ea689ab4f633d0f09e92dd79deb2",
+      "image_sha256": "8ff486f73c746a4748e6c67578107ff7b002b0dd4294d9f7b64f8a20a692d094",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "iphone_day-0330000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 330,
+      "window_rgb_sha256": "82a561f767a94c1ce24809f1cbc377a34735fc22fa548ea34a400fa1500b270d",
+      "image_sha256": "224d50e08923d8f7c64987c0bc005ad74b85b5b81ef6fe354fb2a9b05a69a2ae",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            175,
+            495,
+            207,
+            521
+          ],
+          "description": "blue motorway direction board"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            156,
+            508,
+            169,
+            526
+          ],
+          "reason": "tiny blue board"
+        }
+      ]
+    },
+    {
+      "frame_id": "iphone_day-0360000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 360,
+      "window_rgb_sha256": "acf8c8e0b856666eb47d3070d4d78bf5ccd45114009d0406303ed25d4c047278",
+      "image_sha256": "cd5e463c7159b74ef75154353f113906ff813d1d7e0b6b96805987fc5290870a",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            171,
+            464,
+            203,
+            504
+          ],
+          "description": "blue motorway information face"
+        },
+        {
+          "box": [
+            171,
+            504,
+            204,
+            529
+          ],
+          "description": "white supplementary face"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            525,
+            613,
+            548,
+            685
+          ],
+          "reason": "narrow delineator/hazard marker"
+        },
+        {
+          "box": [
+            879,
+            674,
+            914,
+            716
+          ],
+          "reason": "clipped narrow hazard marker"
+        }
+      ]
+    },
+    {
+      "frame_id": "iphone_day-0390000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 390,
+      "window_rgb_sha256": "7b27eb7f2e0c49eb22a9601f50a86311bc6cee871b63c0088025cc13af51931d",
+      "image_sha256": "7e51d2501f76f6cc9a260885b4a7675fb5e237db4631beef1ac535b5c16895d3",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            179,
+            498,
+            207,
+            537
+          ],
+          "description": "blue parking direction"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            194,
+            483,
+            206,
+            499
+          ],
+          "reason": "tiny blue face"
+        },
+        {
+          "box": [
+            190,
+            540,
+            206,
+            557
+          ],
+          "reason": "tiny chevron"
+        }
+      ]
+    },
+    {
+      "frame_id": "iphone_day-0420000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 420,
+      "window_rgb_sha256": "1c762963b99a61f71efd336cdebd721f070cb8754b65b4cc9c87aebc0ce793c8",
+      "image_sha256": "0350780936bf3a9c152ea7d102173666cfa44850cfac69412363657ac8347e60",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": [
+        {
+          "box": [
+            399,
+            547,
+            436,
+            567
+          ],
+          "reason": "short kilometre marker"
+        }
+      ]
+    },
+    {
+      "frame_id": "iphone_day-0450000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 450,
+      "window_rgb_sha256": "7bd5562be6aa8d4023f0b0c46202b434b1990ae1e79a994122a19e079acf92af",
+      "image_sha256": "decc653a5c48ba9c6e0a4ddbbaf677da53851ba3c0363902ae1192d115bc0689",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "iphone_day-0480000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 480,
+      "window_rgb_sha256": "fe88f64b2d7d34011328ff883d6d3d226dd2955900ca60865cd65df2fab60de0",
+      "image_sha256": "5e40fa06f113b23d5934277baf6b14c4cb586b5aa607537a382903248eff884a",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "iphone_day-0510000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 510,
+      "window_rgb_sha256": "ef5882970e72445a40b43ab3836d2957c3662090dfc0c56f602f932a8dfebb2d",
+      "image_sha256": "82da7316e046febd990c509529fc1bdc6c8d53f3914f99498db6a4359db4d981",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            874,
+            317,
+            988,
+            429
+          ],
+          "description": "80 speed limit"
+        },
+        {
+          "box": [
+            874,
+            431,
+            989,
+            548
+          ],
+          "description": "wet-road supplementary panel"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            0,
+            395,
+            185,
+            466
+          ],
+          "reason": "clipped overhead board"
+        },
+        {
+          "box": [
+            80,
+            498,
+            163,
+            562
+          ],
+          "reason": "distant small panel stack"
+        }
+      ]
+    },
+    {
+      "frame_id": "iphone_day-0540000",
+      "movie_id": "iphone_day",
+      "requested_seconds": 540,
+      "window_rgb_sha256": "23816361f3093f58863ed8211091778294cc7287a75de3f319e0bafc66e7e1d5",
+      "image_sha256": "b3cf9c19bd65dfd651c9de0948110022bfd5804ad91c7b43a13178172bb443b4",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": [
+        {
+          "box": [
+            0,
+            390,
+            28,
+            432
+          ],
+          "reason": "clipped blue arrow"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_dawn-0000000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 0,
+      "window_rgb_sha256": "88630db8c67afa5242718a2048a59875c0619b463c5686c5ba2ba034a7c334a7",
+      "image_sha256": "b5a14410ebe8a9514353d45bbbde843230aa72cd6213a90b60589d88666421a0",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": [
+        {
+          "box": [
+            137,
+            495,
+            158,
+            524
+          ],
+          "reason": "overexposed ambiguous sign face"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_dawn-0030000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 30,
+      "window_rgb_sha256": "aa89057de9cd7d895e970438a29c7566339885885d81b392d26422c32a32c296",
+      "image_sha256": "f8b998f09dd4c149797e36d0f16b0c4065160b5ab012e6ab870809a20c2c1999",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            385,
+            275,
+            487,
+            409
+          ],
+          "description": "parking/camping face"
+        },
+        {
+          "box": [
+            397,
+            409,
+            470,
+            438
+          ],
+          "description": "white supplementary upper"
+        },
+        {
+          "box": [
+            398,
+            440,
+            471,
+            468
+          ],
+          "description": "white supplementary lower"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            104,
+            506,
+            122,
+            528
+          ],
+          "reason": "tiny chevron"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_dawn-0060000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 60,
+      "window_rgb_sha256": "dd5b901d3bbea3689724c69b6c26d276697d699dc73cd8f2353fda5fe5d8ae66",
+      "image_sha256": "f2d557c66dc81f2e4904936d832eb1065e170ef5e494ebc72ece9cbfdadffdf8",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0090000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 90,
+      "window_rgb_sha256": "604aa22b72a64cbc96f70e468fda648b3af424a2198cb86df402a1e49d6fe86d",
+      "image_sha256": "656df0b37436e1ba6d66a330d9365638b2b51a24fc9ec4b73b4aa43b777e1d47",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": [
+        {
+          "box": [
+            305,
+            478,
+            358,
+            550
+          ],
+          "reason": "motion-blurred ambiguous red rectangular board"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_dawn-0120000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 120,
+      "window_rgb_sha256": "f064d0641d27623a14960d2d952498390fba55cfeee16fdd118af4215cb8d31f",
+      "image_sha256": "ece5f7ee4485012a8aaf27ad961374166d50d17c83de19d70b45adf2acda8d8c",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0150000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 150,
+      "window_rgb_sha256": "02fcecb8da634546002900ceb75be7acef1f38534a7d0d256b6d5ba8403f2225",
+      "image_sha256": "8a9cf9a91527ecff2418a1e556784bb5c8eec1aaa825ad094da43a689d89277d",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            111,
+            519,
+            189,
+            580
+          ],
+          "description": "left curve chevron"
+        }
+      ],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0180000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 180,
+      "window_rgb_sha256": "a7955bb0a6a8aca54355a46ddd6f84e96c93617bf9cf1ba4a3a651aca85115c3",
+      "image_sha256": "f0e8194ed455c71c38927e24d3b70b84bf7bd4c8bdf8124d28735519da97b9bc",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": [
+        {
+          "box": [
+            782,
+            470,
+            806,
+            490
+          ],
+          "reason": "tiny distant chevron"
+        },
+        {
+          "box": [
+            181,
+            518,
+            204,
+            542
+          ],
+          "reason": "small sign back"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_dawn-0210000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 210,
+      "window_rgb_sha256": "3e4f302d6951d13de10cc2148a8e3e057165b7c5d74a0e9cf0ddbc8171375762",
+      "image_sha256": "7b1d5f04c0d43d2e3b719e14cff13448b214eaf9f1acea1fb96c4e4ccb3f2730",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0240000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 240,
+      "window_rgb_sha256": "7b3cbdab24577419a23510a789b99992dbe8faaf081e9bcaf8aaa6ef18b445a6",
+      "image_sha256": "99a486d0e68b66058f46b58a3da414b629e7deb23ce8f9171c3e88a79bdb3f4b",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0270000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 270,
+      "window_rgb_sha256": "b27c675d062d88d5855346f562290194b23bca5042178bb0c5a4fd7c27afc187",
+      "image_sha256": "af63d98434400f37ca45bb0128ef95ce3e6814de8b052887a4a4f570b455af6c",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            348,
+            331,
+            484,
+            424
+          ],
+          "description": "Loffenau town entry"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            164,
+            487,
+            211,
+            518
+          ],
+          "reason": "tiny distant signs"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_dawn-0300000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 300,
+      "window_rgb_sha256": "d820789ecde27eccbd157ff68f3ab243b8f3085e1e1e4d0cd50041455548b886",
+      "image_sha256": "becbd0ba3a4afbee74e13faaffb710ef16c83d05160448a8922f563c979c959b",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            330,
+            450,
+            354,
+            476
+          ],
+          "description": "priority-road diamond"
+        }
+      ],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0330000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 330,
+      "window_rgb_sha256": "ce33efb643ef0b0ab3b641bad5ae4537fd0b01598c3abaa61244fba6ff4d28bb",
+      "image_sha256": "aba8b62450ab82640f4058447fb147c4f479a0a1a682c747aed98b2f2c4c0d62",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            471,
+            321,
+            529,
+            413
+          ],
+          "description": "bus-stop face with printed name"
+        }
+      ],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0360000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 360,
+      "window_rgb_sha256": "615a89b39f8504239b24a60906ab765e4650bc85735df571b1bb59aa8312635a",
+      "image_sha256": "1e8712104960bc7cc06b7317ca63909fdc5b7ba00553a1b58b624418fbe3e40f",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": [
+        {
+          "box": [
+            120,
+            405,
+            145,
+            429
+          ],
+          "reason": "small ambiguous yellow pole label"
+        },
+        {
+          "box": [
+            516,
+            429,
+            623,
+            503
+          ],
+          "reason": "rectangular sign backs"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_dawn-0390000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 390,
+      "window_rgb_sha256": "6044677d3ddb3c9f1e2c88225e94e18ba67b1cbcb2025444e35e9130303dde9b",
+      "image_sha256": "68d889789a6db723c02aae4751a7eb704c950edcb8b09673719c0b4f7bad940f",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            186,
+            426,
+            211,
+            459
+          ],
+          "description": "30 speed limit"
+        }
+      ],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0420000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 420,
+      "window_rgb_sha256": "1cefb96a42245a03f552da1d0393e870e504ee771262f51459664ede3f23f475",
+      "image_sha256": "5d5a627bdbde2da98e5fa6b053ac95bbab39b32abaed6987f38eb8b294c72410",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0450000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 450,
+      "window_rgb_sha256": "7b7e8db638fb421a20045dc9f3a036274a7d71645082654272f25b53241fa89a",
+      "image_sha256": "1c1b1c0130d39d311da187c2f1fc53ba9e3d6bf7588a6d3f15caf35e23517327",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            404,
+            308,
+            472,
+            383
+          ],
+          "description": "priority-road diamond"
+        },
+        {
+          "box": [
+            249,
+            417,
+            279,
+            460
+          ],
+          "description": "bus-stop face"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            193,
+            474,
+            210,
+            504
+          ],
+          "reason": "small distant warning stack"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_dawn-0480000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 480,
+      "window_rgb_sha256": "e31be7a04fb9f201b62e2e9d6eda3bad872291b85272d02968226fbcbdae7317",
+      "image_sha256": "e8c4d96a02d0e3b4005d5f3e86c5b7a628cd90a668ab5cc619facc7e78328656",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0510000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 510,
+      "window_rgb_sha256": "5b3f8c5ccf9669910b74fc7dcf9a6be8b9c672a05f0491d7a91d97398fa3e091",
+      "image_sha256": "c472c771b40a80c840f367fde3e1080ecd003714fd055214e043cac3c83e340a",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0540000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 540,
+      "window_rgb_sha256": "d493627e4f6171c1430b2255f707d14ba0197b5e51d051d8994b09a6def1c66d",
+      "image_sha256": "ac9b1a8acd3084223281e748ebadabb01eaa55e410608e8e3e46c888d5f607df",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0570000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 570,
+      "window_rgb_sha256": "0253b13a2ab349ad2c9c85212f0fc45456598e58530fe386e5aff98c7fe02afc",
+      "image_sha256": "02465140510f02c378674c86e2ab959e83262d0f45815687a29ed178ef8bebed",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0600000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 600,
+      "window_rgb_sha256": "b9865dd8cd5168a283183ce62fe2cde16d235aa658c9983ae48e2efd8fe33798",
+      "image_sha256": "343b49203aa3ee8c6d69fb889cb7c04337839f31f5013eb965101490003a7323",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            216,
+            494,
+            252,
+            531
+          ],
+          "description": "50 speed limit"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            128,
+            522,
+            165,
+            548
+          ],
+          "reason": "overexposed distant signs"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_dawn-0630000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 630,
+      "window_rgb_sha256": "b7f9f01ca073c223c3a42c6a9ca11ab24e2d274a42e00a154211df3d4b0269ca",
+      "image_sha256": "2b4fd0b1295dca6b8e6d53d48f03fde1d4e32a22204d98c364c49d17772b9b5d",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            178,
+            472,
+            213,
+            501
+          ],
+          "description": "yellow town entry"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            48,
+            477,
+            159,
+            529
+          ],
+          "reason": "tiny/overexposed distant sign cluster"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_dawn-0660000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 660,
+      "window_rgb_sha256": "c2488b4b1e8b6a0fbd7c0232174b9e57d848a0ee16c4024ee2d18b13b800a4b4",
+      "image_sha256": "8c9e46abc48f1f0635d127093598bf0be959a0de5c3a4842aabc9b8e7c2e42f9",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0690000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 690,
+      "window_rgb_sha256": "9846188456a588e58115036158a3e1726c4d259e1ba71992f4fb3a2802c137b5",
+      "image_sha256": "a56192ffeb59b3cb04510452dbff67baee0bb17f6a3be63e95a47d3573dc2ee8",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_dawn-0720000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 720,
+      "window_rgb_sha256": "0bf3fb0bcefca580a35c26816720a26f68a2f268814463bbc369083d951cfcd4",
+      "image_sha256": "17b5c6e5d0833a3e77a2155744dcafd4001d85be62a402984f60fe39c32ebbf8",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": [
+        {
+          "box": [
+            0,
+            441,
+            76,
+            512
+          ],
+          "reason": "small distant junction signs"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_dawn-0750000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 750,
+      "window_rgb_sha256": "deb5dd1ccc55b2dbc05a1e83debfee6be11da549b2b6932e9da3a1f02e9a0540",
+      "image_sha256": "06e258bb7bdaaae0b4bf99e28099269351c5c501ab02b67f54c3589fdff7664b",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            127,
+            298,
+            235,
+            357
+          ],
+          "description": "motorway/Rastatt direction panel"
+        },
+        {
+          "box": [
+            132,
+            348,
+            244,
+            413
+          ],
+          "description": "Kliniken/Altstadt direction panel"
+        },
+        {
+          "box": [
+            98,
+            400,
+            133,
+            424
+          ],
+          "description": "yellow diversion header"
+        },
+        {
+          "box": [
+            99,
+            422,
+            135,
+            472
+          ],
+          "description": "yellow U diversion arrow"
+        },
+        {
+          "box": [
+            180,
+            422,
+            207,
+            452
+          ],
+          "description": "priority-road diamond"
+        },
+        {
+          "box": [
+            181,
+            450,
+            214,
+            483
+          ],
+          "description": "priority route supplementary"
+        },
+        {
+          "box": [
+            10,
+            323,
+            43,
+            346
+          ],
+          "description": "railway crossbuck"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            164,
+            481,
+            204,
+            516
+          ],
+          "reason": "partly occluded crossing-marker cluster"
+        },
+        {
+          "box": [
+            551,
+            323,
+            610,
+            346
+          ],
+          "reason": "street name plates"
+        },
+        {
+          "box": [
+            560,
+            401,
+            614,
+            423
+          ],
+          "reason": "street name plates"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_dawn-0780000",
+      "movie_id": "android_dawn",
+      "requested_seconds": 780,
+      "window_rgb_sha256": "14bd83a9197e810b41ce7f34156d23406f05f0dbe4171ba5e48814d07b425d07",
+      "image_sha256": "cc24f7f9f388819ae432bdb87031e6641f959417b918ba9e0e50009717b4a2ef",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            191,
+            243,
+            328,
+            315
+          ],
+          "description": "motorway/Rastatt direction panel"
+        },
+        {
+          "box": [
+            196,
+            304,
+            335,
+            384
+          ],
+          "description": "Kliniken/Altstadt direction panel"
+        },
+        {
+          "box": [
+            149,
+            372,
+            200,
+            402
+          ],
+          "description": "yellow diversion header"
+        },
+        {
+          "box": [
+            151,
+            398,
+            199,
+            459
+          ],
+          "description": "yellow U diversion arrow"
+        },
+        {
+          "box": [
+            256,
+            404,
+            293,
+            440
+          ],
+          "description": "priority-road diamond"
+        },
+        {
+          "box": [
+            257,
+            440,
+            299,
+            481
+          ],
+          "description": "priority route supplementary"
+        },
+        {
+          "box": [
+            34,
+            285,
+            80,
+            322
+          ],
+          "description": "railway crossbuck"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            253,
+            479,
+            277,
+            504
+          ],
+          "reason": "small/occluded speed face"
+        },
+        {
+          "box": [
+            215,
+            477,
+            257,
+            525
+          ],
+          "reason": "partly occluded crossing markers"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_sunset-0000000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 0,
+      "window_rgb_sha256": "c2b40847c2c868fc38feb024cc319a07758e49d62b0acbefeed9a31d5827ee72",
+      "image_sha256": "897a69e2eb29ec599b33c298e32728295910162095fadf3608bc89378916bbe5",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_sunset-0030000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 30,
+      "window_rgb_sha256": "1557333448115af2443236bf5bfda9deae3b05cb02638ad0e0021edb142a20ff",
+      "image_sha256": "83dcdca0d4db588fac04a6d5af65ba65c292ae36bf524de2a87b06de2190bfce",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": [
+        {
+          "box": [
+            51,
+            530,
+            69,
+            573
+          ],
+          "reason": "narrow distant parking face"
+        },
+        {
+          "box": [
+            116,
+            536,
+            154,
+            556
+          ],
+          "reason": "small street arrows"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_sunset-0060000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 60,
+      "window_rgb_sha256": "e46a9945718e15f7750ce04d74178fdbd37a2029041c0b5dd43df457e5e7c661",
+      "image_sha256": "7207eb3607a6929a409d543572402e0e78ad71346bef53cb5c80bfbfba6a7b8b",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": [
+        {
+          "box": [
+            0,
+            480,
+            46,
+            537
+          ],
+          "reason": "clipped 40 speed face"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_sunset-0090000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 90,
+      "window_rgb_sha256": "87d9fa3687103a1269b46045dd9e24495ea62f78afede6e003303bf09fd10cde",
+      "image_sha256": "e9f6e72d4ac0cff8c64d7dd61f6d69269cff27d891cf8d891983332919228096",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            148,
+            446,
+            205,
+            477
+          ],
+          "description": "parking direction face"
+        },
+        {
+          "box": [
+            123,
+            497,
+            146,
+            542
+          ],
+          "description": "parking restriction circle"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            151,
+            476,
+            206,
+            496
+          ],
+          "reason": "short supplementary parking face"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_sunset-0120000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 120,
+      "window_rgb_sha256": "6a189c34da8580a8461fcefa1e26b2ccdeaa53acd34f0784815e9e75b839897c",
+      "image_sha256": "9f024e47d3732b9abd7e48ccf08367adf362b4b1b061b58f7f6f86d660f6a78a",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            733,
+            430,
+            761,
+            458
+          ],
+          "description": "parking face"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            733,
+            456,
+            761,
+            473
+          ],
+          "reason": "short supplementary parking face"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_sunset-0150000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 150,
+      "window_rgb_sha256": "8c193b0d8a2c50716eaf889869bc2c2093abd79e3b7aeecfad4accdb250540a1",
+      "image_sha256": "21a75160eb853dc862a191c9f80f0620bdd0536f14dfca2f5ef3e9d5f32855bc",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            25,
+            519,
+            50,
+            561
+          ],
+          "description": "no stopping circle"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            51,
+            531,
+            70,
+            557
+          ],
+          "reason": "small circular face"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_sunset-0180000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 180,
+      "window_rgb_sha256": "3aada022323d2693ec2fab0d695ae6386fbe614dde2012497e7fc266523b7467",
+      "image_sha256": "837237455b7ded6f6829b0ce87fa88775f7ba39b49991e1dea28f88d6b4078f6",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            328,
+            338,
+            384,
+            390
+          ],
+          "description": "no parking circle"
+        },
+        {
+          "box": [
+            332,
+            388,
+            391,
+            469
+          ],
+          "description": "parking/car face"
+        }
+      ],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_sunset-0210000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 210,
+      "window_rgb_sha256": "03f3fe1b7545bb8e6858bc25f7aedb4e31b03ea7cf3c65b7cd800bc2a3a401ff",
+      "image_sha256": "f47675d71f48ee03670aaa367786503ba5cb9708d38111760329bb4f0195ee0f",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_sunset-0240000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 240,
+      "window_rgb_sha256": "886fa01f686d78cb6df280527394cf5ed17592f7ae829f291e355ef8b12a088c",
+      "image_sha256": "f815db69d16a1ef0cc2d1fcc4daad41005e240cf5722bd9cd9a42bd9f6de2a94",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_sunset-0270000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 270,
+      "window_rgb_sha256": "80bc8d964f679af9dee32cad87dd2110346f3fbbbeb8050d0fd93fb688cf9d5e",
+      "image_sha256": "acb26df430835e8bbdc840f8a50ee0fea5d434aed4825225393f6a2353a42b9a",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            278,
+            543,
+            326,
+            573
+          ],
+          "description": "yellow town end board"
+        }
+      ],
+      "ignore_regions": [
+        {
+          "box": [
+            49,
+            567,
+            67,
+            585
+          ],
+          "reason": "tiny priority diamond"
+        },
+        {
+          "box": [
+            239,
+            504,
+            279,
+            522
+          ],
+          "reason": "short sign back"
+        }
+      ]
+    },
+    {
+      "frame_id": "android_sunset-0300000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 300,
+      "window_rgb_sha256": "d42284ca158dfab4543bd49df94b7375833d6d2f972f7b17f8933705993e039a",
+      "image_sha256": "8b48539711cfac5acb5db34e48b8d555a4024ed9e20c3bb7c415b31e38e29743",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_sunset-0330000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 330,
+      "window_rgb_sha256": "b5c8916bdc112a951b5aab090c7a63a0d3813ba5839ffef9f12fce4d3f876e3f",
+      "image_sha256": "8390b651c84aacad2bc17fec6e9e488a027c05db494fb8256c1381cc21431190",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_sunset-0360000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 360,
+      "window_rgb_sha256": "6d67eafbf2802803c56f7a09b3af93dc92445f846bf889e8ad7e5e40c501e948",
+      "image_sha256": "e6328bbc930295923bfc393906479ac4b25b4499037e1265ccc34a63c075425c",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_sunset-0390000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 390,
+      "window_rgb_sha256": "2007e734e9a8bbe0ff6cc6ae9cb7886b8c7b05084d1e7109591f9464662a51ec",
+      "image_sha256": "563dfc6ac8f3080a5ceea9b0c48509605a3870bb4afc966b55dc4803b41e91da",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            7,
+            548,
+            53,
+            581
+          ],
+          "description": "yellow town entry"
+        }
+      ],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_sunset-0420000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 420,
+      "window_rgb_sha256": "87fbea8e0cc366fd109367ac3dc252e9723f0126905ee5e4e5d5188b889dc088",
+      "image_sha256": "e6a98d8f1c4627d606aca1848da8cdf904341fd90f8c9de9f6a230b60de2c5b8",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_sunset-0450000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 450,
+      "window_rgb_sha256": "b54e7fb61b0fa78e9f48dd326485b43b3cafbf50d4541f325ee5af5878fecbca",
+      "image_sha256": "d3fc8715288a7142751ff369c9b00dad253f210f9de5f6a655e02f2bd131dab0",
+      "reviewed": true,
+      "targets": [
+        {
+          "box": [
+            537,
+            456,
+            602,
+            514
+          ],
+          "description": "30 speed limit"
+        },
+        {
+          "box": [
+            104,
+            676,
+            142,
+            735
+          ],
+          "description": "red/white hazard marker"
+        },
+        {
+          "box": [
+            356,
+            644,
+            379,
+            676
+          ],
+          "description": "red/white hazard marker"
+        }
+      ],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_sunset-0480000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 480,
+      "window_rgb_sha256": "6fc380768ab8573f760a0675739b35be8cda8b7cb0cc353df4a2fb7caaa5fcbe",
+      "image_sha256": "2c98a14c71e9621e263d8db511b54a8d2a5920535072f6daf05d7fad85898ddd",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_sunset-0510000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 510,
+      "window_rgb_sha256": "b6ed7ef6926c68291aee85b17240d7156cee1b0a1aac8d7e467ffcaa604ca32f",
+      "image_sha256": "1a0cb9e5e5edf74c8240963bd5dac93e320f53c4368849021d11e5450b465b93",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    },
+    {
+      "frame_id": "android_sunset-0540000",
+      "movie_id": "android_sunset",
+      "requested_seconds": 540,
+      "window_rgb_sha256": "4517c9056583a269bdfcc34c6b63481083b1cbb6e07b10500741335f93709785",
+      "image_sha256": "87b497c854abb3864423dd9ff8f426fcbaf8d202bf422adfc9162caa90a828b1",
+      "reviewed": true,
+      "targets": [],
+      "ignore_regions": []
+    }
+  ]
+}

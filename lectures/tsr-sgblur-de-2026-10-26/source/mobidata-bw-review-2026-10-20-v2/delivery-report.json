@@ -1,0 +1,33 @@
+{
+  "schema_version": "youspeed-mobidata-review-delivery-v1",
+  "role": "exploratory_lecture_review",
+  "full_images": 57,
+  "crops": 57,
+  "sequences": 53,
+  "visible_class_proposals": {
+    "DE:310": 37,
+    "DE:311": 20
+  },
+  "registry_face_disagreements": 2,
+  "no_stored_target_box": 53,
+  "source_target_without_class": 3,
+  "source_target_wrong_code_proposals": 1,
+  "sgblur_yolo11n_target_matches": 9,
+  "sgblur_yolo11n_target_misses": 48,
+  "all_visible_object_annotation_complete": false,
+  "human_approved": false,
+  "eligible_for_training": false,
+  "approved_for_evaluation": false,
+  "normal_course_importer_compatible": false,
+  "source_annotations_changed": false,
+  "collection_manifest_sha256": "82282e8c2f64169f7f124493f98d19b1bd2700b4ae7658fbe8cc48d7a352931d",
+  "limitations": [
+    "Ausgewählte Suchtreffer, keine populationsbezogene Detektor-Recall-Messung.",
+    "Novität gegen bisherige Lehrsammlung und dokumentierte Suchläufe; kein Audit sämtlicher Vortrainingsdaten.",
+    "Nach Baseline-Sichtung exploratives Lehr-/Reviewmaterial; nicht als Blindtest verwenden.",
+    "Standort-/Fahrtgruppen müssen vor einem späteren Split menschlich geprüft werden."
+  ],
+  "archive_file": "panoramax-mobidata-bw-review-2026-10-20-v2.zip",
+  "archive_sha256": "935e5aeceff8b55764fa5ff076777e391ad330a3ed6af74c1111b59c89626729",
+  "archive_bytes": 114226639
+}

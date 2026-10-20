@@ -8,8 +8,6 @@ export function studentText(value){
   .replace('Box stimmt, Klasse falsch → Crops, Klasseninventar und Klassifikator prüfen','Box stimmt, Klasse falsch → Bildausschnitt, Klassen und Klassifikator prüfen')
   .replace('Definierte Crop-Ränder','Feste Ränder')
   .replace('Neue Klassen: Crops','Neue Klassen:\nBildausschnitte')
-  .replace('3.015 zu 3.010 richtige von denselben 3.029 alten Crops','3.015 zu 3.010 richtig / 3.029 Bildausschnitte')
-  .replace('Kleiner Ortstafeltest (3 + 12 Crops). Altbestand: rückblickender Vergleich.\nDer Kandidat erhält wegen der Regression keine Freigabe.','Ortstafeltest: 3 DE:310- und 12 DE:311-Bildausschnitte. Altbestand: rückblickend.\nWegen Regression keine Freigabe.')
   .replaceAll('Schild-Crops','Bildausschnitte')
   .replaceAll('Schild-Crop','Bildausschnitt')
   .replaceAll('Crop-Test','Test mit Bildausschnitten')

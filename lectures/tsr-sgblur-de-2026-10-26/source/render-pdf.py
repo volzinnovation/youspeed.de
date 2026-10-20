@@ -6,11 +6,11 @@ from reportlab.lib.utils import ImageReader
 from pypdf import PdfReader
 
 root = Path(__file__).resolve().parents[1]
-revision = os.environ.get('LECTURE_REVISION', 'v9.2')
+revision = os.environ.get('LECTURE_REVISION', 'v15')
 work = root / '.build' / revision
 data = json.loads((work / 'slides.json').read_text())
 pages = sorted((work / 'final-renders').glob('slide-*.png'))
-assert len(pages) == len(data['slides']) == 27
+assert len(pages) == len(data['slides']) == 28
 output = root / f'output/tsr-sgblur-de-2026-10-26-{revision}.pdf'
 c = canvas.Canvas(str(output), pagesize=(960, 540))
 c.setTitle(data['meta']['title'] + ' — ' + data['meta']['subtitle'])
@@ -24,6 +24,10 @@ for page, slide in zip(pages, data['slides']):
     if slide['type'] == 'modelTable':
         for j, (label, url) in enumerate(slide.get('links', [])):
             c.linkURL(url, ((64+j*602)*.75, (720-526)*.75, (614+j*602)*.75, (720-486)*.75), relative=0, thickness=0)
+    if slide['type'] == 'detectorCandidate':
+        c.linkURL(slide['link'][1], (48, (720-642)*.75, 912, (720-602)*.75), relative=0, thickness=0)
+    if slide['type'] == 'detector' and slide.get('baselineLink'):
+        c.linkURL(slide['baselineLink'][1], (48, (720-680)*.75, 912, (720-650)*.75), relative=0, thickness=0)
     if slide['type'] in ('cnn', 'yolo') and slide.get('links'):
         y = 592 if slide['type'] == 'cnn' else 662
         c.linkURL(slide['links'][0][1], (48, (720-y-40)*.75, 900, (720-y)*.75), relative=0, thickness=0)
@@ -51,6 +55,6 @@ for page, slide in zip(pages, data['slides']):
     c.showPage()
 c.save()
 reader = PdfReader(str(output))
-assert len(reader.pages) == 27
+assert len(reader.pages) == 28
 assert all(abs(float(p.mediabox.width)-960) < 0.01 and abs(float(p.mediabox.height)-540) < 0.01 for p in reader.pages)
 print(output)
