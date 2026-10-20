@@ -1,0 +1,9 @@
+# Lehrumgebung in einem getrennten venv/Container; keine Produktionsumgebung ändern.
+# Python 3.12. CUDA-Wheels für torch/torchvision separat passend zum Server
+# installieren (z.B. offizieller PyTorch cu126-Index); siehe Dozentenleitfaden.
+# Diese direkten Pins ersetzen keinen vollständigen pip-freeze/Container-Digest.
+torch==2.6.0
+torchvision==0.21.0
+ultralytics==8.4.56
+numpy==2.4.4
+Pillow==11.1.0

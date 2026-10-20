@@ -1,0 +1,85 @@
+Externe Panoramax-Testkandidaten — 20. Oktober 2026
+
+Diese ergänzende Sammlung enthält 15 Zielansichten: 2 Vorschläge für Ortseingang
+(DE:310 / city:start) und 13 für Ortsausgang (DE:311 / city:end). Darunter sind
+zwei Ansichten derselben Putlitzer Tafel sowie Vorder-/Rückseite derselben
+Ortsgrenze bei Rodges. Ansichten sind daher keine unabhängigen Testfälle.
+
+Die Quellen sind die öffentlichen Instanzen von OpenStreetMap France, Ulm und
+Fulda. Urheber, Quelllinks, Lizenz und SHA256 stehen bildbezogen im Manifest und
+in der Herkunftsliste. Die Bildquellen weisen CC-BY-SA-4.0 aus:
+https://creativecommons.org/licenses/by-sa/4.0/
+Bei Weitergabe sind diese Herkunftsangaben und die Lizenz beizubehalten. Lokale
+Änderungen (RGB-PNG, Crop, Perspektivprojektion, Box-/Klassenvorschlag) sind
+ausdrücklich dokumentiert. Originale Quelltags bleiben unverändert.
+
+STAND UND AUSSAGEKRAFT
+
+Alle Klassen und ergänzten Boxen sind visuelle Vorschläge des Assistenten.
+Es sind 0 menschlich freigegebene Testfälle enthalten. Einige Tafeln sind klein,
+unscharf oder zeigen einen verblassten roten Balken. Prüfen Sie deren Eignung.
+Der Abgleich gegen die bisherigen 139 HD-Referenzbilder prüft IDs, Sequenzen und
+Dateihashes. Er ersetzt keinen Standort-/Fahrtenabgleich mit dem vollständigen
+späteren Trainingsbestand. Unterschiedliche IDs beweisen keine Unabhängigkeit.
+Die beiden DE:310-Standorte bei Fulda könnten zur selben Fahrt gehören und sind
+deshalb vorerst in einer gemeinsamen konservativen Aufteilungsgruppe.
+
+Die Sammlung enthält jetzt beide Klassen an zusätzlichen Standortkandidaten.
+Mit nur zwei DE:310-Standorten bleibt die Aussagekraft für Ortseingänge gering.
+Die Auswahl über vorhandene Annotationen und anschließende Sichtung ist gezielt;
+sie ist kein repräsentativer Blindtest der gesamten Straßenbildverteilung.
+Berichten Sie Klassen, Standorte und Aufnahmearten getrennt. Berechnen Sie keine
+Konfidenzintervalle, die mehrere Ansichten derselben Tafel als unabhängige Fälle
+behandeln. Bestimmen Sie vor dem Test, welche Genauigkeit und Unsicherheit für
+die Lehrveranstaltung akzeptabel sind.
+
+ZWEI MODELLAUFGABEN
+
+Klassifikator/TSR: Die Ziel-Crops sind im Eingang für die Sichtung bereitgestellt.
+Prüfen Sie jeweils Crop UND Vollbild. Verschieben Sie einen geeigneten Crop erst
+danach in den richtigen Klassenordner, z.B. city__start oder city__end.
+Die 136 Klassenordner sind zunächst leer. Verwerfen Sie ungeeignete Beispiele
+nachvollziehbar. Tragen Sie geprüfte Klasse, prüfende Person und Notiz in die CSV
+ein. Ein Namensvorschlag im Dateinamen ist keine Freigabe.
+
+Detektor/SGBlur: Die Vollansichten und Boxvorschläge sind getrennt enthalten.
+Die Detektorklasse für eine Ortstafel ist weiterhin sign (0), nicht DE:310 oder
+DE:311. Ergänzen oder korrigieren Sie alle sichtbaren sign-, plate- und face-Boxen,
+bevor Sie eine Vollansicht als Ground Truth freigeben. Eine vorhandene Zielbox
+ist keine vollständige Vollbildannotation. Arbeiten Sie mit Rechteckboxen;
+eine konturgenaue Segmentierung ist hier nicht vorgesehen.
+
+GEOMETRIE DER BILDER
+
+11 Zielansichten stammen aus normalen 2D-Aufnahmen. Vier Fulda-Quellen sind
+360°-Panoramen. Deren unveränderte Original-JPEGs bleiben erhalten; zusätzlich
+sind echte sphärische Perspektivprojektionen mit 1920x1080 Pixeln und 75 Grad
+horizontalem Sichtfeld sowie daraus abgeleitete Box-/Cropvorschläge enthalten.
+Die Projektion erzeugt keine neuen Bilddetails. Sie richtet weder einen geneigten
+Horizont automatisch aus noch macht sie die Aufnahme zu einer Smartphonekamera.
+Die Blickrichtung wurde anhand der Zielbox gewählt. Werten Sie diese vier
+Ansichten getrennt von nativen 2D-Bildern aus: Beim Detektor kann die zielzentrierte
+Auswahl die Aufgabe erleichtern. Sie allein belegt keine Verbesserung des Recalls
+auf beliebigen vollständigen Straßenaufnahmen. Projektionsskript, Parameter,
+Mathetests und Prüfnachweise sind für die Reproduktion beigefügt.
+
+FÜR DEN ABSCHLUSSTEST RESERVIEREN
+
+Halten Sie diesen Bestand von Training, Validierung, Epochenwahl und sonstiger
+Modellauswahl getrennt. Die Lehrperson prüft Auswahl, Klassen, Boxen und Gruppen
+und friert danach ein eigenes Testmanifest ein. Alle Ansichten einer Tafel und
+mögliche zusammengehörige Fahrten bleiben auf derselben Seite der Aufteilung.
+Dokumentieren Sie nachträgliche Ausschlüsse, ohne das Modell am Test zu optimieren.
+
+Der normale Kursimporter mit 70/15/15-Aufteilung darf auf diesen reservierten
+Bestand nicht unverändert angewendet werden. Das neue Manifest ist ausdrücklich
+ein Kandidatenmanifest, kein freigegebenes Trainingsmanifest. Ein gesonderter
+Testexport und Evaluationsmodus ist vor der Modellbewertung erforderlich; der
+vorhandene Evaluator bindet Kandidaten an ihr ursprüngliches Trainingsmanifest.
+Deaktivieren Sie dessen Herkunftsprüfungen nicht und ändern Sie keine Checkpoint-
+Metadaten, um einen Test zu erzwingen. Ein alter Split oder Seed wurde hier nicht
+verändert. Der Regressionstest der 134 Bestandsklassen bleibt zusätzlich nötig.
+
+Für die Sammlung wurden keine Modelle ausgeführt oder trainiert und keine
+Annotationen auf den öffentlichen Servern verändert. Die frühere Sammlung und
+die acht zusätzlichen Sequenzen der eigenen Instanz bleiben separat erhalten.

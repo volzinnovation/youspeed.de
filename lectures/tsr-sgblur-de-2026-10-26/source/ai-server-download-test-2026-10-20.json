@@ -1,0 +1,281 @@
+{
+  "schema_version": "ws26-hspf-imo-ai-server-download-verification-v1",
+  "status": "PASS",
+  "completed_at_local": "2026-10-20T12:05:30.593864+02:00",
+  "environment": {
+    "hostname": "wingki01",
+    "user": "raphael",
+    "python": "3.12.3",
+    "cli_dependencies": {
+      "huggingface_hub": "1.10.2",
+      "typer": "0.24.1",
+      "click": "8.3.2"
+    },
+    "receipt_sha256": "f84665aa6fb6f3cd1cd28a1638192164b0c617457584c737adede55dbcae5ee3",
+    "document_sha256": "9ab288b2ce72a6c25217f9d0c1251454345ec4a86931d5737d1b320ecec5f1c3",
+    "helper_sha256": "1c051f732ee9073d258d4b40193c9c2422051483b03b195a71dbc1df1c08ca81",
+    "expected_record_sha256": "63c5519ab95a53c204997fd7cf7653839c164f240f3c578167041018f26f5558",
+    "freeze_sha256": "1a633b62e42e95371b40af167981b3efe01d624f72ce9d49c81410a43d5718fe",
+    "course_directory": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed/lectures/tsr-sgblur-de-2026-10-26/praktikum"
+  },
+  "first_attempt": {
+    "status": "FAIL",
+    "stage": "fresh CLI installation / hf download --help",
+    "error": "ModuleNotFoundError: No module named 'click'",
+    "original_guide_sha256": "560922fd7e9de62a0ab34298aca4033b56752ced0c802f58e365792f520e90a8",
+    "resolution": "Pin huggingface_hub==1.10.2 together with typer==0.24.1 and click==8.3.2; repeat from a new empty workspace."
+  },
+  "scope": "Actual public downloads on the KI server under the configured SSH account, including all four original packages and the documented full HTTPS fallback.",
+  "training_or_gpu_work_executed": false,
+  "production_services_modified": false,
+  "hf_token_required_or_used": false,
+  "receipt": {
+    "schema_version": "ws26-real-server-download-test-v1",
+    "started_at": "2026-10-20T10:04:32.992942+00:00",
+    "document_sha256": "9ab288b2ce72a6c25217f9d0c1251454345ec4a86931d5737d1b320ecec5f1c3",
+    "dataset_revision": "6837ae4fae0d1d216612afa739c9dfefd6b277ab",
+    "workspace": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed",
+    "status": "PASS",
+    "steps": [
+      {
+        "name": "block-00",
+        "status": "PASS",
+        "block_zero_based": 0,
+        "command_sha256": "2a53c429e2f160c4ca41c9eb585ae1cbcbb690ab7be576224dff2ba54efea428",
+        "returncode": 0,
+        "elapsed_seconds": 0.005,
+        "log": "logs/block-00.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "block-01",
+        "status": "PASS",
+        "block_zero_based": 1,
+        "command_sha256": "072d13af9cf0dd49e965080a669fdc0cf543633bb0f79643fbee31ab6b61a3c3",
+        "returncode": 0,
+        "elapsed_seconds": 5.836,
+        "log": "logs/block-01.log",
+        "log_sha256": "1b4df8c80e19977a2e157b080886a258d58357c7989021d6c6e384b7284420d0"
+      },
+      {
+        "name": "hf-version",
+        "status": "PASS",
+        "block_zero_based": null,
+        "command_sha256": "71e83be613691f8e8e924d1e20afe8bab037980c3670f760d4bef6faef7389ff",
+        "returncode": 0,
+        "elapsed_seconds": 0.253,
+        "log": "logs/hf-version.log",
+        "log_sha256": "50020f5178d4e42fca05b2455fbe25f0a8a19b7537bab9fa87429ec5ebe20de1"
+      },
+      {
+        "name": "block-02",
+        "status": "PASS",
+        "block_zero_based": 2,
+        "command_sha256": "966679aebea01a412b01fc69d0807faf2d9e6806075fb9e120ea8823def31093",
+        "returncode": 0,
+        "elapsed_seconds": 13.355,
+        "log": "logs/block-02.log",
+        "log_sha256": "a7a163ac69600245776f6c08aeff46ebb428a78cbff559aee8cb065db337657d"
+      },
+      {
+        "name": "block-03",
+        "status": "PASS",
+        "block_zero_based": 3,
+        "command_sha256": "504e5ea2538386e3ae93f6772900e70c86c4eb7d0a3ecc000e29ff8b7129c4db",
+        "returncode": 0,
+        "elapsed_seconds": 16.863,
+        "log": "logs/block-03.log",
+        "log_sha256": "e7e9b17911d9c28e4cb071ce5300373863466c7760648c3842395673328ff1fc"
+      },
+      {
+        "name": "block-04",
+        "status": "PASS",
+        "block_zero_based": 4,
+        "command_sha256": "438bcd1a2243b089a4f607e7dd4db191ac20cc68cd6744a1937407f94fb5b931",
+        "returncode": 0,
+        "elapsed_seconds": 0.78,
+        "log": "logs/block-04.log",
+        "log_sha256": "b4731a102ad07446c0df3009d83888c5ad842854765e4c61d513aefe8b9fed21"
+      },
+      {
+        "name": "block-05",
+        "status": "PASS",
+        "block_zero_based": 5,
+        "command_sha256": "4064d151b7133c7834475d2b4a26c4309579350e39431f6ec227ff4fb091bbe4",
+        "returncode": 0,
+        "elapsed_seconds": 1.29,
+        "log": "logs/block-05.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "block-06",
+        "status": "PASS",
+        "block_zero_based": 6,
+        "command_sha256": "8eb86507b146cbebc5cce9967c5469e3d2c302f5e9d777e9e4c1672b7312565a",
+        "returncode": 0,
+        "elapsed_seconds": 0.01,
+        "log": "logs/block-06.log",
+        "log_sha256": "ab3156d80c70b313ccf253456c34994231061fc9c6400aafcad5987f4627d277"
+      },
+      {
+        "name": "block-08",
+        "status": "PASS",
+        "block_zero_based": 8,
+        "command_sha256": "947a31b817f42105304bb6963478fb631810a247d02ca7e71b755947d5b7a9b2",
+        "returncode": 0,
+        "elapsed_seconds": 2.501,
+        "log": "logs/block-08.log",
+        "log_sha256": "239f28cc2dcb280495cd5f4ab27f5128ccf4ebb6ef58d41ff422179cfe25ada9"
+      },
+      {
+        "name": "block-09",
+        "status": "PASS",
+        "block_zero_based": 9,
+        "command_sha256": "db4477f7872692a0057b730f2112ed7b6dedfb9025b56044b3bf1ddb117dc031",
+        "returncode": 0,
+        "elapsed_seconds": 0.076,
+        "log": "logs/block-09.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "block-10",
+        "status": "PASS",
+        "block_zero_based": 10,
+        "command_sha256": "4cc738f4c3cadecbb362d99473aa32156bf7ce8eb798f2d41b67b5fe49a9f2ae",
+        "returncode": 0,
+        "elapsed_seconds": 10.555,
+        "log": "logs/block-10.log",
+        "log_sha256": "e566eafb17e2a9223bcf9a67fcc3e9c7fc840711c253e3834db3206977439646"
+      },
+      {
+        "name": "block-11",
+        "status": "PASS",
+        "block_zero_based": 11,
+        "command_sha256": "9efa496b90d050aa4236a22891b57acd75e49e20af97c307dbb02106e941f379",
+        "returncode": 0,
+        "elapsed_seconds": 1.158,
+        "log": "logs/block-11.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "repeat-05",
+        "status": "PASS",
+        "block_zero_based": 5,
+        "command_sha256": "4064d151b7133c7834475d2b4a26c4309579350e39431f6ec227ff4fb091bbe4",
+        "returncode": 1,
+        "elapsed_seconds": 0.003,
+        "log": "logs/repeat-05.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "repeat-09",
+        "status": "PASS",
+        "block_zero_based": 9,
+        "command_sha256": "db4477f7872692a0057b730f2112ed7b6dedfb9025b56044b3bf1ddb117dc031",
+        "returncode": 1,
+        "elapsed_seconds": 0.003,
+        "log": "logs/repeat-09.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "name": "repeat-11",
+        "status": "PASS",
+        "block_zero_based": 11,
+        "command_sha256": "9efa496b90d050aa4236a22891b57acd75e49e20af97c307dbb02106e941f379",
+        "returncode": 1,
+        "elapsed_seconds": 0.003,
+        "log": "logs/repeat-11.log",
+        "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "no_model_work": true,
+    "preflight": {
+      "status": "PLAN",
+      "workspace": "/home/raphael/youspeed-lecture-download-test-20261020-f1a2266d/run-fixed",
+      "blocks_zero_based": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11
+      ],
+      "skipped_block_7": "menschlicher Import, nie ausgeführt",
+      "https_alternative": true,
+      "free_bytes_parent": 1045612994560,
+      "python": "3.12.3",
+      "document_sha256": "9ab288b2ce72a6c25217f9d0c1251454345ec4a86931d5737d1b320ecec5f1c3",
+      "no_gpu_or_training": true
+    },
+    "data_validation": {
+      "learning": {
+        "images": 100,
+        "crops": 214,
+        "sequences": 27,
+        "classes": 136,
+        "manifest_sha256": "5e304ced547b0ee0f5a8bd8ab35ceb7e21dea087968d27688fca26b9482610ac",
+        "all_inbox": true,
+        "approved_files": 0,
+        "rejected_files": 0,
+        "sha256_all_bundles_and_crops": "PASS",
+        "png_dimensions": "PASS"
+      },
+      "demo": {
+        "images": 2,
+        "crops": 6,
+        "sequences": 1,
+        "classes": 136,
+        "manifest_sha256": "05e13a643b0407c2f5f6bb701921399629a4724b6597af93ba41c1eaa94d7730",
+        "all_inbox": true,
+        "approved_files": 0,
+        "rejected_files": 0,
+        "sha256_all_bundles_and_crops": "PASS",
+        "png_dimensions": "PASS"
+      },
+      "own_candidates": {
+        "images": 39,
+        "crops": 77,
+        "sequences": 8,
+        "classes": 136,
+        "manifest_sha256": "bd8b1aa97a3a442118db6e60d13868ee7dde6ef90a3ea9ba5e4a57309a5d8f7c",
+        "all_inbox": true,
+        "approved_files": 0,
+        "rejected_files": 0,
+        "sha256_all_bundles_and_crops": "PASS",
+        "png_dimensions": "PASS",
+        "sd_photos": 246,
+        "human_approved_test_cases": 0
+      },
+      "external_candidates": {
+        "counts": {
+          "candidate_views": 15,
+          "proposed_class_views": {
+            "city:start": 2,
+            "city:end": 13
+          },
+          "site_candidates": 13,
+          "conservative_split_groups": 12,
+          "human_approved_test_cases": 0,
+          "independent_physical_sites_approved": 0,
+          "independent_journeys_approved": 0
+        },
+        "artifacts": 93,
+        "native_2d_views": 11,
+        "perspective_views": 4,
+        "manifest_sha256": "47c229eada4444952f92362688549573419d4fdd91b0dfdac9edcc52947ec54a",
+        "record_and_artifact_file_hashes": "PASS",
+        "eligibility_flags": false
+      },
+      "demo_is_learning_subset": true,
+      "all_four_archive_sha256_and_crc": "PASS",
+      "archives_and_manifests_remain_unapproved": true
+    },
+    "finished_at": "2026-10-20T10:05:30.593864+00:00",
+    "repeat_guards": "PASS"
+  }
+}

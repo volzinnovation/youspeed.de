@@ -1,0 +1,44 @@
+{
+  "schema_version": "youspeed-external-city-candidate-delivery-v1",
+  "created_at": "2026-10-20T08:53:05.357931+00:00",
+  "role": "prospective_test_candidates",
+  "counts": {
+    "candidate_views": 15,
+    "proposed_class_views": {
+      "city:start": 2,
+      "city:end": 13
+    },
+    "site_candidates": 13,
+    "conservative_split_groups": 12,
+    "human_approved_test_cases": 0,
+    "independent_physical_sites_approved": 0,
+    "independent_journeys_approved": 0
+  },
+  "native_2d_views": 11,
+  "perspective_views": 4,
+  "source_instance_count": 3,
+  "sequence_count": 13,
+  "approved_for_evaluation": false,
+  "ready_for_reliable_final_test": false,
+  "physical_independence_approved": false,
+  "human_approved_test_cases": 0,
+  "collection_manifest_sha256": "47c229eada4444952f92362688549573419d4fdd91b0dfdac9edcc52947ec54a",
+  "collection_manifest_lock_sha256": "f6cef5c6deb34ef4eaa8cb0f4b82626ae712c4a47c80b6c94d61a9d8bd7715c3",
+  "overlap_audit": {
+    "reference_candidate_overlap_count": 0,
+    "cross_origin_exact_duplicate_pairs": [],
+    "scope": "Picture/sequence UUIDs and original asset/full image/crop SHA256 against both supplied reference manifests; cross-origin source/input/crop byte and decoded RGB hashes among candidate views.",
+    "limitations": "Zero exact overlaps do not prove physical site/journey independence. Near duplicates, different crops/reencoding/resizing, same routes and teacher-provided training data still need human review. No automatic train/val/test allocation."
+  },
+  "model_inference_or_training_performed": false,
+  "source_annotations_changed": false,
+  "limitations": [
+    "Klassen und ergänzte Boxen sind visuelle Vorschläge; menschliche Freigabe fehlt.",
+    "Nur zwei DE310-Standorte, möglicherweise aus derselben Fahrt; geringe Aussagekraft.",
+    "Standort-/Fahrtprüfung gegen vollständigen späteren Trainingsbestand erforderlich.",
+    "Gezielte annotationenbasierte Suche, kein repräsentativer Blindtest.",
+    "Vier Perspektivansichten sind auf Zielboxen zentriert; getrennt von nativen 2D-Bildern bewerten.",
+    "Vollständige sign/plate/face-Annotationen fehlen; Zielboxen sind keine vollständige Detektor-Ground-Truth.",
+    "Eigener eingefrorener Testexport/Evaluationsmodus und Alt134-Regressionsprüfung bleiben erforderlich."
+  ]
+}

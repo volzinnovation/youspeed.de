@@ -1,0 +1,13 @@
+source/node_modules/
+
+# Public datasets are pinned and checksummed in source/huggingface-publication.json.
+/output/panoramax-*.zip
+
+# Preserve earlier exports locally; commit the current handout and build input.
+/output/tsr-sgblur-de-2026-10-26-v*.pdf
+/output/tsr-sgblur-de-2026-10-26-v*.pptx
+!/output/tsr-sgblur-de-2026-10-26-v9.1.pdf
+!/output/tsr-sgblur-de-2026-10-26-v9.1.pptx
+!/output/tsr-sgblur-de-2026-10-26-v8.pptx
+/output/praktikum-de310-de311-v*.zip
+!/output/praktikum-de310-de311-v7.3.zip

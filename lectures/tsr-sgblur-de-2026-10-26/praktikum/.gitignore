@@ -1,0 +1,7 @@
+/data/
+/models/
+/runs/
+/reports/
+/.venv-hf/
+__pycache__/
+*.py[cod]

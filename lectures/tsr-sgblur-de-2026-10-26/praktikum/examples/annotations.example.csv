@@ -1,0 +1,5 @@
+sample_id,image_path,label,group_id
+bernbach-entry-01,bernbach-entry-01.jpg,city:start,physical-bernbach-entry-east
+bernbach-entry-02,bernbach-entry-02.jpg,city:start,physical-bernbach-entry-east
+dobel-exit-01,dobel-exit-01.jpg,city:end,physical-dobel-exit-west
+old-stop-01,old-stop-01.jpg,stop,physical-course-stop-001

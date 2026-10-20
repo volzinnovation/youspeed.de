@@ -1,0 +1,129 @@
+{
+  "repository_id": "loffenauer/ws26_hspf_imo",
+  "url": "https://huggingface.co/datasets/loffenauer/ws26_hspf_imo",
+  "revision": "6837ae4fae0d1d216612afa739c9dfefd6b277ab",
+  "public": true,
+  "gated": false,
+  "verified_at_utc": "2026-10-20T09:32:00.773913+00:00",
+  "anonymous_access_verified": true,
+  "all_release_file_sha256_verified": true,
+  "release_files": 19,
+  "data_packages": 4,
+  "total_release_bytes": 2301470034,
+  "files": [
+    {
+      "path": "LICENSE-CODE-AGPL-3.0.txt",
+      "bytes": 34523,
+      "sha256": "8486a10c4393cee1c25392769ddd3b2d6c242d6ec7928e1414efff7dfb2f07ef",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "MANIFEST.json",
+      "bytes": 4038,
+      "sha256": "88c19fb96376e59d849a1ded5ea0258e137ff77921a3a61cfba210169209092b",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "README.md",
+      "bytes": 10407,
+      "sha256": "2885b98a3c0b2ebf47d234862bb47fdfed8ecff6628e0c0b3a5914dc61a73a49",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "SHA256SUMS.txt",
+      "bytes": 2076,
+      "sha256": "635074c5e0cd608d71582e749f9427e496cb83a1bebd920a07b9c8a667ce8b05",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "metadata/panoramax-externe-testkandidaten-2026-10-20-bericht.json",
+      "bytes": 2313,
+      "sha256": "8d76260e88e7eb26f9ef50535923006d669a91f37ad01ec9ea8b95395f67346c",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "metadata/panoramax-externe-testkandidaten-2026-10-20-crops.csv",
+      "bytes": 9404,
+      "sha256": "4f94a70eaf1dfc12bad39f337b9acb56e17f6ce82f8988d025b35c36bca0586f",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "metadata/panoramax-externe-testkandidaten-2026-10-20-hinweise.txt",
+      "bytes": 5299,
+      "sha256": "3f75725a213195814e119e51f4671997d56392bb73f82416ba9a647801bb435a",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "metadata/panoramax-externe-testkandidaten-2026-10-20-vollbilder.csv",
+      "bytes": 9455,
+      "sha256": "8ed8bb464b434f1a8943626e970da889955dc4866ced4ce1affce975ebe8844c",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "metadata/panoramax-studenten-2026-10-19-bericht.json",
+      "bytes": 3151,
+      "sha256": "d36f2a20c16541b73e74a6067060618010f5e8433d50cd4edfd34657e4fa9cc7",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "metadata/panoramax-studenten-2026-10-19-crops.csv",
+      "bytes": 105187,
+      "sha256": "15be3aa710eb8d86ba1c330cb6eb6568182af7bbff5780c8c9eceb665b5b735c",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "metadata/panoramax-studenten-2026-10-19-vollbilder.csv",
+      "bytes": 34200,
+      "sha256": "886541a8d8f4ec6bc7a3a1635fc2a3cc979b872b7e04517822150f569ebff0cd",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "metadata/panoramax-testkandidaten-2026-10-20-bericht.json",
+      "bytes": 3038,
+      "sha256": "b977a09719d23e31a14bc2e6dd111e38385779f0f2529d514d97b888486832a1",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "metadata/panoramax-testkandidaten-2026-10-20-crops.csv",
+      "bytes": 40882,
+      "sha256": "951c3ff469d311a303612a616ee01dc9880c3e67444349434f4e09e561daf5c4",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "metadata/panoramax-testkandidaten-2026-10-20-hinweise.txt",
+      "bytes": 3928,
+      "sha256": "96ff724cb007df26e22a2995f37a61cfd19b6530e655fbcc496c808bd9ec9d97",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "metadata/panoramax-testkandidaten-2026-10-20-vollbilder.csv",
+      "bytes": 16611,
+      "sha256": "9095c951b4f3e2671ca5ec550f9756ea951b0ddbc6d4012be799f8e0ecad89b5",
+      "verified_by": "anonymous GET and SHA256"
+    },
+    {
+      "path": "packages/panoramax-beispiele-v6.zip",
+      "bytes": 24475992,
+      "sha256": "01492df22c48c23051bd4c2934deeffddf0ba92aaee8b57b19987778552f0395",
+      "verified_by": "Hub LFS SHA256 and anonymous HTTP HEAD"
+    },
+    {
+      "path": "packages/panoramax-externe-testkandidaten-2026-10-20.zip",
+      "bytes": 246775639,
+      "sha256": "0816350a099eee969ca66d5b1837e4a77621e99674cb29c0deaf750c8a8943a5",
+      "verified_by": "Hub LFS SHA256 and anonymous HTTP HEAD"
+    },
+    {
+      "path": "packages/panoramax-studenten-2026-10-19.zip",
+      "bytes": 1259306033,
+      "sha256": "9c6dd07e9c524b4bae50e8a6e8af915e497785f2af21119193349d749feb1375",
+      "verified_by": "Hub LFS SHA256 and anonymous HTTP HEAD"
+    },
+    {
+      "path": "packages/panoramax-testkandidaten-2026-10-20.zip",
+      "bytes": 770627858,
+      "sha256": "94a46ea8be8f23daf40f08aa156064411b3231138c31fbb85e515b4723d182cb",
+      "verified_by": "Hub LFS SHA256 and anonymous HTTP HEAD"
+    }
+  ]
+}

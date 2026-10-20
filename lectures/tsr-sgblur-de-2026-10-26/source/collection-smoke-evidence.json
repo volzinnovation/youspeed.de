@@ -1,0 +1,134 @@
+{
+  "schema_version": "panoramax-course-collection-smoke-v1",
+  "recorded_at": "2026-10-19T21:37:51.593963+00:00",
+  "python": "3.12.14",
+  "pillow": "12.3.0",
+  "unit_tests": {
+    "count": 70,
+    "passed": true,
+    "command": "python -m unittest discover -p 'test_*.py'"
+  },
+  "live_crawl": {
+    "instance": "https://panoramax.youspeed.de",
+    "method": "Final crawl_panoramax.py CLI with two repeat --item-url selections; TLS verification enabled with system CA bundle; GET only.",
+    "exit_code": 0,
+    "limits": {
+      "max_items": 2,
+      "max_images": 2
+    },
+    "images": 2,
+    "crops": 6,
+    "all_unreviewed": true,
+    "approved_files": 0,
+    "collection_manifest_sha256": "05e13a643b0407c2f5f6bb701921399629a4724b6597af93ba41c1eaa94d7730",
+    "crawl": {
+      "complete_inventory": false,
+      "explicit_selection": true,
+      "max_items": 2,
+      "max_images": 2,
+      "max_pages": 100,
+      "pages_fetched": 0,
+      "items_seen": 2,
+      "image_attempts": 2,
+      "limits_reached": [
+        "max_images"
+      ],
+      "errors": [],
+      "skipped": [],
+      "duplicate_items": 0
+    },
+    "source_urls": [
+      "https://panoramax.youspeed.de/api/collections/b23c42f0-217d-4a50-96ad-0ed96ab0dbab/items/0bf296e2-938e-4e80-a89c-5da2112e8ccc",
+      "https://panoramax.youspeed.de/api/collections/b23c42f0-217d-4a50-96ad-0ed96ab0dbab/items/de6b2547-1e3b-4ca5-abeb-eb08e76342c9"
+    ],
+    "authors": [
+      "admin"
+    ],
+    "licenses": [
+      "CC-BY-SA-4.0"
+    ],
+    "crop_samples": [
+      {
+        "sample_id": "p0bf296e2-938e-4e80-a89c-5da2112e8ccc_a5caa6ea0-9355-44c9-a877-7f1f768cb1cd",
+        "suggested_label": "city:start",
+        "crop_size": [
+          27,
+          22
+        ],
+        "group_id": "sequence-b23c42f0-217d-4a50-96ad-0ed96ab0dbab"
+      },
+      {
+        "sample_id": "pde6b2547-1e3b-4ca5-abeb-eb08e76342c9_a141fc544-f54d-4f6a-8944-d68701cca070",
+        "suggested_label": null,
+        "crop_size": [
+          66,
+          62
+        ],
+        "group_id": "sequence-b23c42f0-217d-4a50-96ad-0ed96ab0dbab"
+      },
+      {
+        "sample_id": "pde6b2547-1e3b-4ca5-abeb-eb08e76342c9_a7d72b441-9d0f-4484-afb9-1b0afc6d082b",
+        "suggested_label": null,
+        "crop_size": [
+          74,
+          107
+        ],
+        "group_id": "sequence-b23c42f0-217d-4a50-96ad-0ed96ab0dbab"
+      },
+      {
+        "sample_id": "pde6b2547-1e3b-4ca5-abeb-eb08e76342c9_a84d03b86-dd5d-4dc4-99b2-c23dd497227b",
+        "suggested_label": "city:end",
+        "crop_size": [
+          27,
+          17
+        ],
+        "group_id": "sequence-b23c42f0-217d-4a50-96ad-0ed96ab0dbab"
+      },
+      {
+        "sample_id": "pde6b2547-1e3b-4ca5-abeb-eb08e76342c9_a8a5f5d5f-caa6-4d2b-80df-bf0eb3250777",
+        "suggested_label": null,
+        "crop_size": [
+          85,
+          73
+        ],
+        "group_id": "sequence-b23c42f0-217d-4a50-96ad-0ed96ab0dbab"
+      },
+      {
+        "sample_id": "pde6b2547-1e3b-4ca5-abeb-eb08e76342c9_ab21c3c54-8859-46db-99c1-be94b859df03",
+        "suggested_label": null,
+        "crop_size": [
+          60,
+          54
+        ],
+        "group_id": "sequence-b23c42f0-217d-4a50-96ad-0ed96ab0dbab"
+      }
+    ]
+  },
+  "synthetic_end_to_end": {
+    "test": "test_real_crawler_move_import_prepare_pipeline_with_136_classes",
+    "images": 3,
+    "crops": 408,
+    "classes": 136,
+    "expected_images_per_split": {
+      "train": 136,
+      "val": 136,
+      "test": 136
+    },
+    "full_scene_and_crop_splits_coupled": true,
+    "real_model_training": false
+  },
+  "original_training_cli_smoke_script_hashes_unchanged": true,
+  "code_sha256": {
+    "crawl_panoramax.py": "b216e4e9b61721eea56e45ebaea2ef0d3d5013086790e2b284e882c62829e0e1",
+    "evaluate.py": "df74c2fdaeba726df9bf8ff32e2f5b1df8142145719b4be39e499808b8d8cb5e",
+    "import_sorted_folders.py": "175fa413292d988f9f932f991141a41a18fdd192e0ce93a66e41e1d5b2bc2ec5",
+    "model_utils.py": "50e2c478161e13c8b1b67c0dcd8cfbbc7db9d1ce90398c9c5f9f915280b787f7",
+    "prepare_dataset.py": "62b52240128080df5d539ad984dd2add4045f389e6c88d5ac4ad97178de02fd4",
+    "test_crawl_panoramax.py": "3c543a238fdc451a15fcf9208cb40e5c969426757dbb94f53a590f52a4a80650",
+    "test_import_sorted_folders.py": "20b9f814987363ac947fec1df3ae1f2e24ecced6634a261824e49f8d4ccbbce8",
+    "test_model_utils.py": "7a35e156757700a8238dbdfee287d235224c8a3abb043cb6c2ced68618b14502",
+    "test_prepare_dataset.py": "09429637f7e6cd4771ee36ab0bddbd7f3268183c09f35e7c2124f4acef2763a4",
+    "train.py": "914b7e36d95560a114f263c8041d58d4ee8cfc2ce2d9893dafa32f21f40c7928"
+  },
+  "scope": "Technical acquisition, human-folder-review import, provenance and grouped-split checks. No real-sign training, model-quality evidence or full instance inventory. Small live city crops need manual suitability review."
+}
