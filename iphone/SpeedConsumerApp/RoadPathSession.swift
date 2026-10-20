@@ -460,7 +460,8 @@ final class RoadPathSession: @unchecked Sendable {
         evaluate(prepared: prepare(frame: frame, frameId: diagnostic.batch.frameId, scope: diagnostic.batch.scope), diagnostic: diagnostic)
     }
 
-    func evaluate(prepared: RoadPathPreparedFrame, diagnostic: TSRApplicabilityDiagnostic, tsrStartedAtUptime: Double? = nil) -> String? {
+    func evaluate(prepared: RoadPathPreparedFrame, diagnostic: TSRApplicabilityDiagnostic, tsrStartedAtUptime: Double? = nil,
+                  associateSigns: Bool = true) -> String? {
         evaluationLock.lock(); defer { evaluationLock.unlock() }
         let frame = prepared.frame, associationStarted = nowUptime()
         guard prepared.frameId == diagnostic.batch.frameId, prepared.scope == diagnostic.batch.scope else {
@@ -540,8 +541,9 @@ final class RoadPathSession: @unchecked Sendable {
             }
         }
         let corridors = RoadPathEvidence.inferCorridorRoles(scope: key, nowSeconds: frame.capturedAtSeconds, poses: poses, corridors: projected)
-        let currentTracks = diagnostic.tracks.filter { $0.visibility == "observed" && !$0.associationAmbiguous }.prefix(24)
-        let ids = Set(diagnostic.tracks.map(\.trackId)); histories = histories.filter { ids.contains($0.key) }
+        let currentTracks = diagnostic.tracks.filter { associateSigns && $0.visibility == "observed" && !$0.associationAmbiguous }.prefix(24)
+        let ids = associateSigns ? Set(diagnostic.tracks.map(\.trackId)) : []
+        histories = histories.filter { ids.contains($0.key) }
         var associations: [[String:Any]] = []
         for track in currentTracks {
             if elapsedMs() >= 200 { break }
@@ -602,11 +604,14 @@ final class RoadPathSession: @unchecked Sendable {
         if let visual = frame.visualCalibration,
            let encoded = try? JSONEncoder().encode(visual),
            let object = try? JSONSerialization.jsonObject(with: encoded) {
-            let width = frame.rotationDegrees % 180 == 0 ? frame.rawWidth : frame.rawHeight
-            let height = frame.rotationDegrees % 180 == 0 ? frame.rawHeight : frame.rawWidth
             json["visualCalibration"] = object
-            json["tsrInputRegion"] = ["leftPixels": visual.cropLeftPixels(width: width),
-                "topPixels": 0, "rightPixels": width, "bottomPixels": height]
+        }
+        json["recognitionInputMode"] = associateSigns ? "full_frame" : "height_1024_rightmost_1024"
+        json["signCoordinateSpace"] = associateSigns ? "full_frame" : "detector_window"
+        if associateSigns {
+            json["tsrInputRegion"] = ["leftPixels": 0, "topPixels": 0,
+                "rightPixels": frame.rotationDegrees % 180 == 0 ? frame.rawWidth : frame.rawHeight,
+                "bottomPixels": frame.rotationDegrees % 180 == 0 ? frame.rawHeight : frame.rawWidth]
         }
         json["temporalOperationCount"] = geometry.temporalOperationCount
         json["temporalResetReason"] = geometry.temporalResetReason

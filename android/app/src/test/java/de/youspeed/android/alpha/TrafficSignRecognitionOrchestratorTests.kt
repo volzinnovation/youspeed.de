@@ -11,6 +11,28 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrafficSignRecognitionOrchestratorTests {
+    @Test fun falseZoneCannotHideAValidSpeedOrReachDisplayAndPassage() {
+        for (withValidSpeed in listOf(false, true)) {
+            val harness = Harness(pack = twoFramePack())
+            val regular = detection()
+            val falseZone = regular.copy(candidate = regular.candidate.copy(rawClassId = "zone:20",
+                semantic = TrafficSignSemantic(TrafficSignSemanticKind.ZONE_START, 20, "km/h"),
+                rawScore = .999, boundingBox = NormalizedTrafficSignBoundingBox(.02, .2, .1, .15)))
+            repeat(5) { index ->
+                harness.clockNanos = index * 500_000_000L
+                assertTrue(harness.orchestrator.submit(harness.frame("zone-$index", capturedAtNanos = harness.clockNanos)))
+                val present = index < 3
+                harness.backend.completeNext(TrafficSignBackendResult.Recognition(if (present) falseZone else null,
+                    displayDetections = if (!present) emptyList() else if (withValidSpeed) listOf(falseZone, regular) else listOf(falseZone)))
+            }
+            assertTrue(harness.observer.outputs.none { it.event.candidate?.semantic?.kind == TrafficSignSemanticKind.ZONE_START })
+            assertTrue(harness.observer.outputs.none { it.displayObservation?.candidate?.semantic?.kind == TrafficSignSemanticKind.ZONE_START })
+            assertTrue(harness.observer.outputs.mapNotNull { it.passageEvent }.none { it.action.kind == TrafficSignActionKind.ZONE_START })
+            assertTrue(harness.observer.outputs.any { it.collectionDetections.any { d -> d.candidate.rawClassId == "zone:20" } })
+            if (withValidSpeed) assertTrue(harness.observer.outputs.any { it.event.candidate?.semantic?.value == 30 })
+            else assertNull(harness.orchestrator.speedOverride())
+        }
+    }
     @Test fun numericOcrRunsOnceOnlyAfterSecondConfirmedSightingAndAuthorityWaitsForCompletion() {
         val harness = Harness(pack = twoFramePack())
         var calls = 0

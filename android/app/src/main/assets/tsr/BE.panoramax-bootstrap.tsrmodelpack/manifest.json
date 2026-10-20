@@ -8,8 +8,8 @@
   "taxonomy_version": "tsr-semantic-v1",
   "preprocessing": {
     "version": "vision-scale-fit-rgb-v1",
-    "input_width": 1280,
-    "input_height": 1280,
+    "input_width": 1024,
+    "input_height": 1024,
     "color_space": "rgb",
     "resize": "scale_fit_letterbox",
     "orientation": "normalize_exif_and_mirroring"
@@ -1277,23 +1277,23 @@
         "precision": "float16",
         "input_shape": [
           1,
-          1280,
-          1280,
+          1024,
+          1024,
           3
         ],
         "output_schema": "yolo_raw_xywh_class_scores_v1",
         "path": "yolo11n_panoramax_float16.tflite",
-        "sha256": "e5490acd60ceb015336bed487b5e247c2728b2b98b6336790bf6ffe02a6f7207",
+        "sha256": "c77fd4303e3528720ef4e7e9e109959a1e74814191c9dcc124fdc0a80ba48686",
         "source_checkpoint_sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
         "exporter": {
           "name": "ultralytics+onnx2tf+litert",
           "version": "8.4.56+1.17.0+1.28.8+2.19.0",
-          "configuration": "imgsz=1280,batch=1,half=true,nms=false"
+          "configuration": "imgsz=1024,batch=1,half=true,nms=false"
         },
         "calibration_dataset_sha256": "8082eea69b055bc584be10e7a04b67dc50a8fa2dd34c512e97569c6919d985db",
         "parity": {
           "tolerance": 0.05,
-          "measured_max_abs_difference": 0.0192,
+          "measured_max_abs_difference": 1.3243639841675758e-05,
           "passed": true
         }
       }

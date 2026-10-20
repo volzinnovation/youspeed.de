@@ -246,7 +246,7 @@ import CoreGraphics
                 return .init(key: hash + ":" + detection.rawLabel, box: [box.x,box.y,box.width,box.height],
                     payload: payload, presentationTrack: presentation, supplementaryOCR: annotation)
             }
-            var cropCount = 0, upright: CGImage?
+            var cropCount = 0
             try capture.observer.observe(at: at, detections: detections, frameID: event.frameId, captureCrop: { candidate in
                 guard cropRequested, cropCount < 4, let frame = emission.collectionFrame,
                       candidate.box.count == 4, candidate.selection?.permits(at: Date()) != false else { return .skipped }
@@ -254,8 +254,7 @@ import CoreGraphics
                 do {
                     cropCount += 1
                     let claim = try store.claim(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure)
-                    if upright == nil { upright = try frame.image() }
-                    let crop = try SignCollectionCrop.generate(upright: upright!, box: box, hashSource: false)
+                    let crop = try frame.crop(box: box)
                     var metadata = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: candidate.observationID,
                         installationID: try store.installationID, epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: candidate.frameAt,
                         localFrameToken: frame.token, privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: claim,

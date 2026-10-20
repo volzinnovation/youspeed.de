@@ -39,19 +39,6 @@ class VisualRoadCalibrationTests {
         assertFalse(initial.compatible(0,0,"rear:rotation:90"))
     }
 
-    @Test fun userCropPreservesFullHeightAndRightBoundaryAndRemapsActualRoundedPixels() {
-        val reference = initial.copy(leftTopX=.3333)
-        assertEquals(533,reference.cropLeftPixels(1600))
-        val cropBox = NormalizedTrafficSignBoundingBox(.1,.2,.3,.4)
-        val full = reference.fullFrameBox(cropBox,1600)
-        assertEquals((533 + .1*1067)/1600,full.x,1e-12)
-        assertEquals(.3*1067/1600,full.width,1e-12)
-        assertEquals(.2,full.y,0.0); assertEquals(.4,full.height,0.0)
-        val complete = reference.fullFrameBox(NormalizedTrafficSignBoundingBox(0.0,0.0,1.0,1.0),1600)
-        assertEquals(1.0,complete.x+complete.width,1e-12)
-        assertEquals(1.0,complete.height,0.0)
-    }
-
     @Test fun invalidCrossedAndAboveHorizonReferencesCannotBeSaved() {
         assertTrue(initial.isValid)
         assertFalse(initial.copy(leftBottom=LanePoint(.98,1.0)).isValid)

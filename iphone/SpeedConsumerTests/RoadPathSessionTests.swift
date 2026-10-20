@@ -2,6 +2,18 @@ import XCTest
 @testable import SpeedConsumer
 
 final class RoadPathSessionTests: XCTestCase {
+    func testWindowClassificationsDoNotEnterFullFrameSignGeometry() throws {
+        let session = RoadPathSession(nowUptime: { 1.001 })
+        let diagnostic = diagnostic(10)
+        let prepared = session.prepare(frame: paintedFrame(10, sourceTime: 100),
+            frameId: diagnostic.batch.frameId, scope: scope)
+        let result = try decoded(session.evaluate(prepared: prepared, diagnostic: diagnostic, associateSigns: false))
+        XCTAssertEqual((result["associations"] as? [Any])?.count, 0)
+        XCTAssertEqual((result["signBoxes"] as? [Any])?.count, 0)
+        XCTAssertEqual((result["boundaries"] as? [Any])?.count, 2)
+        XCTAssertEqual(result["recognitionInputMode"] as? String, "height_1024_rightmost_1024")
+        XCTAssertNil(result["tsrInputRegion"])
+    }
 
     func testPreviewExperimentsCannotChangeTSRPathEvidence() {
         let baseline=RoadPathSession(nowUptime:{1.001})
@@ -163,7 +175,7 @@ final class RoadPathSessionTests: XCTestCase {
         let json = try XCTUnwrap(json)
         return try XCTUnwrap(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String:Any])
     }
-    func testDiagnosticPreservesAllVisualGuidesAndActualUprightPixelCrop() throws {
+    func testDiagnosticPreservesVisualGuidesAndFullFrameGeometry() throws {
         let session = RoadPathSession(nowUptime: { 1.001 })
         let visual = VisualRoadCalibration(horizonY: 0.37,
             leftBottom: LanePoint(x: 0.11, y: 0.93), leftTopX: 0.413,
@@ -183,13 +195,14 @@ final class RoadPathSessionTests: XCTestCase {
         XCTAssertEqual(value["imageWidth"] as? Int, 1280)
         XCTAssertEqual(value["imageHeight"] as? Int, 720)
         XCTAssertEqual(value["tsrInputRegion"] as? [String:Int],
-            ["leftPixels": 528, "topPixels": 0, "rightPixels": 1280, "bottomPixels": 720])
+            ["leftPixels": 0, "topPixels": 0, "rightPixels": 1280, "bottomPixels": 720])
     }
-    func testUncalibratedDiagnosticDoesNotInventSavedGuidesOrCrop() throws {
+    func testUncalibratedDiagnosticUsesFullFrameWithoutSavedGuides() throws {
         let value = try result(RoadPathSession(nowUptime: { 1.001 }), 10)
         XCTAssertNil(value["visualCalibration"])
         XCTAssertNil(value["visualCalibrationRevision"])
-        XCTAssertNil(value["tsrInputRegion"])
+        XCTAssertEqual(value["tsrInputRegion"] as? [String:Int],
+            ["leftPixels": 0, "topPixels": 0, "rightPixels": 128, "bottomPixels": 72])
     }
     func testPreparedGeometryPublishesBeforeTsrAndInferenceTimeIsExcludedWithoutRefreshingExposure() throws {
         let clock = MutableClock(), session = RoadPathSession(nowUptime: { clock.now() })

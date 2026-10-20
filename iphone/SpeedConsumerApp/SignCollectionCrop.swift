@@ -54,12 +54,23 @@ struct SignCollectionCrop {
             guard let image = upright.cropping(to: CGRect(x: geometry.actual[0], y: geometry.actual[1], width: geometry.actual[2]-geometry.actual[0], height: geometry.actual[3]-geometry.actual[1])) else { throw SignCollectionError.storage }
             cropped = image; sourceHash = nil
         }
+        return try encode(cropped: cropped, geometry: geometry, sourceWidth: width, sourceHeight: height, sourceHash: sourceHash)
+    }
+
+    /// Encode an already-cut native rectangle; callers can avoid rendering its entire source frame.
+    static func encode(cropped: CGImage, geometry: SignCollectionCropGeometry, sourceWidth: Int,
+                       sourceHeight: Int, sourceHash: String? = nil) throws -> SignCollectionCrop {
+        guard cropped.colorSpace?.name == CGColorSpace.sRGB,
+              [CGImageAlphaInfo.none, .noneSkipFirst, .noneSkipLast].contains(cropped.alphaInfo),
+              cropped.width == geometry.actual[2] - geometry.actual[0],
+              cropped.height == geometry.actual[3] - geometry.actual[1] else { throw SignCollectionError.invalidContract }
         let bytes = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(bytes, UTType.png.identifier as CFString, 1, nil) else { throw SignCollectionError.storage }
         // Fresh encoding with empty metadata; no GPS, timestamp, EXIF or source tags.
         CGImageDestinationAddImage(destination, cropped, [:] as CFDictionary)
         guard CGImageDestinationFinalize(destination), bytes.length <= 5 * 1024 * 1024 else { throw SignCollectionError.capacity }
-        return SignCollectionCrop(geometry: geometry, bytes: try privatePNG(bytes as Data), sourceHash: sourceHash, sourceWidth: width, sourceHeight: height)
+        return SignCollectionCrop(geometry: geometry, bytes: try privatePNG(bytes as Data), sourceHash: sourceHash,
+            sourceWidth: sourceWidth, sourceHeight: sourceHeight)
     }
 
     /// ImageIO can insert sRGB/ICC ancillary chunks even with empty properties.
@@ -98,7 +109,14 @@ struct SignCollectionCrop {
 /// Retains the analyzed buffer only until the bounded storage task completes.
 final class SignCollectionFrame: @unchecked Sendable, Equatable {
     let token: String
-    let image: () throws -> CGImage
-    init(token: String, image: @escaping () throws -> CGImage) { self.token = token; self.image = image }
+    private let cropProvider: ([String: Double]) throws -> SignCollectionCrop
+    init(token: String, image: @escaping () throws -> CGImage) {
+        self.token = token
+        cropProvider = { try SignCollectionCrop.generate(upright: image(), box: $0, hashSource: false) }
+    }
+    init(token: String, crop: @escaping ([String: Double]) throws -> SignCollectionCrop) {
+        self.token = token; cropProvider = crop
+    }
+    func crop(box: [String: Double]) throws -> SignCollectionCrop { try cropProvider(box) }
     static func == (lhs: SignCollectionFrame, rhs: SignCollectionFrame) -> Bool { lhs.token == rhs.token }
 }

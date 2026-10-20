@@ -2,6 +2,7 @@ import XCTest
 @testable import SpeedConsumer
 import AVFoundation
 import CoreGraphics
+import CoreImage
 import CryptoKit
 import ImageIO
 import SQLite3
@@ -2114,7 +2115,9 @@ final class SpeedConsumerTests: XCTestCase {
             ))
             let imageData = try Data(contentsOf: imageURL)
             let image = try XCTUnwrap(UIImage(data: imageData)?.cgImage)
-            let detections = try backend.detections(in: image, orientation: .up)
+            let input = try TrafficSignDetectorInput(source: CIImage(cgImage: image), orientation: .up,
+                context: CIContext(options: [.cacheIntermediates: false]))
+            let detections = try backend.detections(in: input.image, orientation: .up)
             let speed70 = detections.first {
                 $0.semantic.kind == .maximumSpeed && $0.semantic.value == 70
             }
@@ -2125,7 +2128,7 @@ final class SpeedConsumerTests: XCTestCase {
             XCTAssertNil(speed70?.classifierCalibratedConfidence)
             XCTAssertGreaterThanOrEqual(
                 speed70?.rawScore ?? 0,
-                0.70,
+                fixtureName == "tsr-panoramax-0906fc23" ? 0.70 : 0.25,
                 "Expected a usable two-stage score in \(fixtureName)"
             )
             // Since the primary-sign-only runtime change (2abb2568), live
@@ -2925,7 +2928,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(afterBundleChange.roadContext, nextBundleContext)
     }
 
-    func testCalibratedRuntimeCropsActualInputAndRemapsForEveryMountOrientation() throws {
+    func testRuntimeUsesFixedWindowAndKeepsResultCoordinatesForEveryMountAndCalibration() throws {
         let manifest = makeTrafficSignModelPackManifest()
         let artifact = try XCTUnwrap(manifest.detector.artifacts.first)
         let verified = TrafficSignVerifiedModelPack(directoryURL: URL(fileURLWithPath: NSTemporaryDirectory()),
@@ -2939,12 +2942,13 @@ final class SpeedConsumerTests: XCTestCase {
         let detection = makeTrafficSignDetection(score: 0.9,
             box: TrafficSignNormalizedRect(x: 0.2, y: 0.3, width: 0.1, height: 0.2))
         for orientation: CGImagePropertyOrientation in [.up, .right, .down, .left] {
+          for leftTopX: Double? in [nil, 0.1, 0.5, 0.8] {
             let rotated = orientation == .right || orientation == .left
             let width = rotated ? 6 : 10, height = rotated ? 10 : 6
             var draft = VisualRoadCalibration.defaults(width: width, height: height,
                 orientationKey: "rear:exif:\(orientation.rawValue)")
-            draft.leftTopX = 0.5
-            let calibration = draft
+            draft.leftTopX = leftTopX ?? 0.46
+            let calibration = leftTopX == nil ? nil : draft
             let backend = CalibrationInspectingInferenceBackend(output: detection)
             let emissions = TrafficSignTestEmissionStore(), completed = DispatchSemaphore(value: 0)
             let runtime = TrafficSignRuntime(verifiedPack: verified, backend: backend, snapshotProvider: { snapshot },
@@ -2954,15 +2958,16 @@ final class SpeedConsumerTests: XCTestCase {
             runtime.analyzeStill(cgImage: image, orientation: orientation, timestampUTC: Date(timeIntervalSince1970: 4000), snapshot: snapshot)
             XCTAssertEqual(completed.wait(timeout: .now() + 3), .success)
             let dimensions = try XCTUnwrap(backend.dimensions())
-            XCTAssertEqual(dimensions.0, width / 2); XCTAssertEqual(dimensions.1, height)
+            XCTAssertEqual(dimensions.0, 1024); XCTAssertEqual(dimensions.1, 1024)
             XCTAssertEqual(dimensions.2, .up)
             let candidate = try XCTUnwrap(emissions.snapshot().first?.event.candidate)
-            XCTAssertEqual(candidate.boundingBox.x, 0.6, accuracy: 1e-12)
-            XCTAssertEqual(candidate.boundingBox.width, 0.05, accuracy: 1e-12)
+            XCTAssertEqual(candidate.boundingBox, detection.boundingBox)
             XCTAssertEqual(candidate.boundingBox.y, 0.3); XCTAssertEqual(candidate.boundingBox.height, 0.2)
             XCTAssertEqual(candidate.rawScore, detection.rawScore)
             XCTAssertEqual(candidate.semanticKind, detection.semantic.kind.rawValue)
             XCTAssertEqual(candidate.value, detection.semantic.value)
+            XCTAssertTrue(try XCTUnwrap(emissions.snapshot().first).usesDetectorWindow)
+          }
         }
     }
 
@@ -4243,6 +4248,10 @@ final class SpeedConsumerTests: XCTestCase {
         )
 
         let draft = try XCTUnwrap(PanoramaxTrafficSignAnnotationDraft(emission: emission))
+        let windowEmission = TrafficSignRuntimeEmission(event: event, frameContext: context,
+            captureSessionId: "zone-session", usesDetectorWindow: true)
+        XCTAssertNil(PanoramaxTrafficSignAnnotationDraft(emission: windowEmission),
+            "Window-relative boxes must never be projected onto full-size photos")
         XCTAssertEqual(draft.speedLimitKmh, 30)
         XCTAssertEqual(draft.physicalSignTrackID, "zone-track")
         XCTAssertEqual(

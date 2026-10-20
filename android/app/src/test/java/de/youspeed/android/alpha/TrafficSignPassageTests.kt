@@ -997,6 +997,9 @@ class TrafficSignPassageTests {
         assertTrue(passages.isEmpty())
         assertNotNull(PanoramaxTrafficSignAnnotationDraft.from(annotations.single()))
         assertNull(PanoramaxTrafficSignAnnotationDraft.from(authority.single()))
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(raw, null, usesDetectorWindow = true))
+        assertEquals(listOf(withheld, raw), authority)
+        assertEquals("Window coordinates must not become full-size photo annotations", listOf(raw), annotations)
     }
 
     @Test

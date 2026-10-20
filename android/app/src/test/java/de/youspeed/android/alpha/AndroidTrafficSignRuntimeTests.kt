@@ -110,9 +110,9 @@ class AndroidTrafficSignRuntimeTests {
         val classifier = requireNotNull(pack.classifier?.let(pack::androidArtifact))
 
         assertEquals(TrafficSignArtifactFormat.TFLITE, detector.format)
-        assertEquals(listOf(1, 1280, 1280, 3), detector.inputShape)
+        assertEquals(listOf(1, 1024, 1024, 3), detector.inputShape)
         assertEquals("yolo_raw_xywh_class_scores_v1", detector.outputSchema)
-        assertEquals("e5490acd60ceb015336bed487b5e247c2728b2b98b6336790bf6ffe02a6f7207", detector.sha256)
+        assertEquals("c77fd4303e3528720ef4e7e9e109959a1e74814191c9dcc124fdc0a80ba48686", detector.sha256)
         assertEquals(TrafficSignArtifactFormat.TFLITE, classifier.format)
         assertEquals(listOf(1, 224, 224, 3), classifier.inputShape)
         assertEquals("classification_probabilities_v1", classifier.outputSchema)

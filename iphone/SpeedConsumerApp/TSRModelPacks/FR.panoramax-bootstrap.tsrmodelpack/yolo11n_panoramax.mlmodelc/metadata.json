@@ -77,12 +77,12 @@
     },
     "inputSchema" : [
       {
-        "height" : "1280",
+        "height" : "1024",
         "colorspace" : "RGB",
         "isOptional" : "0",
-        "width" : "1280",
+        "width" : "1024",
         "isColor" : "1",
-        "formattedType" : "Image (Color 1280 × 1280)",
+        "formattedType" : "Image (Color 1024 × 1024)",
         "hasSizeFlexibility" : "0",
         "type" : "Image",
         "shortDescription" : "Input image",

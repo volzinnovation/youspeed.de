@@ -33,10 +33,6 @@ struct VisualRoadCalibration: Equatable, Sendable, Codable {
         return abs(Double(width) / Double(height) - Double(imageWidth) / Double(imageHeight)) < 0.015
     }
 
-    /// The selected upper-left x is the only cropped edge. Quantize once and
-    /// use this exact pixel boundary to map inference boxes back to the source.
-    func cropLeftPixels(width: Int) -> Int { max(0, min(width - 1, Int((leftTopX * Double(width)).rounded(.down)))) }
-
     mutating func move(step: Int, dx: Double, dy: Double) {
         func clamp(_ value: Double, _ low: Double, _ high: Double) -> Double { min(high, max(low, value)) }
         switch step {

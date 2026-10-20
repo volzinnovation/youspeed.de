@@ -9,6 +9,15 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 class RoadPathSessionTests {
+    @Test fun windowClassificationsDoNotEnterFullFrameSignGeometry() {
+        val session = RoadPathSession(nowNanos = { 1_000_000 })
+        val diagnostic = signDiagnostic(10.0)
+        val prepared = session.prepare(paintedFrame(0), diagnostic.batch.frameId, scope)
+        val result = Json.parseToJsonElement(session.evaluate(prepared, diagnostic, associateSigns = false)).jsonObject
+        assertTrue(result.getValue("associations").jsonArray.isEmpty())
+        assertTrue(result.getValue("signBoxes").jsonArray.isEmpty())
+        assertEquals(2, result.getValue("boundaries").jsonArray.size)
+    }
 
     @Test fun previewExperimentsCannotChangeTSRPathEvidence() {
         val baseline=RoadPathSession(nowNanos={1_000_000})

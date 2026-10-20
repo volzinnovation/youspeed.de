@@ -98,7 +98,7 @@ class AndroidTrafficSignPerformanceInstrumentedTest {
                     val actualBox = actual.candidate.boundingBox
                     val sourceWidth = requireNotNull(baseline.sourceWidthPixels).toDouble()
                     val sourceHeight = requireNotNull(baseline.sourceHeightPixels).toDouble()
-                    val scale = 1280.0 / max(sourceWidth, sourceHeight)
+                    val scale = TrafficSignDetectorGeometry.SIZE.toDouble() / max(sourceWidth, sourceHeight)
                     val edgeErrors = listOf(
                         abs(expectedBox.x - actualBox.x) * sourceWidth * scale,
                         abs(expectedBox.x + expectedBox.width - actualBox.x - actualBox.width) * sourceWidth * scale,

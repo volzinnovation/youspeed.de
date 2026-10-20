@@ -113,7 +113,8 @@ internal class TrafficSignFinalizedPassageForwarder(
             output.event.driveSessionId?.let { session -> submitSupplementaryText(TrafficSignSupplementaryTextUpdate(
                 TrafficSignSupplementaryScope(output.contextGeneration, session), output.ocrAnnotation, output.ocrPrimaryPresent || output.event.candidate != null)) }
             submitRecognitionEvent(output.event, output.contextGeneration)
-            submitAnnotationEvent(output.annotationEvent ?: output.event, output.contextGeneration)
+            // Window boxes cannot be projected onto full-size Panoramax photos.
+            if (!output.usesDetectorWindow) submitAnnotationEvent(output.annotationEvent ?: output.event, output.contextGeneration)
         }
         if (output.terminalBackendFailure || output.backendFailureReason != null) output.collectionFrame?.close()
         output.displayObservation?.let(submitDisplayObservation)

@@ -34,7 +34,6 @@
 		1FE2F31D89E17B9AECA41AD6 /* TrafficSignSupplementaryOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = C97C6263A60914F3CBB5C985 /* TrafficSignSupplementaryOCR.swift */; };
 		219944FAA45C0C35CADBEFA5 /* candidate-admission-v1.sql in Resources */ = {isa = PBXBuildFile; fileRef = C91001BF11D209FCCD04047B /* candidate-admission-v1.sql */; };
 		21D59A3A210E221DD1DD7D6C /* provence-alpes-cote-d-azur.poly in Resources */ = {isa = PBXBuildFile; fileRef = 0F082B4FCB53285378CC3975 /* provence-alpes-cote-d-azur.poly */; };
-		22039B2CE46ED3D669809773 /* TrafficSignCalibrationCropMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1028F87EBA230F5C6E574420 /* TrafficSignCalibrationCropMapping.swift */; };
 		2417AB13F220931F9FC2BE73 /* FRA-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = E7C157E2937D1DAD6038038B /* FRA-rules.json */; };
 		252EE9995F351E54A258C171 /* prolix-de-class-catalog-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 243D12B482203C249B54D205 /* prolix-de-class-catalog-v1.json */; };
 		260CAE5EB44878D86FBB618F /* SpeedConsumerAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */; };
@@ -53,9 +52,11 @@
 		35DB5D087F8BBA42013C1812 /* PenaltyDocumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64B3222389B58867565BEF82 /* PenaltyDocumentationTests.swift */; };
 		35E914FB03BBE6F83A65936F /* V3BundleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264903C5CD98D68477E8823C /* V3BundleManager.swift */; };
 		366CE0F512304902AEE3C255 /* StartupLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7CE995B17B323A34DE8F7AB /* StartupLogStore.swift */; };
+		389EAC8A1A08FCB5B783B961 /* TrafficSignDetectorInputTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55830888CAB1F40E2BF0DEEA /* TrafficSignDetectorInputTests.swift */; };
 		38A23CFD1A1F18CBE2616222 /* VisualRoadCalibration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 145060DDBD8CF7ED9A50A6D9 /* VisualRoadCalibration.swift */; };
 		39B9F74DD81800D88911F9D0 /* StartupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B22B25E507BC34DEDF1FF173 /* StartupView.swift */; };
 		39F558FC00EF4122DD334E94 /* liechtenstein.poly in Resources */ = {isa = PBXBuildFile; fileRef = 5DC9B412B9EC756FC6B1F6F4 /* liechtenstein.poly */; };
+		3A57DEFC44BB1BA4F1F0EE72 /* TrafficSignDetectorInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7F1F47CD5C183CE78C513A /* TrafficSignDetectorInput.swift */; };
 		3B7AD3BCC9EE84674B352F2E /* karlsruhe_v3_A_geom16.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = F649DB2DD9AFA048F046113B /* karlsruhe_v3_A_geom16.sqlite */; };
 		3C73A3DCE26AB7A90E4EA23C /* SourceAttributions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E3C55C0CB5CEEEF45D3AEBA /* SourceAttributions.swift */; };
 		3D0DF63AA1C368A285F7954A /* PanoramaxUploadClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A2F4102E4235FC0D1C10EE1 /* PanoramaxUploadClient.swift */; };
@@ -258,7 +259,6 @@
 		0DBC61BE4404AA5DD74A305E /* de.lproj */ = {isa = PBXFileReference; path = de.lproj; sourceTree = "<group>"; };
 		0F082B4FCB53285378CC3975 /* provence-alpes-cote-d-azur.poly */ = {isa = PBXFileReference; path = "provence-alpes-cote-d-azur.poly"; sourceTree = "<group>"; };
 		0FA7950BF984ADA10C90CC8B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		1028F87EBA230F5C6E574420 /* TrafficSignCalibrationCropMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignCalibrationCropMapping.swift; sourceTree = "<group>"; };
 		103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V3SpeedLimitService.swift; sourceTree = "<group>"; };
 		1268C073515BF6EA04CAD322 /* RoadSpeedDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadSpeedDefaults.swift; sourceTree = "<group>"; };
 		12B7F7EA0C73DB02413070D3 /* netherlands.poly */ = {isa = PBXFileReference; path = netherlands.poly; sourceTree = "<group>"; };
@@ -321,6 +321,7 @@
 		5460B7376654275955039717 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		54C992201922329C5EB1498B /* prolix-nl-class-catalog-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "prolix-nl-class-catalog-v1.json"; sourceTree = "<group>"; };
 		54CA070C418623C559123AE2 /* LookupResourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LookupResourceTests.swift; sourceTree = "<group>"; };
+		55830888CAB1F40E2BF0DEEA /* TrafficSignDetectorInputTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignDetectorInputTests.swift; sourceTree = "<group>"; };
 		55D16BE42ECC5E6CF4A4F7E3 /* speed-limit-reference */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "speed-limit-reference"; path = "../shared/speed-limit-reference"; sourceTree = SOURCE_ROOT; };
 		56DC8137DA2A511025046A79 /* RoadBoundaryTemporalTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadBoundaryTemporalTracker.swift; sourceTree = "<group>"; };
 		570DF554C70810252C40393F /* SignCollectionFoundationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionFoundationTests.swift; sourceTree = "<group>"; };
@@ -344,6 +345,7 @@
 		68FFEA14CC3B9A22101A4B5C /* baden-wuerttemberg.poly */ = {isa = PBXFileReference; path = "baden-wuerttemberg.poly"; sourceTree = "<group>"; };
 		69FF9109F78E912ED14AD0E5 /* hessen.poly */ = {isa = PBXFileReference; path = hessen.poly; sourceTree = "<group>"; };
 		6C1443061001BB609384462B /* LaneDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneDetectionTests.swift; sourceTree = "<group>"; };
+		6D7F1F47CD5C183CE78C513A /* TrafficSignDetectorInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignDetectorInput.swift; sourceTree = "<group>"; };
 		6E3C55C0CB5CEEEF45D3AEBA /* SourceAttributions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceAttributions.swift; sourceTree = "<group>"; };
 		716B0EA88F3D19E3D067FA84 /* NLD-cases.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "NLD-cases.json"; sourceTree = "<group>"; };
 		734BE1C063C1A673E23AE2B7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -530,9 +532,9 @@
 				39703EF2C065320F653FE16A /* TrafficSignApplicability.swift */,
 				D47016AE8D9C7439ECD7E708 /* TrafficSignApplicabilityIntegration.swift */,
 				382CA3BE7926270EDA4C3180 /* TrafficSignApplicabilityTests.swift */,
-				1028F87EBA230F5C6E574420 /* TrafficSignCalibrationCropMapping.swift */,
 				CD9F614E4A6B119690935E9F /* TrafficSignCameraReferenceOffer.swift */,
 				451AB91452C045D0505BEBD1 /* TrafficSignCountryPackRegistry.swift */,
+				6D7F1F47CD5C183CE78C513A /* TrafficSignDetectorInput.swift */,
 				191791D7FE8882C94B6118FF /* TrafficSignDocumentationView.swift */,
 				F81574A7DA7F7C5EACC394AA /* TrafficSignOCRLanguageContext.swift */,
 				F52B9FF67851F181479E4036 /* TrafficSignOCRQuality.swift */,
@@ -669,6 +671,7 @@
 				AC99D3F7C2764EF36C720738 /* SolarDaylightTests.swift */,
 				BF45815ACDF05E5392886F6E /* SupplementaryOCRAnnotationTests.swift */,
 				414763A09BE57A810C9A1F9A /* TrafficSignCameraReferenceOfferTests.swift */,
+				55830888CAB1F40E2BF0DEEA /* TrafficSignDetectorInputTests.swift */,
 				E4F90C183F635778082F98C2 /* TrafficSignDocumentationTests.swift */,
 				7B7A2C14162BEF390A9A2BC0 /* TrafficSignOCRLanguageContextTests.swift */,
 				79C2D110B24BE6D8D2F745AD /* TrafficSignPlateRegressionTests.swift */,
@@ -1149,9 +1152,9 @@
 				6889CEC6E1BD5F97E54040F7 /* SupplementaryOCRAnnotation.swift in Sources */,
 				940E0787DE8F2C217D4DAB26 /* TrafficSignApplicability.swift in Sources */,
 				185DD4DEB201DCA2D9AB13F3 /* TrafficSignApplicabilityIntegration.swift in Sources */,
-				22039B2CE46ED3D669809773 /* TrafficSignCalibrationCropMapping.swift in Sources */,
 				66277AAC091B83E4E5FD144C /* TrafficSignCameraReferenceOffer.swift in Sources */,
 				EB295A5EF92B103765FD9F12 /* TrafficSignCountryPackRegistry.swift in Sources */,
+				3A57DEFC44BB1BA4F1F0EE72 /* TrafficSignDetectorInput.swift in Sources */,
 				5251B59580E44D7B457DEE32 /* TrafficSignDocumentationView.swift in Sources */,
 				672B539E45C5606BE3BCCC8E /* TrafficSignOCRLanguageContext.swift in Sources */,
 				B81AA1035852C8D4F0F0B4EA /* TrafficSignOCRQuality.swift in Sources */,
@@ -1208,6 +1211,7 @@
 				C311B51AB053A0342289279F /* SupplementaryOCRAnnotationTests.swift in Sources */,
 				D4C72035447C5F3BD658AC0A /* TrafficSignApplicabilityTests.swift in Sources */,
 				FC456C524266C29AC987BE43 /* TrafficSignCameraReferenceOfferTests.swift in Sources */,
+				389EAC8A1A08FCB5B783B961 /* TrafficSignDetectorInputTests.swift in Sources */,
 				8DC6A08B913555A7EA118CC8 /* TrafficSignDocumentationTests.swift in Sources */,
 				BA1D85801E2B99B747555646 /* TrafficSignOCRLanguageContextTests.swift in Sources */,
 				7F04EA490E89B7A77D7FDA53 /* TrafficSignPlateRegressionTests.swift in Sources */,

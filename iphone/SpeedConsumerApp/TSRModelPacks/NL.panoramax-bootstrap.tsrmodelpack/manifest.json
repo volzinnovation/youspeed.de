@@ -8,8 +8,8 @@
   "taxonomy_version": "tsr-semantic-v1",
   "preprocessing": {
     "version": "vision-scale-fit-rgb-v1",
-    "input_width": 1280,
-    "input_height": 1280,
+    "input_width": 1024,
+    "input_height": 1024,
     "color_space": "rgb",
     "resize": "scale_fit_letterbox",
     "orientation": "normalize_exif_and_mirroring"
@@ -1416,22 +1416,22 @@
         "input_shape": [
           1,
           3,
-          1280,
-          1280
+          1024,
+          1024
         ],
         "output_schema": "vision_recognized_objects_v1",
         "path": "yolo11n_panoramax.mlmodelc",
-        "sha256": "96c782afde62e1ede1d47d9d51b64359102170ed3ab6604838609869fcbd4589",
+        "sha256": "2834e2b7647c82cd4ded310f0e7ff163d3af54c0762c22a51495915e0811af54",
         "source_checkpoint_sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
         "exporter": {
           "name": "ultralytics+coremltools",
           "version": "8.4.56+9.0",
-          "configuration": "imgsz=1280,batch=1,half=true,nms=true"
+          "configuration": "imgsz=1024,batch=1,half=true,nms=true"
         },
         "calibration_dataset_sha256": "9a7904cb3b2e8eb264a89741fcf7fa7319a00074e411ce10115465cc20b31b1c",
         "parity": {
           "tolerance": 0.05,
-          "measured_max_abs_difference": 0.028,
+          "measured_max_abs_difference": 0.014436870813369751,
           "passed": true
         }
       }
