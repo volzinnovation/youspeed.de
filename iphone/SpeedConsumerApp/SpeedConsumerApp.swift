@@ -34,7 +34,9 @@ private struct SpeedConsumerRootView: View {
 
     var body: some View {
         Group {
-            if viewModel.startupLogReviewState != .complete {
+            if viewModel.onboardingScreenshotStep != nil {
+                FirstUserWelcomeView(viewModel: viewModel)
+            } else if viewModel.startupLogReviewState != .complete {
                 StartupLogReviewView(viewModel: viewModel)
             } else if viewModel.isScreenshotMode || !viewModel.drivingControlsAllowed ||
                 (viewModel.startupDataState == .ready && viewModel.onboardingStateLoaded && !viewModel.shouldPresentOnboarding) {

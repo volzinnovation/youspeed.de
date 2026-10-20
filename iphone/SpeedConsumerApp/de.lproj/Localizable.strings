@@ -329,7 +329,7 @@
 "onboarding.driving.safety" = "Richte YouSpeed im Stand ein. Beachte immer die Schilder an der Straße; Datenbank und Erkennung können falsch sein.";
 "onboarding.dashcam.title" = "Deine Fahrt als Video";
 "onboarding.dashcam.body" = "Die Dashcam ist optional. Starte und stoppe Videos auf dem Fahrbildschirm und verwalte gespeicherte Aufnahmen in der Bibliothek.";
-"onboarding.dashcam.controls" = "Die rote Aufnahmetaste startet den Recorder. Video, Schildererkennung und Panoramax-Fotos haben eigene Schalter.";
+"onboarding.dashcam.controls" = "Richte die App im Stand ein. Tippe auf dem Fahrbildschirm unten links auf den roten Kreis, um ein Dashcam-Video zu starten. Schildererkennung und Panoramax-Fotos behalten ihre eigenen Einstellungen.";
 "onboarding.dashcam.library" = "Videos bleiben auf deinem iPhone. Öffne nach dem Stoppen die Videobibliothek, um gespeicherte Aufnahmen auszuwählen, zu teilen oder zu löschen.";
 "onboarding.dashcam.permission" = "Der Kamerazugriff wird beim ersten Einsatz angefragt. Während dieser Einrichtung wird nichts aufgenommen.";
 "onboarding.sources.title" = "Drei Quellen für Tempolimits";
@@ -502,3 +502,5 @@
 "drive_photo.local_hint" = "Speichert ein Foto lokal zur späteren Prüfung. Es wird nichts hochgeladen.";
 "drive_photo.ready" = "Manuelle Fotoaufnahme bereit";
 "drive_photo.retry" = "Foto fehlgeschlagen. Zum Wiederholen tippen";
+"onboarding.dashcam.start_screenshot" = "Fahrbildschirm: Der rote Kreis unten links startet die Videoaufnahme.";
+"onboarding.dashcam.stop" = "Tippe an derselben Stelle auf das rote Quadrat, um das Video zu stoppen und zu speichern. Warte, bis das Speichern abgeschlossen ist, bevor du die Videobibliothek öffnest.";

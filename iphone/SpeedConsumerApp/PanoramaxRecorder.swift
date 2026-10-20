@@ -53,6 +53,17 @@ enum DriveCameraFocusConfiguration {
     }
 }
 
+enum DriveMovieCodecConfiguration {
+    static func preferredCodec(available: [AVVideoCodecType], supportedKeys: [String]) -> AVVideoCodecType? {
+        guard supportedKeys.contains(AVVideoCodecKey) else { return nil }
+        if available.contains(.hevc) { return .hevc }
+        if available.contains(.h264) { return .h264 }
+        // Leave the output's default intact when neither preferred codec is
+        // offered; never invent a codec for an unavailable connection.
+        return nil
+    }
+}
+
 enum DriveRecorderState: Equatable {
     case disabled
     case preparing
@@ -395,10 +406,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         subsystem: "de.youspeed.SpeedConsumer",
         category: "drive-recorder"
     )
-    private static let maximumDashcamFileBytes: Int64 = 5_000_000_000
+    nonisolated private static let maximumDashcamFileBytes: Int64 = 5_000_000_000
     private static let dashcamRetentionBytes: Int64 = 10_000_000_000
-    // AVFoundation objects are configured before use and then touched only on
-    // sessionQueue for start/stop/capture operations.
+    // Camera graph configuration and start/stop/capture operations all run
+    // on sessionQueue. Main-actor state is published after configuration returns.
     nonisolated(unsafe) let session = AVCaptureSession()
 
     @Published private(set) var state: DriveRecorderState = .disabled
@@ -420,7 +431,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
     private var queueStore: PanoramaxQueueStore?
     private let sessionQueue = DispatchQueue(label: "de.youspeed.drive-recorder.camera")
-    private let videoQueue = DispatchQueue(label: "de.youspeed.drive-recorder.tsr", qos: .userInitiated)
+    nonisolated private let videoQueue = DispatchQueue(label: "de.youspeed.drive-recorder.tsr", qos: .userInitiated)
     private let photoProcessingQueue = DispatchQueue(label: "de.youspeed.drive-recorder.panoramax", qos: .utility)
     nonisolated(unsafe) private let frameDispatcher = DriveVideoFrameDispatcher()
     nonisolated(unsafe) private let photoOutput = AVCapturePhotoOutput()
@@ -841,15 +852,25 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             guard generation == requestedGeneration, state == .preparing else { return }
 
             do {
-                try configureSession(
-                    dashcamEnabled: activeDashcamEnabled,
-                    // Preserve the user's selection while an asynchronously
-                    // verified model pack is still loading. The selected video
-                    // output must get graph priority even though it cannot
-                    // consume frames until the runtime attaches.
-                    trafficSignRecognitionEnabled: trafficSignRecognitionEnabled || calibrationPreviewEnabled,
-                    panoramaxEnabled: activePanoramaxEnabled
-                )
+                // Configuration may rebuild the 4K/photo pipeline. Serialize it
+                // with start/stop, and never block the main thread on camera work.
+                let dashcamRequested = activeDashcamEnabled
+                // Reserve analysis output even while the selected model loads.
+                let analysisRequested = trafficSignRecognitionEnabled || calibrationPreviewEnabled
+                let panoramaxRequested = activePanoramaxEnabled
+                let manualPhotosRequested = requestedManualPhotosEnabled
+                let outputs = try await performSessionOperation { [self] in
+                    try self.configureSession(
+                        dashcamEnabled: dashcamRequested,
+                        trafficSignRecognitionEnabled: analysisRequested,
+                        panoramaxEnabled: panoramaxRequested,
+                        manualPhotosEnabled: manualPhotosRequested
+                    )
+                }
+                guard generation == requestedGeneration, state == .preparing else { return }
+                movieOutputAvailable = outputs.movie
+                videoOutputAvailable = outputs.video
+                photoOutputAvailable = outputs.photo
                 activeDashcamEnabled = activeDashcamEnabled && movieOutputAvailable
                 activeTSREnabled = trafficSignRecognitionEnabled
                     && frameDispatcher.hasConsumer
@@ -867,6 +888,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                     throw RecorderError.noEnabledModuleAvailable
                 }
             } catch let error as RecorderError {
+                guard generation == requestedGeneration, state == .preparing else { return }
                 closePanoramaxBatchForReview()
                 resetActiveModulesAfterFailure()
                 state = error.isAvailabilityFailure ? .unavailable : .failed
@@ -881,6 +903,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 notifyChange()
                 return
             } catch {
+                guard generation == requestedGeneration, state == .preparing else { return }
                 closePanoramaxBatchForReview()
                 resetActiveModulesAfterFailure()
                 state = .failed
@@ -905,7 +928,13 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 self.videoOutput.connection(with: .video)?.isEnabled = trafficSignFramesEnabled
                 self.session.startRunning()
                 if let movieURL {
-                    self.configureMovieCodecIfPossible(rotationAngle: movieAngle)
+                    guard self.configureMovieCodecIfPossible(rotationAngle: movieAngle) else {
+                        Task { @MainActor [weak self] in
+                            guard let self, self.generation == requestedGeneration, self.state == .preparing else { return }
+                            self.beginStopping(resultState: .failed, detail: "Dashcam konnte nicht gestartet werden")
+                        }
+                        return
+                    }
                     self.movieOutput.startRecording(to: movieURL, recordingDelegate: self)
                 } else {
                     Task { @MainActor [weak self] in
@@ -953,7 +982,12 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                         }
                         return
                     }
-                    self.configureMovieCodecIfPossible(rotationAngle: movieAngle)
+                    guard self.configureMovieCodecIfPossible(rotationAngle: movieAngle) else {
+                        Task { @MainActor [weak self] in
+                            self?.finishDashcamToggleFailure("Dashcam konnte nicht gestartet werden", token: token)
+                        }
+                        return
+                    }
                     self.movieOutput.startRecording(to: fileURL, recordingDelegate: self)
                 }
             } catch {
@@ -987,6 +1021,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     @discardableResult
     func setTrafficSignRecognitionEnabledDuringRecording(_ enabled: Bool) -> Bool {
         guard state == .recording else { return false }
+        // onChange synchronously reconciles the requested module selections.
+        // Reapplying the committed state must not notify again or it recurses
+        // through syncDriveRecorderState until the main-thread stack overflows.
+        guard activeTSREnabled != enabled else { return true }
         guard enabled else {
             frameDispatcher.setEnabled(false)
             activeTSREnabled = false
@@ -998,7 +1036,9 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         guard videoOutputAvailable, frameDispatcher.hasConsumer else {
             frameDispatcher.setEnabled(false)
             activeTSREnabled = false
-            lastCaptureDetail = "Noch kein Verkehrszeichenmodell installiert"
+            let detail = "Noch kein Verkehrszeichenmodell installiert"
+            guard lastCaptureDetail != detail else { return false }
+            lastCaptureDetail = detail
             notifyChange()
             return false
         }
@@ -1222,32 +1262,60 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         lastCaptureSample = nil
     }
 
-    private func configureSession(
+    /// One queue owns every potentially blocking camera operation. A throwing
+    /// configuration still completes its continuation and leaves Stop runnable.
+    private func performSessionOperation<T: Sendable>(
+        _ operation: @escaping @Sendable () throws -> T
+    ) async throws -> T {
+        try await withCheckedThrowingContinuation { continuation in
+            sessionQueue.async {
+                do { continuation.resume(returning: try operation()) }
+                catch { continuation.resume(throwing: error) }
+            }
+        }
+    }
+
+#if DEBUG
+    func testRunSessionOperation(_ operation: @escaping @Sendable () throws -> Void) async throws {
+        try await performSessionOperation(operation)
+    }
+#endif
+
+    private struct CaptureOutputs: Sendable {
+        var movie = false
+        var video = false
+        var photo = false
+    }
+
+    nonisolated private func configureSession(
         dashcamEnabled: Bool,
         trafficSignRecognitionEnabled: Bool,
-        panoramaxEnabled: Bool
-    ) throws {
+        panoramaxEnabled: Bool,
+        manualPhotosEnabled: Bool
+    ) throws -> CaptureOutputs {
         let supports4K = session.canSetSessionPreset(.hd4K3840x2160)
-        try configureSessionGraph(
+        var outputs = try configureSessionGraph(
             preset: supports4K ? .hd4K3840x2160 : .high,
             dashcamEnabled: dashcamEnabled,
             trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
-            panoramaxEnabled: panoramaxEnabled
+            panoramaxEnabled: panoramaxEnabled,
+            manualPhotosEnabled: manualPhotosEnabled
         )
 
         // Dashcam is a live-selectable consumer even when it was off at drive
         // start. If the 4K multi-output graph cannot retain its dormant movie
         // output, rebuild once at the broadly supported high preset before the
         // session starts. No live graph is ever reconfigured.
-        let requestedOutputMissing = !movieOutputAvailable
-            || (panoramaxEnabled && !photoOutputAvailable)
-            || !videoOutputAvailable
+        let requestedOutputMissing = !outputs.movie
+            || (panoramaxEnabled && !outputs.photo)
+            || !outputs.video
         if requestedOutputMissing, supports4K {
-            try configureSessionGraph(
+            outputs = try configureSessionGraph(
                 preset: .high,
                 dashcamEnabled: dashcamEnabled,
                 trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
-                panoramaxEnabled: panoramaxEnabled
+                panoramaxEnabled: panoramaxEnabled,
+                manualPhotosEnabled: manualPhotosEnabled
             )
         }
 
@@ -1255,30 +1323,30 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         // without a still output. The Dashcam can continue on a reduced graph,
         // but silently dropping the photo consumer makes the user's setting
         // appear enabled while every GPS-triggered capture is discarded.
-        if panoramaxEnabled, !photoOutputAvailable {
+        if panoramaxEnabled, !outputs.photo {
             throw RecorderError.panoramaxUnavailable
         }
 
-        if dashcamEnabled, !movieOutputAvailable,
-           !videoOutputAvailable, !photoOutputAvailable {
+        if dashcamEnabled, !outputs.movie,
+           !outputs.video, !outputs.photo {
             throw RecorderError.sessionUnavailable
         }
+        return outputs
     }
 
-    private func configureSessionGraph(
+    nonisolated private func configureSessionGraph(
         preset: AVCaptureSession.Preset,
         dashcamEnabled: Bool,
         trafficSignRecognitionEnabled: Bool,
-        panoramaxEnabled: Bool
-    ) throws {
+        panoramaxEnabled: Bool,
+        manualPhotosEnabled: Bool
+    ) throws -> CaptureOutputs {
         session.beginConfiguration()
         defer { session.commitConfiguration() }
 
         session.inputs.forEach(session.removeInput)
         session.outputs.forEach(session.removeOutput)
-        movieOutputAvailable = false
-        videoOutputAvailable = false
-        photoOutputAvailable = false
+        var outputs = CaptureOutputs()
 
         if session.canSetSessionPreset(preset) {
             session.sessionPreset = preset
@@ -1298,15 +1366,15 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         configureRoadFocus(for: camera)
 
         func addMovieOutputIfPossible() {
-            guard !movieOutputAvailable, session.canAddOutput(movieOutput) else { return }
+            guard !outputs.movie, session.canAddOutput(movieOutput) else { return }
             session.addOutput(movieOutput)
             movieOutput.movieFragmentInterval = CMTime(seconds: 10, preferredTimescale: 600)
             movieOutput.maxRecordedFileSize = Self.maximumDashcamFileBytes
-            movieOutputAvailable = true
+            outputs.movie = true
         }
 
         func addVideoOutputIfPossible() {
-            guard !videoOutputAvailable, session.canAddOutput(videoOutput) else { return }
+            guard !outputs.video, session.canAddOutput(videoOutput) else { return }
             session.addOutput(videoOutput)
             videoOutput.alwaysDiscardsLateVideoFrames = true
             videoOutput.videoSettings = [
@@ -1324,25 +1392,25 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 }
             }
             videoOutput.setSampleBufferDelegate(frameDispatcher, queue: videoQueue)
-            videoOutputAvailable = true
+            outputs.video = true
         }
 
         func addPhotoOutputIfPossible() {
-            guard !photoOutputAvailable, session.canAddOutput(photoOutput) else { return }
+            guard !outputs.photo, session.canAddOutput(photoOutput) else { return }
             session.addOutput(photoOutput)
             if let dimensions = camera.activeFormat.supportedMaxPhotoDimensions.max(by: {
                 Int64($0.width) * Int64($0.height) < Int64($1.width) * Int64($1.height)
             }) {
                 photoOutput.maxPhotoDimensions = dimensions
             }
-            photoOutputAvailable = true
+            outputs.photo = true
         }
 
         // Keep the graph fixed while the session is running. Panoramax is a
         // selected still consumer, so attach it before the video outputs; on
         // devices with a constrained multi-output budget this prevents the
         // Dashcam/TSR streams from silently displacing photo capture.
-        if panoramaxEnabled || (requestedManualPhotosEnabled && !dashcamEnabled && !trafficSignRecognitionEnabled) {
+        if panoramaxEnabled || (manualPhotosEnabled && !dashcamEnabled && !trafficSignRecognitionEnabled) {
             addPhotoOutputIfPossible()
         }
         if dashcamEnabled { addMovieOutputIfPossible() }
@@ -1352,17 +1420,18 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         // Optional manual stills are attached last. A constrained device must
         // retain its selected movie/recognition outputs and disable the shutter
         // rather than reconfigure or fail the live session.
-        if requestedManualPhotosEnabled { addPhotoOutputIfPossible() }
+        if manualPhotosEnabled { addPhotoOutputIfPossible() }
         videoOutput.connection(with: .video)?.isEnabled = trafficSignRecognitionEnabled
             && frameDispatcher.hasConsumer
-        guard movieOutputAvailable || videoOutputAvailable || photoOutputAvailable else {
+        guard outputs.movie || outputs.video || outputs.photo else {
             throw RecorderError.sessionUnavailable
         }
+        return outputs
     }
 
     /// Photos, Dashcam and TSR share road-focused autofocus. Restrict scans to
     /// distant subjects where supported to avoid focusing on the windscreen.
-    private func configureRoadFocus(for camera: AVCaptureDevice) {
+    nonisolated private func configureRoadFocus(for camera: AVCaptureDevice) {
         do {
             try DriveCameraFocusConfiguration.apply(to: camera)
         } catch {
@@ -1370,13 +1439,23 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
     }
 
-    nonisolated private func configureMovieCodecIfPossible(rotationAngle: CGFloat) {
-        guard let connection = movieOutput.connection(with: .video) else { return }
+    nonisolated private func configureMovieCodecIfPossible(rotationAngle: CGFloat) -> Bool {
+        guard session.isRunning, !movieOutput.isRecording,
+              let connection = movieOutput.connection(with: .video), connection.isEnabled else { return false }
         if connection.isVideoRotationAngleSupported(rotationAngle) {
             connection.videoRotationAngle = rotationAngle
         }
-        let codec: AVVideoCodecType = movieOutput.availableVideoCodecTypes.contains(.hevc) ? .hevc : .h264
-        movieOutput.setOutputSettings([AVVideoCodecKey: codec], for: connection)
+        // The available codecs/keys belong to this configured connection. An
+        // unconditional H.264 fallback can pass an unsupported value to an
+        // Objective-C API that raises an exception instead of a Swift Error.
+        if let codec = DriveMovieCodecConfiguration.preferredCodec(
+            available: movieOutput.availableVideoCodecTypes,
+            supportedKeys: movieOutput.supportedOutputSettingsKeys(for: connection)
+        ) {
+            movieOutput.setOutputSettings([AVVideoCodecKey: codec], for: connection)
+        }
+        Self.logger.notice("movie start requested preset=\(self.session.sessionPreset.rawValue, privacy: .public) codecs=\(self.movieOutput.availableVideoCodecTypes.map(\.rawValue).joined(separator: ","), privacy: .public)")
+        return true
     }
 
     private func finishPhoto(data: Data?, error: Error?, uniqueID: Int64) {

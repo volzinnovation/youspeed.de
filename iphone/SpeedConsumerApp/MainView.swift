@@ -460,9 +460,6 @@ struct MainView: View {
         }
         .onAppear {
             viewModel.setSettingsPresented(showingSettings)
-            if viewModel.driveStatus == "stopped" {
-                viewModel.startDriving()
-            }
             if openSettingsOnAppear && !showingSettings && viewModel.drivingControlsAllowed {
                 settingsPresentation.wrappedValue = true
                 onOpenSettingsConsumed?()
@@ -473,6 +470,9 @@ struct MainView: View {
             hasAutoTriggeredSyncForTests = true
             print("SPEEDCONSUMER_TEST_AUTOTAP_SYNC triggered")
             viewModel.bootstrapAndSync()
+        }
+        .onChange(of: viewModel.canStartDrivingFromDashboard && scenePhase == .active, initial: true) { _, ready in
+            if ready { viewModel.startDriving() }
         }
         .onChange(of: viewModel.driveRecorderDashcamActive) { previousValue, active in
             if active != previousValue {
@@ -660,7 +660,8 @@ struct MainView: View {
                 }
                 .contentShape(Circle())
                 .accessibilityLabel(NSLocalizedString(recorderControl.accessibilityLocalizationKey, comment: ""))
-                .disabled(!recorderControl.isEnabled)
+                .disabled(!recorderControl.isEnabled || (recorderControl.action == .start
+                    && viewModel.panoramaxCaptureEnabled && viewModel.panoramaxQueueMaintenanceInProgress))
 
                 Spacer()
                 panoramaxCaptureButton(diameter: buttonDiameter)
@@ -725,7 +726,7 @@ struct MainView: View {
                 Spacer()
             }
 
-            if viewModel.showsDrivingPhotoButton {
+            if viewModel.replacesSettingsWithDrivingPhotoButton {
                 drivingPhotoButton(diameter: max(44, buttonDiameter))
                     .frame(width: max(44, buttonDiameter), height: max(44, buttonDiameter))
             } else {

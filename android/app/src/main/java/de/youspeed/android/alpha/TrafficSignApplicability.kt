@@ -201,7 +201,7 @@ object TSRApplicabilityPolicy {
 object TSRApplicabilityAuthority {
     fun allows(decision: TSRApplicabilityDecision?, scope: TSRApplicabilityScope, frameId: String, trackId: String,
         sink: String, mode: String = TSRApplicabilityConfiguration.defaultMode): Boolean {
-        if (decision?.reasons?.any { it in listOf(TSRMotorwayExitPolicy.reason, TSRAccessRoadPolicy.reason) } == true) return false
+        if (TSRLiveSignAdmission.blocks(decision)) return false
         if (mode == "shadow") return true
         if (mode != "enforce" || decision == null || decision.schemaVersion != 1 || decision.scope != scope || decision.frameId != frameId || decision.trackId != trackId ||
             decision.policyVersion != TSRApplicabilityConfiguration.policyVersion || decision.configHash != TSRApplicabilityConfiguration.configHash || decision.classification != "LIKELY_EGO_CORRIDOR") return false
@@ -313,21 +313,95 @@ class TSRAccessRoadPolicy {
     }
 }
 
+/** Active camera-input checks; never change the shared speed-reference machine. */
+object TSRLiveSignAdmission {
+    const val zoneTextReason = "zone_panel_unverified"
+    const val zoneRoadReason = "zone_ego_approach_unproven"
+    const val sideRoadReason = "side_road_ambiguous_sign"
+    fun blocks(decision: TSRApplicabilityDecision?): Boolean = decision?.reasons?.any {
+        it in setOf(zoneTextReason, zoneRoadReason, sideRoadReason, TSRMotorwayExitPolicy.reason, TSRAccessRoadPolicy.reason)
+    } == true
+    fun zoneSpeed(semantic: String): Int? = semantic.split(':').let {
+        if (it.firstOrNull() == "zone_start") it.getOrNull(1)?.toIntOrNull() else null
+    }
+    fun verifiesZoneText(text: String, speed: Int): Boolean {
+        val words = text.uppercase(java.util.Locale.ROOT).split(Regex("[^\\p{L}]+"))
+        val numbers = text.split(Regex("[^0-9]+")).mapNotNull(String::toIntOrNull)
+        return words.any { it == "ZONE" || it == "ZONA" } && numbers == listOf(speed)
+    }
+    fun reason(track: TSRPhysicalTrackSnapshot, batch: TSRFrameCandidateBatch,
+        decision: TSRApplicabilityDecision, verifiedZones: Set<String>): String? {
+        val last = track.samples.lastOrNull()?.takeIf { it.frameId == batch.frameId } ?: return null
+        if (decision.classification == "LIKELY_BRANCH" || decision.reasons.any {
+            it in setOf("competing_corridors", "outside_supported_corridor", "unknown_competing_corridor") }) return sideRoadReason
+        // Peripheral speed signs beside a linked side road remain ambiguous;
+        // an end sign on the left is not rejected for image position alone.
+        batch.road?.takeIf { road -> road.scope == batch.scope && road.matchedStable && road.wayId != null &&
+            batch.capturedAtMs-road.capturedAtMs in 0.0..1500.0 &&
+            road.horizontalAccuracyM?.let { it in 0.0..20.0 } == true &&
+            road.courseDeg?.let { it in 0.0..<360.0 } == true &&
+            road.courseAccuracyDeg?.let { it in 0.0..25.0 } == true
+        }?.let { road ->
+            if (last.candidate.semanticKey.startsWith("maximum_speed:")) {
+                val center = last.candidate.box.centerX
+                val onBranchSide = (road.branches + road.hypotheses).any { branch ->
+                    val angle = branch.headingDeg?.let { TSRApplicabilityPolicy.signedAngle(it - requireNotNull(road.courseDeg)) }
+                    branch.wayId != road.wayId && branch.endpointLinked && branch.distanceM?.let { it in 0.0..40.0 } == true &&
+                        angle != null && ((center < 0.2 && angle in -145.0..-35.0) || (center > 0.8 && angle in 35.0..145.0))
+                }
+                if (onBranchSide) return sideRoadReason
+            }
+        }
+        if (zoneSpeed(last.candidate.semanticKey) == null) return null
+        if (last.candidate.candidateId !in verifiedZones) return zoneTextReason
+        if (decision.immediateEligible) return null
+        val road = batch.road ?: return zoneRoadReason
+        val course = road.courseDeg ?: return zoneRoadReason
+        val tangent = road.localTangentDeg ?: return zoneRoadReason
+        if (batch.status != "analyzed" || batch.truncated || track.associationAmbiguous || road.scope != batch.scope ||
+            !road.matchedStable || road.wayId == null || batch.capturedAtMs-road.capturedAtMs !in 0.0..1500.0 ||
+            road.horizontalAccuracyM?.let { it in 0.0..20.0 } != true || course !in 0.0..<360.0 ||
+            road.courseAccuracyDeg?.let { it in 0.0..25.0 } != true || !tangent.isFinite()) return zoneRoadReason
+        val delta = abs(TSRApplicabilityPolicy.signedAngle(tangent-course))
+        if (minOf(delta, 180-delta) > 20) return zoneRoadReason
+        val samples = track.samples.filter { it.candidate.recognitionEligible &&
+            it.candidate.semanticKey == last.candidate.semanticKey && batch.capturedAtMs-it.capturedAtMs <= 1500 }
+        val first = samples.firstOrNull() ?: return zoneRoadReason
+        if (samples.map { it.frameId }.toSet().size < 2 || last.capturedAtMs <= first.capturedAtMs ||
+            !first.candidate.box.valid || !last.candidate.box.valid || first.candidate.box.centerX !in 0.2..0.8 ||
+            last.candidate.box.centerX !in 0.2..0.8 || last.candidate.box.scale/first.candidate.box.scale < 1.08) return zoneRoadReason
+        val branching = (road.branches + road.hypotheses).any {
+            it.wayId != road.wayId && it.endpointLinked && it.distanceM?.let { d -> d in 0.0..40.0 } == true &&
+                it.headingDeg?.let { h -> abs(TSRApplicabilityPolicy.signedAngle(h-course)) in 35.0..145.0 } == true
+        }
+        return if (branching && last.candidate.box.centerX !in 0.4..0.6) sideRoadReason else null
+    }
+}
+
 class TSRApplicabilitySession {
     private val accessPolicy = TSRAccessRoadPolicy()
     var accessRoadWithheldCandidateIDs: Set<String> = emptySet(); private set
+    var liveWithheldCandidateIDs: Set<String> = emptySet(); private set
     private val tracker = TSRPhysicalSignTracker()
     private val decisionsByTrack = mutableMapOf<String, TSRApplicabilityDecision>()
     var diagnostic: TSRApplicabilityDiagnostic? = null; private set
-    fun reset() { tracker.reset(); accessPolicy.reset(); accessRoadWithheldCandidateIDs = emptySet(); decisionsByTrack.clear(); diagnostic = null }
-    fun evaluate(batch: TSRFrameCandidateBatch): TSRApplicabilityDiagnostic {
+    fun reset() { tracker.reset(); accessPolicy.reset(); accessRoadWithheldCandidateIDs = emptySet(); liveWithheldCandidateIDs = emptySet(); decisionsByTrack.clear(); diagnostic = null }
+    fun evaluate(batch: TSRFrameCandidateBatch, verifiedZones: Set<String> = emptySet()): TSRApplicabilityDiagnostic {
         val tracks = tracker.ingest(batch)
         val withheld = TSRMotorwayExitPolicy.withheldCandidates(batch)
         accessRoadWithheldCandidateIDs = accessPolicy.withheldCandidates(batch)
+        val liveWithheld = batch.candidates.filter { TSRLiveSignAdmission.zoneSpeed(it.semanticKey) != null }
+            .map { it.candidateId }.toMutableSet()
         val decisions = tracks.map { track ->
             val decision = TSRApplicabilityPolicy.evaluate(track, batch)
             val sample = track.samples.lastOrNull()
-            if (sample?.frameId == batch.frameId && sample.candidate.candidateId in accessRoadWithheldCandidateIDs)
+            val liveReason = TSRLiveSignAdmission.reason(track, batch, decision, verifiedZones)
+            if (liveReason == null && sample?.frameId == batch.frameId) liveWithheld.remove(sample.candidate.candidateId)
+            if (liveReason != null && sample != null) {
+                liveWithheld.add(sample.candidate.candidateId)
+                decision.copy(classification = if (decision.classification == "LIKELY_EGO_CORRIDOR") "UNKNOWN" else decision.classification, reasons = listOf(liveReason),
+                    displayEligible = false, immediateEligible = false, passageEligible = false)
+            } else if (sample?.frameId == batch.frameId && sample.candidate.candidateId in accessRoadWithheldCandidateIDs)
                 decision.copy(classification = "UNKNOWN", reasons = listOf(TSRAccessRoadPolicy.reason),
                     evidence = listOf("recent_repeated_mainline_limit", "nearby_access_road", "right_side_conflicting_speed"),
                     displayEligible = false, immediateEligible = false, passageEligible = false)
@@ -337,6 +411,7 @@ class TSRApplicabilitySession {
                     displayEligible = false, immediateEligible = false, passageEligible = false)
             else decision
         }
+        liveWithheldCandidateIDs = liveWithheld
         decisionsByTrack.entries.removeAll { (key, value) -> tracks.none { it.trackId == key && it.scope == value.scope } }
         tracks.zip(decisions).filter { it.first.visibility == "observed" }.forEach { (track, decision) -> decisionsByTrack[track.trackId] = decision }
         return TSRApplicabilityDiagnostic(1, batch, tracks, decisions).also { diagnostic = it }

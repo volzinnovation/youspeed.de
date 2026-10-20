@@ -22490,3 +22490,448 @@ extension TrafficSignPassageEvaluationTests {
         XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
     }
 }
+
+extension SpeedConsumerTests {
+    func testStaleReferenceDirectionUsesMatchedLocalTangentBeforeWayEndpoints() throws {
+        var result = try staleReferenceDirectionFixture()
+        let way = try XCTUnwrap(result.wayID)
+        // The selected legacy hypothesis points north; the local curve points south.
+        result.applicabilityGeometry = TSRMapGeometry(wayId: way, localTangentDeg: 180,
+            roadClass: "secondary", hypotheses: [], branches: [], capabilities: ["local_tangent"])
+        XCTAssertEqual(DriveSessionViewModel.trafficSignTravelDirection(for: result, headingDegrees: 180), .forward)
+        XCTAssertEqual(DriveSessionViewModel.trafficSignTravelDirection(for: result, headingDegrees: 0), .reverse)
+        result.applicabilityGeometry = nil
+        XCTAssertEqual(DriveSessionViewModel.trafficSignTravelDirection(for: result, headingDegrees: 0), .forward)
+        result.applicabilityGeometry = TSRMapGeometry(wayId: "different-way", localTangentDeg: 180,
+            roadClass: "secondary", hypotheses: [], branches: [], capabilities: ["local_tangent"])
+        XCTAssertEqual(DriveSessionViewModel.trafficSignTravelDirection(for: result, headingDegrees: 180), .unknown)
+    }
+
+    func testStaleReferenceDirectionWithholdsStationaryNoisyAndStaleNativeCourse() throws {
+        var result = try staleReferenceDirectionFixture()
+        result.applicabilityGeometry = TSRMapGeometry(wayId: result.wayID, localTangentDeg: 90,
+            roadClass: "secondary", hypotheses: [], branches: [], capabilities: ["local_tangent"])
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        func direction(speed: Double = 1, accuracy: Double = 20, course: Double = 90,
+            courseAccuracy: Double = 25, age: Double = 1.5) -> TrafficSignTravelDirection {
+            let location = CLLocation(coordinate: CLLocationCoordinate2D(latitude: 52, longitude: 13),
+                altitude: 0, horizontalAccuracy: accuracy, verticalAccuracy: 5,
+                course: course, courseAccuracy: courseAccuracy, speed: speed, speedAccuracy: 0.1,
+                timestamp: now.addingTimeInterval(-age))
+            return DriveSessionViewModel.reliableReferenceTravelDirection(for: result, location: location, now: now)
+        }
+        XCTAssertEqual(direction(), .forward)
+        XCTAssertEqual(direction(course: 270), .reverse)
+        XCTAssertEqual(direction(speed: 0), .unknown)
+        XCTAssertEqual(direction(speed: 0.99), .unknown)
+        XCTAssertEqual(direction(speed: -1), .unknown)
+        XCTAssertEqual(direction(accuracy: 20.1), .unknown)
+        XCTAssertEqual(direction(accuracy: -1), .unknown)
+        XCTAssertEqual(direction(course: -1), .unknown)
+        XCTAssertEqual(direction(course: 360), .unknown)
+        XCTAssertEqual(direction(courseAccuracy: -1), .unknown)
+        XCTAssertEqual(direction(courseAccuracy: 25.1), .unknown)
+        XCTAssertEqual(direction(age: 1.501), .unknown)
+        XCTAssertEqual(direction(age: -0.1), .unknown)
+    }
+
+    @MainActor
+    func testStaleReferenceControllerHonorsExplicitUnlimitedTrunk() async throws {
+        try await withStaleReferenceController(highway: "trunk", maxspeed: "none") { model in
+            await model.testRunGPSLookup(latitude: 48.9, longitude: 8.4)
+            XCTAssertEqual(model.limitWayID, "6001")
+            XCTAssertEqual(model.effectiveSpeedLimitState.value, .unlimited)
+            XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+            XCTAssertEqual(model.lastLookupStatus, "matched_unlimited")
+        }
+    }
+
+    @MainActor
+    func testStaleReferenceControllerHonorsExplicitUnlimitedRamps() async throws {
+        for highway in ["motorway_link", "trunk_link"] {
+            try await withStaleReferenceController(highway: highway, maxspeed: "none") { model in
+                await model.testRunGPSLookup(latitude: 48.9, longitude: 8.4)
+                XCTAssertEqual(model.limitWayID, "6001", highway)
+                XCTAssertEqual(model.effectiveSpeedLimitState.value, .unlimited, highway)
+                XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle, highway)
+                XCTAssertEqual(model.lastLookupStatus, "matched_unlimited", highway)
+            }
+        }
+    }
+
+    @MainActor
+    func testStaleReferenceControllerDoesNotInferUnlimitedForUnsignedRamp() async throws {
+        try await withStaleReferenceController(highway: "motorway_link", maxspeed: nil) { model in
+            await model.testRunGPSLookup(latitude: 48.9, longitude: 8.4)
+            XCTAssertEqual(model.limitWayID, "6001")
+            XCTAssertEqual(model.effectiveSpeedLimitState.value, .unknown)
+            XCTAssertFalse(model.isUnlimitedSpeedLimitActive)
+            XCTAssertEqual(model.lastLookupStatus, "matched_no_speed")
+        }
+    }
+
+    @MainActor
+    func testStaleReferenceControllerLogsAuthoritativeGrayStateAndPreservesOldLogDecoding() async throws {
+        try await withStaleReferenceController(highway: "secondary", maxspeed: "70") { model in
+            let wasLogging = model.debugLoggingEnabled
+            model.setDebugLoggingEnabled(true)
+            defer { model.setDebugLoggingEnabled(wasLogging) }
+            let context = TrafficSignDetectionContext(wayId: "previous-road", latitude: 48.9, longitude: 8.4,
+                headingDegrees: 90, travelDirection: .forward,
+                sourceSignature: TrafficSignRuntimeSourceSignature(osmRevision: "test-old-map", localCorrectionRevision: nil),
+                roadIdentity: "name:previous-road")
+            model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+            await model.testRunGPSLookup(latitude: 48.9, longitude: 8.4)
+            XCTAssertEqual(model.effectiveSpeedLimitState.value, .numeric(50))
+            XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown)
+            XCTAssertEqual(model.lastLookupStatus, "matched_last_known")
+            let rows = try String(contentsOfFile: model.matchLogPath, encoding: .utf8).split(separator: "\n")
+            let data = Data(try XCTUnwrap(rows.last).utf8)
+            let entry = try JSONDecoder().decode(DriveMatchLogEntry.self, from: data)
+            XCTAssertEqual(entry.result?.speedLimitKmh, 70)
+            XCTAssertEqual(entry.status, "matched_last_known")
+            XCTAssertEqual(entry.effectiveSpeedLimitSource, "last_known")
+            XCTAssertEqual(entry.effectiveSpeedLimitKind, "numeric")
+            XCTAssertEqual(entry.effectiveSpeedLimitCurrent, false)
+            XCTAssertEqual(entry.effectiveSpeedLimitReason, model.effectiveSpeedLimitState.presentationReason)
+            var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            for key in ["effectiveSpeedLimitSource", "effectiveSpeedLimitReason", "effectiveSpeedLimitKind", "effectiveSpeedLimitCurrent"] {
+                legacy.removeValue(forKey: key)
+            }
+            let oldEntry = try JSONDecoder().decode(DriveMatchLogEntry.self,
+                from: JSONSerialization.data(withJSONObject: legacy))
+            XCTAssertNil(oldEntry.effectiveSpeedLimitSource)
+            XCTAssertNil(oldEntry.effectiveSpeedLimitCurrent)
+            XCTAssertEqual(oldEntry.result?.speedLimitKmh, 70)
+        }
+    }
+
+    private func staleReferenceDirectionFixture() throws -> SpeedLimitResult {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("stale-reference-heading-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let database = directory.appendingPathComponent("roads.sqlite")
+        try createHeadingDisambiguationFixtureDB(at: database)
+        return try V3SpeedLimitService(dbPath: database.path, matchingModel: .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic)
+            .lookupSpeedLimit(lat: 52, lon: 13.005, radiusM: 80, maxCandidates: 32,
+                preferredWayID: "1001", headingDeg: 0, headingAccuracyDeg: 5, speedKmh: 40, horizontalAccuracyM: 5)
+    }
+
+    @MainActor
+    private func withStaleReferenceController(highway: String, maxspeed: String?,
+        body: (DriveSessionViewModel) async throws -> Void) async throws {
+        let fm = FileManager.default
+        let root = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        let activeStateURL = root.appendingPathComponent("active_bundle.json")
+        let originalActiveState = try? Data(contentsOf: activeStateURL)
+        let bundlesDirectory = root.appendingPathComponent("bundles")
+        let installedDirectories = (try? fm.contentsOfDirectory(at: bundlesDirectory,
+            includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])) ?? []
+        let originalManifests: [(URL, Data)] = installedDirectories.compactMap { directory in
+            let url = directory.appendingPathComponent("bundle-manifest.v3.json")
+            return (try? Data(contentsOf: url)).map { (url, $0) }
+        }
+        let fixtureID = UUID().uuidString
+        let directory = root.appendingPathComponent("bundles/DEU-stale-reference-test-\(fixtureID)")
+        let manifestURL = directory.appendingPathComponent("bundle-manifest.v3.json")
+        defer {
+            // Leave the tiny SQLite file until the isolated TestHost process
+            // ends; its reader and asynchronous app startup work may outlive
+            // the assertion scope. Removing only the manifest excludes this
+            // fixture from the next case's bundle-routing inventory.
+            try? fm.removeItem(at: manifestURL)
+            for (url, data) in originalManifests { try? data.write(to: url, options: .atomic) }
+            if let originalActiveState { try? originalActiveState.write(to: activeStateURL, options: .atomic) }
+            else { try? fm.removeItem(at: activeStateURL) }
+        }
+        // Temporarily hide only routing metadata from other TestHost fixtures;
+        // their live SQLite files and readers remain valid throughout this case.
+        for (url, _) in originalManifests { try fm.removeItem(at: url) }
+        try fm.createDirectory(at: directory, withIntermediateDirectories: true)
+        let database = directory.appendingPathComponent("roads.sqlite")
+        try createCityPolygonFixtureDB(at: database, fixLat: 48.9, fixLon: 8.4, adminLevel8Name: "Reference Test City")
+        let maxspeedSQL = maxspeed.map { "'\($0)'" } ?? "NULL"
+        try executeSQL(at: database, sql: "UPDATE ways SET highway='\(highway)',maxspeed=\(maxspeedSQL),maxspeed_type=NULL,source_maxspeed=NULL;")
+        let data = try Data(contentsOf: database)
+        let digest = sha256Hex(data)
+        let manifest = V3BundleManifest(format: "youspeed.v3.bundle.manifest", schemaVersion: 1,
+            variant: "v3", region: "germany/baden-wuerttemberg", countryCode: "DEU", bundleVersion: fixtureID,
+            createdAtUTC: "2026-10-19T00:00:00Z", minAppVersion: "1.0.0",
+            db: BundleArtifact(file: database.lastPathComponent, bytes: Int64(data.count), sha256: digest, url: nil),
+            dbParts: nil, deltaIndex: nil,
+            coverage: BundleCoverage(bbox: BundleCoverageBBox(minLon: 8.35, minLat: 48.85, maxLon: 8.45, maxLat: 48.95), poly: nil))
+        try JSONEncoder().encode(manifest).write(to: manifestURL)
+        let active = ActiveBundleState(region: "germany/baden-wuerttemberg", bundleVersion: fixtureID,
+            dbFileName: database.lastPathComponent, activatedAtUTC: "2026-10-19T00:00:00Z", dbPath: database.path, dbSHA256: digest)
+        try JSONEncoder().encode(active).write(to: activeStateURL, options: .atomic)
+        let model = DriveSessionViewModel()
+        // App services start independent asynchronous network work. Keep the
+        // controller alive for the isolated process, as the real app does, so
+        // fixture teardown cannot invalidate a URLSession before its queued
+        // bridge has created its task. Each case still gets its own controller.
+        staleReferenceControllerFixtureLifetimes.append(model)
+        defer { model.stopDriving() }
+        try await model.testWaitForStartupDataLoad()
+        await model.testRefreshBundleInventory()
+        model.matcherDebugProfile = .m7
+        try await body(model)
+    }
+}
+
+// Fixture ownership matches the application lifetime. XCTest's TestHost process
+// teardown releases these resources after all queued app work has stopped.
+@MainActor private var staleReferenceControllerFixtureLifetimes: [DriveSessionViewModel] = []
+
+private struct GeneratedDirectionalSpeedCases: Decodable {
+    struct Road: Decodable {
+        let wayId: String
+        let lat: Double
+        let lon: Double
+        let forwardHeadingDeg: Double
+        let expectedForwardKmh: Int
+        let expectedBackwardKmh: Int
+    }
+    let databaseSHA256: String
+    let cases: [Road]
+}
+
+extension SpeedConsumerTests {
+    func testDirectionalPostedLimitsRequireReliableLocalWayDirection() throws {
+        let file = try makeDirectionalSpeedFixture(forward: "30", backward: "50", highCity: true)
+        defer { try? FileManager.default.removeItem(at: file) }
+        for model in [V3SpeedLimitService.MatchingModel.corridorHMM, .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic] {
+            let service = V3SpeedLimitService(dbPath: file.path, countryCode: "DEU", matchingModel: model)
+            defer { service.invalidateDatabase() }
+            func lookup(_ heading: Double?, _ accuracy: Double? = 5, _ speed: Double = 40) throws -> SpeedLimitResult {
+                try service.lookupSpeedLimit(lat: 52, lon: 13.002, headingDeg: heading,
+                    headingAccuracyDeg: accuracy, speedKmh: speed, horizontalAccuracyM: 5)
+            }
+            let forward = try lookup(90, 45, 8)
+            XCTAssertEqual(forward.wayID, "4101")
+            XCTAssertEqual(forward.speedLimitKmh, 30)
+            XCTAssertEqual(forward.speedSource, "EXPLICIT_TAG")
+            XCTAssertEqual(try lookup(270).speedLimitKmh, 50)
+            for result in [try lookup(nil), try lookup(90, nil), try lookup(90, 45.1),
+                           try lookup(90, -1), try lookup(90, 5, 7.99), try lookup(0), try lookup(361)] {
+                XCTAssertNil(result.speedLimitKmh, "A known urban default must not mask directional ambiguity")
+                XCTAssertNotEqual(result.isUnlimitedSpeedLimit, true)
+                XCTAssertEqual(result.speedSource, "DIRECTIONAL_UNRESOLVED")
+                XCTAssertEqual(result.speedCandidateCount, 1, "Mapped directional evidence still counts toward bundle density")
+            }
+        }
+    }
+
+    func testDirectionalPostedLimitsUseLocalCurveInsteadOfWholeWayEndpoints() throws {
+        let file = try makeDirectionalSpeedFixture(forward: "30", backward: "70")
+        defer { try? FileManager.default.removeItem(at: file) }
+        try executeSQL(at: file, sql: """
+        UPDATE ways SET max_lat=52.002;
+        UPDATE ways_rtree SET max_lat=52.002;
+        UPDATE way_geom SET points_json='[[52,13],[52,13.004],[52.002,13.004],[52.002,13]]';
+        """)
+        let service = V3SpeedLimitService(dbPath: file.path, countryCode: "DEU")
+        defer { service.invalidateDatabase() }
+        let along = try service.lookupSpeedLimit(lat: 52.002, lon: 13.002, headingDeg: 270,
+            headingAccuracyDeg: 5, speedKmh: 40, horizontalAccuracyM: 5)
+        let against = try service.lookupSpeedLimit(lat: 52.002, lon: 13.002, headingDeg: 90,
+            headingAccuracyDeg: 5, speedKmh: 40, horizontalAccuracyM: 5)
+        XCTAssertEqual(along.wayID, "4101")
+        XCTAssertEqual(along.speedLimitKmh, 30)
+        XCTAssertEqual(against.speedLimitKmh, 70)
+        XCTAssertNil(along.insideCity)
+        XCTAssertEqual(along.citySource, "settlement:missing:unknown")
+    }
+
+    func testDirectionalPostedLimitsHandleOverridesAgreementUnlimitedAndUnsupportedTags() throws {
+        let variants: [(String?, String?, String?, Double?, Int?, Bool, String)] = [
+            ("30", nil, "50", 90, 30, false, "EXPLICIT_TAG"),
+            ("30", nil, "50", 270, 50, false, "EXPLICIT_TAG"),
+            ("30", nil, "50", nil, nil, false, "DIRECTIONAL_UNRESOLVED"),
+            ("50", nil, "50", nil, 50, false, "EXPLICIT_TAG"),
+            ("40", "40", nil, nil, 40, false, "EXPLICIT_TAG"),
+            ("none", "none", nil, nil, nil, true, "EXPLICIT_UNLIMITED_TAG"),
+            ("none", nil, "80", 90, nil, true, "EXPLICIT_UNLIMITED_TAG"),
+            ("none", nil, "80", 270, 80, false, "EXPLICIT_TAG"),
+            ("none", nil, "80", nil, nil, false, "DIRECTIONAL_UNRESOLVED"),
+            ("signals", "70", "50", 90, nil, false, "DIRECTIONAL_UNRESOLVED"),
+            ("signals", "70", "50", 270, 70, false, "EXPLICIT_TAG"),
+            ("DE:urban", "DE:urban", nil, nil, 50, false, "INHERITED_TAG")
+        ]
+        for (forward, backward, base, heading, expected, unlimited, source) in variants {
+            let file = try makeDirectionalSpeedFixture(forward: forward, backward: backward, base: base, highCity: true)
+            defer { try? FileManager.default.removeItem(at: file) }
+            let service = V3SpeedLimitService(dbPath: file.path, countryCode: "DEU")
+            let result = try service.lookupSpeedLimit(lat: 52, lon: 13.002, headingDeg: heading,
+                headingAccuracyDeg: 5, speedKmh: 40, horizontalAccuracyM: 5)
+            service.invalidateDatabase()
+            XCTAssertEqual(result.speedLimitKmh, expected, "forward=\(forward ?? "nil") backward=\(backward ?? "nil") heading=\(heading?.description ?? "nil")")
+            XCTAssertEqual(result.isUnlimitedSpeedLimit == true, unlimited)
+            XCTAssertEqual(result.speedSource, source)
+        }
+        let weak = try makeDirectionalSpeedFixture(forward: "DE:urban", backward: "DE:urban")
+        defer { try? FileManager.default.removeItem(at: weak) }
+        let service = V3SpeedLimitService(dbPath: weak.path, countryCode: "DEU")
+        let result = try service.lookupSpeedLimit(lat: 52, lon: 13.002)
+        service.invalidateDatabase()
+        XCTAssertNil(result.speedLimitKmh, "Symbolic evidence must retain the existing settlement confidence gate")
+    }
+
+    func testDirectionalPostedLimitsPreserveLegacyBundlesWithoutOptionalColumns() throws {
+        let file = try makeDirectionalSpeedFixture(base: "60", directionalColumns: false)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let service = V3SpeedLimitService(dbPath: file.path, countryCode: "DEU")
+        defer { service.invalidateDatabase() }
+        let result = try service.lookupSpeedLimit(lat: 52, lon: 13.002)
+        XCTAssertEqual(result.speedLimitKmh, 60)
+        XCTAssertEqual(result.speedSource, "EXPLICIT_TAG")
+        XCTAssertNil(result.insideCity)
+    }
+
+    @MainActor
+    func testGeneratedDirectionalPostedLimitsReachControllerOnAllThreeRecordedWays() async throws {
+        let fixture = try generatedDirectionalSpeedFixture()
+        try await withGeneratedDirectionalSpeedController(database: fixture.database, cases: fixture.manifest) { model in
+            let wasLogging = model.debugLoggingEnabled
+            model.setDebugLoggingEnabled(true)
+            defer { model.setDebugLoggingEnabled(wasLogging) }
+            for road in fixture.manifest.cases {
+                for (heading, expected) in [(road.forwardHeadingDeg, road.expectedForwardKmh),
+                    ((road.forwardHeadingDeg + 180).truncatingRemainder(dividingBy: 360), road.expectedBackwardKmh)] {
+                    model.stopDriving()
+                    await model.testRunGPSLookup(latitude: road.lat, longitude: road.lon,
+                        headingDegrees: heading, speedKmh: 40, headingAccuracyDegrees: 5)
+                    XCTAssertEqual(model.limitWayID, road.wayId)
+                    XCTAssertEqual(model.effectiveSpeedLimitState.value, .numeric(expected))
+                    XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+                    XCTAssertEqual(model.lastLookupStatus, "matched")
+                    let last = try String(contentsOfFile: model.matchLogPath, encoding: .utf8).split(separator: "\n").last
+                    let entry = try JSONDecoder().decode(DriveMatchLogEntry.self, from: Data(try XCTUnwrap(last).utf8))
+                    XCTAssertEqual(entry.result?.speedSource, "EXPLICIT_TAG")
+                    XCTAssertNil(entry.result?.insideCity)
+                    XCTAssertEqual(entry.result?.citySource, "settlement:missing:unknown")
+                    print("GENERATED_DIRECTIONAL_CONTROLLER way=\(road.wayId) heading=\(heading) kmh=\(expected) source=\(entry.result?.speedSource ?? "nil") city=unknown")
+                }
+                let lookup = V3SpeedLimitService(dbPath: fixture.database.path, countryCode: "DEU")
+                for (heading, accuracy) in [(nil, 5.0), (road.forwardHeadingDeg, 46.0),
+                    ((road.forwardHeadingDeg + 90).truncatingRemainder(dividingBy: 360), 5.0)] as [(Double?, Double)] {
+                    let result = try lookup.lookupSpeedLimit(lat: road.lat, lon: road.lon, headingDeg: heading,
+                        headingAccuracyDeg: accuracy, speedKmh: 40, horizontalAccuracyM: 5)
+                    XCTAssertEqual(result.wayID, road.wayId)
+                    XCTAssertNil(result.speedLimitKmh)
+                    XCTAssertEqual(result.speedSource, "DIRECTIONAL_UNRESOLVED")
+                    XCTAssertNil(result.insideCity)
+                }
+                let density = try lookup.bundleRouteFeatureCounts(lat: road.lat, lon: road.lon, radiusM: 50, maxCandidates: 64)
+                XCTAssertGreaterThan(density.candidateCount, 0)
+                XCTAssertGreaterThan(density.speedCandidateCount, 0,
+                    "Headingless routing must count the mapped directional limits without inventing current authority")
+                let unknown = try lookup.lookupSpeedLimit(lat: road.lat, lon: road.lon, radiusM: 50, maxCandidates: 64)
+                XCTAssertNil(unknown.speedLimitKmh)
+                XCTAssertEqual(unknown.speedCandidateCount, density.speedCandidateCount)
+                XCTAssertNotNil(unknown.nearestSpeedCandidateDistanceM)
+                lookup.invalidateDatabase()
+            }
+        }
+    }
+
+    @MainActor
+    func testGeneratedDirectionalPostedLimitReversalRetainsEightSecondConfirmation() async throws {
+        let fixture = try generatedDirectionalSpeedFixture()
+        let road = try XCTUnwrap(fixture.manifest.cases.first)
+        try await withGeneratedDirectionalSpeedController(database: fixture.database, cases: fixture.manifest) { model in
+            await model.testRunGPSLookup(latitude: road.lat, longitude: road.lon,
+                headingDegrees: road.forwardHeadingDeg, speedKmh: 40)
+            XCTAssertEqual(model.speedLimitKmh, road.expectedForwardKmh)
+            let reverse = (road.forwardHeadingDeg + 180).truncatingRemainder(dividingBy: 360)
+            await model.testRunGPSLookup(latitude: road.lat, longitude: road.lon, headingDegrees: reverse, speedKmh: 40)
+            XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown)
+            XCTAssertEqual(model.speedLimitKmh, road.expectedForwardKmh)
+            try await Task.sleep(nanoseconds: 8_200_000_000)
+            await model.testRunGPSLookup(latitude: road.lat, longitude: road.lon, headingDegrees: reverse, speedKmh: 40)
+            XCTAssertEqual(model.limitWayID, road.wayId)
+            XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+            XCTAssertEqual(model.speedLimitKmh, road.expectedBackwardKmh)
+        }
+    }
+
+    private func makeDirectionalSpeedFixture(forward: String? = nil, backward: String? = nil,
+        base: String? = nil, highCity: Bool = false, directionalColumns: Bool = true) throws -> URL {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("directional-limit-\(UUID()).sqlite")
+        try createGermanLowSpeedHeuristicFixtureDB(at: file)
+        try addSettlementSchema(at: file)
+        func sql(_ value: String?) -> String { value.map { "'\($0.replacingOccurrences(of: "'", with: "''"))'" } ?? "NULL" }
+        try executeSQL(at: file, sql: "UPDATE ways SET maxspeed=\(sql(base)),maxspeed_type=NULL,source_maxspeed=NULL;")
+        if directionalColumns {
+            try executeSQL(at: file, sql: """
+            ALTER TABLE ways ADD COLUMN maxspeed_forward TEXT;
+            ALTER TABLE ways ADD COLUMN maxspeed_backward TEXT;
+            UPDATE ways SET maxspeed_forward=\(sql(forward)),maxspeed_backward=\(sql(backward));
+            """)
+        }
+        if highCity {
+            try executeSQL(at: file, sql: "INSERT INTO settlement_segment VALUES(1,4101,0,0,1,'zone_traffic','high','[]','[[52,13],[52,13.004]]');")
+        }
+        return file
+    }
+
+    private func generatedDirectionalSpeedFixture() throws -> (database: URL, manifest: GeneratedDirectionalSpeedCases) {
+        let directory = FileManager.default.temporaryDirectory
+        let database = directory.appendingPathComponent("directional-speeds.sqlite")
+        let cases = directory.appendingPathComponent("directional-speeds.json")
+        guard FileManager.default.fileExists(atPath: database.path), FileManager.default.fileExists(atPath: cases.path) else {
+            throw XCTSkip("Stage the real builder's directional-speeds.sqlite and directional-speeds.json in the isolated TestHost tmp")
+        }
+        let manifest = try JSONDecoder().decode(GeneratedDirectionalSpeedCases.self, from: Data(contentsOf: cases))
+        XCTAssertEqual(Set(manifest.cases.map(\.wayId)), Set(["1248904506", "1302655171", "81302142"]))
+        XCTAssertEqual(sha256Hex(try Data(contentsOf: database)), manifest.databaseSHA256)
+        return (database, manifest)
+    }
+
+    @MainActor
+    private func withGeneratedDirectionalSpeedController(database: URL, cases: GeneratedDirectionalSpeedCases,
+        body: (DriveSessionViewModel) async throws -> Void) async throws {
+        let fm = FileManager.default
+        let root = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        let activeStateURL = root.appendingPathComponent("active_bundle.json")
+        let originalState = try? Data(contentsOf: activeStateURL)
+        let installed = (try? fm.contentsOfDirectory(at: root.appendingPathComponent("bundles"), includingPropertiesForKeys: nil)) ?? []
+        let originals: [(URL, Data)] = installed.compactMap { directory in
+            let url = directory.appendingPathComponent("bundle-manifest.v3.json")
+            return (try? Data(contentsOf: url)).map { (url, $0) }
+        }
+        let id = UUID().uuidString
+        let directory = root.appendingPathComponent("bundles/DEU-directional-source-\(id)")
+        let manifestURL = directory.appendingPathComponent("bundle-manifest.v3.json")
+        defer {
+            try? fm.removeItem(at: manifestURL)
+            for (url, data) in originals { try? data.write(to: url, options: .atomic) }
+            if let originalState { try? originalState.write(to: activeStateURL, options: .atomic) }
+            else { try? fm.removeItem(at: activeStateURL) }
+        }
+        for (url, _) in originals { try fm.removeItem(at: url) }
+        try fm.createDirectory(at: directory, withIntermediateDirectories: true)
+        let copied = directory.appendingPathComponent("roads.sqlite")
+        try fm.copyItem(at: database, to: copied)
+        XCTAssertEqual(sha256Hex(try Data(contentsOf: copied)), cases.databaseSHA256)
+        let bbox = BundleCoverageBBox(minLon: cases.cases.map(\.lon).min()! - 0.01,
+            minLat: cases.cases.map(\.lat).min()! - 0.01, maxLon: cases.cases.map(\.lon).max()! + 0.01,
+            maxLat: cases.cases.map(\.lat).max()! + 0.01)
+        let manifest = V3BundleManifest(format: "youspeed.v3.bundle.manifest", schemaVersion: 1, variant: "v3",
+            region: "germany/baden-wuerttemberg", countryCode: "DEU", bundleVersion: id,
+            createdAtUTC: "2026-10-19T00:00:00Z", minAppVersion: "1.0.0",
+            db: BundleArtifact(file: copied.lastPathComponent, bytes: Int64(try Data(contentsOf: copied).count),
+                sha256: cases.databaseSHA256, url: nil), dbParts: nil, deltaIndex: nil,
+            coverage: BundleCoverage(bbox: bbox, poly: nil))
+        try JSONEncoder().encode(manifest).write(to: manifestURL)
+        let state = ActiveBundleState(region: manifest.region, bundleVersion: id, dbFileName: copied.lastPathComponent,
+            activatedAtUTC: "2026-10-19T00:00:00Z", dbPath: copied.path, dbSHA256: cases.databaseSHA256)
+        try JSONEncoder().encode(state).write(to: activeStateURL, options: .atomic)
+        let model = DriveSessionViewModel()
+        staleReferenceControllerFixtureLifetimes.append(model)
+        defer { model.stopDriving() }
+        try await model.testWaitForStartupDataLoad()
+        await model.testRefreshBundleInventory()
+        model.matcherDebugProfile = .m7
+        try await body(model)
+    }
+}

@@ -5,9 +5,12 @@ import android.content.ContextWrapper
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.compose.runtime.MutableState
 import java.io.File
 import java.time.Clock
 import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.UUID
 import org.junit.Assert.*
 import org.junit.Test
@@ -18,10 +21,56 @@ class SpeedReferenceControllerInstrumentedTest {
     private val t0 = Instant.now()
     private fun field(name: String) = ConsumerSessionController::class.java.getDeclaredField(name).apply { isAccessible = true }
 
+    @Test fun supplementaryDisplaySurvivesTheActualThreeSecondExpiry() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val base = instrumentation.targetContext
+        assertTrue(base.packageName.endsWith(".testhost"))
+        val id = "ocr-expiry-${UUID.randomUUID()}"
+        val root = File(base.cacheDir, id).apply { mkdirs() }
+        val isolated = object : ContextWrapper(base) {
+            override fun getApplicationContext(): Context = this
+            override fun getFilesDir() = File(root, "files").apply { mkdirs() }
+            override fun getCacheDir() = File(root, "cache").apply { mkdirs() }
+            override fun getNoBackupFilesDir() = File(root, "no-backup").apply { mkdirs() }
+            override fun getSharedPreferences(name: String, mode: Int) = base.getSharedPreferences("$id-$name", mode)
+        }
+        lateinit var controller: ConsumerSessionController
+        instrumentation.runOnMainSync {
+            controller = ConsumerSessionController(isolated, File(root, "bundle"),
+                isolated.getSharedPreferences("youspeed", Context.MODE_PRIVATE), Clock.systemUTC(), null)
+        }
+        try {
+            val deadline = SystemClock.uptimeMillis() + 30_000
+            while (controller.uiState.startupDataState == StartupDataState.LOADING && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(100)
+            val now = Instant.now()
+            val value = TrafficSignSupplementaryTextAnnotation("maxspeed:30", 30, "expiry", "expiry-frame", now,
+                now.minusMillis(500), "Lärmschutz", null, TrafficSignSupplementaryOCRStatus.READ,
+                NormalizedTrafficSignBoundingBox(.2, .2, .1, .1))
+            instrumentation.runOnMainSync {
+                // Use the same retained display path as an admitted OCR callback.
+                controller.presentTrafficSignSupplementaryText(value)
+                assertEquals(value, controller.uiState.trafficSignSupplementaryText)
+            }
+            SystemClock.sleep(3_250)
+            instrumentation.runOnMainSync {
+                assertNull(controller.uiState.trafficSignSupplementaryText)
+                assertEquals(value, controller.uiState.retainedTrafficSignSupplementaryText)
+            }
+        } finally {
+            instrumentation.runOnMainSync { controller.dispose() }
+            base.deleteSharedPreferences("$id-youspeed"); root.deleteRecursively()
+        }
+    }
     @Test fun roadRecoveryAndUserDismissalReachTheControllerPresentation() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val base = instrumentation.targetContext
         val id = "reference-test-${UUID.randomUUID()}"
+        val drivingClock = object : Clock() {
+            var at: Instant = Instant.parse("2026-10-19T12:00:00Z")
+            override fun getZone(): ZoneId = ZoneOffset.UTC
+            override fun withZone(zone: ZoneId): Clock = this
+            override fun instant(): Instant = at
+        }
         val root = File(base.cacheDir, id).apply { mkdirs() }
         val isolated = object : ContextWrapper(base) {
             override fun getApplicationContext(): Context = this
@@ -33,12 +82,19 @@ class SpeedReferenceControllerInstrumentedTest {
         lateinit var controller: ConsumerSessionController
         instrumentation.runOnMainSync {
             controller = ConsumerSessionController(isolated, File(root, "bundle"),
-                isolated.getSharedPreferences("youspeed", Context.MODE_PRIVATE), Clock.systemUTC(), null)
+                isolated.getSharedPreferences("youspeed", Context.MODE_PRIVATE), drivingClock, null)
         }
         try {
             val deadline = SystemClock.uptimeMillis() + 30_000
             while (controller.uiState.startupDataState == StartupDataState.LOADING && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(100)
             instrumentation.runOnMainSync {
+                // A camera-source fixture needs the same affirmative daytime/location admission as driving.
+                @Suppress("UNCHECKED_CAST")
+                val state = field("uiState\$delegate").get(controller) as MutableState<ConsumerUiState>
+                state.value = state.value.copy(currentLatitude = 49.0, currentLongitude = 8.4)
+                ConsumerSessionController::class.java.getDeclaredMethod("refreshCameraDaylight")
+                    .apply { isAccessible = true }.invoke(controller)
+                assertTrue(field("cameraTSRDaylightAllowed").getBoolean(controller))
                 field("isDriving").setBoolean(controller, true)
                 val runtime = field("speedReference").get(controller) as SpeedReferenceRuntime
                 val resolver = field("trafficSignResolver").get(controller) as TrafficSignRuntimeSourceResolver
@@ -51,7 +107,7 @@ class SpeedReferenceControllerInstrumentedTest {
                     controller.setAudioAlertThresholdKmh(10)
                 }
                 runtime.bundle("map", SpeedReferenceValue("numeric", 80))
-                val end = passage(action = TrafficSignAction(TrafficSignActionKind.MAXIMUM_SPEED_END, 30))
+                val end = passage(action = TrafficSignAction(TrafficSignActionKind.MAXIMUM_SPEED_END, 30), at = drivingClock.instant())
                 val unresolved = resolver.commit(end, baseLimit)
                 publish(unresolved, end)
                 repeat(10) {
@@ -61,7 +117,8 @@ class SpeedReferenceControllerInstrumentedTest {
                     assertEquals(EffectiveSpeedLimitSource.BUNDLE, controller.uiState.effectiveSpeedLimitSource)
                 }
                 resolver.clear()
-                val sign = passage(at = t0.plusSeconds(2))
+                drivingClock.at = drivingClock.at.plusSeconds(2)
+                val sign = passage(at = drivingClock.instant())
                 publish(resolver.commit(sign, baseLimit), sign)
                 assertEquals(EffectiveSpeedLimitSource.CAMERA, controller.uiState.effectiveSpeedLimitSource)
                 assertTrue(controller.canDisregardVision)
@@ -80,7 +137,7 @@ class SpeedReferenceControllerInstrumentedTest {
                 // still points at a neighboring extract (iPhone parity).
                 val selection = field("penaltyCountrySelection").get(controller) as PenaltyCountrySelection
                 val catalog = field("regionalPackCatalog").get(controller) as RegionalPackCatalog
-                val now = System.currentTimeMillis() / 1000.0
+                val now = drivingClock.millis() / 1000.0
                 assertEquals("DEU", selection.update(catalog, 48.8259633333, 8.12651, 8.0, now, now))
                 controller.onTrafficSignBundleSelected("FRA", "test_overlapping_map")
                 assertEquals("DEU", controller.uiState.activePenaltyRules.countryCode)

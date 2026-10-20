@@ -128,11 +128,12 @@ build_cmd=(
 )
 
 # A distinct app container protects the driver's maps, observations and settings.
-# The one live UI flow explicitly depends on the driver's installed map, so run
-# it separately with --installed-app-ui-tests after the isolated suite passes.
+# Live UI flows depend on the driver's installed map and real camera, so run
+# them separately with --installed-app-ui-tests after the isolated suite passes.
 if [[ "${scheme}" == "SpeedConsumer" && "${installed_app_ui_tests}" != "1" ]]; then
   build_cmd+=("YOUSPEED_TEST_BUNDLE_SUFFIX=.TestHost")
   build_cmd+=("-skip-testing:SpeedConsumerUITests/ScreenOrientationUITests/testLiveSettingsDismissalReopenAndNestedDebugNavigation")
+  build_cmd+=("-skip-testing:SpeedConsumerUITests/LiveDeviceRecordingUITests")
 fi
 
 for test_identifier in ${only_testing[@]+"${only_testing[@]}"}; do

@@ -40,7 +40,27 @@ final class SpeedReferenceRuntime {
     private var road: String?
     private var relations = Set<String>()
     private var direction = "unknown"
-    private var departure: (String, Double)?
+    private struct Departure {
+        var way: String
+        var road: String?
+        var relations: Set<String>
+        var direction: String
+        let startedAt: Double
+        let reason: String
+
+        func continues(way nextWay: String, road nextRoad: String?, relations nextRelations: Set<String>, direction nextDirection: String) -> Bool {
+            // Forward/reverse describe an OSM way's digitization, not the road's
+            // travel direction. Adjacent ways can have opposite digitization.
+            let reversed = way == nextWay && direction != "unknown" && nextDirection != "unknown" && direction != nextDirection
+            return !reversed && (way == nextWay || (road != nil && road == nextRoad) || !relations.intersection(nextRelations).isEmpty)
+        }
+
+        mutating func observe(way nextWay: String, road nextRoad: String?, relations nextRelations: Set<String>, direction nextDirection: String) {
+            if way != nextWay || nextDirection != "unknown" { direction = nextDirection }
+            way = nextWay; road = nextRoad; relations = nextRelations
+        }
+    }
+    private var departure: Departure?
     private(set) var lastEventReason = ""
     var elapsedSeconds: Double { machine?.time ?? 0 }
     var traveledMeters: Double { machine?.distance ?? 0 }
@@ -103,18 +123,28 @@ final class SpeedReferenceRuntime {
     func context(way nextWay: String?, road nextRoad: String?, relations nextRelations: Set<String>, direction nextDirection: String, stable: Bool) {
         tick()
         guard let nextWay, !nextWay.isEmpty else { _ = send("context_missing"); return }
-        let reversed = way == nextWay && direction != "unknown" && nextDirection != "unknown" && direction != nextDirection
+        var acceptedDirection = nextDirection
+        let comparisonDirection = nextDirection == "unknown" && departure?.way == nextWay
+            ? departure?.direction ?? nextDirection : nextDirection
+        let reversed = way == nextWay && direction != "unknown" && comparisonDirection != "unknown" && direction != comparisonDirection
         let continues = !reversed && (way == nil || way == nextWay || (road != nil && road == nextRoad) || !relations.intersection(nextRelations).isEmpty)
         if continues {
             _ = send("context_restored", ["verified": true]); departure = nil
         } else {
-            let candidate = "\(nextRoad ?? nextWay)|\(nextDirection)"
-            if departure?.0 != candidate { departure = (candidate, machine?.time ?? 0) }
+            if departure?.continues(way: nextWay, road: nextRoad, relations: nextRelations, direction: nextDirection) != true {
+                departure = Departure(way: nextWay, road: nextRoad, relations: nextRelations, direction: nextDirection,
+                    startedAt: machine?.time ?? 0, reason: reversed ? "direction_reversal" : "road_relation_exit")
+            } else {
+                departure?.observe(way: nextWay, road: nextRoad, relations: nextRelations, direction: nextDirection)
+            }
             _ = send("context_pending")
-            guard stable, let departure, let machine, machine.time - departure.1 >= machine.limit("road_departure_confirmation_s") else { return }
-            boundary(reversed ? "direction_reversal" : "road_relation_exit")
+            guard stable, let departure, let machine, machine.time - departure.startedAt >= machine.limit("road_departure_confirmation_s") else { return }
+            guard departure.reason != "direction_reversal" || nextDirection != "unknown" else { return }
+            acceptedDirection = departure.direction
+            boundary(departure.reason)
         }
-        way = nextWay; road = nextRoad; relations = nextRelations; direction = nextDirection
+        if way != nextWay || acceptedDirection != "unknown" { direction = acceptedDirection }
+        way = nextWay; road = nextRoad; relations = nextRelations
     }
 }
 

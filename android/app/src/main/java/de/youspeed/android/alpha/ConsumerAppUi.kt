@@ -532,7 +532,8 @@ private fun MainScreen(
         ),
     )
     val previewVisible = previewPresentation.isVisible
-    val drivingPhotoVisible = DrivingPhotoCapturePolicy.isVisible(ui.currentSpeedKmh)
+    val drivingPhotoVisible = DrivingPhotoCapturePolicy.replacesSettings(ui.currentSpeedKmh,
+        ui.appScreenshotState != null || ui.drivingControlHasSignal)
     var photoReadinessNow by remember { mutableStateOf(Instant.now()) }
     LaunchedEffect(drivingPhotoVisible) {
         while (drivingPhotoVisible) {
@@ -682,8 +683,8 @@ private fun MainScreen(
                             onDoubleTap = onCapture,
                         )
                         if (!ui.isTrafficSignEndOverlayVisible && !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
-                            ui.trafficSignSupplementaryText?.takeIf {
-                                it.generation == ui.trafficSignGeneration && it.matchesNumeric(ui.speedLimitKmh, ui.cameraSpeedLimitEvidence)
+                            ui.retainedTrafficSignSupplementaryText?.takeIf {
+                                it.matchesNumeric(ui.speedLimitKmh, cameraEvidence = true)
                             }?.let { restriction ->
                                 SupplementaryRestrictionText(restriction.text, fontSize = 20.sp, lineHeight = 20.sp,
                                     modifier = Modifier.align(Alignment.BottomCenter).offset(y = 52.dp).height(48.dp).widthIn(max = signSize)
@@ -705,8 +706,8 @@ private fun MainScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally) {
                                     RecognizedTrafficSignPictogram(pictogram = pictogram)
                                     if (!ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
-                                        ui.trafficSignSupplementaryText?.takeIf {
-                                            it.generation == ui.trafficSignGeneration && it.matchesPictogram(pictogram.classId)
+                                        ui.retainedTrafficSignSupplementaryText?.takeIf {
+                                            it.matchesPictogram(pictogram.classId)
                                         }?.let { restriction ->
                                             SupplementaryRestrictionText(restriction.text, fontSize = 14.sp, lineHeight = 17.sp,
                                                 modifier = Modifier.widthIn(max = 150.dp).testTag("traffic-sign-pictogram-supplementary-text"))

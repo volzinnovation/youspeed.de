@@ -67,6 +67,95 @@ class SpeedLimitReferenceModelTests {
         assertEquals("LAST_KNOWN", runtime.output()?.state)
         assertNull(runtime.output()?.baselineKmh)
     }
+
+    @Test fun pendingRoadConfirmsAfterEightSecondsAcrossOppositeWayOrientations() {
+        for (relationOnly in listOf(false, true)) {
+            var now = 0.0
+            val runtime = SpeedReferenceRuntime(model()) { now }
+            runtime.context("old", "ref:old", emptySet(), "forward", true)
+            runtime.bundle("old-map", SpeedReferenceValue("numeric", 70))
+            val road = if (relationOnly) null else "ref:L562"
+            val relations = if (relationOnly) setOf("562") else emptySet()
+            // Recorded L562 traversal: adjacent OSM ways have opposite digitization.
+            for ((at, way, direction) in listOf(Triple(1.0, "242667444", "forward"), Triple(3.0, "242667445", "reverse"),
+                Triple(4.0, "242667443", "forward"), Triple(7.0, "31266734", "reverse"), Triple(8.999, "733915457", "forward"))) {
+                now = at
+                runtime.context(way, road, relations, direction, true)
+                runtime.bundle("new-map", SpeedReferenceValue("numeric", 50))
+                assertEquals("LAST_KNOWN", runtime.output()?.state)
+                assertEquals(0, runtime.output()?.generation)
+                assertNull(runtime.output()?.baselineKmh)
+            }
+            assertTrue(requireNotNull(runtime.camera("pending-sign", SpeedReferenceValue("numeric", 30))).pendingContextAfter)
+            now = 9.0
+            runtime.context("733915457", road, relations, "forward", true)
+            assertEquals(1, runtime.output()?.generation)
+            runtime.bundle("current-map", SpeedReferenceValue("numeric", 50))
+            assertEquals("BUNDLE", runtime.output()?.state)
+            assertEquals(50, runtime.output()?.baselineKmh)
+            assertEquals("CAMERA", runtime.camera("fresh-sign", SpeedReferenceValue("numeric", 30))?.after?.state)
+        }
+    }
+
+    @Test fun pendingSameWayReversalRestartsAndUnknownDoesNotEraseDirection() {
+        var now = 0.0
+        val runtime = SpeedReferenceRuntime(model()) { now }
+        runtime.context("old", "ref:old", emptySet(), "forward", true)
+        runtime.bundle("old-map", SpeedReferenceValue("numeric", 70))
+        for ((at, direction) in listOf(1.0 to "forward", 3.0 to "unknown", 4.0 to "reverse", 9.0 to "reverse", 11.999 to "unknown")) {
+            now = at
+            runtime.context("new", "ref:new", emptySet(), direction, true)
+            assertEquals(0, runtime.output()?.generation)
+        }
+        now = 12.0
+        runtime.context("new", "ref:new", emptySet(), "unknown", true)
+        assertEquals(1, runtime.output()?.generation)
+        runtime.bundle("new-map", SpeedReferenceValue("numeric", 50))
+        now = 13.0
+        runtime.context("new", "ref:new", emptySet(), "forward", true)
+        assertEquals("LAST_KNOWN", runtime.output()?.state)
+        now = 21.0
+        runtime.context("new", "ref:new", emptySet(), "forward", true)
+        assertEquals(2, runtime.output()?.generation)
+    }
+
+    @Test fun unrelatedPendingRoadRestartsConfirmation() {
+        var now = 0.0
+        val runtime = SpeedReferenceRuntime(model()) { now }
+        runtime.context("old", "ref:old", setOf("old"), "forward", true)
+        runtime.bundle("old-map", SpeedReferenceValue("numeric", 70))
+        now = 1.0
+        runtime.context("b", "ref:B", setOf("B"), "forward", true)
+        now = 4.0
+        runtime.context("c", "ref:C", setOf("C"), "forward", true)
+        now = 9.0
+        runtime.context("c", "ref:C", setOf("C"), "forward", true)
+        assertEquals(0, runtime.output()?.generation)
+        now = 12.0
+        runtime.context("c", "ref:C", setOf("C"), "forward", false)
+        assertEquals(0, runtime.output()?.generation)
+        runtime.context("c", "ref:C", setOf("C"), "forward", true)
+        assertEquals(1, runtime.output()?.generation)
+    }
+
+    @Test fun acceptedDirectionSurvivesUnknownButRealReversalStillWaitsEightSeconds() {
+        var now = 0.0
+        val runtime = SpeedReferenceRuntime(model()) { now }
+        runtime.context("road", "ref:A", emptySet(), "forward", true)
+        runtime.bundle("map", SpeedReferenceValue("numeric", 70))
+        now = 1.0
+        runtime.context("road", "ref:A", emptySet(), "unknown", true)
+        assertEquals("BUNDLE", runtime.output()?.state)
+        now = 2.0
+        runtime.context("road", "ref:A", emptySet(), "reverse", true)
+        assertEquals("LAST_KNOWN", runtime.output()?.state)
+        now = 9.999
+        runtime.context("road", "ref:A", emptySet(), "unknown", true)
+        assertEquals(0, runtime.output()?.generation)
+        now = 10.0
+        runtime.context("road", "ref:A", emptySet(), "reverse", true)
+        assertEquals(1, runtime.output()?.generation)
+    }
     @Test fun dismissalRejectsDelayedEvidenceButAllowsNewSigns() {
         val gate = VisionDismissalGate()
         val now = java.time.Instant.ofEpochSecond(100)

@@ -1,9 +1,25 @@
 import XCTest
 import ImageIO
 import AVFoundation
+import UIKit
 @testable import SpeedConsumer
 
 final class TrafficSignSupplementaryOCRTests: XCTestCase {
+    func testNativePrimaryZoneProofRejectsInformationPanelsAndMismatchedLimits() throws {
+        for (number, label) in [("30", "ZONE"), ("20", "ZONE"), ("40", "Kurort"), ("70", "GEFAHR")] {
+            let format = UIGraphicsImageRendererFormat(); format.scale = 1
+            let image = UIGraphicsImageRenderer(size: CGSize(width: 400, height: 400), format: format).image { context in
+                UIColor.white.setFill(); context.fill(CGRect(x: 0, y: 0, width: 400, height: 400))
+                let style = NSMutableParagraphStyle(); style.alignment = .center
+                let attributes: [NSAttributedString.Key: Any] = [.font: UIFont.boldSystemFont(ofSize: 70),
+                    .foregroundColor: UIColor.black, .paragraphStyle: style]
+                (number as NSString).draw(in: CGRect(x: 0, y: 70, width: 400, height: 100), withAttributes: attributes)
+                (label as NSString).draw(in: CGRect(x: 0, y: 200, width: 400, height: 100), withAttributes: attributes)
+            }
+            XCTAssertEqual(TrafficSignSupplementaryOCR.verifiesZone(in: try XCTUnwrap(image.cgImage), speed: 30),
+                           number == "30" && label == "ZONE", "\(number) \(label)")
+        }
+    }
     func testRawOCRDiagnosticEscapesRecordSeparatorsAndKeepsUnknownClauses() throws {
         let raw = "Mo-Fr\n6:30-17:30h\naußer \\\"Anlieger\\\"\r\ntimestamp=forged\u{0}\tbei Nässe"
         let read = TrafficSignSupplementaryOCRRead(rawText: raw, modelVersion: "revision-3", readStatus: .read)
@@ -259,7 +275,11 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
         try assertRuntimeOCRDelivery(thermal: .nominal, pictogram: true)
     }
 
-    private func assertRuntimeOCRDelivery(thermal: TrafficSignThermalState, retry: Bool = false, pictogram: Bool = false) throws {
+    func testSavedVisualCalibrationStillPassesTheFullFrameToRecognition() throws {
+        try assertRuntimeOCRDelivery(thermal: .nominal, calibrated: true)
+    }
+
+    private func assertRuntimeOCRDelivery(thermal: TrafficSignThermalState, retry: Bool = false, pictogram: Bool = false, calibrated: Bool = false) throws {
         let url = try XCTUnwrap(Bundle.main.url(forResource: "DE.panoramax-bootstrap", withExtension: "tsrmodelpack", subdirectory: "TSRModelPacks"))
         let manifest = try TrafficSignPackJSON.decoder().decode(TrafficSignModelPackManifest.self,
             from: Data(contentsOf: url.appendingPathComponent("manifest.json")))
@@ -301,7 +321,13 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
         let runtime = TrafficSignRuntime(verifiedPack: verified,
             backend: SupplementaryOCRTestBackend(retry ? [detection, detection, larger] : [detection]),
             snapshotProvider: { snapshot }, callbackQueue: DispatchQueue(label: "ocr-ordering-test"),
-            eventHandler: { store.append($0); done.fulfill() })
+            eventHandler: { store.append($0); done.fulfill() },
+            visualCalibrationProvider: {
+                guard calibrated else { return nil }
+                var calibration = VisualRoadCalibration.defaults(width: 136, height: 230, orientationKey: "rear:exif:1")
+                calibration.leftTopX = 0.37
+                return calibration
+            })
         defer { runtime.stop() }
         runtime.consumeVideoFrame(buffer, orientation: .up)
         DispatchQueue.global().asyncAfter(deadline: .now() + 0.6) { runtime.consumeVideoFrame(buffer, orientation: .up) }
@@ -371,8 +397,14 @@ private final class SupplementaryOCRTestBackend: TrafficSignInferenceBackend, @u
         defer { index += 1 }
         return [values[min(index, values.count - 1)]]
     }
-    func detections(in pixelBuffer: CVPixelBuffer, orientation: CGImagePropertyOrientation) throws -> [TrafficSignDetection] { next() }
-    func detections(in cgImage: CGImage, orientation: CGImagePropertyOrientation) throws -> [TrafficSignDetection] { next() }
+    func detections(in pixelBuffer: CVPixelBuffer, orientation: CGImagePropertyOrientation) throws -> [TrafficSignDetection] {
+        XCTAssertEqual(CVPixelBufferGetWidth(pixelBuffer), 136); XCTAssertEqual(CVPixelBufferGetHeight(pixelBuffer), 230)
+        return next()
+    }
+    func detections(in cgImage: CGImage, orientation: CGImagePropertyOrientation) throws -> [TrafficSignDetection] {
+        XCTAssertEqual(cgImage.width, 136); XCTAssertEqual(cgImage.height, 230)
+        return next()
+    }
 }
 
 private final class SupplementaryOCREmissionStore: @unchecked Sendable {

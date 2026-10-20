@@ -97,6 +97,17 @@ class V3SpeedLimitLookupTests {
         assertEquals(DerivedSpeedSource.EXPLICIT_UNLIMITED_TAG, derived.source)
     }
 
+    @Test fun explicitUnlimitedEvidenceSurvivesRampAndTrunkClassificationWithoutInferringIt() {
+        for (highway in listOf("motorway_link", "trunk", "trunk_link", "primary")) {
+            val explicit = V3SpeedLimitLookup.deriveSpeedLimitWithSource("none", null, null, highway)
+            assertTrue("explicit none on $highway", explicit.isUnlimited)
+            assertEquals(DerivedSpeedSource.EXPLICIT_UNLIMITED_TAG, explicit.source)
+            val missing = V3SpeedLimitLookup.deriveSpeedLimitWithSource(null, null, null, highway)
+            assertFalse("missing tag on $highway", missing.isUnlimited)
+        }
+        assertFalse(V3SpeedLimitLookup.deriveSpeedLimitWithSource(null, "none", "none", "motorway").isUnlimited)
+    }
+
     @Test
     fun derivesInheritedGermanUrbanAndRuralDefaults() {
         val urban = V3SpeedLimitLookup.deriveSpeedLimitWithSource(

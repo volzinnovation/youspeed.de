@@ -329,7 +329,7 @@
 "onboarding.driving.safety" = "Set up YouSpeed while parked. Always follow the signs on the road; map data and recognition can be wrong.";
 "onboarding.dashcam.title" = "Keep a video of your drive";
 "onboarding.dashcam.body" = "Dashcam is optional. Start and stop videos from the driving screen, then manage saved recordings in the library.";
-"onboarding.dashcam.controls" = "The red record control starts the recorder. Video, sign recognition and Panoramax photos have separate controls.";
+"onboarding.dashcam.controls" = "Set up while parked. On the driving screen, tap the red circle to start a Dashcam video. Sign recognition and Panoramax photos keep their own settings.";
 "onboarding.dashcam.library" = "Videos stay on your phone. After stopping, open the video library to select, share or delete saved recordings.";
 "onboarding.dashcam.permission" = "Camera access is requested when you start using it. Nothing is recorded during this setup.";
 "onboarding.sources.title" = "Three ways to find a limit";
@@ -502,3 +502,5 @@
 "drive_photo.local_hint" = "Saves one photo locally for later review. Nothing is uploaded.";
 "drive_photo.ready" = "Manual photo capture ready";
 "drive_photo.retry" = "Photo failed. Tap to try again";
+"onboarding.dashcam.start_screenshot" = "Driving screen: the red circle at the bottom left starts video recording.";
+"onboarding.dashcam.stop" = "Tap the red square in the same place to stop and save the video. Wait for saving to finish before opening the video library.";

@@ -3,6 +3,20 @@ import Foundation
 /// Matches OCR evidence to the currently visible sign. These checks only admit
 /// presentation and speech; they never determine whether a road rule applies.
 enum TrafficSignSupplementaryPresentation {
+    /// Display memory is independent of fresh OCR used for speech and captures.
+    /// A miss, a textless result, or a fragmented track of the same class keeps it.
+    static func retainedForDisplay(_ current: TrafficSignSupplementaryOCRAnnotation?,
+                                   primaryClassID: String?,
+                                   read: TrafficSignSupplementaryOCRAnnotation? = nil,
+                                   now: Date) -> TrafficSignSupplementaryOCRAnnotation? {
+        if let read, read.readStatus == .read, read.text != nil,
+           isFresh(read, at: now), primaryClassID == nil || read.primaryClassID == primaryClassID {
+            return read
+        }
+        guard primaryClassID == nil || primaryClassID == current?.primaryClassID else { return nil }
+        return current
+    }
+
     /// A newer primary result need not contain another OCR read. Keep the last
     /// successful text for the same sign, without changing its source provenance.
     static func retainedAnnotation(

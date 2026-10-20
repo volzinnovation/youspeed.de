@@ -261,7 +261,8 @@ data class ConsumerUiState(
     val audioAlertThresholdKmh: Int = 8,
     val hideWelcomeScreen: Boolean = false,
     val manualOrientation: ManualOrientation = ManualOrientation.PORTRAIT,
-    val drivingControlsAllowed: Boolean = false,
+    val drivingControlsAllowed: Boolean = true,
+    val drivingControlHasSignal: Boolean = false,
     val stationarySpeedObservedAt: Instant? = null,
     val dashcamButtonActionPending: Boolean = false,
     val dashcamButtonActionError: String? = null,
@@ -310,6 +311,7 @@ data class ConsumerUiState(
     val otherTrafficSignDisplayEnabled: Boolean = false,
     val lastTrafficSignPictogram: TrafficSignPictogram? = null,
     val trafficSignSupplementaryText: TrafficSignSupplementaryTextObservation? = null,
+    val retainedTrafficSignSupplementaryText: TrafficSignSupplementaryTextObservation? = null,
     val trafficSignPendingSpeedKmh: Int? = null,
     val isTrafficSignEndOverlayVisible: Boolean = false,
     val trafficSignEndPictogram: TrafficSignPictogram? = null,
@@ -604,6 +606,7 @@ class ConsumerSessionController(
         override fun run() {
             if (!isDriving || isDisposed.get()) return
             refreshCameraDaylight()
+            updateDrivingControlPosture(phoneScreenAngleDegrees)
             speedReference.tick()
             updateState { this }
             mainHandler.postDelayed(this, 1_000)
@@ -656,6 +659,7 @@ class ConsumerSessionController(
     private var supplementarySpeechIncludedKey: String? = null
     private var supplementaryExpiry: Runnable? = null
     private var lastNumericSignFeedback: Triple<Long, Int, Instant>? = null
+    private var lastSupplementarySpeechDiagnostic: String? = null
     private val trafficSignDisplayDeliveryGate = TrafficSignDisplayDeliveryGate()
     private var secondarySpeechGeneration = trafficSignGeneration.get()
     private var secondarySpeechCountryCode = "DE"
@@ -681,6 +685,8 @@ class ConsumerSessionController(
     // Keep the GPS latch separate: a handheld posture must not erase a moving lock.
     private var speedControlsAllowed = true
     private var phoneScreenAngleDegrees: Double? = null
+    private var drivingControlObservedAt: Instant? = null
+    private var drivingControlAccuracy: Double? = null
     private val drivingControlPostureMotion = DrivingControlPostureMotion(appContext, ::updateDrivingControlPosture)
     @Volatile private var lanePreviewVisible = false
     @Volatile private var lanePreviewScope = 0L
@@ -1536,9 +1542,11 @@ class ConsumerSessionController(
     private fun updateDrivingControlPosture(angleDegrees: Double?) {
         if (isDisposed.get() || uiState.appScreenshotState != null) return
         phoneScreenAngleDegrees = angleDegrees
-        val allowed = DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed, angleDegrees)
-        if (uiState.drivingControlsAllowed == allowed) return
-        updateState { copy(drivingControlsAllowed = allowed) }
+        val hasSignal = DrivingControlPosturePolicy.hasSignal(drivingControlObservedAt, drivingControlAccuracy, clock.instant())
+        val allowed = DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed, angleDegrees,
+            uiState.currentSpeedKmh, hasSignal)
+        if (uiState.drivingControlsAllowed == allowed && uiState.drivingControlHasSignal == hasSignal) return
+        updateState { copy(drivingControlsAllowed = allowed, drivingControlHasSignal = hasSignal) }
         if (!allowed && uiState.speedCaptureMode != SpeedCaptureModeState.IDLE) {
             cancelSpeedCapture(reason = null)
         }
@@ -2119,7 +2127,7 @@ class ConsumerSessionController(
             speedReference.dismissCamera()
         }
         pendingTrafficSignEndDisplay = null
-        updateState { copy(trafficSignLastEvent = null, lastTrafficSignPictogram = null, trafficSignSupplementaryText = null, trafficSignPendingSpeedKmh = null,
+        updateState { copy(trafficSignLastEvent = null, lastTrafficSignPictogram = null, trafficSignSupplementaryText = null, retainedTrafficSignSupplementaryText = null, trafficSignPendingSpeedKmh = null,
             isTrafficSignEndOverlayVisible = false, trafficSignEndPictogram = null) }
         appendRuntimeDiagnosticEvent("vision_dismissed", mapOf("source" to "user"))
     }
@@ -2327,6 +2335,7 @@ class ConsumerSessionController(
             updateState {
                 copy(
                     lastTrafficSignPictogram = null,
+                    retainedTrafficSignSupplementaryText = null,
                     isTrafficSignEndOverlayVisible = false,
                     countryModelPackStatus = ConsumerRuntimeText.MODEL_COUNTRY_PREFIX.text(country) + "ready",
                 )
@@ -2872,6 +2881,7 @@ class ConsumerSessionController(
     /** Presentation-only callback. This path never invokes the speed resolver or passage persistence. */
     fun submitTrafficSignDisplayObservation(observation: TrafficSignDisplayObservation) {
         fun applicable(): Boolean {
+            if (TSRLiveSignAdmission.blocks(observation.applicabilityDecision)) return false
             if (TSRApplicabilityConfiguration.defaultMode == "shadow") return true
             val decision = observation.applicabilityDecision ?: return false
             val context = latestTrafficSignContext ?: return false
@@ -2910,6 +2920,8 @@ class ConsumerSessionController(
                 !synchronized(trafficSignStateLock) { visionDismissalGate.permits(observation.candidate.trackId, observedAt) } ||
                 !isTrafficSignRecognitionRuntimeEnabled() || uiState.appScreenshotState != null ||
                 !trafficSignDisplayDeliveryGate.accept(observation, currentGeneration, trafficSignDriveSessionId)) return@post
+            updateState { copy(retainedTrafficSignSupplementaryText = TrafficSignSupplementaryDisplayPolicy.retained(
+                retainedTrafficSignSupplementaryText, observation.candidate.rawClassId, now = clock.instant())) }
             if (!uiState.otherTrafficSignDisplayEnabled) return@post
             updateState { copy(lastTrafficSignPictogram = TrafficSignDisplayPolicy.next(
                 lastTrafficSignPictogram, observation, trafficSignDisplayCatalog,
@@ -2958,23 +2970,29 @@ class ConsumerSessionController(
             // A temporary visual miss keeps only already confirmed, fresh evidence. A present
             // replacement clears the old text immediately, including another sign of the same class.
             if (observation == null && !update.primaryPresent) return@post
-            supplementaryExpiry?.let(mainHandler::removeCallbacks)
-            supplementaryExpiry = null
-            updateState { copy(trafficSignSupplementaryText = observation) }
-            if (observation == null) {
-                if (speechPlaybackState.hasSupplementaryUtterance) stopSpeech()
-                return@post
-            }
-            val expiry = Runnable {
-                if (uiState.trafficSignSupplementaryText == observation) {
-                    updateState { copy(trafficSignSupplementaryText = null, trafficSignPendingSpeedKmh = null) }
-                    if (speechPlaybackState.hasSupplementaryUtterance && speechPlaybackState.supplementarySpeechKey == observation.presentationKey) stopSpeech()
-                }
-            }
-            supplementaryExpiry = expiry
-            mainHandler.postDelayed(expiry, (3_000L - Duration.between(observation.observedAt, clock.instant()).toMillis()).coerceAtLeast(1L))
-            maybeSpeakSupplementaryText(observation)
+            presentTrafficSignSupplementaryText(observation)
         }
+    }
+
+    internal fun presentTrafficSignSupplementaryText(observation: TrafficSignSupplementaryTextObservation?) {
+        if (observation != null) updateState { copy(retainedTrafficSignSupplementaryText = TrafficSignSupplementaryDisplayPolicy.retained(
+            retainedTrafficSignSupplementaryText, observation.primaryClassId, observation, clock.instant())) }
+        supplementaryExpiry?.let(mainHandler::removeCallbacks)
+        supplementaryExpiry = null
+        updateState { copy(trafficSignSupplementaryText = observation) }
+        if (observation == null) {
+            return
+        }
+        val expiry = Runnable {
+            if (uiState.trafficSignSupplementaryText == observation) {
+                updateState { copy(trafficSignSupplementaryText = null, trafficSignPendingSpeedKmh = null) }
+                // Freshness gates starting speech. An admitted utterance may
+                // finish after the source frame ages out, as on iPhone.
+            }
+        }
+        supplementaryExpiry = expiry
+        mainHandler.postDelayed(expiry, (3_000L - Duration.between(observation.observedAt, clock.instant()).toMillis()).coerceAtLeast(1L))
+        maybeSpeakSupplementaryText(observation)
     }
 
     private fun markSupplementaryTextSpoken(observation: TrafficSignSupplementaryTextObservation) {
@@ -2993,7 +3011,7 @@ class ConsumerSessionController(
             it.first == observation.generation && it.second == observation.primarySpeedKmh && it.third >= observation.firstSeenAt
         } != true
         val locale = TrafficSignOCRLanguageContext.speechLocale(observation.rawText ?: observation.text) ?: return
-        supplementarySignSpeechGate.consume(observation.speechKey, observation.observedAt, clock.instant(),
+        val emitted = supplementarySignSpeechGate.consume(observation.speechKey, observation.observedAt, clock.instant(),
             SecondaryTrafficSignSpeechPolicy.canSpeak(uiState.trafficSignFeedbackMode,
                 displayEnabled = numeric || uiState.otherTrafficSignDisplayEnabled,
                 runtimeEnabled = isTrafficSignRecognitionRuntimeEnabled(), liveFrame = true,
@@ -3004,6 +3022,20 @@ class ConsumerSessionController(
             else speakSecondaryTrafficSign(observation.spokenText(locale), locale, observation.presentationKey).also {
                 if (it) supplementarySpeechIncludedKey = observation.presentationKey
             }
+        }
+        val reason = when {
+            emitted -> "submitted"
+            primaryFeedbackPending -> "primary_feedback_pending"
+            !isSpeechIdle() -> "speech_busy"
+            else -> "mode_motion_capture_or_dedup_gate"
+        }
+        val signature = "${observation.presentationKey}:$reason"
+        if (signature != lastSupplementarySpeechDiagnostic) {
+            lastSupplementarySpeechDiagnostic = signature
+            appendRuntimeDiagnosticEvent("supplementary_speech", mapOf("decision" to reason,
+                "primaryClassId" to observation.primaryClassId, "physicalSignId" to observation.physicalSignId,
+                "frameId" to observation.frameId, "mode" to uiState.trafficSignFeedbackMode.name,
+                "sourceAgeMs" to Duration.between(observation.observedAt, clock.instant()).toMillis()))
         }
     }
 
@@ -3494,10 +3526,15 @@ class ConsumerSessionController(
         if (Looper.myLooper() == Looper.getMainLooper()) cancelVisionDismissalListening()
         else mainHandler.post { reconcileVisionDismissalListening() }
         val generation = trafficSignGeneration.incrementAndGet(permitWrites)
+        val retainDisplay = preserveDisplay || reason !in setOf(
+            "application_lifecycle", "independent_recognition_changed", "bundle_country_switch",
+            "recognition_unavailable", "drive_started", "drive_stopped", "tsr_enabled", "tsr_disabled", "bundle_removed",
+        )
         supplementaryExpiry?.let(mainHandler::removeCallbacks)
         supplementaryExpiry = null
         lastNumericSignFeedback = null
-        updateState { copy(trafficSignSupplementaryText = null, trafficSignPendingSpeedKmh = null) }
+        updateState { copy(trafficSignSupplementaryText = null, trafficSignPendingSpeedKmh = null,
+            retainedTrafficSignSupplementaryText = retainedTrafficSignSupplementaryText.takeIf { retainDisplay }) }
         resetSecondaryTrafficSignSpeech(resetDedup = reason in setOf(
             "application_lifecycle", "independent_recognition_changed", "bundle_country_switch",
             "recognition_unavailable", "drive_started", "drive_stopped", "tsr_enabled", "tsr_disabled",
@@ -3532,7 +3569,7 @@ class ConsumerSessionController(
                 trafficSignDebugRuntimeUnhealthy = false,
             ) else copy(
                 trafficSignGeneration = generation,
-                lastTrafficSignPictogram = null,
+                lastTrafficSignPictogram = lastTrafficSignPictogram.takeIf { retainDisplay },
                 isTrafficSignEndOverlayVisible = false,
                 trafficSignDebugRoadContextInvalid = false,
                 trafficSignDebugGenerationSessionContextMismatch = false,
@@ -5159,7 +5196,11 @@ class ConsumerSessionController(
             now = clock.instant(),
         )
         speedControlsAllowed = motion.controlsAllowed
-        val controlsAllowed = DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed, phoneScreenAngleDegrees)
+        drivingControlObservedAt = Instant.ofEpochMilli(location.time)
+        drivingControlAccuracy = location.accuracy.toDouble().takeIf { location.hasAccuracy() }
+        val controlsAllowed = DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed, phoneScreenAngleDegrees,
+            filteredSpeedKmh, DrivingControlPosturePolicy.hasSignal(
+                drivingControlObservedAt, drivingControlAccuracy, clock.instant()))
         val position = TrafficSignPositionSample(
             timestampMs = location.time,
             latitude = location.latitude,
@@ -5176,6 +5217,7 @@ class ConsumerSessionController(
             copy(
                 currentSpeedKmh = filteredSpeedKmh,
                 drivingControlsAllowed = controlsAllowed,
+                drivingControlHasSignal = DrivingControlPosturePolicy.hasSignal(drivingControlObservedAt, drivingControlAccuracy, clock.instant()),
                 stationarySpeedObservedAt = motion.stationaryObservedAt,
                 currentLatitude = location.latitude,
                 currentLongitude = location.longitude,
@@ -5205,6 +5247,7 @@ class ConsumerSessionController(
             matchContext: WayMatchContext?,
             overrideSpeedKmh: Int? = null,
             errorText: String? = null,
+            effective: EffectiveSpeedLimit? = null,
         ) {
             val logTicket = debugLogPersistence.ticket() ?: return
             val logLocation = Location(location)
@@ -5232,6 +5275,7 @@ class ConsumerSessionController(
                             gpsSignalBars = gpsSignalBars,
                             overrideSpeedKmh = overrideSpeedKmh,
                             errorText = errorText,
+                            effective = effective,
                         )
                     }
                 }.onFailure { error ->
@@ -5519,7 +5563,7 @@ class ConsumerSessionController(
                 }
                 selectedQueryTimeMs = result.queryTimeMs
                 if (!lookupIsFresh("after_selected_query")) return@lookup
-                val activeCorrectionOverrideValue = applyActiveLocalSpeedCorrectionIfNeeded(result = result)
+                val activeCorrectionOverrideValue = applyActiveLocalSpeedCorrectionIfNeeded(result = result, location = location)
                 // Saved observations remain review/export evidence; expired
                 // voice/camera assertions must not return through the map index.
                 val localOverrideValue = activeCorrectionOverrideValue
@@ -5623,16 +5667,11 @@ class ConsumerSessionController(
                     }
                 }
                 enqueueLookupLog(
-                    status = when {
-                        unlimitedActive -> "matched_unlimited"
-                        localOverrideValue != null -> "matched_local_override"
-                        effectiveSpeed != null -> "matched"
-                        result.wayId != null -> "matched_no_speed"
-                        else -> "no_match"
-                    },
+                    status = SpeedReferenceRoadInput.lookupStatus(result.wayId, committedEvaluation.effective),
                     result = result,
                     matchContext = matchContext,
                     overrideSpeedKmh = effectiveSpeed,
+                    effective = committedEvaluation.effective,
                 )
                 if (evaluation.invalidatedByCityContextTransition) {
                     appendRuntimeDiagnosticEvent(
@@ -5807,12 +5846,14 @@ class ConsumerSessionController(
                 textToSpeech?.setSpeechRate(0.9f)
                 textToSpeech?.setOnUtteranceProgressListener(
                     object : UtteranceProgressListener() {
-                        override fun onStart(utteranceId: String?) = Unit
+                        override fun onStart(utteranceId: String?) {
+                            appendRuntimeDiagnosticEvent("speech_playback", mapOf("state" to "started", "utteranceId" to utteranceId))
+                        }
 
                         override fun onDone(utteranceId: String?) = onSpeechFinished(utteranceId)
 
                         @Deprecated("Deprecated in Java")
-                        override fun onError(utteranceId: String?) = onSpeechFinished(utteranceId)
+                        override fun onError(utteranceId: String?) = onSpeechFinished(utteranceId, failed = true)
 
                         override fun onStop(utteranceId: String?, interrupted: Boolean) =
                             onSpeechFinished(utteranceId, interrupted = true)
@@ -5822,9 +5863,12 @@ class ConsumerSessionController(
         }
     }
 
-    private fun onSpeechFinished(utteranceId: String?, interrupted: Boolean = false) {
+    private fun onSpeechFinished(utteranceId: String?, interrupted: Boolean = false, failed: Boolean = false) {
         mainHandler.post {
             if (utteranceId == null) return@post
+            appendRuntimeDiagnosticEvent("speech_playback", mapOf(
+                "state" to if (failed) "failed" else if (interrupted) "interrupted" else "finished",
+                "utteranceId" to utteranceId))
             speechPlaybackState.finish(utteranceId)
             if (!interrupted) currentSupplementaryText()?.let(::maybeSpeakSupplementaryText)
             if (!interrupted && utteranceId == speedCapturePromptUtteranceId && isAwaitingSpeedCapturePromptCompletion) {
@@ -6250,9 +6294,14 @@ class ConsumerSessionController(
         trafficSignResolver.clear()
     }
 
-    private fun applyActiveLocalSpeedCorrectionIfNeeded(result: SpeedLookupResult): String? {
+    private fun applyActiveLocalSpeedCorrectionIfNeeded(result: SpeedLookupResult, location: Location): String? {
+        val referenceDirection = SpeedReferenceRoadInput.direction(result.travelDirection,
+            location.speed.toDouble().takeIf { location.hasSpeed() },
+            location.bearing.toDouble().takeIf { location.hasBearing() },
+            location.bearingAccuracyDegrees.toDouble().takeIf { location.hasBearingAccuracy() },
+            location.accuracy.toDouble().takeIf { location.hasAccuracy() }, location.time, clock.millis())
         speedReference.context(result.wayId, DrivingRoadIdentity.key(result.streetRef, result.streetBaseName, result.highway),
-            result.sourceRelationIds.map { it.toString() }.toSet(), result.travelDirection.name.lowercase(Locale.US), result.wayId != null)
+            result.sourceRelationIds.map { it.toString() }.toSet(), referenceDirection.name.lowercase(Locale.US), result.wayId != null)
         val value = speedReference.voice()
         if (value == null) { activeLocalSpeedCorrection = null; return null }
         return when (value.kind) { "numeric" -> value.kmh?.toString(); "walk" -> "walk"; "unlimited" -> "none"; else -> null }
@@ -6280,7 +6329,7 @@ class ConsumerSessionController(
                 TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, staleSpeedLimitKmh)
             result.isUnlimitedSpeedLimit &&
                 normalizedCountryCode(countryCode) == "DEU" &&
-                result.highway?.trim()?.lowercase(Locale.US) == "motorway" ->
+                result.speedSource == DerivedSpeedSource.EXPLICIT_UNLIMITED_TAG ->
                 TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNLIMITED)
             result.speedLimitKmh != null ->
                 TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, result.speedLimitKmh)
@@ -6803,6 +6852,7 @@ class ConsumerSessionController(
         gpsSignalBars: Int,
         overrideSpeedKmh: Int? = null,
         errorText: String? = null,
+        effective: EffectiveSpeedLimit? = null,
     ) {
         val timestampUtc = Instant.ofEpochMilli(location.time).toString()
         val horizontalAccM = location.accuracy.toDouble().takeIf { it >= 0.0 } ?: 0.0
@@ -6824,6 +6874,12 @@ class ConsumerSessionController(
             put("courseDeg", courseDeg)
             put("gpsSignalBars", gpsSignalBars)
             put("status", status)
+            effective?.let {
+                put("effectiveSpeedLimitSource", it.source.wireValue)
+                put("effectiveSpeedLimitReason", it.presentationReason)
+                put("effectiveSpeedLimitKind", it.resolution?.kind?.name?.lowercase(Locale.US) ?: "unknown")
+                put("effectiveSpeedLimitCurrent", !it.source.isStale && it.source != EffectiveSpeedLimitSource.NONE)
+            }
             overrideSpeedKmh?.let { put("speedLimitOverrideKmh", it) }
             put("tunnelModeState", tunnelModeState)
             result?.let { put("result", buildRichMatchResultJson(it, matchContext, horizontalAccM)) }
@@ -6858,6 +6914,10 @@ class ConsumerSessionController(
         return JSONObject().apply {
             result.speedLimitKmh?.let { put("speedLimitKmh", it) }
             put("isUnlimitedSpeedLimit", result.isUnlimitedSpeedLimit)
+            put("speedSource", result.speedSource.name.lowercase(Locale.US))
+            put("travelDirection", result.travelDirection.name.lowercase(Locale.US))
+            put("sourceRelationIDs", JSONArray(result.sourceRelationIds.toList()))
+            put("routeRelationGroupIDs", JSONArray(result.routeRelationGroupIds.toList()))
             put("matchedWayStable", result.matchedWayStable)
             put("matchedFixCount", matchContext?.matchedFixCount ?: 0)
             matchContext?.preferredWayId?.let { put("preferredWayID", it) }

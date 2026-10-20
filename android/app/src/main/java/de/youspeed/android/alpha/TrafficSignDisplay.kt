@@ -261,5 +261,5 @@ internal fun TrafficSignCandidate.normalizedPrimarySemantic(): TrafficSignSemant
 /** Covers all publication paths, including route/city generation increments outside camera lifecycle methods. */
 internal fun ConsumerUiState.withCurrentTrafficSignDisplayGeneration(previousGeneration: Long, currentGeneration: Long): ConsumerUiState =
     if (previousGeneration != currentGeneration || trafficSignGeneration != currentGeneration) {
-        copy(lastTrafficSignPictogram = null, trafficSignSupplementaryText = null, trafficSignPendingSpeedKmh = null, trafficSignGeneration = currentGeneration)
+        copy(trafficSignSupplementaryText = null, trafficSignPendingSpeedKmh = null, trafficSignGeneration = currentGeneration)
     } else this

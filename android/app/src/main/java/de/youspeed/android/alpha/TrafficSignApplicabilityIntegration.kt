@@ -1,6 +1,7 @@
 package de.youspeed.android.alpha
 
 fun TrafficSignRecognitionEvent.permitsApplicability(sink: String, mode: String = TSRApplicabilityConfiguration.defaultMode): Boolean {
+    if (TSRLiveSignAdmission.blocks(applicabilityDecision)) return false
     if (mode == "shadow") return true
     val decision = applicabilityDecision ?: return false
     val context = roadContext ?: return false
@@ -8,6 +9,7 @@ fun TrafficSignRecognitionEvent.permitsApplicability(sink: String, mode: String 
     return TSRApplicabilityAuthority.allows(decision, decision.scope, frameId ?: return false, candidate?.trackId ?: return false, sink, mode)
 }
 fun TrafficSignPassageEvent.permitsApplicability(mode: String = TSRApplicabilityConfiguration.defaultMode): Boolean {
+    if (TSRLiveSignAdmission.blocks(applicabilityDecision)) return false
     if (mode == "shadow") return true
     val decision = applicabilityDecision ?: return false
     val context = activationContext ?: return false

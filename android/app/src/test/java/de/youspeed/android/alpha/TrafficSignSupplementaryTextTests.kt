@@ -13,6 +13,20 @@ class TrafficSignSupplementaryTextTests {
     private fun request() = TrafficSignSupplementaryOCRRequest(candidate(), "physical", "confirmed-second-frame",
         start.plusMillis(201), start, TrafficSignSupplementaryScope(7, "drive"))
 
+    @Test fun displayRetainsReadAcrossMissesAndSameClassTracksUntilClassReplacement() {
+        val value = request().annotation("Lärmschutz")
+        val later = start.plusSeconds(120)
+        assertEquals(value, TrafficSignSupplementaryDisplayPolicy.retained(value, null, now = later))
+        assertEquals(value, TrafficSignSupplementaryDisplayPolicy.retained(value, "maxspeed:30", now = later))
+        assertEquals(value, TrafficSignSupplementaryDisplayPolicy.retained(value, "maxspeed:30",
+            request().annotation(null), later))
+        assertFalse(value.isFresh(later))
+        assertNull(TrafficSignSupplementaryDisplayPolicy.retained(value, "maxspeed:50", now = later))
+        assertNull(TrafficSignSupplementaryDisplayPolicy.retained(null, "maxspeed:30", value, later))
+        val next = request().copy(physicalSignId = "another-track").annotation("22-6 h")
+        assertEquals(next, TrafficSignSupplementaryDisplayPolicy.retained(value, "maxspeed:30", next, next.observedAt))
+    }
+
     @Test fun timeParsingIsOptionalFormattingAndNeverDropsUnknownRawConditions() {
         for (text in listOf("22-6h", "22–6 h", "22 — 06 Uhr", "22−6", "22:00-06:00"))
             assertEquals("22–6 h", TrafficSignSupplementaryTimeWindow.parse(text)?.displayText)

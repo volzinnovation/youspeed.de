@@ -16,8 +16,16 @@ enum DrivingControlPosturePolicy {
         return angleDegrees >= 0 && angleDegrees <= 10 + 1e-9
     }
 
-    static func controlsAllowed(speedControlsAllowed: Bool, angleDegrees: Double?) -> Bool {
-        speedControlsAllowed && isFlat(angleDegrees: angleDegrees)
+    static func controlsAllowed(speedControlsAllowed: Bool, angleDegrees: Double?,
+                                speedKmh: Double = 20, hasSignal: Bool = true) -> Bool {
+        !hasSignal || (speedKmh.isFinite && speedKmh >= 0 && speedKmh < 4)
+            || (speedControlsAllowed && isFlat(angleDegrees: angleDegrees))
+    }
+
+    static func hasSignal(observedAt: Date?, accuracy: Double?, now: Date) -> Bool {
+        guard let observedAt, let accuracy, accuracy.isFinite, accuracy >= 0, accuracy < 60 else { return false }
+        let age = now.timeIntervalSince(observedAt)
+        return age.isFinite && (0...3).contains(age)
     }
 }
 
@@ -54,6 +62,10 @@ enum DrivingPhotoPolicy {
 
     static func showsButton(speedKmh: Double) -> Bool {
         speedKmh.isFinite && speedKmh > speedThresholdKmh
+    }
+
+    static func replacesSettings(speedKmh: Double, hasSignal: Bool) -> Bool {
+        hasSignal && speedKmh.isFinite && speedKmh >= 4
     }
 
     static func locationIsUsable(latitude: Double, longitude: Double, accuracy: Double,

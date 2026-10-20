@@ -190,6 +190,22 @@ final class TrafficSignSupplementaryOCR: @unchecked Sendable {
 
     static func warmUp() { shared.prepareAtStartup() }
 
+    /// Primary-panel proof only; never a supplementary restriction or speed rule.
+    static func verifiesZone(in primary: CGImage, speed: Int) -> Bool {
+        guard primary.width >= 48, primary.height >= 48,
+              primary.width * primary.height <= 1_000_000 else { return false }
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = false
+        request.automaticallyDetectsLanguage = true
+        request.minimumTextHeight = 0
+        do {
+            try VNImageRequestHandler(cgImage: primary, options: [:]).perform([request])
+            let text = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: "\n")
+            return TSRLiveSignAdmission.verifiesZoneText(text, speed: speed)
+        } catch { return false }
+    }
+
     private func prepareAtStartup() {
         warmLock.lock()
         guard !warmingStarted else { warmLock.unlock(); return }

@@ -3,6 +3,39 @@ import XCTest
 @testable import SpeedConsumer
 
 final class TrafficSignSupplementaryPresentationTests: XCTestCase {
+    @MainActor
+    func testControllerExpiryKeepsDisplayTextAfterThreeSeconds() async throws {
+        let now = Date()
+        let value = TrafficSignSupplementaryOCRAnnotation(primaryClassID: "maxspeed:30", primarySpeedKmh: 30,
+            physicalSignID: "expiry", frameID: "expiry-frame", sourceObservedAt: now,
+            observedAt: now, firstSeenAt: now.addingTimeInterval(-0.5), rawText: "Lärmschutz", window: nil,
+            readStatus: .read, primaryBoundingBox: .init(x: 0.2, y: 0.2, width: 0.1, height: 0.1), ocrBoundingBox: nil,
+            engine: "test", modelVersion: "test")
+        let model = DriveSessionViewModel()
+        model.testPresentTrafficSignSupplementaryText(value)
+        XCTAssertEqual(model.trafficSignSupplementaryText, value)
+        try await Task.sleep(nanoseconds: 3_250_000_000)
+        XCTAssertNil(model.trafficSignSupplementaryText)
+        XCTAssertEqual(model.retainedTrafficSignSupplementaryText, value)
+    }
+    func testDisplayRetainsReadAcrossMissesAndSameClassTracksUntilClassReplacement() {
+        let value = annotation(rawText: "Lärmschutz")
+        let later = observedAt.addingTimeInterval(120)
+        XCTAssertEqual(TrafficSignSupplementaryPresentation.retainedForDisplay(value,
+            primaryClassID: nil, now: later), value)
+        XCTAssertEqual(TrafficSignSupplementaryPresentation.retainedForDisplay(value,
+            primaryClassID: "maxspeed:30", now: later), value)
+        XCTAssertEqual(TrafficSignSupplementaryPresentation.retainedForDisplay(value,
+            primaryClassID: "maxspeed:30", read: annotation(rawText: nil, status: .noText), now: later), value)
+        XCTAssertFalse(TrafficSignSupplementaryPresentation.isFresh(value, at: later))
+        XCTAssertNil(TrafficSignSupplementaryPresentation.retainedForDisplay(value,
+            primaryClassID: "maxspeed:50", now: later))
+        XCTAssertNil(TrafficSignSupplementaryPresentation.retainedForDisplay(nil,
+            primaryClassID: "maxspeed:30", read: value, now: later))
+        let next = annotation(rawText: "22-6 h")
+        XCTAssertEqual(TrafficSignSupplementaryPresentation.retainedForDisplay(value,
+            primaryClassID: "maxspeed:30", read: next, now: observedAt), next)
+    }
     private let observedAt = Date(timeIntervalSince1970: 1_000)
 
     func testFreshnessIncludesBothBoundariesAndRejectsFutureStaleAndNonFiniteDates() throws {

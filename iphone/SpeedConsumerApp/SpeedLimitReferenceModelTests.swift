@@ -3,6 +3,9 @@ import XCTest
 
 final class SpeedLimitReferenceModelTests: XCTestCase {
     private func read(_ name: String) throws -> Data {
+        if let url = Bundle.main.url(forResource: name, withExtension: nil, subdirectory: SpeedLimitReferenceModel.directory) {
+            return try Data(contentsOf: url)
+        }
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("shared/speed-limit-reference")
         return try Data(contentsOf: root.appendingPathComponent(name))
     }
@@ -62,6 +65,96 @@ final class SpeedLimitReferenceModelTests: XCTestCase {
         runtime.pipelineAuthorityWithdrawn(evidenceID: "different-end-sign")
         XCTAssertEqual(runtime.output?.state, "LAST_KNOWN")
         XCTAssertNil(runtime.output?.baselineKmh)
+    }
+
+    func testPendingRoadConfirmsAfterEightSecondsAcrossOppositeWayOrientations() throws {
+        for relationOnly in [false, true] {
+            var now = 0.0
+            let runtime = SpeedReferenceRuntime(model: try SpeedLimitReferenceModel.load(read: read), now: { now })
+            runtime.context(way: "old", road: "ref:old", relations: [], direction: "forward", stable: true)
+            runtime.bundle(id: "old-map", value: .init(kind: "numeric", kmh: 70))
+            let road: String? = relationOnly ? nil : "ref:L562"
+            let relations: Set<String> = relationOnly ? ["562"] : []
+            // The recorded L562 drive crosses ways digitized in both directions.
+            for (at, way, direction) in [(1.0, "242667444", "forward"), (3.0, "242667445", "reverse"),
+                                         (4.0, "242667443", "forward"), (7.0, "31266734", "reverse"),
+                                         (8.999, "733915457", "forward")] {
+                now = at
+                runtime.context(way: way, road: road, relations: relations, direction: direction, stable: true)
+                runtime.bundle(id: "new-map", value: .init(kind: "numeric", kmh: 50))
+                XCTAssertEqual(runtime.output?.state, "LAST_KNOWN")
+                XCTAssertEqual(runtime.output?.generation, 0)
+                XCTAssertNil(runtime.output?.baselineKmh)
+            }
+            XCTAssertTrue(try XCTUnwrap(runtime.camera(id: "pending-sign", value: .init(kind: "numeric", kmh: 30))).pendingContextAfter)
+            now = 9
+            runtime.context(way: "733915457", road: road, relations: relations, direction: "forward", stable: true)
+            XCTAssertEqual(runtime.output?.generation, 1)
+            runtime.bundle(id: "current-map", value: .init(kind: "numeric", kmh: 50))
+            XCTAssertEqual(runtime.output?.state, "BUNDLE")
+            XCTAssertEqual(runtime.output?.baselineKmh, 50)
+            XCTAssertEqual(runtime.camera(id: "fresh-sign", value: .init(kind: "numeric", kmh: 30))?.after.state, "CAMERA")
+        }
+    }
+
+    func testPendingSameWayReversalRestartsAndUnknownDoesNotEraseDirection() throws {
+        var now = 0.0
+        let runtime = SpeedReferenceRuntime(model: try SpeedLimitReferenceModel.load(read: read), now: { now })
+        runtime.context(way: "old", road: "ref:old", relations: [], direction: "forward", stable: true)
+        runtime.bundle(id: "old-map", value: .init(kind: "numeric", kmh: 70))
+        for (at, direction) in [(1.0, "forward"), (3.0, "unknown"), (4.0, "reverse"), (9.0, "reverse"), (11.999, "unknown")] {
+            now = at
+            runtime.context(way: "new", road: "ref:new", relations: [], direction: direction, stable: true)
+            XCTAssertEqual(runtime.output?.generation, 0)
+        }
+        now = 12
+        runtime.context(way: "new", road: "ref:new", relations: [], direction: "unknown", stable: true)
+        XCTAssertEqual(runtime.output?.generation, 1)
+        runtime.bundle(id: "new-map", value: .init(kind: "numeric", kmh: 50))
+        now = 13
+        runtime.context(way: "new", road: "ref:new", relations: [], direction: "forward", stable: true)
+        XCTAssertEqual(runtime.output?.state, "LAST_KNOWN", "Confirmation must retain the last reliable same-way reverse direction")
+        now = 21
+        runtime.context(way: "new", road: "ref:new", relations: [], direction: "forward", stable: true)
+        XCTAssertEqual(runtime.output?.generation, 2)
+    }
+
+    func testUnrelatedPendingRoadRestartsConfirmation() throws {
+        var now = 0.0
+        let runtime = SpeedReferenceRuntime(model: try SpeedLimitReferenceModel.load(read: read), now: { now })
+        runtime.context(way: "old", road: "ref:old", relations: ["old"], direction: "forward", stable: true)
+        runtime.bundle(id: "old-map", value: .init(kind: "numeric", kmh: 70))
+        now = 1
+        runtime.context(way: "b", road: "ref:B", relations: ["B"], direction: "forward", stable: true)
+        now = 4
+        runtime.context(way: "c", road: "ref:C", relations: ["C"], direction: "forward", stable: true)
+        now = 9
+        runtime.context(way: "c", road: "ref:C", relations: ["C"], direction: "forward", stable: true)
+        XCTAssertEqual(runtime.output?.generation, 0)
+        now = 12
+        runtime.context(way: "c", road: "ref:C", relations: ["C"], direction: "forward", stable: false)
+        XCTAssertEqual(runtime.output?.generation, 0)
+        runtime.context(way: "c", road: "ref:C", relations: ["C"], direction: "forward", stable: true)
+        XCTAssertEqual(runtime.output?.generation, 1)
+    }
+
+    func testAcceptedDirectionSurvivesUnknownButRealReversalStillWaitsEightSeconds() throws {
+        var now = 0.0
+        let runtime = SpeedReferenceRuntime(model: try SpeedLimitReferenceModel.load(read: read), now: { now })
+        runtime.context(way: "road", road: "ref:A", relations: [], direction: "forward", stable: true)
+        runtime.bundle(id: "map", value: .init(kind: "numeric", kmh: 70))
+        now = 1
+        runtime.context(way: "road", road: "ref:A", relations: [], direction: "unknown", stable: true)
+        XCTAssertEqual(runtime.output?.state, "BUNDLE")
+        now = 2
+        runtime.context(way: "road", road: "ref:A", relations: [], direction: "reverse", stable: true)
+        XCTAssertEqual(runtime.output?.state, "LAST_KNOWN")
+        now = 9.999
+        runtime.context(way: "road", road: "ref:A", relations: [], direction: "unknown", stable: true)
+        XCTAssertEqual(runtime.output?.generation, 0)
+        now = 10
+        runtime.context(way: "road", road: "ref:A", relations: [], direction: "reverse", stable: true)
+        XCTAssertEqual(runtime.output?.generation, 1)
     }
     func testDismissalRejectsDelayedEvidenceButAllowsNewSigns() {
         var gate = VisionDismissalGate()

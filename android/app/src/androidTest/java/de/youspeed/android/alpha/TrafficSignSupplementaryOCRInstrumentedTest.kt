@@ -16,6 +16,37 @@ import org.junit.runner.RunWith
 /** Fixture is injected into the isolated test host, never committed or read from the user's app. */
 @RunWith(AndroidJUnit4::class)
 class TrafficSignSupplementaryOCRInstrumentedTest {
+    @Test fun primaryZoneProofRejectsInformationPanelsAndMismatchedLimits() {
+        val candidate = TrafficSignCandidate("zone:30", "30 ZONE",
+            TrafficSignSemantic(TrafficSignSemanticKind.ZONE_START, 30, "km/h"), .99, null,
+            NormalizedTrafficSignBoundingBox(0.0, 0.0, 1.0, 1.0), evidenceFrames = 2)
+        fun panel(number: String, label: String): Bitmap = Bitmap.createBitmap(400, 400, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(android.graphics.Color.WHITE)
+            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.BLACK; textSize = 70f; textAlign = android.graphics.Paint.Align.CENTER
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+            }
+            android.graphics.Canvas(this).apply { drawText(number, 200f, 150f, paint); drawText(label, 200f, 280f, paint) }
+        }
+        // Warm the separate bounded primary-panel reader, then verify actual OCR output.
+        panel("30", "ZONE").let { image ->
+            try {
+                val deadline = android.os.SystemClock.uptimeMillis() + 10_000
+                var verified = false
+                while (!verified && android.os.SystemClock.uptimeMillis() < deadline) {
+                    verified = AndroidTrafficSignSupplementaryOCR.verifiesZone(image, candidate)
+                    if (!verified) android.os.SystemClock.sleep(100)
+                }
+                assertTrue("Bundled zone proof must initialize and read the primary panel", verified)
+            } finally { image.recycle() }
+        }
+        for ((number, label) in listOf("30" to "ZONE", "20" to "ZONE", "40" to "Kurort", "70" to "GEFAHR")) {
+            val image = panel(number, label)
+            try { assertEquals("$number $label", number == "30" && label == "ZONE",
+                AndroidTrafficSignSupplementaryOCR.verifiesZone(image, candidate)) }
+            finally { image.recycle() }
+        }
+    }
     private fun report(fixture: String, annotation: TrafficSignSupplementaryTextAnnotation, started: Long) {
         InstrumentationRegistry.getInstrumentation().sendStatus(0, Bundle().apply {
             putString("ocr_fixture", fixture)

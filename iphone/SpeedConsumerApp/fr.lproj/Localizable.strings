@@ -329,7 +329,7 @@
 "onboarding.driving.safety" = "Configurez YouSpeed à l’arrêt. Respectez toujours la signalisation : les cartes et la reconnaissance peuvent se tromper.";
 "onboarding.dashcam.title" = "Gardez une vidéo du trajet";
 "onboarding.dashcam.body" = "La dashcam est facultative. Démarrez et arrêtez la vidéo depuis l’écran de conduite, puis gérez les enregistrements dans la vidéothèque.";
-"onboarding.dashcam.controls" = "Le bouton rouge démarre l’enregistreur. La vidéo, la reconnaissance et les photos Panoramax ont des commandes séparées.";
+"onboarding.dashcam.controls" = "Configurez l’app à l’arrêt. Sur l’écran de conduite, touchez le cercle rouge en bas à gauche pour démarrer une vidéo. La reconnaissance des panneaux et les photos Panoramax conservent leurs réglages.";
 "onboarding.dashcam.library" = "Les vidéos restent sur votre téléphone. Après l’arrêt, ouvrez la vidéothèque pour sélectionner, partager ou supprimer les enregistrements.";
 "onboarding.dashcam.permission" = "L’accès à la caméra est demandé lors de son utilisation. Aucun enregistrement n’a lieu pendant cette configuration.";
 "onboarding.sources.title" = "Trois sources de limitations";
@@ -502,3 +502,5 @@
 "drive_photo.local_hint" = "Enregistre une photo localement pour examen ultérieur. Aucun envoi.";
 "drive_photo.ready" = "Prise de photo manuelle prête";
 "drive_photo.retry" = "Échec de la photo. Touchez pour réessayer";
+"onboarding.dashcam.start_screenshot" = "Écran de conduite : le cercle rouge en bas à gauche démarre la vidéo.";
+"onboarding.dashcam.stop" = "Touchez le carré rouge au même endroit pour arrêter et enregistrer la vidéo. Attendez la fin de l’enregistrement avant d’ouvrir la vidéothèque.";

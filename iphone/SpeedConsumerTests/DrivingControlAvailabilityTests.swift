@@ -114,6 +114,8 @@ final class DrivingControlAvailabilityTests: XCTestCase {
         model.testObserveDrivingControlSpeed(rawMetersPerSecond: 0, displayedKmh: 0)
         XCTAssertTrue(model.drivingControlsAllowed)
         model.testSetDrivingControlAngle(11)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 10 / 3.6, displayedKmh: 10)
         XCTAssertFalse(model.drivingControlsAllowed)
         model.testSetDrivingControlAngle(0)
         XCTAssertTrue(model.drivingControlsAllowed)
@@ -124,5 +126,41 @@ final class DrivingControlAvailabilityTests: XCTestCase {
         model.testSetDrivingControlAngle(nil)
         XCTAssertFalse(model.drivingControlsAllowed)
     }
+
+    @MainActor
+    func testSignalLossRestoresMountedControlsAndFreshMovingFixLocksAgain() {
+        let model = DriveSessionViewModel()
+        model.testSetDrivingControlAngle(90)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 10, displayedKmh: 36)
+        XCTAssertFalse(model.drivingControlsAllowed)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 10, displayedKmh: 36,
+                                            timestamp: Date().addingTimeInterval(-4))
+        XCTAssertTrue(model.drivingControlsAllowed)
+        XCTAssertFalse(model.replacesSettingsWithDrivingPhotoButton)
+        XCTAssertNil(model.stationarySpeedObservedAt)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 10, displayedKmh: 36)
+        XCTAssertFalse(model.drivingControlsAllowed)
+    }
     #endif
+
+    func testSlowSpeedAndMissingSignalAllowControlsInEveryPostureWithoutClaimingStandstill() {
+        for angle in [nil, 0, 10, 11, 90, 180] as [Double?] {
+            for speed in [0.0, 0.5, 3.999] {
+                XCTAssertTrue(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: false,
+                    angleDegrees: angle, speedKmh: speed, hasSignal: true))
+            }
+            XCTAssertTrue(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: false,
+                angleDegrees: angle, speedKmh: 70, hasSignal: false))
+        }
+        XCTAssertFalse(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: true,
+            angleDegrees: 90, speedKmh: 4, hasSignal: true))
+        XCTAssertFalse(DrivingPhotoPolicy.replacesSettings(speedKmh: 3.999, hasSignal: true))
+        XCTAssertFalse(DrivingPhotoPolicy.replacesSettings(speedKmh: 70, hasSignal: false))
+        XCTAssertTrue(DrivingPhotoPolicy.replacesSettings(speedKmh: 4, hasSignal: true))
+        XCTAssertFalse(DrivingControlPosturePolicy.hasSignal(observedAt: nil, accuracy: nil, now: now))
+        XCTAssertFalse(DrivingControlPosturePolicy.hasSignal(observedAt: now.addingTimeInterval(-3.001), accuracy: 5, now: now))
+        XCTAssertFalse(DrivingControlPosturePolicy.hasSignal(observedAt: now, accuracy: 60, now: now))
+        XCTAssertTrue(DrivingControlPosturePolicy.hasSignal(observedAt: now.addingTimeInterval(-3), accuracy: 5, now: now))
+    }
 }

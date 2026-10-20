@@ -11,6 +11,9 @@ internal object DrivingPhotoCapturePolicy {
 
     fun isVisible(speedKmh: Double): Boolean = speedKmh.isFinite() && speedKmh > SPEED_THRESHOLD_KMH
 
+    fun replacesSettings(speedKmh: Double, hasSignal: Boolean): Boolean =
+        hasSignal && speedKmh.isFinite() && speedKmh >= 4.0
+
     /** Match the iPhone's stationary permission setup; a hidden shutter does not prove standstill. */
     fun canRequestCameraPermission(speedKmh: Double, controlsAllowed: Boolean): Boolean =
         speedKmh == 0.0 && controlsAllowed

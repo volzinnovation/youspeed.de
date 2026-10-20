@@ -92,6 +92,16 @@ data class TrafficSignSupplementaryTextAnnotation(
 
 typealias TrafficSignSupplementaryTextObservation = TrafficSignSupplementaryTextAnnotation
 
+/** Display memory never refreshes the OCR evidence used for speech, captures, or authority. */
+internal object TrafficSignSupplementaryDisplayPolicy {
+    fun retained(current: TrafficSignSupplementaryTextAnnotation?, primaryClassId: String?,
+        read: TrafficSignSupplementaryTextAnnotation? = null, now: Instant): TrafficSignSupplementaryTextAnnotation? {
+        if (read != null && read.hasText && read.isFresh(now) &&
+            (primaryClassId == null || read.primaryClassId == primaryClassId)) return read
+        return current?.takeIf { primaryClassId == null || primaryClassId == it.primaryClassId }
+    }
+}
+
 internal data class TrafficSignSupplementaryTextUpdate(
     val scope: TrafficSignSupplementaryScope,
     val observation: TrafficSignSupplementaryTextAnnotation?,

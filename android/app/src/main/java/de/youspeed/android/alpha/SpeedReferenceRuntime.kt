@@ -38,7 +38,25 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
     private var road: String? = null
     private var relations = emptySet<String>()
     private var direction = "unknown"
-    private var departure: Pair<String, Double>? = null
+    private data class Departure(
+        val way: String,
+        val road: String?,
+        val relations: Set<String>,
+        val direction: String,
+        val startedAt: Double,
+        val reason: String,
+    ) {
+        fun continues(nextWay: String, nextRoad: String?, nextRelations: Set<String>, nextDirection: String): Boolean {
+            // Forward/reverse are relative to an OSM way's digitization. They
+            // cannot be compared across adjacent ways on the same road.
+            val reversed = way == nextWay && direction != "unknown" && nextDirection != "unknown" && direction != nextDirection
+            return !reversed && (way == nextWay || (road != null && road == nextRoad) || relations.intersect(nextRelations).isNotEmpty())
+        }
+        fun observed(nextWay: String, nextRoad: String?, nextRelations: Set<String>, nextDirection: String) =
+            copy(way = nextWay, road = nextRoad, relations = nextRelations,
+                direction = if (way == nextWay && nextDirection == "unknown") direction else nextDirection)
+    }
+    private var departure: Departure? = null
     var lastEventReason = ""; private set
     val elapsedSeconds: Double get() = synchronized(this) { machine?.time ?: 0.0 }
     val traveledMeters: Double get() = synchronized(this) { machine?.distance ?: 0.0 }
@@ -94,18 +112,26 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
     @Synchronized fun context(nextWay: String?, nextRoad: String?, nextRelations: Set<String>, nextDirection: String, stable: Boolean) {
         tick()
         if (nextWay.isNullOrBlank()) { send("context_missing"); return }
-        val reversed = way == nextWay && direction != "unknown" && nextDirection != "unknown" && direction != nextDirection
+        var acceptedDirection = nextDirection
+        val comparisonDirection = if (nextDirection == "unknown" && departure?.way == nextWay) departure!!.direction else nextDirection
+        val reversed = way == nextWay && direction != "unknown" && comparisonDirection != "unknown" && direction != comparisonDirection
         val continues = !reversed && (way == null || way == nextWay || (road != null && road == nextRoad) || relations.intersect(nextRelations).isNotEmpty())
         if (continues) { send("context_restored", mapOf("verified" to true)); departure = null }
         else {
-            val candidate = "${nextRoad ?: nextWay}|$nextDirection"
-            if (departure?.first != candidate) departure = candidate to (machine?.time ?: 0.0)
+            val candidate = departure
+            departure = if (candidate?.continues(nextWay, nextRoad, nextRelations, nextDirection) == true)
+                candidate.observed(nextWay, nextRoad, nextRelations, nextDirection)
+            else Departure(nextWay, nextRoad, nextRelations, nextDirection, machine?.time ?: 0.0,
+                if (reversed) "direction_reversal" else "road_relation_exit")
             send("context_pending")
             val m = machine ?: return
-            if (!stable || m.time - departure!!.second < m.limit("road_departure_confirmation_s")) return
-            boundary(if (reversed) "direction_reversal" else "road_relation_exit")
+            if (!stable || m.time - departure!!.startedAt < m.limit("road_departure_confirmation_s")) return
+            if (departure!!.reason == "direction_reversal" && nextDirection == "unknown") return
+            acceptedDirection = departure!!.direction
+            boundary(departure!!.reason)
         }
-        way = nextWay; road = nextRoad; relations = nextRelations; direction = nextDirection
+        if (way != nextWay || acceptedDirection != "unknown") direction = acceptedDirection
+        way = nextWay; road = nextRoad; relations = nextRelations
     }
 }
 

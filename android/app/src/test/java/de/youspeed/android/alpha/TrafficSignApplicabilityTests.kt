@@ -6,6 +6,98 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class TrafficSignApplicabilityTests {
+    @Test fun zoneTextRequiresBothTheWordAndTheExactNumber() {
+        for (text in listOf("30 ZONE", "ZONE\n30", "30 zona")) assertTrue(text, TSRLiveSignAdmission.verifiesZoneText(text, 30))
+        for (text in listOf("40 Kurort", "70 GEFAHR", "20 ZONE", "ZONE", "30", "30 ZONE 70", "30 OZONEN"))
+            assertFalse(text, TSRLiveSignAdmission.verifiesZoneText(text, 30))
+    }
+    private fun zoneBatches(x: Double = .45, calibrated: Boolean = false): List<TSRFrameCandidateBatch> =
+        scenarios().first { it.getValue("id").jsonPrimitive.content == "ego_right" }
+            .getValue("batches").jsonArray.map { TSRApplicabilityJson.decodeBatch(it.jsonObject) }.map { batch ->
+                batch.copy(candidates = batch.candidates.map { it.copy(semanticKey = "zone_start:30:km/h", box = it.box.copy(x = x)) },
+                    road = batch.road!!.let { if (calibrated) it else it.copy(cameraHorizontalFovDeg = null, cameraYawDeg = null) })
+            }
+    @Test fun verifiedZoneNeedsAnEgoApproachButInformationPanelsNeverGainAuthority() {
+        for (calibrated in listOf(false, true)) {
+            val session = TSRApplicabilitySession()
+            val unverified = TSRApplicabilitySession()
+            for ((index, batch) in zoneBatches(calibrated = calibrated).withIndex()) {
+                val rejected = unverified.evaluate(batch)
+                assertEquals(setOf(batch.candidates.single().candidateId), unverified.liveWithheldCandidateIDs)
+                for (sink in listOf("display", "immediate", "passage"))
+                    assertFalse(TSRApplicabilityAuthority.allows(rejected.decisions.single(), batch.scope, batch.frameId,
+                        rejected.decisions.single().trackId, sink, "shadow"))
+                val admitted = session.evaluate(batch, batch.candidates.map { it.candidateId }.toSet())
+                assertEquals(index == 0, session.liveWithheldCandidateIDs.isNotEmpty())
+                assertEquals(batch.candidates, admitted.batch.candidates) // Raw evidence is preserved.
+            }
+        }
+    }
+    @Test fun farLeftZoneAndStaleRoadAreWithheldWhileLeftEndSignsRemainEligible() {
+        val session = TSRApplicabilitySession()
+        for (batch in zoneBatches(x = .015)) {
+            session.evaluate(batch, batch.candidates.map { it.candidateId }.toSet())
+            assertTrue(session.liveWithheldCandidateIDs.isNotEmpty())
+        }
+        for (variant in listOf("stale", "missing", "truncated", "unstable", "turning")) {
+            val guarded = TSRApplicabilitySession()
+            for (original in zoneBatches()) {
+                val batch = when (variant) {
+                    "stale" -> original.copy(road = original.road!!.copy(capturedAtMs = original.capturedAtMs - 2000))
+                    "missing" -> original.copy(road = null)
+                    "truncated" -> original.copy(truncated = true)
+                    "unstable" -> original.copy(road = original.road!!.copy(matchedStable = false))
+                    else -> original.copy(road = original.road!!.copy(courseDeg = 90.0))
+                }
+                guarded.evaluate(batch, batch.candidates.map { it.candidateId }.toSet())
+                assertTrue(variant, guarded.liveWithheldCandidateIDs.isNotEmpty())
+            }
+        }
+        val ends = TSRApplicabilitySession()
+        for (zone in zoneBatches(x = .015)) {
+            ends.evaluate(zone.copy(candidates = zone.candidates.map { it.copy(semanticKey = "speed_limit_end:70:km/h") }))
+            assertTrue(ends.liveWithheldCandidateIDs.isEmpty())
+        }
+    }
+    @Test fun uncalibratedPeripheralSpeedNeedsNoAuthorityOverTheLinkedSideRoad() {
+        for (center in listOf(.015, .85, .45)) {
+            val session = TSRApplicabilitySession()
+            for (zone in zoneBatches(x = center)) {
+                val heading = if (center < .2) 270.0 else 90.0
+                val batch = zone.copy(candidates = zone.candidates.map { it.copy(semanticKey = "maximum_speed:30:km/h") },
+                    road = zone.road!!.copy(branches = listOf(TSRApplicabilityCorridor("side", heading, 15.0, "residential", true, heading))))
+                session.evaluate(batch)
+                assertEquals(center != .45, session.liveWithheldCandidateIDs.isNotEmpty())
+            }
+        }
+        // Once the vehicle actually follows that road, its heading is the new
+        // ego tangent and a central, growing zone can be admitted normally.
+        val turned = TSRApplicabilitySession()
+        for ((index, zone) in zoneBatches().withIndex()) {
+            val scope = zone.scope.copy(traversalEpoch = 2)
+            val batch = zone.copy(scope = scope, road = zone.road!!.copy(scope = scope,
+                wayId = "side", courseDeg = 90.0, localTangentDeg = 90.0))
+            turned.evaluate(batch, batch.candidates.map { it.candidateId }.toSet())
+            assertEquals(index == 0, turned.liveWithheldCandidateIDs.isNotEmpty())
+        }
+    }
+    @Test fun lateUntrackedZoneCannotBypassAdmission() {
+        val batches = zoneBatches()
+        val session = TSRApplicabilitySession()
+        for (batch in batches) session.evaluate(batch, batch.candidates.map { it.candidateId }.toSet())
+        val old = batches.first().copy(frameId = "late-frame", candidates = batches.first().candidates.map { it.copy(candidateId = "late-frame:0") })
+        session.evaluate(old, setOf("late-frame:0"))
+        assertEquals(setOf("late-frame:0"), session.liveWithheldCandidateIDs)
+    }
+    @Test fun knownSideRoadIsVetoedEvenInShadow() {
+        val output = outputs(scenarios().first { it.getValue("id").jsonPrimitive.content == "weak_ego_strong_branch" }).second.last()
+        val branch = output.decisions.first { it.classification == "LIKELY_BRANCH" }
+        assertTrue(TSRLiveSignAdmission.blocks(branch))
+        for (sink in listOf("display", "immediate", "passage"))
+            assertFalse(TSRApplicabilityAuthority.allows(branch, output.batch.scope, output.batch.frameId, branch.trackId, sink, "shadow"))
+        val ego = output.decisions.first { it.classification == "LIKELY_EGO_CORRIDOR" }
+        assertTrue(TSRApplicabilityAuthority.allows(ego, output.batch.scope, output.batch.frameId, ego.trackId, "immediate", "shadow"))
+    }
     @Test fun secondarySignLogMetadataRoundTripAndLegacyDecode() {
         val legacy = TSRApplicabilityJson.decodeBatch(scenarios().first().getValue("batches").jsonArray.first().jsonObject)
         assertNull(legacy.country)

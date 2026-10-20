@@ -2,8 +2,10 @@ package de.youspeed.android.alpha
 
 import kotlin.math.acos
 import kotlin.math.sqrt
+import java.time.Duration
+import java.time.Instant
 
-/** Controls require a face-up phone within ten degrees of horizontal, independent of the selected screen rotation. */
+/** Below 4 km/h or without GPS, controls remain available in every mounting position. */
 internal object DrivingControlPosturePolicy {
     /** Core Motion convention: a downward gravity vector in units of g; face-up is zero degrees. */
     fun screenAngleDegrees(x: Double, y: Double, z: Double): Double? {
@@ -17,7 +19,13 @@ internal object DrivingControlPosturePolicy {
         screenAngleDegrees != null && screenAngleDegrees.isFinite() &&
             screenAngleDegrees >= 0.0 && screenAngleDegrees <= 10.0 + 1e-9
 
-    /** Unknown posture cannot establish that the phone is flat. */
-    fun controlsAllowed(speedControlsAllowed: Boolean, screenAngleDegrees: Double?): Boolean =
-        speedControlsAllowed && isFlat(screenAngleDegrees)
+    /** At 4 km/h or above with GPS, unknown posture cannot establish a flat phone. */
+    fun controlsAllowed(speedControlsAllowed: Boolean, screenAngleDegrees: Double?,
+        speedKmh: Double = 20.0, hasSignal: Boolean = true): Boolean =
+        !hasSignal || (speedKmh.isFinite() && speedKmh >= 0.0 && speedKmh < 4.0) ||
+            (speedControlsAllowed && isFlat(screenAngleDegrees))
+
+    fun hasSignal(observedAt: Instant?, accuracy: Double?, now: Instant): Boolean =
+        observedAt != null && accuracy != null && accuracy.isFinite() && accuracy >= 0.0 && accuracy < 60.0 &&
+            Duration.between(observedAt, now).let { !it.isNegative && it <= Duration.ofSeconds(3) }
 }

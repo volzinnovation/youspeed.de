@@ -136,7 +136,10 @@ class DrivingPhotoCaptureInstrumentedTest {
                         fixture.state { copy(currentSpeedKmh = speed, drivingControlsAllowed = speed <= 20.0) }
                     }
                     compose.waitForIdle()
-                    if (speed <= 1.0) compose.onNodeWithTag("driving-photo-button").assertDoesNotExist()
+                    if (speed < 4.0) {
+                        compose.onNodeWithTag("driving-photo-button").assertDoesNotExist()
+                        compose.onNodeWithTag("settings-button").assertExists()
+                    }
                     else {
                         compose.onNodeWithTag("driving-photo-button").assertExists()
                         scenario.onActivity { assertBottomRight(it, device, speed <= 20.0) }
@@ -146,7 +149,7 @@ class DrivingPhotoCaptureInstrumentedTest {
             }
             scenario.onActivity { activity ->
                 fixture.state { copy(manualOrientation = ManualOrientation.PORTRAIT,
-                    currentSpeedKmh = 1.5, drivingControlsAllowed = true) }
+                    currentSpeedKmh = 4.0, drivingControlsAllowed = true) }
                 activity.requestedOrientation = ManualOrientation.PORTRAIT.requestedOrientation
                 activity.setContent {
                     androidx.compose.runtime.CompositionLocalProvider(
@@ -174,7 +177,7 @@ class DrivingPhotoCaptureInstrumentedTest {
 
     @Test fun tapUsesOneLocalJpegRequestWithoutStoppingMovieAndIgnoresAutomaticPreferenceAndSignFilter() {
         withFixture { fixture, scenario ->
-            fixture.prepareCapture(scenario, speed = 1.5)
+            fixture.prepareCapture(scenario, speed = 4.0)
             scenario.onActivity {
                 fixture.clock.freeze()
                 fixture.fix(fixture.clock.instant())

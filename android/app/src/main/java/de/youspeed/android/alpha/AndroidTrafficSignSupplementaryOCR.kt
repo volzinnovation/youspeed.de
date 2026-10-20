@@ -26,6 +26,44 @@ internal object AndroidTrafficSignSupplementaryOCR {
         private set
     private fun client(): TextRecognizer = recognizer ?: TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         .also { recognizer = it }
+    private val zoneReadInFlight = AtomicBoolean(false)
+    private val zoneRecognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
+
+    /** Primary-panel proof, separate from supplementary text and its presentation. */
+    fun verifiesZone(bitmap: Bitmap, candidate: TrafficSignCandidate): Boolean {
+        if (!zoneReadInFlight.compareAndSet(false, true)) return false
+        var launched = false
+        return try { verifiesZonePanel(bitmap, candidate) { launched = true } }
+        catch (_: Exception) { false }
+        finally { if (!launched) zoneReadInFlight.set(false) }
+    }
+
+    private fun verifiesZonePanel(bitmap: Bitmap, candidate: TrafficSignCandidate, launched: () -> Unit): Boolean {
+        if (candidate.semantic.kind != TrafficSignSemanticKind.ZONE_START) return false
+        val speed = candidate.semantic.value ?: return false
+        val box = candidate.boundingBox
+        val x = kotlin.math.floor(box.x * bitmap.width).toInt()
+        val y = kotlin.math.floor(box.y * bitmap.height).toInt()
+        val width = kotlin.math.ceil(box.width * bitmap.width).toInt()
+        val height = kotlin.math.ceil(box.height * bitmap.height).toInt()
+        if (width < 48 || height < 48 || width.toLong()*height > 1_000_000 ||
+            x+width > bitmap.width || y+height > bitmap.height) return false
+        val region = Bitmap.createBitmap(bitmap, x, y, width, height)
+        val crop = if (region === bitmap) bitmap.copy(Bitmap.Config.ARGB_8888, false) else region
+        val task = try { zoneRecognizer.process(InputImage.fromBitmap(crop, 0)) }
+        catch (_: Exception) { crop.recycle(); return false }
+        launched()
+        task.addOnCompleteListener(java.util.concurrent.Executor { it.run() }) { zoneReadInFlight.set(false) }
+        try {
+            val text = Tasks.await(task, 500, TimeUnit.MILLISECONDS).text
+            return TSRLiveSignAdmission.verifiesZoneText(text, speed)
+        } catch (_: Exception) { return false }
+        finally {
+            // A timed-out native read still owns its pixels until completion.
+            if (task.isComplete) crop.recycle()
+            else task.addOnCompleteListener(java.util.concurrent.Executor { it.run() }) { crop.recycle() }
+        }
+    }
 
     fun warmUp(context: Context, completion: (Boolean) -> Unit = {}) {
         if (ready) { completion(true); return }
