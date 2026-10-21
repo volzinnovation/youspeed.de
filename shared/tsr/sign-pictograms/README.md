@@ -84,14 +84,19 @@ python3 shared/tsr/sign-pictograms/fetch_national.py FR --fetch
 ```
 
 To restore missing assets, use `fetch.py --fetch`. This requires `curl`, network
-access and ImageMagick 7.1.2-3. It fetches pinned originals sequentially, verifies
+access and the pinned ImageMagick version for each missing PNG (7.1.2-3 by
+default; DE:1044-10 uses 7.1.2-31). It fetches pinned originals sequentially, verifies
 their hashes, and recreates PNGs locally. Two renderer exceptions, signs 206
 and 250, use separately pinned Commons PNG renditions: ImageMagick's SVG reader
 loses their lettering or red ring. `png_source_kind`, source URL and source
 hash record this distinction. Different bytes fail verification;
 the script never updates the manifest or overwrites an existing mismatched
-file. Review an intentional source/renderer update separately. Current PNGs
-were produced on aarch64 with ImageMagick 7.1.2-3 Q16-HDRI; another platform may
+file. Review an intentional source/renderer update separately. PNGs were
+produced on aarch64 with ImageMagick 7.1.2-3 Q16-HDRI, except DE:1044-10,
+regenerated with 7.1.2-31 on 2026-10-21 to restore its opaque white face and
+complete outline. Its original SVG is unchanged. The manifest records this
+exception in `png_renderer` and `png_renderer_version`; `fetch.py` checks the
+exact version before rendering a missing PNG. Another platform may
 render different bytes and correctly fail that reproducibility check.
 
 ## Display contract

@@ -3320,8 +3320,8 @@
       "png_source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1c/Zusatzzeichen_1044-10_-_nur_Schwerbehinderte_mit_au%C3%9Fergew%C3%B6hnlicher_Gehbehinderung_und_Blinde%2C_StVO_1992.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
       "png_source_sha256": "5eb2033f4061bf47e5306b34b308773daa2cc52b67894f26109a5e4aeb78d8b7",
       "png_path": "png/de-1044-10.png",
-      "png_sha256": "7890b8d4d3fa00379f914ac3e94864322f69a288dd42dd3f898c1f1b832233b8",
-      "png_bytes": 4381,
+      "png_sha256": "f1352ccc2de9794faa031cd22f51a2d089be611be7af14f00653f3fb91c1e1a6",
+      "png_bytes": 4508,
       "png_width": 256,
       "png_height": 141,
       "license": "Public domain",
@@ -3330,8 +3330,10 @@
       "attribution_required": false,
       "artist": "Nach den amtlichen Vorgaben von 1992 digital umgesetzt durch: Mediatus",
       "source_credit": "Straßenverkehrs-Ordnung, Verkehrsblatt und DIN-Normen",
-      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped.",
-      "png_source_kind": "original_svg"
+      "changes": "Unmodified original SVG; rasterized locally with ImageMagick 7.1.2-31 to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped. Regenerated on 2026-10-21 to correct missing white face and outline from the previous rendering; only the exterior remains transparent.",
+      "png_source_kind": "original_svg",
+      "png_renderer_version": "7.1.2-31",
+      "png_renderer": "ImageMagick 7.1.2-31 Q16-HDRI aarch64"
     }
   ],
   "png_conversion": {
@@ -3349,6 +3351,6 @@
       "-define",
       "png:exclude-chunk=date,time"
     ],
-    "source": "Original SVG by default. For entries png_source_kind=commons_png, the pinned Commons PNG rendition is used because the local SVG renderer loses sign geometry; source bytes identified by png_source_sha256."
+    "source": "Original SVG by default. For entries png_source_kind=commons_png, the pinned Commons PNG rendition is used because the local SVG renderer loses sign geometry; source bytes identified by png_source_sha256. Per-entry png_renderer and png_renderer_version override the default tool; DE:1044-10 requires ImageMagick 7.1.2-31 to preserve its clipped white face and outline."
   }
 }

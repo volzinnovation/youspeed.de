@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify pictograms offline, or restore pinned SVG/PNG assets with --fetch.
 
-Fetching needs curl, ImageMagick 7.1.2-3 and network access. Downloads are
+Fetching needs curl, the manifest-pinned ImageMagick version and network access. Downloads are
 sequential and paced; a changed upstream file or renderer never updates hashes.
 """
 
@@ -72,6 +72,12 @@ def restore(artwork, magick):
         return
     if png.exists():
         raise ValueError(f"Existing PNG hash mismatch: {png}")
+    expected_version = artwork.get("png_renderer_version", "7.1.2-3")
+    version = subprocess.check_output([magick, "-version"], text=True).split()[2]
+    if version != expected_version:
+        raise ValueError(
+            f"{artwork['sign_code']} requires ImageMagick {expected_version}; found {version}"
+        )
     check_svg(original.read_bytes())
     with tempfile.TemporaryDirectory() as directory:
         rendered = Path(directory) / "sign.png"
@@ -111,10 +117,7 @@ def main():
     magick = shutil.which("magick")
     if args.fetch:
         if not magick:
-            parser.error("--fetch requires ImageMagick 7.1.2-3 (magick)")
-        version = subprocess.check_output([magick, "-version"], text=True)
-        if "ImageMagick 7.1.2-3" not in version:
-            parser.error("Pinned PNG generation requires ImageMagick 7.1.2-3")
+            parser.error("--fetch requires ImageMagick (magick), pinned per asset in the manifest")
     for artwork in manifest["artworks"]:
         if args.fetch:
             restore(artwork, magick)
