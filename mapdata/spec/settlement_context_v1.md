@@ -130,6 +130,18 @@ camera limit on town entry, or select a settlement-specific penalty variant.
 Low-confidence landuse can support the city indicator; unknown uses the existing
 unknown-context presentation. Posted numeric limits remain independent.
 
+Posted directional limits are independent too. The optional `ways.maxspeed_forward`
+and `ways.maxspeed_backward` text columns preserve OSM `maxspeed:forward` and
+`maxspeed:backward` in the original way's node order. A consumer selects the
+applicable tag using reliable course and the local directed road tangent; a
+directional tag takes precedence over the undirected tag for that direction.
+If course cannot distinguish the directions, only identical supported outcomes
+for both directions can establish a current limit. An unresolved directional
+override must not fall through to a settlement or road-class default. Bundles
+without these optional columns retain their existing behavior. Numeric
+directional tags never establish `inside_city`; a current posted limit and
+unknown settlement context are a valid combination.
+
 The product also supplies a road-class fallback of **50 km/h** for `residential`
 and `service` ways when speed derivation falls back to road class and no
 high-confidence settlement default is available. Explicit numeric/unlimited

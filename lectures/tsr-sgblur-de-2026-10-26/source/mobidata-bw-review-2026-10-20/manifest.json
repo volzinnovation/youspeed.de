@@ -1,0 +1,1430 @@
+{
+  "created_at": "2026-10-20T20:22:20.312466+00:00",
+  "registry_source_url": "https://mobidata-bw.de/daten/portal/VZ-Daten/signs.geojson",
+  "registry_source_sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+  "federation_export_http_last_modified": "2026-10-11T12:14:12Z",
+  "spatial_summary": {
+    "scope": "Public federation GeoParquet modified 2026-10-11; BW bounding rectangle [7.50,47.50,10.50,49.80], matched only to registry DE:310/DE:311 points. Not a current complete catalogue census.",
+    "picture_rows_in_bbox": 6327008,
+    "registry_town_signs": 23100,
+    "registry_locations": 23080,
+    "registry_records_with_picture_within_m": {
+      "25": 3799,
+      "50": 4225,
+      "75": 4609,
+      "100": 4944
+    },
+    "picture_ids_within_100m": 133047,
+    "sequences_within_100m": 2881,
+    "picture_counts_by_instance_within_100m": {
+      "osm-fr": 126910,
+      "mapcomplete": 297,
+      "ign": 964,
+      "ulm": 4876
+    },
+    "view_candidates_sign_sequence_pairs": 9959,
+    "candidate_unique_sign_records": 4148,
+    "candidate_unique_picture_ids": 6563,
+    "candidate_new_picture_ids": 6563,
+    "candidate_new_sequences": 2310,
+    "prior_scope": {
+      "lecture_pictures": 154,
+      "lecture_sequences": 48,
+      "prior_discovery_pictures": 3745,
+      "prior_discovery_sequences": 298
+    }
+  },
+  "review_sample": {
+    "location_selected_frames": 144,
+    "unique_sequences": 131,
+    "unannotated_frames": 98,
+    "native_hd_frames_downloaded": 16,
+    "visually_retained_target_proposals": 13,
+    "visible_class_proposals": {
+      "DE:310": 7,
+      "DE:311": 6
+    },
+    "retained_sequences": 13,
+    "source_target_status": {
+      "no_stored_target_box": 12,
+      "detected_but_unclassified_yes": 1
+    },
+    "registry_opposite_face_cases": 2
+  },
+  "baseline_replay": {
+    "checkpoint_sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+    "torch_version": "2.9.1",
+    "ultralytics_version": "8.4.56",
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "settings": {
+      "full_scene": true,
+      "imgsz": 1280,
+      "rect": false,
+      "conf": 0.25,
+      "iou": 0.7,
+      "target_match_iou": 0.5,
+      "device": "cpu"
+    },
+    "known_targets": 13,
+    "matched_known_targets": 2,
+    "missing_known_targets": 11,
+    "limitations": [
+      "Exploratory replay of the repository SGBlur YOLO11n baseline, not a replay of the exact source server model/version.",
+      "Assistant-proposed target boxes are partial and need human approval. No precision, mAP or population recall can be inferred.",
+      "No classifier was run; this detector only predicts sign, plate and face.",
+      "No training or model selection was performed. These examples are exploratory discovery material, not a blinded holdout."
+    ]
+  },
+  "novelty_scope": "154 lecture images from 48 sequences and the earlier discovery cache of 3,745 image IDs from 298 sequences. Not a complete model-pretraining-corpus audit. All retained frames/sequences and checked file hashes are absent from this scoped inventory.",
+  "use_role": "exploratory_lecture_review",
+  "human_approved": false,
+  "eligible_for_training": false,
+  "approved_for_evaluation": false,
+  "records": [
+    {
+      "registry_group_id": "c2280ff7-a165-4d02-b47e-dead2444219a",
+      "registry_location_id": "6cf99033-4ef0-4d5f-8419-aa4e5e711e04",
+      "registry_class": "DE:310",
+      "registry_coordinates": [
+        8.693941,
+        49.214405
+      ],
+      "registry_orientation": 80,
+      "municipality": "Östringen",
+      "picture_id": "3f939665-b68e-4ffe-8d07-b43944d3ff92",
+      "sequence_id": "55f84923-8668-4055-9148-22f6886021ae",
+      "camera_coordinates": [
+        8.693638261,
+        49.214419485
+      ],
+      "camera_heading": 94,
+      "fov": null,
+      "dimensions": [
+        4624,
+        3472
+      ],
+      "camera_accuracy": 5.0,
+      "distance_m": 22.07,
+      "bearing_to_sign": 94.19,
+      "view_error_deg": 0.19,
+      "registry_orientation_error_deg": 14.19,
+      "capture_datetime": "2025-11-17 08:17:39.476836",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 0.1207,
+      "review_index": 1,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/55f84923-8668-4055-9148-22f6886021ae/items/3f939665-b68e-4ffe-8d07-b43944d3ff92",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=3f939665-b68e-4ffe-8d07-b43944d3ff92",
+      "metadata_path": "metadata/3f939665-b68e-4ffe-8d07-b43944d3ff92.json",
+      "source_item_sha256": "4e2b44902edd7fd0cf6bedf4ace22d5fc4eafcaaac48edfe9d3ce7301b9409e9",
+      "live_annotations": [],
+      "live_semantics": [],
+      "author": "BenediktTheExplorer",
+      "live_capture_datetime": "2025-11-17T08:17:39.476836+00:00",
+      "native_dimensions": [
+        4624,
+        3472
+      ],
+      "source_sign_tags": [],
+      "fetched_at": "2026-10-20T20:13:35.018787+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/3f/93/96/65/b68e-4ffe-8d07-b43944d3ff92/sd.jpg",
+      "sd_sha256": "32a494c843cc8ed585526a6b7a8fd851d4f5744ad5343f3b92eabff3707994ef",
+      "status": "downloaded",
+      "discovery_folder": "city-discovery",
+      "discovery_index": 1,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/3f/93/96/65/b68e-4ffe-8d07-b43944d3ff92.jpg",
+      "hd_sha256": "1c1d82acd2c8728ba0849daa64368a3eca124a6d99f334d7fdfc25115fcfe36d",
+      "hd_bytes": 1902388,
+      "hd_dimensions": [
+        4624,
+        3472
+      ],
+      "rgb_sha256": "ce10b015d81ca04b55fdf94edb01206f3f4250b0b6c765867a7a08e3f32c14e0",
+      "candidate_index": 1,
+      "visible_class_proposal": "DE:310",
+      "target_bbox_xyxy_proposal": [
+        3116,
+        2485,
+        3303,
+        2623
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 8811.9,
+      "nearest_prior_lecture_picture_id": "9aaf4945-cbc8-4efa-80ac-ced278f33b2c",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/01-3f939665-b68e-4ffe-8d07-b43944d3ff92.jpg",
+      "crop_path": "crops/01-DE-310.png",
+      "crop_dimensions": [
+        187,
+        138
+      ],
+      "crop_sha256": "9054ef7027d976dac0061a5a8f3780c8d25a2e68133a87f411fb3a990e3eb766",
+      "sgblur_yolo11n_target_detected": false,
+      "sgblur_yolo11n_target_iou": 0,
+      "source_target_annotation_id": null,
+      "source_target_status": "no_stored_target_box",
+      "registry_face_disagrees_with_visible_face": false,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/01.jpg"
+    },
+    {
+      "registry_group_id": "19dc57d2-e1fd-499c-be73-70d81694be60",
+      "registry_location_id": "f095b373-5cb9-4969-b953-f8a64ed6d858",
+      "registry_class": "DE:310",
+      "registry_coordinates": [
+        8.600951,
+        48.840079
+      ],
+      "registry_orientation": 5,
+      "municipality": "Neuenbürg",
+      "picture_id": "5d841594-5af4-43b0-b3d3-00b270a70cd9",
+      "sequence_id": "8ee75ea5-9a8a-4fe4-a6c4-fae8dd342806",
+      "camera_coordinates": [
+        8.6009458,
+        48.8398842
+      ],
+      "camera_heading": 1,
+      "fov": null,
+      "dimensions": [
+        3264,
+        1468
+      ],
+      "camera_accuracy": 5.0,
+      "distance_m": 21.69,
+      "bearing_to_sign": 1.01,
+      "view_error_deg": 0.01,
+      "registry_orientation_error_deg": 3.99,
+      "capture_datetime": "2025-04-27 16:27:26.034672",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 0.3131,
+      "review_index": 3,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/8ee75ea5-9a8a-4fe4-a6c4-fae8dd342806/items/5d841594-5af4-43b0-b3d3-00b270a70cd9",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=5d841594-5af4-43b0-b3d3-00b270a70cd9",
+      "metadata_path": "metadata/5d841594-5af4-43b0-b3d3-00b270a70cd9.json",
+      "source_item_sha256": "949df5dd5d14ff6b8c282b5c8212bd30c537637ba23811cef0e9eba8d4e2dbc8",
+      "live_annotations": [],
+      "live_semantics": [],
+      "author": "Geofreund1",
+      "live_capture_datetime": "2025-04-27T16:27:26.034672+00:00",
+      "native_dimensions": [
+        3264,
+        1468
+      ],
+      "source_sign_tags": [],
+      "fetched_at": "2026-10-20T20:13:35.067101+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/5d/84/15/94/5af4-43b0-b3d3-00b270a70cd9/sd.jpg",
+      "sd_sha256": "31d0d17f7448da30d39bd8f56df4515cc134745c7f5b4af8d5c486ce9ebe66af",
+      "status": "downloaded",
+      "discovery_folder": "city-discovery",
+      "discovery_index": 3,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/5d/84/15/94/5af4-43b0-b3d3-00b270a70cd9.jpg",
+      "hd_sha256": "232a8e6f12ae0d4048b791bc457ef63a008f3a7e087557ebedd25e4ec0d2eb21",
+      "hd_bytes": 2175363,
+      "hd_dimensions": [
+        3264,
+        1468
+      ],
+      "rgb_sha256": "d17cb88b7ce9dcabfa3907ca403afb6bfe6a25b27ebe6d544fd3220621c9edb8",
+      "candidate_index": 2,
+      "visible_class_proposal": "DE:310",
+      "target_bbox_xyxy_proposal": [
+        1998,
+        541,
+        2089,
+        598
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 2746.1,
+      "nearest_prior_lecture_picture_id": "212f42bb-6bda-4d75-9b8d-69d0080c65e5",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/02-5d841594-5af4-43b0-b3d3-00b270a70cd9.jpg",
+      "crop_path": "crops/02-DE-310.png",
+      "crop_dimensions": [
+        91,
+        57
+      ],
+      "crop_sha256": "26b6764be935486aa36344d2b46b926fd103f62241b0bcfe756e01be1815a0ae",
+      "sgblur_yolo11n_target_detected": false,
+      "sgblur_yolo11n_target_iou": 0.0,
+      "source_target_annotation_id": null,
+      "source_target_status": "no_stored_target_box",
+      "registry_face_disagrees_with_visible_face": false,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/02.jpg"
+    },
+    {
+      "registry_group_id": "fb5d89b5-be96-4d7e-ad73-be51205c2d71",
+      "registry_location_id": "b75f3ed4-65cd-4c45-9308-49b674f71348",
+      "registry_class": "DE:310",
+      "registry_coordinates": [
+        8.865948,
+        49.19874
+      ],
+      "registry_orientation": 209,
+      "municipality": "Sinsheim",
+      "picture_id": "9a1c7b60-497a-487e-9230-c746e3f9e171",
+      "sequence_id": "a047b65a-9377-4d73-a967-a55897e88568",
+      "camera_coordinates": [
+        8.866140302,
+        49.198894612
+      ],
+      "camera_heading": 220,
+      "fov": 100,
+      "dimensions": [
+        3840,
+        2160
+      ],
+      "camera_accuracy": 4.0,
+      "distance_m": 22.18,
+      "bearing_to_sign": 219.1,
+      "view_error_deg": 0.9,
+      "registry_orientation_error_deg": 10.1,
+      "capture_datetime": "2026-03-20 17:19:24",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 0.4034,
+      "review_index": 5,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/a047b65a-9377-4d73-a967-a55897e88568/items/9a1c7b60-497a-487e-9230-c746e3f9e171",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=9a1c7b60-497a-487e-9230-c746e3f9e171",
+      "metadata_path": "metadata/9a1c7b60-497a-487e-9230-c746e3f9e171.json",
+      "source_item_sha256": "d11c3a0b2f8c8287895fb5763142a19c61c4156776655442bb0bba2f83a15a3b",
+      "live_annotations": [],
+      "live_semantics": [],
+      "author": "R_A",
+      "live_capture_datetime": "2026-03-20T17:19:24+00:00",
+      "native_dimensions": [
+        3840,
+        2160
+      ],
+      "source_sign_tags": [],
+      "fetched_at": "2026-10-20T20:13:35.798377+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/9a/1c/7b/60/497a-487e-9230-c746e3f9e171/sd.jpg",
+      "sd_sha256": "cbc9547016173c6b369a47e6255a26314ef0e39a10cd9ce86a3f77365777f7d9",
+      "status": "downloaded",
+      "discovery_folder": "city-discovery",
+      "discovery_index": 5,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/9a/1c/7b/60/497a-487e-9230-c746e3f9e171.jpg",
+      "hd_sha256": "c7d0e51eb7852d285e2c86a82f0adacc69f4a9b7b9b8390bde728ad11f66fe6e",
+      "hd_bytes": 1991083,
+      "hd_dimensions": [
+        3840,
+        2160
+      ],
+      "rgb_sha256": "e973ce7348baee09cb72f9f7d36487b5ed67a80944303ae61a9552613dece21c",
+      "candidate_index": 3,
+      "visible_class_proposal": "DE:310",
+      "target_bbox_xyxy_proposal": [
+        2520,
+        1240,
+        2808,
+        1450
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 19975.2,
+      "nearest_prior_lecture_picture_id": "3888b526-9b50-416e-8912-e30049df2502",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/03-9a1c7b60-497a-487e-9230-c746e3f9e171.jpg",
+      "crop_path": "crops/03-DE-310.png",
+      "crop_dimensions": [
+        288,
+        210
+      ],
+      "crop_sha256": "99ce9c9cade067d6b50e8fd0c17ea1f5fc1bda9580ff26f85fd897a4ba8dfe68",
+      "sgblur_yolo11n_target_detected": false,
+      "sgblur_yolo11n_target_iou": 0,
+      "source_target_annotation_id": null,
+      "source_target_status": "no_stored_target_box",
+      "registry_face_disagrees_with_visible_face": false,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/03.jpg"
+    },
+    {
+      "registry_group_id": "1f7700fe-ade5-43e0-998e-026bbe8dbd13",
+      "registry_location_id": "2449e9f8-e73d-4719-85ad-d7ce53d08868",
+      "registry_class": "DE:310",
+      "registry_coordinates": [
+        8.768343,
+        48.880929
+      ],
+      "registry_orientation": 179,
+      "municipality": "Pforzheim",
+      "picture_id": "a20dee5c-3cec-4004-afd0-e74db85ff8c0",
+      "sequence_id": "f9dfa7b4-c690-478f-86bc-a39290dc6858",
+      "camera_coordinates": [
+        8.768340591,
+        48.880724022
+      ],
+      "camera_heading": 359,
+      "fov": null,
+      "dimensions": [
+        3840,
+        2160
+      ],
+      "camera_accuracy": 4.0,
+      "distance_m": 22.82,
+      "bearing_to_sign": 0.44,
+      "view_error_deg": 1.44,
+      "registry_orientation_error_deg": 178.56,
+      "capture_datetime": "2025-01-15 11:48:25",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 1.1795,
+      "review_index": 31,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/f9dfa7b4-c690-478f-86bc-a39290dc6858/items/a20dee5c-3cec-4004-afd0-e74db85ff8c0",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=a20dee5c-3cec-4004-afd0-e74db85ff8c0",
+      "metadata_path": "metadata/a20dee5c-3cec-4004-afd0-e74db85ff8c0.json",
+      "source_item_sha256": "793d78ad9ebd3d71053448b9c419cfe1fa3affaf41dc5523d3c933bb068551ce",
+      "live_annotations": [],
+      "live_semantics": [],
+      "author": "R_A",
+      "live_capture_datetime": "2025-01-15T11:48:25+00:00",
+      "native_dimensions": [
+        3840,
+        2160
+      ],
+      "source_sign_tags": [],
+      "fetched_at": "2026-10-20T20:13:43.145922+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/a2/0d/ee/5c/3cec-4004-afd0-e74db85ff8c0/sd.jpg",
+      "sd_sha256": "756fce8b5dca830b452351c8735bc9623e33ff20445db922c03a1242d2aad7c0",
+      "status": "downloaded",
+      "discovery_folder": "city-discovery",
+      "discovery_index": 31,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/a2/0d/ee/5c/3cec-4004-afd0-e74db85ff8c0.jpg",
+      "hd_sha256": "4fb750ed5725d01a5d63b798cae2a104f1782c864e2a96cbd6a0a236c897884d",
+      "hd_bytes": 2099342,
+      "hd_dimensions": [
+        3840,
+        2160
+      ],
+      "rgb_sha256": "8c56b1f19904f658b739ae7bee9cebaa95dcacdeea50d75c627ab4de235bab8f",
+      "candidate_index": 4,
+      "visible_class_proposal": "DE:311",
+      "target_bbox_xyxy_proposal": [
+        1302,
+        1346,
+        1408,
+        1413
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 3958.6,
+      "nearest_prior_lecture_picture_id": "62ba30cf-f21c-4f7a-acf2-b6f6f0544777",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/04-a20dee5c-3cec-4004-afd0-e74db85ff8c0.jpg",
+      "crop_path": "crops/04-DE-311.png",
+      "crop_dimensions": [
+        106,
+        67
+      ],
+      "crop_sha256": "f3a877e6b1bcb25d6adc174b26fe0b5ff8acc8660c89622e38c91ada2f40541e",
+      "sgblur_yolo11n_target_detected": false,
+      "sgblur_yolo11n_target_iou": 0.0,
+      "source_target_annotation_id": null,
+      "source_target_status": "no_stored_target_box",
+      "registry_face_disagrees_with_visible_face": true,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/04.jpg"
+    },
+    {
+      "registry_group_id": "2a7ad110-1cec-44dd-91f3-bc6888ac9fa4",
+      "registry_location_id": "6c9dff33-4193-4693-a520-431252c47c83",
+      "registry_class": "DE:310",
+      "registry_coordinates": [
+        9.338326,
+        47.704383
+      ],
+      "registry_orientation": 167,
+      "municipality": "Markdorf",
+      "picture_id": "962602dc-c154-4431-9120-6c3f84305919",
+      "sequence_id": "e3619bc8-a14f-42ca-84f7-26974917f57c",
+      "camera_coordinates": [
+        9.338275,
+        47.704569444
+      ],
+      "camera_heading": 168,
+      "fov": null,
+      "dimensions": [
+        4080,
+        3060
+      ],
+      "camera_accuracy": 5.0,
+      "distance_m": 21.1,
+      "bearing_to_sign": 169.57,
+      "view_error_deg": 1.57,
+      "registry_orientation_error_deg": 2.57,
+      "capture_datetime": "2023-09-17 14:02:45.977000",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 1.2888,
+      "review_index": 40,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/e3619bc8-a14f-42ca-84f7-26974917f57c/items/962602dc-c154-4431-9120-6c3f84305919",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=962602dc-c154-4431-9120-6c3f84305919",
+      "metadata_path": "metadata/962602dc-c154-4431-9120-6c3f84305919.json",
+      "source_item_sha256": "9997b0a128194e800f8d438e0bea074577ad4e65d337e5e13d72cdb56f2de547",
+      "live_annotations": [],
+      "live_semantics": [],
+      "author": "mcliquid",
+      "live_capture_datetime": "2023-09-17T14:02:45.977000+00:00",
+      "native_dimensions": [
+        4080,
+        3060
+      ],
+      "source_sign_tags": [],
+      "fetched_at": "2026-10-20T20:13:45.428937+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/96/26/02/dc/c154-4431-9120-6c3f84305919/sd.jpg",
+      "sd_sha256": "dbe6975e993b2325e2d7d1f62091a8aace1ca8f78f94e13bcd0347e6a0bc3ff4",
+      "status": "downloaded",
+      "discovery_folder": "city-discovery",
+      "discovery_index": 40,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/96/26/02/dc/c154-4431-9120-6c3f84305919.jpg",
+      "hd_sha256": "ff538ca134d0d85692e2d8b999cac900f144572a53c7ae10d4c730f6f6575521",
+      "hd_bytes": 2080839,
+      "hd_dimensions": [
+        4080,
+        3060
+      ],
+      "rgb_sha256": "a5f2bd9965ddd6ab43a8b514606b1958093b216ba7409c32e90ff2e99b7ab2cc",
+      "candidate_index": 5,
+      "visible_class_proposal": "DE:310",
+      "target_bbox_xyxy_proposal": [
+        2227,
+        744,
+        2375,
+        853
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 135994.7,
+      "nearest_prior_lecture_picture_id": "da32c480-5f73-4090-b031-ef28921c87cd",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/05-962602dc-c154-4431-9120-6c3f84305919.jpg",
+      "crop_path": "crops/05-DE-310.png",
+      "crop_dimensions": [
+        148,
+        109
+      ],
+      "crop_sha256": "fab9999a29e5536367753896e9f64bb4db90096328b87f4e785e23d785cadc2c",
+      "sgblur_yolo11n_target_detected": true,
+      "sgblur_yolo11n_target_iou": 0.8611200877154856,
+      "source_target_annotation_id": null,
+      "source_target_status": "no_stored_target_box",
+      "registry_face_disagrees_with_visible_face": false,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/05.jpg"
+    },
+    {
+      "registry_group_id": "d23dd3ad-005b-40cf-baf1-b527e53764e0",
+      "registry_location_id": "a18755eb-b201-4ca2-926f-ecada1ba0a8d",
+      "registry_class": "DE:310",
+      "registry_coordinates": [
+        9.543225,
+        48.799766
+      ],
+      "registry_orientation": 248,
+      "municipality": "Schorndorf",
+      "picture_id": "21879e8b-3d68-4fd9-919d-391b04141649",
+      "sequence_id": "5bda8280-4c64-4ab2-a054-d3a338086e86",
+      "camera_coordinates": [
+        9.54353177,
+        48.799818959
+      ],
+      "camera_heading": 255,
+      "fov": 100,
+      "dimensions": [
+        3840,
+        2160
+      ],
+      "camera_accuracy": 4.0,
+      "distance_m": 23.25,
+      "bearing_to_sign": 255.31,
+      "view_error_deg": 0.31,
+      "registry_orientation_error_deg": 7.31,
+      "capture_datetime": "2026-03-22 09:21:44",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 1.3323,
+      "review_index": 42,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/5bda8280-4c64-4ab2-a054-d3a338086e86/items/21879e8b-3d68-4fd9-919d-391b04141649",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=21879e8b-3d68-4fd9-919d-391b04141649",
+      "metadata_path": "metadata/21879e8b-3d68-4fd9-919d-391b04141649.json",
+      "source_item_sha256": "dad156138afc9d722e0513f3cea764b618636198eccfeb7589f2f5aef11ef5f8",
+      "live_annotations": [
+        {
+          "id": "e3e13e51-9305-438e-823d-8396c62d1399",
+          "semantics": [
+            {
+              "key": "detection_confidence[osm|traffic_sign=yes]",
+              "value": "0.793"
+            },
+            {
+              "key": "detection_model[osm|traffic_sign=yes]",
+              "value": "SGBlur-yolo11s/0.1.0"
+            },
+            {
+              "key": "osm|traffic_sign",
+              "value": "yes"
+            }
+          ],
+          "shape": {
+            "coordinates": [
+              [
+                [
+                  1891,
+                  1571
+                ],
+                [
+                  1940,
+                  1571
+                ],
+                [
+                  1940,
+                  1618
+                ],
+                [
+                  1891,
+                  1618
+                ],
+                [
+                  1891,
+                  1571
+                ]
+              ]
+            ],
+            "type": "Polygon"
+          }
+        }
+      ],
+      "live_semantics": [],
+      "author": "R_A",
+      "live_capture_datetime": "2026-03-22T09:21:44+00:00",
+      "native_dimensions": [
+        3840,
+        2160
+      ],
+      "source_sign_tags": [
+        "yes"
+      ],
+      "fetched_at": "2026-10-20T20:13:46.048648+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/21/87/9e/8b/3d68-4fd9-919d-391b04141649/sd.jpg",
+      "sd_sha256": "631ffa2bbb970471bdb1f4bc3a35cf339223648d06feede4e1446a0a738b89a6",
+      "status": "downloaded",
+      "discovery_folder": "city-discovery",
+      "discovery_index": 42,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/21/87/9e/8b/3d68-4fd9-919d-391b04141649.jpg",
+      "hd_sha256": "9983e5a194fe23d130e886ace5dfcd33f3fd8376063434af2f592a1884cf9438",
+      "hd_bytes": 2021907,
+      "hd_dimensions": [
+        3840,
+        2160
+      ],
+      "rgb_sha256": "de381ea59b77686461a3f7d8c18c39c60d4b6c12fc762add24abff6a676df58b",
+      "candidate_index": 6,
+      "visible_class_proposal": "DE:310",
+      "target_bbox_xyxy_proposal": [
+        2324,
+        1228,
+        2532,
+        1372
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 61393.8,
+      "nearest_prior_lecture_picture_id": "62ba30cf-f21c-4f7a-acf2-b6f6f0544777",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/06-21879e8b-3d68-4fd9-919d-391b04141649.jpg",
+      "crop_path": "crops/06-DE-310.png",
+      "crop_dimensions": [
+        208,
+        144
+      ],
+      "crop_sha256": "5ea0315b42416794a99aa41b8fbdf3b1c0bce1bae91426e38c02750458706e72",
+      "sgblur_yolo11n_target_detected": false,
+      "sgblur_yolo11n_target_iou": 0.0,
+      "source_target_annotation_id": null,
+      "source_target_status": "no_stored_target_box",
+      "registry_face_disagrees_with_visible_face": false,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/06.jpg"
+    },
+    {
+      "registry_group_id": "06558685-bf39-4fe2-b420-a70a012ab28a",
+      "registry_location_id": "a020fe6d-f258-47d8-bc2e-677f71539796",
+      "registry_class": "DE:310",
+      "registry_coordinates": [
+        9.373187,
+        48.576486
+      ],
+      "registry_orientation": 333,
+      "municipality": "Frickenhausen",
+      "picture_id": "b070f06e-b24e-44f7-b1ad-30074e79cb49",
+      "sequence_id": "2214620e-db60-4ed2-ac7f-ed014e38ba6e",
+      "camera_coordinates": [
+        9.373283,
+        48.5762964
+      ],
+      "camera_heading": 337,
+      "fov": 72,
+      "dimensions": [
+        4032,
+        1814
+      ],
+      "camera_accuracy": 5.0,
+      "distance_m": 22.26,
+      "bearing_to_sign": 341.48,
+      "view_error_deg": 4.48,
+      "registry_orientation_error_deg": 8.48,
+      "capture_datetime": "2025-07-13 18:33:26.170799",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 1.3789,
+      "review_index": 44,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/2214620e-db60-4ed2-ac7f-ed014e38ba6e/items/b070f06e-b24e-44f7-b1ad-30074e79cb49",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=b070f06e-b24e-44f7-b1ad-30074e79cb49",
+      "metadata_path": "metadata/b070f06e-b24e-44f7-b1ad-30074e79cb49.json",
+      "source_item_sha256": "8968f94f983998c6eaaa298e004d3edb255db7c368bd88beb8b83a6e6a56ea7c",
+      "live_annotations": [],
+      "live_semantics": [],
+      "author": "5R-MFT",
+      "live_capture_datetime": "2025-07-13T18:33:26.170799+00:00",
+      "native_dimensions": [
+        4032,
+        1814
+      ],
+      "source_sign_tags": [],
+      "fetched_at": "2026-10-20T20:13:46.650493+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/b0/70/f0/6e/b24e-44f7-b1ad-30074e79cb49/sd.jpg",
+      "sd_sha256": "8d2b167c5e2e7eedb6aa365963b744530f57f15cc9067c16f6757840fcbd958d",
+      "status": "downloaded",
+      "discovery_folder": "city-discovery",
+      "discovery_index": 44,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/b0/70/f0/6e/b24e-44f7-b1ad-30074e79cb49.jpg",
+      "hd_sha256": "1c25f3334a14fad668da41562d286f8234ebf129fb6de069fdb814a3e9a815c4",
+      "hd_bytes": 2455865,
+      "hd_dimensions": [
+        4032,
+        1814
+      ],
+      "rgb_sha256": "01e1899510726962f3235883319d9a6556b031627b751e052a86d7a786cdbf6c",
+      "candidate_index": 7,
+      "visible_class_proposal": "DE:310",
+      "target_bbox_xyxy_proposal": [
+        2444,
+        1009,
+        2626,
+        1134
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 59037.4,
+      "nearest_prior_lecture_picture_id": "62ba30cf-f21c-4f7a-acf2-b6f6f0544777",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/07-b070f06e-b24e-44f7-b1ad-30074e79cb49.jpg",
+      "crop_path": "crops/07-DE-310.png",
+      "crop_dimensions": [
+        182,
+        125
+      ],
+      "crop_sha256": "0365706b17f4419075a078df08143e57e51b3259ba37c0ec79647ab9cc7957b5",
+      "sgblur_yolo11n_target_detected": false,
+      "sgblur_yolo11n_target_iou": 0.0,
+      "source_target_annotation_id": null,
+      "source_target_status": "no_stored_target_box",
+      "registry_face_disagrees_with_visible_face": false,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/07.jpg"
+    },
+    {
+      "registry_group_id": "10df3858-5fe1-4d45-8cbb-f96e06c80951",
+      "registry_location_id": "1569e8ec-032c-46c7-af0e-9ba1a19bc147",
+      "registry_class": "DE:311",
+      "registry_coordinates": [
+        9.204107,
+        47.774165
+      ],
+      "registry_orientation": 200,
+      "municipality": "Überlingen",
+      "picture_id": "415afdb5-20d3-4c01-9133-8e8c2d0a60a1",
+      "sequence_id": "a5695dbe-8a33-47f0-8292-52a2044cd08a",
+      "camera_coordinates": [
+        9.203972222,
+        47.773991667
+      ],
+      "camera_heading": 27,
+      "fov": null,
+      "dimensions": [
+        4000,
+        3000
+      ],
+      "camera_accuracy": 4.0,
+      "distance_m": 21.77,
+      "bearing_to_sign": 27.59,
+      "view_error_deg": 0.59,
+      "registry_orientation_error_deg": 172.41,
+      "capture_datetime": "2025-11-30 12:28:17",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 0.3764,
+      "review_index": 51,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/a5695dbe-8a33-47f0-8292-52a2044cd08a/items/415afdb5-20d3-4c01-9133-8e8c2d0a60a1",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=415afdb5-20d3-4c01-9133-8e8c2d0a60a1",
+      "metadata_path": "metadata/415afdb5-20d3-4c01-9133-8e8c2d0a60a1.json",
+      "source_item_sha256": "0f7f88f29c02d6d775a09fed7fca7ba212374a3c6833daa5b08f16bb247c4863",
+      "live_annotations": [
+        {
+          "id": "bfef9319-d7c5-4074-9439-7831c7751ba4",
+          "semantics": [
+            {
+              "key": "detection_confidence[osm|traffic_sign=yes]",
+              "value": "0.727"
+            },
+            {
+              "key": "detection_model[osm|traffic_sign=yes]",
+              "value": "SGBlur-yolo11s/0.1.0"
+            },
+            {
+              "key": "osm|traffic_sign",
+              "value": "yes"
+            }
+          ],
+          "shape": {
+            "coordinates": [
+              [
+                [
+                  2105,
+                  1314
+                ],
+                [
+                  2253,
+                  1314
+                ],
+                [
+                  2253,
+                  1416
+                ],
+                [
+                  2105,
+                  1416
+                ],
+                [
+                  2105,
+                  1314
+                ]
+              ]
+            ],
+            "type": "Polygon"
+          }
+        }
+      ],
+      "live_semantics": [],
+      "author": "mcliquid",
+      "live_capture_datetime": "2025-11-30T12:28:17+00:00",
+      "native_dimensions": [
+        4000,
+        3000
+      ],
+      "source_sign_tags": [
+        "yes"
+      ],
+      "fetched_at": "2026-10-20T20:13:48.920404+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/41/5a/fd/b5/20d3-4c01-9133-8e8c2d0a60a1/sd.jpg",
+      "sd_sha256": "8ee75e5ebc79d0ebc9e5002c55210af8760b6dc6200e11df2edef19f204e9f27",
+      "status": "downloaded",
+      "discovery_folder": "city-discovery",
+      "discovery_index": 51,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/41/5a/fd/b5/20d3-4c01-9133-8e8c2d0a60a1.jpg",
+      "hd_sha256": "79a359752c46a2a5cb1b0ac6298a904b38bd7446866f74cb4b86c047e32f2903",
+      "hd_bytes": 1175949,
+      "hd_dimensions": [
+        4000,
+        3000
+      ],
+      "rgb_sha256": "10fd7205c5538c5bf6968e807d520849ff175504a30f20d743f3b7ca11d0f87d",
+      "candidate_index": 8,
+      "visible_class_proposal": "DE:310",
+      "target_bbox_xyxy_proposal": [
+        2105,
+        1314,
+        2253,
+        1416
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 124931.5,
+      "nearest_prior_lecture_picture_id": "da32c480-5f73-4090-b031-ef28921c87cd",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/08-415afdb5-20d3-4c01-9133-8e8c2d0a60a1.jpg",
+      "crop_path": "crops/08-DE-310.png",
+      "crop_dimensions": [
+        148,
+        102
+      ],
+      "crop_sha256": "d6cef331455c0110c6453b896668d8a001be7273d054793eaa01e71f7eb52f99",
+      "sgblur_yolo11n_target_detected": true,
+      "sgblur_yolo11n_target_iou": 0.832176730136923,
+      "source_target_annotation_id": "bfef9319-d7c5-4074-9439-7831c7751ba4",
+      "source_target_status": "detected_but_unclassified_yes",
+      "registry_face_disagrees_with_visible_face": true,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/08.jpg"
+    },
+    {
+      "registry_group_id": "57b4f4e7-cd9f-455c-9017-60472c3b1e03",
+      "registry_location_id": "38368d34-5ea6-4061-a1f7-af9638462fe0",
+      "registry_class": "DE:311",
+      "registry_coordinates": [
+        9.907521,
+        49.08164
+      ],
+      "registry_orientation": 342,
+      "municipality": "Vellberg",
+      "picture_id": "9e6706da-b3ca-4f2b-a24a-bf3c20e9de93",
+      "sequence_id": "730bf312-45c1-462a-9f3c-f0abaf2b8ada",
+      "camera_coordinates": [
+        9.907697886,
+        49.081474543
+      ],
+      "camera_heading": 333,
+      "fov": 100,
+      "dimensions": [
+        3840,
+        2160
+      ],
+      "camera_accuracy": 4.0,
+      "distance_m": 22.49,
+      "bearing_to_sign": 325.0,
+      "view_error_deg": 8.0,
+      "registry_orientation_error_deg": 17.0,
+      "capture_datetime": "2026-04-03 11:45:16",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 2.4854,
+      "review_index": 28,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/730bf312-45c1-462a-9f3c-f0abaf2b8ada/items/9e6706da-b3ca-4f2b-a24a-bf3c20e9de93",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=9e6706da-b3ca-4f2b-a24a-bf3c20e9de93",
+      "metadata_path": "metadata/9e6706da-b3ca-4f2b-a24a-bf3c20e9de93.json",
+      "source_item_sha256": "a7529eb1565de23ce7b91e6cfc9605830b8edaf3e4448ffa392604b3629ee046",
+      "live_annotations": [],
+      "live_semantics": [],
+      "author": "R_A",
+      "live_capture_datetime": "2026-04-03T11:45:16+00:00",
+      "native_dimensions": [
+        3840,
+        2160
+      ],
+      "source_sign_tags": [],
+      "fetched_at": "2026-10-20T20:14:47.979513+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/9e/67/06/da/b3ca-4f2b-a24a-bf3c20e9de93/sd.jpg",
+      "sd_sha256": "a40dc38432f700eb22353c862cdf62d2ff6f34be1dd8472d41a30fc5e9981ecc",
+      "status": "downloaded",
+      "discovery_folder": "city-direction-aware",
+      "discovery_index": 28,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/9e/67/06/da/b3ca-4f2b-a24a-bf3c20e9de93.jpg",
+      "hd_sha256": "4ed212ecfab187ff6f7dfd34dde8131fdb571c722c77dfdbac93d274d33b7168",
+      "hd_bytes": 2151615,
+      "hd_dimensions": [
+        3840,
+        2160
+      ],
+      "rgb_sha256": "701aed429e04ab84a708d0c8665dbca6c44a2c61f466fe1d01e11d6dac369fce",
+      "candidate_index": 10,
+      "visible_class_proposal": "DE:311",
+      "target_bbox_xyxy_proposal": [
+        1280,
+        1380,
+        1378,
+        1478
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 90011.8,
+      "nearest_prior_lecture_picture_id": "62ba30cf-f21c-4f7a-acf2-b6f6f0544777",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/10-9e6706da-b3ca-4f2b-a24a-bf3c20e9de93.jpg",
+      "crop_path": "crops/10-DE-311.png",
+      "crop_dimensions": [
+        98,
+        98
+      ],
+      "crop_sha256": "6b74bde2d257c482f11a29d6a39fcc8e70f37415f01161e1845c5db70e6bbeef",
+      "sgblur_yolo11n_target_detected": false,
+      "sgblur_yolo11n_target_iou": 0,
+      "source_target_annotation_id": null,
+      "source_target_status": "no_stored_target_box",
+      "registry_face_disagrees_with_visible_face": false,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/10.jpg"
+    },
+    {
+      "registry_group_id": "11b01dba-c459-4afa-ba2c-4ca0ef2fd982",
+      "registry_location_id": "38011e0a-731b-44d3-9270-0f4180b5a1a6",
+      "registry_class": "DE:311",
+      "registry_coordinates": [
+        8.512639,
+        49.507643
+      ],
+      "registry_orientation": 88,
+      "municipality": "Mannheim",
+      "picture_id": "ff37ca29-5ac3-421f-882c-d1bce638b205",
+      "sequence_id": "11ad9edc-9a9e-4849-868e-03db506dfa08",
+      "camera_coordinates": [
+        8.512339331,
+        49.507596586
+      ],
+      "camera_heading": 86,
+      "fov": 100,
+      "dimensions": [
+        3840,
+        2160
+      ],
+      "camera_accuracy": 4.0,
+      "distance_m": 22.27,
+      "bearing_to_sign": 76.58,
+      "view_error_deg": 9.42,
+      "registry_orientation_error_deg": 11.42,
+      "capture_datetime": "2025-10-12 10:50:06",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 2.6233,
+      "review_index": 32,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/11ad9edc-9a9e-4849-868e-03db506dfa08/items/ff37ca29-5ac3-421f-882c-d1bce638b205",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=ff37ca29-5ac3-421f-882c-d1bce638b205",
+      "metadata_path": "metadata/ff37ca29-5ac3-421f-882c-d1bce638b205.json",
+      "source_item_sha256": "2787fba8cb7d1f5fc07fda9e55fce7dd47faa6270500336460290d9534b39147",
+      "live_annotations": [],
+      "live_semantics": [],
+      "author": "R_A",
+      "live_capture_datetime": "2025-10-12T10:50:06+00:00",
+      "native_dimensions": [
+        3840,
+        2160
+      ],
+      "source_sign_tags": [],
+      "fetched_at": "2026-10-20T20:14:49.315399+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/ff/37/ca/29/5ac3-421f-882c-d1bce638b205/sd.jpg",
+      "sd_sha256": "de9c50f3b608a91c88483fba61ac9131306e81da6c367662a492bc94b2a3b268",
+      "status": "downloaded",
+      "discovery_folder": "city-direction-aware",
+      "discovery_index": 32,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/ff/37/ca/29/5ac3-421f-882c-d1bce638b205.jpg",
+      "hd_sha256": "0089ee2165675de28a48756d55f5ccbb03d6dbc40926e496b8877e570c497e74",
+      "hd_bytes": 2112603,
+      "hd_dimensions": [
+        3840,
+        2160
+      ],
+      "rgb_sha256": "1799c56bb2b28cdd91a3c023eac9b37091b7c19b30b80551de60b6c9ecf7be31",
+      "candidate_index": 11,
+      "visible_class_proposal": "DE:311",
+      "target_bbox_xyxy_proposal": [
+        2366,
+        1266,
+        2538,
+        1393
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 23424.4,
+      "nearest_prior_lecture_picture_id": "3abdc140-42aa-4557-a7ad-1728c2944c52",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/11-ff37ca29-5ac3-421f-882c-d1bce638b205.jpg",
+      "crop_path": "crops/11-DE-311.png",
+      "crop_dimensions": [
+        172,
+        127
+      ],
+      "crop_sha256": "8fea067d19618ec28a7b6d7db871d2222771e747a2b0451dd621133d5a1c9561",
+      "sgblur_yolo11n_target_detected": false,
+      "sgblur_yolo11n_target_iou": 0,
+      "source_target_annotation_id": null,
+      "source_target_status": "no_stored_target_box",
+      "registry_face_disagrees_with_visible_face": false,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/11.jpg"
+    },
+    {
+      "registry_group_id": "fe348ce2-e329-4006-a38f-9972034d3425",
+      "registry_location_id": "090c78a2-014a-421d-afd0-65c28d512330",
+      "registry_class": "DE:311",
+      "registry_coordinates": [
+        8.004673,
+        48.582019
+      ],
+      "registry_orientation": 218,
+      "municipality": "Renchen",
+      "picture_id": "bf8e082f-870b-41f3-9966-89bae9bb5b48",
+      "sequence_id": "afc8cec2-5564-4e42-b451-0365cae4f427",
+      "camera_coordinates": [
+        8.004725182,
+        48.582202227
+      ],
+      "camera_heading": 185,
+      "fov": 70,
+      "dimensions": [
+        3840,
+        2160
+      ],
+      "camera_accuracy": 5.0,
+      "distance_m": 20.76,
+      "bearing_to_sign": 190.67,
+      "view_error_deg": 5.67,
+      "registry_orientation_error_deg": 27.33,
+      "capture_datetime": "2026-04-20 05:41:24.817622",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 2.6617,
+      "review_index": 33,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/afc8cec2-5564-4e42-b451-0365cae4f427/items/bf8e082f-870b-41f3-9966-89bae9bb5b48",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=bf8e082f-870b-41f3-9966-89bae9bb5b48",
+      "metadata_path": "metadata/bf8e082f-870b-41f3-9966-89bae9bb5b48.json",
+      "source_item_sha256": "7c8258e4e41733c587afdd787eac2bd2f8474029ed90a1d0da9c42ff0fb82db2",
+      "live_annotations": [],
+      "live_semantics": [],
+      "author": "Karthoo",
+      "live_capture_datetime": "2026-04-20T05:41:24.817622+00:00",
+      "native_dimensions": [
+        3840,
+        2160
+      ],
+      "source_sign_tags": [],
+      "fetched_at": "2026-10-20T20:14:49.900098+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/bf/8e/08/2f/870b-41f3-9966-89bae9bb5b48/sd.jpg",
+      "sd_sha256": "2bf76042371fd861154b9a7b40424c8886b624de87fae86b5b9b5a4108453655",
+      "status": "downloaded",
+      "discovery_folder": "city-direction-aware",
+      "discovery_index": 33,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/bf/8e/08/2f/870b-41f3-9966-89bae9bb5b48.jpg",
+      "hd_sha256": "219e39fd9bad110774ad0c5859d43e845d27afb3c505bbc6fc12244b1b5de556",
+      "hd_bytes": 2367461,
+      "hd_dimensions": [
+        3840,
+        2160
+      ],
+      "rgb_sha256": "0b2cefb22af67d4c6a2aa075711333f9a65122c760ba05e3054607803598bf35",
+      "candidate_index": 12,
+      "visible_class_proposal": "DE:311",
+      "target_bbox_xyxy_proposal": [
+        879,
+        968,
+        1117,
+        1124
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 26253.0,
+      "nearest_prior_lecture_picture_id": "efd8384b-a346-4449-956d-f7a047922adc",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/12-bf8e082f-870b-41f3-9966-89bae9bb5b48.jpg",
+      "crop_path": "crops/12-DE-311.png",
+      "crop_dimensions": [
+        238,
+        156
+      ],
+      "crop_sha256": "6e0b255c4a7a6aea4ff52cbf1337ae9de502155ac23bfc42c76f74fafa7fc861",
+      "sgblur_yolo11n_target_detected": false,
+      "sgblur_yolo11n_target_iou": 0,
+      "source_target_annotation_id": null,
+      "source_target_status": "no_stored_target_box",
+      "registry_face_disagrees_with_visible_face": false,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/12.jpg"
+    },
+    {
+      "registry_group_id": "8a019c74-3fdf-4411-bab6-aa23fe603a3d",
+      "registry_location_id": "8d7aae09-02b5-4a1c-a9f6-24dca0f0820d",
+      "registry_class": "DE:311",
+      "registry_coordinates": [
+        8.843935,
+        49.394901
+      ],
+      "registry_orientation": 111,
+      "municipality": "Neckargemünd",
+      "picture_id": "7023219b-9ac1-4042-ba60-e5a58799247e",
+      "sequence_id": "0496c7f4-6e8c-4e2c-a369-719b54f8297a",
+      "camera_coordinates": [
+        8.843614189,
+        49.394930396
+      ],
+      "camera_heading": 103,
+      "fov": 100,
+      "dimensions": [
+        3840,
+        2160
+      ],
+      "camera_accuracy": 4.0,
+      "distance_m": 23.47,
+      "bearing_to_sign": 98.01,
+      "view_error_deg": 4.99,
+      "registry_orientation_error_deg": 12.99,
+      "capture_datetime": "2026-04-02 15:48:50",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 2.7191,
+      "review_index": 36,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/0496c7f4-6e8c-4e2c-a369-719b54f8297a/items/7023219b-9ac1-4042-ba60-e5a58799247e",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=7023219b-9ac1-4042-ba60-e5a58799247e",
+      "metadata_path": "metadata/7023219b-9ac1-4042-ba60-e5a58799247e.json",
+      "source_item_sha256": "325c86e78956cfecf6b5c006fba33751ac9f270981b4b67a7cc5d9826d8d800f",
+      "live_annotations": [],
+      "live_semantics": [],
+      "author": "R_A",
+      "live_capture_datetime": "2026-04-02T15:48:50+00:00",
+      "native_dimensions": [
+        3840,
+        2160
+      ],
+      "source_sign_tags": [],
+      "fetched_at": "2026-10-20T20:14:50.566601+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/70/23/21/9b/9ac1-4042-ba60-e5a58799247e/sd.jpg",
+      "sd_sha256": "946e9036c513dff0aaf56ce2557104a9bd00634533fc58869430d821782e3ef7",
+      "status": "downloaded",
+      "discovery_folder": "city-direction-aware",
+      "discovery_index": 36,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/70/23/21/9b/9ac1-4042-ba60-e5a58799247e.jpg",
+      "hd_sha256": "f4b702fffc76bf1623a41909ff8db7321dc0cff9343658f55929a27de21cdf6d",
+      "hd_bytes": 1907835,
+      "hd_dimensions": [
+        3840,
+        2160
+      ],
+      "rgb_sha256": "0afe596362e52f12d244c684196f8c0387060caf3e6fb5d78746a61e9683b7e8",
+      "candidate_index": 13,
+      "visible_class_proposal": "DE:311",
+      "target_bbox_xyxy_proposal": [
+        1036,
+        1248,
+        1194,
+        1408
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 17385.9,
+      "nearest_prior_lecture_picture_id": "3abdc140-42aa-4557-a7ad-1728c2944c52",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/13-7023219b-9ac1-4042-ba60-e5a58799247e.jpg",
+      "crop_path": "crops/13-DE-311.png",
+      "crop_dimensions": [
+        158,
+        160
+      ],
+      "crop_sha256": "31253c0405e207a300287f0f86b786475e34afc92c6593d473ddff1269f00054",
+      "sgblur_yolo11n_target_detected": false,
+      "sgblur_yolo11n_target_iou": 0,
+      "source_target_annotation_id": null,
+      "source_target_status": "no_stored_target_box",
+      "registry_face_disagrees_with_visible_face": false,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/13.jpg"
+    },
+    {
+      "registry_group_id": "e189f65d-3e96-47f7-b5ad-d1e8186ae74d",
+      "registry_location_id": "e8c9cbc9-c731-406b-befe-bff92a4a731a",
+      "registry_class": "DE:311",
+      "registry_coordinates": [
+        7.863468,
+        48.59848
+      ],
+      "registry_orientation": 233,
+      "municipality": "Kehl",
+      "picture_id": "ba821df0-8bdd-49c4-8b4b-4e71c5a78b9b",
+      "sequence_id": "26a3e9f7-05dd-4f93-82d5-c6dfdfda4b1a",
+      "camera_coordinates": [
+        7.863578956,
+        48.598639187
+      ],
+      "camera_heading": 208,
+      "fov": 70,
+      "dimensions": [
+        3840,
+        2160
+      ],
+      "camera_accuracy": 5.0,
+      "distance_m": 19.51,
+      "bearing_to_sign": 204.75,
+      "view_error_deg": 3.25,
+      "registry_orientation_error_deg": 28.25,
+      "capture_datetime": "2026-05-10 07:15:25.889769",
+      "license": "CC-BY-SA-4.0",
+      "instance": {
+        "name": "osm-fr",
+        "url": "https://panoramax.openstreetmap.fr"
+      },
+      "picture_new_to_prior_discovery": true,
+      "sequence_new_to_prior_discovery": true,
+      "sequence_new_to_lecture": true,
+      "rank_score": 3.3003,
+      "review_index": 44,
+      "source_item_url": "https://panoramax.openstreetmap.fr/api/collections/26a3e9f7-05dd-4f93-82d5-c6dfdfda4b1a/items/ba821df0-8bdd-49c4-8b4b-4e71c5a78b9b",
+      "viewer_url": "https://panoramax.openstreetmap.fr/#pic=ba821df0-8bdd-49c4-8b4b-4e71c5a78b9b",
+      "metadata_path": "metadata/ba821df0-8bdd-49c4-8b4b-4e71c5a78b9b.json",
+      "source_item_sha256": "d83b3690addb6b716bf6a707112ad44a5228ecf06a57dbdf8f2fa792bc7d647f",
+      "live_annotations": [],
+      "live_semantics": [],
+      "author": "Karthoo",
+      "live_capture_datetime": "2026-05-10T07:15:25.889769+00:00",
+      "native_dimensions": [
+        3840,
+        2160
+      ],
+      "source_sign_tags": [],
+      "fetched_at": "2026-10-20T20:14:52.601343+00:00",
+      "sd_url": "https://panoramax.openstreetmap.fr/derivates/ba/82/1d/f0/8bdd-49c4-8b4b-4e71c5a78b9b/sd.jpg",
+      "sd_sha256": "c3fb8813d0e179bbacf234d7dc53ea48481d8d03e86691a0cc87fd13a3f259e5",
+      "status": "downloaded",
+      "discovery_folder": "city-direction-aware",
+      "discovery_index": 44,
+      "hd_url": "https://panoramax.openstreetmap.fr/images/ba/82/1d/f0/8bdd-49c4-8b4b-4e71c5a78b9b.jpg",
+      "hd_sha256": "e79fba0af891010088546cc2c837756bbc4bfe7331373772e40afbd01a5f13de",
+      "hd_bytes": 2725734,
+      "hd_dimensions": [
+        3840,
+        2160
+      ],
+      "rgb_sha256": "07fcb6d9cf9d0b57d22be79628b703bab3efb7f90f6f4278c879a9200dfb2fd2",
+      "candidate_index": 14,
+      "visible_class_proposal": "DE:311",
+      "target_bbox_xyxy_proposal": [
+        725,
+        1226,
+        876,
+        1332
+      ],
+      "proposal_status": "assistant_visual_proposal_pending_human_review",
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "nearest_prior_lecture_camera_m": 31746.4,
+      "nearest_prior_lecture_picture_id": "efd8384b-a346-4449-956d-f7a047922adc",
+      "possible_same_lecture_site_within_150m": false,
+      "exact_hash_overlap_with_prior_inventory": false,
+      "image_path": "images/14-ba821df0-8bdd-49c4-8b4b-4e71c5a78b9b.jpg",
+      "crop_path": "crops/14-DE-311.png",
+      "crop_dimensions": [
+        151,
+        106
+      ],
+      "crop_sha256": "4b26a1786fc5f5e8b835b5c8936fe40ad9b2eec12736fe8de787fcedbc46fe3b",
+      "sgblur_yolo11n_target_detected": false,
+      "sgblur_yolo11n_target_iou": 0,
+      "source_target_annotation_id": null,
+      "source_target_status": "no_stored_target_box",
+      "registry_face_disagrees_with_visible_face": false,
+      "source_tags_changed": false,
+      "human_approved": false,
+      "overlay_path": "overlays/14.jpg"
+    }
+  ],
+  "schema_version": "youspeed-mobidata-town-sign-review-v1",
+  "normal_course_importer_compatible": false,
+  "all_visible_object_annotation_complete": false
+}

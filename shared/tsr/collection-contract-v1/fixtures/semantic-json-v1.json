@@ -1,0 +1,38 @@
+[
+  {
+    "input": {
+      "b": 1.0,
+      "a": -0.0
+    },
+    "canonical": "{\"a\":0,\"b\":1}",
+    "sha256": "f4c1d8bd90d7ccd720aa5a69a67185fb9caf4f35926a4eacf53a86d0e70bdf88"
+  },
+  {
+    "input": {
+      "text": "Falsch · 湿潤",
+      "number": 1e-07
+    },
+    "canonical": "{\"number\":1e-7,\"text\":\"Falsch · 湿潤\"}",
+    "sha256": "7c04db98cd22aad786ca36dcccbf2abdd87e21e69e5edc40bcc43606fef17ee1"
+  },
+  {
+    "input": {
+      "near": 1e-06,
+      "far": 1e+21
+    },
+    "canonical": "{\"far\":1e+21,\"near\":0.000001}",
+    "sha256": "1717eb4d2a55f3bca92f576a6652802966042c2e02aec55b0962781d44f8ca6d"
+  },
+  {
+    "input": {
+      "array": [
+        true,
+        null,
+        1,
+        2.5
+      ]
+    },
+    "canonical": "{\"array\":[true,null,1,2.5]}",
+    "sha256": "4aeff8416ac1b73d291d526a713bc14a45e6945c1157942d0116af7cec6f1a03"
+  }
+]

@@ -179,6 +179,42 @@ class DataManagerTests {
         }
     }
 
+    @Test fun otherRegionsRemainDownloadableWhileOneTransferRuns() {
+        val active = DataManagerTransferState.resolve("belgium", "belgium", listOf("switzerland"), emptyMap())
+        val waiting = DataManagerTransferState.resolve("switzerland", "belgium", listOf("switzerland"), emptyMap())
+        val another = DataManagerTransferState.resolve("netherlands", "belgium", listOf("switzerland"), emptyMap())
+        assertTrue(active.active)
+        assertFalse(active.canRequest(null))
+        assertTrue(waiting.queued)
+        assertFalse(waiting.canRequest(null))
+        assertTrue("Another region can be requested independently", another.canRequest(null))
+        assertFalse(another.canRequest(DataManagerMetadataState(DataManagerMetadataStatus.UNAVAILABLE)))
+        val overlap = DataManagerTransferState.resolve("belgium", "belgium", listOf("belgium"), emptyMap())
+        assertFalse("Active progress must never offer queued cancellation", overlap.queued)
+    }
+
+    @Test fun perRegionFailuresSurviveOtherDownloadsAndAllowRetry() {
+        val errors = mapOf("belgium" to "HTTP 503")
+        val failed = DataManagerTransferState.resolve("belgium", "switzerland", emptyList(), errors)
+        val active = DataManagerTransferState.resolve("switzerland", "switzerland", emptyList(), errors)
+        assertEquals("HTTP 503", failed.error)
+        assertTrue(failed.canRequest(null))
+        assertNull("An unrelated failure is not assigned to the active region", active.error)
+        assertNull("A queued retry takes precedence over previous failure text",
+            DataManagerTransferState.resolve("belgium", "switzerland", listOf("belgium"), errors).error)
+    }
+
+    @Test fun multipleManagerRequestsKeepExistingQueueOrderAcrossCancellationAndFailure() {
+        val queue = BundleDownloadQueue<String> { it }
+        listOf("belgium", "netherlands", "switzerland", "netherlands").forEach { queue.enqueue(it, "belgium") }
+        assertEquals(listOf("netherlands", "switzerland"), queue.ids)
+        assertNull("Downloads wait while the active transfer or bundle removal is busy", queue.next(true))
+        queue.remove("netherlands")
+        assertEquals(listOf("switzerland"), queue.ids)
+        assertEquals("A failure of the active download does not drop the remaining queue", "switzerland", queue.next(false))
+        assertNull(queue.next(false))
+    }
+
     @Test fun only404And410BecomeConfirmedUnavailable() {
         val endpoint = V3ManifestEndpoint("germany", "DEU", "germany/bayern", "bayern", "Bayern", "https://fixture.test/manifest.json")
         fun reader(status: Int) = DataManagerManifestReader { url -> object : HttpURLConnection(url) {

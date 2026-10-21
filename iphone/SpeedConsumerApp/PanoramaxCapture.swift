@@ -134,6 +134,9 @@ struct PanoramaxTrafficSignAnnotationDraft: Equatable, Sendable {
     }
 
     init?(emission: TrafficSignRuntimeEmission) {
+        // Full-size JPEG projection requires full-frame coordinates. Mobile
+        // classification intentionally keeps its boxes in the detector window.
+        guard !emission.usesDetectorWindow else { return nil }
         let event = emission.annotationEvent ?? emission.event
         applicabilityStatus = event.applicabilityDecision?.classification ?? "NOT_EVALUATED"
         guard event.source == .liveFrame,
@@ -295,6 +298,8 @@ struct PanoramaxCaptureMetadata: Codable, Equatable {
     let imageWidthPixels: Int?
     let imageHeightPixels: Int?
     let trafficSignAnnotations: [PanoramaxTrafficSignAnnotation]?
+    var captureReason: String? = nil
+    var signEvidence: [SignCaptureFilter.Evidence]? = nil
 
     init(
         captureID: String,
@@ -306,7 +311,9 @@ struct PanoramaxCaptureMetadata: Codable, Equatable {
         software: String,
         imageWidthPixels: Int? = nil,
         imageHeightPixels: Int? = nil,
-        trafficSignAnnotations: [PanoramaxTrafficSignAnnotation]? = nil
+        trafficSignAnnotations: [PanoramaxTrafficSignAnnotation]? = nil,
+        captureReason: String? = nil,
+        signEvidence: [SignCaptureFilter.Evidence]? = nil
     ) {
         self.captureID = captureID
         self.captureSessionID = captureSessionID
@@ -318,6 +325,7 @@ struct PanoramaxCaptureMetadata: Codable, Equatable {
         self.imageWidthPixels = imageWidthPixels
         self.imageHeightPixels = imageHeightPixels
         self.trafficSignAnnotations = trafficSignAnnotations
+        self.captureReason = captureReason; self.signEvidence = signEvidence
     }
 
     func replacingImageMetadata(
@@ -337,7 +345,8 @@ struct PanoramaxCaptureMetadata: Codable, Equatable {
             software: software,
             imageWidthPixels: imageWidthPixels,
             imageHeightPixels: imageHeightPixels,
-            trafficSignAnnotations: trafficSignAnnotations
+            trafficSignAnnotations: trafficSignAnnotations,
+            captureReason: captureReason, signEvidence: signEvidence
         )
     }
 
@@ -499,6 +508,7 @@ struct PanoramaxCadenceConfiguration: Equatable {
     var maxLocationAge: TimeInterval = 10
     var maxAccuracyMeters: Double = 50
     var triggerMode: PanoramaxCaptureTriggerMode = .distance
+    var recognizedSignsOnly = false
 }
 
 enum PanoramaxCaptureTriggerMode: String, CaseIterable, Codable {

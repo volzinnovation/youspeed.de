@@ -1,0 +1,27 @@
+{
+  "repository_id": "loffenauer/ws26_hspf_imo",
+  "dataset_revision": "c02d4163a58a7fcc6e97b0195abc22ae0b0dd249",
+  "previous_revision": "1bed8ecad056122145d4cd4c92598add5f66cfe2",
+  "public": true,
+  "added_archive": {
+    "path": "packages/mapillary-mobidata-bw-review-2026-10-21-additions.zip",
+    "bytes": 144587464,
+    "sha256": "8eaf4e62db93cd0fcb2ccf695da57fec9ec34b04b216212a3a2bb8e32df7e4d7"
+  },
+  "anonymous_full_download_sha256_verified": true,
+  "all_previous_seven_archive_lfs_hashes_unchanged": true,
+  "published_index_and_metadata_match_local": true,
+  "learning_archives": 5,
+  "totals": {
+    "full_images": 295,
+    "crops": 409,
+    "exact_crop_sha256_distinct": 409,
+    "town_candidates": 265,
+    "town_class_candidates": {
+      "DE:310": 200,
+      "DE:311": 65
+    }
+  },
+  "training_performed": false,
+  "sgblur_inference_performed": false
+}

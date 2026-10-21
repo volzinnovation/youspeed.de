@@ -1,6 +1,35 @@
 import CoreMotion
 import SwiftUI
 
+/// Runs throughout foreground use, including while Settings or another sheet is open.
+@MainActor
+final class DrivingControlPostureMotion {
+    private let manager = CMMotionManager()
+    private var generation: UUID?
+
+    func start(onChange: @escaping @MainActor (Double?) -> Void) {
+        guard generation == nil else { return }
+        guard manager.isDeviceMotionAvailable else { onChange(nil); return }
+        let token = UUID()
+        generation = token
+        manager.deviceMotionUpdateInterval = 0.1
+        manager.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: .main) { [weak self] motion, error in
+            Task { @MainActor [weak self] in
+                guard let self, self.generation == token else { return }
+                guard let gravity = motion?.gravity, error == nil else { onChange(nil); return }
+                onChange(DrivingControlPosturePolicy.angleDegrees(x: gravity.x, y: gravity.y, z: gravity.z))
+            }
+        }
+    }
+
+    func stop() {
+        generation = nil
+        manager.stopDeviceMotionUpdates()
+    }
+
+    deinit { manager.stopDeviceMotionUpdates() }
+}
+
 /// Gravity can establish roll and tilt, but cannot establish the vehicle's heading.
 struct GravityAlignmentReading: Equatable {
     let rollDegrees: Double

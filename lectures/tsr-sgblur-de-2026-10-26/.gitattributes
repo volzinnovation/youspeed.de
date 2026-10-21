@@ -1,0 +1,8 @@
+# Preserve published CSV checksums, including their standard CRLF line endings.
+*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+*.pdf binary
+*.pptx binary
+*.zip binary
+
+# Keep raw device measurements byte-for-byte, including terminal alignment.
+source/memory-evidence/*.txt -text whitespace=-blank-at-eol

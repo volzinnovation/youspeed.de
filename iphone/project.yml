@@ -7,8 +7,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.10"
-    CURRENT_PROJECT_VERSION: 10032
-    MARKETING_VERSION: "1.3"
+    CURRENT_PROJECT_VERSION: 10056
+    MARKETING_VERSION: "1.4"
 targets:
   SpeedConsumer:
     type: application
@@ -72,6 +72,9 @@ targets:
       - path: ../shared/tsr/sign-pictograms
         type: folder
         buildPhase: resources
+      - path: ../shared/tsr/collection-contract-v1
+        type: folder
+        buildPhase: resources
       - path: ../shared/attributions
         type: folder
         buildPhase: resources
@@ -81,7 +84,7 @@ targets:
     settings:
       base:
         "SWIFT_OPTIMIZATION_LEVEL[sdk=iphoneos*]": "-O"
-        PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumer
+        PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumer$(YOUSPEED_TEST_BUNDLE_SUFFIX)
         PRODUCT_NAME: SpeedConsumer
         INFOPLIST_FILE: SpeedConsumerApp/Info.plist
         GENERATE_INFOPLIST_FILE: NO
@@ -140,6 +143,9 @@ targets:
     type: bundle.unit-test
     platform: iOS
     sources:
+      - path: ../tests/fixtures/tsr-ocr-32
+        type: folder
+        buildPhase: resources
       - path: SpeedConsumerApp/SpeedConsumerTests.swift
       - path: SpeedConsumerApp/TrafficSignApplicabilityTests.swift
       - path: SpeedConsumerApp/SpeedLimitReferenceModelTests.swift

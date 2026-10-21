@@ -103,10 +103,9 @@ jobs:
 
       - name: Run iOS simulator tests
         run: |
-          xcodebuild test \
-            -project iphone/SpeedDBBench.xcodeproj \
-            -scheme SpeedConsumer \
-            -destination 'platform=iOS Simulator,name=iPhone 16'
+          ./scripts/iphone/run_consumer_device_tests.sh \
+            --skip-project-gen \
+            --destination 'platform=iOS Simulator,name=iPhone 16'
 
       - name: Export Swift applicability replay
         run: |

@@ -115,12 +115,12 @@ class TrafficSignDisplayTests {
         assertEquals(TrafficSignActionKind.UNKNOWN, candidate("classifier:310").toAction("DE").kind)
     }
 
-    @Test fun publicationClearsPreviousPictogramOnRouteOrCityGenerationChange() {
+    @Test fun publicationRetainsPresentationOnRouteOrCityGenerationChange() {
         val state = ConsumerUiState(trafficSignGeneration = 4, lastTrafficSignPictogram = catalog.pictogram("stop"))
         assertEquals("stop", state.withCurrentTrafficSignDisplayGeneration(4, 4).lastTrafficSignPictogram?.classId)
         val changed = state.copy(trafficSignGeneration = 5).withCurrentTrafficSignDisplayGeneration(4, 5)
-        assertNull(changed.lastTrafficSignPictogram)
-        assertNull(state.withCurrentTrafficSignDisplayGeneration(4, 5).lastTrafficSignPictogram)
+        assertEquals("stop", changed.lastTrafficSignPictogram?.classId)
+        assertEquals("stop", state.withCurrentTrafficSignDisplayGeneration(4, 5).lastTrafficSignPictogram?.classId)
         assertEquals(5L, changed.trafficSignGeneration)
     }
 

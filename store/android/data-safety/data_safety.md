@@ -2,6 +2,8 @@
 
 This is a review draft, not a submitted Play Console form. The CSV is an internal checklist, not Google's import template. Match final answers to the release binary, public privacy policy and both Panoramax operators' actual practices.
 
+On 4 October the owner selected **https://panoramax.youspeed.de/terms-of-service** for both the Play privacy-policy URL and the deletion URL. The privacy-policy change is saved for review; the deletion URL is saved and enables Next. On reopening, the Console form is set to externally created accounts and labels the second field **data deletion**; those intervening account selections were preserved. The review queue includes privacy and Data safety among 18 changes; no review submission occurred. The owner selected **studios@moonshots.gmbh** as the YouSpeed-instance rights/deletion contact. [Prepared page source](panoramax-terms-of-service-de.html) adds prominent account-and-associated-data request instructions and preserves the instance's own licence, hosting and research disclosures. This source is not deployed; the inspected live page still gives the HSPF address for privacy requests. Full per-type declarations and operational retention/deletion verification remain pending.
+
 Google's definition of collection covers data transmitted off device; local-only access does not qualify. User-initiated transfer can meet a sharing exception, but that does not exempt collection. Mark collection optional only where all users can use the app without it. [Google Data safety guidance](https://support.google.com/googleplay/android-developer/answer/10787469).
 
 ## Known data flows and proposed form choices
@@ -38,7 +40,7 @@ Global collection: **Yes**, because Panoramax uploads are an optional but implem
 5. Confirm reviewer access for the upload flow and update the live public privacy policy before submission.
 6. Reconcile account-service name/email, retained server diagnostics and research purpose mapping. Moonshots is the YouSpeed-instance publisher; HSPF's service-provider role is unverified, and OSM France is an independent public contributor service. Do not assume a service-provider sharing exemption.
 
-Privacy URL: https://youspeed.de/datenschutz.html
+Privacy and account-deletion URL selected for Play: https://panoramax.youspeed.de/terms-of-service
 
 ## Source evidence
 

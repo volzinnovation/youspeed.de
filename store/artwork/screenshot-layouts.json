@@ -1,34 +1,10 @@
 {
   "format": "youspeed.marketing-screenshots.v1",
   "images": {
-    "store/apple/screenshots/en-US/iphone-6.9/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/apple/en-US/01-safe-speed.png",
-      "source_sha256": "601692b64b457bdb6b971ba4587430d153a50c89a960f0bedb1f55f1b5dd85f1",
-      "output_sha256": "97b5dc946ec6678c8773dee5aeb0574112c92d246c21ac3245115ff791ca0983",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/02-camera-speed-limit.png": {
-      "source": "store/artwork/raw-screenshots/apple/en-US/02-camera-speed-limit.png",
-      "source_sha256": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538",
-      "output_sha256": "e8abdc0d134501c42e234ab355a4308924e87ed891034b4116fd497136f8a904",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/03-secondary-sign.png": {
-      "source": "store/artwork/raw-screenshots/apple/en-US/03-secondary-sign.png",
-      "source_sha256": "f78d5c4768c544850519def612d9335512abd007b2723783019ea79dad584e59",
-      "output_sha256": "d63c628b7e9094dbcce76527ce8383b13395f5e9f73c756190a1235e79a17d4c",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
     "store/apple/screenshots/en-US/iphone-6.9/04-dashcam.png": {
       "source": "store/artwork/raw-screenshots/apple/en-US/04-dashcam.png",
-      "source_sha256": "c1ddbae45b10e848ffa8fa3d3df9423f2af81c7d97d20b36699efb72d3aee411",
-      "output_sha256": "30010370d4d0c24f7e158059c024fd8b3329eae5e2447cace139c676164c5d2f",
+      "source_sha256": "588f959fbfdc8cf50d3be79947ed5c2a1984b6ce0976a5471f82e4bb04830573",
+      "output_sha256": "7722d267b3e97154d5162f2f0c88e744633efb3694a83d3b89aad6155db63150",
       "width": 1320,
       "height": 2868,
       "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
@@ -55,30 +31,24 @@
         },
         "native_viewport": [
           54,
-          1311,
+          1383,
           1212,
-          1043
+          971
         ],
         "fit": "centered aspect-fill",
         "mask": "enclosed-black-component",
         "protected_capsules": [
           [
             90,
-            1348,
+            1420,
             379,
             78
-          ],
-          [
-            328,
-            2242,
-            664,
-            76
           ]
         ],
         "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 1172426,
-        "replaced_native_pixels": 1172426,
-        "composed_native_sha256": "12c77dbed1e7a1e9e3210f83601a9dcd7421ec5edc54ded261360626451620e2",
+        "changed_native_pixels": 1134686,
+        "replaced_native_pixels": 1134686,
+        "composed_native_sha256": "fe43a1595c5284ac37d0af2a8fcaa3c00a8ca12312cdb3ad5af28e54fb8f4573",
         "native_placement": {
           "x": 192,
           "y": 690,
@@ -87,40 +57,17 @@
         },
         "rendered_viewport_bounds": [
           230,
-          1619,
+          1670,
           1090,
           2359
         ]
-      }
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/apple/de-DE/01-safe-speed.png",
-      "source_sha256": "a42611f942c703c5d3e0a4ef984246881099c3873456c084173618381d8fcff0",
-      "output_sha256": "c7d4742945c57647d89648ceab7438b3f701b4626a3341389c75f54aa70a8994",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/02-camera-speed-limit.png": {
-      "source": "store/artwork/raw-screenshots/apple/de-DE/02-camera-speed-limit.png",
-      "source_sha256": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538",
-      "output_sha256": "81aab88601362a891da3cc32af9ca3d19504b8c32652b6af7f7693644c5fdeef",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/03-secondary-sign.png": {
-      "source": "store/artwork/raw-screenshots/apple/de-DE/03-secondary-sign.png",
-      "source_sha256": "f78d5c4768c544850519def612d9335512abd007b2723783019ea79dad584e59",
-      "output_sha256": "ceeacef793f666d5b657182567c90e3ade324a032774bbb889512047c4363efd",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+      },
+      "demonstration_speed_kmh": 27
     },
     "store/apple/screenshots/de-DE/iphone-6.9/04-dashcam.png": {
       "source": "store/artwork/raw-screenshots/apple/de-DE/04-dashcam.png",
-      "source_sha256": "5ced10adf38a5160d008d0af5997d672536ed100c9284fd48c1fd60f3a530a87",
-      "output_sha256": "340941aeb4372b02e4c07b598f77d58078180659c259c9d83abe1331c985313c",
+      "source_sha256": "7091eba3acd5e993860d258aaeed7b8a28c03630dd35c93324cb910db4841b44",
+      "output_sha256": "5f5d1ef08023122de96efcd95b90e6290f8f5e3cfa26816bbdb603b9f79e7d73",
       "width": 1320,
       "height": 2868,
       "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
@@ -147,30 +94,24 @@
         },
         "native_viewport": [
           54,
-          1311,
+          1383,
           1212,
-          1043
+          971
         ],
         "fit": "centered aspect-fill",
         "mask": "enclosed-black-component",
         "protected_capsules": [
           [
             90,
-            1348,
+            1420,
             379,
             78
-          ],
-          [
-            214,
-            2242,
-            891,
-            76
           ]
         ],
         "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 1155174,
-        "replaced_native_pixels": 1155174,
-        "composed_native_sha256": "c7051021af464d4e4ad495984ecad2f463579ef9e5d6d10b59f1fcd6bfc50e1d",
+        "changed_native_pixels": 1134686,
+        "replaced_native_pixels": 1134686,
+        "composed_native_sha256": "f327a57e9775b4b6ac59a006c42fa9be5b7c8042267c63636822f9825169ab60",
         "native_placement": {
           "x": 192,
           "y": 690,
@@ -179,40 +120,17 @@
         },
         "rendered_viewport_bounds": [
           230,
-          1619,
+          1670,
           1090,
           2359
         ]
-      }
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/apple/fr-FR/01-safe-speed.png",
-      "source_sha256": "601692b64b457bdb6b971ba4587430d153a50c89a960f0bedb1f55f1b5dd85f1",
-      "output_sha256": "49b2e44f5e79f1e57231b3bdf8d4fd6343dbe1f447886b849ef611efa96bd90a",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/02-camera-speed-limit.png": {
-      "source": "store/artwork/raw-screenshots/apple/fr-FR/02-camera-speed-limit.png",
-      "source_sha256": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538",
-      "output_sha256": "dd5ac6cf37aaa728af056ebd13793b4046dc6eb886fa3737685fb9453ae9d2d9",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/03-secondary-sign.png": {
-      "source": "store/artwork/raw-screenshots/apple/fr-FR/03-secondary-sign.png",
-      "source_sha256": "dc0ffa236e07d22ac7f4e263ea0eaa2c6405cdc19acb2c689f7ece32ab02a8a2",
-      "output_sha256": "370033810312760aa01c9a970873d60cef240c4502824ba8ad810f558b5455ab",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+      },
+      "demonstration_speed_kmh": 27
     },
     "store/apple/screenshots/fr-FR/iphone-6.9/04-dashcam.png": {
       "source": "store/artwork/raw-screenshots/apple/fr-FR/04-dashcam.png",
-      "source_sha256": "e659eeac40bacc0f202cd86d062ce23ef70f2145d154860948644d095ac434ad",
-      "output_sha256": "e79e245854f2ac6479eb4143bfba6477db2b9280b529c37aa1b594cb7dda1a8d",
+      "source_sha256": "227b4df28ed33da3cc821d81a47384322c7b5a460826b9ab47a16ad4371b5792",
+      "output_sha256": "58fcf6887fe7f78dbd993b667e4d174b055ec7d00216dd1bfc415292a2814738",
       "width": 1320,
       "height": 2868,
       "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
@@ -239,30 +157,24 @@
         },
         "native_viewport": [
           54,
-          1311,
+          1383,
           1212,
-          1043
+          971
         ],
         "fit": "centered aspect-fill",
         "mask": "enclosed-black-component",
         "protected_capsules": [
           [
             90,
-            1348,
+            1420,
             460,
             78
-          ],
-          [
-            270,
-            2242,
-            778,
-            76
           ]
         ],
         "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 1157444,
-        "replaced_native_pixels": 1157444,
-        "composed_native_sha256": "63b09077ee22b7ff6b60f1aed7e92b255d2e5f1d4a9eef9a80ed66aec27e3590",
+        "changed_native_pixels": 1128368,
+        "replaced_native_pixels": 1128368,
+        "composed_native_sha256": "fe657cc0596eb0f255659b87da8a12245bda87c70c22bc49b08095692aa97c23",
         "native_placement": {
           "x": 192,
           "y": 690,
@@ -271,40 +183,17 @@
         },
         "rendered_viewport_bounds": [
           230,
-          1619,
+          1670,
           1090,
           2359
         ]
-      }
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/01-safe-speed.png": {
-      "source": "store/artwork/raw-screenshots/apple/nl-NL/01-safe-speed.png",
-      "source_sha256": "a42611f942c703c5d3e0a4ef984246881099c3873456c084173618381d8fcff0",
-      "output_sha256": "c052c162525d685bf18cd3ed106d2fb58f0260391e83136998ad845186d7a5b7",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/02-camera-speed-limit.png": {
-      "source": "store/artwork/raw-screenshots/apple/nl-NL/02-camera-speed-limit.png",
-      "source_sha256": "f809739544b8533dc20b372a3275315af5413a1982d1a7bfcd8a9018aacee538",
-      "output_sha256": "f8419ac2349696569593a8d3dbdc7ee35aa07e22bc8f0c46a2e2c1befda98b43",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/03-secondary-sign.png": {
-      "source": "store/artwork/raw-screenshots/apple/nl-NL/03-secondary-sign.png",
-      "source_sha256": "f78d5c4768c544850519def612d9335512abd007b2723783019ea79dad584e59",
-      "output_sha256": "3f4506b287b64b119a0d5d23756057eadf2d26e44aa5916308b98613a38cf067",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+      },
+      "demonstration_speed_kmh": 27
     },
     "store/apple/screenshots/nl-NL/iphone-6.9/04-dashcam.png": {
       "source": "store/artwork/raw-screenshots/apple/nl-NL/04-dashcam.png",
-      "source_sha256": "e82d65ba1f506caad3a5a9ceea6d5dc651da1f41815a18631f8db34f75f8179c",
-      "output_sha256": "24bbdd8980febc9f43c7d2b1ea9e8096101e0e0640e07d32660860e4014ce2c7",
+      "source_sha256": "8714b3ee60a8bf8bc2cdcb60782c4a74bb7dd668847269437191dd23621eac32",
+      "output_sha256": "a91df98c290b32abefd8b997c1023d6c13445fd20a9c8d851e9c99221dd919c7",
       "width": 1320,
       "height": 2868,
       "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
@@ -331,30 +220,24 @@
         },
         "native_viewport": [
           54,
-          1311,
+          1383,
           1212,
-          1043
+          971
         ],
         "fit": "centered aspect-fill",
         "mask": "enclosed-black-component",
         "protected_capsules": [
           [
             90,
-            1348,
+            1420,
             379,
             78
-          ],
-          [
-            294,
-            2242,
-            731,
-            76
           ]
         ],
         "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 1167334,
-        "replaced_native_pixels": 1167334,
-        "composed_native_sha256": "1fa905c43bdfaf4b6b501d3ef039a821033876d4fd95db1f8a581401007d8b69",
+        "changed_native_pixels": 1134686,
+        "replaced_native_pixels": 1134686,
+        "composed_native_sha256": "df56e4f3df4566511694edb5ddaa621415f572bcb1b4a01836f91c11baea1f99",
         "native_placement": {
           "x": 192,
           "y": 690,
@@ -363,1199 +246,1098 @@
         },
         "rendered_viewport_bounds": [
           230,
-          1619,
+          1670,
           1090,
           2359
         ]
-      }
-    },
-    "store/android/listing/en-US/phone-screenshots/02-dashcam.png": {
-      "source": "store/artwork/raw-screenshots/android/en-US/02-dashcam.png",
-      "source_sha256": "195c74313a5667c224dfdfe082dea722bd47187f49a13fb34c9234f1355a00fd",
-      "output_sha256": "ce89872d58782ecd3125377efc2b88d04a4e74e4968f52d1363b8e97f0e26ddc",
-      "width": 1920,
-      "height": 1080,
-      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
-      "composite": {
-        "format": "youspeed.dashcam-marketing-composite.v1",
-        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
-        "frame": {
-          "path": "store/artwork/source/real-dashcam-5.5s.png",
-          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
-          "source_time_seconds": 5.5,
-          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
-          "archive": {
-            "dataset": "loffenauer/youspeed.de",
-            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
-            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
-          },
-          "source_crop": [
-            0,
-            320,
-            3840,
-            1720
-          ],
-          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
-        },
-        "native_viewport": [
-          906,
-          264,
-          972,
-          638
-        ],
-        "fit": "centered aspect-fill",
-        "mask": "rounded-black-pixels",
-        "protected_capsules": [],
-        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 617520,
-        "replaced_native_pixels": 617520,
-        "composed_native_sha256": "8f21378e7423606063acb67d99637ef544af0ebba3e8669e563c900cb9560cbb",
-        "native_placement": {
-          "x": 422,
-          "y": 410,
-          "width": 1076,
-          "height": 605
-        },
-        "rendered_viewport_bounds": [
-          929,
-          557,
-          1475,
-          916
-        ]
-      }
-    },
-    "store/android/listing/de-DE/phone-screenshots/02-dashcam.png": {
-      "source": "store/artwork/raw-screenshots/android/de-DE/02-dashcam.png",
-      "source_sha256": "4ff95800ba98f45af81c187f2cf1058fa0f924cbe24519f16c239fbe8d9e3bb0",
-      "output_sha256": "13e90a6ee227eadc3fa2cf3224035efb0f0b8df5167738d2606c28c71d0f2ba8",
-      "width": 1920,
-      "height": 1080,
-      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
-      "composite": {
-        "format": "youspeed.dashcam-marketing-composite.v1",
-        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
-        "frame": {
-          "path": "store/artwork/source/real-dashcam-5.5s.png",
-          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
-          "source_time_seconds": 5.5,
-          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
-          "archive": {
-            "dataset": "loffenauer/youspeed.de",
-            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
-            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
-          },
-          "source_crop": [
-            0,
-            320,
-            3840,
-            1720
-          ],
-          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
-        },
-        "native_viewport": [
-          906,
-          264,
-          972,
-          638
-        ],
-        "fit": "centered aspect-fill",
-        "mask": "rounded-black-pixels",
-        "protected_capsules": [],
-        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 617324,
-        "replaced_native_pixels": 617324,
-        "composed_native_sha256": "f8ca703a0477706d589cde0a6efdf35444f4bf5c50d77802ca55694fccadcf41",
-        "native_placement": {
-          "x": 422,
-          "y": 410,
-          "width": 1076,
-          "height": 605
-        },
-        "rendered_viewport_bounds": [
-          929,
-          557,
-          1475,
-          916
-        ]
-      }
-    },
-    "store/android/listing/fr-FR/phone-screenshots/02-dashcam.png": {
-      "source": "store/artwork/raw-screenshots/android/fr-FR/02-dashcam.png",
-      "source_sha256": "e1b87a31ad010de79a90d6aafc7e616d188a34c5f7967cfb8ae029d0485df496",
-      "output_sha256": "346bc921ae62c531ed8c85642ee4ea80b4e452c74a6ce3cde34f047e1ed941a7",
-      "width": 1920,
-      "height": 1080,
-      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
-      "composite": {
-        "format": "youspeed.dashcam-marketing-composite.v1",
-        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
-        "frame": {
-          "path": "store/artwork/source/real-dashcam-5.5s.png",
-          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
-          "source_time_seconds": 5.5,
-          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
-          "archive": {
-            "dataset": "loffenauer/youspeed.de",
-            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
-            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
-          },
-          "source_crop": [
-            0,
-            320,
-            3840,
-            1720
-          ],
-          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
-        },
-        "native_viewport": [
-          906,
-          264,
-          972,
-          638
-        ],
-        "fit": "centered aspect-fill",
-        "mask": "rounded-black-pixels",
-        "protected_capsules": [],
-        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 616993,
-        "replaced_native_pixels": 616993,
-        "composed_native_sha256": "67756cf863ca1228f2bacb04d4a40780225548e9fb0a1294d61e45487c3c5788",
-        "native_placement": {
-          "x": 422,
-          "y": 410,
-          "width": 1076,
-          "height": 605
-        },
-        "rendered_viewport_bounds": [
-          929,
-          557,
-          1475,
-          916
-        ]
-      }
-    },
-    "store/android/listing/nl-NL/phone-screenshots/02-dashcam.png": {
-      "source": "store/artwork/raw-screenshots/android/nl-NL/02-dashcam.png",
-      "source_sha256": "942453b8f40f19a84c93ce7b6c167ebf6d76440585f8245b8f5e1eaa4c491238",
-      "output_sha256": "516946ed035bcc88017275c5a6ec6ce58032382828c405e8b8be7d49e4974bf7",
-      "width": 1920,
-      "height": 1080,
-      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
-      "composite": {
-        "format": "youspeed.dashcam-marketing-composite.v1",
-        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
-        "frame": {
-          "path": "store/artwork/source/real-dashcam-5.5s.png",
-          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
-          "source_time_seconds": 5.5,
-          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
-          "archive": {
-            "dataset": "loffenauer/youspeed.de",
-            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
-            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
-          },
-          "source_crop": [
-            0,
-            320,
-            3840,
-            1720
-          ],
-          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
-        },
-        "native_viewport": [
-          906,
-          264,
-          972,
-          638
-        ],
-        "fit": "centered aspect-fill",
-        "mask": "rounded-black-pixels",
-        "protected_capsules": [],
-        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 617044,
-        "replaced_native_pixels": 617044,
-        "composed_native_sha256": "c7ac11aed4b9e10b6e35a28e286218e3dfe1852ba59a983b790e9e1b1b75aec2",
-        "native_placement": {
-          "x": 422,
-          "y": 410,
-          "width": 1076,
-          "height": 605
-        },
-        "rendered_viewport_bounds": [
-          929,
-          557,
-          1475,
-          916
-        ]
-      }
-    },
-    "store/android/listing/es-ES/phone-screenshots/02-dashcam.png": {
-      "source": "store/artwork/raw-screenshots/android/es-ES/02-dashcam.png",
-      "source_sha256": "f51a84a1828961af2752bcb5ec3aa87c47c44d87b76a60156457edaf0a4696a6",
-      "output_sha256": "35a531bf7b355d67f7a58052765a16635c26eae283ad59cd29844d1dc5c66718",
-      "width": 1920,
-      "height": 1080,
-      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
-      "composite": {
-        "format": "youspeed.dashcam-marketing-composite.v1",
-        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
-        "frame": {
-          "path": "store/artwork/source/real-dashcam-5.5s.png",
-          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
-          "source_time_seconds": 5.5,
-          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
-          "archive": {
-            "dataset": "loffenauer/youspeed.de",
-            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
-            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
-          },
-          "source_crop": [
-            0,
-            320,
-            3840,
-            1720
-          ],
-          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
-        },
-        "native_viewport": [
-          906,
-          264,
-          972,
-          638
-        ],
-        "fit": "centered aspect-fill",
-        "mask": "rounded-black-pixels",
-        "protected_capsules": [],
-        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 617520,
-        "replaced_native_pixels": 617520,
-        "composed_native_sha256": "5fddbf110960926b1f4eaddcc9f927c78cb1bd67f2066be9f8fd6cdfea68d37a",
-        "native_placement": {
-          "x": 422,
-          "y": 410,
-          "width": 1076,
-          "height": 605
-        },
-        "rendered_viewport_bounds": [
-          929,
-          557,
-          1475,
-          916
-        ]
-      }
-    },
-    "store/android/listing/it-IT/phone-screenshots/02-dashcam.png": {
-      "source": "store/artwork/raw-screenshots/android/it-IT/02-dashcam.png",
-      "source_sha256": "2917f1b8548b1751671e7de8d162132006c90e09b3b75dc80da8c560560ba5f1",
-      "output_sha256": "0f63ec15abc54fac797fc49e04ad213a80ee074b23a03763b176c11967d371ef",
-      "width": 1920,
-      "height": 1080,
-      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
-      "composite": {
-        "format": "youspeed.dashcam-marketing-composite.v1",
-        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
-        "frame": {
-          "path": "store/artwork/source/real-dashcam-5.5s.png",
-          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
-          "source_time_seconds": 5.5,
-          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
-          "archive": {
-            "dataset": "loffenauer/youspeed.de",
-            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
-            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
-          },
-          "source_crop": [
-            0,
-            320,
-            3840,
-            1720
-          ],
-          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
-        },
-        "native_viewport": [
-          906,
-          264,
-          972,
-          638
-        ],
-        "fit": "centered aspect-fill",
-        "mask": "rounded-black-pixels",
-        "protected_capsules": [],
-        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 617520,
-        "replaced_native_pixels": 617520,
-        "composed_native_sha256": "bc17dfa367d81acd27ca010f0b7b0cc5ce0849bcce8691cd87f3bf0c62bc99bb",
-        "native_placement": {
-          "x": 422,
-          "y": 410,
-          "width": 1076,
-          "height": 605
-        },
-        "rendered_viewport_bounds": [
-          929,
-          557,
-          1475,
-          916
-        ]
-      }
-    },
-    "store/android/listing/pl-PL/phone-screenshots/02-dashcam.png": {
-      "source": "store/artwork/raw-screenshots/android/pl-PL/02-dashcam.png",
-      "source_sha256": "76e2b424420cdf660d8874a44cd8bc086f3b954c4de7105cc496a825fc476018",
-      "output_sha256": "56783c64ca4bf8978bb3e327d190c3f73ed4422478d005c1af51ef92dd62b199",
-      "width": 1920,
-      "height": 1080,
-      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
-      "composite": {
-        "format": "youspeed.dashcam-marketing-composite.v1",
-        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
-        "frame": {
-          "path": "store/artwork/source/real-dashcam-5.5s.png",
-          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
-          "source_time_seconds": 5.5,
-          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
-          "archive": {
-            "dataset": "loffenauer/youspeed.de",
-            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
-            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
-          },
-          "source_crop": [
-            0,
-            320,
-            3840,
-            1720
-          ],
-          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
-        },
-        "native_viewport": [
-          906,
-          264,
-          972,
-          638
-        ],
-        "fit": "centered aspect-fill",
-        "mask": "rounded-black-pixels",
-        "protected_capsules": [],
-        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 617520,
-        "replaced_native_pixels": 617520,
-        "composed_native_sha256": "9ed3bebbf079c760cb49e0610832f4b02a1a6a0aa1f6fa427d2892121a87953d",
-        "native_placement": {
-          "x": 422,
-          "y": 410,
-          "width": 1076,
-          "height": 605
-        },
-        "rendered_viewport_bounds": [
-          929,
-          557,
-          1475,
-          916
-        ]
-      }
-    },
-    "store/android/listing/pt-BR/phone-screenshots/02-dashcam.png": {
-      "source": "store/artwork/raw-screenshots/android/pt-BR/02-dashcam.png",
-      "source_sha256": "50fb16b8e3cb6ba9c865fcd95dde2e617fb4c662c81c68a828f37d458d8a227f",
-      "output_sha256": "cae0d11cd2d22a1e1950a12e4455d44e71edb5c652727c96ad54c31270be91e2",
-      "width": 1920,
-      "height": 1080,
-      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
-      "composite": {
-        "format": "youspeed.dashcam-marketing-composite.v1",
-        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
-        "frame": {
-          "path": "store/artwork/source/real-dashcam-5.5s.png",
-          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
-          "source_time_seconds": 5.5,
-          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
-          "archive": {
-            "dataset": "loffenauer/youspeed.de",
-            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
-            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
-          },
-          "source_crop": [
-            0,
-            320,
-            3840,
-            1720
-          ],
-          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
-        },
-        "native_viewport": [
-          906,
-          264,
-          972,
-          638
-        ],
-        "fit": "centered aspect-fill",
-        "mask": "rounded-black-pixels",
-        "protected_capsules": [],
-        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 617520,
-        "replaced_native_pixels": 617520,
-        "composed_native_sha256": "1d0a1b303a9f0dd26927bd0bff6111923cb1a74aebf0eb1d7d2684b87b9ea91c",
-        "native_placement": {
-          "x": 422,
-          "y": 410,
-          "width": 1076,
-          "height": 605
-        },
-        "rendered_viewport_bounds": [
-          929,
-          557,
-          1475,
-          916
-        ]
-      }
-    },
-    "store/android/listing/sv-SE/phone-screenshots/02-dashcam.png": {
-      "source": "store/artwork/raw-screenshots/android/sv-SE/02-dashcam.png",
-      "source_sha256": "5f4775a9bc52aeaa516aea0d7ba52e78d95706358f10d7bd186b509ed4b7be37",
-      "output_sha256": "6fdc73c722653a468076c8ac2c658b4355dde82f5255973db917fa56bdf15757",
-      "width": 1920,
-      "height": 1080,
-      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
-      "composite": {
-        "format": "youspeed.dashcam-marketing-composite.v1",
-        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
-        "frame": {
-          "path": "store/artwork/source/real-dashcam-5.5s.png",
-          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
-          "source_time_seconds": 5.5,
-          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
-          "archive": {
-            "dataset": "loffenauer/youspeed.de",
-            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
-            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
-          },
-          "source_crop": [
-            0,
-            320,
-            3840,
-            1720
-          ],
-          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
-        },
-        "native_viewport": [
-          906,
-          264,
-          972,
-          638
-        ],
-        "fit": "centered aspect-fill",
-        "mask": "rounded-black-pixels",
-        "protected_capsules": [],
-        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
-        "changed_native_pixels": 617520,
-        "replaced_native_pixels": 617520,
-        "composed_native_sha256": "d1ebd1662e9e9e7d7037347eea73a210053e5bbd5ca6f7630b40774d85a26f85",
-        "native_placement": {
-          "x": 422,
-          "y": 410,
-          "width": 1076,
-          "height": 605
-        },
-        "rendered_viewport_bounds": [
-          929,
-          557,
-          1475,
-          916
-        ]
-      }
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/05-reference-signs-DE.png": {
-      "source": "store/reference-screenshots/apple/en-US/signs/DE.png",
-      "source_sha256": "b3cb7956edceab15d2a68f3c6ef2a0276c0fa7d7a2c90d9e5ff3ddf2d2bd0caf",
-      "output_sha256": "f040812505c0c98dad9c07a1ced4ae6336bc8eb3c46c6653e244e53c3fc44a91",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/06-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/apple/en-US/signs/FR.png",
-      "source_sha256": "1adb811cb4bd0ec8b4177ca357cb6d43b4dfe8855ad2e89f1448a021c6200248",
-      "output_sha256": "f517ffb4ad347469cd16ff772390fd54fe8e3728eea61a4b78b3c7cdfe8820fe",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/07-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/apple/en-US/signs/CH.png",
-      "source_sha256": "fa23ae506d17cbb09d9338fabcc16a3168acf8866a2620f428099e5b3b56a666",
-      "output_sha256": "15cf8d6ba73bd4042f408e9102fdf1b31d49cf59fe697897dae46075fe4d3e79",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/08-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/apple/en-US/signs/BE.png",
-      "source_sha256": "ffd9e738a2ce81b22d9777b737c23ad5b1c9ae113650835d4fa5eaeea51182ad",
-      "output_sha256": "c516d5a40461398afdca2645b0ba54d5f0fc9aa4282c11e5c24fa2291ee972ce",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/09-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/apple/en-US/signs/NL.png",
-      "source_sha256": "7aeeed776b4f2bcf865d0014fcd242768aeb133a3f186583c6fd0c5d353d9558",
-      "output_sha256": "8fc734ceca2696756f181895d9f052d9fce0102099b5b8456f94a82cb51d7266",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/en-US/iphone-6.9/10-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/apple/en-US/penalties/NLD.png",
-      "source_sha256": "6b81ccf77e88280bbb7967342fd2b425c8a4c7c58dce7dfbce2d3fca1cddd6a7",
-      "output_sha256": "a19c6e15aad43a5af72b4ed18f8c2ef198a34cae515ec81894d0de902fd2d9c3",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/05-reference-signs-DE.png": {
-      "source": "store/reference-screenshots/apple/de-DE/signs/DE.png",
-      "source_sha256": "6ffc39455b6110c4524a4a2c3d7f2f987afbdd4748754c57ffce582a58f4a410",
-      "output_sha256": "3bb8358a8dd17ffc56ecebd31f20fea3793bfb0f812d4cc7864493d19ffc191b",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/06-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/apple/de-DE/signs/FR.png",
-      "source_sha256": "81b41b382a8000b994fb8e0e0cb0eaf9bf6403445081b41631600880cf59a16d",
-      "output_sha256": "e8ba21fd631d49f242c539af14bf3a05560bbe94eeddc70dc0dc36894169810f",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/07-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/apple/de-DE/signs/CH.png",
-      "source_sha256": "45e3ebf39cf935c84e87971a026bf4e7db741024f2bf95e70154ee3394b389a3",
-      "output_sha256": "eca8c3bcb645cca1b27e1a8dbb052d8593b5b826730bee9dd553997ca4c02c99",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/08-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/apple/de-DE/signs/BE.png",
-      "source_sha256": "24e89110ab4786fc1ac6001f474c863b365ebc3c41634e685cb3cc329259758b",
-      "output_sha256": "c9b3c6a42bc3f983aa878a4afb6b33a37a9d93c22132aa806e42d075cd584548",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/09-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/apple/de-DE/signs/NL.png",
-      "source_sha256": "2f406b302f995421823181be120113fc5f5d7835057adb5f62f3e7435b47c51c",
-      "output_sha256": "13ae086b82dba31417e4a13742d1cc62ad5b906b7d7703692b1180fac0b2b267",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/de-DE/iphone-6.9/10-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/apple/de-DE/penalties/NLD.png",
-      "source_sha256": "db8664f57d46d158cef0769c6e9f0689b17f073f84643a26ad24d2bd5a170714",
-      "output_sha256": "12b8ef70f0aaa82594e0933d8cb4a3132b60d863a1bf3bf54e83381ebc953f4f",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/05-reference-signs-DE.png": {
-      "source": "store/reference-screenshots/apple/fr-FR/signs/DE.png",
-      "source_sha256": "97ed167a87bd20cf85a02ae8d9c221db5a5d1a3a98de61c8cd9b511f7b423738",
-      "output_sha256": "a343742cb71bbf71da8b360f27a361faa68524b2bd02975302794d107216c0a0",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/06-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/apple/fr-FR/signs/FR.png",
-      "source_sha256": "8b47618e122efa6da420c691e20487b562c334354c7b1529a155e19274a5204c",
-      "output_sha256": "0a12cc3b806bb8d7313c59853222c43fa3bb09d7f57d261b1505c5bed8bfb58c",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/07-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/apple/fr-FR/signs/CH.png",
-      "source_sha256": "d9ddbf9541ee5d5c6f492ebd7870555d36458b4dc4f599be61a0a32e569503f6",
-      "output_sha256": "24088f7b1582db4485dd247837db2b7f2ab273a1844312945b7071065eec5d93",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/08-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/apple/fr-FR/signs/BE.png",
-      "source_sha256": "e0968f8d278c5374748be81a66ee9fcd1e917ecc6d0a6f3eac13c95f8959fb29",
-      "output_sha256": "0fbfd45cb065fee265d43651f4e58c3154fff07b66a574c3331ce65d0bbc72f3",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/09-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/apple/fr-FR/signs/NL.png",
-      "source_sha256": "f03205164ff2cbd6434803db67d3bf0299c7681f5a2263ed4eb6991541a0a635",
-      "output_sha256": "98526cfd9a70eeb32a330f8dc3b9c372aae0cc50b131bc26c8c209a1625dae44",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/fr-FR/iphone-6.9/10-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/apple/fr-FR/penalties/NLD.png",
-      "source_sha256": "b3c94a62a782ffd404171ebb936bb7bd0a2cdd47d1272025d845d46cef010896",
-      "output_sha256": "5e58eaedbe93abd23a4c65f2b908a20ed173e9b8c873d6cda714dec0bce27ef2",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/05-reference-signs-DE.png": {
-      "source": "store/reference-screenshots/apple/nl-NL/signs/DE.png",
-      "source_sha256": "e3abd2d9e3151ca1d9f73804fa33d6221bdc69c4e352deb75aea8ec1775832cb",
-      "output_sha256": "d80de3f0ebd495ca4b2f02b6fc89884b8d6ac36b4bd7b94f9714592e5d8c4794",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/06-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/apple/nl-NL/signs/FR.png",
-      "source_sha256": "fedcf75fb4598d3c73649386372c4c6101fb9f27191e20d9c6536096d0b4e523",
-      "output_sha256": "c8f49684d2df0a1d7b5431683622171025208276f20ad45009007b179e644dcb",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/07-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/apple/nl-NL/signs/CH.png",
-      "source_sha256": "ae5a4f2921cdfb971a481c48a3a6eaaacfc9e0d1fb6aa2c40c6a9f77d66ff143",
-      "output_sha256": "36db236b987692783f13c46d22738fad90325cc34d0c83c0b675547f6cb71d68",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/08-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/apple/nl-NL/signs/BE.png",
-      "source_sha256": "8e7d8ac9e6eac673043a182af72f352112d9ac53b1257d97c8f1c0a3e1f904ac",
-      "output_sha256": "6575cb1d6072f6a7cf94996bcb06bffeb8d9e69ca6bf66bb43430d2a762715dc",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/09-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/apple/nl-NL/signs/NL.png",
-      "source_sha256": "82cb312084a4feee4b762ee8be3d8f5ed23f4559841ae83b718959f99c3f30b6",
-      "output_sha256": "5431b4cdad4c22543757965f99bfabac78a4c03a33c4a81b31d0e30583c79340",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/apple/screenshots/nl-NL/iphone-6.9/10-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/apple/nl-NL/penalties/NLD.png",
-      "source_sha256": "f300e7ba63a5102c61e97a3a70d923756d8ae59e66c41553c3e904838c9a5a35",
-      "output_sha256": "9460b91901444895db7ed87b76f5cb36ce0f394ea9a1798ae7380036149b0ba7",
-      "width": 1320,
-      "height": 2868,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+      },
+      "demonstration_speed_kmh": 27
     },
     "store/android/listing/en-US/phone-screenshots/01-camera-recognition.png": {
       "source": "store/artwork/raw-screenshots/android/en-US/01-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "c7a2d70926e24c8379483f4533d395a7977c6e148385b6e808fc1b38deb02cfd",
+      "source_sha256": "b83e15fdff7b34eb01339971db0540d2b7a0edf678d3c902703c37b1087264f4",
+      "output_sha256": "865ad35111aac64e498fbb2c40dfad86227b42cffd6ba178491f698d24ff8109",
       "width": 1080,
       "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/en-US/phone-screenshots/03-reference-signs-DE.png": {
-      "source": "store/reference-screenshots/android/en-US/signs/DE.png",
-      "source_sha256": "ba8dde6e397a5f9d72aa403099778a2a53aec51b7b0e77ffbf19b81121aebb0e",
-      "output_sha256": "b4c9ada180cfea0263447f3d568d03fbf863699452136b1f86f475c23af580a8",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/en-US/phone-screenshots/04-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/android/en-US/signs/FR.png",
-      "source_sha256": "d0a0b2f27d1fe2e841e185f8a7108ab5d4539836a78b23d575a6d3b83af9f1bd",
-      "output_sha256": "8930670d7a33126125757fadbdba2e1612596fed047b163f2907533899e867a0",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/en-US/phone-screenshots/05-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/android/en-US/signs/CH.png",
-      "source_sha256": "f0a4e8d59b235d773dccccb058f72acee8685e0808e6613518fbbf7e5e891ab8",
-      "output_sha256": "64a53704118fca6aa9203fdb73f408d799c69f0547819fdbfe270a0d04c1827c",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/en-US/phone-screenshots/06-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/android/en-US/signs/BE.png",
-      "source_sha256": "a98ee11b3f3835fc62ca26ceea0e467c8a29cde877853233b10d123900793ccc",
-      "output_sha256": "200c6f16781e394f07510ad4f353dc9b3592e3fe5b974d6f3183df54a66cb230",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/en-US/phone-screenshots/07-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/android/en-US/signs/NL.png",
-      "source_sha256": "0d71ba625777ab7a56e207669173e4710841bd111b25da06a9ec0417f175c74e",
-      "output_sha256": "defd353f39e0aacf8c9c92f9c4d969bec017a7b1d984f6a516b31250573d4f8c",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/en-US/phone-screenshots/08-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/android/en-US/penalties/NLD.png",
-      "source_sha256": "ba74aa71fe16043839b5c6a4915d931f89a184ec9e15ad9a4ec54d837c8cb62f",
-      "output_sha256": "fe7fa6a779130d2b3ccb022d05bb48d82f36aa1b03a9a346d1802a7d2c1f5527",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
     },
     "store/android/listing/de-DE/phone-screenshots/01-camera-recognition.png": {
       "source": "store/artwork/raw-screenshots/android/de-DE/01-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "465fc277fcc10ec967e298ffeebae84089fd333aa6c040d428422aa45e552489",
+      "source_sha256": "b83e15fdff7b34eb01339971db0540d2b7a0edf678d3c902703c37b1087264f4",
+      "output_sha256": "153b2ca174f8948f749a66f2ff9853d73d7759d3652fe4f0ef5924ba9c307448",
       "width": 1080,
       "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/de-DE/phone-screenshots/03-reference-signs-DE.png": {
-      "source": "store/reference-screenshots/android/de-DE/signs/DE.png",
-      "source_sha256": "240e8102fbfab56645f9d521e7c40ca361bc5342e638ca9e0725268fd7feed7c",
-      "output_sha256": "d9edf5de9e84b69ed123c43cd24bd8cee622afa86af62f7d67bd6183bad41d96",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/de-DE/phone-screenshots/04-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/android/de-DE/signs/FR.png",
-      "source_sha256": "a24be78c3d1c09b432f846ec410ec3ceadef56bc76bc630043aeac7c0fc10a48",
-      "output_sha256": "58849605509ac588aa330c87299737973bed1196397062fe93e19215f1eadbd0",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/de-DE/phone-screenshots/05-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/android/de-DE/signs/CH.png",
-      "source_sha256": "71738dbf1885daab37a43b90d9bedb93b00a5306599a58e6fb82b2deeb86f542",
-      "output_sha256": "179ad0e5c8eea1816ac60b82d8379e9d9ebf73dfa943df1552e636b230bd4be0",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/de-DE/phone-screenshots/06-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/android/de-DE/signs/BE.png",
-      "source_sha256": "a94ec85cadce1fe1f7c41e5adab36f03f2c6243c145d5a4c1e3e94be683905a3",
-      "output_sha256": "935448ef0d590639deb4f6ebee7ab713c0934baadf7cbe2f9d67f0b8d8230aad",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/de-DE/phone-screenshots/07-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/android/de-DE/signs/NL.png",
-      "source_sha256": "86126fbd9852cdc79d6f765d1cfd7a5b37884e8929c5d0f5a7d18a6b6c5f8146",
-      "output_sha256": "1902216ac4a6c360e79fa92b58e749fa2485a22abf70bee5ca313785878cc052",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/de-DE/phone-screenshots/08-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/android/de-DE/penalties/NLD.png",
-      "source_sha256": "dfab40195328c29ed88feccbc74969c763b6274da6b2b063a56550f98b89748f",
-      "output_sha256": "2879ee30357d0328680ec39f2b2b849fd64583514b4f338c31cedb9f6492e92f",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
     },
     "store/android/listing/fr-FR/phone-screenshots/01-camera-recognition.png": {
       "source": "store/artwork/raw-screenshots/android/fr-FR/01-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "acea5c597b6fb9311e6fa88744bc43d8a34afab9dcda7daec2b2299ad71578e7",
+      "source_sha256": "b83e15fdff7b34eb01339971db0540d2b7a0edf678d3c902703c37b1087264f4",
+      "output_sha256": "ca3a6dad006479a6cbcb9b4a154fa85b06e7c957efc5ec4ddfc1cdb847aea832",
       "width": 1080,
       "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/fr-FR/phone-screenshots/03-reference-signs-DE.png": {
-      "source": "store/reference-screenshots/android/fr-FR/signs/DE.png",
-      "source_sha256": "22a80981ec7cd451f0be52bc6b747064147665505bb952da15540f168b36f51a",
-      "output_sha256": "6c996e167bb8ab9c259187c3f8bf290574f0739b2a14cd648cd169a4e406af37",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/fr-FR/phone-screenshots/04-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/android/fr-FR/signs/FR.png",
-      "source_sha256": "4f3cfd4b4e76a0c494a2b26dac88b61236bc4349b4999923c62c034b8df332de",
-      "output_sha256": "1e859d46d4ff0dadceae30d019eba31b99fe52a550dc881bf4f47b1cc20a682e",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/fr-FR/phone-screenshots/05-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/android/fr-FR/signs/CH.png",
-      "source_sha256": "23d9d7dbb64a5c59976e1780f58804164b7d6f7a7499bf4c05b95b56971b6e9d",
-      "output_sha256": "cd68632ea21a27509e1b1e66ac4f9bde2117d7470fd59c7ce9b2c56978fcdebc",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/fr-FR/phone-screenshots/06-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/android/fr-FR/signs/BE.png",
-      "source_sha256": "087a6f865ace3a28d0a4fb5afe20898a432a7ffb19730ee0ea674db332138857",
-      "output_sha256": "7ed9c19935eaa6e967ace7947f6f419532dec33f3b9c8be9a26d5bcdf24936cb",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/fr-FR/phone-screenshots/07-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/android/fr-FR/signs/NL.png",
-      "source_sha256": "d7159d4d9cf9631c9b8ef13428ba0214ed7bd667338918277575152863fb244a",
-      "output_sha256": "444134380a0d7d230775ae5b53fe0fa05fd240f9903c14b8ddb2ec0da69a58fd",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/fr-FR/phone-screenshots/08-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/android/fr-FR/penalties/NLD.png",
-      "source_sha256": "43b832a7adfdc40b25b576746ea2b3fc3481177d16298e6b872747a59cf838ae",
-      "output_sha256": "f8feb918a9afa60477732a33425fc2afb66757a120ef80b88fd77bd32cd91279",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
     },
     "store/android/listing/nl-NL/phone-screenshots/01-camera-recognition.png": {
       "source": "store/artwork/raw-screenshots/android/nl-NL/01-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "6868ee3f005f53b5367bd186c00b3188113e45b6f677b725f105720eec534e9c",
+      "source_sha256": "b83e15fdff7b34eb01339971db0540d2b7a0edf678d3c902703c37b1087264f4",
+      "output_sha256": "d878578ea08760fd93d3d361ee2e90ea5a8d3c02c85bc8dd9ee8cfc8367f3da2",
       "width": 1080,
       "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/nl-NL/phone-screenshots/03-reference-signs-DE.png": {
-      "source": "store/reference-screenshots/android/nl-NL/signs/DE.png",
-      "source_sha256": "8ad771f71803e2ceda2542944ccc5afe2edc6e1fd9d910998bafb9ff83726376",
-      "output_sha256": "2c900297db17daa202ff5a0fba2066b8b8f6056df9cc094ad0223abad199fa44",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/nl-NL/phone-screenshots/04-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/android/nl-NL/signs/FR.png",
-      "source_sha256": "4c751e771308e9ba21f55cbe1c79de282ac7251863a4416e4c170de18e2d7302",
-      "output_sha256": "2ea850427f7e5a313e3a4226950c4af52dadc2c79c76857b7a45cf121d6d0af4",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/nl-NL/phone-screenshots/05-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/android/nl-NL/signs/CH.png",
-      "source_sha256": "e48f460b47d67487433478a054cfef7a86219f2d41a18358efa7cc83716ad695",
-      "output_sha256": "b82076eca14bf7f313f7f4bb93cc50eed5c2e1a302b0fc5aee66a783fc49a0be",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/nl-NL/phone-screenshots/06-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/android/nl-NL/signs/BE.png",
-      "source_sha256": "627b4023a8bc875c10f5b70cfe69590fce6f7dc0fd6c862bfe19f7b9c3e8aba6",
-      "output_sha256": "5fe9df6cf93998ed8b701edde55cf07070258fb95d71eaa2b078eed7ee554c40",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/nl-NL/phone-screenshots/07-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/android/nl-NL/signs/NL.png",
-      "source_sha256": "2441b3f86363a0691bf1ccdf991819bb79320668a48f4d4f3af4272a19a8a913",
-      "output_sha256": "4178d4989a4f1deb68dc30a6619fc2877013ffd870497162e734b8e4a0536eb8",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/nl-NL/phone-screenshots/08-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/android/nl-NL/penalties/NLD.png",
-      "source_sha256": "6969394af3931434174ceda93ff19b9883fee7c8b51cd10d14afdb5de2516277",
-      "output_sha256": "71309b1e41cd31f22a5351822ef71b65af8c2be6e40882af436cc12211241a9f",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
     },
     "store/android/listing/es-ES/phone-screenshots/01-camera-recognition.png": {
       "source": "store/artwork/raw-screenshots/android/es-ES/01-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "07ecbdcc2ff7559fbdc05e354362fa1d5a54469b942d67d3933a69c3847a7e16",
+      "source_sha256": "b83e15fdff7b34eb01339971db0540d2b7a0edf678d3c902703c37b1087264f4",
+      "output_sha256": "87fc5fbf80605a3860094fb941a5ca34ce16e7e3a3a7c1eacef7ff8a3547e716",
       "width": 1080,
       "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/es-ES/phone-screenshots/03-reference-signs-DE.png": {
-      "source": "store/reference-screenshots/android/es-ES/signs/DE.png",
-      "source_sha256": "0d49c2a53fabb74be521f909fd08f9a7b323616123210a306229b2d12e961795",
-      "output_sha256": "c0303108cad78b72ab42fae5acc6c321d025b027b1aed6bb0f0c1340c364be4e",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/es-ES/phone-screenshots/04-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/android/es-ES/signs/FR.png",
-      "source_sha256": "2319aef1066351c8c3533e8aae2a6d345ff924c864676638b4b1e5f4e5cfb940",
-      "output_sha256": "b6da470c0e6e38ec4446eb7333190fb6e676c7a2d2825497b402bea50dfee010",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/es-ES/phone-screenshots/05-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/android/es-ES/signs/CH.png",
-      "source_sha256": "081793440d3552d27655f2656995cffb9be009ac077ec98086bbfcc2828dc8ff",
-      "output_sha256": "47b9fc4de3cece7ee07cb7a45d9946b69351b89bd9489b73b26d5b4bd4f3d034",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/es-ES/phone-screenshots/06-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/android/es-ES/signs/BE.png",
-      "source_sha256": "9bdec2fd330762f14f2b05c14a588824d8ee2e24906b61993427faca1eb99d85",
-      "output_sha256": "4c603de4ada70ab1ff0b83faa1e92b677a489f598c424547b6631e6e92299f1d",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/es-ES/phone-screenshots/07-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/android/es-ES/signs/NL.png",
-      "source_sha256": "819fb59d750d21853c17ec3a16e0cf23bb72f2a027495007a2c8fc1f0793b21e",
-      "output_sha256": "3f02d0e350d1942099a748d9943e794d61fa8e70a2fb7448fd2a4f6da0df80b4",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/es-ES/phone-screenshots/08-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/android/es-ES/penalties/NLD.png",
-      "source_sha256": "78a88098aa48e73d4f0e55d7578d4ca37f9d4176b96d789114a102c746279153",
-      "output_sha256": "a946281cebe6538431fd5a0d89a2678e3778c9b46dc51ed92e6126eaf7682538",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
     },
     "store/android/listing/it-IT/phone-screenshots/01-camera-recognition.png": {
       "source": "store/artwork/raw-screenshots/android/it-IT/01-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "fc4b66a9b3e9e57755487c32060fdeea0747c514b0dd62ac5a8c508e29b13c5e",
+      "source_sha256": "b83e15fdff7b34eb01339971db0540d2b7a0edf678d3c902703c37b1087264f4",
+      "output_sha256": "bbf49db55d7f60d48c5d8380ee9a6be533426505bcd3eec937afe4a6719732ba",
       "width": 1080,
       "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/it-IT/phone-screenshots/03-reference-signs-DE.png": {
-      "source": "store/reference-screenshots/android/it-IT/signs/DE.png",
-      "source_sha256": "f31ccdda5a2d6240b99ecb5641846da1dc4194b20c17ca0bd4a6a78653b4ea0f",
-      "output_sha256": "6e7f7d5f4298f155ecf8740632e2dfdd28ef78ba0530039671d5c046b7fe0f69",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/it-IT/phone-screenshots/04-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/android/it-IT/signs/FR.png",
-      "source_sha256": "72c228ebad7a5fa3efce821326c1c353769ddcae82e074b33bcef316fe6d7598",
-      "output_sha256": "7edc838fdc774a4caa1ffa2893a80aa13a09447d0c2b9cfb35c9961e6f83cc76",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/it-IT/phone-screenshots/05-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/android/it-IT/signs/CH.png",
-      "source_sha256": "782f79ba446e27d0d60d8b0dc9f906a1c2364a8e15899034acfb3e2507518a5a",
-      "output_sha256": "7a406889fb2825dded98f42bb4aca17beacd20db81e14769b968e3a9b3cd32d0",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/it-IT/phone-screenshots/06-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/android/it-IT/signs/BE.png",
-      "source_sha256": "5184df39adc90f3a405459b32d5152040a9f20551764a772a0b8bb69b826e505",
-      "output_sha256": "b001e2b77eb816a5d81e0aee4df0587c376f25165fbcea5e7021e9e948751d06",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/it-IT/phone-screenshots/07-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/android/it-IT/signs/NL.png",
-      "source_sha256": "62c46953c979e6742700291a60287d75b76800f464b2ceaeb05deeb0499d0e92",
-      "output_sha256": "ac6eccb559b45a0c590001a7b0b4013eaa4286c060e9b4108b9ab579a0990a5e",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/it-IT/phone-screenshots/08-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/android/it-IT/penalties/NLD.png",
-      "source_sha256": "f6d7c0aa86bc8b1c124bb215f206de070f0a0fa6a293af99188901628856267d",
-      "output_sha256": "08bc467baa236b1cce97820c0579f1c01db95ef5af8022c30c8a18a6ed85d4db",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
     },
     "store/android/listing/pl-PL/phone-screenshots/01-camera-recognition.png": {
       "source": "store/artwork/raw-screenshots/android/pl-PL/01-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "282989e8b35f69933b11b4591082282aa52df29eebe15d4556f9bedde33402c0",
+      "source_sha256": "b83e15fdff7b34eb01339971db0540d2b7a0edf678d3c902703c37b1087264f4",
+      "output_sha256": "04e6c4e8e5ef52320904fb1fad875d003a28575bab976004db734390638c22a4",
       "width": 1080,
       "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pl-PL/phone-screenshots/03-reference-signs-DE.png": {
-      "source": "store/reference-screenshots/android/pl-PL/signs/DE.png",
-      "source_sha256": "0b004b7f4422f1de478a471d5e3cc46589d5c78306c4a080eaf9e6426eddd53d",
-      "output_sha256": "428ee7c5551efd8f8d19f77f315235f6e60d6d17b6f63714f24141cc7fdaf3cd",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pl-PL/phone-screenshots/04-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/android/pl-PL/signs/FR.png",
-      "source_sha256": "cbfbb2c47f48fd2f19f4088b0373621764d7c6a2fcc1aa8683f95e5256526041",
-      "output_sha256": "75403bbabfbdeddccdbb1b6e3e83f3b5b5c928b5925606153e7b9efe372fe26c",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pl-PL/phone-screenshots/05-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/android/pl-PL/signs/CH.png",
-      "source_sha256": "d6a491c3c6a6ba93af3267122269b45636ce97a84da4e4f0eab4efc6a6a1de11",
-      "output_sha256": "ecdf3b275176101d47a3b806da8d2cce348030ae80bec05a1646e83de08d70a5",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pl-PL/phone-screenshots/06-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/android/pl-PL/signs/BE.png",
-      "source_sha256": "9589f8edc99b20931853ec0b5d2e3b8962da82eecf242d161afe4dc160a376a1",
-      "output_sha256": "8b853484c881848d8a7a83cb382f36ab9ca39177aec0b10535924d0c0f756bdd",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pl-PL/phone-screenshots/07-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/android/pl-PL/signs/NL.png",
-      "source_sha256": "14c32bbf54bebb560f642e2150a871d2c1d689c468b810352f931c9592f3e296",
-      "output_sha256": "da97c89c4daec724d6ab5d7a9cde9e5855bd0d340a2a44c88d684165c5c6f68e",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pl-PL/phone-screenshots/08-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/android/pl-PL/penalties/NLD.png",
-      "source_sha256": "d8a979ae6f97f220833d5369a1cd7cfc6d53f382dc4bb402cfdba60f5ac9a6c0",
-      "output_sha256": "44653093c04fdd07b358e5ae5ef5c7496562b8bed164dce4e620ac45f3e03b81",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
     },
     "store/android/listing/pt-BR/phone-screenshots/01-camera-recognition.png": {
       "source": "store/artwork/raw-screenshots/android/pt-BR/01-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "3c8e29d5709556507e0cee863203cb655c627dddd0831d40d44b5dcc426e6340",
+      "source_sha256": "b83e15fdff7b34eb01339971db0540d2b7a0edf678d3c902703c37b1087264f4",
+      "output_sha256": "28e4522909e5906327e17e6d775ba7cce6f3dd74b4ae4485920ebf2e1141a247",
       "width": 1080,
       "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pt-BR/phone-screenshots/03-reference-signs-DE.png": {
-      "source": "store/reference-screenshots/android/pt-BR/signs/DE.png",
-      "source_sha256": "7ee599c987d6dd8b4882c473b5e49ef63bbaab1d466d01e61f9aa3b31210703e",
-      "output_sha256": "f0f9d79c804342bb67fad9223e4a22ee93e89ced4934d82eb170ffd28a8d2214",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pt-BR/phone-screenshots/04-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/android/pt-BR/signs/FR.png",
-      "source_sha256": "d82370025691d20113a58dadd733188487b832e1e0d0afb4b8e454b1aee67088",
-      "output_sha256": "ace4cb56abeb018336d64a22be00c39bf17c133ecdea8acb424b69da773d3579",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pt-BR/phone-screenshots/05-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/android/pt-BR/signs/CH.png",
-      "source_sha256": "5541f49a6d3f27fe0908bd21a045e007235f1e455b8c94020c898d5b56fe911c",
-      "output_sha256": "befdda2826aa67445369e389ca69248d9eecc687b98c114063bf4534ebc1cc6d",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pt-BR/phone-screenshots/06-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/android/pt-BR/signs/BE.png",
-      "source_sha256": "4cdeed55305b0ccf4eebc4b25cc385391829d8f37159be9e79e7baa08730d3f6",
-      "output_sha256": "4ce6cdb7f0b94c73ec8896b2d53d879fce58a6029af8aa3665246590e40cd035",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pt-BR/phone-screenshots/07-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/android/pt-BR/signs/NL.png",
-      "source_sha256": "376936989bfd8c6dbe1e1f3af6cb04f86ef32ebbc91b834b8aed8119a5134136",
-      "output_sha256": "a81c91911c8cceec12f7ba75a21a4a1c8bf60d8eec0e0634347fefaa9359b197",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/pt-BR/phone-screenshots/08-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/android/pt-BR/penalties/NLD.png",
-      "source_sha256": "a1cfbe609578240c1ed198ed50fa7994abaaacf01116b61ce054076ff77dbb04",
-      "output_sha256": "e24acdfa1ca58587413d5573864d488d13ee4d6b275a613f91baae06c2b74660",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
     },
     "store/android/listing/sv-SE/phone-screenshots/01-camera-recognition.png": {
       "source": "store/artwork/raw-screenshots/android/sv-SE/01-camera-recognition.png",
-      "source_sha256": "5134377e28e4bef81e1bedf8422397f6bd13bedc1a5e6db2fbb369afb53cf26a",
-      "output_sha256": "e788838bba3912c806d2d3ec8b6cf5d89bbbe5019edcd51025bbac0eea128c28",
+      "source_sha256": "b83e15fdff7b34eb01339971db0540d2b7a0edf678d3c902703c37b1087264f4",
+      "output_sha256": "083bb47bdecfcf82aa13d31876415a338c79542ea49f757b411fbaa3ac89e247",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/apple/screenshots/en-US/iphone-6.9/01-camera-speed-limit.png": {
+      "source": "store/artwork/raw-screenshots/apple/en-US/02-camera-speed-limit.png",
+      "source_sha256": "dc10cf052856ba5bcbe2675086ba842ad4de8b3ada0965a42355e81ed7f65764",
+      "output_sha256": "a4b7316cd3652b32a4a19571c6408d81de13dd79dc8fecffdccd2ba6f8e65f4e",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/apple/screenshots/en-US/iphone-6.9/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/apple/en-US/03-secondary-sign.png",
+      "source_sha256": "4a9367afedef1cf5e21a112f8adebd9f2cc8652eb845f93275e332ed89b1f1a6",
+      "output_sha256": "af559fe14a52f85369b34d503bd130e28c614673698eb503165f58c40f29e239",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 47
+    },
+    "store/apple/screenshots/en-US/iphone-6.9/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/apple/en-US/05-france-fine.png",
+      "source_sha256": "f9257eda21af41bca1c7d55d3a183a6f0e928333360ac3928ecbc37129d8995a",
+      "output_sha256": "a2a7e3393a7765d6a1bed07acbe3a48861090f422dd88bf029afe2ab853789ea",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/apple/screenshots/en-US/iphone-6.9/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/apple/en-US/05-panoramax-upload.png",
+      "source_sha256": "3e45c84678b51363a587d36f34bea6e0510e2d3130068d02760558bc63b923a7",
+      "output_sha256": "61ec925020201f885c32bcf07a945e544b2004f0c0dfb0be1b6c0694a7585148",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/apple/screenshots/en-US/iphone-6.9/06-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/apple/en-US/signs/DE.png",
+      "source_sha256": "b3cb7956edceab15d2a68f3c6ef2a0276c0fa7d7a2c90d9e5ff3ddf2d2bd0caf",
+      "output_sha256": "015add6e2b621cf54366b97ad3a9710947bcddeda798a3b4299f8d3f505b4b00",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/de-DE/iphone-6.9/01-camera-speed-limit.png": {
+      "source": "store/artwork/raw-screenshots/apple/de-DE/02-camera-speed-limit.png",
+      "source_sha256": "dc10cf052856ba5bcbe2675086ba842ad4de8b3ada0965a42355e81ed7f65764",
+      "output_sha256": "2775354d36a11c17cd5265683f16a1809ec286ce4e53c75b268cdc070e0ed4b5",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/apple/screenshots/de-DE/iphone-6.9/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/apple/de-DE/03-secondary-sign.png",
+      "source_sha256": "4a9367afedef1cf5e21a112f8adebd9f2cc8652eb845f93275e332ed89b1f1a6",
+      "output_sha256": "6b95f1f6ba70fae918937510b97684d970f2483e5bd8f84d157c6a8fb31134a1",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 47
+    },
+    "store/apple/screenshots/de-DE/iphone-6.9/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/apple/de-DE/05-france-fine.png",
+      "source_sha256": "f9257eda21af41bca1c7d55d3a183a6f0e928333360ac3928ecbc37129d8995a",
+      "output_sha256": "cdbbf9f9878ef245251c1a497b5eaa616def230216c21ea4adbb9bb1315fcdc7",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/apple/screenshots/de-DE/iphone-6.9/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/apple/en-US/05-panoramax-upload.png",
+      "source_sha256": "3e45c84678b51363a587d36f34bea6e0510e2d3130068d02760558bc63b923a7",
+      "output_sha256": "3ba80979362cee135a8826040f0e1fb6e146c4a7da1bec586fe08d06c6b8aaea",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/apple/screenshots/de-DE/iphone-6.9/06-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/apple/de-DE/signs/DE.png",
+      "source_sha256": "6ffc39455b6110c4524a4a2c3d7f2f987afbdd4748754c57ffce582a58f4a410",
+      "output_sha256": "e34b610d447d6efce03cda54d27ea3aec6d7129ebe9cef3e0f6c335fbb8a987c",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/fr-FR/iphone-6.9/01-camera-speed-limit.png": {
+      "source": "store/artwork/raw-screenshots/apple/fr-FR/02-camera-speed-limit.png",
+      "source_sha256": "dc10cf052856ba5bcbe2675086ba842ad4de8b3ada0965a42355e81ed7f65764",
+      "output_sha256": "789bb2216aa4eb0747553c007821b19a43c576af027d2a681b9638f3d05ee2d6",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/apple/screenshots/fr-FR/iphone-6.9/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/apple/fr-FR/03-secondary-sign.png",
+      "source_sha256": "4a9367afedef1cf5e21a112f8adebd9f2cc8652eb845f93275e332ed89b1f1a6",
+      "output_sha256": "8ba430d8d24900050c7781fe7592b0a80b6a46ee57071eab261ca89557771d9c",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 47
+    },
+    "store/apple/screenshots/fr-FR/iphone-6.9/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/apple/fr-FR/05-france-fine.png",
+      "source_sha256": "f9257eda21af41bca1c7d55d3a183a6f0e928333360ac3928ecbc37129d8995a",
+      "output_sha256": "a651254f2176e717f110f03adab21497c7ae6cce3c3a8116eb3c912bb380e481",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/apple/screenshots/fr-FR/iphone-6.9/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/apple/en-US/05-panoramax-upload.png",
+      "source_sha256": "3e45c84678b51363a587d36f34bea6e0510e2d3130068d02760558bc63b923a7",
+      "output_sha256": "6f86464321cb03b93d6d8d37d44215a15cad2075fb33062f882643ed2db04c9f",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/apple/screenshots/fr-FR/iphone-6.9/06-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/apple/fr-FR/signs/DE.png",
+      "source_sha256": "97ed167a87bd20cf85a02ae8d9c221db5a5d1a3a98de61c8cd9b511f7b423738",
+      "output_sha256": "ea307f90dff5cab49736c52e7b2d1d773d5a2578c0e210f3944457dc8ccfaf0a",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/apple/screenshots/nl-NL/iphone-6.9/01-camera-speed-limit.png": {
+      "source": "store/artwork/raw-screenshots/apple/nl-NL/02-camera-speed-limit.png",
+      "source_sha256": "dc10cf052856ba5bcbe2675086ba842ad4de8b3ada0965a42355e81ed7f65764",
+      "output_sha256": "82555c336473b3a5c0f8310b6480b78a3de02e0479ecc8b0768085fcbe2d82a7",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/apple/screenshots/nl-NL/iphone-6.9/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/apple/nl-NL/03-secondary-sign.png",
+      "source_sha256": "4a9367afedef1cf5e21a112f8adebd9f2cc8652eb845f93275e332ed89b1f1a6",
+      "output_sha256": "c143807f7a08dc0e73e62509ecf0cbc6650793eb323d4f8220de9043403449d5",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 47
+    },
+    "store/apple/screenshots/nl-NL/iphone-6.9/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/apple/nl-NL/05-france-fine.png",
+      "source_sha256": "f9257eda21af41bca1c7d55d3a183a6f0e928333360ac3928ecbc37129d8995a",
+      "output_sha256": "0c1755bd8d6c832694b3cef3faff822a9a540dd67198220cfba351bbe386406f",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/apple/screenshots/nl-NL/iphone-6.9/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/apple/en-US/05-panoramax-upload.png",
+      "source_sha256": "3e45c84678b51363a587d36f34bea6e0510e2d3130068d02760558bc63b923a7",
+      "output_sha256": "2715582f5885aa2c16f3e05e9146666b0c6046f7b1a5fe89f3f5081c4c933f49",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/apple/screenshots/nl-NL/iphone-6.9/06-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/apple/nl-NL/signs/DE.png",
+      "source_sha256": "e3abd2d9e3151ca1d9f73804fa33d6221bdc69c4e352deb75aea8ec1775832cb",
+      "output_sha256": "c657b0c5705b4d1da1df8c6f6c0a68f99f2159c61f485f70b869ec6e03d329e1",
+      "width": 1320,
+      "height": 2868,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/en-US/phone-screenshots/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/04-traffic-signs.png",
+      "source_sha256": "4cba881eadbf6c001248c4120af4dde4c576c2165149c0b647ab8054ff5532de",
+      "output_sha256": "e9116b891ebbd2dee4e0152630c8cde885fd4789bfafbea96f432ceddfa474f8",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/en-US/phone-screenshots/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/05-france-fine.png",
+      "source_sha256": "54bd8282ec16e1ce639af39073b337a993582f193465d960f1c9d7802a3ca814",
+      "output_sha256": "b775077a39a9f74035a7f65e11df89b8f706e26406806ee848a3b61336949314",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/android/listing/en-US/phone-screenshots/04-dashcam.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/02-dashcam.png",
+      "source_sha256": "209df4f84f85b1204db359c6c3a4b6d6733c44c78a4ec8fb43edc319866357de",
+      "output_sha256": "5c33c869a221ea981a0549712ee0a08890b4a5b8d1946af7d17b5f149e8e6eaf",
+      "width": 1920,
+      "height": 1080,
+      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
+      "composite": {
+        "format": "youspeed.dashcam-marketing-composite.v1",
+        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+        "frame": {
+          "path": "store/artwork/source/real-dashcam-5.5s.png",
+          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+          "source_time_seconds": 5.5,
+          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+          "archive": {
+            "dataset": "loffenauer/youspeed.de",
+            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+          },
+          "source_crop": [
+            0,
+            320,
+            3840,
+            1720
+          ],
+          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+        },
+        "native_viewport": [
+          906,
+          194,
+          972,
+          697
+        ],
+        "fit": "centered aspect-fill",
+        "mask": "rounded-black-pixels",
+        "protected_capsules": [],
+        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+        "changed_native_pixels": 675972,
+        "replaced_native_pixels": 675972,
+        "composed_native_sha256": "6440644f61fa6997339ec1fd4fa45ca8b783cbdb67405075c1ce9129279cd556",
+        "native_placement": {
+          "x": 422,
+          "y": 410,
+          "width": 1076,
+          "height": 605
+        },
+        "rendered_viewport_bounds": [
+          929,
+          518,
+          1475,
+          910
+        ]
+      },
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/en-US/phone-screenshots/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/05-panoramax-upload.png",
+      "source_sha256": "be0d43a2495e89f501ce189dd7d73382c30631c4bce5b5f340e71357bbfc8a56",
+      "output_sha256": "40edea6a77aeef571414ca97b1bc9a6dbfc148e796bb316e72bc56418487ec09",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/android/listing/en-US/phone-screenshots/06-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/en-US/signs/DE.png",
+      "source_sha256": "ba8dde6e397a5f9d72aa403099778a2a53aec51b7b0e77ffbf19b81121aebb0e",
+      "output_sha256": "96d2b689e9b129ca64c35aa85a991d3c5da7c8b1a1de4eb5e45ff065a44e02d5",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
     },
-    "store/android/listing/sv-SE/phone-screenshots/03-reference-signs-DE.png": {
+    "store/android/listing/de-DE/phone-screenshots/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/android/de-DE/04-traffic-signs.png",
+      "source_sha256": "4cba881eadbf6c001248c4120af4dde4c576c2165149c0b647ab8054ff5532de",
+      "output_sha256": "2e761dad8cb814c90e24192c9e0f8db927a73863d76d42c4a51edb3bf9a9fb58",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/de-DE/phone-screenshots/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/android/de-DE/05-france-fine.png",
+      "source_sha256": "c91fffb19ddaf290095d1ea352bc6d8ee223757a1e39a9e58ea5772f77acaf56",
+      "output_sha256": "85ed4b1df5e084c6c6cf0aa1aa1e2e4ec4c912543e3ae979f4467014851274f6",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/android/listing/de-DE/phone-screenshots/04-dashcam.png": {
+      "source": "store/artwork/raw-screenshots/android/de-DE/02-dashcam.png",
+      "source_sha256": "765244a0d48f2ae7c26d6ac7a61ff534d41f753389e08df2929bbe0d653cf789",
+      "output_sha256": "6a982e63daa35d79144e129ec4aa047b62c77e64248a92a102a0a7172e90156a",
+      "width": 1920,
+      "height": 1080,
+      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
+      "composite": {
+        "format": "youspeed.dashcam-marketing-composite.v1",
+        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+        "frame": {
+          "path": "store/artwork/source/real-dashcam-5.5s.png",
+          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+          "source_time_seconds": 5.5,
+          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+          "archive": {
+            "dataset": "loffenauer/youspeed.de",
+            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+          },
+          "source_crop": [
+            0,
+            320,
+            3840,
+            1720
+          ],
+          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+        },
+        "native_viewport": [
+          906,
+          194,
+          972,
+          697
+        ],
+        "fit": "centered aspect-fill",
+        "mask": "rounded-black-pixels",
+        "protected_capsules": [],
+        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+        "changed_native_pixels": 675972,
+        "replaced_native_pixels": 675972,
+        "composed_native_sha256": "7cdad1645958ed2b68f8fbcd4cd1e914396b1b0a4500de7fb6c8d5093b2d34b5",
+        "native_placement": {
+          "x": 422,
+          "y": 410,
+          "width": 1076,
+          "height": 605
+        },
+        "rendered_viewport_bounds": [
+          929,
+          518,
+          1475,
+          910
+        ]
+      },
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/de-DE/phone-screenshots/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/05-panoramax-upload.png",
+      "source_sha256": "be0d43a2495e89f501ce189dd7d73382c30631c4bce5b5f340e71357bbfc8a56",
+      "output_sha256": "c2449ec12582967c355a281f4c86e3e80d0793d5d939c6d635d4b5efabce7f88",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/android/listing/de-DE/phone-screenshots/06-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/de-DE/signs/DE.png",
+      "source_sha256": "240e8102fbfab56645f9d521e7c40ca361bc5342e638ca9e0725268fd7feed7c",
+      "output_sha256": "2c8db51be1364b0a51e9c1ac69cc27134de78136ed477104238e21b8879501c0",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/fr-FR/phone-screenshots/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/android/fr-FR/04-traffic-signs.png",
+      "source_sha256": "4cba881eadbf6c001248c4120af4dde4c576c2165149c0b647ab8054ff5532de",
+      "output_sha256": "3726b8e446396ad52bcc685d895328fc35b09e2435ec0fc37f6a0776747a248e",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/fr-FR/phone-screenshots/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/android/fr-FR/05-france-fine.png",
+      "source_sha256": "ecbaf80793b7b5a81fb1a73f6af9a010be5296197d462fe17005aa2864231e62",
+      "output_sha256": "8ad6d3ab55e6c8e7488127757678fbb86506bf1ff8a8042773965d9c84f5c065",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/android/listing/fr-FR/phone-screenshots/04-dashcam.png": {
+      "source": "store/artwork/raw-screenshots/android/fr-FR/02-dashcam.png",
+      "source_sha256": "f93af78fb895e4081bd1049ea419ea6754c3f892866c6bc63140ffc67d537336",
+      "output_sha256": "a680bf8bc096bbcda6c5cba7128b26b19cec1dbbf14b20bbcd7b7b269f7de350",
+      "width": 1920,
+      "height": 1080,
+      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
+      "composite": {
+        "format": "youspeed.dashcam-marketing-composite.v1",
+        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+        "frame": {
+          "path": "store/artwork/source/real-dashcam-5.5s.png",
+          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+          "source_time_seconds": 5.5,
+          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+          "archive": {
+            "dataset": "loffenauer/youspeed.de",
+            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+          },
+          "source_crop": [
+            0,
+            320,
+            3840,
+            1720
+          ],
+          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+        },
+        "native_viewport": [
+          906,
+          194,
+          972,
+          697
+        ],
+        "fit": "centered aspect-fill",
+        "mask": "rounded-black-pixels",
+        "protected_capsules": [],
+        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+        "changed_native_pixels": 652370,
+        "replaced_native_pixels": 652370,
+        "composed_native_sha256": "e4b1727238434ec4a20478e2056339df751cc93f3e4ef2a0a9883d3558bc05d1",
+        "native_placement": {
+          "x": 422,
+          "y": 410,
+          "width": 1076,
+          "height": 605
+        },
+        "rendered_viewport_bounds": [
+          929,
+          518,
+          1475,
+          910
+        ]
+      },
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/fr-FR/phone-screenshots/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/05-panoramax-upload.png",
+      "source_sha256": "be0d43a2495e89f501ce189dd7d73382c30631c4bce5b5f340e71357bbfc8a56",
+      "output_sha256": "af8d9129f839e911aea7e6e333b9c94e6bb76e59bdcee2319f70baef11f676dd",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/android/listing/fr-FR/phone-screenshots/06-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/fr-FR/signs/DE.png",
+      "source_sha256": "22a80981ec7cd451f0be52bc6b747064147665505bb952da15540f168b36f51a",
+      "output_sha256": "1c5b4062a42b5075be5f546fd3f3ffa7add4596fab49721ce2db75099ce8cb3a",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/nl-NL/phone-screenshots/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/android/nl-NL/04-traffic-signs.png",
+      "source_sha256": "4cba881eadbf6c001248c4120af4dde4c576c2165149c0b647ab8054ff5532de",
+      "output_sha256": "8e0235ffedbf268cb60a9b8efa65175a031e83a89e00770ef4f6a26b5176cc57",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/nl-NL/phone-screenshots/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/android/nl-NL/05-france-fine.png",
+      "source_sha256": "24abf880bc5420770dec4ea7f5d71229c5b177f0b40f8bdc54477109d24a6731",
+      "output_sha256": "a40c5a401cb30b687abdc844e2a190fa0e947082d330d7466512770e37ddc0f7",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/android/listing/nl-NL/phone-screenshots/04-dashcam.png": {
+      "source": "store/artwork/raw-screenshots/android/nl-NL/02-dashcam.png",
+      "source_sha256": "c9cdb5edada521b7aec42e292db08d5fcfc769bd40bd6dbeb75236a5e6da4bb9",
+      "output_sha256": "940537a6bc511e7016bb03a9fd2216645716740db67b97f5571d724472fe7f13",
+      "width": 1920,
+      "height": 1080,
+      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
+      "composite": {
+        "format": "youspeed.dashcam-marketing-composite.v1",
+        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+        "frame": {
+          "path": "store/artwork/source/real-dashcam-5.5s.png",
+          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+          "source_time_seconds": 5.5,
+          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+          "archive": {
+            "dataset": "loffenauer/youspeed.de",
+            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+          },
+          "source_crop": [
+            0,
+            320,
+            3840,
+            1720
+          ],
+          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+        },
+        "native_viewport": [
+          906,
+          194,
+          972,
+          697
+        ],
+        "fit": "centered aspect-fill",
+        "mask": "rounded-black-pixels",
+        "protected_capsules": [],
+        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+        "changed_native_pixels": 675972,
+        "replaced_native_pixels": 675972,
+        "composed_native_sha256": "84a399f85f7e637216ea0a65c3f2767ab208541f0d8cd751be4b46cd71a5d599",
+        "native_placement": {
+          "x": 422,
+          "y": 410,
+          "width": 1076,
+          "height": 605
+        },
+        "rendered_viewport_bounds": [
+          929,
+          518,
+          1475,
+          910
+        ]
+      },
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/nl-NL/phone-screenshots/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/05-panoramax-upload.png",
+      "source_sha256": "be0d43a2495e89f501ce189dd7d73382c30631c4bce5b5f340e71357bbfc8a56",
+      "output_sha256": "08b2ea7273f411f7a7c289e91458a64feb34806e7d76998e940f85744807e26a",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/android/listing/nl-NL/phone-screenshots/06-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/nl-NL/signs/DE.png",
+      "source_sha256": "8ad771f71803e2ceda2542944ccc5afe2edc6e1fd9d910998bafb9ff83726376",
+      "output_sha256": "38741661297306673571796a6e78eb321129653ab19de163fdbdef739e34b330",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/es-ES/phone-screenshots/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/android/es-ES/04-traffic-signs.png",
+      "source_sha256": "4cba881eadbf6c001248c4120af4dde4c576c2165149c0b647ab8054ff5532de",
+      "output_sha256": "576328bad9989d96c1c1895f6e57a0f0fd2c56732d90739c4427ca12434bab7f",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/es-ES/phone-screenshots/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/android/es-ES/05-france-fine.png",
+      "source_sha256": "e9eadda9657aea57dd8736bf90608529e603731f3709cca6310c1eb49868a30d",
+      "output_sha256": "eddaf0b6dc6e185ac028410419ed06f11f9ac691ac0c8c9da836c701e01d5f84",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/android/listing/es-ES/phone-screenshots/04-dashcam.png": {
+      "source": "store/artwork/raw-screenshots/android/es-ES/02-dashcam.png",
+      "source_sha256": "1a9b9daf9b2bd2a9bddef728d72cb03180ac37b01017f527b07f08582fdf4acd",
+      "output_sha256": "11837f8846f28632cd4b248401ad3db9706e03465d254e30650c9e54983228fa",
+      "width": 1920,
+      "height": 1080,
+      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
+      "composite": {
+        "format": "youspeed.dashcam-marketing-composite.v1",
+        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+        "frame": {
+          "path": "store/artwork/source/real-dashcam-5.5s.png",
+          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+          "source_time_seconds": 5.5,
+          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+          "archive": {
+            "dataset": "loffenauer/youspeed.de",
+            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+          },
+          "source_crop": [
+            0,
+            320,
+            3840,
+            1720
+          ],
+          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+        },
+        "native_viewport": [
+          906,
+          194,
+          972,
+          697
+        ],
+        "fit": "centered aspect-fill",
+        "mask": "rounded-black-pixels",
+        "protected_capsules": [],
+        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+        "changed_native_pixels": 675972,
+        "replaced_native_pixels": 675972,
+        "composed_native_sha256": "472bda7cd09f9ef4e10266e18139564c83cc7914c9acf865bbba72ee8d638c82",
+        "native_placement": {
+          "x": 422,
+          "y": 410,
+          "width": 1076,
+          "height": 605
+        },
+        "rendered_viewport_bounds": [
+          929,
+          518,
+          1475,
+          910
+        ]
+      },
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/es-ES/phone-screenshots/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/05-panoramax-upload.png",
+      "source_sha256": "be0d43a2495e89f501ce189dd7d73382c30631c4bce5b5f340e71357bbfc8a56",
+      "output_sha256": "456b1c1e2ff5b88d7827d821b9dacad93703ebeb45f544f784dafd6d39af786c",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/android/listing/es-ES/phone-screenshots/06-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/es-ES/signs/DE.png",
+      "source_sha256": "0d49c2a53fabb74be521f909fd08f9a7b323616123210a306229b2d12e961795",
+      "output_sha256": "b93a542c96fc23b622cfa9c56b5d6873e0a90895bf10c7dff81b4739d9f880f1",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/it-IT/phone-screenshots/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/android/it-IT/04-traffic-signs.png",
+      "source_sha256": "4cba881eadbf6c001248c4120af4dde4c576c2165149c0b647ab8054ff5532de",
+      "output_sha256": "0c5eada7d4c7a68036d9c1ed7271f3b3fc02d77d81e2ced236ec5b9f6c5ce517",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/it-IT/phone-screenshots/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/android/it-IT/05-france-fine.png",
+      "source_sha256": "48132523b4a5055365e3370972cf7bac088f267574fd4d059870127253e93f2f",
+      "output_sha256": "aa070a2d41c5ea1df575103060f89cd60653a73c07f3cbaa6d745712bec9b861",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/android/listing/it-IT/phone-screenshots/04-dashcam.png": {
+      "source": "store/artwork/raw-screenshots/android/it-IT/02-dashcam.png",
+      "source_sha256": "1a9b9daf9b2bd2a9bddef728d72cb03180ac37b01017f527b07f08582fdf4acd",
+      "output_sha256": "804ec078812f17b1bc34da6e54a21612005f98a29486489f2c782beda93f9a8f",
+      "width": 1920,
+      "height": 1080,
+      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
+      "composite": {
+        "format": "youspeed.dashcam-marketing-composite.v1",
+        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+        "frame": {
+          "path": "store/artwork/source/real-dashcam-5.5s.png",
+          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+          "source_time_seconds": 5.5,
+          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+          "archive": {
+            "dataset": "loffenauer/youspeed.de",
+            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+          },
+          "source_crop": [
+            0,
+            320,
+            3840,
+            1720
+          ],
+          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+        },
+        "native_viewport": [
+          906,
+          194,
+          972,
+          697
+        ],
+        "fit": "centered aspect-fill",
+        "mask": "rounded-black-pixels",
+        "protected_capsules": [],
+        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+        "changed_native_pixels": 675972,
+        "replaced_native_pixels": 675972,
+        "composed_native_sha256": "472bda7cd09f9ef4e10266e18139564c83cc7914c9acf865bbba72ee8d638c82",
+        "native_placement": {
+          "x": 422,
+          "y": 410,
+          "width": 1076,
+          "height": 605
+        },
+        "rendered_viewport_bounds": [
+          929,
+          518,
+          1475,
+          910
+        ]
+      },
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/it-IT/phone-screenshots/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/05-panoramax-upload.png",
+      "source_sha256": "be0d43a2495e89f501ce189dd7d73382c30631c4bce5b5f340e71357bbfc8a56",
+      "output_sha256": "1d4e98767db1540609806ff7d493cd74e15f46255f04cd72ce3e0bf83c4b6455",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/android/listing/it-IT/phone-screenshots/06-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/it-IT/signs/DE.png",
+      "source_sha256": "f31ccdda5a2d6240b99ecb5641846da1dc4194b20c17ca0bd4a6a78653b4ea0f",
+      "output_sha256": "926a6a976bc7b11f1bea5048080f8c22578cc3fe56168b39244e808ff65d8a38",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pl-PL/phone-screenshots/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/android/pl-PL/04-traffic-signs.png",
+      "source_sha256": "4cba881eadbf6c001248c4120af4dde4c576c2165149c0b647ab8054ff5532de",
+      "output_sha256": "467a33778ede8eebd5444a281581440696eb6da62b329175d4c1442ef900a319",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/pl-PL/phone-screenshots/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/android/pl-PL/05-france-fine.png",
+      "source_sha256": "48132523b4a5055365e3370972cf7bac088f267574fd4d059870127253e93f2f",
+      "output_sha256": "3b80202b92315df7a2a406fa84b233e729730ab2a6d8101ab9b4be8b44b7d29f",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/android/listing/pl-PL/phone-screenshots/04-dashcam.png": {
+      "source": "store/artwork/raw-screenshots/android/pl-PL/02-dashcam.png",
+      "source_sha256": "1a9b9daf9b2bd2a9bddef728d72cb03180ac37b01017f527b07f08582fdf4acd",
+      "output_sha256": "278bc91c8427034c749042ac854497d39ec4710a4012e2d5c541029ca7c7c608",
+      "width": 1920,
+      "height": 1080,
+      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
+      "composite": {
+        "format": "youspeed.dashcam-marketing-composite.v1",
+        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+        "frame": {
+          "path": "store/artwork/source/real-dashcam-5.5s.png",
+          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+          "source_time_seconds": 5.5,
+          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+          "archive": {
+            "dataset": "loffenauer/youspeed.de",
+            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+          },
+          "source_crop": [
+            0,
+            320,
+            3840,
+            1720
+          ],
+          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+        },
+        "native_viewport": [
+          906,
+          194,
+          972,
+          697
+        ],
+        "fit": "centered aspect-fill",
+        "mask": "rounded-black-pixels",
+        "protected_capsules": [],
+        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+        "changed_native_pixels": 675972,
+        "replaced_native_pixels": 675972,
+        "composed_native_sha256": "472bda7cd09f9ef4e10266e18139564c83cc7914c9acf865bbba72ee8d638c82",
+        "native_placement": {
+          "x": 422,
+          "y": 410,
+          "width": 1076,
+          "height": 605
+        },
+        "rendered_viewport_bounds": [
+          929,
+          518,
+          1475,
+          910
+        ]
+      },
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/pl-PL/phone-screenshots/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/05-panoramax-upload.png",
+      "source_sha256": "be0d43a2495e89f501ce189dd7d73382c30631c4bce5b5f340e71357bbfc8a56",
+      "output_sha256": "901e55513605ee6186ff627fed41f7362cc8835534ef971fbfc61f238a9ae0f6",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/android/listing/pl-PL/phone-screenshots/06-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/pl-PL/signs/DE.png",
+      "source_sha256": "0b004b7f4422f1de478a471d5e3cc46589d5c78306c4a080eaf9e6426eddd53d",
+      "output_sha256": "8adfc6ee86226686c26752c7fd9e8843ef1a753bab667956532be20f7540b71a",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/pt-BR/phone-screenshots/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/android/pt-BR/04-traffic-signs.png",
+      "source_sha256": "4cba881eadbf6c001248c4120af4dde4c576c2165149c0b647ab8054ff5532de",
+      "output_sha256": "5932f77c74d0679d3545d6398f77574e4852a2ee5a6dc044dbd5866909cf6b0f",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/pt-BR/phone-screenshots/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/android/pt-BR/05-france-fine.png",
+      "source_sha256": "8970066e092bf81731bf6db097608e7870aa5dad2d65c6b77541432103edeccf",
+      "output_sha256": "6c6d07ca124e6289fe075b16735bc144c741a1f0fd353c44efe9f1addf2cd1d7",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/android/listing/pt-BR/phone-screenshots/04-dashcam.png": {
+      "source": "store/artwork/raw-screenshots/android/pt-BR/02-dashcam.png",
+      "source_sha256": "1a9b9daf9b2bd2a9bddef728d72cb03180ac37b01017f527b07f08582fdf4acd",
+      "output_sha256": "25ea9b9c0c8f7793cffcb56d4d98c4fad947fc04f9ca9acaf0ff4d761e2e48c1",
+      "width": 1920,
+      "height": 1080,
+      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
+      "composite": {
+        "format": "youspeed.dashcam-marketing-composite.v1",
+        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+        "frame": {
+          "path": "store/artwork/source/real-dashcam-5.5s.png",
+          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+          "source_time_seconds": 5.5,
+          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+          "archive": {
+            "dataset": "loffenauer/youspeed.de",
+            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+          },
+          "source_crop": [
+            0,
+            320,
+            3840,
+            1720
+          ],
+          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+        },
+        "native_viewport": [
+          906,
+          194,
+          972,
+          697
+        ],
+        "fit": "centered aspect-fill",
+        "mask": "rounded-black-pixels",
+        "protected_capsules": [],
+        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+        "changed_native_pixels": 675972,
+        "replaced_native_pixels": 675972,
+        "composed_native_sha256": "472bda7cd09f9ef4e10266e18139564c83cc7914c9acf865bbba72ee8d638c82",
+        "native_placement": {
+          "x": 422,
+          "y": 410,
+          "width": 1076,
+          "height": 605
+        },
+        "rendered_viewport_bounds": [
+          929,
+          518,
+          1475,
+          910
+        ]
+      },
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/pt-BR/phone-screenshots/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/05-panoramax-upload.png",
+      "source_sha256": "be0d43a2495e89f501ce189dd7d73382c30631c4bce5b5f340e71357bbfc8a56",
+      "output_sha256": "4b70becae0e16008be10af0b3693e04d971ca7fd90fef0ba05f150127238a1a9",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/android/listing/pt-BR/phone-screenshots/06-reference-signs-DE.png": {
+      "source": "store/reference-screenshots/android/pt-BR/signs/DE.png",
+      "source_sha256": "7ee599c987d6dd8b4882c473b5e49ef63bbaab1d466d01e61f9aa3b31210703e",
+      "output_sha256": "829ffc6f4efaa91d7b273202eb97066994155311d580e57090c7a39db6e41dc7",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
+    },
+    "store/android/listing/sv-SE/phone-screenshots/02-live-assistance.png": {
+      "source": "store/artwork/raw-screenshots/android/sv-SE/04-traffic-signs.png",
+      "source_sha256": "4cba881eadbf6c001248c4120af4dde4c576c2165149c0b647ab8054ff5532de",
+      "output_sha256": "c4621009a2a615a275006c5851cd286ed7ec4ea4e1bb7829f7ecfa7c8dd08685",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/sv-SE/phone-screenshots/03-fine-calculation.png": {
+      "source": "store/artwork/raw-screenshots/android/sv-SE/05-france-fine.png",
+      "source_sha256": "b5a58b32485dc7175e4056560a9a8c2a8ee0886b152173df605ce3f411ba2ff8",
+      "output_sha256": "c5ae7d1d89fe362ed65ad2f447dd79038f0f18d0ef6547f8350dca9afaa34c43",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "demonstration_speed_kmh": 52
+    },
+    "store/android/listing/sv-SE/phone-screenshots/04-dashcam.png": {
+      "source": "store/artwork/raw-screenshots/android/sv-SE/02-dashcam.png",
+      "source_sha256": "1a9b9daf9b2bd2a9bddef728d72cb03180ac37b01017f527b07f08582fdf4acd",
+      "output_sha256": "2e0f5da8d4bf751d9eb5d14840ecb44e324d8c6fa52c43b0edf2735bf11f0fe3",
+      "width": 1920,
+      "height": 1080,
+      "content": "User-requested marketing composition: complete native demonstration UI with a genuine recorded Dashcam frame placed in its empty camera viewport. Not a live capture of the depicted session. No synthetic road imagery or recognition result.",
+      "composite": {
+        "format": "youspeed.dashcam-marketing-composite.v1",
+        "authoring": "User-requested composition of the native demonstration UI with pixels from a genuine iPhone Dashcam recording; not a live capture of the depicted session.",
+        "frame": {
+          "path": "store/artwork/source/real-dashcam-5.5s.png",
+          "sha256": "d9b504dc1ca06a9f144d83ef65e18c40b9880425b386ff1d24128ec7701a5e7f",
+          "source_time_seconds": 5.5,
+          "source_video_sha256": "f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402",
+          "archive": {
+            "dataset": "loffenauer/youspeed.de",
+            "revision": "bd12056313e00acc790d25ebe5486aac11f4cf79",
+            "remote_path": "device-backups/2026-10-01/objects/f622d4746220f98b9ac66b8a323e51d0c2dcb44a3b51068b4e842fcf99577402.mov"
+          },
+          "source_crop": [
+            0,
+            320,
+            3840,
+            1720
+          ],
+          "crop_reason": "Exclude the recording car mirror at the top and dashboard/hood at the bottom; retain genuine empty-road pixels without cars or people."
+        },
+        "native_viewport": [
+          906,
+          194,
+          972,
+          697
+        ],
+        "fit": "centered aspect-fill",
+        "mask": "rounded-black-pixels",
+        "protected_capsules": [],
+        "preserved": "All native pixels outside the camera pane, its border, caption capsules and non-black UI pixels (including Done). Raw source capture remains unchanged.",
+        "changed_native_pixels": 675972,
+        "replaced_native_pixels": 675972,
+        "composed_native_sha256": "472bda7cd09f9ef4e10266e18139564c83cc7914c9acf865bbba72ee8d638c82",
+        "native_placement": {
+          "x": 422,
+          "y": 410,
+          "width": 1076,
+          "height": 605
+        },
+        "rendered_viewport_bounds": [
+          929,
+          518,
+          1475,
+          910
+        ]
+      },
+      "demonstration_speed_kmh": 27
+    },
+    "store/android/listing/sv-SE/phone-screenshots/05-panoramax-upload.png": {
+      "source": "store/artwork/raw-screenshots/android/en-US/05-panoramax-upload.png",
+      "source_sha256": "be0d43a2495e89f501ce189dd7d73382c30631c4bce5b5f340e71357bbfc8a56",
+      "output_sha256": "ec3cead7fbfbf18ab877b9846b75b65fd4961eb0522c5eb5898386eb56eb2a63",
+      "width": 1080,
+      "height": 1920,
+      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result.",
+      "source_locale": "en-US",
+      "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account."
+    },
+    "store/android/listing/sv-SE/phone-screenshots/06-reference-signs-DE.png": {
       "source": "store/reference-screenshots/android/sv-SE/signs/DE.png",
       "source_sha256": "8ec83d83ac4ce3ee57b20ff8959152bf59f6d0fb55035b26baf2c83f02a11034",
-      "output_sha256": "a731a9b68e00ef7fe1f365e98ab9036b3772b5d4946426d6243ae4c60908c7ed",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/sv-SE/phone-screenshots/04-reference-signs-FR.png": {
-      "source": "store/reference-screenshots/android/sv-SE/signs/FR.png",
-      "source_sha256": "79a8df7b916690eb4403ecc86859240dc956b49c1e0963a8a07f3ca8c516be9e",
-      "output_sha256": "7a076dad41d01df774db210da456c09916e7f8b98eb6ec1bae3360c354ff941f",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/sv-SE/phone-screenshots/05-reference-signs-CH.png": {
-      "source": "store/reference-screenshots/android/sv-SE/signs/CH.png",
-      "source_sha256": "f1261e173b5f017dae12af2c539ac4674cba6526bb5c1b0d2de64f02af6086f8",
-      "output_sha256": "eeb646bf2c2a8106c28effd69c383037cea0ffeec49552b4f8acdd6d7b9336ef",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/sv-SE/phone-screenshots/06-reference-signs-BE.png": {
-      "source": "store/reference-screenshots/android/sv-SE/signs/BE.png",
-      "source_sha256": "dbd11c86a753d67c8fb7f4932ace82359eb7a1395a8c5c0f7c3d976356c1069d",
-      "output_sha256": "d8e902c3dfec8f172f5f6c15de3276bec201a99b72c40caa3a202c58d7013842",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/sv-SE/phone-screenshots/07-reference-signs-NL.png": {
-      "source": "store/reference-screenshots/android/sv-SE/signs/NL.png",
-      "source_sha256": "fe90c5704d648f9abad04e65a77fb7fbae0a4bc543dc4883433bc29867df7e4a",
-      "output_sha256": "4d1593ab4899247ed85558d2ee3513d98f981f1ec8c8529d9cf6b9b6fdb1333d",
-      "width": 1080,
-      "height": 1920,
-      "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."
-    },
-    "store/android/listing/sv-SE/phone-screenshots/08-reference-penalties-NLD.png": {
-      "source": "store/reference-screenshots/android/sv-SE/penalties/NLD.png",
-      "source_sha256": "4b80e831942564af2d3ac21568e7e6cf7eed6fd9f5e4eb311b388696114fd609",
-      "output_sha256": "e79a1d4dd09b67cbc6545c2bac1d9df3eeacc76ce4d15c1866986eb95354b84c",
+      "output_sha256": "d5dd98a5207de74cb4f1dda064d0e2663a0c53e2051fa08e31da715b1519cf5a",
       "width": 1080,
       "height": 1920,
       "content": "Complete native demonstration capture, proportionally scaled. No synthetic road preview or recognition result."

@@ -17,6 +17,12 @@ F-Droid build metadata reference. Android releases use app-specific
 
 ## Readiness findings
 
+The findings below concern versions 1.0.0 and 1.0.1. The current 1.4 development
+build includes bundled ML Kit for supplementary restriction-text OCR and local
+language identification, alongside other
+later dependency changes. A current F-Droid submission needs a fresh dependency
+and licensing review; the historical scan does not cover this build.
+
 The application is structurally suitable for F-Droid: it has public source,
 an OSI-approved license, no Google Play Services/Firebase/advertising/tracking
 SDK, only trusted Google Maven and Maven Central repositories, and a normal

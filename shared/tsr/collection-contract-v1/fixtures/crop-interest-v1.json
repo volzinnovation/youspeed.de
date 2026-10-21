@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "revision": 1,
+  "algorithm_version": "waterfill-v1",
+  "generated_at": "2026-10-04T12:00:00+00:00",
+  "valid_from": "2026-10-04T12:00:00+00:00",
+  "valid_until": "2026-10-06T12:00:00+00:00",
+  "registry_revision": "test-mapping-1",
+  "compatible_packs": [
+    "1111111111111111111111111111111111111111111111111111111111111111"
+  ],
+  "always": {
+    "exact": "bad",
+    "prefix": "bad:"
+  },
+  "interests": [
+    {
+      "collection_key": "DE:DE:278-10",
+      "country": "DE",
+      "class_id": "DE:278-10",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-10"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 200,
+      "allocated_images": 1,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    }
+  ],
+  "limits": {
+    "normal_images": 1,
+    "normal_bytes": 10000000,
+    "max_image_bytes": 10000,
+    "metadata_batch_events": 100,
+    "upload_attempts": 3,
+    "encounter": {
+      "regular_samples": 6,
+      "growth_samples": 2,
+      "growth_ratio": 1.5,
+      "spacing_ms": 500,
+      "max_crops": 8,
+      "max_attempts_per_frame": 4
+    }
+  }
+}

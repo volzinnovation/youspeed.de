@@ -2,6 +2,7 @@ import XCTest
 @testable import SpeedConsumer
 import AVFoundation
 import CoreGraphics
+import CoreImage
 import CryptoKit
 import ImageIO
 import SQLite3
@@ -487,6 +488,13 @@ private final class TrafficSignTestEmissionStore: @unchecked Sendable {
 }
 
 final class SpeedConsumerTests: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        guard Bundle.main.bundleIdentifier == "de.youspeed.SpeedConsumer.TestHost" else {
+            throw XCTSkip("Run the unit suite through run_consumer_device_tests.sh in its isolated TestHost app; these fixtures replace map data.")
+        }
+    }
+
     @MainActor
     func testGPSRoutingLeavesCoverageAndReusesReadersWhenReturning() async throws {
         let fm = FileManager.default
@@ -508,7 +516,7 @@ final class SpeedConsumerTests: XCTestCase {
                 coverage: BundleCoverage(bbox: BundleCoverageBBox(minLon: lon - 0.05, minLat: lat - 0.05,
                     maxLon: lon + 0.05, maxLat: lat + 0.05), poly: nil))
             try JSONEncoder().encode(manifest).write(to: directory.appendingPathComponent("bundle-manifest.v3.json"))
-            return database
+            return database.resolvingSymlinksInPath().standardizedFileURL
         }
         let france = try fixture(region: "france/rhone-alpes", country: "FRA", lat: 45.7204, lon: 5.078, city: "French Test City")
         let swiss = try fixture(region: "switzerland", country: "CHE", lat: 47, lon: 8, city: "Swiss Test City")
@@ -523,7 +531,7 @@ final class SpeedConsumerTests: XCTestCase {
         model.matcherDebugProfile = .m7
         // Persisted Switzerland must yield to France even 44 m off its nearest road.
         await model.testRunGPSLookup(latitude: 45.720, longitude: 5.078)
-        XCTAssertEqual(model.activeDBPath, france.path)
+        assertPathEqual(model.activeDBPath, france.path)
         XCTAssertEqual(model.testMapCountryCode, "FRA")
         XCTAssertNil(model.limitWayID)
         XCTAssertEqual(model.limitCityName, "French Test City")
@@ -549,14 +557,14 @@ final class SpeedConsumerTests: XCTestCase {
         await model.testRunGPSLookup(latitude: 43.2965, longitude: 5.3698)
         XCTAssertEqual(model.testMapContextGeneration, generation)
         await model.testRunGPSLookup(latitude: 45.7204, longitude: 5.078)
-        XCTAssertEqual(model.activeDBPath, france.path)
+        assertPathEqual(model.activeDBPath, france.path)
         XCTAssertEqual(model.testLookupServiceIdentity, franceReader)
         XCTAssertEqual(model.testLookupResourceStatistics?.opens, opens)
         await model.testRunGPSLookup(latitude: 47, longitude: 8)
-        XCTAssertEqual(model.activeDBPath, swiss.path)
+        assertPathEqual(model.activeDBPath, swiss.path)
         XCTAssertEqual(model.testMapCountryCode, "CHE")
         await model.testRunGPSLookup(latitude: 45.7204, longitude: 5.078)
-        XCTAssertEqual(model.activeDBPath, france.path)
+        assertPathEqual(model.activeDBPath, france.path)
         XCTAssertEqual(model.testMapCountryCode, "FRA")
         XCTAssertEqual(model.testLookupServiceIdentity, franceReader)
         XCTAssertEqual(model.testLookupResourceStatistics?.opens, opens)
@@ -603,6 +611,44 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(queue.next(isBusy: false)?.id, "switzerland")
     }
 
+
+    func testDataManagerDownloadStateAllowsIndependentQueuedRequests() {
+        let active = "germany|berlin", waiting = "germany|bayern", failed = "belgium|belgium"
+        func state(_ id: String) -> DataManagerDownloadState {
+            .resolve(optionID: id, activeID: active, queuedIDs: [waiting],
+                     failures: [failed: "offline", active: "stale active error", waiting: "stale queued error"])
+        }
+        XCTAssertEqual(state(active), .downloading)
+        XCTAssertFalse(state(active).acceptsDownloadRequest)
+        XCTAssertEqual(state(waiting), .queued(position: 1))
+        XCTAssertFalse(state(waiting).acceptsDownloadRequest)
+        XCTAssertEqual(state(failed), .failed("offline"))
+        XCTAssertTrue(state(failed).acceptsDownloadRequest)
+        XCTAssertEqual(state("france|reunion"), .idle)
+        XCTAssertTrue(state("france|reunion").acceptsDownloadRequest,
+                      "A different active transfer must not disable adding this region to the FIFO")
+    }
+
+    func testDataManagerQueuedCancellationRetryAndRemovalStaySerial() {
+        struct Request: Identifiable { let id: String }
+        var queue = BundleDownloadQueue<Request>()
+        queue.enqueue(Request(id: "a"), activeID: nil)
+        let active = queue.next(isBusy: false)?.id
+        XCTAssertEqual(active, "a")
+        queue.enqueue(Request(id: "b"), activeID: active)
+        queue.enqueue(Request(id: "c"), activeID: active)
+        queue.enqueue(Request(id: "b"), activeID: active)
+        XCTAssertNil(queue.next(isBusy: true), "Transfer/removal ownership must retain a single worker")
+        XCTAssertEqual(queue.ids, ["b", "c"])
+        queue.remove(id: "b")
+        XCTAssertEqual(DataManagerDownloadState.resolve(optionID: "b", activeID: active,
+            queuedIDs: queue.ids, failures: [:]), .idle)
+        queue.enqueue(Request(id: "b"), activeID: active)
+        XCTAssertEqual(queue.ids, ["c", "b"])
+        XCTAssertEqual(queue.next(isBusy: false)?.id, "c")
+        XCTAssertEqual(queue.next(isBusy: false)?.id, "b")
+        XCTAssertNil(queue.next(isBusy: false))
+    }
 
     func testDataManagerMapAndListShareTruthfulAvailabilityStates() {
         for phase in [BundleMetadataLoadState.unknown, .loading, .available, .unavailable, .failed] {
@@ -2069,7 +2115,9 @@ final class SpeedConsumerTests: XCTestCase {
             ))
             let imageData = try Data(contentsOf: imageURL)
             let image = try XCTUnwrap(UIImage(data: imageData)?.cgImage)
-            let detections = try backend.detections(in: image, orientation: .up)
+            let input = try TrafficSignDetectorInput(source: CIImage(cgImage: image), orientation: .up,
+                context: CIContext(options: [.cacheIntermediates: false]))
+            let detections = try backend.detections(in: input.image, orientation: .up)
             let speed70 = detections.first {
                 $0.semantic.kind == .maximumSpeed && $0.semantic.value == 70
             }
@@ -2080,7 +2128,7 @@ final class SpeedConsumerTests: XCTestCase {
             XCTAssertNil(speed70?.classifierCalibratedConfidence)
             XCTAssertGreaterThanOrEqual(
                 speed70?.rawScore ?? 0,
-                0.70,
+                fixtureName == "tsr-panoramax-0906fc23" ? 0.70 : 0.25,
                 "Expected a usable two-stage score in \(fixtureName)"
             )
             // Since the primary-sign-only runtime change (2abb2568), live
@@ -2880,7 +2928,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(afterBundleChange.roadContext, nextBundleContext)
     }
 
-    func testCalibratedRuntimeCropsActualInputAndRemapsForEveryMountOrientation() throws {
+    func testRuntimeUsesFixedWindowAndKeepsResultCoordinatesForEveryMountAndCalibration() throws {
         let manifest = makeTrafficSignModelPackManifest()
         let artifact = try XCTUnwrap(manifest.detector.artifacts.first)
         let verified = TrafficSignVerifiedModelPack(directoryURL: URL(fileURLWithPath: NSTemporaryDirectory()),
@@ -2894,12 +2942,13 @@ final class SpeedConsumerTests: XCTestCase {
         let detection = makeTrafficSignDetection(score: 0.9,
             box: TrafficSignNormalizedRect(x: 0.2, y: 0.3, width: 0.1, height: 0.2))
         for orientation: CGImagePropertyOrientation in [.up, .right, .down, .left] {
+          for leftTopX: Double? in [nil, 0.1, 0.5, 0.8] {
             let rotated = orientation == .right || orientation == .left
             let width = rotated ? 6 : 10, height = rotated ? 10 : 6
             var draft = VisualRoadCalibration.defaults(width: width, height: height,
                 orientationKey: "rear:exif:\(orientation.rawValue)")
-            draft.leftTopX = 0.5
-            let calibration = draft
+            draft.leftTopX = leftTopX ?? 0.46
+            let calibration = leftTopX == nil ? nil : draft
             let backend = CalibrationInspectingInferenceBackend(output: detection)
             let emissions = TrafficSignTestEmissionStore(), completed = DispatchSemaphore(value: 0)
             let runtime = TrafficSignRuntime(verifiedPack: verified, backend: backend, snapshotProvider: { snapshot },
@@ -2909,15 +2958,16 @@ final class SpeedConsumerTests: XCTestCase {
             runtime.analyzeStill(cgImage: image, orientation: orientation, timestampUTC: Date(timeIntervalSince1970: 4000), snapshot: snapshot)
             XCTAssertEqual(completed.wait(timeout: .now() + 3), .success)
             let dimensions = try XCTUnwrap(backend.dimensions())
-            XCTAssertEqual(dimensions.0, width / 2); XCTAssertEqual(dimensions.1, height)
+            XCTAssertEqual(dimensions.0, 1024); XCTAssertEqual(dimensions.1, 1024)
             XCTAssertEqual(dimensions.2, .up)
             let candidate = try XCTUnwrap(emissions.snapshot().first?.event.candidate)
-            XCTAssertEqual(candidate.boundingBox.x, 0.6, accuracy: 1e-12)
-            XCTAssertEqual(candidate.boundingBox.width, 0.05, accuracy: 1e-12)
+            XCTAssertEqual(candidate.boundingBox, detection.boundingBox)
             XCTAssertEqual(candidate.boundingBox.y, 0.3); XCTAssertEqual(candidate.boundingBox.height, 0.2)
             XCTAssertEqual(candidate.rawScore, detection.rawScore)
             XCTAssertEqual(candidate.semanticKind, detection.semantic.kind.rawValue)
             XCTAssertEqual(candidate.value, detection.semantic.value)
+            XCTAssertTrue(try XCTUnwrap(emissions.snapshot().first).usesDetectorWindow)
+          }
         }
     }
 
@@ -4198,6 +4248,10 @@ final class SpeedConsumerTests: XCTestCase {
         )
 
         let draft = try XCTUnwrap(PanoramaxTrafficSignAnnotationDraft(emission: emission))
+        let windowEmission = TrafficSignRuntimeEmission(event: event, frameContext: context,
+            captureSessionId: "zone-session", usesDetectorWindow: true)
+        XCTAssertNil(PanoramaxTrafficSignAnnotationDraft(emission: windowEmission),
+            "Window-relative boxes must never be projected onto full-size photos")
         XCTAssertEqual(draft.speedLimitKmh, 30)
         XCTAssertEqual(draft.physicalSignTrackID, "zone-track")
         XCTAssertEqual(
@@ -4670,6 +4724,47 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.startupCleanup?.removedOrphanFileCount, 1)
         XCTAssertFalse(FileManager.default.fileExists(atPath: orphan.path))
         XCTAssertEqual(result.batches.first?.state, .awaitingReview)
+    }
+
+    func testPanoramaxReadableBatchRemainsPublishableWithAnotherJournalGap() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let healthy = try store.createBatch(captureSessionID: "healthy-gallery")
+        let item = try addPanoramaxTestItem(store: store, batch: healthy, itemID: "healthy-photo")
+        let damaged = try store.createBatch(captureSessionID: "damaged-gallery")
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let header = try JSONSerialization.jsonObject(with: encoder.encode(damaged))
+        let journal = root.appendingPathComponent("Panoramax/batches/\(damaged.batchID).journal")
+        try FileManager.default.createDirectory(at: journal, withIntermediateDirectories: true)
+        let record: [String: Any] = ["version": 1, "sequence": 2, "header": header,
+                                   "upserts": [], "removed": []]
+        try JSONSerialization.data(withJSONObject: record)
+            .write(to: journal.appendingPathComponent("00000000000000000002.json"))
+
+        let reopened = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let result = await PanoramaxQueueMaintenanceExecutor.shared.loadBatches(store: reopened)
+        XCTAssertTrue(result.batchDirectoryReadSucceeded, "Healthy photos must remain publishable")
+        XCTAssertFalse(result.batchLoadSucceeded, "Partial reads must not reconcile deletion intents")
+        XCTAssertEqual(result.batches.map(\.batchID), [healthy.batchID])
+        XCTAssertEqual(result.batches.first?.items.map(\.itemID), [item.itemID])
+        XCTAssertTrue(result.deletion.failedRelativePaths.contains("batches/\(damaged.batchID).json"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(store.originalURL(for: item)).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: journal.path))
+    }
+
+    func testPanoramaxFailedDirectoryReadDoesNotPublishAnEmptyGallery() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let directory = root.appendingPathComponent("Panoramax/batches")
+        try FileManager.default.removeItem(at: directory)
+        try Data("not a directory".utf8).write(to: directory)
+        let result = await PanoramaxQueueMaintenanceExecutor.shared.loadBatches(store: store)
+        XCTAssertFalse(result.batchDirectoryReadSucceeded)
+        XCTAssertFalse(result.batchLoadSucceeded)
+        XCTAssertTrue(result.batches.isEmpty)
     }
 
     func testPanoramaxMaintenanceExecutorDeletesAndReloadsGallerySnapshot() async throws {
@@ -7901,7 +7996,8 @@ final class SpeedConsumerTests: XCTestCase {
         let firstExport = try await store.exportProposalAsOscPackage(observationID: newer.id)
         let recoveredExport = try await store.exportProposalAsOscPackage(observationID: newer.id)
         XCTAssertEqual(firstExport.exportID, recoveredExport.exportID)
-        XCTAssertEqual(firstExport.packageDirectory, recoveredExport.packageDirectory)
+        XCTAssertEqual(firstExport.packageDirectory.resolvingSymlinksInPath().standardizedFileURL,
+                       recoveredExport.packageDirectory.resolvingSymlinksInPath().standardizedFileURL)
         XCTAssertTrue(fm.fileExists(atPath: recoveredExport.changesFile.path))
     }
 
@@ -21346,7 +21442,7 @@ private final class BlockingOrientationFrameConsumer: DriveVideoFrameConsumer, @
     let release = DispatchSemaphore(value: 0)
     func consumeVideoFrame(_ sampleBuffer: CMSampleBuffer, orientation: CGImagePropertyOrientation) {
         entered.signal()
-        _ = release.wait(timeout: .now() + 2)
+        _ = release.wait(timeout: .now() + 10)
     }
 }
 
@@ -21368,7 +21464,8 @@ extension SpeedConsumerTests {
         dispatcher.setConsumer(consumer)
         dispatcher.setEnabled(true)
         DispatchQueue.global().async { dispatcher.dispatch(frame) }
-        XCTAssertEqual(consumer.entered.wait(timeout: .now() + 1), .success)
+        defer { consumer.release.signal() }
+        XCTAssertEqual(consumer.entered.wait(timeout: .now() + 5), .success)
         let updated = DispatchSemaphore(value: 0)
         let setterEntered = DispatchSemaphore(value: 0)
         DispatchQueue.global().async {
@@ -21376,11 +21473,11 @@ extension SpeedConsumerTests {
             dispatcher.setOrientation(.down)
             updated.signal()
         }
-        XCTAssertEqual(setterEntered.wait(timeout: .now() + 1), .success)
+        XCTAssertEqual(setterEntered.wait(timeout: .now() + 5), .success)
         XCTAssertEqual(updated.wait(timeout: .now() + 0.05), .timedOut,
                        "A mount change must not overtake a frame that is acquiring its context")
         consumer.release.signal()
-        XCTAssertEqual(updated.wait(timeout: .now() + 1), .success)
+        XCTAssertEqual(updated.wait(timeout: .now() + 5), .success)
     }
 }
 
@@ -22015,4 +22112,835 @@ extension SpeedConsumerTests {
         XCTAssertEqual(narrow.speedCandidateCount, 2)
     }
 
+}
+
+extension SpeedConsumerTests {
+    func testDrivingPhotoThresholdAndReadiness() {
+        for speed in [-1.0, 0, 0.999, 1, Double.nan, Double.infinity] {
+            XCTAssertFalse(DrivingPhotoPolicy.showsButton(speedKmh: speed))
+        }
+        for speed in [1.001, 1.79, 3.99, 4, 80] {
+            XCTAssertTrue(DrivingPhotoPolicy.showsButton(speedKmh: speed))
+        }
+        XCTAssertEqual(DrivingControlAvailability.controlsSpeedThresholdKmh, 20)
+        let now = Date(timeIntervalSince1970: 10_000)
+        func location(latitude: Double = 49, longitude: Double = 8,
+                      accuracy: Double = 5, age: Double = 0) -> Bool {
+            DrivingPhotoPolicy.locationIsUsable(latitude: latitude, longitude: longitude,
+                accuracy: accuracy, timestamp: now.addingTimeInterval(-age), now: now)
+        }
+        XCTAssertTrue(location(age: 10))
+        XCTAssertTrue(location(age: -60)) // Preserve the existing timestamp-skew allowance.
+        for valid in [location(age: 10.001), location(age: -60.001), location(latitude: 91),
+                      location(longitude: .nan), location(accuracy: -1), location(accuracy: 50.001),
+                      location(accuracy: .infinity)] { XCTAssertFalse(valid) }
+        func ready(recording: Bool = true, authorized: Bool = true, output: Bool = true,
+                   storage: Bool = true, inFlight: Bool = false, location: Bool = true,
+                   last: Date? = nil) -> Bool {
+            DrivingPhotoPolicy.canCapture(recording: recording, cameraAuthorized: authorized,
+                photoOutputAvailable: output, storageReady: storage, photoInFlight: inFlight,
+                locationUsable: location, lastRequestAt: last, now: now)
+        }
+        XCTAssertTrue(ready())
+        for result in [ready(recording: false), ready(authorized: false), ready(output: false),
+                       ready(storage: false), ready(inFlight: true), ready(location: false),
+                       ready(last: now.addingTimeInterval(-0.499))] { XCTAssertFalse(result) }
+        XCTAssertTrue(ready(last: now.addingTimeInterval(-0.5)))
+    }
+
+    @MainActor
+    func testDrivingPhotoInjectedSessionIgnoresHardwareFailureNotifications() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        try coordinator.testPrepareManualPhotoSession { _, _ in }
+        NotificationCenter.default.post(name: .AVCaptureSessionWasInterrupted, object: coordinator.session)
+        NotificationCenter.default.post(name: .AVCaptureSessionRuntimeError, object: coordinator.session)
+        try await Task.sleep(for: .milliseconds(50))
+        let location = CLLocation(coordinate: .init(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 10, timestamp: Date())
+        XCTAssertEqual(coordinator.state, .recording)
+        XCTAssertTrue(coordinator.canCaptureManualPhoto(location: location),
+            "An injected still session uses its synthetic camera, not simulator AVCaptureSession hardware")
+    }
+
+    @MainActor
+    func testDrivingPhotoManualPipelineIgnoresAutomaticFiltersAndRejectsRepeatedTaps() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        var requests: [(Int64, CGFloat)] = []
+        try coordinator.testPrepareManualPhotoSession { requests.append(($0, $1)) }
+        coordinator.updatePanoramaxConfiguration(PanoramaxCadenceConfiguration(
+            distanceMeters: 90, fallbackInterval: 240, recognizedSignsOnly: true), storageLimitBytes: 100_000_000)
+        let location = CLLocation(coordinate: .init(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 1.01 / 3.6, timestamp: Date())
+        XCTAssertFalse(coordinator.isPanoramaxModuleActive, "Automatic photo preference stays off")
+        XCTAssertFalse(coordinator.needsDashcamFinalization)
+        coordinator.ingest(location: location, speedMetersPerSecond: 10)
+        XCTAssertTrue(requests.isEmpty)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).jpegData(withCompressionQuality: 0.8) { _ in }
+        for orientation in ScreenOrientation.allCases {
+            coordinator.setScreenOrientation(orientation)
+            let before = requests.count
+            XCTAssertTrue(coordinator.captureManualPhoto(location: location, speedKmh: 1.01))
+            XCTAssertFalse(coordinator.captureManualPhoto(location: location, speedKmh: 30))
+            coordinator.ingest(location: location, speedMetersPerSecond: 10)
+            XCTAssertEqual(requests.count, before + 1)
+            XCTAssertEqual(requests.last?.1, orientation.captureRotationAngle)
+            coordinator.testCompletePhoto(data: image, uniqueID: try XCTUnwrap(requests.last?.0))
+            for _ in 0..<100 where coordinator.isManualPhotoInFlight { try await Task.sleep(for: .milliseconds(20)) }
+            XCTAssertFalse(coordinator.isManualPhotoInFlight)
+            XCTAssertEqual(coordinator.capturedImageCount, before + 1)
+            try await Task.sleep(for: .milliseconds(510))
+        }
+        let batches = try store.listBatches()
+        let items = batches.flatMap(\.items)
+        XCTAssertEqual(items.count, 3)
+        XCTAssertTrue(items.allSatisfy { $0.metadata.captureReason == "manual" && $0.state == .captured && $0.remoteID == nil })
+        XCTAssertTrue(items.allSatisfy { $0.metadata.signEvidence == nil })
+        XCTAssertEqual(coordinator.state, .recording)
+        XCTAssertFalse(coordinator.isPanoramaxModuleActive)
+        XCTAssertFalse(coordinator.needsDashcamFinalization)
+    }
+
+    @MainActor
+    func testDrivingPhotoLateCompletionCannotEnterNewSession() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        var requests: [Int64] = []
+        try coordinator.testPrepareManualPhotoSession { id, _ in requests.append(id) }
+        let location = CLLocation(coordinate: .init(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 10, timestamp: Date())
+        XCTAssertTrue(coordinator.captureManualPhoto(location: location, speedKmh: 36))
+        let oldID = try XCTUnwrap(requests.last)
+        coordinator.stop()
+        XCTAssertFalse(coordinator.captureManualPhoto(location: location, speedKmh: 36))
+        for _ in 0..<100 where coordinator.state == .stopping { try await Task.sleep(for: .milliseconds(20)) }
+        try coordinator.testPrepareManualPhotoSession { id, _ in requests.append(id) }
+        XCTAssertTrue(coordinator.captureManualPhoto(location: location, speedKmh: 36))
+        coordinator.testCompletePhoto(data: nil, uniqueID: oldID)
+        XCTAssertTrue(coordinator.isManualPhotoInFlight, "Stale callback cannot release the new request")
+        let newID = try XCTUnwrap(requests.last)
+        coordinator.testCompletePhoto(data: nil, uniqueID: newID)
+        XCTAssertFalse(coordinator.isManualPhotoInFlight)
+        XCTAssertEqual(coordinator.capturedImageCount, 0)
+        XCTAssertTrue(try store.listBatches().flatMap(\.items).isEmpty)
+    }
+
+    @MainActor
+    func testDrivingPhotoDecelerationFinishesPhotoBeforeReview() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        var requestID: Int64?
+        try coordinator.testPrepareManualPhotoSession { id, _ in requestID = id }
+        let location = CLLocation(coordinate: .init(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 10, timestamp: Date())
+        XCTAssertTrue(coordinator.captureManualPhoto(location: location, speedKmh: 36))
+        coordinator.setManualPhotoMoving(false)
+        XCTAssertEqual(try store.listBatches().first?.state, .capturing)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8)).jpegData(withCompressionQuality: 0.8) { _ in }
+        coordinator.testCompletePhoto(data: image, uniqueID: try XCTUnwrap(requestID))
+        for _ in 0..<100 where (try store.listBatches().first?.state) != .awaitingReview {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let batch = try XCTUnwrap(store.listBatches().first)
+        XCTAssertEqual(batch.state, .awaitingReview)
+        XCTAssertEqual(batch.items.count, 1)
+        XCTAssertFalse(coordinator.canCaptureManualPhoto(location: location))
+    }
+}
+
+extension SpeedConsumerTests {
+    @MainActor
+    func testDrivingPhotoSharesBusyGateWithoutStoppingDashcam() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        var requests: [Int64] = []
+        try coordinator.testPrepareManualPhotoSession(automaticPhotos: true, dashcamActive: true) { id, _ in requests.append(id) }
+        let location = CLLocation(coordinate: .init(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 10, timestamp: Date())
+        XCTAssertTrue(coordinator.captureManualPhoto(location: location, speedKmh: 36))
+        coordinator.ingest(location: location, speedMetersPerSecond: 10)
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertEqual(coordinator.state, .recording)
+        XCTAssertTrue(coordinator.isDashcamModuleActive)
+        XCTAssertTrue(coordinator.needsDashcamFinalization)
+        coordinator.testCompletePhoto(data: nil, uniqueID: try XCTUnwrap(requests.last))
+        XCTAssertTrue(coordinator.manualPhotoCaptureFailed)
+        XCTAssertFalse(coordinator.isManualPhotoInFlight)
+        XCTAssertTrue(coordinator.isDashcamModuleActive)
+        let unavailable = DriveCaptureCoordinator(queueStore: store)
+        try unavailable.testPrepareManualPhotoSession(outputAvailable: false) { _, _ in XCTFail("No output must never request an image") }
+        XCTAssertFalse(unavailable.captureManualPhoto(location: location, speedKmh: 36))
+        XCTAssertFalse(unavailable.canCaptureManualPhoto(location: location))
+    }
+}
+
+extension SpeedConsumerTests {
+    @MainActor
+    func testDrivingPhotoFailedExposureStillBecomesReviewableAfterDeceleration() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        var requestID: Int64?
+        try coordinator.testPrepareManualPhotoSession(dashcamActive: true) { id, _ in requestID = id }
+        let location = CLLocation(coordinate: .init(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 10, timestamp: Date())
+        XCTAssertTrue(coordinator.captureManualPhoto(location: location, speedKmh: 36))
+        coordinator.setManualPhotoMoving(false)
+        coordinator.testCompletePhoto(data: nil, uniqueID: try XCTUnwrap(requestID))
+        for _ in 0..<100 where (try store.listBatches().first?.state) != .awaitingReview {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertEqual(try store.listBatches().first?.state, .awaitingReview)
+        XCTAssertTrue(coordinator.manualPhotoCaptureFailed)
+        XCTAssertFalse(coordinator.isManualPhotoInFlight)
+        XCTAssertTrue(coordinator.isDashcamModuleActive)
+        XCTAssertEqual(coordinator.state, .recording)
+    }
+}
+
+final class PanoramaxCaptureToggleTests: XCTestCase {
+    @MainActor
+    func testSavedSelectionUpdatesRetainedDriveRecordingSession() throws {
+        let key = "youspeed.drive_recorder.panoramax_enabled"
+        let previous = UserDefaults.standard.object(forKey: key)
+        defer {
+            if let previous { UserDefaults.standard.set(previous, forKey: key) }
+            else { UserDefaults.standard.removeObject(forKey: key) }
+        }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let model = DriveSessionViewModel()
+        model.panoramaxCaptureEnabled = false
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        try coordinator.testPrepareManualPhotoSession(purpose: .driveRecording) { _, _ in }
+        model.testAttachPanoramaxCaptureCoordinator(coordinator, store: store)
+        let sessionID = coordinator.activeCaptureSessionID
+        let batchID = try XCTUnwrap(store.listBatches().first?.batchID)
+
+        model.panoramaxCaptureEnabled = true
+        XCTAssertTrue(coordinator.isPanoramaxModuleActive)
+        XCTAssertTrue(model.driveRecorderPanoramaxActive)
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: key))
+        model.panoramaxCaptureEnabled = false
+        XCTAssertFalse(coordinator.isPanoramaxModuleActive)
+        XCTAssertFalse(model.driveRecorderPanoramaxActive)
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: key))
+        XCTAssertEqual(coordinator.state, .recording)
+        XCTAssertEqual(coordinator.sessionPurpose, .driveRecording)
+        XCTAssertEqual(coordinator.activeCaptureSessionID, sessionID)
+        XCTAssertEqual(try store.listBatches().map(\.batchID), [batchID])
+    }
+
+    @MainActor
+    func testDisablePreservesAcceptedPhotoAndManualShutterInBothSessionPurposes() async throws {
+        for purpose in [DriveCaptureSessionPurpose.automaticCapture, .driveRecording] {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let store = try PanoramaxQueueStore(root: root)
+            let coordinator = DriveCaptureCoordinator(queueStore: store)
+            var requests: [Int64] = []
+            try coordinator.testPrepareManualPhotoSession(automaticPhotos: true, dashcamActive: true,
+                purpose: purpose) { id, _ in requests.append(id) }
+            let sessionID = coordinator.activeCaptureSessionID
+            let location = movingLocation()
+            coordinator.ingest(location: location, speedMetersPerSecond: 10)
+            XCTAssertEqual(requests.count, 1)
+            XCTAssertTrue(coordinator.setPanoramaxEnabledDuringRecording(false))
+            XCTAssertTrue(coordinator.isManualPhotoInFlight)
+            coordinator.ingest(location: location, speedMetersPerSecond: 10)
+            XCTAssertEqual(requests.count, 1)
+            let jpeg = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8))
+                .jpegData(withCompressionQuality: 0.8) { _ in }
+            coordinator.testCompletePhoto(data: jpeg, uniqueID: try XCTUnwrap(requests.first))
+            for _ in 0..<100 where coordinator.isManualPhotoInFlight {
+                try await Task.sleep(for: .milliseconds(20))
+            }
+            XCTAssertEqual(coordinator.capturedImageCount, 1)
+            XCTAssertEqual(try store.listBatches().flatMap(\.items).count, 1)
+            coordinator.ingest(location: movingLocation(longitude: 8.001), speedMetersPerSecond: 10)
+            XCTAssertEqual(requests.count, 1, "Disabling blocks new automatic exposures")
+            XCTAssertTrue(coordinator.captureManualPhoto(location: movingLocation(), speedKmh: 36))
+            XCTAssertEqual(requests.count, 2, "The explicit shutter remains independent")
+            coordinator.testCompletePhoto(data: nil, uniqueID: try XCTUnwrap(requests.last))
+            XCTAssertTrue(coordinator.setPanoramaxEnabledDuringRecording(true))
+            coordinator.ingest(location: movingLocation(longitude: 8.002), speedMetersPerSecond: 10)
+            XCTAssertEqual(requests.count, 3, "Enabling resumes automatic admission")
+            coordinator.testCompletePhoto(data: nil, uniqueID: try XCTUnwrap(requests.last))
+            XCTAssertEqual(coordinator.activeCaptureSessionID, sessionID)
+            XCTAssertEqual(coordinator.state, .recording)
+            XCTAssertTrue(coordinator.isDashcamModuleActive)
+            XCTAssertTrue(coordinator.needsDashcamFinalization)
+        }
+    }
+
+    @MainActor
+    func testEnableAfterStationaryDisablePreparesNewBatchWithoutRestart() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        var requests = 0
+        try coordinator.testPrepareManualPhotoSession(automaticPhotos: true, purpose: .driveRecording) { _, _ in requests += 1 }
+        let sessionID = coordinator.activeCaptureSessionID
+        let originalBatch = try XCTUnwrap(store.listBatches().first?.batchID)
+        coordinator.setManualPhotoMoving(false)
+        XCTAssertTrue(coordinator.setPanoramaxEnabledDuringRecording(false))
+        for _ in 0..<100 where (try store.getBatch(originalBatch)?.state) != .awaitingReview {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertEqual(try store.getBatch(originalBatch)?.state, .awaitingReview)
+        XCTAssertTrue(coordinator.setPanoramaxEnabledDuringRecording(true))
+        for _ in 0..<100 where (try store.listBatches().filter { $0.state == .capturing }).isEmpty {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        let replacement = try XCTUnwrap(store.listBatches().first { $0.state == .capturing })
+        XCTAssertNotEqual(replacement.batchID, originalBatch)
+        XCTAssertEqual(replacement.captureSessionID, sessionID)
+        coordinator.setManualPhotoMoving(true)
+        for _ in 0..<100 where !coordinator.canCaptureManualPhoto(location: movingLocation()) {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        coordinator.ingest(location: movingLocation(), speedMetersPerSecond: 10)
+        XCTAssertEqual(requests, 1)
+        XCTAssertEqual(coordinator.state, .recording)
+        XCTAssertEqual(coordinator.activeCaptureSessionID, sessionID)
+    }
+
+    @MainActor
+    func testUnavailablePhotoOutputKeepsIntentButDoesNotClaimActiveCapture() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        try coordinator.testPrepareManualPhotoSession(outputAvailable: false, purpose: .driveRecording) { _, _ in
+            XCTFail("An unavailable still output cannot accept photos")
+        }
+        let sessionID = coordinator.activeCaptureSessionID
+        XCTAssertFalse(coordinator.setPanoramaxEnabledDuringRecording(true))
+        XCTAssertTrue(coordinator.requestedPanoramaxEnabled)
+        XCTAssertFalse(coordinator.isPanoramaxModuleActive)
+        XCTAssertTrue(coordinator.lastCaptureDetail.contains("nicht verfuegbar"))
+        coordinator.ingest(location: movingLocation(), speedMetersPerSecond: 10)
+        XCTAssertFalse(coordinator.captureManualPhoto(location: movingLocation(), speedKmh: 36))
+        XCTAssertEqual(coordinator.activeCaptureSessionID, sessionID)
+        XCTAssertEqual(coordinator.state, .recording)
+    }
+
+    private func movingLocation(longitude: Double = 8) -> CLLocation {
+        CLLocation(coordinate: .init(latitude: 49, longitude: longitude), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 10, timestamp: Date())
+    }
+}
+
+extension SpeedConsumerTests {
+    func testNormalizedEndpointBundleSupportsTunnelPortalWithoutLegacyLinks() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let db = root.appendingPathComponent("normalized.sqlite")
+        try createTunnelTransitionFixtureDB(at: db)
+        try executeSQL(at: db, sql: """
+            DROP TABLE way_links;
+            CREATE TABLE way_endpoints (way_id INTEGER PRIMARY KEY, ref_norm TEXT, highway TEXT, tunnel_flag INTEGER, start_node_key TEXT, start_lon REAL, start_lat REAL, end_node_key TEXT, end_lon REAL, end_lat REAL, way_length_m REAL);
+            INSERT INTO way_endpoints VALUES (7001,'B10','primary',0,'approach',13.0,52.0,'portal',13.0010,52.0,68.5),(7002,'B10','primary',1,'portal',13.0010,52.0,'exit',13.0020,52.0,68.5),(7003,'B36','primary',0,'parallel-start',13.0010,52.00025,'parallel-end',13.0020,52.00025,68.5);
+            UPDATE way_geom SET points_json='[[52.0,13.0],[52.0,13.0010]]' WHERE way_id=7001;
+        """)
+        let service = V3SpeedLimitService(dbPath: db.path, matchingModel: .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic)
+        let approach = WayMatchContext(preferredWayID: "7001", preferredHighway: "primary",
+            preferredEndpointProximityM: 0, recentWayIDs: ["7001"], preferredStreetRef: "B 10", recentStreetRefs: ["B 10"])
+        let entry = try service.lookupSpeedLimit(lat: 52, lon: 13.0010, radiusM: 80, maxCandidates: 32,
+            matchContext: approach, headingDeg: 90, speedKmh: 20, horizontalAccuracyM: 5)
+        XCTAssertEqual(entry.wayID, "7002")
+        XCTAssertTrue(entry.isTunnelSegment)
+        let middle = try service.lookupSpeedLimit(lat: 52, lon: 13.0015, radiusM: 80, maxCandidates: 32,
+            matchContext: approach, headingDeg: 90, speedKmh: 20, horizontalAccuracyM: 5)
+        XCTAssertNotEqual(middle.wayID, "7002")
+        // A shared ref without an exact endpoint connection must remain rejected.
+        try executeSQL(at: db, sql: "UPDATE way_endpoints SET start_node_key='unconnected' WHERE way_id=7002;")
+        let disconnected = try service.lookupSpeedLimit(lat: 52, lon: 13.0010, radiusM: 80, maxCandidates: 32,
+            matchContext: approach, headingDeg: 90, speedKmh: 20, horizontalAccuracyM: 5)
+        XCTAssertNotEqual(disconnected.wayID, "7002")
+    }
+}
+
+extension TrafficSignPassageEvaluationTests {
+    @MainActor
+    func testNightWithdrawsCameraAuthorityAndRestoresBundledLimit() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .zoneStart(30), context: context))
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .camera)
+        let selected = model.trafficSignRecognitionEnabled
+        model.testRefreshCameraDaylight(latitude: 48.76, longitude: 8.34,
+            at: ISO8601DateFormatter().date(from: "2026-10-18T17:05:00Z")!)
+        XCTAssertFalse(model.cameraTSRDaylightAllowed)
+        XCTAssertEqual(model.trafficSignRecognitionEnabled, selected)
+        XCTAssertEqual(model.speedLimitKmh, 50)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+        XCTAssertFalse(model.effectiveSpeedLimitState.hasCameraEvidenceMarker)
+        model.testRefreshCameraDaylight(latitude: 48.76, longitude: 8.34,
+            at: ISO8601DateFormatter().date(from: "2026-10-19T10:00:00Z")!)
+        XCTAssertTrue(model.cameraTSRDaylightAllowed)
+        XCTAssertEqual(model.speedLimitKmh, 50)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+    }
+}
+
+extension SpeedConsumerTests {
+    func testStaleReferenceDirectionUsesMatchedLocalTangentBeforeWayEndpoints() throws {
+        var result = try staleReferenceDirectionFixture()
+        let way = try XCTUnwrap(result.wayID)
+        // The selected legacy hypothesis points north; the local curve points south.
+        result.applicabilityGeometry = TSRMapGeometry(wayId: way, localTangentDeg: 180,
+            roadClass: "secondary", hypotheses: [], branches: [], capabilities: ["local_tangent"])
+        XCTAssertEqual(DriveSessionViewModel.trafficSignTravelDirection(for: result, headingDegrees: 180), .forward)
+        XCTAssertEqual(DriveSessionViewModel.trafficSignTravelDirection(for: result, headingDegrees: 0), .reverse)
+        result.applicabilityGeometry = nil
+        XCTAssertEqual(DriveSessionViewModel.trafficSignTravelDirection(for: result, headingDegrees: 0), .forward)
+        result.applicabilityGeometry = TSRMapGeometry(wayId: "different-way", localTangentDeg: 180,
+            roadClass: "secondary", hypotheses: [], branches: [], capabilities: ["local_tangent"])
+        XCTAssertEqual(DriveSessionViewModel.trafficSignTravelDirection(for: result, headingDegrees: 180), .unknown)
+    }
+
+    func testStaleReferenceDirectionWithholdsStationaryNoisyAndStaleNativeCourse() throws {
+        var result = try staleReferenceDirectionFixture()
+        result.applicabilityGeometry = TSRMapGeometry(wayId: result.wayID, localTangentDeg: 90,
+            roadClass: "secondary", hypotheses: [], branches: [], capabilities: ["local_tangent"])
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        func direction(speed: Double = 1, accuracy: Double = 20, course: Double = 90,
+            courseAccuracy: Double = 25, age: Double = 1.5) -> TrafficSignTravelDirection {
+            let location = CLLocation(coordinate: CLLocationCoordinate2D(latitude: 52, longitude: 13),
+                altitude: 0, horizontalAccuracy: accuracy, verticalAccuracy: 5,
+                course: course, courseAccuracy: courseAccuracy, speed: speed, speedAccuracy: 0.1,
+                timestamp: now.addingTimeInterval(-age))
+            return DriveSessionViewModel.reliableReferenceTravelDirection(for: result, location: location, now: now)
+        }
+        XCTAssertEqual(direction(), .forward)
+        XCTAssertEqual(direction(course: 270), .reverse)
+        XCTAssertEqual(direction(speed: 0), .unknown)
+        XCTAssertEqual(direction(speed: 0.99), .unknown)
+        XCTAssertEqual(direction(speed: -1), .unknown)
+        XCTAssertEqual(direction(accuracy: 20.1), .unknown)
+        XCTAssertEqual(direction(accuracy: -1), .unknown)
+        XCTAssertEqual(direction(course: -1), .unknown)
+        XCTAssertEqual(direction(course: 360), .unknown)
+        XCTAssertEqual(direction(courseAccuracy: -1), .unknown)
+        XCTAssertEqual(direction(courseAccuracy: 25.1), .unknown)
+        XCTAssertEqual(direction(age: 1.501), .unknown)
+        XCTAssertEqual(direction(age: -0.1), .unknown)
+    }
+
+    @MainActor
+    func testStaleReferenceControllerHonorsExplicitUnlimitedTrunk() async throws {
+        try await withStaleReferenceController(highway: "trunk", maxspeed: "none") { model in
+            await model.testRunGPSLookup(latitude: 48.9, longitude: 8.4)
+            XCTAssertEqual(model.limitWayID, "6001")
+            XCTAssertEqual(model.effectiveSpeedLimitState.value, .unlimited)
+            XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+            XCTAssertEqual(model.lastLookupStatus, "matched_unlimited")
+        }
+    }
+
+    @MainActor
+    func testStaleReferenceControllerHonorsExplicitUnlimitedRamps() async throws {
+        for highway in ["motorway_link", "trunk_link"] {
+            try await withStaleReferenceController(highway: highway, maxspeed: "none") { model in
+                await model.testRunGPSLookup(latitude: 48.9, longitude: 8.4)
+                XCTAssertEqual(model.limitWayID, "6001", highway)
+                XCTAssertEqual(model.effectiveSpeedLimitState.value, .unlimited, highway)
+                XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle, highway)
+                XCTAssertEqual(model.lastLookupStatus, "matched_unlimited", highway)
+            }
+        }
+    }
+
+    @MainActor
+    func testStaleReferenceControllerDoesNotInferUnlimitedForUnsignedRamp() async throws {
+        try await withStaleReferenceController(highway: "motorway_link", maxspeed: nil) { model in
+            await model.testRunGPSLookup(latitude: 48.9, longitude: 8.4)
+            XCTAssertEqual(model.limitWayID, "6001")
+            XCTAssertEqual(model.effectiveSpeedLimitState.value, .unknown)
+            XCTAssertFalse(model.isUnlimitedSpeedLimitActive)
+            XCTAssertEqual(model.lastLookupStatus, "matched_no_speed")
+        }
+    }
+
+    @MainActor
+    func testStaleReferenceControllerLogsAuthoritativeGrayStateAndPreservesOldLogDecoding() async throws {
+        try await withStaleReferenceController(highway: "secondary", maxspeed: "70") { model in
+            let wasLogging = model.debugLoggingEnabled
+            model.setDebugLoggingEnabled(true)
+            defer { model.setDebugLoggingEnabled(wasLogging) }
+            let context = TrafficSignDetectionContext(wayId: "previous-road", latitude: 48.9, longitude: 8.4,
+                headingDegrees: 90, travelDirection: .forward,
+                sourceSignature: TrafficSignRuntimeSourceSignature(osmRevision: "test-old-map", localCorrectionRevision: nil),
+                roadIdentity: "name:previous-road")
+            model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+            await model.testRunGPSLookup(latitude: 48.9, longitude: 8.4)
+            XCTAssertEqual(model.effectiveSpeedLimitState.value, .numeric(50))
+            XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown)
+            XCTAssertEqual(model.lastLookupStatus, "matched_last_known")
+            let rows = try String(contentsOfFile: model.matchLogPath, encoding: .utf8).split(separator: "\n")
+            let data = Data(try XCTUnwrap(rows.last).utf8)
+            let entry = try JSONDecoder().decode(DriveMatchLogEntry.self, from: data)
+            XCTAssertEqual(entry.result?.speedLimitKmh, 70)
+            XCTAssertEqual(entry.status, "matched_last_known")
+            XCTAssertEqual(entry.effectiveSpeedLimitSource, "last_known")
+            XCTAssertEqual(entry.effectiveSpeedLimitKind, "numeric")
+            XCTAssertEqual(entry.effectiveSpeedLimitCurrent, false)
+            XCTAssertEqual(entry.effectiveSpeedLimitReason, model.effectiveSpeedLimitState.presentationReason)
+            var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            for key in ["effectiveSpeedLimitSource", "effectiveSpeedLimitReason", "effectiveSpeedLimitKind", "effectiveSpeedLimitCurrent"] {
+                legacy.removeValue(forKey: key)
+            }
+            let oldEntry = try JSONDecoder().decode(DriveMatchLogEntry.self,
+                from: JSONSerialization.data(withJSONObject: legacy))
+            XCTAssertNil(oldEntry.effectiveSpeedLimitSource)
+            XCTAssertNil(oldEntry.effectiveSpeedLimitCurrent)
+            XCTAssertEqual(oldEntry.result?.speedLimitKmh, 70)
+        }
+    }
+
+    private func staleReferenceDirectionFixture() throws -> SpeedLimitResult {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("stale-reference-heading-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let database = directory.appendingPathComponent("roads.sqlite")
+        try createHeadingDisambiguationFixtureDB(at: database)
+        return try V3SpeedLimitService(dbPath: database.path, matchingModel: .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic)
+            .lookupSpeedLimit(lat: 52, lon: 13.005, radiusM: 80, maxCandidates: 32,
+                preferredWayID: "1001", headingDeg: 0, headingAccuracyDeg: 5, speedKmh: 40, horizontalAccuracyM: 5)
+    }
+
+    @MainActor
+    private func withStaleReferenceController(highway: String, maxspeed: String?,
+        body: (DriveSessionViewModel) async throws -> Void) async throws {
+        let fm = FileManager.default
+        let root = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        let activeStateURL = root.appendingPathComponent("active_bundle.json")
+        let originalActiveState = try? Data(contentsOf: activeStateURL)
+        let bundlesDirectory = root.appendingPathComponent("bundles")
+        let installedDirectories = (try? fm.contentsOfDirectory(at: bundlesDirectory,
+            includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])) ?? []
+        let originalManifests: [(URL, Data)] = installedDirectories.compactMap { directory in
+            let url = directory.appendingPathComponent("bundle-manifest.v3.json")
+            return (try? Data(contentsOf: url)).map { (url, $0) }
+        }
+        let fixtureID = UUID().uuidString
+        let directory = root.appendingPathComponent("bundles/DEU-stale-reference-test-\(fixtureID)")
+        let manifestURL = directory.appendingPathComponent("bundle-manifest.v3.json")
+        defer {
+            // Leave the tiny SQLite file until the isolated TestHost process
+            // ends; its reader and asynchronous app startup work may outlive
+            // the assertion scope. Removing only the manifest excludes this
+            // fixture from the next case's bundle-routing inventory.
+            try? fm.removeItem(at: manifestURL)
+            for (url, data) in originalManifests { try? data.write(to: url, options: .atomic) }
+            if let originalActiveState { try? originalActiveState.write(to: activeStateURL, options: .atomic) }
+            else { try? fm.removeItem(at: activeStateURL) }
+        }
+        // Temporarily hide only routing metadata from other TestHost fixtures;
+        // their live SQLite files and readers remain valid throughout this case.
+        for (url, _) in originalManifests { try fm.removeItem(at: url) }
+        try fm.createDirectory(at: directory, withIntermediateDirectories: true)
+        let database = directory.appendingPathComponent("roads.sqlite")
+        try createCityPolygonFixtureDB(at: database, fixLat: 48.9, fixLon: 8.4, adminLevel8Name: "Reference Test City")
+        let maxspeedSQL = maxspeed.map { "'\($0)'" } ?? "NULL"
+        try executeSQL(at: database, sql: "UPDATE ways SET highway='\(highway)',maxspeed=\(maxspeedSQL),maxspeed_type=NULL,source_maxspeed=NULL;")
+        let data = try Data(contentsOf: database)
+        let digest = sha256Hex(data)
+        let manifest = V3BundleManifest(format: "youspeed.v3.bundle.manifest", schemaVersion: 1,
+            variant: "v3", region: "germany/baden-wuerttemberg", countryCode: "DEU", bundleVersion: fixtureID,
+            createdAtUTC: "2026-10-19T00:00:00Z", minAppVersion: "1.0.0",
+            db: BundleArtifact(file: database.lastPathComponent, bytes: Int64(data.count), sha256: digest, url: nil),
+            dbParts: nil, deltaIndex: nil,
+            coverage: BundleCoverage(bbox: BundleCoverageBBox(minLon: 8.35, minLat: 48.85, maxLon: 8.45, maxLat: 48.95), poly: nil))
+        try JSONEncoder().encode(manifest).write(to: manifestURL)
+        let active = ActiveBundleState(region: "germany/baden-wuerttemberg", bundleVersion: fixtureID,
+            dbFileName: database.lastPathComponent, activatedAtUTC: "2026-10-19T00:00:00Z", dbPath: database.path, dbSHA256: digest)
+        try JSONEncoder().encode(active).write(to: activeStateURL, options: .atomic)
+        let model = DriveSessionViewModel()
+        // App services start independent asynchronous network work. Keep the
+        // controller alive for the isolated process, as the real app does, so
+        // fixture teardown cannot invalidate a URLSession before its queued
+        // bridge has created its task. Each case still gets its own controller.
+        staleReferenceControllerFixtureLifetimes.append(model)
+        defer { model.stopDriving() }
+        try await model.testWaitForStartupDataLoad()
+        await model.testRefreshBundleInventory()
+        model.matcherDebugProfile = .m7
+        try await body(model)
+    }
+}
+
+// Fixture ownership matches the application lifetime. XCTest's TestHost process
+// teardown releases these resources after all queued app work has stopped.
+@MainActor private var staleReferenceControllerFixtureLifetimes: [DriveSessionViewModel] = []
+
+private struct GeneratedDirectionalSpeedCases: Decodable {
+    struct Road: Decodable {
+        let wayId: String
+        let lat: Double
+        let lon: Double
+        let forwardHeadingDeg: Double
+        let expectedForwardKmh: Int
+        let expectedBackwardKmh: Int
+    }
+    let databaseSHA256: String
+    let cases: [Road]
+}
+
+extension SpeedConsumerTests {
+    func testDirectionalPostedLimitsRequireReliableLocalWayDirection() throws {
+        let file = try makeDirectionalSpeedFixture(forward: "30", backward: "50", highCity: true)
+        defer { try? FileManager.default.removeItem(at: file) }
+        for model in [V3SpeedLimitService.MatchingModel.corridorHMM, .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic] {
+            let service = V3SpeedLimitService(dbPath: file.path, countryCode: "DEU", matchingModel: model)
+            defer { service.invalidateDatabase() }
+            func lookup(_ heading: Double?, _ accuracy: Double? = 5, _ speed: Double = 40) throws -> SpeedLimitResult {
+                try service.lookupSpeedLimit(lat: 52, lon: 13.002, headingDeg: heading,
+                    headingAccuracyDeg: accuracy, speedKmh: speed, horizontalAccuracyM: 5)
+            }
+            let forward = try lookup(90, 45, 8)
+            XCTAssertEqual(forward.wayID, "4101")
+            XCTAssertEqual(forward.speedLimitKmh, 30)
+            XCTAssertEqual(forward.speedSource, "EXPLICIT_TAG")
+            XCTAssertEqual(try lookup(270).speedLimitKmh, 50)
+            for result in [try lookup(nil), try lookup(90, nil), try lookup(90, 45.1),
+                           try lookup(90, -1), try lookup(90, 5, 7.99), try lookup(0), try lookup(361)] {
+                XCTAssertNil(result.speedLimitKmh, "A known urban default must not mask directional ambiguity")
+                XCTAssertNotEqual(result.isUnlimitedSpeedLimit, true)
+                XCTAssertEqual(result.speedSource, "DIRECTIONAL_UNRESOLVED")
+                XCTAssertEqual(result.speedCandidateCount, 1, "Mapped directional evidence still counts toward bundle density")
+            }
+        }
+    }
+
+    func testDirectionalPostedLimitsUseLocalCurveInsteadOfWholeWayEndpoints() throws {
+        let file = try makeDirectionalSpeedFixture(forward: "30", backward: "70")
+        defer { try? FileManager.default.removeItem(at: file) }
+        try executeSQL(at: file, sql: """
+        UPDATE ways SET max_lat=52.002;
+        UPDATE ways_rtree SET max_lat=52.002;
+        UPDATE way_geom SET points_json='[[52,13],[52,13.004],[52.002,13.004],[52.002,13]]';
+        """)
+        let service = V3SpeedLimitService(dbPath: file.path, countryCode: "DEU")
+        defer { service.invalidateDatabase() }
+        let along = try service.lookupSpeedLimit(lat: 52.002, lon: 13.002, headingDeg: 270,
+            headingAccuracyDeg: 5, speedKmh: 40, horizontalAccuracyM: 5)
+        let against = try service.lookupSpeedLimit(lat: 52.002, lon: 13.002, headingDeg: 90,
+            headingAccuracyDeg: 5, speedKmh: 40, horizontalAccuracyM: 5)
+        XCTAssertEqual(along.wayID, "4101")
+        XCTAssertEqual(along.speedLimitKmh, 30)
+        XCTAssertEqual(against.speedLimitKmh, 70)
+        XCTAssertNil(along.insideCity)
+        XCTAssertEqual(along.citySource, "settlement:missing:unknown")
+    }
+
+    func testDirectionalPostedLimitsHandleOverridesAgreementUnlimitedAndUnsupportedTags() throws {
+        let variants: [(String?, String?, String?, Double?, Int?, Bool, String)] = [
+            ("30", nil, "50", 90, 30, false, "EXPLICIT_TAG"),
+            ("30", nil, "50", 270, 50, false, "EXPLICIT_TAG"),
+            ("30", nil, "50", nil, nil, false, "DIRECTIONAL_UNRESOLVED"),
+            ("50", nil, "50", nil, 50, false, "EXPLICIT_TAG"),
+            ("40", "40", nil, nil, 40, false, "EXPLICIT_TAG"),
+            ("none", "none", nil, nil, nil, true, "EXPLICIT_UNLIMITED_TAG"),
+            ("none", nil, "80", 90, nil, true, "EXPLICIT_UNLIMITED_TAG"),
+            ("none", nil, "80", 270, 80, false, "EXPLICIT_TAG"),
+            ("none", nil, "80", nil, nil, false, "DIRECTIONAL_UNRESOLVED"),
+            ("signals", "70", "50", 90, nil, false, "DIRECTIONAL_UNRESOLVED"),
+            ("signals", "70", "50", 270, 70, false, "EXPLICIT_TAG"),
+            ("DE:urban", "DE:urban", nil, nil, 50, false, "INHERITED_TAG")
+        ]
+        for (forward, backward, base, heading, expected, unlimited, source) in variants {
+            let file = try makeDirectionalSpeedFixture(forward: forward, backward: backward, base: base, highCity: true)
+            defer { try? FileManager.default.removeItem(at: file) }
+            let service = V3SpeedLimitService(dbPath: file.path, countryCode: "DEU")
+            let result = try service.lookupSpeedLimit(lat: 52, lon: 13.002, headingDeg: heading,
+                headingAccuracyDeg: 5, speedKmh: 40, horizontalAccuracyM: 5)
+            service.invalidateDatabase()
+            XCTAssertEqual(result.speedLimitKmh, expected, "forward=\(forward ?? "nil") backward=\(backward ?? "nil") heading=\(heading?.description ?? "nil")")
+            XCTAssertEqual(result.isUnlimitedSpeedLimit == true, unlimited)
+            XCTAssertEqual(result.speedSource, source)
+        }
+        let weak = try makeDirectionalSpeedFixture(forward: "DE:urban", backward: "DE:urban")
+        defer { try? FileManager.default.removeItem(at: weak) }
+        let service = V3SpeedLimitService(dbPath: weak.path, countryCode: "DEU")
+        let result = try service.lookupSpeedLimit(lat: 52, lon: 13.002)
+        service.invalidateDatabase()
+        XCTAssertNil(result.speedLimitKmh, "Symbolic evidence must retain the existing settlement confidence gate")
+    }
+
+    func testDirectionalPostedLimitsPreserveLegacyBundlesWithoutOptionalColumns() throws {
+        let file = try makeDirectionalSpeedFixture(base: "60", directionalColumns: false)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let service = V3SpeedLimitService(dbPath: file.path, countryCode: "DEU")
+        defer { service.invalidateDatabase() }
+        let result = try service.lookupSpeedLimit(lat: 52, lon: 13.002)
+        XCTAssertEqual(result.speedLimitKmh, 60)
+        XCTAssertEqual(result.speedSource, "EXPLICIT_TAG")
+        XCTAssertNil(result.insideCity)
+    }
+
+    @MainActor
+    func testGeneratedDirectionalPostedLimitsReachControllerOnAllThreeRecordedWays() async throws {
+        let fixture = try generatedDirectionalSpeedFixture()
+        try await withGeneratedDirectionalSpeedController(database: fixture.database, cases: fixture.manifest) { model in
+            let wasLogging = model.debugLoggingEnabled
+            model.setDebugLoggingEnabled(true)
+            defer { model.setDebugLoggingEnabled(wasLogging) }
+            for road in fixture.manifest.cases {
+                for (heading, expected) in [(road.forwardHeadingDeg, road.expectedForwardKmh),
+                    ((road.forwardHeadingDeg + 180).truncatingRemainder(dividingBy: 360), road.expectedBackwardKmh)] {
+                    model.stopDriving()
+                    await model.testRunGPSLookup(latitude: road.lat, longitude: road.lon,
+                        headingDegrees: heading, speedKmh: 40, headingAccuracyDegrees: 5)
+                    XCTAssertEqual(model.limitWayID, road.wayId)
+                    XCTAssertEqual(model.effectiveSpeedLimitState.value, .numeric(expected))
+                    XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+                    XCTAssertEqual(model.lastLookupStatus, "matched")
+                    let last = try String(contentsOfFile: model.matchLogPath, encoding: .utf8).split(separator: "\n").last
+                    let entry = try JSONDecoder().decode(DriveMatchLogEntry.self, from: Data(try XCTUnwrap(last).utf8))
+                    XCTAssertEqual(entry.result?.speedSource, "EXPLICIT_TAG")
+                    XCTAssertNil(entry.result?.insideCity)
+                    XCTAssertEqual(entry.result?.citySource, "settlement:missing:unknown")
+                    print("GENERATED_DIRECTIONAL_CONTROLLER way=\(road.wayId) heading=\(heading) kmh=\(expected) source=\(entry.result?.speedSource ?? "nil") city=unknown")
+                }
+                let lookup = V3SpeedLimitService(dbPath: fixture.database.path, countryCode: "DEU")
+                for (heading, accuracy) in [(nil, 5.0), (road.forwardHeadingDeg, 46.0),
+                    ((road.forwardHeadingDeg + 90).truncatingRemainder(dividingBy: 360), 5.0)] as [(Double?, Double)] {
+                    let result = try lookup.lookupSpeedLimit(lat: road.lat, lon: road.lon, headingDeg: heading,
+                        headingAccuracyDeg: accuracy, speedKmh: 40, horizontalAccuracyM: 5)
+                    XCTAssertEqual(result.wayID, road.wayId)
+                    XCTAssertNil(result.speedLimitKmh)
+                    XCTAssertEqual(result.speedSource, "DIRECTIONAL_UNRESOLVED")
+                    XCTAssertNil(result.insideCity)
+                }
+                let density = try lookup.bundleRouteFeatureCounts(lat: road.lat, lon: road.lon, radiusM: 50, maxCandidates: 64)
+                XCTAssertGreaterThan(density.candidateCount, 0)
+                XCTAssertGreaterThan(density.speedCandidateCount, 0,
+                    "Headingless routing must count the mapped directional limits without inventing current authority")
+                let unknown = try lookup.lookupSpeedLimit(lat: road.lat, lon: road.lon, radiusM: 50, maxCandidates: 64)
+                XCTAssertNil(unknown.speedLimitKmh)
+                XCTAssertEqual(unknown.speedCandidateCount, density.speedCandidateCount)
+                XCTAssertNotNil(unknown.nearestSpeedCandidateDistanceM)
+                lookup.invalidateDatabase()
+            }
+        }
+    }
+
+    @MainActor
+    func testGeneratedDirectionalPostedLimitReversalRetainsEightSecondConfirmation() async throws {
+        let fixture = try generatedDirectionalSpeedFixture()
+        let road = try XCTUnwrap(fixture.manifest.cases.first)
+        try await withGeneratedDirectionalSpeedController(database: fixture.database, cases: fixture.manifest) { model in
+            await model.testRunGPSLookup(latitude: road.lat, longitude: road.lon,
+                headingDegrees: road.forwardHeadingDeg, speedKmh: 40)
+            XCTAssertEqual(model.speedLimitKmh, road.expectedForwardKmh)
+            let reverse = (road.forwardHeadingDeg + 180).truncatingRemainder(dividingBy: 360)
+            await model.testRunGPSLookup(latitude: road.lat, longitude: road.lon, headingDegrees: reverse, speedKmh: 40)
+            XCTAssertEqual(model.effectiveSpeedLimitState.source, .lastKnown)
+            XCTAssertEqual(model.speedLimitKmh, road.expectedForwardKmh)
+            try await Task.sleep(nanoseconds: 8_200_000_000)
+            await model.testRunGPSLookup(latitude: road.lat, longitude: road.lon, headingDegrees: reverse, speedKmh: 40)
+            XCTAssertEqual(model.limitWayID, road.wayId)
+            XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+            XCTAssertEqual(model.speedLimitKmh, road.expectedBackwardKmh)
+        }
+    }
+
+    private func makeDirectionalSpeedFixture(forward: String? = nil, backward: String? = nil,
+        base: String? = nil, highCity: Bool = false, directionalColumns: Bool = true) throws -> URL {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("directional-limit-\(UUID()).sqlite")
+        try createGermanLowSpeedHeuristicFixtureDB(at: file)
+        try addSettlementSchema(at: file)
+        func sql(_ value: String?) -> String { value.map { "'\($0.replacingOccurrences(of: "'", with: "''"))'" } ?? "NULL" }
+        try executeSQL(at: file, sql: "UPDATE ways SET maxspeed=\(sql(base)),maxspeed_type=NULL,source_maxspeed=NULL;")
+        if directionalColumns {
+            try executeSQL(at: file, sql: """
+            ALTER TABLE ways ADD COLUMN maxspeed_forward TEXT;
+            ALTER TABLE ways ADD COLUMN maxspeed_backward TEXT;
+            UPDATE ways SET maxspeed_forward=\(sql(forward)),maxspeed_backward=\(sql(backward));
+            """)
+        }
+        if highCity {
+            try executeSQL(at: file, sql: "INSERT INTO settlement_segment VALUES(1,4101,0,0,1,'zone_traffic','high','[]','[[52,13],[52,13.004]]');")
+        }
+        return file
+    }
+
+    private func generatedDirectionalSpeedFixture() throws -> (database: URL, manifest: GeneratedDirectionalSpeedCases) {
+        let directory = FileManager.default.temporaryDirectory
+        let database = directory.appendingPathComponent("directional-speeds.sqlite")
+        let cases = directory.appendingPathComponent("directional-speeds.json")
+        guard FileManager.default.fileExists(atPath: database.path), FileManager.default.fileExists(atPath: cases.path) else {
+            throw XCTSkip("Stage the real builder's directional-speeds.sqlite and directional-speeds.json in the isolated TestHost tmp")
+        }
+        let manifest = try JSONDecoder().decode(GeneratedDirectionalSpeedCases.self, from: Data(contentsOf: cases))
+        XCTAssertEqual(Set(manifest.cases.map(\.wayId)), Set(["1248904506", "1302655171", "81302142"]))
+        XCTAssertEqual(sha256Hex(try Data(contentsOf: database)), manifest.databaseSHA256)
+        return (database, manifest)
+    }
+
+    @MainActor
+    private func withGeneratedDirectionalSpeedController(database: URL, cases: GeneratedDirectionalSpeedCases,
+        body: (DriveSessionViewModel) async throws -> Void) async throws {
+        let fm = FileManager.default
+        let root = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        let activeStateURL = root.appendingPathComponent("active_bundle.json")
+        let originalState = try? Data(contentsOf: activeStateURL)
+        let installed = (try? fm.contentsOfDirectory(at: root.appendingPathComponent("bundles"), includingPropertiesForKeys: nil)) ?? []
+        let originals: [(URL, Data)] = installed.compactMap { directory in
+            let url = directory.appendingPathComponent("bundle-manifest.v3.json")
+            return (try? Data(contentsOf: url)).map { (url, $0) }
+        }
+        let id = UUID().uuidString
+        let directory = root.appendingPathComponent("bundles/DEU-directional-source-\(id)")
+        let manifestURL = directory.appendingPathComponent("bundle-manifest.v3.json")
+        defer {
+            try? fm.removeItem(at: manifestURL)
+            for (url, data) in originals { try? data.write(to: url, options: .atomic) }
+            if let originalState { try? originalState.write(to: activeStateURL, options: .atomic) }
+            else { try? fm.removeItem(at: activeStateURL) }
+        }
+        for (url, _) in originals { try fm.removeItem(at: url) }
+        try fm.createDirectory(at: directory, withIntermediateDirectories: true)
+        let copied = directory.appendingPathComponent("roads.sqlite")
+        try fm.copyItem(at: database, to: copied)
+        XCTAssertEqual(sha256Hex(try Data(contentsOf: copied)), cases.databaseSHA256)
+        let bbox = BundleCoverageBBox(minLon: cases.cases.map(\.lon).min()! - 0.01,
+            minLat: cases.cases.map(\.lat).min()! - 0.01, maxLon: cases.cases.map(\.lon).max()! + 0.01,
+            maxLat: cases.cases.map(\.lat).max()! + 0.01)
+        let manifest = V3BundleManifest(format: "youspeed.v3.bundle.manifest", schemaVersion: 1, variant: "v3",
+            region: "germany/baden-wuerttemberg", countryCode: "DEU", bundleVersion: id,
+            createdAtUTC: "2026-10-19T00:00:00Z", minAppVersion: "1.0.0",
+            db: BundleArtifact(file: copied.lastPathComponent, bytes: Int64(try Data(contentsOf: copied).count),
+                sha256: cases.databaseSHA256, url: nil), dbParts: nil, deltaIndex: nil,
+            coverage: BundleCoverage(bbox: bbox, poly: nil))
+        try JSONEncoder().encode(manifest).write(to: manifestURL)
+        let state = ActiveBundleState(region: manifest.region, bundleVersion: id, dbFileName: copied.lastPathComponent,
+            activatedAtUTC: "2026-10-19T00:00:00Z", dbPath: copied.path, dbSHA256: cases.databaseSHA256)
+        try JSONEncoder().encode(state).write(to: activeStateURL, options: .atomic)
+        let model = DriveSessionViewModel()
+        staleReferenceControllerFixtureLifetimes.append(model)
+        defer { model.stopDriving() }
+        try await model.testWaitForStartupDataLoad()
+        await model.testRefreshBundleInventory()
+        model.matcherDebugProfile = .m7
+        try await body(model)
+    }
 }

@@ -1,8 +1,6 @@
-Die Strecke ist vertraut. Das Tempolimit hat sich geändert. Mit YouSpeed behältst du das Wesentliche im Blick.
+Mach dein iPhone zum Assistenzsystem für jedes Auto. Sieh deine aktuelle Geschwindigkeit neben Tempolimit und anderen Verkehrszeichen, höre hilfreiche Warnungen und halte (auf Wunsch) deine Fahrt in Video und Bildern fest.
 
-Mach dein iPhone zum Begleiter für das Auto, das du schon hast. Sieh deine aktuelle Geschwindigkeit neben dem Referenz-Tempolimit, höre hilfreiche Warnungen und halte deine Fahrt im Video fest. Eine Verbindung zum Auto ist nicht nötig.
-
-Tempolimits im Blick
+Tempolimits und Bußgelder im Blick
 Nutze heruntergeladene Kartendaten und Kameraerkennung für Tempolimit-Hinweise auf deiner Strecke. Wähle selbst, ab welcher Überschreitung du gewarnt wirst. Wo unterstützt, zeigen länderspezifische Bußgeldschätzungen, was eine Überschreitung kosten könnte.
 
 Verkehrszeichen hören
@@ -12,12 +10,14 @@ Jetzt aufnehmen. Später ansehen.
 Die integrierte Dashcam speichert Videos auf deinem iPhone. Schau sie dir im Stand an, teile einen Clip oder lösche Aufnahmen, die du nicht mehr brauchst.
 
 Vorbereiten und offline fahren
-Lade die benötigten Karten vor der Fahrt herunter und nutze sie ohne laufende Mobilfunkverbindung. Karten sind für Deutschland, Frankreich, die Schweiz, Belgien und die Niederlande verfügbar. Im Datenmanager verwaltest du Downloads und Speicherplatz.
+Lade die benötigten Karten vor der Fahrt herunter und nutze sie ohne laufende Mobilfunkverbindung. Karten sind für Deutschland, Frankreich, die Schweiz, Belgien und die Niederlande und weitere Länder verfügbar. Im Datenmanager verwaltest du Downloads und Speicherplatz.
 
 Nachschlagen und mitmachen
 Unter Info findest du offline verfügbare Verkehrszeichenkataloge und länderspezifische Bußgeldtabellen. Lass dir Zeichennamen auf Deutsch, Englisch, Französisch oder Niederländisch vorlesen. Auf unterstützten Geräten und in unterstützten Sprachen kannst du Tempolimit-Korrekturen per Sprache erfassen. Straßenfotos kannst du aufnehmen, prüfen und für einen optionalen Panoramax-Upload auswählen.
 
 Deine Aufnahmen. Deine Entscheidung.
-Die Fahrtfunktionen brauchen kein Konto. Kamera und Mikrofon sind optional. Bei eingeschalteter Fotoaufnahme entstehen während der Bewegung mit geöffneter App automatisch Fotos. Fotos und Videos bleiben auf deinem iPhone, bis du sie bewusst teilst oder hochlädst. Panoramax-Uploads benötigen ein verbundenes Konto und Internet; hochgeladene Fotos enthalten Standort- und Aufnahmedaten. Lokale Diagnoseprotokolle sind standardmäßig eingeschaltet und lassen sich in den Einstellungen deaktivieren. Keine Werbe- oder Tracking-SDKs.
+Die Fahrtfunktionen brauchen kein Konto. Kamera und Mikrofon sind optional. Bei eingeschalteter Fotoaufnahme entstehen während der Bewegung mit geöffneter App automatisch Fotos. Vollständige Straßenfotos und Dashcam-Videos bleiben auf deinem iPhone, bis du sie bewusst teilst oder hochlädst. Panoramax-Uploads benötigen ein verbundenes Konto und Internet; hochgeladene Fotos enthalten Standort- und Aufnahmedaten. Lokale Diagnoseprotokolle sind standardmäßig eingeschaltet und lassen sich in den Einstellungen deaktivieren. Keine Werbe- oder Tracking-SDKs.
 
-Richte die App im Stand ein und bediene ihre Funktionen nur im Stand. Erkennung und Kartendaten können unvollständig oder falsch sein. Länderabdeckung und Bußgeldschätzungen unterscheiden sich; die Referenztabellen sind keine Rechtsberatung. Verkehrszeichen und Verkehrsregeln sind maßgeblich. YouSpeed garantiert weder das geltende Tempolimit noch rechtliche Folgen.
+Richte die App im Stand ein und bediene ihre Funktionen nur im Stand. Erkennung und Kartendaten können unvollständig oder falsch sein. Länderabdeckung und Bußgeldschätzungen unterscheiden sich; die Referenztabellen sind keine Rechtsberatung. Verkehrszeichen und Verkehrsregeln sind maßgeblich.
+
+Optionale Zeichenbeiträge: Mit Zustimmung werden Zeichenklassen, Modellwerte, Zeit und GPS-Position unter einer zufälligen Installations-ID an die private YouSpeed-Zeichendatenbank gesendet. Der tägliche Sammelplan wählt Zeichen-Crops für den automatischen Upload, auch über mobile Daten; Negativbeispiele werden immer ausgewählt. Offline können Crops bis zu sieben Tage lokal warten. Freigabe widerrufen und Löschung anfordern: Einstellungen. Erkennung funktioniert auch ohne Beitragsfreigabe. Vollständige Fotos werden dadurch nicht auf Panoramax veröffentlicht.

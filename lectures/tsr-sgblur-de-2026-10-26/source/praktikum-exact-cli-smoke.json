@@ -1,0 +1,91 @@
+{
+  "schema_version": "lecture-exact-cli-smoke-v1",
+  "recorded_at": "2026-10-19",
+  "ultralytics": "8.4.56",
+  "torch": "2.6.0+cu126",
+  "wheel_sha256": "84185b7c8ad91a8974bb4c5a42a14aeebb87a8c051cc64a5191758ed7d91fb95",
+  "wheel_url": "https://files.pythonhosted.org/packages/55/3f/7c86e841462a5f394c5f446943b5776b298aed418a6fd12386da70672660/ultralytics-8.4.56-py3-none-any.whl",
+  "wheel_installed": false,
+  "wheel_import_method": "Extract official SHA-verified wheel in temporary directory; PYTHONPATH only for child processes",
+  "device": "cpu",
+  "threads": 2,
+  "synthetic_train_images": 136,
+  "synthetic_val_images": 2,
+  "synthetic_test_images": 2,
+  "epochs": 1,
+  "optimization_batches": 17,
+  "head_classes": 136,
+  "parameter_elements": 13008840,
+  "commands": [
+    {
+      "command": [
+        "train.py",
+        "--model",
+        "/mnt/nvme/prolix/models/DE/classifier/classify_de_road_signs.pt",
+        "--epochs",
+        "1",
+        "--batch-size",
+        "8",
+        "--device",
+        "cpu"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "command": [
+        "evaluate.py",
+        "--baseline",
+        "/mnt/nvme/prolix/models/DE/classifier/classify_de_road_signs.pt",
+        "--candidate",
+        "runs/versuch-01/weights/best.pt",
+        "--device",
+        "cpu"
+      ],
+      "exit_code": 3,
+      "expected_exit_code": 3
+    },
+    {
+      "command": [
+        "evaluate.py",
+        "--baseline",
+        "/mnt/nvme/prolix/models/DE/classifier/classify_de_road_signs.pt",
+        "--candidate",
+        "runs/versuch-01/weights/best.pt",
+        "--split",
+        "test",
+        "--output",
+        "reports/abschluss",
+        "--device",
+        "cpu"
+      ],
+      "exit_code": 3,
+      "expected_exit_code": 3
+    }
+  ],
+  "progress_csv": true,
+  "safe_checkpoint_written_and_reloaded": true,
+  "validation_report_written": true,
+  "test_report_written": true,
+  "incomplete_old_class_gate_exit_3_verified": true,
+  "production_checkpoint_sha256_unchanged": true,
+  "package_installation_or_service_change": false,
+  "real_sign_training_or_quality_evidence": false,
+  "elapsed_seconds": 27.236297607421875,
+  "temporary_directory_removed": true,
+  "local_unit_tests": {
+    "count": 27,
+    "command": "python3 -m unittest discover -p 'test_*.py'",
+    "passed": true
+  },
+  "coverage_note": "CLI synthetic fixture verifies model loading, head extension, optimization, progress, safe checkpoint serialization/reload, validation/test inference and persisted non-pass regression gate. No claim about real-sign quality.",
+  "script_sha256": {
+    "praktikum/model_utils.py": "50e2c478161e13c8b1b67c0dcd8cfbbc7db9d1ce90398c9c5f9f915280b787f7",
+    "praktikum/prepare_dataset.py": "62b52240128080df5d539ad984dd2add4045f389e6c88d5ac4ad97178de02fd4",
+    "praktikum/test_model_utils.py": "7a35e156757700a8238dbdfee287d235224c8a3abb043cb6c2ced68618b14502",
+    "praktikum/test_prepare_dataset.py": "09429637f7e6cd4771ee36ab0bddbd7f3268183c09f35e7c2124f4acef2763a4",
+    "praktikum/train.py": "914b7e36d95560a114f263c8041d58d4ee8cfc2ce2d9893dafa32f21f40c7928",
+    "praktikum/evaluate.py": "df74c2fdaeba726df9bf8ff32e2f5b1df8142145719b4be39e499808b8d8cb5e"
+  },
+  "class_index_sha256": "4e072e612a9ee779eeff797505d76c4399830627749061d7c2d6b138456fe4f9"
+}

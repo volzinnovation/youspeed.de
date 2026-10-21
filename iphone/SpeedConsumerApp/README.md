@@ -2,6 +2,22 @@
 
 Consumer iPhone app scaffold for on-road speed + speed-limit display.
 
+## Test isolation
+
+Run tests through `scripts/iphone/run_consumer_device_tests.sh`. Its default
+SpeedConsumer run uses the separate `de.youspeed.SpeedConsumer.TestHost` app and
+container on simulators and physical phones. Unit tests do not start the live
+dashboard or camera; their map fixtures cannot touch the driver's installed app.
+The map-fixture suite skips if invoked directly in the normal app container.
+
+The live Settings UI flow needs the driver's installed map. Run it separately
+with `--installed-app-ui-tests --only-testing
+SpeedConsumerUITests/ScreenOrientationUITests/testLiveSettingsDismissalReopenAndNestedDebugNavigation`
+and the physical-device destination. This option rejects unit-test identifiers.
+Keep the phone unlocked while Xcode installs and runs the tests. Use separate
+DerivedData directories for concurrent destinations, and finish one run before
+rebuilding products used by that run.
+
 ## Design goals
 - Keep the benchmark app (`SpeedDBBenchSketch`) stable for reproducibility.
 - Use only v3 runtime data (`speeds_v3.sqlite`) for production consumer flow.

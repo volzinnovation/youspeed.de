@@ -1,0 +1,52 @@
+Zusätzliche Panoramax-Testkandidaten — Stand 20. Oktober 2026
+
+39 annotierte HD-Vollbilder und 77 Schild-Crops aus acht bisher ungenutzten Sequenzen unserer Instanz.
+Zusätzlich sind alle 246 SD-Vorschaubilder dieser acht Sequenzen und 20 Kontaktbögen enthalten.
+Die 39 HD-Aufnahmen sind eine Teilmenge der 246 SD-Aufnahmen, keine weiteren 39 unabhängigen Fälle.
+Quelle: https://panoramax.youspeed.de — Urheber laut Quelldaten: admin; Lizenz: CC-BY-SA-4.0.
+Bildbezogene Herkunft, Originaltags, Abmessungen und Prüfsummen stehen in den Manifesten und Metadaten.
+
+ERGEBNIS: Noch kein belastbarer Abschlusstest für DE:310 UND DE:311.
+Ein vollständiger neuer Ortseingangs-Crop zeigt Birkenfeld/Enzkreis (61108145…).
+Er war in der Quelle nur als allgemeines Schild (yes) annotiert.
+Eine weitere gelbe Ortstafel bei Etzenrot ist am Bildrand abgeschnitten.
+In allen 20 Kontaktbögen wurde keine zusätzliche eindeutige DE:311-Ausgangstafel gefunden.
+Diese Übersichtssichtung belegt keine Abwesenheit kleiner, verdeckter oder übersehener Tafeln.
+Es sind 0 menschlich freigegebene Testfälle enthalten.
+
+VERWENDUNG:
+Reservieren Sie diese Sammlung für den Dozenten als Testkandidaten. Verwenden Sie die Bilder nicht
+für Training, Validierung, Epochenwahl oder Hyperparameterwahl. Die bestehende Sammlung und ihr Seed
+bleiben unverändert. Acht neue Sequenz-IDs sind kein Beleg für acht unabhängige Fahrten oder Tafeln.
+Die drei aufeinanderfolgenden Abschnitte vom 19. September müssen insbesondere als mögliche gemeinsame
+Fahrt geprüft werden. Auch die Abschnitte vom 10. Oktober können zusammengehören.
+Prüfen Sie die tatsächlichen Tafeln gegen den vollständigen späteren Trainings-/Validierungsbestand.
+
+SICHTUNG:
+Öffnen Sie SICHTUNG_CROPS.csv und die unveränderten Bilder in collection/inbox/classifier/.
+Tragen Sie eine geprüfte Klasse erst nach Sichtung des Crops und des Vollbilds ein. Vorschläge sind
+keine Ground Truth. Die 136 leeren Zielordner dienen der späteren manuellen Sortierung.
+Prüfen Sie vor einer Detektorfreigabe sämtliche sign-, plate- und face-Boxen auf Richtigkeit und
+Vollständigkeit. Werbung und Wegweiser sind nicht automatisch Ortstafeln. Fehlende oder falsche Boxen
+müssen korrigiert und nachvollziehbar neu exportiert werden. SD-Bilder ohne vorhandene Annotationen
+sind kein Nachweis für objektfreie Negativbeispiele. Prüfen Sie die Aufnahmen vollständig.
+Die SD-Ableitungen können anders orientiert sein als das HD-Raster. Übertragen Sie keine Boxen aus
+den Kontaktbögen ungeprüft in HD-Pixelkoordinaten; Quelle und Raster müssen übereinstimmen.
+
+VOR EINEM ABSCHLUSSTEST:
+Ergänzen Sie weitere unabhängige physische Ortstafeln beider Klassen, besonders DE:311. Lassen Sie
+Klassen, Eignung und Boxen von Menschen prüfen. Frieren Sie Auswahl und Modell vor dem Test ein.
+Der normale Importer verteilt Gruppen 70/15/15 und darf für diesen reservierten Bestand nicht
+unverändert eingesetzt werden. Ein gesonderter Testexport und Evaluationsmodus ist erforderlich;
+der bisherige Evaluator erwartet das ursprüngliche Trainingsmanifest. Deaktivieren Sie dessen
+Prüfungen nicht. Das Gate der 134 Bestandsklassen muss zusätzlich auf geeignetem Testmaterial bestehen.
+
+INHALT:
+collection/ — unveränderte HD-Vollbilder, Originalboxen, Crops, Herkunftsmanifest; alle ungeprüft.
+sequence-preview/ — 246 unveränderte SD-Dateien,20 Kontaktbögen, Herkunftsmanifeste und Sichtungsbefunde.
+nachweise/ — lesende API-Abfragen und Integritäts-/Überschneidungsnachweise mit dokumentierten Grenzen.
+SICHTUNG_*.csv — Arbeitslisten; geprüfte Klassen und Namen sind absichtlich leer.
+STATUS.json / HOLDOUT-PROTOKOLL.json — tatsächlicher Stand; keine Trainings- oder Testfreigabe.
+DATEI-SHA256SUMS.txt — SHA256 aller übrigen Dateien des Archivs.
+
+Keine Modellinferenz, kein Training und keine schreibenden API-Aufrufe wurden für diese Sammlung ausgeführt.

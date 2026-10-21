@@ -41,4 +41,8 @@
     <string name="ui_video_save_failed">Nie udało się zapisać filmu</string>
     <string name="ui_video_save_timeout">Rejestrator nie potwierdził zapisania filmu. Żądana czynność została anulowana.</string>
     <string name="ui_correct_speed_limit">Popraw ograniczenie prędkości</string>
+    <string name="ui_driving_photo">Zrób zdjęcie</string>
+    <string name="ui_driving_photo_unavailable">Zdjęcie niedostępne</string>
+    <string name="ui_driving_photo_local_only">Zapisuje jedno zdjęcie lokalnie do sprawdzenia. Nic nie jest przesyłane.</string>
+    <string name="ui_driving_photo_failed">Nie udało się zapisać zdjęcia. Spróbuj ponownie, gdy aparat będzie gotowy.</string>
 </resources>

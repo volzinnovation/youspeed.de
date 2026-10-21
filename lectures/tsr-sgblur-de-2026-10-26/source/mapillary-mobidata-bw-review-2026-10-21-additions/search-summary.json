@@ -1,0 +1,28 @@
+{
+  "queried_registry_records": 1001,
+  "queried_municipalities": 511,
+  "matched_within_10m": 656,
+  "matched_within_50m": 756,
+  "queries_at_100_image_cap": 0,
+  "unique_candidate_images": 2158,
+  "downloaded_previews": 280,
+  "full_bw_coverage_measured": false,
+  "sampling": "Bounded frozen query plan; capped results and filtering prevent an exhaustive coverage claim.",
+  "training_performed": false,
+  "human_approved": false,
+  "screened_previews": 280,
+  "original_resolution_candidates_screened": 88,
+  "original_resolution_candidates_excluded": 19,
+  "additional_user_seed": 1,
+  "selected_pairs": 70,
+  "selected_classes": {
+    "DE:311": 18,
+    "DE:310": 52
+  },
+  "selected_groups": 68,
+  "source_detection_hint_requests": 280,
+  "source_detection_hint_images": 4,
+  "registry_code_visible_proposal_differences": 42,
+  "api_query_count_basis": "1001 radius-search requests; additional image probe/detection metadata requests are separate",
+  "not_a_model_quality_result": true
+}

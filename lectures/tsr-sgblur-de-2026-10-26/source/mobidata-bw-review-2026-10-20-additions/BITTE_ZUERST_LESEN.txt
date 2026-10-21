@@ -1,0 +1,64 @@
+MobiData BW / Panoramax – zusätzliche Ortstafel-Sichtung
+
+Dieses Ergänzungspaket enthält 63 zusätzliche unveränderte Original-JPEGs und
+63 native PNG-Zielcrops: 58 visuelle Vorschläge DE:310 und fünf DE:311.
+Zusammen mit dem getrennten v2-Paket sind 120 Crop-/Vollbildpaare vorhanden.
+Das Ergänzungspaket hat einen eigenen Wurzelordner; es überschreibt v2 nicht.
+Öffnen Sie SICHTUNG.html. Prüfen Sie SICHTUNG_CROPS.csv, SICHTUNG_VOLLBILDER.csv
+und die unveränderten Quelldaten unter metadata/.
+
+Suchumfang und Grenzen
+Es wurden 360 zusätzliche Vorschauansichten aus 156 Gemeinden und 360 Sequenzen anhand von Farbregionen gesichtet. Davon wurden
+80 Originalbilder in hoher Auflösung geprüft und 63 Zielansichten behalten.
+Der abschließende Sequenzabgleich fand acht bereits früher gesichtete
+Sequenzen in der Vorschauauswahl; ein ansonsten geeigneter HD-Kandidat wurde
+deshalb zusätzlich ausgeschlossen. Alle 63 behaltenen Sequenzen sind neu.
+Dies ist keine vollständige Vollbildannotation und keine vollständige Sichtung
+aller 2.730 Katastereinträge. Weder Training noch lokaler Modell-Replay wurden
+mit diesen Ergänzungen durchgeführt. Fehlende gespeicherte Panoramax-Boxen
+sind Hinweise für eine Prüfung, kein Nachweis eines aktuellen SGBlur-Fehlers.
+Die archivierten Quellannotationen und ihre Modellangaben bleiben erhalten.
+
+Die Kameraposition liegt laut Katalog-Snapshot höchstens zehn Meter vom
+Katasterpunkt entfernt. GPS, Blickrichtung, Verwaltungsebene und Katasterklasse
+beweisen weder die Sichtbarkeit noch die Identität des aufgenommenen Schildes.
+Die sichtbare Schildseite kann von der Katasterklasse abweichen. Übernehmen
+Sie daher keine Katasterklasse ungeprüft. Einige Vorschläge enthalten Unschärfe,
+Gegenlicht, Schatten, Aufkleber oder teilweise verdeckende Vegetation.
+
+Aufgabe und Freigabe
+Alle Klassen und Zielboxen sind Vorschläge eines Assistenten. Sämtliche
+Freigaben sind FALSE; approved/ ist leer. Prüfen und korrigieren Sie die
+Klasse und Boxen persönlich. Die Vollbilder enthalten nur eine vorgeschlagene
+Zielbox. Für den Detektor müssen Sie sämtliche sichtbaren Schilder, Gesichter
+und Kennzeichen nach dem Kursvertrag annotieren. Vermeiden Sie falsche
+Hintergrundlabels durch unvollständige Annotation.
+Das normale Ordnerimportskript übernimmt diesen Teilannotations-Eingang nicht
+direkt. Exportieren Sie nach Freigabe die geprüften Crops mit image_path,label,
+group_id beziehungsweise vollständig annotierte Detektorbilder in das
+erwartete Kursformat. Bewahren Sie die Herkunft bei jedem Export auf.
+
+Sequenzen und nahe Standorte wurden zu konservativen Gruppen zusammengefasst;
+auch gleicher Urheber und Aufnahmetag werden zusammengehalten. Prüfen Sie
+Fahrten und physische Standorte zusätzlich über alle Kursdatensätze hinweg.
+Es wurde kein Trainings-/Validierungs-/Testsplit vergeben. Die explorativ
+ausgewählten Bilder sind kein reservierter Blindtest. Beachten Sie die
+unausgewogene Klassenverteilung und beschaffen Sie unabhängige Testbeispiele.
+
+Herkunft und Lizenzen
+Kataster: Verkehrsministerium Baden-Württemberg / MobiData BW,
+https://mobidata-bw.de/dataset/verkehrszeichen-baden-wurttemberg
+https://mobidata-bw.de/daten/portal/VZ-Daten/signs.geojson
+Datenlizenz Deutschland – Namensnennung – Version 2.0,
+https://www.govdata.de/dl-de/by-2-0
+Katasterdaten wurden für räumliche Suche und Herkunft verwendet; die Bildklasse
+und Zielboxen sind separate, ungeprüfte Bearbeitungsvorschläge.
+Panoramax-Katalogstand: HTTP Last-Modified 2026-10-11; Abrufe 2026-10-20 UTC.
+Die aufgenommenen Bilder können älter sein; pro Bild stehen Zeitpunkt,
+Urheber, Instanz, Quell-URL und Prüfsummen in manifest.json und HERKUNFT.csv.
+Bildlizenz: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+Original-JPEGs unverändert; PNG-Crops sind Ausschnitte. Überlagerungen sind
+verkleinerte Vorschauen mit magentafarbener Zielbox und eigener Bildlegende.
+Alle Bildbearbeitungen behalten die Zuordnung zu Urheber und Original bei.
+evidence/ hält Auswahl, Sichtungsentscheidungen und alle 9.014 räumlichen
+Suchpaare fest. Nur die 63 behaltenen Originale sind im Ergänzungspaket.

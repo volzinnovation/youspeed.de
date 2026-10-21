@@ -120,7 +120,10 @@ class PortraitContentLayoutInstrumentedTest {
                     else -> compose.onNodeWithTag("onboarding-panoramax-toggle")
                 }
                 contentTarget.performScrollTo().assertIsDisplayed()
-                assertInsideViewport(contentTarget)
+                // A tall, tappable screenshot preview can be partly clipped by its
+                // inner scroller; controls and navigation must remain fully visible.
+                assertInsideViewport(contentTarget, minimumTouchSizeDp = if (step == 2) 48 else 0,
+                    allowScrollClipping = step == 2)
                 // Scrolling instructional content must not move either footer control.
                 assertOnboardingNavigation(step)
                 compose.onNodeWithTag("onboarding-next-button").performClick()
@@ -182,7 +185,7 @@ class PortraitContentLayoutInstrumentedTest {
         }
     }
 
-    private fun assertInsideViewport(interaction: SemanticsNodeInteraction, minimumTouchSizeDp: Int = 0) {
+    private fun assertInsideViewport(interaction: SemanticsNodeInteraction, minimumTouchSizeDp: Int = 0, allowScrollClipping: Boolean = false) {
         val viewportNode = compose.onNodeWithTag("portrait-content-viewport").fetchSemanticsNode()
         val node = interaction.fetchSemanticsNode()
         val parent = Rect(viewportNode.positionInRoot.x, viewportNode.positionInRoot.y,
@@ -192,11 +195,13 @@ class PortraitContentLayoutInstrumentedTest {
         assertTrue("Nonempty layout bounds: $raw", raw.width > 0 && raw.height > 0)
         assertTrue("Unclipped node $raw stays inside viewport $parent", raw.left >= parent.left - 1 &&
             raw.top >= parent.top - 1 && raw.right <= parent.right + 1 && raw.bottom <= parent.bottom + 1)
-        assertEquals("No horizontal clipping", raw.width, node.boundsInRoot.width, 1f)
-        assertEquals("No vertical clipping", raw.height, node.boundsInRoot.height, 1f)
+        if (!allowScrollClipping) {
+            assertEquals("No horizontal clipping", raw.width, node.boundsInRoot.width, 1f)
+            assertEquals("No vertical clipping", raw.height, node.boundsInRoot.height, 1f)
+        }
         if (minimumTouchSizeDp > 0) {
             val minimum = minimumTouchSizeDp * context.resources.displayMetrics.density - 1
-            assertTrue("At least ${minimumTouchSizeDp}dp touch bounds: $raw", raw.width >= minimum && raw.height >= minimum)
+            assertTrue("At least ${minimumTouchSizeDp}dp visible touch bounds", node.boundsInRoot.width >= minimum && node.boundsInRoot.height >= minimum)
         }
     }
 

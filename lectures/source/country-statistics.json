@@ -1,0 +1,127 @@
+{
+  "schema": "youspeed-lecture-country-statistics-v1",
+  "snapshot_utc": "2026-10-18T09:44:44.150255+00:00",
+  "snapshot_local": "2026-10-18T11:44:44.150255+02:00",
+  "snapshot_label_de": "18.10.2026, 11:44 MESZ",
+  "recommended_slide_title_de": "Datenbestand nach Modellland",
+  "column_labels_de": {
+    "country": "Modellland",
+    "panoramax_ready_crops": "Panoramax-Crops",
+    "mobile_stored_crops": "App-Crops",
+    "mobile_retained_sightings": "App-Sightings"
+  },
+  "rows": [
+    {
+      "country_code": "DE",
+      "country_label_de": "Deutschland",
+      "panoramax_ready_crops": 9431,
+      "mobile_stored_crops": 5391,
+      "mobile_retained_sightings": 3751
+    },
+    {
+      "country_code": "FR",
+      "country_label_de": "Frankreich",
+      "panoramax_ready_crops": 1723,
+      "mobile_stored_crops": 214,
+      "mobile_retained_sightings": 112
+    },
+    {
+      "country_code": "BE",
+      "country_label_de": "Belgien*",
+      "panoramax_ready_crops": 33,
+      "mobile_stored_crops": 0,
+      "mobile_retained_sightings": 0
+    },
+    {
+      "country_code": "NL",
+      "country_label_de": "Niederlande",
+      "panoramax_ready_crops": 248,
+      "mobile_stored_crops": 0,
+      "mobile_retained_sightings": 0
+    },
+    {
+      "country_code": "CH",
+      "country_label_de": "Schweiz",
+      "panoramax_ready_crops": 216,
+      "mobile_stored_crops": 5973,
+      "mobile_retained_sightings": 2940
+    },
+    {
+      "country_code": "unknown",
+      "country_label_de": "Unklar*",
+      "panoramax_ready_crops": 36,
+      "mobile_stored_crops": 0,
+      "mobile_retained_sightings": 0
+    }
+  ],
+  "totals": {
+    "panoramax_ready_crops": 11687,
+    "mobile_stored_crops": 11578,
+    "mobile_retained_sightings": 6803
+  },
+  "definitions_de": {
+    "country": "Gespeicherte Modell-/Klassifikatorzuordnung; kein verifiziertes geographisches Aufnahmeland.",
+    "panoramax_ready_crops": "Anzahl unterschiedlicher importierter Panoramax-Crop-IDs: aktive Annotationen auf aktiven Quellbildern mit Status ready und aktuellem Crop-/Objektverweis. Alle gespeicherten Sichtbarkeiten; Bildgeometrie muss vorliegen.",
+    "mobile_stored_crops": "Alle gespeicherten Crop-Datensätze aus den Apps, einschließlich Replay-Installationen und inaktiver/abgelaufener Altbestände. Mehrere Crops können zu einer Sichtung gehören.",
+    "mobile_retained_sightings": "Alle gespeicherten mobilen Beobachtungsereignisse mit kind=sighting; ein Ereignis pro (Installation, Epoche, Ereignis-ID), einschließlich Replay und Sichtungen ohne gespeicherten Crop. Keine Einschränkung auf aktive Galerie oder positive Einwilligung."
+  },
+  "slide_notes_de": [
+    "Stand 18.10.2026, 11:44 MESZ. Datensätze, keine Zahl unterschiedlicher physischer Schilder.",
+    "Modellland ist die gespeicherte Zuordnung; BE* (33) weist Zuordnungskonflikte auf, Unklar* (36) eine mehrdeutige Länderzuordnung.",
+    "Panoramax-Crops = importierter Bestand mit fertigem Crop; keine Anzahl aller Fotos der Instanz. App-Crops und App-Sightings einschließlich Replay/Altbestand.",
+    "Panoramax und App-Bestand sind getrennte Quellen; Crops und Sightings sind nicht addierbar.",
+    "Die neueste Panoramax-Synchronisation war noch nicht abgeschlossen; die Zahlen beschreiben den importierten Verwaltungsbestand am Snapshot."
+  ],
+  "suggested_compact_footer_de": "18.10.2026, 11:44 MESZ · Modellzuordnung, keine Geo-Statistik · inkl. Replay/Altbestand · Panoramax: importierte fertige Crops · * Zuordnungskonflikt/unklar",
+  "coverage": {
+    "mobile_sightings_with_stored_crops": 5995,
+    "mobile_sightings_without_stored_crops": 808,
+    "mobile_orphan_stored_crops": 0,
+    "panoramax_inspector_visible_crops": 11432,
+    "panoramax_ready_source_pictures": 6467,
+    "panoramax_active_annotations_all_states": 12091,
+    "panoramax_import_manifest_pictures_all_states": 17477,
+    "panoramax_crop_checkpoint_utc": "2026-10-17T01:30:03.591644+00:00",
+    "panoramax_discovery_checkpoint_utc": "2026-10-18T01:30:03.166391+00:00",
+    "panoramax_latest_sync_phase": "discovered",
+    "panoramax_latest_sync_complete": false
+  },
+  "zero_policy_de": "0 für BE/NL/Unklar im mobilen Bestand folgt aus der vollständigen, ungefilterten Gruppierung aller gespeicherten Datensätze: exakt drei Modellländer DE, CH und FR; Summen stimmen mit unabhängigen Nennern überein. Keine fehlenden Werte werden als 0 ausgegeben.",
+  "validation": {
+    "read_only_repeatable_read_source_snapshot": true,
+    "all_sources_same_snapshot": true,
+    "source_validation_all_assertions_passed": true,
+    "country_totals_recomputed_from_exclusive_group_rows": true,
+    "mobile_crop_totals_match_independent_sighting_link_aggregation": true,
+    "selected_source_hashes_match_validation_receipt": true,
+    "panoramax_overlapping_class_assignments_not_used": true,
+    "raw_event_or_installation_identifiers_exported": false,
+    "image_bytes_revalidated": false,
+    "readiness": "Share with caveats"
+  },
+  "sources": {
+    "repository": "Woladen.de-analytics",
+    "evidence_directory": "/Users/raphaelvolz/Github/Woladen.de-analytics/docs/youspeed/collection-evidence/2026-10-18",
+    "source_hashes_sha256": {
+      "README.md": "10dcce993eab0e033203616827380bce2a4f1c1ed245277e8a56bf93adcf15fc",
+      "summary.json": "ad90e3ae708f6b80d2d20c5101db7142ad57af5cb591f233678bc55ee81cb8ac",
+      "mobile/sign-statistics.json": "0d6cdff7ed872973fb6c4fa8fb963ba7f4b7b325d832ec76e2e674c8a6120451",
+      "mobile/sighting-statistics.json": "555fde14f8b8539834fa74f0027ddaf545aaca71db1f6730e271fdc0056bebbc",
+      "panoramax/sign-statistics.json": "7db631fbe25f2a46767a18d9e6ee0017ff33e73fa5dc60ace66b3c874b30ee48",
+      "mobile/source-query.sql": "f9b6a71074bb3c46b81fc5800809ee2d30747225a88a497dcbd349bf7a84ca8d",
+      "mobile/source-sighting-query.sql": "87c28a00aa0ec46e217762e72107c00cdffefa48d802841e9bf45113dfb5505f",
+      "panoramax/source-query.sql": "e627c95ff5a7d9d47a10b825fc831caa970bc4191c1bcdfaca3fe72b8cb95eb4",
+      "generator-provenance.json": "7efe7412ddc661992000e639be7a278025fa08a098b70fe0eca9d6a586dee33d"
+    },
+    "validation_receipt_sha256": "2c301dbad5ac132d9f89c7b38c70d10698d33e1c0f4567492ccfce3896233e3b",
+    "source_access": "Same-day local source-controlled database exports; no additional production query executed for lecture table."
+  },
+  "panoramax_photo_breakdown_check": {
+    "distinct_photo_total_available": 6467,
+    "deduplicated_country_photo_counts_available": false,
+    "reason_de": "Der vorhandene Bericht exportiert keine eindeutigen Quellfoto-IDs und keine Länderaggregation unterschiedlicher Quellfotos. by_image_geographic_country zählt Crops (ein Inkrement pro Crop-Zeile), keine Fotos. source_pictures ist nur innerhalb einzelner Klassen-/Status-Gruppen dedupliziert und darf nicht über diese Gruppen summiert werden.",
+    "sum_of_group_source_picture_counts_not_additive": 10067,
+    "safe_recommendation_de": "Panoramax-Spalte als importierte fertige Schild-Crops erklären; alternativ die belegte Gesamtzahl 6.467 Quellbilder separat nennen. Keine Foto-Länderzahlen ableiten.",
+    "additional_server_pipeline_executed": false
+  }
+}

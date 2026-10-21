@@ -181,6 +181,21 @@ class PanoramaxCaptureTests {
         }
     }
 
+    @Test fun recognizedCaptureEvidenceSurvivesSidecarRoundtripAndLegacyRecordsStayUnmarked() {
+        val root = createTempDirectory("panoramax-evidence").toFile()
+        try {
+            val store = PanoramaxQueueStore(root); val batch = store.createBatch("session-1", t0)
+            val jpeg = File(root,"input.jpg").apply { writeBytes(byteArrayOf(0xff.toByte(),0xd8.toByte(),0xff.toByte(),0xd9.toByte())) }
+            val thumb = File(root,"thumb.jpg").apply { writeBytes(byteArrayOf(4,5)) }
+            val evidence = SignCaptureEvidence("track", "white_sign", t0, listOf(.1,.2,.3,.4), .9)
+            val metadata = PanoramaxCaptureMetadata("capture-1","session-1",t0,fix(0),PanoramaxQueueStore.sha256(jpeg),jpeg.length(),"test",captureReason="recognized_sign",signEvidence=listOf(evidence))
+            store.addJpeg(batch.batchId,jpeg,thumb,metadata)
+            val recovered = PanoramaxQueueStore(root).listBatches().single().items.single().metadata
+            assertEquals("recognized_sign",recovered.captureReason); assertEquals(listOf(evidence),recovered.signEvidence)
+            assertNull(metadata.copy(captureReason=null,signEvidence=null).captureReason)
+        } finally { root.deleteRecursively() }
+    }
+
     private fun recognitionEvent(
         semanticKind: TrafficSignSemanticKind,
         trackId: String? = "track-one",

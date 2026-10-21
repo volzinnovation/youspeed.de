@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "text_regions": [
+    {
+      "text": "sauf bus",
+      "language": "fr",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      }
+    }
+  ],
+  "arrows": [
+    {
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 0.5,
+        "height": 0.5
+      },
+      "orientation": "downward",
+      "related_text_indices": [
+        0
+      ],
+      "lane_binding": "unresolved"
+    }
+  ],
+  "candidates": [
+    {
+      "original_text": "sauf bus",
+      "language": "fr",
+      "restriction_type": "unknown",
+      "value": null,
+      "unit": null,
+      "condition": {
+        "kind": "unknown",
+        "original_text": "sauf bus",
+        "value": null,
+        "unit": null,
+        "timezone": null,
+        "children": []
+      },
+      "parent_sign_id": null,
+      "assembly_id": null,
+      "direction": "unresolved",
+      "lane_binding": "unresolved",
+      "valid_from": null,
+      "valid_to": null
+    }
+  ],
+  "quality_flags": [
+    "insufficient_primary_context"
+  ]
+}

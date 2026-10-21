@@ -5,9 +5,9 @@ import java.time.Instant
 
 internal data class DrivingInteractionMotion(val controlsAllowed: Boolean, val stationaryObservedAt: Instant?)
 
-/** Fresh speeds below 4 km/h unlock controls; only a measured zero establishes standstill. */
+/** Fresh speeds at or below 20 km/h unlock controls; only a measured zero establishes standstill. */
 internal object DrivingInteractionMotionPolicy {
-    const val CONTROLS_SPEED_THRESHOLD_KMH = 4.0
+    const val CONTROLS_SPEED_THRESHOLD_KMH = 20.0
     fun observe(
         previouslyAllowed: Boolean,
         rawSpeedMetersPerSecond: Double?,
@@ -19,8 +19,8 @@ internal object DrivingInteractionMotionPolicy {
         val validRaw = rawSpeedMetersPerSecond != null && rawSpeedMetersPerSecond.isFinite() &&
             rawSpeedMetersPerSecond >= 0.0 && horizontalAccuracyMeters != null &&
             horizontalAccuracyMeters.isFinite() && horizontalAccuracyMeters >= 0.0
-        if (filteredSpeedKmh >= CONTROLS_SPEED_THRESHOLD_KMH ||
-            (rawSpeedMetersPerSecond?.let { it.isFinite() && it >= CONTROLS_SPEED_THRESHOLD_KMH / 3.6 } == true)) {
+        if (filteredSpeedKmh > CONTROLS_SPEED_THRESHOLD_KMH ||
+            (rawSpeedMetersPerSecond?.let { it.isFinite() && it > CONTROLS_SPEED_THRESHOLD_KMH / 3.6 } == true)) {
             return DrivingInteractionMotion(false, null)
         }
         val ageMs = Duration.between(observedAt, now).toMillis()

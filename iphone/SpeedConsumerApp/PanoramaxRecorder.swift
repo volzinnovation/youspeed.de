@@ -53,6 +53,17 @@ enum DriveCameraFocusConfiguration {
     }
 }
 
+enum DriveMovieCodecConfiguration {
+    static func preferredCodec(available: [AVVideoCodecType], supportedKeys: [String]) -> AVVideoCodecType? {
+        guard supportedKeys.contains(AVVideoCodecKey) else { return nil }
+        if available.contains(.hevc) { return .hevc }
+        if available.contains(.h264) { return .h264 }
+        // Leave the output's default intact when neither preferred codec is
+        // offered; never invent a codec for an unavailable connection.
+        return nil
+    }
+}
+
 enum DriveRecorderState: Equatable {
     case disabled
     case preparing
@@ -395,10 +406,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         subsystem: "de.youspeed.SpeedConsumer",
         category: "drive-recorder"
     )
-    private static let maximumDashcamFileBytes: Int64 = 5_000_000_000
+    nonisolated private static let maximumDashcamFileBytes: Int64 = 5_000_000_000
     private static let dashcamRetentionBytes: Int64 = 10_000_000_000
-    // AVFoundation objects are configured before use and then touched only on
-    // sessionQueue for start/stop/capture operations.
+    // Camera graph configuration and start/stop/capture operations all run
+    // on sessionQueue. Main-actor state is published after configuration returns.
     nonisolated(unsafe) let session = AVCaptureSession()
 
     @Published private(set) var state: DriveRecorderState = .disabled
@@ -407,6 +418,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     @Published private(set) var dashcamFileURL: URL?
     @Published private(set) var dashcamTransitionInFlight = false
     @Published private(set) var capturedImageCount = 0
+    private(set) var manualPhotoCaptureFailed = false
     @Published private(set) var lastCaptureAt: Date?
     @Published private(set) var lastCaptureDetail = "Noch keine Aufnahme"
     @Published private(set) var lastAccuracyMeters: Double?
@@ -419,7 +431,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
     private var queueStore: PanoramaxQueueStore?
     private let sessionQueue = DispatchQueue(label: "de.youspeed.drive-recorder.camera")
-    private let videoQueue = DispatchQueue(label: "de.youspeed.drive-recorder.tsr", qos: .userInitiated)
+    nonisolated private let videoQueue = DispatchQueue(label: "de.youspeed.drive-recorder.tsr", qos: .userInitiated)
     private let photoProcessingQueue = DispatchQueue(label: "de.youspeed.drive-recorder.panoramax", qos: .utility)
     nonisolated(unsafe) private let frameDispatcher = DriveVideoFrameDispatcher()
     nonisolated(unsafe) private let photoOutput = AVCapturePhotoOutput()
@@ -430,6 +442,9 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     private var storageLimitBytes: Int64?
     private var batch: PanoramaxBatchRecord?
     private var lastCaptureSample: PanoramaxLocationSample?
+    private var pendingSignEvidence: [SignCaptureFilter.Evidence] = []
+    private var pendingCaptureReason = "cadence"
+    private var lastManualPhotoRequestAt: Date?
     private var pendingSample: PanoramaxLocationSample?
     private var pendingPhotoUniqueID: Int64?
     private var photoInFlight = false
@@ -439,6 +454,11 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     private var generation = 0
     private var activeDashcamEnabled = false
     private var activePanoramaxEnabled = false
+    private var activeManualPhotosEnabled = false
+    private var requestedManualPhotosEnabled = false
+    private var manualBatchPreparationInFlight = false
+    private var manualBatchPreparationFailed = false
+    private var manualPhotoMoving = true
     private var activeTSREnabled = false
     private var calibrationPreviewEnabled = false
     private var activeLanesEnabled = false
@@ -461,6 +481,43 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
 #if DEBUG
     private var testDashcamOutputDirectory: URL?
+    private var testPhotoCapture: ((Int64, CGFloat) -> Void)?
+
+    /// Camera-independent seam for simulator/unit coverage. The request and
+    /// completion still go through the production admission/JPEG/queue path.
+    func testPrepareManualPhotoSession(automaticPhotos: Bool = false,
+                                      dashcamActive: Bool = false,
+                                      outputAvailable: Bool = true,
+                                      purpose: DriveCaptureSessionPurpose = .automaticCapture,
+                                      capture: @escaping (Int64, CGFloat) -> Void) throws {
+        guard let queueStore else { throw RecorderError.sessionUnavailable }
+        testPhotoCapture = capture
+        generation += 1
+        pendingPhotoUniqueID = nil
+        pendingSample = nil
+        photoInFlight = false
+        lastManualPhotoRequestAt = nil
+        capturedImageCount = 0
+        lastCaptureAt = nil
+        manualPhotoMoving = true
+        let sessionID = UUID().uuidString
+        captureSessionID = sessionID
+        sessionPurpose = purpose
+        requestedManualPhotosEnabled = true
+        activeManualPhotosEnabled = true
+        activePanoramaxEnabled = automaticPhotos
+        activeDashcamEnabled = dashcamActive
+        requestedPanoramaxEnabled = automaticPhotos
+        photoOutputAvailable = outputAvailable
+        batch = try queueStore.createBatch(captureSessionID: sessionID)
+        state = .recording
+        notifyChange()
+    }
+
+    func testCompletePhoto(data: Data?, uniqueID: Int64) {
+        finishPhoto(data: data, error: nil, uniqueID: uniqueID)
+    }
+
     // Keep the exemption on the exact created URL, including late callbacks after
     // the test clears its destination. Normal recordings never enter this set.
     private var isolatedTestDashcamURLs = Set<URL>()
@@ -535,6 +592,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
     var isDashcamModuleActive: Bool { activeDashcamEnabled }
     var isPanoramaxModuleActive: Bool { activePanoramaxEnabled }
+    var isManualPhotoInFlight: Bool { photoInFlight }
     var isTrafficSignRecognitionModuleActive: Bool { activeTSREnabled }
     var isAutomaticCaptureSession: Bool {
         sessionPurpose == .automaticCapture
@@ -565,6 +623,80 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
     func setQueueStore(_ store: PanoramaxQueueStore) {
         queueStore = store
+        manualBatchPreparationFailed = false
+        preparePhotoBatchIfNeeded()
+    }
+
+    /// A manually created batch becomes reviewable at standstill. Keep an
+    /// accepted exposure alive through deceleration and seal after persistence.
+    func setManualPhotoMoving(_ moving: Bool) {
+        if moving != manualPhotoMoving { manualBatchPreparationFailed = false }
+        manualPhotoMoving = moving
+        guard state == .recording else { return }
+        if !moving, !photoInFlight {
+            activeManualPhotosEnabled = false
+            if !activePanoramaxEnabled, batch != nil {
+                closePanoramaxBatchForReview()
+                notifyChange()
+            }
+        } else if moving {
+            activeManualPhotosEnabled = requestedManualPhotosEnabled && photoOutputAvailable && batch != nil
+            preparePhotoBatchIfNeeded()
+        }
+    }
+
+    private func preparePhotoBatchIfNeeded() {
+        guard state == .recording, queueStore != nil,
+              requestedPanoramaxEnabled || (requestedManualPhotosEnabled && manualPhotoMoving), photoOutputAvailable,
+              batch == nil, !manualBatchPreparationInFlight, !manualBatchPreparationFailed,
+              let captureSessionID else { return }
+        manualBatchPreparationInFlight = true
+        let requestedGeneration = generation
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await preparePanoramaxBatch(captureSessionID: captureSessionID, requestedGeneration: requestedGeneration)
+            manualBatchPreparationInFlight = false
+            if generation == requestedGeneration, state == .recording {
+                activeManualPhotosEnabled = requestedManualPhotosEnabled && batch != nil && manualPhotoMoving
+                manualBatchPreparationFailed = batch == nil
+                if !activeManualPhotosEnabled, !activePanoramaxEnabled, !photoInFlight { closePanoramaxBatchForReview() }
+                notifyChange()
+            }
+        }
+    }
+
+    /// Changes automatic photo admission without rebuilding the camera graph.
+    /// The caller retains the normal dashboard action/finalization ordering.
+    /// Manual stills and an exposure already accepted keep their existing batch.
+    @discardableResult
+    func setPanoramaxEnabledDuringRecording(_ enabled: Bool) -> Bool {
+        guard state == .recording, sessionPurpose != .calibration else { return false }
+        requestedPanoramaxEnabled = enabled
+        if enabled {
+            guard photoOutputAvailable, queueStore != nil else {
+                activePanoramaxEnabled = false
+                lastCaptureDetail = photoOutputAvailable
+                    ? "Panoramax-Speicher nicht verfuegbar"
+                    : "Panoramax-Fotokamera ist fuer diese Kamerakonfiguration nicht verfuegbar"
+                notifyChange()
+                return false
+            }
+            activePanoramaxEnabled = true
+            manualBatchPreparationFailed = false
+            preparePhotoBatchIfNeeded()
+            lastCaptureDetail = batch == nil
+                ? "Panoramax-Speicher wird vorbereitet"
+                : "Panoramax-Bilder werden lokal gesammelt"
+        } else {
+            activePanoramaxEnabled = false
+            if !photoInFlight, !requestedManualPhotosEnabled || !manualPhotoMoving {
+                activeManualPhotosEnabled = false
+                closePanoramaxBatchForReview()
+            }
+            lastCaptureDetail = "Automatische Panoramax-Aufnahme pausiert"
+        }
+        notifyChange()
+        return true
     }
 
     func setVideoFrameConsumer(_ consumer: (any DriveVideoFrameConsumer)?) {
@@ -580,7 +712,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         if DriveRecorderPolicy.shouldStopAfterTrafficSignRuntimeLoss(
             for: state,
             dashcamActive: activeDashcamEnabled || dashcamTransitionInFlight,
-            panoramaxActive: activePanoramaxEnabled || calibrationPreviewEnabled
+            panoramaxActive: activePanoramaxEnabled || activeManualPhotosEnabled || calibrationPreviewEnabled
         ) {
             beginStopping(resultState: .unavailable, detail: lastCaptureDetail)
             return
@@ -652,14 +784,17 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         dashcamEnabled: Bool,
         trafficSignRecognitionEnabled: Bool,
         panoramaxEnabled: Bool,
-        purpose: DriveCaptureSessionPurpose = .driveRecording
+        purpose: DriveCaptureSessionPurpose = .driveRecording,
+        manualPhotosEnabled: Bool = false,
+        allowCameraPermissionRequest: Bool = true
     ) {
         guard state != .preparing, state != .recording, state != .stopping else {
             return
         }
 
         let tsrEnabled = trafficSignRecognitionEnabled && frameDispatcher.hasConsumer
-        guard dashcamEnabled || panoramaxEnabled || trafficSignRecognitionEnabled || calibrationPreviewEnabled else {
+        let manualPhotos = manualPhotosEnabled && purpose != .calibration
+        guard dashcamEnabled || panoramaxEnabled || trafficSignRecognitionEnabled || calibrationPreviewEnabled || manualPhotos else {
             state = .unavailable
             lastCaptureDetail = trafficSignRecognitionEnabled
                 ? "Noch kein Verkehrszeichenmodell installiert"
@@ -690,12 +825,23 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         activeDashcamEnabled = dashcamEnabled
         requestedPanoramaxEnabled = panoramaxEnabled
         activePanoramaxEnabled = panoramaxEnabled
+        requestedManualPhotosEnabled = manualPhotos
+        manualBatchPreparationFailed = false
+        manualPhotoCaptureFailed = false
+        manualPhotoMoving = true
+        activeManualPhotosEnabled = manualPhotos
+        lastManualPhotoRequestAt = nil
         activeTSREnabled = tsrEnabled
         notifyChange()
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            guard await AVCaptureDevice.requestAccess(for: .video) else {
+            let authorization = AVCaptureDevice.authorizationStatus(for: .video)
+            var authorized = authorization == .authorized
+            if authorization == .notDetermined && allowCameraPermissionRequest {
+                authorized = await AVCaptureDevice.requestAccess(for: .video)
+            }
+            guard authorized else {
                 guard generation == requestedGeneration else { return }
                 resetActiveModulesAfterFailure()
                 state = .denied
@@ -706,31 +852,43 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             guard generation == requestedGeneration, state == .preparing else { return }
 
             do {
-                try configureSession(
-                    dashcamEnabled: activeDashcamEnabled,
-                    // Preserve the user's selection while an asynchronously
-                    // verified model pack is still loading. The selected video
-                    // output must get graph priority even though it cannot
-                    // consume frames until the runtime attaches.
-                    trafficSignRecognitionEnabled: trafficSignRecognitionEnabled || calibrationPreviewEnabled,
-                    panoramaxEnabled: activePanoramaxEnabled
-                )
+                // Configuration may rebuild the 4K/photo pipeline. Serialize it
+                // with start/stop, and never block the main thread on camera work.
+                let dashcamRequested = activeDashcamEnabled
+                // Reserve analysis output even while the selected model loads.
+                let analysisRequested = trafficSignRecognitionEnabled || calibrationPreviewEnabled
+                let panoramaxRequested = activePanoramaxEnabled
+                let manualPhotosRequested = requestedManualPhotosEnabled
+                let outputs = try await performSessionOperation { [self] in
+                    try self.configureSession(
+                        dashcamEnabled: dashcamRequested,
+                        trafficSignRecognitionEnabled: analysisRequested,
+                        panoramaxEnabled: panoramaxRequested,
+                        manualPhotosEnabled: manualPhotosRequested
+                    )
+                }
+                guard generation == requestedGeneration, state == .preparing else { return }
+                movieOutputAvailable = outputs.movie
+                videoOutputAvailable = outputs.video
+                photoOutputAvailable = outputs.photo
                 activeDashcamEnabled = activeDashcamEnabled && movieOutputAvailable
                 activeTSREnabled = trafficSignRecognitionEnabled
                     && frameDispatcher.hasConsumer
                     && videoOutputAvailable
                 activePanoramaxEnabled = activePanoramaxEnabled && photoOutputAvailable
-                if activePanoramaxEnabled {
+                activeManualPhotosEnabled = activeManualPhotosEnabled && photoOutputAvailable
+                if activePanoramaxEnabled || activeManualPhotosEnabled {
                     await preparePanoramaxBatch(captureSessionID: captureSessionID, requestedGeneration: requestedGeneration)
                     guard generation == requestedGeneration, state == .preparing else { return }
                 }
                 if activeDashcamEnabled {
                     dashcamFileURL = try makeDashcamFileURL(captureSessionID: captureSessionID)
                 }
-                guard activeDashcamEnabled || activeTSREnabled || activePanoramaxEnabled || (calibrationPreviewEnabled && videoOutputAvailable) else {
+                guard activeDashcamEnabled || activeTSREnabled || activePanoramaxEnabled || activeManualPhotosEnabled || (calibrationPreviewEnabled && videoOutputAvailable) else {
                     throw RecorderError.noEnabledModuleAvailable
                 }
             } catch let error as RecorderError {
+                guard generation == requestedGeneration, state == .preparing else { return }
                 closePanoramaxBatchForReview()
                 resetActiveModulesAfterFailure()
                 state = error.isAvailabilityFailure ? .unavailable : .failed
@@ -745,6 +903,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 notifyChange()
                 return
             } catch {
+                guard generation == requestedGeneration, state == .preparing else { return }
                 closePanoramaxBatchForReview()
                 resetActiveModulesAfterFailure()
                 state = .failed
@@ -769,7 +928,13 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 self.videoOutput.connection(with: .video)?.isEnabled = trafficSignFramesEnabled
                 self.session.startRunning()
                 if let movieURL {
-                    self.configureMovieCodecIfPossible(rotationAngle: movieAngle)
+                    guard self.configureMovieCodecIfPossible(rotationAngle: movieAngle) else {
+                        Task { @MainActor [weak self] in
+                            guard let self, self.generation == requestedGeneration, self.state == .preparing else { return }
+                            self.beginStopping(resultState: .failed, detail: "Dashcam konnte nicht gestartet werden")
+                        }
+                        return
+                    }
                     self.movieOutput.startRecording(to: movieURL, recordingDelegate: self)
                 } else {
                     Task { @MainActor [weak self] in
@@ -817,7 +982,12 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                         }
                         return
                     }
-                    self.configureMovieCodecIfPossible(rotationAngle: movieAngle)
+                    guard self.configureMovieCodecIfPossible(rotationAngle: movieAngle) else {
+                        Task { @MainActor [weak self] in
+                            self?.finishDashcamToggleFailure("Dashcam konnte nicht gestartet werden", token: token)
+                        }
+                        return
+                    }
                     self.movieOutput.startRecording(to: fileURL, recordingDelegate: self)
                 }
             } catch {
@@ -851,6 +1021,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     @discardableResult
     func setTrafficSignRecognitionEnabledDuringRecording(_ enabled: Bool) -> Bool {
         guard state == .recording else { return false }
+        // onChange synchronously reconciles the requested module selections.
+        // Reapplying the committed state must not notify again or it recurses
+        // through syncDriveRecorderState until the main-thread stack overflows.
+        guard activeTSREnabled != enabled else { return true }
         guard enabled else {
             frameDispatcher.setEnabled(false)
             activeTSREnabled = false
@@ -862,7 +1036,9 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         guard videoOutputAvailable, frameDispatcher.hasConsumer else {
             frameDispatcher.setEnabled(false)
             activeTSREnabled = false
-            lastCaptureDetail = "Noch kein Verkehrszeichenmodell installiert"
+            let detail = "Noch kein Verkehrszeichenmodell installiert"
+            guard lastCaptureDetail != detail else { return false }
+            lastCaptureDetail = detail
             notifyChange()
             return false
         }
@@ -920,20 +1096,64 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
     }
 
+    @discardableResult
+    func ingestRecognizedSigns(_ evidence: [SignCaptureFilter.Evidence], location: CLLocation, speedMetersPerSecond: Double?) -> Bool {
+        guard cadenceConfiguration.recognizedSignsOnly, !evidence.isEmpty, evidence.allSatisfy({ abs(Date().timeIntervalSince($0.frameAt)) <= 2 }) else { return false }
+        return capture(location: location, speedMetersPerSecond: speedMetersPerSecond, signEvidence: evidence)
+    }
     func ingest(location: CLLocation, speedMetersPerSecond: Double? = nil) {
+        guard !cadenceConfiguration.recognizedSignsOnly else { return }
+        _ = capture(location: location, speedMetersPerSecond: speedMetersPerSecond, signEvidence: [])
+    }
+
+    func canCaptureManualPhoto(location: CLLocation, now: Date = Date()) -> Bool {
+        DrivingPhotoPolicy.canCapture(
+            recording: state == .recording && activeManualPhotosEnabled,
+            cameraAuthorized: cameraAuthorizedForPhoto,
+            photoOutputAvailable: photoOutputAvailable,
+            storageReady: batch != nil && queueStore?.hasSpaceForManualPhoto() == true,
+            photoInFlight: photoInFlight,
+            locationUsable: DrivingPhotoPolicy.locationIsUsable(
+                latitude: location.coordinate.latitude, longitude: location.coordinate.longitude,
+                accuracy: location.horizontalAccuracy, timestamp: location.timestamp, now: now,
+                maxAge: cadenceConfiguration.maxLocationAge, maxAccuracy: cadenceConfiguration.maxAccuracyMeters),
+            lastRequestAt: lastManualPhotoRequestAt, now: now
+        )
+    }
+
+    private var cameraAuthorizedForPhoto: Bool {
+#if DEBUG
+        if testPhotoCapture != nil { return true }
+#endif
+        return AVCaptureDevice.authorizationStatus(for: .video) == .authorized
+    }
+
+    /// A tap shares the JPEG/queue pipeline without enabling automatic photos,
+    /// consuming a sign-filter candidate, uploading, or finalizing the movie.
+    @discardableResult
+    func captureManualPhoto(location: CLLocation, speedKmh: Double) -> Bool {
+        guard DrivingPhotoPolicy.showsButton(speedKmh: speedKmh),
+              canCaptureManualPhoto(location: location) else { return false }
+        return capture(location: location, speedMetersPerSecond: speedKmh / 3.6, signEvidence: [], manual: true)
+    }
+
+    private func capture(location: CLLocation, speedMetersPerSecond: Double?, signEvidence: [SignCaptureFilter.Evidence], manual: Bool = false) -> Bool {
         guard state == .recording,
-              activePanoramaxEnabled,
+              (manual ? activeManualPhotosEnabled : activePanoramaxEnabled),
+              photoOutputAvailable,
               !photoInFlight,
               batch != nil else {
-            return
+            return false
         }
         let accuracy = location.horizontalAccuracy
         let requestedAt = Date()
-        guard PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: speedMetersPerSecond ?? location.speed) else { return }
+        if !signEvidence.isEmpty, let last = lastCaptureAt, requestedAt.timeIntervalSince(last) < 2 { return false }
+        guard manual || PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: speedMetersPerSecond ?? location.speed) else { return false }
         guard accuracy >= 0,
               accuracy.isFinite,
-              requestedAt.timeIntervalSince(location.timestamp) <= cadenceConfiguration.maxLocationAge else {
-            return
+              requestedAt.timeIntervalSince(location.timestamp) <= cadenceConfiguration.maxLocationAge,
+              location.timestamp <= requestedAt.addingTimeInterval(60), accuracy <= cadenceConfiguration.maxAccuracyMeters else {
+            return false
         }
         let heading: Double?
         if location.course >= 0, location.course <= 360, location.courseAccuracy >= 0 {
@@ -950,16 +1170,22 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             headingDegrees: heading
         )
         lastAccuracyMeters = accuracy
-        guard PanoramaxCapturePolicy.shouldCapture(
+        guard manual || !signEvidence.isEmpty || PanoramaxCapturePolicy.shouldCapture(
             lastCapture: lastCaptureSample,
             current: sample,
             now: requestedAt,
             configuration: cadenceConfiguration
         ) else {
             notifyChange()
-            return
+            return false
         }
 
+        pendingSignEvidence = signEvidence
+        pendingCaptureReason = manual ? "manual" : (signEvidence.isEmpty ? "cadence" : "recognized_sign")
+        if manual {
+            lastManualPhotoRequestAt = requestedAt
+            manualPhotoCaptureFailed = false
+        }
         pendingSample = sample
         pendingPhotoOrientationEpoch = orientationEpoch
         let photoAngle = screenOrientation.captureRotationAngle
@@ -970,19 +1196,34 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             settings.maxPhotoDimensions = maximumDimensions
         }
         pendingPhotoUniqueID = settings.uniqueID
+        notifyChange()
+#if DEBUG
+        if let testPhotoCapture {
+            testPhotoCapture(settings.uniqueID, photoAngle)
+            return true
+        }
+#endif
         sessionQueue.async { [weak self] in
             guard let self else { return }
-            if let connection = self.photoOutput.connection(with: .video),
-               connection.isVideoRotationAngleSupported(photoAngle) {
+            guard self.session.isRunning, !self.session.isInterrupted,
+                  let connection = self.photoOutput.connection(with: .video), connection.isActive else {
+                Task { @MainActor [weak self] in
+                    self?.finishPhoto(data: nil, error: nil, uniqueID: settings.uniqueID)
+                }
+                return
+            }
+            if connection.isVideoRotationAngleSupported(photoAngle) {
                 connection.videoRotationAngle = photoAngle
             }
             self.photoOutput.capturePhoto(with: settings, delegate: self)
         }
+        return true
     }
 
     private func preparePanoramaxBatch(captureSessionID: String, requestedGeneration: Int) async {
         guard let queueStore else {
             activePanoramaxEnabled = false
+            activeManualPhotosEnabled = false
             lastCaptureDetail = "Panoramax-Speicher nicht verfuegbar"
             return
         }
@@ -990,7 +1231,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             let created = try await PanoramaxQueueMaintenanceExecutor.shared.perform(store: queueStore) {
                 try $0.createBatch(captureSessionID: captureSessionID)
             }
-            guard generation == requestedGeneration, state == .preparing else {
+            guard generation == requestedGeneration, (state == .preparing || state == .recording) else {
                 // Stop/new start may run while JPEG work owns the queue lock.
                 // Seal only this obsolete batch; never overwrite the new drive.
                 _ = try? await PanoramaxQueueMaintenanceExecutor.shared.perform(store: queueStore) {
@@ -1000,8 +1241,9 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             }
             batch = created
         } catch {
-            guard generation == requestedGeneration, state == .preparing else { return }
+            guard generation == requestedGeneration, (state == .preparing || state == .recording) else { return }
             activePanoramaxEnabled = false
+            activeManualPhotosEnabled = false
             batch = nil
             lastCaptureDetail = "Panoramax-Batch konnte nicht erstellt werden: \(error.localizedDescription)"
         }
@@ -1020,32 +1262,60 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         lastCaptureSample = nil
     }
 
-    private func configureSession(
+    /// One queue owns every potentially blocking camera operation. A throwing
+    /// configuration still completes its continuation and leaves Stop runnable.
+    private func performSessionOperation<T: Sendable>(
+        _ operation: @escaping @Sendable () throws -> T
+    ) async throws -> T {
+        try await withCheckedThrowingContinuation { continuation in
+            sessionQueue.async {
+                do { continuation.resume(returning: try operation()) }
+                catch { continuation.resume(throwing: error) }
+            }
+        }
+    }
+
+#if DEBUG
+    func testRunSessionOperation(_ operation: @escaping @Sendable () throws -> Void) async throws {
+        try await performSessionOperation(operation)
+    }
+#endif
+
+    private struct CaptureOutputs: Sendable {
+        var movie = false
+        var video = false
+        var photo = false
+    }
+
+    nonisolated private func configureSession(
         dashcamEnabled: Bool,
         trafficSignRecognitionEnabled: Bool,
-        panoramaxEnabled: Bool
-    ) throws {
+        panoramaxEnabled: Bool,
+        manualPhotosEnabled: Bool
+    ) throws -> CaptureOutputs {
         let supports4K = session.canSetSessionPreset(.hd4K3840x2160)
-        try configureSessionGraph(
+        var outputs = try configureSessionGraph(
             preset: supports4K ? .hd4K3840x2160 : .high,
             dashcamEnabled: dashcamEnabled,
             trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
-            panoramaxEnabled: panoramaxEnabled
+            panoramaxEnabled: panoramaxEnabled,
+            manualPhotosEnabled: manualPhotosEnabled
         )
 
         // Dashcam is a live-selectable consumer even when it was off at drive
         // start. If the 4K multi-output graph cannot retain its dormant movie
         // output, rebuild once at the broadly supported high preset before the
         // session starts. No live graph is ever reconfigured.
-        let requestedOutputMissing = !movieOutputAvailable
-            || (panoramaxEnabled && !photoOutputAvailable)
-            || !videoOutputAvailable
+        let requestedOutputMissing = !outputs.movie
+            || (panoramaxEnabled && !outputs.photo)
+            || !outputs.video
         if requestedOutputMissing, supports4K {
-            try configureSessionGraph(
+            outputs = try configureSessionGraph(
                 preset: .high,
                 dashcamEnabled: dashcamEnabled,
                 trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
-                panoramaxEnabled: panoramaxEnabled
+                panoramaxEnabled: panoramaxEnabled,
+                manualPhotosEnabled: manualPhotosEnabled
             )
         }
 
@@ -1053,30 +1323,30 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         // without a still output. The Dashcam can continue on a reduced graph,
         // but silently dropping the photo consumer makes the user's setting
         // appear enabled while every GPS-triggered capture is discarded.
-        if panoramaxEnabled, !photoOutputAvailable {
+        if panoramaxEnabled, !outputs.photo {
             throw RecorderError.panoramaxUnavailable
         }
 
-        if dashcamEnabled, !movieOutputAvailable,
-           !videoOutputAvailable, !photoOutputAvailable {
+        if dashcamEnabled, !outputs.movie,
+           !outputs.video, !outputs.photo {
             throw RecorderError.sessionUnavailable
         }
+        return outputs
     }
 
-    private func configureSessionGraph(
+    nonisolated private func configureSessionGraph(
         preset: AVCaptureSession.Preset,
         dashcamEnabled: Bool,
         trafficSignRecognitionEnabled: Bool,
-        panoramaxEnabled: Bool
-    ) throws {
+        panoramaxEnabled: Bool,
+        manualPhotosEnabled: Bool
+    ) throws -> CaptureOutputs {
         session.beginConfiguration()
         defer { session.commitConfiguration() }
 
         session.inputs.forEach(session.removeInput)
         session.outputs.forEach(session.removeOutput)
-        movieOutputAvailable = false
-        videoOutputAvailable = false
-        photoOutputAvailable = false
+        var outputs = CaptureOutputs()
 
         if session.canSetSessionPreset(preset) {
             session.sessionPreset = preset
@@ -1096,15 +1366,15 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         configureRoadFocus(for: camera)
 
         func addMovieOutputIfPossible() {
-            guard !movieOutputAvailable, session.canAddOutput(movieOutput) else { return }
+            guard !outputs.movie, session.canAddOutput(movieOutput) else { return }
             session.addOutput(movieOutput)
             movieOutput.movieFragmentInterval = CMTime(seconds: 10, preferredTimescale: 600)
             movieOutput.maxRecordedFileSize = Self.maximumDashcamFileBytes
-            movieOutputAvailable = true
+            outputs.movie = true
         }
 
         func addVideoOutputIfPossible() {
-            guard !videoOutputAvailable, session.canAddOutput(videoOutput) else { return }
+            guard !outputs.video, session.canAddOutput(videoOutput) else { return }
             session.addOutput(videoOutput)
             videoOutput.alwaysDiscardsLateVideoFrames = true
             videoOutput.videoSettings = [
@@ -1122,39 +1392,46 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 }
             }
             videoOutput.setSampleBufferDelegate(frameDispatcher, queue: videoQueue)
-            videoOutputAvailable = true
+            outputs.video = true
         }
 
         func addPhotoOutputIfPossible() {
-            guard !photoOutputAvailable, session.canAddOutput(photoOutput) else { return }
+            guard !outputs.photo, session.canAddOutput(photoOutput) else { return }
             session.addOutput(photoOutput)
             if let dimensions = camera.activeFormat.supportedMaxPhotoDimensions.max(by: {
                 Int64($0.width) * Int64($0.height) < Int64($1.width) * Int64($1.height)
             }) {
                 photoOutput.maxPhotoDimensions = dimensions
             }
-            photoOutputAvailable = true
+            outputs.photo = true
         }
 
         // Keep the graph fixed while the session is running. Panoramax is a
         // selected still consumer, so attach it before the video outputs; on
         // devices with a constrained multi-output budget this prevents the
         // Dashcam/TSR streams from silently displacing photo capture.
-        if panoramaxEnabled { addPhotoOutputIfPossible() }
+        if panoramaxEnabled || (manualPhotosEnabled && !dashcamEnabled && !trafficSignRecognitionEnabled) {
+            addPhotoOutputIfPossible()
+        }
         if dashcamEnabled { addMovieOutputIfPossible() }
         if trafficSignRecognitionEnabled { addVideoOutputIfPossible() }
         addMovieOutputIfPossible()
         addVideoOutputIfPossible()
+        // Optional manual stills are attached last. A constrained device must
+        // retain its selected movie/recognition outputs and disable the shutter
+        // rather than reconfigure or fail the live session.
+        if manualPhotosEnabled { addPhotoOutputIfPossible() }
         videoOutput.connection(with: .video)?.isEnabled = trafficSignRecognitionEnabled
             && frameDispatcher.hasConsumer
-        guard movieOutputAvailable || videoOutputAvailable || photoOutputAvailable else {
+        guard outputs.movie || outputs.video || outputs.photo else {
             throw RecorderError.sessionUnavailable
         }
+        return outputs
     }
 
     /// Photos, Dashcam and TSR share road-focused autofocus. Restrict scans to
     /// distant subjects where supported to avoid focusing on the windscreen.
-    private func configureRoadFocus(for camera: AVCaptureDevice) {
+    nonisolated private func configureRoadFocus(for camera: AVCaptureDevice) {
         do {
             try DriveCameraFocusConfiguration.apply(to: camera)
         } catch {
@@ -1162,13 +1439,23 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
     }
 
-    nonisolated private func configureMovieCodecIfPossible(rotationAngle: CGFloat) {
-        guard let connection = movieOutput.connection(with: .video) else { return }
+    nonisolated private func configureMovieCodecIfPossible(rotationAngle: CGFloat) -> Bool {
+        guard session.isRunning, !movieOutput.isRecording,
+              let connection = movieOutput.connection(with: .video), connection.isEnabled else { return false }
         if connection.isVideoRotationAngleSupported(rotationAngle) {
             connection.videoRotationAngle = rotationAngle
         }
-        let codec: AVVideoCodecType = movieOutput.availableVideoCodecTypes.contains(.hevc) ? .hevc : .h264
-        movieOutput.setOutputSettings([AVVideoCodecKey: codec], for: connection)
+        // The available codecs/keys belong to this configured connection. An
+        // unconditional H.264 fallback can pass an unsupported value to an
+        // Objective-C API that raises an exception instead of a Swift Error.
+        if let codec = DriveMovieCodecConfiguration.preferredCodec(
+            available: movieOutput.availableVideoCodecTypes,
+            supportedKeys: movieOutput.supportedOutputSettingsKeys(for: connection)
+        ) {
+            movieOutput.setOutputSettings([AVVideoCodecKey: codec], for: connection)
+        }
+        Self.logger.notice("movie start requested preset=\(self.session.sessionPreset.rawValue, privacy: .public) codecs=\(self.movieOutput.availableVideoCodecTypes.map(\.rawValue).joined(separator: ","), privacy: .public)")
+        return true
     }
 
     private func finishPhoto(data: Data?, error: Error?, uniqueID: Int64) {
@@ -1183,13 +1470,20 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             photoInFlight = false
             pendingSample = nil
             pendingPhotoUniqueID = nil
+            if !manualPhotoMoving || !requestedManualPhotosEnabled {
+                activeManualPhotosEnabled = false
+                if !activePanoramaxEnabled { closePanoramaxBatchForReview() }
+            }
             if state == .recording {
+                if pendingCaptureReason == "manual" { manualPhotoCaptureFailed = true }
                 lastCaptureDetail = error.map { "Aufnahme fehlgeschlagen: \($0.localizedDescription)" } ?? "Aufnahme verworfen"
             }
             notifyChange()
             return
         }
         let storageLimit = storageLimitBytes
+        let signEvidence = pendingSignEvidence
+        let captureReason = pendingCaptureReason
         let annotationDraft = pendingPhotoOrientationEpoch == orientationEpoch
             ? latestTrafficSignAnnotationDraft : nil
         latestTrafficSignAnnotationDraft = nil
@@ -1200,7 +1494,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 batch: batch,
                 queueStore: queueStore,
                 storageLimitBytes: storageLimit,
-                annotationDraft: annotationDraft
+                annotationDraft: annotationDraft, signEvidence: signEvidence, captureReason: captureReason
             )
             Task { @MainActor [weak self] in
                 self?.finishPhotoProcessing(uniqueID: uniqueID, result: result)
@@ -1214,10 +1508,15 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             photoInFlight = false
             pendingSample = nil
             pendingPhotoUniqueID = nil
+            if !manualPhotoMoving || !requestedManualPhotosEnabled {
+                activeManualPhotosEnabled = false
+                if !activePanoramaxEnabled { closePanoramaxBatchForReview() }
+            }
             notifyChange()
         }
         guard state == .recording else { return }
         lastCaptureDetail = result.detail
+        if pendingCaptureReason == "manual" { manualPhotoCaptureFailed = !result.saved }
         guard result.saved else { return }
         lastCaptureSample = result.sample
         capturedImageCount += 1
@@ -1238,7 +1537,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         dashcamFileURL = nil
         clearDashcamTransition()
         lastCaptureDetail = detail
-        if state == .recording, !activePanoramaxEnabled, !activeTSREnabled {
+        if state == .recording, !activePanoramaxEnabled, !activeManualPhotosEnabled, !activeTSREnabled {
             beginStopping(resultState: .failed, detail: detail)
         } else {
             notifyChange()
@@ -1252,7 +1551,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         activeDashcamRecordingURL = nil
         clearDashcamTransition()
         lastCaptureDetail = "Dashcam-Aufnahme beendet"
-        if state == .recording, !activePanoramaxEnabled, !activeTSREnabled {
+        if state == .recording, !activePanoramaxEnabled, !activeManualPhotosEnabled, !activeTSREnabled {
             beginStopping(resultState: .disabled, detail: lastCaptureDetail)
         } else {
             notifyChange()
@@ -1298,6 +1597,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         completeInteractionFinalization(.failure(DriveInteractionError.finalizationFailed))
         activeDashcamEnabled = false
         activePanoramaxEnabled = false
+        activeManualPhotosEnabled = false
         activeTSREnabled = false
         activeDashcamRecordingURL = nil
         clearDashcamTransition()
@@ -1313,7 +1613,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         batch: PanoramaxBatchRecord,
         queueStore: PanoramaxQueueStore,
         storageLimitBytes: Int64?,
-        annotationDraft: PanoramaxTrafficSignAnnotationDraft?
+        annotationDraft: PanoramaxTrafficSignAnnotationDraft?, signEvidence: [SignCaptureFilter.Evidence], captureReason: String
     ) -> PanoramaxPhotoProcessingResult {
         let dimensions = PanoramaxJPEGMetadata.pixelDimensions(from: data)
         let annotations: [PanoramaxTrafficSignAnnotation]
@@ -1345,7 +1645,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             software: "YouSpeed/1.0.1",
             imageWidthPixels: dimensions?.width,
             imageHeightPixels: dimensions?.height,
-            trafficSignAnnotations: annotations.isEmpty ? nil : annotations
+            trafficSignAnnotations: annotations.isEmpty ? nil : annotations,
+            captureReason: captureReason, signEvidence: signEvidence.isEmpty ? nil : signEvidence
         )
         do {
             _ = try queueStore.addJPEG(
@@ -1379,6 +1680,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         startedAt = nil
         activeDashcamEnabled = false
         activePanoramaxEnabled = false
+        activeManualPhotosEnabled = false
         activeTSREnabled = false
         activeDashcamRecordingURL = nil
         clearDashcamTransition()
@@ -1406,7 +1708,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 }
             }
         }
-        guard activeDashcamEnabled || activePanoramaxEnabled || activeTSREnabled || (calibrationPreviewEnabled && videoOutputAvailable) else {
+        guard activeDashcamEnabled || activePanoramaxEnabled || activeManualPhotosEnabled || activeTSREnabled || (calibrationPreviewEnabled && videoOutputAvailable) else {
             beginStopping(
                 resultState: .unavailable,
                 detail: "Kein aktiviertes Kameramodul ist mehr verfuegbar"
@@ -1423,6 +1725,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             lastCaptureDetail = "Dashcam-Aufnahme aktiv"
         } else if activeTSREnabled {
             lastCaptureDetail = "Verkehrszeichenerkennung aktiv"
+        } else if activeManualPhotosEnabled {
+            lastCaptureDetail = NSLocalizedString("drive_photo.ready", comment: "")
         } else if calibrationPreviewEnabled {
             lastCaptureDetail = NSLocalizedString("calibration.live", comment: "")
         }
@@ -1476,6 +1780,11 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             queue: nil
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
+#if DEBUG
+                // Injected still tests have no running AVCaptureSession. Its
+                // simulator hardware errors must not stop their synthetic session.
+                if self?.testPhotoCapture != nil { return }
+#endif
                 self?.beginStopping(resultState: .failed, detail: "Kamera wurde unterbrochen; lokale Daten wurden abgeschlossen")
             }
         })
@@ -1485,6 +1794,9 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             queue: nil
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
+#if DEBUG
+                if self?.testPhotoCapture != nil { return }
+#endif
                 self?.beginStopping(resultState: .failed, detail: "Kamera-Fehler; lokale Daten wurden abgeschlossen")
             }
         })
@@ -1549,13 +1861,13 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         } else if state == .recording {
             activeDashcamEnabled = false
             if DriveRecorderPolicy.shouldKeepCameraAfterMovieFinalization(
-                panoramaxActive: activePanoramaxEnabled,
+                panoramaxActive: activePanoramaxEnabled || activeManualPhotosEnabled,
                 trafficSignRecognitionActive: activeTSREnabled,
                 successful: successful,
                 actionPending: interactionFinalization != nil
             ) {
                 if wasLiveToggle, successful {
-                    lastCaptureDetail = activePanoramaxEnabled || activeTSREnabled
+                    lastCaptureDetail = activePanoramaxEnabled || activeManualPhotosEnabled || activeTSREnabled
                         ? "Dashcam-Aufnahme gespeichert; andere Kameramodule laufen weiter"
                         : "Dashcam-Aufnahme gespeichert"
                 } else {

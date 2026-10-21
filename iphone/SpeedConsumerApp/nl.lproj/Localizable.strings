@@ -175,6 +175,8 @@
 "panoramax.recorder.camera_unavailable" = "Camera niet beschikbaar";
 "panoramax.recorder.start" = "Opname starten";
 "panoramax.recorder.stop" = "Opname stoppen";
+"panoramax.capture.start" = "Foto-opname starten";
+"panoramax.capture.stop" = "Foto-opname stoppen";
 "panoramax.recorder.ready" = "Gereed voor de volgende opname";
 "panoramax.review.title" = "Panoramax-foto’s";
 "panoramax.review.local_count" = "%d lokale foto’s controleren";
@@ -327,7 +329,7 @@
 "onboarding.driving.safety" = "Stel YouSpeed in terwijl je geparkeerd staat. Volg altijd de verkeersborden; kaarten en herkenning kunnen fouten bevatten.";
 "onboarding.dashcam.title" = "Bewaar een video van je rit";
 "onboarding.dashcam.body" = "De dashcam is optioneel. Start en stop video’s op het rijscherm en beheer opgeslagen opnamen in de bibliotheek.";
-"onboarding.dashcam.controls" = "De rode opnameknop start de recorder. Video, bordherkenning en Panoramax-foto’s hebben aparte schakelaars.";
+"onboarding.dashcam.controls" = "Stel de app in terwijl je stilstaat. Tik op het rijscherm linksonder op de rode cirkel om een dashcamvideo te starten. Bordherkenning en Panoramax-foto’s behouden hun eigen instellingen.";
 "onboarding.dashcam.library" = "Video’s blijven op je telefoon. Open na het stoppen de videobibliotheek om opgeslagen opnamen te selecteren, delen of verwijderen.";
 "onboarding.dashcam.permission" = "Cameratoegang wordt gevraagd bij gebruik. Tijdens deze installatie wordt niets opgenomen.";
 "onboarding.sources.title" = "Drie bronnen voor limieten";
@@ -491,3 +493,14 @@
 "penalty.documentation.title" = "Boetetabellen";
 
 "traffic.sign.documentation.title" = "Verkeersborden";
+"data_manager.queue_count" = "%d downloads in de wachtrij";
+"data_manager.queued_position" = "Wachtrij: positie %d";
+
+/* Driving manual photo shutter */
+"drive_photo.capture" = "Foto maken";
+"drive_photo.unavailable" = "Foto maken niet beschikbaar";
+"drive_photo.local_hint" = "Slaat één foto lokaal op voor latere controle. Er wordt niets geüpload.";
+"drive_photo.ready" = "Handmatige foto-opname gereed";
+"drive_photo.retry" = "Foto mislukt. Tik om opnieuw te proberen";
+"onboarding.dashcam.start_screenshot" = "Rijscherm: de rode cirkel linksonder start de video-opname.";
+"onboarding.dashcam.stop" = "Tik op dezelfde plek op het rode vierkant om de video te stoppen en op te slaan. Wacht tot het opslaan klaar is voordat je de videobibliotheek opent.";

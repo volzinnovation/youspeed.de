@@ -325,7 +325,8 @@ class RoadPathSession(private val previewMode: Boolean = false, maximumGeometryO
     }
 
     /** Consumes the exact prepared exposure after TSR. The intervening model time is not path processing. */
-    fun evaluate(prepared: RoadPathPreparedFrame, diagnostic: TSRApplicabilityDiagnostic): String = synchronized(evaluationLock) {
+    fun evaluate(prepared: RoadPathPreparedFrame, diagnostic: TSRApplicabilityDiagnostic,
+        associateSigns: Boolean = true): String = synchronized(evaluationLock) {
         val frame = prepared.frame
         val batch = diagnostic.batch
         val location = prepared.location
@@ -381,8 +382,8 @@ class RoadPathSession(private val previewMode: Boolean = false, maximumGeometryO
                     "visual-$index", "unknown", polygon, corridor.confidence, true, 2.5)
             }
         val corridors = RoadPathEvidence.inferCorridorRoles(key, frame.capturedAtSeconds, poses, projected)
-        val currentTracks = diagnostic.tracks.filter { it.visibility == "observed" && !it.associationAmbiguous }.take(24)
-        histories.keys.retainAll(diagnostic.tracks.map { it.trackId }.toSet())
+        val currentTracks = diagnostic.tracks.filter { associateSigns && it.visibility == "observed" && !it.associationAmbiguous }.take(24)
+        histories.keys.retainAll(if (associateSigns) diagnostic.tracks.map { it.trackId }.toSet() else emptySet())
         val associations = mutableListOf<Pair<String, RoadPathResult>>()
         for (track in currentTracks) {
             if (nowNanos() >= deadline) break

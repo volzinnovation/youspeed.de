@@ -1,0 +1,1 @@
+New in 1.4: supplementary-sign OCR, clearer camera and recording controls, manual street photos, and improved selection and Panoramax uploads. iPhone and Android provide aligned capture controls. Sign recognition and map data can be wrong. Always follow road signs and traffic rules.

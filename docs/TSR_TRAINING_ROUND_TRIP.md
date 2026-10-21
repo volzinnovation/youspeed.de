@@ -16,11 +16,12 @@ signs. One shared camera frame produces:
 
 That same contract is used for live inference, consented diagnostic capture,
 human review, training, replay, and mobile evaluation. Supplementary signs are
-explicitly outside this live contract: the app does not detect, group, OCR, or
-interpret them. They will use a separate offline-first workflow over
-Panoramax-linkable full-scene evidence, manual annotation, and optionally a
-vision-language model. Shared schemas may retain supplementary fields for
-backward compatibility, but live events leave them empty.
+outside this live model/authority contract. The separate
+[on-device time-text OCR lane](TSR_SUPPLEMENTARY_OCR_2026-10-16.md) adds display
+and speech without evaluating conditional speed rules. Broader interpretation
+uses an offline-first workflow over Panoramax-linkable full-scene evidence,
+manual annotation, and optionally a vision-language model. Shared schemas retain
+supplementary fields for compatibility, but live model events leave them empty.
 
 ## Reproducible source baseline
 
@@ -324,7 +325,7 @@ release.
 | License posture | Every required model and actual training/calibration dataset lineage gate is explicitly asserted to the evaluator by the review process. This is an engineering blocker only, not a legal determination or proof embedded in the model evidence bundle. The YOLOX and MobileNetV3 initializations remain blocked until their pretrained-weight/data lineage and NOTICE obligations are documented; the Panoramax classifier additionally requires both CC BY-SA dataset treatment and an explicit Ultralytics AGPL-compliance or Enterprise-license decision. |
 | Leakage | The materializer's capture-group split passes, and a separate pre-split audit demonstrates zero physical-sign-cluster or near-duplicate overlap between train, calibration, validation, and test partitions. |
 | Primary semantics | On the real route holdout, the lower 95% confidence bound is at least 99% for confirmed numeric-limit precision and 90% for recall; dangerous speed substitutions are at most 0.1%. |
-| Supplementary boundary | Live output contains no supplementary detections, restrictions, OCR results, or grouped members. Offline supplementary evaluation is tracked separately and cannot gate live activation. |
+| Supplementary boundary | The live model output contains no supplementary detections, restrictions, OCR results, or grouped members. A separate app OCR lane reads native lower rectangles below numeric signs and accepted pictograms, retries improving views, and stores/displays/speaks local-language text; it does not evaluate conditions or change primary model semantics. Broader supplementary evaluation remains separate. |
 | Temporal evidence | Replay produces at most one confirmed event per physical assembly and satisfies versioned duplicate-confirmation and wrong-way-confirmation thresholds. Those thresholds are currently pending, so this gate remains blocked. |
 | Calibration | Expected calibration error is at most 0.03 on the calibration audit set, with per-class reliability plots and no threshold fitted on the held-out test set. |
 | Cross-runtime parity | Every scorecard-case normalized semantic and assembly state agrees across ONNX/Core ML/LiteRT; matched boxes have IoU at least 0.995 and calibrated confidence differs by at most 0.02. |

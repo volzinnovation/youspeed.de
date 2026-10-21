@@ -1,0 +1,78 @@
+MobiData BW – kumulative Ortstafel-Sichtung v2, 20. Oktober 2026
+
+57 Original-Vollbilder und 57 Zielcrops: 37 visuelle DE:310- und 20
+DE:311-Vorschläge aus 53 Sequenzen. Diese Fassung ergänzt die ursprünglichen
+13 Beispiele um 44 neue Zielansichten (30 DE:310, 14 DE:311) aus 40 weiteren
+Sequenzen. Das frühere Paket bleibt unverändert erhalten.
+
+Öffnen Sie SICHTUNG.html für die Crop-Übersicht mit Links zu Originalbildern
+und Prüfüberlagerungen. Bearbeiten Sie SICHTUNG_CROPS.csv und
+SICHTUNG_VOLLBILDER.csv. Die 136 Freigabeordner sind leer. Sämtliche Klassen,
+Boxen und Gruppierungen sind Vorschläge; menschliche Freigabe fehlt.
+Der normale Kursimporter ist noch nicht kompatibel: Vollbilder enthalten
+Teilannotation der Zieltafel, keine vollständigen Schild-/Gesichts-/Kennzeichenboxen.
+Prüfen und ergänzen Sie alle sichtbaren Zielobjekte vor einer späteren Freigabe.
+
+Zusätzliche Suche:
+- Alle 2.730 Katastereinträge mit einer öffentlichen Fotoposition im Abstand
+  bis 10 m wurden erneut über den gleichen Katalog-Snapshot abgeglichen.
+- 9.014 passende Kataster-/Foto-Paare, 5.972 verschiedene öffentliche Fotos.
+- 180 neue native Ansichten aus 95 Gemeinden visuell gesichtet, 53 davon in
+  voller Auflösung geprüft und mit dem festen SGBlur-YOLO11n-Modell durchlaufen.
+- 44 neue Zielansichten behalten. Das ist eine gezielte Auswahl, keine
+  vollständige visuelle Prüfung aller 2.730 Einträge oder 5.972 Fotos.
+- Alle 44 neuen Kamerapositionen liegen nominell höchstens 10 m vom jeweiligen
+  Suchpunkt entfernt. GPS-Unsicherheit, Sichtbarkeit und Schildseiten bleiben
+  getrennte Fragen. Der Katasterpunkt ist ein Suchhinweis, keine Bildannotation.
+
+Befunde für die 44 neuen Zielvorschläge:
+- Öffentliche Metadaten: 41 ohne passende gespeicherte Zielbox, zwei mit
+  traffic_sign=yes ohne genaue Klasse, eine als FR:C50 klassifizierte Box.
+- Nonnenweier/Schwanau zeigt visuell DE:310; die passende Quellbox trägt FR:C50
+  mit Klassifikationsscore 0,92 (classify_fr_road_signs/0.13). Ihre Detektorquelle
+  heißt SGBlur-yolo11s/0.1.0. Das ist ein Vorschlag für einen nachgelagerten
+  Klassifikationsfehler, keine DE-Klassenausgabe des lokalen SGBlur-Detektors.
+- Labels benachbarter Zeichen werden nicht der Ortstafel zugeschrieben.
+  Die Quellbox muss mindestens IoU 0,5 mit der vorgeschlagenen Zielbox erreichen.
+- Lokales SGBlur-YOLO11n: sieben Zielboxen gefunden, 37 nicht gefunden bei
+  imgsz=1280, rect=false, conf=0,25, NMS-IoU=0,7, Ziel-IoU>=0,5.
+  Ein Treffer liegt mit IoU 0,512 nahe der Grenze; eine menschliche Boxkorrektur
+  kann dessen Status verändern. Keine Objektklassen-Verwechslung mit plate/face
+  wurde für diese Zielvorschläge festgestellt.
+- Über beide Pakete zusammen: neun von 57 Zielvorschlägen gefunden, 48 verfehlt.
+
+Ein fehlender gespeicherter Zielkasten beweist keinen Fehler einer bestimmten
+Server-Modellversion. Quellannotation und lokaler YOLO11n-Replay sind getrennte
+Belege. SGBlur liefert sign/plate/face, nicht DE:310/DE:311. Es wurde kein neuer
+Klassifikator ausgeführt. Aus den ausgewählten, teilweise annotierten Beispielen
+folgen weder populationsbezogener Recall noch Precision/mAP oder Aussagen über
+unverpixelte Gesichter/Kennzeichen.
+
+Neuheit: keine gleichen Bild-IDs, Sequenzen oder exakten HD-/RGB-/Crop-Hashes
+zwischen den 44 neuen Beispielen und dem ersten 13er-Paket. Auch gegen die
+festgehaltene frühere Lehr-/Suchhistorie bestehen keine exakten Bild-/Hash-Treffer.
+Das ist kein Audit sämtlicher Vortrainingsdaten. Nahe Standorte und gleiche
+Sequenzen erhalten konservative Gruppenvorschläge. Prüfen Sie physische Tafeln
+und Fahrten gegen Ihren vollständigen Lernbestand vor einem späteren Split.
+
+Die Beispiele wurden bereits mit der Baseline gesichtet: exploratives Lehr-
+und Reviewmaterial, kein Blindtest. Alle Freigaben bleiben false. Es wurde
+weder trainiert noch in reservierte Testkandidaten importiert. Original-
+Panoramax-Annotationen und Original-JPEG-Bytes bleiben unverändert.
+
+Bildherkunft und Lizenz je Ansicht: manifest.json und HERKUNFT.csv.
+Creative Commons Attribution-ShareAlike 4.0 International:
+https://creativecommons.org/licenses/by-sa/4.0/ . Die Autoren stehen auch in
+SICHTUNG.html. Änderungen: Zielcrops, lokale Box-/Klassenvorschläge und
+Prüfüberlagerungen; Original-JPEGs unverändert.
+
+Standortquelle: Verkehrsministerium Baden-Württemberg / MobiData BW,
+https://mobidata-bw.de/dataset/verkehrszeichen-baden-wurttemberg ,
+https://mobidata-bw.de/daten/portal/VZ-Daten/signs.geojson .
+Datenlizenz Deutschland – Namensnennung – Version 2.0:
+https://www.govdata.de/dl-de/by-2-0 . Änderungen: räumlicher Abgleich mit
+öffentlichen Panoramax-Fotometadaten. Quellstand und SHA-256 im Manifest.
+
+SHA256SUMS.json prüft alle Paketdateien. evidence enthält den eingefrorenen
+10-m-Abgleich als Parquet, die Suchauswahl und ursprüngliche Modellvorhersagen.
+Die Sammlung wurde ausschließlich lokal erstellt; keine Veröffentlichung.

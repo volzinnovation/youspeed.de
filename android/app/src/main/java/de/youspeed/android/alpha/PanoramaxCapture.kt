@@ -294,6 +294,8 @@ data class PanoramaxCaptureMetadata(
     val imageWidthPixels: Int? = null,
     val imageHeightPixels: Int? = null,
     val trafficSignAnnotations: List<PanoramaxTrafficSignAnnotation>? = null,
+    val captureReason: String? = null,
+    val signEvidence: List<SignCaptureEvidence>? = null,
 ) {
     fun validate(now: Instant = capturedAt): List<String> = buildList {
         if (captureId.isBlank()) add("captureId is missing")

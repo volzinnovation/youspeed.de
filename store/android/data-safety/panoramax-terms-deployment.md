@@ -1,0 +1,9 @@
+# YouSpeed Panoramax terms update
+
+The owner selected `https://panoramax.youspeed.de/terms-of-service` as both the Play privacy and deletion destination, with `studios@moonshots.gmbh` replacing the HSPF contact for this instance. Both Console links are saved; no review submission occurred.
+
+[The prepared German page](panoramax-terms-of-service-de.html) is a standalone review preview. [The body fragment](panoramax-terms-of-service-de.fragment.html) contains the content for integration into the existing Panoramax legal-page source. It preserves the inspected instance notice, licence, host and research disclosures, substitutes the Moonshots email, turns the literal Markdown heading text into HTML headings, adds app-specific upload context and prominently explains how to request account-and-associated-data deletion. OpenStreetMap France remains a separate operator with its own rights contact. No IGN retention period, public-interest legal basis or licence was copied.
+
+The [before snapshot](../../../docs/release/android-submission-audit-2026-10-04/panoramax-terms-before.html) preserves the observed live body. The [rendered preview](../../../docs/release/android-submission-audit-2026-10-04/terms-preview.jpg) verifies the amended contact and visible deletion instructions.
+
+The actual server legal-page file or management route was not found in the local repositories. The existing analytics `deploy/panoramax` setup describes the runtime, but contains no terms source. Deployment therefore awaits the source/server path. No server state was changed. Integrate the fragment into the existing page resource, retain other language versions as appropriate, then verify the public canonical URL without authentication and the email request link. Keep exact retention, recipients and deletion execution subject to operator verification; the preview does not establish them.

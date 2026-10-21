@@ -1,0 +1,29 @@
+{
+  "pairs": 70,
+  "exact_crop_pixels_verified": 70,
+  "distinct_full_hashes": 70,
+  "distinct_crop_hashes": 70,
+  "attribution_present": 70,
+  "html_local_links_checked": 636,
+  "credentials_or_private_paths_published": false,
+  "training_performed": false,
+  "student_download_instructions": {
+    "shell_blocks_syntax_checked": 16,
+    "learning_checksum_OK_lines": 6,
+    "malformed_checksum_lists": {
+      "missing": "rejected",
+      "duplicate": "rejected"
+    },
+    "new_archive_extraction": "passed",
+    "existing_review_overwrite": "refused",
+    "extracted_file_hashes_verified": 437,
+    "handout_members_match_sources": 17,
+    "dataset_revision": "c02d4163a58a7fcc6e97b0195abc22ae0b0dd249",
+    "model_training_or_evaluation_performed": false,
+    "hf_cli_dry_run_resolved_files": 7
+  },
+  "unrelated_working_tree_diff_preserved": true,
+  "unrelated_diff_sha256": "328ce0978dd1eeb0bfd6e1f573a1dde1a7d9317799a9742f97b74974f7655074",
+  "tracked_lecture_training_result_artifacts": [],
+  "handout_sha256": "5c34ce056969231a94a890205cd9c0485a0cca8b8276ef7ac005bcc8a648c238"
+}

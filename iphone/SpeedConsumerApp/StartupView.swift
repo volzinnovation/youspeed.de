@@ -42,7 +42,7 @@ struct StartupView: View {
                             .padding(.horizontal, 16)
                     }
 
-                    RecordingSafeButton("startup.retry") {
+                    RecordingSafeButton(LocalizedStringKey("startup.retry")) {
                         viewModel.retryStartupDataPreparation()
                     }
                     .font(.system(size: 17, weight: .bold, design: .rounded))
@@ -149,7 +149,7 @@ struct FirstUserWelcomeView: View {
 
             HStack(spacing: 16) {
                 if step > 0 {
-                    RecordingSafeButton("onboarding.back") { viewModel.goBackInOnboarding() }
+                    RecordingSafeButton(LocalizedStringKey("onboarding.back")) { viewModel.goBackInOnboarding() }
                         .buttonStyle(.bordered)
                         .accessibilityIdentifier("onboarding.back")
                 }
@@ -281,8 +281,10 @@ struct FirstUserWelcomeView: View {
 
     private var dashcamStep: some View {
         VStack(alignment: .leading, spacing: 18) {
-            screenshot("onboarding-dashcam", caption: "onboarding.dashcam.screenshot")
             information("onboarding.dashcam.controls", icon: "record.circle")
+            screenshot("onboarding-record-control", caption: "onboarding.dashcam.start_screenshot")
+            information("onboarding.dashcam.stop", icon: "stop.fill")
+            screenshot("onboarding-dashcam", caption: "onboarding.dashcam.screenshot")
             information("onboarding.dashcam.library", icon: "play.rectangle.on.rectangle")
             information("onboarding.dashcam.share", icon: "square.and.arrow.up")
             information("onboarding.dashcam.permission", icon: "camera")
@@ -348,6 +350,7 @@ struct FirstUserWelcomeView: View {
                         }
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("onboarding.screenshot.\(name)")
                 .accessibilityLabel(Text(LocalizedStringKey(caption)))
                 .accessibilityHint(Text("onboarding.screenshot.enlarge"))
                 Text(LocalizedStringKey(caption)).font(.caption).foregroundStyle(.secondary)

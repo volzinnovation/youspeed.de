@@ -61,40 +61,6 @@ final class VisualRoadCalibrationTests: XCTestCase {
         XCTAssertEqual(store.snapshot(), draft)
     }
 
-    func testOnlyLeftCropEdgeChangesAndBoxesMapBackToExactPixelBoundary() {
-        var calibration = defaults(); calibration.leftTopX = 0.461
-        let left = calibration.cropLeftPixels(width: 1280)
-        XCTAssertEqual(left, 590)
-        let mapping = TrafficSignCalibrationCropMapping(sourceWidth: 1280, leftPixels: left)
-        let box = TrafficSignNormalizedRect(x: 0.2, y: 0.1, width: 0.3, height: 0.4)
-        let full = mapping.remap(box)
-        XCTAssertEqual(full.x, (590 + 0.2 * 690) / 1280, accuracy: 1e-12)
-        XCTAssertEqual(full.width, 0.3 * 690 / 1280, accuracy: 1e-12)
-        XCTAssertEqual(full.y, box.y); XCTAssertEqual(full.height, box.height)
-        let whole = mapping.remap(TrafficSignNormalizedRect(x: 0, y: 0, width: 1, height: 1))
-        XCTAssertEqual(whole.x + whole.width, 1, accuracy: 1e-12)
-        XCTAssertEqual(whole.y + whole.height, 1, accuracy: 1e-12)
-        XCTAssertEqual(TrafficSignCalibrationCropMapping(sourceWidth: 1280, leftPixels: 0).remap(box), box)
-    }
-
-    func testRemappingDoesNotChangeModelScoresSemanticOrThresholds() {
-        let original = TrafficSignDetection(rawClassId: "maxspeed-80", rawLabel: "80",
-            semantic: TrafficSignSemantic(kind: .maximumSpeed, value: 80, unit: "km/h"),
-            rawScore: 0.91, calibratedConfidence: 0.92, detectorRawScore: 0.93,
-            detectorCalibratedConfidence: 0.94, classifierRawScore: 0.95, classifierCalibratedConfidence: 0.96,
-            boundingBox: TrafficSignNormalizedRect(x: 0.2, y: 0.3, width: 0.1, height: 0.2),
-            classThreshold: 0.7, assemblyId: "assembly")
-        let mapped = TrafficSignCalibrationCropMapping(sourceWidth: 1600, leftPixels: 736).remap(original)
-        XCTAssertEqual(mapped.semantic, original.semantic); XCTAssertEqual(mapped.rawScore, original.rawScore)
-        XCTAssertEqual(mapped.calibratedConfidence, original.calibratedConfidence)
-        XCTAssertEqual(mapped.detectorRawScore, original.detectorRawScore)
-        XCTAssertEqual(mapped.detectorCalibratedConfidence, original.detectorCalibratedConfidence)
-        XCTAssertEqual(mapped.classifierRawScore, original.classifierRawScore)
-        XCTAssertEqual(mapped.classifierCalibratedConfidence, original.classifierCalibratedConfidence)
-        XCTAssertEqual(mapped.classThreshold, original.classThreshold); XCTAssertEqual(mapped.assemblyId, original.assemblyId)
-        XCTAssertNotEqual(mapped.boundingBox, original.boundingBox)
-    }
-
     func testCalibrationCameraIsHiddenFromRecordingControls() {
         XCTAssertEqual(DriveRecorderPolicy.presentedRecorderState(captureState: .recording, purpose: .calibration,
             driveStartPending: false), .disabled)

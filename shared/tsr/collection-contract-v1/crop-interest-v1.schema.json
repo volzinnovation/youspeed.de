@@ -1,0 +1,410 @@
+{
+  "$defs": {
+    "Always": {
+      "additionalProperties": false,
+      "properties": {
+        "exact": {
+          "const": "bad",
+          "default": "bad",
+          "title": "Exact",
+          "type": "string"
+        },
+        "prefix": {
+          "const": "bad:",
+          "default": "bad:",
+          "title": "Prefix",
+          "type": "string"
+        }
+      },
+      "title": "Always",
+      "type": "object"
+    },
+    "EncounterPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "growth_ratio": {
+          "const": 1.5,
+          "default": 1.5,
+          "title": "Growth Ratio",
+          "type": "number"
+        },
+        "growth_samples": {
+          "const": 2,
+          "default": 2,
+          "title": "Growth Samples",
+          "type": "integer"
+        },
+        "max_attempts_per_frame": {
+          "const": 4,
+          "default": 4,
+          "title": "Max Attempts Per Frame",
+          "type": "integer"
+        },
+        "max_crops": {
+          "const": 8,
+          "default": 8,
+          "title": "Max Crops",
+          "type": "integer"
+        },
+        "regular_samples": {
+          "const": 6,
+          "default": 6,
+          "title": "Regular Samples",
+          "type": "integer"
+        },
+        "spacing_ms": {
+          "const": 500,
+          "default": 500,
+          "title": "Spacing Ms",
+          "type": "integer"
+        }
+      },
+      "title": "EncounterPolicy",
+      "type": "object"
+    },
+    "Fraction": {
+      "additionalProperties": false,
+      "properties": {
+        "denominator": {
+          "maximum": 1000000,
+          "minimum": 1,
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "numerator": {
+          "maximum": 1000000,
+          "minimum": 0,
+          "title": "Numerator",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator"
+      ],
+      "title": "Fraction",
+      "type": "object"
+    },
+    "Interest": {
+      "additionalProperties": false,
+      "properties": {
+        "allocated_images": {
+          "anyOf": [
+            {
+              "maximum": 1000000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Allocated Images"
+        },
+        "class_id": {
+          "maxLength": 160,
+          "minLength": 1,
+          "pattern": "^[^\\r\\n]+$",
+          "title": "Class Id",
+          "type": "string"
+        },
+        "collection_key": {
+          "maxLength": 160,
+          "minLength": 1,
+          "pattern": "^[^\\r\\n]+$",
+          "title": "Collection Key",
+          "type": "string"
+        },
+        "country": {
+          "pattern": "^[A-Z]{2}$",
+          "title": "Country",
+          "type": "string"
+        },
+        "encounter_policy": {
+          "$ref": "#/$defs/EncounterPolicy"
+        },
+        "selection": {
+          "$ref": "#/$defs/Fraction"
+        },
+        "selectors": {
+          "items": {
+            "$ref": "#/$defs/Selector"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Selectors",
+          "type": "array"
+        },
+        "target_deficit": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Target Deficit",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "collection_key",
+        "country",
+        "class_id",
+        "selectors",
+        "selection",
+        "target_deficit",
+        "encounter_policy"
+      ],
+      "title": "Interest",
+      "type": "object"
+    },
+    "PlanLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "encounter": {
+          "$ref": "#/$defs/EncounterPolicy"
+        },
+        "max_image_bytes": {
+          "maximum": 5242880,
+          "minimum": 1,
+          "title": "Max Image Bytes",
+          "type": "integer"
+        },
+        "metadata_batch_events": {
+          "const": 100,
+          "default": 100,
+          "title": "Metadata Batch Events",
+          "type": "integer"
+        },
+        "normal_bytes": {
+          "anyOf": [
+            {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Normal Bytes"
+        },
+        "normal_images": {
+          "anyOf": [
+            {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Normal Images"
+        },
+        "upload_attempts": {
+          "const": 3,
+          "default": 3,
+          "title": "Upload Attempts",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_image_bytes",
+        "encounter"
+      ],
+      "title": "PlanLimits",
+      "type": "object"
+    },
+    "Selector": {
+      "additionalProperties": false,
+      "properties": {
+        "classifier_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Classifier Sha256",
+          "type": "string"
+        },
+        "country": {
+          "pattern": "^[A-Z]{2}$",
+          "title": "Country",
+          "type": "string"
+        },
+        "pack_sha256": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Pack Sha256",
+          "type": "string"
+        },
+        "raw_label": {
+          "maxLength": 160,
+          "minLength": 1,
+          "pattern": "^[^\\r\\n]+$",
+          "title": "Raw Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "country",
+        "pack_sha256",
+        "classifier_sha256",
+        "raw_label"
+      ],
+      "title": "Selector",
+      "type": "object"
+    },
+    "Watermarks": {
+      "additionalProperties": false,
+      "properties": {
+        "contiguous_sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Contiguous Sequence",
+          "type": "integer"
+        },
+        "control_sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Control Sequence",
+          "type": "integer"
+        },
+        "controls_refreshed_at": {
+          "format": "date-time",
+          "title": "Controls Refreshed At",
+          "type": "string"
+        },
+        "received_sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Received Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "contiguous_sequence",
+        "control_sequence",
+        "received_sequence",
+        "controls_refreshed_at"
+      ],
+      "title": "Watermarks",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "algorithm_version": {
+      "enum": [
+        "waterfill-v1",
+        "daily-maximum-v1"
+      ],
+      "title": "Algorithm Version",
+      "type": "string"
+    },
+    "always": {
+      "$ref": "#/$defs/Always"
+    },
+    "bootstrap": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Bootstrap"
+    },
+    "compatible_packs": {
+      "items": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "maxItems": 512,
+      "minItems": 1,
+      "title": "Compatible Packs",
+      "type": "array"
+    },
+    "daily_maximum": {
+      "anyOf": [
+        {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Daily Maximum"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "interests": {
+      "items": {
+        "$ref": "#/$defs/Interest"
+      },
+      "maxItems": 10000,
+      "title": "Interests",
+      "type": "array"
+    },
+    "limits": {
+      "$ref": "#/$defs/PlanLimits"
+    },
+    "registry_revision": {
+      "maxLength": 160,
+      "minLength": 1,
+      "pattern": "^[^\\r\\n]+$",
+      "title": "Registry Revision",
+      "type": "string"
+    },
+    "revision": {
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "source_watermarks": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Watermarks"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "valid_from": {
+      "format": "date-time",
+      "title": "Valid From",
+      "type": "string"
+    },
+    "valid_until": {
+      "format": "date-time",
+      "title": "Valid Until",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "revision",
+    "algorithm_version",
+    "generated_at",
+    "valid_from",
+    "valid_until",
+    "registry_revision",
+    "compatible_packs",
+    "always",
+    "interests",
+    "limits"
+  ],
+  "title": "Plan",
+  "type": "object"
+}

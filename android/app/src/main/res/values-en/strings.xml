@@ -140,4 +140,8 @@
 
     <!-- Store readiness: complete camera calibration translations. -->
     <string name="tsr_disregard_vision">Disregard vision and return to road</string>
+    <string name="ui_driving_photo">Take photo</string>
+    <string name="ui_driving_photo_unavailable">Photo unavailable</string>
+    <string name="ui_driving_photo_local_only">Saves one photo locally for review. Nothing is uploaded.</string>
+    <string name="ui_driving_photo_failed">Photo could not be saved. Try again when the camera is ready.</string>
 </resources>

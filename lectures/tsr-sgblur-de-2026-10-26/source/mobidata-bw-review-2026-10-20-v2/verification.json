@@ -1,0 +1,23 @@
+{
+  "checked_at": "2026-10-20",
+  "target_matching_tests_passed": 4,
+  "frozen_catalogue_matches": 9014,
+  "frozen_catalogue_unique_sign_records": 2730,
+  "frozen_catalogue_unique_photos": 5972,
+  "archive_crc_ok": true,
+  "packaged_file_hashes_verified": 319,
+  "original_image_hashes_verified": 57,
+  "source_metadata_hashes_verified": 57,
+  "exact_crop_pixel_checks_passed": 57,
+  "empty_classifier_approval_folders": 136,
+  "approved_files": 0,
+  "previous_archive_unchanged": true,
+  "previous_archive_sha256": "3246af0aa99e229a98e10dd7b0a3e05ae218486cb2bbb9dc2743cfba71c10d47",
+  "new_archive_sha256": "935e5aeceff8b55764fa5ff076777e391ad330a3ed6af74c1111b59c89626729",
+  "browser_card_count": 57,
+  "browser_horizontal_overflow": false,
+  "browser_overlay_link_opened": true,
+  "human_approved": false,
+  "eligible_for_training": false,
+  "approved_for_evaluation": false
+}

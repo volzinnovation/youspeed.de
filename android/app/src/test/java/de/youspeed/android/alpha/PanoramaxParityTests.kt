@@ -118,6 +118,88 @@ class PanoramaxParityTests {
         assertTrue(requests.all { it.origin == "https://panoramax.openstreetmap.fr" })
     }
 
+    @Test fun explicitUploadValidatesSavedAccountBeforeApprovingAndUploadingSelection() = withQueue { root, store ->
+        val batch = addBatch(root, store, "validate-on-upload", 1)
+        store.transitionBatch(batch.batchId, PanoramaxBatchState.AWAITING_REVIEW)
+        val memory = MemoryCredentials().apply {
+            save(PanoramaxServerCatalog.default.origin, PanoramaxCredentials("saved-token", "device"))
+        }
+        val paths = mutableListOf<String>()
+        val transport = PanoramaxUploadTransport { request, _ ->
+            paths += request.path
+            when {
+                request.path == "/api/users/me" -> {
+                    assertEquals(PanoramaxBatchState.AWAITING_REVIEW, store.getBatch(batch.batchId)?.state)
+                    PanoramaxHttpResponse(200)
+                }
+                request.path == "/api/upload_sets" -> response("""{"id":"remote"}""")
+                request.path.endsWith("/files") -> PanoramaxHttpResponse(201)
+                else -> response("""{"id":"remote","ready":true}""")
+            }
+        }
+        val account = PanoramaxAccount(memory, transport)
+        assertTrue(account.state.hasToken)
+        assertFalse(account.state.isConnected)
+        PanoramaxUploadCoordinator(store, account, { true }, { false }, {}, transport,
+            { _, _ -> store.originalFile(batch.items.single()) }, pollingIntervalMillis = 0, pollingAttempts = 1).use { upload ->
+            upload.uploadSelections(mapOf(batch.batchId to setOf(batch.items.single().itemId)))
+            awaitIdle(upload)
+            assertEquals("Upload complete", upload.statusByBatch[batch.batchId])
+        }
+        assertTrue(account.state.isConnected)
+        assertEquals("/api/users/me", paths.first())
+        assertEquals(PanoramaxBatchState.COMPLETE, store.getBatch(batch.batchId)?.state)
+    }
+
+    @Test fun rejectedAccountValidationPreservesSelectionAndNeverStartsUpload() = withQueue { root, store ->
+        val batch = addBatch(root, store, "rejected-account", 1)
+        store.transitionBatch(batch.batchId, PanoramaxBatchState.AWAITING_REVIEW)
+        val initial = store.getBatch(batch.batchId)
+        val memory = MemoryCredentials().apply {
+            save(PanoramaxServerCatalog.default.origin, PanoramaxCredentials("expired-token", "device"))
+        }
+        val paths = mutableListOf<String>()
+        val transport = PanoramaxUploadTransport { request, _ ->
+            paths += request.path
+            PanoramaxHttpResponse(401)
+        }
+        val account = PanoramaxAccount(memory, transport)
+        PanoramaxUploadCoordinator(store, account, { true }, { false }, {}, transport).use { upload ->
+            upload.uploadSelections(mapOf(batch.batchId to setOf(batch.items.single().itemId)))
+            awaitIdle(upload)
+            assertEquals("Connect and validate your Panoramax account", upload.statusByBatch[batch.batchId])
+        }
+        assertEquals(listOf("/api/users/me"), paths)
+        assertFalse(account.state.isConnected)
+        assertEquals(initial, store.getBatch(batch.batchId))
+        assertTrue(store.originalFile(batch.items.single()).exists())
+    }
+
+    @Test fun resumingUploadValidatesSavedAccountBeforeCompletingRemoteSet() = withQueue { root, store ->
+        val batch = addBatch(root, store, "validate-on-resume", 1)
+        store.updateBatch(batch.copy(state = PanoramaxBatchState.PROCESSING, remoteUploadSetId = "existing",
+            items = batch.items.map { it.copy(state = PanoramaxItemState.UPLOADED) }))
+        val memory = MemoryCredentials().apply {
+            save(PanoramaxServerCatalog.default.origin, PanoramaxCredentials("saved-token", "device"))
+        }
+        val paths = mutableListOf<String>()
+        val transport = PanoramaxUploadTransport { request, _ ->
+            paths += request.path
+            if (request.path == "/api/users/me") PanoramaxHttpResponse(200)
+            else response("""{"id":"existing","ready":true}""")
+        }
+        val account = PanoramaxAccount(memory, transport)
+        assertFalse(account.state.isConnected)
+        PanoramaxUploadCoordinator(store, account, { true }, { false }, {}, transport,
+            pollingIntervalMillis = 0, pollingAttempts = 1).use { upload ->
+            upload.uploadBatch(batch.batchId)
+            awaitIdle(upload)
+            assertEquals("Upload complete", upload.statusByBatch[batch.batchId])
+        }
+        assertEquals(listOf("/api/users/me", "/api/upload_sets/existing"), paths)
+        assertEquals(PanoramaxBatchState.COMPLETE, store.getBatch(batch.batchId)?.state)
+    }
+
     @Test fun explicitUploadSkipsAcceptedItemsCompletesBeforeDeletingAndCleansMultipart() = withQueue { root, store ->
         val batch = addBatch(root, store, "resume", 2)
         store.updateBatch(batch.copy(state = PanoramaxBatchState.PARTIAL, remoteUploadSetId = "existing", items = batch.items.mapIndexed { index, item ->

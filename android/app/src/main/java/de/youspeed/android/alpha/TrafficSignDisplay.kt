@@ -168,22 +168,30 @@ internal class SecondaryTrafficSignSpeechGate(
 internal class TrafficSignSpeechPlaybackState {
     private var activeUtteranceId: String? = null
     private var secondaryUtteranceId: String? = null
+    private var supplementaryUtteranceId: String? = null
+    var supplementarySpeechKey: String? = null
+        private set
+    val hasSupplementaryUtterance: Boolean
+        get() = supplementaryUtteranceId != null && supplementaryUtteranceId == activeUtteranceId
     val hasSecondaryUtterance: Boolean
         get() = secondaryUtteranceId != null && secondaryUtteranceId == activeUtteranceId
 
     fun isIdle(engineSpeaking: Boolean): Boolean = activeUtteranceId == null && !engineSpeaking
 
-    fun begin(utteranceId: String, secondary: Boolean) {
+    fun begin(utteranceId: String, secondary: Boolean, supplementaryKey: String? = null) {
         activeUtteranceId = utteranceId
         secondaryUtteranceId = utteranceId.takeIf { secondary }
+        supplementaryUtteranceId = utteranceId.takeIf { secondary && supplementaryKey != null }
+        supplementarySpeechKey = supplementaryKey.takeIf { secondary }
     }
 
     fun finish(utteranceId: String) {
         if (utteranceId == activeUtteranceId) activeUtteranceId = null
         if (utteranceId == secondaryUtteranceId) secondaryUtteranceId = null
+        if (utteranceId == supplementaryUtteranceId) { supplementaryUtteranceId = null; supplementarySpeechKey = null }
     }
 
-    fun reset() { activeUtteranceId = null; secondaryUtteranceId = null }
+    fun reset() { activeUtteranceId = null; secondaryUtteranceId = null; supplementaryUtteranceId = null; supplementarySpeechKey = null }
 }
 
 internal object SecondaryTrafficSignSpeechPolicy {
@@ -253,5 +261,5 @@ internal fun TrafficSignCandidate.normalizedPrimarySemantic(): TrafficSignSemant
 /** Covers all publication paths, including route/city generation increments outside camera lifecycle methods. */
 internal fun ConsumerUiState.withCurrentTrafficSignDisplayGeneration(previousGeneration: Long, currentGeneration: Long): ConsumerUiState =
     if (previousGeneration != currentGeneration || trafficSignGeneration != currentGeneration) {
-        copy(lastTrafficSignPictogram = null, trafficSignGeneration = currentGeneration)
+        copy(trafficSignSupplementaryText = null, trafficSignPendingSpeedKmh = null, trafficSignGeneration = currentGeneration)
     } else this

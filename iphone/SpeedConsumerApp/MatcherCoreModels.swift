@@ -261,6 +261,7 @@ struct DriveMatchReplayDebug: Codable, Sendable {
 
 struct SpeedLimitResult: Codable, Sendable {
     var applicabilityGeometry: TSRMapGeometry? = nil
+    var speedSource: String? = nil
     let speedLimitKmh: Int?
     let isUnlimitedSpeedLimit: Bool?
     let wayID: String?
@@ -321,6 +322,11 @@ struct DriveMatchLogEntry: Codable, Sendable {
     let result: SpeedLimitResult?
     let error: String?
     let replayDebug: DriveMatchReplayDebug?
+    // Optional so historical drive logs retain their decoding contract.
+    let effectiveSpeedLimitSource: String?
+    let effectiveSpeedLimitReason: String?
+    let effectiveSpeedLimitKind: String?
+    let effectiveSpeedLimitCurrent: Bool?
 
     init(
         fixID: Int,
@@ -337,7 +343,11 @@ struct DriveMatchLogEntry: Codable, Sendable {
         tunnelModeState: String,
         result: SpeedLimitResult?,
         error: String?,
-        replayDebug: DriveMatchReplayDebug? = nil
+        replayDebug: DriveMatchReplayDebug? = nil,
+        effectiveSpeedLimitSource: String? = nil,
+        effectiveSpeedLimitReason: String? = nil,
+        effectiveSpeedLimitKind: String? = nil,
+        effectiveSpeedLimitCurrent: Bool? = nil
     ) {
         self.fixID = fixID
         self.timestampUTC = timestampUTC
@@ -354,6 +364,10 @@ struct DriveMatchLogEntry: Codable, Sendable {
         self.result = result
         self.error = error
         self.replayDebug = replayDebug
+        self.effectiveSpeedLimitSource = effectiveSpeedLimitSource
+        self.effectiveSpeedLimitReason = effectiveSpeedLimitReason
+        self.effectiveSpeedLimitKind = effectiveSpeedLimitKind
+        self.effectiveSpeedLimitCurrent = effectiveSpeedLimitCurrent
     }
 }
 

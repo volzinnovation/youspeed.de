@@ -1,0 +1,113 @@
+{
+  "format": "youspeed.alpha-release-artifacts.v1",
+  "checked_at": "2026-10-19T01:29:46.400263+02:00",
+  "app_source_commit": "6283797620d039419bd0b9688162ad7399a61d5c",
+  "android": {
+    "version": "1.4-alpha",
+    "base_build": 10053,
+    "workflow": "https://github.com/volzinnovation/youspeed.de/actions/runs/39171256574",
+    "build_checkout": "6283797620d039419bd0b9688162ad7399a61d5c",
+    "release_tag_commit": "6283797620d039419bd0b9688162ad7399a61d5c",
+    "workflow_attempt": 2,
+    "workflow_conclusion": "success",
+    "release_url": "https://github.com/volzinnovation/youspeed.de/releases/tag/android-v1.4-alpha",
+    "prerelease": true,
+    "stable_latest": "android-v1.3",
+    "previous_build_assets_retained": true,
+    "assets": [
+      {
+        "name": "YouSpeed-1.4-alpha-100531.apk",
+        "bytes": 354274993,
+        "sha256": "d088ab382cfabc593b00264b8da3da53a6e4fc547bb9d73a74c7dfeb6a70bb21",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.4-alpha/YouSpeed-1.4-alpha-100531.apk"
+      },
+      {
+        "name": "YouSpeed-1.4-alpha-100532.apk",
+        "bytes": 362901557,
+        "sha256": "cec77f5ff7ea11a30783e561bc1eb47c247f3593f53ce90a85dd26ff2824da8f",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.4-alpha/YouSpeed-1.4-alpha-100532.apk"
+      },
+      {
+        "name": "YouSpeed-1.4-alpha-100533.apk",
+        "bytes": 366418373,
+        "sha256": "4dccfe83c9b6dd842731eb4656b8304412657753e201a500274ec839ccf3563b",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.4-alpha/YouSpeed-1.4-alpha-100533.apk"
+      },
+      {
+        "name": "YouSpeed-1.4-alpha-100534.apk",
+        "bytes": 365946365,
+        "sha256": "6356215bdc25d1669a35a2121e441f3b3cec346ba0ad6d62eb187b7fdc1ba76d",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.4-alpha/YouSpeed-1.4-alpha-100534.apk"
+      }
+    ],
+    "arm64_validation": {
+      "signature": "APK Signature Scheme v2 verified",
+      "certificate_sha256": "79b38431153de1b1776ea83e1970662d0a40c6a41aecbca958d73e3fe509e08a",
+      "certificate_matches_signed_10052": true,
+      "package": "de.youspeed.android",
+      "version_code": 100532,
+      "version_name": "1.4-alpha",
+      "abi": "arm64-v8a",
+      "downloaded_sha256_matches": true,
+      "runtime_dex_differs_from_10052": true
+    }
+  },
+  "apple": {
+    "version": "1.4",
+    "build": "10053",
+    "bundle": "de.youspeed.SpeedConsumer",
+    "ipa_bytes": 248844376,
+    "ipa_sha256": "d38094d6065f4fffac3873aaadda1bf4fca5a71807b24e4bfd8a2aec4f2e112b",
+    "build_id": "3e818c45-d946-46b6-a031-a7df5b6f9b7b",
+    "ipa_hash_scope": "Local exported IPA; upload re-exported the same signed archive",
+    "upload_succeeded": true,
+    "upload_confirmed_at": "2026-10-19T00:16:51+02:00",
+    "processing_state": "VALID",
+    "testflight_internal": "IN_BETA_TESTING",
+    "testflight_external": "WAITING_FOR_BETA_REVIEW",
+    "testflight_groups_verified": true,
+    "test_instructions_locale": "de-DE",
+    "testflight_url": "https://testflight.apple.com/join/k3a1pgce",
+    "production_submission": false,
+    "external_review_authorization": "User explicitly instructed permanent expiration of 10052 and external beta-review submission of 10053 on 19 October 2026",
+    "external_submission_last_attempt_at": "2026-10-18T16:29:22-07:00",
+    "external_submission_last_result": "Accepted by Apple; WAITING_FOR_BETA_REVIEW",
+    "external_review_submission_id": "3e818c45-d946-46b6-a031-a7df5b6f9b7b",
+    "external_review_state": "WAITING_FOR_REVIEW",
+    "superseded_build_10052": {
+      "build_id": "1d85c9a1-3026-417c-b934-c24240eced95",
+      "expired": true,
+      "testflight_internal": "EXPIRED",
+      "testflight_external": "EXPIRED",
+      "verified_at": "2026-10-19T01:29:46.400263+02:00"
+    }
+  },
+  "checks": {
+    "android_unit": {
+      "tests": 715,
+      "failures": 0,
+      "skipped": 1
+    },
+    "android_device": {
+      "tests": 18,
+      "failures": 0
+    },
+    "iphone_focused_unit_controller": {
+      "tests": 18,
+      "failures": 0
+    },
+    "iphone_ui": {
+      "methods": 3,
+      "failures": 0
+    },
+    "speed_reference": {
+      "scenarios": 39,
+      "steps": 171,
+      "status": "passed"
+    },
+    "gernsbach_replay": {
+      "recovered_tunnel_matches": 86,
+      "fresh_drive_verified": false
+    }
+  }
+}

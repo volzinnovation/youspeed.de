@@ -17,8 +17,8 @@ final class DrivingControlAvailabilityTests: XCTestCase {
         XCTAssertEqual(result.stationaryObservedAt, now.addingTimeInterval(-1))
     }
 
-    func testFreshSpeedsBelowFourUnlockControlsWithoutClaimingStandstill() {
-        for speed in [0.001, 0.5, 1, 3, 3.99] {
+    func testFreshSpeedsAtOrBelowTwentyUnlockControlsWithoutClaimingStandstill() {
+        for speed in [0.001, 0.5, 1, 3, 19.99, 20] {
             let result = evaluate(raw: speed / 3.6, displayed: speed)
             XCTAssertTrue(result.controlsAllowed, "Speed: \(speed)")
             XCTAssertNil(result.stationaryObservedAt)
@@ -28,18 +28,18 @@ final class DrivingControlAvailabilityTests: XCTestCase {
         XCTAssertNil(evaluate(raw: 0, displayed: 3.99).stationaryObservedAt)
     }
 
-    func testFourOrFasterLocksForRawAndDisplayedSpeed() {
-        for speed in [4.0, 4.01, 30] {
+    func testAboveTwentyLocksForRawAndDisplayedSpeed() {
+        for speed in [20.001, 20.01, 30] {
             XCTAssertFalse(evaluate(allowed: true, raw: speed / 3.6).controlsAllowed)
             XCTAssertFalse(evaluate(allowed: true, displayed: speed).controlsAllowed)
             XCTAssertFalse(evaluate(allowed: true, raw: -1, displayed: speed).controlsAllowed)
         }
     }
 
-    func testDeceleratingBelowFourRestoresControlsAndAcceleratingLocksAgain() {
+    func testDeceleratingAtOrBelowTwentyRestoresControlsAndAcceleratingLocksAgain() {
         let moving = evaluate(allowed: true, raw: 10, displayed: 36)
         let slow = evaluate(allowed: moving.controlsAllowed, raw: 3 / 3.6, displayed: 3)
-        let movingAgain = evaluate(allowed: slow.controlsAllowed, raw: 4 / 3.6, displayed: 4)
+        let movingAgain = evaluate(allowed: slow.controlsAllowed, raw: 20.01 / 3.6, displayed: 20.01)
         XCTAssertFalse(moving.controlsAllowed)
         XCTAssertTrue(slow.controlsAllowed)
         XCTAssertFalse(movingAgain.controlsAllowed)
@@ -64,5 +64,103 @@ final class DrivingControlAvailabilityTests: XCTestCase {
         let result = evaluate(allowed: true, raw: -1)
         XCTAssertTrue(result.controlsAllowed)
         XCTAssertNil(result.stationaryObservedAt)
+    }
+
+    func testControlsRequireFlatPostureAndSpeedPermission() {
+        for angle in [0.0, 5, 10] {
+            XCTAssertTrue(DrivingControlPosturePolicy.isFlat(angleDegrees: angle))
+            XCTAssertTrue(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: true, angleDegrees: angle))
+            XCTAssertFalse(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: false, angleDegrees: angle))
+        }
+        for angle in [nil, -1, 10.001, 30, 79, 90, 101, 135, 180, .nan, .infinity] as [Double?] {
+            XCTAssertFalse(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: true, angleDegrees: angle))
+            XCTAssertFalse(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: false, angleDegrees: angle))
+        }
+    }
+
+    func testPostureUsesScreenPlaneInPortraitAndBothLandscapeMounts() throws {
+        for angle in [0.0, 5, 10, 10.001, 45, 80, 90, 100, 135, 180] {
+            let radians = angle * .pi / 180
+            for (x, y) in [(0.0, -sin(radians)), (sin(radians), 0.0), (-sin(radians), 0.0)] {
+                let measured = try XCTUnwrap(DrivingControlPosturePolicy.angleDegrees(x: x, y: y, z: -cos(radians)))
+                XCTAssertEqual(measured, angle, accuracy: 1e-9)
+                XCTAssertEqual(DrivingControlPosturePolicy.isFlat(angleDegrees: measured), (0...10).contains(angle))
+            }
+        }
+    }
+
+    func testInvalidGravityLeavesPostureUnknown() {
+        for (x, y, z) in [(0.0, 0.0, 0.0), (0, -3, 0), (.nan, -1, 0), (0, -.infinity, 0), (0, 0, .nan)] {
+            XCTAssertNil(DrivingControlPosturePolicy.angleDegrees(x: x, y: y, z: z))
+        }
+    }
+
+    func testAccelerationInclinesAndStaleGPSCannotUnlockControls() {
+        let moving = evaluate(allowed: true, raw: 10, displayed: 36)
+        let stale = evaluate(allowed: moving.controlsAllowed, age: 4)
+        for angle in [0.0, 5, 10, 45, 79, 101, 180] {
+            for speed in [moving, stale] {
+                XCTAssertFalse(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: speed.controlsAllowed, angleDegrees: angle))
+                XCTAssertNil(speed.stationaryObservedAt)
+            }
+        }
+    }
+
+    #if canImport(UIKit)
+    @MainActor
+    func testPostureImmediatelyReappliesBothGates() {
+        let model = DriveSessionViewModel()
+        model.testSetDrivingControlAngle(0)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 0, displayedKmh: 0)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        model.testSetDrivingControlAngle(11)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 10 / 3.6, displayedKmh: 10)
+        XCTAssertFalse(model.drivingControlsAllowed)
+        model.testSetDrivingControlAngle(0)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 21 / 3.6, displayedKmh: 21)
+        XCTAssertFalse(model.drivingControlsAllowed)
+        model.testSetDrivingControlAngle(5)
+        XCTAssertFalse(model.drivingControlsAllowed)
+        model.testSetDrivingControlAngle(nil)
+        XCTAssertFalse(model.drivingControlsAllowed)
+    }
+
+    @MainActor
+    func testSignalLossRestoresMountedControlsAndFreshMovingFixLocksAgain() {
+        let model = DriveSessionViewModel()
+        model.testSetDrivingControlAngle(90)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 10, displayedKmh: 36)
+        XCTAssertFalse(model.drivingControlsAllowed)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 10, displayedKmh: 36,
+                                            timestamp: Date().addingTimeInterval(-4))
+        XCTAssertTrue(model.drivingControlsAllowed)
+        XCTAssertFalse(model.replacesSettingsWithDrivingPhotoButton)
+        XCTAssertNil(model.stationarySpeedObservedAt)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 10, displayedKmh: 36)
+        XCTAssertFalse(model.drivingControlsAllowed)
+    }
+    #endif
+
+    func testSlowSpeedAndMissingSignalAllowControlsInEveryPostureWithoutClaimingStandstill() {
+        for angle in [nil, 0, 10, 11, 90, 180] as [Double?] {
+            for speed in [0.0, 0.5, 3.999] {
+                XCTAssertTrue(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: false,
+                    angleDegrees: angle, speedKmh: speed, hasSignal: true))
+            }
+            XCTAssertTrue(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: false,
+                angleDegrees: angle, speedKmh: 70, hasSignal: false))
+        }
+        XCTAssertFalse(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: true,
+            angleDegrees: 90, speedKmh: 4, hasSignal: true))
+        XCTAssertFalse(DrivingPhotoPolicy.replacesSettings(speedKmh: 3.999, hasSignal: true))
+        XCTAssertFalse(DrivingPhotoPolicy.replacesSettings(speedKmh: 70, hasSignal: false))
+        XCTAssertTrue(DrivingPhotoPolicy.replacesSettings(speedKmh: 4, hasSignal: true))
+        XCTAssertFalse(DrivingControlPosturePolicy.hasSignal(observedAt: nil, accuracy: nil, now: now))
+        XCTAssertFalse(DrivingControlPosturePolicy.hasSignal(observedAt: now.addingTimeInterval(-3.001), accuracy: 5, now: now))
+        XCTAssertFalse(DrivingControlPosturePolicy.hasSignal(observedAt: now, accuracy: 60, now: now))
+        XCTAssertTrue(DrivingControlPosturePolicy.hasSignal(observedAt: now.addingTimeInterval(-3), accuracy: 5, now: now))
     }
 }

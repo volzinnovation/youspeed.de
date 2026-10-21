@@ -1,0 +1,367 @@
+{
+  "$defs": {
+    "Arrow": {
+      "additionalProperties": false,
+      "properties": {
+        "box": {
+          "$ref": "#/$defs/Box"
+        },
+        "lane_binding": {
+          "const": "unresolved",
+          "title": "Lane Binding",
+          "type": "string"
+        },
+        "orientation": {
+          "enum": [
+            "left",
+            "right",
+            "downward",
+            "upward",
+            "unknown"
+          ],
+          "title": "Orientation",
+          "type": "string"
+        },
+        "related_text_indices": {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 16,
+          "title": "Related Text Indices",
+          "type": "array"
+        }
+      },
+      "required": [
+        "box",
+        "orientation",
+        "related_text_indices",
+        "lane_binding"
+      ],
+      "title": "Arrow",
+      "type": "object"
+    },
+    "Box": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Height",
+          "type": "number"
+        },
+        "width": {
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "Box",
+      "type": "object"
+    },
+    "Condition": {
+      "additionalProperties": false,
+      "properties": {
+        "children": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Condition"
+          },
+          "maxItems": 16,
+          "title": "Children",
+          "type": "array"
+        },
+        "kind": {
+          "enum": [
+            "and",
+            "alternative",
+            "not",
+            "time",
+            "date",
+            "vehicle",
+            "weather",
+            "distance",
+            "unknown"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "original_text": {
+          "maxLength": 2048,
+          "title": "Original Text",
+          "type": "string"
+        },
+        "timezone": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timezone"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "kind",
+        "original_text"
+      ],
+      "title": "Condition",
+      "type": "object"
+    },
+    "RestrictionCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "assembly_id": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Assembly Id"
+        },
+        "condition": {
+          "$ref": "#/$defs/Condition"
+        },
+        "direction": {
+          "const": "unresolved",
+          "title": "Direction",
+          "type": "string"
+        },
+        "lane_binding": {
+          "const": "unresolved",
+          "title": "Lane Binding",
+          "type": "string"
+        },
+        "language": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Language",
+          "type": "string"
+        },
+        "original_text": {
+          "maxLength": 2048,
+          "title": "Original Text",
+          "type": "string"
+        },
+        "parent_sign_id": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Parent Sign Id"
+        },
+        "restriction_type": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Restriction Type",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        },
+        "valid_from": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Valid From"
+        },
+        "valid_to": {
+          "anyOf": [
+            {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Valid To"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "original_text",
+        "language",
+        "restriction_type",
+        "value",
+        "unit",
+        "condition",
+        "parent_sign_id",
+        "assembly_id",
+        "direction",
+        "lane_binding",
+        "valid_from",
+        "valid_to"
+      ],
+      "title": "RestrictionCandidate",
+      "type": "object"
+    },
+    "TextRegion": {
+      "additionalProperties": false,
+      "properties": {
+        "box": {
+          "$ref": "#/$defs/Box"
+        },
+        "language": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Language",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "language",
+        "box"
+      ],
+      "title": "TextRegion",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "arrows": {
+      "items": {
+        "$ref": "#/$defs/Arrow"
+      },
+      "maxItems": 16,
+      "title": "Arrows",
+      "type": "array"
+    },
+    "candidates": {
+      "items": {
+        "$ref": "#/$defs/RestrictionCandidate"
+      },
+      "maxItems": 16,
+      "title": "Candidates",
+      "type": "array"
+    },
+    "quality_flags": {
+      "items": {
+        "maxLength": 160,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Quality Flags",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "text_regions": {
+      "items": {
+        "$ref": "#/$defs/TextRegion"
+      },
+      "maxItems": 32,
+      "title": "Text Regions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "text_regions",
+    "arrows",
+    "candidates",
+    "quality_flags"
+  ],
+  "title": "Extraction",
+  "type": "object"
+}

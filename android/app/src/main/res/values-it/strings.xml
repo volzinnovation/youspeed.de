@@ -41,4 +41,8 @@
     <string name="ui_video_save_failed">Impossibile salvare il video</string>
     <string name="ui_video_save_timeout">Il registratore non ha confermato il salvataggio del video. L’azione richiesta è stata annullata.</string>
     <string name="ui_correct_speed_limit">Correggi limite di velocità</string>
+    <string name="ui_driving_photo">Scatta foto</string>
+    <string name="ui_driving_photo_unavailable">Foto non disponibile</string>
+    <string name="ui_driving_photo_local_only">Salva una foto in locale per la revisione. Non viene caricato nulla.</string>
+    <string name="ui_driving_photo_failed">Impossibile salvare la foto. Riprova quando la fotocamera è pronta.</string>
 </resources>

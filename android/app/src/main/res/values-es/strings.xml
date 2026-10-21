@@ -41,4 +41,8 @@
     <string name="ui_video_save_failed">No se pudo guardar el vídeo</string>
     <string name="ui_video_save_timeout">La grabadora no confirmó que el vídeo se guardara. Se canceló la acción solicitada.</string>
     <string name="ui_correct_speed_limit">Corregir límite de velocidad</string>
+    <string name="ui_driving_photo">Tomar foto</string>
+    <string name="ui_driving_photo_unavailable">Foto no disponible</string>
+    <string name="ui_driving_photo_local_only">Guarda una foto localmente para revisarla. No se sube nada.</string>
+    <string name="ui_driving_photo_failed">No se pudo guardar la foto. Inténtalo de nuevo cuando la cámara esté lista.</string>
 </resources>

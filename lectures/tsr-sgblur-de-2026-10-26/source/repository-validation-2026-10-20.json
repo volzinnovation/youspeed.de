@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "scope": "Repository packaging validation; existing artifacts unchanged",
+  "practical_revision": "v7.3",
+  "lecture_revision": "v9.1",
+  "practical_unit_tests": {
+    "passed": 70,
+    "failed": 0
+  },
+  "experiment_protocol_tests": {
+    "passed": 7,
+    "failed": 0
+  },
+  "local_markdown_links": "PASS",
+  "current_output_sha256_count": 18,
+  "current_zip_crc": "PASS",
+  "json_syntax": "PASS",
+  "javascript_syntax": "PASS",
+  "final_powerpoint_sha256": "578f73f327dff34d5608756fdb3f70abc0f1043fdac475321f11bb48fd01a84a",
+  "public_archive_downloads": [
+    {
+      "file": "packages/panoramax-beispiele-v6.zip",
+      "http_status": "200",
+      "success": true
+    },
+    {
+      "file": "packages/panoramax-externe-testkandidaten-2026-10-20.zip",
+      "http_status": "200",
+      "success": true
+    },
+    {
+      "file": "packages/panoramax-studenten-2026-10-19.zip",
+      "http_status": "200",
+      "success": true
+    },
+    {
+      "file": "packages/panoramax-testkandidaten-2026-10-20.zip",
+      "http_status": "200",
+      "success": true
+    }
+  ],
+  "large_archives_and_previous_exports": "Preserved locally and ignored; public archives remain pinned on Hugging Face"
+}

@@ -60,7 +60,7 @@ internal fun AttributionSheet(onDismiss: () -> Unit) {
                 item {
                     Column {
                         AttributionCatalog.NOTICE_PATHS.forEach { path ->
-                            OutlinedButton(onClick = { noticePath = path }, modifier = Modifier.fillMaxWidth().testTag("notice-${path.substringBefore('/')}")) {
+                            OutlinedButton(onClick = { noticePath = path }, modifier = Modifier.fillMaxWidth().testTag("notice-${path.replace('/', '-')}")) {
                                 Text(noticeTitle(path))
                             }
                         }

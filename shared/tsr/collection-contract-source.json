@@ -1,0 +1,8 @@
+{
+  "source_repository": "Woladen.de-analytics",
+  "source_branch": "main",
+  "source_commit": "d65f09b464a20e0a55dd188cb284053e8da0ba0e",
+  "manifest_sha256": "6c027fdcb4b2bcebf61e08d9aff69b4ee9961b3d40b4caf1a8711e949218c410",
+  "live_transport_enabled": true,
+  "source_worktree_amendment": "Additive supplementary_ocr annotations for numeric and pictogram sightings/crops, plus immutable supplementary_ocr_observed media-status attempts; transcription only, no condition evaluation."
+}

@@ -2,6 +2,7 @@ import Foundation
 
 extension TrafficSignRecognitionEvent {
     func permitsApplicability(_ sink: String, mode: String = TSRApplicabilityConfiguration.defaultMode) -> Bool {
+        if TSRLiveSignAdmission.blocks(applicabilityDecision) { return false }
         if mode == "shadow" { return true }
         guard let decision = applicabilityDecision, let context = roadContext,
               decision.scope.sessionId == driveSessionId,
@@ -14,6 +15,7 @@ extension TrafficSignRecognitionEvent {
 
 extension TrafficSignPassageEvent {
     func permitsApplicability(mode: String = TSRApplicabilityConfiguration.defaultMode) -> Bool {
+        if TSRLiveSignAdmission.blocks(applicabilityDecision) { return false }
         if mode == "shadow" { return true }
         guard let decision = applicabilityDecision,
               decision.scope.sessionId == driveSessionID,

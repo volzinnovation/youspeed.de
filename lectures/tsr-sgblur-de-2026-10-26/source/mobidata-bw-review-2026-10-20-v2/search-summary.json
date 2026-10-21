@@ -1,0 +1,63 @@
+{
+  "cohort_records": 2730,
+  "catalogue_candidate_photos": 5972,
+  "previews_reviewed": 180,
+  "hd_images_reviewed_and_replayed": 53,
+  "retained_new_target_views": 44,
+  "visible_class_proposals": {
+    "DE:310": 30,
+    "DE:311": 14
+  },
+  "source_target_status": {
+    "detected_but_wrong_code_proposal": 1,
+    "no_stored_target_box": 41,
+    "detected_but_unclassified_yes": 2
+  },
+  "baseline_target_issue": {
+    "missed_sign": 37,
+    "detected_sign": 7
+  },
+  "retained_sequences": 40,
+  "all_retained_camera_positions_within_10m": true,
+  "limits": "Selected exploratory cases with partial assistant-proposed target boxes, not an exhaustive visual census or population metric. Source SGBlur-yolo11s annotations and the pinned local YOLO11n replay are separate evidence.",
+  "total_review_full_images": 57,
+  "total_review_crops": 57,
+  "total_visible_class_proposals": {
+    "DE:310": 37,
+    "DE:311": 20
+  },
+  "total_sequences": 53,
+  "conservative_split_groups": 53,
+  "all_approvals": false,
+  "source_annotations_changed": false,
+  "source_detection_model": "SGBlur-yolo11s/0.1.0 where recorded",
+  "source_wrong_target_classification_model": "classify_fr_road_signs/0.13",
+  "source_wrong_target_code": "FR:C50",
+  "source_wrong_target_classification_confidence": 0.92,
+  "baseline_checkpoint_sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+  "one_baseline_match_near_threshold_IoU": 0.5123620550875272,
+  "supporting_asset_hashes": {
+    "evidence/cohort-2730.json": "a96d8c69b2d51ecdc057d3cf48fc89260e267a9de1ffc5080d4da82f6af0bd44",
+    "evidence/catalogue-matches-10m.parquet": "78d8efd4a9c73aa112e41ab15c145b636d322f88a66594dab7aa3a1f43f180e6",
+    "evidence/selection.sql": "e0aea504578124891b4912b040810c7817f4dac7a0aaeef750678a1c74a9aed4",
+    "evidence/selection-summary.json": "706ffd946c62f77b74abc3dac401256e38a8441f39690de8ee5b849f0e6277ae",
+    "evidence/screening-180.json": "85678e44f98c56fe33c6a773a16b20f2973fdecb37d9971eeff9eedc11104c30",
+    "evidence/full-image-inference-53.json": "6997f6371f29e92b8e1bf18e41ee419bbe4206c3f993b5ff233bee2026cee66e",
+    "evidence/visual-box-selections.json": "bc76dd4c32caf10404c485313b6af49c593fc3fff0dddf4668b12b2f43f8453d",
+    "evidence/retained-01.jpg": "99c177e2415ca761b50713cf81fa62f532843632777861244eb315c016a5b81f",
+    "evidence/retained-02.jpg": "dd6703cf2559b4e36360f62533bfa89198b888aaf0a5ed9d60d002c50fad7636",
+    "evidence/retained-03.jpg": "49e5ab3cf16b0150d6dbcba627664a40b212d03d4f6b06e556ee3bf8c18770cd",
+    "reproduce/select_near10.py": "630685d1999b3f6da060e93f382074940d7abcd16d50f9d35778cbad273de09f",
+    "reproduce/fetch_near10.py": "d1e47d9b784b0f852ce1f5f39059e7c39ec324b2d436f1992e3380ad6acb2392",
+    "reproduce/infer_full.py": "55d7831dd53177b3ed478eb700e67c117a6f57b9a34f998e7a1edd0ba3bb181f",
+    "reproduce/roi.py": "9fa2ef1c3caa9721f2720a9c339ace93a3efe6c69c4d5aa6fd80a453ebccfec5",
+    "reproduce/roi_strict.py": "ddab95771feb14aafccd6b6cd6bfb5d4e9b772b2328e193cebc87f0a60383805",
+    "reproduce/retain.py": "64dbf017ed65158bfd9e45c92f5101bacac8177c6af998833bb1d4ae25d9689a",
+    "reproduce/enrich.py": "b38c1a74fecf89456fb6a7d23e4366b301f9f0c4d5097f70b4a57c51204e1503",
+    "reproduce/export_matches.py": "c31c6953a9a3fcc2c9508d0011315f6b76145efb15e60199a4a75a3c16602410",
+    "reproduce/prepare_review.py": "7e18c8116ca310cae8df24180de67d26d52dcf0abe44133bc5e2f022131a4176",
+    "reproduce/mobidata_review.py": "a5168a732fc22be403b897860a068e5220f24f620f0a0a7853305dc4bbacd520",
+    "reproduce/package_mobidata_bw_review.py": "e76df31e73f0b146085bb0f8db112bdaa36897a1a79cee91c19b24e7a37acf35",
+    "reproduce/README.txt": "1d7e85c5b1fd9e06c1719136dcffbfd915f3fefd216292c1a7f679fe27d337a3"
+  }
+}

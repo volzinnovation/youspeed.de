@@ -19,25 +19,16 @@ adb_target() { "$ADB" -s "$ANDROID_SERIAL" "$@"; }
 # The Play phone gallery permits eight images. Use the current app's real UI
 # with deterministic debug fixtures; no camera, recording, or upload is started.
 captures=(
-  "01-safe-speed.png:warn-level-0"
-  "02-dashcam.png:camera-limit-active:dashcam"
-  "03-camera-recognition.png:camera-limit-active"
-  "04-traffic-signs.png:other-sign-give-way"
-  "05-france-fine.png:warn-level-0:FRA:3"
-  "06-switzerland-fine.png:warn-level-0:CHE:11"
-  "07-belgium-fine.png:warn-level-0:BEL:5"
-  "08-netherlands-fine.png:warn-level-0:NLD:12"
+  "01-camera-recognition.png:camera-limit-active"
+  "02-live-assistance.png:other-sign-give-way"
+  "03-fine-calculation.png:warn-level-1:FR:2"
+  "04-dashcam.png:camera-limit-active:dashcam"
 )
 capture_kind="${SCREENSHOT_CAPTURE_KIND:-all}"
 if [[ "$capture_kind" == dashcam ]]; then
-  captures=("02-dashcam.png:camera-limit-active:dashcam")
-elif [[ "$capture_kind" == netherlands ]]; then
-  captures=("08-netherlands-fine.png:warn-level-0:NLD:12")
-elif [[ "$capture_kind" == country-examples ]]; then
-  captures=("05-france-fine.png:warn-level-0:FRA:3" "06-switzerland-fine.png:warn-level-0:CHE:11"
-    "07-belgium-fine.png:warn-level-0:BEL:5" "08-netherlands-fine.png:warn-level-0:NLD:12")
+  captures=("04-dashcam.png:camera-limit-active:dashcam")
 elif [[ "$capture_kind" != all ]]; then
-  echo 'SCREENSHOT_CAPTURE_KIND must be all, dashcam, netherlands or country-examples.' >&2
+  echo 'SCREENSHOT_CAPTURE_KIND must be all or dashcam.' >&2
   exit 1
 fi
 dashcam_orientation="${DASHCAM_SCREENSHOT_ORIENTATION:-landscape_camera_upper_left}"
@@ -138,6 +129,10 @@ for locale in "${locales[@]}"; do
   for capture in "${captures[@]}"; do
     IFS=: read -r file_name screenshot_state scenario delta <<< "$capture"
     launch=(-n "$PACKAGE_ID/de.youspeed.android.alpha.MainActivity" --es screenshot_state "$screenshot_state")
+    # Match the iPhone's moving demonstration without changing stationary test defaults.
+    if [[ "$screenshot_state" == camera-limit-active || "$screenshot_state" == other-sign-give-way ]]; then
+      launch+=(--ei screenshot_speed 27)
+    fi
     if [[ "${scenario:-}" == dashcam ]]; then
       launch+=(--ez screenshot_dashcam true)
     elif [[ -n "${scenario:-}" ]]; then
@@ -154,7 +149,7 @@ for locale in "${locales[@]}"; do
     # A cold launch on a busy emulator may take several seconds; wait for the
     # Activity's first frame before the additional Compose settling interval.
     adb_target shell am start -W "${launch[@]}" >/dev/null
-    sleep 2
+    sleep 4
     # A successful launch can still leave the system splash visible. Country
     # examples must expose a monetary unit before entering the upload gallery.
     if [[ -n "${scenario:-}" && "$scenario" != dashcam ]]; then
@@ -171,7 +166,47 @@ for locale in "${locales[@]}"; do
       done
       [[ "$ready" == 1 ]] || { echo "Country screen did not settle: $locale $file_name" >&2; exit 1; }
     fi
-    adb_target exec-out screencap -p > "$locale_staging/$file_name"
+    # Wait for native controls, rejecting the Android splash and immersive tutorial.
+    ready=0
+    for attempt in {1..8}; do
+      adb_target shell uiautomator dump "$ui_dump_path" >/dev/null 2>&1
+      ui_tree="$(adb_target shell cat "$ui_dump_path")"
+      if [[ "$ui_tree" == *'com.android.systemui:id/ok'* ]]; then
+        tutorial_bounds="$(printf '%s' "$ui_tree" | python3 -c 'import sys,re,xml.etree.ElementTree as E; n=next(n for n in E.fromstring(sys.stdin.read()).iter("node") if n.get("resource-id")=="com.android.systemui:id/ok"); x1,y1,x2,y2=map(int,re.findall(r"[0-9]+",n.get("bounds"))); print((x1+x2)//2,(y1+y2)//2)')"
+        read -r tutorial_x tutorial_y <<< "$tutorial_bounds"
+        adb_target shell input tap "$tutorial_x" "$tutorial_y"
+      elif [[ "$ui_tree" == *"$PACKAGE_ID"* && "$ui_tree" != *'splashscreen'* &&
+        ( "$ui_tree" == *'clickable="true"'* || "$ui_tree" == *'km/h'* || "$ui_tree" == *'km/u'* || "$ui_tree" == *EUR* || "$ui_tree" == *CHF* ) ]]; then
+        ready=1
+        break
+      fi
+      sleep 2
+    done
+    [[ "$ready" == 1 ]] || { echo "App controls did not settle: $locale $file_name" >&2; exit 1; }
+    # Controls can precede the orientation transition. Validate actual capture dimensions.
+    orientation_ready=0
+    for attempt in {1..8}; do
+      adb_target exec-out screencap -p > "$locale_staging/$file_name"
+      if python3 - "$locale_staging/$file_name" "$scenario" "$dashcam_orientation" <<'PYORIENTATION'
+import struct,sys
+from pathlib import Path
+raw=Path(sys.argv[1]).read_bytes()
+assert raw[:8]==b'\x89PNG\r\n\x1a\n'
+w,h=struct.unpack('>II',raw[16:24])
+landscape=sys.argv[2]=='dashcam' and sys.argv[3]=='landscape_camera_upper_left'
+sys.exit(0 if (w>h)==landscape else 1)
+PYORIENTATION
+      then
+        orientation_ready=1
+        break
+      fi
+      sleep 2
+    done
+    [[ "$orientation_ready" == 1 ]] || { echo "Capture orientation did not settle: $locale $file_name" >&2; exit 1; }
+    if [[ -n "${NATIVE_CAPTURE_BACKUP_DIR:-}" ]]; then
+      mkdir -p "$NATIVE_CAPTURE_BACKUP_DIR/$locale"
+      cp "$locale_staging/$file_name" "$NATIVE_CAPTURE_BACKUP_DIR/$locale/$file_name"
+    fi
     python3 - "$locale_staging/$file_name" <<'PYPNG'
 import struct,sys
 from pathlib import Path

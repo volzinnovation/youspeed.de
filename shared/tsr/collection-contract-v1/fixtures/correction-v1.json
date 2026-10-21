@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "event_id": "95949224-cd07-4f45-b0fc-6641d21c4a01",
+  "created_at": "2026-10-02T10:01:00Z",
+  "intent": "unspecified_wrong",
+  "input_modality": "voice",
+  "target_kind": "observation",
+  "target_id": "15e77710-981b-4db4-9c65-a35b4b21b60a",
+  "target_version": null,
+  "association_status": "exact",
+  "presentation_id": "presentation-fixture",
+  "speech_attempt_id": "attempt-fixture",
+  "media_refs": []
+}

@@ -96,11 +96,18 @@ def reconcile_catalog(catalog: dict) -> dict:
             if entry is None:
                 continue
             art = artworks[entry["artwork_id"]]
+            previous = signs.get(label, {})
             signs[label] = {"class_id": label, "sign_code": entry["sign_code"],
                 "image_path": "tsr/sign-pictograms/" + art["png_path"], "display_eligible": True,
                 "artwork_id": art["asset_id"], "label": {lang: f"{entry['sign_code']} — {label}" for lang in ("en", "de", "fr", "nl")},
                 "notes": "Exact label spelling/country-code reconciliation; mapping-review-v1.json.",
                 "source_provenance": {key: art[key] for key in ("commons_title", "license", "license_source_url", "original_sha256", "png_sha256")}}
+            # Later presentation reviews localize these exact reconciled assets.
+            # Re-running the mapping audit must retain their labels and speech.
+            if previous.get("artwork_id") == art["asset_id"]:
+                for field in ("label", "speech"):
+                    if field in previous:
+                        signs[label][field] = previous[field]
     generic_values = {"maxheight", "maxwidth", "maxlength", "maxweight", "maxaxleweight", "min_distance", "min_speed", "min_speed:end", "speed", "speed:end", "maxspeed:end", "hazard:incline", "hazard:incline:up", "hazard:include:down"}
     french_values = {"B11", "B12", "B13", "B13a", "B17", "C4a", "C4b", "B25", "B43", "A2a", "A2b"}
     for label in result["class_labels"]:
@@ -122,8 +129,10 @@ def reconcile_catalog(catalog: dict) -> dict:
             sign["notes"] = "Current Belgian C29 is height; C27 is width. Generic classifier does not identify metres; no numeric pictogram displayed."
         if country == "FR" and label in {"C107", "C207", "B41"}:
             meaning = {"C107": "motorroad entry", "C207": "motorway entry", "B41": "end of mandatory footpath"}[label]
-            sign["label"] = {lang: f"{label} — {meaning}" for lang in ("en", "de", "fr", "nl")}
-            sign["notes"] = "Corrected against the French sign regulation; this is not a speed-end action."
+            review_note = "Corrected against the French sign regulation; this is not a speed-end action."
+            if sign.get("notes") != review_note:
+                sign["label"] = {lang: f"{label} — {meaning}" for lang in ("en", "de", "fr", "nl")}
+            sign["notes"] = review_note
     result["signs"] = list(signs.values())
     return result
 

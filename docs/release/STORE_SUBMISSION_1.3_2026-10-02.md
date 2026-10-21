@@ -1,5 +1,7 @@
 # YouSpeed 1.3 submission status — 2 October 2026
 
+**Android status updated on 4 October:** the signed 1.3 (10033) bundle, nine localized listings, galleries, video and Belgium change are saved in Play, with 16 changes awaiting review. Upload signing and Mac access are resolved. The active Data safety and reviewer-access declarations remain outdated; the corrected draft requires a deletion URL. The recorded Play bundle also predates the cross-border fix released on GitHub. See the [current Android submission audit](ANDROID_SUBMISSION_1.3_2026-10-04.md). The dated evidence below preserves the 2 October state.
+
 **The signed iPhone build 1.3 (10032) has uploaded successfully to App Store Connect. Neither store has received a review submission.** The current release includes freshly reviewed Dutch tariffs and both offline Info references. Camera recognition is presented as a standard feature, without an experimental label.
 
 Production source for build 10032 was committed and pushed on main at `8370141` (following the Info implementation at `ef19b22`). Subsequent changes prepare listing assets, reports and a screenshot-only UI test; they do not alter the production binary's runtime behavior or protected speed-reference policy.

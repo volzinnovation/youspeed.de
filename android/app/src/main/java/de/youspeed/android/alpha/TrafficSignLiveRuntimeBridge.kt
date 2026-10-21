@@ -25,6 +25,10 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
         submitFinalizedPassage = controller::submitFinalizedTrafficSignPassage,
         submitDisplayObservation = controller::submitTrafficSignDisplayObservation,
         submitRecognitionEvent = controller::onTrafficSignRecognitionEvent,
+        submitAnnotatedCollectionFrame = controller::onSignCollectionFrame,
+        submitSupplementaryText = controller::onTrafficSignSupplementaryTextUpdate,
+        submitSupplementaryAttempt = controller::onTrafficSignSupplementaryTextAttempt,
+        submitSupplementaryPending = controller::onTrafficSignSupplementaryTextPending,
         submitAnnotationEvent = controller::onTrafficSignAnnotationEvent,
         onRuntimeUnavailable = onRuntimeUnavailable,
         onContextMismatch = onContextMismatch,
@@ -72,6 +76,11 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
 internal class TrafficSignFinalizedPassageForwarder(
     private val submitDisplayObservation: (TrafficSignDisplayObservation) -> Unit = {},
     private val submitRecognitionEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
+    private val submitCollectionFrame: (TrafficSignRecognitionEvent, List<TrafficSignDetection>, Long, SignCollectionFrame?) -> Unit = { _, _, _, frame -> frame?.close() },
+    private val submitAnnotatedCollectionFrame: ((TrafficSignRecognitionEvent, List<TrafficSignDetection>, Long, SignCollectionFrame?, TrafficSignSupplementaryTextAnnotation?) -> Unit)? = null,
+    private val submitSupplementaryText: (TrafficSignSupplementaryTextUpdate) -> Unit = {},
+    private val submitSupplementaryAttempt: (TrafficSignSupplementaryTextAnnotation) -> Unit = {},
+    private val submitSupplementaryPending: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
     private val submitAnnotationEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
     private val onRuntimeUnavailable: (String, Long) -> Unit = { _, _ -> },
     private val onContextMismatch: (Long) -> Unit = {},
@@ -79,6 +88,14 @@ internal class TrafficSignFinalizedPassageForwarder(
     private val submitFinalizedPassage: (TrafficSignPassageEvent) -> Boolean,
 ) : TrafficSignRecognitionObserver {
     override fun onRecognition(output: TrafficSignOrchestrationOutput) {
+        if (output.supplementaryOCROnly) {
+            if (output.contextIsCurrent) {
+                output.ocrAttemptAnnotation?.let(submitSupplementaryAttempt)
+                output.event.driveSessionId?.takeIf { output.ocrPresentationUpdate }?.let { session -> submitSupplementaryText(TrafficSignSupplementaryTextUpdate(
+                    TrafficSignSupplementaryScope(output.contextGeneration, session), output.ocrAnnotation, true)) }
+            }
+            return
+        }
         if (!output.contextIsCurrent) {
             onContextMismatch(output.contextGeneration)
         }
@@ -90,11 +107,22 @@ internal class TrafficSignFinalizedPassageForwarder(
         // output; finalized passages still carry durable activation.
         output.passageEvent?.let(submitFinalizedPassage)
         if (!output.terminalBackendFailure && output.backendFailureReason == null) {
+            if (submitAnnotatedCollectionFrame != null) submitAnnotatedCollectionFrame.invoke(output.event, output.collectionDetections,
+                output.contextGeneration, output.collectionFrame, output.ocrAttemptAnnotation)
+            else submitCollectionFrame(output.event, output.collectionDetections, output.contextGeneration, output.collectionFrame)
+            output.event.driveSessionId?.let { session -> submitSupplementaryText(TrafficSignSupplementaryTextUpdate(
+                TrafficSignSupplementaryScope(output.contextGeneration, session), output.ocrAnnotation, output.ocrPrimaryPresent || output.event.candidate != null)) }
             submitRecognitionEvent(output.event, output.contextGeneration)
-            submitAnnotationEvent(output.annotationEvent ?: output.event, output.contextGeneration)
+            // Window boxes cannot be projected onto full-size Panoramax photos.
+            if (!output.usesDetectorWindow) submitAnnotationEvent(output.annotationEvent ?: output.event, output.contextGeneration)
         }
+        if (output.terminalBackendFailure || output.backendFailureReason != null) output.collectionFrame?.close()
         output.displayObservation?.let(submitDisplayObservation)
         onInferenceDiagnostics(output)
+    }
+
+    override fun onSupplementaryTextPending(event: TrafficSignRecognitionEvent, generation: Long) {
+        submitSupplementaryPending(event, generation)
     }
 
     override fun onSpeedOverrideChanged(current: TrafficSignSpeedOverride?) {

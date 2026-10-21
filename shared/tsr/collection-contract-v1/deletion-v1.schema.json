@@ -1,0 +1,33 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "collection_epoch": {
+      "anyOf": [
+        {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Collection Epoch"
+    },
+    "deletion_request_id": {
+      "title": "Deletion Request Id",
+      "type": "string"
+    },
+    "installation_id": {
+      "title": "Installation Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "installation_id",
+    "deletion_request_id"
+  ],
+  "title": "Deletion",
+  "type": "object"
+}

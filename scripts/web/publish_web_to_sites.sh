@@ -16,7 +16,10 @@ python3 "${repo_root}/scripts/web/render_social_assets.py"
 rm -rf "${dst}"
 mkdir -p "${dst}"
 
-rsync -a --delete "${src}/" "${dst}/"
+rsync -a --delete \
+  --exclude '/assets/video/ScreenRecording_07-22-2026 17-29-31_1.mov' \
+  --exclude '/assets/video/youspeed-demo-app-preview.mp4' \
+  "${src}/" "${dst}/"
 printf 'youspeed.de\n' > "${dst}/CNAME"
 touch "${dst}/.nojekyll"
 

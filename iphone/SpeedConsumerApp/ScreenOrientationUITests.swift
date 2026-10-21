@@ -1,6 +1,186 @@
 import XCTest
 
+/// Opt in with --installed-app-ui-tests and this class's test identifier.
+/// Uses real GPS/camera and preserves the driver's maps, queue, and preferences.
+final class LiveDeviceRecordingUITests: XCTestCase {
+    func testLocationAndRepeatedDashcamRecordingOnInstalledApp() throws {
+#if targetEnvironment(simulator)
+        throw XCTSkip("This smoke test requires the attached iPhone's camera and GPS.")
+#else
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        func cancelExchangePrompt(_ alert: XCUIElement) -> Bool {
+            let exchange = alert.staticTexts.matching(
+                NSPredicate(format: "label CONTAINS[cd] 'Exchange'"))
+            guard alert.label.localizedCaseInsensitiveContains("Exchange") || exchange.count > 0 else { return false }
+            let cancel = alert.buttons["Abbrechen"].exists
+                ? alert.buttons["Abbrechen"] : alert.buttons["Cancel"]
+            guard cancel.exists else { return false }
+            cancel.tap()
+            return true
+        }
+        addUIInterruptionMonitor(withDescription: "Cancel unrelated Exchange reauthentication") { alert in
+            cancelExchangePrompt(alert)
+        }
+        func openDashboard() {
+            // iOS can fail to construct the automatic interruption query for
+            // an existing account alert; address SpringBoard directly as well.
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            for alert in springboard.alerts.allElementsBoundByIndex {
+                _ = cancelExchangePrompt(alert)
+            }
+            let keep = app.buttons["startup.logs.keep"]
+            let start = app.buttons["Start drive recording"]
+            let ready = NSPredicate { _, _ in keep.exists || start.exists }
+            expectation(for: ready, evaluatedWith: nil)
+            waitForExpectations(timeout: 90)
+            if keep.exists {
+                keep.tap()
+                // A system interruption may consume the first tap.
+                if keep.exists { keep.tap() }
+            }
+            expectation(for: NSPredicate(format: "exists == true AND enabled == true"), evaluatedWith: start)
+            waitForExpectations(timeout: 90)
+        }
+        app.launch()
+        openDashboard()
+        defer {
+            let stop = app.buttons["Stop drive recording"]
+            if app.state == .runningForeground && stop.exists && stop.isEnabled { stop.tap() }
+        }
+        for cycle in 1...3 {
+            app.buttons["Start drive recording"].tap()
+            let stop = app.buttons["Stop drive recording"]
+            let contribution = app.navigationBars["Share detected signs"]
+            expectation(for: NSPredicate { _, _ in stop.exists || contribution.exists }, evaluatedWith: nil)
+            waitForExpectations(timeout: 30)
+            if contribution.exists {
+                // Recording does not require opting in to sign uploads.
+                contribution.buttons["Close"].tap()
+                // The asynchronously presented sheet may have intercepted the
+                // start tap before it reached the dashboard.
+                let start = app.buttons["Start drive recording"]
+                if !stop.exists && start.exists && start.isHittable { start.tap() }
+            }
+            XCTAssertTrue(stop.waitForExistence(timeout: 30))
+            // The combined SwiftUI module button does not consistently expose
+            // accessibilityValue. Verify the actual recording-state indicator.
+            let recording = app.descendants(matching: .any)
+                .matching(NSPredicate(format: "label BEGINSWITH 'REC'")).firstMatch
+            XCTAssertTrue(recording.waitForExistence(timeout: 30))
+            Thread.sleep(forTimeInterval: 10)
+            XCTAssertEqual(app.state, .runningForeground, "Recording must not crash the app")
+            XCTAssertTrue(stop.isEnabled)
+            XCTAssertTrue(recording.exists)
+            let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            attachment.name = "physical-dashcam-recording-\(cycle)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            stop.tap()
+            let start = app.buttons["Start drive recording"]
+            expectation(for: NSPredicate(format: "exists == true AND enabled == true"), evaluatedWith: start)
+            waitForExpectations(timeout: 45)
+            if cycle == 1 {
+                // Exercise the startup path again against the retained map/logs.
+                app.terminate()
+                app.launch()
+                openDashboard()
+            } else if cycle == 2 {
+                XCUIDevice.shared.press(.home)
+                app.activate()
+                openDashboard()
+            }
+        }
+#endif
+    }
+}
+
 final class ScreenOrientationUITests: XCTestCase {
+    func testPanoramaxCaptureButtonTogglesInEveryMountAndMatchesSettings() {
+        continueAfterFailure = false
+        for orientation in ["portrait", "landscape_camera_lower_right", "landscape_camera_upper_left"] {
+            let app = XCUIApplication()
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"
+            app.launchArguments = ["-youspeed.screen_orientation", orientation,
+                "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+            app.launch()
+            let capture = app.buttons["dashboard.panoramaxCaptureButton"]
+            XCTAssertTrue(capture.waitForExistence(timeout: 15))
+            XCTAssertTrue(capture.isHittable)
+            if (capture.value as? String) == "on" { capture.tap() }
+            XCTAssertEqual(capture.label, "Start photo capture")
+            XCTAssertEqual(capture.value as? String, "off")
+            for state in ["off", "on", "off"] {
+                if (capture.value as? String) != state { capture.tap() }
+                XCTAssertEqual(capture.value as? String, state)
+                let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                screenshot.name = "panoramax-capture-\(state)-\(orientation)"
+                screenshot.lifetime = .keepAlways
+                add(screenshot)
+            }
+            capture.tap()
+            XCTAssertEqual(capture.label, "Stop photo capture")
+            if orientation == "portrait" {
+                app.buttons["dashboard.settingsButton"].tap()
+                let preference = app.switches["Capture pictures"]
+                for _ in 0..<24 where !preference.isHittable { app.swipeUp() }
+                XCTAssertTrue(preference.waitForExistence(timeout: 5))
+                XCTAssertEqual(preference.value as? String, "1")
+                preference.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+                expectation(for: NSPredicate(format: "value == '0'"), evaluatedWith: preference)
+                waitForExpectations(timeout: 5)
+                app.buttons["subscreen.close"].tap()
+                XCTAssertTrue(capture.waitForExistence(timeout: 5))
+                XCTAssertEqual(capture.value as? String, "off")
+            }
+            app.terminate()
+        }
+    }
+
+    func testSupplementaryOCRPlateDoesNotResizeOrMoveSpeedCircleAndTelemetry() {
+        continueAfterFailure = false
+        for orientation in ["portrait", "landscape_camera_lower_right"] {
+            var baselineSign = CGRect.zero
+            var baselineMetric = CGRect.zero
+            for hasText in [false, true] {
+                let app = XCUIApplication()
+                app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"
+                if hasText {
+                    app.launchEnvironment["YOUSPEED_SCREENSHOT_SUPPLEMENTARY_TEXT"] = "Mo-Fr\n6³⁰–17³⁰ h"
+                }
+                app.launchArguments = ["-youspeed.screen_orientation", orientation,
+                                       "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+                app.launch()
+                let sign = app.descendants(matching: .any)["dashboard.speedSignGeometry"]
+                let metric = app.staticTexts["primary-metric"]
+                XCTAssertTrue(sign.waitForExistence(timeout: 20))
+                XCTAssertTrue(metric.exists)
+                let plate = app.staticTexts["dashboard.speedSignSupplementaryText"]
+                if hasText {
+                    XCTAssertTrue(plate.exists)
+                    XCTAssertEqual(plate.label, "Mo-Fr 6:30–17:30 h")
+                    for (actual, expected) in [(sign.frame, baselineSign), (metric.frame, baselineMetric)] {
+                        XCTAssertEqual(actual.minX, expected.minX, accuracy: 0.5)
+                        XCTAssertEqual(actual.minY, expected.minY, accuracy: 0.5)
+                        XCTAssertEqual(actual.width, expected.width, accuracy: 0.5)
+                        XCTAssertEqual(actual.height, expected.height, accuracy: 0.5)
+                    }
+                    XCTAssertGreaterThanOrEqual(plate.frame.minY, sign.frame.maxY)
+                    let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                    screenshot.name = "supplementary-plate-stable-\(orientation)"
+                    screenshot.lifetime = .keepAlways
+                    add(screenshot)
+                } else {
+                    XCTAssertFalse(plate.exists)
+                    baselineSign = sign.frame
+                    baselineMetric = metric.frame
+                }
+                app.terminate()
+            }
+        }
+    }
+
     func testSwissPenaltyUsesTwoLargeLocalizedLines() {
         continueAfterFailure = false
         let labels: [(String, String, String, String)] = [
@@ -99,7 +279,10 @@ final class ScreenOrientationUITests: XCTestCase {
             XCTAssertTrue(app.otherElements["dashboard.limitPane"].waitForExistence(timeout: 15))
             XCTAssertFalse(app.buttons["dashboard.settingsButton"].exists)
             XCTAssertFalse(app.buttons["dashboard.disregardVision"].exists)
-            XCTAssertTrue(app.buttons.allElementsBoundByIndex.filter { $0.isHittable }.isEmpty)
+            let photo = app.buttons["dashboard.photoButton"]
+            XCTAssertTrue(photo.exists)
+            XCTAssertFalse(photo.isEnabled, "Ordinary screenshot fixtures never start a camera")
+            XCTAssertTrue(app.buttons.allElementsBoundByIndex.filter { $0.isHittable && $0.identifier != "dashboard.photoButton" }.isEmpty)
             XCTAssertFalse(app.descendants(matching: .any)["dashboard.gravityAlignment"].exists)
             app.terminate()
         }
@@ -119,6 +302,11 @@ final class ScreenOrientationUITests: XCTestCase {
         defer { app.terminate() }
 
         let settings = app.buttons["dashboard.settingsButton"]
+        let keepLogs = app.buttons["startup.logs.keep"]
+        let startupReady = NSPredicate { _, _ in settings.exists || keepLogs.exists }
+        expectation(for: startupReady, evaluatedWith: nil)
+        waitForExpectations(timeout: 60)
+        if keepLogs.exists { keepLogs.tap() }
         XCTAssertTrue(settings.waitForExistence(timeout: 60),
                       "The live dashboard requires an installed map and completed onboarding.")
         let close = app.buttons["subscreen.close"]
@@ -136,19 +324,35 @@ final class ScreenOrientationUITests: XCTestCase {
             XCTAssertTrue(close.isHittable)
             if pass == 0 {
                 let mounts = ["Portrait", "Landscape · camera lower right", "Landscape · camera upper left"]
+                // Landscape has less vertical space, so later mount options
+                // may need scrolling after the preceding orientation change.
+                let revealMount: (String) -> XCUIElement = { name in
+                    // Short drags avoid a full-screen flick skipping past the
+                    // orientation section in the shallow landscape viewport.
+                    let middle = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
+                    let lower = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.70))
+                    for _ in 0..<12 where !app.buttons["Portrait"].isHittable {
+                        middle.press(forDuration: 0.1, thenDragTo: lower)
+                    }
+                    let option = app.buttons[name]
+                    for _ in 0..<12 where !option.isHittable {
+                        lower.press(forDuration: 0.1, thenDragTo: middle)
+                    }
+                    return option
+                }
                 guard let originalMount = mounts.first(where: {
-                    let button = app.buttons[$0]
+                    let button = revealMount($0)
                     return button.isSelected || (button.value as? String) == "1"
                 }) else {
                     XCTFail("Cannot preserve the original mount: \(app.debugDescription)")
                     return
                 }
                 defer {
-                    let original = app.buttons[originalMount]
+                    let original = revealMount(originalMount)
                     if original.isHittable { original.tap() }
                 }
                 for mount in mounts {
-                    let option = app.buttons[mount]
+                    let option = revealMount(mount)
                     XCTAssertTrue(option.isHittable)
                     option.tap()
                     let settled = NSPredicate { _, _ in
@@ -238,7 +442,9 @@ final class ScreenOrientationUITests: XCTestCase {
         XCTAssertTrue(app.buttons["dataManager.region.germany|berlin"].waitForExistence(timeout: 5))
         // Selecting never starts a download. Back returns to Settings and
         // reopening retains the selected ID on the long-lived view model.
-        app.navigationBars.buttons.firstMatch.tap()
+        let backToSettings = app.navigationBars["Data Manager"].buttons["Settings"]
+        XCTAssertTrue(backToSettings.isHittable)
+        backToSettings.tap()
         XCTAssertTrue(managerLink.waitForExistence(timeout: 5))
         managerLink.tap()
         XCTAssertTrue(tabs.buttons["Map"].isSelected)
@@ -403,6 +609,7 @@ final class ScreenOrientationUITests: XCTestCase {
                     hierarchy.lifetime = .keepAlways
                     self.add(hierarchy)
                 }
+                attachDashboard(caseName)
                 let city = workspace.staticTexts["Bad Herrenalb"]
                 assertLabelClearance()
                 if !dashcam {
@@ -610,4 +817,150 @@ extension ScreenOrientationUITests {
         }
     }
 
+}
+
+
+extension ScreenOrientationUITests {
+    func testDrivingPhotoButtonLayoutAndManualCapture() throws {
+#if !targetEnvironment(simulator)
+        throw XCTSkip("Manual photo UI fixtures are simulator-only and never access a physical camera.")
+#else
+        continueAfterFailure = false
+        for orientation in ["portrait", "landscape_camera_lower_right", "landscape_camera_upper_left"] {
+            let app = drivingPhotoApp(speed: "30", orientation: orientation, camera: "ready")
+            app.launch()
+            let photo = app.buttons["dashboard.photoButton"]
+            XCTAssertTrue(photo.waitForExistence(timeout: 20))
+            expectation(for: NSPredicate(format: "enabled == true AND hittable == true"), evaluatedWith: photo)
+            waitForExpectations(timeout: 10)
+            assertDrivingPhotoLowerRight(photo, in: app)
+            XCTAssertFalse(app.buttons["dashboard.settingsButton"].exists)
+            XCTAssertEqual(app.buttons.allElementsBoundByIndex.filter { $0.isHittable && $0.isEnabled }.count, 1)
+            XCTAssertEqual(photo.value as? String, "0")
+            photo.doubleTap()
+            expectation(for: NSPredicate(format: "value == '1'"), evaluatedWith: photo)
+            waitForExpectations(timeout: 10)
+            XCTAssertEqual(photo.value as? String, "1", "Repeated taps during capture save only one JPEG")
+            XCTAssertFalse(app.alerts.firstMatch.exists)
+            expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: photo)
+            waitForExpectations(timeout: 5)
+            photo.tap()
+            expectation(for: NSPredicate(format: "value == '2'"), evaluatedWith: photo)
+            waitForExpectations(timeout: 10)
+            let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            attachment.name = "driving-photo-\(orientation)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            app.terminate()
+        }
+#endif
+    }
+
+    func testDrivingPhotoThresholdAndDisabledCamera() throws {
+#if !targetEnvironment(simulator)
+        throw XCTSkip("Manual photo UI fixtures are simulator-only.")
+#else
+        continueAfterFailure = false
+        for orientation in ["portrait", "landscape_camera_lower_right", "landscape_camera_upper_left"] {
+            var settingsSlot: CGRect?
+            for speed in ["1", "1.01", "3.99", "4", "20", "20.01"] {
+                let app = drivingPhotoApp(speed: speed, orientation: orientation, camera: "unavailable")
+                if orientation == "landscape_camera_upper_left" {
+                    app.launchArguments += ["-AppleLanguages", "(ar)", "-AppleLocale", "ar_SA", "-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"]
+                }
+                app.launch()
+                XCTAssertTrue(app.otherElements["dashboard.limitPane"].waitForExistence(timeout: 20))
+                let photo = app.buttons["dashboard.photoButton"]
+                let moving = (Double(speed) ?? 0) >= 4
+                XCTAssertEqual(photo.exists, moving)
+                let settings = app.buttons["dashboard.settingsButton"]
+                XCTAssertEqual(settings.exists, !moving)
+                if settings.exists { settingsSlot = settings.frame }
+                if moving {
+                    XCTAssertFalse(photo.isEnabled)
+                    assertDrivingPhotoLowerRight(photo, in: app)
+                    let info = app.buttons["dashboard.infoButton"]
+                    XCTAssertEqual(info.exists, (Double(speed) ?? 0) <= 20)
+                    let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                    screenshot.name = "photo-slot-\(orientation)-\(speed)"
+                    screenshot.lifetime = .keepAlways
+                    add(screenshot)
+                    if info.exists {
+                        // Wrapped buttons expose their icon glyph bounds; the shutter
+                        // exposes its full 44pt target. Compare centers, not glyph edges.
+                        XCTAssertEqual(photo.frame.midY, info.frame.midY, accuracy: 2.5,
+                            "Shutter shares the current action-row center")
+                    }
+                    if let slot = settingsSlot {
+                        XCTAssertEqual(photo.frame.midX, slot.midX, accuracy: 2.5, "Shutter uses the Settings slot")
+                    }
+                    photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+                    XCTAssertFalse(app.alerts.firstMatch.exists)
+                    XCTAssertEqual(photo.value as? String, "0")
+                }
+                app.terminate()
+            }
+        }
+#endif
+    }
+
+    private func drivingPhotoApp(speed: String, orientation: String, camera: String) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "warn-level-0"
+        app.launchEnvironment["YOUSPEED_MANUAL_PHOTO_TEST"] = camera
+        app.launchEnvironment["YOUSPEED_MANUAL_PHOTO_SPEED"] = speed
+        app.launchArguments = ["-youspeed.screen_orientation", orientation,
+                               "-youspeed.drive_recorder.panoramax_enabled", "NO",
+                               "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        return app
+    }
+
+    private func assertDrivingPhotoLowerRight(_ photo: XCUIElement, in app: XCUIApplication,
+                                              file: StaticString = #filePath, line: UInt = #line) {
+        let safeArea = app.descendants(matching: .any)["dashboard.safeAreaGeometry"]
+        XCTAssertTrue(safeArea.exists, file: file, line: line)
+        let safeFrame = safeArea.frame
+        let frame = photo.frame
+        XCTAssertGreaterThanOrEqual(frame.width, 44, file: file, line: line)
+        XCTAssertGreaterThanOrEqual(frame.height, 44, file: file, line: line)
+        XCTAssertGreaterThanOrEqual(frame.minX, safeFrame.minX, file: file, line: line)
+        XCTAssertGreaterThanOrEqual(frame.minY, safeFrame.minY, file: file, line: line)
+        XCTAssertLessThanOrEqual(frame.maxX, safeFrame.maxX, file: file, line: line)
+        XCTAssertLessThanOrEqual(frame.maxY, safeFrame.maxY, file: file, line: line)
+        XCTAssertLessThan(safeFrame.maxX - frame.maxX, 40, file: file, line: line)
+        XCTAssertLessThan(safeFrame.maxY - frame.maxY, 40, file: file, line: line)
+    }
+}
+
+/// TestFlight feedback regressions run in the isolated .TestHost container.
+final class TestFlightFeedbackUITests: XCTestCase {
+    func testDashcamOnboardingLocalizesBackAndShowsTheRecordingControl() {
+        continueAfterFailure = false
+        for (language, backLabel) in [("de", "Zurück"), ("en", "Back"), ("fr", "Retour"), ("nl", "Terug")] {
+            let app = XCUIApplication()
+            app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "warn-level-0"
+            app.launchEnvironment["YOUSPEED_ONBOARDING_SCREENSHOT_STEP"] = "2"
+            app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", language,
+                                   "-youspeed.screen_orientation", "portrait"]
+            app.launch()
+            let back = app.buttons["onboarding.back"]
+            XCTAssertTrue(back.waitForExistence(timeout: 15))
+            XCTAssertEqual(back.label, backLabel)
+            XCTAssertTrue(back.isHittable)
+            let reference = app.buttons["onboarding.screenshot.onboarding-record-control"]
+            for _ in 0..<5 where !reference.isHittable { app.swipeUp() }
+            XCTAssertTrue(reference.isHittable, "The guide must show how to start recording")
+            reference.tap()
+            XCTAssertTrue(app.buttons["subscreen.close"].waitForExistence(timeout: 5))
+            let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            attachment.name = "onboarding-record-control-\(language)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            app.buttons["subscreen.close"].tap()
+            back.tap()
+            XCTAssertTrue(app.buttons["onboarding.next"].exists)
+            XCTAssertEqual(back.label, backLabel)
+            app.terminate()
+        }
+    }
 }

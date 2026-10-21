@@ -1,0 +1,22 @@
+{
+  "exact_image_rgb_crop_overlap_with_prior_inventory": 0,
+  "prior_inventory_sha256": "8cc030cf19aea1f683ada31e842f92819038a04ae38d898fc6cf0e3e82898476",
+  "conservative_split_groups": {
+    "mapillary-journey:5rmft:2017-01-17": [
+      "209557124011952"
+    ],
+    "mapillary-journey:arneschwarck:2020-07-10": [
+      "140183654711325",
+      "227029542094396"
+    ],
+    "mapillary-journey:tst:2020-06-28": [
+      "462102138196184"
+    ],
+    "mapillary-journey:teddy73:2026-05-01": [
+      "35202950636019768"
+    ]
+  },
+  "physical_independence_approved": false,
+  "pretraining_overlap_audited": false,
+  "rule": "Group by same creator and capture day. Reconcile locations and journeys across all course archives before splitting."
+}

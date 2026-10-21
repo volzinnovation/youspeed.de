@@ -138,4 +138,8 @@
     <string name="calibration_up">Nach oben</string>
     <string name="calibration_down">Nach unten</string>
     <string name="calibration_defaults">Entwurf zurücksetzen</string>
+    <string name="ui_driving_photo">Foto aufnehmen</string>
+    <string name="ui_driving_photo_unavailable">Foto nicht verfügbar</string>
+    <string name="ui_driving_photo_local_only">Speichert ein Foto lokal zur Prüfung. Es wird nichts hochgeladen.</string>
+    <string name="ui_driving_photo_failed">Foto konnte nicht gespeichert werden. Erneut versuchen, sobald die Kamera bereit ist.</string>
 </resources>

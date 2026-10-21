@@ -1,0 +1,119 @@
+{
+  "schema_version": "panoramax-student-collection-report-v1",
+  "created_at": "2026-10-19T21:51:12.741015+00:00",
+  "instance": "https://panoramax.youspeed.de",
+  "photos": 100,
+  "crops": 214,
+  "sequences": 27,
+  "all_unreviewed": true,
+  "approved_files": 0,
+  "source_annotation_class_counts": {
+    "sign": 214
+  },
+  "existing_osm_tag_crop_counts": {
+    "DE:101": 5,
+    "DE:101-x1": 1,
+    "DE:1044-10": 2,
+    "DE:114": 1,
+    "DE:123": 1,
+    "DE:131": 1,
+    "DE:136": 1,
+    "DE:205": 4,
+    "DE:206": 8,
+    "DE:209": 2,
+    "DE:209-30": 4,
+    "DE:211": 1,
+    "DE:214": 1,
+    "DE:215": 6,
+    "DE:222": 6,
+    "DE:239": 2,
+    "DE:240": 1,
+    "DE:250": 6,
+    "DE:265": 2,
+    "DE:267": 7,
+    "DE:274-30": 9,
+    "DE:274-50": 5,
+    "DE:274-60": 2,
+    "DE:274-70": 4,
+    "DE:274.1": 1,
+    "DE:276": 3,
+    "DE:283": 6,
+    "DE:286": 3,
+    "DE:301": 9,
+    "DE:306": 9,
+    "DE:310": 49,
+    "DE:311": 21,
+    "DE:314": 6,
+    "DE:315": 1,
+    "DE:350": 4,
+    "yes": 25
+  },
+  "city_examples": {
+    "DE:310": {
+      "photos": 49,
+      "crops": 49,
+      "sequences": 12,
+      "short_side_min_px": 18,
+      "short_side_median_px": 62,
+      "short_side_below_32_px": 5,
+      "short_side_below_64_px": 25,
+      "default_group_split_crop_counts": {
+        "train": 32,
+        "val": 17,
+        "test": 0
+      }
+    },
+    "DE:311": {
+      "photos": 20,
+      "crops": 21,
+      "sequences": 9,
+      "short_side_min_px": 13,
+      "short_side_median_px": 61,
+      "short_side_below_32_px": 4,
+      "short_side_below_64_px": 14,
+      "default_group_split_crop_counts": {
+        "train": 15,
+        "val": 6,
+        "test": 0
+      }
+    }
+  },
+  "default_group_split_full_frames": {
+    "val": 31,
+    "train": 63,
+    "test": 6
+  },
+  "authors": [
+    "admin"
+  ],
+  "licenses": [
+    "CC-BY-SA-4.0"
+  ],
+  "crawl": {
+    "complete_inventory": false,
+    "explicit_selection": true,
+    "max_items": 100,
+    "max_images": 100,
+    "max_pages": 100,
+    "pages_fetched": 0,
+    "items_seen": 100,
+    "image_attempts": 100,
+    "limits_reached": [
+      "max_images"
+    ],
+    "errors": [],
+    "skipped": [],
+    "duplicate_items": 0
+  },
+  "duplicate_byte_groups": [],
+  "manifest_sha256": "5e304ced547b0ee0f5a8bd8ab35ceb7e21dea087968d27688fca26b9482610ac",
+  "crawler_sha256": "b216e4e9b61721eea56e45ebaea2ef0d3d5013086790e2b284e882c62829e0e1",
+  "class_index_sha256": "4e072e612a9ee779eeff797505d76c4399830627749061d7c2d6b138456fe4f9",
+  "limitations": [
+    "Existing annotations are proposals; no sample is approved.",
+    "No face or plate supervision is established by the available sign annotations. All three detector classes require completeness review.",
+    "Whole-sequence groups are provisional: repeated physical signs across sequences must be merged before training/evaluation.",
+    "The DE:310/311 examples have no test-group support under the unchanged default seed and original sequence groups; additional independent city groups are required.",
+    "Small or unreadable crops should be rejected by reviewers. This is not a complete instance inventory or a model-quality evaluation."
+  ]
+}

@@ -533,6 +533,13 @@ enum PanoramaxGalleryDeletionPolicy {
 
 @MainActor
 final class DriveSessionViewModel: NSObject, ObservableObject {
+    /// Provisional v1.4 foundations: local only; no upload/recognizer hook yet.
+    let signCollectionFoundation = SignCollectionFoundation()
+    private let panoramaxSignFilter = SignCaptureFilter()
+    @Published var panoramaxRecognizedSignsOnly = UserDefaults.standard.bool(forKey: "youspeed.panoramax.recognized_signs_only") {
+        didSet { UserDefaults.standard.set(panoramaxRecognizedSignsOnly, forKey: "youspeed.panoramax.recognized_signs_only"); panoramaxSignFilter.reset(); applyPanoramaxConfiguration() }
+    }
+    lazy var signCollection = SignCollectionCoordinator(foundation: signCollectionFoundation)
     #if DEBUG
     /// Opt-in device-test access to the actual app owner, avoiding a second loaded model/camera.
     private(set) static weak var testActiveInstance: DriveSessionViewModel?
@@ -540,6 +547,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     var testTrafficSignRuntime: TrafficSignRuntime? { trafficSignRuntime }
     var testIsDriving: Bool { isDriving }
     var testPanoramaxQueueStore: PanoramaxQueueStore? { panoramaxQueueStore }
+    var testSpeedCaptureConfirmationTone: (() -> Void)?
     #endif
     private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "session")
     private nonisolated static let tsrLogger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "tsr")
@@ -605,12 +613,21 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         penaltyCountryExpiryTask?.cancel()
         bundleMetadataTask?.cancel()
         bundleMetadataIndexTask?.cancel()
+        trafficSignSupplementaryExpiryTask?.cancel()
     }
     @Published var driveStatus: String = "stopped"
     @Published var activeBundleVersion: String = "none"
     @Published var activeDBPath: String = ""
     @Published var currentSpeedKmh: Double = 0
     @Published private(set) var drivingControlsAllowed = true
+    @Published private(set) var drivingControlHasSignal = false
+    @Published private(set) var cameraTSRDaylightAllowed = false
+    private var daylightTransitionGeneration = 0
+    private var speedControlsAllowed = true
+    private var drivingControlAngleDegrees: Double?
+    private var drivingControlObservedAt: Date?
+    private var drivingControlAccuracy: Double?
+    private let drivingControlPostureMotion = DrivingControlPostureMotion()
     @Published private(set) var stationarySpeedObservedAt: Date?
     @Published private(set) var isVisionDismissalListening = false
     @Published var speedLimitKmh: Int?
@@ -684,7 +701,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func startNextBundleDownload() {
-        guard let request = bundleDownloadQueue.next(isBusy: isSyncingNow) else { return }
+        guard let request = bundleDownloadQueue.next(isBusy: isManagingBundles) else { return }
         startBundleDownload(request.option, firstLocationSetup: request.firstLocationSetup)
     }
 
@@ -712,6 +729,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var trafficSignRecognitionEnabled: Bool {
         didSet {
             guard trafficSignRecognitionEnabled != oldValue else { return }
+            signCollection.visualTSRChanged(enabled: trafficSignRecognitionEnabled)
             UserDefaults.standard.set(trafficSignRecognitionEnabled, forKey: Self.trafficSignRecognitionEnabledDefaultsKey)
             trafficSignRecognitionState = trafficSignRecognitionEnabled ? .unavailable : .disabled
             trafficSignDebugRoadContextInvalid = false
@@ -788,7 +806,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         switch coordinator.state {
         case .disabled, .denied, .unavailable, .failed:
             coordinator.start(dashcamEnabled: false, trafficSignRecognitionEnabled: false,
-                              panoramaxEnabled: false, purpose: .calibration)
+                              panoramaxEnabled: false, purpose: .calibration,
+                              allowCameraPermissionRequest: cameraPermissionMayBeRequested)
         default: break
         }
     }
@@ -835,10 +854,37 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var trafficSignPictogramEnabled: Bool {
         didSet {
             UserDefaults.standard.set(trafficSignPictogramEnabled, forKey: "youspeed.drive_recorder.tsr_pictogram_enabled")
-            if !trafficSignPictogramEnabled { resetTrafficSignPictogram() }
+            if !trafficSignPictogramEnabled { resetTrafficSignPictogram(resetSupplementaryText: false) }
         }
     }
     @Published private(set) var trafficSignPictogram: TrafficSignPresentationCatalog.Sign?
+    @Published private(set) var trafficSignSupplementaryText: TrafficSignSupplementaryOCRAnnotation?
+    @Published private(set) var retainedTrafficSignSupplementaryText: TrafficSignSupplementaryOCRAnnotation?
+    /// Visual recognition may precede OCR; this never enters the speed resolver.
+    @Published private(set) var trafficSignPendingSpeedKmh: Int?
+    private var trafficSignSupplementaryExpiryTask: Task<Void, Never>?
+    private var supplementaryTrafficSignSpeechGate = TrafficSignSecondarySpeechGate()
+    private var lastSpokenTrafficSignSpeed: Int?
+    private var lastSpokenTrafficSignSpeedAt = Date.distantPast
+    private var lastSupplementarySpeechDiagnostic: String?
+
+    var trafficSignNumericSupplementaryText: String? {
+        if appScreenshotState == .cameraLimitActive, !isInSpeedCaptureMode,
+           let text = ProcessInfo.processInfo.environment["YOUSPEED_SCREENSHOT_SUPPLEMENTARY_TEXT"] {
+            return TrafficSignOCRTextFormatting.display(text).split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        }
+        guard !isInSpeedCaptureMode, let observation = retainedTrafficSignSupplementaryText,
+              let speed = observation.primarySpeedKmh, speed > 0, speed == speedLimitKmh else { return nil }
+        return observation.text
+    }
+
+    var trafficSignPictogramSupplementaryText: String? {
+        guard !isInSpeedCaptureMode, trafficSignPictogramEnabled,
+              let observation = retainedTrafficSignSupplementaryText,
+              observation.primarySpeedKmh == nil,
+              observation.primaryClassID == trafficSignPictogram?.classID else { return nil }
+        return observation.text
+    }
     @Published private(set) var trafficSignEndOverlayVisible = false
     @Published private(set) var trafficSignEndPictogram: TrafficSignPresentationCatalog.Sign?
     private var trafficSignPresentationCatalog = TrafficSignPresentationCatalog.bundled()
@@ -855,6 +901,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
             trafficSignFeedbackGate.reset()
             secondaryTrafficSignSpeechGate.reset()
+            supplementaryTrafficSignSpeechGate.reset()
+            lastSpokenTrafficSignSpeed = nil
             cancelTrafficSignSpeech()
             Self.tsrLogger.notice(
                 "timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) setting=feedback mode=\(self.trafficSignFeedbackMode.rawValue, privacy: .public)"
@@ -946,6 +994,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var trafficSignRecognitionUnavailableDetail = "Traffic-sign recognition is unavailable."
     @Published private(set) var panoramaxCaptureState: PanoramaxRecorderState = .disabled
     @Published private(set) var panoramaxCaptureCount = 0
+    @Published private(set) var drivingPhotoCaptureFailed = false
     @Published private(set) var panoramaxLastCaptureAt: Date?
     @Published private(set) var panoramaxLastCaptureDetail = "Noch keine Aufnahme"
     @Published private(set) var panoramaxLastAccuracyMeters: Double?
@@ -1095,6 +1144,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var panoramaxStorageLimitTask: Task<Void, Never>?
     private var panoramaxStorageLimitGeneration: UInt64 = 0
     private var isDriving = false
+    private var latestManualPhotoLocation: CLLocation?
+#if DEBUG && targetEnvironment(simulator)
+    private var manualPhotoTestFixture = false
+#endif
     private var hasPreparedGPSLogFile = false
     private var preparedMatchLogURL: URL?
     private var preparedTSRLogURL: URL?
@@ -1820,6 +1873,23 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    func dataManagerDownloadState(for option: BundleDownloadOption) -> DataManagerDownloadState {
+        DataManagerDownloadState.resolve(optionID: option.id,
+            activeID: hasActiveBundleDownload ? activeDownloadOptionID : nil,
+            queuedIDs: queuedBundleDownloadIDs, failures: bundleDownloadErrors)
+    }
+
+    func canRequestDataManagerDownload(_ option: BundleDownloadOption) -> Bool {
+        // A different region's active transfer and startup work may hold the
+        // FIFO, but must not block adding an independent request to that FIFO.
+        !isDeletingBundle && dataManagerMetadataState(for: option) != .unavailable
+            && dataManagerDownloadState(for: option).acceptsDownloadRequest
+    }
+
+    func canDeleteDataManagerBundle(_ option: BundleDownloadOption) -> Bool {
+        !isManagingBundles && !bundleInventoryError && !queuedBundleDownloadIDs.contains(option.id)
+    }
+
     func dataManagerDisplayState(for option: BundleDownloadOption) -> BundleMapDisplayState {
         let state = dataManagerMetadataState(for: option)
         return BundleMapDisplayState.resolve(installed: isBundleDownloaded(option),
@@ -1933,13 +2003,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         PenaltyCountryCode.normalized(raw)
     }
 
-    private func isGermanAutobahnUnlimitedMatch(result: SpeedLimitResult, localOverrideValue: String?) -> Bool {
+    private func isBundledExplicitUnlimitedMatch(result: SpeedLimitResult, localOverrideValue: String?) -> Bool {
         guard localOverrideValue == nil,
               result.isUnlimitedSpeedLimit == true,
               activeMapCountryCode == "DEU" else {
             return false
         }
-        return result.highway?.lowercased() == "motorway"
+        // The lookup sets this flag only for an explicit maxspeed=none tag.
+        // Ramps and divided trunk roads may carry the same explicit evidence;
+        // an unsigned road does not acquire an unlimited default here.
+        return true
     }
 
     private func inferCountryCodeFromDBPath(_ dbPath: String) -> String? {
@@ -2046,6 +2119,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             latestPenaltyFixIsValid = false
             penaltyRulesAreApplicable = false
             penaltyCountrySelection.suspend()
+            TrafficSignOCRLanguageContext.configure(countryCode: nil)
             return
         }
         if let lastPenaltyFixTimestamp, timestamp <= lastPenaltyFixTimestamp { return }
@@ -2060,8 +2134,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let countries = Set(regionalPackCatalog.matches(longitude: longitude, latitude: latitude).map(\.country))
         guard let country = penaltyCountrySelection.update(countries: countries, timestamp: timestamp) else {
             penaltyRulesAreApplicable = false
+            TrafficSignOCRLanguageContext.configure(countryCode: nil)
             return
         }
+        TrafficSignOCRLanguageContext.configure(countryCode: country)
         if !penaltyRulesAreApplicable || !penaltyRulesUseBundledSource || normalizedCountryCode(activePenaltyRules.countryCode) != country {
             applyBundledPenaltyRules(countryCode: country)
         }
@@ -2072,6 +2148,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         latestPenaltyFixIsValid = false
         penaltyCountrySelection.suspend()
         penaltyRulesAreApplicable = false
+        TrafficSignOCRLanguageContext.configure(countryCode: nil)
     }
 
     var penaltyCountryDisplayName: String {
@@ -2139,6 +2216,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let endpointCount = manifestEndpoints.count
         Self.logger.notice("sync endpoints configured count=\(endpointCount, privacy: .public)")
         super.init()
+        TrafficSignSupplementaryOCR.warmUp()
         #if DEBUG
         if ProcessInfo.processInfo.environment["LANE_FULL_WORKLOAD_RUN_ID"] != nil { Self.testActiveInstance = self }
         #endif
@@ -2190,6 +2268,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if let screenshotState = AppScreenshotState.current() {
             startupLogReviewState = .complete
             configureForScreenshotMode(screenshotState)
+#if DEBUG
+            if let step = onboardingScreenshotStep {
+                // Isolated UI fixture: no map download or location/camera prompt.
+                downloadedBundleLatestVersionByRegion = ["onboarding-fixture": "screenshot"]
+                UserDefaults.standard.set(step, forKey: "youspeed.onboarding.step")
+                driveStatus = "stopped"
+                currentSpeedKmh = 0
+                speedControlsAllowed = true
+                refreshDrivingControlAvailability()
+                prepareOnboardingAfterStartup()
+            }
+#endif
             return
         }
         prepareTrafficSignRecognitionRuntime()
@@ -2337,6 +2427,47 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    var showsDrivingPhotoButton: Bool {
+        DrivingPhotoPolicy.showsButton(speedKmh: currentSpeedKmh)
+    }
+
+    var replacesSettingsWithDrivingPhotoButton: Bool {
+        DrivingPhotoPolicy.replacesSettings(speedKmh: currentSpeedKmh, hasSignal: drivingControlHasSignal)
+    }
+
+    func canCaptureDrivingPhoto(at now: Date = Date()) -> Bool {
+#if DEBUG && targetEnvironment(simulator)
+        if manualPhotoTestFixture {
+            return showsDrivingPhotoButton && trafficSignApplicationIsActive
+                && driveCaptureCoordinator?.canCaptureManualPhoto(location: manualPhotoFixtureLocation(at: now), now: now) == true
+        }
+#endif
+        guard isDriving, !isScreenshotMode, !visualCalibrationActive,
+              trafficSignApplicationIsActive, showsDrivingPhotoButton,
+              !panoramaxQueueMaintenanceInProgress, let location = latestManualPhotoLocation else { return false }
+        return driveCaptureCoordinator?.canCaptureManualPhoto(location: location, now: now) == true
+    }
+
+    /// This action intentionally bypasses performDriveInteraction: a still must
+    /// not finalize or interrupt the current Dashcam movie.
+    @discardableResult
+    func captureDrivingPhoto() -> Bool {
+        guard canCaptureDrivingPhoto() else { return false }
+#if DEBUG && targetEnvironment(simulator)
+        if manualPhotoTestFixture {
+            return driveCaptureCoordinator?.captureManualPhoto(location: manualPhotoFixtureLocation(at: Date()), speedKmh: currentSpeedKmh) == true
+        }
+#endif
+        guard let location = latestManualPhotoLocation else { return false }
+        return driveCaptureCoordinator?.captureManualPhoto(location: location, speedKmh: currentSpeedKmh) == true
+    }
+
+    private var cameraPermissionMayBeRequested: Bool {
+        // Preserve initial stationary setup before the first fix, without
+        // prompting when the dashboard already reports movement.
+        currentSpeedKmh == 0 && drivingControlsAllowed
+    }
+
     var isPanoramaxRecordingActive: Bool {
         driveRecorderPanoramaxActive
     }
@@ -2390,7 +2521,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             prepareTrafficSignRecognitionRuntime()
         }
         let configuration = DriveRecorderPolicy.mainControlStartConfiguration(
-            trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
+            trafficSignRecognitionEnabled: trafficSignRecognitionEnabled && cameraTSRDaylightAllowed,
             panoramaxEnabled: panoramaxCaptureEnabled
         )
         // The main recorder control owns the Dashcam start. Persist that
@@ -2402,7 +2533,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             dashcamEnabled: configuration.dashcamEnabled,
             trafficSignRecognitionEnabled: configuration.trafficSignRecognitionEnabled,
             panoramaxEnabled: configuration.panoramaxEnabled,
-            purpose: .driveRecording
+            purpose: .driveRecording,
+            manualPhotosEnabled: true,
+            allowCameraPermissionRequest: cameraPermissionMayBeRequested
         )
     }
 
@@ -2441,16 +2574,48 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     func setTrafficSignApplicationActive(_ isActive: Bool) {
         if trafficSignApplicationIsActive != isActive { trafficSignBundleContextTracker.reset() }
         trafficSignApplicationIsActive = isActive
+        if isActive && !isScreenshotMode {
+            drivingControlPostureMotion.start { [weak self] angle in
+                self?.updateDrivingControlPosture(angleDegrees: angle)
+            }
+        } else {
+            drivingControlPostureMotion.stop()
+            if !isScreenshotMode { updateDrivingControlPosture(angleDegrees: nil) }
+        }
         if !isActive {
+            retainedTrafficSignSupplementaryText = nil
             cancelVisionDismissalVoice()
             endVisualRoadCalibration()
             secondaryTrafficSignSpeechGate.reset()
+            resetTrafficSignSupplementaryText()
             cancelTrafficSignSpeech(secondaryOnly: true)
         }
+        refreshCameraDaylight()
         refreshLaneDetectionActivity()
         updateTrafficSignWriteGate()
         refreshTrafficSignFrameSnapshot()
         reconcileAutomaticCapture(allowTerminalRetry: isActive)
+    }
+
+    /// Re-evaluate with wall-clock time, even without a new GPS fix (e.g. at sunset).
+    private func refreshCameraDaylight(now: Date = Date()) {
+        guard !isScreenshotMode else { return }
+        let allowed = SolarDaylight.permitsCameraTSR(latitude: currentLatitude, longitude: currentLongitude, at: now)
+        guard allowed != cameraTSRDaylightAllowed else { return }
+        cameraTSRDaylightAllowed = allowed
+        daylightTransitionGeneration += 1
+        trafficSignOverridePolicy.clear()
+        handleTrafficSignRecognitionSettingChange()
+        if !allowed {
+            // Existing authority-withdrawal event; the shared policy is unchanged.
+            speedReference.pipelineAuthorityWithdrawn(evidenceID: "night-\(daylightTransitionGeneration)")
+            let bundle = EffectiveSpeedLimitState.base(localValue: nil,
+                bundledSpeedKmh: currentBundledSpeedLimitKmh, bundledUnlimited: currentBaseUnlimitedSpeedLimitActive)
+            speedReference.bundle(id: "\(activeBundleVersion):\(limitWayID ?? "none")",
+                value: limitWayID == nil ? nil : SpeedReferenceValue(bundle.value))
+            publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
+        }
+        appendTSRLog("camera_daylight allowed=\(allowed) reason=\(allowed ? "daylight" : "night_or_unknown_location")", timestamp: now)
     }
 
     private var trafficSignProcessingIsEnabled: Bool {
@@ -2495,6 +2660,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private var trafficSignMutationIsEnabled: Bool {
         trafficSignRecognitionEnabled
+            && cameraTSRDaylightAllowed
             && isDriving
             && driveCaptureCoordinator?.state == .recording
             && driveRecorderTrafficSignRecognitionActive
@@ -2532,10 +2698,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func reconcileAutomaticCapture(allowTerminalRetry: Bool = false) {
-        guard let driveCaptureCoordinator else { return }
+        guard let driveCaptureCoordinator, !isScreenshotMode else { return }
         if visualCalibrationActive { return }
+        let wantsRecognition = trafficSignRecognitionEnabled && cameraTSRDaylightAllowed
+            && isDriving && trafficSignApplicationIsActive
+        if driveCaptureCoordinator.state == .recording,
+           !driveCaptureCoordinator.isAutomaticCaptureSession,
+           driveCaptureCoordinator.isTrafficSignRecognitionModuleActive != wantsRecognition,
+           !wantsRecognition || driveCaptureCoordinator.isTrafficSignRecognitionOutputAvailable {
+            _ = driveCaptureCoordinator.setTrafficSignRecognitionEnabledDuringRecording(wantsRecognition)
+        }
         let recognition = DriveRecorderPolicy.shouldRunStandaloneTrafficSignRecognition(
-            recognitionEnabled: trafficSignRecognitionEnabled,
+            recognitionEnabled: trafficSignRecognitionEnabled && cameraTSRDaylightAllowed,
             independentRecognitionEnabled: trafficSignRecognitionIndependentEnabled,
             runtimeReady: trafficSignRuntime != nil,
             isDriving: isDriving,
@@ -2546,12 +2720,26 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             applicationActive: trafficSignApplicationIsActive,
             storageReady: !panoramaxQueueMaintenanceInProgress && panoramaxQueueStore != nil
         )
-        let shouldRun = recognition || photos
+        // Manual readiness never requests access, changes the user's automatic
+        // photo preference, or starts before normal driving/onboarding gates.
+        let manualPhotos = isDriving && showsDrivingPhotoButton && onboardingStateLoaded && !shouldPresentOnboarding
+            && trafficSignApplicationIsActive
+            && !panoramaxQueueMaintenanceInProgress && panoramaxQueueStore != nil
+            && AVCaptureDevice.authorizationStatus(for: .video) == .authorized
+        let shouldRun = recognition || photos || manualPhotos
+        driveCaptureCoordinator.setManualPhotoMoving(showsDrivingPhotoButton)
+        if driveCaptureCoordinator.state == .recording,
+           driveCaptureCoordinator.requestedPanoramaxEnabled != photos {
+            // Automatic and user-started sessions reserve a still output where
+            // supported. Apply the saved selection to the retained session after
+            // the normal button gate has finalized any movie.
+            _ = driveCaptureCoordinator.setPanoramaxEnabledDuringRecording(photos)
+        }
         if driveCaptureCoordinator.isAutomaticCaptureSession {
             if driveCaptureCoordinator.state == .recording || driveCaptureCoordinator.state == .preparing {
-                if !shouldRun || driveCaptureCoordinator.requestedPanoramaxEnabled != photos {
-                    // Photo-output changes require a new fixed camera graph. onChange
-                    // restarts the automatic session after stop has finished.
+                if !shouldRun {
+                    if !shouldRun, trafficSignApplicationIsActive, isDriving,
+                       driveCaptureCoordinator.isManualPhotoInFlight { return }
                     driveCaptureCoordinator.stop()
                 } else if driveCaptureCoordinator.state == .recording,
                           driveCaptureCoordinator.isTrafficSignRecognitionModuleActive != recognition {
@@ -2561,6 +2749,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
         guard shouldRun, !driveRecorderStartPending else { return }
+        guard AVCaptureDevice.authorizationStatus(for: .video) == .authorized || cameraPermissionMayBeRequested else { return }
         let canStart: Bool
         switch driveCaptureCoordinator.state {
         case .disabled: canStart = true
@@ -2570,7 +2759,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard canStart else { return }
         driveCaptureCoordinator.start(
             dashcamEnabled: false, trafficSignRecognitionEnabled: recognition,
-            panoramaxEnabled: photos, purpose: .automaticCapture
+            panoramaxEnabled: photos, purpose: .automaticCapture,
+            manualPhotosEnabled: true,
+            allowCameraPermissionRequest: (recognition || photos) && cameraPermissionMayBeRequested
         )
     }
 
@@ -2661,7 +2852,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             if presentedState.hasCameraEvidenceMarker && presentedState.value == .unknown {
                 speedReference.pipelineAuthorityWithdrawn(evidenceID: trafficSignEffectiveLimitResolver.activePassage?.physicalTrackID ?? presentedState.presentationReason)
             }
-            if presentedState.source == .camera, let value = SpeedReferenceValue(presentedState.value) {
+            if cameraTSRDaylightAllowed, presentedState.source == .camera, let value = SpeedReferenceValue(presentedState.value) {
                 let passage = trafficSignEffectiveLimitResolver.activePassage
                 let immediate = trafficSignOverridePolicy.activeOverride
                 if let offer = TrafficSignCameraReferenceOffer.select(
@@ -2867,7 +3058,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 self.trafficSignRecognitionUnavailableDetail = ""
                 if let driveCaptureCoordinator = self.driveCaptureCoordinator {
                     driveCaptureCoordinator.setVideoFrameConsumer(runtime)
-                    if self.trafficSignRecognitionEnabled,
+                    if self.trafficSignRecognitionEnabled, self.cameraTSRDaylightAllowed,
                        driveCaptureCoordinator.sessionPurpose != .calibration,
                        driveCaptureCoordinator.state == .recording {
                         _ = driveCaptureCoordinator
@@ -3127,7 +3318,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     /// under the previous OSM/local snapshot immediately. The next completed
     /// map match publishes a fresh coherent context.
     private func invalidateTrafficSignInferenceContext() {
-        resetTrafficSignPictogram(resetSpeechGate: false)
+        resetTrafficSignPictogram(resetSpeechGate: false, preserveDisplay: true)
         trafficSignContextGeneration &+= 1
         trafficSignDebugGenerationSessionContextMismatch = false
         trafficSignFrameContextIsCurrent = false
@@ -3175,7 +3366,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard transition != .none else { return }
         speedReference.boundary(transition == .enteredCity ? "city_entry" : "city_exit")
         clearActiveLocalSpeedCorrection()
-        resetTrafficSignPictogram(resetSpeechGate: false)
+        resetTrafficSignPictogram(resetSpeechGate: false, preserveDisplay: true)
         let base = currentBaseEffectiveSpeedLimitState()
         trafficSignContextGeneration &+= 1
         trafficSignFrameContextIsCurrent = false
@@ -3315,7 +3506,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             speedReference.output?.source == "camera"
     }
 
-    func disregardVision() {
+    func disregardVision() { disregardVision(recordCollectionCorrection: true) }
+
+    private func disregardVision(recordCollectionCorrection: Bool) {
+        if recordCollectionCorrection {
+            let attempt = SignCollectionJSON.uuid()
+            signCollection.freezeCorrection(attempt: attempt, presentation: trafficSignEffectiveLimitResolver.activePassage?.physicalTrackID ?? trafficSignOverridePolicy.activeOverride?.trackId)
+            signCollection.correct(attempt: attempt, modality: "touch")
+        }
         cancelVisionDismissalVoice()
         let now = Date()
         visionDismissalGate.dismiss(at: now, tracks: [
@@ -3415,6 +3613,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 self.cancelVisionDismissalVoice()
                 return
             }
+            self.signCollection.freezeCorrection(attempt: attempt.token.uuidString.lowercased(), presentation: self.trafficSignEffectiveLimitResolver.activePassage?.physicalTrackID ?? self.trafficSignOverridePolicy.activeOverride?.trackId)
             let listener = VisionDismissalSpeechListener()
             self.visionDismissalSpeechListener = listener
             do {
@@ -3451,7 +3650,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             token: token, evidenceID: identity, transcript: transcript,
             now: ProcessInfo.processInfo.systemUptime
         ) {
-            disregardVision()
+            signCollection.correct(attempt: token.uuidString.lowercased(), modality: "voice")
+            disregardVision(recordCollectionCorrection: false)
             appendTSRLog("event=vision_dismissed source=voice")
         } else if ended {
             cancelVisionDismissalVoice()
@@ -3491,6 +3691,52 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // yellow because of a stale callback that arrived during a normal
         // context refresh.
         trafficSignDebugGenerationSessionContextMismatch = false
+        if let diagnostic = emission.ocrDiagnostic { appendTSRLog(diagnostic, timestamp: emission.event.frameTimestampUtc) }
+        if emission.supplementaryOCROnly {
+            // The primary event was admitted before this clearer-view retry.
+            // Store and present its auxiliary evidence without replaying rules,
+            // passages, camera assertions, capture filters, or primary feedback.
+            if let actual = emission.ocrAttemptAnnotation { signCollection.updateSupplementaryOCR(actual) }
+            let displayPermitted = !TSRLiveSignAdmission.blocks(emission.event.applicabilityDecision) && (TSRApplicabilityConfiguration.defaultMode == "shadow" || (
+                emission.event.permitsApplicability("display") &&
+                emission.event.applicabilityDecision?.scope.generation == trafficSignRecorderGeneration &&
+                emission.event.applicabilityDecision?.scope.contextGeneration == trafficSignContextGeneration &&
+                emission.event.roadContext?.traversalEpoch == latestTrafficSignDetectionContext?.traversalEpoch &&
+                emission.event.roadContext?.sourceSignature.bundleSHA256 == latestTrafficSignDetectionContext?.sourceSignature.bundleSHA256))
+            guard trafficSignApplicationIsActive, displayPermitted,
+                  visionDismissalGate.permits(track: emission.event.candidate?.trackId,
+                    observedAt: emission.event.frameTimestampUtc) else { return }
+            acceptTrafficSignSupplementaryText(from: emission)
+            maybeSpeakTrafficSignSupplementaryText()
+            return
+        }
+        if emission.ocrPhase == .pending {
+            // The confirmed sign may be drawn while its initial eligible read runs.
+            // Collection, feedback and authoritative publication wait for the
+            // completed callback below, so this event is never ingested twice.
+            guard trafficSignApplicationIsActive, emission.event.source == .liveFrame,
+                  emission.event.state == .confirmed,
+                  let candidate = emission.event.candidate, candidate.evidenceFrames >= 2,
+                  let speed = candidate.value, speed > 0,
+                  visionDismissalGate.permits(track: candidate.trackId,
+                    observedAt: emission.event.frameTimestampUtc),
+                  emission.event.permitsApplicability("display") else { return }
+            acceptTrafficSignSupplementaryText(from: emission)
+            trafficSignPendingSpeedKmh = speed
+            return
+        }
+        trafficSignPendingSpeedKmh = nil
+        if panoramaxRecognizedSignsOnly, trafficSignApplicationIsActive, emission.event.source == .liveFrame, let location = locationManager.location {
+            let detections = emission.collectionDetections.filter { $0.boundingBox.isValid && $0.rawScore.isFinite && $0.rawScore >= $0.classThreshold }.map { d in
+                SignCaptureFilter.Detection(key: emission.event.packId + ":" + d.rawLabel, label: d.rawLabel,
+                    box: [d.boundingBox.x,d.boundingBox.y,d.boundingBox.width,d.boundingBox.height], score: d.rawScore, frameID: emission.event.frameId)
+            }
+            let evidence = panoramaxSignFilter.observe(at: emission.event.frameTimestampUtc, detections: detections)
+            if driveCaptureCoordinator?.ingestRecognizedSigns(evidence, location: location, speedMetersPerSecond: emission.frameSpeedKmh.map { $0 / 3.6 }) == true {
+                panoramaxSignFilter.captured(evidence, at: emission.event.frameTimestampUtc)
+            }
+        }
+        signCollection.observe(emission, pack: trafficSignRuntime?.verifiedPack, location: locationManager.location)
         guard visionDismissalGate.permits(track: emission.event.candidate?.trackId,
                                           observedAt: emission.event.frameTimestampUtc) else { return }
         let immediateOverrideChanged: Bool
@@ -3532,17 +3778,20 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             publishLegacyTrafficSignOverride(from: effective)
         }
         logTrafficSignRuntimeEmission(emission)
-        let displayPermitted = TSRApplicabilityConfiguration.defaultMode == "shadow" || (
+        let displayPermitted = !TSRLiveSignAdmission.blocks(emission.event.applicabilityDecision) && (TSRApplicabilityConfiguration.defaultMode == "shadow" || (
             emission.event.permitsApplicability("display") &&
             emission.event.applicabilityDecision?.scope.generation == trafficSignRecorderGeneration &&
             emission.event.applicabilityDecision?.scope.contextGeneration == trafficSignContextGeneration &&
             emission.event.roadContext?.traversalEpoch == latestTrafficSignDetectionContext?.traversalEpoch &&
-            emission.event.roadContext?.sourceSignature.bundleSHA256 == latestTrafficSignDetectionContext?.sourceSignature.bundleSHA256)
+            emission.event.roadContext?.sourceSignature.bundleSHA256 == latestTrafficSignDetectionContext?.sourceSignature.bundleSHA256))
         // Speech follows this exact admitted display stream. A speed passage
         // gets first use of the audio lane, and dismissed/inapplicable frames
         // cannot announce a previously retained pictogram of the same class.
         defer {
-            if displayPermitted { maybeSpeakSecondaryTrafficSign(from: emission) }
+            if displayPermitted {
+                maybeSpeakSecondaryTrafficSign(from: emission)
+                maybeSpeakTrafficSignSupplementaryText()
+            }
         }
         if displayPermitted, let observation = emission.displayObservation, observation.isSpeedLimitEnd {
             pendingTrafficSignEndDisplay = (observation.classID, emission.event.frameTimestampUtc)
@@ -3550,6 +3799,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if displayPermitted && trafficSignPictogramEnabled {
             trafficSignDisplayState.consume(emission.displayObservation, catalog: trafficSignPresentationCatalog)
             trafficSignPictogram = trafficSignDisplayState.sign
+        }
+        if displayPermitted, let observation = emission.displayObservation {
+            retainedTrafficSignSupplementaryText = TrafficSignSupplementaryPresentation.retainedForDisplay(
+                retainedTrafficSignSupplementaryText, primaryClassID: observation.classID, now: Date())
+        }
+        if displayPermitted, emission.event.source == .liveFrame {
+            acceptTrafficSignSupplementaryText(from: emission)
+        } else {
+            resetTrafficSignSupplementaryText(resetSpeechGate: false)
         }
         driveCaptureCoordinator?.recordTrafficSignRecognition(emission)
         publishTrafficSignRecognitionState(for: emission.event)
@@ -3725,9 +3983,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         case .spokenSpeed, .spokenSpeedAndSigns:
             prepareSpeechPlaybackAudioSession()
             let format = NSLocalizedString("tsr.feedback.spoken_speed_format", comment: "")
-            let utterance = AVSpeechUtterance(
-                string: String(format: format, locale: Locale.current, speedKmh)
-            )
+            var phrase = String(format: format, locale: Locale.current, speedKmh)
+            if trafficSignFeedbackMode == .spokenSpeedAndSigns,
+               let observation = trafficSignSupplementaryText,
+               TrafficSignSupplementaryPresentation.matchesNumeric(
+                observation, displayedSpeedKmh: speedKmh, cameraEvidence: true, now: Date()),
+               observation.firstSeenAt <= passage.lastSeenTimestampUTC,
+               observation.observedAt >= passage.firstSeenTimestampUTC,
+               let signLanguage = TrafficSignOCRLanguageContext.speechLanguage(for: observation.rawText ?? observation.text ?? ""),
+               signLanguage.prefix(2) == Self.trafficSignSpeechLanguageIdentifier().prefix(2) {
+                phrase += ", " + TrafficSignSupplementaryPresentation.spokenPhrase(
+                    for: observation, languageIdentifier: signLanguage)
+                supplementaryTrafficSignSpeechGate.recordSpoken(
+                    classID: TrafficSignSupplementaryPresentation.speechKey(for: observation),
+                    observedAt: observation.observedAt, now: Date())
+            }
+            let utterance = AVSpeechUtterance(string: phrase)
             utterance.voice = AVSpeechSynthesisVoice(
                 language: Self.trafficSignSpeechLanguageIdentifier()
             ) ?? AVSpeechSynthesisVoice(language: "en")
@@ -3737,6 +4008,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             stopSpeechImmediately()
             trafficSignSpeechUtterance = utterance
             trafficSignSpeechIsSecondary = false
+            lastSpokenTrafficSignSpeed = speedKmh
+            lastSpokenTrafficSignSpeedAt = Date()
             speakTrackedUtterance(utterance)
         case .sound:
             captureConfirmationTonePlayer.play()
@@ -3760,7 +4033,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                       && visionDismissalVoiceTask == nil && !speechSynthesizer.isSpeaking
                       && activeSpeechUtteranceID == nil
               ) else { return }
-        let utterance = AVSpeechUtterance(string: phrase)
+        var spokenPhrase = phrase
+        if let supplementary = trafficSignSupplementaryText,
+           TrafficSignSupplementaryPresentation.matchesPictogram(supplementary, classID: sign.classID, now: Date()),
+           let signLanguage = TrafficSignOCRLanguageContext.speechLanguage(for: supplementary.rawText ?? supplementary.text ?? ""),
+           signLanguage.prefix(2) == Self.trafficSignSpeechLanguageIdentifier().prefix(2) {
+            spokenPhrase += ", " + TrafficSignSupplementaryPresentation.spokenPhrase(
+                for: supplementary, languageIdentifier: signLanguage)
+            supplementaryTrafficSignSpeechGate.recordSpoken(
+                classID: TrafficSignSupplementaryPresentation.speechKey(for: supplementary),
+                observedAt: supplementary.observedAt, now: Date())
+        }
+        let utterance = AVSpeechUtterance(string: spokenPhrase)
         utterance.voice = voice
         utterance.rate = 0.48
         prepareSpeechPlaybackAudioSession()
@@ -3769,10 +4053,124 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         speakTrackedUtterance(utterance)
     }
 
+    private func acceptTrafficSignSupplementaryText(from emission: TrafficSignRuntimeEmission) {
+        guard let observation = emission.ocrAnnotation, observation.readStatus == .read,
+              observation.text != nil else {
+            let candidate = emission.event.candidate
+            let numeric = trafficSignSupplementaryText?.primarySpeedKmh != nil
+            let classID = emission.ocrAnnotation?.primaryClassID ?? (numeric
+                ? candidate?.rawClassId ?? emission.displayObservation?.classID
+                : emission.displayObservation?.classID ?? candidate?.rawClassId)
+            let speed: Int?
+            if let annotation = emission.ocrAnnotation {
+                speed = annotation.primarySpeedKmh
+            } else if let candidate, classID == candidate.rawClassId {
+                speed = candidate.value
+            } else {
+                speed = trafficSignSupplementaryText?.primarySpeedKmh
+            }
+            let physicalID = emission.ocrAnnotation?.physicalSignID ?? (numeric
+                ? emission.event.applicabilityDecision?.trackId ?? candidate?.trackId : nil)
+            guard let retained = TrafficSignSupplementaryPresentation.retainedAnnotation(
+                trafficSignSupplementaryText, primaryClassID: classID, primarySpeedKmh: speed,
+                physicalSignID: physicalID, evidenceAt: emission.event.frameTimestampUtc, now: Date()) else {
+                resetTrafficSignSupplementaryText(resetSpeechGate: false, resetPrimarySpeech: false)
+                return
+            }
+            presentTrafficSignSupplementaryText(retained)
+            return
+        }
+        guard TrafficSignSupplementaryPresentation.isFresh(observation, at: Date()),
+              observation.primaryClassID == emission.event.candidate?.rawClassId ||
+                observation.primaryClassID == emission.displayObservation?.classID else {
+            resetTrafficSignSupplementaryText(resetSpeechGate: false, resetPrimarySpeech: false)
+            return
+        }
+        presentTrafficSignSupplementaryText(observation)
+    }
+
+    private func presentTrafficSignSupplementaryText(_ observation: TrafficSignSupplementaryOCRAnnotation) {
+        retainedTrafficSignSupplementaryText = TrafficSignSupplementaryPresentation.retainedForDisplay(
+            retainedTrafficSignSupplementaryText, primaryClassID: observation.primaryClassID,
+            read: observation, now: Date())
+        guard trafficSignSupplementaryText != observation else { return }
+        trafficSignSupplementaryText = observation
+        trafficSignSupplementaryExpiryTask?.cancel()
+        let delay = max(0, 3 - Date().timeIntervalSince(observation.observedAt))
+        trafficSignSupplementaryExpiryTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000)) }
+            catch { return }
+            guard let self, self.trafficSignSupplementaryText == observation else { return }
+            self.trafficSignSupplementaryText = nil
+            self.trafficSignSupplementaryExpiryTask = nil
+        }
+    }
+
+    private func resetTrafficSignSupplementaryText(resetSpeechGate: Bool = true, resetPrimarySpeech: Bool = true) {
+        trafficSignSupplementaryExpiryTask?.cancel()
+        trafficSignSupplementaryExpiryTask = nil
+        trafficSignSupplementaryText = nil
+        trafficSignPendingSpeedKmh = nil
+        if resetPrimarySpeech { lastSpokenTrafficSignSpeed = nil }
+        if resetSpeechGate { supplementaryTrafficSignSpeechGate.reset() }
+    }
+
+    /// A late OCR result may follow a completed sign announcement while it is
+    /// still fresh. It never queues behind a capture prompt or another speaker.
+    private func maybeSpeakTrafficSignSupplementaryText() {
+        guard let observation = trafficSignSupplementaryText else { return }
+        func logDecision(_ reason: String) {
+            let signature = "\(observation.physicalSignID):\(observation.text ?? ""):\(reason)"
+            guard signature != lastSupplementarySpeechDiagnostic else { return }
+            lastSupplementarySpeechDiagnostic = signature
+            appendTSRLog("supplementary_speech decision=\(reason) class=\(observation.primaryClassID) track=\(observation.physicalSignID) frame=\(observation.frameID) mode=\(trafficSignFeedbackMode.rawValue)")
+        }
+        guard trafficSignFeedbackMode == .spokenSpeedAndSigns,
+              trafficSignProcessingIsEnabled, appScreenshotState == nil,
+              !isInSpeedCaptureMode, !isVisionDismissalListening,
+              visionDismissalVoiceTask == nil, !speechSynthesizer.isSpeaking,
+              activeSpeechUtteranceID == nil, currentSpeedKmh.isFinite, currentSpeedKmh >= 1,
+              TrafficSignSupplementaryPresentation.isFresh(observation, at: Date()) else {
+            logDecision("mode_motion_capture_freshness_or_audio_gate")
+            return
+        }
+        let matchesNumeric = TrafficSignSupplementaryPresentation.matchesNumeric(
+            observation, displayedSpeedKmh: speedLimitKmh,
+            cameraEvidence: effectiveSpeedLimitState.source == .camera || effectiveSpeedLimitState.hasCameraEvidenceMarker,
+            now: Date()) && lastSpokenTrafficSignSpeed == observation.primarySpeedKmh
+            && lastSpokenTrafficSignSpeedAt >= observation.firstSeenAt
+        let matchesPictogram = trafficSignPictogramEnabled && TrafficSignSupplementaryPresentation.matchesPictogram(
+            observation, classID: trafficSignPictogram?.classID, now: Date())
+        guard matchesNumeric || matchesPictogram else {
+            logDecision("not_visible_or_primary_feedback_pending")
+            return
+        }
+        guard
+              let signLanguage = TrafficSignOCRLanguageContext.speechLanguage(for: observation.rawText ?? observation.text ?? ""),
+              let voice = AVSpeechSynthesisVoice(language: signLanguage),
+              voice.language.prefix(2) == signLanguage.prefix(2),
+              supplementaryTrafficSignSpeechGate.shouldEmit(
+                classID: TrafficSignSupplementaryPresentation.speechKey(for: observation),
+                observedAt: observation.observedAt, now: Date(), canSpeak: true) else {
+            logDecision("language_voice_or_dedup_gate")
+            return
+        }
+        let utterance = AVSpeechUtterance(string: TrafficSignSupplementaryPresentation.spokenPhrase(
+            for: observation, languageIdentifier: signLanguage))
+        utterance.voice = voice
+        utterance.rate = 0.48
+        prepareSpeechPlaybackAudioSession()
+        trafficSignSpeechUtterance = utterance
+        trafficSignSpeechIsSecondary = true
+        logDecision("submitted")
+        speakTrackedUtterance(utterance)
+    }
+
     private func speakTrackedUtterance(_ utterance: AVSpeechUtterance) {
         // AVSpeechSynthesizer may not report isSpeaking until the next run-loop
         // turn. Track every app utterance so lower-priority speech cannot queue.
         activeSpeechUtteranceID = ObjectIdentifier(utterance)
+        appendTSRLog("speech_playback state=submitted secondary=\(trafficSignSpeechIsSecondary)")
         speechSynthesizer.speak(utterance)
     }
 
@@ -3966,13 +4364,20 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func resetTrafficSignPictogram(resetSpeechGate: Bool = true) {
+    private func resetTrafficSignPictogram(resetSpeechGate: Bool = true, resetSupplementaryText: Bool = true,
+                                         preserveDisplay: Bool = false) {
+        if !preserveDisplay { retainedTrafficSignSupplementaryText = nil }
         // A map-context change does not mean a continuously visible sign vanished.
         if resetSpeechGate { secondaryTrafficSignSpeechGate.reset() }
+        if resetSupplementaryText || trafficSignSupplementaryText?.primarySpeedKmh == nil {
+            resetTrafficSignSupplementaryText(resetSpeechGate: resetSpeechGate)
+        }
         cancelTrafficSignSpeech(secondaryOnly: true)
         pendingTrafficSignEndDisplay = nil
-        trafficSignDisplayState.reset()
-        trafficSignPictogram = nil
+        if !preserveDisplay {
+            trafficSignDisplayState.reset()
+            trafficSignPictogram = nil
+        }
         trafficSignEndOverlayTask?.cancel()
         trafficSignEndOverlayTask = nil
         trafficSignEndOverlayGeneration &+= 1
@@ -4037,6 +4442,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard canToggleDriveRecorderModules,
               let driveCaptureCoordinator else { return false }
 
+        if !cameraTSRDaylightAllowed && !isScreenshotMode {
+            // Preserve the selection for sunrise while keeping the consumer paused.
+            trafficSignRecognitionEnabled.toggle()
+            syncDriveRecorderState()
+            return true
+        }
+
         if driveRecorderTrafficSignRecognitionActive {
             trafficSignRecognitionEnabled = false
             if !driveRecorderPanoramaxActive
@@ -4082,7 +4494,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             fallbackInterval: panoramaxMinimumIntervalSeconds,
             maxLocationAge: 10,
             maxAccuracyMeters: 50,
-            triggerMode: panoramaxTriggerMode
+            triggerMode: panoramaxTriggerMode, recognizedSignsOnly: panoramaxRecognizedSignsOnly
         )
         driveCaptureCoordinator?.updatePanoramaxConfiguration(
             cadence,
@@ -4116,6 +4528,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         driveRecorderTrafficSignRecognitionActive = driveCaptureCoordinator?.isTrafficSignRecognitionModuleActive ?? false
         driveRecorderTrafficSignRecognitionAvailable = driveCaptureCoordinator?.isTrafficSignRecognitionOutputAvailable ?? false
         driveRecorderPanoramaxActive = driveCaptureCoordinator?.isPanoramaxModuleActive ?? false
+        signCollection.cameraChanged(active: driveRecorderTrafficSignRecognitionActive)
         refreshLaneDetectionActivity()
         // The model may finish loading while camera permission/session setup is
         // still in progress. Honor the persisted chip selection as soon as the
@@ -4123,7 +4536,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if captureState == .recording,
            capturePurpose != .calibration,
            capturePurpose == .driveRecording || trafficSignRecognitionIndependentEnabled,
-           trafficSignRecognitionEnabled,
+           trafficSignRecognitionEnabled, cameraTSRDaylightAllowed,
            trafficSignRuntime != nil,
            !driveRecorderTrafficSignRecognitionActive,
            driveRecorderTrafficSignRecognitionAvailable,
@@ -4167,6 +4580,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         panoramaxCaptureState = driveRecorderPanoramaxActive ? captureState : .disabled
         panoramaxCaptureCount = driveCaptureCoordinator?.capturedImageCount ?? 0
+        drivingPhotoCaptureFailed = driveCaptureCoordinator?.manualPhotoCaptureFailed ?? false
         panoramaxLastCaptureAt = driveCaptureCoordinator?.lastCaptureAt
         panoramaxLastCaptureDetail = driveCaptureCoordinator?.lastCaptureDetail ?? "Panoramax-Speicher nicht verfuegbar"
         panoramaxLastAccuracyMeters = driveCaptureCoordinator?.lastAccuracyMeters
@@ -4472,7 +4886,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 return
             }
             panoramaxQueueStore = store
-            driveCaptureCoordinator?.setQueueStore(store)
             let publicationGeneration = nextPanoramaxBatchPublicationGeneration()
             let result = await PanoramaxQueueMaintenanceExecutor.shared.runStartup(
                 store: store,
@@ -4485,6 +4898,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             if generation == panoramaxQueueMaintenanceGeneration {
                 panoramaxQueueMaintenanceInProgress = false
                 panoramaxQueueMaintenanceTask = nil
+                if !isScreenshotMode { driveCaptureCoordinator?.setQueueStore(store) }
                 reconcileAutomaticCapture(allowTerminalRetry: true)
             }
         }
@@ -4528,7 +4942,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         notePanoramaxCleanupFailures(result.deletion.failedRelativePaths)
         guard publicationGeneration == panoramaxBatchPublicationGeneration,
-              result.batchLoadSucceeded else { return }
+              result.batchDirectoryReadSucceeded else { return }
         panoramaxBatches = result.batches
     }
 
@@ -5019,6 +5433,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    var onboardingScreenshotStep: Int? {
+#if DEBUG
+        guard Bundle.main.bundleIdentifier?.hasSuffix(".TestHost") == true,
+              isScreenshotMode,
+              let raw = ProcessInfo.processInfo.environment["YOUSPEED_ONBOARDING_SCREENSHOT_STEP"],
+              let step = Int(raw), (0...FirstRunOnboardingPolicy.lastStep).contains(step) else { return nil }
+        return step
+#else
+        return nil
+#endif
+    }
+
     var isScreenshotMode: Bool {
         appScreenshotState != nil
     }
@@ -5253,7 +5679,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func deleteSelectedBundle(_ option: BundleDownloadOption, expectedManifestRegion: String? = nil) {
-        guard !isDeletingBundle else { return }
+        guard !isDeletingBundle, !bundleInventoryError,
+              !queuedBundleDownloadIDs.contains(option.id) else { return }
         if let expectedManifestRegion, installedBundleRegion(for: option) != expectedManifestRegion {
             maintenanceMessage = NSLocalizedString("data_manager.delete_changed", comment: "")
             return
@@ -5275,9 +5702,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 return
             }
             defer {
-                isDeletingBundle = false
                 mapLookupPauseState.finishBundleRemoval()
                 refreshMapLookupPause()
+                isDeletingBundle = false
+                startNextBundleDownload()
             }
             do {
                 let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
@@ -5548,7 +5976,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func deleteDownloadedBundlesKeepingSeed() {
-        guard !isDeletingBundle, !bundleInventoryError else { return }
+        guard !isDeletingBundle, !bundleInventoryError, queuedBundleDownloadIDs.isEmpty else { return }
         guard startupTask == nil else {
             maintenanceMessage = "Startup-Datenvorbereitung laeuft noch."
             return
@@ -5566,9 +5994,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 return
             }
             defer {
-                isDeletingBundle = false
                 mapLookupPauseState.finishBundleRemoval()
                 refreshMapLookupPause()
+                isDeletingBundle = false
+                startNextBundleDownload()
             }
             do {
                 let removed = try await bundleManager.removeDownloadedBundlesKeepingSeed()
@@ -5772,6 +6201,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func configureForScreenshotMode(_ screenshotState: AppScreenshotState) {
         let fixture = screenshotState.fixture
+        var demonstrationSpeed = fixture.currentSpeedKmh
+#if DEBUG
+        // Store captures can show motion without changing the stationary test fixture.
+        if let value = ProcessInfo.processInfo.environment["YOUSPEED_SCREENSHOT_SPEED_KMH"],
+           let speed = Double(value), speed.isFinite, (0...300).contains(speed) {
+            demonstrationSpeed = speed
+        }
+#endif
         if screenshotState != .countryPenalty { applyBundledPenaltyRules(countryCode: "DEU") }
         appScreenshotState = screenshotState
         // Exercise the real recorder layout in simulator screenshots without
@@ -5792,9 +6229,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         activeBundleVersion = "screenshot"
         activeDBPath = screenshotState.rawValue
         activeBundleDBSHA256 = nil
-        currentSpeedKmh = fixture.currentSpeedKmh
-        drivingControlsAllowed = fixture.currentSpeedKmh < DrivingControlAvailability.controlsSpeedThresholdKmh
-        stationarySpeedObservedAt = fixture.currentSpeedKmh == 0 ? Date() : nil
+        currentSpeedKmh = demonstrationSpeed
+        // Deterministic fixtures model a flat phone without live motion sensors.
+        drivingControlAngleDegrees = 0
+        speedControlsAllowed = demonstrationSpeed <= DrivingControlAvailability.controlsSpeedThresholdKmh
+        refreshDrivingControlAvailability()
+        stationarySpeedObservedAt = demonstrationSpeed == 0 ? Date() : nil
         speedLimitKmh = fixture.speedLimitKmh
         speedLimitDisplayText = fixture.speedLimitDisplayText
         limitWayID = fixture.wayID
@@ -5913,7 +6353,47 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 try? data.write(to: documents.appendingPathComponent("country-review.json"), options: .atomic)
             }
         }
+#if DEBUG && targetEnvironment(simulator)
+        configureManualPhotoTestFixtureIfRequested()
+#endif
     }
+
+#if DEBUG && targetEnvironment(simulator)
+    private func manualPhotoFixtureLocation(at now: Date) -> CLLocation {
+        CLLocation(coordinate: CLLocationCoordinate2D(latitude: 49, longitude: 8),
+                   altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5,
+                   course: 90, speed: currentSpeedKmh / 3.6, timestamp: now)
+    }
+
+    private func configureManualPhotoTestFixtureIfRequested() {
+        guard isScreenshotMode,
+              let fixture = ProcessInfo.processInfo.environment["YOUSPEED_MANUAL_PHOTO_TEST"] else { return }
+        manualPhotoTestFixture = true
+        currentSpeedKmh = Double(ProcessInfo.processInfo.environment["YOUSPEED_MANUAL_PHOTO_SPEED"] ?? "30") ?? 30
+        speedControlsAllowed = currentSpeedKmh <= DrivingControlAvailability.controlsSpeedThresholdKmh
+        refreshDrivingControlAvailability()
+        stationarySpeedObservedAt = currentSpeedKmh == 0 ? Date() : nil
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("manual-photo-ui-\(UUID().uuidString)", isDirectory: true)
+        guard let store = try? PanoramaxQueueStore(root: root) else { return }
+        let coordinator = DriveCaptureCoordinator(queueStore: store)
+        driveCaptureCoordinator = coordinator
+        coordinator.setScreenOrientation(screenOrientation)
+        coordinator.updatePanoramaxConfiguration(PanoramaxCadenceConfiguration(recognizedSignsOnly: true), storageLimitBytes: 100_000_000)
+        coordinator.onChange = { [weak self] in self?.syncDriveRecorderState() }
+        try? coordinator.testPrepareManualPhotoSession(outputAvailable: fixture == "ready") { [weak coordinator] uniqueID, _ in
+            Task { @MainActor in
+                // Keeps the in-flight state observable in simulator UI tests.
+                try? await Task.sleep(for: .seconds(1))
+                let renderer = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8))
+                let jpeg = renderer.jpegData(withCompressionQuality: 0.8) { context in
+                    UIColor.darkGray.setFill()
+                    context.fill(CGRect(x: 0, y: 0, width: 8, height: 8))
+                }
+                coordinator?.testCompletePhoto(data: jpeg, uniqueID: uniqueID)
+            }
+        }
+    }
+#endif
 
     private func beginSyncBackgroundTask() {
         guard syncBackgroundTaskID == .invalid else {
@@ -6082,6 +6562,30 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         firstLocationPackStatus = String(format: NSLocalizedString("onboarding.map.suggested", comment: ""), option.displayName)
     }
 
+    /// The dashboard can already be mounted while asynchronous map/onboarding
+    /// setup finishes. Readiness, rather than appearance alone, starts GPS.
+    var canStartDrivingFromDashboard: Bool {
+        driveStatus == "stopped" && !isDriving && startupLogReviewState == .complete
+            && (isScreenshotMode || (startupDataState == .ready
+                && onboardingStateLoaded && !shouldPresentOnboarding))
+    }
+
+#if DEBUG
+    var testStartLocationUpdates: (() -> Void)?
+
+    func testPrepareDrivingStartup(ready: Bool, hasMap: Bool = true, completed: Bool = true) async {
+        // Let initialization finish before replacing its result with a fixture.
+        // Cancelling a parent cannot stop its detached disk read from returning.
+        await startupLogTask?.value
+        await startupTask?.value
+        startupLogReviewState = .complete
+        startupDataState = ready ? .ready : .loading
+        downloadedBundleLatestVersionByRegion = hasMap ? ["startup-test": "validated-fixture"] : [:]
+        onboardingStateLoaded = ready
+        onboardingCompleted = completed
+    }
+#endif
+
     func startDriving() {
         guard startupLogReviewState == .complete else { return }
         guard isScreenshotMode || (onboardingStateLoaded && !shouldPresentOnboarding) else { return }
@@ -6107,6 +6611,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 guard !Task.isCancelled, let self, self.isDriving else { return }
+                self.refreshCameraDaylight()
+                self.refreshDrivingControlAvailability()
                 self.speedReference.tick()
                 self.publishEffectiveSpeedLimitState(self.effectiveSpeedLimitState)
             }
@@ -6134,6 +6640,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         resetDerivedSpeedTracking()
         resetTunnelModeTracking()
         driveStatus = "requesting_location"
+        startDrivingLocationUpdates()
+        reconcileAutomaticCapture(allowTerminalRetry: true)
+    }
+
+    private func startDrivingLocationUpdates() {
+#if DEBUG
+        if let testStartLocationUpdates {
+            testStartLocationUpdates()
+            driveStatus = "running"
+            return
+        }
+#endif
         let auth = locationManager.authorizationStatus
         if auth == .notDetermined {
             locationManager.requestWhenInUseAuthorization()
@@ -6144,10 +6662,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             driveStatus = "location_denied"
             lastError = "Location permission denied"
         }
-        reconcileAutomaticCapture(allowTerminalRetry: true)
     }
 
     func stopDriving() {
+        signCollection.endSession()
         if isDriving { roadPathSession.resetTrajectory(); lanePreviewSession.resetTrajectory() }
         cancelVisionDismissalVoice()
         mapLookupWorker.cancel()
@@ -6160,6 +6678,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignBundleContextTracker.reset()
         resetTrafficSignPictogram()
         isDriving = false
+        latestManualPhotoLocation = nil
         driveCaptureCoordinator?.stop()
         locationManager.stopUpdatingLocation()
         latestTrafficSignDetectionContext = nil
@@ -7271,6 +7790,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func playSpeedCaptureConfirmationTone() {
+#if DEBUG
+        if let testSpeedCaptureConfirmationTone {
+            testSpeedCaptureConfirmationTone()
+            return
+        }
+#endif
         captureConfirmationTonePlayer.play()
         Self.logger.notice("capture_speech confirmation_tone played freq_hz=432")
     }
@@ -7410,26 +7935,54 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
               headingDegrees.isFinite,
               headingDegrees >= 0,
               headingDegrees < 360,
-              let rawWayID = result.wayID,
-              !rawWayID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              let hypothesis = result.matchHypotheses.first(where: {
-                  $0.wayID == rawWayID.trimmingCharacters(in: .whitespacesAndNewlines)
-              }),
-              let startLat = hypothesis.startLat,
-              let startLon = hypothesis.startLon,
-              let endLat = hypothesis.endLat,
-              let endLon = hypothesis.endLon,
-              let wayHeading = initialBearingDegrees(
-                  startLatitude: startLat,
-                  startLongitude: startLon,
-                  endLatitude: endLat,
-                  endLongitude: endLon
-              ) else {
-            return .unknown
+              let rawWayID = result.wayID?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !rawWayID.isEmpty else { return .unknown }
+        let wayHeading: Double
+        if let tangent = result.applicabilityGeometry?.localTangentDeg {
+            // A curved way's endpoints need not describe its direction at this fix.
+            guard result.applicabilityGeometry?.wayId == rawWayID,
+                  tangent.isFinite, (0..<360).contains(tangent) else { return .unknown }
+            wayHeading = tangent
+        } else {
+            // Older serialized results may not include local geometry.
+            guard let hypothesis = result.matchHypotheses.first(where: { $0.wayID == rawWayID }),
+                  let startLat = hypothesis.startLat, let startLon = hypothesis.startLon,
+                  let endLat = hypothesis.endLat, let endLon = hypothesis.endLon,
+                  let bearing = initialBearingDegrees(startLatitude: startLat, startLongitude: startLon,
+                    endLatitude: endLat, endLongitude: endLon) else { return .unknown }
+            wayHeading = bearing
         }
         let clockwise = (headingDegrees - wayHeading + 360).truncatingRemainder(dividingBy: 360)
         let difference = min(clockwise, 360 - clockwise)
         return difference <= 90 ? .forward : .reverse
+    }
+
+    nonisolated static func reliableReferenceTravelDirection(
+        for result: SpeedLimitResult, location: CLLocation, now: Date = Date()
+    ) -> TrafficSignTravelDirection {
+        let ageMs = now.timeIntervalSince(location.timestamp) * 1000
+        // Reuse the existing road-context accuracy/freshness bounds and the
+        // road-path trajectory's minimum moving speed. Stationary GPS course
+        // noise and coordinate-derived headings are not reversal evidence.
+        guard ageMs.isFinite, (0...TSRApplicabilityConfiguration.maxContextAgeMs).contains(ageMs),
+              location.speed.isFinite, location.speed >= 1,
+              location.horizontalAccuracy.isFinite,
+              (0...TSRApplicabilityConfiguration.maxGpsAccuracyM).contains(location.horizontalAccuracy),
+              location.courseAccuracy.isFinite,
+              (0...TSRApplicabilityConfiguration.maxCourseAccuracyDeg).contains(location.courseAccuracy),
+              location.course.isFinite, (0..<360).contains(location.course) else { return .unknown }
+        return trafficSignTravelDirection(for: result, headingDegrees: location.course)
+    }
+
+    nonisolated static func authoritativeLookupStatus(
+        wayID: String?, state: EffectiveSpeedLimitState
+    ) -> String {
+        if state.source.isStale { return "matched_last_known" }
+        if state.value == .unlimited { return "matched_unlimited" }
+        if state.value == .unknown { return wayID == nil ? "no_match" : "matched_no_speed" }
+        if state.source == .camera { return "matched_camera_override" }
+        if state.source == .localCorrection { return "matched_local_override" }
+        return "matched"
     }
 
     nonisolated static func trafficSignHeading(
@@ -7851,7 +8404,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         )
                         return
                     }
-                    let propagatedOverrideValue = self.applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: lat, lon: lon, timestamp: location.timestamp, direction: travelDirection)
+                    let referenceDirection = Self.reliableReferenceTravelDirection(for: result, location: location)
+                    let propagatedOverrideValue = self.applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: lat, lon: lon, timestamp: location.timestamp, direction: referenceDirection)
                     let localOverrideValue = propagatedOverrideValue
                     let localOverride = localOverrideValue.flatMap(Int.init)
                     let sourceSignature = self.makeTrafficSignSourceSignature(
@@ -7900,7 +8454,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     let baseSpeedLimitDisplayText = Self.speedLimitDisplayText(
                         for: localOverrideValue
                     )
-                    let bundledUnlimitedMatch = self.isGermanAutobahnUnlimitedMatch(
+                    let bundledUnlimitedMatch = self.isBundledExplicitUnlimitedMatch(
                         result: result,
                         localOverrideValue: nil
                     )
@@ -7971,8 +8525,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.publishEffectiveSpeedLimitState(effectiveState)
                     self.publishLegacyTrafficSignOverride(from: effectiveState)
                     let effectiveSpeedLimit = self.effectiveSpeedLimitState.value.speedKmh
-                    let hasTrafficSignOverride = effectiveState.hasCameraEvidenceMarker
-                    let unlimitedMatch = effectiveState.value == .unlimited
                     self.refreshTrafficSignFrameSnapshot()
                     self.tunnelModeTracker.consumeFix(isTunnelSegment: result.isTunnelSegment)
                     self.syncTunnelModePublishedState()
@@ -7988,18 +8540,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     )
                     self.maybeNotifyDrivingBanWarning()
                     self.maybeSpeakOverspeedWarning()
-                    let lookupStatus: String
-                    if unlimitedMatch {
-                        lookupStatus = "matched_unlimited"
-                    } else if effectiveSpeedLimit == nil {
-                        lookupStatus = result.wayID == nil ? "no_match" : "matched_no_speed"
-                    } else if hasTrafficSignOverride {
-                        lookupStatus = "matched_camera_override"
-                    } else if localOverride != nil {
-                        lookupStatus = "matched_local_override"
-                    } else {
-                        lookupStatus = "matched"
-                    }
+                    let lookupStatus = Self.authoritativeLookupStatus(
+                        wayID: result.wayID, state: self.effectiveSpeedLimitState)
                     self.lastLookupStatus = lookupStatus
                     self.lastLookupQueryMs = result.queryTimeMs
                     self.lastLookupCandidateCount = result.candidateCount
@@ -8184,13 +8726,31 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func updateDrivingControlAvailability(from location: CLLocation) {
+        drivingControlObservedAt = location.timestamp
+        drivingControlAccuracy = location.horizontalAccuracy
         let next = DrivingControlAvailability.updated(
-            previouslyAllowed: drivingControlsAllowed, rawSpeedMetersPerSecond: location.speed,
+            previouslyAllowed: speedControlsAllowed, rawSpeedMetersPerSecond: location.speed,
             displayedSpeedKmh: currentSpeedKmh, horizontalAccuracyMeters: location.horizontalAccuracy,
             observedAt: location.timestamp, now: Date()
         )
-        drivingControlsAllowed = next.controlsAllowed
+        speedControlsAllowed = next.controlsAllowed
         stationarySpeedObservedAt = next.stationaryObservedAt
+        refreshDrivingControlAvailability()
+    }
+
+    private func updateDrivingControlPosture(angleDegrees: Double?) {
+        drivingControlAngleDegrees = angleDegrees
+        refreshDrivingControlAvailability()
+    }
+
+    private func refreshDrivingControlAvailability() {
+        drivingControlHasSignal = isScreenshotMode || DrivingControlPosturePolicy.hasSignal(
+            observedAt: drivingControlObservedAt, accuracy: drivingControlAccuracy, now: Date())
+        let allowed = DrivingControlPosturePolicy.controlsAllowed(
+            speedControlsAllowed: speedControlsAllowed, angleDegrees: drivingControlAngleDegrees,
+            speedKmh: currentSpeedKmh, hasSignal: drivingControlHasSignal)
+        guard drivingControlsAllowed != allowed else { return }
+        drivingControlsAllowed = allowed
         if !drivingControlsAllowed {
             cancelPendingDriveInteraction()
             endVisualRoadCalibration()
@@ -8347,7 +8907,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             speedLimitOverrideKmh: speedLimitOverrideKmh,
             tunnelModeState: tunnelModeState,
             result: result,
-            error: errorText
+            error: errorText,
+            effectiveSpeedLimitSource: effectiveSpeedLimitState.source.rawValue,
+            effectiveSpeedLimitReason: effectiveSpeedLimitState.presentationReason,
+            effectiveSpeedLimitKind: {
+                switch effectiveSpeedLimitState.value {
+                case .numeric: return "numeric"
+                case .walk: return "walk"
+                case .unlimited: return "unlimited"
+                case .unknown: return "unknown"
+                }
+            }(),
+            effectiveSpeedLimitCurrent: !effectiveSpeedLimitState.source.isStale && effectiveSpeedLimitState.value != .unknown
         )
         do {
             let payload = try JSONEncoder().encode(entry) + Data("\n".utf8)
@@ -8653,22 +9224,28 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
 #if DEBUG
 extension DriveSessionViewModel {
+    func testPresentTrafficSignSupplementaryText(_ observation: TrafficSignSupplementaryOCRAnnotation) {
+        presentTrafficSignSupplementaryText(observation)
+    }
     var testLookupServiceIdentity: ObjectIdentifier? { speedLimitService.map(ObjectIdentifier.init) }
     var testLookupResourceStatistics: V3LookupResources.Statistics? { speedLimitService?.resourceStatistics }
     var testMapCountryCode: String? { activeMapCountryCode }
     var testMapContextGeneration: UInt64 { trafficSignContextGeneration }
 
-    func testRunGPSLookup(latitude: Double, longitude: Double) async {
+    func testRunGPSLookup(latitude: Double, longitude: Double, headingDegrees: Double = 90,
+        speedKmh: Double = 0, headingAccuracyDegrees: Double = 5) async {
         isDriving = true
         currentLatitude = latitude
         currentLongitude = longitude
         latestTrafficSignLookupFixID += 1
         let fixID = latestTrafficSignLookupFixID
         let location = CLLocation(coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
-            altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5, course: 90, speed: 0, timestamp: Date())
+            altitude: 0, horizontalAccuracy: 5, verticalAccuracy: 5,
+            course: headingDegrees, courseAccuracy: headingAccuracyDegrees,
+            speed: speedKmh / 3.6, speedAccuracy: 0.1, timestamp: Date())
         mapLookupWorker.submit { [weak self] token in
             await self?.updateSpeedLimit(for: location, fixID: fixID, requestToken: token,
-                speedKmh: 0, headingDegrees: 90, headingAccuracyDegrees: 5)
+                speedKmh: speedKmh, headingDegrees: headingDegrees, headingAccuracyDegrees: headingAccuracyDegrees)
         }
         await mapLookupWorker.waitUntilIdle()
     }
@@ -8686,6 +9263,36 @@ extension DriveSessionViewModel {
     }
 
     func testDiscoverPacks(for location: CLLocation) { discoverPacks(for: location) }
+
+    func testRefreshCameraDaylight(latitude: Double?, longitude: Double?, at date: Date) {
+        currentLatitude = latitude
+        currentLongitude = longitude
+        refreshCameraDaylight(now: date)
+    }
+
+    func testSetDrivingControlAngle(_ degrees: Double?) {
+        updateDrivingControlPosture(angleDegrees: degrees)
+    }
+
+    func testObserveDrivingControlSpeed(rawMetersPerSecond: Double, displayedKmh: Double,
+                                       timestamp: Date = Date()) {
+        currentSpeedKmh = displayedKmh
+        updateDrivingControlAvailability(from: CLLocation(
+            coordinate: CLLocationCoordinate2D(latitude: 49, longitude: 8), altitude: 0,
+            horizontalAccuracy: 5, verticalAccuracy: 5, course: 90,
+            speed: rawMetersPerSecond, timestamp: timestamp))
+    }
+
+    func testAttachPanoramaxCaptureCoordinator(_ coordinator: DriveCaptureCoordinator,
+                                              store: PanoramaxQueueStore) {
+        driveCaptureCoordinator?.onChange = nil
+        driveCaptureCoordinator = coordinator
+        panoramaxQueueStore = store
+        panoramaxQueueMaintenanceInProgress = false
+        isDriving = true
+        currentSpeedKmh = 36
+        coordinator.onChange = { [weak self] in self?.syncDriveRecorderState() }
+    }
 
     func testWaitForTrafficSignModelLoad(timeout: TimeInterval = 30) async throws {
         let deadline = Date().addingTimeInterval(timeout)
@@ -8762,6 +9369,7 @@ extension DriveSessionViewModel {
         trafficSignEffectiveLimitResolver.clear(base: currentBaseEffectiveSpeedLimitState())
         speedReference.context(way: context.wayId, road: context.roadIdentity,
             relations: Set(context.routeRelationMemberships.compactMap { $0.sourceRelationID.map(String.init) }), direction: context.travelDirection.rawValue, stable: true)
+        cameraTSRDaylightAllowed = true
         speedReference.bundle(id: "test-bundle", value: bundledSpeedKmh.map { SpeedReferenceValue(kind: "numeric", kmh: $0) })
         publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
     }
@@ -8813,6 +9421,7 @@ extension DriveSessionViewModel {
 
     func testClearTrafficSignAssertionKeepingCurrentBase() {
         speedReference.boundary("applicable_end")
+        cameraTSRDaylightAllowed = true
         speedReference.bundle(id: "test-bundle", value: currentBundledSpeedLimitKmh.map { SpeedReferenceValue(kind: "numeric", kmh: $0) })
         trafficSignEffectiveLimitResolver.clear(base: currentBaseEffectiveSpeedLimitState())
         publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
@@ -8831,6 +9440,9 @@ extension DriveSessionViewModel {
     }
 
     func testBeginSpeedCaptureListening() -> UUID {
+        // State-machine unit fixtures must not depend on a simulator audio
+        // device. Live captures continue to use the actual confirmation tone.
+        if testSpeedCaptureConfirmationTone == nil { testSpeedCaptureConfirmationTone = {} }
         let attemptID = prepareSpeedCaptureAttempt()
         speedCaptureMode = .listening
         return attemptID
@@ -8940,10 +9552,13 @@ extension DriveSessionViewModel: AVSpeechSynthesizerDelegate {
         Task { @MainActor [weak self] in
             guard let self else { return }
             if self.activeSpeechUtteranceID == utteranceID { self.activeSpeechUtteranceID = nil }
-            if self.trafficSignSpeechUtterance.map(ObjectIdentifier.init) == utteranceID {
+            let completedTrafficSignSpeech = self.trafficSignSpeechUtterance.map(ObjectIdentifier.init) == utteranceID
+            self.appendTSRLog("speech_playback state=finished sign_speech=\(completedTrafficSignSpeech)")
+            if completedTrafficSignSpeech {
                 self.trafficSignSpeechUtterance = nil
                 self.trafficSignSpeechIsSecondary = false
             }
+            if completedTrafficSignSpeech { self.maybeSpeakTrafficSignSupplementaryText() }
             guard self.awaitingSpeedCapturePromptCompletion,
                   self.speedCapturePromptUtteranceID == utteranceID else { return }
             self.speedCapturePromptUtteranceID = nil
@@ -8956,6 +9571,7 @@ extension DriveSessionViewModel: AVSpeechSynthesizerDelegate {
         let utteranceID = ObjectIdentifier(utterance)
         Task { @MainActor [weak self] in
             guard let self else { return }
+            self.appendTSRLog("speech_playback state=interrupted")
             if self.activeSpeechUtteranceID == utteranceID { self.activeSpeechUtteranceID = nil }
             if self.trafficSignSpeechUtterance.map(ObjectIdentifier.init) == utteranceID {
                 self.trafficSignSpeechUtterance = nil
@@ -8998,6 +9614,7 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
         for location in locations {
             discoverPacks(for: location)
             guard isDriving else { continue }
+            latestManualPhotoLocation = location
             roadPathSession.recordLocation(time: location.timestamp.timeIntervalSince1970,
                 latitude: location.coordinate.latitude, longitude: location.coordinate.longitude, course: location.course,
                 speed: location.speed, accuracy: location.horizontalAccuracy, courseAccuracy: location.courseAccuracy)
@@ -9031,6 +9648,8 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
             currentLongitude = location.coordinate.longitude
             gpsHorizontalAccuracyM = location.horizontalAccuracy >= 0 ? location.horizontalAccuracy : nil
             gpsSignalBars = Self.gpsSignalBars(horizontalAccuracyM: location.horizontalAccuracy)
+            refreshCameraDaylight()
+            reconcileAutomaticCapture()
             driveCaptureCoordinator?.ingest(location: location, speedMetersPerSecond: displaySpeedKmh / 3.6)
             gpsFixCount += 1
             maybeSpeakOverspeedWarning()

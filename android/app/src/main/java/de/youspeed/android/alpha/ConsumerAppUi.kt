@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -65,7 +66,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material.icons.filled.CheckCircle
@@ -117,6 +117,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
@@ -146,7 +147,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -181,21 +185,6 @@ private val BrightYellow = Color(0xFFF9D950)
 private val SoftOrange = Color(0xFFF39A24)
 private val SoftRed = Color(0xFFC5212E)
 
-private fun trafficSignBugButtonTint(ui: ConsumerUiState, foreground: Color): Color {
-    if (!ui.trafficSignRecognitionEnabled) return foreground
-    val runtimeUnhealthy = ui.trafficSignRecognitionUnavailable ||
-        ui.trafficSignDebugRuntimeUnhealthy ||
-        ui.trafficSignCameraRuntimeState in setOf(
-            TrafficSignCameraRuntimeState.DENIED,
-            TrafficSignCameraRuntimeState.UNAVAILABLE,
-            TrafficSignCameraRuntimeState.FAILED,
-        )
-    if (runtimeUnhealthy) return SoftRed
-    if (ui.trafficSignDebugRoadContextInvalid || ui.trafficSignDebugGenerationSessionContextMismatch) {
-        return BrightYellow
-    }
-    return foreground
-}
 private const val DRIVING_BAN_PULSE_CYCLE_SECONDS = 2.2f
 private const val SPEED_LIMIT_NUMBER_SCALE = 0.5f
 private const val SECONDARY_TEXT_RATIO = 9f / 16f
@@ -224,6 +213,7 @@ internal object CameraSpeedLimitUsePresentation {
 @Composable
 internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: AppReviewPrompt? = null) {
     val ui = controller.uiState
+    SignCollectionConsentDialog(controller.signCollection)
     var openSettings by rememberSaveable { mutableStateOf(false) }
     var openDataManager by rememberSaveable { mutableStateOf(false) }
     val dataManagerSavedState = rememberSaveableStateHolder()
@@ -313,7 +303,7 @@ internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: Ap
                         onOpenCalibration = { controller.performButtonAction(controller::beginVisualCalibration) },
                         onOpenLegal = { controller.performButtonAction { openLegal = true } },
                         onOpenDebug = { controller.performButtonAction { openDebug = true } },
-                        onOpenLocalRecordings = { controller.performButtonAction { openLocalRecordings = true } },
+                        onTogglePanoramaxCapture = { controller.performButtonAction(controller::togglePanoramaxCapture) },
                         onOpenPanoramaxGallery = { controller.performButtonAction { openPanoramaxGallery = true } },
                         onToggleDriveRecorder = controller::toggleDriveRecorder,
                         onCapture = { controller.performButtonAction(controller::beginSpeedCapture) },
@@ -377,6 +367,7 @@ internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: Ap
                         controller = controller,
                         onDismiss = { controller.setSettingsVisible(false); openSettings = false },
                         onOpenDebug = { controller.performButtonAction { openDebug = true } },
+                        onOpenLocalRecordings = { controller.performButtonAction { openLocalRecordings = true } },
                         onOpenDataManager = { controller.performButtonAction { openDataManager = true } },
                     )
                 }
@@ -508,7 +499,7 @@ private fun MainScreen(
     onOpenCalibration: () -> Unit,
     onOpenLegal: () -> Unit,
     onOpenDebug: () -> Unit,
-    onOpenLocalRecordings: () -> Unit,
+    onTogglePanoramaxCapture: () -> Unit,
     onOpenPanoramaxGallery: () -> Unit,
     onToggleDriveRecorder: () -> Unit,
     onCapture: () -> Unit,
@@ -541,6 +532,16 @@ private fun MainScreen(
         ),
     )
     val previewVisible = previewPresentation.isVisible
+    val drivingPhotoVisible = DrivingPhotoCapturePolicy.replacesSettings(ui.currentSpeedKmh,
+        ui.appScreenshotState != null || ui.drivingControlHasSignal)
+    var photoReadinessNow by remember { mutableStateOf(Instant.now()) }
+    LaunchedEffect(drivingPhotoVisible) {
+        while (drivingPhotoVisible) {
+            photoReadinessNow = Instant.now()
+            kotlinx.coroutines.delay(250)
+        }
+    }
+    val drivingPhotoReady = controller.canCaptureDrivingPhoto(photoReadinessNow)
     val pulseTransition = rememberInfiniteTransition(label = "driving-ban-pulse")
     val pulseFraction by pulseTransition.animateFloat(
         initialValue = 0f,
@@ -559,14 +560,16 @@ private fun MainScreen(
     val buttonBorder = foreground.copy(alpha = 0.95f)
     val primaryMetric = ConsumerMainScreenLogic.primaryMetricText(ui)
     val secondaryMetric = ConsumerMainScreenLogic.secondaryMetricText(ui)
-    val limitText = ConsumerMainScreenLogic.limitText(ui)
+    val pendingLimit = ui.trafficSignPendingSpeedKmh.takeUnless { ConsumerMainScreenLogic.isInSpeedCaptureMode(ui) }
+    val limitText = pendingLimit?.toString() ?: ConsumerMainScreenLogic.limitText(ui)
     val banner = runtimeBanner(ui)
-    val showsPedestrianZoneSign = ConsumerMainScreenLogic.showsPedestrianZoneSign(ui)
+    val showsPedestrianZoneSign = pendingLimit == null && ConsumerMainScreenLogic.showsPedestrianZoneSign(ui)
 
     BoxWithConstraints(
         Modifier.fillMaxSize().background(background).testTag("main-root").safeDrawingPadding(),
     ) {
         val landscape = ui.manualOrientation.isLandscape && maxWidth > maxHeight
+        // The shutter replaces Settings without changing the action-row baseline.
         // Portrait uses the full display width for the sign pane so the sign
         // and its camera eye are centered on the screen. Landscape keeps the
         // two fixed panes side by side.
@@ -590,7 +593,7 @@ private fun MainScreen(
             if (landscape) max(48f, maxHeight.value - 104f)
             else maxHeight.value * 0.42f).dp
         val portraitTopHeight = min(maxHeight.value * 0.57f,
-            signSize.value + CONTROL_BUTTON_DIAMETER.value + screenInset.value + 28f).dp
+            signSize.value + CONTROL_BUTTON_DIAMETER.value + screenInset.value + 52f).dp
         val primaryMetricFont = (signSize.value * if (compact) 0.42f else SPEED_LIMIT_NUMBER_SCALE).sp
         val secondaryScale = sharedSecondaryScale(
             primaryMetricFont.value * SECONDARY_TEXT_RATIO,
@@ -604,11 +607,7 @@ private fun MainScreen(
         val horizontalPadding = max(12f, workspaceWidth.value * 0.04f).dp
         // Match the iPhone recorder layout: portrait status controls sit above
         // the bottom action row, whose overlay needs its own reserved space.
-        val workspaceBottomPadding = if (!landscape && ui.driveRecorderDashcamActive && ui.drivingControlsAllowed) {
-            CONTROL_BUTTON_DIAMETER + 16.dp
-        } else {
-            12.dp
-        }
+        val workspaceBottomPadding = CONTROL_BUTTON_DIAMETER + 16.dp
         val locationHeight = if (landscape) 72.dp else max(LOCATION_SLOT_MIN_HEIGHT.value, minDimension * 0.225f).dp
         val locationBadgeWidth = if (landscape) {
             (workspaceWidth.value * 0.78f).coerceAtLeast(180f).dp
@@ -663,13 +662,13 @@ private fun MainScreen(
                             screenInset = screenInset,
                             landscape = landscape,
                         )
-                        if (ui.isTrafficSignEndOverlayVisible && ui.trafficSignEndPictogram != null &&
+                        if (pendingLimit == null && ui.isTrafficSignEndOverlayVisible && ui.trafficSignEndPictogram != null &&
                             !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
                             RecognizedTrafficSignPictogram(ui.trafficSignEndPictogram,
                                 modifier = Modifier.testTag("speed-limit-end-sign"), signSize = signSize)
                         } else SpeedLimitSign(
                             limitText = limitText, signSize = signSize, numberFontSize = primaryMetricFont,
-                            showsUnlimitedIcon = !showsPedestrianZoneSign && ui.isUnlimitedSpeedLimitActive &&
+                            showsUnlimitedIcon = pendingLimit == null && !showsPedestrianZoneSign && ui.isUnlimitedSpeedLimitActive &&
                                 !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
                             showsPedestrianZoneIcon = showsPedestrianZoneSign,
                             showsActiveCameraLimitIndicator = showsActiveCameraLimitIndicator,
@@ -683,6 +682,15 @@ private fun MainScreen(
                             touchEnabled = ui.drivingControlsAllowed,
                             onDoubleTap = onCapture,
                         )
+                        if (!ui.isTrafficSignEndOverlayVisible && !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
+                            ui.retainedTrafficSignSupplementaryText?.takeIf {
+                                it.matchesNumeric(ui.speedLimitKmh, cameraEvidence = true)
+                            }?.let { restriction ->
+                                SupplementaryRestrictionText(restriction.text, fontSize = 20.sp, lineHeight = 20.sp,
+                                    modifier = Modifier.align(Alignment.BottomCenter).offset(y = 52.dp).height(48.dp).widthIn(max = signSize)
+                                        .testTag("traffic-sign-supplementary-time"))
+                            }
+                        }
                         // Draw the recognized secondary sign after the speed
                         // sign. This is intentionally the same z-order as the
                         // iPhone implementation: it remains at the eye tip,
@@ -694,12 +702,18 @@ private fun MainScreen(
                                 } else {
                                     screenInset + CONTROL_BUTTON_DIAMETER / 2
                                 }
-                                RecognizedTrafficSignPictogram(
-                                    pictogram = pictogram,
-                                    modifier = Modifier
-                                        .align(Alignment.TopStart)
-                                        .offset(x = eyeTipInset),
-                                )
+                                Column(Modifier.align(Alignment.TopStart).offset(x = eyeTipInset),
+                                    horizontalAlignment = Alignment.CenterHorizontally) {
+                                    RecognizedTrafficSignPictogram(pictogram = pictogram)
+                                    if (!ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
+                                        ui.retainedTrafficSignSupplementaryText?.takeIf {
+                                            it.matchesPictogram(pictogram.classId)
+                                        }?.let { restriction ->
+                                            SupplementaryRestrictionText(restriction.text, fontSize = 14.sp, lineHeight = 17.sp,
+                                                modifier = Modifier.widthIn(max = 150.dp).testTag("traffic-sign-pictogram-supplementary-text"))
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -772,18 +786,7 @@ private fun MainScreen(
                         controller, Modifier.padding(top = 6.dp).testTag("drive-recorder-status"),
                         onPreviewRequested = { previewSelected = true },
                     )
-                    if (landscape && ui.drivingControlsAllowed) BottomCornerButtons(
-                        horizontalPadding = screenInset, foreground = foreground,
-                        buttonBg = buttonBg, buttonBorder = buttonBorder,
-                        onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings, onOpenCalibration = onOpenCalibration,
-                        onOpenPanoramaxGallery = onOpenPanoramaxGallery,
-                        onToggleDriveRecorder = onToggleDriveRecorder,
-                        onOpenLocalRecordings = onOpenLocalRecordings,
-                        localRecordingsTint = trafficSignBugButtonTint(ui, foreground),
-                        driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
-            photoCaptureFeedbackVisible = photoCaptureFeedbackVisible,
-                        modifier = Modifier.padding(top = if (recorderVisible) 8.dp else 16.dp),
-                    )
+
                 }
             },
         ) { measurables, constraints ->
@@ -803,18 +806,38 @@ private fun MainScreen(
                 lower.place(if (landscape) upperWidth else 0, if (landscape) 0 else upperHeight)
             }
         }
-        if (!landscape && ui.drivingControlsAllowed) BottomCornerButtons(
+        if (ui.drivingControlsAllowed) BottomCornerButtons(
             horizontalPadding = screenInset, foreground = foreground,
             buttonBg = buttonBg, buttonBorder = buttonBorder,
             onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings, onOpenCalibration = onOpenCalibration,
             onOpenPanoramaxGallery = onOpenPanoramaxGallery,
             onToggleDriveRecorder = onToggleDriveRecorder,
-            onOpenLocalRecordings = onOpenLocalRecordings,
-            localRecordingsTint = trafficSignBugButtonTint(ui, foreground),
+            onTogglePanoramaxCapture = onTogglePanoramaxCapture,
+            panoramaxCaptureEnabled = ui.panoramaxCaptureEnabled,
+            reservePhotoSlot = drivingPhotoVisible,
             driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
             photoCaptureFeedbackVisible = photoCaptureFeedbackVisible,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
+            modifier = Modifier.width(if (landscape) workspaceWidth else maxWidth)
+                .align(androidx.compose.ui.AbsoluteAlignment.BottomRight).padding(bottom = 8.dp),
         )
+        if (drivingPhotoVisible) PillIconButton(
+            onClick = { controller.captureDrivingPhoto() },
+            enabled = drivingPhotoReady,
+            background = buttonBg,
+            border = buttonBorder,
+            modifier = Modifier.align(androidx.compose.ui.AbsoluteAlignment.BottomRight)
+                .absolutePadding(right = screenInset, bottom = 8.dp),
+            buttonTestTag = "driving-photo-button",
+        ) {
+            val label = stringResource(if (drivingPhotoReady) R.string.ui_driving_photo else R.string.ui_driving_photo_unavailable)
+            val hint = stringResource(if (ui.drivingPhotoCaptureFailed) R.string.ui_driving_photo_failed else R.string.ui_driving_photo_local_only)
+            Icon(Icons.Default.CameraAlt, contentDescription = "$label. $hint",
+                tint = when {
+                    ui.drivingPhotoCaptureFailed -> Color(0xFFEF4444)
+                    photoCaptureFeedbackVisible -> Color(0xFF22C55E)
+                    else -> foreground
+                })
+        }
         if (GravityAlignmentVisibility.isVisible(landscape = landscape,
             speedKmh = ui.currentSpeedKmh, inTunnel = ui.tunnelModeState == TunnelModeState.ACTIVE,
             searchingForSignal = ConsumerMainScreenLogic.isSearchingSignal(ui))) {
@@ -830,37 +853,6 @@ private fun MainScreen(
                 modifier = Modifier.align(Alignment.BottomCenter).background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(12.dp))
                     .padding(horizontal = 10.dp, vertical = 4.dp).testTag("vision-dismissal-listening"))
         }
-    }
-}
-
-@Composable
-private fun TopCornerButtons(
-    screenInset: androidx.compose.ui.unit.Dp,
-    foreground: Color,
-    buttonBg: Color,
-    buttonBorder: Color,
-    bugTint: Color,
-    showLocalRecordings: Boolean,
-    onOpenLocalRecordings: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    if (!showLocalRecordings) return
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = screenInset),
-        verticalAlignment = Alignment.Top,
-    ) {
-        if (showLocalRecordings) {
-            LocalRecordingsButton(
-                onClick = onOpenLocalRecordings,
-                foreground = foreground,
-                buttonBg = buttonBg,
-                buttonBorder = buttonBorder,
-                tint = bugTint,
-            )
-        }
-        if (showLocalRecordings) Spacer(modifier = Modifier.weight(1f))
     }
 }
 
@@ -900,108 +892,131 @@ private fun BottomCornerButtons(
     onOpenCalibration: () -> Unit,
     onOpenPanoramaxGallery: () -> Unit,
     onToggleDriveRecorder: () -> Unit,
-    onOpenLocalRecordings: (() -> Unit)?,
-    localRecordingsTint: Color,
+    onTogglePanoramaxCapture: () -> Unit,
+    panoramaxCaptureEnabled: Boolean,
+    reservePhotoSlot: Boolean,
     driveRecorderState: DriveRecorderState,
     panoramaxCaptureCount: Int,
     photoCaptureFeedbackVisible: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = horizontalPadding)
-            .testTag("dashboard-bottom-controls"),
-        horizontalArrangement = Arrangement.SpaceBetween,
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.ui.platform.LocalLayoutDirection provides androidx.compose.ui.unit.LayoutDirection.Ltr,
     ) {
-        PillIconButton(
-            onClick = { if (driveRecorderState != DriveRecorderState.STOPPING) onToggleDriveRecorder() },
-            background = if (driveRecorderState == DriveRecorderState.RECORDING) Color(0x3321C55D) else buttonBg,
-            border = if (driveRecorderState == DriveRecorderState.RECORDING) Color(0xFFEF4444) else buttonBorder,
-            modifier = Modifier.testTag("drive-recorder-toggle-button"),
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalPadding)
+                .testTag("dashboard-bottom-controls"),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Icon(
-                imageVector = if (DriveRecorderPolicy.isActive(driveRecorderState)) Icons.Default.Stop else Icons.Default.RadioButtonUnchecked,
-                contentDescription = stringResource(
-                    if (DriveRecorderPolicy.isActive(driveRecorderState)) R.string.ui_drive_recorder_stop else R.string.ui_drive_recorder_start,
-                ),
-                tint = Color(0xFFEF4444),
-            )
-        }
-        if (onOpenLocalRecordings != null) {
-            LocalRecordingsButton(
-                onClick = onOpenLocalRecordings,
+            PillIconButton(
+                onClick = { if (driveRecorderState != DriveRecorderState.STOPPING) onToggleDriveRecorder() },
+                background = if (driveRecorderState == DriveRecorderState.RECORDING) Color(0x3321C55D) else buttonBg,
+                border = if (driveRecorderState == DriveRecorderState.RECORDING) Color(0xFFEF4444) else buttonBorder,
+                modifier = Modifier.testTag("drive-recorder-toggle-button"),
+            ) {
+                Icon(
+                    imageVector = if (DriveRecorderPolicy.isActive(driveRecorderState)) Icons.Default.Stop else Icons.Default.RadioButtonUnchecked,
+                    contentDescription = stringResource(
+                        if (DriveRecorderPolicy.isActive(driveRecorderState)) R.string.ui_drive_recorder_stop else R.string.ui_drive_recorder_start,
+                    ),
+                    tint = Color(0xFFEF4444),
+                )
+            }
+            PanoramaxCaptureToggleButton(
+                onClick = onTogglePanoramaxCapture,
+                captureEnabled = panoramaxCaptureEnabled,
                 foreground = foreground,
                 buttonBg = buttonBg,
                 buttonBorder = buttonBorder,
-                tint = localRecordingsTint,
             )
-        }
-        PillIconButton(
-            onClick = { if (DriveRecorderPolicy.canProcessPanoramaxUploads(driveRecorderState)) onOpenPanoramaxGallery() },
-            enabled = DriveRecorderPolicy.canProcessPanoramaxUploads(driveRecorderState),
-            background = buttonBg,
-            border = buttonBorder,
-            modifier = Modifier.testTag("panoramax-gallery-button"),
-        ) {
-            Box {
-                Icon(
-                    Icons.Default.PhotoLibrary,
-                    contentDescription = stringResource(R.string.ui_panoramax_gallery),
-                    tint = if (photoCaptureFeedbackVisible) Color(0xFF22C55E) else foreground,
-                )
-                if (panoramaxCaptureCount > 0) {
-                    Text(
-                        panoramaxCaptureCount.toString(),
-                        color = Color.White,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .background(Color(0xFFEF4444), CircleShape)
-                            .padding(horizontal = 4.dp, vertical = 1.dp),
+            PillIconButton(
+                onClick = { if (DriveRecorderPolicy.canProcessPanoramaxUploads(driveRecorderState)) onOpenPanoramaxGallery() },
+                enabled = DriveRecorderPolicy.canProcessPanoramaxUploads(driveRecorderState),
+                background = buttonBg,
+                border = buttonBorder,
+                modifier = Modifier.testTag("panoramax-gallery-button"),
+            ) {
+                Box {
+                    Icon(
+                        Icons.Default.PhotoLibrary,
+                        contentDescription = stringResource(R.string.ui_panoramax_gallery),
+                        tint = if (photoCaptureFeedbackVisible) Color(0xFF22C55E) else foreground,
                     )
+                    if (panoramaxCaptureCount > 0) {
+                        Text(
+                            panoramaxCaptureCount.toString(),
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .background(Color(0xFFEF4444), CircleShape)
+                                .padding(horizontal = 4.dp, vertical = 1.dp),
+                        )
+                    }
                 }
             }
-        }
-        PillIconButton(onClick = onOpenCalibration, background = buttonBg, border = buttonBorder,
-            modifier = Modifier.testTag("visual-calibration-button")) {
-            Icon(Icons.Default.CenterFocusStrong, contentDescription = stringResource(R.string.calibration_title), tint = foreground)
-        }
-        PillIconButton(
-            onClick = onOpenLegal,
-            background = buttonBg,
-            border = buttonBorder,
-            modifier = Modifier.testTag("legal-button"),
-        ) {
-            Icon(Icons.Default.Info, contentDescription = stringResource(R.string.ui_legal_title), tint = foreground)
-        }
-        PillIconButton(
-            onClick = onOpenSettings,
-            background = buttonBg,
-            border = buttonBorder,
-            modifier = Modifier.testTag("settings-button"),
-        ) {
-            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.ui_settings_title), tint = foreground)
+            PillIconButton(onClick = onOpenCalibration, background = buttonBg, border = buttonBorder,
+                modifier = Modifier.testTag("visual-calibration-button")) {
+                Icon(Icons.Default.CenterFocusStrong, contentDescription = stringResource(R.string.calibration_title), tint = foreground)
+            }
+            PillIconButton(
+                onClick = onOpenLegal,
+                background = buttonBg,
+                border = buttonBorder,
+                modifier = Modifier.testTag("legal-button"),
+            ) {
+                Icon(Icons.Default.Info, contentDescription = stringResource(R.string.ui_legal_title), tint = foreground)
+            }
+            if (reservePhotoSlot) {
+                Spacer(Modifier.size(CONTROL_BUTTON_DIAMETER))
+            } else {
+                PillIconButton(
+                    onClick = onOpenSettings,
+                    background = buttonBg,
+                    border = buttonBorder,
+                    modifier = Modifier.testTag("settings-button"),
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.ui_settings_title), tint = foreground)
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun LocalRecordingsButton(
+private fun PanoramaxCaptureToggleButton(
     onClick: () -> Unit,
+    captureEnabled: Boolean,
     foreground: Color,
     buttonBg: Color,
     buttonBorder: Color,
-    tint: Color = foreground,
 ) {
+    val actionLabel = stringResource(if (captureEnabled) R.string.ui_panoramax_stop else R.string.ui_panoramax_start)
     PillIconButton(
         onClick = onClick,
         background = buttonBg,
-        border = if (tint == foreground) buttonBorder else tint,
-        modifier = Modifier.testTag("local-recordings-button"),
+        border = buttonBorder,
+        buttonTestTag = "panoramax-capture-toggle-button",
+        buttonModifier = Modifier.semantics {
+            contentDescription = actionLabel
+            role = Role.Switch
+            toggleableState = if (captureEnabled) ToggleableState.On else ToggleableState.Off
+        },
+        modifier = Modifier.drawWithContent {
+            drawContent()
+            if (!captureEnabled) drawLine(
+                color = foreground,
+                start = Offset(size.width * 0.1464466f, size.height * 0.8535534f),
+                end = Offset(size.width * 0.8535534f, size.height * 0.1464466f),
+                strokeWidth = 2.dp.toPx(),
+                cap = StrokeCap.Round,
+            )
+        },
     ) {
-        Icon(Icons.Default.BugReport, contentDescription = stringResource(R.string.ui_recordings_title), tint = tint)
+        Icon(Icons.Default.CameraAlt, contentDescription = null, tint = foreground)
     }
 }
 
@@ -1012,6 +1027,8 @@ private fun PillIconButton(
     border: Color,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    buttonTestTag: String? = null,
+    buttonModifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Surface(
@@ -1020,10 +1037,33 @@ private fun PillIconButton(
         color = background,
         border = androidx.compose.foundation.BorderStroke(1.5.dp, border),
     ) {
-        IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(CONTROL_BUTTON_DIAMETER)) {
+        IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(CONTROL_BUTTON_DIAMETER).then(buttonModifier)
+            .then(if (buttonTestTag == null) Modifier else Modifier.testTag(buttonTestTag))) {
             content()
         }
     }
+}
+
+@Composable
+private fun SupplementaryRestrictionText(
+    text: String,
+    fontSize: androidx.compose.ui.unit.TextUnit,
+    lineHeight: androidx.compose.ui.unit.TextUnit,
+    modifier: Modifier = Modifier,
+) {
+    val plateShape = RoundedCornerShape(3.dp)
+    Text(
+        text = text,
+        color = Color.Black,
+        fontSize = fontSize,
+        lineHeight = lineHeight,
+        fontWeight = FontWeight.SemiBold,
+        maxLines = 2,
+        textAlign = TextAlign.Center,
+        modifier = modifier.background(Color.White, plateShape)
+            .border(1.dp, Color.Black, plateShape)
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
 }
 
 @Composable
@@ -1414,6 +1454,7 @@ private fun SettingsSheet(
     controller: ConsumerSessionController,
     onDismiss: () -> Unit,
     onOpenDebug: () -> Unit,
+    onOpenLocalRecordings: () -> Unit,
     onOpenDataManager: () -> Unit,
 ) {
     val ui = controller.uiState
@@ -1452,6 +1493,7 @@ private fun SettingsSheet(
                     }
                 }
             }
+            item { SignCollectionSettings(controller.signCollection) }
             item { RecorderParitySettings(controller) }
             item {
                 SectionCard(stringResource(R.string.ui_audio_alerts)) {
@@ -1514,6 +1556,12 @@ private fun SettingsSheet(
                         Switch(checked = ui.debugLoggingEnabled, onCheckedChange = controller::setDebugLoggingEnabled,
                             modifier = Modifier.testTag("settings.debug.logging"))
                     }
+                    OutlinedButton(
+                        onClick = onOpenLocalRecordings,
+                        modifier = Modifier.testTag("settings-local-recordings-button"),
+                    ) {
+                        Text(stringResource(R.string.ui_recordings_title))
+                    }
                     Button(
                         onClick = onOpenDebug,
                         colors = ButtonDefaults.buttonColors(containerColor = SignalGreen),
@@ -1537,6 +1585,7 @@ private fun DebugSheet(
     val ui = controller.uiState
     SheetScaffold(title = stringResource(R.string.ui_diagnostics), onDismiss = onDismiss, testTag = "debug-sheet") {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize()) {
+            item { TextButton(onClick = { controller.signCollection.clearPendingForDeveloper() }) { Text(SignCollectionText.text("Clear pending observations", "Ausstehende Beobachtungen löschen")) } }
             item {
                 SectionCard(stringResource(R.string.ui_latest_location)) {
                     controller.debugRows().forEach { (key, value) -> DebugLabel(key, value) }
@@ -1961,19 +2010,19 @@ internal fun SheetScaffold(
                         .padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = onBack ?: onDismiss,
-                        modifier = Modifier.size(48.dp).testTag(if (onBack != null) "$testTag-back" else "$testTag-close")) {
-                        Icon(if (onBack != null) Icons.AutoMirrored.Filled.ArrowBack else Icons.Default.Close,
-                            contentDescription = stringResource(if (onBack != null) R.string.data_manager_back else R.string.ui_done), tint = Color.Black)
+                    if (onBack != null) {
+                        IconButton(onClick = onBack, modifier = Modifier.size(48.dp).testTag("$testTag-back")) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.data_manager_back), tint = Color.Black)
+                        }
+                        Spacer(Modifier.width(8.dp))
                     }
-                    Spacer(Modifier.width(8.dp))
                     Text(title, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.Black,
                         maxLines = 2, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f).testTag("$testTag-title"))
-                    if (onBack != null) {
-                        IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).testTag("$testTag-close")) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_done), tint = Color.Black)
-                        }
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).testTag("$testTag-close")) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_close), tint = Color.Black)
                     }
                 }
                 HorizontalDivider()

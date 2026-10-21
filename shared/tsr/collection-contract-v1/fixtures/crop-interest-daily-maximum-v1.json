@@ -1,0 +1,3907 @@
+{
+  "schema_version": 1,
+  "revision": 2,
+  "algorithm_version": "daily-maximum-v1",
+  "daily_maximum": 2,
+  "bootstrap": false,
+  "generated_at": "2026-10-04T12:00:00+00:00",
+  "valid_from": "2026-10-04T12:00:00+00:00",
+  "valid_until": "2026-10-06T12:00:00+00:00",
+  "registry_revision": "test-mapping-1",
+  "compatible_packs": [
+    "1111111111111111111111111111111111111111111111111111111111111111"
+  ],
+  "always": {
+    "exact": "bad",
+    "prefix": "bad:"
+  },
+  "interests": [
+    {
+      "collection_key": "DE:DE:278-10",
+      "country": "DE",
+      "class_id": "DE:278-10",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-10"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-100",
+      "country": "DE",
+      "class_id": "DE:278-100",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-100"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-110",
+      "country": "DE",
+      "class_id": "DE:278-110",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-110"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-120",
+      "country": "DE",
+      "class_id": "DE:278-120",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-120"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-130",
+      "country": "DE",
+      "class_id": "DE:278-130",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-130"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-20",
+      "country": "DE",
+      "class_id": "DE:278-20",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-20"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-30",
+      "country": "DE",
+      "class_id": "DE:278-30",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-30"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-40",
+      "country": "DE",
+      "class_id": "DE:278-40",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-40"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-5",
+      "country": "DE",
+      "class_id": "DE:278-5",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-5"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-50",
+      "country": "DE",
+      "class_id": "DE:278-50",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-50"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-60",
+      "country": "DE",
+      "class_id": "DE:278-60",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-60"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-70",
+      "country": "DE",
+      "class_id": "DE:278-70",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-70"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-80",
+      "country": "DE",
+      "class_id": "DE:278-80",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-80"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:278-90",
+      "country": "DE",
+      "class_id": "DE:278-90",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:278-90"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:281",
+      "country": "DE",
+      "class_id": "DE:281",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:281"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:282",
+      "country": "DE",
+      "class_id": "DE:282",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:282"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:310",
+      "country": "DE",
+      "class_id": "DE:310",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:310"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:DE:311",
+      "country": "DE",
+      "class_id": "DE:311",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "DE:311"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:arrow:red",
+      "country": "DE",
+      "class_id": "arrow:red",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "arrow:red"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:arrow_left_down",
+      "country": "DE",
+      "class_id": "arrow_left_down",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "arrow_left_down"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:arrow_right",
+      "country": "DE",
+      "class_id": "arrow_right",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "arrow_right"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:arrow_right_down",
+      "country": "DE",
+      "class_id": "arrow_right_down",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "arrow_right_down"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:arrow_through",
+      "country": "DE",
+      "class_id": "arrow_through",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "arrow_through"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:arrow_turn_left",
+      "country": "DE",
+      "class_id": "arrow_turn_left",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "arrow_turn_left"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:arrow_turn_left_right",
+      "country": "DE",
+      "class_id": "arrow_turn_left_right",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "arrow_turn_left_right"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:arrow_turn_left_through",
+      "country": "DE",
+      "class_id": "arrow_turn_left_through",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "arrow_turn_left_through"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:arrow_turn_right",
+      "country": "DE",
+      "class_id": "arrow_turn_right",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "arrow_turn_right"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:arrow_turn_right_through",
+      "country": "DE",
+      "class_id": "arrow_turn_right_through",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "arrow_turn_right_through"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:arrow_u_turn",
+      "country": "DE",
+      "class_id": "arrow_u_turn",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "arrow_u_turn"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:bicycle:priority",
+      "country": "DE",
+      "class_id": "bicycle:priority",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "bicycle:priority"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:bicycle:start",
+      "country": "DE",
+      "class_id": "bicycle:start",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "bicycle:start"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:bus:start",
+      "country": "DE",
+      "class_id": "bus:start",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "bus:start"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:city:end",
+      "country": "DE",
+      "class_id": "city:end",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "city:end"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:city:start",
+      "country": "DE",
+      "class_id": "city:start",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "city:start"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:exit",
+      "country": "DE",
+      "class_id": "exit",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "exit"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:give_way",
+      "country": "DE",
+      "class_id": "give_way",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "give_way"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard",
+      "country": "DE",
+      "class_id": "hazard",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:airport",
+      "country": "DE",
+      "class_id": "hazard:airport",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:airport"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:animals",
+      "country": "DE",
+      "class_id": "hazard:animals",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:animals"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:bicycle",
+      "country": "DE",
+      "class_id": "hazard:bicycle",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:bicycle"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:bothways",
+      "country": "DE",
+      "class_id": "hazard:bothways",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:bothways"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:bumps",
+      "country": "DE",
+      "class_id": "hazard:bumps",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:bumps"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:crossing",
+      "country": "DE",
+      "class_id": "hazard:crossing",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:crossing"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:gravel",
+      "country": "DE",
+      "class_id": "hazard:gravel",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:gravel"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:horse",
+      "country": "DE",
+      "class_id": "hazard:horse",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:horse"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:ice",
+      "country": "DE",
+      "class_id": "hazard:ice",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:ice"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:incline",
+      "country": "DE",
+      "class_id": "hazard:incline",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:incline"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:intersection",
+      "country": "DE",
+      "class_id": "hazard:intersection",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:intersection"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:left_turn",
+      "country": "DE",
+      "class_id": "hazard:left_turn",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:left_turn"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:level_crossing",
+      "country": "DE",
+      "class_id": "hazard:level_crossing",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:level_crossing"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:moving_bridge",
+      "country": "DE",
+      "class_id": "hazard:moving_bridge",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:moving_bridge"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:narrow_both",
+      "country": "DE",
+      "class_id": "hazard:narrow_both",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:narrow_both"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:narrow_left",
+      "country": "DE",
+      "class_id": "hazard:narrow_left",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:narrow_left"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:narrow_right",
+      "country": "DE",
+      "class_id": "hazard:narrow_right",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:narrow_right"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:other",
+      "country": "DE",
+      "class_id": "hazard:other",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:other"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:pedestrian_crossing",
+      "country": "DE",
+      "class_id": "hazard:pedestrian_crossing",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:pedestrian_crossing"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:right_turn",
+      "country": "DE",
+      "class_id": "hazard:right_turn",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:right_turn"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:road_works",
+      "country": "DE",
+      "class_id": "hazard:road_works",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:road_works"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:rocks",
+      "country": "DE",
+      "class_id": "hazard:rocks",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:rocks"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:school",
+      "country": "DE",
+      "class_id": "hazard:school",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:school"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:slippery",
+      "country": "DE",
+      "class_id": "hazard:slippery",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:slippery"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:traffic_jam",
+      "country": "DE",
+      "class_id": "hazard:traffic_jam",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:traffic_jam"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:traffic_signal",
+      "country": "DE",
+      "class_id": "hazard:traffic_signal",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:traffic_signal"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:train",
+      "country": "DE",
+      "class_id": "hazard:train",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:train"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:train2",
+      "country": "DE",
+      "class_id": "hazard:train2",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:train2"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:wild_animals",
+      "country": "DE",
+      "class_id": "hazard:wild_animals",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:wild_animals"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:wind",
+      "country": "DE",
+      "class_id": "hazard:wind",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:wind"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:zigzag",
+      "country": "DE",
+      "class_id": "hazard:zigzag",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:zigzag"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:hazard:zigzag:left",
+      "country": "DE",
+      "class_id": "hazard:zigzag:left",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "hazard:zigzag:left"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:horse:start",
+      "country": "DE",
+      "class_id": "horse:start",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "horse:start"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:lanes",
+      "country": "DE",
+      "class_id": "lanes",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "lanes"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxaxleweight",
+      "country": "DE",
+      "class_id": "maxaxleweight",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxaxleweight"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxheight",
+      "country": "DE",
+      "class_id": "maxheight",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxheight"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxlength",
+      "country": "DE",
+      "class_id": "maxlength",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxlength"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:10",
+      "country": "DE",
+      "class_id": "maxspeed:10",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:10"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:100",
+      "country": "DE",
+      "class_id": "maxspeed:100",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:100"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:120",
+      "country": "DE",
+      "class_id": "maxspeed:120",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:120"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:130",
+      "country": "DE",
+      "class_id": "maxspeed:130",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:130"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:20",
+      "country": "DE",
+      "class_id": "maxspeed:20",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:20"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:25",
+      "country": "DE",
+      "class_id": "maxspeed:25",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:25"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:40",
+      "country": "DE",
+      "class_id": "maxspeed:40",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:40"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:5",
+      "country": "DE",
+      "class_id": "maxspeed:5",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:5"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:50",
+      "country": "DE",
+      "class_id": "maxspeed:50",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:50"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:60",
+      "country": "DE",
+      "class_id": "maxspeed:60",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:60"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:70",
+      "country": "DE",
+      "class_id": "maxspeed:70",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:70"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:80",
+      "country": "DE",
+      "class_id": "maxspeed:80",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:80"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxspeed:end",
+      "country": "DE",
+      "class_id": "maxspeed:end",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxspeed:end"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxweight",
+      "country": "DE",
+      "class_id": "maxweight",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxweight"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:maxwidth",
+      "country": "DE",
+      "class_id": "maxwidth",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "maxwidth"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:min_distance",
+      "country": "DE",
+      "class_id": "min_distance",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "min_distance"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:motorway:end",
+      "country": "DE",
+      "class_id": "motorway:end",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "motorway:end"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:motorway:start",
+      "country": "DE",
+      "class_id": "motorway:start",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "motorway:start"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no:end",
+      "country": "DE",
+      "class_id": "no:end",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no:end"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no:other",
+      "country": "DE",
+      "class_id": "no:other",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no:other"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no:other:dog",
+      "country": "DE",
+      "class_id": "no:other:dog",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no:other:dog"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_bicycle",
+      "country": "DE",
+      "class_id": "no_bicycle",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_bicycle"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_bus",
+      "country": "DE",
+      "class_id": "no_bus",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_bus"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_car",
+      "country": "DE",
+      "class_id": "no_car",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_car"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_car_bicycle",
+      "country": "DE",
+      "class_id": "no_car_bicycle",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_car_bicycle"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_car_motorcycle",
+      "country": "DE",
+      "class_id": "no_car_motorcycle",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_car_motorcycle"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_dangerous",
+      "country": "DE",
+      "class_id": "no_dangerous",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_dangerous"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_dangerous_liquid",
+      "country": "DE",
+      "class_id": "no_dangerous_liquid",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_dangerous_liquid"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_entry",
+      "country": "DE",
+      "class_id": "no_entry",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_entry"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_exit",
+      "country": "DE",
+      "class_id": "no_exit",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_exit"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_exit:car",
+      "country": "DE",
+      "class_id": "no_exit:car",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_exit:car"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_hgv",
+      "country": "DE",
+      "class_id": "no_hgv",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_hgv"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_horse",
+      "country": "DE",
+      "class_id": "no_horse",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_horse"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_motorcycle",
+      "country": "DE",
+      "class_id": "no_motorcycle",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_motorcycle"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_overtaking",
+      "country": "DE",
+      "class_id": "no_overtaking",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_overtaking"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_overtaking:end",
+      "country": "DE",
+      "class_id": "no_overtaking:end",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_overtaking:end"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_overtaking:end:hgv",
+      "country": "DE",
+      "class_id": "no_overtaking:end:hgv",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_overtaking:end:hgv"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_overtaking:hgv",
+      "country": "DE",
+      "class_id": "no_overtaking:hgv",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_overtaking:hgv"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_parking",
+      "country": "DE",
+      "class_id": "no_parking",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_parking"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_pedestrian",
+      "country": "DE",
+      "class_id": "no_pedestrian",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_pedestrian"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_stop",
+      "country": "DE",
+      "class_id": "no_stop",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_stop"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_u_turn",
+      "country": "DE",
+      "class_id": "no_u_turn",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_u_turn"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:no_way",
+      "country": "DE",
+      "class_id": "no_way",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "no_way"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:oneway",
+      "country": "DE",
+      "class_id": "oneway",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "oneway"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:other",
+      "country": "DE",
+      "class_id": "other",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "other"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:other:charging",
+      "country": "DE",
+      "class_id": "other:charging",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "other:charging"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:other:motorhome",
+      "country": "DE",
+      "class_id": "other:motorhome",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "other:motorhome"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:other:multi",
+      "country": "DE",
+      "class_id": "other:multi",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "other:multi"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:park_ride",
+      "country": "DE",
+      "class_id": "park_ride",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "park_ride"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:parking",
+      "country": "DE",
+      "class_id": "parking",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "parking"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:parking:covered",
+      "country": "DE",
+      "class_id": "parking:covered",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "parking:covered"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:parking:disabled",
+      "country": "DE",
+      "class_id": "parking:disabled",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "parking:disabled"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:parking:pedestrian",
+      "country": "DE",
+      "class_id": "parking:pedestrian",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "parking:pedestrian"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:parking:perpendicular",
+      "country": "DE",
+      "class_id": "parking:perpendicular",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "parking:perpendicular"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:parking:sidewalk",
+      "country": "DE",
+      "class_id": "parking:sidewalk",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "parking:sidewalk"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:pedestrian:start",
+      "country": "DE",
+      "class_id": "pedestrian:start",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "pedestrian:start"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:pedestrian_bicycle:designated",
+      "country": "DE",
+      "class_id": "pedestrian_bicycle:designated",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "pedestrian_bicycle:designated"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:pedestrian_bicycle:start",
+      "country": "DE",
+      "class_id": "pedestrian_bicycle:start",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "pedestrian_bicycle:start"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:pedestrian_crossing",
+      "country": "DE",
+      "class_id": "pedestrian_crossing",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "pedestrian_crossing"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:priority:backward",
+      "country": "DE",
+      "class_id": "priority:backward",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "priority:backward"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:priority:end",
+      "country": "DE",
+      "class_id": "priority:end",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "priority:end"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:priority:forward",
+      "country": "DE",
+      "class_id": "priority:forward",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "priority:forward"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:priority:start",
+      "country": "DE",
+      "class_id": "priority:start",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "priority:start"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:roundabout",
+      "country": "DE",
+      "class_id": "roundabout",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "roundabout"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:stop",
+      "country": "DE",
+      "class_id": "stop",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "stop"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:traffic_signal",
+      "country": "DE",
+      "class_id": "traffic_signal",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "traffic_signal"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:trunk:end",
+      "country": "DE",
+      "class_id": "trunk:end",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "trunk:end"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:trunk:start",
+      "country": "DE",
+      "class_id": "trunk:start",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "trunk:start"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:tunnel:start",
+      "country": "DE",
+      "class_id": "tunnel:start",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "tunnel:start"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:zone:20",
+      "country": "DE",
+      "class_id": "zone:20",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "zone:20"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:zone:30",
+      "country": "DE",
+      "class_id": "zone:30",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "zone:30"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:zone:30:end",
+      "country": "DE",
+      "class_id": "zone:30:end",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "zone:30:end"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:zone:end",
+      "country": "DE",
+      "class_id": "zone:end",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "zone:end"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:zone:no_parking",
+      "country": "DE",
+      "class_id": "zone:no_parking",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "zone:no_parking"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    },
+    {
+      "collection_key": "DE:zone:pedestrian",
+      "country": "DE",
+      "class_id": "zone:pedestrian",
+      "selectors": [
+        {
+          "country": "DE",
+          "pack_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "classifier_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+          "raw_label": "zone:pedestrian"
+        }
+      ],
+      "selection": {
+        "numerator": 1000000,
+        "denominator": 1000000
+      },
+      "target_deficit": 2,
+      "encounter_policy": {
+        "regular_samples": 6,
+        "growth_samples": 2,
+        "growth_ratio": 1.5,
+        "spacing_ms": 500,
+        "max_crops": 8,
+        "max_attempts_per_frame": 4
+      }
+    }
+  ],
+  "limits": {
+    "max_image_bytes": 5242880,
+    "metadata_batch_events": 100,
+    "upload_attempts": 3,
+    "encounter": {
+      "regular_samples": 6,
+      "growth_samples": 2,
+      "growth_ratio": 1.5,
+      "spacing_ms": 500,
+      "max_crops": 8,
+      "max_attempts_per_frame": 4
+    }
+  }
+}

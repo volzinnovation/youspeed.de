@@ -721,6 +721,10 @@ class PanoramaxQueueStore(private val appRoot: File) {
             put("software", item.metadata.software)
             item.metadata.imageWidthPixels?.let { put("image_width_pixels", it) }
             item.metadata.imageHeightPixels?.let { put("image_height_pixels", it) }
+            item.metadata.captureReason?.let { put("capture_reason", it) }
+            item.metadata.signEvidence?.let { evidence -> put("sign_evidence", JsonArray(evidence.map { e -> buildJsonObject {
+                put("track_id", e.trackId); put("model_label", e.modelLabel); put("frame_at", e.frameAt.toString()); put("normalized_box", JsonArray(e.normalizedBox.map(::JsonPrimitive))); put("raw_score", e.rawScore); e.sourceFrameId?.let { put("source_frame_id", it) }
+            } })) }
             item.metadata.trafficSignAnnotations?.let { annotations ->
                 PanoramaxExifUserCommentCodec.encode(annotations)?.let {
                     put("traffic_sign_user_comment", it)
@@ -785,6 +789,10 @@ class PanoramaxQueueStore(private val appRoot: File) {
                 software = metadata.requiredString("software"),
                 imageWidthPixels = metadata["image_width_pixels"]?.jsonPrimitive?.longOrNull?.toInt(),
                 imageHeightPixels = metadata["image_height_pixels"]?.jsonPrimitive?.longOrNull?.toInt(),
+                captureReason = metadata["capture_reason"]?.jsonPrimitive?.content,
+                signEvidence = metadata["sign_evidence"]?.jsonArray?.map { e -> e.jsonObject.let {
+                    SignCaptureEvidence(it.requiredString("track_id"), it.requiredString("model_label"), Instant.parse(it.requiredString("frame_at")), it.getValue("normalized_box").jsonArray.map { b -> b.jsonPrimitive.double }, it.requiredDouble("raw_score"), it["source_frame_id"]?.jsonPrimitive?.content)
+                } },
                 trafficSignAnnotations = metadata["traffic_sign_user_comment"]
                     ?.jsonPrimitive
                     ?.content

@@ -1,0 +1,69 @@
+{
+  "schema_version": "youspeed-hf-mapillary-course-publication-v1",
+  "repository_id": "loffenauer/ws26_hspf_imo",
+  "revision": "1bed8ecad056122145d4cd4c92598add5f66cfe2",
+  "previous_revision": "e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8",
+  "published_date": "2026-10-21",
+  "visibility": "public",
+  "gated": false,
+  "upload_method": "authenticated hf upload; explicit nine-file allowlist",
+  "all_six_previous_archives_unchanged": true,
+  "archive_anonymous_GET_hash_verified": true,
+  "training_performed": false,
+  "model_evaluation_performed": false,
+  "coverage_scope": "Five public-UI image references spatially connected to MobiData town signs; statewide API search not performed.",
+  "learning_collection_totals": {
+    "full_images": 225,
+    "crops": 339,
+    "town_candidates": 195,
+    "DE:310": 148,
+    "DE:311": 47
+  },
+  "uploaded_files": [
+    {
+      "path": "LEARNING_COLLECTION.json",
+      "bytes": 3871,
+      "sha256": "8cea042a561ab246d3b8be02e6b44271aede1e05a96bfe58332170bd042b43ea"
+    },
+    {
+      "path": "MANIFEST.json",
+      "bytes": 6155,
+      "sha256": "c59c0c0f3dc717345272a1a4708ae845f5a2ba5e35fa17738662c8a3e2cb5671"
+    },
+    {
+      "path": "README.md",
+      "bytes": 17951,
+      "sha256": "3e3dc17460196c0af9d40930b47b5f5335421a44d2aad2b843295aab0235143c"
+    },
+    {
+      "path": "SHA256SUMS.txt",
+      "bytes": 3151,
+      "sha256": "555fb6088170f3a6c83daf969952a0f6f83a2ecbee291e5f702359a4d6d3993e"
+    },
+    {
+      "path": "assets/mapillary-logo.png",
+      "bytes": 17701,
+      "sha256": "0c36737753efeac686e644b1618c049ec46f24b8f0783ab0ff0aca21d8ad1ce7"
+    },
+    {
+      "path": "metadata/mapillary-mobidata-bw-review-2026-10-21-bericht.json",
+      "bytes": 972,
+      "sha256": "cba8bab706726e70176348bdf541c7aafbdc37ab0d55211a4a11a6fda241db10"
+    },
+    {
+      "path": "metadata/mapillary-mobidata-bw-review-2026-10-21-herkunft.csv",
+      "bytes": 2578,
+      "sha256": "566e5afd6f5f7dfaef2e86cebf3dc83bf4e59fe31836b4922b803f2580cb0db4"
+    },
+    {
+      "path": "metadata/mapillary-mobidata-bw-review-2026-10-21-hinweise.txt",
+      "bytes": 1535,
+      "sha256": "a090960111e3508a4e7b97a86eec0093e14ba65219d2d8adfa411e3e0f13a0fc"
+    },
+    {
+      "path": "packages/mapillary-mobidata-bw-review-2026-10-21.zip",
+      "bytes": 3129044,
+      "sha256": "4c04a802d5e0a53a3a31eaf0884a1307460fd68ae52a71abe444b899bc6071a9"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "archive_sha256": "88be269f7c0d06111a5e5822252a40744140c722ff2c211396aef4876501da64",
+  "crc_pass": true,
+  "all_internal_file_hashes_pass": true,
+  "exact_native_crop_pixel_checks": 63,
+  "unmodified_full_jpeg_checks": 63,
+  "all_approvals_false": true,
+  "no_training_or_model_inference": true,
+  "picture_and_sequence_overlap_with_documented_prior_inventory": 0,
+  "visual_crop_sheet_review_completed": true
+}

@@ -1,0 +1,117 @@
+{
+  "schema_version": "youspeed-hf-de-dataset-card-review-v1",
+  "checked_at": "2026-10-20T12:53:01.504858+00:00",
+  "scope": "Read-only current dataset API/card metadata and existing local archive audit; no new archive/model downloads, training, inference or changes to existing course files.",
+  "dataset_repository": {
+    "url": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs",
+    "api_url": "https://huggingface.co/api/datasets/Panoramax/classified_de_road_signs?blobs=true",
+    "current_main_revision": "b4856947ed7cb6312587258acc90e8cf88a4aa13",
+    "same_as_existing_course_dataset_revision": true,
+    "last_modified": "2026-03-29T18:11:33.000Z",
+    "card": {
+      "pinned_url": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/blob/b4856947ed7cb6312587258acc90e8cf88a4aa13/README.md",
+      "size_bytes": 724,
+      "sha256": "be4a77c6c6589feade508836af37e2fe78c15473354fa12c97a65fdd5697d2d8",
+      "license": "cc-by-sa-4.0",
+      "task": "image-classification",
+      "declared_examples": "20000+",
+      "declared_classes": "130+",
+      "origin": "Panoramax pictures from Germany; sign detection and crop generation using Panoramax/detect_face_plate_sign.",
+      "detector_model_url": "https://huggingface.co/Panoramax/detect_face_plate_sign",
+      "extra_categories": "bad/other contain non-road-sign false positives or not-yet-classed signs; actual archive contains more specific bad:* and other:* labels as well.",
+      "geographic_caveat": "Some classes include signs from European countries with similar signs; filenames may have country prefixes such as BE_ or FR_.",
+      "manual_review_claim": "The card does not establish exhaustive human review of every class label."
+    },
+    "archives": [
+      {
+        "filename": "train.zip",
+        "size_bytes": 59887779,
+        "sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+        "entries": 13287,
+        "unique_image_hashes": 13287,
+        "within_archive_exact_duplicates": 0
+      },
+      {
+        "filename": "val.zip",
+        "size_bytes": 29740678,
+        "sha256": "13ca882129a4e024fc865fc4a3187514a4554f8e323f612e338144fd1ff189ea",
+        "entries": 6944,
+        "unique_image_hashes": 6944,
+        "within_archive_exact_duplicates": 0
+      }
+    ],
+    "published_roles": {
+      "train.zip": "Examples for fitting/optimizing the classifier weights.",
+      "val.zip": "Examples for validation and model/epoch selection; must not also be used as a final independent test.",
+      "independent_test_archive_present": false,
+      "annotation_encoding": "Image classification label is the class directory: train/<label>/<filename>.jpg or val/<label>/<filename>.jpg.",
+      "not_complete_detection_or_segmentation_ground_truth": "The archive is a crop classification corpus. It does not supply an exhaustive face/plate/sign bounding-box set or pixel masks for the original full images."
+    }
+  },
+  "verified_local_audit": {
+    "evidence": "source/hf-model-card-review-2026-10-20.json; pinned archive hashes and counts recorded in this document",
+    "archive_entries": 20231,
+    "train_entries": 13287,
+    "val_entries": 6944,
+    "class_directory_labels": 134,
+    "unique_byte_images": 19709,
+    "unique_rgb_images": 19709,
+    "train_val_exact_image_sha256_intersection": 522,
+    "city_start_or_end_label_present": false,
+    "interpretation": "522 byte-identical images occur in both original archives; the published split cannot be treated unchanged as an independent course evaluation split.",
+    "limits": "Exact-hash deduplication alone does not establish physical-sign, route, sequence or pretraining independence. The published baseline may have used this corpus."
+  },
+  "recommended_slide04_source_labels": [
+    {
+      "label_de": "Modellgewichte",
+      "url": "https://huggingface.co/Panoramax/classify_de_road_signs"
+    },
+    {
+      "label_de": "Trainingsdaten",
+      "url": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs"
+    }
+  ],
+  "recommended_new_slide": {
+    "placement": "Between the former slides08 and09.",
+    "title_de": "Vom Datensatz zum Modell",
+    "flow_de": [
+      "Gelabelte Bildausschnitte",
+      "Training",
+      "Gelernte Gewichte",
+      "Vorhersage auf einem neuen Bildausschnitt"
+    ],
+    "bullets_de": [
+      "Der Panoramax-Datensatz liefert Bildausschnitte mit Klassennamen, zum Beispiel stop oder maxspeed:30.",
+      "train.zip dient zum Lernen; val.zip hilft bei der Auswahl des Modells.",
+      "Unser Audit: 20.231 Einträge in 134 Klassen; city:start und city:end ergänzen wir mit eigenen geprüften Beispielen.",
+      "Datenquelle: Panoramax/classified_de_road_signs, CC BY-SA 4.0."
+    ],
+    "notes_de": [
+      "Ein Datensatz enthält Beispiele und die zugehörigen Klassenlabels. Ein Modell enthält Zahlenwerte, die beim Training verändert werden. Die Prolix-Verarbeitung lädt das Modell für Vorhersagen.",
+      "Die Herausgeberkarte nennt mehr als20.000 Bilder und mehr als130 Klassen. Unser eigener Audit der gepinnten Archive zählt20.231 Einträge und134 Klassenverzeichnisse. Das sind unterschiedliche Genauigkeitsstufen derselben Beschreibung.",
+      "Die Klassenzuordnung steckt im Ordnernamen. Die Bilder wurden zuvor aus Panoramax-Aufnahmen mithilfe eines Detektors ausgeschnitten. bad/other und Unterklassen erfassen Fehlfunde oder andere Objekte; einige ähnliche Verkehrszeichen stammen laut Karte aus weiteren europäischen Ländern.",
+      "Die vorhandenen train/val-Namen bestimmen die beabsichtigte Rolle, garantieren aber keine Unabhängigkeit:522 Bilder sind byteidentisch in beiden Archiven. Nach Entfernen dieser Überschneidungen bleiben19.709 eindeutige Bilder. Erstellen Sie die Aufteilung deshalb gruppenweise neu und führen Sie einen eigenen reservierten Test getrennt.",
+      "Dieser Datensatz lehrt die Klassifikation eines bereits ausgeschnittenen Schildes. Für SGBlur benötigen Sie zusätzlich geprüfte vollständige Boxannotationen auf Vollbildern; aus diesem Klassenordnerkorpus entstehen keine vollständigen Lokalisierungs- oder Segmentierungslabels.",
+      "Dokumentieren Sie Datensatzrevision, Bildherkunft, Lizenz, Änderungen und Aufteilung. CC BY-SA 4.0 ist die veröffentlichte Datensatzlizenz; die Modellkarte nennt gesondert Etalab2.0 und die verwendete Ultralytics-Software-/Modelllinie hat eigene Lizenzbedingungen. Das ist keine pauschale Freigabe sämtlicher Komponenten."
+    ]
+  },
+  "primary_sources": [
+    "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/blob/b4856947ed7cb6312587258acc90e8cf88a4aa13/README.md",
+    "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/tree/b4856947ed7cb6312587258acc90e8cf88a4aa13",
+    "https://huggingface.co/Panoramax/classify_de_road_signs",
+    "https://huggingface.co/Panoramax/detect_face_plate_sign",
+    "https://creativecommons.org/licenses/by-sa/4.0/"
+  ],
+  "relation_to_course_assignment": {
+    "weights_repository": "https://huggingface.co/Panoramax/classify_de_road_signs",
+    "weights_revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+    "weights_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+    "dataset_revision_changed": false,
+    "baseline_changed": false,
+    "prolix_role": "Inference pipeline consuming the detector/classifier weights; distinguish it from the original model and dataset repositories.",
+    "old_test_role": "Any old-class comparison remains retrospective unless pretraining independence is established.",
+    "new_city_test_role": "Collect and manually approve independent examples of both new classes before freezing a final test.",
+    "class_extension": "134 old model outputs become136 with city:start (DE:310) and city:end (DE:311).",
+    "required_split": "Group source-image IDs, exact duplicates, physical sites and journeys before assigning training/validation/test roles. Preserve the old classes and add reviewed city:start/city:end examples."
+  }
+}

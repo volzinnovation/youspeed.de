@@ -1224,6 +1224,8 @@ def main() -> int:
           street_name TEXT,
           ref TEXT,
           maxspeed TEXT,
+          maxspeed_forward TEXT,
+          maxspeed_backward TEXT,
           maxspeed_type TEXT,
           source_maxspeed TEXT,
           approx_heading_deg REAL,
@@ -1460,6 +1462,8 @@ def main() -> int:
                     meta.get("street_name"),
                     meta.get("ref"),
                     meta.get("maxspeed"),
+                    meta.get("maxspeed_forward", (meta.get("raw_tags") or {}).get("maxspeed:forward")),
+                    meta.get("maxspeed_backward", (meta.get("raw_tags") or {}).get("maxspeed:backward")),
                     meta.get("maxspeed_type"),
                     meta.get("source_maxspeed"),
                     meta.get("approx_heading_deg"),
@@ -1518,10 +1522,10 @@ def main() -> int:
                 conn.executemany(
                     """
                     INSERT INTO ways(
-                      way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
+                      way_id, highway, street_name, ref, maxspeed, maxspeed_forward, maxspeed_backward, maxspeed_type, source_maxspeed,
                       approx_heading_deg, service, tunnel,
                       min_lon, min_lat, max_lon, max_lat
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     ways_batch,
                 )
@@ -1569,10 +1573,10 @@ def main() -> int:
         conn.executemany(
             """
             INSERT INTO ways(
-              way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
+              way_id, highway, street_name, ref, maxspeed, maxspeed_forward, maxspeed_backward, maxspeed_type, source_maxspeed,
               approx_heading_deg, service, tunnel,
               min_lon, min_lat, max_lon, max_lat
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             ways_batch,
         )

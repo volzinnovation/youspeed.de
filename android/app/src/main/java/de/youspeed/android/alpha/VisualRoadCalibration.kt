@@ -26,16 +26,6 @@ data class VisualRoadCalibration(
     fun compatible(width: Int, height: Int, orientationKey: String): Boolean = isValid && width > 0 && height > 0 &&
         this.orientationKey == orientationKey && abs(width.toDouble() / height - imageWidth.toDouble() / imageHeight) < 0.015
 
-    /** Actual pixel-aligned ROI. Only its left edge is user-defined; all other edges stay full-frame. */
-    fun cropLeftPixels(width: Int): Int = (leftTopX * width).toInt().coerceIn(0, (width - 1).coerceAtLeast(0))
-
-    fun fullFrameBox(box: NormalizedTrafficSignBoundingBox, sourceWidth: Int): NormalizedTrafficSignBoundingBox {
-        require(sourceWidth > 0)
-        val left = cropLeftPixels(sourceWidth).toDouble() / sourceWidth
-        val scale = 1.0 - left
-        return NormalizedTrafficSignBoundingBox(left + box.x * scale, box.y, box.width * scale, box.height)
-    }
-
     fun encode(): String = buildJsonObject {
         put("schemaVersion", 1); put("revision", revision); put("imageWidth", imageWidth); put("imageHeight", imageHeight)
         put("orientationKey", orientationKey); put("horizonY", horizonY)

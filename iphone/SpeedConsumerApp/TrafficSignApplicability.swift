@@ -341,7 +341,7 @@ enum TSRApplicabilityPolicy {
 enum TSRApplicabilityAuthority {
     static func allows(_ decision: TSRApplicabilityDecision?, scope: TSRApplicabilityScope, frameId: String,
                        trackId: String, sink: String, mode: String = TSRApplicabilityConfiguration.defaultMode) -> Bool {
-        if decision?.reasons.contains(where: { [TSRMotorwayExitPolicy.reason, TSRAccessRoadPolicy.reason].contains($0) }) == true { return false }
+        if TSRLiveSignAdmission.blocks(decision) { return false }
         if mode == "shadow" { return true }
         guard mode == "enforce", let decision, decision.schemaVersion == 1, decision.scope == scope, decision.frameId == frameId,
               decision.trackId == trackId, decision.policyVersion == TSRApplicabilityConfiguration.policyVersion,
@@ -492,20 +492,111 @@ struct TSRAccessRoadPolicy: Sendable {
     }
 }
 
+/// Active camera-input checks, independent of the shared speed-reference machine.
+enum TSRLiveSignAdmission {
+    static let zoneTextReason = "zone_panel_unverified"
+    static let zoneRoadReason = "zone_ego_approach_unproven"
+    static let sideRoadReason = "side_road_ambiguous_sign"
+    static func blocks(_ decision: TSRApplicabilityDecision?) -> Bool {
+        decision?.reasons.contains { [zoneTextReason, zoneRoadReason, sideRoadReason,
+            TSRMotorwayExitPolicy.reason, TSRAccessRoadPolicy.reason].contains($0) } == true
+    }
+    static func zoneSpeed(_ semantic: String) -> Int? {
+        let parts = semantic.split(separator: ":")
+        guard parts.first == "zone_start", parts.count > 1 else { return nil }
+        return Int(parts[1])
+    }
+    static func verifiesZoneText(_ text: String, speed: Int) -> Bool {
+        let words = text.uppercased().components(separatedBy: CharacterSet.letters.inverted)
+        let numbers = text.components(separatedBy: CharacterSet.decimalDigits.inverted).compactMap(Int.init)
+        return words.contains(where: { ["ZONE", "ZONA"].contains($0) }) && numbers == [speed]
+    }
+    static func reason(track: TSRPhysicalTrackSnapshot, batch: TSRFrameCandidateBatch,
+                       decision: TSRApplicabilityDecision, verifiedZones: Set<String>) -> String? {
+        guard let last = track.samples.last, last.frameId == batch.frameId else { return nil }
+        if decision.classification == "LIKELY_BRANCH" || decision.reasons.contains(where: {
+            ["competing_corridors", "outside_supported_corridor", "unknown_competing_corridor"].contains($0)
+        }) { return sideRoadReason }
+        // With no metric camera pose, a peripheral speed sign aligned with a
+        // nearby linked side road is ambiguous. Do not veto end signs merely
+        // because they stand on the left side of the current road.
+        if last.candidate.semanticKey.hasPrefix("maximum_speed:"),
+           let road = batch.road, road.scope == batch.scope, road.matchedStable,
+           let way = road.wayId, (0...1500).contains(batch.capturedAtMs - road.capturedAtMs),
+           let accuracy = road.horizontalAccuracyM, (0...20).contains(accuracy),
+           let course = road.courseDeg, (0..<360).contains(course),
+           let courseAccuracy = road.courseAccuracyDeg, (0...25).contains(courseAccuracy) {
+            let center = last.candidate.box.centerX
+            let onBranchSide = (road.branches + road.hypotheses).contains {
+                guard $0.wayId != way, $0.endpointLinked, let distance = $0.distanceM,
+                      (0...40).contains(distance), let heading = $0.headingDeg else { return false }
+                let angle = TSRApplicabilityPolicy.signedAngle(heading - course)
+                return (center < 0.2 && (-145 ... -35).contains(angle)) ||
+                    (center > 0.8 && (35...145).contains(angle))
+            }
+            if onBranchSide { return sideRoadReason }
+        }
+        guard zoneSpeed(last.candidate.semanticKey) != nil else { return nil }
+        guard verifiedZones.contains(last.candidate.candidateId) else { return zoneTextReason }
+        if decision.immediateEligible { return nil }
+        // Without a metric camera pose, admit only an independently observed,
+        // growing, central approach on a fresh, stable matched road. Edge-only
+        // zone signs remain observations until the vehicle turns onto that road.
+        guard batch.status == "analyzed", !batch.truncated, !track.associationAmbiguous,
+              let road = batch.road, road.scope == batch.scope, road.matchedStable,
+              road.wayId != nil, (0...1500).contains(batch.capturedAtMs - road.capturedAtMs),
+              let accuracy = road.horizontalAccuracyM, (0...20).contains(accuracy),
+              let course = road.courseDeg, (0..<360).contains(course),
+              let courseAccuracy = road.courseAccuracyDeg, (0...25).contains(courseAccuracy),
+              let tangent = road.localTangentDeg, tangent.isFinite else { return zoneRoadReason }
+        let delta = abs(TSRApplicabilityPolicy.signedAngle(tangent - course))
+        guard min(delta, 180 - delta) <= 20 else { return zoneRoadReason }
+        let samples = track.samples.filter { $0.candidate.recognitionEligible &&
+            $0.candidate.semanticKey == last.candidate.semanticKey && batch.capturedAtMs - $0.capturedAtMs <= 1500 }
+        guard Set(samples.map(\.frameId)).count >= 2, let first = samples.first,
+              last.capturedAtMs > first.capturedAtMs, first.candidate.box.valid, last.candidate.box.valid,
+              (0.2...0.8).contains(first.candidate.box.centerX), (0.2...0.8).contains(last.candidate.box.centerX),
+              last.candidate.box.scale / first.candidate.box.scale >= 1.08 else { return zoneRoadReason }
+        let branching = (road.branches + road.hypotheses).contains {
+            guard $0.wayId != road.wayId, $0.endpointLinked,
+                  let distance = $0.distanceM, (0...40).contains(distance), let heading = $0.headingDeg else { return false }
+            let angle = abs(TSRApplicabilityPolicy.signedAngle(heading - course))
+            return angle >= 35 && angle <= 145
+        }
+        return branching && !(0.4...0.6).contains(last.candidate.box.centerX) ? sideRoadReason : nil
+    }
+}
+
 struct TSRApplicabilitySession: Sendable {
     private var accessPolicy = TSRAccessRoadPolicy()
     private(set) var accessRoadWithheldCandidateIDs = Set<String>()
+    private(set) var liveWithheldCandidateIDs = Set<String>()
     private var tracker = TSRPhysicalSignTracker()
     private var decisionsByTrack: [String: TSRApplicabilityDecision] = [:]
     private(set) var diagnostic: TSRApplicabilityDiagnostic?
-    mutating func reset() { tracker.reset(); accessPolicy.reset(); accessRoadWithheldCandidateIDs = []; decisionsByTrack = [:]; diagnostic = nil }
-    mutating func evaluate(_ batch: TSRFrameCandidateBatch) -> TSRApplicabilityDiagnostic {
+    mutating func reset() { tracker.reset(); accessPolicy.reset(); accessRoadWithheldCandidateIDs = []; liveWithheldCandidateIDs = []; decisionsByTrack = [:]; diagnostic = nil }
+    mutating func evaluate(_ batch: TSRFrameCandidateBatch, verifiedZones: Set<String> = []) -> TSRApplicabilityDiagnostic {
         let tracks = tracker.ingest(batch)
         let withheld = TSRMotorwayExitPolicy.withheldCandidates(batch)
         accessRoadWithheldCandidateIDs = accessPolicy.withheldCandidates(batch)
         let accessWithheld = accessRoadWithheldCandidateIDs
+        // An untracked/capped/late zone has no approach proof. Start withheld
+        // and release only a current physical track that passes admission.
+        liveWithheldCandidateIDs = Set(batch.candidates.filter { TSRLiveSignAdmission.zoneSpeed($0.semanticKey) != nil }.map(\.candidateId))
         let decisions = tracks.map { track in
             let decision = TSRApplicabilityPolicy.evaluate(track, batch: batch)
+            if let reason = TSRLiveSignAdmission.reason(track: track, batch: batch, decision: decision, verifiedZones: verifiedZones),
+               let sample = track.samples.last {
+                liveWithheldCandidateIDs.insert(sample.candidate.candidateId)
+                return TSRApplicabilityDecision(schemaVersion: decision.schemaVersion, policyVersion: decision.policyVersion,
+                    configHash: decision.configHash, frameId: decision.frameId, trackId: decision.trackId, scope: decision.scope,
+                    roadSnapshotId: decision.roadSnapshotId, classification: decision.classification == "LIKELY_EGO_CORRIDOR" ? "UNKNOWN" : decision.classification, reasons: [reason],
+                    evidence: decision.evidence, imageSupport: decision.imageSupport,
+                    displayEligible: false, immediateEligible: false, passageEligible: false)
+            }
+            if let sample = track.samples.last, sample.frameId == batch.frameId {
+                liveWithheldCandidateIDs.remove(sample.candidate.candidateId)
+            }
             if let sample = track.samples.last, sample.frameId == batch.frameId, accessWithheld.contains(sample.candidate.candidateId) {
                 return TSRApplicabilityDecision(schemaVersion: decision.schemaVersion, policyVersion: decision.policyVersion,
                     configHash: decision.configHash, frameId: decision.frameId, trackId: decision.trackId, scope: decision.scope,

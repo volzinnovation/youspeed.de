@@ -33,12 +33,27 @@ The choice persists across app launches and applies to settings and galleries
 as well as the driving screen. Controls respect side cutouts and system bars.
 Unknown saved values fall back to portrait.
 
+## Phone posture and controls
+
+Both clients use gravity to measure the angle of the screen plane relative to
+horizontal, independently of the saved screen orientation. Ordinary controls are
+available only with the phone face up within 10° of horizontal and speed at or
+below 20 km/h. Either raw or displayed speed above 20 km/h hides them regardless
+of posture. Unknown posture cannot establish that the phone is flat. Inclines,
+declines and acceleration must not unlock controls in a mounted phone.
+
+Posture changes update availability immediately; fresh low-speed GPS evidence
+restores the speed gate. Permission and review prompts still require fresh GPS
+evidence of exactly zero speed. The manual driving shutter remains the sole
+moving control, replacing Settings in the same bottom-right action-row slot.
+Showing it never adds a second row or moves the other controls upward.
+
 ## Portrait layout
 
 iPhone portrait restores the original vertical arrangement shown on youspeed.de:
 the large speed-limit sign is centered above the speed/fine and city display.
 Dashcam preview replaces that lower display. The action row, including the
-debug/local-recordings button, spans the full width at the bottom. In landscape,
+Panoramax capture button, spans the full width at the bottom. In landscape,
 the sign stays on the left and the workspace and its action row stay on the right.
 Both the telemetry and preview frames reserve space for the bottom action row
 and the recorder status strip, so their content cannot extend into those controls.
@@ -54,11 +69,18 @@ the on-screen keyboard; long content scrolls beneath the fixed header.
 
 Gallery actions and local-recording actions wrap onto additional rows when
 space is limited. Their labels remain readable with enlarged system text.
-Dashboard controls have 48 dp targets. In portrait, the recorder, gallery, local
-recordings, legal notices and settings controls share the bottom row. Android's
+Dashboard controls have 48 dp targets. In portrait, the recorder, Panoramax
+capture, gallery, calibration, legal notices and settings controls share the bottom row. Android's
 dashboard omits the GPS marker and accuracy readout, matching iPhone; GPS data
 remains available in diagnostics. Startup messages scroll so that Retry remains
 reachable on a narrow portrait screen, including long failure messages.
+
+The round camera button toggles the saved automatic Panoramax capture option,
+matching Settings. Enabled capture shows the camera alone; disabled capture adds
+a diagonal slash across the entire circular button. It uses the same recording
+finalization gate as other dashboard actions. Local corrections and their export
+remain available under Settings alongside diagnostics, and movies remain in the
+gallery's Videos tab.
 
 ## Dashcam action ordering
 

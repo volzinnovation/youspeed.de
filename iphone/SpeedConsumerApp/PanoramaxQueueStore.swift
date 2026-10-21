@@ -374,6 +374,14 @@ final class PanoramaxQueueStore: @unchecked Sendable {
         }
     }
 
+    /// Leave headroom for the JPEG, thumbnail and atomic sidecar writes. Quota
+    /// retention remains the same shared policy used by automatic capture.
+    func hasSpaceForManualPhoto(minimumFreeBytes: Int64 = 20_000_000) -> Bool {
+        guard let attributes = try? FileManager.default.attributesOfFileSystem(forPath: root.path),
+              let free = attributes[.systemFreeSize] as? NSNumber else { return false }
+        return free.int64Value >= minimumFreeBytes
+    }
+
     @discardableResult
     func addJPEG(batchID: String, jpeg: Data, thumbnail: Data, metadata: PanoramaxCaptureMetadata) throws -> PanoramaxItemRecord {
         guard Self.isJPEG(jpeg), !thumbnail.isEmpty else { throw QueueError.invalidImage }
@@ -1106,6 +1114,9 @@ struct PanoramaxQueueMaintenanceResult: @unchecked Sendable {
     let deletion: PanoramaxDeletionReport
     let batches: [PanoramaxBatchRecord]
     let batchLoadSucceeded: Bool
+    // A successful directory scan can return healthy batches even when some
+    // records are unreadable. Only a complete load can reconcile deletions.
+    let batchDirectoryReadSucceeded: Bool
 }
 
 /// Serializes gallery scans, upload preparation and retention deletion away from the main actor.
@@ -1193,7 +1204,8 @@ actor PanoramaxQueueMaintenanceExecutor {
                 startupCleanup: nil,
                 deletion: PanoramaxDeletionReport(),
                 batches: [],
-                batchLoadSucceeded: false
+                batchLoadSucceeded: false,
+                batchDirectoryReadSucceeded: false
             )
         }
         var deletion = PanoramaxDeletionReport()
@@ -1266,7 +1278,8 @@ actor PanoramaxQueueMaintenanceExecutor {
             report.failedRelativePaths += store.unreadableRelativePaths
             return PanoramaxQueueMaintenanceResult(
                 startupCleanup: startup, deletion: report, batches: batches,
-                batchLoadSucceeded: store.unreadableRelativePaths.isEmpty
+                batchLoadSucceeded: store.unreadableRelativePaths.isEmpty,
+                batchDirectoryReadSucceeded: true
             )
         } catch {
             var failedDeletion = deletion
@@ -1275,7 +1288,8 @@ actor PanoramaxQueueMaintenanceExecutor {
                 startupCleanup: startup,
                 deletion: failedDeletion,
                 batches: [],
-                batchLoadSucceeded: false
+                batchLoadSucceeded: false,
+                batchDirectoryReadSucceeded: false
             )
         }
     }

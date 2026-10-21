@@ -1,0 +1,13 @@
+{
+  "scope": "Prior lecture/discovery inventory, previous 180-view screen and retained v2; not a pretraining audit.",
+  "screened_views_with_prior_sequence": 8,
+  "otherwise_usable_hd_views_excluded_for_prior_sequence": 1,
+  "prior_v2_manifest_sha256": "2254b2092c9b0e9845232b887f439ccbfbcaf405bbad438a7aa99cdcbbc85bdc",
+  "additional_picture_id_overlaps": 0,
+  "additional_sequence_overlaps": 0,
+  "additional_exact_hd_rgb_crop_hash_overlaps": 0,
+  "minimum_registry_distance_to_v2_m": 356.88976318272586,
+  "conservative_split_groups": 47,
+  "physical_independence_approved": false,
+  "group_rule": "Union of same sequence/location, registry separation <=150m, or same producer/capture day. Reconcile across all datasets manually; no split assigned."
+}

@@ -215,6 +215,18 @@ data class DataManagerMetadataState(
 
 enum class DataManagerDisplayState { INSTALLED, AVAILABLE, UNAVAILABLE, UNKNOWN }
 
+/** Presentation of one independently requested entry in the existing serial transfer queue. */
+data class DataManagerTransferState(val active: Boolean, val queued: Boolean, val error: String?) {
+    fun canRequest(metadata: DataManagerMetadataState?): Boolean = !active && !queued &&
+        metadata?.status != DataManagerMetadataStatus.UNAVAILABLE
+
+    companion object {
+        fun resolve(id: String, activeId: String?, queuedIds: List<String>, errors: Map<String, String>): DataManagerTransferState =
+            DataManagerTransferState(activeId == id, activeId != id && id in queuedIds,
+                errors[id].takeIf { activeId != id && id !in queuedIds })
+    }
+}
+
 fun dataManagerDisplayState(installed: Boolean, metadata: DataManagerMetadataState?): DataManagerDisplayState = when {
     installed -> DataManagerDisplayState.INSTALLED
     metadata?.status == DataManagerMetadataStatus.UNAVAILABLE -> DataManagerDisplayState.UNAVAILABLE

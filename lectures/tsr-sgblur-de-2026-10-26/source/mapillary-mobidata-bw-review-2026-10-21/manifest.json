@@ -1,0 +1,561 @@
+{
+  "schema_version": "youspeed-mapillary-mobidata-review-input-v1",
+  "created_date": "2026-10-21",
+  "selection_method": "Bounded public-UI inspection of five modern OSM image references within 60m of a MobiData town-sign record, plus user-supplied panorama seed. Broader API pass is pending a registered client token.",
+  "registry_source_url": "https://mobidata-bw.de/daten/portal/VZ-Daten/signs.geojson",
+  "registry_source_sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+  "role": "learning_review_pending_human_approval",
+  "records": [
+    {
+      "image_id": "209557124011952",
+      "source_url": "https://www.mapillary.com/app/?pKey=209557124011952",
+      "author": "5rmft",
+      "license": "CC-BY-SA-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "captured_date_displayed": "2017-01-17",
+      "captured_time_displayed": "14:25:46.181",
+      "capture_time_timezone": "not supplied by displayed image details; do not interpret as UTC",
+      "sequence_id": "7Jj7zBTz8VhAUC_cbADqRw",
+      "camera_displayed": "HUAWEI HUAWEI Y550-L01",
+      "source_resolution_displayed": [
+        2592,
+        1944
+      ],
+      "downloaded_representation": "Mapillary web-app Download image: complete, resized image, maximum width 2048",
+      "downloaded_representation_not_original_resolution": true,
+      "projection": "perspective",
+      "viewer_map_centre": [
+        9.28294335,
+        48.64962878
+      ],
+      "viewer_map_centre_is_verified_camera_geometry": false,
+      "metadata_acquisition": "Public Mapillary image-details UI; no API response or detection result fabricated",
+      "metadata_checked_on": "2026-10-21",
+      "discovery": "cached OSM Mapillary reference spatially matched to MobiData town-sign records",
+      "osm_reference": {
+        "osm_type": "node",
+        "osm_id": 540397568,
+        "osm_sign_code": "city_limit",
+        "coordinates": [
+          9.2829108,
+          48.6496287
+        ]
+      },
+      "registry_matches": [
+        {
+          "record_key": "b8cfd6bf6acb5c80b5e09d26bb5892417c450d4ceab8fe6d3d068dfce87e861e",
+          "location_id": "d466fa9d-415a-4249-a646-553310118374",
+          "sign_code": "DE:310",
+          "longitude": 9.282892,
+          "latitude": 48.649596,
+          "municipality_name": "Wolfschlugen",
+          "orientation_deg": 104.0,
+          "distance_to_osm_m": 3.9
+        },
+        {
+          "record_key": "f4a33b3a45fb9deda935f725827fabb43400d093ac3ed9d769b32239e8f775c1",
+          "location_id": "cac0101b-b4f5-4217-a93d-c0cc47652468",
+          "sign_code": "DE:311",
+          "longitude": 9.282907,
+          "latitude": 48.649599,
+          "municipality_name": "Wolfschlugen",
+          "orientation_deg": 283.0,
+          "distance_to_osm_m": 3.3
+        }
+      ],
+      "registry_record": {
+        "record_key": "b8cfd6bf6acb5c80b5e09d26bb5892417c450d4ceab8fe6d3d068dfce87e861e",
+        "location_id": "d466fa9d-415a-4249-a646-553310118374",
+        "sign_code": "DE:310",
+        "longitude": 9.282892,
+        "latitude": 48.649596,
+        "municipality_name": "Wolfschlugen",
+        "orientation_deg": 104.0,
+        "distance_to_osm_m": 3.9
+      },
+      "registry_match_is_physical_identity_confirmation": false,
+      "visible_class_proposal": "DE:310",
+      "bbox_xyxy": [
+        1712,
+        535,
+        2005,
+        735
+      ],
+      "bbox_coordinate_system": "downloaded_image_pixel_edges_right_bottom_exclusive",
+      "box_source": "assistant_visual_proposal_pending_human_review",
+      "human_approved": false,
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "all_visible_object_annotation_complete": false,
+      "physical_independence_approved": false,
+      "sgblur_replay_performed": false,
+      "quality_notes": [
+        "Winter lighting and snow; sign near the right image edge, but all sign edges visible."
+      ],
+      "nearest_previous_mobidata_course_registry_site": {
+        "distance_m": 10507.2,
+        "panoramax_picture_id": "b070f06e-b24e-44f7-b1ad-30074e79cb49"
+      },
+      "candidate_id": "mapillary-209557124011952",
+      "image_path": "inbox/detector/mapillary-209557124011952/image.jpg",
+      "crop_path": "inbox/classifier/mapillary-209557124011952.png",
+      "metadata_path": "metadata/209557124011952.json",
+      "overlay_path": "overlays/209557124011952.jpg",
+      "full_image_page": "ansichten/209557124011952.html",
+      "source_image_sha256": "7fe5bf2ead0b3a52314314b33462019ad8aeea5be7e60fe9a2ee027e5ee68467",
+      "source_rgb_sha256": "0a2bb645880c84fa67cf571f5967b8e4180e1b856d65daa7f8d023d34d09f1cf",
+      "image_dimensions": [
+        2048,
+        1536
+      ],
+      "proposed_model_label": "city:start",
+      "modification_notice": "Downloaded JPEG bytes unchanged; exact rectangular PNG crop and a separate annotated preview. No upscaling, synthetic pixels or blur removal.",
+      "conservative_split_group_id": "mapillary-journey:5rmft:2017-01-17",
+      "crop_dimensions": [
+        293,
+        200
+      ],
+      "crop_sha256": "019a017ba8e711edd0b8064668b52b666b1fa2a35c75305f67234766ec3a07ad"
+    },
+    {
+      "image_id": "140183654711325",
+      "source_url": "https://www.mapillary.com/app/?pKey=140183654711325",
+      "author": "arneschwarck",
+      "license": "CC-BY-SA-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "captured_date_displayed": "2020-07-10",
+      "captured_time_displayed": "09:26:49.801",
+      "capture_time_timezone": "not supplied by displayed image details; do not interpret as UTC",
+      "sequence_id": "fwb1f2jv99rj8pbe2yga7y",
+      "camera_displayed": "samsung SM-N950F",
+      "source_resolution_displayed": [
+        4032,
+        2268
+      ],
+      "downloaded_representation": "Mapillary web-app Download image: complete, resized image, maximum width 2048",
+      "downloaded_representation_not_original_resolution": true,
+      "projection": "perspective",
+      "viewer_map_centre": [
+        9.9637251404719,
+        48.190613182396
+      ],
+      "viewer_map_centre_is_verified_camera_geometry": false,
+      "metadata_acquisition": "Public Mapillary image-details UI; no API response or detection result fabricated",
+      "metadata_checked_on": "2026-10-21",
+      "discovery": "cached OSM Mapillary reference spatially matched to MobiData town-sign records",
+      "osm_reference": {
+        "osm_type": "node",
+        "osm_id": 2587025151,
+        "osm_sign_code": "city_limit:begin",
+        "coordinates": [
+          9.9635014,
+          48.1907103
+        ]
+      },
+      "registry_matches": [
+        {
+          "record_key": "1e7ac7692719c4c9c8d95c4312bf4b6d29a2e8f82304896388892b4e5ef62339",
+          "location_id": "50b5d4ec-db18-4bda-9319-6506c4a26f2d",
+          "sign_code": "DE:310",
+          "longitude": 9.963519,
+          "latitude": 48.190633,
+          "municipality_name": "Schwendi",
+          "orientation_deg": 147.0,
+          "distance_to_osm_m": 8.7
+        }
+      ],
+      "registry_record": {
+        "record_key": "1e7ac7692719c4c9c8d95c4312bf4b6d29a2e8f82304896388892b4e5ef62339",
+        "location_id": "50b5d4ec-db18-4bda-9319-6506c4a26f2d",
+        "sign_code": "DE:310",
+        "longitude": 9.963519,
+        "latitude": 48.190633,
+        "municipality_name": "Schwendi",
+        "orientation_deg": 147.0,
+        "distance_to_osm_m": 8.7
+      },
+      "registry_match_is_physical_identity_confirmation": false,
+      "visible_class_proposal": "DE:311",
+      "bbox_xyxy": [
+        29,
+        401,
+        185,
+        535
+      ],
+      "bbox_coordinate_system": "downloaded_image_pixel_edges_right_bottom_exclusive",
+      "box_source": "assistant_visual_proposal_pending_human_review",
+      "human_approved": false,
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "all_visible_object_annotation_complete": false,
+      "physical_independence_approved": false,
+      "sgblur_replay_performed": false,
+      "quality_notes": [],
+      "nearest_previous_mobidata_course_registry_site": {
+        "distance_m": 35907.0,
+        "panoramax_picture_id": "655af494-0839-40ab-b293-af7e8ae2c7e5"
+      },
+      "candidate_id": "mapillary-140183654711325",
+      "image_path": "inbox/detector/mapillary-140183654711325/image.jpg",
+      "crop_path": "inbox/classifier/mapillary-140183654711325.png",
+      "metadata_path": "metadata/140183654711325.json",
+      "overlay_path": "overlays/140183654711325.jpg",
+      "full_image_page": "ansichten/140183654711325.html",
+      "source_image_sha256": "2ba6cba647278d3a3b5c25479dceaef9ea006b1438f24974b23f7064ae816cc6",
+      "source_rgb_sha256": "1f875887208e90c71d02ddeb29a10ce30408d8686bb8164bbbab3385b3b15828",
+      "image_dimensions": [
+        2048,
+        1152
+      ],
+      "proposed_model_label": "city:end",
+      "modification_notice": "Downloaded JPEG bytes unchanged; exact rectangular PNG crop and a separate annotated preview. No upscaling, synthetic pixels or blur removal.",
+      "conservative_split_group_id": "mapillary-journey:arneschwarck:2020-07-10",
+      "crop_dimensions": [
+        156,
+        134
+      ],
+      "crop_sha256": "7703e38f340da88723e73ebd2fcd86a8c6787309a6d2e35c1c041c229e16ef91"
+    },
+    {
+      "image_id": "227029542094396",
+      "source_url": "https://www.mapillary.com/app/?pKey=227029542094396",
+      "author": "arneschwarck",
+      "license": "CC-BY-SA-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "captured_date_displayed": "2020-07-10",
+      "captured_time_displayed": "09:26:23.758",
+      "capture_time_timezone": "not supplied by displayed image details; do not interpret as UTC",
+      "sequence_id": "fwb1f2jv99rj8pbe2yga7y",
+      "camera_displayed": "samsung SM-N950F",
+      "source_resolution_displayed": [
+        4032,
+        2268
+      ],
+      "downloaded_representation": "Mapillary web-app Download image: complete, resized image, maximum width 2048",
+      "downloaded_representation_not_original_resolution": true,
+      "projection": "perspective",
+      "viewer_map_centre": [
+        9.9670528593254,
+        48.189826200298
+      ],
+      "viewer_map_centre_is_verified_camera_geometry": false,
+      "metadata_acquisition": "Public Mapillary image-details UI; no API response or detection result fabricated",
+      "metadata_checked_on": "2026-10-21",
+      "discovery": "cached OSM Mapillary reference spatially matched to MobiData town-sign records",
+      "osm_reference": {
+        "osm_type": "node",
+        "osm_id": 7710689858,
+        "osm_sign_code": "city_limit:begin",
+        "coordinates": [
+          9.9667489,
+          48.1896737
+        ]
+      },
+      "registry_matches": [
+        {
+          "record_key": "fd4d26e9bb0ad77cbdee044068b108e988c87fb0d5333fa2243b446260f65954",
+          "location_id": "0fa64621-6b4c-4006-a55d-c42ff5f3f49b",
+          "sign_code": "DE:311",
+          "longitude": 9.966791,
+          "latitude": 48.189736,
+          "municipality_name": "Schwendi",
+          "orientation_deg": 63.0,
+          "distance_to_osm_m": 7.6
+        }
+      ],
+      "registry_record": {
+        "record_key": "fd4d26e9bb0ad77cbdee044068b108e988c87fb0d5333fa2243b446260f65954",
+        "location_id": "0fa64621-6b4c-4006-a55d-c42ff5f3f49b",
+        "sign_code": "DE:311",
+        "longitude": 9.966791,
+        "latitude": 48.189736,
+        "municipality_name": "Schwendi",
+        "orientation_deg": 63.0,
+        "distance_to_osm_m": 7.6
+      },
+      "registry_match_is_physical_identity_confirmation": false,
+      "visible_class_proposal": "DE:310",
+      "bbox_xyxy": [
+        1328,
+        406,
+        1461,
+        512
+      ],
+      "bbox_coordinate_system": "downloaded_image_pixel_edges_right_bottom_exclusive",
+      "box_source": "assistant_visual_proposal_pending_human_review",
+      "human_approved": false,
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "all_visible_object_annotation_complete": false,
+      "physical_independence_approved": false,
+      "sgblur_replay_performed": false,
+      "quality_notes": [
+        "Visible DE:310 differs from the nearby DE:311 inventory record; reverse face or nearby sign association is not resolved."
+      ],
+      "nearest_previous_mobidata_course_registry_site": {
+        "distance_m": 36134.8,
+        "panoramax_picture_id": "655af494-0839-40ab-b293-af7e8ae2c7e5"
+      },
+      "candidate_id": "mapillary-227029542094396",
+      "image_path": "inbox/detector/mapillary-227029542094396/image.jpg",
+      "crop_path": "inbox/classifier/mapillary-227029542094396.png",
+      "metadata_path": "metadata/227029542094396.json",
+      "overlay_path": "overlays/227029542094396.jpg",
+      "full_image_page": "ansichten/227029542094396.html",
+      "source_image_sha256": "e9d88dc3d225603ba5bb932a8bfe5f56565bceb845969e41415dde1b7a31a5a1",
+      "source_rgb_sha256": "4d81c5f29a8655af8caa5ac94fb0785847a9dcd9f553aee9df4953e88c94ac3f",
+      "image_dimensions": [
+        2048,
+        1152
+      ],
+      "proposed_model_label": "city:start",
+      "modification_notice": "Downloaded JPEG bytes unchanged; exact rectangular PNG crop and a separate annotated preview. No upscaling, synthetic pixels or blur removal.",
+      "conservative_split_group_id": "mapillary-journey:arneschwarck:2020-07-10",
+      "crop_dimensions": [
+        133,
+        106
+      ],
+      "crop_sha256": "37dcaeef56e79d2852b2f013f7306198034fc3512e040c4e7874bb26c2a8fc49"
+    },
+    {
+      "image_id": "462102138196184",
+      "source_url": "https://www.mapillary.com/app/?pKey=462102138196184",
+      "author": "tst",
+      "license": "CC-BY-SA-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "captured_date_displayed": "2020-06-28",
+      "captured_time_displayed": "17:40:01.000",
+      "capture_time_timezone": "not supplied by displayed image details; do not interpret as UTC",
+      "sequence_id": "avITDo1DpVuQ24V1SDFJoA",
+      "camera_displayed": "GoPro HERO7 Black",
+      "source_resolution_displayed": [
+        4000,
+        3000
+      ],
+      "downloaded_representation": "Mapillary web-app Download image: complete, resized image, maximum width 2048",
+      "downloaded_representation_not_original_resolution": true,
+      "projection": "perspective",
+      "viewer_map_centre": [
+        9.9311378,
+        48.220769599972
+      ],
+      "viewer_map_centre_is_verified_camera_geometry": false,
+      "metadata_acquisition": "Public Mapillary image-details UI; no API response or detection result fabricated",
+      "metadata_checked_on": "2026-10-21",
+      "discovery": "cached OSM Mapillary reference spatially matched to MobiData town-sign records",
+      "osm_reference": {
+        "osm_type": "node",
+        "osm_id": 7710722284,
+        "osm_sign_code": "city_limit:begin",
+        "coordinates": [
+          9.9312109,
+          48.2207254
+        ]
+      },
+      "registry_matches": [
+        {
+          "record_key": "cadab5e7c08cbb14df353698b42d721d3ab6b216efd76391b1ca7f4707c588ca",
+          "location_id": "e9c57d8e-3a54-4ae7-8f80-a1c37b9359cc",
+          "sign_code": "DE:310",
+          "longitude": 9.9312,
+          "latitude": 48.220689,
+          "municipality_name": "Burgrieden",
+          "orientation_deg": 126.0,
+          "distance_to_osm_m": 4.1
+        },
+        {
+          "record_key": "5236ed5d6220fe96e7a65435364176fbff125d2b5c37df30eb05aaedb8033240",
+          "location_id": "44226db5-340b-43bc-a7f6-a587d5110cb5",
+          "sign_code": "DE:311",
+          "longitude": 9.931189,
+          "latitude": 48.220687,
+          "municipality_name": "Burgrieden",
+          "orientation_deg": 305.0,
+          "distance_to_osm_m": 4.6
+        }
+      ],
+      "registry_record": {
+        "record_key": "cadab5e7c08cbb14df353698b42d721d3ab6b216efd76391b1ca7f4707c588ca",
+        "location_id": "e9c57d8e-3a54-4ae7-8f80-a1c37b9359cc",
+        "sign_code": "DE:310",
+        "longitude": 9.9312,
+        "latitude": 48.220689,
+        "municipality_name": "Burgrieden",
+        "orientation_deg": 126.0,
+        "distance_to_osm_m": 4.1
+      },
+      "registry_match_is_physical_identity_confirmation": false,
+      "visible_class_proposal": "DE:310",
+      "bbox_xyxy": [
+        1228,
+        618,
+        1352,
+        716
+      ],
+      "bbox_coordinate_system": "downloaded_image_pixel_edges_right_bottom_exclusive",
+      "box_source": "assistant_visual_proposal_pending_human_review",
+      "human_approved": false,
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "all_visible_object_annotation_complete": false,
+      "physical_independence_approved": false,
+      "sgblur_replay_performed": false,
+      "quality_notes": [
+        "Wide-angle perspective and an oblique sign; retain exact pixels, no perspective correction."
+      ],
+      "nearest_previous_mobidata_course_registry_site": {
+        "distance_m": 34166.9,
+        "panoramax_picture_id": "655af494-0839-40ab-b293-af7e8ae2c7e5"
+      },
+      "candidate_id": "mapillary-462102138196184",
+      "image_path": "inbox/detector/mapillary-462102138196184/image.jpg",
+      "crop_path": "inbox/classifier/mapillary-462102138196184.png",
+      "metadata_path": "metadata/462102138196184.json",
+      "overlay_path": "overlays/462102138196184.jpg",
+      "full_image_page": "ansichten/462102138196184.html",
+      "source_image_sha256": "ecf5e325e137fd2ceb5255f93a188e541c8bfedb4eeb4d426c9faeb2144a777d",
+      "source_rgb_sha256": "9b34dd3e891143a0b528826e36004f3d85584769e15a799889831a46cfe681b7",
+      "image_dimensions": [
+        2048,
+        1536
+      ],
+      "proposed_model_label": "city:start",
+      "modification_notice": "Downloaded JPEG bytes unchanged; exact rectangular PNG crop and a separate annotated preview. No upscaling, synthetic pixels or blur removal.",
+      "conservative_split_group_id": "mapillary-journey:tst:2020-06-28",
+      "crop_dimensions": [
+        124,
+        98
+      ],
+      "crop_sha256": "6fd9bae11c9d2dc90bbd365b542800fa8d8de411cecc8b5d0eff0b7595b4f901"
+    },
+    {
+      "image_id": "35202950636019768",
+      "source_url": "https://www.mapillary.com/app/?pKey=35202950636019768",
+      "author": "teddy73",
+      "license": "CC-BY-SA-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "captured_date_displayed": "2026-05-01",
+      "captured_time_displayed": "16:25:50.000",
+      "capture_time_timezone": "not supplied by displayed image details; do not interpret as UTC",
+      "sequence_id": "5lWHu9F7bkGtf8XRSLVsDU",
+      "camera_displayed": "DJI AC003",
+      "source_resolution_displayed": [
+        3840,
+        2160
+      ],
+      "downloaded_representation": "Mapillary web-app Download image: complete, resized image, maximum width 2048",
+      "downloaded_representation_not_original_resolution": true,
+      "projection": "perspective",
+      "viewer_map_centre": [
+        9.2219527,
+        49.216567
+      ],
+      "viewer_map_centre_is_verified_camera_geometry": false,
+      "metadata_acquisition": "Public Mapillary image-details UI; no API response or detection result fabricated",
+      "metadata_checked_on": "2026-10-21",
+      "discovery": "cached OSM Mapillary reference spatially matched to MobiData town-sign records",
+      "osm_reference": {
+        "osm_type": "node",
+        "osm_id": 8377657889,
+        "osm_sign_code": "DE:310",
+        "coordinates": [
+          9.221902,
+          49.2165818
+        ]
+      },
+      "registry_matches": [
+        {
+          "record_key": "badfbc98317a8064092c00b78c4499bb8b75eca69306f41b942b1b97ac0d5c5d",
+          "location_id": "235975bc-5263-4335-bc6f-e4eeb1409ea9",
+          "sign_code": "DE:310",
+          "longitude": 9.22196,
+          "latitude": 49.216592,
+          "municipality_name": "Bad Friedrichshall",
+          "orientation_deg": 340.0,
+          "distance_to_osm_m": 4.4
+        }
+      ],
+      "registry_record": {
+        "record_key": "badfbc98317a8064092c00b78c4499bb8b75eca69306f41b942b1b97ac0d5c5d",
+        "location_id": "235975bc-5263-4335-bc6f-e4eeb1409ea9",
+        "sign_code": "DE:310",
+        "longitude": 9.22196,
+        "latitude": 49.216592,
+        "municipality_name": "Bad Friedrichshall",
+        "orientation_deg": 340.0,
+        "distance_to_osm_m": 4.4
+      },
+      "registry_match_is_physical_identity_confirmation": false,
+      "visible_class_proposal": "DE:310",
+      "bbox_xyxy": [
+        1209,
+        233,
+        1369,
+        338
+      ],
+      "bbox_coordinate_system": "downloaded_image_pixel_edges_right_bottom_exclusive",
+      "box_source": "assistant_visual_proposal_pending_human_review",
+      "human_approved": false,
+      "eligible_for_training": false,
+      "approved_for_evaluation": false,
+      "all_visible_object_annotation_complete": false,
+      "physical_independence_approved": false,
+      "sgblur_replay_performed": false,
+      "quality_notes": [],
+      "nearest_previous_mobidata_course_registry_site": {
+        "distance_m": 10385.4,
+        "panoramax_picture_id": "96cf2eb1-4040-47c0-ade8-81518318f572"
+      },
+      "candidate_id": "mapillary-35202950636019768",
+      "image_path": "inbox/detector/mapillary-35202950636019768/image.jpg",
+      "crop_path": "inbox/classifier/mapillary-35202950636019768.png",
+      "metadata_path": "metadata/35202950636019768.json",
+      "overlay_path": "overlays/35202950636019768.jpg",
+      "full_image_page": "ansichten/35202950636019768.html",
+      "source_image_sha256": "991614fe75075c47b9e876d126d4ea0b6011691fa999736cb9389296c2b3d30f",
+      "source_rgb_sha256": "1f7c0d12871d49b4979bf3419282c67cebbb47ffd68d852537788b952fa6ca5b",
+      "image_dimensions": [
+        2048,
+        1152
+      ],
+      "proposed_model_label": "city:start",
+      "modification_notice": "Downloaded JPEG bytes unchanged; exact rectangular PNG crop and a separate annotated preview. No upscaling, synthetic pixels or blur removal.",
+      "conservative_split_group_id": "mapillary-journey:teddy73:2026-05-01",
+      "crop_dimensions": [
+        160,
+        105
+      ],
+      "crop_sha256": "814600b996b560cdd63ed26f20c67ab5079424e14ccd4d3c63d1b7de5329e197"
+    }
+  ],
+  "deferred": [
+    {
+      "image_id": "1666865467913496",
+      "reason": "Public download is a 2048x1024 panorama; current native sign crop is only 46x38 pixels. Defer until original-resolution API access; do not count as a retained pair."
+    }
+  ],
+  "api_queries_executed": 0,
+  "sgblur_inference_performed": false,
+  "training_performed": false,
+  "normal_course_importer_compatible": false,
+  "registry_license": {
+    "id": "dl-de/by-2-0",
+    "url": "https://www.govdata.de/dl-de/by-2-0",
+    "attribution": "Verkehrsministerium Baden-Württemberg / MobiData BW"
+  },
+  "osm_license": {
+    "id": "ODbL-1.0",
+    "url": "https://www.openstreetmap.org/copyright",
+    "attribution": "© OpenStreetMap contributors"
+  },
+  "logo_provenance": {
+    "source_url": "https://github.com/mapillary/mapillary_press/releases/download/v0.0.4/logos.zip",
+    "member": "logos/mapillary/mapillary_logo_dark@2x.png",
+    "sha256": "0c36737753efeac686e644b1618c049ec46f24b8f0783ab0ff0aca21d8ad1ce7",
+    "notice": "Unmodified official attribution artwork. Mapillary trademark; not relicensed as CC BY-SA imagery."
+  },
+  "physical_independence_approved": false,
+  "human_approved": false,
+  "eligible_for_training": false,
+  "approved_for_evaluation": false
+}

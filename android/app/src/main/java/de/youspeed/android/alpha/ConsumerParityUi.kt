@@ -590,22 +590,26 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
         }
         ParitySection(parityText("Panoramax storage and capture", "Panoramax-Speicher und Aufnahme", "Stockage et capture Panoramax", "Panoramax-opslag en opname")) {
             if (ui.panoramaxCaptureEnabled) {
+                ParityToggle(SignCollectionText.text("Capture recognized traffic signs only", "Nur erkannte Verkehrszeichen aufnehmen"), ui.panoramaxRecognizedSignsOnly, onChange = controller::setPanoramaxRecognizedSignsOnly)
+                if (ui.panoramaxRecognizedSignsOnly) Text(SignCollectionText.text("Waiting for camera recognition of a stable sign. Distance/time capture is paused; photos still require Panoramax review and approval.", "Wartet auf die Kameraerkennung eines stabilen Zeichens. Abstand-/Zeitaufnahmen pausieren; Bilder benötigen weiterhin die Panoramax-Prüfung und Freigabe."), style = MaterialTheme.typography.bodySmall)
                 Text("${ui.panoramaxCaptureCount} " + parityText("saved photos", "gespeicherte Fotos", "photos enregistrées", "opgeslagen foto’s"))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PanoramaxCaptureTriggerMode.entries.forEach { mode ->
-                        FilterChip(ui.panoramaxTriggerMode == mode, { controller.setPanoramaxTriggerMode(mode) }, label = { Text(
-                            if (mode == PanoramaxCaptureTriggerMode.DISTANCE) parityText("Distance", "Abstand", "Distance", "Afstand")
-                            else parityText("Time", "Zeit", "Temps", "Tijd")) })
+                if (!ui.panoramaxRecognizedSignsOnly) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PanoramaxCaptureTriggerMode.entries.forEach { mode ->
+                            FilterChip(ui.panoramaxTriggerMode == mode, { controller.setPanoramaxTriggerMode(mode) }, label = { Text(
+                                if (mode == PanoramaxCaptureTriggerMode.DISTANCE) parityText("Distance", "Abstand", "Distance", "Afstand")
+                                else parityText("Time", "Zeit", "Temps", "Tijd")) })
+                        }
                     }
+                    ParitySlider(parityText("Minimum distance", "Mindestabstand", "Distance minimale", "Minimumafstand"), ui.panoramaxMinimumDistanceMeters,
+                        10f..90f, 79, "m", controller::setPanoramaxMinimumDistanceMeters)
+                    ParitySlider(parityText("Minimum interval", "Mindestintervall", "Intervalle minimal", "Minimuminterval"), ui.panoramaxMinimumIntervalSeconds,
+                        5f..240f, 234, "s", controller::setPanoramaxMinimumIntervalSeconds)
+                    Text(parityText("GPS accuracy also limits capture spacing; stationary duplicates are skipped.",
+                        "Auch die GPS-Genauigkeit begrenzt den Fotoabstand; doppelte Bilder im Stand werden ausgelassen.",
+                        "La précision GPS limite aussi l’espacement ; les doublons à l’arrêt sont ignorés.",
+                        "GPS-nauwkeurigheid beperkt ook de fotoafstand; duplicaten bij stilstand worden overgeslagen."), style = MaterialTheme.typography.bodySmall)
                 }
-                ParitySlider(parityText("Minimum distance", "Mindestabstand", "Distance minimale", "Minimumafstand"), ui.panoramaxMinimumDistanceMeters,
-                    10f..90f, 79, "m", controller::setPanoramaxMinimumDistanceMeters)
-                ParitySlider(parityText("Minimum interval", "Mindestintervall", "Intervalle minimal", "Minimuminterval"), ui.panoramaxMinimumIntervalSeconds,
-                    5f..240f, 234, "s", controller::setPanoramaxMinimumIntervalSeconds)
-                Text(parityText("GPS accuracy also limits capture spacing; stationary duplicates are skipped.",
-                    "Auch die GPS-Genauigkeit begrenzt den Fotoabstand; doppelte Bilder im Stand werden ausgelassen.",
-                    "La précision GPS limite aussi l’espacement ; les doublons à l’arrêt sont ignorés.",
-                    "GPS-nauwkeurigheid beperkt ook de fotoafstand; duplicaten bij stilstand worden overgeslagen."), style = MaterialTheme.typography.bodySmall)
                 ParityToggle(parityText("Unlimited storage", "Unbegrenzter Speicher", "Stockage illimité", "Onbeperkte opslag"), ui.panoramaxUnlimitedStorage,
                     onChange = controller::setPanoramaxUnlimitedStorage)
                 if (!ui.panoramaxUnlimitedStorage) {
@@ -810,6 +814,8 @@ private fun ParityDeleteConfirmation(count: Int, onDismiss: () -> Unit, onDelete
 @OptIn(ExperimentalLayoutApi::class)
 internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, compact: Boolean = false) {
     val ui = controller.uiState
+    var signsOnly by remember { mutableStateOf(false) }
+    fun matches(item: PanoramaxItemRecord) = !signsOnly || item.metadata.captureReason == "recognized_sign" || !item.metadata.trafficSignAnnotations.isNullOrEmpty()
     var selected by remember { mutableStateOf(emptyMap<String, Set<String>>()) }
     var deleteConfirmation by remember { mutableStateOf(false) }
     var uploadConfirmation by remember { mutableStateOf(false) }
@@ -830,6 +836,8 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
         LazyColumn(Modifier.weight(1f).fillMaxWidth().testTag("panoramax-photo-list"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item(key = "gallery-introduction") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ParityToggle(SignCollectionText.text("Show traffic-sign captures only", "Nur Verkehrszeichen-Aufnahmen anzeigen"), signsOnly, onChange = { signsOnly = it })
+                    if (signsOnly) Text(SignCollectionText.text("Filter active · selected hidden photos stay selected", "Filter aktiv · ausgeblendete Bilder bleiben ausgewählt"), style = MaterialTheme.typography.bodySmall)
                     Text(parityText("Review photos before upload. Open a photo to inspect it; protect favorites from automatic cleanup.",
                         "Fotos vor dem Hochladen prüfen. Ein Foto zum Prüfen öffnen; Favoriten vor automatischer Bereinigung schützen.",
                         "Vérifiez les photos avant l’envoi. Ouvrez-les pour les inspecter ; les favoris sont protégés du nettoyage automatique.",
@@ -842,7 +850,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                     }
                     if (ui.panoramaxMaintenanceInProgress) LinearProgressIndicator(Modifier.fillMaxWidth())
                     ui.panoramaxMaintenanceIssue?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                    if (ui.panoramaxBatches.all { it.items.isEmpty() }) Text(parityText("No photos yet.", "Noch keine Fotos.", "Aucune photo.", "Nog geen foto’s."))
+                    if (ui.panoramaxBatches.all { batch -> batch.items.none(::matches) }) Text(parityText("No photos yet.", "Noch keine Fotos.", "Aucune photo.", "Nog geen foto’s."))
                 }
             }
             ui.panoramaxBatches.forEach { batch ->
@@ -855,13 +863,13 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                             Text("${progress.completedItems} / ${progress.totalItems}", style = MaterialTheme.typography.bodySmall)
                         }
                         if (batch.remoteUploadSetId != null && batch.state != PanoramaxBatchState.COMPLETE && batch.batchId !in ui.panoramaxActiveUploadBatchIds) {
-                            TextButton(onClick = { controller.resumePanoramaxUpload(batch.batchId) }, enabled = controller.canProcessPanoramaxUploads() && ui.panoramaxAccountConnected) {
+                            TextButton(onClick = { controller.resumePanoramaxUpload(batch.batchId) }, enabled = controller.canProcessPanoramaxUploads()) {
                                 Text(parityText("Resume upload", "Upload fortsetzen", "Reprendre l’envoi", "Upload hervatten"))
                             }
                         }
                     }
                 }
-                items(batch.items, key = { "${batch.batchId}/${it.itemId}" }) { item ->
+                items(batch.items.filter(::matches), key = { "${batch.batchId}/${it.itemId}" }) { item ->
                     val editable = controller.canProcessPanoramaxUploads() && batch.batchId !in ui.panoramaxActiveUploadBatchIds && batch.state != PanoramaxBatchState.CAPTURING
                     Card {
                         Column(Modifier.fillMaxWidth().padding(10.dp)) {
@@ -872,6 +880,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Text(dateText(item.metadata.capturedAt), style = MaterialTheme.typography.bodySmall)
                                     Text(itemStateLabel(item.state), style = MaterialTheme.typography.bodySmall)
+                                    if (item.metadata.captureReason == "recognized_sign") Text(SignCollectionText.text("Traffic-sign capture", "Verkehrszeichen-Aufnahme") + " · " + (item.metadata.signEvidence?.size ?: 0), style = MaterialTheme.typography.bodySmall)
                                     item.metadata.trafficSignAnnotations.orEmpty().firstOrNull()?.speedLimitKmh?.let { Text("$it km/h", fontWeight = FontWeight.Bold) }
                                 }
                             }
@@ -938,7 +947,8 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                     icon = Icons.Default.Upload,
                     compact = compact,
                     label = "${parityText("Upload", "Hochladen", "Envoyer", "Uploaden")} ($count)",
-                    enabled = count > 0 && controller.canProcessPanoramaxUploads() && ui.panoramaxAccountConnected,
+                    // The upload worker validates saved credentials on demand, as on iPhone.
+                    enabled = count > 0 && controller.canProcessPanoramaxUploads(),
                     onClick = { uploadConfirmation = true },
                 )
             } else {

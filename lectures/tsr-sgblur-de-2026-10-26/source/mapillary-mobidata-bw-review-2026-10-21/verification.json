@@ -1,0 +1,18 @@
+{
+  "revision": "1bed8ecad056122145d4cd4c92598add5f66cfe2",
+  "hf_cli_exact_command_dry_run_files": 6,
+  "learning_checksum_OK_lines": 5,
+  "missing_and_duplicate_checksums_rejected": {
+    "missing": 1,
+    "duplicate": 1
+  },
+  "mapillary_extract_command": "passed",
+  "second_extract_refused_and_existing_manifest_preserved": true,
+  "all_six_previous_package_hashes_preserved": true,
+  "new_archive_anonymous_GET_sha256": "4c04a802d5e0a53a3a31eaf0884a1307460fd68ae52a71abe444b899bc6071a9",
+  "native_crop_pixel_identity": "passed",
+  "image_count": 5,
+  "crop_count": 5,
+  "human_approved": false,
+  "training_or_model_evaluation_performed": false
+}

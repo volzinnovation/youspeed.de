@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "source_checkpoint_sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+  "source_uri": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt",
+  "scope": "mobile detector only; classifiers and server inference unchanged",
+  "configuration": {
+    "imgsz": 1024,
+    "batch": 1,
+    "half": true,
+    "coreml_nms": true,
+    "litert_nms": false
+  },
+  "artifact_sha256": {
+    "ios": "2834e2b7647c82cd4ded310f0e7ff163d3af54c0762c22a51495915e0811af54",
+    "android": "c77fd4303e3528720ef4e7e9e109959a1e74814191c9dcc124fdc0a80ba48686"
+  },
+  "coreml_export_environment": {
+    "image": "sha256:d8c1e3e02ebc99127070956b67727a6142254675b505647f8e8303c6d6e6e24d",
+    "torch": "2.7.0+cpu",
+    "ultralytics": "8.4.56",
+    "coremltools": "9.0"
+  },
+  "litert_export_environment": {
+    "image": "sha256:e0977ea33bd642d389067e29766df70129325aaf731e2def22234480a128212b",
+    "torch": "2.13.0+cpu",
+    "ultralytics": "8.4.56",
+    "tensorflow": "2.19.0",
+    "onnx2tf": "1.28.8"
+  },
+  "coreml_parity": {
+    "input_shape": [
+      1,
+      3,
+      1024,
+      1024
+    ],
+    "scope": "fixed rightmost mobile window; two public bundled reference images; CPU float16 export versus original checkpoint",
+    "tolerance": 0.05,
+    "measured_max_abs_difference": 0.014436870813369751,
+    "fixtures": [
+      {
+        "fixture": "tsr-panoramax-0906fc23.jpg",
+        "fixture_sha256": "3ad4c4349a121ab9695a8febaeb0bff4feadef4739672f434c63e98c8f0d3d0b",
+        "source_score": 0.8901920318603516,
+        "coreml_score": 0.890625,
+        "absolute_difference": 0.0004329681396484375
+      },
+      {
+        "fixture": "tsr-panoramax-49e25e66.jpg",
+        "fixture_sha256": "1d2c8a66c8eedf68c3028d8749c5916c597ba2b7feeb4e1ddb71a4bf219b3f76",
+        "source_score": 0.30691733956336975,
+        "coreml_score": 0.29248046875,
+        "absolute_difference": 0.014436870813369751
+      }
+    ],
+    "passed": true
+  },
+  "litert_parity": {
+    "scope": "seeded random RGB tensor; float16 LiteRT versus float32 ONNX export; reference-sign recognition tested separately in Android instrumentation",
+    "input_shape": [
+      1,
+      1024,
+      1024,
+      3
+    ],
+    "output_shape": [
+      1,
+      7,
+      21504
+    ],
+    "sign_score_max_abs_difference": 1.3243639841675758e-05,
+    "coordinate_max_abs_difference": 0.00043720006942749023,
+    "onnx_coordinate_max": 0.9970142841339111,
+    "litert_coordinate_max": 0.9970174431800842
+  }
+}

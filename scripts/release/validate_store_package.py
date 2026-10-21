@@ -22,13 +22,9 @@ APPLE_LIMITS = {"name.txt": 30, "subtitle.txt": 30, "description.txt": 4000,
                 "keywords.txt": 100}
 PLAY_LIMITS = {"title.txt": 30, "short_description.txt": 80,
                "full_description.txt": 4000, "release_notes.txt": 500}
-APPLE_IMAGES = ("01-safe-speed.png", "02-camera-speed-limit.png", "03-secondary-sign.png",
-                "04-dashcam.png", "05-reference-signs-DE.png", "06-reference-signs-FR.png",
-                "07-reference-signs-CH.png", "08-reference-signs-BE.png",
-                "09-reference-signs-NL.png", "10-reference-penalties-NLD.png")
-PLAY_IMAGES = ("01-camera-recognition.png", "02-dashcam.png", "03-reference-signs-DE.png",
-               "04-reference-signs-FR.png", "05-reference-signs-CH.png", "06-reference-signs-BE.png",
-               "07-reference-signs-NL.png", "08-reference-penalties-NLD.png")
+GALLERY_PLAN = json.loads((ROOT / "store/artwork/gallery-plan.json").read_text())
+APPLE_IMAGES = tuple(entry["file"] for entry in GALLERY_PLAN["platforms"]["apple"])
+PLAY_IMAGES = tuple(entry["file"] for entry in GALLERY_PLAN["platforms"]["android"])
 
 
 def main() -> int:
@@ -37,6 +33,19 @@ def main() -> int:
     args = parser.parse_args()
     errors: list[str] = []
     files: list[dict] = []
+    for platform, entries in GALLERY_PLAN["platforms"].items():
+        limit = 10 if platform == "apple" else 8
+        if not 5 <= len(entries) <= limit:
+            errors.append(f"{platform}: gallery count exceeds the store limit or omits a core feature")
+        if [entry["file"][:2] for entry in entries] != [f"{index:02}" for index in range(1, len(entries) + 1)]:
+            errors.append(f"{platform}: numbered screenshot order must be contiguous")
+        captions = [entry.get("caption") for entry in entries[:5]]
+        if captions != [1, 2, 4, 3, "panoramax"]:
+            errors.append(f"{platform}: core driving and upload features must lead the gallery")
+        if any(entry.get("demonstration_speed_kmh", 1) <= 0 for entry in entries):
+            errors.append(f"{platform}: driving gallery must not use stationary demonstration speeds")
+        if any(entry.get("reference_country") for entry in entries[:5]):
+            errors.append(f"{platform}: reference pages must follow core features")
 
     def problem(path: Path, message: str) -> None:
         errors.append(f"{path.relative_to(ROOT)}: {message}")
@@ -110,7 +119,7 @@ def main() -> int:
         text_file(metadata / "review_notes.md")
         directory = ROOT / "store/apple/screenshots" / locale / "iphone-6.9"
         if {p.name for p in directory.glob("*.png")} != set(APPLE_IMAGES):
-            problem(directory, "gallery must contain exactly the selected ten images")
+            problem(directory, "gallery must contain exactly the selected feature-first images")
         for name in APPLE_IMAGES:
             png(directory / name, "apple")
 
@@ -134,10 +143,10 @@ def main() -> int:
                 identical(listing / name, fastlane / "images" / mirror)
         gallery = listing / "phone-screenshots"
         if {p.name for p in gallery.glob("*.png")} != set(PLAY_IMAGES):
-            problem(gallery, "gallery must contain exactly the selected eight images")
+            problem(gallery, "gallery must contain exactly the selected feature-first images")
         mirror_gallery = fastlane / "images/phoneScreenshots"
         if {p.name for p in mirror_gallery.glob("*.png")} != set(PLAY_IMAGES):
-            problem(mirror_gallery, "gallery must contain exactly the selected eight images")
+            problem(mirror_gallery, "gallery must contain exactly the selected feature-first images")
         for name in PLAY_IMAGES:
             png(gallery / name, "play")
             if (gallery / name).is_file():

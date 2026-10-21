@@ -22,6 +22,10 @@ all 51 packages accessible, including France's overseas regions.
   Installed data and available-download metadata have separate labels.
 - Download/check-update and delete are explicit buttons. Deletion requires a
   confirmation naming the actual installed scope and retained versions.
+- Requests for additional regions use the existing duplicate-free download
+  queue while another region transfers. Queued state, per-region errors, retry,
+  and cancellation of a queued request remain available in the manager.
+  Cancelling a queued request does not cancel the active transfer.
 - A legacy whole-country installation can cover a selected regional shard.
   Its broader scope must be visible in the detail card and deletion prompt.
 - Pan, zoom, reset, and region focus use the same projected coordinates as hit

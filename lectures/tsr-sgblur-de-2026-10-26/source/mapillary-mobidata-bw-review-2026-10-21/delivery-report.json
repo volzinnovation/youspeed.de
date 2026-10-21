@@ -1,0 +1,26 @@
+{
+  "schema_version": "youspeed-mapillary-mobidata-review-report-v1",
+  "full_images": 5,
+  "crops": 5,
+  "sequences": 4,
+  "municipalities": 4,
+  "visible_class_proposals": {
+    "DE:310": 4,
+    "DE:311": 1
+  },
+  "conservative_split_groups": 4,
+  "all_examples_unapproved": true,
+  "normal_course_importer_compatible": false,
+  "training_performed": false,
+  "sgblur_replay_performed": false,
+  "api_queries_executed": 0,
+  "selected_from_public_ui_references": true,
+  "exhaustive_mapillary_coverage_measured": false,
+  "downloaded_image_representation": "Complete perspective image resized by Mapillary to width 2048; JPEG unchanged locally.",
+  "exact_image_rgb_crop_overlap_with_prior_inventory": 0,
+  "pretraining_overlap_audited": false,
+  "physical_independence_approved": false,
+  "archive_file": "mapillary-mobidata-bw-review-2026-10-21.zip",
+  "archive_bytes": 3129044,
+  "archive_sha256": "4c04a802d5e0a53a3a31eaf0884a1307460fd68ae52a71abe444b899bc6071a9"
+}

@@ -374,7 +374,7 @@ function renderShotItems(locale, shots) {
     .map(
       ([file, title, body], index) => `
           <figure class="shot reveal reveal-d${index + 1}">
-            <img src="${rootRelative(locale, `assets/screenshots/${file}`)}" alt="${escapeHtml(`${title}: ${body}`)}" loading="lazy" width="1179" height="2556" />
+            <img src="${rootRelative(locale, `assets/screenshots/${file}`)}" alt="${escapeHtml(`${title}: ${body}`)}" loading="lazy" width="1320" height="2868" />
             <figcaption>
               <strong>${escapeHtml(title)}</strong>
               <span>${escapeHtml(body)}</span>

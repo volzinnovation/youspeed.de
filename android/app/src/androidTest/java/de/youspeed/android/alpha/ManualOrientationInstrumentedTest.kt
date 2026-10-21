@@ -6,6 +6,7 @@ import android.content.ContextWrapper
 import android.content.SharedPreferences
 import android.database.sqlite.SQLiteDatabase
 import android.location.Location
+import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Handler
 import android.os.Looper
@@ -38,6 +39,7 @@ class ManualOrientationInstrumentedTest {
 
     @Test fun settingsPauseKeepsRawFixesAndWaitsForQueuedBundleRemovalAfterDismissal() = withController { test ->
         test.act { it.startDriving() }
+        test.stopSystemLocationUpdates()
         test.injectFix()
         test.awaitLookupWork()
         val warm = test.lookupStats()
@@ -139,6 +141,7 @@ class ManualOrientationInstrumentedTest {
             it.setTrafficSignRecognitionEnabled(true)
             it.setTrafficSignRecognitionIndependentEnabled(true)
             it.startDriving()
+            it.onPanoramaxPhotoOutputReadyChanged(true)
             it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Standalone recognition")
         }
         test.idle()
@@ -156,6 +159,7 @@ class ManualOrientationInstrumentedTest {
                 it.setTrafficSignRecognitionEnabled(true)
                 it.setTrafficSignRecognitionIndependentEnabled(true)
                 it.startDriving()
+                it.onPanoramaxPhotoOutputReadyChanged(true)
                 it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Standalone camera")
             }
             test.awaitBackgroundWork()
@@ -255,7 +259,9 @@ class ManualOrientationInstrumentedTest {
         test.withStorageWorkerBlocked {
             test.actResponsive {
                 it.startDriving()
+                it.onPanoramaxPhotoOutputReadyChanged(true)
                 it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Test camera active")
+                it.onPanoramaxPhotoOutputReadyChanged(true)
                 it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Repeated active callback")
                 repeat(1_000) { _ -> it.refreshPanoramaxBatches() }
                 it.performButtonAction { galleryActions++ }
@@ -281,10 +287,13 @@ class ManualOrientationInstrumentedTest {
         test.withStorageWorkerBlocked {
             test.actResponsive {
                 it.startDriving()
+                it.onPanoramaxPhotoOutputReadyChanged(true)
                 it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "First drive")
                 it.stopDriving()
                 it.startDriving()
+                it.onPanoramaxPhotoOutputReadyChanged(true)
                 it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Next drive")
+                it.onPanoramaxPhotoOutputReadyChanged(true)
                 it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Repeated active callback")
             }
         }
@@ -300,6 +309,7 @@ class ManualOrientationInstrumentedTest {
     @Test fun disposalSealsCapturesAfterQueueContentionWithoutBlockingMain() = withController { test ->
         test.act {
             it.startDriving()
+            it.onPanoramaxPhotoOutputReadyChanged(true)
             it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Test camera active")
         }
         test.awaitBackgroundWork()
@@ -427,6 +437,12 @@ class ManualOrientationInstrumentedTest {
             idle()
         }
 
+        fun stopSystemLocationUpdates() {
+            val manager = field("locationManager") as LocationManager
+            manager.removeUpdates(field("locationListener") as LocationListener)
+            manager.removeUpdates(field("coarseLocationListener") as LocationListener)
+        }
+
         fun injectFix() {
             val location = Location(LocationManager.GPS_PROVIDER).apply {
                 latitude = 52.06000; longitude = 13.00392
@@ -452,7 +468,9 @@ class ManualOrientationInstrumentedTest {
                     it.setTrafficSignRecognitionIndependentEnabled(true)
                     it.setPanoramaxCaptureEnabled(true)
                     it.startDriving()
+                    stopSystemLocationUpdates()
                     it.toggleDriveRecorder()
+                    it.onPanoramaxPhotoOutputReadyChanged(true)
                     it.onTrafficSignCameraRuntimeStateChanged(TrafficSignCameraRuntimeState.ACTIVE, "Test camera active")
                 } else if (!it.uiState.dashcamRecordingEnabled) {
                     it.toggleDriveRecorderDashcam()
@@ -554,6 +572,7 @@ class ManualOrientationInstrumentedTest {
                 dbSha256 = PanoramaxQueueStore.sha256(databaseFile), dbBytes = databaseFile.length(),
                 manifestUrl = "asset://shared/matcher/fixtures/straight-linked.sql", activatedAtUTC = Instant.now().toString(),
             )
+            writeCoverageFixtureManifest(databaseFile, active.region, active.bundleVersion, 13.0, 52.0, 13.1, 52.1)
             File(bundleRoot, "active_bundle.json").writeText(ContractJson.encodeActiveBundleState(active))
             assertTrue(preferences.edit().putBoolean(OnboardingPolicy.COMPLETED_KEY, true).commit())
             harness.initialize()

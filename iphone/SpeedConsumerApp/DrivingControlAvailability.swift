@@ -1,7 +1,36 @@
 import Foundation
 
+/// Screen-plane angle to horizontal, independent of the selected screen rotation.
+enum DrivingControlPosturePolicy {
+    static func angleDegrees(x: Double, y: Double, z: Double) -> Double? {
+        guard x.isFinite, y.isFinite, z.isFinite else { return nil }
+        let length = sqrt(x * x + y * y + z * z)
+        guard (0.5...1.5).contains(length) else { return nil }
+        // Core Motion points downward: face up is 0°, upright 90°, face down 180°.
+        return acos(max(-1, min(1, -z / length))) * 180 / .pi
+    }
+
+    static func isFlat(angleDegrees: Double?) -> Bool {
+        guard let angleDegrees, angleDegrees.isFinite else { return false }
+        // Include exact boundaries despite floating-point gravity conversion.
+        return angleDegrees >= 0 && angleDegrees <= 10 + 1e-9
+    }
+
+    static func controlsAllowed(speedControlsAllowed: Bool, angleDegrees: Double?,
+                                speedKmh: Double = 20, hasSignal: Bool = true) -> Bool {
+        !hasSignal || (speedKmh.isFinite && speedKmh >= 0 && speedKmh < 4)
+            || (speedControlsAllowed && isFlat(angleDegrees: angleDegrees))
+    }
+
+    static func hasSignal(observedAt: Date?, accuracy: Double?, now: Date) -> Bool {
+        guard let observedAt, let accuracy, accuracy.isFinite, accuracy >= 0, accuracy < 60 else { return false }
+        let age = now.timeIntervalSince(observedAt)
+        return age.isFinite && (0...3).contains(age)
+    }
+}
+
 struct DrivingControlAvailability {
-    static let controlsSpeedThresholdKmh = 4.0
+    static let controlsSpeedThresholdKmh = 20.0
     let controlsAllowed: Bool
     let stationaryObservedAt: Date?
 
@@ -9,8 +38,8 @@ struct DrivingControlAvailability {
                         displayedSpeedKmh: Double, horizontalAccuracyMeters: Double,
                         observedAt: Date, now: Date) -> Self {
         let validSpeed = rawSpeedMetersPerSecond.isFinite && rawSpeedMetersPerSecond >= 0
-        if displayedSpeedKmh >= controlsSpeedThresholdKmh ||
-            (validSpeed && rawSpeedMetersPerSecond >= controlsSpeedThresholdKmh / 3.6) {
+        if displayedSpeedKmh > controlsSpeedThresholdKmh ||
+            (validSpeed && rawSpeedMetersPerSecond > controlsSpeedThresholdKmh / 3.6) {
             return Self(controlsAllowed: false, stationaryObservedAt: nil)
         }
         let age = now.timeIntervalSince(observedAt)
@@ -22,5 +51,38 @@ struct DrivingControlAvailability {
         let stopped = rawSpeedMetersPerSecond == 0 && displayedSpeedKmh == 0
         // Low-speed controls do not establish standstill for permission dialogs.
         return Self(controlsAllowed: true, stationaryObservedAt: stopped ? observedAt : nil)
+    }
+}
+
+/// Independent of the twenty-km/h lock for navigation/settings. Manual capture
+/// never changes that lock or opens a permission/settings sheet.
+enum DrivingPhotoPolicy {
+    static let speedThresholdKmh = 1.0
+    static let minimumTapInterval: TimeInterval = 0.5
+
+    static func showsButton(speedKmh: Double) -> Bool {
+        speedKmh.isFinite && speedKmh > speedThresholdKmh
+    }
+
+    static func replacesSettings(speedKmh: Double, hasSignal: Bool) -> Bool {
+        hasSignal && speedKmh.isFinite && speedKmh >= 4
+    }
+
+    static func locationIsUsable(latitude: Double, longitude: Double, accuracy: Double,
+                                 timestamp: Date, now: Date,
+                                 maxAge: TimeInterval = 10, maxAccuracy: Double = 50) -> Bool {
+        let age = now.timeIntervalSince(timestamp)
+        return latitude.isFinite && (-90...90).contains(latitude)
+            && longitude.isFinite && (-180...180).contains(longitude)
+            && accuracy.isFinite && accuracy >= 0 && accuracy <= maxAccuracy
+            && age >= -60 && age <= maxAge
+    }
+
+    static func canCapture(recording: Bool, cameraAuthorized: Bool, photoOutputAvailable: Bool,
+                           storageReady: Bool, photoInFlight: Bool, locationUsable: Bool,
+                           lastRequestAt: Date?, now: Date) -> Bool {
+        recording && cameraAuthorized && photoOutputAvailable && storageReady
+            && !photoInFlight && locationUsable
+            && (lastRequestAt.map { now.timeIntervalSince($0) >= minimumTapInterval } ?? true)
     }
 }

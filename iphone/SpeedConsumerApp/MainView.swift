@@ -142,7 +142,6 @@ struct MainView: View {
     @State private var showingSettings = false
     @State private var showingLegalInfo = false
     @State private var showingDebug = false
-    @State private var showingLocalRecordings = false
     @State private var showingPanoramaxGallery = false
     @State private var showingTrafficSignDetails = false
     @State private var showingVisualCalibration = false
@@ -174,10 +173,12 @@ struct MainView: View {
             // content. Both modes reserve the bottom action row outside it.
             let contentBottomInset = bottomPadding + controlDiameter + 10
                 + (landscape ? 0 : recorderStatusReserve)
-            let workspaceTopInset = landscape ? screenInset + recorderStatusReserve : 0
+            let workspaceTopInset = landscape ? screenInset + recorderStatusReserve
+                : 52
             let locationReserve = viewModel.isInSpeedCaptureMode ? CGFloat(0)
                 : (landscape ? 68 : max(cityBadgeSlotMinHeight, minDimension * 0.225))
             let signWidthBudget = min(paneWidth * 0.82, paneWidth - horizontalPadding * 2)
+            // Preserve the pre-OCR circle size; the workspace accommodates visible text.
             let portraitSignHeight = (proxy.size.height - contentTopInset - contentBottomInset
                 - locationReserve - sectionGap * 2)
                 / (1 + speedLimitNumberScale * (1.05 + secondaryTextRatio * 1.2))
@@ -221,6 +222,10 @@ struct MainView: View {
                 ? AnyLayout(HStackLayout(alignment: .center, spacing: sectionGap))
                 : AnyLayout(VStackLayout(spacing: sectionGap))
             ZStack {
+                Color.clear
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("dashboard.safeAreaGeometry")
                 screenBackgroundView.ignoresSafeArea()
                 layout {
                     ZStack(alignment: .top) {
@@ -272,6 +277,14 @@ struct MainView: View {
                         // width so its two tips can sit symmetrically outside
                         // the circle with a small inset from the display edge.
                         .frame(height: signSize)
+                        .overlay(alignment: .bottom) {
+                            if let text = viewModel.trafficSignNumericSupplementaryText {
+                                supplementaryRestrictionText(text, fontSize: min(20, max(16, signSize * 0.09)))
+                                    .frame(maxWidth: signSize, minHeight: 28, maxHeight: 48)
+                                    .offset(y: 48)
+                                    .accessibilityIdentifier("dashboard.speedSignSupplementaryText")
+                            }
+                        }
                         .frame(maxWidth: .infinity)
                         .padding(.top, landscape ? 0 : contentTopInset)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -296,6 +309,14 @@ struct MainView: View {
                                     .accessibilityIdentifier("dashboard.trafficSignPictogram")
                             }
                             .frame(width: 86, height: 86)
+                            .overlay(alignment: .bottom) {
+                                if let text = viewModel.trafficSignPictogramSupplementaryText {
+                                    supplementaryRestrictionText(text, fontSize: 14)
+                                        .frame(minWidth: 86, maxWidth: 130)
+                                        .offset(y: 28)
+                                        .accessibilityIdentifier("dashboard.pictogramSupplementaryText")
+                                }
+                            }
                                 .position(x: eyeLeft + 43, y: signTop + 43)
                         }
                     }
@@ -327,12 +348,7 @@ struct MainView: View {
                                 .padding(.bottom, landscape ? 0 : bottomPadding + controlDiameter + 8)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: landscape ? .top : .bottom)
                         }
-                        if landscape && viewModel.drivingControlsAllowed {
-                            bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true,
-                                                buttonDiameter: controlDiameter)
-                                .padding(.bottom, bottomPadding)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                        }
+
                     }
                     .frame(width: paneWidth, height: workspacePaneHeight, alignment: .top)
                     .environment(\.layoutDirection, textLayoutDirection)
@@ -358,15 +374,19 @@ struct MainView: View {
                         .accessibilityIdentifier("dashboard.visionDismissalListening")
                 }
             }
-            if !landscape && viewModel.drivingControlsAllowed {
-                bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true,
+            if viewModel.drivingControlsAllowed || viewModel.showsDrivingPhotoButton {
+                bottomCornerButtons(horizontalPadding: screenInset,
                                     buttonDiameter: controlDiameter)
+                    .frame(width: landscape ? paneWidth : proxy.size.width)
                     .padding(.bottom, bottomPadding)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: landscape ? .bottomTrailing : .bottom)
+                    .environment(\.layoutDirection, .leftToRight)
             }
+
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
+            viewModel.signCollection.visualTSRChanged(enabled: viewModel.trafficSignRecognitionEnabled)
             var safeSince: Date?
             let prompt = AppReviewPrompt.shared
             let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
@@ -388,7 +408,6 @@ struct MainView: View {
             settingsPresentation.wrappedValue = false
             showingLegalInfo = false
             showingDebug = false
-            showingLocalRecordings = false
             showingPanoramaxGallery = false
             showingTrafficSignDetails = false
             showingVisualCalibration = false
@@ -410,6 +429,7 @@ struct MainView: View {
                 photoCaptureFeedbackVisible = false
             } catch { } // A newer capture owns the replacement task.
         }
+        .modifier(SignCollectionConsentModifier(collection: viewModel.signCollection))
         .sheet(isPresented: settingsPresentation) {
             DismissibleNavigationSheet {
                 SettingsView(viewModel: viewModel, account: viewModel.panoramaxAccount)
@@ -423,11 +443,6 @@ struct MainView: View {
         .sheet(isPresented: $showingDebug) {
             DismissibleNavigationSheet {
                 DebugInformationView(viewModel: viewModel)
-            }
-        }
-        .sheet(isPresented: $showingLocalRecordings) {
-            DismissibleNavigationSheet {
-                LocalRecordingsView(viewModel: viewModel)
             }
         }
         .sheet(isPresented: $showingPanoramaxGallery) {
@@ -445,9 +460,6 @@ struct MainView: View {
         }
         .onAppear {
             viewModel.setSettingsPresented(showingSettings)
-            if viewModel.driveStatus == "stopped" {
-                viewModel.startDriving()
-            }
             if openSettingsOnAppear && !showingSettings && viewModel.drivingControlsAllowed {
                 settingsPresentation.wrappedValue = true
                 onOpenSettingsConsumed?()
@@ -458,6 +470,9 @@ struct MainView: View {
             hasAutoTriggeredSyncForTests = true
             print("SPEEDCONSUMER_TEST_AUTOTAP_SYNC triggered")
             viewModel.bootstrapAndSync()
+        }
+        .onChange(of: viewModel.canStartDrivingFromDashboard && scenePhase == .active, initial: true) { _, ready in
+            if ready { viewModel.startDriving() }
         }
         .onChange(of: viewModel.driveRecorderDashcamActive) { previousValue, active in
             if active != previousValue {
@@ -493,7 +508,7 @@ struct MainView: View {
                 viewModel.startupDataState == .ready && viewModel.onboardingStateLoaded &&
                 !viewModel.shouldPresentOnboarding && viewModel.gpsSignalBars > 0,
             active: scenePhase == .active,
-            interrupted: showingSettings || showingLegalInfo || showingDebug || showingLocalRecordings ||
+            interrupted: showingSettings || showingLegalInfo || showingDebug ||
                 showingPanoramaxGallery || showingTrafficSignDetails || showingVisualCalibration ||
                 viewModel.isInSpeedCaptureMode || viewModel.driveInteractionPending || viewModel.driveInteractionError != nil)
     }
@@ -511,14 +526,29 @@ struct MainView: View {
     }
 
     private var showsPedestrianZoneSign: Bool {
-        !viewModel.isInSpeedCaptureMode && viewModel.speedLimitDisplayText == "Schritt"
+        !viewModel.isInSpeedCaptureMode && viewModel.trafficSignPendingSpeedKmh == nil
+            && viewModel.speedLimitDisplayText == "Schritt"
     }
 
     private var showsActiveCameraLimitIndicator: Bool {
-        CameraSpeedLimitUsePresentation.isVisible(
+        viewModel.trafficSignPendingSpeedKmh == nil && CameraSpeedLimitUsePresentation.isVisible(
             isInSpeedCaptureMode: viewModel.isInSpeedCaptureMode,
             effectiveState: viewModel.effectiveSpeedLimitState
         )
+    }
+
+    private func supplementaryRestrictionText(_ text: String, fontSize: CGFloat) -> some View {
+        Text(text)
+            .font(.system(size: fontSize, weight: .semibold).monospacedDigit())
+            .foregroundStyle(.black)
+            .lineLimit(2)
+            .multilineTextAlignment(.center)
+            .minimumScaleFactor(0.7)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(.white, in: RoundedRectangle(cornerRadius: 3))
+            .overlay { RoundedRectangle(cornerRadius: 3).strokeBorder(.black, lineWidth: 1) }
+            .accessibilityLabel(Text(text))
     }
 
     private struct TrafficSignPictogramView: View {
@@ -536,39 +566,73 @@ struct MainView: View {
         }
     }
 
-    private func localRecordingsButton(diameter: CGFloat = 44) -> some View {
+    private func panoramaxCaptureButton(diameter: CGFloat = 44) -> some View {
         RecordingSafeButton {
-            showingLocalRecordings = true
+            viewModel.panoramaxCaptureEnabled.toggle()
         } label: {
-            Image(systemName: viewModel.isLowSpeedMatchingRuleActive ? "tortoise.fill" : "ladybug.fill")
+            Image(systemName: "camera.fill")
                 .font(.title3.weight(.semibold))
                 .frame(width: diameter, height: diameter)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(trafficSignDebugButtonColor)
+        .foregroundStyle(primaryForegroundColor)
         .background(actionButtonBackgroundColor, in: Circle())
         .overlay {
-            Circle()
-                .strokeBorder(trafficSignDebugButtonColor, lineWidth: 1.5)
+            Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
         }
+        .overlay {
+            if !viewModel.panoramaxCaptureEnabled {
+                GeometryReader { geometry in
+                    Path { path in
+                        // A 45° diameter reaches the circular rim at both ends.
+                        let inset: CGFloat = (1 - sqrt(0.5)) / 2
+                        path.move(to: CGPoint(x: geometry.size.width * inset, y: geometry.size.height * (1 - inset)))
+                        path.addLine(to: CGPoint(x: geometry.size.width * (1 - inset), y: geometry.size.height * inset))
+                    }
+                    .stroke(primaryForegroundColor, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                }
+                .clipShape(Circle())
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            }
+        }
+        .contentShape(Circle())
+        .accessibilityIdentifier("dashboard.panoramaxCaptureButton")
+        .accessibilityLabel(NSLocalizedString(viewModel.panoramaxCaptureEnabled
+            ? "panoramax.capture.stop" : "panoramax.capture.start", comment: ""))
+        .accessibilityValue(NSLocalizedString(viewModel.panoramaxCaptureEnabled
+            ? "drive_recorder.status.on" : "drive_recorder.status.off", comment: ""))
     }
 
-    private var trafficSignDebugButtonColor: Color {
-        guard viewModel.trafficSignRecognitionEnabled else { return primaryForegroundColor }
-        if viewModel.trafficSignDebugRuntimeUnhealthy
-            || viewModel.trafficSignRecognitionState == .unavailable {
-            return .red
+    private func drivingPhotoButton(diameter: CGFloat) -> some View {
+        // Re-evaluate freshness and the tap cooldown even when GPS stops. The
+        // action repeats every gate; an old enabled frame cannot admit a shot.
+        TimelineView(.periodic(from: .now, by: 0.25)) { timeline in
+            let ready = viewModel.canCaptureDrivingPhoto(at: timeline.date)
+            Button {
+                _ = viewModel.captureDrivingPhoto()
+            } label: {
+                Image(systemName: "camera.fill")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(photoCaptureFeedbackVisible ? Color.green : (ready ? primaryForegroundColor : Color.gray))
+                    .frame(width: diameter, height: diameter)
+            }
+            .buttonStyle(.plain)
+            .background(ready ? actionButtonBackgroundColor : Color.gray.opacity(0.16), in: Circle())
+            .overlay { Circle().strokeBorder(ready ? actionButtonBorderColor : Color.gray.opacity(0.6), lineWidth: 1.5) }
+            .contentShape(Circle())
+            .disabled(!ready)
+            .accessibilityIdentifier("dashboard.photoButton")
+            .accessibilityLabel(NSLocalizedString(ready
+                ? (viewModel.drivingPhotoCaptureFailed ? "drive_photo.retry" : "drive_photo.capture")
+                : "drive_photo.unavailable", comment: ""))
+            .accessibilityHint(NSLocalizedString("drive_photo.local_hint", comment: ""))
+            .accessibilityValue(String(viewModel.panoramaxCaptureCount))
         }
-        if viewModel.trafficSignDebugRoadContextInvalid
-            || viewModel.trafficSignDebugGenerationSessionContextMismatch {
-            return .yellow
-        }
-        return primaryForegroundColor
     }
 
     private func bottomCornerButtons(
         horizontalPadding: CGFloat,
-        includeLocalRecordings: Bool,
         buttonDiameter: CGFloat = 44
     ) -> some View {
         let recorderControl = DriveRecorderMainControlPresentation.resolve(
@@ -578,98 +642,108 @@ struct MainView: View {
             for: viewModel.driveRecorderState
         )
 
-        return HStack {
-            RecordingSafeButton {
-                viewModel.toggleDriveRecorder()
-            } label: {
-                Image(systemName: recorderControl.systemImageName)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(recorderControl.usesRedIcon ? Color.red : Color.white)
-                    .frame(width: buttonDiameter, height: buttonDiameter)
-            }
-            .buttonStyle(.plain)
-            .background(Color.black, in: Circle())
-            .overlay {
-                Circle()
-                    .strokeBorder(Color.white, lineWidth: 1.5)
-            }
-            .contentShape(Circle())
-            .accessibilityLabel(NSLocalizedString(recorderControl.accessibilityLocalizationKey, comment: ""))
-            .disabled(!recorderControl.isEnabled)
+        return HStack(alignment: .bottom) {
+            if viewModel.drivingControlsAllowed {
+                RecordingSafeButton {
+                    viewModel.toggleDriveRecorder()
+                } label: {
+                    Image(systemName: recorderControl.systemImageName)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(recorderControl.usesRedIcon ? Color.red : Color.white)
+                        .frame(width: buttonDiameter, height: buttonDiameter)
+                }
+                .buttonStyle(.plain)
+                .background(Color.black, in: Circle())
+                .overlay {
+                    Circle()
+                        .strokeBorder(Color.white, lineWidth: 1.5)
+                }
+                .contentShape(Circle())
+                .accessibilityLabel(NSLocalizedString(recorderControl.accessibilityLocalizationKey, comment: ""))
+                .disabled(!recorderControl.isEnabled || (recorderControl.action == .start
+                    && viewModel.panoramaxCaptureEnabled && viewModel.panoramaxQueueMaintenanceInProgress))
 
-            if includeLocalRecordings {
                 Spacer()
-                localRecordingsButton(diameter: buttonDiameter)
-            }
+                panoramaxCaptureButton(diameter: buttonDiameter)
 
-            Spacer()
+                Spacer()
 
-            RecordingSafeButton {
-                guard galleryControl.isEnabled else { return }
-                showingPanoramaxGallery = true
-            } label: {
-                Image(systemName: "photo.on.rectangle")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(photoCaptureFeedbackVisible ? Color.green : (galleryControl.isEnabled ? primaryForegroundColor : Color.gray))
-                    .frame(width: buttonDiameter, height: buttonDiameter)
-            }
-            .buttonStyle(.plain)
-            .background(
-                galleryControl.isEnabled ? actionButtonBackgroundColor : Color.gray.opacity(0.16),
-                in: Circle()
-            )
-            .overlay {
-                Circle().strokeBorder(
-                    galleryControl.isEnabled ? actionButtonBorderColor : Color.gray.opacity(0.6),
-                    lineWidth: 1.5
+                RecordingSafeButton {
+                    guard galleryControl.isEnabled else { return }
+                    showingPanoramaxGallery = true
+                } label: {
+                    Image(systemName: "photo.on.rectangle")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(photoCaptureFeedbackVisible ? Color.green : (galleryControl.isEnabled ? primaryForegroundColor : Color.gray))
+                        .frame(width: buttonDiameter, height: buttonDiameter)
+                }
+                .buttonStyle(.plain)
+                .background(
+                    galleryControl.isEnabled ? actionButtonBackgroundColor : Color.gray.opacity(0.16),
+                    in: Circle()
                 )
+                .overlay {
+                    Circle().strokeBorder(
+                        galleryControl.isEnabled ? actionButtonBorderColor : Color.gray.opacity(0.6),
+                        lineWidth: 1.5
+                    )
+                }
+                .contentShape(Circle())
+                .opacity(galleryControl.opacity)
+                .accessibilityLabel(NSLocalizedString("panoramax.gallery.open", comment: ""))
+                .disabled(!galleryControl.isEnabled)
+
+                Spacer()
+
+                RecordingSafeButton {
+                    guard viewModel.drivingControlsAllowed else { return }
+                    showingVisualCalibration = true
+                } label: {
+                    Image(systemName: "viewfinder").font(.title3.weight(.semibold))
+                        .frame(width: buttonDiameter, height: buttonDiameter)
+                }
+                .accessibilityLabel(Text("calibration.title"))
+                .accessibilityIdentifier("dashboard.calibrationButton")
+                .buttonStyle(.plain)
+                .background(actionButtonBackgroundColor, in: Circle())
+                .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
+
+                Spacer()
+
+                RecordingSafeButton { showingLegalInfo = true } label: {
+                    Image(systemName: "info.circle.fill")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: buttonDiameter, height: buttonDiameter)
+                }
+                .accessibilityLabel(Text("legal.title"))
+                .accessibilityIdentifier("dashboard.infoButton")
+                .buttonStyle(.plain)
+                .background(actionButtonBackgroundColor, in: Circle())
+                .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
+
+                Spacer()
+            } else {
+                Spacer()
             }
-            .contentShape(Circle())
-            .opacity(galleryControl.opacity)
-            .accessibilityLabel(NSLocalizedString("panoramax.gallery.open", comment: ""))
-            .disabled(!galleryControl.isEnabled)
 
-            Spacer()
-
-            RecordingSafeButton {
-                guard viewModel.drivingControlsAllowed else { return }
-                showingVisualCalibration = true
-            } label: {
-                Image(systemName: "viewfinder").font(.title3.weight(.semibold))
-                    .frame(width: buttonDiameter, height: buttonDiameter)
+            if viewModel.replacesSettingsWithDrivingPhotoButton {
+                drivingPhotoButton(diameter: max(44, buttonDiameter))
+                    .frame(width: max(44, buttonDiameter), height: max(44, buttonDiameter))
+            } else {
+                RecordingSafeButton { settingsPresentation.wrappedValue = true } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: buttonDiameter, height: buttonDiameter)
+                }
+                .accessibilityLabel(NSLocalizedString("settings.title", comment: ""))
+                .accessibilityIdentifier("dashboard.settingsButton")
+                .buttonStyle(.plain)
+                .background(actionButtonBackgroundColor, in: Circle())
+                .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
             }
-            .accessibilityLabel(Text("calibration.title"))
-            .accessibilityIdentifier("dashboard.calibrationButton")
-            .buttonStyle(.plain)
-            .background(actionButtonBackgroundColor, in: Circle())
-            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
-
-            Spacer()
-
-            RecordingSafeButton { showingLegalInfo = true } label: {
-                Image(systemName: "info.circle.fill")
-                    .font(.title3.weight(.semibold))
-                    .frame(width: buttonDiameter, height: buttonDiameter)
-            }
-            .accessibilityLabel(Text("legal.title"))
-            .accessibilityIdentifier("dashboard.infoButton")
-            .buttonStyle(.plain)
-            .background(actionButtonBackgroundColor, in: Circle())
-            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
-
-            Spacer()
-
-            RecordingSafeButton { settingsPresentation.wrappedValue = true } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.title3.weight(.semibold))
-                    .frame(width: buttonDiameter, height: buttonDiameter)
-            }
-            .accessibilityLabel(NSLocalizedString("settings.title", comment: ""))
-            .accessibilityIdentifier("dashboard.settingsButton")
-            .buttonStyle(.plain)
-            .background(actionButtonBackgroundColor, in: Circle())
-            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
         }
+        .frame(height: max(44, buttonDiameter), alignment: .bottom)
+        .environment(\.layoutDirection, .leftToRight)
         .padding(.horizontal, horizontalPadding)
         .foregroundStyle(primaryForegroundColor)
     }
@@ -1075,7 +1149,7 @@ struct MainView: View {
                     showDetectedLanes: viewModel.showDetectedLanes,
                     legacyLanesAllowed: false,
                     previewVisible: showingPreview && !showingSettings && !showingLegalInfo
-                        && !showingDebug && !showingLocalRecordings && !showingPanoramaxGallery
+                        && !showingDebug && !showingPanoramaxGallery
                         && !showingTrafficSignDetails && !showingVisualCalibration
                 )
                     .frame(maxWidth: .infinity)
@@ -1112,18 +1186,32 @@ struct MainView: View {
                     }
                     .contentShape(Rectangle())
                     .opacity(showingPreview ? 1 : 0)
-                    .allowsHitTesting(showingPreview)
                     .accessibilityElement(children: .ignore)
                     .accessibilityIdentifier("dashboard.dashcamPreview")
                     .accessibilityLabel(NSLocalizedString("drive_recorder.preview.live", comment: ""))
                     .accessibilityHint(viewModel.drivingControlsAllowed ? NSLocalizedString("drive_recorder.preview.hide", comment: "") : "")
-                    .accessibilityHidden(!showingPreview)
                     .onTapGesture {
                         guard viewModel.drivingControlsAllowed, DriveRecorderPreviewInteractionPolicy.canDismissPreview(
                             at: Date(),
                             notBefore: driveRecorderPreviewDismissalAllowedAt
                         ) else { return }
                         viewModel.performDriveInteraction { setDriveRecorderPreviewVisible(false) }
+                    }
+                    // Apply visibility outside the gesture's accessibility wrapper so
+                    // a retained, transparent preview cannot cover telemetry labels.
+                    .allowsHitTesting(showingPreview)
+                    .accessibilityHidden(!showingPreview)
+                    .accessibilityRepresentation {
+                        if showingPreview {
+                            Button(NSLocalizedString("drive_recorder.preview.live", comment: "")) {
+                                guard viewModel.drivingControlsAllowed, DriveRecorderPreviewInteractionPolicy.canDismissPreview(
+                                    at: Date(), notBefore: driveRecorderPreviewDismissalAllowedAt
+                                ) else { return }
+                                viewModel.performDriveInteraction { setDriveRecorderPreviewVisible(false) }
+                            }
+                            .accessibilityIdentifier("dashboard.dashcamPreview")
+                            .accessibilityHint(viewModel.drivingControlsAllowed ? NSLocalizedString("drive_recorder.preview.hide", comment: "") : "")
+                        }
                     }
             }
         }
@@ -1332,6 +1420,7 @@ struct MainView: View {
         if let capture = viewModel.speedCaptureSignText {
             return capture
         }
+        if let pending = viewModel.trafficSignPendingSpeedKmh { return String(pending) }
         if let displayText = viewModel.speedLimitDisplayText {
             return displayText
         }
@@ -1342,6 +1431,9 @@ struct MainView: View {
     }
 
     private var speedLimitAccessibilityDescription: String {
+        if let pending = viewModel.trafficSignPendingSpeedKmh, !viewModel.isInSpeedCaptureMode {
+            return String(format: NSLocalizedString("limit.accessibility.value", comment: ""), String(pending))
+        }
         if viewModel.isInSpeedCaptureMode {
             return String(format: NSLocalizedString("limit.accessibility.value", comment: ""), limitText)
         }
@@ -1371,7 +1463,7 @@ struct MainView: View {
     }
 
     private var showsUnlimitedAutobahnSign: Bool {
-        viewModel.isUnlimitedSpeedLimitActive && !viewModel.isInSpeedCaptureMode
+        viewModel.trafficSignPendingSpeedKmh == nil && viewModel.isUnlimitedSpeedLimitActive && !viewModel.isInSpeedCaptureMode
     }
 
     private var shouldShowTunnelCurrentSpeedIcon: Bool {
@@ -2724,6 +2816,7 @@ private struct PictureGalleryView: View {
     @State private var selectedItemIDs: Set<String> = []
     @State private var showingDeleteConfirmation = false
     @State private var showingAccountRequired = false
+    @State private var signsOnly = false
 
     private struct GalleryItem: Identifiable {
         let id: String
@@ -2731,12 +2824,15 @@ private struct PictureGalleryView: View {
         let item: PanoramaxItemRecord
     }
 
-    private var entries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] { viewModel.panoramaxGalleryItems }
+    private var allEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] { viewModel.panoramaxGalleryItems }
+    private var entries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
+        allEntries.filter { !signsOnly || $0.item.metadata.captureReason == "recognized_sign" || !($0.item.metadata.trafficSignAnnotations ?? []).isEmpty }
+    }
     private var locallySelectableEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
         entries.filter { canSelectLocally(batch: $0.batch) }
     }
     private var selectedEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
-        entries.filter { selectedItemIDs.contains($0.item.itemID) }
+        allEntries.filter { selectedItemIDs.contains($0.item.itemID) }
     }
     private var uploadableSelectedEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
         selectedEntries.filter { isUploadEligible(batch: $0.batch, item: $0.item) }
@@ -2759,6 +2855,9 @@ private struct PictureGalleryView: View {
     }
     var body: some View {
         VStack(spacing: 0) {
+            Toggle(SignCollectionText.text("Show traffic-sign captures only", "Nur Verkehrszeichen-Aufnahmen anzeigen"), isOn: $signsOnly).padding(.horizontal)
+            if signsOnly { Text(SignCollectionText.text("Filter active · selected hidden photos stay selected", "Filter aktiv · ausgeblendete Bilder bleiben ausgewählt")).font(.caption).foregroundStyle(.secondary) }
+
             Group {
                 if entries.isEmpty {
                     ContentUnavailableView(NSLocalizedString("panoramax.gallery.empty", comment: ""), systemImage: "photo.on.rectangle")
@@ -2817,7 +2916,7 @@ private struct PictureGalleryView: View {
                                 .padding(6)
                             }
                             .overlay(alignment: .bottomLeading) {
-                                Text(entry.item.metadata.capturedAt.formatted(date: .omitted, time: .shortened))
+                                Text((entry.item.metadata.captureReason == "recognized_sign" ? SignCollectionText.text("Sign · ", "Zeichen · ") : "") + entry.item.metadata.capturedAt.formatted(date: .omitted, time: .shortened))
                                     .font(.caption2.monospacedDigit())
                                     .foregroundStyle(.white)
                                     .padding(5)
@@ -3178,6 +3277,8 @@ private struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            SignCollectionSettingsSection(collection: viewModel.signCollection)
+
             Section(NSLocalizedString("drive_recorder.settings.section", comment: "")) {
                 Text(NSLocalizedString("drive_recorder.settings.description", comment: ""))
                     .font(.footnote)
@@ -3239,47 +3340,53 @@ private struct SettingsView: View {
                     .foregroundStyle(.secondary)
 
                 if viewModel.panoramaxCaptureEnabled {
+                    Toggle(SignCollectionText.text("Capture recognized traffic signs only", "Nur erkannte Verkehrszeichen aufnehmen"), isOn: $viewModel.panoramaxRecognizedSignsOnly)
+                    if viewModel.panoramaxRecognizedSignsOnly {
+                        Text(SignCollectionText.text("Waiting for camera recognition of a stable sign. Distance/time capture is paused; photos still require Panoramax review and approval.", "Wartet auf die Kameraerkennung eines stabilen Zeichens. Abstand-/Zeitaufnahmen pausieren; Bilder benötigen weiterhin die Panoramax-Prüfung und Freigabe.")).font(.footnote).foregroundStyle(.secondary)
+                    }
                     LabeledContent(NSLocalizedString("panoramax.settings.saved_images", comment: ""), value: "\(viewModel.panoramaxCaptureCount)")
 
-                    Picker(NSLocalizedString("panoramax.settings.trigger", comment: ""), selection: $viewModel.panoramaxTriggerMode) {
-                        ForEach(PanoramaxCaptureTriggerMode.allCases, id: \.self) { mode in
-                            Text(mode.label).tag(mode)
+                    if !viewModel.panoramaxRecognizedSignsOnly {
+                        Picker(NSLocalizedString("panoramax.settings.trigger", comment: ""), selection: $viewModel.panoramaxTriggerMode) {
+                            ForEach(PanoramaxCaptureTriggerMode.allCases, id: \.self) { mode in
+                                Text(mode.label).tag(mode)
+                            }
                         }
-                    }
-                    .pickerStyle(.segmented)
+                        .pickerStyle(.segmented)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(NSLocalizedString("panoramax.settings.minimum_distance", comment: ""))
-                            Spacer()
-                            Text("\(Int(viewModel.panoramaxMinimumDistanceMeters.rounded())) m")
-                                .monospacedDigit()
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(NSLocalizedString("panoramax.settings.minimum_distance", comment: ""))
+                                Spacer()
+                                Text("\(Int(viewModel.panoramaxMinimumDistanceMeters.rounded())) m")
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                            }
+                            Slider(value: $viewModel.panoramaxMinimumDistanceMeters, in: 10...90, step: 1)
+                        }
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(NSLocalizedString("panoramax.settings.minimum_time", comment: ""))
+                                Spacer()
+                                Text("\(Int(viewModel.panoramaxMinimumIntervalSeconds.rounded())) s")
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                            }
+                            Slider(value: $viewModel.panoramaxMinimumIntervalSeconds, in: 5...240, step: 1)
+                        }
+
+                        if let accuracy = viewModel.panoramaxLastAccuracyMeters {
+                            Text(String(format: NSLocalizedString("panoramax.settings.gps_distance_explanation", comment: ""), Int(accuracy.rounded())))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(NSLocalizedString("panoramax.settings.gps_accuracy_explanation", comment: ""))
+                                .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
-                        Slider(value: $viewModel.panoramaxMinimumDistanceMeters, in: 10...90, step: 1)
-                    }
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(NSLocalizedString("panoramax.settings.minimum_time", comment: ""))
-                            Spacer()
-                            Text("\(Int(viewModel.panoramaxMinimumIntervalSeconds.rounded())) s")
-                                .monospacedDigit()
-                                .foregroundStyle(.secondary)
-                        }
-                        Slider(value: $viewModel.panoramaxMinimumIntervalSeconds, in: 5...240, step: 1)
                     }
-
-                    if let accuracy = viewModel.panoramaxLastAccuracyMeters {
-                        Text(String(format: NSLocalizedString("panoramax.settings.gps_distance_explanation", comment: ""), Int(accuracy.rounded())))
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text(NSLocalizedString("panoramax.settings.gps_accuracy_explanation", comment: ""))
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-
                     Toggle(NSLocalizedString("panoramax.settings.unlimited_storage", comment: ""), isOn: $viewModel.panoramaxUnlimitedStorage)
                     if !viewModel.panoramaxUnlimitedStorage {
                         VStack(alignment: .leading, spacing: 4) {
@@ -3365,6 +3472,10 @@ private struct SettingsView: View {
                 NavigationLink(NSLocalizedString("settings.debug.open", comment: "")) {
                     DebugInformationView(viewModel: viewModel)
                 }
+                NavigationLink(NSLocalizedString("recordings.title", comment: "")) {
+                    LocalRecordingsView(viewModel: viewModel)
+                }
+                .accessibilityIdentifier("settings.localRecordings")
             }
         }
         .navigationTitle(NSLocalizedString("settings.title", comment: ""))
@@ -3454,6 +3565,10 @@ private struct DataManagerView: View {
             .padding(.horizontal, 12)
             statusLegend.padding(.horizontal, 12)
             activeDownloadBanner.padding(.horizontal, 12)
+            if !viewModel.queuedBundleDownloadIDs.isEmpty {
+                Text(String(format: dataManagerText("queue_count"), viewModel.queuedBundleDownloadIDs.count))
+                    .font(.caption).foregroundStyle(.secondary).padding(.horizontal, 12)
+            }
             if viewModel.bundleInventoryError {
                 Label(dataManagerText("inventory_error"), systemImage: "exclamationmark.triangle")
                     .font(.caption).foregroundStyle(.orange).padding(.horizontal, 12)
@@ -3603,7 +3718,7 @@ private struct DataManagerView: View {
                     RecordingSafeButton(dataManagerText("all_downloads"), role: .destructive) {
                         showingDeleteAllConfirmation = true
                     }
-                    .disabled(viewModel.isManagingBundles || viewModel.bundleInventoryError)
+                    .disabled(viewModel.isManagingBundles || viewModel.bundleInventoryError || !viewModel.queuedBundleDownloadIDs.isEmpty)
                 }.padding(.top, 10)
             }
         }
@@ -3678,6 +3793,12 @@ private struct DataManagerView: View {
                         Text(option.displayName).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
                         Text("\(option.countryName) · \(dataManagerText(state.localizationKey))")
                             .font(.caption).foregroundStyle(.secondary)
+                        Text(downloadStatusText(option) ?? " ")
+                            .font(.caption2).foregroundStyle(viewModel.bundleDownloadErrors[option.id] == nil ? Color.secondary : Color.red)
+                            .lineLimit(2, reservesSpace: true)
+                        ProgressView(value: viewModel.activeBundleDownloadProgress(option) ?? 0)
+                            .opacity(viewModel.isActiveBundleDownload(option) ? 1 : 0)
+                            .accessibilityHidden(!viewModel.isActiveBundleDownload(option))
                         if !details.isEmpty {
                             Text(details).font(.caption2).foregroundStyle(.secondary)
                         }
@@ -3773,6 +3894,11 @@ private struct DataManagerView: View {
                 if metadata != nil && state != .available {
                     Text(dataManagerText("cached_metadata")).font(.caption).foregroundStyle(.secondary)
                 }
+                if let status = downloadStatusText(option) {
+                    Text(status).font(.caption)
+                        .foregroundStyle(viewModel.bundleDownloadErrors[option.id] == nil ? Color.secondary : Color.red)
+                        .accessibilityIdentifier("dataManager.downloadStatus")
+                }
                 if viewModel.isActiveBundleDownload(option) {
                     downloadProgress(option)
                 }
@@ -3799,20 +3925,29 @@ private struct DataManagerView: View {
         let layout = vertical || dynamicTypeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
             : AnyLayout(HStackLayout(spacing: 12))
-        let queued = viewModel.queuedBundleDownloadIDs.contains(option.id)
+        let operation = viewModel.dataManagerDownloadState(for: option)
         return layout {
-            RecordingSafeButton {
-                if queued { viewModel.cancelQueuedBundleDownload(option) }
-                else { viewModel.downloadSelectedBundle(option) }
-            } label: {
-                Label(queued ? NSLocalizedString("settings.maps.cancel_queued", comment: "")
-                      : dataManagerText(downloaded ? "check_update" : "download"),
-                      systemImage: queued ? "xmark.circle" : "arrow.down.circle")
-                    .frame(minHeight: 44)
+            if case .queued = operation {
+                RecordingSafeButton {
+                    viewModel.cancelQueuedBundleDownload(option)
+                } label: {
+                    Label(NSLocalizedString("settings.maps.cancel_queued", comment: ""), systemImage: "xmark.circle")
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("dataManager.cancelQueued")
+            } else {
+                RecordingSafeButton {
+                    viewModel.downloadSelectedBundle(option)
+                } label: {
+                    Label(downloadActionTitle(option, downloaded: downloaded),
+                          systemImage: viewModel.bundleDownloadErrors[option.id] == nil ? "arrow.down.circle" : "arrow.clockwise.circle")
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!viewModel.canRequestDataManagerDownload(option))
+                .accessibilityIdentifier("dataManager.download")
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(viewModel.isDeletingBundle || viewModel.isActiveBundleDownload(option) || (!queued && state == .unavailable))
-            .accessibilityIdentifier("dataManager.download")
             if downloaded {
                 RecordingSafeButton(role: .destructive) {
                     if let region = viewModel.installedBundleRegion(for: option),
@@ -3825,11 +3960,33 @@ private struct DataManagerView: View {
                         .frame(minHeight: 44)
                 }
                 .buttonStyle(.bordered)
-                .disabled(viewModel.isManagingBundles || viewModel.bundleInventoryError)
+                .disabled(!viewModel.canDeleteDataManagerBundle(option))
                 .accessibilityIdentifier("dataManager.delete")
             }
         }
         .fixedSize(horizontal: !vertical && !dynamicTypeSize.isAccessibilitySize, vertical: false)
+    }
+
+    private func downloadActionTitle(_ option: DriveSessionViewModel.BundleDownloadOption, downloaded: Bool) -> String {
+        switch viewModel.dataManagerDownloadState(for: option) {
+        case .downloading: return NSLocalizedString("metric.downloading_data", comment: "")
+        case .queued: return NSLocalizedString("settings.maps.cancel_queued", comment: "")
+        case .failed: return NSLocalizedString("onboarding.map.retry", comment: "")
+        case .idle: return dataManagerText(downloaded ? "check_update" : "download")
+        }
+    }
+
+    private func downloadStatusText(_ option: DriveSessionViewModel.BundleDownloadOption) -> String? {
+        switch viewModel.dataManagerDownloadState(for: option) {
+        case .downloading:
+            let bytes = viewModel.activeBundleDownloadBytesText(option)
+            return bytes.isEmpty ? NSLocalizedString("settings.maps.preparing", comment: "") : bytes
+        case .queued(let position):
+            return String(format: dataManagerText("queued_position"), position)
+        case .failed(let message):
+            return String(format: NSLocalizedString("settings.maps.download_failed", comment: ""), message)
+        case .idle: return nil
+        }
     }
 
     private func downloadProgress(_ option: DriveSessionViewModel.BundleDownloadOption) -> some View {
@@ -3993,6 +4150,7 @@ private struct DebugInformationView: View {
             }
 
             Section("Logs") {
+                Button(SignCollectionText.text("Clear pending observations", "Ausstehende Beobachtungen löschen"), role: .destructive) { viewModel.signCollection.clearPendingForDeveloper() }
                 if let gpsLogURL {
                     RecordingSafeButton("GPS-CSV teilen") {
                         shareItem = LocalDebugShareItem(url: gpsLogURL)

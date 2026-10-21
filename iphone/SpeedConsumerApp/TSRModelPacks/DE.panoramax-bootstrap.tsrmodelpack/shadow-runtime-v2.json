@@ -9,14 +9,14 @@
   },
   "detector": {
     "component_id": "sgblur-yolo11n-panoramax-169451970702aca0",
-    "artifact_id": "sgblur-yolo11n-panoramax-coreml-96c782af-v2",
+    "artifact_id": "sgblur-yolo11n-panoramax-ios-2834e2b7-1024-v2",
     "artifact_path": "yolo11n_panoramax.mlmodelc",
-    "artifact_sha256": "96c782afde62e1ede1d47d9d51b64359102170ed3ab6604838609869fcbd4589",
+    "artifact_sha256": "2834e2b7647c82cd4ded310f0e7ff163d3af54c0762c22a51495915e0811af54",
     "artifact_format": "coreml",
     "preprocessing": {
-      "version": "vision-scale-fit-letterbox-rgb-1280-v2",
-      "input_width": 1280,
-      "input_height": 1280,
+      "version": "vision-scale-fit-letterbox-rgb-1024-v2",
+      "input_width": 1024,
+      "input_height": 1024,
       "color_space": "rgb",
       "resize": "scale_fit_letterbox",
       "orientation": "normalize_exif_and_mirroring"
@@ -50,10 +50,10 @@
     }
   },
   "thresholds": {
-    "classifier_confirmed": 0.70,
+    "classifier_confirmed": 0.7,
     "confirmation_frames": 2,
     "temporal_window_ms": 1500,
-    "minimum_track_iou": 0.20
+    "minimum_track_iou": 0.2
   },
   "association": {
     "policy": "stable_observation_hint_then_unique_semantic_road_direction",

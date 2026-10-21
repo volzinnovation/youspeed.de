@@ -89,6 +89,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
         let endPoint: (Double, Double)?
         let startHeadingDeg: Double?
         let endHeadingDeg: Double?
+        var hasDirectionalSpeedEvidence = false
     }
 
     private struct PolylineMetrics {
@@ -99,12 +100,13 @@ final class V3SpeedLimitService: @unchecked Sendable {
         let localHeadingDeg: Double?
     }
 
-    private enum DerivedSpeedSource {
-        case explicitTag
-        case explicitUnlimitedTag
-        case inheritedTag
-        case highwayClass
-        case none
+    private enum DerivedSpeedSource: String {
+        case explicitTag = "EXPLICIT_TAG"
+        case explicitUnlimitedTag = "EXPLICIT_UNLIMITED_TAG"
+        case inheritedTag = "INHERITED_TAG"
+        case highwayClass = "HIGHWAY_CLASS"
+        case directionalUnresolved = "DIRECTIONAL_UNRESOLVED"
+        case none = "NONE"
     }
 
     private struct CityBoundaryCandidate {
@@ -905,7 +907,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
                 && candidate.points.allSatisfy { $0.0.isFinite && $0.1.isFinite && (-90...90).contains($0.0) && (-180...180).contains($0.1) }
                 && candidate.distanceM.isFinite && candidate.distanceM <= radiusM
         }
-        return (nearby.count, nearby.filter { $0.speedKmh != nil || $0.isUnlimitedSpeedLimit }.count)
+        return (nearby.count, nearby.filter { $0.speedKmh != nil || $0.isUnlimitedSpeedLimit || $0.hasDirectionalSpeedEvidence }.count)
     }
 
     func lookupSpeedLimit(
@@ -949,6 +951,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
             radiusM: cappedCandidateRadiusM,
             maxCandidates: maxCandidates,
             headingForScoring: headingForScoring,
+            directionalHeading: Self.reliableSpeedHeading(headingDeg, accuracy: headingAccuracyDeg, speedKmh: speedKmh),
             matchContext: normalizedMatchContext
         )
         let fullCandidateQuery: CandidateQueryResult?
@@ -960,6 +963,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
                 radiusM: normalizedRadiusM,
                 maxCandidates: maxCandidates,
                 headingForScoring: headingForScoring,
+                directionalHeading: Self.reliableSpeedHeading(headingDeg, accuracy: headingAccuracyDeg, speedKmh: speedKmh),
                 matchContext: normalizedMatchContext
             )
         } else {
@@ -1191,6 +1195,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
 
             return SpeedLimitResult(
                 applicabilityGeometry: applicabilityGeometry(db: db, selected: finalSelected, candidates: rankedCandidates, links: wayLinksContext),
+                speedSource: finalSelected?.speedSource.rawValue,
                 speedLimitKmh: effectiveSpeed,
                 isUnlimitedSpeedLimit: finalSelected?.isUnlimitedSpeedLimit == true ? true : nil,
                 wayID: finalSelected?.wayID,
@@ -1782,6 +1787,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
 
             return SpeedLimitResult(
                 applicabilityGeometry: applicabilityGeometry(db: db, selected: finalSelected, candidates: rankedCandidates, links: wayLinksContext),
+                speedSource: finalSelected?.speedSource.rawValue,
                 speedLimitKmh: effectiveSpeed,
                 isUnlimitedSpeedLimit: finalSelected?.isUnlimitedSpeedLimit == true ? true : nil,
                 wayID: finalSelected?.wayID,
@@ -2164,6 +2170,63 @@ final class V3SpeedLimitService: @unchecked Sendable {
         }
     }
 
+    /// Native course reliability is shared with directional settlement segments.
+    private static func reliableSpeedHeading(_ heading: Double?, accuracy: Double?, speedKmh: Double?) -> Double? {
+        guard let heading, heading.isFinite, (0..<360).contains(heading),
+              let accuracy, accuracy.isFinite, (0...45).contains(accuracy),
+              let speedKmh, speedKmh.isFinite, speedKmh >= 8 else { return nil }
+        return heading
+    }
+
+    /// Route probes count mapped features even when direction is not yet known;
+    /// this density does not grant an applicable numeric/unlimited reference.
+    private static func directionalSpeedEvidence(forward: String?, backward: String?, country: String) -> Bool {
+        let tags = [forward, backward].map { $0?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+        if tags.contains(where: { isUnlimitedSpeedTag($0) || $0.flatMap(parseExplicitSpeed) != nil }) { return true }
+        return tags[0] != nil && tags[0] == tags[1] && RoadSpeedDefaults.symbolicSpeed(tags[0], country: country) != nil
+    }
+
+    private static func directionalSpeedLimit(
+        maxspeed: String?, forward: String?, backward: String?, maxspeedType: String?,
+        sourceMaxspeed: String?, highway: String?, country: String,
+        heading: Double?, localTangent: Double?
+    ) -> (speed: Int?, source: DerivedSpeedSource, isUnlimited: Bool) {
+        func normalized(_ raw: String?) -> String? {
+            let value = raw?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            return value?.isEmpty == false ? value : nil
+        }
+        let forward = normalized(forward), backward = normalized(backward)
+        let base = deriveSpeedLimitWithSource(maxspeed: maxspeed, maxspeedType: maxspeedType,
+            sourceMaxspeed: sourceMaxspeed, highway: highway, country: country)
+        guard forward != nil || backward != nil else { return base }
+        let unresolved: (speed: Int?, source: DerivedSpeedSource, isUnlimited: Bool) = (nil, .directionalUnresolved, false)
+        func resolve(_ tag: String?) -> (speed: Int?, source: DerivedSpeedSource, isUnlimited: Bool) {
+            guard let tag else { return base }
+            if isUnlimitedSpeedTag(tag) { return (nil, .explicitUnlimitedTag, true) }
+            if let speed = parseExplicitSpeed(tag) { return (speed, .explicitTag, false) }
+            if let speed = RoadSpeedDefaults.symbolicSpeed(tag, country: country) { return (speed, .inheritedTag, false) }
+            // A directional condition we cannot interpret must not fall back to
+            // an unrelated undirected/class or settlement-derived limit.
+            return unresolved
+        }
+        let along = resolve(forward), against = resolve(backward)
+        if let heading, let localTangent, localTangent.isFinite, (0..<360).contains(localTangent) {
+            let delta = abs(heading - localTangent).truncatingRemainder(dividingBy: 360)
+            let difference = min(delta, 360 - delta)
+            if difference <= 45 { return along }
+            if difference >= 135 { return against }
+        }
+        // No direction is needed when both applicable explicit values agree.
+        let explicit: (DerivedSpeedSource) -> Bool = { $0 == .explicitTag || $0 == .explicitUnlimitedTag }
+        if explicit(along.source), explicit(against.source),
+           along.speed == against.speed, along.isUnlimited == against.isUnlimited { return along }
+        // Preserve typed urban/rural evidence without promoting it to explicit
+        // authority; the existing high-confidence settlement gate still applies.
+        if forward != nil, forward == backward, along.source == .inheritedTag,
+           against.source == .inheritedTag, along.speed == against.speed { return along }
+        return unresolved
+    }
+
     private static func deriveSpeedLimitWithSource(
         maxspeed: String?,
         maxspeedType: String?,
@@ -2319,6 +2382,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
         radiusM: Double,
         maxCandidates: Int,
         headingForScoring: Double?,
+        directionalHeading: Double? = nil,
         matchContext: NormalizedMatchContext
     ) throws -> CandidateQueryResult {
         var mergedCandidatesByWayID: [String: WayCandidate] = [:]
@@ -2331,6 +2395,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
                 radiusM: radiusM,
                 maxCandidates: maxCandidates,
                 headingForScoring: headingForScoring,
+                directionalHeading: directionalHeading,
                 network: network
             )
             for candidate in candidates {
@@ -2354,13 +2419,13 @@ final class V3SpeedLimitService: @unchecked Sendable {
             isBetterCandidate(lhs, than: rhs)
         }
         let speedCandidateCount = rankedCandidates.reduce(into: 0) { partialResult, candidate in
-            if candidate.speedKmh != nil || candidate.isUnlimitedSpeedLimit {
+            if candidate.speedKmh != nil || candidate.isUnlimitedSpeedLimit || candidate.hasDirectionalSpeedEvidence {
                 partialResult += 1
             }
         }
         let nearestCandidateDistance = rankedCandidates.map(\.distanceM).min() ?? .infinity
         let nearestSpeedCandidateDistance = rankedCandidates
-            .compactMap { ($0.speedKmh != nil || $0.isUnlimitedSpeedLimit) ? $0.distanceM : nil }
+            .compactMap { ($0.speedKmh != nil || $0.isUnlimitedSpeedLimit || $0.hasDirectionalSpeedEvidence) ? $0.distanceM : nil }
             .min() ?? .infinity
         let nearbyTunnelCandidateWayIDs = rankedCandidates.compactMap { candidate -> String? in
             guard isTruthyOSMTag(candidate.tunnel) else {
@@ -2392,6 +2457,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
         radiusM: Double,
         maxCandidates: Int,
         headingForScoring: Double?,
+        directionalHeading: Double? = nil,
         network: CandidateNetwork
     ) throws -> [WayCandidate] {
         let wayGeomJoin = "LEFT JOIN way_geom g ON g.way_id = w.way_id"
@@ -2400,6 +2466,9 @@ final class V3SpeedLimitService: @unchecked Sendable {
         let wayEndpointSelect = hasWayEndpoints
             ? ", e.start_node_key, e.end_node_key, e.way_length_m"
             : ", NULL AS start_node_key, NULL AS end_node_key, NULL AS way_length_m"
+        let directionalSelect = ["maxspeed_forward", "maxspeed_backward"].map { column in
+            columnExists(db: db, table: "ways", column: column) ? "w.\(column)" : "NULL AS \(column)"
+        }.joined(separator: ", ")
         let bounds = queryBounds(lat: lat, lon: lon, radiusM: radiusM)
         let hasNetworkRTree = tableExists(db: db, name: network.rtreeTableName)
         let hasWaysRtree = tableExists(db: db, name: "ways_rtree")
@@ -2422,7 +2491,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
         let sql = """
         SELECT w.way_id, w.highway, w.street_name, w.ref, w.maxspeed, w.maxspeed_type, w.source_maxspeed,
                w.approx_heading_deg, w.service, w.tunnel,
-               w.min_lon, w.min_lat, w.max_lon, w.max_lat, g.points_json\(wayEndpointSelect)
+               w.min_lon, w.min_lat, w.max_lon, w.max_lat, g.points_json\(wayEndpointSelect), \(directionalSelect)
         \(fromClause)
         \(wayGeomJoin)
         \(wayEndpointJoin)
@@ -2496,11 +2565,14 @@ final class V3SpeedLimitService: @unchecked Sendable {
             )
             let polylineMetrics = polylineMetrics(lat: lat, lon: lon, points: points)
             let distance = polylineMetrics?.distanceM ?? bboxDistance
-            let parsedResult = Self.deriveSpeedLimitWithSource(
-                maxspeed: maxspeedRaw,
-                maxspeedType: maxspeedType,
-                sourceMaxspeed: sourceMaxspeed,
-                highway: highway, country: countryCode ?? "DE"
+            let forwardSpeedTag = cStringOptional(sqlite3_column_text(stmt, 18))
+            let backwardSpeedTag = cStringOptional(sqlite3_column_text(stmt, 19))
+            let parsedResult = Self.directionalSpeedLimit(
+                maxspeed: maxspeedRaw, forward: forwardSpeedTag,
+                backward: backwardSpeedTag,
+                maxspeedType: maxspeedType, sourceMaxspeed: sourceMaxspeed,
+                highway: highway, country: countryCode ?? "DE",
+                heading: directionalHeading, localTangent: polylineMetrics?.localHeadingDeg
             )
             let localHeadingDeg = polylineMetrics?.localHeadingDeg
             let headingPenalty: Double
@@ -2538,7 +2610,9 @@ final class V3SpeedLimitService: @unchecked Sendable {
                     startPoint: points.first,
                     endPoint: points.last,
                     startHeadingDeg: endpointHeadingDeg(points: points, atStart: true),
-                    endHeadingDeg: endpointHeadingDeg(points: points, atStart: false)
+                    endHeadingDeg: endpointHeadingDeg(points: points, atStart: false),
+                    hasDirectionalSpeedEvidence: Self.directionalSpeedEvidence(
+                        forward: forwardSpeedTag, backward: backwardSpeedTag, country: countryCode ?? "DE")
                 )
             )
         }
@@ -6948,7 +7022,8 @@ final class V3SpeedLimitService: @unchecked Sendable {
         candidates: [WayCandidate],
         matchContext: NormalizedMatchContext
     ) -> WayLinksContext {
-        guard tableExists(db: db, name: "way_links") else {
+        let hasLinks = tableExists(db: db, name: "way_links")
+        guard hasLinks || tableExists(db: db, name: "way_endpoints") else {
             return WayLinksContext(available: false, byWayID: [:])
         }
 
@@ -6963,6 +7038,9 @@ final class V3SpeedLimitService: @unchecked Sendable {
             return WayLinksContext(available: true, byWayID: [:])
         }
 
+        if !hasLinks {
+            return loadEndpointWayLinksContext(db: db, wayIDs: orderedWayIDs)
+        }
         let placeholders = Array(repeating: "?", count: orderedWayIDs.count).joined(separator: ",")
         let hasSharedRef = columnExists(db: db, table: "way_links", column: "shared_ref")
         let hasSharedNodeKey = columnExists(db: db, table: "way_links", column: "shared_node_key")
@@ -7007,6 +7085,39 @@ final class V3SpeedLimitService: @unchecked Sendable {
             byWayID[sourceWayID] = info
         }
         return WayLinksContext(available: true, byWayID: byWayID)
+    }
+
+    /// Normalized bundles store the same topology as endpoint keys instead of
+    /// materialized way_links. Recover exact tunnel portal connections only;
+    /// leave surface-only diagnostic matcher behavior unchanged.
+    private func loadEndpointWayLinksContext(db: OpaquePointer, wayIDs: [Int64]) -> WayLinksContext {
+        let placeholders = Array(repeating: "?", count: wayIDs.count).joined(separator: ",")
+        var stmt: OpaquePointer?
+        defer { resources.release(stmt) }
+        let tunnelColumn = columnExists(db: db, table: "way_endpoints", column: "tunnel_flag") ? "tunnel_flag" : "0"
+        guard resources.prepare(db, "SELECT way_id,ref_norm,start_node_key,end_node_key,\(tunnelColumn) FROM way_endpoints WHERE way_id IN (\(placeholders))", -1, &stmt, nil) == SQLITE_OK,
+              let stmt else { return WayLinksContext(available: false, byWayID: [:]) }
+        for (index, id) in wayIDs.enumerated() { sqlite3_bind_int64(stmt, Int32(index + 1), id) }
+        var byNode: [String: [(id: String, refs: Set<String>, tunnel: Bool)]] = [:]
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            let id = String(sqlite3_column_int64(stmt, 0))
+            let refs = Set(Self.normalizedRefTokens(cStringOptional(sqlite3_column_text(stmt, 1))))
+            let nodes = Set([cStringOptional(sqlite3_column_text(stmt, 2)), cStringOptional(sqlite3_column_text(stmt, 3))].compactMap { $0 }.filter { !$0.isEmpty })
+            for node in nodes { byNode[node, default: []].append((id, refs, sqlite3_column_int(stmt, 4) != 0)) }
+        }
+        var byWayID: [String: WayLinkInfo] = [:]
+        for (node, members) in byNode {
+            for from in members {
+                for to in members where from.id != to.id && (from.tunnel || to.tunnel) {
+                    var info = byWayID[from.id] ?? WayLinkInfo()
+                    info.linkedWayIDs.insert(to.id)
+                    if !from.refs.isDisjoint(with: to.refs) { info.sharedRefWayIDs.insert(to.id) }
+                    info.sharedNodeKeysByLinkedWayID[to.id, default: []].insert(node)
+                    byWayID[from.id] = info
+                }
+            }
+        }
+        return WayLinksContext(available: !byWayID.isEmpty, byWayID: byWayID)
     }
 
     private func loadCorridorProgressContext(
@@ -9168,7 +9279,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
 
     private func settlementSpeedLimit(candidate: WayCandidate?, settlement: SettlementDecision) -> Int? {
         guard let candidate else { return nil }
-        if candidate.isUnlimitedSpeedLimit { return nil }
+        if candidate.isUnlimitedSpeedLimit || candidate.speedSource == .directionalUnresolved { return nil }
         if candidate.speedSource == .explicitTag { return candidate.speedKmh }
         let code = RoadSpeedDefaults.country(countryCode ?? "DE")
         let region = code == "BE" ? regulationRegion?(candidate.queryPoint.0, candidate.queryPoint.1) : nil
@@ -9285,14 +9396,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
         headingDeg: Double?, headingAccuracyDeg: Double?, speedKmh: Double?
     ) -> SettlementDecision {
         guard lat.isFinite, lon.isFinite else { return .missing }
-        let reliableHeading: Double?
-        if let headingDeg, headingDeg.isFinite, (0..<360).contains(headingDeg),
-           let headingAccuracyDeg, headingAccuracyDeg.isFinite, (0...45).contains(headingAccuracyDeg),
-           let speedKmh, speedKmh.isFinite, speedKmh >= 8 {
-            reliableHeading = headingDeg
-        } else {
-            reliableHeading = nil
-        }
+        let reliableHeading = reliableSpeedHeading(headingDeg, accuracy: headingAccuracyDeg, speedKmh: speedKmh)
         let longitudeScale = 111_320.0 * max(0.01, cos(lat * .pi / 180))
         var candidates: [(distance: Double, tangent: Double, segment: SettlementSegment)] = []
         for segment in segments where (-1...1).contains(segment.direction) {

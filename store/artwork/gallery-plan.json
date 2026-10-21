@@ -1,0 +1,91 @@
+{
+  "format": "youspeed.store-gallery.v1",
+  "priority": [
+    "Traffic-sign display",
+    "Live assistance",
+    "Fine calculation",
+    "Dashcam",
+    "Panoramax review and upload",
+    "Supporting sign reference"
+  ],
+  "platforms": {
+    "apple": [
+      {
+        "file": "01-camera-speed-limit.png",
+        "source": "store/artwork/raw-screenshots/apple/{locale}/02-camera-speed-limit.png",
+        "caption": 1,
+        "demonstration_speed_kmh": 27
+      },
+      {
+        "file": "02-live-assistance.png",
+        "source": "store/artwork/raw-screenshots/apple/{locale}/03-secondary-sign.png",
+        "caption": 2,
+        "demonstration_speed_kmh": 47
+      },
+      {
+        "file": "03-fine-calculation.png",
+        "source": "store/artwork/raw-screenshots/apple/{locale}/05-france-fine.png",
+        "caption": 4,
+        "demonstration_speed_kmh": 52
+      },
+      {
+        "file": "04-dashcam.png",
+        "source": "store/artwork/raw-screenshots/apple/{locale}/04-dashcam.png",
+        "caption": 3,
+        "demonstration_speed_kmh": 27
+      },
+      {
+        "file": "05-panoramax-upload.png",
+        "source": "store/artwork/raw-screenshots/apple/en-US/05-panoramax-upload.png",
+        "caption": "panoramax",
+        "source_locale": "en-US",
+        "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account.",
+        "origin": "iphone/SpeedConsumerApp/Assets.xcassets/onboarding-photo-review.imageset/onboarding-photo-review.png"
+      },
+      {
+        "file": "06-reference-signs-DE.png",
+        "source": "store/reference-screenshots/apple/{locale}/signs/DE.png",
+        "reference_country": "DE"
+      }
+    ],
+    "android": [
+      {
+        "file": "01-camera-recognition.png",
+        "source": "store/artwork/raw-screenshots/android/{locale}/01-camera-recognition.png",
+        "caption": 1,
+        "demonstration_speed_kmh": 27
+      },
+      {
+        "file": "02-live-assistance.png",
+        "source": "store/artwork/raw-screenshots/android/{locale}/04-traffic-signs.png",
+        "caption": 2,
+        "demonstration_speed_kmh": 27
+      },
+      {
+        "file": "03-fine-calculation.png",
+        "source": "store/artwork/raw-screenshots/android/{locale}/05-france-fine.png",
+        "caption": 4,
+        "demonstration_speed_kmh": 52
+      },
+      {
+        "file": "04-dashcam.png",
+        "source": "store/artwork/raw-screenshots/android/{locale}/02-dashcam.png",
+        "caption": 3,
+        "demonstration_speed_kmh": 27
+      },
+      {
+        "file": "05-panoramax-upload.png",
+        "source": "store/artwork/raw-screenshots/android/en-US/05-panoramax-upload.png",
+        "caption": "panoramax",
+        "source_locale": "en-US",
+        "notes": "Retained native gallery showing a selected synthetic test photo and upload control. English UI. No completed upload; Android upload is disabled without a connected account.",
+        "origin": "android/app/src/main/res/drawable-nodpi/onboarding_photo_review.png"
+      },
+      {
+        "file": "06-reference-signs-DE.png",
+        "source": "store/reference-screenshots/android/{locale}/signs/DE.png",
+        "reference_country": "DE"
+      }
+    ]
+  }
+}

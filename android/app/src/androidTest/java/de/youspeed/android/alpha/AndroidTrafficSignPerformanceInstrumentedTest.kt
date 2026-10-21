@@ -18,6 +18,8 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
+import android.os.Build
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.math.abs
@@ -39,6 +41,9 @@ class AndroidTrafficSignPerformanceInstrumentedTest {
             val mode = if (allowPrecisionLoss) "reducedPrecision" else "fullPrecision"
             AndroidLiteRtTrafficSignInferenceEngine(pack, gpuPrecisionLossAllowed = allowPrecisionLoss).use { engine ->
                 val startup = AndroidTrafficSignStartupProbe.run(instrumentation.targetContext, engine, pack.modelPack)
+                val emulator = Build.FINGERPRINT.startsWith("generic") || Build.MODEL.contains("sdk_gphone")
+                assumeTrue("Emulator lacks a supported GPU delegate; benchmark needs a physical GPU",
+                    !emulator || startup.executionBackend == "gpu")
                 assertEquals("This benchmark requires actual GPU execution", "gpu", startup.executionBackend)
                 startupReports.put(mode, JSONObject()
                     .put("warmInferenceTimesMs", JSONArray(startup.warmInferenceTimesMs))
@@ -93,7 +98,7 @@ class AndroidTrafficSignPerformanceInstrumentedTest {
                     val actualBox = actual.candidate.boundingBox
                     val sourceWidth = requireNotNull(baseline.sourceWidthPixels).toDouble()
                     val sourceHeight = requireNotNull(baseline.sourceHeightPixels).toDouble()
-                    val scale = 1280.0 / max(sourceWidth, sourceHeight)
+                    val scale = TrafficSignDetectorGeometry.SIZE.toDouble() / max(sourceWidth, sourceHeight)
                     val edgeErrors = listOf(
                         abs(expectedBox.x - actualBox.x) * sourceWidth * scale,
                         abs(expectedBox.x + expectedBox.width - actualBox.x - actualBox.width) * sourceWidth * scale,

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "pinned_revision": "e74fc1564aae8f74bc4cca0e86baf7cfd612a6c8",
+  "learning_zip_count": 3,
+  "learning_crops": 334,
+  "full_images": 220,
+  "exact_four_entry_checksum_selection_pass": true,
+  "all_four_file_hashes_pass": true,
+  "missing_or_duplicate_checksum_entry_rejected": true,
+  "all_three_documented_extraction_commands_pass": true,
+  "all_three_existing_destination_guards_pass": true,
+  "cli_slide_dry_run_selected_exactly_five_files": true,
+  "no_training_or_model_inference_performed": true
+}

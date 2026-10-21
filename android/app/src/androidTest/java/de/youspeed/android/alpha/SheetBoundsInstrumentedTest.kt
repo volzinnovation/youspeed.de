@@ -46,9 +46,13 @@ class SheetBoundsInstrumentedTest {
         val originalWindow = focusedWindow()
         for (mount in listOf(ManualOrientation.LANDSCAPE_CAMERA_LOWER_RIGHT,
             ManualOrientation.LANDSCAPE_CAMERA_UPPER_LEFT)) {
+            compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("settings-sheet-content")))
+                .performScrollToNode(hasTestTag("orientation-${mount.storageValue}"))
             compose.onNodeWithTag("orientation-${mount.storageValue}").performClick()
             waitForRotation(mount)
             assertSheetBounds("settings-sheet")
+            compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("settings-sheet-content")))
+                .performScrollToNode(hasTestTag("orientation-portrait"))
             compose.onNodeWithTag("orientation-portrait").performClick()
             waitForRotation(ManualOrientation.PORTRAIT)
             assertSame("The open sheet and its input state survive rotation", originalWindow, focusedWindow())
@@ -92,11 +96,15 @@ class SheetBoundsInstrumentedTest {
         assertSheetBounds("attribution-sheet")
         compose.onNodeWithTag("attribution-sheet-close").performClick()
         compose.onNodeWithTag("legal-sheet-close").performClick()
-        clickDashboard("local-recordings-button")
+        clickDashboard("settings-button")
+        compose.onNode(hasScrollAction() and hasAnyAncestor(hasTestTag("settings-sheet-content")))
+            .performScrollToNode(hasTestTag("settings-local-recordings-button"))
+        compose.onNodeWithTag("settings-local-recordings-button").performClick()
         assertSheetBounds("local-recordings-sheet")
         assertTagsInsideSafeWindow(listOf("local-export-button", "local-delete-all-button"))
         capture("recordings-portrait")
         compose.onNodeWithTag("local-recordings-sheet-close").performClick()
+        compose.onNodeWithTag("settings-sheet-close").performClick()
         clickDashboard("panoramax-gallery-button")
         assertSheetBounds("panoramax-gallery-sheet")
         val actions = compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button) and
@@ -253,10 +261,9 @@ class SheetBoundsInstrumentedTest {
         val close = compose.onNodeWithTag("$tag-close").fetchSemanticsNode()
         val title = compose.onNodeWithTag("$tag-title").fetchSemanticsNode()
         val back = compose.onAllNodesWithTag("$tag-back").fetchSemanticsNodes().firstOrNull()
-        if (back == null) assertTrue("Close is left of the title", close.positionInWindow.x + close.size.width <= title.positionInWindow.x)
-        else {
+        assertTrue("Close is right of the title", title.positionInWindow.x + title.size.width <= close.positionInWindow.x)
+        if (back != null) {
             assertTrue("Back is left of the title", back.positionInWindow.x + back.size.width <= title.positionInWindow.x)
-            assertTrue("Close is right of the title", title.positionInWindow.x + title.size.width <= close.positionInWindow.x)
         }
         val minimum = 48 * context.resources.displayMetrics.density - 1
         assertTrue("Close has a 48dp touch target", close.size.width >= minimum && close.size.height >= minimum)
