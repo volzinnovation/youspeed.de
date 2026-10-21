@@ -27,6 +27,8 @@ source/node_modules/
 
 # Public datasets are pinned and checksummed in source/huggingface-publication.json.
 /output/panoramax-*.zip
+/output/mapillary-*.zip
+/output/mapillary-*/
 
 # Preserve earlier exports locally; commit the current handout and build input.
 /output/tsr-sgblur-de-2026-10-26-v*.pdf
@@ -34,4 +36,4 @@ source/node_modules/
 !/output/tsr-sgblur-de-2026-10-26-v15.pdf
 !/output/tsr-sgblur-de-2026-10-26-v15.pptx
 /output/praktikum-de310-de311-v*.zip
-!/output/praktikum-de310-de311-v7.6.zip
+!/output/praktikum-de310-de311-v7.8.zip

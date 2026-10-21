@@ -1,0 +1,215 @@
+{
+  "exact_image_rgb_crop_overlap_with_prior_inventory": 0,
+  "prior_inventory_sha256": "a1d0fa7964c259fd5332b441bb7891d7f35540bcde167f173e13b985302edf03",
+  "conservative_split_groups": {
+    "mapillary-additions:c669ca2355288f10": [
+      "617168628044902",
+      "675627185103746"
+    ],
+    "mapillary-additions:7ae1ef521dd9cb94": [
+      "540066368378042",
+      "472526225681763"
+    ],
+    "mapillary-additions:46e093294ebefb8c": [
+      "120611377380122"
+    ],
+    "mapillary-additions:c32dd75c16698546": [
+      "1029537562355836"
+    ],
+    "mapillary-additions:723f44af072a3f49": [
+      "915250305994203"
+    ],
+    "mapillary-additions:793c16f963c4eefd": [
+      "771337597968109"
+    ],
+    "mapillary-additions:215bc933e2b61450": [
+      "302820665805395"
+    ],
+    "mapillary-additions:0383983d3dcc5157": [
+      "199788851960838"
+    ],
+    "mapillary-additions:fd5f6cf814c8e198": [
+      "910356043800605"
+    ],
+    "mapillary-additions:e90b6daaac002d9c": [
+      "476127340112543"
+    ],
+    "mapillary-additions:17f623562554baf7": [
+      "1508769360401828"
+    ],
+    "mapillary-additions:42e742f7cc47dd71": [
+      "1383947025294067"
+    ],
+    "mapillary-additions:37b64111ea15ba52": [
+      "998385744325397"
+    ],
+    "mapillary-additions:4a363888eba95275": [
+      "1547382299839624"
+    ],
+    "mapillary-additions:11a8b44df537a0b8": [
+      "1730341113825771"
+    ],
+    "mapillary-additions:610e12e68bd641be": [
+      "242817328149611"
+    ],
+    "mapillary-additions:3c38c8f60185068e": [
+      "615127569461259"
+    ],
+    "mapillary-additions:610f58f581369fda": [
+      "502790330936288"
+    ],
+    "mapillary-additions:8e3e496b5b397dcb": [
+      "929718931149909"
+    ],
+    "mapillary-additions:930d0b76da4a02cf": [
+      "742464975605086"
+    ],
+    "mapillary-additions:eb64da032f3eba21": [
+      "1143423643150510"
+    ],
+    "mapillary-additions:d21f2e52b5ba44df": [
+      "804815297814039"
+    ],
+    "mapillary-additions:3059000393c99baf": [
+      "1425365802218010"
+    ],
+    "mapillary-additions:58810f2e94d50f91": [
+      "1813576146241032"
+    ],
+    "mapillary-additions:5361fcbf487a7a6d": [
+      "1975167663220094"
+    ],
+    "mapillary-additions:faa2f6b03045a12c": [
+      "507034627006107"
+    ],
+    "mapillary-additions:3c8d38cca14c1d30": [
+      "1374470417887261"
+    ],
+    "mapillary-additions:8e762a3df838d04a": [
+      "1485887492800229"
+    ],
+    "mapillary-additions:88af6161d1864e5c": [
+      "676787914231459"
+    ],
+    "mapillary-additions:a1793f58e007a45e": [
+      "1683862105343216"
+    ],
+    "mapillary-additions:324dcbb33c40e80f": [
+      "442985970883216"
+    ],
+    "mapillary-additions:bf18cf7e540aee03": [
+      "294382408991313"
+    ],
+    "mapillary-additions:23701ba9fc090db6": [
+      "1621736625220529"
+    ],
+    "mapillary-additions:14fcaf6225c74282": [
+      "655882839119023"
+    ],
+    "mapillary-additions:dd8e1b2db956294e": [
+      "2892045904418326"
+    ],
+    "mapillary-additions:40fe93b9f4204e24": [
+      "1063835771049471"
+    ],
+    "mapillary-additions:341cec23d62547b5": [
+      "456509742108484"
+    ],
+    "mapillary-additions:0275a76d0945f25c": [
+      "2258806690940253"
+    ],
+    "mapillary-additions:c75c1fba78b86f71": [
+      "460506833228814"
+    ],
+    "mapillary-additions:ab08d3e60bf6b967": [
+      "528098995020782"
+    ],
+    "mapillary-additions:0924dd7330132bf7": [
+      "838611936752304"
+    ],
+    "mapillary-additions:93caaa5a2ef9f3bf": [
+      "514464529692283"
+    ],
+    "mapillary-additions:e22e31a520d820a7": [
+      "1094414262461491"
+    ],
+    "mapillary-additions:272996d2af30fdfb": [
+      "249666050277715"
+    ],
+    "mapillary-additions:a0117c2d4cfa58e7": [
+      "285895906573029"
+    ],
+    "mapillary-additions:cd4bb7152e5357ef": [
+      "4403745009954413"
+    ],
+    "mapillary-additions:21ee3a1afdfc23b7": [
+      "1166641498390205"
+    ],
+    "mapillary-additions:fc3a50eac3bced86": [
+      "887060887758357"
+    ],
+    "mapillary-additions:7f875531d4daba97": [
+      "793029631602634"
+    ],
+    "mapillary-additions:922f2ae85ff8589a": [
+      "811485078214461"
+    ],
+    "mapillary-additions:5f32d8d7d48cc3b4": [
+      "811341293134127"
+    ],
+    "mapillary-additions:558328301cdca7d1": [
+      "4048935361904552"
+    ],
+    "mapillary-additions:b3127fe433544d52": [
+      "1631806310347454"
+    ],
+    "mapillary-additions:d7c83247394088d5": [
+      "1560803822412842"
+    ],
+    "mapillary-additions:4fe1330faa091009": [
+      "220870026137163"
+    ],
+    "mapillary-additions:e3c3287e389b2564": [
+      "273245204538098"
+    ],
+    "mapillary-additions:4ab7b0f7ee8961b0": [
+      "763761693247646"
+    ],
+    "mapillary-additions:0d67e9233e273fe7": [
+      "297472618598610"
+    ],
+    "mapillary-additions:b8ecafc1d1d4932d": [
+      "1109243082919433"
+    ],
+    "mapillary-additions:c9341a2df8c52a57": [
+      "807329376873329"
+    ],
+    "mapillary-additions:d041d6349a20292b": [
+      "2842523589345944"
+    ],
+    "mapillary-additions:14110752c82e0026": [
+      "2196131447823090"
+    ],
+    "mapillary-additions:651ed8e65bc2d82d": [
+      "670993673693558"
+    ],
+    "mapillary-additions:ff3a5db0d486cddd": [
+      "1393038605372664"
+    ],
+    "mapillary-additions:da3cc06aa5acaffe": [
+      "407848217615497"
+    ],
+    "mapillary-additions:948094caa57013be": [
+      "1460579215548870"
+    ],
+    "mapillary-additions:8c2a38918a2568ec": [
+      "410612858135825"
+    ],
+    "mapillary-additions:bc0cc5b543317211": [
+      "1666865467913496"
+    ]
+  },
+  "physical_independence_approved": false,
+  "pretraining_overlap_audited": false,
+  "rule": "Union of same creator/capture day and registry sites within 100m. Cross-package links remain mandatory merge proposals before splitting."
+}

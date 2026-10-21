@@ -84,6 +84,7 @@ android/local.properties
 android/**/build/
 
 # Credentials and machine-local signing configuration
+/secret/MAPILLARY-CLIENT-TOKEN.txt
 .env
 .env.*
 !.env.example
