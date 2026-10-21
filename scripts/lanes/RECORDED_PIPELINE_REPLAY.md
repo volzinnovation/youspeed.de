@@ -102,3 +102,27 @@ results with input hashes. Optional RGB comparison sheets use 640×360 panels:
 manual paint is magenta, explicit no-paint regions cyan, and predicted PAINT
 green. Raw and published output occupy separate rows. These small partial-label
 audits establish neither complete lane accuracy nor correct corridor geometry.
+
+### Optional detector diagnostics
+
+`--detector-trace` captures the production detector's actual post-NMS stripe candidates
+before and after the twelve-candidate row cap, sample-to-track assignments, completed
+track rejection reasons, and fresh hypotheses before the six-boundary output cap.
+Sample IDs are `rowIndex * analysisWidth + pixelX`; track IDs identify their first
+sample. The optional observer defaults to absent in both apps. It creates no trace
+payload when absent and never changes ranking, tracking, rejection thresholds, or
+operation counts. Trace-enabled timings include diagnostic overhead and are not
+performance acceptance results. Observers must not mutate cancellation state.
+
+Use identical source snapshots/options for a paired trace-on/trace-off replay, then
+run `audit_detector_trace.py --traced-replay TRACE --untraced-replay CONTROL --labels
+REVIEW --output-dir NEW`. The audit verifies source/input hashes, trace provenance,
+all non-timing pipeline outputs, and the existing approximate review bindings. It
+separates fresh-output capacity, temporal changes, rejected associated tracks, and
+nearby stripes that did not form matching geometry. Nearby pixels are diagnostic
+counts, not hypothetical reconstructed lanes. A missing post-NMS stripe does not
+prove that the source image contains no paint. Fragment-join rejections remain
+aggregate diagnostics; the baseline trace follows original greedy association.
+
+`compare_detector_platforms.py` also checks trace-on/off full detector equality and
+Swift/Kotlin event equality for all four detector options on the same input bytes.

@@ -1,0 +1,421 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Offline lane semantic hint prototype v1",
+  "description": "Structure only. Executable qualifier additionally enforces identity, cross-field geometry, clocks, valid masks, size, source ordering and freshness. Not a deployed phone contract.",
+  "$defs": {
+    "modelIdentity": {
+      "type": "object",
+      "required": [
+        "modelId",
+        "revision",
+        "outputKind"
+      ],
+      "properties": {
+        "modelId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "\\S"
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "\\S"
+        },
+        "outputKind": {
+          "const": "lane-paint-probability-v1"
+        }
+      },
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "required": [
+        "sessionId",
+        "sessionGeneration",
+        "cameraId",
+        "cameraGeneration",
+        "calibrationGeneration"
+      ],
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "\\S"
+        },
+        "sessionGeneration": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "cameraId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "\\S"
+        },
+        "cameraGeneration": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "calibrationGeneration": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "additionalProperties": false
+    },
+    "exposure": {
+      "type": "object",
+      "required": [
+        "frameId",
+        "sourceTimeNs",
+        "sourceClockId",
+        "capturedAtNs",
+        "clockId",
+        "clockKnown"
+      ],
+      "properties": {
+        "frameId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "\\S"
+        },
+        "sourceTimeNs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "sourceClockId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "\\S"
+        },
+        "capturedAtNs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "clockId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "\\S"
+        },
+        "clockKnown": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "clockReading": {
+      "type": "object",
+      "required": [
+        "atNs",
+        "clockId",
+        "clockKnown"
+      ],
+      "properties": {
+        "atNs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "clockId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "\\S"
+        },
+        "clockKnown": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometry": {
+      "type": "object",
+      "required": [
+        "sourceWidth",
+        "sourceHeight",
+        "crop",
+        "rotationDegrees",
+        "mirrored",
+        "analysisWidth",
+        "analysisHeight",
+        "mappingId",
+        "fullScene"
+      ],
+      "properties": {
+        "sourceWidth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32768
+        },
+        "sourceHeight": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32768
+        },
+        "crop": {
+          "type": "object",
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "properties": {
+            "x": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "y": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32768
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 32768
+            }
+          },
+          "additionalProperties": false
+        },
+        "rotationDegrees": {
+          "type": "integer",
+          "enum": [
+            0,
+            90,
+            180,
+            270
+          ]
+        },
+        "mirrored": {
+          "type": "boolean"
+        },
+        "analysisWidth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32768
+        },
+        "analysisHeight": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32768
+        },
+        "mappingId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "\\S"
+        },
+        "fullScene": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "mask": {
+      "type": "object",
+      "required": [
+        "width",
+        "height",
+        "probabilities",
+        "validity"
+      ],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 512
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 512
+        },
+        "probabilities": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 262144,
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "validity": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 262144,
+          "items": {
+            "type": "boolean"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "hint": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "modelIdentity",
+        "provenance",
+        "scope",
+        "exposure",
+        "arrival",
+        "geometry",
+        "alignment",
+        "mask"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1,
+          "type": "integer"
+        },
+        "modelIdentity": {
+          "$ref": "#/$defs/modelIdentity"
+        },
+        "provenance": {
+          "type": "object",
+          "required": [
+            "kind",
+            "sourceId"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "model_inference",
+                "synthetic_fixture"
+              ]
+            },
+            "sourceId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "\\S"
+            }
+          },
+          "additionalProperties": false
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "exposure": {
+          "$ref": "#/$defs/exposure"
+        },
+        "arrival": {
+          "$ref": "#/$defs/clockReading"
+        },
+        "geometry": {
+          "$ref": "#/$defs/geometry"
+        },
+        "alignment": {
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "const": "exact_exposure"
+            }
+          },
+          "additionalProperties": false
+        },
+        "mask": {
+          "$ref": "#/$defs/mask"
+        }
+      },
+      "additionalProperties": false
+    },
+    "context": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "scope",
+        "exposure",
+        "geometry",
+        "now"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1,
+          "type": "integer"
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "exposure": {
+          "$ref": "#/$defs/exposure"
+        },
+        "geometry": {
+          "$ref": "#/$defs/geometry"
+        },
+        "now": {
+          "$ref": "#/$defs/clockReading"
+        }
+      },
+      "additionalProperties": false
+    },
+    "policy": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "modelIdentity",
+        "maskWidth",
+        "maskHeight",
+        "maxCaptureAgeNs"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1,
+          "type": "integer"
+        },
+        "modelIdentity": {
+          "$ref": "#/$defs/modelIdentity"
+        },
+        "maskWidth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 512
+        },
+        "maskHeight": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 512
+        },
+        "maxCaptureAgeNs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/hint"
+    },
+    {
+      "$ref": "#/$defs/context"
+    },
+    {
+      "$ref": "#/$defs/policy"
+    }
+  ]
+}

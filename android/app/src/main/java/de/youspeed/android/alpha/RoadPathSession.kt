@@ -169,6 +169,8 @@ class RoadPathSession(private val previewMode: Boolean = false, maximumGeometryO
 
     /** Runs on the admitted frame's worker before TSR; the guard makes context validation/publication atomic. */
     fun prepare(frame: RoadPathCameraFrame, frameId: String, scope: TSRApplicabilityScope,
+        detectorTrace: RoadBoundaryTraceObserver? = null,
+        semanticScoreAdjustments: List<Double>? = null,
         publishIfCurrent: (() -> Unit) -> Boolean = { publication -> publication(); true }): RoadPathPreparedFrame = synchronized(evaluationLock) {
         val location = synchronized(lock) { LocationSnapshot(fixes.toList(), origin, locationEpoch, overlayEpoch,
             duplicateFixesDropped, outOfOrderFixesDropped) }
@@ -235,7 +237,7 @@ class RoadPathSession(private val previewMode: Boolean = false, maximumGeometryO
                 listOf(LanePoint(it.rightTopX,it.horizonY),it.rightBottom)) } ?: emptyList())
             val fresh = if(prediction.budgetExceeded) RoadBoundaryFrame(emptyList(),emptyList(),frame.capturedAtSeconds,budgetExceeded=true) else
                 detector.detect(filtered,frame.width,frame.height,frame.capturedAtSeconds,
-                    maximumOperations=maximumGeometryOperations, guidance=RoadBoundarySearchGuidance(samplingVisual?.horizonY,guides),options=detectionOptions)
+                    maximumOperations=maximumGeometryOperations, guidance=RoadBoundarySearchGuidance(samplingVisual?.horizonY,guides),options=detectionOptions,trace=detectorTrace)
             val detectedAt=nowNanos(); detectionMs=(detectedAt-predictedAt).coerceAtLeast(0L)/1e6
             freshBoundaries=fresh.boundaries; freshRejections=fresh.rejectionCounts; variant=fresh.detectionVariant
             geometry = temporal.complete(prediction,fresh,frame.grayscale)
@@ -259,7 +261,8 @@ class RoadPathSession(private val previewMode: Boolean = false, maximumGeometryO
             jointSelection=jointSelection,egoContext=RoadBoundaryEgoContext(
                 calibration=frame.calibration.takeIf { motionProjection != null },
                 speedMetersPerSecond=motionHint.speedMetersPerSecond.takeIf { motionProjection != null },
-                headingRateDegreesPerSecond=motionHint.headingRateDegreesPerSecond.takeIf { motionProjection != null }))
+                headingRateDegreesPerSecond=motionHint.headingRateDegreesPerSecond.takeIf { motionProjection != null }),
+            semanticScoreAdjustments=semanticScoreAdjustments)
         val ready = nowNanos()
         val addedMs = (ready - frame.startedAtNanos).coerceAtLeast(0L) / 1e6
         geometry.temporalResetReason?.takeUnless { it in listOf("initial","scope_or_geometry") }?.let { resetComponents.add("temporal:$it") }

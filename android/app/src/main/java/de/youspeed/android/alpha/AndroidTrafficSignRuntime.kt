@@ -1070,7 +1070,7 @@ internal class AndroidTrafficSignCameraRuntime(
                                     frame.roadPathPreparationFailure = "frame_input_unavailable"
                                     controller.roadPathSession.invalidateOverlay()
                                 } else frame.preparedRoadPath = controller.roadPathSession.prepare(input, frame.frameId,
-                                    preparation.scope, preparation.publishIfCurrent)
+                                    preparation.scope, publishIfCurrent = preparation.publishIfCurrent)
                             }.onFailure {
                                 frame.roadPathPreparationFailure = "path_processing_failed"
                                 controller.roadPathSession.invalidateOverlay()

@@ -184,6 +184,7 @@
 		FC456C524266C29AC987BE43 /* TrafficSignCameraReferenceOfferTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 414763A09BE57A810C9A1F9A /* TrafficSignCameraReferenceOfferTests.swift */; };
 		FD62AB20C68AC0EB6376D543 /* VisionDismissalVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E99625FEFE84861C5DCC7691 /* VisionDismissalVoice.swift */; };
 		FDADD879200055ACA254B841 /* V3SpeedLimitServicePool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98DD2E5EF42CC8EFC99702FF /* V3SpeedLimitServicePool.swift */; };
+		5E648C6D09B74DC38F6A1C52 /* LaneSemanticHint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8747C3B936AA43AC830496CA /* LaneSemanticHint.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -396,6 +397,7 @@
 		FBA1B9CD185BDF7E00FDE66B /* MCO-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "MCO-rules.json"; sourceTree = "<group>"; };
 		FBE90CAE15446042E62B6F56 /* hamburg.poly */ = {isa = PBXFileReference; path = hamburg.poly; sourceTree = "<group>"; };
 		FC99AE36886F7BCCAF89C410 /* RoadPathEvidence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadPathEvidence.swift; sourceTree = "<group>"; };
+		8747C3B936AA43AC830496CA /* LaneSemanticHint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneSemanticHint.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -417,6 +419,7 @@
 				E65A06FABB9BD2F9609312D6 /* GravityAlignment.swift */,
 				50B9F9477677BC3AD0EE7F74 /* LaneBoundaryBezier.swift */,
 				C9CEBD6C0203A9D6C46955EF /* LaneDetection.swift */,
+				8747C3B936AA43AC830496CA /* LaneSemanticHint.swift */,
 				ACC246DEFF0D2E1BB0EE2AD1 /* LaneDetectionRuntime.swift */,
 				ED0EE73EBD62C9AFC470ABD8 /* LaneDetectionRuntimeTests.swift */,
 				6C1443061001BB609384462B /* LaneDetectionTests.swift */,
@@ -997,6 +1000,7 @@
 				F4619697F0D218CA52A31C65 /* GravityAlignment.swift in Sources */,
 				0E2EC469069622230A7B0A72 /* LaneBoundaryBezier.swift in Sources */,
 				D60CF7D362BC29B5DEA0BECF /* LaneDetection.swift in Sources */,
+				5E648C6D09B74DC38F6A1C52 /* LaneSemanticHint.swift in Sources */,
 				4BE89006C90A4D59F921E5F1 /* LaneDetectionRuntime.swift in Sources */,
 				9877E92DFAFDB8EE699F6987 /* LanePreviewPresentation.swift in Sources */,
 				E0C47E1887A900EBE4EEFC4B /* LatestPendingLookupWorker.swift in Sources */,

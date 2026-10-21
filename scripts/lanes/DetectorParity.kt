@@ -17,8 +17,11 @@ fun main(args:Array<String>) {
         val bytes=File(f[1]).readBytes(); val filtered=requireNotNull(RoadPathLaneFilter.applyForDetector(bytes,width,height))
         val digest=MessageDigest.getInstance("SHA-256").digest(filtered).joinToString("") { "%02x".format(it.toInt() and 255) }
         for(options in listOf(RoadBoundaryDetectionOptions(),RoadBoundaryDetectionOptions(useSearchBands=true),RoadBoundaryDetectionOptions(groupFragments=true),RoadBoundaryDetectionOptions(useSearchBands=true,groupFragments=true))) {
-            val frame=RoadBoundaryDetector().detect(filtered,width,height,time,options=options)
-            println(encode(mapOf("id" to f[0],"variant" to options.identifier,"filteredSha256" to digest,
+            val events=mutableListOf<Map<String,Any?>>()
+            val frame=RoadBoundaryDetector().detect(filtered,width,height,time,options=options,trace={ events.add(it) })
+            val untraced=RoadBoundaryDetector().detect(filtered,width,height,time,options=options)
+            check(frame==untraced) { "Trace changed detection" }
+            println(encode(mapOf("id" to f[0],"variant" to options.identifier,"filteredSha256" to digest,"trace" to events,"traceEquivalent" to true,
                 "operationCount" to frame.operationCount,"budgetExceeded" to frame.budgetExceeded,"rejectionCounts" to frame.rejectionCounts,
                 "boundaries" to frame.boundaries.map { b -> mapOf("points" to b.points.map { listOf(it.x,it.y) },"confidence" to b.confidence,
                     "cue" to b.cue.name.lowercase(),"supportRows" to b.supportRows,"observedSegments" to b.observedSegments.map { it.map { p -> listOf(p.x,p.y) } },
