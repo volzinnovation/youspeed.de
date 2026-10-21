@@ -6,6 +6,14 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SolarDaylightTests {
+    @Test fun numericalElevationsMatchIPhoneReference() {
+        // Computed by the unchanged Swift SolarDaylight implementation.
+        assertEquals(-0.306899070365, SolarDaylight.elevationDegrees(48.76, 8.34, Instant.parse("2026-10-18T16:30:00Z"))!!, 1e-9)
+        assertEquals(12.425937130402, SolarDaylight.elevationDegrees(48.76, 8.34, Instant.parse("2026-06-21T18:00:00Z"))!!, 1e-9)
+        assertEquals(63.255541280433, SolarDaylight.elevationDegrees(-33.87, 151.21, Instant.parse("2026-12-21T00:00:00Z"))!!, 1e-9)
+        // Dropping the higher harmonics pauses the camera too early here.
+        assertTrue(SolarDaylight.permitsCameraTSR(48.76, 8.34, Instant.parse("2026-10-18T16:32:00Z")))
+    }
     @Test fun seasonsPolarRegionsLeapYearAndDateline() {
         assertEquals("2026-10-18T17:05:00Z", false, SolarDaylight.permitsCameraTSR(48.76, 8.34, Instant.parse("2026-10-18T17:05:00Z")))
         assertEquals("2026-06-21T18:00:00Z", true, SolarDaylight.permitsCameraTSR(48.76, 8.34, Instant.parse("2026-06-21T18:00:00Z")))
