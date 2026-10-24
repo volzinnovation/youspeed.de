@@ -28,6 +28,8 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
         submitAnnotatedCollectionFrame = controller::onSignCollectionFrame,
         submitSupplementaryText = controller::onTrafficSignSupplementaryTextUpdate,
         submitSupplementaryAttempt = controller::onTrafficSignSupplementaryTextAttempt,
+        submitSupplementaryAuthority = controller::onTrafficSignSupplementaryAuthority,
+        submitUnverifiedAssembly = controller::onTrafficSignUnverifiedAssembly,
         submitSupplementaryPending = controller::onTrafficSignSupplementaryTextPending,
         submitAnnotationEvent = controller::onTrafficSignAnnotationEvent,
         onRuntimeUnavailable = onRuntimeUnavailable,
@@ -77,9 +79,11 @@ internal class TrafficSignFinalizedPassageForwarder(
     private val submitDisplayObservation: (TrafficSignDisplayObservation) -> Unit = {},
     private val submitRecognitionEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
     private val submitCollectionFrame: (TrafficSignRecognitionEvent, List<TrafficSignDetection>, Long, SignCollectionFrame?) -> Unit = { _, _, _, frame -> frame?.close() },
-    private val submitAnnotatedCollectionFrame: ((TrafficSignRecognitionEvent, List<TrafficSignDetection>, Long, SignCollectionFrame?, TrafficSignSupplementaryTextAnnotation?) -> Unit)? = null,
+    private val submitAnnotatedCollectionFrame: ((TrafficSignRecognitionEvent, List<TrafficSignDetection>, Long, SignCollectionFrame?, TrafficSignSupplementaryTextAnnotation?, java.time.Instant?) -> Unit)? = null,
     private val submitSupplementaryText: (TrafficSignSupplementaryTextUpdate) -> Unit = {},
     private val submitSupplementaryAttempt: (TrafficSignSupplementaryTextAnnotation) -> Unit = {},
+    private val submitSupplementaryAuthority: (TrafficSignRecognitionEvent, TrafficSignSupplementaryTextAnnotation) -> Unit = { _, _ -> },
+    private val submitUnverifiedAssembly: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
     private val submitSupplementaryPending: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
     private val submitAnnotationEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
     private val onRuntimeUnavailable: (String, Long) -> Unit = { _, _ -> },
@@ -88,6 +92,14 @@ internal class TrafficSignFinalizedPassageForwarder(
     private val submitFinalizedPassage: (TrafficSignPassageEvent) -> Boolean,
 ) : TrafficSignRecognitionObserver {
     override fun onRecognition(output: TrafficSignOrchestrationOutput) {
+        if (output.contextIsCurrent) {
+            submitUnverifiedAssembly(output.event, output.contextGeneration)
+            // Authority masking precedes both the immediate and finalized paths,
+            // including clearer-view OCR callbacks after the original detection.
+            listOfNotNull(output.ocrAttemptAnnotation, output.ocrAnnotation).distinct().forEach {
+                submitSupplementaryAuthority(output.event, it)
+            }
+        }
         if (output.supplementaryOCROnly) {
             if (output.contextIsCurrent) {
                 output.ocrAttemptAnnotation?.let(submitSupplementaryAttempt)
@@ -108,7 +120,7 @@ internal class TrafficSignFinalizedPassageForwarder(
         output.passageEvent?.let(submitFinalizedPassage)
         if (!output.terminalBackendFailure && output.backendFailureReason == null) {
             if (submitAnnotatedCollectionFrame != null) submitAnnotatedCollectionFrame.invoke(output.event, output.collectionDetections,
-                output.contextGeneration, output.collectionFrame, output.ocrAttemptAnnotation)
+                output.contextGeneration, output.collectionFrame, output.ocrAttemptAnnotation, output.collectionCaptureAtUtc)
             else submitCollectionFrame(output.event, output.collectionDetections, output.contextGeneration, output.collectionFrame)
             output.event.driveSessionId?.let { session -> submitSupplementaryText(TrafficSignSupplementaryTextUpdate(
                 TrafficSignSupplementaryScope(output.contextGeneration, session), output.ocrAnnotation, output.ocrPrimaryPresent || output.event.candidate != null)) }

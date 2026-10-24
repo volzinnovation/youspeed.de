@@ -239,3 +239,5 @@ Task.detached {
 }
 transportChecksDone.wait()
 try transportChecksResult!.get()
+
+try runCollectionCaptureChecks(gate: gate, root: contractRoot, output: outputRoot)

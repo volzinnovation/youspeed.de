@@ -74,6 +74,7 @@ data class TrafficSignSupplementaryTextAnnotation(
     val driveSessionId: String = "",
     val qualityDecision: String = "legacy",
     internal val ocrPasses: List<TrafficSignOCRPass> = emptyList(),
+    val assemblyEvidence: TrafficSignConditionalAssemblyEvidence? = null,
 ) {
     val text: String get() {
         if (status != TrafficSignSupplementaryOCRStatus.READ) return ""
@@ -116,16 +117,18 @@ data class TrafficSignSupplementaryOCRRequest(
     val firstSeenAt: Instant,
     val scope: TrafficSignSupplementaryScope,
     val attemptNumber: Int = 1,
+    val otherPrimaryBoxes: List<NormalizedTrafficSignBoundingBox> = emptyList(),
 ) {
     fun annotation(rawText: String?, failed: Boolean = false,
         ocrBox: NormalizedTrafficSignBoundingBox? = null, admitted: Boolean = true,
-        decision: String = "legacy", passes: List<TrafficSignOCRPass> = emptyList()): TrafficSignSupplementaryTextAnnotation {
+        decision: String = "legacy", passes: List<TrafficSignOCRPass> = emptyList(),
+        assemblyEvidence:TrafficSignConditionalAssemblyEvidence?=null): TrafficSignSupplementaryTextAnnotation {
         val raw = rawText?.trim()?.takeIf { it.isNotEmpty() }
         return TrafficSignSupplementaryTextAnnotation(candidate.rawClassId, candidate.numericSupplementarySpeed(),
             physicalSignId, frameId, observedAt, firstSeenAt, raw, raw?.takeIf { admitted && !failed }?.let(TrafficSignSupplementaryTimeWindow::parse),
             when { failed -> TrafficSignSupplementaryOCRStatus.FAILED; raw == null || !admitted -> TrafficSignSupplementaryOCRStatus.NO_TEXT; else -> TrafficSignSupplementaryOCRStatus.READ },
             candidate.boundingBox, ocrBoundingBox = ocrBox, generation = scope.generation, driveSessionId = scope.driveSessionId,
-            modelVersion = "16.0.1-${TrafficSignPlateDetector.revision}", qualityDecision = decision, ocrPasses = passes)
+            modelVersion = "16.0.1-${TrafficSignPlateDetector.revision}", qualityDecision = decision, ocrPasses = passes, assemblyEvidence=assemblyEvidence)
     }
 }
 
@@ -161,12 +164,18 @@ internal fun supplementaryTextPixelRect(box: NormalizedTrafficSignBoundingBox, w
 
 /** Pixel-quality retries are independent of sign/speed fusion and never evaluate conditions. */
 internal class TrafficSignSupplementaryTextTracker {
+    val conditionalInterpretationCandidate: ConditionalOCRInterpretation.Parsed? get() = current?.latest?.let { annotation ->
+        annotation.rawText?.takeIf { annotation.status == TrafficSignSupplementaryOCRStatus.READ &&
+            annotation.primarySpeedKmh != null && annotation.primaryClassId == "maxspeed:${annotation.primarySpeedKmh}" }
+            ?.let(ConditionalOCRInterpretation::parse)
+    }
     data class Admission(val request: TrafficSignSupplementaryOCRRequest?,
         val presentation: TrafficSignSupplementaryTextAnnotation?, val latestAttempt: TrafficSignSupplementaryTextAnnotation?)
     private data class Track(val id: String, val classId: String, val speed: Int?, val firstSeen: Instant,
         var box: NormalizedTrafficSignBoundingBox, var lastSeen: Instant, var lastFrame: String,
         var frames: Int = 1, var attempts: Int = 0, var lastAttemptAt: Instant? = null, var lastArea: Int = 0,
-        var best: TrafficSignSupplementaryTextAnnotation? = null, var latest: TrafficSignSupplementaryTextAnnotation? = null)
+        var best: TrafficSignSupplementaryTextAnnotation? = null, var latest: TrafficSignSupplementaryTextAnnotation? = null,
+        var pendingConfirmation:Boolean=false,var confirmedProofKey:String?=null)
     private val tracks = linkedMapOf<String, Track>()
     private var current: Track? = null
     private var scope: TrafficSignSupplementaryScope? = null
@@ -175,7 +184,8 @@ internal class TrafficSignSupplementaryTextTracker {
 
     fun begin(candidate: TrafficSignCandidate?, physicalId: String?, frameId: String, at: Instant,
         scope: TrafficSignSupplementaryScope, confirmed: Boolean, evidenceFrames: Int,
-        width: Int, height: Int, thermallyDeferred: Boolean = false): Admission {
+        width: Int, height: Int, thermallyDeferred: Boolean = false,
+        otherPrimaryBoxes:List<NormalizedTrafficSignBoundingBox> = emptyList()): Admission {
         if (this.scope != scope) { reset(); this.scope = scope }
         val c = candidate ?: return Admission(null, null, null)
         val previous = current
@@ -200,9 +210,9 @@ internal class TrafficSignSupplementaryTextTracker {
         val rect = supplementaryTextPixelRect(c.boundingBox, width, height) ?: return cached()
         val area = rect.width * rect.height
         if (track.attempts >= 6 || track.lastAttemptAt?.let { Duration.between(it, at) < Duration.ofMillis(300) } == true ||
-            (track.attempts > 0 && area < track.lastArea * 1.8)) return cached()
+            (track.attempts >= 2 && !track.pendingConfirmation && area < track.lastArea * 1.8)) return cached()
         track.attempts++; track.lastArea = area; track.lastAttemptAt = at
-        return Admission(TrafficSignSupplementaryOCRRequest(c, id, frameId, at, track.firstSeen, scope, track.attempts),
+        return Admission(TrafficSignSupplementaryOCRRequest(c, id, frameId, at, track.firstSeen, scope, track.attempts,otherPrimaryBoxes),
             (track.best ?: track.latest)?.copy(observedAt = at), track.latest)
     }
 
@@ -210,6 +220,17 @@ internal class TrafficSignSupplementaryTextTracker {
         val track = current?.takeIf { scope == request.scope && it.id == request.physicalSignId &&
             it.classId == request.candidate.rawClassId && it.lastSeen >= request.observedAt &&
             Duration.between(request.observedAt, it.lastSeen) <= Duration.ofSeconds(2) } ?: return null
+        fun proofKey(value:TrafficSignSupplementaryTextAnnotation):String? {
+            val kind=value.assemblyEvidence?.validate(value.primaryBoundingBox,value.rawText,value.frameId,value.sourceObservedAt)?.kind
+            return kind?.takeIf {it!=TrafficSignConditionalAssemblyEvidence.Kind.UNRESOLVED}?.let {
+                "${it}:${value.primaryClassId}:${value.primarySpeedKmh}:${value.assemblyEvidence?.plateRects?.size}:${TrafficSignOCRQuality.comparison(value.rawText.orEmpty())}:${value.engine}:${value.modelVersion}"
+            }
+        }
+        val key=proofKey(annotation);val previous=track.latest
+        val span=previous?.let {Duration.between(it.sourceObservedAt,annotation.sourceObservedAt).toMillis()}
+        if(key!=null && previous!=null && key==proofKey(previous) && previous.frameId!=annotation.frameId && span!=null && span in 100..2000) {
+            track.confirmedProofKey=key;track.pendingConfirmation=false
+        } else track.pendingConfirmation=key!=null && key!=track.confirmedProofKey
         track.latest = annotation
         if (annotation.hasText) track.best = annotation
         return Admission(null, (track.best ?: annotation).copy(observedAt = track.lastSeen), annotation)

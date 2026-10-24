@@ -1555,7 +1555,7 @@ final class SpeedConsumerTests: XCTestCase {
         ))
     }
 
-    func testLiveTwoStageAdapterDiscardsSupplementarySignEvidence() throws {
+    func testLiveTwoStageAdapterPreservesSupplementarySignEvidence() throws {
         let primary = makeTrafficSignDetection(
             score: 0.9,
             box: TrafficSignNormalizedRect(x: 0.45, y: 0.20, width: 0.12, height: 0.16)
@@ -1601,12 +1601,10 @@ final class SpeedConsumerTests: XCTestCase {
 
         let assembly = try XCTUnwrap(assemblies.first)
         XCTAssertEqual(assemblies.count, 1)
-        XCTAssertTrue(assembly.supplementaryPlates.isEmpty)
-        XCTAssertEqual(assembly.detection.conditionState, .none)
-        XCTAssertTrue(assembly.detection.restrictions.isEmpty)
-        XCTAssertTrue(try XCTUnwrap(
-            TrafficSignVisionTwoStageCoreMLBackend.shadowAssembly(assembly)
-        ).supplementaryPlates.isEmpty)
+        XCTAssertEqual(assembly.supplementaryPlates.count,1)
+        XCTAssertEqual(assembly.detection.conditionState,.unresolved)
+        XCTAssertEqual(assembly.detection.restrictions,[restriction])
+        XCTAssertEqual(try XCTUnwrap(TrafficSignVisionTwoStageCoreMLBackend.shadowAssembly(assembly)).supplementaryPlates.count,1)
     }
 
     @MainActor
@@ -1917,7 +1915,7 @@ final class SpeedConsumerTests: XCTestCase {
         display.consume(observation("give_way", 1), catalog: catalog)
         XCTAssertEqual(display.sign?.classID, "stop", "Late frames must not resurrect an older sign")
         display.consume(observation("maxspeed:30", 3, affectsSpeed: true), catalog: catalog)
-        XCTAssertNil(display.sign)
+        XCTAssertEqual(display.sign?.classID,"stop","A numeric primary limit does not invalidate the secondary card")
         display.consume(observation("give_way", 4), catalog: catalog)
         display.consume(observation("other", 5), catalog: catalog)
         XCTAssertNil(display.sign, "A newly accepted class without a faithful pictogram clears the previous one")
@@ -7521,6 +7519,41 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertEqual(candidates.count, 1)
         XCTAssertEqual(Set(candidates.map(\.region)), Set(["pilot-region"]))
+    }
+
+    func testSelectedRegionalVersionOverridesLexicalOrderingAndRefreshesCoverageCache() async throws {
+        let fm=FileManager.default
+        let root=try V3BundleManager.applicationSupportDirectory(fileManager:fm)
+        if fm.fileExists(atPath:root.path) { try fm.removeItem(at:root) }
+        defer { try? fm.removeItem(at:root) }
+        func install(_ region:String,_ version:String,_ filename:String) throws -> URL {
+            let directory=root.appendingPathComponent("bundles/\(region)-\(version)",isDirectory:true)
+            try fm.createDirectory(at:directory,withIntermediateDirectories:true)
+            let db=directory.appendingPathComponent(filename)
+            try createFixtureV3DB(at:db)
+            let manifest=V3BundleManifest(format:"youspeed.v3.bundle.manifest",schemaVersion:1,variant:"v3",region:region,countryCode:"DEU",bundleVersion:version,createdAtUTC:"2026-10-24T00:00:00Z",minAppVersion:"1.0.0",
+                db:BundleArtifact(file:filename,bytes:try fileSize(db),sha256:sha256Hex(try Data(contentsOf:db)),url:nil),dbParts:nil,deltaIndex:nil,
+                coverage:BundleCoverage(bbox:BundleCoverageBBox(minLon:7,minLat:47,maxLon:10,maxLat:50),poly:nil))
+            try JSONEncoder().encode(manifest).write(to:directory.appendingPathComponent("bundle-manifest.v3.json"),options:.atomic)
+            return db
+        }
+        let selected=try install("baden-wuerttemberg","2026-10-23-v1.5-journal-conditional","conditional.sqlite")
+        let old=try install("baden-wuerttemberg","2026-10-23-v1.5-lookahead","old.sqlite")
+        let adjacent=try install("alsace","v1","alsace.sqlite")
+        let manager=V3BundleManager(fileManager:fm,session:URLSession(configuration:.ephemeral))
+        let initial=try await manager.resolveLocalBundleRoutes(lat:48.5,lon:8.5,fallbackDBPath:nil)
+        XCTAssertEqual(Set(initial.map(\.dbPath)),Set([old.path,adjacent.path]))
+        func activate(_ db:URL,_ version:String) throws {
+            let state=ActiveBundleState(region:"baden-wuerttemberg",bundleVersion:version,dbFileName:db.lastPathComponent,activatedAtUTC:"2026-10-24T10:00:00Z",dbPath:db.path)
+            try JSONEncoder().encode(state).write(to:root.appendingPathComponent("active_bundle.json"),options:.atomic)
+        }
+        try activate(selected,"2026-10-23-v1.5-journal-conditional")
+        let updated=try await manager.resolveLocalBundleRoutes(lat:48.5,lon:8.5,fallbackDBPath:nil)
+        XCTAssertEqual(Set(updated.map(\.dbPath)),Set([selected.path,adjacent.path]))
+        XCTAssertTrue(fm.fileExists(atPath:old.path))
+        try activate(old,"2026-10-23-v1.5-lookahead")
+        let rollback=try await manager.resolveLocalBundleRoutes(lat:48.5,lon:8.5,fallbackDBPath:nil)
+        XCTAssertEqual(Set(rollback.map(\.dbPath)),Set([old.path,adjacent.path]))
     }
 
     func testResolvePenaltyRuleContextUsesManifestCountryAndRulesFile() async throws {
@@ -19411,6 +19444,18 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         }
     }
 
+    func testSelectedConditionalVersionCannotLoseToAnOlderScalarCopy() {
+        let selected=LocalBundleRoute(region:"baden-wuerttemberg",bundleVersion:"2026-10-23-v1.5-journal-conditional",countryCode:"DEU",dbPath:"/conditional.sqlite")
+        let old=LocalBundleRoute(region:selected.region,bundleVersion:"2026-10-23-v1.5-lookahead",countryCode:"DEU",dbPath:"/old.sqlite")
+        let unknown=BundleRouteProbe(route:selected,hasWayMatch:true,hasSpeedMatch:false,nearestCandidateDistanceM:0,nearestSpeedCandidateDistanceM:nil,candidateCount:1,speedCandidateCount:0)
+        let flattened=BundleRouteProbe(route:old,hasWayMatch:true,hasSpeedMatch:true,nearestCandidateDistanceM:0,nearestSpeedCandidateDistanceM:0,candidateCount:100,speedCandidateCount:100)
+        XCTAssertEqual(BundleRouteSelection.choose(probes:[unknown,flattened],currentDBPath:selected.dbPath,coveringRoutes:[selected,old]),selected)
+        XCTAssertNil(BundleRouteSelection.choose(probes:[flattened],currentDBPath:selected.dbPath,coveringRoutes:[selected,old]))
+        let adjacent=LocalBundleRoute(region:"alsace",bundleVersion:"v1",countryCode:"FRA",dbPath:"/alsace.sqlite")
+        let border=BundleRouteProbe(route:adjacent,hasWayMatch:true,hasSpeedMatch:true,nearestCandidateDistanceM:0,nearestSpeedCandidateDistanceM:0,candidateCount:2,speedCandidateCount:1)
+        XCTAssertEqual(BundleRouteSelection.choose(probes:[unknown,flattened,border],currentDBPath:selected.dbPath,coveringRoutes:[selected,old,adjacent]),adjacent)
+    }
+
     func testBundleRouteCoverageGapNeverUsesActiveDatabase() {
         let active = LocalBundleRoute(region: "switzerland", bundleVersion: "v2",
             countryCode: "CHE", dbPath: "/ch.sqlite", dbSHA256: String(repeating: "a", count: 64))
@@ -20105,7 +20150,7 @@ private enum TrafficSignM0ReviewedDeviceContractFixture {
 }
 
 final class TrafficSignShadowRuntimeV2Tests: XCTestCase {
-    func testLiveAdapterDropsSupplementaryOCRAndRectangleEvidence() throws {
+    func testLiveAdapterPreservesSupplementaryOCRAndRectangleEvidenceAsUnread() throws {
         let primaryBox = TrafficSignNormalizedRect(
             x: 0.4, y: 0.3, width: 0.12, height: 0.12
         )
@@ -20190,7 +20235,7 @@ final class TrafficSignShadowRuntimeV2Tests: XCTestCase {
                 )
             )
         )
-        XCTAssertTrue(rawAssembly.supplementaryPlates.isEmpty)
+        XCTAssertEqual(rawAssembly.supplementaryPlates.count,2)
 
         let base = makeFrameInput(eventID: "auxiliary-event", readablePlate: false)
         let runtime = try makeRuntime(calibrationPassed: false)
@@ -20210,8 +20255,9 @@ final class TrafficSignShadowRuntimeV2Tests: XCTestCase {
 
         XCTAssertEqual(event.state, .provisional)
         let plates = try XCTUnwrap(event.assemblies.first?.supplementaryPlates)
-        XCTAssertTrue(plates.isEmpty)
-        XCTAssertFalse(event.diagnosticCapture.reasons.contains(.unreadableSupplementaryPlate))
+        XCTAssertEqual(plates.count,2)
+        XCTAssertTrue(plates.allSatisfy { $0.readability == .unreadable && $0.restriction == nil })
+        XCTAssertTrue(event.diagnosticCapture.reasons.contains(.unreadableSupplementaryPlate))
         let wire = try TrafficSignPackJSON.encoder().encode(event)
         XCTAssertEqual(
             try TrafficSignPackJSON.decoder().decode(
@@ -21647,7 +21693,30 @@ extension SpeedConsumerTests {
         XCTAssertNil(unsupported.speedLimitKmh)
     }
 
-    func testSettlementResidentialAndServiceDefaultToFiftyWithoutAssertingCity() throws {
+    func testResidentialDefaultDoesNotPromoteSuppressedInheritedSpeedTags() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("residential-inherited-\(UUID()).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try createGermanLowSpeedHeuristicFixtureDB(at: url)
+        try addSettlementSchema(at: url)
+        try executeSQL(at: url, sql: """
+        UPDATE ways SET maxspeed=NULL,source_maxspeed=NULL;
+        INSERT INTO settlement_segment VALUES(1,4101,0,0,NULL,'missing','unknown','[]','[[52,13],[52,13.004]]');
+        """)
+        for model in [V3SpeedLimitService.MatchingModel.connectedBaseline, .corridorHMM] {
+            for highway in ["residential", "service"] {
+                for tag in ["DE:urban", "DE:rural"] {
+                    try executeSQL(at: url, sql: "UPDATE ways SET highway='\(highway)',maxspeed_type='\(tag)'")
+                    let result = try V3SpeedLimitService(dbPath: url.path,countryCode:"DEU",matchingModel:model)
+                        .lookupSpeedLimit(lat:52,lon:13.002)
+                    XCTAssertEqual(result.speedLimitKmh,highway == "residential" ? 50 : nil,"\(model) \(highway) \(tag)")
+                    XCTAssertEqual(result.insideCity,highway == "residential" ? true : nil)
+                    XCTAssertEqual(result.speedSource,highway == "residential" ? "HIGHWAY_CLASS" : "INHERITED_TAG")
+                }
+            }
+        }
+    }
+
+    func testSettlementResidentialEstablishesCityAndServiceRetainsUnknownLocality() throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("settlement-road-default-\(UUID()).sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         try createGermanLowSpeedHeuristicFixtureDB(at: url)
@@ -21661,8 +21730,9 @@ extension SpeedConsumerTests {
                     let unknown = try V3SpeedLimitService(dbPath: url.path, countryCode: "DEU", matchingModel: model)
                         .lookupSpeedLimit(lat: 52, lon: 13.002)
                     XCTAssertEqual(unknown.speedLimitKmh, 50, "\(highway), \(model), schema=\(hasSettlementSchema)")
-                    XCTAssertNil(unknown.insideCity)
-                    XCTAssertEqual(unknown.citySource, "settlement:missing:unknown")
+                    let residential = highway.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "residential"
+                    XCTAssertEqual(unknown.insideCity, residential ? true : nil)
+                    XCTAssertEqual(unknown.citySource, residential ? "settlement:highway_residential:high" : "settlement:missing:unknown")
                     if hasSettlementSchema {
                         try executeSQL(at: url, sql: """
                         INSERT INTO settlement_segment VALUES(1,4101,0,0,1,'landuse','low','[]','[[52,13],[52,13.004]]');
@@ -21671,7 +21741,7 @@ extension SpeedConsumerTests {
                             .lookupSpeedLimit(lat: 52, lon: 13.002)
                         XCTAssertEqual(low.speedLimitKmh, 50)
                         XCTAssertEqual(low.insideCity, true)
-                        XCTAssertEqual(low.citySource, "settlement:landuse:low")
+                        XCTAssertEqual(low.citySource, residential ? "settlement:highway_residential:high" : "settlement:landuse:low")
                     }
                 }
             }
@@ -21700,7 +21770,7 @@ extension SpeedConsumerTests {
                             .lookupSpeedLimit(lat: 52, lon: 13.002)
                         XCTAssertEqual(result.speedLimitKmh, expectedSpeed, "\(highway), \(model), tag=\(tag), city=\(state)")
                         XCTAssertEqual(result.isUnlimitedSpeedLimit == true, unlimited)
-                        XCTAssertEqual(result.insideCity, insideCity)
+                        XCTAssertEqual(result.insideCity, insideCity ?? (highway == "residential" ? true : nil))
                     }
                 }
             }
@@ -22942,5 +23012,939 @@ extension SpeedConsumerTests {
         await model.testRefreshBundleInventory()
         model.matcherDebugProfile = .m7
         try await body(model)
+    }
+}
+
+// Optional MobiData runtime capability; these fixtures also cover old/no-sign bundles.
+extension SpeedConsumerTests {
+    private func inventoryV15DB() throws -> OpaquePointer {
+        var db: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(":memory:", &db), SQLITE_OK)
+        let result = try XCTUnwrap(db)
+        let sql = """
+        CREATE TABLE traffic_sign_capability(key TEXT PRIMARY KEY,value TEXT);
+        INSERT INTO traffic_sign_capability VALUES('version','1');
+        CREATE TABLE traffic_sign_runtime(sign_id TEXT PRIMARY KEY,source_id TEXT,record_key TEXT,snapshot_sha256 TEXT,
+          sign_code TEXT,normalized_code TEXT,kind TEXT,numeric_value REAL,unit TEXT,parameter_status TEXT,
+          lon REAL,lat REAL,orientation_deg REAL,display_radius_m REAL,pictogram_code TEXT,pictogram_path TEXT,model_classes_json TEXT);
+        CREATE TABLE traffic_sign_way_rule(rule_id TEXT,sign_id TEXT,way_id INTEGER,direction INTEGER,
+          start_chainage_m REAL,end_chainage_m REAL,station_chainage_m REAL,local_heading_deg REAL,
+          speed_kmh REAL,inside_city INTEGER,association_status TEXT,lane_scope TEXT);
+        CREATE TABLE traffic_sign_association(sign_id TEXT,status TEXT,way_id INTEGER,direction INTEGER,station_chainage_m REAL,local_heading_deg REAL,confidence REAL,evidence_json TEXT);
+        INSERT INTO traffic_sign_runtime VALUES('speed','source','record','snapshot','DE:274-50','DE:274-50','speed_limit',50,'km/h','parsed_source_value',8.002,48,90,10,'DE:274-50',NULL,'["maxspeed:50"]');
+        INSERT INTO traffic_sign_way_rule VALUES('rule','speed',1,1,100,200,100,90,50,NULL,'accepted','all');
+        """
+        XCTAssertEqual(sqlite3_exec(result,sql,nil,nil,nil),SQLITE_OK)
+        return result
+    }
+    private func inventoryV15Lookup(_ db: OpaquePointer, lat: Double = 48, lon: Double = 8.002,
+        heading: Double? = 90, accuracy: Double = 5, headingAccuracy: Double? = 5) -> InventorySignLookup? {
+        InventorySignBundle.lookup(db:db,lat:lat,lon:lon,wayID:"1",points:[(48,8),(48,8.01)],
+            heading:heading,headingAccuracy:headingAccuracy,accuracy:accuracy)
+    }
+    func testInventoryV15CapabilityAbsenceAndUnknownVersionPreserveOldBundles() throws {
+        var db: OpaquePointer?; sqlite3_open(":memory:",&db)
+        defer { sqlite3_close(db) }
+        XCTAssertNil(inventoryV15Lookup(try XCTUnwrap(db)))
+        let supported=try inventoryV15DB(); defer { sqlite3_close(supported) }
+        sqlite3_exec(supported,"UPDATE traffic_sign_capability SET value='2'",nil,nil,nil)
+        XCTAssertNil(inventoryV15Lookup(supported))
+    }
+    func testInventoryV15DirectedRuleCannotApplyToOppositeRoadDirectionOrPoorGPS() throws {
+        let db=try inventoryV15DB(); defer { sqlite3_close(db) }
+        XCTAssertEqual(inventoryV15Lookup(db)?.activeRule?.speedKmh,50)
+        XCTAssertNil(inventoryV15Lookup(db,heading:270)?.activeRule)
+        XCTAssertNil(inventoryV15Lookup(db,heading:180)?.activeRule)
+        XCTAssertNil(inventoryV15Lookup(db,accuracy:25.1)?.activeRule)
+        XCTAssertNil(inventoryV15Lookup(db,headingAccuracy:nil)?.activeRule)
+        XCTAssertNil(inventoryV15Lookup(db,headingAccuracy:35.1)?.activeRule)
+        sqlite3_exec(db,"UPDATE traffic_sign_way_rule SET lane_scope='unresolved'",nil,nil,nil)
+        XCTAssertNil(inventoryV15Lookup(db)?.activeRule)
+    }
+    func testInventoryV15ActualTenAndThirtyMetreRadii() throws {
+        let db=try inventoryV15DB(); defer { sqlite3_close(db) }
+        for distance in [9.9,10.1] {
+            XCTAssertEqual(inventoryV15Lookup(db,lat:48+distance/111_195.08)?.signs.count,distance<10 ? 1:0)
+        }
+        sqlite3_exec(db,"UPDATE traffic_sign_runtime SET sign_code='DE:310',kind='settlement_boundary',display_radius_m=30",nil,nil,nil)
+        // Ordinary road accuracy is still <=25 m; the sign distance can be 30 m.
+        for distance in [29.9,30.1] {
+            XCTAssertEqual(inventoryV15Lookup(db,lon:8.002+distance/(111_195.08*cos(48 * .pi/180)))?.signs.count,distance<30 ? 1:0)
+        }
+    }
+    func testInventoryV15ConflictingIntervalsFailClosed() throws {
+        let db=try inventoryV15DB(); defer { sqlite3_close(db) }
+        sqlite3_exec(db,"INSERT INTO traffic_sign_way_rule SELECT 'conflict',sign_id,way_id,direction,start_chainage_m,end_chainage_m,station_chainage_m,local_heading_deg,30,inside_city,association_status,lane_scope FROM traffic_sign_way_rule",nil,nil,nil)
+        XCTAssertNil(inventoryV15Lookup(db)?.activeRule)
+    }
+    func testInventoryV15ReverseIntervalOwnsStationEndpoint() throws {
+        let db=try inventoryV15DB(); defer { sqlite3_close(db) }
+        let p=try XCTUnwrap(InventorySignBundle.projection(lat:48,lon:8.002,points:[(48,8),(48,8.01)]))
+        sqlite3_exec(db,"UPDATE traffic_sign_way_rule SET direction=-1,end_chainage_m=\(p.chainage),start_chainage_m=0",nil,nil,nil)
+        XCTAssertNotNil(inventoryV15Lookup(db,heading:270)?.activeRule)
+        sqlite3_exec(db,"UPDATE traffic_sign_way_rule SET start_chainage_m=\(p.chainage),end_chainage_m=300",nil,nil,nil)
+        XCTAssertNil(inventoryV15Lookup(db,heading:270)?.activeRule)
+    }
+    func testInventoryV15ZeroLengthTownStationStillCrossesBeforeFreshPostedLimit() {
+        let town=InventoryTrafficRule(ruleID:"town",signID:"town",code:"DE:310",direction:1,stationM:100,startM:100,endM:100,speedKmh:nil,insideCity:true)
+        let posted=InventoryTrafficRule(ruleID:"speed",signID:"speed",code:"DE:274-30",direction:1,stationM:100,startM:100,endM:300,speedKmh:30,insideCity:true)
+        var tracker=InventoryBoundaryPassageTracker()
+        let before=InventorySignLookup(signs:[],activeRule:nil,wayID:"1",direction:1,chainageM:99,boundaries:[town])
+        let after=InventorySignLookup(signs:[],activeRule:posted,wayID:"1",direction:1,chainageM:101,boundaries:[town])
+        XCTAssertEqual(tracker.consume(before,bundle:"hash"),[])
+        XCTAssertEqual(tracker.consume(after,bundle:"hash"),[town])
+        XCTAssertEqual(tracker.consume(before,bundle:"hash"),[])
+        XCTAssertEqual(tracker.consume(after,bundle:"hash"),[],"GPS jitter cannot reset twice")
+    }
+    private func inventoryV15Sign(id: String = "sign", classes: [String] = ["maxspeed:50"]) -> InventoryTrafficSign {
+        .init(signID:id,sourceID:"source",recordKey:"record",snapshotSHA256:"snapshot",code:"DE:274-50",kind:"speed_limit",numericValue:50,unit:"km/h",parameterStatus:"parsed_source_value",latitude:48,longitude:8,radiusM:10,pictogramCode:nil,pictogramPath:nil,modelClasses:classes,distanceM:0,associatedWayID:"1",associatedDirection:1,associationStatus:"accepted")
+    }
+    private func inventoryV15Events(_ url: URL) throws -> [[String:Any]] {
+        try String(contentsOf:url,encoding:.utf8).split(separator:"\n").map { try JSONSerialization.jsonObject(with:Data($0.utf8)) as! [String:Any] }
+    }
+    func testInventoryV15CameraConfirmationRequiresDistinctFramesGeometryAndRoadContext() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let journal=InventorySignJournal(url:root.appendingPathComponent("events.ndjson")), runtime=InventorySignEncounterRuntime(journal:InventorySignJournal(url:root.appendingPathComponent("events.ndjson")))
+        let at=Date(timeIntervalSince1970:1000)
+        runtime.update(.init(signs:[inventoryV15Sign()],activeRule:nil,wayID:"1",direction:1,chainageM:0),bundle:"bundle",at:at,now:at,cameraEnabled:true,cameraAvailable:true,classes:["maxspeed:50"])
+        func frame(_ id:String,_ delay:Double,_ way:String="1") -> InventorySignEncounterRuntime.Observation {
+            .init(label:"maxspeed:50",value:50,score:0.99,frameID:id,at:at.addingTimeInterval(delay),box:[0.2,0.2,0.1,0.1],packID:"pack",checkpoint:"model",wayID:way,direction:1,bundle:"bundle")
+        }
+        runtime.observe([frame("wrong",0,"parallel")],now:at)
+        runtime.observe([frame("one",0)],now:at)
+        runtime.observe([frame("one",0.2)],now:at.addingTimeInterval(0.2))
+        XCTAssertFalse(try inventoryV15Events(journal.url).contains { $0["outcome"] as? String == "camera_confirmed" })
+        runtime.observe([frame("two",0.2)],now:at.addingTimeInterval(0.2))
+        XCTAssertTrue(try inventoryV15Events(journal.url).contains { $0["outcome"] as? String == "camera_confirmed" })
+    }
+    func testInventoryV15UnsupportedTownAndCameraOffAreLoggedWithoutConfirmation() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let journal=InventorySignJournal(url:root.appendingPathComponent("events.ndjson")), runtime=InventorySignEncounterRuntime(journal:InventorySignJournal(url:root.appendingPathComponent("events.ndjson")))
+        let now=Date()
+        runtime.update(.init(signs:[inventoryV15Sign(classes:[])],activeRule:nil,wayID:"1",direction:1,chainageM:0),bundle:"bundle",at:now,now:now,cameraEnabled:true,cameraAvailable:true,classes:["maxspeed:50"])
+        XCTAssertEqual(try inventoryV15Events(journal.url).last?["outcome"] as? String,"unsupported_model_class")
+        runtime.update(.init(signs:[inventoryV15Sign(classes:[])],activeRule:nil,wayID:"1",direction:1,chainageM:0),bundle:"bundle",at:now,now:now,cameraEnabled:false,cameraAvailable:false,classes:[])
+        XCTAssertEqual(try inventoryV15Events(journal.url).last?["outcome"] as? String,"camera_off")
+    }
+    func testInventoryV15CaptureFailureRetriesAndOnlyDurableSuccessConsumes() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let runtime=InventorySignEncounterRuntime(journal:InventorySignJournal(url:root.appendingPathComponent("events.ndjson")))
+        let now=Date()
+        runtime.update(.init(signs:[inventoryV15Sign()],activeRule:nil,wayID:"1",direction:1,chainageM:0),bundle:"bundle",at:now,now:now,cameraEnabled:false,cameraAvailable:false,classes:[])
+        let ids=runtime.pendingCaptureIDs
+        XCTAssertEqual(ids.count,1)
+        runtime.captureRequested(ids); XCTAssertTrue(runtime.pendingCaptureIDs.isEmpty)
+        runtime.captureFinished(ids,saved:false,captureID:nil,now:now)
+        XCTAssertEqual(runtime.pendingCaptureIDs,ids)
+        runtime.captureRequested(ids); runtime.captureFinished(ids,saved:true,captureID:"image",now:now)
+        XCTAssertTrue(runtime.pendingCaptureIDs.isEmpty)
+    }
+    func testInventoryV15FailedJournalCannotClaimEncounterOrConfirmation() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        try Data([1]).write(to:root)
+        let runtime=InventorySignEncounterRuntime(journal:InventorySignJournal(url:root.appendingPathComponent("events.ndjson")))
+        let now=Date()
+        runtime.update(.init(signs:[inventoryV15Sign()],activeRule:nil,wayID:"1",direction:1,chainageM:0),bundle:"bundle",at:now,now:now,cameraEnabled:true,cameraAvailable:true,classes:["maxspeed:50"])
+        XCTAssertTrue(runtime.pendingCaptureIDs.isEmpty)
+    }
+    @MainActor
+    func testInventoryV15CaptureModesMigrateOldPreferenceWithoutChangingCadence() {
+        let defaults=UserDefaults.standard
+        let old=defaults.object(forKey:"youspeed.panoramax.inventory_signs_only")
+        let oldRecognized=defaults.object(forKey:"youspeed.panoramax.recognized_signs_only")
+        defer {
+            if let old { defaults.set(old,forKey:"youspeed.panoramax.inventory_signs_only") } else { defaults.removeObject(forKey:"youspeed.panoramax.inventory_signs_only") }
+            if let oldRecognized { defaults.set(oldRecognized,forKey:"youspeed.panoramax.recognized_signs_only") } else { defaults.removeObject(forKey:"youspeed.panoramax.recognized_signs_only") }
+        }
+        defaults.removeObject(forKey:"youspeed.panoramax.inventory_signs_only")
+        let model=DriveSessionViewModel(), distance=model.panoramaxMinimumDistanceMeters, interval=model.panoramaxMinimumIntervalSeconds
+        model.panoramaxRecognizedSignsOnly=true
+        XCTAssertFalse(model.panoramaxInventorySignsOnly)
+        model.panoramaxInventorySignsOnly=true
+        XCTAssertFalse(model.panoramaxRecognizedSignsOnly)
+        model.panoramaxInventorySignsOnly=false
+        XCTAssertEqual(model.panoramaxMinimumDistanceMeters,distance)
+        XCTAssertEqual(model.panoramaxMinimumIntervalSeconds,interval)
+        model.stopDriving()
+    }
+}
+
+extension SpeedConsumerTests {
+    @MainActor
+    func testInventoryV15ControllerTownResetDropsVoiceEvenWhenInsideCityDoesNotChange() throws {
+        let model=DriveSessionViewModel()
+        var result=try staleReferenceDirectionFixture()
+        let way=try XCTUnwrap(result.wayID)
+        let now=Date(), town=InventoryTrafficRule(ruleID:"boundary",signID:"boundary",code:"DE:310",direction:1,
+            stationM:100,startM:100,endM:100,speedKmh:nil,insideCity:true)
+        model.lastLookupInsideCity=true
+        model.lastLookupCitySource="settlement:traffic_sign:high"
+        model.testSetActiveLocalSpeedCorrection(wayID:way,value:"70",numericSpeedKmh:70,startedAt:now)
+        let location=CLLocation(coordinate:CLLocationCoordinate2D(latitude:48,longitude:8),altitude:0,
+            horizontalAccuracy:5,verticalAccuracy:5,timestamp:now)
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:way,direction:1,chainageM:99,boundaries:[town])
+        XCTAssertFalse(model.testConsumeInventoryResult(result,location:location))
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:way,direction:1,chainageM:101,boundaries:[town])
+        XCTAssertTrue(model.testConsumeInventoryResult(result,location:location))
+        XCTAssertNil(model.testApplyActiveLocalSpeedCorrection(wayID:way,timestamp:now))
+        XCTAssertEqual(model.lastLookupInsideCity,true)
+        XCTAssertFalse(model.testConsumeInventoryResult(result,location:location),"Same station resets once")
+        model.stopDriving()
+    }
+    func testInventoryV15CameraNeedsAnalyzedFramesBeforeNotObservedAndRearmsAfterOff() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let journal=InventorySignJournal(url:root.appendingPathComponent("events.ndjson")),runtime=InventorySignEncounterRuntime(journal:InventorySignJournal(url:root.appendingPathComponent("events.ndjson")))
+        let now=Date(), lookup=InventorySignLookup(signs:[inventoryV15Sign()],activeRule:nil,wayID:"1",direction:1,chainageM:0)
+        runtime.update(lookup,bundle:"bundle",at:now,now:now,cameraEnabled:true,cameraAvailable:true,classes:["maxspeed:50"])
+        runtime.finish(now:now.addingTimeInterval(0.5))
+        XCTAssertEqual(try inventoryV15Events(journal.url).last?["outcome"] as? String,"camera_unavailable")
+        runtime.update(lookup,bundle:"bundle",at:now,now:now,cameraEnabled:false,cameraAvailable:false,classes:["maxspeed:50"])
+        runtime.update(lookup,bundle:"bundle",at:now,now:now,cameraEnabled:true,cameraAvailable:true,classes:["maxspeed:50"])
+        XCTAssertEqual(try inventoryV15Events(journal.url).last?["outcome"] as? String,"awaiting_camera")
+        runtime.observe([],now:now,frameID:"one",frameAt:now,frameWayID:"1",frameDirection:1,frameBundle:"bundle")
+        runtime.observe([],now:now.addingTimeInterval(0.2),frameID:"two",frameAt:now.addingTimeInterval(0.2),frameWayID:"1",frameDirection:1,frameBundle:"bundle")
+        runtime.finish(now:now.addingTimeInterval(0.5))
+        XCTAssertEqual(try inventoryV15Events(journal.url).last?["outcome"] as? String,"not_observed")
+    }
+}
+
+extension SpeedConsumerTests {
+    func testInventoryV15CancellationDefaultsCannotReviveOldPostedSpeed() {
+        let ended=InventoryTrafficRule(ruleID:"end",signID:"end",code:"DE:278",direction:1,stationM:100,
+            startM:100,endM:500,speedKmh:nil,insideCity:nil)
+        XCTAssertEqual(InventorySignRoadOffer.resolve(ended,country:"DE",highway:"primary",settlementInsideCity:true),.init(speedKmh:50,unlimited:false))
+        XCTAssertEqual(InventorySignRoadOffer.resolve(ended,country:"DE",highway:"primary",settlementInsideCity:false),.init(speedKmh:100,unlimited:false))
+        XCTAssertEqual(InventorySignRoadOffer.resolve(ended,country:"DE",highway:"motorway",settlementInsideCity:false),.init(speedKmh:nil,unlimited:true))
+        XCTAssertEqual(InventorySignRoadOffer.resolve(ended,country:"DE",highway:"motorway",settlementInsideCity:true),.init(speedKmh:50,unlimited:false))
+        XCTAssertEqual(InventorySignRoadOffer.resolve(ended,country:"DE",highway:"trunk",settlementInsideCity:false),.init(speedKmh:nil,unlimited:false))
+    }
+    func testInventoryV15FirstFixInitializationNeedsRadiusButKnownCrossingCanSkipIt() {
+        var town=InventoryTrafficRule(ruleID:"town",signID:"town",code:"DE:310",direction:1,stationM:100,
+            startM:100,endM:100,speedKmh:nil,insideCity:true,distanceM:40,radiusM:30)
+        var tracker=InventoryBoundaryPassageTracker()
+        XCTAssertTrue(tracker.consume(.init(signs:[],activeRule:nil,wayID:"1",direction:1,chainageM:140,boundaries:[town]),bundle:"b").isEmpty)
+        tracker.reset(); town.distanceM=29
+        XCTAssertEqual(tracker.consume(.init(signs:[],activeRule:nil,wayID:"1",direction:1,chainageM:120,boundaries:[town]),bundle:"b"),[town])
+        tracker.reset();town.distanceM=40
+        XCTAssertTrue(tracker.consume(.init(signs:[],activeRule:nil,wayID:"1",direction:1,chainageM:60,boundaries:[town]),bundle:"b").isEmpty)
+        XCTAssertEqual(tracker.consume(.init(signs:[],activeRule:nil,wayID:"1",direction:1,chainageM:140,boundaries:[town]),bundle:"b"),[town])
+    }
+    func testInventoryV15PendingCaptureKeepsOriginalEncounterAcrossExitAndReentry() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let journal=InventorySignJournal(url:root.appendingPathComponent("events.ndjson")),runtime=InventorySignEncounterRuntime(journal:InventorySignJournal(url:root.appendingPathComponent("events.ndjson")))
+        let now=Date(), lookup=InventorySignLookup(signs:[inventoryV15Sign()],activeRule:nil,wayID:"1",direction:1,chainageM:0)
+        runtime.update(lookup,bundle:"bundle",at:now,now:now,cameraEnabled:false,cameraAvailable:false,classes:[])
+        let original=runtime.pendingCaptureIDs;runtime.captureRequested(original)
+        runtime.finish(now:now.addingTimeInterval(0.1))
+        runtime.update(lookup,bundle:"bundle",at:now.addingTimeInterval(0.2),now:now.addingTimeInterval(0.2),cameraEnabled:false,cameraAvailable:false,classes:[])
+        let replacement=runtime.pendingCaptureIDs
+        XCTAssertNotEqual(original,replacement)
+        runtime.captureFinished(original,saved:true,captureID:"image",now:now.addingTimeInterval(0.3))
+        XCTAssertEqual(runtime.pendingCaptureIDs,replacement)
+        let link=try XCTUnwrap(inventoryV15Events(journal.url).last { $0["phase"] as? String == "capture_saved" })
+        XCTAssertEqual(link["encounter_id"] as? String,original.first)
+        XCTAssertEqual(link["capture_id"] as? String,"image")
+    }
+}
+
+extension SpeedConsumerTests {
+    @MainActor
+    func testInventoryV15CaptureUsesProductionJPEGQueueAndRetriesFailedExposure() async throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let store=try PanoramaxQueueStore(root:root), coordinator=DriveCaptureCoordinator(queueStore:store)
+        var requests:[Int64]=[], outcomes:[([String],Bool,String?)]=[]
+        try coordinator.testPrepareManualPhotoSession(automaticPhotos:true) { id,_ in requests.append(id) }
+        coordinator.updatePanoramaxConfiguration(.init(inventorySignsOnly:true),storageLimitBytes:100_000_000)
+        coordinator.onInventoryCaptureResult = { ids,saved,captureID in outcomes.append((ids,saved,captureID)) }
+        let location=CLLocation(coordinate:.init(latitude:48,longitude:8),altitude:0,horizontalAccuracy:5,
+            verticalAccuracy:5,course:90,speed:10,timestamp:Date())
+        coordinator.ingest(location:location,speedMetersPerSecond:10)
+        XCTAssertTrue(requests.isEmpty,"Cadence pauses in inventory mode")
+        for (accuracy,offset) in [(26.0,0.0),(5.0,-4.0),(5.0,2.0)] {
+            let badFix=CLLocation(coordinate:location.coordinate,altitude:0,horizontalAccuracy:accuracy,
+                verticalAccuracy:5,course:90,speed:10,timestamp:Date().addingTimeInterval(offset))
+            XCTAssertFalse(coordinator.ingestInventorySigns(["encounter"],location:badFix,speedMetersPerSecond:10))
+        }
+        XCTAssertTrue(requests.isEmpty,"Inventory capture uses25m/3s/+1s source gates before requesting exposure")
+        XCTAssertTrue(coordinator.ingestInventorySigns(["encounter"],location:location,speedMetersPerSecond:10))
+        XCTAssertFalse(coordinator.ingestInventorySigns(["encounter"],location:location,speedMetersPerSecond:10),"Busy gate prevents duplicate requests")
+        coordinator.testCompletePhoto(data:nil,uniqueID:try XCTUnwrap(requests.last))
+        XCTAssertEqual(outcomes.count,1);XCTAssertFalse(outcomes[0].1)
+        XCTAssertTrue(coordinator.ingestInventorySigns(["encounter"],location:location,speedMetersPerSecond:10))
+        let jpeg=UIGraphicsImageRenderer(size:CGSize(width:8,height:8)).jpegData(withCompressionQuality:0.8) { _ in }
+        coordinator.testCompletePhoto(data:jpeg,uniqueID:try XCTUnwrap(requests.last))
+        for _ in 0..<100 where outcomes.count<2 { try await Task.sleep(for:.milliseconds(20)) }
+        let item=try XCTUnwrap(store.listBatches().flatMap(\.items).first)
+        XCTAssertEqual(item.metadata.captureReason,"inventory_sign")
+        XCTAssertEqual(item.metadata.inventoryEncounterIDs,["encounter"])
+        XCTAssertEqual(outcomes.count,2)
+        XCTAssertTrue(outcomes[1].1)
+        XCTAssertEqual(outcomes[1].2,item.metadata.captureID)
+        XCTAssertEqual(try store.listBatches().flatMap(\.items).count,1)
+        coordinator.stop()
+    }
+}
+
+extension SpeedConsumerTests {
+    func testInventoryV15UnstableRoadMatchKeepsProximityButCannotApplyRule() throws {
+        let db=try inventoryV15DB();defer { sqlite3_close(db) }
+        let lookup=try XCTUnwrap(InventorySignBundle.lookup(db:db,lat:48,lon:8.002,wayID:"1",points:[(48,8),(48,8.01)],heading:90,headingAccuracy:5,accuracy:5,matchStable:false))
+        XCTAssertEqual(lookup.signs.count,1)
+        XCTAssertNil(lookup.activeRule)
+        XCTAssertNil(lookup.direction)
+        XCTAssertTrue(lookup.boundaries.isEmpty)
+    }
+    func testInventoryV15SourceChainageDoesNotChangeWithOffRoadQueryLatitude() throws {
+        let points:[(Double,Double)]=[(48,8),(48,8.01),(48.01,8.01)]
+        let onRoad=try XCTUnwrap(InventorySignBundle.projection(lat:48,lon:8.005,points:points))
+        let offRoad=try XCTUnwrap(InventorySignBundle.projection(lat:48.0001,lon:8.005,points:points))
+        XCTAssertEqual(onRoad.chainage,offRoad.chainage,accuracy:0.00001)
+        let expected=InventorySignBundle.distance(48,8,48,8.01)*(6_371_000.0/6_371_008.8)/2
+        XCTAssertEqual(onRoad.chainage,expected,accuracy:0.00001)
+    }
+}
+
+extension SpeedConsumerTests {
+    func testInventoryV15AmbiguousAndMismatchingNumericEvidenceStayUnconfirmed() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let journal=InventorySignJournal(url:root.appendingPathComponent("events.ndjson")),runtime=InventorySignEncounterRuntime(journal:InventorySignJournal(url:root.appendingPathComponent("events.ndjson")))
+        let now=Date(), lookup=InventorySignLookup(signs:[inventoryV15Sign(id:"a"),inventoryV15Sign(id:"b")],activeRule:nil,wayID:"1",direction:1,chainageM:0)
+        runtime.update(lookup,bundle:"bundle",at:now,now:now,cameraEnabled:true,cameraAvailable:true,classes:["maxspeed:50"])
+        let seen=InventorySignEncounterRuntime.Observation(label:"maxspeed:50",value:50,score:0.99,frameID:"one",at:now,
+            box:[0,0,0.1,0.1],packID:"pack",checkpoint:"model",wayID:"1",direction:1,bundle:"bundle")
+        runtime.observe([seen],now:now)
+        XCTAssertEqual(try inventoryV15Events(journal.url).last?["outcome"] as? String,"ambiguous")
+        runtime.finish(now:now)
+        runtime.update(.init(signs:[inventoryV15Sign()],activeRule:nil,wayID:"1",direction:1,chainageM:0),bundle:"bundle",at:now,now:now,cameraEnabled:true,cameraAvailable:true,classes:["maxspeed:50"])
+        let wrong=InventorySignEncounterRuntime.Observation(label:"maxspeed:80",value:80,score:0.99,frameID:"two",at:now,
+            box:[0,0,0.1,0.1],packID:"pack",checkpoint:"model",wayID:"1",direction:1,bundle:"bundle")
+        runtime.observe([wrong],now:now)
+        XCTAssertEqual(try inventoryV15Events(journal.url).last?["outcome"] as? String,"camera_mismatch")
+        XCTAssertEqual(try inventoryV15Events(journal.url).last?["observed_value"] as? Int,80)
+        XCTAssertFalse(try inventoryV15Events(journal.url).contains { $0["outcome"] as? String == "camera_confirmed" })
+    }
+}
+
+extension SpeedConsumerTests {
+    func testInventoryV15HighFrameRateConfirmationIsBoundedAndPreservesFirstFrame() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let journal=InventorySignJournal(url:root.appendingPathComponent("events.ndjson")),runtime=InventorySignEncounterRuntime(journal:InventorySignJournal(url:root.appendingPathComponent("events.ndjson")))
+        let at=Date(), lookup=InventorySignLookup(signs:[inventoryV15Sign()],activeRule:nil,wayID:"1",direction:1,chainageM:0)
+        runtime.update(lookup,bundle:"bundle-sha",at:at,now:at,cameraEnabled:true,cameraAvailable:true,classes:["maxspeed:50"],bundleSHA256:"bundle-sha",bundleVersion:"1.5-test")
+        for i in 0..<90 {
+            let time=at.addingTimeInterval(Double(i)/30)
+            runtime.observe([.init(label:"maxspeed:50",value:50,score:0.99,frameID:String(i),at:time,
+                box:[0.2,0.2,0.1,0.1],packID:"pack",checkpoint:"model",wayID:"1",direction:1,bundle:"bundle-sha")],
+                now:time,frameID:String(i),frameAt:time,frameWayID:"1",frameDirection:1,frameBundle:"bundle-sha")
+        }
+        let events=try inventoryV15Events(journal.url)
+        XCTAssertEqual(events.count,3,"Start, first support, confirmation; confirmed frames produce no further fsynced writes")
+        let confirmed=try XCTUnwrap(events.last)
+        XCTAssertEqual(confirmed["outcome"] as? String,"camera_confirmed")
+        XCTAssertEqual(confirmed["first_frame_id"] as? String,"0")
+        XCTAssertEqual(confirmed["frame_ids"] as? [String],["0","3"])
+        XCTAssertEqual(confirmed["bundle_sha256"] as? String,"bundle-sha")
+        XCTAssertEqual(confirmed["bundle_version"] as? String,"1.5-test")
+    }
+
+    func testInventoryV15OppositeFaceAndParallelTargetsCannotDisplayCaptureOrConfirm() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let journal=InventorySignJournal(url:root.appendingPathComponent("events.ndjson")),runtime=InventorySignEncounterRuntime(journal:InventorySignJournal(url:root.appendingPathComponent("events.ndjson")))
+        var opposite=inventoryV15Sign(id:"known_opposite_face"),parallel=inventoryV15Sign(id:"parallel")
+        opposite.associatedDirection = -1;parallel.associatedWayID="2"
+        let town=InventoryTrafficSign(signID:"town",sourceID:"source",recordKey:"town",snapshotSHA256:"snapshot",code:"DE:311",kind:"settlement_boundary",numericValue:nil,unit:nil,parameterStatus:"not_applicable",latitude:48,longitude:8,radiusM:30,pictogramCode:"DE:311",pictogramPath:nil,modelClasses:[],distanceM:0,associatedWayID:"1",associatedDirection:-1,associationStatus:"accepted")
+        let secondary=InventoryTrafficSign(signID:"height",sourceID:"source",recordKey:"height",snapshotSHA256:"snapshot",code:"DE:265",kind:"secondary",numericValue:3.8,unit:"m",parameterStatus:"parsed_source_value",latitude:48,longitude:8,radiusM:10,pictogramCode:nil,pictogramPath:nil,modelClasses:[],distanceM:0)
+        let at=Date()
+        runtime.update(.init(signs:[opposite,parallel,town,secondary],activeRule:nil,wayID:"1",direction:1,chainageM:0),bundle:"bundle",at:at,now:at,cameraEnabled:true,cameraAvailable:true,classes:["maxspeed:50"])
+        XCTAssertEqual(runtime.visible.map(\.signID),["height"])
+        XCTAssertEqual(runtime.pendingCaptureIDs.count,1,"Only proximity-only secondary is capture eligible")
+        for i in 0..<2 {
+            let time=at.addingTimeInterval(Double(i)*0.2)
+            runtime.observe([.init(label:"maxspeed:50",value:50,score:0.99,frameID:String(i),at:time,
+                box:[0,0,0.1,0.1],packID:"pack",checkpoint:"model",wayID:"1",direction:1,bundle:"bundle")],now:time)
+        }
+        let events=try inventoryV15Events(journal.url)
+        XCTAssertFalse(events.contains { $0["outcome"] as? String == "camera_confirmed" })
+        XCTAssertEqual(events.filter { $0["outcome"] as? String == "ambiguous" }.count,3)
+    }
+
+    func testInventoryV15DetachedCaptureAndFinishRetainOriginalFixProvenance() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let journal=InventorySignJournal(url:root.appendingPathComponent("events.ndjson")),runtime=InventorySignEncounterRuntime(journal:InventorySignJournal(url:root.appendingPathComponent("events.ndjson")))
+        let at=Date(),lookup=InventorySignLookup(signs:[inventoryV15Sign()],activeRule:nil,wayID:"1",direction:1,chainageM:123)
+        runtime.update(lookup,bundle:"old",at:at,now:at,cameraEnabled:false,cameraAvailable:false,classes:[],latitude:48,longitude:8,accuracy:5,bundleSHA256:"old-sha",bundleVersion:"old-version",heading:90,headingAccuracy:5)
+        let original=runtime.pendingCaptureIDs;runtime.captureRequested(original)
+        runtime.finish(now:at.addingTimeInterval(0.1))
+        runtime.update(lookup,bundle:"new",at:at.addingTimeInterval(0.2),now:at.addingTimeInterval(0.2),cameraEnabled:false,cameraAvailable:false,classes:[],latitude:49,longitude:9,accuracy:10,bundleSHA256:"new-sha",bundleVersion:"new-version")
+        runtime.captureFinished(original,saved:true,captureID:"image",now:at.addingTimeInterval(0.3))
+        let oldEvents=try inventoryV15Events(journal.url).filter { $0["encounter_id"] as? String == original.first }
+        XCTAssertEqual(oldEvents.count,3)
+        for event in oldEvents {
+            XCTAssertEqual(event["latitude"] as? Double,48)
+            XCTAssertEqual(event["longitude"] as? Double,8)
+            XCTAssertEqual(event["chainage_m"] as? Double,123)
+            XCTAssertEqual(event["heading_deg"] as? Double,90)
+            XCTAssertEqual(event["heading_accuracy_deg"] as? Double,5)
+            XCTAssertEqual(event["sign_latitude"] as? Double,48)
+            XCTAssertEqual(event["sign_longitude"] as? Double,8)
+            XCTAssertEqual(event["bundle_sha256"] as? String,"old-sha")
+            XCTAssertEqual(event["last_fix_at"] as? Double,at.timeIntervalSince1970)
+        }
+    }
+
+    @MainActor
+    func testInventoryV15TownContextSurvivesUnsignedRoadAndDerivedConflictingContext() throws {
+        let model=DriveSessionViewModel();defer { model.stopDriving() }
+        var result=try staleReferenceDirectionFixture()
+        let at=Date(),location=CLLocation(coordinate:.init(latitude:48,longitude:8),altitude:0,horizontalAccuracy:5,verticalAccuracy:5,timestamp:at)
+        let town=InventoryTrafficRule(ruleID:"town",signID:"town",code:"DE:310",direction:1,stationM:100,startM:100,endM:100,speedKmh:nil,insideCity:true,distanceM:5)
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:"A",direction:1,chainageM:101,boundaries:[town])
+        XCTAssertTrue(model.testInventoryContextualResult(result,location:location).insideCity == true)
+        result.speedSource="EXPLICIT_TAG";result.speedLimitKmh=70
+        XCTAssertEqual(model.testInventoryContextualResult(result,location:location).speedLimitKmh,50,"An old same-way OSM70 cannot survive the town epoch when its interval is zero/unavailable")
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:"A",direction:nil,chainageM:102)
+        XCTAssertEqual(model.testInventoryContextualResult(result,location:location).speedLimitKmh,50,"Transient heading loss cannot re-admit that old tag")
+        for source in ["settlement:unknown:low","settlement:source_maxspeed:high","settlement:urban_polygon:high"] {
+            result.inventorySigns = .init(signs:[],activeRule:nil,wayID:"B",direction:1,chainageM:200)
+            result.insideCity=false;result.citySource=source;result.speedLimitKmh=100;result.speedSource="DEFAULT"
+            let contextual=model.testInventoryContextualResult(result,location:location)
+            XCTAssertEqual(contextual.insideCity,true)
+            XCTAssertEqual(contextual.citySource,"settlement:inventory:high")
+            XCTAssertEqual(contextual.speedLimitKmh,50)
+        }
+        result.speedSource="EXPLICIT_TAG";result.speedLimitKmh=70
+        XCTAssertEqual(model.testInventoryContextualResult(result,location:location).speedLimitKmh,70,"A fresh explicit posted limit on the new way remains usable")
+        let exit=InventoryTrafficRule(ruleID:"osm-exit",signID:"osm-exit",code:"DE:311",direction:1,stationM:220,startM:220,endM:220,speedKmh:nil,insideCity:false,distanceM:5)
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:"B",direction:1,chainageM:221,boundaries:[exit])
+        let afterExit=model.testInventoryContextualResult(result,location:location)
+        XCTAssertEqual(afterExit.insideCity,false,"A genuine source/OSM town station transitions the persistent context")
+    }
+}
+
+extension TrafficSignPassageEvaluationTests {
+    func testInventoryV15EndsRetainRealCameraEnclosureAndTownResetClearsIt() {
+        let base=EffectiveSpeedLimitState.base(localValue:nil,bundledSpeedKmh:50,bundledUnlimited:false)
+        let context=makeContext()
+        for action in [TrafficSignStructuralAction.maximumSpeedEnd(nil),.allRestrictionsEnd] {
+            var resolver=TrafficSignEffectiveLimitResolver()
+            let zone=makePassage(action:.zoneStart(30),context:context,eventID:"real-zone")
+            _=resolver.commit(zone,base:base)
+            _=resolver.commit(makePassage(action:.postedMaximum(70),context:context,eventID:"real-posted"),base:base)
+            let ended=resolver.applyInventoryEnd(action:action,base:base)
+            XCTAssertTrue(ended.applied)
+            XCTAssertEqual(ended.effectiveState.value,.numeric(30))
+            XCTAssertEqual(ended.effectiveState.source,.camera)
+            XCTAssertEqual(resolver.activePassage?.physicalTrackID,zone.physicalTrackID)
+            XCTAssertTrue(resolver.hasActiveEnclosingSpeedRule)
+            XCTAssertEqual(resolver.resolve(base:base,currentContext:context,currentCoordinate:nil,timestamp:baseTime.addingTimeInterval(1)).value,.numeric(30))
+            XCTAssertEqual(resolver.clear(base:base).value,.numeric(50),"Town boundary uses the existing full reset")
+            XCTAssertFalse(resolver.hasActiveCameraAssertion)
+        }
+    }
+}
+
+extension SpeedConsumerTests {
+    @MainActor
+    func testInventoryV15PoorFixDoesNotRearmTownBoundaryInsideItsGeofence() throws {
+        let model=DriveSessionViewModel();defer { model.stopDriving() }
+        var result=try staleReferenceDirectionFixture()
+        let way=try XCTUnwrap(result.wayID),at=Date()
+        let location=CLLocation(coordinate:.init(latitude:48,longitude:8),altitude:0,horizontalAccuracy:5,verticalAccuracy:5,timestamp:at)
+        let town=InventoryTrafficRule(ruleID:"town",signID:"town",code:"DE:310",direction:1,stationM:100,startM:100,endM:100,speedKmh:nil,insideCity:true,distanceM:5)
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:way,direction:1,chainageM:101,boundaries:[town])
+        XCTAssertTrue(model.testConsumeInventoryResult(result,location:location))
+        model.testSetActiveLocalSpeedCorrection(wayID:way,value:"30",numericSpeedKmh:30,startedAt:at)
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:way,direction:nil,chainageM:102)
+        XCTAssertFalse(model.testConsumeInventoryResult(result,location:location))
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:way,direction:1,chainageM:103,boundaries:[town])
+        XCTAssertFalse(model.testConsumeInventoryResult(result,location:location))
+        XCTAssertEqual(model.testApplyActiveLocalSpeedCorrection(wayID:way,timestamp:at),"30")
+    }
+}
+
+extension TrafficSignPassageEvaluationTests {
+    func testInventoryV15TypedEndMismatchPreservesCameraPostedLayer() {
+        var resolver=TrafficSignEffectiveLimitResolver()
+        let base=EffectiveSpeedLimitState.base(localValue:nil,bundledSpeedKmh:50,bundledUnlimited:false),context=makeContext()
+        _=resolver.commit(makePassage(action:.zoneStart(30),context:context,eventID:"zone"),base:base)
+        _=resolver.commit(makePassage(action:.postedMaximum(70),context:context,eventID:"posted"),base:base)
+        let mismatched=resolver.applyInventoryEnd(action:.maximumSpeedEnd(50),base:base)
+        XCTAssertFalse(mismatched.applied)
+        XCTAssertEqual(mismatched.effectiveState.value,.numeric(70))
+        XCTAssertFalse(resolver.hasActiveEnclosingSpeedRule,"The posted70 layer remains, so the controller must not send applicable_end")
+        let matching=resolver.applyInventoryEnd(action:.maximumSpeedEnd(70),base:base)
+        XCTAssertTrue(matching.applied)
+        XCTAssertEqual(matching.effectiveState.value,.numeric(30))
+    }
+    func testInventoryV15EndPreservesPedestrianEvidenceAndDoesNotFabricateCameraFallback() {
+        let base=EffectiveSpeedLimitState.base(localValue:nil,bundledSpeedKmh:50,bundledUnlimited:false),context=makeContext()
+        for action in [TrafficSignStructuralAction.maximumSpeedEnd(nil),.allRestrictionsEnd] {
+            var resolver=TrafficSignEffectiveLimitResolver()
+            _=resolver.commit(makePassage(action:.pedestrianZoneStart,context:context,eventID:"pedestrian"),base:base)
+            _=resolver.commit(makePassage(action:.postedMaximum(70),context:context,eventID:"posted"),base:base)
+            XCTAssertEqual(resolver.applyInventoryEnd(action:action,base:base).effectiveState.value,.walk)
+            XCTAssertTrue(resolver.hasActiveEnclosingSpeedRule)
+            _=resolver.clear(base:base)
+            _=resolver.commit(makePassage(action:.postedMaximum(70),context:context,eventID:"posted-only"),base:base)
+            let ended=resolver.applyInventoryEnd(action:action,base:base)
+            XCTAssertEqual(ended.effectiveState,base)
+            XCTAssertFalse(ended.effectiveState.hasCameraEvidenceMarker)
+            XCTAssertFalse(resolver.hasActiveCameraAssertion)
+        }
+    }
+}
+
+extension SpeedConsumerTests {
+    func testInventoryV15TownRearmsOnlyAfterKnownPhysicalExitAcrossAnotherWay() {
+        let town=InventoryTrafficRule(ruleID:"town",signID:"town",code:"DE:310",direction:1,stationM:100,startM:100,endM:100,
+            speedKmh:nil,insideCity:true,distanceM:5,sourceLatitude:48,sourceLongitude:8)
+        let inside=InventorySignLookup(signs:[],activeRule:nil,wayID:"A",direction:1,chainageM:101,boundaries:[town])
+        var tracker=InventoryBoundaryPassageTracker()
+        XCTAssertEqual(tracker.consume(inside,bundle:"b",latitude:48,longitude:8),[town])
+        XCTAssertTrue(tracker.consume(nil,bundle:"b").isEmpty)
+        XCTAssertTrue(tracker.consume(inside,bundle:"b",latitude:48,longitude:8).isEmpty)
+        let other=InventorySignLookup(signs:[],activeRule:nil,wayID:"B",direction:1,chainageM:0)
+        XCTAssertTrue(tracker.consume(other,bundle:"b",latitude:48.001,longitude:8).isEmpty)
+        XCTAssertEqual(tracker.consume(inside,bundle:"b",latitude:48,longitude:8),[town],"A usable fix on another way proved actual exit before this re-entry")
+    }
+}
+
+extension SpeedConsumerTests {
+    @MainActor
+    func testInventoryV15EndMaskSurvivesUnknownDirectionButQualifiedReversalAdmitsOppositeOSM() throws {
+        let model=DriveSessionViewModel();defer { model.stopDriving() }
+        var result=try staleReferenceDirectionFixture()
+        let at=Date(),location=CLLocation(coordinate:.init(latitude:48,longitude:8),altitude:0,horizontalAccuracy:5,verticalAccuracy:5,timestamp:at)
+        let end=InventoryTrafficRule(ruleID:"end",signID:"end",code:"DE:278",direction:1,stationM:100,startM:100,endM:100,speedKmh:nil,insideCity:nil,distanceM:5,radiusM:10)
+        result.speedSource="EXPLICIT_TAG";result.speedLimitKmh=70;result.insideCity=true
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:"A",direction:1,chainageM:101,boundaries:[end])
+        XCTAssertEqual(model.testInventoryContextualResult(result,location:location).speedLimitKmh,50)
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:"A",direction:nil,chainageM:102)
+        XCTAssertEqual(model.testInventoryContextualResult(result,location:location).speedLimitKmh,50)
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:"A",direction:-1,chainageM:102)
+        XCTAssertEqual(model.testInventoryContextualResult(result,location:location).speedLimitKmh,70,"A stable accurate opposite direction may offer its OSM posted restriction")
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:"B",direction:1,chainageM:0)
+        XCTAssertEqual(model.testInventoryContextualResult(result,location:location).speedLimitKmh,70,"The remembered end only masks the directed reset way")
+    }
+}
+
+extension SpeedConsumerTests {
+    /// Run explicitly after installing the frozen local BW acceptance bundle.
+    @MainActor
+    func testInventoryV15InstalledFullBWBundleLoadsAndProbesProductionRuntime() async throws {
+        let manager=V3BundleManager(), expectedVersion="2026-10-21-v1.5-runtime"
+        let stateValue=try await manager.activeState()
+        guard let state=stateValue,state.bundleVersion == expectedVersion else {
+            throw XCTSkip("Install the frozen local BW v1.5 bundle in this isolated simulator before running the full-data acceptance probe")
+        }
+        let databaseValue=try await manager.activeDatabaseURL()
+        let database=try XCTUnwrap(databaseValue)
+        let manifestData=try Data(contentsOf:database.deletingLastPathComponent().appendingPathComponent("bundle-manifest.v3.json"))
+        let manifest=try XCTUnwrap(JSONSerialization.jsonObject(with:manifestData) as? [String:Any])
+        let artifact=try XCTUnwrap(manifest["db"] as? [String:Any])
+        XCTAssertEqual(state.dbSHA256,artifact["uncompressed_sha256"] as? String)
+        let source=try XCTUnwrap(manifest["source"] as? [String:Any])
+        let runtimeManifest=try XCTUnwrap(source["traffic_sign_runtime"] as? [String:Any])
+        let runtimeCount=try XCTUnwrap(runtimeManifest["signs"] as? Int)
+        let osmCount=try XCTUnwrap(runtimeManifest["osm_town_fallbacks"] as? Int)
+        let installed=try await manager.listDownloadedBundles()
+        XCTAssertTrue(installed.contains { $0.bundleVersion == expectedVersion && $0.region == "baden-wuerttemberg" })
+        var pointer:OpaquePointer?
+        XCTAssertEqual(sqlite3_open_v2(database.path,&pointer,SQLITE_OPEN_READONLY,nil),SQLITE_OK)
+        let db=try XCTUnwrap(pointer);defer { sqlite3_close(db) }
+        func scalar(_ sql:String) throws -> Int {
+            var statement:OpaquePointer?;XCTAssertEqual(sqlite3_prepare_v2(db,sql,-1,&statement,nil),SQLITE_OK)
+            let q=try XCTUnwrap(statement);defer { sqlite3_finalize(q) }
+            XCTAssertEqual(sqlite3_step(q),SQLITE_ROW);return Int(sqlite3_column_int64(q,0))
+        }
+        XCTAssertEqual(try scalar("SELECT count(*) FROM traffic_sign_runtime"),runtimeCount)
+        XCTAssertEqual(try scalar("SELECT count(*) FROM traffic_sign_runtime WHERE source_id='mobidata-bw-vzk'"),163504)
+        XCTAssertEqual(try scalar("SELECT count(*) FROM traffic_sign_runtime WHERE source_id='osm-settlement'"),osmCount)
+        XCTAssertEqual(try scalar("SELECT count(*) FROM traffic_sign_capability WHERE key='osm_town_fallback' AND value='materialized'"),1)
+        var statement:OpaquePointer?
+        let sql="""
+            SELECT r.way_id,r.direction,r.start_chainage_m,r.end_chainage_m,r.speed_kmh,s.sign_id,g.points_json
+            FROM traffic_sign_way_rule r JOIN traffic_sign_runtime s USING(sign_id) JOIN way_geom g USING(way_id)
+            JOIN traffic_sign_association a ON a.sign_id=s.sign_id
+            WHERE r.association_status='accepted' AND r.lane_scope='all' AND r.speed_kmh IS NOT NULL
+              AND s.source_id='mobidata-bw-vzk' AND a.way_id=r.way_id AND r.end_chainage_m-r.start_chainage_m>50
+            ORDER BY r.way_id,r.direction DESC LIMIT 1
+            """
+        XCTAssertEqual(sqlite3_prepare_v2(db,sql,-1,&statement,nil),SQLITE_OK)
+        let q=try XCTUnwrap(statement)
+        XCTAssertEqual(sqlite3_step(q),SQLITE_ROW)
+        let way=String(sqlite3_column_int64(q,0)),direction=Int(sqlite3_column_int(q,1))
+        let middle=(sqlite3_column_double(q,2)+sqlite3_column_double(q,3))/2,expected=Int(sqlite3_column_int(q,4))
+        let sign=String(cString:sqlite3_column_text(q,5)),raw=String(cString:sqlite3_column_text(q,6))
+        sqlite3_finalize(q)
+        let decoded=try JSONDecoder().decode([[Double]].self,from:Data(raw.utf8))
+        let points=decoded.map { ($0[0],$0[1]) }
+        var remaining=middle,probe:(Double,Double,Double)?
+        for (a,b) in zip(points,points.dropFirst()) {
+            let length=InventorySignBundle.distance(a.0,a.1,b.0,b.1)*(6_371_000.0/6_371_008.8)
+            if remaining<=length && length>0 {
+                let fraction=remaining/length,lat=a.0+(b.0-a.0)*fraction,lon=a.1+(b.1-a.1)*fraction
+                let bearing=(atan2((b.1-a.1)*cos(lat * .pi/180),b.0-a.0)*180 / .pi+360).truncatingRemainder(dividingBy:360)
+                probe=(lat,lon,(bearing+(direction == 1 ? 0 : 180)).truncatingRemainder(dividingBy:360));break
+            }
+            remaining-=length
+        }
+        let fix=try XCTUnwrap(probe)
+        let inventory=try XCTUnwrap(InventorySignBundle.lookup(db:db,lat:fix.0,lon:fix.1,wayID:way,points:points,heading:fix.2,headingAccuracy:5,accuracy:5))
+        XCTAssertEqual(inventory.activeRule?.signID,sign);XCTAssertEqual(inventory.activeRule?.speedKmh,expected)
+        let service=V3SpeedLimitService(dbPath:database.path,countryCode:"DEU")
+        let context=WayMatchContext(preferredWayID:way,recentWayIDs:[way],preferredStreetRef:nil,recentStreetRefs:[],matchedFixCount:3)
+        let result=try service.lookupSpeedLimit(lat:fix.0,lon:fix.1,matchContext:context,headingDeg:fix.2,headingAccuracyDeg:5,speedKmh:35,horizontalAccuracyM:5)
+        XCTAssertEqual(result.wayID,way);XCTAssertEqual(result.speedSource,"INVENTORY_SIGN")
+        XCTAssertEqual(result.speedLimitKmh,expected);XCTAssertEqual(result.inventorySigns?.activeRule?.signID,sign)
+        let route=try await manager.resolveLocalBundleRoute(lat:fix.0,lon:fix.1,fallbackDBPath:nil)
+        XCTAssertEqual(route?.bundleVersion,expectedVersion)
+        let model=DriveSessionViewModel();defer { model.stopDriving() }
+        try await model.testWaitForStartupDataLoad(timeout:60)
+        await model.testRefreshBundleInventory()
+        XCTAssertEqual(model.activeBundleVersion,expectedVersion)
+        for _ in 0..<3 { await model.testRunGPSLookup(latitude:fix.0,longitude:fix.1,headingDegrees:fix.2,speedKmh:35) }
+        XCTAssertEqual(model.limitWayID,way);XCTAssertEqual(model.speedLimitKmh,expected)
+        print("INVENTORY_V15_FULL_BUNDLE "+String(data:try JSONSerialization.data(withJSONObject:["bundle_version":expectedVersion,"db_sha256":state.dbSHA256 ?? "","runtime_signs":runtimeCount,"mobidata_signs":163504,"osm_town_fallbacks":osmCount,"way_id":way,"direction":direction,"sign_id":sign,"speed_kmh":expected,"latitude":fix.0,"longitude":fix.1,"heading_deg":fix.2,"loader":true,"route":true,"v3_service":true,"controller":true],options:[.sortedKeys]),encoding:.utf8)!)
+    }
+}
+
+extension SpeedConsumerTests {
+    func testInventoryV15PartialOptionalSchemaCannotActivateOnlyOneSubstream() throws {
+        let db=try inventoryV15DB();defer { sqlite3_close(db) }
+        XCTAssertNotNil(inventoryV15Lookup(db)?.activeRule)
+        XCTAssertEqual(sqlite3_exec(db,"ALTER TABLE traffic_sign_runtime RENAME COLUMN pictogram_path TO missing_pictogram_path",nil,nil,nil),SQLITE_OK)
+        XCTAssertNil(inventoryV15Lookup(db),"Incomplete capability falls back as a whole rather than activating a speed-only subset")
+    }
+}
+
+extension SpeedConsumerTests {
+    func testInventoryV15UnverifiedSourceAnnotationCannotBecomeCameraConfirmationFromVocabularyCoverage() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let journal=InventorySignJournal(url:root.appendingPathComponent("events.ndjson")),runtime=InventorySignEncounterRuntime(journal:InventorySignJournal(url:root.appendingPathComponent("events.ndjson")))
+        let at=Date()
+        for (index,status) in ["dynamic_unverified","annotation_unverified","invalid_value","malformed_code","unknown"].enumerated() {
+            let sign=InventoryTrafficSign(signID:status,sourceID:"source",recordKey:status,snapshotSHA256:"snapshot",code:"DE:331.2[]",kind:"secondary",numericValue:nil,unit:nil,parameterStatus:status,latitude:48,longitude:8,radiusM:10,pictogramCode:nil,pictogramPath:nil,modelClasses:["motorway:end"],distanceM:0)
+            let now=at.addingTimeInterval(Double(index))
+            runtime.update(.init(signs:[sign],activeRule:nil,wayID:"1",direction:1,chainageM:0),bundle:"bundle",at:now,now:now,cameraEnabled:true,cameraAvailable:true,classes:["motorway:end"])
+            for i in 0..<2 {
+                let frameAt=now.addingTimeInterval(Double(i)*0.2)
+                runtime.observe([.init(label:"motorway:end",value:nil,score:0.99,frameID:"\(index):\(i)",at:frameAt,
+                    box:[0,0,0.1,0.1],packID:"pack",checkpoint:"model",wayID:"1",direction:1,bundle:"bundle")],now:frameAt)
+            }
+            XCTAssertEqual(try inventoryV15Events(journal.url).last?["outcome"] as? String,"ambiguous")
+        }
+        XCTAssertFalse(try inventoryV15Events(journal.url).contains { $0["outcome"] as? String == "camera_confirmed" })
+    }
+}
+
+final class V15DriveDisplayMetadataTests: XCTestCase {
+    func testMobiDataContourRequiresExactProviderAndInventoryOrigin() {
+        let state = EffectiveSpeedLimitState(value: .numeric(50), source: .bundle,
+            presentationReason: "test", hasCameraEvidenceMarker: false)
+        for kind: BundleSpeedProvenance.Kind in [.inventorySign, .inventoryTownContext, .inventoryResetContext] {
+            let origin = BundleSpeedProvenance(kind: kind, sourceID: "mobidata-bw-vzk")
+            XCTAssertTrue(MobiDataSignSourcePresentation.showsLimitContour(state: state, provenance: origin,
+                isInSpeedCaptureMode: false, hasPendingCameraLimit: false, showsCameraEndSign: false))
+            for source: String? in [nil, "", "osm-settlement", "actual-source", "mobidata-bw-vzk-copy"] {
+                XCTAssertFalse(MobiDataSignSourcePresentation.isMobiData(sourceID: source))
+                var other = origin; other.sourceID = source
+                XCTAssertFalse(MobiDataSignSourcePresentation.showsLimitContour(state: state, provenance: other,
+                    isInSpeedCaptureMode: false, hasPendingCameraLimit: false, showsCameraEndSign: false))
+            }
+        }
+        for kind: BundleSpeedProvenance.Kind in [.osmTag, .roadDefault] {
+            XCTAssertFalse(MobiDataSignSourcePresentation.showsLimitContour(state: state,
+                provenance: .init(kind: kind, sourceID: "mobidata-bw-vzk"),
+                isInSpeedCaptureMode: false, hasPendingCameraLimit: false, showsCameraEndSign: false))
+        }
+        XCTAssertFalse(MobiDataSignSourcePresentation.showsLimitContour(state: state, provenance: nil,
+            isInSpeedCaptureMode: false, hasPendingCameraLimit: false, showsCameraEndSign: false))
+    }
+    func testCameraOverridesAndTransientScreensCannotRetainMobiDataContour() {
+        let origin = BundleSpeedProvenance(kind: .inventorySign, sourceID: "mobidata-bw-vzk")
+        for source: EffectiveSpeedLimitSource in [.camera, .localCorrection, .lastKnown, .staleBundle, .none] {
+            XCTAssertFalse(MobiDataSignSourcePresentation.showsLimitContour(state: .init(value: .numeric(30),
+                source: source, presentationReason: "test", hasCameraEvidenceMarker: source == .camera),
+                provenance: origin, isInSpeedCaptureMode: false, hasPendingCameraLimit: false, showsCameraEndSign: false))
+        }
+        for value: EffectiveSpeedLimitValue in [.numeric(30), .walk, .unlimited, .unknown] {
+            for flags in [(false, false, false), (true, false, false), (false, true, false), (false, false, true)] {
+                let state = EffectiveSpeedLimitState(value: value, source: .bundle, presentationReason: "test", hasCameraEvidenceMarker: false)
+                XCTAssertEqual(MobiDataSignSourcePresentation.showsLimitContour(state: state, provenance: origin,
+                    isInSpeedCaptureMode: flags.0, hasPendingCameraLimit: flags.1, showsCameraEndSign: flags.2),
+                    value != .unknown && !flags.0 && !flags.1 && !flags.2)
+            }
+        }
+    }
+    private func sign(_ id: String, code: String = "DE:222", kind: String = "secondary") -> InventoryTrafficSign {
+        .init(signID:id,sourceID:"actual-source",recordKey:id,snapshotSHA256:"snapshot",
+            code:code,kind:kind,numericValue:nil,unit:nil,parameterStatus:"not_applicable",
+            latitude:48,longitude:8,radiusM:10,pictogramCode:nil,pictogramPath:nil,
+            modelClasses:[],distanceM:2)
+    }
+    func testSecondaryCardSurvivesExitAndNumericLimitsThenReplacesOnNextSign() {
+        var display=InventorySecondaryDisplaySelection()
+        let first=sign("warning"),next=sign("end",code:"DE:280")
+        let trigger=Date(timeIntervalSince1970:1000)
+        XCTAssertTrue(display.consume([first],at:trigger))
+        XCTAssertFalse(display.consume([],at:trigger.addingTimeInterval(1)))
+        XCTAssertEqual(display.sign,first)
+        XCTAssertEqual(display.triggeredAt,trigger)
+        XCTAssertFalse(display.consume([sign("speed",code:"DE:274-50",kind:"speed_limit")]))
+        XCTAssertEqual(display.sign,first,"The geofence is an admission trigger, not a display timeout")
+        XCTAssertTrue(display.consume([next],at:trigger.addingTimeInterval(10)))
+        XCTAssertEqual(display.sign,next)
+        XCTAssertEqual(display.triggeredAt,trigger.addingTimeInterval(10))
+        display.reset()
+        XCTAssertNil(display.sign)
+        XCTAssertNil(display.triggeredAt)
+    }
+    func testNewCameraSignCannotBeOverwrittenBySameAlreadyTriggeredInventoryCard() {
+        var display=InventorySecondaryDisplaySelection()
+        let first=sign("first"),next=sign("next")
+        display.consume([first])
+        display.replacedByCamera()
+        XCTAssertNil(display.sign)
+        XCTAssertFalse(display.consume([first]))
+        XCTAssertNil(display.sign)
+        XCTAssertTrue(display.consume([next]))
+        XCTAssertEqual(display.sign,next)
+        display.consume([])
+        XCTAssertTrue(display.consume([first]),"A genuine re-entry may trigger the original sign again")
+    }
+    func testTextOnlyUnsupportedSignIsRetainedWithoutInventingPictogramOrCameraEvidence() {
+        var display=InventorySecondaryDisplaySelection()
+        let unsupported=sign("unsupported",code:"DE:108-12")
+        display.consume([unsupported])
+        display.consume([])
+        XCTAssertEqual(display.sign?.code,"DE:108-12")
+        XCTAssertNil(display.sign?.pictogramPath)
+        XCTAssertTrue(display.sign?.modelClasses.isEmpty == true)
+    }
+    func testTSRSelectedAtNightIsPausedWhileIndependentPhotoCameraMayRun() {
+        let paused=TSRCaptureActivity.resolve(selected:true,daylightAllowed:false,locationKnown:true,
+            applicationActive:true,driving:true,modelReady:true,recognitionActive:false,
+            independent:true,driveRecording:false)
+        XCTAssertEqual(paused,.pausedNight)
+        XCTAssertEqual(paused.localizationKey,"capture.tsr.activity.paused_night")
+        XCTAssertEqual(TSRCaptureActivity.resolve(selected:false,daylightAllowed:false,locationKnown:true,
+            applicationActive:true,driving:true,modelReady:true,recognitionActive:false,
+            independent:true,driveRecording:true),.off)
+        XCTAssertEqual(TSRCaptureActivity.resolve(selected:true,daylightAllowed:false,locationKnown:false,
+            applicationActive:true,driving:true,modelReady:true,recognitionActive:false,
+            independent:true,driveRecording:false),.pausedLocation)
+        XCTAssertEqual(TSRCaptureActivity.resolve(selected:true,daylightAllowed:true,locationKnown:true,
+            applicationActive:true,driving:true,modelReady:true,recognitionActive:true,
+            independent:true,driveRecording:false),.running)
+    }
+    func testEffectiveAuthorityOverridesInventorySourceBadge() {
+        let provenance=BundleSpeedProvenance(kind:.inventorySign,sourceID:"registry")
+        func key(_ source: EffectiveSpeedLimitSource, unknown: Bool = false, user: Bool = false) -> String {
+            SpeedLimitSourcePresentation.localizationKey(state:.init(value:unknown ? .unknown : .numeric(50),
+                source:source,presentationReason:"test",hasCameraEvidenceMarker:source == .camera,isUserCorrection:user),provenance:provenance)
+        }
+        XCTAssertEqual(key(.bundle),"speed.source.inventory_sign")
+        XCTAssertEqual(key(.camera),"speed.source.camera")
+        XCTAssertEqual(key(.localCorrection,user:true),"speed.source.user_correction")
+        XCTAssertEqual(key(.localCorrection),"speed.source.local_correction")
+        XCTAssertEqual(key(.lastKnown),"speed.source.last_known")
+        XCTAssertEqual(key(.staleBundle),"speed.source.last_known")
+        XCTAssertEqual(key(.camera,unknown:true),"speed.source.unknown")
+        XCTAssertEqual(SpeedLimitSourcePresentation.localizationKey(state:.init(value:.numeric(50),source:.bundle,
+            presentationReason:"old-bundle",hasCameraEvidenceMarker:false),provenance:nil),"speed.source.bundle")
+    }
+    func testProvenanceWireKeysAndRememberedOriginAreExact() throws {
+        let original=BundleSpeedProvenance(kind:.inventoryTownContext,sourceID:"osm-settlement",signID:"source-sign",
+            ruleID:nil,signCode:"DE:310",snapshotSHA256:"source-snapshot",wayID:"A",direction:-1)
+        let latched=original.retainingOrigin(as:.inventoryTownContext,wayID:"B")
+        XCTAssertEqual(latched.wayID,"A")
+        XCTAssertEqual(latched.sourceID,"osm-settlement")
+        let object=try XCTUnwrap(JSONSerialization.jsonObject(with:JSONEncoder().encode(latched)) as? [String:Any])
+        XCTAssertEqual(object["source_id"] as? String,"osm-settlement")
+        XCTAssertEqual(object["snapshot_sha256"] as? String,"source-snapshot")
+        XCTAssertNil(object["rule_id"],"A physical station does not fabricate a rule identifier")
+        XCTAssertNil(object["sourceID"])
+        XCTAssertEqual(try JSONDecoder().decode(BundleSpeedProvenance.self,from:JSONEncoder().encode(latched)),latched)
+        XCTAssertNil(BundleSpeedProvenance.legacy(speedSource:"NONE",wayID:"A"))
+        XCTAssertEqual(BundleSpeedProvenance.legacy(speedSource:"EXPLICIT_TAG",wayID:"A")?.kind,.osmTag)
+        XCTAssertEqual(BundleSpeedProvenance.legacy(speedSource:"HIGHWAY_CLASS",wayID:"A")?.kind,.roadDefault)
+    }
+}
+
+extension SpeedConsumerTests {
+    func testInventoryV15ProvenanceUsesJoinedSourceRatherThanAssumingMobiData() throws {
+        let db=try inventoryV15DB();defer { sqlite3_close(db) }
+        let active=try XCTUnwrap(inventoryV15Lookup(db)?.activeRule)
+        XCTAssertEqual(active.provenance(wayID:"1").sourceID,"source")
+        XCTAssertEqual(active.provenance(wayID:"1").snapshotSHA256,"snapshot")
+        XCTAssertEqual(active.provenance(wayID:"1").ruleID,"rule")
+        sqlite3_exec(db,"UPDATE traffic_sign_runtime SET source_id='osm-settlement',snapshot_sha256='pbf-sha',sign_code='DE:310',kind='settlement_boundary',numeric_value=NULL; INSERT INTO traffic_sign_association VALUES('speed','accepted',1,1,100,90,1,'{}')",nil,nil,nil)
+        let station=try XCTUnwrap(inventoryV15Lookup(db)?.boundaries.first)
+        XCTAssertEqual(station.provenance(wayID:"1").sourceID,"osm-settlement")
+        XCTAssertEqual(station.provenance(wayID:"1").snapshotSHA256,"pbf-sha")
+        XCTAssertEqual(station.provenance(wayID:"1").kind,.inventoryTownContext)
+        XCTAssertNil(station.provenance(wayID:"1").ruleID)
+    }
+    @MainActor
+    func testInventoryV15TownLatchRetainsActualSourceOnUnsignedNewWay() throws {
+        let model=DriveSessionViewModel();defer { model.stopDriving() }
+        var result=try staleReferenceDirectionFixture()
+        let now=Date(),location=CLLocation(coordinate:.init(latitude:48,longitude:8),altitude:0,
+            horizontalAccuracy:5,verticalAccuracy:5,timestamp:now)
+        let town=InventoryTrafficRule(ruleID:"town",signID:"town",code:"DE:310",direction:1,
+            stationM:100,startM:100,endM:100,speedKmh:nil,insideCity:true,distanceM:5,
+            sourceID:"actual-town-source",snapshotSHA256:"actual-town-snapshot")
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:"A",direction:1,chainageM:101,boundaries:[town])
+        _=model.testInventoryContextualResult(result,location:location)
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:"B",direction:1,chainageM:200)
+        result.speedSource="HIGHWAY_CLASS";result.speedLimitKmh=100
+        let contextual=model.testInventoryContextualResult(result,location:location)
+        XCTAssertEqual(contextual.speedLimitKmh,50)
+        XCTAssertEqual(contextual.bundleSpeedProvenance?.sourceID,"actual-town-source")
+        XCTAssertEqual(contextual.bundleSpeedProvenance?.snapshotSHA256,"actual-town-snapshot")
+        XCTAssertEqual(contextual.bundleSpeedProvenance?.signCode,"DE:310")
+        XCTAssertEqual(contextual.bundleSpeedProvenance?.wayID,"A")
+    }
+}
+
+extension V15DriveDisplayMetadataTests {
+    func testUIPresentationLifecycleDeduplicatesRerendersAndRecordsReplacementAndVisibility() {
+        var tracker=SignUIPresentationTracker()
+        let start=Date(timeIntervalSince1970:1000)
+        let first=SignUIPresentationDescriptor(surface:"secondary",itemID:"A",sourceID:"actual-source",identityKind:"inventory_sign",signID:"A",signCode:"DE:222")
+        let next=SignUIPresentationDescriptor(surface:"secondary",itemID:"B",sourceID:"actual-source",identityKind:"inventory_sign",signID:"B",signCode:"DE:280")
+        func update(_ descriptor:SignUIPresentationDescriptor?,visible:Bool=true,mounted:Bool=true,active:Bool=true,seconds:Double=0,reason:String="view_update") -> [SignUIPresentationTracker.Event] {
+            tracker.update(descriptor,visible:visible,screenMounted:mounted,applicationActive:active,
+                at:start.addingTimeInterval(seconds),reason:reason)
+        }
+        let opened=update(first)
+        XCTAssertEqual(opened.map(\.phase),["presented"])
+        XCTAssertTrue(update(first,seconds:0.1).isEmpty,"SwiftUI rerenders cannot inflate displayed counts")
+        let replacement=update(next,seconds:5,reason:"new_sign")
+        XCTAssertEqual(replacement.map(\.phase),["ended","presented"])
+        XCTAssertEqual(replacement.first?.descriptor.signID,"A")
+        XCTAssertEqual(replacement.first?.durationMs,5000)
+        XCTAssertEqual(replacement.first?.episodeID,opened.first?.episodeID)
+        let hidden=update(next,visible:false,seconds:8,reason:"settings")
+        XCTAssertEqual(hidden.map(\.phase),["ended"])
+        XCTAssertEqual(hidden.first?.durationMs,3000)
+        XCTAssertTrue(update(next,visible:false,seconds:9).isEmpty)
+        let reopened=update(next,seconds:10,reason:"settings_dismissed")
+        XCTAssertEqual(reopened.map(\.phase),["presented"])
+        XCTAssertNotEqual(reopened.first?.episodeID,replacement.last?.episodeID)
+        XCTAssertEqual(reopened.first?.fields["paint_observed"] as? Bool,false)
+        XCTAssertEqual(reopened.first?.fields["camera_confirmation"] as? Bool,false)
+        XCTAssertEqual(update(next,mounted:false,seconds:12,reason:"screen_disappeared").map(\.phase),["ended"])
+        XCTAssertTrue(update(next,mounted:false,seconds:13).isEmpty)
+    }
+    func testCameraSecondaryPersistsAcrossNumericAndWrongModelUntilAdmittedEndOrReplacement() throws {
+        let catalog=try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
+        var display=TrafficSignDisplayState()
+        func observation(_ code:String,_ second:Double,speed:Bool=false,sha:String?=nil) -> TrafficSignDisplayObservation {
+            .init(classID:code,classifierScore:0.99,timestamp:Date(timeIntervalSince1970:second),
+                affectsSpeed:speed,classifierCheckpointSHA256:sha ?? catalog.classifierCheckpointSHA256)
+        }
+        display.consume(observation("give_way",1),catalog:catalog)
+        display.consume(observation("maxspeed:50",2,speed:true),catalog:catalog)
+        XCTAssertEqual(display.sign?.classID,"give_way")
+        display.consume(observation("stop",3,sha:"wrong-model"),catalog:catalog)
+        XCTAssertEqual(display.sign?.classID,"give_way","Unadmitted evidence cannot invalidate the card")
+        display.consume(observation("stop",4),catalog:catalog)
+        XCTAssertEqual(display.sign?.classID,"stop")
+        display.invalidate(at:Date(timeIntervalSince1970:3))
+        XCTAssertEqual(display.sign?.classID,"stop","Late ends cannot invalidate a newer sign")
+        display.invalidate(at:Date(timeIntervalSince1970:5))
+        XCTAssertNil(display.sign)
+        display.consume(observation("give_way",4.5),catalog:catalog)
+        XCTAssertNil(display.sign,"An invalidated display cannot be resurrected by late frames")
+    }
+}
+
+extension V15DriveDisplayMetadataTests {
+    func testSecondaryFaceRejectsOnlyKnownOppositionRotatingStoredGeometryExactlyOnce() {
+        var warning=sign("warning")
+        warning.associationStatus="accepted";warning.associatedWayID="source-way"
+        warning.associatedDirection = -1;warning.associatedHeadingDeg=90
+        XCTAssertEqual(warning.secondaryFaceStatus(heading:270,headingAccuracy:5),"face_compatible")
+        XCTAssertTrue(warning.targetMatches(way:"adjacent-split",direction:1,heading:270,headingAccuracy:5))
+        XCTAssertEqual(warning.secondaryFaceStatus(heading:90,headingAccuracy:5),"known_opposite_face")
+        XCTAssertFalse(warning.targetMatches(way:"adjacent-split",direction:1,heading:90,headingAccuracy:5))
+        XCTAssertEqual(warning.secondaryFaceStatus(heading:180,headingAccuracy:35),"face_compatible","Exactly90degrees is not clear opposition")
+        XCTAssertEqual(warning.secondaryFaceStatus(heading:90,headingAccuracy:35.1),"face_unknown")
+        XCTAssertTrue(warning.targetMatches(way:nil,direction:nil,heading:90,headingAccuracy:nil),"Missing face evidence preserves proximity behavior")
+        warning.associationStatus="low_source_confidence"
+        XCTAssertEqual(warning.secondaryFaceStatus(heading:90,headingAccuracy:5),"face_unknown")
+    }
+    func testDelayedInventoryFixCannotReplaceMoreRecentCameraCard() {
+        var display=InventorySecondaryDisplaySelection()
+        let at=Date(timeIntervalSince1970:1000)
+        display.consume([sign("first")],at:at)
+        display.replacedByCamera(at:at.addingTimeInterval(2))
+        XCTAssertFalse(display.consume([sign("delayed")],at:at.addingTimeInterval(1)))
+        XCTAssertNil(display.sign)
+        XCTAssertTrue(display.consume([sign("next")],at:at.addingTimeInterval(3)))
+        XCTAssertEqual(display.sign?.signID,"next")
+    }
+}
+
+extension SpeedConsumerTests {
+    @MainActor
+    func testInventoryV15HeldSecondaryIgnoresDistantHairpinButClearsLiveKnownOppositeFace() throws {
+        let model=DriveSessionViewModel();defer { model.stopDriving() }
+        var result=try staleReferenceDirectionFixture()
+        let at=Date()
+        let warning=InventoryTrafficSign(signID:"warning",sourceID:"source",recordKey:"warning",snapshotSHA256:"source-sha",
+            code:"DE:222",kind:"secondary",numericValue:nil,unit:nil,parameterStatus:"not_applicable",latitude:48,longitude:8,
+            radiusM:10,pictogramCode:nil,pictogramPath:nil,modelClasses:[],distanceM:2,
+            associatedWayID:"adjacent-split",associatedDirection:1,associationStatus:"accepted",associatedHeadingDeg:90)
+        func location(_ offset:Double,_ heading:Double) -> CLLocation {
+            CLLocation(coordinate:.init(latitude:48,longitude:8),altitude:0,horizontalAccuracy:5,verticalAccuracy:5,
+                course:heading,courseAccuracy:5,speed:5,speedAccuracy:1,timestamp:at.addingTimeInterval(offset))
+        }
+        result.inventorySigns = .init(signs:[warning],activeRule:nil,wayID:"A",direction:1,chainageM:10)
+        model.testConsumeInventoryResult(result,location:location(0,90))
+        XCTAssertEqual(model.inventorySecondarySign?.signID,"warning")
+        result.inventorySigns = .init(signs:[],activeRule:nil,wayID:"B",direction:-1,chainageM:100)
+        model.testConsumeInventoryResult(result,location:location(0.1,270))
+        XCTAssertEqual(model.inventorySecondarySign?.signID,"warning","Do not compare a held sign's orientation after leaving its geofence")
+        result.inventorySigns = .init(signs:[warning],activeRule:nil,wayID:"B",direction:-1,chainageM:100)
+        model.testConsumeInventoryResult(result,location:location(0.2,270))
+        XCTAssertNil(model.inventorySecondarySign,"Reliable opposing-face evidence can revoke the still-near card")
+    }
+    func testInventoryV15OppositeSecondaryCannotTriggerCaptureOrCameraConfirmation() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let url=root.appendingPathComponent("events.ndjson")
+        let runtime=InventorySignEncounterRuntime(journal:InventorySignJournal(url:url))
+        let warning=InventoryTrafficSign(signID:"warning",sourceID:"source",recordKey:"warning",snapshotSHA256:"source-sha",
+            code:"DE:222",kind:"secondary",numericValue:nil,unit:nil,parameterStatus:"not_applicable",latitude:48,longitude:8,
+            radiusM:10,pictogramCode:nil,pictogramPath:nil,modelClasses:["warning-fixture"],distanceM:2,
+            associatedWayID:"adjacent-split",associatedDirection:1,associationStatus:"accepted",associatedHeadingDeg:90)
+        let at=Date(timeIntervalSince1970:1000)
+        runtime.update(.init(signs:[warning],activeRule:nil,wayID:"A",direction:1,chainageM:0),bundle:"bundle",at:at,now:at,
+            cameraEnabled:true,cameraAvailable:true,classes:["warning-fixture"],heading:270,headingAccuracy:5)
+        XCTAssertTrue(runtime.visible.isEmpty)
+        XCTAssertTrue(runtime.pendingCaptureIDs.isEmpty)
+        for (id,offset) in [("one",0.0),("two",0.2)] {
+            let date=at.addingTimeInterval(offset)
+            runtime.observe([.init(label:"warning-fixture",value:nil,score:0.99,frameID:id,at:date,box:[0.2,0.2,0.1,0.1],
+                packID:"pack",checkpoint:"checkpoint",wayID:"A",direction:1,bundle:"bundle")],now:date)
+        }
+        let events=try inventoryV15Events(url)
+        XCTAssertFalse(events.contains { $0["outcome"] as? String == "camera_confirmed" })
+        XCTAssertEqual(events.first?["face_status"] as? String,"known_opposite_face")
     }
 }

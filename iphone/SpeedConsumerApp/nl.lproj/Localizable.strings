@@ -504,3 +504,42 @@
 "drive_photo.retry" = "Foto mislukt. Tik om opnieuw te proberen";
 "onboarding.dashcam.start_screenshot" = "Rijscherm: de rode cirkel linksonder start de video-opname.";
 "onboarding.dashcam.stop" = "Tik op dezelfde plek op het rode vierkant om de video te stoppen en op te slaan. Wacht tot het opslaan klaar is voordat je de videobibliotheek opent.";
+
+// Capture activity and offline-sign provenance.
+"capture.tsr.activity.off" = "Uit";
+"capture.tsr.activity.running" = "Actief";
+"capture.tsr.activity.unavailable" = "Niet beschikbaar";
+"capture.tsr.activity.paused_night" = "Nachtpauze";
+"capture.tsr.activity.paused_location" = "Wacht op locatie";
+"capture.tsr.activity.paused_background" = "Gepauzeerd op achtergrond";
+"capture.tsr.activity.waiting_drive" = "Wacht op rit";
+"capture.tsr.activity.waiting_recording" = "Wacht op opname";
+"capture.tsr.activity.loading_model" = "Model laden";
+"capture.tsr.status" = "Cameraherkenning";
+"capture.tsr.night_description" = "Herkenning is geselecteerd en ’s nachts gepauzeerd. Ze wordt overdag hervat. De fotocamera en offline verkeersborden werken onafhankelijk.";
+"capture.photo_camera.active" = "Fotocamera actief";
+"capture.photo_camera.off" = "Fotocamera uit";
+"capture.photo_camera.ready" = "Fotocamera gereed";
+"capture.photos.active" = "Automatische foto’s actief";
+"capture.photos.selected" = "Automatische foto’s geselecteerd";
+"capture.photos.off" = "Automatische foto’s uit";
+"speed.source.unknown" = "Bron van limiet onbekend";
+"speed.source.camera" = "Cameraherkenning";
+"speed.source.user_correction" = "Eigen correctie";
+"speed.source.local_correction" = "Lokale correctie";
+"speed.source.last_known" = "Laatst bekende limiet";
+"speed.source.osm_tag" = "OSM-snelheidslimiet";
+"speed.source.road_default" = "Standaardlimiet";
+"speed.source.inventory_sign" = "Offline verkeersbord";
+"speed.source.inventory_town_context" = "Offline bebouwdekomgrens";
+"speed.source.inventory_reset_context" = "Offline einde beperking";
+"speed.source.bundle" = "Offline weggegevens";
+"inventory.display.persistence" = "Een bord binnen 10 m of een bebouwdekomgrens binnen 30 m activeert de secundaire weergave. Die blijft tot het volgende toepasselijke bord of het einde van de rit. Foto’s blijven onafhankelijk; nabijheid bevestigt geen camerawaarneming. Foto’s moeten worden beoordeeld.";
+"speed.source.camera_pending" = "Cameravoorstel";
+
+/* Upcoming physical speed limit preview. */
+"speed.upcoming.distance" = "over %d m";
+"speed.upcoming.distance.near" = "over <10 m";
+"speed.upcoming.distance.accessibility" = "over %d meter";
+"speed.upcoming.distance.near.accessibility" = "over minder dan 10 meter";
+"speed.upcoming.accessibility" = "Komende snelheidslimiet, %d kilometer per uur, %@.";

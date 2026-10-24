@@ -127,6 +127,7 @@ internal class TrafficSignDisplayDeliveryGate {
     }
 
     fun reset() { lastAcceptedAt = null }
+    fun invalidate(at: Instant) { if (lastAcceptedAt?.let { at > it } != false) lastAcceptedAt = at }
 }
 
 /** No queue: every attempt needs a fresh accepted frame and an idle speech lane. */
@@ -217,10 +218,11 @@ internal object TrafficSignDisplayPolicy {
 
     fun next(current: TrafficSignPictogram?, observation: TrafficSignDisplayObservation?, catalog: TrafficSignDisplayCatalog): TrafficSignPictogram? {
         val candidate = observation?.candidate ?: return current
-        // An accepted speed sign supersedes the previous other sign, but is shown only in the speed lane.
+        // Numeric/scope observations have their own speed lane. A committed typed
+        // boundary explicitly invalidates the secondary lane after resolver admission.
         return when (candidate.normalizedPrimarySemantic().kind) {
             TrafficSignSemanticKind.UNKNOWN, TrafficSignSemanticKind.NON_SPEED_RESTRICTION_END -> catalog.pictogram(candidate.rawClassId)
-            else -> null
+            else -> current
         }
     }
 }

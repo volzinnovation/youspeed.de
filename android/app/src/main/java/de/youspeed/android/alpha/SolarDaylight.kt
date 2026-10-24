@@ -16,9 +16,9 @@ internal object SolarDaylight {
         val gamma = 2 * PI / utc.toLocalDate().lengthOfYear() * (utc.dayOfYear - 1 + (hours - 12) / 24)
         val equation = 229.18 * (0.000075 + 0.001868 * cos(gamma) - 0.032077 * sin(gamma)
             - 0.014615 * cos(2 * gamma) - 0.040849 * sin(2 * gamma))
-        val declination = 0.006918 - 0.399912 * cos(gamma) + 0.070257 * sin(gamma)
+        val declination = (0.006918 - 0.399912 * cos(gamma) + 0.070257 * sin(gamma)
             - 0.006758 * cos(2 * gamma) + 0.000907 * sin(2 * gamma)
-            - 0.002697 * cos(3 * gamma) + 0.00148 * sin(3 * gamma)
+            - 0.002697 * cos(3 * gamma) + 0.00148 * sin(3 * gamma))
         val hourAngle = (hours * 60 + equation + 4 * longitude) / 4 - 180
         val lat = Math.toRadians(latitude)
         val sine = sin(lat) * sin(declination) + cos(lat) * cos(declination) * cos(Math.toRadians(hourAngle))

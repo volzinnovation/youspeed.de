@@ -48,6 +48,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
@@ -56,6 +57,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -77,6 +79,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.WifiOff
@@ -117,12 +120,15 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.asImageBitmap
@@ -143,11 +149,14 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.testTag as semanticsTestTag
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
@@ -215,11 +224,13 @@ internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: Ap
     val ui = controller.uiState
     SignCollectionConsentDialog(controller.signCollection)
     var openSettings by rememberSaveable { mutableStateOf(false) }
+    var settingsStartAtJournal by rememberSaveable {mutableStateOf(false)}
     var openDataManager by rememberSaveable { mutableStateOf(false) }
     val dataManagerSavedState = rememberSaveableStateHolder()
     var openLegal by rememberSaveable { mutableStateOf(false) }
     var openDebug by rememberSaveable { mutableStateOf(false) }
     var openLocalRecordings by rememberSaveable { mutableStateOf(false) }
+    var openTrips by rememberSaveable { mutableStateOf(false) }
     var openPanoramaxGallery by rememberSaveable { mutableStateOf(false) }
 
     val reviewActivity = LocalContext.current as? ComponentActivity
@@ -231,7 +242,7 @@ internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: Ap
                 latest.startupDataState == StartupDataState.READY && !controller.shouldPresentOnboarding() &&
                 ConsumerMainScreenLogic.hasUsableGpsFix(latest),
             reviewActivity?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.RESUMED) == true,
-            openSettings || openDataManager || openLegal || openDebug || openLocalRecordings || openPanoramaxGallery ||
+            openTrips || openSettings || openDataManager || openLegal || openDebug || openLocalRecordings || openPanoramaxGallery ||
                 controller.calibrationVisible || ConsumerMainScreenLogic.isInSpeedCaptureMode(latest) ||
                 latest.dashcamButtonActionPending || latest.dashcamButtonActionError != null)
     })
@@ -254,6 +265,7 @@ internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: Ap
     LaunchedEffect(ui.drivingControlsAllowed) {
         if (!ui.drivingControlsAllowed) {
             openSettings = false
+            openTrips = false
             openLegal = false
             openDebug = false
             openLocalRecordings = false
@@ -262,8 +274,10 @@ internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: Ap
             controller.setSettingsVisible(false)
         }
     }
-    LaunchedEffect(ui.stationarySpeedObservedAt, ui.trafficSignRecognitionEnabled) {
+    LaunchedEffect(ui.stationarySpeedObservedAt, ui.trafficSignRecognitionEnabled, ui.phoneIsFlat) {
         controller.prepareVisionDismissalPermissionIfNeeded()
+        val stationary = ui.phoneIsFlat || (ui.drivingControlsAllowed && ui.currentSpeedKmh == 0.0 && ui.stationarySpeedObservedAt?.let { java.time.Duration.between(it, Instant.now()).seconds in 0..3 } == true)
+        if (!stationary) openTrips = false
     }
     SideEffect { controller.setSettingsVisible(openSettings && ui.drivingControlsAllowed) }
     DisposableEffect(controller) {
@@ -271,10 +285,14 @@ internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: Ap
     }
     val showSettings = {
         controller.setSettingsVisible(true)
+        settingsStartAtJournal=false
         openSettings = true
     }
 
     val showingOnboarding = controller.shouldPresentOnboarding()
+    LaunchedEffect(ui.appScreenshotState, ui.startupLogReviewState, showingOnboarding, ui.startupDataState) {
+        if(ui.appScreenshotState==null && ui.startupLogReviewState==StartupLogReviewState.COMPLETE && !showingOnboarding) controller.startJournalDrivingUse()
+    }
     LaunchedEffect(ui.startupDataState, ui.appScreenshotState, showingOnboarding, ui.drivingControlsAllowed) {
         if (showingOnboarding && ui.drivingControlsAllowed) {
             controller.pauseDrivingForOnboarding()
@@ -299,11 +317,13 @@ internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: Ap
                     MainScreen(
                         controller = controller,
                         ui = ui,
+                        presentationVisible = !openTrips && !openSettings && !openLegal && !openDebug && !openLocalRecordings && !openPanoramaxGallery && !controller.calibrationVisible,
                         onOpenSettings = { controller.performButtonAction(showSettings) },
                         onOpenCalibration = { controller.performButtonAction(controller::beginVisualCalibration) },
                         onOpenLegal = { controller.performButtonAction { openLegal = true } },
                         onOpenDebug = { controller.performButtonAction { openDebug = true } },
                         onTogglePanoramaxCapture = { controller.performButtonAction(controller::togglePanoramaxCapture) },
+                        onOpenTrips = { controller.performButtonAction { if (ui.phoneIsFlat || (ui.currentSpeedKmh == 0.0 && ui.stationarySpeedObservedAt?.let { java.time.Duration.between(it, Instant.now()).seconds in 0..3 } == true)) openTrips = true } },
                         onOpenPanoramaxGallery = { controller.performButtonAction { openPanoramaxGallery = true } },
                         onToggleDriveRecorder = controller::toggleDriveRecorder,
                         onCapture = { controller.performButtonAction(controller::beginSpeedCapture) },
@@ -329,6 +349,7 @@ internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: Ap
                         onRecognitionEnabled = controller::setTrafficSignRecognitionEnabled,
                         onIndependentRecognitionEnabled = controller::setTrafficSignRecognitionIndependentEnabled,
                         onPanoramaxEnabled = controller::setPanoramaxCaptureEnabled,
+                        journalOption = {TripJournalSetupOption(controller.tripJournal)},
                     )
                 }
 
@@ -369,6 +390,7 @@ internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: Ap
                         onOpenDebug = { controller.performButtonAction { openDebug = true } },
                         onOpenLocalRecordings = { controller.performButtonAction { openLocalRecordings = true } },
                         onOpenDataManager = { controller.performButtonAction { openDataManager = true } },
+                        initialJournalSection = settingsStartAtJournal,
                     )
                 }
             }
@@ -380,6 +402,12 @@ internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: Ap
             }
             if (openLocalRecordings && ui.drivingControlsAllowed) {
                 LocalRecordingsSheet(controller = controller, onDismiss = { openLocalRecordings = false })
+            }
+            if (openTrips && ui.drivingControlsAllowed) {
+                TripJournalScreen(controller.tripJournal, mediaCleanup = controller::tripMediaCleanup, mapDatabasePath = controller.uiState.activeDBPath,
+                    galleryContent = {media, dismiss -> TripJournalLibrary(controller,media,dismiss)},onOpenSettings={
+                        controller.performButtonAction {openTrips=false;settingsStartAtJournal=true;controller.setSettingsVisible(true);openSettings=true}
+                    }) { openTrips = false }
             }
             if (openPanoramaxGallery && ui.drivingControlsAllowed) {
                 PanoramaxGallerySheet(controller = controller, onDismiss = { openPanoramaxGallery = false })
@@ -492,18 +520,35 @@ private fun rememberTrafficSignTypeface(): Typeface {
 }
 
 @Composable
-private fun MainScreen(
+internal fun MainScreen(
     controller: ConsumerSessionController,
     ui: ConsumerUiState,
+    presentationVisible: Boolean,
     onOpenSettings: () -> Unit,
     onOpenCalibration: () -> Unit,
     onOpenLegal: () -> Unit,
     onOpenDebug: () -> Unit,
     onTogglePanoramaxCapture: () -> Unit,
+    onOpenTrips: () -> Unit,
     onOpenPanoramaxGallery: () -> Unit,
     onToggleDriveRecorder: () -> Unit,
     onCapture: () -> Unit,
 ) {
+    val journalRecordingEnabled = rememberTripJournalRecordingEnabled(controller.tripJournal)
+    val hasInventorySecondary = ui.inventorySignPictogram != null || ui.inventorySignCode != null
+    val secondaryIdentity = if (hasInventorySecondary) ui.inventorySignPresentationId else ui.cameraSecondaryPresentationId
+        ?: ui.lastTrafficSignPictogram?.classId?.let { "camera:$it" }
+    val secondarySource = if (hasInventorySecondary) ui.inventorySignSourceId ?: "inventory" else "camera"
+    val secondaryCode = if (hasInventorySecondary) ui.inventorySignCode else ui.lastTrafficSignPictogram?.classId
+    val secondaryVisible = ui.otherTrafficSignDisplayEnabled && presentationVisible && ui.presentationForeground &&
+        secondaryIdentity != null && (hasInventorySecondary || ui.lastTrafficSignPictogram != null)
+    PresentationCompositionTelemetry(controller,"secondary",secondaryIdentity,secondarySource,secondaryCode,secondaryVisible)
+    val primaryKind = DriveEvidencePresentation.sourceKind(ui.effectiveSpeedLimitSource,
+        ui.speedLimitKmh != null || ui.speedLimitDisplayText != null || ui.isUnlimitedSpeedLimitActive,ui.bundleSpeedProvenance)
+    val primaryValue = ui.speedLimitDisplayText ?: ui.speedLimitKmh?.toString() ?: if (ui.isUnlimitedSpeedLimitActive) "unlimited" else "unknown"
+    val primaryOrigin = ui.bundleSpeedProvenance.takeIf { ui.effectiveSpeedLimitSource == EffectiveSpeedLimitSource.BUNDLE }
+    PresentationCompositionTelemetry(controller,"primary","$primaryKind:$primaryValue:${primaryOrigin?.signId.orEmpty()}:${primaryOrigin?.ruleId.orEmpty()}",
+        primaryKind,primaryValue,presentationVisible && ui.presentationForeground && !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui))
     var previewSelected by rememberSaveable { mutableStateOf(true) }
     val recorderVisible = ui.driveRecorderState != DriveRecorderState.DISABLED
     var previousPhotoCaptureAt by remember { mutableStateOf(ui.panoramaxLastCaptureAt) }
@@ -533,7 +578,7 @@ private fun MainScreen(
     )
     val previewVisible = previewPresentation.isVisible
     val drivingPhotoVisible = DrivingPhotoCapturePolicy.replacesSettings(ui.currentSpeedKmh,
-        ui.appScreenshotState != null || ui.drivingControlHasSignal)
+        ui.appScreenshotState != null || ui.drivingControlHasSignal, phoneIsFlat = ui.phoneIsFlat)
     var photoReadinessNow by remember { mutableStateOf(Instant.now()) }
     LaunchedEffect(drivingPhotoVisible) {
         while (drivingPhotoVisible) {
@@ -673,6 +718,13 @@ private fun MainScreen(
                             showsPedestrianZoneIcon = showsPedestrianZoneSign,
                             showsActiveCameraLimitIndicator = showsActiveCameraLimitIndicator,
                             showsStaleBundleLimitIndicator = ui.effectiveSpeedLimitSource.isStale,
+                            showsMobiDataContour = MobiDataSignSourcePresentation.showsLimitContour(
+                                source = ui.effectiveSpeedLimitSource,
+                                hasValue = ui.speedLimitKmh != null || ui.speedLimitDisplayText != null || ui.isUnlimitedSpeedLimitActive,
+                                provenance = ui.bundleSpeedProvenance,
+                                isInSpeedCaptureMode = ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
+                                hasPendingCameraLimit = pendingLimit != null,
+                                showsCameraEndSign = ui.isTrafficSignEndOverlayVisible),
                             cameraSourceStateDescription = when {
                                 ui.isUnlimitedSpeedLimitActive -> stringResource(R.string.ui_camera_unlimited)
                                 ui.speedLimitDisplayText == "Schritt" -> stringResource(R.string.ui_camera_walking)
@@ -696,7 +748,17 @@ private fun MainScreen(
                         // iPhone implementation: it remains at the eye tip,
                         // but its artwork is in front of the speed-limit ring.
                         if (ui.otherTrafficSignDisplayEnabled) {
-                            ui.lastTrafficSignPictogram?.let { pictogram ->
+                            if (ui.inventorySignPictogram == null && ui.inventorySignCode != null) {
+                                Column(Modifier.align(Alignment.TopStart).offset(x = screenInset)
+                                    .mobiDataSourceContour(MobiDataSignSourcePresentation.isMobiData(ui.inventorySignSourceId), rectangular = true),
+                                    horizontalAlignment = Alignment.CenterHorizontally) {
+                                    SupplementaryRestrictionText(ui.inventorySignCode, fontSize = 14.sp, lineHeight = 17.sp,
+                                        modifier = Modifier.widthIn(max = 150.dp).testTag("inventory-sign-code"))
+                                    ui.inventorySignParameterText?.let { text -> SupplementaryRestrictionText(text, fontSize = 14.sp, lineHeight = 17.sp,
+                                        modifier = Modifier.widthIn(max = 150.dp).testTag("inventory-sign-parameter")) }
+                                }
+                            }
+                            (ui.inventorySignPictogram ?: ui.lastTrafficSignPictogram)?.let { pictogram ->
                                 val eyeTipInset = if (landscape) {
                                     max(10f, (signPaneWidth.value - signSize.value) / 4f).dp
                                 } else {
@@ -704,7 +766,12 @@ private fun MainScreen(
                                 }
                                 Column(Modifier.align(Alignment.TopStart).offset(x = eyeTipInset),
                                     horizontalAlignment = Alignment.CenterHorizontally) {
-                                    RecognizedTrafficSignPictogram(pictogram = pictogram)
+                                    RecognizedTrafficSignPictogram(pictogram = pictogram, showsMobiDataContour =
+                                        ui.inventorySignPictogram != null && MobiDataSignSourcePresentation.isMobiData(ui.inventorySignSourceId))
+                                    if (ui.inventorySignPictogram == pictogram) ui.inventorySignParameterText?.let { text ->
+                                        SupplementaryRestrictionText(text, fontSize = 14.sp, lineHeight = 17.sp,
+                                            modifier = Modifier.widthIn(max = 150.dp).testTag("inventory-sign-parameter"))
+                                    }
                                     if (!ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
                                         ui.retainedTrafficSignSupplementaryText?.takeIf {
                                             it.matchesPictogram(pictogram.classId)
@@ -716,6 +783,14 @@ private fun MainScreen(
                                 }
                             }
                         }
+                    }
+                    ui.upcomingSpeedLimit?.let { upcoming ->
+                        UpcomingSpeedLimitPreview(upcoming, foreground,
+                            Modifier.align(androidx.compose.ui.AbsoluteAlignment.BottomLeft)
+                                .absolutePadding(left = screenInset,
+                                    bottom = 4.dp)
+                                .widthIn(max = if (landscape) 160.dp else (signPaneWidth - signSize) / 2 + 30.dp),
+                            alignSignToLeft = landscape)
                     }
 
                 }
@@ -731,6 +806,7 @@ private fun MainScreen(
                         compact = true,
                         onPreviewRequested = { previewSelected = true },
                     )
+                    RoadworksDrivingAdvisory()
                     BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
                         val fittedMetricHeight = min(metricSlotMinHeight.value, maxHeight.value * 0.58f).dp
                         val metricScale = (fittedMetricHeight.value / metricSlotMinHeight.value).coerceIn(0.1f, 1f)
@@ -810,11 +886,12 @@ private fun MainScreen(
             horizontalPadding = screenInset, foreground = foreground,
             buttonBg = buttonBg, buttonBorder = buttonBorder,
             onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings, onOpenCalibration = onOpenCalibration,
-            onOpenPanoramaxGallery = onOpenPanoramaxGallery,
+            onOpenTrips = onOpenTrips, onOpenPanoramaxGallery = onOpenPanoramaxGallery,
             onToggleDriveRecorder = onToggleDriveRecorder,
             onTogglePanoramaxCapture = onTogglePanoramaxCapture,
             panoramaxCaptureEnabled = ui.panoramaxCaptureEnabled,
-            reservePhotoSlot = drivingPhotoVisible,
+            journalRecordingEnabled = journalRecordingEnabled,
+            reservePhotoSlot = drivingPhotoVisible && !ui.phoneIsFlat,
             driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
             photoCaptureFeedbackVisible = photoCaptureFeedbackVisible,
             modifier = Modifier.width(if (landscape) workspaceWidth else maxWidth)
@@ -856,11 +933,26 @@ private fun MainScreen(
     }
 }
 
+/** A committed Compose lifecycle, deliberately distinct from GPS selection or physical sign sighting. */
+@Composable
+private fun PresentationCompositionTelemetry(controller: ConsumerSessionController, slot: String, identity: String?,
+                                             source: String?, code: String?, visible: Boolean) {
+    DisposableEffect(controller,slot,identity,visible) {
+        val startedAt = System.nanoTime()
+        if (visible && identity != null) controller.recordUiComposition(slot,"start",identity,source,code)
+        onDispose {
+            if (visible && identity != null) controller.recordUiComposition(slot,"end",identity,source,code,
+                (System.nanoTime()-startedAt)/1_000_000.0)
+        }
+    }
+}
+
 @Composable
 private fun RecognizedTrafficSignPictogram(
     pictogram: TrafficSignPictogram,
     modifier: Modifier = Modifier,
     signSize: androidx.compose.ui.unit.Dp = 72.dp,
+    showsMobiDataContour: Boolean = false,
 ) {
     val pictogramModifier = modifier
         .size(signSize)
@@ -872,12 +964,21 @@ private fun RecognizedTrafficSignPictogram(
             runCatching { context.assets.open(path).use(BitmapFactory::decodeStream)?.asImageBitmap() }.getOrNull()
         }
     }
+    val contour = remember(pictogram.imagePath, showsMobiDataContour) {
+        if (showsMobiDataContour && pictogram.imagePath?.startsWith("tsr/sign-pictograms/png/") == true) {
+            val path = "tsr/sign-pictograms/contours/" + pictogram.imagePath.substringAfterLast('/')
+            runCatching { context.assets.open(path).use(BitmapFactory::decodeStream)?.asImageBitmap() }.getOrNull()
+        } else null
+    }
     if (bitmap != null) {
-        Image(
-            bitmap = bitmap,
-            contentDescription = stringResource(R.string.ui_last_recognized_sign, pictogram.label()),
-            modifier = pictogramModifier,
-        )
+        Box(pictogramModifier.then(if (showsMobiDataContour) Modifier.semantics { stateDescription = "MobiData" } else Modifier),
+            contentAlignment = Alignment.Center) {
+            if (contour != null) Image(bitmap = contour, contentDescription = null,
+                modifier = Modifier.requiredSize((signSize - 10.dp) * 1.125f).testTag("mobidata-sign-source-contour"))
+            Image(bitmap = bitmap,
+                contentDescription = stringResource(R.string.ui_last_recognized_sign, pictogram.label()),
+                modifier = Modifier.fillMaxSize())
+        }
     }
 }
 
@@ -890,10 +991,12 @@ private fun BottomCornerButtons(
     onOpenLegal: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenCalibration: () -> Unit,
+    onOpenTrips: () -> Unit,
     onOpenPanoramaxGallery: () -> Unit,
     onToggleDriveRecorder: () -> Unit,
     onTogglePanoramaxCapture: () -> Unit,
     panoramaxCaptureEnabled: Boolean,
+    journalRecordingEnabled: Boolean,
     reservePhotoSlot: Boolean,
     driveRecorderState: DriveRecorderState,
     panoramaxCaptureCount: Int,
@@ -970,6 +1073,14 @@ private fun BottomCornerButtons(
             ) {
                 Icon(Icons.Default.Info, contentDescription = stringResource(R.string.ui_legal_title), tint = foreground)
             }
+            val journalState = if (journalRecordingEnabled) ConsumerUiStrings.text("On", "Ein", "Activé", "Aan")
+                else ConsumerUiStrings.text("Off", "Aus", "Désactivé", "Uit")
+            PillIconButton(onClick = onOpenTrips, background = buttonBg, border = buttonBorder,
+                modifier = Modifier.recordingOffSlash(!journalRecordingEnabled, foreground),
+                buttonTestTag = "trip-journal-button",
+                buttonModifier = Modifier.semantics { stateDescription = journalState }) {
+                Icon(Icons.Default.Route, contentDescription = ConsumerUiStrings.text("Trips", "Fahrten", "Trajets", "Ritten"), tint = foreground)
+            }
             if (reservePhotoSlot) {
                 Spacer(Modifier.size(CONTROL_BUTTON_DIAMETER))
             } else {
@@ -1005,19 +1116,21 @@ private fun PanoramaxCaptureToggleButton(
             role = Role.Switch
             toggleableState = if (captureEnabled) ToggleableState.On else ToggleableState.Off
         },
-        modifier = Modifier.drawWithContent {
-            drawContent()
-            if (!captureEnabled) drawLine(
-                color = foreground,
-                start = Offset(size.width * 0.1464466f, size.height * 0.8535534f),
-                end = Offset(size.width * 0.8535534f, size.height * 0.1464466f),
-                strokeWidth = 2.dp.toPx(),
-                cap = StrokeCap.Round,
-            )
-        },
+        modifier = Modifier.recordingOffSlash(!captureEnabled, foreground),
     ) {
         Icon(Icons.Default.CameraAlt, contentDescription = null, tint = foreground)
     }
+}
+
+private fun Modifier.recordingOffSlash(off: Boolean, foreground: Color): Modifier = drawWithContent {
+    drawContent()
+    if (off) drawLine(
+        color = foreground,
+        start = Offset(size.width * 0.1464466f, size.height * 0.8535534f),
+        end = Offset(size.width * 0.8535534f, size.height * 0.1464466f),
+        strokeWidth = 2.dp.toPx(),
+        cap = StrokeCap.Round,
+    )
 }
 
 @Composable
@@ -1067,6 +1180,25 @@ private fun SupplementaryRestrictionText(
 }
 
 @Composable
+internal fun UpcomingSpeedLimitPreview(upcoming: UpcomingSpeedLimitCandidate, foreground: Color, modifier: Modifier = Modifier,
+                                     alignSignToLeft: Boolean = false) {
+    val caption = if (upcoming.distanceM < 10) stringResource(R.string.upcoming_limit_distance_near)
+        else stringResource(R.string.upcoming_limit_distance, upcoming.displayDistanceM)
+    val description = stringResource(R.string.upcoming_limit_accessibility, upcoming.speedKmh, caption)
+    Column(modifier.clearAndSetSemantics { contentDescription = description; semanticsTestTag = "upcoming-speed-limit" },
+        horizontalAlignment = if (alignSignToLeft) androidx.compose.ui.AbsoluteAlignment.Left else Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Box(Modifier.size(60.dp).background(Color.White, CircleShape).border(5.dp, Color(0xFFD81920), CircleShape),
+            contentAlignment = Alignment.Center) {
+            Text(upcoming.speedKmh.toString(), color = Color.Black, fontSize = 25.sp,
+                fontWeight = FontWeight.Bold, maxLines = 1)
+        }
+        Text(caption, color = foreground, fontSize = 14.sp, lineHeight = 17.sp,
+            textAlign = TextAlign.Center, modifier = Modifier.widthIn(min = 60.dp))
+    }
+}
+
+@Composable
 private fun SpeedLimitSign(
     limitText: String,
     modifier: Modifier = Modifier,
@@ -1077,6 +1209,7 @@ private fun SpeedLimitSign(
     showsActiveCameraLimitIndicator: Boolean,
     showsStaleBundleLimitIndicator: Boolean,
     cameraSourceStateDescription: String?,
+    showsMobiDataContour: Boolean = false,
     touchEnabled: Boolean = true,
     onDoubleTap: () -> Unit,
 ) {
@@ -1094,9 +1227,11 @@ private fun SpeedLimitSign(
         modifier = Modifier
             .then(modifier)
             .size(signSize)
+            .mobiDataSourceContour(showsMobiDataContour, rectangular = showsPedestrianZoneIcon)
             .then(if (touchEnabled) Modifier.pointerInput(Unit) { detectTapGestures(onDoubleTap = { currentCaptureAction() }) } else Modifier)
             .semantics {
                 contentDescription = signDescription
+                if (showsMobiDataContour) stateDescription = "MobiData"
                 if (touchEnabled) onClick(label = captureLabel) { currentCaptureAction(); true }
             }
             .testTag("speed-sign"),
@@ -1164,6 +1299,24 @@ private fun SpeedLimitSign(
         }
     }
 }
+
+/** Two primitive strokes, with no filters, offscreen buffers, or animation. */
+private fun Modifier.mobiDataSourceContour(visible: Boolean, rectangular: Boolean = false): Modifier =
+    if (!visible) this else drawWithCache {
+        val outset = 4.dp.toPx()
+        val radius = max(3.dp.toPx(), size.minDimension * 0.025f) + outset
+        val bounds = Rect(-outset, -outset, size.width + outset, size.height + outset)
+        val path = Path().apply {
+            if (rectangular) addRoundRect(RoundRect(bounds, CornerRadius(radius))) else addOval(bounds)
+        }
+        val backing = Stroke(4.dp.toPx())
+        val white = Stroke(2.dp.toPx())
+        onDrawWithContent {
+            drawContent()
+            drawPath(path, Color.Black, style = backing)
+            drawPath(path, Color.White, style = white)
+        }
+    }
 
 @Composable
 private fun ActiveCameraSpeedLimitEye(
@@ -1456,13 +1609,24 @@ private fun SettingsSheet(
     onOpenDebug: () -> Unit,
     onOpenLocalRecordings: () -> Unit,
     onOpenDataManager: () -> Unit,
+    initialJournalSection:Boolean=false,
 ) {
+    var showTrips by remember {mutableStateOf(false)}
+    var journalSettingsRequest by remember {mutableStateOf(0)}
+    val settingsListState=rememberLazyListState()
+    LaunchedEffect(initialJournalSection,journalSettingsRequest) {if(initialJournalSection || journalSettingsRequest>0) settingsListState.scrollToItem(2)}
+    val journalStationary=controller.uiState.phoneIsFlat || (controller.uiState.currentSpeedKmh==0.0 && controller.uiState.stationarySpeedObservedAt?.let {java.time.Duration.between(it,Instant.now()).seconds in 0..3}==true)
+    LaunchedEffect(journalStationary) {if(!journalStationary) showTrips=false}
+    if(showTrips && journalStationary) {
+        TripJournalScreen(controller.tripJournal,mediaCleanup=controller::tripMediaCleanup,mapDatabasePath=controller.uiState.activeDBPath,galleryContent={media,dismiss->TripJournalLibrary(controller,media,dismiss)},onOpenSettings={showTrips=false;journalSettingsRequest++}) {showTrips=false}
+        return
+    }
     val ui = controller.uiState
     val thresholdInputState = remember(ui.audioAlertThresholdKmh) {
         mutableStateOf(ui.audioAlertThresholdKmh.toString())
     }
     SheetScaffold(title = stringResource(R.string.ui_settings_title), onDismiss = onDismiss, testTag = "settings-sheet") {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize()) {
+        LazyColumn(state=settingsListState,verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize().testTag("settings-list")) {
             item {
                 SectionCard(stringResource(R.string.data_manager_title)) {
                     Text(stringResource(R.string.data_manager_entry_help), color = Color(0xFF555555), fontSize = 13.sp)
@@ -1493,8 +1657,14 @@ private fun SettingsSheet(
                     }
                 }
             }
+            item { SectionCard(ConsumerUiStrings.text("Trip journal","Fahrtenbuch","Carnet de trajets","Rittenboek")) {
+                TripJournalRecordingPreferences(controller.tripJournal)
+                TripJournalDataManagement(controller.tripJournal)
+                OutlinedButton({showTrips=true},enabled=journalStationary,modifier=Modifier.fillMaxWidth().testTag("settings-trip-history")) {Text(ConsumerUiStrings.text("Open trip history","Fahrtenverlauf öffnen","Ouvrir l’historique des trajets","Ritgeschiedenis openen"))}
+            } }
             item { SignCollectionSettings(controller.signCollection) }
             item { RecorderParitySettings(controller) }
+            item { RoadworksSettingsSection() }
             item {
                 SectionCard(stringResource(R.string.ui_audio_alerts)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1664,6 +1834,13 @@ private fun DebugSheet(
                             modifier = Modifier.testTag("debug-share-match-log-button"),
                         ) {
                             Text(stringResource(R.string.ui_share_matcher_log))
+                        }
+                    }
+                    if (ui.inventorySignLogPath.isNotBlank()) {
+                        DebugLabel(SignCollectionText.text("Map-sign confirmation log", "Kartenzeichen-Bestätigungsprotokoll"), ui.inventorySignLogPath)
+                        OutlinedButton(onClick = controller::shareInventorySignLog,
+                            modifier = Modifier.testTag("debug-share-inventory-sign-log-button")) {
+                            Text(SignCollectionText.text("Share map-sign log", "Kartenzeichen-Protokoll teilen"))
                         }
                     }
                     if (ui.runtimeDiagnosticsLogPath.isNotBlank()) {
@@ -1976,6 +2153,8 @@ internal fun SheetScaffold(
     testTag: String,
     onBack: (() -> Unit)? = null,
     contentPadding: Dp = 16.dp,
+    containerColor: Color = Paper,
+    compact: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
     Dialog(
@@ -1988,21 +2167,22 @@ internal fun SheetScaffold(
         val window = (LocalView.current.parent as DialogWindowProvider).window
         SideEffect {
             if (window.attributes.width != WindowManager.LayoutParams.MATCH_PARENT ||
-                window.attributes.height != WindowManager.LayoutParams.MATCH_PARENT) {
-                window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
+                window.attributes.height != (if(compact) WindowManager.LayoutParams.WRAP_CONTENT else WindowManager.LayoutParams.MATCH_PARENT)) {
+                window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, if(compact) WindowManager.LayoutParams.WRAP_CONTENT else WindowManager.LayoutParams.MATCH_PARENT)
             }
         }
         Surface(
             modifier = Modifier
-                .fillMaxSize()
+                .then(if(compact) Modifier.fillMaxWidth() else Modifier.fillMaxSize())
                 .safeDrawingPadding()
                 .padding(12.dp)
                 .semantics { testTagsAsResourceId = true }
                 .testTag(testTag),
             shape = RoundedCornerShape(28.dp),
-            color = Paper,
+            color = containerColor,
+            contentColor = if(containerColor==Color.White) Color.Black else androidx.compose.material3.LocalContentColor.current,
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = if(compact) Modifier.fillMaxWidth() else Modifier.fillMaxSize()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -2028,7 +2208,7 @@ internal fun SheetScaffold(
                 HorizontalDivider()
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .then(if(compact) Modifier.fillMaxWidth() else Modifier.fillMaxSize())
                         .testTag("$testTag-content")
                         .padding(contentPadding),
                     content = content,

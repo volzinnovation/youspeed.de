@@ -174,7 +174,7 @@ struct SignCollectionClaim {
 struct SignCollectionContractGate {
     let verified: Bool
     private var schemas: [String: [String: Any]] = [:]
-    static let manifestSHA256 = "6c027fdcb4b2bcebf61e08d9aff69b4ee9961b3d40b4caf1a8711e949218c410"
+    static let manifestSHA256 = "7a20724614d25e008c43a6ea286fb459c2ed7bd9eb163cc1ac634db5928a152f"
     static var blocked: SignCollectionContractGate { SignCollectionContractGate(verified: false) }
     private init(verified: Bool) { self.verified = verified }
     // Delivery additionally verifies deployed capabilities and explicit claims.

@@ -167,6 +167,7 @@ final class SignCollectionStore: @unchecked Sendable {
         } }
     }
     private func enqueueCaptured(kind: String, event: [String: Any], claim: [String: Any]) throws {
+            if let device = event["device_id"] as? String, device != (try state("installation")) { throw SignCollectionError.invalidContract }
             let id = event["event_id"] as! String
             try gate.validate(event, model: kind.replacingOccurrences(of: "_", with: "-"))
             let body = try SignCollectionJSON.canonical(event), digest = SignCollectionJSON.sha256(Data(body.utf8))
@@ -419,7 +420,7 @@ final class SignCollectionStore: @unchecked Sendable {
         }
     }
     private func insertCrop(metadata: [String: Any], bytes: Data, disclosure: String, processorDisclosure: String?, captured: Bool = false, trustedEncoding: Bool = false) throws {
-            if !trustedEncoding { try gate.validate(metadata, model: "crop") }
+            try gate.validate(metadata, model: "crop")
             guard let encodedHash = metadata["encoded_sha256"] as? String else { throw SignCollectionError.invalidContract }
             guard metadata["installation_id"] as? String == (try state("installation")), metadata["collection_epoch"] as? Int == Int(try state("epoch")!),
                   metadata["byte_length"] as? Int == bytes.count, trustedEncoding || encodedHash == SignCollectionJSON.sha256(bytes) else { throw SignCollectionError.invalidContract }

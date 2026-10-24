@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/trip-journal/export-v1.json",
+  "title": "YouSpeed private journal portable export v1 (journal.json)",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "measurement_policy_version", "units", "trip", "events", "media", "privacy"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "measurement_policy_version": {"const": 1},
+    "units": {"const": {"distance": "metre", "duration": "second", "speed": "metres_per_second", "coordinates": "longitude,latitude", "event_time": "unix_seconds_utc"}},
+    "trip": {
+      "type": "object",
+      "required": ["id", "started_at", "ended_at", "distance_m", "duration_s", "state"],
+      "properties": {
+        "id": {"type": "string"},
+        "started_at": {"type": "number"},
+        "ended_at": {"type": ["number", "null"]},
+        "distance_m": {"type": "number", "minimum": 0},
+        "duration_s": {"type": "number", "minimum": 0},
+        "state": {"enum": ["active", "ended", "finished", "interrupted"]},
+        "vehicle": {"type": ["string", "null"]},
+        "odometer_start_km": {"type": ["number", "null"]},
+        "odometer_end_km": {"type": ["number", "null"]}
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["seq", "time", "kind", "payload"],
+        "properties": {
+          "seq": {"type": "integer", "minimum": 1},
+          "time": {"type": "number"},
+          "kind": {"type": "string"},
+          "payload": {"type": "object"}
+        }
+      }
+    },
+    "media": {"type": "array", "items": {"type": "object"}},
+    "privacy": {
+      "type": "object",
+      "required": ["masked", "raw_logs_included"],
+      "properties": {"masked": {"type": "boolean"}, "raw_logs_included": {"type": "boolean"}}
+    }
+  }
+}

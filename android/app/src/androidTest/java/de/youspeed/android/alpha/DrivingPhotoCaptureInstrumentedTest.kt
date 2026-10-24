@@ -77,15 +77,32 @@ class DrivingPhotoCaptureInstrumentedTest {
         }
     }
 
-    @Test fun onlyFlatPostureAtLowSpeedAllowsSettingsAndMovingNeverUnlocks() {
+    @Test fun flatDeskKeepsSettingsOpenAtAnyReportedSpeed() {
         assertTrue(instrumentation.targetContext.packageName.endsWith(".testhost"))
         withFixture { fixture, scenario ->
-            scenario.onActivity { fixture.prepareInteractionTest() }
+            scenario.onActivity {
+                fixture.prepareInteractionTest()
+                fixture.movingGpsFix()
+            }
             compose.onNodeWithTag("settings-button").performClick()
             compose.onNodeWithTag("settings-sheet").assertExists()
             scenario.onActivity { fixture.posture(11.0) }
             compose.onNodeWithTag("settings-sheet").assertDoesNotExist()
-            for (angle in listOf(0.0, 10.0, 45.0, 79.0, 101.0, 180.0)) {
+            for (angle in listOf(0.0, 10.0)) {
+                scenario.onActivity {
+                    fixture.posture(angle)
+                    fixture.movingGpsFix()
+                    assertTrue(fixture.controller.uiState.drivingControlsAllowed)
+                    assertTrue(fixture.controller.uiState.phoneIsFlat)
+                    assertTrue(fixture.controller.uiState.currentSpeedKmh > 20)
+                }
+                compose.onNodeWithTag("settings-button").performClick()
+                compose.onNodeWithTag("settings-sheet").assertExists()
+                scenario.onActivity { fixture.movingGpsFix() }
+                compose.onNodeWithTag("settings-sheet").assertExists()
+                compose.onNodeWithTag("settings-sheet-close").performClick()
+            }
+            for (angle in listOf(45.0, 79.0, 101.0, 180.0)) {
                 scenario.onActivity {
                     fixture.posture(angle)
                     fixture.movingGpsFix()

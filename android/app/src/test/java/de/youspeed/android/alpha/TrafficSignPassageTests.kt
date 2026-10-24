@@ -979,6 +979,40 @@ class TrafficSignPassageTests {
         assertEquals(listOf(passage), forwarded)
     }
 
+    @Test fun supplementaryAuthorityMaskPrecedesImmediatePassageAndLateCallbacks() {
+        val event = recognition(t0)
+        val order = mutableListOf<String>()
+        val annotation = TrafficSignSupplementaryTextAnnotation("maxspeed:30", 30, "physical-1", "ocr", t0, t0,
+            "bei Nässe", null, TrafficSignSupplementaryOCRStatus.READ, NormalizedTrafficSignBoundingBox(.2, .2, .1, .1))
+        val forwarder = TrafficSignFinalizedPassageForwarder(
+            submitSupplementaryAuthority = { _, _ -> order += "mask" },
+            submitRecognitionEvent = { _, _ -> order += "immediate" },
+            submitFinalizedPassage = { order += "passage"; true })
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(event, null, passage(), ocrAnnotation = annotation, ocrAttemptAnnotation = annotation))
+        assertEquals(listOf("mask", "passage", "immediate"), order)
+        order.clear()
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(event, null, ocrAnnotation = annotation, supplementaryOCROnly = true))
+        assertEquals(listOf("mask"), order)
+        order.clear()
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(event, null, contextIsCurrent = false, ocrAnnotation = annotation, supplementaryOCROnly = true))
+        assertTrue(order.isEmpty())
+    }
+
+    @Test fun deferredAssemblyAuthorityMaskPrecedesPassageWithoutAnOcrAnnotation() {
+        val order = mutableListOf<String>()
+        val event = recognition(t0).let { it.copy(candidate = it.candidate!!.copy(conditionState = TrafficSignConditionState.UNRESOLVED)) }
+        val forwarder = TrafficSignFinalizedPassageForwarder(
+            submitUnverifiedAssembly = { observed, generation ->
+                assertEquals(TrafficSignConditionState.UNRESOLVED, observed.candidate?.conditionState)
+                assertEquals(7L, generation)
+                order += "mask"
+            },
+            submitFinalizedPassage = { order += "passage"; true })
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(event, null, passage(), contextGeneration = 7,
+            ocrPhase = TrafficSignSupplementaryOCRPhase.NOT_REQUIRED))
+        assertEquals(listOf("mask", "passage"), order)
+    }
+
     @Test
     fun rawAnnotationCannotReachAuthorityCallbacks() {
         val raw = recognition(t0)
@@ -1243,6 +1277,38 @@ class TrafficSignPassageTests {
         assertTrue(mismatch.cameraEvidence)
         assertEquals(TrafficSignActionKind.ZONE_START, zoneResolver.activeAssertion()?.layers?.last()?.kind)
         assertEquals(TrafficSignActionKind.ZONE_END, zoneResolver.takeNewlyPersistableEvent()?.action?.kind)
+    }
+
+    @Test
+    fun inventoryEndsRetainRealEnclosingEvidenceAndTownResetClearsEverything() {
+        val bundle = base(50, EffectiveSpeedLimitSource.BUNDLE)
+        for (endKind in listOf(TrafficSignActionKind.MAXIMUM_SPEED_END, TrafficSignActionKind.ALL_RESTRICTIONS_END)) {
+            val resolver = TrafficSignRuntimeSourceResolver()
+            val zone = passage(TrafficSignAction(TrafficSignActionKind.ZONE_START,30))
+            resolver.commit(zone,bundle)
+            resolver.commit(passage(TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM,70),at=t0.plusSeconds(1)),bundle)
+            val restored=resolver.applyInventoryEnd(TrafficSignAction(endKind),"source:boundary",bundle)
+            assertEquals(30,restored.effective.resolution?.speedKmh)
+            assertTrue(restored.applied)
+            assertEquals(zone.finalizedEventId,resolver.activeAssertion()?.event?.finalizedEventId)
+            assertTrue(resolver.hasActiveEnclosingSpeedRule())
+            assertNull(resolver.takeNewlyActivatedEvent())
+            assertNull(resolver.takeNewlyPersistableEvent())
+            resolver.clear() // inventory DE:310/311 uses this full reset path.
+            assertEquals(50,resolver.effective(bundle).resolution?.speedKmh)
+            assertFalse(resolver.effective(bundle).cameraEvidence)
+        }
+        val postedOnly=TrafficSignRuntimeSourceResolver()
+        postedOnly.commit(passage(TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM,70)),bundle)
+        val ended=postedOnly.applyInventoryEnd(TrafficSignAction(TrafficSignActionKind.MAXIMUM_SPEED_END),"end",bundle)
+        assertEquals(50,ended.effective.resolution?.speedKmh)
+        assertFalse(ended.effective.cameraEvidence)
+        assertNull(postedOnly.activeAssertion())
+        val mismatched=TrafficSignRuntimeSourceResolver()
+        mismatched.commit(passage(TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM,70)),bundle)
+        val unchanged=mismatched.applyInventoryEnd(TrafficSignAction(TrafficSignActionKind.MAXIMUM_SPEED_END,30),"wrong-value",bundle)
+        assertFalse(unchanged.applied)
+        assertEquals(70,unchanged.effective.resolution?.speedKmh)
     }
 
     @Test

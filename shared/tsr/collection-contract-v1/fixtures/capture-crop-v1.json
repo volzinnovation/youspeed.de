@@ -1,0 +1,82 @@
+{
+  "actual_box": [
+    120,
+    200,
+    200,
+    330
+  ],
+  "actual_extra_height": 50,
+  "bottom_clipped": true,
+  "byte_length": 280,
+  "camera_viewing_direction": {
+    "accuracy_status": "high",
+    "azimuth_degrees": 90,
+    "elevation_degrees": 0,
+    "frame_measurement_delta_ms": 0,
+    "measured_at": "2026-10-02T10:00:01Z",
+    "optical_axis": "rear_camera",
+    "reference": "true_north",
+    "source": "core_motion_true_north"
+  },
+  "capture_metadata_version": 1,
+  "collection_authorization": {
+    "consent_generation": 1,
+    "decided_at": "2026-10-02T09:55:00.000Z",
+    "disclosure_version": "crop-1",
+    "origin": "client_claim",
+    "scope": "crop_storage",
+    "state": "granted"
+  },
+  "collection_epoch": 0,
+  "crop_id": "78b247a4-9f14-430d-a3c0-af218a95d101",
+  "crop_version": "downward-1",
+  "decoded_height": 130,
+  "decoded_width": 80,
+  "device_id": "d3e3c09c-2fc6-4f05-9698-67b8c3c30212",
+  "encoded_sha256": "af33dc2e048068e1be10b63d1fc81732e20348c608a1adf2eb1a33993a71abc5",
+  "encoding": "PNG",
+  "installation_id": "d3e3c09c-2fc6-4f05-9698-67b8c3c30212",
+  "local_frame_token": "synthetic-upright-frame",
+  "observation_id": "15e77710-981b-4db4-9c65-a35b4b21b60a",
+  "orientation_version": "upright-1",
+  "original_box": [
+    120,
+    200,
+    200,
+    280
+  ],
+  "privacy_preflight": "passed",
+  "processor_authorization": null,
+  "redaction_masks": [],
+  "redaction_version": "review-1",
+  "requested_box": [
+    120,
+    200,
+    200,
+    360
+  ],
+  "requested_extra_height": 80,
+  "schema_version": 1,
+  "source_frame_at": "2026-10-02T10:00:01Z",
+  "source_height": 330,
+  "source_kind": "detector",
+  "source_upright_sha256": null,
+  "source_width": 640,
+  "supplied_box": {
+    "height": 0.24242424242424243,
+    "width": 0.125,
+    "x": 0.1875,
+    "y": 0.6060606060606061
+  },
+  "vehicle_position": {
+    "alignment": "nearest_fix",
+    "course_accuracy_degrees": 10.0,
+    "course_degrees": 90.0,
+    "fix_at": "2026-10-02T10:00:01Z",
+    "frame_fix_delta_ms": 0,
+    "horizontal_accuracy_m": 8.0,
+    "latitude": 48.9,
+    "longitude": 8.7,
+    "source": "gnss"
+  }
+}

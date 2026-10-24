@@ -259,11 +259,55 @@ struct DriveMatchReplayDebug: Codable, Sendable {
     let replayResult: SpeedLimitResult
 }
 
+/// Data origin only; this never changes effective speed-reference authority.
+struct BundleSpeedProvenance: Codable, Equatable, Sendable {
+    enum Kind: String, Codable, Sendable {
+        case osmTag = "osm_tag"
+        case roadDefault = "road_default"
+        case inventorySign = "inventory_sign"
+        case inventoryTownContext = "inventory_town_context"
+        case inventoryResetContext = "inventory_reset_context"
+    }
+    var kind: Kind
+    var sourceID: String? = nil
+    var signID: String? = nil
+    var ruleID: String? = nil
+    var signCode: String? = nil
+    var snapshotSHA256: String? = nil
+    var wayID: String? = nil
+    var direction: Int? = nil
+    enum CodingKeys: String, CodingKey {
+        case kind
+        case sourceID = "source_id", signID = "sign_id", ruleID = "rule_id"
+        case signCode = "sign_code", snapshotSHA256 = "snapshot_sha256", wayID = "way_id", direction
+    }
+    func retainingOrigin(as kind: Kind, wayID: String?) -> Self {
+        var result = self
+        result.kind = kind
+        // A remembered context retains the source station/rule's road. The
+        // enclosing SpeedLimitResult carries the vehicle's current way.
+        result.wayID = result.wayID ?? wayID
+        return result
+    }
+    static func legacy(speedSource: String?, wayID: String?) -> Self? {
+        switch speedSource {
+        case "EXPLICIT_TAG", "EXPLICIT_UNLIMITED_TAG", "INHERITED_TAG":
+            return .init(kind: .osmTag, wayID: wayID)
+        case "HIGHWAY_CLASS": return .init(kind: .roadDefault, wayID: wayID)
+        default: return nil
+        }
+    }
+}
+
 struct SpeedLimitResult: Codable, Sendable {
+    var conditionalRuleContext: ConditionalSpeedRules.Reevaluation? = nil
+    var upcomingSpeedLimits: UpcomingSpeedLimitSnapshot? = nil
+    var bundleSpeedProvenance: BundleSpeedProvenance? = nil
+    var inventorySigns: InventorySignLookup? = nil
     var applicabilityGeometry: TSRMapGeometry? = nil
     var speedSource: String? = nil
-    let speedLimitKmh: Int?
-    let isUnlimitedSpeedLimit: Bool?
+    var speedLimitKmh: Int?
+    var isUnlimitedSpeedLimit: Bool?
     let wayID: String?
     let highway: String?
     let service: String?
@@ -281,8 +325,8 @@ struct SpeedLimitResult: Codable, Sendable {
     let cityName: String?
     let cityPlaceName: String?
     let cityDistrictName: String?
-    let insideCity: Bool?
-    let citySource: String?
+    var insideCity: Bool?
+    var citySource: String?
     let cityResolveMs: Double
     let cityCandidateBoundaries: Int
     let cityContainingBoundaries: Int

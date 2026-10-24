@@ -7,7 +7,7 @@ import org.junit.Test
 
 class TrafficSignSpatialAssemblyTests {
     @Test
-    fun supplementaryPlateBelowPrimaryIsIgnoredForLiveAssembly() {
+    fun supplementaryPlateBelowPrimaryIsRetainedButNeverResolvedByClassifier() {
         val pack = packWithWetPlate()
         val primary = detection("speed_limit_30", box(0.45, 0.20, 0.10, 0.12))
         val wetPlate = detection("plate_wet", box(0.44, 0.34, 0.12, 0.05))
@@ -20,12 +20,12 @@ class TrafficSignSpatialAssemblyTests {
 
         val assembly = result.assemblies.single()
         assertEquals("frame-42-assembly-1", assembly.assemblyId)
-        assertEquals(TrafficSignConditionState.NONE, assembly.conditionState)
-        assertTrue(assembly.restrictions.isEmpty())
+        assertEquals(TrafficSignConditionState.UNRESOLVED, assembly.conditionState)
+        assertEquals(listOf("wet"),assembly.restrictions.map {it.normalizedValue})
         assertEquals(assembly.assemblyId, assembly.primary.candidate.assemblyId)
-        assertEquals(TrafficSignConditionState.NONE, assembly.primary.candidate.conditionState)
-        assertTrue(assembly.primary.candidate.restrictions.isEmpty())
-        assertTrue(assembly.supplementaryPlates.isEmpty())
+        assertEquals(TrafficSignConditionState.UNRESOLVED, assembly.primary.candidate.conditionState)
+        assertEquals(1,assembly.primary.candidate.restrictions.size)
+        assertEquals(listOf(wetPlate),assembly.supplementaryPlates)
         assertTrue(result.unassignedSupplementaryPlates.isEmpty())
     }
 
@@ -46,11 +46,11 @@ class TrafficSignSpatialAssemblyTests {
         assertEquals(TrafficSignConditionState.NONE, assembly.primary.candidate.conditionState)
         assertTrue(assembly.restrictions.isEmpty())
         assertTrue(assembly.primary.candidate.restrictions.isEmpty())
-        assertTrue(result.unassignedSupplementaryPlates.isEmpty())
+        assertEquals(listOf(sidePlate),result.unassignedSupplementaryPlates)
     }
 
     @Test
-    fun twoPrimarySignsRemainSeparateAndPlateIsIgnored() {
+    fun twoPrimarySignsRemainSeparateAndPlateBindsOnlyToItsParent() {
         val pack = packWithWetPlate()
         val left = detection("speed_limit_30", box(0.25, 0.15, 0.10, 0.12))
         val right = detection("speed_limit_30", box(0.55, 0.18, 0.10, 0.12))
@@ -64,9 +64,22 @@ class TrafficSignSpatialAssemblyTests {
 
         assertEquals(2, assemblies.size)
         assertTrue(assemblies[0].restrictions.isEmpty())
-        assertTrue(assemblies[1].restrictions.isEmpty())
+        assertEquals(1,assemblies[1].restrictions.size)
         assertEquals(TrafficSignConditionState.NONE, assemblies[0].conditionState)
-        assertEquals(TrafficSignConditionState.NONE, assemblies[1].conditionState)
+        assertEquals(TrafficSignConditionState.UNRESOLVED, assemblies[1].conditionState)
+    }
+
+    @Test fun ambiguousAndStackedPlatesAreNeverDroppedOrGrantedAuthority() {
+        val pack=packWithWetPlate()
+        val left=detection("speed_limit_30",box(.40,.1,.12,.12));val right=detection("speed_limit_30",box(.44,.1,.12,.12))
+        val plate=detection("plate_wet",box(.41,.24,.14,.05))
+        val ambiguous=TrafficSignSpatialAssembly.assemble(listOf(left,right,plate),pack,"ambiguous")
+        assertEquals(listOf(plate),ambiguous.unassignedSupplementaryPlates)
+        assertTrue(ambiguous.assemblies.all {it.conditionState==TrafficSignConditionState.UNRESOLVED})
+        val lower=detection("plate_wet",box(.41,.31,.14,.05))
+        val stacked=TrafficSignSpatialAssembly.assemble(listOf(left,plate,lower),pack,"stacked").assemblies.single()
+        assertEquals(listOf(plate,lower),stacked.supplementaryPlates)
+        assertEquals(TrafficSignConditionState.UNRESOLVED,stacked.conditionState)
     }
 
     private fun packWithWetPlate(): TrafficSignModelPack {

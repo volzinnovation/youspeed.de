@@ -93,7 +93,7 @@ struct SignCollectionCrop {
 
     func metadata(cropID: String, observationID: String, installationID: String, epoch: Int, sourceKind: String, frameAt: Date,
                   localFrameToken: String?, privacyPreflight: String, redactionVersion: String, collectionClaim: SignCollectionClaim,
-                  processorClaim: SignCollectionClaim? = nil, vehiclePosition: Any = NSNull()) -> [String: Any] {
+                  processorClaim: SignCollectionClaim? = nil, vehiclePosition: Any = NSNull(), cameraViewingDirection: [String: Any]? = nil) -> [String: Any] {
         var result = geometry.wire
         result.merge(["schema_version": 1, "crop_id": cropID, "observation_id": observationID, "installation_id": installationID, "collection_epoch": epoch,
                       "source_kind": sourceKind, "source_frame_at": SignCollectionJSON.utc(frameAt), "source_width": sourceWidth, "source_height": sourceHeight,
@@ -102,6 +102,10 @@ struct SignCollectionCrop {
                       "decoded_width": geometry.actual[2]-geometry.actual[0], "decoded_height": geometry.actual[3]-geometry.actual[1], "encoding": "PNG",
                       "orientation_version": "upright-1", "crop_version": "downward-1", "redaction_version": redactionVersion, "redaction_masks": [],
                       "privacy_preflight": privacyPreflight, "collection_authorization": collectionClaim.wire, "processor_authorization": processorClaim?.wire as Any? ?? NSNull()]) { _, new in new }
+        if let cameraViewingDirection {
+            result["capture_metadata_version"] = 1; result["device_id"] = installationID
+            result["camera_viewing_direction"] = cameraViewingDirection
+        }
         return result
     }
 }
@@ -119,4 +123,49 @@ final class SignCollectionFrame: @unchecked Sendable, Equatable {
     }
     func crop(box: [String: Double]) throws -> SignCollectionCrop { try cropProvider(box) }
     static func == (lhs: SignCollectionFrame, rhs: SignCollectionFrame) -> Bool { lhs.token == rhs.token }
+}
+
+/// A bounded history preserves the pose of the captured frame during inference.
+/// North/east/up are physical coordinates, unaffected by portrait/landscape UI.
+struct SignCollectionCameraSample {
+    let at: Date
+    let azimuth: Double
+    let elevation: Double
+    let accuracy: String
+    let source: String
+    static func opticalAxis(north: Double, east: Double, up: Double, at: Date,
+                            accuracy: String, source: String) -> Self? {
+        guard [north, east, up].allSatisfy(\.isFinite), ["medium", "high"].contains(accuracy),
+              hypot(north, east) > 0.1 else { return nil } // Azimuth is undefined near vertical.
+        let bearing = atan2(east, north) * 180 / .pi
+        return .init(at: at, azimuth: (bearing + 360).truncatingRemainder(dividingBy: 360),
+                     elevation: atan2(up, hypot(north, east)) * 180 / .pi, accuracy: accuracy, source: source)
+    }
+    static func coreMotionMatrix(_ r: [Double], at: Date, accuracy: String) -> Self? {
+        guard r.count == 9 else { return nil }
+        // Inverse of the NWU-to-device rotation, applied to device (0,0,-1).
+        return opticalAxis(north: -r[6], east: r[7], up: -r[8], at: at, accuracy: accuracy, source: "core_motion_true_north")
+    }
+    func wire(frameAt: Date) -> [String: Any]? {
+        let delta = frameAt.timeIntervalSince(at) * 1000
+        guard abs(delta) <= 500 else { return nil }
+        return ["azimuth_degrees": azimuth, "elevation_degrees": elevation,
+                "reference": "true_north", "optical_axis": "rear_camera", "measured_at": SignCollectionJSON.utc(at),
+                "frame_measurement_delta_ms": delta, "accuracy_status": accuracy, "source": source]
+    }
+}
+
+final class SignCollectionCameraHistory: @unchecked Sendable {
+    private let lock = NSLock()
+    private var samples: [SignCollectionCameraSample] = []
+    func append(_ sample: SignCollectionCameraSample) {
+        lock.lock(); defer { lock.unlock() }
+        samples.append(sample)
+        if samples.count > 240 { samples.removeFirst(samples.count - 240) }
+    }
+    func clear() { lock.lock(); defer { lock.unlock() }; samples.removeAll() }
+    func direction(at: Date) -> [String: Any]? {
+        lock.lock(); defer { lock.unlock() }
+        return samples.min { abs($0.at.timeIntervalSince(at)) < abs($1.at.timeIntervalSince(at)) }?.wire(frameAt: at)
+    }
 }

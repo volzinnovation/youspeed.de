@@ -142,12 +142,17 @@ struct MainView: View {
     @State private var showingSettings = false
     @State private var showingLegalInfo = false
     @State private var showingDebug = false
+    @State private var showingTripJournal = false
+    @State private var journalSettingsAfterDismiss = false
     @State private var showingPanoramaxGallery = false
     @State private var showingTrafficSignDetails = false
     @State private var showingVisualCalibration = false
+    @State private var dashboardMounted = false
+    @State private var consentObscuresDashboard = false
     @State private var photoCaptureFeedbackToken: UUID?
     @State private var photoCaptureFeedbackVisible = false
     @AppStorage("youspeed.debug.show_tsr_badge") private var showsTrafficSignRecognitionDebugBadge = false
+    @AppStorage("youspeed.journal.enabled") private var journalRecordingEnabled = false
     // Keep the user's selection independent from transient recorder
     // availability. Published recorder fields arrive one after another; if a
     // short unavailable state overwrites this preference, the preview flashes
@@ -244,9 +249,15 @@ struct MainView: View {
                                 showsPedestrianZoneIcon: showsPedestrianZoneSign,
                                 showsActiveCameraLimitIndicator: showsActiveCameraLimitIndicator,
                                 showsStaleBundleLimitIndicator: viewModel.effectiveSpeedLimitState.source.isStale,
+                                showsMobiDataContour: showsMobiDataLimitContour,
                                 accessibilityDescription: speedLimitAccessibilityDescription
                             )
                             .frame(width: signSize, height: signSize)
+                            .overlay {
+                                if showsMobiDataLimitContour {
+                                    MobiDataSourceContour(rectangular: showsPedestrianZoneSign)
+                                }
+                            }
                             }
                             Color.clear
                                 .frame(width: signSize, height: signSize)
@@ -297,15 +308,18 @@ struct MainView: View {
                             }
                         )
                         if viewModel.trafficSignPictogramEnabled,
-                           let sign = viewModel.trafficSignPictogram {
+                           let sign = viewModel.trafficSignPictogramForDisplay {
                             ZStack(alignment: .topLeading) {
-                                TrafficSignPictogramView(sign: sign)
+                                TrafficSignPictogramView(sign: sign, showsMobiDataContour:
+                                    MobiDataSignSourcePresentation.isMobiData(sourceID: viewModel.inventorySecondarySign?.sourceID))
                                     .frame(width: 76, height: 76)
                                     .padding(5)
                                 Color.clear
                                     .frame(width: 86, height: 86)
                                     .allowsHitTesting(false)
                                     .accessibilityLabel(Text(sign.localizedLabel()))
+                                    .accessibilityValue(MobiDataSignSourcePresentation.isMobiData(
+                                        sourceID: viewModel.inventorySecondarySign?.sourceID) ? "MobiData" : "")
                                     .accessibilityIdentifier("dashboard.trafficSignPictogram")
                             }
                             .frame(width: 86, height: 86)
@@ -318,6 +332,22 @@ struct MainView: View {
                                 }
                             }
                                 .position(x: eyeLeft + 43, y: signTop + 43)
+                        } else if viewModel.trafficSignPictogramEnabled,
+                                  let sign=viewModel.inventorySecondarySign {
+                            VStack(spacing:4) {
+                                Text(sign.code).font(.caption.monospaced())
+                                if let text=viewModel.inventorySecondaryValueText {
+                                    Text(text).font(.caption).multilineTextAlignment(.center)
+                                }
+                            }
+                            .frame(width:110,height:86)
+                            .overlay {
+                                if MobiDataSignSourcePresentation.isMobiData(sourceID: sign.sourceID) {
+                                    MobiDataSourceContour(rectangular: true)
+                                }
+                            }
+                            .accessibilityIdentifier("dashboard.inventorySignText")
+                            .position(x:eyeLeft+43,y:signTop+43)
                         }
                     }
                     .frame(width: paneWidth, height: signPaneHeight)
@@ -357,6 +387,14 @@ struct MainView: View {
                 }
                 .environment(\.layoutDirection, .leftToRight)
                 .allowsHitTesting(viewModel.drivingControlsAllowed)
+                if let upcoming = viewModel.upcomingSpeedLimitForDisplay, !viewModel.isInSpeedCaptureMode {
+                    UpcomingSpeedLimitPreview(candidate: upcoming)
+                        .frame(width: 88, alignment: .leading)
+                        .position(x: screenInset + 44,
+                            y: landscape ? proxy.size.height - bottomPadding - 48
+                                : signTop + signSize - 34)
+                        .allowsHitTesting(false)
+                }
                 if showsGravityAlignment {
                     GravityAlignmentOverlay(orientation: viewModel.screenOrientation, foregroundColor: primaryForegroundColor)
                         .frame(width: proxy.size.width * 0.1, height: proxy.size.height * 0.1)
@@ -406,6 +444,7 @@ struct MainView: View {
         .onChange(of: viewModel.drivingControlsAllowed) { _, allowed in
             guard !allowed else { return }
             settingsPresentation.wrappedValue = false
+            showingTripJournal = false
             showingLegalInfo = false
             showingDebug = false
             showingPanoramaxGallery = false
@@ -435,6 +474,19 @@ struct MainView: View {
                 SettingsView(viewModel: viewModel, account: viewModel.panoramaxAccount)
             }
         }
+        .sheet(isPresented: $showingTripJournal,onDismiss:{
+            if journalSettingsAfterDismiss { journalSettingsAfterDismiss = false; settingsPresentation.wrappedValue = true }
+        }) {
+            DismissibleNavigationSheet {
+                TripJournalView(gallery: { photoIDs, videoIDs in
+                    AnyView(PanoramaxGalleryView(viewModel: viewModel, tripPhotoIDs: photoIDs, tripVideoIDs: videoIDs))
+                }, deleteMedia: { photoIDs, videoIDs in
+                    await viewModel.deleteTripJournalMedia(photoIDs: photoIDs, videoIDs: videoIDs)
+                },openSettings:{journalSettingsAfterDismiss = true; showingTripJournal = false})
+            }
+            .preferredColorScheme(.light)
+            .presentationBackground(.white)
+        }
         .sheet(isPresented: $showingLegalInfo) {
             DismissibleNavigationSheet {
                 LegalInformationView(activePenaltyRules: viewModel.activePenaltyRules)
@@ -459,6 +511,8 @@ struct MainView: View {
             }
         }
         .onAppear {
+            dashboardMounted=true
+            recordDashboardPresentation(reason:"screen_appeared")
             viewModel.setSettingsPresented(showingSettings)
             if openSettingsOnAppear && !showingSettings && viewModel.drivingControlsAllowed {
                 settingsPresentation.wrappedValue = true
@@ -470,6 +524,23 @@ struct MainView: View {
             hasAutoTriggeredSyncForTests = true
             print("SPEEDCONSUMER_TEST_AUTOTAP_SYNC triggered")
             viewModel.bootstrapAndSync()
+        }
+        .onDisappear {
+            dashboardMounted=false
+            recordDashboardPresentation(reason:"screen_disappeared")
+        }
+        .onChange(of:viewModel.secondaryUIPresentationDescriptor) { _,_ in
+            recordDashboardPresentation(reason:viewModel.secondaryDisplayChangeReason)
+        }
+        .onChange(of:viewModel.primarySpeedUIPresentationDescriptor) { _,_ in
+            recordDashboardPresentation(reason:"effective_limit_changed")
+        }
+        .onChange(of:dashboardPresentationVisible) { _, visible in
+            recordDashboardPresentation(reason:visible ? "screen_visible" : scenePhase == .active ? "screen_obscured" : "background")
+        }
+        .onReceive(viewModel.signCollection.$consentPresented) { presented in
+            consentObscuresDashboard=presented
+            recordDashboardPresentation(reason:presented ? "consent_sheet" : "consent_dismissed")
         }
         .onChange(of: viewModel.canStartDrivingFromDashboard && scenePhase == .active, initial: true) { _, ready in
             if ready { viewModel.startDriving() }
@@ -487,6 +558,16 @@ struct MainView: View {
                 setDriveRecorderPreviewVisible(true)
             }
         }
+    }
+
+    private var dashboardPresentationVisible: Bool {
+        dashboardMounted && scenePhase == .active && !consentObscuresDashboard
+            && !showingTripJournal && !showingSettings && !showingLegalInfo && !showingDebug && !showingPanoramaxGallery
+            && !showingTrafficSignDetails && !showingVisualCalibration
+    }
+    private func recordDashboardPresentation(reason: String) {
+        viewModel.recordDashboardUIPresentation(visible:dashboardPresentationVisible,
+            screenMounted:dashboardMounted,applicationActive:scenePhase == .active,reason:reason)
     }
 
     private var settingsPresentation: Binding<Bool> {
@@ -508,7 +589,7 @@ struct MainView: View {
                 viewModel.startupDataState == .ready && viewModel.onboardingStateLoaded &&
                 !viewModel.shouldPresentOnboarding && viewModel.gpsSignalBars > 0,
             active: scenePhase == .active,
-            interrupted: showingSettings || showingLegalInfo || showingDebug ||
+            interrupted: showingTripJournal || showingSettings || showingLegalInfo || showingDebug ||
                 showingPanoramaxGallery || showingTrafficSignDetails || showingVisualCalibration ||
                 viewModel.isInSpeedCaptureMode || viewModel.driveInteractionPending || viewModel.driveInteractionError != nil)
     }
@@ -537,6 +618,14 @@ struct MainView: View {
         )
     }
 
+    private var showsMobiDataLimitContour: Bool {
+        MobiDataSignSourcePresentation.showsLimitContour(
+            state: viewModel.effectiveSpeedLimitState, provenance: viewModel.currentBundleSpeedProvenance,
+            isInSpeedCaptureMode: viewModel.isInSpeedCaptureMode,
+            hasPendingCameraLimit: viewModel.trafficSignPendingSpeedKmh != nil,
+            showsCameraEndSign: viewModel.trafficSignEndOverlayVisible)
+    }
+
     private func supplementaryRestrictionText(_ text: String, fontSize: CGFloat) -> some View {
         Text(text)
             .font(.system(size: fontSize, weight: .semibold).monospacedDigit())
@@ -553,17 +642,79 @@ struct MainView: View {
 
     private struct TrafficSignPictogramView: View {
         let sign: TrafficSignPresentationCatalog.Sign
+        var showsMobiDataContour = false
 
         var body: some View {
-            Group {
-                if let url = sign.imageURL(), let image = UIImage(contentsOfFile: url.path) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
+            GeometryReader { proxy in
+                if let url = sign.imageURL(), let image = SignPresentationImageCache.image(at: url) {
+                    ZStack {
+                        if showsMobiDataContour,
+                           sign.imagePath?.hasPrefix("tsr/sign-pictograms/png/") == true,
+                           let contourURL = Bundle.main.url(forResource: url.deletingPathExtension().lastPathComponent,
+                               withExtension: "png", subdirectory: "sign-pictograms/contours"),
+                           let contour = SignPresentationImageCache.image(at: contourURL) {
+                            // Shared mask has 16 px padding around a 256 px reference square.
+                            Image(uiImage: contour).resizable().interpolation(.high)
+                                .frame(width: proxy.size.width * 1.125, height: proxy.size.height * 1.125)
+                                .accessibilityHidden(true).allowsHitTesting(false)
+                        }
+                        Image(uiImage: image).resizable().scaledToFit()
+                            .frame(width: proxy.size.width, height: proxy.size.height)
+                    }
+                    .frame(width: proxy.size.width, height: proxy.size.height)
                 }
             }
             .accessibilityLabel(Text(sign.localizedLabel()))
         }
+    }
+
+    private enum SignPresentationImageCache {
+        private static let images: NSCache<NSURL, UIImage> = {
+            let cache = NSCache<NSURL, UIImage>()
+            cache.countLimit = 48
+            return cache
+        }()
+        static func image(at url: URL) -> UIImage? {
+            if let image = images.object(forKey: url as NSURL) { return image }
+            guard let image = UIImage(contentsOfFile: url.path) else { return nil }
+            images.setObject(image, forKey: url as NSURL)
+            return image
+        }
+    }
+
+    /// A constant-cost source cue, outside the existing sign's measured bounds.
+    private struct MobiDataSourceContour: View {
+        var rectangular = false
+        var body: some View {
+            GeometryReader { proxy in
+                let radius = max(3, min(proxy.size.width, proxy.size.height) * 0.025) + 4
+                ZStack {
+                    if rectangular {
+                        RoundedRectangle(cornerRadius: radius).stroke(.black, lineWidth: 4)
+                        RoundedRectangle(cornerRadius: radius).stroke(.white, lineWidth: 2)
+                    } else {
+                        Circle().stroke(.black, lineWidth: 4)
+                        Circle().stroke(.white, lineWidth: 2)
+                    }
+                }
+                .padding(-4)
+            }
+            .allowsHitTesting(false).accessibilityHidden(true)
+        }
+    }
+
+    private var recordingOffSlash: some View {
+        GeometryReader { geometry in
+            Path { path in
+                let inset: CGFloat = (1 - sqrt(0.5)) / 2
+                path.move(to: CGPoint(x: geometry.size.width * inset, y: geometry.size.height * (1 - inset)))
+                path.addLine(to: CGPoint(x: geometry.size.width * (1 - inset), y: geometry.size.height * inset))
+            }
+            .stroke(primaryForegroundColor, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+        }
+        .clipShape(Circle())
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private func panoramaxCaptureButton(diameter: CGFloat = 44) -> some View {
@@ -582,18 +733,7 @@ struct MainView: View {
         }
         .overlay {
             if !viewModel.panoramaxCaptureEnabled {
-                GeometryReader { geometry in
-                    Path { path in
-                        // A 45° diameter reaches the circular rim at both ends.
-                        let inset: CGFloat = (1 - sqrt(0.5)) / 2
-                        path.move(to: CGPoint(x: geometry.size.width * inset, y: geometry.size.height * (1 - inset)))
-                        path.addLine(to: CGPoint(x: geometry.size.width * (1 - inset), y: geometry.size.height * inset))
-                    }
-                    .stroke(primaryForegroundColor, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                }
-                .clipShape(Circle())
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
+                recordingOffSlash
             }
         }
         .contentShape(Circle())
@@ -602,6 +742,7 @@ struct MainView: View {
             ? "panoramax.capture.stop" : "panoramax.capture.start", comment: ""))
         .accessibilityValue(NSLocalizedString(viewModel.panoramaxCaptureEnabled
             ? "drive_recorder.status.on" : "drive_recorder.status.off", comment: ""))
+        .accessibilityHint(NSLocalizedString(viewModel.photoCameraActive ? "capture.photo_camera.active" : "capture.photo_camera.off", comment: ""))
     }
 
     private func drivingPhotoButton(diameter: CGFloat) -> some View {
@@ -642,7 +783,7 @@ struct MainView: View {
             for: viewModel.driveRecorderState
         )
 
-        return HStack(alignment: .bottom) {
+        return HStack(alignment: .bottom, spacing: 0) {
             if viewModel.drivingControlsAllowed {
                 RecordingSafeButton {
                     viewModel.toggleDriveRecorder()
@@ -660,13 +801,14 @@ struct MainView: View {
                 }
                 .contentShape(Circle())
                 .accessibilityLabel(NSLocalizedString(recorderControl.accessibilityLocalizationKey, comment: ""))
+                .accessibilityIdentifier("dashboard.recorderButton")
                 .disabled(!recorderControl.isEnabled || (recorderControl.action == .start
                     && viewModel.panoramaxCaptureEnabled && viewModel.panoramaxQueueMaintenanceInProgress))
 
-                Spacer()
+                Spacer(minLength: 0)
                 panoramaxCaptureButton(diameter: buttonDiameter)
 
-                Spacer()
+                Spacer(minLength: 0)
 
                 RecordingSafeButton {
                     guard galleryControl.isEnabled else { return }
@@ -691,9 +833,10 @@ struct MainView: View {
                 .contentShape(Circle())
                 .opacity(galleryControl.opacity)
                 .accessibilityLabel(NSLocalizedString("panoramax.gallery.open", comment: ""))
+                .accessibilityIdentifier("dashboard.galleryButton")
                 .disabled(!galleryControl.isEnabled)
 
-                Spacer()
+                Spacer(minLength: 0)
 
                 RecordingSafeButton {
                     guard viewModel.drivingControlsAllowed else { return }
@@ -708,7 +851,7 @@ struct MainView: View {
                 .background(actionButtonBackgroundColor, in: Circle())
                 .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
 
-                Spacer()
+                Spacer(minLength: 0)
 
                 RecordingSafeButton { showingLegalInfo = true } label: {
                     Image(systemName: "info.circle.fill")
@@ -721,9 +864,30 @@ struct MainView: View {
                 .background(actionButtonBackgroundColor, in: Circle())
                 .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
 
-                Spacer()
+                Spacer(minLength: 0)
             } else {
-                Spacer()
+                Spacer(minLength: 0)
+            }
+
+            if viewModel.drivingControlsAllowed {
+                RecordingSafeButton {
+                    guard viewModel.drivingControlsAllowed else { return }
+                    showingTripJournal = true
+                } label: {
+                    Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: buttonDiameter, height: buttonDiameter)
+                }
+                .accessibilityLabel(journalText("navigation"))
+                .accessibilityIdentifier("dashboard.tripsButton")
+                .accessibilityValue(NSLocalizedString(journalRecordingEnabled
+                    ? "drive_recorder.status.on" : "drive_recorder.status.off", comment: ""))
+                .buttonStyle(.plain)
+                .background(actionButtonBackgroundColor, in: Circle())
+                .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
+                .overlay { if !journalRecordingEnabled { recordingOffSlash } }
+                .contentShape(Circle())
+                Spacer(minLength: 0)
             }
 
             if viewModel.replacesSettingsWithDrivingPhotoButton {
@@ -820,7 +984,8 @@ struct MainView: View {
                     selected: viewModel.trafficSignRecognitionEnabled,
                     active: viewModel.driveRecorderTrafficSignRecognitionActive,
                     available: viewModel.driveRecorderTrafficSignRecognitionAvailable,
-                    transitioning: false
+                    transitioning: false,
+                    status: viewModel.trafficSignCaptureActivityText
                 ) {
                     if !viewModel.toggleDriveRecorderTrafficSignRecognition() {
                         showingTrafficSignDetails = true
@@ -884,6 +1049,7 @@ struct MainView: View {
         active: Bool,
         available: Bool,
         transitioning: Bool,
+        status: String? = nil,
         action: @escaping () -> Void
     ) -> some View {
         if !viewModel.drivingControlsAllowed {
@@ -929,7 +1095,8 @@ struct MainView: View {
                 available: available,
                 transitioning: transitioning
             ))
-            .accessibilityHint(NSLocalizedString("drive_recorder.status.toggle_hint", comment: ""))
+            .accessibilityHint([status, NSLocalizedString("drive_recorder.status.toggle_hint", comment: "")]
+                .compactMap { $0 }.joined(separator: ". "))
         }
     }
 
@@ -998,6 +1165,9 @@ struct MainView: View {
     }
 
     private var trafficSignRecognitionStatusText: String {
+        if viewModel.trafficSignCaptureActivity != .running {
+            return viewModel.trafficSignCaptureActivityText
+        }
         switch trafficSignRecognitionPresentationState {
         case .disabled:
             return NSLocalizedString("tsr.state.disabled", comment: "")
@@ -1120,6 +1290,7 @@ struct MainView: View {
                     reservedHeight: reservedHeight,
                     compact: landscape
                 )
+                RoadworksDrivingAdvisoryView().allowsHitTesting(false)
             }
             .frame(maxWidth: .infinity, minHeight: workspaceHeight, alignment: .center)
             .contentShape(Rectangle())
@@ -1815,6 +1986,9 @@ private struct TrafficSignRecognitionDetailsView: View {
     }
 
     private var statusText: String {
+        if viewModel.trafficSignCaptureActivity != .running {
+            return viewModel.trafficSignCaptureActivityText
+        }
         switch viewModel.trafficSignRecognitionState {
         case .disabled:
             return NSLocalizedString("tsr.state.disabled", comment: "")
@@ -1832,6 +2006,9 @@ private struct TrafficSignRecognitionDetailsView: View {
     }
 
     private var stateDescription: String {
+        if viewModel.trafficSignCaptureActivity == .pausedNight {
+            return NSLocalizedString("capture.tsr.night_description", comment: "")
+        }
         switch viewModel.trafficSignRecognitionState {
         case .disabled:
             return NSLocalizedString("tsr.details.disabled", comment: "")
@@ -1875,6 +2052,7 @@ private struct SpeedLimitSignView: View {
     let showsPedestrianZoneIcon: Bool
     let showsActiveCameraLimitIndicator: Bool
     let showsStaleBundleLimitIndicator: Bool
+    let showsMobiDataContour: Bool
     let accessibilityDescription: String
 
     var body: some View {
@@ -1960,6 +2138,51 @@ private struct SpeedLimitSignView: View {
                 ? "\(accessibilityDescription), von der Kamera übernommen"
                 : accessibilityDescription
         )
+        .accessibilityValue(showsMobiDataContour ? "MobiData" : "")
+        .accessibilityIdentifier("dashboard.speedLimitSign")
+    }
+}
+
+private struct UpcomingSpeedLimitPreview: View {
+    let candidate: UpcomingSpeedLimitCandidate
+    @ScaledMetric(relativeTo: .caption) private var captionSize: CGFloat = 15
+    private var roundedDistance: Int { Int(ceil(candidate.distanceM / 10) * 10) }
+    private var caption: String {
+        candidate.distanceM < 10
+            ? NSLocalizedString("speed.upcoming.distance.near", comment: "")
+            : String(format: NSLocalizedString("speed.upcoming.distance", comment: ""), roundedDistance)
+    }
+    private var spokenDistance: String {
+        candidate.distanceM < 10
+            ? NSLocalizedString("speed.upcoming.distance.near.accessibility", comment: "")
+            : String(format: NSLocalizedString("speed.upcoming.distance.accessibility", comment: ""), roundedDistance)
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ZStack {
+                Circle().fill(.white)
+                Circle().stroke(SpeedLimitSignPalette.borderColor, lineWidth: 5)
+                    .padding(2.5)
+                Text(String(candidate.speedKmh))
+                    .font(trafficSignNumberFont(size: 31))
+                    .foregroundStyle(.black)
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+                    .padding(8)
+            }
+            .frame(width: 58, height: 58)
+            Text(caption)
+                .font(.system(size: min(captionSize, 21), weight: .semibold))
+                .foregroundStyle(.white)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .frame(width: 76)
+                .padding(.horizontal, 3)
+                .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 3))
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(String(format: NSLocalizedString("speed.upcoming.accessibility", comment: ""), candidate.speedKmh, spokenDistance))
+        .accessibilityIdentifier("dashboard.upcomingSpeedLimit")
     }
 }
 
@@ -2500,6 +2723,8 @@ private struct LocalRecordingsView: View {
 
 private struct DashcamRecordingsView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+    var tripVideoIDs: Set<String>? = nil
+    private var recordings: [DashcamRecording] { viewModel.dashcamRecordings.filter { tripVideoIDs == nil || tripVideoIDs!.contains($0.url.lastPathComponent) } }
     @State private var sharedRecording: DashcamRecording?
     @State private var selectedRecordingIDs: Set<String> = []
     @State private var showingDeleteConfirmation = false
@@ -2507,7 +2732,7 @@ private struct DashcamRecordingsView: View {
     var body: some View {
         VStack(spacing: 0) {
             Group {
-                if viewModel.dashcamRecordings.isEmpty {
+                if recordings.isEmpty {
                     ContentUnavailableView(
                         NSLocalizedString("drive_recorder.library.empty", comment: ""),
                         systemImage: "video.slash"
@@ -2515,7 +2740,7 @@ private struct DashcamRecordingsView: View {
                 } else {
                     List {
                         Section {
-                            ForEach(viewModel.dashcamRecordings) { recording in
+                            ForEach(recordings) { recording in
                                 HStack(spacing: 12) {
                                     RecordingSafeButton {
                                         if selectedRecordingIDs.contains(recording.id) {
@@ -2559,7 +2784,7 @@ private struct DashcamRecordingsView: View {
             }
             .frame(maxHeight: .infinity)
 
-            if !viewModel.dashcamRecordings.isEmpty {
+            if !recordings.isEmpty {
                 HStack(spacing: 8) {
                     RecordingSafeButton {
                         selectedRecordingIDs = Set(viewModel.dashcamRecordings.map(\.id))
@@ -2792,14 +3017,16 @@ private struct PanoramaxReviewItemRow: View {
 
 private struct PanoramaxGalleryView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+    var tripPhotoIDs: Set<String>? = nil
+    var tripVideoIDs: Set<String>? = nil
 
     var body: some View {
         TabView {
-            PictureGalleryView(viewModel: viewModel)
+            PictureGalleryView(viewModel: viewModel, tripPhotoIDs: tripPhotoIDs)
                 .tabItem {
                     Label(NSLocalizedString("gallery.tab.pictures", comment: ""), systemImage: "photo.on.rectangle")
                 }
-            DashcamRecordingsView(viewModel: viewModel)
+            DashcamRecordingsView(viewModel: viewModel, tripVideoIDs: tripVideoIDs)
                 .tabItem {
                     Label(NSLocalizedString("gallery.tab.videos", comment: ""), systemImage: "video.fill")
                 }
@@ -2812,6 +3039,7 @@ private struct PanoramaxGalleryView: View {
 
 private struct PictureGalleryView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+    var tripPhotoIDs: Set<String>? = nil
     @State private var selectedItem: GalleryItem?
     @State private var selectedItemIDs: Set<String> = []
     @State private var showingDeleteConfirmation = false
@@ -2824,7 +3052,9 @@ private struct PictureGalleryView: View {
         let item: PanoramaxItemRecord
     }
 
-    private var allEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] { viewModel.panoramaxGalleryItems }
+    private var allEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
+        viewModel.panoramaxGalleryItems.filter { tripPhotoIDs == nil || tripPhotoIDs!.contains($0.item.metadata.captureID) }
+    }
     private var entries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
         allEntries.filter { !signsOnly || $0.item.metadata.captureReason == "recognized_sign" || !($0.item.metadata.trafficSignAnnotations ?? []).isEmpty }
     }
@@ -3216,12 +3446,25 @@ private struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
-private struct SettingsView: View {
+struct SettingsView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
     @ObservedObject var account: PanoramaxAccountModel
 
     var body: some View {
         Form {
+            Section(journalText("title")) {
+                TripJournalRecordingSettings()
+                NavigationLink {
+                    TripJournalView(gallery: { photoIDs, videoIDs in
+                        AnyView(PanoramaxGalleryView(viewModel: viewModel, tripPhotoIDs: photoIDs, tripVideoIDs: videoIDs))
+                    }, deleteMedia: { photoIDs, videoIDs in
+                        await viewModel.deleteTripJournalMedia(photoIDs: photoIDs, videoIDs: videoIDs)
+                    })
+                } label: { Label(journalText("navigation"), systemImage: "point.topleft.down.to.point.bottomright.curvepath") }
+                .accessibilityIdentifier("settings.trips")
+                TripJournalDataSettings()
+            }
+            RoadworksSettingsSection()
             Section(NSLocalizedString("settings.maps.section", comment: "")) {
                 NavigationLink {
                     DataManagerView(viewModel: viewModel)
@@ -3288,6 +3531,11 @@ private struct SettingsView: View {
 
                 Toggle(NSLocalizedString("drive_recorder.settings.tsr", comment: ""), isOn: $viewModel.trafficSignRecognitionEnabled)
                     .disabled(viewModel.isDriveRecorderActive)
+                LabeledContent(NSLocalizedString("capture.tsr.status", comment: ""), value:viewModel.trafficSignCaptureActivityText)
+                if viewModel.trafficSignCaptureActivity == .pausedNight {
+                    Text(NSLocalizedString("capture.tsr.night_description",comment: ""))
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
                 Text(NSLocalizedString("drive_recorder.settings.tsr_description", comment: ""))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -3341,12 +3589,16 @@ private struct SettingsView: View {
 
                 if viewModel.panoramaxCaptureEnabled {
                     Toggle(SignCollectionText.text("Capture recognized traffic signs only", "Nur erkannte Verkehrszeichen aufnehmen"), isOn: $viewModel.panoramaxRecognizedSignsOnly)
+                    Toggle(SignCollectionText.text("Capture inventory traffic signs only", "Nur Verkehrszeichen aus dem Offline-Bestand aufnehmen"), isOn: $viewModel.panoramaxInventorySignsOnly)
+                    if viewModel.panoramaxInventorySignsOnly {
+                        Text(NSLocalizedString("inventory.display.persistence",comment: "")).font(.footnote).foregroundStyle(.secondary)
+                    }
                     if viewModel.panoramaxRecognizedSignsOnly {
                         Text(SignCollectionText.text("Waiting for camera recognition of a stable sign. Distance/time capture is paused; photos still require Panoramax review and approval.", "Wartet auf die Kameraerkennung eines stabilen Zeichens. Abstand-/Zeitaufnahmen pausieren; Bilder benötigen weiterhin die Panoramax-Prüfung und Freigabe.")).font(.footnote).foregroundStyle(.secondary)
                     }
                     LabeledContent(NSLocalizedString("panoramax.settings.saved_images", comment: ""), value: "\(viewModel.panoramaxCaptureCount)")
 
-                    if !viewModel.panoramaxRecognizedSignsOnly {
+                    if !viewModel.panoramaxRecognizedSignsOnly && !viewModel.panoramaxInventorySignsOnly {
                         Picker(NSLocalizedString("panoramax.settings.trigger", comment: ""), selection: $viewModel.panoramaxTriggerMode) {
                             ForEach(PanoramaxCaptureTriggerMode.allCases, id: \.self) { mode in
                                 Text(mode.label).tag(mode)
@@ -4164,6 +4416,11 @@ private struct DebugInformationView: View {
                 if let tsrLogURL {
                     RecordingSafeButton("TSR-Log teilen") {
                         shareItem = LocalDebugShareItem(url: tsrLogURL)
+                    }
+                }
+                if let url=viewModel.inventorySignLogURL {
+                    RecordingSafeButton(SignCollectionText.text("Share inventory confirmation log", "Offline-Zeichen-Sichtungslog teilen")) {
+                        shareItem=LocalDebugShareItem(url:url)
                     }
                 }
                 if gpsLogURL != nil || matchLogURL != nil || tsrLogURL != nil {

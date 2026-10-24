@@ -282,6 +282,7 @@ private struct PanoramaxPhotoProcessingResult {
     let saved: Bool
     let detail: String
     var annotationLogLine: String? = nil
+    var captureID: String? = nil
 }
 
 /// An image analyzer attaches here without owning or reconfiguring the
@@ -428,6 +429,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     private var lastDiagnosticSnapshot: String?
     var onTrafficSignAnnotation: ((String) -> Void)?
     var onPanoramaxQueueChange: (() -> Void)?
+    var onInventoryCaptureResult: (([String], Bool, String?) -> Void)?
 
     private var queueStore: PanoramaxQueueStore?
     private let sessionQueue = DispatchQueue(label: "de.youspeed.drive-recorder.camera")
@@ -444,6 +446,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     private var lastCaptureSample: PanoramaxLocationSample?
     private var pendingSignEvidence: [SignCaptureFilter.Evidence] = []
     private var pendingCaptureReason = "cadence"
+    private var pendingInventoryEncounterIDs: [String] = []
     private var lastManualPhotoRequestAt: Date?
     private var pendingSample: PanoramaxLocationSample?
     private var pendingPhotoUniqueID: Int64?
@@ -478,6 +481,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     private var pendingPhotoOrientationEpoch: UInt64?
     private var interactionFinalization: ((Result<Void, Error>) -> Void)?
     private var interactionFinalizationTimeout: Task<Void, Never>?
+    private var journalVideoStarts: [String: (wall: Date, monotonic: Double)] = [:]
 
 #if DEBUG
     private var testDashcamOutputDirectory: URL?
@@ -501,6 +505,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         lastCaptureAt = nil
         manualPhotoMoving = true
         let sessionID = UUID().uuidString
+        TripJournal.shared.bind(sessionID)
         captureSessionID = sessionID
         sessionPurpose = purpose
         requestedManualPhotosEnabled = true
@@ -592,6 +597,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
     var isDashcamModuleActive: Bool { activeDashcamEnabled }
     var isPanoramaxModuleActive: Bool { activePanoramaxEnabled }
+    var isPhotoOutputAvailable: Bool { photoOutputAvailable }
     var isManualPhotoInFlight: Bool { photoInFlight }
     var isTrafficSignRecognitionModuleActive: Bool { activeTSREnabled }
     var isAutomaticCaptureSession: Bool {
@@ -806,6 +812,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         generation += 1
         let requestedGeneration = generation
         let captureSessionID = UUID().uuidString
+        TripJournal.shared.bind(captureSessionID)
         self.captureSessionID = captureSessionID
         frameDispatcher.setCaptureSessionID(captureSessionID)
         sessionPurpose = purpose
@@ -1073,6 +1080,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         activeLanesEnabled = false
         frameDispatcher.setLanesEnabled(false)
         closePanoramaxBatchForReview()
+        if !pendingInventoryEncounterIDs.isEmpty {
+            onInventoryCaptureResult?(pendingInventoryEncounterIDs, false, nil)
+            pendingInventoryEncounterIDs = []
+        }
         pendingSample = nil
         pendingPhotoUniqueID = nil
         photoInFlight = false
@@ -1098,12 +1109,22 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
     @discardableResult
     func ingestRecognizedSigns(_ evidence: [SignCaptureFilter.Evidence], location: CLLocation, speedMetersPerSecond: Double?) -> Bool {
-        guard cadenceConfiguration.recognizedSignsOnly, !evidence.isEmpty, evidence.allSatisfy({ abs(Date().timeIntervalSince($0.frameAt)) <= 2 }) else { return false }
+        guard cadenceConfiguration.recognizedSignsOnly, !cadenceConfiguration.inventorySignsOnly, !evidence.isEmpty, evidence.allSatisfy({ abs(Date().timeIntervalSince($0.frameAt)) <= 2 }) else { return false }
         return capture(location: location, speedMetersPerSecond: speedMetersPerSecond, signEvidence: evidence)
     }
     func ingest(location: CLLocation, speedMetersPerSecond: Double? = nil) {
-        guard !cadenceConfiguration.recognizedSignsOnly else { return }
+        guard !cadenceConfiguration.recognizedSignsOnly, !cadenceConfiguration.inventorySignsOnly else { return }
         _ = capture(location: location, speedMetersPerSecond: speedMetersPerSecond, signEvidence: [])
+    }
+
+    @discardableResult
+    func ingestInventorySigns(_ encounterIDs: [String], location: CLLocation, speedMetersPerSecond: Double?) -> Bool {
+        guard cadenceConfiguration.inventorySignsOnly, !cadenceConfiguration.recognizedSignsOnly,
+              !encounterIDs.isEmpty,
+              location.horizontalAccuracy.isFinite, (0...25).contains(location.horizontalAccuracy),
+              location.timestamp <= Date().addingTimeInterval(1), Date().timeIntervalSince(location.timestamp) <= 3 else { return false }
+        return capture(location: location, speedMetersPerSecond: speedMetersPerSecond,
+                       signEvidence: [], inventoryEncounterIDs: encounterIDs)
     }
 
     func canCaptureManualPhoto(location: CLLocation, now: Date = Date()) -> Bool {
@@ -1137,7 +1158,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         return capture(location: location, speedMetersPerSecond: speedKmh / 3.6, signEvidence: [], manual: true)
     }
 
-    private func capture(location: CLLocation, speedMetersPerSecond: Double?, signEvidence: [SignCaptureFilter.Evidence], manual: Bool = false) -> Bool {
+    private func capture(location: CLLocation, speedMetersPerSecond: Double?, signEvidence: [SignCaptureFilter.Evidence], manual: Bool = false, inventoryEncounterIDs: [String] = []) -> Bool {
         guard state == .recording,
               (manual ? activeManualPhotosEnabled : activePanoramaxEnabled),
               photoOutputAvailable,
@@ -1147,7 +1168,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
         let accuracy = location.horizontalAccuracy
         let requestedAt = Date()
-        if !signEvidence.isEmpty, let last = lastCaptureAt, requestedAt.timeIntervalSince(last) < 2 { return false }
+        if !signEvidence.isEmpty || !inventoryEncounterIDs.isEmpty, let last = lastCaptureAt, requestedAt.timeIntervalSince(last) < 2 { return false }
         guard manual || PanoramaxCapturePolicy.isMoving(speedMetersPerSecond: speedMetersPerSecond ?? location.speed) else { return false }
         guard accuracy >= 0,
               accuracy.isFinite,
@@ -1170,7 +1191,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             headingDegrees: heading
         )
         lastAccuracyMeters = accuracy
-        guard manual || !signEvidence.isEmpty || PanoramaxCapturePolicy.shouldCapture(
+        guard manual || !signEvidence.isEmpty || !inventoryEncounterIDs.isEmpty || PanoramaxCapturePolicy.shouldCapture(
             lastCapture: lastCaptureSample,
             current: sample,
             now: requestedAt,
@@ -1181,7 +1202,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
 
         pendingSignEvidence = signEvidence
-        pendingCaptureReason = manual ? "manual" : (signEvidence.isEmpty ? "cadence" : "recognized_sign")
+        pendingInventoryEncounterIDs = inventoryEncounterIDs
+        pendingCaptureReason = manual ? "manual" : (!inventoryEncounterIDs.isEmpty ? "inventory_sign" : (signEvidence.isEmpty ? "cadence" : "recognized_sign"))
         if manual {
             lastManualPhotoRequestAt = requestedAt
             manualPhotoCaptureFailed = false
@@ -1195,6 +1217,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         if maximumDimensions.width > 0, maximumDimensions.height > 0 {
             settings.maxPhotoDimensions = maximumDimensions
         }
+        if let captureSessionID { TripJournal.shared.bind("photo-\(captureSessionID)-\(settings.uniqueID)") }
         pendingPhotoUniqueID = settings.uniqueID
         notifyChange()
 #if DEBUG
@@ -1467,6 +1490,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
               let sample = pendingSample,
               let batch,
               let queueStore else {
+            if !pendingInventoryEncounterIDs.isEmpty {
+                onInventoryCaptureResult?(pendingInventoryEncounterIDs, false, nil)
+                pendingInventoryEncounterIDs = []
+            }
             photoInFlight = false
             pendingSample = nil
             pendingPhotoUniqueID = nil
@@ -1484,6 +1511,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         let storageLimit = storageLimitBytes
         let signEvidence = pendingSignEvidence
         let captureReason = pendingCaptureReason
+        let inventoryEncounterIDs = pendingInventoryEncounterIDs
         let annotationDraft = pendingPhotoOrientationEpoch == orientationEpoch
             ? latestTrafficSignAnnotationDraft : nil
         latestTrafficSignAnnotationDraft = nil
@@ -1494,7 +1522,9 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 batch: batch,
                 queueStore: queueStore,
                 storageLimitBytes: storageLimit,
-                annotationDraft: annotationDraft, signEvidence: signEvidence, captureReason: captureReason
+                annotationDraft: annotationDraft, signEvidence: signEvidence, captureReason: captureReason,
+                inventoryEncounterIDs: inventoryEncounterIDs,
+                journalBinding: "photo-\(batch.captureSessionID)-\(uniqueID)"
             )
             Task { @MainActor [weak self] in
                 self?.finishPhotoProcessing(uniqueID: uniqueID, result: result)
@@ -1516,6 +1546,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
         guard state == .recording else { return }
         lastCaptureDetail = result.detail
+        if !pendingInventoryEncounterIDs.isEmpty {
+            onInventoryCaptureResult?(pendingInventoryEncounterIDs, result.saved, result.captureID)
+            pendingInventoryEncounterIDs = []
+        }
         if pendingCaptureReason == "manual" { manualPhotoCaptureFailed = !result.saved }
         guard result.saved else { return }
         lastCaptureSample = result.sample
@@ -1613,7 +1647,9 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         batch: PanoramaxBatchRecord,
         queueStore: PanoramaxQueueStore,
         storageLimitBytes: Int64?,
-        annotationDraft: PanoramaxTrafficSignAnnotationDraft?, signEvidence: [SignCaptureFilter.Evidence], captureReason: String
+        annotationDraft: PanoramaxTrafficSignAnnotationDraft?, signEvidence: [SignCaptureFilter.Evidence], captureReason: String,
+        inventoryEncounterIDs: [String] = [],
+        journalBinding: String? = nil
     ) -> PanoramaxPhotoProcessingResult {
         let dimensions = PanoramaxJPEGMetadata.pixelDimensions(from: data)
         let annotations: [PanoramaxTrafficSignAnnotation]
@@ -1646,15 +1682,20 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             imageWidthPixels: dimensions?.width,
             imageHeightPixels: dimensions?.height,
             trafficSignAnnotations: annotations.isEmpty ? nil : annotations,
-            captureReason: captureReason, signEvidence: signEvidence.isEmpty ? nil : signEvidence
+            captureReason: captureReason, signEvidence: signEvidence.isEmpty ? nil : signEvidence,
+            inventoryEncounterIDs: inventoryEncounterIDs.isEmpty ? nil : inventoryEncounterIDs
         )
         do {
-            _ = try queueStore.addJPEG(
+            let journalItem = try queueStore.addJPEG(
                 batchID: batch.batchID,
                 jpeg: panoramaxJPEG,
                 thumbnail: thumbnail,
                 metadata: metadata
             )
+            if let journalBinding { TripJournal.shared.aliasBinding(journalBinding, to: metadata.captureID) }
+            if let original = queueStore.originalURL(for: journalItem) {
+                TripJournal.shared.media(session: batch.captureSessionID, id: metadata.captureID, path: original.path, kind: "photo", binding: journalBinding, at: sample.capturedAt, location: sample)
+            }
             let annotationLogLine = annotations.first.map {
                 "event_id=\($0.sourceEventID) image_id=\(metadata.captureID) speed_kmh=\($0.speedLimitKmh)"
             }
@@ -1665,7 +1706,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 sample: sample,
                 saved: true,
                 detail: "Panoramax-Bild lokal gespeichert",
-                annotationLogLine: annotationLogLine
+                annotationLogLine: annotationLogLine,
+                captureID: metadata.captureID
             )
         } catch {
             return PanoramaxPhotoProcessingResult(sample: sample, saved: false, detail: "Aufnahme konnte nicht gespeichert werden")
@@ -1818,6 +1860,12 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         errorSummary: String?
     ) {
         logPathRecording(event:"stop",url:url)
+        let duration = CMTimeGetSeconds(movieOutput.recordedDuration)
+        let start = journalVideoStarts.removeValue(forKey: url.lastPathComponent)
+        TripJournal.shared.videoTiming(id: url.lastPathComponent, path: url.path,
+            session: captureSessionID ?? url.lastPathComponent, startedAt: start?.wall,
+            duration: duration.isFinite ? duration : nil, finished: true, successful: successful,
+            monotonicStart: start?.monotonic)
         if let errorSummary {
             Self.logger.error(
                 "movie output finished file=\(url.lastPathComponent, privacy: .public) successful=\(successful, privacy: .public) error=\(errorSummary, privacy: .public)"
@@ -1889,6 +1937,13 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
     private func handleMovieStarted(url: URL) {
         logPathRecording(event:"start",url:url)
+        let duration = CMTimeGetSeconds(movieOutput.recordedDuration)
+        let start = Date().addingTimeInterval(duration.isFinite ? -max(0, duration) : 0)
+        let monotonicStart = TripJournal.recordingMonotonicTime() - (duration.isFinite ? max(0, duration) : 0)
+        journalVideoStarts[url.lastPathComponent] = (start, monotonicStart)
+        TripJournal.shared.videoTiming(id: url.lastPathComponent, path: url.path,
+            session: captureSessionID ?? url.lastPathComponent, startedAt: start,
+            duration: nil, finished: false, monotonicStart: monotonicStart)
         defer { stopDashcamForPendingInteraction() }
         guard dashcamFileURL?.standardizedFileURL == url.standardizedFileURL else {
             sessionQueue.async { [weak self] in
@@ -1972,7 +2027,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             return url
         }
 #endif
-        return try Self.dashcamDirectory().appendingPathComponent(filename)
+        let url = try Self.dashcamDirectory().appendingPathComponent(filename)
+        TripJournal.shared.bind(filename)
+        TripJournal.shared.media(session: captureSessionID, id: filename, path: url.path, kind: "video", binding: filename)
+        return url
     }
 
     private func enforceDashcamStorageLimitUnlessIsolatedTest(retaining url: URL) {
@@ -2013,6 +2071,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         guard FileManager.default.fileExists(atPath: target.path) else { return false }
         do {
             try FileManager.default.removeItem(at: target)
+            try? FileManager.default.removeItem(at: target.appendingPathExtension("youspeed.json"))
             return true
         } catch {
             return false

@@ -36,6 +36,7 @@ final class SpeedReferenceRuntime {
     private var meters = 0.0
     private var withdrawnCameraEvidence = Set<String>()
     private var cameraOrigins: [String: (Double, Double)] = [:]
+    private var cachedBundleApplicability: [String:Any]?
     private var way: String?
     private var road: String?
     private var relations = Set<String>()
@@ -69,10 +70,11 @@ final class SpeedReferenceRuntime {
     func reset() {
         session = UUID().uuidString; sequence = 0; origin = now(); meters = 0
         withdrawnCameraEvidence = []
-        cameraOrigins = [:]; way = nil; road = nil; relations = []; departure = nil; direction = "unknown"
+        cameraOrigins = [:]; cachedBundleApplicability = nil; way = nil; road = nil; relations = []; departure = nil; direction = "unknown"
         _ = send("reset")
     }
     var output: SpeedReferenceOutput? { machine?.project() }
+    var cameraEvidenceIDs: [String] { ["camera", "camera_context"].compactMap { machine?.claims[$0]?.id } }
     var voice: SpeedReferenceValue? { machine?.claims["voice"]?.value }
     var policyIdentity: String { machine.map { "\($0.model.version):\($0.model.sha256)" } ?? "invalid_policy" }
     @discardableResult private func send(_ kind: String, _ fields: [String: Any] = [:]) -> SpeedReferenceOutput? {
@@ -92,8 +94,10 @@ final class SpeedReferenceRuntime {
     private var applicability: [String: Any] { ["status": "applicable", "context_revision": machine?.applicabilityRevision ?? 0, "conditions": [Any]()] }
     func voice(id: String, value: SpeedReferenceValue) { tick(); _ = send("voice", ["id": id, "value": value.json, "verified": true]) }
     func bundle(id: String, value: SpeedReferenceValue?, applicability evaluated: [String: Any]? = nil) {
-        if let value { _ = send("bundle", ["id": id, "value": value.json, "verified": true, "applicability": evaluated ?? applicability]) }
-        else { _ = send("bundle_missing") }
+        if let value {
+            cachedBundleApplicability = evaluated
+            _ = send("bundle",["id":id,"value":value.json,"verified":true,"applicability":evaluated ?? applicability])
+        } else { cachedBundleApplicability = nil; _ = send("bundle_missing") }
     }
     @discardableResult
     func camera(id: String, value: SpeedReferenceValue, enclosing: Bool = false, applicability evaluated: [String: Any]? = nil) -> SpeedReferenceCameraReceipt? {
@@ -111,6 +115,47 @@ final class SpeedReferenceRuntime {
         return SpeedReferenceCameraReceipt(offeredID: id, offeredValue: value, offeredKind: kind,
             before: before, after: after, pendingContextBefore: pendingBefore, pendingContextAfter: machine.pendingContext)
     }
+    /// Source-specific opt-in; existing producer calls keep their old semantics.
+    func preserveObservedCameraOrigin(id: String, elapsed: Double, distance: Double) {
+        tick()
+        guard elapsed.isFinite, distance.isFinite, elapsed >= 0, distance >= 0,
+              elapsed <= elapsedSeconds, distance <= traveledMeters, cameraOrigins[id] == nil else { return }
+        cameraOrigins[id] = (elapsed,distance)
+    }
+    /// Re-evaluate through existing T14, retaining independent current producer
+    /// claims under their original IDs/ordinary evidence origins. No policy edit.
+    @discardableResult
+    func reevaluateObservedCamera(parentID: String, value: SpeedReferenceValue?,
+                                  observedElapsedSeconds: Double, observedDistanceMeters: Double,
+                                  evaluatedConditions: [String: Any] = [:]) -> SpeedReferenceCameraReceipt? {
+        tick()
+        // Voice explicitly clears camera authority under the existing policy;
+        // never cache it for resurrection after that correction expires.
+        guard voice == nil else { return nil }
+        let owned = cameraEvidenceIDs.contains(parentID)
+        guard value != nil || owned else { return nil }
+        let other = machine?.claims.filter { key, claim in
+            ["camera", "camera_context", "bundle"].contains(key) && claim.id != parentID
+        } ?? [:]
+        applicabilityContextChanged(revision: (machine?.applicabilityRevision ?? 0)+1)
+        if let bundle = other["bundle"] {
+            var evaluated = cachedBundleApplicability
+            evaluated?["context_revision"] = machine?.applicabilityRevision ?? 0
+            self.bundle(id:bundle.id,value:bundle.value,applicability:evaluated)
+        }
+        if let enclosing = other["camera_context"] { _ = camera(id: enclosing.id, value: enclosing.value, enclosing: true) }
+        if let ordinary = other["camera"] {
+            preserveObservedCameraOrigin(id: ordinary.id, elapsed: ordinary.time, distance: ordinary.distance)
+            _ = camera(id: ordinary.id, value: ordinary.value)
+        }
+        guard let value else { return nil }
+        preserveObservedCameraOrigin(id: parentID, elapsed: observedElapsedSeconds, distance: observedDistanceMeters)
+        return camera(id: parentID, value: value, applicability:["status":"applicable",
+            "context_revision":machine?.applicabilityRevision ?? 0,"conditions":evaluatedConditions])
+    }
+#if DEBUG
+    var testBundleApplicability: [String:Any]? { cachedBundleApplicability }
+#endif
     func applicabilityContextChanged(revision: Int) { _ = send("applicability_context_changed", ["next_revision": revision]) }
     func pipelineAuthorityWithdrawn(evidenceID: String) {
         guard withdrawnCameraEvidence.insert(evidenceID).inserted else { return }

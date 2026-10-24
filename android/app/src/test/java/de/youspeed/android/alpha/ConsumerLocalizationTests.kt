@@ -10,15 +10,15 @@ class ConsumerLocalizationTests {
     @Test
     fun belgianLocalesSelectTheirLanguageForRuntimeMessages() {
         assertEquals(
-            "La reconnaissance par caméra est active.",
+            "La caméra est active.",
             ConsumerRuntimeText.CAMERA_ACTIVE.text(locale = Locale.forLanguageTag("fr-BE")),
         )
         assertEquals(
-            "Cameraherkenning is actief.",
+            "Camera is actief.",
             ConsumerRuntimeText.CAMERA_ACTIVE.text(locale = Locale.forLanguageTag("nl-BE")),
         )
         assertEquals(
-            "Kamera-Erkennung ist aktiv.",
+            "Kamera ist aktiv.",
             ConsumerRuntimeText.CAMERA_ACTIVE.text(locale = Locale.forLanguageTag("de-BE")),
         )
         assertEquals(

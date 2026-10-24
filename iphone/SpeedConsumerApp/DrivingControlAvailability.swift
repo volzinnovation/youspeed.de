@@ -18,8 +18,8 @@ enum DrivingControlPosturePolicy {
 
     static func controlsAllowed(speedControlsAllowed: Bool, angleDegrees: Double?,
                                 speedKmh: Double = 20, hasSignal: Bool = true) -> Bool {
-        !hasSignal || (speedKmh.isFinite && speedKmh >= 0 && speedKmh < 4)
-            || (speedControlsAllowed && isFlat(angleDegrees: angleDegrees))
+        isFlat(angleDegrees: angleDegrees) || !hasSignal
+            || (speedKmh.isFinite && speedKmh >= 0 && speedKmh < 4)
     }
 
     static func hasSignal(observedAt: Date?, accuracy: Double?, now: Date) -> Bool {
@@ -64,8 +64,8 @@ enum DrivingPhotoPolicy {
         speedKmh.isFinite && speedKmh > speedThresholdKmh
     }
 
-    static func replacesSettings(speedKmh: Double, hasSignal: Bool) -> Bool {
-        hasSignal && speedKmh.isFinite && speedKmh >= 4
+    static func replacesSettings(speedKmh: Double, hasSignal: Bool, phoneIsFlat: Bool = false) -> Bool {
+        !phoneIsFlat && hasSignal && speedKmh.isFinite && speedKmh >= 4
     }
 
     static func locationIsUsable(latitude: Double, longitude: Double, accuracy: Double,

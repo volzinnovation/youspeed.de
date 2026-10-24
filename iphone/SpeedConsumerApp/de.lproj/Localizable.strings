@@ -504,3 +504,42 @@
 "drive_photo.retry" = "Foto fehlgeschlagen. Zum Wiederholen tippen";
 "onboarding.dashcam.start_screenshot" = "Fahrbildschirm: Der rote Kreis unten links startet die Videoaufnahme.";
 "onboarding.dashcam.stop" = "Tippe an derselben Stelle auf das rote Quadrat, um das Video zu stoppen und zu speichern. Warte, bis das Speichern abgeschlossen ist, bevor du die Videobibliothek öffnest.";
+
+// Capture activity and offline-sign provenance.
+"capture.tsr.activity.off" = "Aus";
+"capture.tsr.activity.running" = "Aktiv";
+"capture.tsr.activity.unavailable" = "Nicht verfügbar";
+"capture.tsr.activity.paused_night" = "Nachtpause";
+"capture.tsr.activity.paused_location" = "Wartet auf Standort";
+"capture.tsr.activity.paused_background" = "Im Hintergrund pausiert";
+"capture.tsr.activity.waiting_drive" = "Wartet auf Fahrt";
+"capture.tsr.activity.waiting_recording" = "Wartet auf Aufnahme";
+"capture.tsr.activity.loading_model" = "Modell lädt";
+"capture.tsr.status" = "Kameraerkennung";
+"capture.tsr.night_description" = "Die Erkennung ist ausgewählt und nachts pausiert. Bei Tageslicht wird sie fortgesetzt. Fotokamera und Offline-Zeichen funktionieren unabhängig davon.";
+"capture.photo_camera.active" = "Fotokamera aktiv";
+"capture.photo_camera.off" = "Fotokamera aus";
+"capture.photo_camera.ready" = "Fotokamera bereit";
+"capture.photos.active" = "Automatische Fotos aktiv";
+"capture.photos.selected" = "Automatische Fotos ausgewählt";
+"capture.photos.off" = "Automatische Fotos aus";
+"speed.source.unknown" = "Limitquelle unbekannt";
+"speed.source.camera" = "Kameraerkennung";
+"speed.source.user_correction" = "Eigene Korrektur";
+"speed.source.local_correction" = "Lokale Korrektur";
+"speed.source.last_known" = "Zuletzt bekanntes Limit";
+"speed.source.osm_tag" = "OSM-Tempolimit";
+"speed.source.road_default" = "Straßenstandard";
+"speed.source.inventory_sign" = "Offline-Verkehrszeichen";
+"speed.source.inventory_town_context" = "Offline-Ortstafel";
+"speed.source.inventory_reset_context" = "Offline-Aufhebungszeichen";
+"speed.source.bundle" = "Offline-Straßendaten";
+"inventory.display.persistence" = "Ein Zeichen innerhalb von 10 m oder eine Ortstafel innerhalb von 30 m löst die Nebenanzeige aus. Sie bleibt bis zum nächsten passenden Zeichen oder bis zum Fahrtende. Fotoaufnahme bleibt unabhängig; Nähe bestätigt keine Kamerasichtung. Fotos benötigen Prüfung.";
+"speed.source.camera_pending" = "Kamera-Vorschlag";
+
+/* Upcoming physical speed limit preview. */
+"speed.upcoming.distance" = "in %d m";
+"speed.upcoming.distance.near" = "in <10 m";
+"speed.upcoming.distance.accessibility" = "in %d Metern";
+"speed.upcoming.distance.near.accessibility" = "in weniger als 10 Metern";
+"speed.upcoming.accessibility" = "Kommendes Tempolimit, %d Kilometer pro Stunde, %@.";

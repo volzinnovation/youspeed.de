@@ -28,6 +28,8 @@ internal class AndroidTrafficSignDetectorInput : AutoCloseable {
     override fun close() { bitmap.recycle() }
 
     companion object {
+        fun nativeContentRect(source: Bitmap) = TrafficSignSupplementaryPixelRect(
+            maxOf(0, source.height-source.width), 0, minOf(source.width,source.height), source.height)
         /** Owned native-resolution window for selected upload evidence; no image scaling. */
         fun nativeWindow(source: Bitmap): Bitmap {
             val size = source.height

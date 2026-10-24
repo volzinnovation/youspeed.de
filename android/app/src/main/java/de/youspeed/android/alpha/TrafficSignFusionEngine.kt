@@ -68,8 +68,7 @@ class TrafficSignFusionEngine(
         val primaryDetection = detection.copy(
             candidate = detection.candidate.copy(
                 semantic = detection.candidate.normalizedPrimarySemantic(),
-                conditionState = TrafficSignConditionState.NONE,
-                restrictions = emptyList(),
+
             ),
         )
 
@@ -125,8 +124,8 @@ class TrafficSignFusionEngine(
                 trackId = matchingTrack.id,
                 evidenceFrames = physicalEvidenceFrames ?: matchingTrack.observations.size,
                 assemblyId = assemblyId,
-                conditionState = TrafficSignConditionState.NONE,
-                restrictions = emptyList(),
+                conditionState = if(matchingTrack.observations.any {it.detection.candidate.conditionState!=TrafficSignConditionState.NONE || it.detection.candidate.restrictions.isNotEmpty()}) TrafficSignConditionState.UNRESOLVED else TrafficSignConditionState.NONE,
+                restrictions = matchingTrack.observations.flatMap {it.detection.candidate.restrictions}.distinct(),
             ),
             fusedScore = fusedScore,
             bestCropBoundingBox = best.boundingBox,

@@ -55,7 +55,7 @@ def main():
         jsonschema.Draft202012Validator.check_schema(schema)
         schema_keywords(schema)
     payloads = []
-    for name in ["sighting", "manual"]:
+    for name in ["sighting", "manual", "capture-sighting"]:
         value = json.loads((PIN / f"fixtures/{name}-batch-v1.json").read_text())
         payloads.append(("batch", value))
         payloads.extend(("sighting", event) for event in value["events"])
@@ -63,6 +63,7 @@ def main():
         payloads.append((name, json.loads((PIN / f"fixtures/{name}-v1.json").read_text())))
     for name in ["crop-interest-v1", "crop-interest-daily-maximum-v1"]:
         payloads.append(("crop-interest", json.loads((PIN / f"fixtures/{name}.json").read_text())))
+    payloads.append(("crop", json.loads((PIN / "fixtures/capture-crop-v1.json").read_text())))
     for model, value in payloads: jsonschema.validate(value, schemas[model])
     backend = None
     if args.backend:

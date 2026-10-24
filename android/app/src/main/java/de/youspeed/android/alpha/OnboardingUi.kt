@@ -60,6 +60,7 @@ internal fun OnboardingScreen(
     onRecognitionEnabled: (Boolean) -> Unit,
     onIndependentRecognitionEnabled: (Boolean) -> Unit,
     onPanoramaxEnabled: (Boolean) -> Unit,
+    journalOption: @Composable () -> Unit = {},
 ) {
     val step = OnboardingPolicy.resumedStep(ui.onboardingStep, hasUsableMap)
     val decreaseThreshold = stringResource(R.string.onboarding_threshold_decrease_label)
@@ -122,6 +123,7 @@ internal fun OnboardingScreen(
                                 }
                             }
                         }
+                        journalOption()
                         SetupToggle(R.string.onboarding_audio, ui.audioAlertsEnabled, onAudioEnabled, "onboarding-audio-toggle")
                         SetupBody(R.string.onboarding_audio_body)
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,

@@ -113,6 +113,7 @@ class BundleBootstrapper(
     private val coverageCacheTtlMillis = 60_000L
     private var coverageCacheLoadedAtMillis = 0L
     private var cachedCoverageEntries: List<CoverageEntry> = emptyList()
+    private var coverageCacheSelectedDBPath: String? = null
 
     fun activeState(): ActiveBundleState? {
         val stateFile = File(rootDir, "active_bundle.json")
@@ -704,7 +705,9 @@ class BundleBootstrapper(
     @Synchronized
     private fun loadCoverageEntriesIfNeeded(forceReload: Boolean = false): List<CoverageEntry> {
         val now = clock.millis()
+        val selectedDBPath = activeState()?.dbPath
         if (!forceReload &&
+            selectedDBPath == coverageCacheSelectedDBPath &&
             coverageCacheLoadedAtMillis > 0L &&
             now - coverageCacheLoadedAtMillis < coverageCacheTtlMillis
         ) {
@@ -776,11 +779,14 @@ class BundleBootstrapper(
             )
         }
 
-        // Retain previous downloads for rollback without routing through them.
+        // An explicit activation wins over lexical version ordering. Old copies
+        // remain on disk for rollback and never compete on speed completeness.
         val latest = loaded.groupBy { it.region.lowercase(Locale.US) }.values.map { entries ->
-            entries.maxBy { if (it.bundleVersion == "seed") "" else it.bundleVersion }
+            entries.firstOrNull { it.dbPath == selectedDBPath }
+                ?: entries.maxBy { if (it.bundleVersion == "seed") "" else it.bundleVersion }
         }
         cachedCoverageEntries = latest
+        coverageCacheSelectedDBPath = selectedDBPath
         coverageCacheLoadedAtMillis = now
         return latest
     }

@@ -33,6 +33,7 @@ actor V3BundleManager {
     private let minimumFreeDiskReserveBytes: Int64 = 256 * 1024 * 1024
     private let coverageCacheTTLSeconds: TimeInterval = 60
     private var coverageCacheUpdatedAt: Date?
+    private var coverageCacheSelectedDBPath: String?
     private var cachedCoverageEntries: [CoverageEntry] = []
 
     func configuredShardRegions(forCountryCode countryCode: String) -> [String] {
@@ -1470,8 +1471,10 @@ actor V3BundleManager {
 
     private func loadCoverageEntriesIfNeeded(forceReload: Bool = false) throws -> [CoverageEntry] {
         let now = Date()
+        let selectedDBPath = try activeDatabaseURL()?.path
         if !forceReload,
            let updatedAt = coverageCacheUpdatedAt,
+           selectedDBPath == coverageCacheSelectedDBPath,
            now.timeIntervalSince(updatedAt) < coverageCacheTTLSeconds {
             return cachedCoverageEntries
         }
@@ -1529,12 +1532,15 @@ actor V3BundleManager {
             )
         }
 
-        // Old regional versions remain available for rollback, but must never
-        // compete with a repaired version during GPS routing.
+        // Activation is explicit; a lexically later obsolete copy cannot replace
+        // a selected conditional version merely because it supplies more scalars.
+        // Other regions retain their existing version and coverage rules.
         let latest = Dictionary(grouping: loaded, by: { $0.region.lowercased() }).values.compactMap { entries in
-            entries.max { ($0.bundleVersion == "seed" ? "" : $0.bundleVersion) < ($1.bundleVersion == "seed" ? "" : $1.bundleVersion) }
+            if let selected = entries.first(where: { $0.dbPath == selectedDBPath }) { return selected }
+            return entries.max { ($0.bundleVersion == "seed" ? "" : $0.bundleVersion) < ($1.bundleVersion == "seed" ? "" : $1.bundleVersion) }
         }
         cachedCoverageEntries = latest
+        coverageCacheSelectedDBPath = selectedDBPath
         coverageCacheUpdatedAt = now
         return latest
     }

@@ -19,6 +19,10 @@ internal data class SupplementaryOCRAnnotation(
     val modelVersion: String,
     val parsedTimeWindow: ParsedTimeWindow?,
 ) {
+    /** Parsed candidates still require explicit complete-assembly verification and two frames. */
+    val conditionalInterpretationCandidate: ConditionalOCRInterpretation.Parsed? get() =
+        rawText?.takeIf { status == Status.READ && primarySpeedKmh != null && primaryClassId == "maxspeed:$primarySpeedKmh" }
+            ?.let(ConditionalOCRInterpretation::parse)
     enum class Status(val wireValue: String) { READ("read"), NO_TEXT("no_text"), FAILED("failed") }
     data class Box(val x: Double, val y: Double, val width: Double, val height: Double) {
         val valid get() = listOf(x, y, width, height).all { it.isFinite() } && x >= 0 && y >= 0 &&

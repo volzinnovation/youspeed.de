@@ -300,6 +300,7 @@ struct PanoramaxCaptureMetadata: Codable, Equatable {
     let trafficSignAnnotations: [PanoramaxTrafficSignAnnotation]?
     var captureReason: String? = nil
     var signEvidence: [SignCaptureFilter.Evidence]? = nil
+    var inventoryEncounterIDs: [String]? = nil
 
     init(
         captureID: String,
@@ -313,7 +314,8 @@ struct PanoramaxCaptureMetadata: Codable, Equatable {
         imageHeightPixels: Int? = nil,
         trafficSignAnnotations: [PanoramaxTrafficSignAnnotation]? = nil,
         captureReason: String? = nil,
-        signEvidence: [SignCaptureFilter.Evidence]? = nil
+        signEvidence: [SignCaptureFilter.Evidence]? = nil,
+        inventoryEncounterIDs: [String]? = nil
     ) {
         self.captureID = captureID
         self.captureSessionID = captureSessionID
@@ -326,6 +328,7 @@ struct PanoramaxCaptureMetadata: Codable, Equatable {
         self.imageHeightPixels = imageHeightPixels
         self.trafficSignAnnotations = trafficSignAnnotations
         self.captureReason = captureReason; self.signEvidence = signEvidence
+        self.inventoryEncounterIDs = inventoryEncounterIDs
     }
 
     func replacingImageMetadata(
@@ -346,7 +349,7 @@ struct PanoramaxCaptureMetadata: Codable, Equatable {
             imageWidthPixels: imageWidthPixels,
             imageHeightPixels: imageHeightPixels,
             trafficSignAnnotations: trafficSignAnnotations,
-            captureReason: captureReason, signEvidence: signEvidence
+            captureReason: captureReason, signEvidence: signEvidence, inventoryEncounterIDs: inventoryEncounterIDs
         )
     }
 
@@ -509,6 +512,7 @@ struct PanoramaxCadenceConfiguration: Equatable {
     var maxAccuracyMeters: Double = 50
     var triggerMode: PanoramaxCaptureTriggerMode = .distance
     var recognizedSignsOnly = false
+    var inventorySignsOnly = false
 }
 
 enum PanoramaxCaptureTriggerMode: String, CaseIterable, Codable {

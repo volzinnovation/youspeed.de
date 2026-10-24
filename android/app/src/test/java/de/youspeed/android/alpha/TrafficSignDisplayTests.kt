@@ -1,6 +1,7 @@
 package de.youspeed.android.alpha
 
 import java.io.File
+import java.time.Instant
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -38,7 +39,7 @@ class TrafficSignDisplayTests {
         .map { File(it, TrafficSignDisplayCatalog.ASSET_PATH) }.first(File::isFile)
         .readText().let(TrafficSignDisplayCatalog::decode)
 
-    @Test fun latestOtherSignReplacesPreviousWhileEmptyFrameRetainsAndSpeedOrUnmappedClears() {
+    @Test fun latestOtherSignReplacesPreviousWhileEmptyAndNumericFramesRetain() {
         val yield = observe("give_way")
         val stop = observe("stop")
         val first = TrafficSignDisplayPolicy.next(null, yield, catalog)
@@ -47,9 +48,9 @@ class TrafficSignDisplayTests {
         val second = TrafficSignDisplayPolicy.next(first, stop, catalog)
         assertEquals("stop", second?.classId)
         assertNull(TrafficSignDisplayPolicy.next(second, observe("other"), catalog))
-        assertNull(TrafficSignDisplayPolicy.next(second, observe("maxspeed:30", TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, 30)), catalog))
-        assertNull(TrafficSignDisplayPolicy.next(second, observe("no:end"), catalog))
-        assertNull(TrafficSignDisplayPolicy.next(second, observe("motorway:end"), catalog))
+        assertEquals(second,TrafficSignDisplayPolicy.next(second, observe("maxspeed:30", TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, 30)), catalog))
+        assertEquals(second,TrafficSignDisplayPolicy.next(second, observe("no:end"), catalog))
+        assertEquals(second,TrafficSignDisplayPolicy.next(second, observe("motorway:end"), catalog))
         assertNull(catalog.pictogram("DE:310")) // Reference artwork cannot invent a classifier class.
         val pedestrianCrossing = requireNotNull(catalog.pictogram("pedestrian_crossing"))
         assertEquals("pedestrian_crossing", pedestrianCrossing.classId)
@@ -122,6 +123,15 @@ class TrafficSignDisplayTests {
         assertEquals("stop", changed.lastTrafficSignPictogram?.classId)
         assertEquals("stop", state.withCurrentTrafficSignDisplayGeneration(4, 5).lastTrafficSignPictogram?.classId)
         assertEquals(5L, changed.trafficSignGeneration)
+    }
+
+    @Test fun appliedBoundaryInvalidationKeepsLateFramesFromRestoringOldSecondary() {
+        val gate=TrafficSignDisplayDeliveryGate()
+        val at=Instant.parse("2026-10-21T12:00:00Z")
+        assertTrue(gate.accept(observe("stop").copy(capturedAtUtc=at),1,"drive-test"))
+        gate.invalidate(at.plusSeconds(2))
+        assertFalse(gate.accept(observe("stop").copy(capturedAtUtc=at.plusSeconds(1)),1,"drive-test"))
+        assertTrue(gate.accept(observe("give_way").copy(capturedAtUtc=at.plusSeconds(3)),1,"drive-test"))
     }
 
     private fun observe(id: String, semantic: TrafficSignSemantic = TrafficSignSemantic(TrafficSignSemanticKind.UNKNOWN)) =

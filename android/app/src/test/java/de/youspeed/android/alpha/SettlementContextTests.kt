@@ -4,6 +4,18 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SettlementContextTests {
+    @Test fun residentialRoadEstablishesLocalityWithoutReplacingExplicitSemantics() {
+        assertEquals(SettlementContext(true, "highway_residential", "high"),
+            SettlementContextPolicy.residential(SettlementContext.unknown(), " ReSiDeNtIaL "))
+        assertEquals(true, SettlementContextPolicy.residential(SettlementContext(false, "urban_polygon", "low"), "residential").insideCity)
+        for (source in listOf("zone_traffic", "maxspeed_type", "source_maxspeed", "traffic_sign")) {
+            val explicit = SettlementContext(false, source, "high")
+            assertEquals(explicit, SettlementContextPolicy.residential(explicit, "residential"))
+        }
+        val conflict = SettlementContext.unknown("conflict")
+        assertEquals(conflict, SettlementContextPolicy.residential(conflict, "residential"))
+        assertNull(SettlementContextPolicy.residential(SettlementContext.unknown(), "service").insideCity)
+    }
     private val point = SettlementPoint(49.0, 8.0)
     private val east = listOf(SettlementPoint(49.0, 7.999), SettlementPoint(49.0, 8.001))
     private fun segment(inside: Boolean?, direction: Int = 0, confidence: String = "high", points: List<SettlementPoint> = east) =

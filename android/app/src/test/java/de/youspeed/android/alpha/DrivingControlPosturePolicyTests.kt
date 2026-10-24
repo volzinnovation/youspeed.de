@@ -31,8 +31,15 @@ class DrivingControlPosturePolicyTests {
                     if (landscape) 0.0 else sin(radians), -cos(radians))!!
                 assertEquals(angle, measured, 1e-9)
                 assertEquals(angle <= 10.0, DrivingControlPosturePolicy.controlsAllowed(true, measured))
-                assertFalse(DrivingControlPosturePolicy.controlsAllowed(false, measured))
+                assertEquals(angle <= 10.0, DrivingControlPosturePolicy.controlsAllowed(false, measured))
             }
+        }
+    }
+
+    @Test fun flatDeskKeepsControlsAndSettingsAtEveryReportedSpeed() {
+        for(angle in listOf(0.0,5.0,10.0)) for(speed in listOf(21.0,70.0,180.0,Double.NaN,Double.POSITIVE_INFINITY)) {
+            assertTrue(DrivingControlPosturePolicy.controlsAllowed(false,angle,speed,true))
+            assertFalse(DrivingPhotoCapturePolicy.replacesSettings(speed,true,phoneIsFlat=true))
         }
     }
 

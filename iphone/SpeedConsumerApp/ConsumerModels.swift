@@ -559,6 +559,14 @@ enum BundleRouteSelection {
     /// when both databases can match the same road.
     static let switchScoreMargin = 120.0
 
+    /// An explicit regional selection may have fewer exact speeds because it
+    /// preserves unresolved restrictions. Older copies cannot compete with it.
+    static func selectedRegionalVersions(_ routes: [LocalBundleRoute], currentDBPath: String?) -> [LocalBundleRoute] {
+        guard let current = routes.first(where: { $0.dbPath == currentDBPath }) else { return routes }
+        let region = current.region.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return routes.filter { $0.dbPath == current.dbPath || $0.region.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() != region }
+    }
+
     static func choose(
         probes: [BundleRouteProbe],
         currentDBPath: String?,
@@ -566,7 +574,7 @@ enum BundleRouteSelection {
     ) -> LocalBundleRoute? {
         // Geographic eligibility comes before road evidence or hysteresis.
         // In particular, an active database is never a coverage-gap fallback.
-        let coveringPaths = Set(coveringRoutes.map(\.dbPath))
+        let coveringPaths = Set(selectedRegionalVersions(coveringRoutes, currentDBPath: currentDBPath).map(\.dbPath))
         let eligible = probes.filter { coveringPaths.contains($0.route.dbPath) }
         guard !eligible.isEmpty else { return nil }
         let ordered = eligible.sorted {

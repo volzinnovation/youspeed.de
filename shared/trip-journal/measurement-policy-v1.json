@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "coordinate_order": "longitude,latitude",
+  "distance_unit": "metre",
+  "duration_unit": "second",
+  "max_fix_age_seconds": 10,
+  "max_horizontal_accuracy_metres": 50,
+  "max_increment_seconds": 15,
+  "max_speed_metres_per_second": 70,
+  "minimum_displacement_metres": 3,
+  "minimum_reported_speed_metres_per_second_exclusive": 0.5,
+  "minimum_displacement_includes_both_accuracy_radii": true,
+  "distance_rounding_metres": 0.001,
+  "foreground_resume_grace_seconds": 300,
+  "media_clock_exact_tolerance_seconds": 0.25,
+  "media_clock_estimated_tolerance_seconds": 2,
+  "privacy_photo_location_tolerance_seconds": 3,
+  "storage_representation": "Existing SQLite REAL metre/second counters retained; integer-unit migration deferred by product owner."
+}

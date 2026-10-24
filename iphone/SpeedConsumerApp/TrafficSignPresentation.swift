@@ -166,14 +166,23 @@ struct TrafficSignDisplayState {
         guard let observation, observation.timestamp.timeIntervalSince1970.isFinite,
               observation.timestamp > lastAcceptedAt else { return }
         lastAcceptedAt = observation.timestamp
-        guard !observation.affectsSpeed,
-              let catalog, observation.classifierCheckpointSHA256 == catalog.classifierCheckpointSHA256,
-              catalog.canRecognize(observation.classID),
+        guard let catalog, observation.classifierCheckpointSHA256 == catalog.classifierCheckpointSHA256,
+              catalog.canRecognize(observation.classID) else { return }
+        // A numeric primary limit does not end an unrelated secondary sign.
+        // Applicable typed ends/town transitions invalidate after admission.
+        guard !observation.affectsSpeed else { return }
+        guard
               let next = catalog.sign(for: observation.classID), next.displayEligible else {
             sign = nil
             return
         }
         sign = next
+    }
+
+    mutating func invalidate(at timestamp: Date) {
+        guard timestamp.timeIntervalSince1970.isFinite, timestamp >= lastAcceptedAt else { return }
+        lastAcceptedAt=timestamp
+        sign=nil
     }
 
     mutating func reset() { self = Self() }

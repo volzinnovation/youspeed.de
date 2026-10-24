@@ -114,6 +114,9 @@ targets:
       - path: SpeedConsumerApp/V3SpeedLimitService.swift
       - path: SpeedConsumerApp/V3LookupResources.swift
       - path: SpeedConsumerApp/MatcherCoreModels.swift
+      - path: SpeedConsumerApp/ConditionalSpeedRules.swift
+      - path: SpeedConsumerApp/InventorySignRuntime.swift
+      - path: SpeedConsumerApp/UpcomingSpeedLimit.swift
       - path: SpeedConsumerApp/TrafficSignApplicability.swift
       - path: SpeedConsumerApp/RoadSpeedDefaults.swift
       - path: SpeedDBBenchSketch/BenchmarkAssets
@@ -150,6 +153,9 @@ targets:
       - path: SpeedConsumerApp/TrafficSignApplicabilityTests.swift
       - path: SpeedConsumerApp/SpeedLimitReferenceModelTests.swift
       - path: SpeedConsumerTests
+      - path: ../shared/upcoming-speed-limit
+        type: folder
+        buildPhase: resources
       - path: ../shared/tsr/passage/suppression-v1.json
         buildPhase: resources
       - path: ../shared/matcher/candidate-admission-v1.json

@@ -34,6 +34,8 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
     private var meters = 0.0
     private val withdrawnCameraEvidence = mutableSetOf<String>()
     private val cameraOrigins = mutableMapOf<String, Pair<Double, Double>>()
+    private var bundleEnvelope:Pair<String,Map<String,Any?>>?=null
+    private val cameraEnvelopes=mutableMapOf<String,Map<String,Any?>>()
     private var way: String? = null
     private var road: String? = null
     private var relations = emptySet<String>()
@@ -65,10 +67,14 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
     @Synchronized fun reset() {
         session = UUID.randomUUID().toString(); sequence = 0; origin = now(); meters = 0.0
         withdrawnCameraEvidence.clear()
-        cameraOrigins.clear(); way = null; road = null; relations = emptySet(); departure = null; direction = "unknown"
+        cameraOrigins.clear();cameraEnvelopes.clear();bundleEnvelope=null; way = null; road = null; relations = emptySet(); departure = null; direction = "unknown"
         send("reset")
     }
     @Synchronized fun output() = machine?.project()
+    @Synchronized fun cameraEvidenceIds(): List<String> = listOf("camera", "camera_context").mapNotNull { machine?.claims?.get(it)?.id }
+    @Synchronized fun ordinaryCameraEvidenceId():String? = machine?.claims?.get("camera")?.id
+    @Synchronized fun ordinaryCameraOrigin():Pair<Double,Double>? = machine?.claims?.get("camera")?.let {it.time to it.distance}
+    @Synchronized fun contextPending(): Boolean = machine?.pendingContext == true
     @Synchronized fun voice() = machine?.claims?.get("voice")?.value
     val policyIdentity: String get() = machine?.let { "${it.model.version}:${it.model.sha256}" } ?: "invalid_policy"
     private fun send(kind: String, fields: Map<String, Any?> = emptyMap()): SpeedReferenceOutput? {
@@ -85,23 +91,50 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
     }
     @Synchronized fun tick(distance: Double = 0.0) { if (distance.isFinite() && distance >= 0) meters += distance; send("tick") }
     private fun applicability() = mapOf("status" to "applicable", "context_revision" to (machine?.applicabilityRevision ?: 0), "conditions" to emptyList<Any>())
+    private fun rebased(envelope:Map<String,Any?>)=envelope+mapOf("context_revision" to (machine?.applicabilityRevision ?: 0))
+    @Synchronized internal fun bundleApplicability():Map<String,Any?>?=bundleEnvelope?.second?.let(::rebased)
     @Synchronized fun voice(id: String, value: SpeedReferenceValue) { tick(); send("voice", mapOf("id" to id, "value" to value.json, "verified" to true)) }
     @Synchronized fun bundle(id: String, value: SpeedReferenceValue?, evaluatedApplicability: Map<String, Any?>? = null) {
-        if (value == null) send("bundle_missing") else send("bundle", mapOf("id" to id, "value" to value.json, "verified" to true, "applicability" to (evaluatedApplicability ?: applicability())))
+        if (value == null) {bundleEnvelope=null;send("bundle_missing")} else {
+            val envelope=rebased(evaluatedApplicability ?: bundleEnvelope?.takeIf {it.first==id}?.second ?: applicability())
+            bundleEnvelope=id to envelope
+            send("bundle", mapOf("id" to id, "value" to value.json, "verified" to true, "applicability" to envelope))
+        }
     }
-    @Synchronized fun camera(id: String, value: SpeedReferenceValue, enclosing: Boolean = false, evaluatedApplicability: Map<String, Any?>? = null): SpeedReferenceCameraReceipt? {
+    @Synchronized fun camera(id: String, value: SpeedReferenceValue, enclosing: Boolean = false, evaluatedApplicability: Map<String, Any?>? = null,
+        originalElapsedSeconds:Double?=null,originalDistanceMeters:Double?=null): SpeedReferenceCameraReceipt? {
         tick()
-        val first = cameraOrigins.getOrPut(id) { (machine?.time ?: 0.0) to meters }
+        if((originalElapsedSeconds==null)!=(originalDistanceMeters==null)) return null
+        if(originalElapsedSeconds!=null && (!originalElapsedSeconds.isFinite() || originalElapsedSeconds<0 || originalElapsedSeconds>(machine?.time ?: 0.0) ||
+                originalDistanceMeters?.isFinite()!=true || originalDistanceMeters<0 || originalDistanceMeters>meters)) return null
+        val first = cameraOrigins.getOrPut(id) { (originalElapsedSeconds ?: (machine?.time ?: 0.0)) to (originalDistanceMeters ?: meters) }
         // Capture after the existing tick, immediately before the unchanged offer.
         val before = machine?.project()
         val pendingBefore = machine?.pendingContext
         val kind = if (enclosing) "camera_context" else "camera"
+        val envelope=rebased(evaluatedApplicability ?: cameraEnvelopes[id] ?: applicability())
         val after = send(kind, mapOf("id" to id, "value" to value.json, "verified" to true,
-            "applicability" to (evaluatedApplicability ?: applicability()), "observed_elapsed_s" to first.first, "observed_distance_m" to first.second,
+            "applicability" to envelope, "observed_elapsed_s" to first.first, "observed_distance_m" to first.second,
             "area_verified" to enclosing, "scope_kind" to "zone"))
+        if(machine?.claims?.get(kind)?.id==id) cameraEnvelopes[id]=envelope
         return if (before != null && after != null && pendingBefore != null)
             SpeedReferenceCameraReceipt(id, value, kind, before, after, pendingBefore, machine!!.pendingContext)
         else null
+    }
+    /** Reevaluate one producer's condition using existing applicability events.
+     * Other currently valid registers retain their evidence IDs and origins.
+     * Voice-suppressed historical camera evidence is never cached or restored. */
+    @Synchronized fun reevaluateCamera(id:String,value:SpeedReferenceValue?,originalElapsedSeconds:Double,originalDistanceMeters:Double,conditionEvidence:Map<String,Any?> = emptyMap()):SpeedReferenceCameraReceipt? {
+        tick();val current=machine ?: return null
+        if(current.claims["voice"]!=null) return null
+        if(value==null && current.claims["camera"]?.id!=id && current.claims["camera_context"]?.id!=id) return null
+        val retained=current.claims.filterKeys {it in setOf("camera","camera_context","bundle")}.filterValues {it.id!=id}.toMap()
+        send("applicability_context_changed",mapOf("next_revision" to current.applicabilityRevision+1))
+        retained["bundle"]?.let {bundle(it.id,it.value)}
+        retained["camera_context"]?.let {camera(it.id,it.value,enclosing=true)}
+        retained["camera"]?.let {camera(it.id,it.value,originalElapsedSeconds=it.time,originalDistanceMeters=it.distance)}
+        return value?.let {camera(id,it,evaluatedApplicability=applicability()+mapOf("conditions" to conditionEvidence),
+            originalElapsedSeconds=originalElapsedSeconds,originalDistanceMeters=originalDistanceMeters)}
     }
     @Synchronized fun applicabilityContextChanged(revision: Int) { send("applicability_context_changed", mapOf("next_revision" to revision)) }
     @Synchronized fun pipelineAuthorityWithdrawn(evidenceId: String) {

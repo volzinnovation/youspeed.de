@@ -113,7 +113,7 @@ class TrafficSignRecognitionOrchestratorTests {
         assertNull(harness.observer.outputs.last().ocrAnnotation)
     }
 
-    @Test fun failedSingleOcrAttemptStillCompletesBeforeUnconditionalPrimaryDelivery() {
+    @Test fun failedReadsRemainBoundedAndCompleteBeforeNumericDelivery() {
         val harness = Harness(pack = twoFramePack())
         var calls = 0
         repeat(3) { index ->
@@ -122,12 +122,12 @@ class TrafficSignRecognitionOrchestratorTests {
             harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection(),
                 supplementaryTextRecognition = TrafficSignSupplementaryTextRecognition { _, _ -> calls++; error("OCR unavailable") }))
         }
-        assertEquals(1, calls)
+        assertEquals(2, calls)
         assertEquals(TrafficSignSupplementaryOCRStatus.FAILED, harness.observer.outputs.last().ocrAnnotation?.status)
         assertEquals(30, harness.orchestrator.speedOverride()?.speedKmh)
     }
 
-    @Test fun laterClearerViewRetriesWithoutHoldingOrRepeatingPrimaryAuthority() {
+    @Test fun laterClearerViewWaitsForItsOwnInspectionBeforeNumericDelivery() {
         val harness = Harness(pack = twoFramePack())
         val requests = mutableListOf<TrafficSignSupplementaryOCRRequest>()
         val completions = mutableListOf<(TrafficSignSupplementaryTextAnnotation) -> Unit>()
@@ -146,21 +146,21 @@ class TrafficSignRecognitionOrchestratorTests {
             boundingBox = NormalizedTrafficSignBoundingBox(.65, .1, .16, .24))) }
         val third = frame(601_000_000, larger)
         assertEquals(2, requests.size)
-        assertEquals(1, third.releaseCount)
-        assertEquals(3, harness.observer.outputs.count { !it.supplementaryOCROnly })
-        assertEquals(1, harness.observer.pendingOcr.size)
+        assertEquals(0, third.releaseCount)
+        assertEquals(2, harness.observer.outputs.count { !it.supplementaryOCROnly })
+        assertEquals(2, harness.observer.pendingOcr.size)
         assertEquals("bei Nässe", harness.observer.outputs.last().ocrAnnotation?.rawText)
         completions[1](requests[1].annotation(null))
+        assertEquals(1, third.releaseCount)
         val refinement = harness.observer.outputs.last()
-        assertTrue(refinement.supplementaryOCROnly)
-        assertNull(refinement.passageEvent)
+        assertFalse(refinement.supplementaryOCROnly)
         assertEquals("bei Nässe", refinement.ocrAnnotation?.rawText)
         assertEquals(TrafficSignSupplementaryOCRStatus.NO_TEXT, refinement.ocrAttemptAnnotation?.status)
         assertEquals(3, harness.observer.outputs.count { !it.supplementaryOCROnly })
         assertEquals(30, harness.orchestrator.speedOverride()?.speedKmh)
     }
 
-    @Test fun completedRetryForReplacedSignStillCollectsItsSourceWithoutClearingNewPresentation() {
+    @Test fun numericRetryHoldsItsFrameAndDuplicateCompletionCannotOverwriteReplacement() {
         val harness = Harness(pack = twoFramePack())
         val requests = mutableListOf<TrafficSignSupplementaryOCRRequest>()
         val completions = mutableListOf<(TrafficSignSupplementaryTextAnnotation) -> Unit>()
@@ -174,24 +174,18 @@ class TrafficSignRecognitionOrchestratorTests {
         completions[0](requests[0].annotation(null))
         frame(601_000_000, detection().let { it.copy(candidate = it.candidate.copy(
             boundingBox = NormalizedTrafficSignBoundingBox(.65, .1, .16, .24))) })
+        assertEquals(2,harness.observer.outputs.size)
+        val annotation=requests[1].annotation("bei Nässe")
+        completions[1](annotation)
+        val completed=harness.observer.outputs.last()
+        assertFalse(completed.supplementaryOCROnly)
+        assertEquals("frame-601000000",completed.ocrAttemptAnnotation?.frameId)
         val replacement = detection().let { it.copy(candidate = it.candidate.copy(rawClassId = "hazard:school",
             semantic = TrafficSignSemantic(TrafficSignSemanticKind.UNKNOWN))) }
         frame(1001_000_000, replacement); frame(1401_000_000, replacement)
-        completions[1](requests[1].annotation("bei Nässe"))
-        val late = harness.observer.outputs.last()
-        assertTrue(late.supplementaryOCROnly)
-        assertFalse(late.ocrPresentationUpdate)
-        assertNull(late.ocrAnnotation)
-        assertEquals("frame-601000000", late.ocrAttemptAnnotation?.frameId)
-        var authoritativeDeliveries = 0; var presentationUpdates = 0
-        val collected = mutableListOf<TrafficSignSupplementaryTextAnnotation>()
-        TrafficSignFinalizedPassageForwarder(submitRecognitionEvent = { _, _ -> authoritativeDeliveries++ },
-            submitSupplementaryText = { presentationUpdates++ }, submitSupplementaryAttempt = collected::add,
-            submitFinalizedPassage = { error("Late OCR cannot deliver a passage") }).onRecognition(late)
-        assertEquals(1, collected.size)
-        assertEquals(requests[1].frameId, collected.single().frameId)
-        assertEquals(0, authoritativeDeliveries)
-        assertEquals(0, presentationUpdates)
+        val before=harness.observer.outputs.toList()
+        completions[1](annotation)
+        assertEquals(before,harness.observer.outputs)
     }
 
     @Test fun numericOcrFollowsFusionThresholdWithoutRequiringPictogramDisplayPointNineScore() {

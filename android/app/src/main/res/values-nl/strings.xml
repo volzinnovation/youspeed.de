@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">YouSpeed</string>
     <string name="header_title">YouSpeed</string>
     <string name="header_summary">Live snelheidslimietassistent met offline kaartgegevens en indicatieve waarschuwingen.</string>
@@ -144,4 +144,7 @@
     <string name="ui_driving_photo_unavailable">Foto niet beschikbaar</string>
     <string name="ui_driving_photo_local_only">Slaat één foto lokaal op voor controle. Er wordt niets geüpload.</string>
     <string name="ui_driving_photo_failed">De foto kon niet worden opgeslagen. Probeer opnieuw zodra de camera klaar is.</string>
+    <string name="upcoming_limit_distance" tools:ignore="MissingTranslation">over %1$d m</string>
+    <string name="upcoming_limit_distance_near" tools:ignore="MissingTranslation">over &lt;10 m</string>
+    <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Komende snelheidslimiet, %1$d kilometer per uur, %2$s</string>
 </resources>

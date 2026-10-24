@@ -519,6 +519,28 @@ class BundleContractTests {
     }
 
     @Test
+    fun selectedRegionalVersionOverridesLexicalOrderingAndRefreshesCoverageCache() {
+        val root=createTempDirectory("selected-conditional-route").toFile()
+        try {
+            val bbox=BundleCoverageBBox(7.0,47.0,10.0,50.0)
+            val selected=writeCoverageBundle(root,"bw","2026-10-23-v1.5-journal-conditional","baden-wuerttemberg","conditional.sqlite",bbox,null)
+            val old=writeCoverageBundle(root,"bw","2026-10-23-v1.5-lookahead","baden-wuerttemberg","old.sqlite",bbox,null)
+            val adjacent=writeCoverageBundle(root,"alsace","v1","alsace","alsace.sqlite",bbox,null)
+            val manager=BundleBootstrapper(rootDir=root,httpFetcher=FakeHttpFetcher(emptyMap()),deltaDatabase=ContractTestDatabase)
+            assertEquals(setOf(old.absolutePath,adjacent.absolutePath),manager.resolveLocalBundleRoutes(48.5,8.5,null).map { it.dbPath }.toSet())
+            fun activate(file:File,version:String) {
+                File(root,"active_bundle.json").writeText(ContractJson.encodeActiveBundleState(ActiveBundleState("baden-wuerttemberg","DEU",version,file.name,file.absolutePath,sha256Hex(file.readBytes()),file.length(),"file:///fixture","2026-10-24T10:00:00Z")))
+            }
+            activate(selected,"2026-10-23-v1.5-journal-conditional")
+            assertEquals(setOf(selected.absolutePath,adjacent.absolutePath),manager.resolveLocalBundleRoutes(48.5,8.5,null).map { it.dbPath }.toSet())
+            // The former file remains a possible explicit rollback, never an automatic fallback.
+            assertTrue(old.exists())
+            activate(old,"2026-10-23-v1.5-lookahead")
+            assertEquals(setOf(old.absolutePath,adjacent.absolutePath),manager.resolveLocalBundleRoutes(48.5,8.5,null).map { it.dbPath }.toSet())
+        } finally { root.deleteRecursively() }
+    }
+
+    @Test
     fun resolveLocalBundleRoutesReturnsAllOverlappingInstalledCandidates() {
         val tempRoot = createTempDirectory("android-alpha-route-overlap").toFile()
         tempRoot.deleteOnExit()

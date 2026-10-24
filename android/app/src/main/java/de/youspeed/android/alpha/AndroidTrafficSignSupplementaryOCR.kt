@@ -85,7 +85,8 @@ internal object AndroidTrafficSignSupplementaryOCR {
     }
 
     internal data class Read(val raw: String?, val rect: TrafficSignPlateRect? = null,
-        val decision: String, val passes: List<TrafficSignOCRPass> = emptyList(), val failed: Boolean = false)
+        val decision: String, val passes: List<TrafficSignOCRPass> = emptyList(), val failed: Boolean = false,
+        val scan:TrafficSignPlateDetector.Scan?=null)
 
     /** Owns one admitted primary-plus-lower crop; only a separate lower plate reaches ML Kit. */
     fun recognize(bitmap: Bitmap, completion: (Read) -> Unit): Boolean {
@@ -104,12 +105,12 @@ internal object AndroidTrafficSignSupplementaryOCR {
         bitmap.getPixels(it, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
     }
     private fun readPlate(bitmap: Bitmap): Read {
-        val rect = TrafficSignPlateDetector.select(bitmap.width, bitmap.height, pixels(bitmap))
-            ?: return Read(null, decision = "no_separate_plate")
+        val scan=TrafficSignPlateDetector.scan(bitmap.width,bitmap.height,pixels(bitmap))
+        val rect=scan.rect ?: return Read(null,decision=scan.decision,scan=scan)
         val plate = Bitmap.createBitmap(bitmap, rect.x, rect.y, rect.width, rect.height)
         try {
             if (TrafficSignPlateDetector.isPrimaryGraphic(plate.width, plate.height, pixels(plate)))
-                return Read(null, rect, "primary_graphic")
+                return Read(null, rect, "primary_graphic",scan=scan)
             val platePixels = pixels(plate)
             fun pass(input: Bitmap, scale: Int): TrafficSignOCRPass {
                 val result = Tasks.await(client().process(InputImage.fromBitmap(input, 0)))
@@ -118,7 +119,9 @@ internal object AndroidTrafficSignSupplementaryOCR {
                 val rows = lines.flatMap { line -> line.boundingBox?.let { ((it.top/scale-2).coerceAtLeast(0)..(it.bottom/scale+2).coerceAtMost(plate.height-1)).toList() } ?: emptyList() }.toSet()
                 return TrafficSignOCRPass(lines.joinToString("\n") { it.text },
                     lines.minOfOrNull { it.confidence.toDouble() } ?: 0.0, scale,
-                    TrafficSignPlateDetector.hasUncoveredInk(plate.width, plate.height, platePixels, rows))
+                    TrafficSignPlateDetector.hasUncoveredInk(plate.width, plate.height, platePixels, rows) ||
+                        TrafficSignPlateDetector.hasUncoveredAssemblyInk(plate.width,plate.height,platePixels,rows,
+                            scan.plates.map {TrafficSignPlateRect(it.x-rect.x,it.y-rect.y,it.width,it.height)}))
             }
             val passes = mutableListOf(pass(plate, 1))
             val scaled = Bitmap.createScaledBitmap(plate, plate.width*2, plate.height*2, true)
@@ -126,12 +129,12 @@ internal object AndroidTrafficSignSupplementaryOCR {
             val chosen = requireNotNull(TrafficSignOCRQuality.selected(passes)).text.ifBlank { passes.first().text }.ifBlank { null }
             val decision = TrafficSignOCRQuality.decision(passes, rect.width)
             if (decision == "accepted" && chosen != null) TrafficSignOCRLanguageContext.prepare(chosen)
-            return Read(chosen, rect, decision, passes)
+            return Read(chosen, rect, decision, passes,scan=scan)
         } finally { if (plate !== bitmap) plate.recycle() }
     }
 
     /** Copy primary context before returning; the camera owns and recycles its source. */
-    fun fromBitmap(bitmap: Bitmap): TrafficSignSupplementaryTextRecognition = TrafficSignSupplementaryTextRecognition { request, completion ->
+    fun fromBitmap(bitmap: Bitmap, sourceContentRect:TrafficSignSupplementaryPixelRect=TrafficSignSupplementaryPixelRect(0,0,bitmap.width,bitmap.height)): TrafficSignSupplementaryTextRecognition = TrafficSignSupplementaryTextRecognition { request, completion ->
         val sourceWidth = bitmap.width; val sourceHeight = bitmap.height
         val context = supplementaryOCRContextPixelRect(request.candidate.boundingBox, sourceWidth, sourceHeight)
         if (context == null)
@@ -144,8 +147,11 @@ internal object AndroidTrafficSignSupplementaryOCR {
             else if (!recognize(owned) { read ->
                 val roi = read.rect?.let { NormalizedTrafficSignBoundingBox((x+it.x).toDouble()/sourceWidth,
                     (y+it.y).toDouble()/sourceHeight, it.width.toDouble()/sourceWidth, it.height.toDouble()/sourceHeight) }
+                val evidence=read.scan?.let {scan -> TrafficSignConditionalAssemblyEvidence(request.physicalSignId,request.frameId,request.observedAt,sourceWidth,sourceHeight,context,
+                    request.candidate.boundingBox,scan.plates,scan.status,read.decision,scan.lowerLumaStd,scan.lowerEdgeFraction,
+                    read.passes,request.otherPrimaryBoxes,sourceContentRect)}
                 completion(request.annotation(read.raw, failed = read.failed, ocrBox = roi,
-                    admitted = read.decision == "accepted", decision = read.decision, passes = read.passes))
+                    admitted = read.decision == "accepted", decision = read.decision, passes = read.passes,assemblyEvidence=evidence))
             }) { owned.recycle(); completion(request.annotation(null, failed = true)) }
         }
     }

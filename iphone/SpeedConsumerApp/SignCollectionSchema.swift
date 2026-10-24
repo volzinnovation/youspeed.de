@@ -58,10 +58,11 @@ struct SignCollectionSchema {
 extension SignCollectionSchema {
     static func semantics(_ value: Any, model: String) throws {
         guard let o = value as? [String: Any] else { throw SignCollectionError.invalidContract }
-        for key in ["event_id", "installation_id", "batch_id", "collection_session_id", "crop_id", "observation_id", "deletion_request_id", "target_id", "superseded_by"] {
+        for key in ["device_id", "event_id", "installation_id", "batch_id", "collection_session_id", "crop_id", "observation_id", "deletion_request_id", "target_id", "superseded_by"] {
             if let id = o[key], !(id is NSNull) { guard let s = id as? String, SignCollectionJSON.isUUID(s) else { throw SignCollectionError.invalidContract } }
         }
         for id in o["media_refs"] as? [String] ?? [] { guard SignCollectionJSON.isUUID(id) else { throw SignCollectionError.invalidContract } }
+        try captureMetadata(o, model: model)
         if model == "sighting" {
             func date(_ key: String) throws -> Date {
                 let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -108,8 +109,38 @@ extension SignCollectionSchema {
                    !(o["source_upright_sha256"] is NSNull) || !(o["local_frame_token"] as? String ?? "").isEmpty else { throw SignCollectionError.invalidContract }
         }
         if model == "batch" {
-            let events = o["events"] as! [[String: Any]]; let ids = events.compactMap { $0["event_id"] as? String }
+            let events = o["events"] as! [[String: Any]]
+            guard events.allSatisfy({ $0["device_id"] == nil || $0["device_id"] is NSNull || $0["device_id"] as? String == o["installation_id"] as? String }) else { throw SignCollectionError.invalidContract }
+            let ids = events.compactMap { $0["event_id"] as? String }
             guard ids.count == events.count, Set(ids).count == ids.count, ids.allSatisfy(SignCollectionJSON.isUUID) else { throw SignCollectionError.invalidContract }
+        }
+    }
+}
+
+
+extension SignCollectionSchema {
+    static func captureMetadata(_ o: [String: Any], model: String) throws {
+        guard ["sighting", "crop"].contains(model) else { return }
+        let keys = ["capture_metadata_version", "device_id", "camera_viewing_direction"]
+        guard o["observer_version"] as? String == "sighting-observer-2" ||
+                keys.contains(where: { o[$0] != nil && !(o[$0] is NSNull) }) else { return }
+        func date(_ v: Any?) -> Date? {
+            guard let text = v as? String else { return nil }
+            let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let d = f.date(from: text) { return d }
+            f.formatOptions = [.withInternetDateTime]; return f.date(from: text)
+        }
+        guard o["capture_metadata_version"] as? Int == 1,
+              let device = o["device_id"] as? String, SignCollectionJSON.isUUID(device),
+              model != "crop" || device == o["installation_id"] as? String,
+              let frame = date(o[model == "crop" ? "source_frame_at" : "representative_frame_at"]),
+              let position = o["vehicle_position"] as? [String: Any],
+              let direction = o["camera_viewing_direction"] as? [String: Any] else { throw SignCollectionError.invalidContract }
+        for (measurement, timeKey, deltaKey, maximum) in [(position, "fix_at", "frame_fix_delta_ms", 5000.0),
+                (direction, "measured_at", "frame_measurement_delta_ms", 500.0)] {
+            guard let at = date(measurement[timeKey]), let delta = (measurement[deltaKey] as? NSNumber)?.doubleValue,
+                  abs(frame.timeIntervalSince(at)*1000) <= maximum,
+                  abs(frame.timeIntervalSince(at)*1000 - delta) <= 2 else { throw SignCollectionError.invalidContract }
         }
     }
 }

@@ -921,7 +921,8 @@ final class V3SpeedLimitService: @unchecked Sendable {
         headingAccuracyDeg: Double? = nil,
         speedKmh: Double? = nil,
         horizontalAccuracyM: Double? = nil,
-        gpsSignalBars: Int? = nil
+        gpsSignalBars: Int? = nil,
+        inventoryFixUsable: Bool = true
     ) throws -> SpeedLimitResult {
         let t0 = DispatchTime.now().uptimeNanoseconds
 
@@ -1151,12 +1152,37 @@ final class V3SpeedLimitService: @unchecked Sendable {
             }
             let cityContext = resolveCityContext(db: db, lat: lat, lon: lon)
             let settlementStarted = DispatchTime.now().uptimeNanoseconds
-            let settlement = resolveSettlementContext(
+            let settlement = Self.residentialSettlementContext(resolveSettlementContext(
                 db: db, wayID: finalSelected?.wayID, lat: lat, lon: lon,
                 headingDeg: headingDeg, headingAccuracyDeg: headingAccuracyDeg, speedKmh: speedKmh
-            )
+            ), highway: finalSelected?.highway)
             let settlementResolveMs = Double(DispatchTime.now().uptimeNanoseconds - settlementStarted) / 1_000_000.0
-            let effectiveSpeed = settlementSpeedLimit(candidate: finalSelected, settlement: settlement)
+            let allowMobiData = InventorySignSourceScope.allowsMobiData(countryCode: countryCode, dbPath: dbPath,
+                sourceInputPBF: metadataValue(db: db, key: "source_input_pbf"))
+            let inventory = InventorySignBundle.lookup(db: db, lat: lat, lon: lon,
+                wayID: finalSelected?.wayID, points: finalSelected?.points ?? [], heading: headingDeg,
+                headingAccuracy: headingAccuracyDeg,
+                accuracy: inventoryFixUsable ? horizontalAccuracyM ?? .infinity : .infinity,
+                matchStable: (matchContext?.matchedFixCount ?? 0) >= 1
+                    && normalizedWayID(matchContext?.preferredWayID) == normalizedWayID(finalSelected?.wayID),
+                allowMobiData: allowMobiData)
+            let inventoryRule = inventory?.activeRule
+            let inventoryOffer = inventoryRule.map {
+                InventorySignRoadOffer.resolve($0, country:countryCode ?? "DE",highway:finalSelected?.highway,
+                    settlementInsideCity:settlement.insideCity)
+            }
+            let conditionalOffer = finalSelected?.wayID.flatMap { wayID in
+                ConditionalSpeedRules.resolve(db: db, wayID: wayID,
+                    direction: inventory?.direction ?? Self.conditionalTravelDirection(heading: headingDeg,
+                        accuracy: headingAccuracyDeg, speedKmh: speedKmh, localHeading: finalSelected?.localHeadingDeg),
+                    baseKmh: settlementSpeedLimit(candidate: finalSelected, settlement: settlement),
+                    baseUnlimited: finalSelected?.isUnlimitedSpeedLimit == true,
+                    countryCode: countryCode)
+            }
+            let effectiveSpeed: Int?
+            if let inventoryOffer { effectiveSpeed = inventoryOffer.speedKmh }
+            else if let conditionalOffer { effectiveSpeed = conditionalOffer.kmh }
+            else { effectiveSpeed = settlementSpeedLimit(candidate: finalSelected, settlement: settlement) }
             let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - t0) / 1_000_000.0
             let selectedRouteContinuity = loadSelectedRouteContinuity(
                 db: db,
@@ -1193,11 +1219,25 @@ final class V3SpeedLimitService: @unchecked Sendable {
                 )
             }
 
+            let previewContext = UpcomingSpeedLimitBundle.previewContext(db: db, resources: resources, inventory: inventory,
+                points: finalSelected?.points ?? [], latitude: lat, longitude: lon, heading: headingDeg,
+                headingAccuracy: headingAccuracyDeg, accuracy: horizontalAccuracyM, fixUsable: inventoryFixUsable,
+                preferredWayID: matchContext?.preferredWayID, matchedFixCount: matchContext?.matchedFixCount ?? 0,
+                relationGroupIDs: selectedRouteContinuity.memberships.map(\.groupID))
+            let upcoming = UpcomingSpeedLimitBundle.lookup(db: db, resources: resources, inventory: previewContext,
+                points: finalSelected?.points ?? [], relationGroupIDs: selectedRouteContinuity.memberships.map(\.groupID), speedKmh: speedKmh,
+                allowMobiData: allowMobiData)
             return SpeedLimitResult(
+                conditionalRuleContext: inventoryOffer == nil ? conditionalOffer?.reevaluation : nil,
+                upcomingSpeedLimits: upcoming,
+                bundleSpeedProvenance: inventoryRule?.provenance(wayID: finalSelected?.wayID)
+                    ?? BundleSpeedProvenance.legacy(speedSource: settlementSpeedSource(candidate: finalSelected, settlement: settlement)?.rawValue, wayID: finalSelected?.wayID),
+                inventorySigns: inventory,
                 applicabilityGeometry: applicabilityGeometry(db: db, selected: finalSelected, candidates: rankedCandidates, links: wayLinksContext),
-                speedSource: finalSelected?.speedSource.rawValue,
+                speedSource: inventoryRule == nil ? settlementSpeedSource(candidate: finalSelected, settlement: settlement)?.rawValue : "INVENTORY_SIGN",
                 speedLimitKmh: effectiveSpeed,
-                isUnlimitedSpeedLimit: finalSelected?.isUnlimitedSpeedLimit == true ? true : nil,
+                isUnlimitedSpeedLimit: inventoryOffer != nil ? (inventoryOffer?.unlimited == true ? true : nil)
+                    : (conditionalOffer?.unlimited ?? (finalSelected?.isUnlimitedSpeedLimit == true) ? true : nil),
                 wayID: finalSelected?.wayID,
                 highway: finalSelected?.highway,
                 service: finalSelected?.service,
@@ -1215,8 +1255,8 @@ final class V3SpeedLimitService: @unchecked Sendable {
                 cityName: cityContext.cityName,
                 cityPlaceName: cityContext.cityPlaceName,
                 cityDistrictName: cityContext.cityDistrictName,
-                insideCity: settlement.insideCity,
-                citySource: settlement.citySource,
+                insideCity: inventoryRule?.insideCity ?? settlement.insideCity,
+                citySource: inventoryRule?.insideCity != nil ? "settlement:inventory:high" : settlement.citySource,
                 cityResolveMs: cityContext.resolveMs + settlementResolveMs,
                 cityCandidateBoundaries: cityContext.candidateBoundaries,
                 cityContainingBoundaries: cityContext.containingBoundaries,
@@ -1742,12 +1782,37 @@ final class V3SpeedLimitService: @unchecked Sendable {
         ) -> SpeedLimitResult {
             let cityContext = resolveCityContext(db: db, lat: lat, lon: lon)
             let settlementStarted = DispatchTime.now().uptimeNanoseconds
-            let settlement = resolveSettlementContext(
+            let settlement = Self.residentialSettlementContext(resolveSettlementContext(
                 db: db, wayID: finalSelected?.wayID, lat: lat, lon: lon,
                 headingDeg: headingDeg, headingAccuracyDeg: headingAccuracyDeg, speedKmh: speedKmh
-            )
+            ), highway: finalSelected?.highway)
             let settlementResolveMs = Double(DispatchTime.now().uptimeNanoseconds - settlementStarted) / 1_000_000.0
-            let effectiveSpeed = settlementSpeedLimit(candidate: finalSelected, settlement: settlement)
+            let allowMobiData = InventorySignSourceScope.allowsMobiData(countryCode: countryCode, dbPath: dbPath,
+                sourceInputPBF: metadataValue(db: db, key: "source_input_pbf"))
+            let inventory = InventorySignBundle.lookup(db: db, lat: lat, lon: lon,
+                wayID: finalSelected?.wayID, points: finalSelected?.points ?? [], heading: headingDeg,
+                headingAccuracy: headingAccuracyDeg,
+                accuracy: inventoryFixUsable ? horizontalAccuracyM ?? .infinity : .infinity,
+                matchStable: (matchContext?.matchedFixCount ?? 0) >= 1
+                    && normalizedWayID(matchContext?.preferredWayID) == normalizedWayID(finalSelected?.wayID),
+                allowMobiData: allowMobiData)
+            let inventoryRule = inventory?.activeRule
+            let inventoryOffer = inventoryRule.map {
+                InventorySignRoadOffer.resolve($0, country:countryCode ?? "DE",highway:finalSelected?.highway,
+                    settlementInsideCity:settlement.insideCity)
+            }
+            let conditionalOffer = finalSelected?.wayID.flatMap { wayID in
+                ConditionalSpeedRules.resolve(db: db, wayID: wayID,
+                    direction: inventory?.direction ?? Self.conditionalTravelDirection(heading: headingDeg,
+                        accuracy: headingAccuracyDeg, speedKmh: speedKmh, localHeading: finalSelected?.localHeadingDeg),
+                    baseKmh: settlementSpeedLimit(candidate: finalSelected, settlement: settlement),
+                    baseUnlimited: finalSelected?.isUnlimitedSpeedLimit == true,
+                    countryCode: countryCode)
+            }
+            let effectiveSpeed: Int?
+            if let inventoryOffer { effectiveSpeed = inventoryOffer.speedKmh }
+            else if let conditionalOffer { effectiveSpeed = conditionalOffer.kmh }
+            else { effectiveSpeed = settlementSpeedLimit(candidate: finalSelected, settlement: settlement) }
             let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - t0) / 1_000_000.0
             let selectedRouteContinuity = loadSelectedRouteContinuity(
                 db: db,
@@ -1785,11 +1850,25 @@ final class V3SpeedLimitService: @unchecked Sendable {
                 )
             }
 
+            let previewContext = UpcomingSpeedLimitBundle.previewContext(db: db, resources: resources, inventory: inventory,
+                points: finalSelected?.points ?? [], latitude: lat, longitude: lon, heading: headingDeg,
+                headingAccuracy: headingAccuracyDeg, accuracy: horizontalAccuracyM, fixUsable: inventoryFixUsable,
+                preferredWayID: matchContext?.preferredWayID, matchedFixCount: matchContext?.matchedFixCount ?? 0,
+                relationGroupIDs: selectedRouteContinuity.memberships.map(\.groupID))
+            let upcoming = UpcomingSpeedLimitBundle.lookup(db: db, resources: resources, inventory: previewContext,
+                points: finalSelected?.points ?? [], relationGroupIDs: selectedRouteContinuity.memberships.map(\.groupID), speedKmh: speedKmh,
+                allowMobiData: allowMobiData)
             return SpeedLimitResult(
+                conditionalRuleContext: inventoryOffer == nil ? conditionalOffer?.reevaluation : nil,
+                upcomingSpeedLimits: upcoming,
+                bundleSpeedProvenance: inventoryRule?.provenance(wayID: finalSelected?.wayID)
+                    ?? BundleSpeedProvenance.legacy(speedSource: settlementSpeedSource(candidate: finalSelected, settlement: settlement)?.rawValue, wayID: finalSelected?.wayID),
+                inventorySigns: inventory,
                 applicabilityGeometry: applicabilityGeometry(db: db, selected: finalSelected, candidates: rankedCandidates, links: wayLinksContext),
-                speedSource: finalSelected?.speedSource.rawValue,
+                speedSource: inventoryRule == nil ? settlementSpeedSource(candidate: finalSelected, settlement: settlement)?.rawValue : "INVENTORY_SIGN",
                 speedLimitKmh: effectiveSpeed,
-                isUnlimitedSpeedLimit: finalSelected?.isUnlimitedSpeedLimit == true ? true : nil,
+                isUnlimitedSpeedLimit: inventoryOffer != nil ? (inventoryOffer?.unlimited == true ? true : nil)
+                    : (conditionalOffer?.unlimited ?? (finalSelected?.isUnlimitedSpeedLimit == true) ? true : nil),
                 wayID: finalSelected?.wayID,
                 highway: finalSelected?.highway,
                 service: finalSelected?.service,
@@ -1807,8 +1886,8 @@ final class V3SpeedLimitService: @unchecked Sendable {
                 cityName: cityContext.cityName,
                 cityPlaceName: cityContext.cityPlaceName,
                 cityDistrictName: cityContext.cityDistrictName,
-                insideCity: settlement.insideCity,
-                citySource: settlement.citySource,
+                insideCity: inventoryRule?.insideCity ?? settlement.insideCity,
+                citySource: inventoryRule?.insideCity != nil ? "settlement:inventory:high" : settlement.citySource,
                 cityResolveMs: cityContext.resolveMs + settlementResolveMs,
                 cityCandidateBoundaries: cityContext.candidateBoundaries,
                 cityContainingBoundaries: cityContext.containingBoundaries,
@@ -2171,6 +2250,14 @@ final class V3SpeedLimitService: @unchecked Sendable {
     }
 
     /// Native course reliability is shared with directional settlement segments.
+    private static func conditionalTravelDirection(heading: Double?, accuracy: Double?, speedKmh: Double?, localHeading: Double?) -> Int? {
+        guard let heading = reliableSpeedHeading(heading, accuracy: accuracy, speedKmh: speedKmh),
+              let localHeading, localHeading.isFinite else { return nil }
+        if InventorySignBundle.angle(heading, localHeading) <= 35 { return 1 }
+        if InventorySignBundle.angle(heading, localHeading + 180) <= 35 { return -1 }
+        return nil
+    }
+
     private static func reliableSpeedHeading(_ heading: Double?, accuracy: Double?, speedKmh: Double?) -> Double? {
         guard let heading, heading.isFinite, (0..<360).contains(heading),
               let accuracy, accuracy.isFinite, (0...45).contains(accuracy),
@@ -9277,6 +9364,16 @@ final class V3SpeedLimitService: @unchecked Sendable {
         let points: [(Double, Double)]
     }
 
+    /// Product locality fallback for residential roads. Explicit OSM semantics,
+    /// source town boundaries and unresolved conflicts retain their meaning.
+    /// The session's accepted physical town-boundary latch is applied afterwards.
+    static func residentialSettlementContext(_ context: SettlementDecision, highway: String?) -> SettlementDecision {
+        guard highway?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "residential",
+              context.source != "conflict",
+              !(context.confidence == "high" && ["zone_traffic", "maxspeed_type", "source_maxspeed", "traffic_sign"].contains(context.source)) else { return context }
+        return SettlementDecision(insideCity: true, source: "highway_residential", confidence: "high")
+    }
+
     private func settlementSpeedLimit(candidate: WayCandidate?, settlement: SettlementDecision) -> Int? {
         guard let candidate else { return nil }
         if candidate.isUnlimitedSpeedLimit || candidate.speedSource == .directionalUnresolved { return nil }
@@ -9285,6 +9382,9 @@ final class V3SpeedLimitService: @unchecked Sendable {
         let region = code == "BE" ? regulationRegion?(candidate.queryPoint.0, candidate.queryPoint.1) : nil
         if settlement.source == "conflict" { return nil }
         if candidate.speedSource == .inheritedTag {
+            if settlementSpeedSource(candidate: candidate, settlement: settlement) == .highwayClass {
+                return RoadSpeedDefaults.speedKmh(country: code, region: region, highway: candidate.highway, insideCity: true)
+            }
             return code != "DE" || settlement.confidence == "high" ? candidate.speedKmh : nil
         }
         if candidate.highway?.lowercased() == "living_street" { return candidate.speedKmh }
@@ -9297,6 +9397,15 @@ final class V3SpeedLimitService: @unchecked Sendable {
             return RoadSpeedDefaults.speedKmh(country: code, region: region, highway: highway, insideCity: true)
         }
         return nil
+    }
+
+    private func settlementSpeedSource(candidate: WayCandidate?, settlement: SettlementDecision) -> DerivedSpeedSource? {
+        guard let candidate else { return nil }
+        // Synthetic residential locality cannot verify a symbolic tag that the
+        // qualified settlement layer left unresolved. Its fallback stays derived.
+        if candidate.speedSource == .inheritedTag, settlement.source == "highway_residential",
+           RoadSpeedDefaults.country(countryCode ?? "DE") == "DE" { return .highwayClass }
+        return candidate.speedSource
     }
 
     private func metadataValue(db: OpaquePointer, key: String) -> String? {

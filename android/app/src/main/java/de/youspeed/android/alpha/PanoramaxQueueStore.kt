@@ -305,6 +305,13 @@ class PanoramaxQueueStore(private val appRoot: File) {
                 if (item.itemId == itemId) item.copy(state = state, remoteId = remoteId ?: item.remoteId) else item
             })
             write(updated)
+            if (remoteId != null && batch.instanceOrigin?.startsWith("https://") == true) {
+                runCatching { UUID.fromString(remoteId) }.onSuccess {
+                    val item=batch.items.first {it.itemId==itemId}
+                    TripJournal.existing()?.media(batch.captureSessionId, itemId, batch.instanceOrigin.trimEnd('/') + "/?pic=" + remoteId, "photo_remote", time=item.metadata.capturedAt.toEpochMilli()/1000.0, binding = itemId,
+                        metadata=mapOf("latitude" to item.metadata.location.latitude,"longitude" to item.metadata.location.longitude,"accuracy" to item.metadata.location.accuracyMeters))
+                }
+            }
             return updated
         } finally { shared.lock.unlock() }
     }
@@ -722,6 +729,7 @@ class PanoramaxQueueStore(private val appRoot: File) {
             item.metadata.imageWidthPixels?.let { put("image_width_pixels", it) }
             item.metadata.imageHeightPixels?.let { put("image_height_pixels", it) }
             item.metadata.captureReason?.let { put("capture_reason", it) }
+            item.metadata.inventoryEncounterIds?.let { put("inventory_encounter_ids", JsonArray(it.map(::JsonPrimitive))) }
             item.metadata.signEvidence?.let { evidence -> put("sign_evidence", JsonArray(evidence.map { e -> buildJsonObject {
                 put("track_id", e.trackId); put("model_label", e.modelLabel); put("frame_at", e.frameAt.toString()); put("normalized_box", JsonArray(e.normalizedBox.map(::JsonPrimitive))); put("raw_score", e.rawScore); e.sourceFrameId?.let { put("source_frame_id", it) }
             } })) }
@@ -790,6 +798,7 @@ class PanoramaxQueueStore(private val appRoot: File) {
                 imageWidthPixels = metadata["image_width_pixels"]?.jsonPrimitive?.longOrNull?.toInt(),
                 imageHeightPixels = metadata["image_height_pixels"]?.jsonPrimitive?.longOrNull?.toInt(),
                 captureReason = metadata["capture_reason"]?.jsonPrimitive?.content,
+                inventoryEncounterIds = metadata["inventory_encounter_ids"]?.jsonArray?.map { it.jsonPrimitive.content },
                 signEvidence = metadata["sign_evidence"]?.jsonArray?.map { e -> e.jsonObject.let {
                     SignCaptureEvidence(it.requiredString("track_id"), it.requiredString("model_label"), Instant.parse(it.requiredString("frame_at")), it.getValue("normalized_box").jsonArray.map { b -> b.jsonPrimitive.double }, it.requiredDouble("raw_score"), it["source_frame_id"]?.jsonPrimitive?.content)
                 } },

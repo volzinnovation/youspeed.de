@@ -1674,8 +1674,8 @@ struct TrafficSignFusionEngine: Sendable {
                 trackID: track.id,
                 evidenceFrames: evidenceFrames,
                 assemblyId: fusedAssemblyID,
-                conditionState: TrafficSignConditionState.none,
-                restrictions: []
+                conditionState: detection.conditionState,
+                restrictions: detection.restrictions
             ),
             roadContext: roadContext,
             latencyMs: latencyMs,
@@ -1718,26 +1718,7 @@ struct TrafficSignFusionEngine: Sendable {
         )
     }
 
-    private static func livePrimaryOnlyDetection(
-        _ detection: TrafficSignDetection
-    ) -> TrafficSignDetection {
-        TrafficSignDetection(
-            rawClassId: detection.rawClassId,
-            rawLabel: detection.rawLabel,
-            semantic: detection.semantic,
-            rawScore: detection.rawScore,
-            calibratedConfidence: detection.calibratedConfidence,
-            detectorRawScore: detection.detectorRawScore,
-            detectorCalibratedConfidence: detection.detectorCalibratedConfidence,
-            classifierRawScore: detection.classifierRawScore,
-            classifierCalibratedConfidence: detection.classifierCalibratedConfidence,
-            boundingBox: detection.boundingBox,
-            classThreshold: detection.classThreshold,
-            assemblyId: detection.assemblyId,
-            conditionState: .none,
-            restrictions: []
-        )
-    }
+    private static func livePrimaryOnlyDetection(_ detection: TrafficSignDetection) -> TrafficSignDetection { detection }
 
     private func effectiveScore(for detection: TrafficSignDetection) -> Double? {
         switch runtimeOutput {

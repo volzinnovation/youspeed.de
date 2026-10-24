@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">YouSpeed</string>
     <string name="header_title">YouSpeed</string>
     <string name="header_summary">Assistant de limitation de vitesse en direct avec cartes hors ligne et alertes indicatives.</string>
@@ -144,4 +144,7 @@
     <string name="ui_driving_photo_unavailable">Photo indisponible</string>
     <string name="ui_driving_photo_local_only">Enregistre une photo localement pour vérification. Aucun envoi.</string>
     <string name="ui_driving_photo_failed">La photo n’a pas pu être enregistrée. Réessayez lorsque la caméra est prête.</string>
+    <string name="upcoming_limit_distance" tools:ignore="MissingTranslation">dans %1$d m</string>
+    <string name="upcoming_limit_distance_near" tools:ignore="MissingTranslation">dans &lt;10 m</string>
+    <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Limitation à venir, %1$d kilomètres par heure, %2$s</string>
 </resources>

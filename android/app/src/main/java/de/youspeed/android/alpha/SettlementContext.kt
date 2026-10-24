@@ -28,6 +28,13 @@ internal data class SettlementSegment(
 internal object SettlementContextPolicy {
     private data class Projection(val distanceM: Double, val heading: Double)
 
+    /** Matched residential roads establish locality, independently of their numeric limit. */
+    fun residential(context: SettlementContext, highway: String?): SettlementContext {
+        if (highway?.trim()?.lowercase() != "residential" || context.source == "conflict" ||
+            (context.confidence == "high" && context.source in setOf("zone_traffic", "maxspeed_type", "source_maxspeed", "traffic_sign"))) return context
+        return SettlementContext(true, "highway_residential", "high")
+    }
+
     fun reliableHeading(heading: Double?, speed: Double?, accuracy: Double?): Double? = heading?.takeIf {
         it.isFinite() && it >= 0.0 && it < 360.0 &&
             speed != null && speed.isFinite() && speed >= 8.0 &&

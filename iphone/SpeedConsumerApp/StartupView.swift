@@ -270,6 +270,8 @@ struct FirstUserWelcomeView: View {
                 .buttonStyle(.borderedProminent).tint(.red)
             }
             Divider()
+            TripJournalSetupOption()
+            Divider()
             Toggle("settings.audio.voice_output", isOn: $viewModel.audioAlertsEnabled)
             Stepper(value: $viewModel.audioAlertThresholdKmh, in: 0...80) {
                 Text(String(format: NSLocalizedString("onboarding.driving.threshold", comment: ""), viewModel.audioAlertThresholdKmh))

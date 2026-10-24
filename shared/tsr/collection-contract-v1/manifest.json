@@ -31,7 +31,7 @@
     },
     {
       "path": "crop-v1.schema.json",
-      "sha256": "ac27be5cfa1a73070a372cb17c785ba74e59544a282cf1bc59049ffc8862701b"
+      "sha256": "abed18175c173b858b92883a02e2f97e4f24acdb64d0b4f5d0ff971424c4ff25"
     },
     {
       "path": "deletion-v1.schema.json",
@@ -40,6 +40,18 @@
     {
       "path": "extraction-v1.schema.json",
       "sha256": "b17469fdad60d7759780d778f6dd0e9f74eb4ea4a34eeda5277fc39484165f40"
+    },
+    {
+      "path": "fixtures/camera-axis-v1.json",
+      "sha256": "449f68ce15381f5f2460abb784f431a6ac4030054376be97f98302ab365b5aac"
+    },
+    {
+      "path": "fixtures/capture-crop-v1.json",
+      "sha256": "7cc44e2438b40dbb4939fc7f556d561e792e67db864e2c42bf55b592c5391866"
+    },
+    {
+      "path": "fixtures/capture-sighting-batch-v1.json",
+      "sha256": "4b27f2d4a83dfbe3981a2f7f58c2e033eedfe7f7a8b5f518f8c60e15d0c4f1c4"
     },
     {
       "path": "fixtures/consent-v1.json",
@@ -103,7 +115,7 @@
     },
     {
       "path": "sighting-v1.schema.json",
-      "sha256": "820af1c29b8f28d37cc21de2909b597277ea18ccdfce4fca5e0edef743c46f59"
+      "sha256": "be3fbefec1278f643672750d63ec6cc2b2dd904021404c314c6f743f3c54d11a"
     }
   ]
 }

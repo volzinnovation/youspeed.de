@@ -115,6 +115,7 @@ internal class SignCollectionStore(root: File, val gate: SignCollectionContractG
         enqueueCaptured(kind, event, claim.wire)
     }
     private fun enqueueCaptured(kind: String, event: JsonObject, claim: JsonObject) {
+        event["device_id"]?.takeIf { it !== JsonNull }?.let { require(it.jsonPrimitive.content == installationId) }
         val id = event.getValue("event_id").jsonPrimitive.content
         gate.validate(event, kind.replace('_', '-'))
         val body = SignCollectionJson.canonical(event); val digest = SignCollectionJson.sha256(body.toByteArray(Charsets.UTF_8))
@@ -292,7 +293,7 @@ internal class SignCollectionStore(root: File, val gate: SignCollectionContractG
         }
     }
     private fun insertCrop(metadata: JsonObject, bytes: ByteArray, disclosure: String, processorDisclosure: String?, captured: Boolean = false, trustedEncoding: Boolean = false) {
-        if (!trustedEncoding) gate.validate(metadata, "crop")
+        gate.validate(metadata, "crop")
         require(metadata.getValue("installation_id").jsonPrimitive.content == installationId && metadata.getValue("collection_epoch") == JsonPrimitive(collectionEpoch))
         val encodedHash = metadata.getValue("encoded_sha256").jsonPrimitive.content
         require(metadata.getValue("byte_length") == JsonPrimitive(bytes.size) && (trustedEncoding || encodedHash == SignCollectionJson.sha256(bytes)))

@@ -60,22 +60,25 @@ class TrafficSignSupplementaryRetryTests {
         assertNotNull(tracker.frame(primary(), 601, id = "new-physical").request)
     }
 
-    @Test fun retryNeedsBothSpacingAndMaterialNativePixelGrowthAndPreservesSuccessfulText() {
+    @Test fun secondIndependentReadMayKeepNativeSizeThenLaterRetriesNeedGrowth() {
         val tracker = TrafficSignSupplementaryTextTracker()
         val first = requireNotNull(tracker.frame(primary(numeric = true), 0).request)
         tracker.finish(first, first.annotation(null))
         assertNull(tracker.frame(primary(.2, .2, true), 201).request)
-        assertNull(tracker.frame(primary(numeric = true), 400).request)
-        val later = requireNotNull(tracker.frame(primary(.2, .2, true), 600).request)
-        assertEquals(2, later.attemptNumber)
+        val second=requireNotNull(tracker.frame(primary(numeric=true),400).request)
+        assertEquals(2,second.attemptNumber)
+        tracker.finish(second,second.annotation(null))
+        assertNull(tracker.frame(primary(numeric=true),800).request)
+        val later = requireNotNull(tracker.frame(primary(.2, .2, true), 1000).request)
+        assertEquals(3, later.attemptNumber)
         val successful = requireNotNull(tracker.finish(later, later.annotation("Mo-Fr 6-18h")))
-        assertEquals("frame-600", successful.presentation?.frameId)
-        val larger = requireNotNull(tracker.frame(primary(.4, .35, true), 1000).request)
+        assertEquals("frame-1000", successful.presentation?.frameId)
+        val larger = requireNotNull(tracker.frame(primary(.4, .35, true), 1400).request)
         val failed = requireNotNull(tracker.finish(larger, larger.annotation(null, failed = true)))
         assertEquals("Mo-Fr 6-18h", failed.presentation?.rawText)
         assertEquals(TrafficSignSupplementaryOCRStatus.FAILED, failed.latestAttempt?.status)
-        assertEquals("frame-1000", failed.latestAttempt?.frameId)
-        assertEquals(start.plusMillis(600), failed.presentation?.sourceObservedAt)
+        assertEquals("frame-1400", failed.latestAttempt?.frameId)
+        assertEquals(start.plusMillis(1000), failed.presentation?.sourceObservedAt)
     }
 
     @Test fun explicitTrackSurvivesRapidGrowthButStopsAtSixAttemptsAndGenerationClearsEverything() {

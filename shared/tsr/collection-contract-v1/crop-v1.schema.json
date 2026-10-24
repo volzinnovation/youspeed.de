@@ -89,6 +89,73 @@
       "title": "Box",
       "type": "object"
     },
+    "CameraViewingDirection": {
+      "additionalProperties": false,
+      "description": "Rear-camera optical axis, independent of GNSS course or screen rotation.",
+      "properties": {
+        "accuracy_status": {
+          "enum": [
+            "medium",
+            "high"
+          ],
+          "title": "Accuracy Status",
+          "type": "string"
+        },
+        "azimuth_degrees": {
+          "exclusiveMaximum": 360,
+          "minimum": 0,
+          "title": "Azimuth Degrees",
+          "type": "number"
+        },
+        "elevation_degrees": {
+          "maximum": 90,
+          "minimum": -90,
+          "title": "Elevation Degrees",
+          "type": "number"
+        },
+        "frame_measurement_delta_ms": {
+          "maximum": 500,
+          "minimum": -500,
+          "title": "Frame Measurement Delta Ms",
+          "type": "number"
+        },
+        "measured_at": {
+          "format": "date-time",
+          "title": "Measured At",
+          "type": "string"
+        },
+        "optical_axis": {
+          "const": "rear_camera",
+          "title": "Optical Axis",
+          "type": "string"
+        },
+        "reference": {
+          "const": "true_north",
+          "title": "Reference",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "core_motion_true_north",
+            "android_rotation_vector"
+          ],
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "azimuth_degrees",
+        "elevation_degrees",
+        "reference",
+        "optical_axis",
+        "measured_at",
+        "frame_measurement_delta_ms",
+        "accuracy_status",
+        "source"
+      ],
+      "title": "CameraViewingDirection",
+      "type": "object"
+    },
     "CollectionSelection": {
       "additionalProperties": false,
       "properties": {
@@ -505,6 +572,30 @@
       "title": "Byte Length",
       "type": "integer"
     },
+    "camera_viewing_direction": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CameraViewingDirection"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "capture_metadata_version": {
+      "anyOf": [
+        {
+          "const": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Capture Metadata Version"
+    },
     "collection_authorization": {
       "$ref": "#/$defs/Authorization"
     },
@@ -546,6 +637,18 @@
       "maximum": 32768,
       "title": "Decoded Width",
       "type": "integer"
+    },
+    "device_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Device Id"
     },
     "encoded_sha256": {
       "pattern": "^[a-f0-9]{64}$",

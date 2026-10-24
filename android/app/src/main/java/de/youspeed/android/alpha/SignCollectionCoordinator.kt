@@ -16,11 +16,13 @@ import java.util.concurrent.Future
 
 /** Camera processing never waits for consent, SQLite or the network worker. */
 internal class SignCollectionCoordinator(private val context: Context, private val foundation: SignCollectionFoundation) {
+    private val cameraDirection = SignCollectionCameraDirection(context)
     private val preferences = context.getSharedPreferences("youspeed.sign_collection", Context.MODE_PRIVATE)
     var enabled by mutableStateOf(preferences.getBoolean("enabled", true)); private set
     var authorized by mutableStateOf(false); private set
     var cropsAuthorized by mutableStateOf(false); private set
     @Volatile var wantsCropFrame = false; private set
+    private val locations = ArrayDeque<Location>()
     private var framePending = false
     var consentPresented by mutableStateOf(false); private set
     var status by mutableStateOf("idle"); private set
@@ -71,14 +73,15 @@ internal class SignCollectionCoordinator(private val context: Context, private v
             foundation.interests?.interested(SignCollectionInterestPlan.Identity(country,pack,classifier,label)) == true }
     }
     fun cameraChanged(active: Boolean) {
-        val becameActive = active && !cameraActive; cameraActive = active; if (!active) wantsCropFrame = false
+        val becameActive = active && !cameraActive; cameraActive = active; cameraDirection.setActive(active && authorized && enabled); if (!active) wantsCropFrame = false
         if (becameActive) {
             if (session == null) session = SignCollectionJson.uuid()
             val id = session!!; perform { it.beginSession(id) }; requestConsent()
         }
-        if (!active) deliver()
+        if (!active) { locations.clear(); deliver() }
     }
     fun endSession() {
+        cameraDirection.setActive(false); locations.clear()
         wantsCropFrame = false; cropsAuthorized = false
         session = null; consentPresented = false; authorized = false; cameraActive = false
         perform { observer.reset(); it.endSession() }; deliver()
@@ -114,6 +117,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
     fun clearPendingForDeveloper() { invalidateUpload(); perform { observer.reset(); it.clearPendingForDeveloper() } }
     private fun invalidateUpload() { generation++; client.cancel(); upload?.cancel(true); upload = null }
     private fun privacy(action: (SignCollectionStore) -> Unit) {
+        cameraDirection.setActive(false); locations.clear()
         invalidateUpload(); privacyChangePending = true; authorized = false; cropsAuthorized = false; wantsCropFrame = false
         val token = generation
         perform { store ->
@@ -149,6 +153,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                 currentEpoch = epoch
                 authorized = allowed && enabled && !privacyChangePending; deletions = phases
                 cropsAuthorized = crops && authorized; wantsCropFrame = cropsAuthorized && cameraActive
+                cameraDirection.setActive(cameraActive && authorized && enabled)
                 if (cameraActive && session == null && !privacyChangePending && !barrier) {
                     session = SignCollectionJson.uuid(); val id = session!!
                     perform { it.beginSession(id) }; requestConsent()
@@ -177,16 +182,27 @@ internal class SignCollectionCoordinator(private val context: Context, private v
             } }
         }
     }
+    fun recordLocation(location: Location) {
+        if (!enabled || !authorized || !cameraActive) return
+        if (locations.lastOrNull()?.time != location.time) locations.addLast(Location(location))
+        while (locations.size > 120) locations.removeFirst()
+    }
     fun observe(event: TrafficSignRecognitionEvent, detections: List<TrafficSignDetection>, location: Location?, frame: SignCollectionFrame? = null,
-        ocrAnnotation: TrafficSignSupplementaryTextAnnotation? = null) {
+        ocrAnnotation: TrafficSignSupplementaryTextAnnotation? = null, captureAt: Instant? = null) {
         if (closed || !enabled || !authorized || !cameraActive || event.source != TrafficSignInputSource.LIVE_FRAME) { frame?.close(); return }
         if (framePending) { frame?.close(); ocrAnnotation?.let { updateSupplementaryOCR(it) }; return }
         val id = session ?: run { frame?.close(); return }
         val cropRequested = cropsAuthorized
         val supplementaryOCR = ocrAnnotation?.let(::collectionOCRAnnotation)
+        // Freeze both measurements before inference/storage can advance to another frame.
+        location?.let(::recordLocation)
+        val frameAt = captureAt ?: run { frame?.close(); executeStorage { observer.reset() }; return }
+        val fix = locations.minByOrNull { kotlin.math.abs(frameAt.toEpochMilli() - it.time) }?.let { Location(it) }
+        val framePosition = position(fix, frameAt)
+        val frameDirection = if (fix != null && framePosition is JsonObject &&
+            absFrameDelta(framePosition) <= 5000) cameraDirection.direction(frameAt,fix) else null
+        if (frameDirection == null) { frame?.close(); executeStorage { observer.reset() }; return }
         framePending = true
-        // Snapshot mutable Location data for this frame before asynchronous storage.
-        val framePosition = position(location?.let { Location(it) }, event.frameTimestampUtc)
         perform(refreshAfter = false) { store ->
           try {
             if (!store.isAuthorized("sign_metadata", SignCollectionCapabilities.metadataDisclosure)) return@perform
@@ -213,8 +229,9 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                 val d = detection.candidate; val box = d.boundingBox
                 val mapping = modelPack.modelPack.classFor(d.rawClassId)
                 val payload = buildJsonObject {
-                    put("schema_version", 1); put("collection_session_id", id); put("observer_version", "sighting-observer-1"); put("source_kind", "detector")
+                    put("schema_version", 1); put("collection_session_id", id); put("observer_version", "sighting-observer-2"); put("source_kind", "detector")
                     put("app", buildJsonObject { put("platform", "android"); put("version", BuildConfig.VERSION_NAME); put("build", BuildConfig.VERSION_CODE.toString()) })
+                    put("capture_metadata_version", 1); put("device_id", store.installationId); put("camera_viewing_direction", frameDirection)
                     put("clock_quality", "device_unverified"); put("vehicle_position", position); put("sign_position", JsonNull)
                     put("classification", buildJsonObject {
                         put("country", country); put("model_label", d.rawClassId); put("canonical_code", JsonNull); put("family", d.semantic.kind.wireValue)
@@ -239,7 +256,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                     listOf(box.x,box.y,box.width,box.height), payload, presentation, annotation)
             }
             var cropCount = 0
-            observer.observe(event.frameTimestampUtc, mapped, frameId = event.frameId, captureCrop = { candidate ->
+            observer.observe(frameAt, mapped, frameId = event.frameId, captureCrop = { candidate ->
                 if (!cropRequested || frame == null || cropCount >= 4 || candidate.selection?.permits(Instant.now()) == false) SignCollectionObserver.CropCaptureResult.SKIPPED
                 else runCatching {
                     cropCount++
@@ -248,7 +265,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                     val crop = frame.crop(box)
                     var metadata = crop.metadata(SignCollectionJson.uuid(), candidate.observationId,
                         store.installationId, store.collectionEpoch, "detector", candidate.frameAt, frame.token, "passed", "metadata-strip-1", claim,
-                        vehiclePosition = framePosition)
+                        vehiclePosition = framePosition, cameraViewingDirection = frameDirection)
                     candidate.selection?.let { metadata = JsonObject(metadata + ("collection_selection" to it.wire)) }
                     candidate.supplementaryOCR?.let { metadata = JsonObject(metadata + ("supplementary_ocr" to it.wire)) }
                     store.enqueueAutomaticCrop(metadata, crop.bytes)
@@ -295,6 +312,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
         if (!closed) storage.execute(action)
     }
     fun close() {
+        cameraDirection.setActive(false); locations.clear()
         synchronized(storageLifecycle) {
             if (closed) return
             closed = true
@@ -302,6 +320,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
         }
         main.removeCallbacks(tick); invalidateUpload(); interestRefresh?.cancel(true); interestHTTP.cancel(); interestNetwork.shutdownNow(); network.shutdownNow()
     }
+    private fun absFrameDelta(position: JsonObject) = kotlin.math.abs(position.getValue("frame_fix_delta_ms").jsonPrimitive.double)
     private fun position(fix: Location?, at: Instant): JsonElement {
         if (fix == null || !fix.hasAccuracy() || fix.accuracy !in 0f..100_000f || !fix.latitude.isFinite() || !fix.longitude.isFinite() || fix.latitude !in -90.0..90.0 || fix.longitude !in -180.0..180.0 || kotlin.math.abs(at.toEpochMilli() - fix.time) > 30_000) return JsonNull
         return buildJsonObject {

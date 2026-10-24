@@ -90,6 +90,7 @@ struct TrafficSignSupplementaryOCRRead: Equatable, Sendable {
     var plateRect: TrafficSignPlateRect? = nil
     var decision: String = "legacy"
     var passes: [TrafficSignOCRPass] = []
+    var scan: TrafficSignPlateScan? = nil
     var window: TrafficSignSupplementaryTimeWindow? {
         guard readStatus == .read else { return nil }
         return rawText.flatMap { TrafficSignSupplementaryTimeWindow.parseRecognizedLines($0.components(separatedBy: .newlines)) }
@@ -113,6 +114,23 @@ enum TrafficSignSupplementaryOCRDiagnostics {
 
 /// The original OCR source is immutable even when a matching later frame keeps
 /// its presentation fresh. Consumers must attach this to frameID's crop.
+/// Immutable actual-pixel inspection, bound to one captured frame and exact parent.
+struct TrafficSignConditionalAssemblyEvidence: Equatable, Sendable {
+    let revision = "live-assembly-pixels-v1"
+    let sourceWidth: Int
+    let sourceHeight: Int
+    let sourceFrameID: String
+    let capturedAt: Date
+    let physicalSignID: String
+    let primaryBox: TrafficSignNormalizedRect
+    let contextRect: TrafficSignPlateRect
+    let otherPrimaryBoxes: [TrafficSignNormalizedRect]
+    let scan: TrafficSignPlateScan
+    let qualityDecision: String
+    let passes: [TrafficSignOCRPass]
+    var nativeContentRect: TrafficSignPlateRect? = nil
+}
+
 struct TrafficSignSupplementaryOCRAnnotation: Equatable, Sendable {
     let primaryClassID: String
     let primarySpeedKmh: Int?
@@ -128,6 +146,7 @@ struct TrafficSignSupplementaryOCRAnnotation: Equatable, Sendable {
     let ocrBoundingBox: TrafficSignNormalizedRect?
     let engine: String
     let modelVersion: String
+    var assemblyEvidence: TrafficSignConditionalAssemblyEvidence? = nil
 
     var displayText: String? {
         guard readStatus == .read else { return nil }
@@ -151,7 +170,7 @@ struct TrafficSignSupplementaryOCRAnnotation: Equatable, Sendable {
         Self(primaryClassID: primaryClassID, primarySpeedKmh: primarySpeedKmh, physicalSignID: physicalSignID,
             frameID: frameID, sourceObservedAt: sourceObservedAt, observedAt: timestamp, firstSeenAt: firstSeenAt,
             rawText: rawText, window: window, readStatus: readStatus, primaryBoundingBox: primaryBoundingBox,
-            ocrBoundingBox: ocrBoundingBox, engine: engine, modelVersion: modelVersion)
+            ocrBoundingBox: ocrBoundingBox, engine: engine, modelVersion: modelVersion, assemblyEvidence: assemblyEvidence)
     }
 }
 
@@ -251,20 +270,23 @@ final class TrafficSignSupplementaryOCR: @unchecked Sendable {
     }
 
     func read(in nativePrimaryAndLowerCrop: CGImage) throws -> TrafficSignSupplementaryOCRRead {
-        try queue.sync {
+        queue.sync {
             let image = nativePrimaryAndLowerCrop
             let version = "revision\(request.revision)-accurate-\(TrafficSignPlateDetector.revision)"
+            let pixels = Self.pixels(image)
+            let scan = pixels.map { TrafficSignPlateDetector.scan(width: image.width, height: image.height, rgba: $0) }
+                ?? .init(status: .unresolved, union: nil, components: [], decision: "pixels_unavailable")
             func result(_ raw: String?, _ accepted: Bool, _ decision: String,
                         _ rect: TrafficSignPlateRect? = nil, _ passes: [TrafficSignOCRPass] = []) -> TrafficSignSupplementaryOCRRead {
                 .init(rawText: raw, modelVersion: version, readStatus: accepted ? .read : .noText,
-                      plateRect: rect, decision: decision, passes: passes)
+                      plateRect: rect, decision: decision, passes: passes, scan: scan)
             }
-            guard let pixels = Self.pixels(image),
-                  let rect = TrafficSignPlateDetector.select(width: image.width, height: image.height, rgba: pixels),
+            guard let rect = scan.union,
                   let plate = image.cropping(to: CGRect(x: rect.x, y: rect.y, width: rect.width, height: rect.height)),
                   let platePixels = Self.pixels(plate) else { return result(nil, false, "no_separate_plate") }
             guard !TrafficSignPlateDetector.isPrimaryGraphic(width: plate.width, height: plate.height, rgba: platePixels)
                 else { return result(nil, false, "primary_graphic", rect) }
+            do {
             let languages = TrafficSignOCRLanguageContext.recognitionLanguages
             request.recognitionLevel = .accurate
             let supported = try request.supportedRecognitionLanguages()
@@ -286,7 +308,15 @@ final class TrafficSignSupplementaryOCR: @unchecked Sendable {
                 }
                 return .init(text: candidates.map(\.string).joined(separator: "\n"),
                              confidence: Double(candidates.map(\.confidence).min() ?? 0), scale: scale,
-                             uncoveredInk: TrafficSignPlateDetector.hasUncoveredInk(width: plate.width, height: plate.height, rgba: platePixels, coveredRows: rows))
+                             uncoveredInk: scan.components.contains { component in
+                                 let local = CGRect(x: component.x-rect.x, y: component.y-rect.y, width: component.width, height: component.height)
+                                     .intersection(CGRect(x:0,y:0,width:plate.width,height:plate.height))
+                                 guard !local.isNull, local.width >= 48, local.height >= 32,
+                                       let panel = plate.cropping(to:local), let bytes = Self.pixels(panel) else { return true }
+                                 let offset = Int(local.minY)
+                                 return TrafficSignPlateDetector.hasUncoveredInk(width:panel.width,height:panel.height,rgba:bytes,
+                                     coveredRows:Set(rows.filter { $0 >= offset && $0 < offset+panel.height }.map { $0-offset }))
+                             })
             }
             var passes = [try recognize(plate, scale: 1)]
             // One bounded interpolation pass improves small glyph sampling; it
@@ -297,6 +327,10 @@ final class TrafficSignSupplementaryOCR: @unchecked Sendable {
             let raw = chosen.text.isEmpty ? passes.first?.text : chosen.text
             if decision == "accepted", let raw { TrafficSignOCRLanguageContext.prepare(text: raw, candidates: languages) }
             return result(raw?.isEmpty == false ? raw : nil, decision == "accepted", decision, rect, passes)
+            } catch {
+                return .init(rawText:nil,modelVersion:version,readStatus:.failed,plateRect:rect,
+                    decision:"native_ocr_failure",passes:[],scan:scan)
+            }
         }
     }
 
@@ -324,6 +358,12 @@ final class TrafficSignSupplementaryOCR: @unchecked Sendable {
 /// Bounded reads of increasingly useful native pixels, independent of road rules.
 /// Owned exclusively by the runtime's existing single inference queue.
 struct TrafficSignSupplementaryTextTracker {
+    /// Re-reading a closer frame updates candidate interpretation, never authority.
+    var conditionalInterpretationCandidate: ConditionalOCRInterpretation.Parsed? {
+        guard let completed, completed.readStatus == .read,
+              let speed = completed.primarySpeedKmh, completed.primaryClassID == "maxspeed:\(speed)", let raw = completed.rawText else { return nil }
+        return ConditionalOCRInterpretation.parse(raw)
+    }
     struct Primary: Equatable {
         let classID: String
         let speedKmh: Int?
@@ -350,6 +390,8 @@ struct TrafficSignSupplementaryTextTracker {
         var count = 0
         var lastAttemptAt: Date?
         var largestAttemptArea = 0.0
+        var inspectionSignature: String?
+        var agreementFollowupPending = false
     }
     private var primary: Primary?
     private var associationID: String?
@@ -403,7 +445,7 @@ struct TrafficSignSupplementaryTextTracker {
         let area = Double(size.width * size.height)
         guard budget.count < 6,
               budget.lastAttemptAt.map({ timestamp.timeIntervalSince($0) >= 0.3 }) ?? true,
-              budget.count == 0 || area >= budget.largestAttemptArea * 1.8 else { return unavailable() }
+              budget.count < 2 || budget.agreementFollowupPending || area >= budget.largestAttemptArea * 1.8 else { return unavailable() }
         let previousAttemptAt = budget.lastAttemptAt
         let previousAttemptArea = budget.largestAttemptArea
         budget.count += 1
@@ -428,14 +470,26 @@ struct TrafficSignSupplementaryTextTracker {
     }
 
     mutating func finish(_ attempt: Attempt, read: TrafficSignSupplementaryOCRRead,
-                         ocrBoundingBox: TrafficSignNormalizedRect?) -> TrafficSignSupplementaryOCRAnnotation? {
+                         ocrBoundingBox: TrafficSignNormalizedRect?,
+                         assemblyEvidence: TrafficSignConditionalAssemblyEvidence? = nil) -> TrafficSignSupplementaryOCRAnnotation? {
         guard associationID == attempt.physicalSignID else { return nil }
         let annotation = TrafficSignSupplementaryOCRAnnotation(primaryClassID: attempt.primary.classID,
             primarySpeedKmh: attempt.primary.speedKmh, physicalSignID: attempt.physicalSignID, frameID: attempt.frameID,
             sourceObservedAt: attempt.observedAt, observedAt: attempt.observedAt, firstSeenAt: attempt.firstSeenAt,
             rawText: read.rawText, window: read.window, readStatus: read.readStatus,
             primaryBoundingBox: attempt.primary.box, ocrBoundingBox: ocrBoundingBox,
-            engine: "apple_vision_text_recognition", modelVersion: read.modelVersion)
+            engine: "apple_vision_text_recognition", modelVersion: read.modelVersion, assemblyEvidence: assemblyEvidence)
+        if var budget = budgets[attempt.physicalSignID] {
+            let signature: String?
+            switch ConditionalOCRInterpretation.assess(annotation) {
+            case .plain: signature = "plain"
+            case .conditional(let parsed): signature = parsed.normalizedText
+            case .unresolved: signature = nil
+            }
+            budget.agreementFollowupPending = signature != nil && signature != budget.inspectionSignature
+            budget.inspectionSignature = signature
+            budgets[attempt.physicalSignID] = budget
+        }
         // A closer empty/failed read is still collected, but must not erase a
         // successful restriction already shown for this physical sign.
         if annotation.readStatus == .read || completed?.readStatus != .read { completed = annotation }

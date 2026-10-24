@@ -1,0 +1,72 @@
+{
+  "retrieved_at_utc": "2026-10-24T10:52:13.743029+00:00",
+  "role": "bounded original public full-scene evidence, no synthetic context, no runtime annotation promotion",
+  "sources": [
+    {
+      "picture_id": "baa81e7c-8bfc-49d0-bca5-f39c1dfe21cc",
+      "source_url": "https://panoramax.youspeed.de/permanent/ba/a8/1e/7c/8bfc-49d0-bca5-f39c1dfe21cc.jpg",
+      "final_url": "https://panoramax.youspeed.de/permanent/ba/a8/1e/7c/8bfc-49d0-bca5-f39c1dfe21cc.jpg",
+      "path": "baa81e7c-8bfc-49d0-bca5-f39c1dfe21cc.jpg",
+      "sha256": "d82de8d0af882633d586459dac74e4ddaa284986a5951fce40fba5115734f7ad",
+      "bytes": 2297358,
+      "dimensions": [
+        4224,
+        2376
+      ],
+      "metadata_sha256": "388d3e549caef757c3305836dceaf5019ff7ae77f53056f2aeac21d3bf639e68",
+      "item_url": "https://panoramax.youspeed.de/api/collections/994aa2f1-336f-4c60-8309-771124138e2f/items/baa81e7c-8bfc-49d0-bca5-f39c1dfe21cc",
+      "license": "CC-BY-SA-4.0",
+      "captured_at": "2026-10-14T13:48:23.448000+00:00",
+      "producer": "admin",
+      "asset_key": "hd",
+      "asset_description": "Highest resolution available of this picture",
+      "fixture_crop_id": "fbc95839-71fc-540c-ae6b-041df195e07d",
+      "fixture_recorded_source_sha256": "d82de8d0af882633d586459dac74e4ddaa284986a5951fce40fba5115734f7ad",
+      "matches_fixture_recorded_source_sha256": true,
+      "visual_review": {
+        "full_scene": true,
+        "primary_30_fully_visible": true,
+        "schedule_plate_22_to_6_h_fully_visible": true,
+        "surrounding_pixels_above_below_left_right": true,
+        "occluded_or_clipped_at_image_edge": false,
+        "runtime_pixel_gate_pass_claimed": false,
+        "note": "Inspected unmodified 4224x2376 public HD source. This is evidence availability and visual completeness only; server annotations remain evaluation_enabled=false and native detection/OCR admission must independently pass."
+      },
+      "attribution": "admin / YouSpeed Panoramax, CC BY-SA 4.0"
+    },
+    {
+      "picture_id": "0c6575e7-36c3-4468-a6d0-e709485176df",
+      "source_url": "https://panoramax.youspeed.de/permanent/0c/65/75/e7/36c3-4468-a6d0-e709485176df.jpg",
+      "final_url": "https://panoramax.youspeed.de/permanent/0c/65/75/e7/36c3-4468-a6d0-e709485176df.jpg",
+      "path": "0c6575e7-36c3-4468-a6d0-e709485176df.jpg",
+      "sha256": "425c9479a9411cf54e162e62971c25227ec9155d1a7a5c98e7d4aee901165112",
+      "bytes": 4506067,
+      "dimensions": [
+        4224,
+        2376
+      ],
+      "metadata_sha256": "5a89258090df08c641028b60b585e1f9c8d9836e61d3c7b6ba2f0133872e58b3",
+      "item_url": "https://panoramax.youspeed.de/api/collections/994aa2f1-336f-4c60-8309-771124138e2f/items/0c6575e7-36c3-4468-a6d0-e709485176df",
+      "license": "CC-BY-SA-4.0",
+      "captured_at": "2026-10-14T13:49:23.415000+00:00",
+      "producer": "admin",
+      "asset_key": "hd",
+      "asset_description": "Highest resolution available of this picture",
+      "fixture_crop_id": "7c735ee1-bbd7-5ab4-b969-f4fd9ac40b8b",
+      "fixture_recorded_source_sha256": "425c9479a9411cf54e162e62971c25227ec9155d1a7a5c98e7d4aee901165112",
+      "matches_fixture_recorded_source_sha256": true,
+      "visual_review": {
+        "full_scene": true,
+        "primary_30_fully_visible": true,
+        "schedule_plate_22_to_6_h_fully_visible": true,
+        "surrounding_pixels_above_below_left_right": true,
+        "occluded_or_clipped_at_image_edge": false,
+        "runtime_pixel_gate_pass_claimed": false,
+        "note": "Inspected unmodified 4224x2376 public HD source. This is evidence availability and visual completeness only; server annotations remain evaluation_enabled=false and native detection/OCR admission must independently pass."
+      },
+      "attribution": "admin / YouSpeed Panoramax, CC BY-SA 4.0"
+    }
+  ],
+  "source_metadata_hint_only": true,
+  "fixture_usage": "Unmodified public source photographs for native detector/OCR regression tests only. Existing server annotations are not executable runtime rules."
+}

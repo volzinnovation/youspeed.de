@@ -172,3 +172,75 @@ and `youspeed.review.last_requested_at`. The store localizes the native UI.
 
 References: [Apple review guidance](https://developer.apple.com/documentation/storekit/requesting-app-store-reviews)
 and [Google Play review guidance](https://developer.android.com/guide/playcore/in-app-review).
+
+## Local v1.5 traffic-sign bundle test (emulator)
+
+The optional `traffic_sign_capability.version=1` tables enable BW inventory signs.
+Databases without that capability retain the existing road, settlement and camera
+flows. The isolated v1.5 build uses its own application ID and keeps the production
+app's files and settings separate.
+
+```sh
+# From the repository root. Use an existing API 34+ emulator.
+./android/gradlew -p android :app:assembleDebug :app:assembleDebugAndroidTest \
+  -PyouspeedVersionName=1.5 -PyouspeedBuildNumber=10057 -PyouspeedIsolatedTests=true
+adb -s emulator-5554 install -r android/app/build/outputs/apk/debug/app-debug.apk
+adb -s emulator-5554 install -r android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+adb -s emulator-5554 shell am instrument -w \
+  -e class de.youspeed.android.alpha.InventorySignDatabaseInstrumentedTest \
+  de.youspeed.android.testhost.test/androidx.test.runner.AndroidJUnitRunner
+
+# After the local runtime bundle has been generated:
+python3 android/scripts/install-local-v3-test-bundle.py --serial emulator-5554 \
+  --manifest mapdata/bundles/v3/baden-wuerttemberg/2026-10-21-v1.5-runtime/baden-wuerttemberg_manifest.json
+# Verify real Android SQLite readiness, local routing, and a directed speed rule offline:
+adb -s emulator-5554 shell am instrument -w -e localInventoryBundle true \
+  -e class de.youspeed.android.alpha.LocalInventoryBundleInstrumentedTest \
+  de.youspeed.android.testhost.test/androidx.test.runner.AndroidJUnitRunner
+adb -s emulator-5554 shell pm grant de.youspeed.android.testhost android.permission.ACCESS_FINE_LOCATION
+adb -s emulator-5554 shell pm grant de.youspeed.android.testhost android.permission.ACCESS_COARSE_LOCATION
+adb -s emulator-5554 shell am force-stop de.youspeed.android.testhost
+adb -s emulator-5554 shell am start -n de.youspeed.android.testhost/de.youspeed.android.alpha.MainActivity
+# Longitude comes first. Use accepted directed signs from the generated build report.
+adb -s emulator-5554 emu geo fix 8.4 49.0
+```
+
+The installer defaults to an explicit emulator serial and a debuggable testhost
+or debug package. After explicit authorization for a physical phone, use its
+exact serial with `--allow-physical-device --package de.youspeed.android.debug`;
+update that existing debug app with `adb install -r` and omit
+`-PyouspeedIsolatedTests=true` when building it. Never uninstall or clear the
+driver app to install this test bundle. It checks the compressed artifact, materialized bytes and the
+on-emulator database hash before activating the ordinary regional bundle layout.
+It keeps other regional downloads and a copy of the former active-bundle record.
+The APK's normal coverage routing selects BW after a precise location fix; map
+installation alone does not fabricate a GPS bearing, camera frame or confirmation.
+Use emulator route playback with bearing accuracy, or the controller fixtures, to
+exercise directional speed limits and town passage. Readiness validation measures
+bundle structure, not the existence or accuracy of the source's real signs.
+
+Enable **Show other traffic signs** for geofenced secondary signs. In Panoramax
+settings, **Capture bundle traffic signs only** selects the new trigger; it is
+mutually exclusive with recognized-sign capture and preserves saved distance/time
+settings. The camera, motion, storage and existing review/consent gates still apply.
+Captures have `captureReason=inventory_sign` and optional encounter UUID links;
+proximity does not constitute visual confirmation. The map-sign encounter journal
+is local NDJSON at `files/inventory-signs/encounters.ndjson`, shareable in
+**Diagnostics → Logs → Share map-sign log**. Unsupported town-sign model outputs
+are recorded explicitly rather than treated as camera confirmations.
+
+Build 10058 keeps an admitted secondary sign after leaving its geofence, until
+an applicable replacement or boundary invalidates it. GPS, camera and foreground
+gaps preserve the card; a new drive, bundle or country clears it. The 10 m/30 m
+radii still gate new inventory encounters and photos. Accepted source headings
+reject known opposite-facing secondary signs when an accurate vehicle heading
+is available; unknown faces retain proximity behavior and are logged explicitly.
+
+The speed-source caption distinguishes OSM tags, inventory signs, road defaults,
+camera evidence and local corrections. A selected TSR switch now reports when
+recognition is paused at night independently of the photo camera. Diagnostic
+events separate inventory selection, SQLite/overlay/publication latency and
+Compose presentation intervals. Compose events measure UI composition, not
+compositor paint or a physical camera sighting. Build 10057 did not record
+secondary presentation counts, so encounter counts cannot establish how many
+cards were displayed on historical drives.

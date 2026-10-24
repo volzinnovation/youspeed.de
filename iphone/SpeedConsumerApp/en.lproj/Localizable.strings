@@ -504,3 +504,42 @@
 "drive_photo.retry" = "Photo failed. Tap to try again";
 "onboarding.dashcam.start_screenshot" = "Driving screen: the red circle at the bottom left starts video recording.";
 "onboarding.dashcam.stop" = "Tap the red square in the same place to stop and save the video. Wait for saving to finish before opening the video library.";
+
+// Capture activity and offline-sign provenance.
+"capture.tsr.activity.off" = "Off";
+"capture.tsr.activity.running" = "Active";
+"capture.tsr.activity.unavailable" = "Unavailable";
+"capture.tsr.activity.paused_night" = "Paused at night";
+"capture.tsr.activity.paused_location" = "Waiting for location";
+"capture.tsr.activity.paused_background" = "Paused in background";
+"capture.tsr.activity.waiting_drive" = "Waiting for drive";
+"capture.tsr.activity.waiting_recording" = "Waiting for recording";
+"capture.tsr.activity.loading_model" = "Loading model";
+"capture.tsr.status" = "Camera recognition";
+"capture.tsr.night_description" = "Recognition is selected and paused at night. It resumes in daylight. The photo camera and offline signs work independently.";
+"capture.photo_camera.active" = "Photo camera active";
+"capture.photo_camera.off" = "Photo camera off";
+"capture.photo_camera.ready" = "Photo camera ready";
+"capture.photos.active" = "Automatic photos active";
+"capture.photos.selected" = "Automatic photos selected";
+"capture.photos.off" = "Automatic photos off";
+"speed.source.unknown" = "Unknown limit source";
+"speed.source.camera" = "Camera recognition";
+"speed.source.user_correction" = "Your correction";
+"speed.source.local_correction" = "Local correction";
+"speed.source.last_known" = "Last known limit";
+"speed.source.osm_tag" = "OSM speed tag";
+"speed.source.road_default" = "Road default";
+"speed.source.inventory_sign" = "Inventory sign";
+"speed.source.inventory_town_context" = "Inventory town boundary";
+"speed.source.inventory_reset_context" = "Inventory restriction end";
+"speed.source.bundle" = "Offline road data";
+"inventory.display.persistence" = "A sign within 10 m, or a town boundary within 30 m, triggers the secondary card. It stays until the next applicable sign replaces it or the drive ends. Photo capture remains separate; proximity does not confirm camera visibility. Photos require review.";
+"speed.source.camera_pending" = "Camera candidate";
+
+/* Upcoming physical speed limit preview. */
+"speed.upcoming.distance" = "in %d m";
+"speed.upcoming.distance.near" = "in <10 m";
+"speed.upcoming.distance.accessibility" = "in %d metres";
+"speed.upcoming.distance.near.accessibility" = "in less than 10 metres";
+"speed.upcoming.accessibility" = "Upcoming speed limit, %d kilometres per hour, %@.";

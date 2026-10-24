@@ -108,7 +108,7 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
         }
     }
 
-    func testFirstProvisionalDoesNotReadAndSecondConfirmedReadsExactlyOnce() throws {
+    func testFirstProvisionalDoesNotReadAndConfirmedGetsTwoDistinctInspections() throws {
         var tracker = TrafficSignSupplementaryTextTracker()
         var reads = 0
         XCTAssertNil(observe(&tracker, primary: primary(), frame: 1, at: 0, confirmed: false, frames: 1, reads: &reads))
@@ -122,7 +122,7 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
             XCTAssertNotNil(observe(&tracker, primary: primary(), frame: frame, at: Double(frame) * 0.2,
                 confirmed: true, frames: frame, reads: &reads))
         }
-        XCTAssertEqual(reads, 1, "No periodic rereads while the physical sign remains matched")
+        XCTAssertEqual(reads, 2, "Two source inspections permit authority; subsequent same-size frames do not reread")
     }
 
     func testPictogramUsesTwoDistinctAcceptedFramesWithoutSpeedFusion() throws {
@@ -175,7 +175,7 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
         XCTAssertEqual(reads, 3)
     }
 
-    func testUnreadableAttemptRetriesOnlyWithLargerPixelsAndCadence() throws {
+    func testUnreadableAgreementRetryThenRequiresLargerPixelsAndCadence() throws {
         var tracker = TrafficSignSupplementaryTextTracker(), reads = 0
         let failed = observe(&tracker, primary: primary(), frame: 1, at: 0,
             confirmed: true, frames: 2, reads: &reads, raw: nil, status: .noText)
@@ -184,14 +184,14 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
             confirmed: true, frames: 3, reads: &reads, roi: CGSize(width: 200, height: 200))
         _ = observe(&tracker, primary: primary(), frame: 3, at: 0.4,
             confirmed: true, frames: 4, reads: &reads, roi: CGSize(width: 130, height: 130))
-        XCTAssertEqual(reads, 1, "Neither cadence alone nor too-small pixel improvement permits a retry")
-        let clearer = try XCTUnwrap(observe(&tracker, primary: primary(), frame: 4, at: 0.6,
-            confirmed: true, frames: 5, reads: &reads, raw: "Mo–Fr 6:30–17:30 h", roi: CGSize(width: 140, height: 140)))
-        XCTAssertEqual(reads, 2)
-        XCTAssertEqual(clearer.text, "Mo–Fr 6:30–17:30 h")
-        _ = observe(&tracker, primary: primary(), frame: 5, at: 1,
-            confirmed: true, frames: 6, reads: &reads, raw: nil, status: .failed, roi: CGSize(width: 200, height: 200))
+        XCTAssertEqual(reads, 2, "The second distinct frame inspection is allowed without growth")
+        let clearer = try XCTUnwrap(observe(&tracker, primary: primary(), frame: 4, at: 0.8,
+            confirmed: true, frames: 5, reads: &reads, raw: "Mo–Fr 6:30–17:30 h", roi: CGSize(width: 180, height: 180)))
         XCTAssertEqual(reads, 3)
+        XCTAssertEqual(clearer.text, "Mo–Fr 6:30–17:30 h")
+        _ = observe(&tracker, primary: primary(), frame: 5, at: 1.2,
+            confirmed: true, frames: 6, reads: &reads, raw: nil, status: .failed, roi: CGSize(width: 250, height: 250))
+        XCTAssertEqual(reads, 4)
         XCTAssertEqual(tracker.presentationAnnotation(at: now.addingTimeInterval(1))?.text, clearer.text,
             "A later failure is collected without erasing the useful read")
     }
@@ -232,30 +232,26 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
     }
 
     func testCachedAnnotationKeepsSourceIdentityAndRefreshesOnlyPresentationTimestamp() throws {
-        var tracker = TrafficSignSupplementaryTextTracker()
-        var reads = 0
-        let source = try XCTUnwrap(observe(&tracker, primary: primary(), frame: 1, at: 0,
-            confirmed: true, frames: 2, reads: &reads))
-        let cached = try XCTUnwrap(observe(&tracker, primary: primary(), frame: 2, at: 1,
-            confirmed: true, frames: 3, reads: &reads))
-        XCTAssertEqual(cached.frameID, source.frameID)
-        XCTAssertEqual(cached.sourceObservedAt, source.sourceObservedAt)
-        XCTAssertEqual(cached.firstSeenAt, source.firstSeenAt)
-        XCTAssertEqual(cached.primaryBoundingBox, source.primaryBoundingBox)
-        XCTAssertEqual(cached.observedAt, now.addingTimeInterval(1))
-        XCTAssertEqual(reads, 1)
+        var tracker = TrafficSignSupplementaryTextTracker(), reads = 0
+        _ = observe(&tracker, primary: primary(), frame: 1, at: 0, confirmed:true,frames:2,reads:&reads)
+        let source = try XCTUnwrap(observe(&tracker,primary:primary(),frame:2,at:0.4,confirmed:true,frames:3,reads:&reads))
+        let cached = try XCTUnwrap(observe(&tracker,primary:primary(),frame:3,at:1,confirmed:true,frames:4,reads:&reads))
+        XCTAssertEqual(cached.frameID,source.frameID)
+        XCTAssertEqual(cached.sourceObservedAt,source.sourceObservedAt)
+        XCTAssertEqual(cached.firstSeenAt,source.firstSeenAt)
+        XCTAssertEqual(cached.primaryBoundingBox,source.primaryBoundingBox)
+        XCTAssertEqual(cached.observedAt,now.addingTimeInterval(1))
+        XCTAssertEqual(reads,2,"Only the first two independent inspections may run without pixel growth")
     }
-
-    func testLossCannotAttachOldTextToAReplacementOrAnUnmatchedFrame() {
-        var tracker = TrafficSignSupplementaryTextTracker()
-        var reads = 0
-        XCTAssertNotNil(observe(&tracker, primary: primary(), frame: 1, at: 0,
-            confirmed: true, frames: 2, reads: &reads))
-        XCTAssertNil(observe(&tracker, primary: nil, frame: 2, at: 0.2,
-            confirmed: true, frames: 3, reads: &reads))
-        XCTAssertNil(observe(&tracker, primary: primary(), frame: 3, at: 3,
-            confirmed: true, frames: 4, reads: &reads))
-        XCTAssertEqual(reads, 1)
+    func testLossCannotAttachOldTextToAReplacementOrAnUnmatchedFrame() throws {
+        var tracker = TrafficSignSupplementaryTextTracker(), reads = 0
+        XCTAssertNotNil(observe(&tracker,primary:primary(),frame:1,at:0,confirmed:true,frames:2,reads:&reads))
+        XCTAssertNil(observe(&tracker,primary:nil,frame:2,at:0.2,confirmed:true,frames:3,reads:&reads))
+        let fresh = try XCTUnwrap(observe(&tracker,primary:primary(),frame:3,at:3,confirmed:true,frames:4,reads:&reads))
+        XCTAssertEqual(fresh.frameID,"frame-3")
+        XCTAssertEqual(fresh.sourceObservedAt,now.addingTimeInterval(3))
+        XCTAssertEqual(fresh.firstSeenAt,now.addingTimeInterval(3),"Reacquisition gets actual new pixels, never cached old provenance")
+        XCTAssertEqual(reads,2)
     }
 
     #if os(iOS)
@@ -275,7 +271,7 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
         try assertRuntimeOCRDelivery(thermal: .nominal, pictogram: true)
     }
 
-    func testSavedVisualCalibrationStillPassesTheFullFrameToRecognition() throws {
+    func testSavedVisualCalibrationPreservesNativeOCRSourceWithMobileDetectorWindow() throws {
         try assertRuntimeOCRDelivery(thermal: .nominal, calibrated: true)
     }
 
@@ -349,6 +345,9 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
         let diagnosticData = try XCTUnwrap(diagnostic.dropFirst("ocr_attempt_v1=".count).data(using: .utf8))
         let diagnosticFields = try XCTUnwrap(JSONSerialization.jsonObject(with: diagnosticData) as? [String: Any])
         XCTAssertEqual(diagnosticFields["status"] as? String, "no_text")
+        XCTAssertLessThanOrEqual(try XCTUnwrap(diagnosticFields["native_roi_width"] as? Int),230,"OCR keeps native captured pixels despite the detector's1024 input window")
+        XCTAssertEqual(values[2].ocrAttemptAnnotation?.assemblyEvidence?.sourceWidth,230)
+        XCTAssertEqual(values[2].ocrAttemptAnnotation?.assemblyEvidence?.nativeContentRect?.width,136)
         XCTAssertTrue(diagnosticFields["raw_text"] is NSNull)
         XCTAssertEqual(values[2].supplementaryOCROnly, pictogram)
         if pictogram {
@@ -402,7 +401,7 @@ private final class SupplementaryOCRTestBackend: TrafficSignInferenceBackend, @u
         return next()
     }
     func detections(in cgImage: CGImage, orientation: CGImagePropertyOrientation) throws -> [TrafficSignDetection] {
-        XCTAssertEqual(cgImage.width, 136); XCTAssertEqual(cgImage.height, 230)
+        XCTAssertEqual(cgImage.width, 1024); XCTAssertEqual(cgImage.height, 1024)
         return next()
     }
 }

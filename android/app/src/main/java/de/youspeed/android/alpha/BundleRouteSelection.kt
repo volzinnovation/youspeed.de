@@ -38,6 +38,13 @@ data class BundleRouteIdentity(
 object BundleRouteSelection {
     const val SWITCH_SCORE_MARGIN = 120.0
 
+    /** Unresolved restrictions in a selected version cannot revive an older scalar copy. */
+    fun selectedRegionalVersions(routes: List<LocalBundleRoute>, currentDBPath: String?): List<LocalBundleRoute> {
+        val current = routes.firstOrNull { it.dbPath == currentDBPath } ?: return routes
+        val region = current.region.trim().lowercase(java.util.Locale.ROOT)
+        return routes.filter { it.dbPath == current.dbPath || it.region.trim().lowercase(java.util.Locale.ROOT) != region }
+    }
+
     /** Model selection is a state transition, not a per-fix notification. */
     fun shouldSelectTrafficSignModel(
         activeCountryCode: String?,
@@ -52,7 +59,7 @@ object BundleRouteSelection {
     ): LocalBundleRoute? {
         // Geographic eligibility comes before road evidence or hysteresis.
         // An active database is never a coverage-gap fallback.
-        val coveringPaths = coveringRoutes.map { it.dbPath }.toSet()
+        val coveringPaths = selectedRegionalVersions(coveringRoutes, currentDBPath).map { it.dbPath }.toSet()
         val eligible = probes.filter { it.route.dbPath in coveringPaths }
         if (eligible.isEmpty()) return null
         val best = eligible.sortedWith(

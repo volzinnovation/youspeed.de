@@ -25,44 +25,35 @@ data class TrafficSignAssemblyGeometry(
     }
 }
 
-/**
- * Produces primary-only live assemblies. Supplementary signs are deliberately
- * ignored on device and belong to offline Panoramax/manual post-processing.
- */
+/** Retains mapped plates as unresolved collection evidence. Only native pixel/OCR proof can resolve authority. */
 object TrafficSignSpatialAssembly {
-    fun assemble(
-        detections: List<TrafficSignDetection>,
-        modelPack: TrafficSignModelPack,
-        assemblyIdPrefix: String,
-        @Suppress("UNUSED_PARAMETER") geometry: TrafficSignAssemblyGeometry = TrafficSignAssemblyGeometry(),
-    ): TrafficSignAssemblyBatch {
-        require(assemblyIdPrefix.isNotBlank()) { "Assembly ID prefix must not be blank" }
-        val primaries = detections.mapNotNull { detection ->
-            modelPack.classFor(detection.candidate.rawClassId)
-                ?.takeIf { it.signRole == TrafficSignRole.PRIMARY_SIGN }
-                ?.let { detection }
+    fun assemble(detections:List<TrafficSignDetection>,modelPack:TrafficSignModelPack,assemblyIdPrefix:String,
+        geometry:TrafficSignAssemblyGeometry=TrafficSignAssemblyGeometry()):TrafficSignAssemblyBatch {
+        require(assemblyIdPrefix.isNotBlank())
+        val primaries=detections.filter {modelPack.classFor(it.candidate.rawClassId)?.signRole==TrafficSignRole.PRIMARY_SIGN}
+        val plates=detections.filter {modelPack.classFor(it.candidate.rawClassId)?.signRole==TrafficSignRole.SUPPLEMENTARY_PLATE}
+        val assigned=Array(primaries.size){mutableListOf<TrafficSignDetection>()};val ambiguous=mutableSetOf<Int>();val unassigned=mutableListOf<TrafficSignDetection>()
+        for(plate in plates.sortedBy {it.candidate.boundingBox.y}) {
+            val p=plate.candidate.boundingBox
+            val eligible=primaries.indices.mapNotNull {index ->val parent=primaries[index].candidate.boundingBox
+                val last=assigned[index].lastOrNull()?.candidate?.boundingBox ?: parent
+                val gap=p.y-(last.y+last.height)
+                val overlap=minOf(parent.x+parent.width,p.x+p.width)-maxOf(parent.x,p.x)
+                if(gap>=-geometry.permittedBoxOverlap && gap<=geometry.maximumVerticalGap &&
+                    overlap>=geometry.minimumHorizontalOverlapFraction*minOf(parent.width,p.width)) index to gap else null
+            }.sortedBy {it.second}
+            if(eligible.isEmpty()) unassigned+=plate
+            else if(eligible.size>1 && eligible[1].second-eligible[0].second<geometry.permittedBoxOverlap) {
+                eligible.forEach {ambiguous+=it.first};unassigned+=plate
+            } else assigned[eligible.first().first]+=plate
         }
-        val assemblies = primaries.mapIndexed { index, primary ->
-            val assemblyId = "$assemblyIdPrefix-assembly-${index + 1}"
-            val decoratedPrimary = primary.copy(
-                candidate = primary.candidate.copy(
-                    assemblyId = assemblyId,
-                    conditionState = TrafficSignConditionState.NONE,
-                    restrictions = emptyList(),
-                ),
-            )
-            TrafficSignAssembly(
-                assemblyId = assemblyId,
-                primary = decoratedPrimary,
-                supplementaryPlates = emptyList(),
-                restrictions = emptyList(),
-                conditionState = TrafficSignConditionState.NONE,
-            )
+        val assemblies=primaries.mapIndexed {index,primary ->
+            val id="$assemblyIdPrefix-assembly-${index+1}";val attached=assigned[index]
+            val restrictions=attached.mapNotNull {modelPack.classFor(it.candidate.rawClassId)?.restriction}
+            val state=if(attached.isNotEmpty() || index in ambiguous) TrafficSignConditionState.UNRESOLVED else TrafficSignConditionState.NONE
+            TrafficSignAssembly(id,primary.copy(candidate=primary.candidate.copy(assemblyId=id,conditionState=state,restrictions=restrictions)),
+                attached.toList(),restrictions,state)
         }
-
-        return TrafficSignAssemblyBatch(
-            assemblies = assemblies,
-            unassignedSupplementaryPlates = emptyList(),
-        )
+        return TrafficSignAssemblyBatch(assemblies,unassigned)
     }
 }

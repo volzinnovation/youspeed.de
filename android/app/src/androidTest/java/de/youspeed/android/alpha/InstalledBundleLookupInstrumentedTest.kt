@@ -10,10 +10,44 @@ import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.json.JSONArray
+import org.json.JSONObject
 
 /** Opt-in, read-only verification of the map installed by the normal app download flow. */
 @RunWith(AndroidJUnit4::class)
 class InstalledBundleLookupInstrumentedTest {
+    /** Opt-in SQLite replay only; never injects device location or changes normal app state. */
+    @Test fun profileReadOnlyProductionLookupStages() {
+        val args=InstrumentationRegistry.getArguments()
+        assumeTrue(args.getString("profile_lookup") == "true")
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val stateFile=File(context.filesDir,"bundle/active_bundle.json")
+        val originalState=stateFile.readText()
+        val state=JSONObject(originalState)
+        val path=state.getString("db_path")
+        val points=JSONArray(requireNotNull(args.getString("profile_points_json")))
+        val output=JSONArray()
+        V3SpeedLimitLookup(path,"DEU",MatcherDebugProfile.M7.lookupModel).use { lookup ->
+            var previous: SpeedLookupResult? = null
+            for(i in 0 until points.length()) {
+                val p=points.getJSONObject(i)
+                val result=lookup.lookup(p.getDouble("lat"),p.getDouble("lon"),120.0,1200,
+                    if(p.isNull("bearing_deg")) null else p.getDouble("bearing_deg"),p.getDouble("speed_kmh"),p.getDouble("accuracy_m"),4,
+                    WayMatchContext(preferredWayId=previous?.wayId,recentWayIds=listOfNotNull(previous?.wayId),
+                        preferredStreetRef=previous?.streetRef,matchedFixCount=if(previous==null) 0 else 3))
+                assertNotNull(result.wayId)
+                output.put(JSONObject().apply {
+                    put("point_index",i);put("way_id",result.wayId);put("speed_kmh",result.speedLimitKmh)
+                    put("inside_city",result.insideCity);put("travel_direction",result.travelDirection.name)
+                    put("candidate_count",result.candidateCount);put("query_ms",result.queryTimeMs)
+                    put("lookup_stage_ms",JSONObject(result.lookupStageMs))
+                })
+                previous=result
+            }
+        }
+        File(context.cacheDir,"lookup-profile.json").writeText(output.toString())
+        assertEquals(originalState,stateFile.readText())
+    }
     @Test
     fun activeBadenWuerttembergBundleSupportsProductionRoadAndSpeedLookup() {
         assumeTrue(

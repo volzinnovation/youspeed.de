@@ -56,10 +56,11 @@ internal object SignCollectionSchema {
 
 internal fun signCollectionSemantics(value: JsonElement, model: String) {
     val o = value.jsonObject
-    listOf("event_id", "installation_id", "batch_id", "collection_session_id", "crop_id", "observation_id", "deletion_request_id", "target_id", "superseded_by").forEach { key ->
+    listOf("device_id", "event_id", "installation_id", "batch_id", "collection_session_id", "crop_id", "observation_id", "deletion_request_id", "target_id", "superseded_by").forEach { key ->
         o[key]?.takeIf { it !== JsonNull }?.let { require(SignCollectionJson.isUuid(it.jsonPrimitive.content)) }
     }
     o["media_refs"]?.jsonArray?.forEach { require(SignCollectionJson.isUuid(it.jsonPrimitive.content)) }
+    signCollectionCaptureMetadata(o,model)
     if (model == "sighting") {
         fun date(key: String) = OffsetDateTime.parse(o.getValue(key).jsonPrimitive.content).toInstant()
         require(date("first_seen_at") <= date("representative_frame_at") && date("representative_frame_at") <= date("last_seen_at"))
@@ -97,7 +98,27 @@ internal fun signCollectionSemantics(value: JsonElement, model: String) {
         require(o.getValue("source_upright_sha256") !== JsonNull || !o.getValue("local_frame_token").jsonPrimitive.contentOrNull.isNullOrEmpty())
     }
     if (model == "batch") {
+        require(o.getValue("events").jsonArray.all { it.jsonObject["device_id"] == null || it.jsonObject["device_id"] === JsonNull || it.jsonObject["device_id"] == o["installation_id"] })
         val ids = o.getValue("events").jsonArray.map { it.jsonObject.getValue("event_id").jsonPrimitive.content }
         require(ids.size == ids.toSet().size && ids.all(SignCollectionJson::isUuid))
+    }
+}
+
+
+internal fun signCollectionCaptureMetadata(o: JsonObject, model: String) {
+    if (model !in setOf("sighting","crop")) return
+    val keys = listOf("capture_metadata_version","device_id","camera_viewing_direction")
+    if (o["observer_version"] != JsonPrimitive("sighting-observer-2") && keys.none { o[it] != null && o[it] !== JsonNull }) return
+    require(o["capture_metadata_version"] == JsonPrimitive(1))
+    require(SignCollectionJson.isUuid(o.getValue("device_id").jsonPrimitive.content))
+    if (model == "crop") require(o["device_id"] == o["installation_id"])
+    val frame = OffsetDateTime.parse(o.getValue(if (model == "crop") "source_frame_at" else "representative_frame_at").jsonPrimitive.content).toInstant()
+    val position = o.getValue("vehicle_position").jsonObject
+    val direction = o.getValue("camera_viewing_direction").jsonObject
+    listOf(Triple(position,"fix_at" to "frame_fix_delta_ms",5000.0),
+        Triple(direction,"measured_at" to "frame_measurement_delta_ms",500.0)).forEach { (measurement,keys,maximum) ->
+        val at = OffsetDateTime.parse(measurement.getValue(keys.first).jsonPrimitive.content).toInstant()
+        val actual = java.time.Duration.between(at,frame).toNanos()/1_000_000.0
+        require(kotlin.math.abs(actual) <= maximum && kotlin.math.abs(actual-measurement.getValue(keys.second).jsonPrimitive.double) <= 2)
     }
 }

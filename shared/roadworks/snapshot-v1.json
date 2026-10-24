@@ -1,0 +1,138 @@
+{
+  "attributions": [
+    {
+      "changes": "Normalized fixture; synthetic events for client parity tests.",
+      "dataset_url": "https://mobidata-bw.de/dataset/baustelleninformationen-baden-wurttemberg",
+      "license_id": "dl-de/by-2-0",
+      "license_url": "https://www.govdata.de/dl-de/by-2-0",
+      "provider": "Verkehrsministerium Baden-Württemberg, BEMaS, via MobiData BW"
+    }
+  ],
+  "evaluation_window": {
+    "end": "2026-10-31T00:00:00Z",
+    "start": "2026-10-23T00:00:00Z"
+  },
+  "features": [
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            7.99,
+            48.0
+          ],
+          [
+            8.01,
+            48.0
+          ]
+        ],
+        "type": "LineString"
+      },
+      "id": "mobidata-bw:bemas:works",
+      "properties": {
+        "active_intervals": [
+          {
+            "end": "2026-10-23T12:00:00Z",
+            "start": "2026-10-23T10:00:00Z"
+          }
+        ],
+        "description": "Synthetic reported worksite",
+        "description_language": "de",
+        "direction": "both",
+        "kind": "roadworks",
+        "operator_status": "implemented",
+        "outer_end": "2026-10-24T00:00:00Z",
+        "outer_start": "2026-10-23T00:00:00Z",
+        "quality_flags": [],
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "road_label": "B 3",
+        "schedule_status": "resolved",
+        "source_direction": "BOTH_DIRECTIONS",
+        "source_id": "works",
+        "source_subtype": null,
+        "source_type": "CONSTRUCTION",
+        "source_version_time": "2026-10-23T09:55:00Z"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            7.99,
+            48.002
+          ],
+          [
+            8.01,
+            48.002
+          ]
+        ],
+        "type": "LineString"
+      },
+      "id": "mobidata-bw:bemas:closure",
+      "properties": {
+        "active_intervals": [
+          {
+            "end": "2026-10-23T12:00:00Z",
+            "start": "2026-10-23T10:00:00Z"
+          }
+        ],
+        "description": "Synthetic reported worksite",
+        "description_language": "de",
+        "direction": "both",
+        "kind": "closure",
+        "operator_status": "implemented",
+        "outer_end": "2026-10-24T00:00:00Z",
+        "outer_start": "2026-10-23T00:00:00Z",
+        "quality_flags": [],
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "road_label": "B 3",
+        "schedule_status": "resolved",
+        "source_direction": "BOTH_DIRECTIONS",
+        "source_id": "closure",
+        "source_subtype": null,
+        "source_type": "ROAD_CLOSED",
+        "source_version_time": "2026-10-23T09:55:00Z"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          8.0,
+          48.001
+        ],
+        "type": "Point"
+      },
+      "id": "mobidata-bw:bemas:point",
+      "properties": {
+        "active_intervals": [
+          {
+            "end": "2026-10-23T12:00:00Z",
+            "start": "2026-10-23T10:00:00Z"
+          }
+        ],
+        "description": "Synthetic reported worksite",
+        "description_language": "de",
+        "direction": "unknown",
+        "kind": "unknown",
+        "operator_status": "implemented",
+        "outer_end": "2026-10-24T00:00:00Z",
+        "outer_start": "2026-10-23T00:00:00Z",
+        "quality_flags": [],
+        "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "road_label": "B 3",
+        "schedule_status": "resolved",
+        "source_direction": "BOTH_DIRECTIONS",
+        "source_id": "point",
+        "source_subtype": null,
+        "source_type": "CONSTRUCTION",
+        "source_version_time": "2026-10-23T09:55:00Z"
+      },
+      "type": "Feature"
+    }
+  ],
+  "generated_at": "2026-10-23T10:00:00Z",
+  "normalization_version": "youspeed-bemas-v1",
+  "schema_version": 1,
+  "type": "FeatureCollection"
+}

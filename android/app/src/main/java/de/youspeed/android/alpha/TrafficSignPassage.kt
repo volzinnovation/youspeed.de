@@ -901,6 +901,8 @@ data class TrafficSignSourceResolverConfiguration(
     val maximumNoMatchDistanceM: Double = 160.0,
 )
 
+data class TrafficSignInventoryEndApplication(val effective: EffectiveSpeedLimit, val applied: Boolean)
+
 /** Stateful camera layer above the ordinary local-correction/bundle base. */
 class TrafficSignRuntimeSourceResolver(
     private val configuration: TrafficSignSourceResolverConfiguration = TrafficSignSourceResolverConfiguration(),
@@ -909,6 +911,7 @@ class TrafficSignRuntimeSourceResolver(
     private var pending: PendingPassage? = null
     private var newlyActivatedEvent: TrafficSignPassageEvent? = null
     private var newlyPersistableEvent: TrafficSignPassageEvent? = null
+    private val layerEvidence = linkedMapOf<String, TrafficSignPassageEvent>()
 
     fun activeAssertion(): TrafficSignCameraAssertion? = active
 
@@ -921,6 +924,32 @@ class TrafficSignRuntimeSourceResolver(
         pending = null
         newlyActivatedEvent = null
         newlyPersistableEvent = null
+        layerEvidence.clear()
+    }
+
+    /** Accepted inventory passage uses the existing end reducer without creating camera evidence. */
+    fun applyInventoryEnd(action: TrafficSignAction, sourceSignId: String, base: TrafficSignBaseLimit): TrafficSignInventoryEndApplication {
+        require(action.kind in setOf(TrafficSignActionKind.MAXIMUM_SPEED_END, TrafficSignActionKind.ALL_RESTRICTIONS_END))
+        if (base.isUserCorrection) { clear(); return TrafficSignInventoryEndApplication(base.effective(), false) }
+        pending = null
+        newlyActivatedEvent = null
+        newlyPersistableEvent = null
+        val previous = active ?: return TrafficSignInventoryEndApplication(base.effective(), true)
+        val reduced = reduceLayers(previous.layers, action, "inventory:$sourceSignId", base, base.resolution)
+        if (reduced.noMutation) return TrafficSignInventoryEndApplication(effective(base), false)
+        val surviving = reduced.layers.lastOrNull()
+        if (surviving == null) {
+            clear()
+            return TrafficSignInventoryEndApplication(base.effective(), true)
+        }
+        active = previous.copy(
+            event = layerEvidence[surviving.eventId] ?: previous.event,
+            layers = reduced.layers,
+            resolution = surviving.resolution,
+            presentationReason = "inventory_${action.kind.wireValue}_enclosing_rule",
+        )
+        layerEvidence.keys.retainAll(reduced.layers.map { it.eventId }.toSet())
+        return TrafficSignInventoryEndApplication(effective(base), true)
     }
 
     fun takeNewlyActivatedEvent(): TrafficSignPassageEvent? = newlyActivatedEvent.also {
@@ -985,6 +1014,8 @@ class TrafficSignRuntimeSourceResolver(
             .orEmpty()
         val reduced = reduceLayers(previousLayers, event.action, event.finalizedEventId, base, fallbackSpeedLimitAfterEnd)
         if (reduced.noMutation) return effective(base)
+        layerEvidence[event.finalizedEventId] = event
+        layerEvidence.keys.retainAll(reduced.layers.map { it.eventId }.toSet())
         val resolution = reduced.layers.lastOrNull()?.resolution ?: reduced.fallback
         val scope = TrafficSignApplicabilityScope(
             originWayId = firstSeenWayId,

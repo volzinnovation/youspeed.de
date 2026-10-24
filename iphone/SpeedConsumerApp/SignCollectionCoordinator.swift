@@ -3,16 +3,19 @@ import Combine
 import CoreLocation
 import Network
 import CoreGraphics
+import CoreMotion
 
 /// Ordinary camera collection. The camera does not wait for this controller.
 @MainActor final class SignCollectionCoordinator: ObservableObject {
     @Published private(set) var enabled: Bool
     @Published private(set) var authorized = false
     @Published private(set) var cropsAuthorized = false
+    private var locations: [CLLocation] = []
     private var framePending = false
     @Published private(set) var consentPresented = false
     @Published private(set) var status = "idle"
     @Published private(set) var deletions: [[String: Bool]] = []
+    private let cameraDirection = SignCollectionCameraDirection()
     private let foundation: SignCollectionFoundation
     private let storage = DispatchQueue(label: "de.youspeed.sign-collection.storage", qos: .utility)
     private final class CaptureState {
@@ -75,15 +78,17 @@ import CoreGraphics
     func cameraChanged(active: Bool) {
         let becameActive = active && !cameraActive
         cameraActive = active
+        cameraDirection.setActive(active && authorized && enabled)
         if becameActive {
             if session == nil { session = SignCollectionJSON.uuid() }
             let id = session!
             perform { store in try store.beginSession(id) }
             requestConsent()
         }
-        if !active { deliver() }
+        if !active { locations.removeAll(); deliver() }
     }
     func endSession() {
+        cameraDirection.setActive(false); locations.removeAll()
         session = nil; consentPresented = false; authorized = false; cropsAuthorized = false; cameraActive = false
         perform { [capture] store in capture.observer.reset(); store.endSession() }
         deliver()
@@ -122,6 +127,7 @@ import CoreGraphics
     }
     private func invalidateUpload() { generation += 1; upload?.cancel(); upload = nil }
     private func privacy(_ action: @escaping (SignCollectionStore) throws -> Void) {
+        cameraDirection.setActive(false); locations.removeAll()
         invalidateUpload(); privacyChangePending = true; authorized = false; cropsAuthorized = false
         let token = generation
         perform { store in
@@ -159,6 +165,7 @@ import CoreGraphics
                 self.currentEpoch = epoch
                 self.authorized = authorized && self.enabled && !self.privacyChangePending; self.deletions = phases
                 self.cropsAuthorized = crops && self.authorized
+                self.cameraDirection.setActive(self.cameraActive && self.authorized && self.enabled)
                 // Active removal invalidates the old session. A new grant is required.
                 if self.cameraActive, self.session == nil, !self.privacyChangePending, !barrier {
                     self.session = SignCollectionJSON.uuid()
@@ -190,13 +197,30 @@ import CoreGraphics
             }
         }
     }
+    func recordLocation(_ location: CLLocation) {
+        guard enabled, authorized, cameraActive else { return }
+        if locations.last?.timestamp != location.timestamp { locations.append(location) }
+        if locations.count > 120 { locations.removeFirst(locations.count - 120) }
+    }
     func observe(_ emission: TrafficSignRuntimeEmission, pack: TrafficSignVerifiedModelPack?, location: CLLocation?) {
         guard enabled, authorized, cameraActive, emission.event.source == .liveFrame else { return }
         defer { if let actual = emission.ocrAttemptAnnotation ?? emission.ocrAnnotation { updateSupplementaryOCR(actual) } }
         guard let session, let pack, !framePending else { return }
+        // Freeze both measurements before inference/storage can advance to another frame.
+        if let location { recordLocation(location) }
+        guard let frameAt = emission.collectionCaptureAt else {
+            perform(refreshAfter: false) { [capture] _ in capture.observer.reset() }
+            return
+        }
+        let nearestFix = locations.min { abs($0.timestamp.timeIntervalSince(frameAt)) < abs($1.timestamp.timeIntervalSince(frameAt)) }
+        let framePosition = Self.position(nearestFix, at: frameAt)
+        guard let position = framePosition as? [String: Any],
+              let delta = position["frame_fix_delta_ms"] as? Double, abs(delta) <= 5000,
+              let frameDirection = cameraDirection.history.direction(at: frameAt) else {
+            perform(refreshAfter: false) { [capture] _ in capture.observer.reset() }
+            return
+        }
         framePending = true
-        // Snapshot the fix for this analyzed frame before asynchronous storage.
-        let framePosition = Self.position(location, at: emission.event.frameTimestampUtc)
         let cropRequested = cropsAuthorized, token = generation
         let supplementaryOCR = (emission.ocrAttemptAnnotation ?? emission.ocrAnnotation).flatMap(Self.collectionOCRAnnotation)
         let interests = foundation.interests
@@ -210,7 +234,7 @@ import CoreGraphics
             if let verified = pack.manifestSHA256 { hash = verified }
             else if let saved = capture.packHashes[path] { hash = saved }
             else { hash = SignCollectionJSON.sha256(try Data(contentsOf: URL(fileURLWithPath: path))); capture.packHashes[path] = hash }
-            let event = emission.event, at = event.frameTimestampUtc
+            let event = emission.event, at = frameAt
             let country = pack.manifest.countries.first(where: { $0.range(of: "^[A-Z]{2}$", options: .regularExpression) != nil }) ?? "unknown"
             let components: [[String: Any]] = event.modelComponents.map {
                 ["role": $0.role, "artifact_sha256": $0.artifactSHA256.lowercased(), "preprocessing_version": $0.preprocessingVersion,
@@ -219,6 +243,7 @@ import CoreGraphics
             guard !components.isEmpty else { return }
             let model: [String: Any] = ["pack_id": event.packId, "pack_version": "manifest-schema-\(pack.manifest.schemaVersion)", "pack_sha256": hash, "components": components]
             let position = framePosition
+            let deviceID = try store.installationID
             let eligible = Array(emission.collectionDetections.filter { $0.boundingBox.isValid && $0.rawScore.isFinite && $0.rawScore >= $0.classThreshold }.prefix(64))
             let annotationMatches = eligible.filter { detection in
                 let box = detection.boundingBox
@@ -237,7 +262,8 @@ import CoreGraphics
                 let evidence: [String: Any] = ["track_id": NSNull(), "assembly_id": detection.assemblyId as Any? ?? NSNull(), "analyzed_frames": 0,
                     "finalization_reason": "qualified_track", "quality_flags": position is NSNull ? ["gps_missing", "manifest_schema_version"] : ["manifest_schema_version"],
                     "normalized_box": ["x": box.x, "y": box.y, "width": box.width, "height": box.height]]
-                let payload: [String: Any] = ["schema_version": 1, "collection_session_id": session, "observer_version": "sighting-observer-1",
+                let payload: [String: Any] = ["schema_version": 1, "collection_session_id": session, "observer_version": "sighting-observer-2",
+                    "capture_metadata_version": 1, "device_id": deviceID, "camera_viewing_direction": frameDirection,
                     "source_kind": "detector", "app": app, "clock_quality": "device_unverified", "vehicle_position": position,
                     "sign_position": NSNull(), "classification": classification, "scores": scores, "model": model, "evidence": evidence, "road_context": NSNull(), "media_refs": []]
                 let presentation = event.candidate.flatMap { presentationMatches == 1 && $0.rawLabel == detection.rawLabel && $0.boundingBox.intersectionOverUnion(with: box) >= 0.5 ? $0.trackId : nil }
@@ -258,7 +284,7 @@ import CoreGraphics
                     var metadata = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: candidate.observationID,
                         installationID: try store.installationID, epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: candidate.frameAt,
                         localFrameToken: frame.token, privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: claim,
-                        vehiclePosition: framePosition)
+                        vehiclePosition: framePosition, cameraViewingDirection: frameDirection)
                     if let selection = candidate.selection { metadata["collection_selection"] = selection.wire }
                     if let annotation = candidate.supplementaryOCR { metadata["supplementary_ocr"] = annotation.wire }
                     try store.enqueueAutomaticCrop(metadata: metadata, bytes: crop.bytes)
@@ -316,4 +342,41 @@ import CoreGraphics
                 "source": "core_location", "alignment": "nearest_fix", "course_degrees": (0..<360).contains(fix.course) ? fix.course as Any : NSNull(),
                 "course_accuracy_degrees": (0...180).contains(fix.courseAccuracy) ? fix.courseAccuracy as Any : NSNull()]
     }
+}
+
+
+/// Core Motion's matrix maps true-north/West/up into device coordinates.
+/// Transpose it to transform the rear camera's fixed device axis (0,0,-1).
+private final class SignCollectionCameraDirection {
+    private(set) var history = SignCollectionCameraHistory()
+    private let motion = CMMotionManager()
+    private let queue: OperationQueue = { let q = OperationQueue(); q.maxConcurrentOperationCount = 1; return q }()
+    private var active = false
+    func setActive(_ value: Bool) {
+        guard value != active else { return }
+        active = value
+        motion.stopDeviceMotionUpdates(); queue.cancelAllOperations(); history = SignCollectionCameraHistory()
+        guard value, motion.isDeviceMotionAvailable,
+              CMMotionManager.availableAttitudeReferenceFrames().contains(.xTrueNorthZVertical) else { return }
+        motion.deviceMotionUpdateInterval = 0.05
+        motion.showsDeviceMovementDisplay = false
+        let bootUTC = Date().timeIntervalSince1970 - ProcessInfo.processInfo.systemUptime
+        let history = self.history
+        motion.startDeviceMotionUpdates(using: .xTrueNorthZVertical, to: queue) { data, _ in
+            guard let data, data.heading.isFinite, data.heading >= 0 else { history.clear(); return }
+            let accuracy: String
+            switch data.magneticField.accuracy {
+            case .high: accuracy = "high"
+            case .medium: accuracy = "medium"
+            default: history.clear(); return
+            }
+            let r = data.attitude.rotationMatrix, g = data.gravity
+            // Fail closed if the reference/matrix convention is not as expected.
+            guard abs(r.m13 + g.x) < 0.05, abs(r.m23 + g.y) < 0.05, abs(r.m33 + g.z) < 0.05,
+                  let sample = SignCollectionCameraSample.coreMotionMatrix([r.m11,r.m12,r.m13,r.m21,r.m22,r.m23,r.m31,r.m32,r.m33],
+                    at: Date(timeIntervalSince1970: bootUTC + data.timestamp), accuracy: accuracy) else { history.clear(); return }
+            history.append(sample)
+        }
+    }
+    deinit { motion.stopDeviceMotionUpdates(); queue.cancelAllOperations() }
 }

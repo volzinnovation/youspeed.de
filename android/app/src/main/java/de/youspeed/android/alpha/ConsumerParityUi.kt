@@ -83,6 +83,15 @@ private fun parityText(en: String, de: String, fr: String, nl: String) = Consume
 private fun dateText(value: Instant): String = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
     .withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault()).format(value)
 private fun onOff(value: Boolean) = if (value) parityText("On", "Ein", "Activé", "Aan") else parityText("Off", "Aus", "Désactivé", "Uit")
+internal fun recognitionRuntimeLabel(status: TrafficSignRuntimeStatus): String = when (status) {
+    TrafficSignRuntimeStatus.DISABLED -> onOff(false)
+    TrafficSignRuntimeStatus.WAITING_LOCATION -> parityText("Waiting for location", "Wartet auf Position", "Position attendue", "Wacht op locatie")
+    TrafficSignRuntimeStatus.PAUSED_NIGHT -> parityText("Paused at night", "Nachts pausiert", "En pause la nuit", "'s Nachts gepauzeerd")
+    TrafficSignRuntimeStatus.PAUSED_SESSION -> parityText("Selected · paused", "Ausgewählt · pausiert", "Sélectionnée · en pause", "Geselecteerd · gepauzeerd")
+    TrafficSignRuntimeStatus.WAITING_CAMERA -> parityText("Waiting for camera", "Wartet auf Kamera", "Caméra attendue", "Wacht op camera")
+    TrafficSignRuntimeStatus.UNAVAILABLE -> parityText("Unavailable", "Nicht verfügbar", "Indisponible", "Niet beschikbaar")
+    TrafficSignRuntimeStatus.ACTIVE -> parityText("Active", "Aktiv", "Active", "Actief")
+}
 private fun doneLabel() = parityText("Done", "Fertig", "Terminé", "Gereed")
 private fun deleteLabel() = parityText("Delete", "Löschen", "Supprimer", "Verwijderen")
 private fun cancelLabel() = parityText("Cancel", "Abbrechen", "Annuler", "Annuleren")
@@ -542,6 +551,12 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
         ParitySection(parityText("Drive recorder", "Fahrtaufnahme", "Enregistrement du trajet", "Ritopname")) {
             ParityToggle(parityText("Traffic-sign recognition", "Verkehrszeichenerkennung", "Reconnaissance des panneaux", "Verkeersbordherkenning"),
                 ui.trafficSignRecognitionEnabled, !active, "traffic-sign-recognition-toggle", controller::setTrafficSignRecognitionEnabled)
+            Text(recognitionRuntimeLabel(ui.trafficSignRuntimeStatus), style = MaterialTheme.typography.bodySmall)
+            if (ui.trafficSignRuntimeStatus == TrafficSignRuntimeStatus.PAUSED_NIGHT) Text(parityText(
+                "Your selection is saved. Camera recognition resumes in daylight. Map signs and photo capture work independently.",
+                "Die Auswahl bleibt gespeichert. Kameraerkennung läuft bei Tageslicht weiter. Kartenzeichen und Fotoaufnahmen arbeiten unabhängig davon.",
+                "La sélection est conservée. La reconnaissance reprend de jour. Panneaux cartographiés et photos sont indépendants.",
+                "De keuze blijft bewaard. Herkenning hervat bij daglicht. Kaartborden en foto's werken onafhankelijk."), style = MaterialTheme.typography.bodySmall)
             ParityToggle(parityText("Show other traffic signs", "Andere Verkehrszeichen anzeigen", "Afficher les autres panneaux", "Andere verkeersborden tonen"),
                 ui.otherTrafficSignDisplayEnabled, tag = "other-traffic-sign-display-toggle", onChange = controller::setOtherTrafficSignDisplayEnabled)
             Text(parityText("The included model does not recognize town-entry signs reliably.",
@@ -591,9 +606,11 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
         ParitySection(parityText("Panoramax storage and capture", "Panoramax-Speicher und Aufnahme", "Stockage et capture Panoramax", "Panoramax-opslag en opname")) {
             if (ui.panoramaxCaptureEnabled) {
                 ParityToggle(SignCollectionText.text("Capture recognized traffic signs only", "Nur erkannte Verkehrszeichen aufnehmen"), ui.panoramaxRecognizedSignsOnly, onChange = controller::setPanoramaxRecognizedSignsOnly)
+                ParityToggle(SignCollectionText.text("Capture bundle traffic signs only", "Nur Verkehrszeichen aus dem Kartenpaket aufnehmen"), ui.panoramaxInventorySignsOnly, onChange = controller::setPanoramaxInventorySignsOnly)
+                if (ui.panoramaxInventorySignsOnly) Text(SignCollectionText.text("Captures within 10 m of bundle signs, or 30 m of town boundaries. The camera must already be active. Proximity is not visual confirmation. Photos stay local for review.", "Aufnahmen innerhalb von 10 m um Zeichen im Kartenpaket, bei Ortstafeln 30 m. Die Kamera muss bereits aktiv sein. Nähe ist keine visuelle Bestätigung. Fotos bleiben zur Prüfung lokal."), style = MaterialTheme.typography.bodySmall)
                 if (ui.panoramaxRecognizedSignsOnly) Text(SignCollectionText.text("Waiting for camera recognition of a stable sign. Distance/time capture is paused; photos still require Panoramax review and approval.", "Wartet auf die Kameraerkennung eines stabilen Zeichens. Abstand-/Zeitaufnahmen pausieren; Bilder benötigen weiterhin die Panoramax-Prüfung und Freigabe."), style = MaterialTheme.typography.bodySmall)
                 Text("${ui.panoramaxCaptureCount} " + parityText("saved photos", "gespeicherte Fotos", "photos enregistrées", "opgeslagen foto’s"))
-                if (!ui.panoramaxRecognizedSignsOnly) {
+                if (!ui.panoramaxRecognizedSignsOnly && !ui.panoramaxInventorySignsOnly) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         PanoramaxCaptureTriggerMode.entries.forEach { mode ->
                             FilterChip(ui.panoramaxTriggerMode == mode, { controller.setPanoramaxTriggerMode(mode) }, label = { Text(
@@ -729,8 +746,8 @@ private fun GalleryAction(
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-internal fun DashcamLibraryContent(controller: ConsumerSessionController) {
-    val recordings = controller.uiState.dashcamRecordings
+internal fun DashcamLibraryContent(controller: ConsumerSessionController, tripPaths: Set<String>? = null) {
+    val recordings = controller.uiState.dashcamRecordings.filter {tripPaths==null || it.path in tripPaths}
     val context = LocalContext.current
     var selected by remember { mutableStateOf(emptySet<String>()) }
     var deleteConfirmation by remember { mutableStateOf(false) }
@@ -812,10 +829,10 @@ private fun ParityDeleteConfirmation(count: Int, onDismiss: () -> Unit, onDelete
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, compact: Boolean = false) {
+internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, compact: Boolean = false, tripPaths: Set<String>? = null) {
     val ui = controller.uiState
     var signsOnly by remember { mutableStateOf(false) }
-    fun matches(item: PanoramaxItemRecord) = !signsOnly || item.metadata.captureReason == "recognized_sign" || !item.metadata.trafficSignAnnotations.isNullOrEmpty()
+    fun matches(item: PanoramaxItemRecord) = (tripPaths==null || controller.panoramaxOriginalFile(item).absolutePath in tripPaths) && (!signsOnly || item.metadata.captureReason in setOf("recognized_sign", "inventory_sign") || !item.metadata.trafficSignAnnotations.isNullOrEmpty())
     var selected by remember { mutableStateOf(emptyMap<String, Set<String>>()) }
     var deleteConfirmation by remember { mutableStateOf(false) }
     var uploadConfirmation by remember { mutableStateOf(false) }
@@ -823,7 +840,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
     val count = selected.values.sumOf { it.size }
     LaunchedEffect(ui.panoramaxBatches) {
         selected = selected.mapNotNull { (batchId, ids) ->
-            val available = ui.panoramaxBatches.firstOrNull { it.batchId == batchId }?.items?.map { it.itemId }?.toSet().orEmpty()
+            val available = ui.panoramaxBatches.firstOrNull { it.batchId == batchId }?.items?.filter(::matches)?.map { it.itemId }?.toSet().orEmpty()
             ids.intersect(available).takeIf { it.isNotEmpty() }?.let { batchId to it }
         }.toMap()
     }
@@ -881,6 +898,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                                     Text(dateText(item.metadata.capturedAt), style = MaterialTheme.typography.bodySmall)
                                     Text(itemStateLabel(item.state), style = MaterialTheme.typography.bodySmall)
                                     if (item.metadata.captureReason == "recognized_sign") Text(SignCollectionText.text("Traffic-sign capture", "Verkehrszeichen-Aufnahme") + " · " + (item.metadata.signEvidence?.size ?: 0), style = MaterialTheme.typography.bodySmall)
+                                    if (item.metadata.captureReason == "inventory_sign") Text(SignCollectionText.text("Map-sign capture", "Kartenzeichen-Aufnahme") + " · " + (item.metadata.inventoryEncounterIds?.size ?: 0), style = MaterialTheme.typography.bodySmall)
                                     item.metadata.trafficSignAnnotations.orEmpty().firstOrNull()?.speedLimitKmh?.let { Text("$it km/h", fontWeight = FontWeight.Bold) }
                                 }
                             }
@@ -921,7 +939,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                 enabled = ui.panoramaxBatches.any { it.batchId !in ui.panoramaxActiveUploadBatchIds && it.state != PanoramaxBatchState.CAPTURING },
                 onClick = {
                     selected = ui.panoramaxBatches.filter { it.batchId !in ui.panoramaxActiveUploadBatchIds && it.state != PanoramaxBatchState.CAPTURING }
-                        .associate { batch -> batch.batchId to batch.items.map { it.itemId }.toSet() }
+                        .associate { batch -> batch.batchId to batch.items.filter(::matches).map { it.itemId }.toSet() }
                 },
             )
             GalleryAction(
@@ -1054,6 +1072,7 @@ internal fun TrafficSignDetailsContent(controller: ConsumerSessionController) {
     val event = ui.trafficSignLastEvent
     val candidate = event?.candidate
     val status = when {
+        ui.trafficSignRuntimeStatus != TrafficSignRuntimeStatus.ACTIVE -> recognitionRuntimeLabel(ui.trafficSignRuntimeStatus)
         !ui.trafficSignRecognitionEnabled -> parityText("Disabled", "Ausgeschaltet", "Désactivée", "Uitgeschakeld")
         ui.trafficSignRecognitionUnavailable -> parityText("Unavailable", "Nicht verfügbar", "Indisponible", "Niet beschikbaar")
         event?.state == TrafficSignRecognitionState.PROVISIONAL -> parityText("Provisional", "Vorläufig", "Provisoire", "Voorlopig")
@@ -1064,6 +1083,9 @@ internal fun TrafficSignDetailsContent(controller: ConsumerSessionController) {
     LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { ParitySection(parityText("Camera recognition", "Kameraerkennung", "Reconnaissance par caméra", "Cameraherkenning")) {
             Text(status, fontWeight = FontWeight.SemiBold)
+            Text(parityText("Photo camera: ", "Fotokamera: ", "Caméra photo : ", "Fotocamera: ") +
+                onOff(ui.trafficSignCameraRuntimeState == TrafficSignCameraRuntimeState.ACTIVE))
+            Text(parityText("Automatic photos: ", "Automatische Fotos: ", "Photos automatiques : ", "Automatische foto's: ") + onOff(ui.panoramaxCaptureEnabled))
             if (ui.trafficSignRecognitionEnabled && !ui.trafficSignRecognitionUnavailable &&
                 event?.state in setOf(TrafficSignRecognitionState.PROVISIONAL, TrafficSignRecognitionState.CONFIRMED)) {
                 candidate?.semantic?.value?.let { Text("$it km/h", style = MaterialTheme.typography.headlineMedium) }

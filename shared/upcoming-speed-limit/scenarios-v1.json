@@ -1,0 +1,3284 @@
+{
+  "schemaVersion": 1,
+  "description": "Shared synthetic preview selection/lifetime fixtures. Distances are already along-path; separate native SQLite/topology fixtures validate their production. Fix cases pass raw candidate snapshots; tick rechecks last snapshot without changing its fix timestamp. Each case starts a new tracker/session. IDs are strings to retain 64-bit source identity.",
+  "cases": [
+    {
+      "id": "inclusive_300m",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 400,
+                "speedKmh": 70,
+                "distanceM": 300
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 300
+          }
+        }
+      ]
+    },
+    {
+      "id": "beyond_300m",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 400.1,
+                "speedKmh": 70,
+                "distanceM": 300.1
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "strictly_lower",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 70,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1001,
+          "fixS": 1001,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 50,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "effective_camera_value",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 50,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "authoritative_unlimited",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": null,
+          "currentUnlimited": true,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 150
+          }
+        }
+      ]
+    },
+    {
+      "id": "unknown_or_stale_main",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": false,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1001,
+          "fixS": 1001,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": null,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "nearest_lower_not_smallest",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 340,
+                "speedKmh": 50,
+                "distanceM": 240
+              },
+              {
+                "signID": "fixture:80",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:80",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 220,
+                "speedKmh": 80,
+                "distanceM": 120
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "fixture:80",
+            "speedKmh": 80,
+            "distanceM": 120
+          }
+        }
+      ]
+    },
+    {
+      "id": "reverse_direction",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": -1,
+            "chainageM": 500,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": -1,
+                "startM": 200,
+                "endM": 500,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": -1,
+                "stationM": 320,
+                "speedKmh": 70,
+                "distanceM": 180
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 180
+          }
+        }
+      ]
+    },
+    {
+      "id": "positive_submetre",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 100.1,
+                "speedKmh": 70,
+                "distanceM": 0.1
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 0.1
+          }
+        }
+      ]
+    },
+    {
+      "id": "at_or_past_station",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 100,
+                "speedKmh": 70,
+                "distanceM": 0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1001,
+          "fixS": 1001,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 101,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 101,
+                "endM": 401,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 100,
+                "speedKmh": 70,
+                "distanceM": -1
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "passage_jitter_does_not_rearm",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 249,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 249,
+                "endM": 549,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 1
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 1
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1001,
+          "fixS": 1001,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 251,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 251,
+                "endM": 551,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1002,
+          "fixS": 1002,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 249,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 249,
+                "endM": 549,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 1
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "hidden_target_passage_stays_consumed",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 50,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 249,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 249,
+                "endM": 549,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 1
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1001,
+          "fixS": 1001,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 50,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 251,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 251,
+                "endM": 551,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1002,
+          "fixS": 1002,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 249,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 249,
+                "endM": 549,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 1
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "main_change_without_movement",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 150
+          }
+        },
+        {
+          "event": "tick",
+          "nowS": 1001,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 50,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": null,
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        },
+        {
+          "event": "tick",
+          "nowS": 1002,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": null,
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 150
+          }
+        }
+      ]
+    },
+    {
+      "id": "no_relation_same_way_fallback",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": []
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 150
+          }
+        }
+      ]
+    },
+    {
+      "id": "cross_way_proven_split",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 950,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 950,
+                "endM": 1000,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              },
+              {
+                "wayID": "102",
+                "direction": -1,
+                "startM": 0,
+                "endM": 250,
+                "entryDistanceM": 50.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "102",
+                "direction": -1,
+                "stationM": 150,
+                "speedKmh": 70,
+                "distanceM": 150
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": true
+          },
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 150
+          }
+        }
+      ]
+    },
+    {
+      "id": "no_cross_way_without_topology",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "102",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "lost_scope_hides_target",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 150
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1001,
+          "fixS": 1001,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              20
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  20
+                ]
+              }
+            ],
+            "candidates": [],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "stale_fix_hides",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 996.9,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "future_fix_rejected",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1001.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "tick_expires_without_fix",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 150
+          }
+        },
+        {
+          "event": "tick",
+          "nowS": 1003.1,
+          "fixS": 1000,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": null,
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "way_identity_above_json_double_precision",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "9007199254740993",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "9007199254740993",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "9007199254740993",
+                "direction": 1,
+                "stationM": 400,
+                "speedKmh": 70,
+                "distanceM": 300
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 300
+          }
+        }
+      ]
+    },
+    {
+      "id": "expires_at_exactly_three_seconds",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:70",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:70",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250.0,
+                "speedKmh": 70,
+                "distanceM": 150.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "fixture:70",
+            "speedKmh": 70,
+            "distanceM": 150
+          }
+        },
+        {
+          "event": "tick",
+          "nowS": 1003.0,
+          "fixS": 1000.0,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": null,
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_0kmh_inclusive_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 0,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 400.0,
+                "speedKmh": 50,
+                "distanceM": 300.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 300.0
+          },
+          "expected": {
+            "signID": "fixture:adaptive:50",
+            "speedKmh": 50,
+            "distanceM": 300.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_0kmh_beyond_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 0,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.001,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 400.001,
+                "speedKmh": 50,
+                "distanceM": 300.001
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 300.0
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_30kmh_inclusive_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 30,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 400.0,
+                "speedKmh": 50,
+                "distanceM": 300.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 300.0
+          },
+          "expected": {
+            "signID": "fixture:adaptive:50",
+            "speedKmh": 50,
+            "distanceM": 300.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_30kmh_beyond_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 30,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.001,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 400.001,
+                "speedKmh": 50,
+                "distanceM": 300.001
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 300.0
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_50kmh_inclusive_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 50,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 516.6666666666667,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 516.6666666666667,
+                "speedKmh": 50,
+                "distanceM": 416.6666666666667
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 416.6666666666667
+          },
+          "expected": {
+            "signID": "fixture:adaptive:50",
+            "speedKmh": 50,
+            "distanceM": 416.6666666666667
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_50kmh_beyond_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 50,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 516.6676666666667,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 516.6676666666667,
+                "speedKmh": 50,
+                "distanceM": 416.66766666666666
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 416.6666666666667
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_80kmh_inclusive_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 80,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 766.6666666666666,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 766.6666666666666,
+                "speedKmh": 50,
+                "distanceM": 666.6666666666666
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 666.6666666666666
+          },
+          "expected": {
+            "signID": "fixture:adaptive:50",
+            "speedKmh": 50,
+            "distanceM": 666.6666666666666
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_80kmh_beyond_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 80,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 766.6676666666666,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 766.6676666666666,
+                "speedKmh": 50,
+                "distanceM": 666.6676666666666
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 666.6666666666666
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_100kmh_inclusive_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 100,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 933.3333333333334,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 933.3333333333334,
+                "speedKmh": 50,
+                "distanceM": 833.3333333333334
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 833.3333333333334
+          },
+          "expected": {
+            "signID": "fixture:adaptive:50",
+            "speedKmh": 50,
+            "distanceM": 833.3333333333334
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_100kmh_beyond_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 100,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 933.3343333333333,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 933.3343333333333,
+                "speedKmh": 50,
+                "distanceM": 833.3343333333333
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 833.3333333333334
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_130kmh_inclusive_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 130,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 1183.3333333333333,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 1183.3333333333333,
+                "speedKmh": 50,
+                "distanceM": 1083.3333333333333
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 1083.3333333333333
+          },
+          "expected": {
+            "signID": "fixture:adaptive:50",
+            "speedKmh": 50,
+            "distanceM": 1083.3333333333333
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_130kmh_beyond_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 130,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 1183.3343333333332,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 1183.3343333333332,
+                "speedKmh": 50,
+                "distanceM": 1083.3343333333332
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 1083.3333333333333
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_300kmh_inclusive_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 300,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 2600.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 2600.0,
+                "speedKmh": 50,
+                "distanceM": 2500.0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 2500.0
+          },
+          "expected": {
+            "signID": "fixture:adaptive:50",
+            "speedKmh": 50,
+            "distanceM": 2500.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_300kmh_beyond_boundary",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 300,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 2600.001,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 2600.001,
+                "speedKmh": 50,
+                "distanceM": 2500.001
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 2500.0
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_reverse_100kmh_beyond_old_300m",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 100,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": -1,
+            "chainageM": 3000.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": -1,
+                "startM": 2166.6666666666665,
+                "endM": 3000.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": -1,
+                "stationM": 2200.0,
+                "speedKmh": 50,
+                "distanceM": 800
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 833.3333333333334
+          },
+          "expected": {
+            "signID": "fixture:adaptive:50",
+            "speedKmh": 50,
+            "distanceM": 800
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_speed_does_not_replace_current_limit_comparison",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 130,
+          "currentLimitKmh": 50,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 1183.3333333333333,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 1100.0,
+                "speedKmh": 50,
+                "distanceM": 1000
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 1083.3333333333333
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_window_recomputed_after_speed_change",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 100,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 933.3333333333334,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 900.0,
+                "speedKmh": 50,
+                "distanceM": 800
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 833.3333333333334
+          },
+          "expected": {
+            "signID": "fixture:adaptive:50",
+            "speedKmh": 50,
+            "distanceM": 800
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1001,
+          "fixS": 1001,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 50,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 110,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 110,
+                "endM": 900,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 900,
+                "speedKmh": 50,
+                "distanceM": 790
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 416.6666666666667
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1002,
+          "fixS": 1002,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 130,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 120,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 120,
+                "endM": 1203.3333333333333,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 900,
+                "speedKmh": 50,
+                "distanceM": 780
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 1083.3333333333333
+          },
+          "expected": {
+            "signID": "fixture:adaptive:50",
+            "speedKmh": 50,
+            "distanceM": 780
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_cross_way_reverse_target_800m",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 100,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 950,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 950,
+                "endM": 1000,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              },
+              {
+                "wayID": "102",
+                "direction": -1,
+                "startM": 0,
+                "endM": 1000,
+                "entryDistanceM": 50.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "102",
+                "direction": -1,
+                "stationM": 250,
+                "speedKmh": 50,
+                "distanceM": 800
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": true,
+            "lookaheadDistanceM": 833.3333333333334
+          },
+          "expected": {
+            "signID": "fixture:adaptive:50",
+            "speedKmh": 50,
+            "distanceM": 800
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_passage_while_hidden_cannot_resurrect",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 100,
+          "currentLimitKmh": 50,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 933.3333333333334,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 900.0,
+                "speedKmh": 50,
+                "distanceM": 800
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 833.3333333333334
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1001,
+          "fixS": 1001,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 100,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 900,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 900,
+                "endM": 1733.3333333333335,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 900,
+                "speedKmh": 50,
+                "distanceM": 0
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 833.3333333333334
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1002,
+          "fixS": 1002,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 100,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 899,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 899,
+                "endM": 1732.3333333333335,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 900,
+                "speedKmh": 50,
+                "distanceM": 1
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 833.3333333333334
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "adaptive_target_expires_after_three_seconds",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 130,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100.0,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 1183.3333333333333,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "fixture:adaptive:50",
+                "sourceID": "synthetic-fixture",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "rule:fixture:adaptive:50",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 1100.0,
+                "speedKmh": 50,
+                "distanceM": 1000
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false,
+            "lookaheadDistanceM": 1083.3333333333333
+          },
+          "expected": {
+            "signID": "fixture:adaptive:50",
+            "speedKmh": 50,
+            "distanceM": 1000
+          }
+        },
+        {
+          "event": "tick",
+          "nowS": 1003,
+          "fixS": 1000,
+          "bundleID": "synthetic-adaptive-v1",
+          "speedKmh": 130,
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": null,
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "directed_town_entry_implied_fifty",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "osm-settlement:town-entry",
+                "sourceID": "osm-settlement",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "town-rule",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250,
+                "speedKmh": 50,
+                "distanceM": 150
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "osm-settlement:town-entry",
+            "speedKmh": 50,
+            "distanceM": 150
+          }
+        }
+      ]
+    },
+    {
+      "id": "own_or_camera_current_thirty_hides_town_fifty",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 30,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100.0,
+                "endM": 400.0,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "osm-settlement:town-entry",
+                "sourceID": "osm-settlement",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "town-rule",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250,
+                "speedKmh": 50,
+                "distanceM": 150
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "town_fifty_passage_never_resurrects_after_jitter",
+      "steps": [
+        {
+          "event": "fix",
+          "nowS": 1000,
+          "fixS": 1000,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 100,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 100,
+                "endM": 400,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "osm-settlement:town-entry",
+                "sourceID": "osm-settlement",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "town-rule",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250,
+                "speedKmh": 50,
+                "distanceM": 150
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": "osm-settlement:town-entry",
+            "speedKmh": 50,
+            "distanceM": 150
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1001,
+          "fixS": 1001,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 251,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 250,
+                "endM": 400,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        },
+        {
+          "event": "fix",
+          "nowS": 1002,
+          "fixS": 1002,
+          "bundleID": "synthetic-v1",
+          "currentLimitKmh": 100,
+          "currentUnlimited": false,
+          "currentUsable": true,
+          "snapshot": {
+            "wayID": "101",
+            "direction": 1,
+            "chainageM": 249,
+            "relationGroupIDs": [
+              10
+            ],
+            "path": [
+              {
+                "wayID": "101",
+                "direction": 1,
+                "startM": 249,
+                "endM": 400,
+                "entryDistanceM": 0.0,
+                "relationGroupIDs": [
+                  10
+                ]
+              }
+            ],
+            "candidates": [
+              {
+                "signID": "osm-settlement:town-entry",
+                "sourceID": "osm-settlement",
+                "snapshotSHA256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ruleID": "town-rule",
+                "originWayID": "101",
+                "direction": 1,
+                "stationM": 250,
+                "speedKmh": 50,
+                "distanceM": 1
+              }
+            ],
+            "reason": "candidate",
+            "queryTimeMs": 0.0,
+            "topologyAvailable": false
+          },
+          "expected": {
+            "signID": null,
+            "speedKmh": null,
+            "distanceM": null
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1945,6 +1945,9 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
     private(set) var activePassage: TrafficSignPassageEvent?
     private(set) var lastEffectiveState: EffectiveSpeedLimitState = .none
     private var assertion: TrafficSignCameraAssertion?
+    // Preserve the actual camera evidence for an enclosing rule when a later
+    // posted maximum temporarily becomes the latest assertion.
+    private var inventoryEnclosingAssertion: TrafficSignCameraAssertion?
     private var rules = TrafficSignRuleState()
     private let maximumGapSeconds: TimeInterval
     private let maximumGapMeters: Double
@@ -1963,6 +1966,7 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
 
     mutating func clear(base: EffectiveSpeedLimitState = .none) -> EffectiveSpeedLimitState {
         assertion = nil
+        inventoryEnclosingAssertion = nil
         activePassage = nil
         rules = TrafficSignRuleState()
         lastEffectiveState = base
@@ -2102,12 +2106,37 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
         )
         assertion?.scope.roadIdentity = context.roadIdentity
         activePassage = passage
+        if rules.zone == nil && rules.city == nil && !rules.pedestrian {
+            inventoryEnclosingAssertion=nil
+        } else if rules.posted == nil { inventoryEnclosingAssertion=assertion }
         lastEffectiveState = state
         return TrafficSignPassageCommitResult(
             applied: true,
             effectiveState: state,
             persistence: persistence
         )
+    }
+
+    /// A directed inventory end is map evidence, never a fabricated camera
+    /// passage. Reuse the established typed reduction, retaining only a real
+    /// camera enclosure and its original passage/scope as camera authority.
+    mutating func applyInventoryEnd(
+        action: TrafficSignStructuralAction, base: EffectiveSpeedLimitState
+    ) -> (applied: Bool, effectiveState: EffectiveSpeedLimitState) {
+        switch action { case .maximumSpeedEnd, .allRestrictionsEnd: break; default: return (false,lastEffectiveState) }
+        guard !base.isUserCorrection else { return (false,base) }
+        let resolution=reduce(action:action,base:base,conditional:false,fallbackSpeedLimitAfterEnd:base.value)
+        guard resolution.applied else { return (false,assertion?.effectiveState ?? base) }
+        if rules.posted == nil, (rules.zone != nil || rules.city != nil || rules.pedestrian),
+           var enclosing=inventoryEnclosingAssertion, enclosing.effectiveState.value == resolution.value {
+            enclosing.effectiveState=EffectiveSpeedLimitState(value:resolution.value,source:.camera,
+                presentationReason:"inventory_end_preserved_camera_enclosure",hasCameraEvidenceMarker:true)
+            enclosing.postedExpired=true
+            assertion=enclosing;activePassage=enclosing.passage
+            lastEffectiveState=enclosing.effectiveState
+            return (true,lastEffectiveState)
+        }
+        return (true,clear(base:base))
     }
 
     mutating func resolve(

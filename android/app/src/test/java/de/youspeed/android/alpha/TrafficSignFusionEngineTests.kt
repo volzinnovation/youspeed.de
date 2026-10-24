@@ -200,8 +200,8 @@ class TrafficSignFusionEngineTests {
         assertEquals(firstResult.candidate?.trackId, result.candidate?.trackId)
         assertEquals(best.candidate.boundingBox, result.bestCropBoundingBox)
         assertEquals("frame-3-assembly-1", result.candidate?.assemblyId)
-        assertEquals(TrafficSignConditionState.NONE, result.candidate?.conditionState)
-        assertTrue(result.candidate?.restrictions.orEmpty().isEmpty())
+        assertEquals(TrafficSignConditionState.UNRESOLVED, result.candidate?.conditionState)
+        assertEquals(listOf(wet),result.candidate?.restrictions)
     }
 
     @Test

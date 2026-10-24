@@ -19,11 +19,11 @@ internal object DrivingControlPosturePolicy {
         screenAngleDegrees != null && screenAngleDegrees.isFinite() &&
             screenAngleDegrees >= 0.0 && screenAngleDegrees <= 10.0 + 1e-9
 
-    /** At 4 km/h or above with GPS, unknown posture cannot establish a flat phone. */
+    /** A face-up desk posture keeps navigation usable at every reported speed. */
     fun controlsAllowed(speedControlsAllowed: Boolean, screenAngleDegrees: Double?,
         speedKmh: Double = 20.0, hasSignal: Boolean = true): Boolean =
-        !hasSignal || (speedKmh.isFinite() && speedKmh >= 0.0 && speedKmh < 4.0) ||
-            (speedControlsAllowed && isFlat(screenAngleDegrees))
+        isFlat(screenAngleDegrees) || !hasSignal ||
+            (speedKmh.isFinite() && speedKmh >= 0.0 && speedKmh < 4.0)
 
     fun hasSignal(observedAt: Instant?, accuracy: Double?, now: Instant): Boolean =
         observedAt != null && accuracy != null && accuracy.isFinite() && accuracy >= 0.0 && accuracy < 60.0 &&

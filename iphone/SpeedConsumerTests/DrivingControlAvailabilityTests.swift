@@ -66,11 +66,15 @@ final class DrivingControlAvailabilityTests: XCTestCase {
         XCTAssertNil(result.stationaryObservedAt)
     }
 
-    func testControlsRequireFlatPostureAndSpeedPermission() {
+    func testFlatDeskPostureAllowsControlsRegardlessOfSpeedPermission() {
         for angle in [0.0, 5, 10] {
             XCTAssertTrue(DrivingControlPosturePolicy.isFlat(angleDegrees: angle))
             XCTAssertTrue(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: true, angleDegrees: angle))
-            XCTAssertFalse(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: false, angleDegrees: angle))
+            XCTAssertTrue(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: false, angleDegrees: angle))
+            for speed in [21.0, 70, 180, .nan, .infinity] {
+                XCTAssertTrue(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: false, angleDegrees: angle, speedKmh: speed))
+                XCTAssertFalse(DrivingPhotoPolicy.replacesSettings(speedKmh: speed, hasSignal: true, phoneIsFlat: true))
+            }
         }
         for angle in [nil, -1, 10.001, 30, 79, 90, 101, 135, 180, .nan, .infinity] as [Double?] {
             XCTAssertFalse(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: true, angleDegrees: angle))
@@ -95,10 +99,10 @@ final class DrivingControlAvailabilityTests: XCTestCase {
         }
     }
 
-    func testAccelerationInclinesAndStaleGPSCannotUnlockControls() {
+    func testInclinesCannotUseTheFlatDeskOverride() {
         let moving = evaluate(allowed: true, raw: 10, displayed: 36)
         let stale = evaluate(allowed: moving.controlsAllowed, age: 4)
-        for angle in [0.0, 5, 10, 45, 79, 101, 180] {
+        for angle in [10.001, 45, 79, 101, 180] {
             for speed in [moving, stale] {
                 XCTAssertFalse(DrivingControlPosturePolicy.controlsAllowed(speedControlsAllowed: speed.controlsAllowed, angleDegrees: angle))
                 XCTAssertNil(speed.stationaryObservedAt)
@@ -120,9 +124,14 @@ final class DrivingControlAvailabilityTests: XCTestCase {
         model.testSetDrivingControlAngle(0)
         XCTAssertTrue(model.drivingControlsAllowed)
         model.testObserveDrivingControlSpeed(rawMetersPerSecond: 21 / 3.6, displayedKmh: 21)
-        XCTAssertFalse(model.drivingControlsAllowed)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        XCTAssertTrue(model.phoneIsFlat)
+        XCTAssertFalse(model.replacesSettingsWithDrivingPhotoButton)
         model.testSetDrivingControlAngle(5)
-        XCTAssertFalse(model.drivingControlsAllowed)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond: 50, displayedKmh: 180)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        XCTAssertFalse(model.replacesSettingsWithDrivingPhotoButton)
         model.testSetDrivingControlAngle(nil)
         XCTAssertFalse(model.drivingControlsAllowed)
     }

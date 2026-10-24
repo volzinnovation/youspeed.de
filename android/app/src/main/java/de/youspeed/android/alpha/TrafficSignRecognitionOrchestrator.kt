@@ -97,6 +97,7 @@ sealed interface TrafficSignBackendResult {
         val displayDetections: List<TrafficSignDetection> = listOfNotNull(detection),
         val diagnostics: TrafficSignInferenceDiagnostics? = null,
         val collectionFrame: SignCollectionFrame? = null,
+        val collectionCaptureAtUtc: Instant? = null,
         val supplementaryTextRecognition: TrafficSignSupplementaryTextRecognition? = null,
         val supplementaryImageWidth: Int? = null,
         val supplementaryImageHeight: Int? = null,
@@ -149,6 +150,7 @@ data class TrafficSignOrchestrationOutput(
     val annotationEvent: TrafficSignRecognitionEvent? = null,
     val collectionDetections: List<TrafficSignDetection> = emptyList(),
     val collectionFrame: SignCollectionFrame? = null,
+    val collectionCaptureAtUtc: Instant? = null,
     val roadPathDiagnostic: String? = null,
     val ocrPhase: TrafficSignSupplementaryOCRPhase = TrafficSignSupplementaryOCRPhase.NOT_REQUIRED,
     val ocrAnnotation: TrafficSignSupplementaryTextAnnotation? = null,
@@ -580,7 +582,9 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                         result.supplementaryImageWidth ?: active.accepted.frame.widthPixels,
                         result.supplementaryImageHeight ?: active.accepted.frame.heightPixels,
                         thermallyDeferred = supplementaryOCRInFlight || result.supplementaryTextRecognition == null ||
-                            conditionsSnapshot().thermalPressure == TrafficSignThermalPressure.CRITICAL)
+                            conditionsSnapshot().thermalPressure == TrafficSignThermalPressure.CRITICAL,
+                        otherPrimaryBoxes=created.collectionDetections.filter {modelPack.classFor(it.candidate.rawClassId)?.signRole==TrafficSignRole.PRIMARY_SIGN &&
+                            it.candidate.boundingBox.intersectionOverUnion(primary?.boundingBox ?: it.candidate.boundingBox)<.95}.map {it.candidate.boundingBox})
                     if (admission.request != null) supplementaryOCRInFlight = true
                 }
             }
@@ -592,9 +596,9 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                 admission.latestAttempt)
             return
         }
-        // Only the first numeric read gates its initial authority delivery. Pictograms and
-        // later quality improvements publish normal primary evidence immediately.
-        val gatePrimary = pending.attemptNumber == 1 && pending.candidate.numericSupplementarySpeed() != null
+        // Every numeric read waits for its own inspection: a later view can reveal a plate.
+        // Pictograms retain their normal primary delivery while text is refined.
+        val gatePrimary = pending.candidate.numericSupplementarySpeed() != null
         if (gatePrimary) observer.onSupplementaryTextPending(requireNotNull(prepared).event, pending.scope.generation)
         val once = java.util.concurrent.atomic.AtomicBoolean(false)
         val completionLock = Any()
@@ -772,6 +776,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     annotationEvent = created.annotationEvent,
                     collectionDetections = created.collectionDetections,
                     collectionFrame = (backendResult as? TrafficSignBackendResult.Recognition)?.collectionFrame,
+                    collectionCaptureAtUtc = (backendResult as? TrafficSignBackendResult.Recognition)?.collectionCaptureAtUtc,
                     roadPathDiagnostic = created.roadPathDiagnostic,
                     usesDetectorWindow = (backendResult as? TrafficSignBackendResult.Recognition)?.usesDetectorWindow == true,
                     ocrPhase = phase,

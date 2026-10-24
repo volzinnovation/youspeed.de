@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "parser_revision": "de-complete-plate-v1",
+  "cases": [
+    {
+      "raw": "Mo-Fr / 630-1730h",
+      "kind": "schedule",
+      "weekdays": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "start_minute": 390,
+      "end_minute": 1050
+    },
+    {
+      "raw": "22-6h",
+      "kind": "schedule",
+      "weekdays": [],
+      "start_minute": 1320,
+      "end_minute": 360
+    },
+    {
+      "raw": "Lärmschutz / 22-6h",
+      "kind": "schedule",
+      "weekdays": [],
+      "start_minute": 1320,
+      "end_minute": 360
+    },
+    {
+      "raw": "Mo-Fr 22:00–06:00",
+      "kind": "schedule",
+      "weekdays": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "start_minute": 1320,
+      "end_minute": 360
+    },
+    {
+      "raw": "00:00-24:00",
+      "kind": "schedule",
+      "weekdays": [],
+      "start_minute": 0,
+      "end_minute": 1440
+    },
+    {
+      "raw": "bei / Nässe",
+      "kind": "wet",
+      "weekdays": [],
+      "start_minute": null,
+      "end_minute": null
+    },
+    {
+      "raw": "Lärmschutz",
+      "kind": "informational",
+      "weekdays": [],
+      "start_minute": null,
+      "end_minute": null
+    },
+    {
+      "raw": "Schule",
+      "kind": "informational",
+      "weekdays": [],
+      "start_minute": null,
+      "end_minute": null
+    },
+    {
+      "raw": "Mo-Fr / 630-1730h / Kindergarten",
+      "kind": null
+    },
+    {
+      "raw": "Lärmschu",
+      "kind": null
+    },
+    {
+      "raw": "↑5km↑ / Unfall- / strecke",
+      "kind": null
+    },
+    {
+      "raw": "3,5 t / RAPPEL",
+      "kind": null
+    },
+    {
+      "raw": "werktags 7-17h",
+      "kind": null
+    },
+    {
+      "raw": "22-6h außer Sonn- und Feiertage",
+      "kind": null
+    },
+    {
+      "raw": "Mo-Fr 6-17h bei Nässe",
+      "kind": null
+    },
+    {
+      "raw": "bei Nasse",
+      "kind": null
+    },
+    {
+      "raw": "6-6h",
+      "kind": null
+    },
+    {
+      "raw": "24-6h",
+      "kind": null
+    },
+    {
+      "raw": "Fr-Mo 22-6h",
+      "kind": null
+    },
+    {
+      "raw": "22-6h 30",
+      "kind": null
+    },
+    {
+      "raw": "Schule frei",
+      "kind": null
+    },
+    {
+      "raw": "6:75-17h",
+      "kind": null
+    }
+  ]
+}

@@ -296,6 +296,7 @@ data class PanoramaxCaptureMetadata(
     val trafficSignAnnotations: List<PanoramaxTrafficSignAnnotation>? = null,
     val captureReason: String? = null,
     val signEvidence: List<SignCaptureEvidence>? = null,
+    val inventoryEncounterIds: List<String>? = null,
 ) {
     fun validate(now: Instant = capturedAt): List<String> = buildList {
         if (captureId.isBlank()) add("captureId is missing")
@@ -313,6 +314,10 @@ data class PanoramaxCaptureMetadata(
         if (imageWidthPixels != null && imageWidthPixels <= 0) add("image width is invalid")
         if (imageHeightPixels != null && imageHeightPixels <= 0) add("image height is invalid")
         if ((imageWidthPixels == null) != (imageHeightPixels == null)) add("image dimensions are incomplete")
+        if (inventoryEncounterIds?.let { ids -> ids.isEmpty() || ids.size > 64 || ids.distinct().size != ids.size ||
+                ids.any { !it.matches(Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) } } == true) {
+            add("inventory encounter IDs are invalid")
+        }
         if (trafficSignAnnotations?.all(PanoramaxTrafficSignAnnotation::isValid) == false) {
             add("traffic-sign annotation is invalid")
         }

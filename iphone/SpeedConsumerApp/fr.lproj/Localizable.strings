@@ -504,3 +504,42 @@
 "drive_photo.retry" = "Échec de la photo. Touchez pour réessayer";
 "onboarding.dashcam.start_screenshot" = "Écran de conduite : le cercle rouge en bas à gauche démarre la vidéo.";
 "onboarding.dashcam.stop" = "Touchez le carré rouge au même endroit pour arrêter et enregistrer la vidéo. Attendez la fin de l’enregistrement avant d’ouvrir la vidéothèque.";
+
+// Capture activity and offline-sign provenance.
+"capture.tsr.activity.off" = "Désactivée";
+"capture.tsr.activity.running" = "Active";
+"capture.tsr.activity.unavailable" = "Indisponible";
+"capture.tsr.activity.paused_night" = "Pause nocturne";
+"capture.tsr.activity.paused_location" = "Position attendue";
+"capture.tsr.activity.paused_background" = "Pause en arrière-plan";
+"capture.tsr.activity.waiting_drive" = "Trajet attendu";
+"capture.tsr.activity.waiting_recording" = "Enregistrement attendu";
+"capture.tsr.activity.loading_model" = "Chargement du modèle";
+"capture.tsr.status" = "Reconnaissance caméra";
+"capture.tsr.night_description" = "La reconnaissance est sélectionnée et en pause la nuit. Elle reprend de jour. La caméra photo et les panneaux hors ligne restent indépendants.";
+"capture.photo_camera.active" = "Caméra photo active";
+"capture.photo_camera.off" = "Caméra photo désactivée";
+"capture.photo_camera.ready" = "Caméra photo prête";
+"capture.photos.active" = "Photos automatiques actives";
+"capture.photos.selected" = "Photos automatiques sélectionnées";
+"capture.photos.off" = "Photos automatiques désactivées";
+"speed.source.unknown" = "Source de limite inconnue";
+"speed.source.camera" = "Reconnaissance caméra";
+"speed.source.user_correction" = "Votre correction";
+"speed.source.local_correction" = "Correction locale";
+"speed.source.last_known" = "Dernière limite connue";
+"speed.source.osm_tag" = "Limite OSM";
+"speed.source.road_default" = "Limite par défaut";
+"speed.source.inventory_sign" = "Panneau hors ligne";
+"speed.source.inventory_town_context" = "Limite d’agglomération hors ligne";
+"speed.source.inventory_reset_context" = "Fin de restriction hors ligne";
+"speed.source.bundle" = "Données routières hors ligne";
+"inventory.display.persistence" = "Un panneau à moins de 10 m ou une limite d’agglomération à moins de 30 m déclenche l’affichage secondaire. Il reste jusqu’au prochain panneau applicable ou à la fin du trajet. Les photos restent indépendantes ; la proximité ne confirme pas une observation caméra. Les photos doivent être vérifiées.";
+"speed.source.camera_pending" = "Proposition caméra";
+
+/* Upcoming physical speed limit preview. */
+"speed.upcoming.distance" = "dans %d m";
+"speed.upcoming.distance.near" = "dans <10 m";
+"speed.upcoming.distance.accessibility" = "dans %d mètres";
+"speed.upcoming.distance.near.accessibility" = "dans moins de 10 mètres";
+"speed.upcoming.accessibility" = "Limitation à venir, %d kilomètres par heure, %@.";

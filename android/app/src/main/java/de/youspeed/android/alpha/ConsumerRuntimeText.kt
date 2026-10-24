@@ -634,10 +634,10 @@ internal enum class ConsumerRuntimeText(
         "Achtercamera is niet beschikbaar.",
     ),
     CAMERA_ACTIVE(
-        "Camera recognition is active.",
-        "Kamera-Erkennung ist aktiv.",
-        "La reconnaissance par caméra est active.",
-        "Cameraherkenning is actief.",
+        "Camera is active.",
+        "Kamera ist aktiv.",
+        "La caméra est active.",
+        "Camera is actief.",
     ),
     PEDESTRIAN_ZONE(
         "Pedestrian zone",

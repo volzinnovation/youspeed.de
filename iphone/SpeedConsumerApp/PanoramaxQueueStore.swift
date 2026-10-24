@@ -450,7 +450,13 @@ final class PanoramaxQueueStore: @unchecked Sendable {
         try lock.withLock {
             guard var batch = try read(batchID), let index = batch.items.firstIndex(where: { $0.itemID == itemID }) else { throw QueueError.unknownItem }
             batch.items[index].state = state
-            if let remoteID { batch.items[index].remoteID = remoteID }
+            if let remoteID {
+                batch.items[index].remoteID = remoteID
+                if let origin = batch.instanceOrigin, UUID(uuidString: remoteID) != nil, let url = URL(string: origin), url.scheme == "https" {
+                    TripJournal.shared.media(session: batch.captureSessionID, id: itemID, path: origin.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/?pic=" + remoteID, kind: "photo_remote", binding: itemID,
+                        at: batch.items[index].metadata.capturedAt, location: batch.items[index].metadata.location)
+                }
+            }
             try commit(batch)
             return batch
         }

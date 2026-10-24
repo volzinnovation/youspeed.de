@@ -139,22 +139,23 @@ class SettlementContextInstrumentedTest {
         LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC,
     )
 
-    @Test fun residentialAndServiceDefault50WithoutChangingUnknownOrWeakCityContext() {
+    @Test fun residentialEstablishesUrbanLocalityWhileServiceRetainsExistingContext() {
         for (model in matchingModels) for (highway in listOf("residential", "service", " ReSiDeNtIaL ")) {
             for (capability in listOf(null, "1")) {
                 val unknown = lookup(fixture(highway = highway, capability = capability,
                     segments = listOf(row(null, confidence = "unknown"))), model = model)
                 assertEquals("$model $highway", 50, unknown.speedLimitKmh)
                 assertEquals(DerivedSpeedSource.HIGHWAY_CLASS, unknown.speedSource)
-                assertNull(unknown.insideCity)
-                assertEquals("settlement:missing:unknown", unknown.citySource)
+                val residential = highway.trim().equals("residential", ignoreCase = true)
+                assertEquals(if (residential) true else null, unknown.insideCity)
+                assertEquals(if (residential) "settlement:highway_residential:high" else "settlement:missing:unknown", unknown.citySource)
             }
             val weak = lookup(fixture(highway = highway, capability = "1",
                 segments = listOf(row(1, confidence = "low"))), model = model)
             assertEquals(50, weak.speedLimitKmh)
             assertEquals(DerivedSpeedSource.HIGHWAY_CLASS, weak.speedSource)
             assertEquals(true, weak.insideCity)
-            assertEquals("settlement:zone_traffic:low", weak.citySource)
+            assertEquals(if (highway.trim().equals("residential", ignoreCase = true)) "settlement:highway_residential:high" else "settlement:zone_traffic:low", weak.citySource)
         }
     }
 
@@ -189,14 +190,14 @@ class SettlementContextInstrumentedTest {
         }
     }
 
-    @Test fun missingSettlementDoesNotRestoreSuppressedInheritedSpeedTags() {
+    @Test fun residentialDefaultDoesNotPromoteSuppressedInheritedSpeedTags() {
         for (model in matchingModels) for (highway in listOf("residential", "service")) {
             for (tag in listOf("DE:urban", "DE:rural")) {
                 val unknown = lookup(fixture(type = tag, highway = highway, capability = "1",
                     segments = listOf(row(null, confidence = "unknown"))), model = model)
-                assertNull(unknown.speedLimitKmh)
-                assertNull(unknown.insideCity)
-                assertEquals(DerivedSpeedSource.INHERITED_TAG, unknown.speedSource)
+                assertEquals(if (highway == "residential") 50 else null, unknown.speedLimitKmh)
+                assertEquals(if (highway == "residential") true else null, unknown.insideCity)
+                assertEquals(if (highway == "residential") DerivedSpeedSource.HIGHWAY_CLASS else DerivedSpeedSource.INHERITED_TAG, unknown.speedSource)
                 val conflict = lookup(fixture(source = tag, highway = highway, capability = "1",
                     segments = listOf(row(0), row(1))), model = model)
                 assertNull(conflict.speedLimitKmh)

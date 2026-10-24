@@ -54,6 +54,13 @@ internal data class SpeedLookupResult(
     val routeRelationContinuityAvailable: Boolean = false,
     val matchedWayStable: Boolean = true,
     val applicabilityGeometry: TSRMapGeometry? = null,
+    val inventoryBoundaryEvent: String? = null,
+    val inventoryBoundarySignId: String? = null,
+    val inventoryBoundaryAction: TrafficSignAction? = null,
+    val bundleSpeedProvenance: BundleSpeedProvenance? = null,
+    val lookupStageMs: Map<String, Double> = emptyMap(),
+    val upcomingSpeedLimits: UpcomingSpeedLimitSnapshot? = null,
+    val conditionalRuleContext: ConditionalSpeedRules.Reevaluation? = null,
 )
 
 internal data class CityContextLookupResult(
@@ -101,6 +108,7 @@ internal class V3SpeedLimitLookup(
         val generalRtree: Boolean, val tilePrefilter: Boolean)
     private val wayCandidateSql = mutableMapOf<WayQueryShape, String>()
     private val settlementContextResolver = SettlementContextResolver(db)
+    private val upcomingSpeedLimitReader = UpcomingSpeedLimitReader(db, InventorySignSourceScope.allowsMobiData(db, dbPath, this.countryCode))
     private val hasWaysTable = tableExists("ways")
     private val hasAreasTable = tableExists("areas")
     private val hasCityBoundaryTable = tableExists("city_boundary")
@@ -267,6 +275,9 @@ internal class V3SpeedLimitLookup(
         includePresentationDetails: Boolean,
     ): LookupEvaluation {
         val startedAtNs = System.nanoTime()
+        var stageStartedAtNs = startedAtNs
+        val stageMs = linkedMapOf<String, Double>()
+        fun markStage(name: String) { val now = System.nanoTime(); stageMs[name] = (now - stageStartedAtNs) / 1_000_000.0; stageStartedAtNs = now }
         val normalizedMatchContext = normalizedMatchContext(matchContext ?: WayMatchContext())
         val effectiveRadiusM = if (
             matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC
@@ -321,6 +332,7 @@ internal class V3SpeedLimitLookup(
             lat, lon, effectiveRadiusM, maxCandidates, observedHeadingDeg, horizontalAccuracyM, normalizedMatchContext, directionalHeadingDeg,
         )
         val candidates = candidateQuery.admitted
+        markStage("candidate_query_ms")
         // Both bundles are compared over the same footprint. A matcher's narrow
         // window or a sparse accuracy-cap fallback must not change feature density.
         val geographicCandidates = if (includePresentationDetails) emptyList() else {
@@ -367,10 +379,12 @@ internal class V3SpeedLimitLookup(
                 placeCandidates = 0,
             )
         }
+        markStage("city_context_ms")
         val wayLinks = loadWayLinksContext(normalizedMatchContext, candidates)
         val corridorProgress = if (usesCorridorMatcher) loadCorridorProgressContext(candidates) else CorridorProgressContext(false, emptyMap())
         val corridorPairs = if (usesCorridorMatcher) corridorPairContext else CorridorPairContext(false, emptyMap(), emptyMap())
         val accuracyBufferM = scaledAccuracyBufferM(horizontalAccuracyM)
+        markStage("topology_ms")
 
         val selection = selectCandidate(
             candidates = candidates,
@@ -386,18 +400,23 @@ internal class V3SpeedLimitLookup(
             corridorPairs = corridorPairs,
         )
         val best = selection.selected
+        markStage("selection_ms")
         val selectedWayId = normalizedWayId(best?.wayId)
         val matchedWayStable = selectedWayId != null &&
             normalizedMatchContext.matchedFixCount > 0 &&
             normalizedWayId(normalizedMatchContext.preferredWayId) == selectedWayId
         val routeMembership = if (includePresentationDetails) loadRouteRelationMembership(best?.wayId) else emptyMap()
+        val previewMatchStable = matchedWayStable || (includePresentationDetails && upcomingSpeedLimitReader.hasTopology &&
+            normalizedMatchContext.matchedFixCount > 0 && routeMembership.isNotEmpty() &&
+            routeMembership.keys.intersect(loadRouteRelationMembership(normalizedMatchContext.preferredWayId).keys).isNotEmpty())
+        markStage("route_membership_ms")
         // Posted/unlimited limits and road classes with their own explicit defaults
         // do not consult settlement evidence. Probes only need its more expensive
         // residential fallback when it can affect effectiveSpeed below.
         val needsSettlement = includePresentationDetails || (best != null && !best.isUnlimitedSpeedLimit &&
             best.speedSource != DerivedSpeedSource.EXPLICIT_TAG && best.highway?.lowercase() != "living_street" &&
             allowsResidentialAreaFallback(best.highway))
-        val settlement = if (needsSettlement) {
+        val settlement = SettlementContextPolicy.residential(if (needsSettlement) {
             val residential = resolveResidentialContext(lat = lat, lon = lon,
                 areas = areaCandidates ?: queryAreaCandidates(lat = lat, lon = lon))
             settlementContextResolver.resolve(
@@ -407,15 +426,20 @@ internal class V3SpeedLimitLookup(
             )
         } else {
             SettlementContext.unknown()
-        }
+        }, best?.highway)
         val region = if (RoadSpeedDefaults.country(countryCode) == "BE") regulationRegion?.invoke(lat, lon) else null
-        val effectiveSpeed = when {
+        // A residential default does not verify a symbolic tag that settlement
+        // v1 deliberately left unresolved; keep both its value and provenance derived.
+        val residentialDefault = best?.speedSource == DerivedSpeedSource.INHERITED_TAG &&
+            settlement.source == "highway_residential" && RoadSpeedDefaults.country(countryCode ?: "DE") == "DE"
+        val osmSpeed = when {
             best == null || best.isUnlimitedSpeedLimit -> null
             best.speedSource == DerivedSpeedSource.DIRECTIONAL_UNRESOLVED -> null
             best.speedSource == DerivedSpeedSource.EXPLICIT_TAG -> best.speedLimitKmh
             best.highway?.lowercase() == "living_street" -> best.speedLimitKmh
             !allowsResidentialAreaFallback(best.highway) -> best.speedLimitKmh
             settlement.source == "conflict" -> null
+            residentialDefault -> RoadSpeedDefaults.speedKmh(countryCode ?: "DE", region, best.highway, true)
             best.speedSource == DerivedSpeedSource.INHERITED_TAG -> best.speedLimitKmh.takeIf { RoadSpeedDefaults.country(countryCode ?: "DE") != "DE" || settlement.isHighConfidence }
             settlement.isHighConfidence || (RoadSpeedDefaults.country(countryCode) == "FR" && settlement.confidence == "low") ->
                 RoadSpeedDefaults.speedKmh(countryCode ?: "DE", region, best.highway, settlement.insideCity)
@@ -423,6 +447,18 @@ internal class V3SpeedLimitLookup(
                 best.highway?.trim()?.lowercase() in setOf("residential", "service") -> RoadSpeedDefaults.speedKmh(countryCode ?: "DE", region, best.highway, true)
             else -> null
         }
+        val conditionalOffer = best?.wayId?.let { way ->
+            ConditionalSpeedRules.resolve(db, way, when (resolveTravelDirection(
+                SettlementContextPolicy.reliableHeading(headingDeg, speedKmh, headingAccuracyDeg), best.localHeadingDeg)) {
+                TrafficSignTravelDirection.FORWARD -> 1
+                TrafficSignTravelDirection.REVERSE -> -1
+                else -> null
+            }, osmSpeed, best.isUnlimitedSpeedLimit, countryCode = countryCode)
+        }
+        val effectiveSpeed = if (conditionalOffer != null) conditionalOffer.kmh else osmSpeed
+        markStage("settlement_context_ms")
+        val presentationGeometry = if (includePresentationDetails) applicabilityGeometry(best, candidates, wayLinks) else null
+        markStage("presentation_geometry_ms")
 
         return LookupEvaluation(SpeedLookupResult(
             wayId = best?.wayId,
@@ -431,7 +467,8 @@ internal class V3SpeedLimitLookup(
             streetBaseName = best?.streetBaseName,
             streetRef = best?.streetRef,
             speedLimitKmh = effectiveSpeed,
-            isUnlimitedSpeedLimit = best?.isUnlimitedSpeedLimit == true,
+            conditionalRuleContext = conditionalOffer?.reevaluation,
+            isUnlimitedSpeedLimit = conditionalOffer?.unlimited ?: (best?.isUnlimitedSpeedLimit == true),
             cityName = cityContext.cityName,
             cityPlaceName = cityContext.cityPlaceName,
             cityDistrictName = cityContext.cityDistrictName,
@@ -457,7 +494,7 @@ internal class V3SpeedLimitLookup(
             miniHMMCandidateCount = selection.miniHMMCandidateCount,
             matchHypotheses = selection.matchHypotheses,
             selectionTrace = selection.selectionTrace,
-            speedSource = best?.speedSource ?: DerivedSpeedSource.NONE,
+            speedSource = if (residentialDefault) DerivedSpeedSource.HIGHWAY_CLASS else best?.speedSource ?: DerivedSpeedSource.NONE,
             // Matching may deliberately ignore heading at walking speed, but
             // TSR direction can still use a valid sensor/displacement bearing.
             travelDirection = resolveTravelDirection(
@@ -468,7 +505,12 @@ internal class V3SpeedLimitLookup(
             sourceRelationIds = routeMembership.values.filterNotNull().toSet(),
             routeRelationContinuityAvailable = routeRelationContinuityAvailable,
             matchedWayStable = matchedWayStable,
-            applicabilityGeometry = if (includePresentationDetails) applicabilityGeometry(best, candidates, wayLinks) else null,
+            applicabilityGeometry = presentationGeometry,
+            upcomingSpeedLimits = if (includePresentationDetails) upcomingSpeedLimitReader.read(
+                lat, lon, best?.wayId, when (resolveTravelDirection(headingDeg, best?.localHeadingDeg)) {
+                    TrafficSignTravelDirection.FORWARD -> 1; TrafficSignTravelDirection.REVERSE -> -1; else -> 0
+                }, previewMatchStable, horizontalAccuracyM, headingDeg, headingAccuracyDeg, routeMembership.keys, speedKmh) else null,
+            lookupStageMs = stageMs,
         ), geographicCandidateCount = geographicCandidates.size,
             geographicSpeedCandidateCount = geographicCandidates.count { it.hasSpeedEvidence })
     }
@@ -1436,9 +1478,9 @@ internal class V3SpeedLimitLookup(
             """
             SELECT way_id, linked_way_id, $sharedRefSelect, $sharedNodeSelect
             FROM way_links
-            WHERE way_id IN ($placeholders) OR linked_way_id IN ($placeholders)
+            WHERE way_id IN ($placeholders)
             """.trimIndent(),
-            (wayIds.toList() + wayIds.toList()).toTypedArray(),
+            wayIds.toTypedArray(),
         ).use { cursor ->
             while (cursor.moveToNext()) {
                 val from = cursor.stringOrNull(0) ?: continue

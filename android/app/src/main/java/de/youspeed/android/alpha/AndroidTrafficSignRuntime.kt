@@ -240,6 +240,12 @@ internal class CameraXTrafficSignFrame(
     private val pathCaptureSeconds = capturedAtUtc.toEpochMilli() / 1000.0 -
         if (pathClockKnown) (android.os.SystemClock.elapsedRealtimeNanos() - image.imageInfo.timestamp) / 1e9 else 0.0
 
+    // Keep collection on the camera clock; receipt and inference time are independent.
+    val collectionCaptureAtUtc: Instant? = if (pathClockKnown &&
+        capturedAtUtc.toEpochMilli()/1000.0 - pathCaptureSeconds in 0.0..1.5)
+        Instant.ofEpochSecond(kotlin.math.floor(pathCaptureSeconds).toLong(),
+            ((pathCaptureSeconds-kotlin.math.floor(pathCaptureSeconds))*1_000_000_000).toLong()) else null
+
     var preparedRoadPath: RoadPathPreparedFrame? = null
     var roadPathPreparationFailure: String? = null
     var roadPathInferenceStartedNanos: Long? = null
@@ -765,10 +771,12 @@ internal class AndroidLiteRtTrafficSignBackend(
             runCatching {
                 frame.withOrientedBitmap(rotationBuffer) { bitmap ->
                     val conversionMs = (System.nanoTime() - conversionStartedAtNanos) / 1_000_000.0
-                    // All recognition consumers use the same fixed mobile window.
-                    // No full-frame coordinate mapping is needed.
+                    // Detection uses a fixed tensor; auxiliary reads use the same normalized
+                    // right-hand window at original resolution, never upscaled OCR evidence.
                     val inference = engine.recognizeAllWithDiagnostics(bitmap)
-                    val window = engine.recognitionBitmap
+                    val window = AndroidTrafficSignDetectorInput.nativeWindow(bitmap)
+                    val nativeContent = AndroidTrafficSignDetectorInput.nativeContentRect(bitmap)
+                    try {
                     val detections = inference.detections
                     val verifiedZones = detections.withIndex().filter {
                         it.value.candidate.semantic.kind == TrafficSignSemanticKind.ZONE_START
@@ -778,10 +786,11 @@ internal class AndroidLiteRtTrafficSignBackend(
                     val primary = primaryDetection(detections)
                     val result = TrafficSignBackendResult.Recognition(
                         detection = primary,
-                        supplementaryTextRecognition = AndroidTrafficSignSupplementaryOCR.fromBitmap(window),
+                        supplementaryTextRecognition = AndroidTrafficSignSupplementaryOCR.fromBitmap(window,nativeContent),
                         supplementaryImageWidth = window.width,
                         supplementaryImageHeight = window.height,
                         supplementaryPictogramClassIds = supplementaryPictogramClassIds,
+                        collectionCaptureAtUtc = frame.collectionCaptureAtUtc,
                         collectionFrame = if (detections.isNotEmpty() && cropRequested(detections.map { it.candidate.rawClassId }) && cropFrameOutstanding.compareAndSet(false, true)) {
                             try {
                                 val owned = AndroidTrafficSignDetectorInput.nativeWindow(bitmap)
@@ -822,6 +831,7 @@ internal class AndroidLiteRtTrafficSignBackend(
                     // completion returns; OCR then owns its independent sub-bitmap on its worker.
                     delivered = true
                     completion(result)
+                    } finally { window.recycle() }
                 }
             }.onFailure { failure ->
                 if (!delivered) completion(TrafficSignBackendResult.Unavailable(

@@ -144,4 +144,7 @@
     <string name="ui_driving_photo_unavailable">Photo unavailable</string>
     <string name="ui_driving_photo_local_only">Saves one photo locally for review. Nothing is uploaded.</string>
     <string name="ui_driving_photo_failed">Photo could not be saved. Try again when the camera is ready.</string>
+    <string name="upcoming_limit_distance" tools:ignore="MissingTranslation">in %1$d m</string>
+    <string name="upcoming_limit_distance_near" tools:ignore="MissingTranslation">in &lt;10 m</string>
+    <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Upcoming speed limit, %1$d kilometres per hour, %2$s</string>
 </resources>

@@ -91,7 +91,10 @@ func runCollectionRepeatCropChecks(gate: SignCollectionContractGate, root: URL, 
                 let manifest = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: candidate.observationID, installationID: try store.installationID,
                     epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: candidate.frameAt, localFrameToken: "frame-\(ms)",
                     privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: try store.claim(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure),
-                    vehiclePosition: position)
+                    vehiclePosition: position, cameraViewingDirection: ["azimuth_degrees": 270-Double(ms)/10,
+                        "elevation_degrees": 0, "reference": "true_north", "optical_axis": "rear_camera",
+                        "measured_at": SignCollectionJSON.utc(candidate.frameAt), "frame_measurement_delta_ms": 0,
+                        "accuracy_status": "high", "source": "core_motion_true_north"])
                 try gate.validate(manifest, model: "crop")
                 try store.enqueueAutomaticCrop(metadata: manifest, bytes: crop.bytes)
                 manifests.append(manifest); return .stored
@@ -108,10 +111,15 @@ func runCollectionRepeatCropChecks(gate: SignCollectionContractGate, root: URL, 
               "each crop retains its own course")
     try check((manifests[1]["vehicle_position"] as! [String: Any])["fix_at"] as! String == manifests[1]["source_frame_at"] as! String,
               "crop position fix is associated with its own frame")
+    try check(manifests.allSatisfy { $0["device_id"] as? String == (try? store.installationID) }, "each crop has device identity")
+    try check((manifests[0]["camera_viewing_direction"] as! [String: Any])["azimuth_degrees"] as! Double == 260 &&
+              (manifests[1]["camera_viewing_direction"] as! [String: Any])["azimuth_degrees"] as! Double == 210,
+              "repeated crops retain their own camera direction independently of driving course")
     for _ in 0..<2 {
         let next = try store.nextCrop()!
         let queued = try SignCollectionJSON.parse(next.metadata) as! [String: Any]
         let original = manifests.first { $0["crop_id"] as? String == next.id }!
+        try check(SignCollectionJSON.canonical(queued["camera_viewing_direction"]!) == SignCollectionJSON.canonical(original["camera_viewing_direction"]!), "queued camera direction stays immutable")
         try check(try SignCollectionJSON.canonical(queued["vehicle_position"]!) == SignCollectionJSON.canonical(original["vehicle_position"]!),
                   "durable queue preserves crop coordinates and course")
         try store.finishBestEffortCrop(id: next.id)

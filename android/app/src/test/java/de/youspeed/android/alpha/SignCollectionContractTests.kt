@@ -50,8 +50,10 @@ class SignCollectionContractTests {
         val input = JsonArray(listOf(1e23, 1e-6, -0.0, 0.30000000000000004, Double.MIN_VALUE, 1.2345678901234567).map(::JsonPrimitive))
         val result = SignCollectionJson.canonical(input)
         assertEquals("[1e+23,0.000001,0,0.30000000000000004,5e-324,1.2345678901234567]", result)
-        File("/private/tmp/youspeed-collection-results").mkdirs()
-        File("/private/tmp/youspeed-collection-results/kotlin-numbers.json").writeText(result)
+        val outputDirectory = System.getenv("YOUSPEED_COLLECTION_OUTPUT_ROOT")?.let(::File)
+            ?: File(System.getProperty("java.io.tmpdir"), "youspeed-collection-results")
+        check(outputDirectory.isDirectory || outputDirectory.mkdirs())
+        File(outputDirectory, "kotlin-numbers.json").writeText(result)
         val unicode = JsonObject(mapOf("😀" to JsonPrimitive(2), "\uE000" to JsonPrimitive(1)))
         assertEquals("{\"\uE000\":1,\"😀\":2}", SignCollectionJson.canonical(unicode))
     }

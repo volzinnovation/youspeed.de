@@ -106,6 +106,30 @@ class OnboardingInstrumentedTest {
         compose.onNodeWithTag("onboarding-next-button").assertIsEnabled()
     }
 
+    @Test fun optionalJournalSetupPreservesUnsetUntilTheUserChoosesAndDoesNotRequireSaving() {
+        val base=InstrumentationRegistry.getInstrumentation().targetContext
+        val root=File(base.cacheDir,"journal-setup-${java.util.UUID.randomUUID()}").apply {mkdirs()}
+        val preference="journal-setup-${java.util.UUID.randomUUID()}"
+        val context=object:android.content.ContextWrapper(base) {
+            override fun getFilesDir()=root
+            override fun getSharedPreferences(name:String,mode:Int)=base.getSharedPreferences(preference,mode)
+        }
+        val journal=TripJournal(context,false)
+        try {
+            ui.value=ConsumerUiState(onboardingStep=1,preciseLocationGranted=true,panoramaxCaptureEnabled=false);mapReady.value=true
+            render(journal)
+            compose.onNodeWithTag("onboarding-trip-journal-toggle").performScrollTo().assertIsOff()
+            compose.onNodeWithTag("onboarding-next-button").assertIsEnabled().performClick()
+            compose.runOnIdle {assertEquals(1,nextCount);assertEquals(false,journal.configured);assertEquals(false,journal.enabled)}
+            compose.onNodeWithTag("onboarding-trip-journal-toggle").performScrollTo().performClick().assertIsOn()
+            compose.runOnIdle {assertEquals(true,journal.enabled);assertTrue(journal.snapshot().first.isEmpty());assertEquals(false,ui.value.panoramaxCaptureEnabled);assertEquals(false,ui.value.trafficSignRecognitionEnabled)}
+            compose.onNodeWithTag("onboarding-trip-journal-toggle").performClick().assertIsOff()
+            compose.runOnIdle {assertEquals(true,journal.configured);assertEquals(false,journal.enabled)}
+            val pictures=File(base.filesDir,"journal-setup-validation").apply {mkdirs()}
+            compose.onRoot().captureToImage().asAndroidBitmap().let {bitmap->File(pictures,"optional-journal-setup.png").outputStream().use {bitmap.compress(Bitmap.CompressFormat.PNG,100,it)}}
+        } finally {journal.close();base.deleteSharedPreferences(preference);root.deleteRecursively()}
+    }
+
     @Test fun everyStepRendersWithReachableNavigation() {
         ui.value = ConsumerUiState(preciseLocationGranted = true)
         mapReady.value = true
@@ -137,7 +161,7 @@ class OnboardingInstrumentedTest {
         compose.onNodeWithTag("onboarding-next-button").assertIsEnabled()
     }
 
-    private fun render() {
+    private fun render(journal:TripJournal?=null) {
         compose.setContent {
             MaterialTheme {
                 Surface(color = Color.Black) {
@@ -156,6 +180,7 @@ class OnboardingInstrumentedTest {
                         onRecognitionEnabled = { ui.value = ui.value.copy(trafficSignRecognitionEnabled = it) },
                         onIndependentRecognitionEnabled = { ui.value = ui.value.copy(trafficSignRecognitionIndependentEnabled = it) },
                         onPanoramaxEnabled = { ui.value = ui.value.copy(panoramaxCaptureEnabled = it) },
+                        journalOption = {if(journal!=null) TripJournalSetupOption(journal)},
                     )
                 }
             }

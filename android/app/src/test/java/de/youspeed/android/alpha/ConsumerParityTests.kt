@@ -136,6 +136,19 @@ class ConsumerParityTests {
     }
 
     @Test
+    fun selectedConditionalVersionCannotLoseToAnOlderScalarCopy() {
+        val selected=LocalBundleRoute("baden-wuerttemberg","2026-10-23-v1.5-journal-conditional","DEU","/conditional.sqlite")
+        val old=selected.copy(bundleVersion="2026-10-23-v1.5-lookahead",dbPath="/old.sqlite")
+        val unknown=BundleRouteProbe(selected,true,false,0.0,null,1,0)
+        val flattened=BundleRouteProbe(old,true,true,0.0,0.0,100,100)
+        assertEquals(selected,BundleRouteSelection.choose(listOf(unknown,flattened),selected.dbPath,listOf(selected,old)))
+        assertNull(BundleRouteSelection.choose(listOf(flattened),selected.dbPath,listOf(selected,old)))
+        val adjacent=LocalBundleRoute("alsace","v1","FRA","/alsace.sqlite")
+        val border=BundleRouteProbe(adjacent,true,true,0.0,0.0,2,1)
+        assertEquals(adjacent,BundleRouteSelection.choose(listOf(unknown,flattened,border),selected.dbPath,listOf(selected,old,adjacent)))
+    }
+
+    @Test
     fun bundleRouteCoverageGapNeverUsesActiveDatabase() {
         val active = LocalBundleRoute("switzerland", "v2", "CHE", "/ch.sqlite", "a".repeat(64))
         val probe = BundleRouteProbe(active, true, true, 0.0, 0.0)
