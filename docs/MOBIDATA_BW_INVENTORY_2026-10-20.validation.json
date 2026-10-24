@@ -1,0 +1,873 @@
+{
+  "base_database": "mapdata/dist-v3/baden-wuerttemberg-settlement-pilot/speeds_v3.sqlite",
+  "inventory_database": "mapdata/dist-v3/baden-wuerttemberg-inventory/speeds_v3.sqlite",
+  "tables": {
+    "areas": {
+      "rows": 144334,
+      "base_sha256": "fcf3dedc015bb4dd4badf51135d9500e12cebfa99ce78f918e99bb6a5096f1eb",
+      "inventory_sha256": "fcf3dedc015bb4dd4badf51135d9500e12cebfa99ce78f918e99bb6a5096f1eb",
+      "identical": true
+    },
+    "areas_rtree": {
+      "rows": 144334,
+      "base_sha256": "ce0be5619fff3fec5ae1955b37bdf1d320b43ac983f167f853d65eab3b388dfc",
+      "inventory_sha256": "ce0be5619fff3fec5ae1955b37bdf1d320b43ac983f167f853d65eab3b388dfc",
+      "identical": true
+    },
+    "areas_rtree_node": {
+      "rows": 4356,
+      "base_sha256": "1f2bf3ada94074702b88d65f2c96ddf44a2558e68b9c578ec4af908e6f46237e",
+      "inventory_sha256": "1f2bf3ada94074702b88d65f2c96ddf44a2558e68b9c578ec4af908e6f46237e",
+      "identical": true
+    },
+    "areas_rtree_parent": {
+      "rows": 4355,
+      "base_sha256": "5ccaaa7477acaaa8410f949701cdc67676131b00817fc46720106ad30d5392f0",
+      "inventory_sha256": "5ccaaa7477acaaa8410f949701cdc67676131b00817fc46720106ad30d5392f0",
+      "identical": true
+    },
+    "areas_rtree_rowid": {
+      "rows": 144334,
+      "base_sha256": "280293813d773aa75802ca1e5ace5ce86d4cbf1074f91b2b854bad224f6c9cac",
+      "inventory_sha256": "280293813d773aa75802ca1e5ace5ce86d4cbf1074f91b2b854bad224f6c9cac",
+      "identical": true
+    },
+    "city_boundary": {
+      "rows": 2857,
+      "base_sha256": "899bd5da05e97ffcc769861b05307c60218ed621385c343748c1e670eff37b20",
+      "inventory_sha256": "899bd5da05e97ffcc769861b05307c60218ed621385c343748c1e670eff37b20",
+      "identical": true
+    },
+    "city_boundary_rtree": {
+      "rows": 2857,
+      "base_sha256": "296cf23f5c0839c9ef1466cbe0e6a672064e1ed419cc1402846cd180415fdfc2",
+      "inventory_sha256": "296cf23f5c0839c9ef1466cbe0e6a672064e1ed419cc1402846cd180415fdfc2",
+      "identical": true
+    },
+    "city_boundary_rtree_node": {
+      "rows": 83,
+      "base_sha256": "8444346e2ea7ac0dea45fab74032e1585e0b08417880034ffaee716bfe7ae285",
+      "inventory_sha256": "8444346e2ea7ac0dea45fab74032e1585e0b08417880034ffaee716bfe7ae285",
+      "identical": true
+    },
+    "city_boundary_rtree_parent": {
+      "rows": 82,
+      "base_sha256": "31096d91a29a0358d70fb6211e2bb80045bbf76f26c4292d1179e05e94ea0775",
+      "inventory_sha256": "31096d91a29a0358d70fb6211e2bb80045bbf76f26c4292d1179e05e94ea0775",
+      "identical": true
+    },
+    "city_boundary_rtree_rowid": {
+      "rows": 2857,
+      "base_sha256": "598e103e827eb57aed8ec964e29c26c7f100376a6e699409c46fe99ff7253e29",
+      "inventory_sha256": "598e103e827eb57aed8ec964e29c26c7f100376a6e699409c46fe99ff7253e29",
+      "identical": true
+    },
+    "city_place": {
+      "rows": 8745,
+      "base_sha256": "e716a9685c603bb3e47404701adfc140fd3cf10a82b2a6aab7a550ec31fef642",
+      "inventory_sha256": "e716a9685c603bb3e47404701adfc140fd3cf10a82b2a6aab7a550ec31fef642",
+      "identical": true
+    },
+    "city_place_rtree": {
+      "rows": 8745,
+      "base_sha256": "a3a0f53f9f86304acc0e67164385e2a17bc68a4ce48388a93e3715fe47e354ce",
+      "inventory_sha256": "a3a0f53f9f86304acc0e67164385e2a17bc68a4ce48388a93e3715fe47e354ce",
+      "identical": true
+    },
+    "city_place_rtree_node": {
+      "rows": 255,
+      "base_sha256": "97ca8f5556a15fde51987c29c549f28aa0669ee5a9e895dedd96749e61a05f77",
+      "inventory_sha256": "97ca8f5556a15fde51987c29c549f28aa0669ee5a9e895dedd96749e61a05f77",
+      "identical": true
+    },
+    "city_place_rtree_parent": {
+      "rows": 254,
+      "base_sha256": "99cfe210ed75bddd53d42e9687987a612c1de8bcb798decda987059d8c11c93f",
+      "inventory_sha256": "99cfe210ed75bddd53d42e9687987a612c1de8bcb798decda987059d8c11c93f",
+      "identical": true
+    },
+    "city_place_rtree_rowid": {
+      "rows": 8745,
+      "base_sha256": "641737aaed0afcd066caf0a621c049c23290bdd52b021746582be626ce9b4faf",
+      "inventory_sha256": "641737aaed0afcd066caf0a621c049c23290bdd52b021746582be626ce9b4faf",
+      "identical": true
+    },
+    "city_ring": {
+      "rows": 3403,
+      "base_sha256": "9391e39181e4f7904ead160819af1149f23e9a1fac5dda9394ad28dfb8ee3da6",
+      "inventory_sha256": "9391e39181e4f7904ead160819af1149f23e9a1fac5dda9394ad28dfb8ee3da6",
+      "identical": true
+    },
+    "city_tile": {
+      "rows": 37949,
+      "base_sha256": "032321061ddfd95f4a19376002290b4dc82a12708410ed8f687ba04e874a3eed",
+      "inventory_sha256": "032321061ddfd95f4a19376002290b4dc82a12708410ed8f687ba04e874a3eed",
+      "identical": true
+    },
+    "metadata": {
+      "rows": 36,
+      "base_sha256": "1e60379d417a97e31be4a21b0cb09862ad78fa58594d1fc190de2bc26809b12b",
+      "inventory_sha256": "1e60379d417a97e31be4a21b0cb09862ad78fa58594d1fc190de2bc26809b12b",
+      "identical": true
+    },
+    "motorway_way_network": {
+      "rows": 5931,
+      "base_sha256": "4f245c8908f12785b37616ce57f997bc1cd7ce402edfda402358baabc97145e8",
+      "inventory_sha256": "4f245c8908f12785b37616ce57f997bc1cd7ce402edfda402358baabc97145e8",
+      "identical": true
+    },
+    "motorway_way_network_rtree": {
+      "rows": 5931,
+      "base_sha256": "b3f3fe48b339044c1b07a90ccd30897b9ed5b18aa7804516574060eb39f7d039",
+      "inventory_sha256": "b3f3fe48b339044c1b07a90ccd30897b9ed5b18aa7804516574060eb39f7d039",
+      "identical": true
+    },
+    "motorway_way_network_rtree_node": {
+      "rows": 177,
+      "base_sha256": "b6599b3714fa5ba9e7c4996b65bf0f6d0074e4bf986064f49d9f7015f4eb9d25",
+      "inventory_sha256": "b6599b3714fa5ba9e7c4996b65bf0f6d0074e4bf986064f49d9f7015f4eb9d25",
+      "identical": true
+    },
+    "motorway_way_network_rtree_parent": {
+      "rows": 176,
+      "base_sha256": "63e0eb9836c631fe890b47b18c13b996577e2477be8e892a70bfb13312064205",
+      "inventory_sha256": "63e0eb9836c631fe890b47b18c13b996577e2477be8e892a70bfb13312064205",
+      "identical": true
+    },
+    "motorway_way_network_rtree_rowid": {
+      "rows": 5931,
+      "base_sha256": "936329ab34736fc2c31870acff723e2ec5af86aec02a23dad62eba6f129255c0",
+      "inventory_sha256": "936329ab34736fc2c31870acff723e2ec5af86aec02a23dad62eba6f129255c0",
+      "identical": true
+    },
+    "settlement_area": {
+      "rows": 40188,
+      "base_sha256": "846b267dc6438e0e718091cd024844f20ac4bce2004b7969391d5a190de14e15",
+      "inventory_sha256": "846b267dc6438e0e718091cd024844f20ac4bce2004b7969391d5a190de14e15",
+      "identical": true
+    },
+    "settlement_ring": {
+      "rows": 44226,
+      "base_sha256": "6ebac6afe1eded7f019d396f2bd5c69ccb70367bcf9f597d91129a36e5a26593",
+      "inventory_sha256": "6ebac6afe1eded7f019d396f2bd5c69ccb70367bcf9f597d91129a36e5a26593",
+      "identical": true
+    },
+    "settlement_segment": {
+      "rows": 1294198,
+      "base_sha256": "83741773f6d104ed903fe107876b782e98d02a9f3cd8217a11c3e63c67832596",
+      "inventory_sha256": "83741773f6d104ed903fe107876b782e98d02a9f3cd8217a11c3e63c67832596",
+      "identical": true
+    },
+    "settlement_sign": {
+      "rows": 32886,
+      "base_sha256": "2d0e99b1c95652147519dc62f63f7611ebe1a017c23c6d1cc9ceaeee7f3da86f",
+      "inventory_sha256": "2d0e99b1c95652147519dc62f63f7611ebe1a017c23c6d1cc9ceaeee7f3da86f",
+      "identical": true
+    },
+    "surface_way_network": {
+      "rows": 1077262,
+      "base_sha256": "ff672ff508345870b2f04c0916861204bb962a09bc51ed81ba29a2b38bd5744b",
+      "inventory_sha256": "ff672ff508345870b2f04c0916861204bb962a09bc51ed81ba29a2b38bd5744b",
+      "identical": true
+    },
+    "surface_way_network_rtree": {
+      "rows": 1077262,
+      "base_sha256": "a7ec25c33cfc24a5e05bb4ae3a921cc1401ae34c7161e52a5dd25c7c80045ad9",
+      "inventory_sha256": "a7ec25c33cfc24a5e05bb4ae3a921cc1401ae34c7161e52a5dd25c7c80045ad9",
+      "identical": true
+    },
+    "surface_way_network_rtree_node": {
+      "rows": 32145,
+      "base_sha256": "ca97b27ba860c49a6962cfd0f592068e75d16aa9a34ead52b1de5fda28bcadcd",
+      "inventory_sha256": "ca97b27ba860c49a6962cfd0f592068e75d16aa9a34ead52b1de5fda28bcadcd",
+      "identical": true
+    },
+    "surface_way_network_rtree_parent": {
+      "rows": 32144,
+      "base_sha256": "25813403aa3dfbdd50dfc43037bfa8f2e24790ebe3a3a813e4bda5960219e5ba",
+      "inventory_sha256": "25813403aa3dfbdd50dfc43037bfa8f2e24790ebe3a3a813e4bda5960219e5ba",
+      "identical": true
+    },
+    "surface_way_network_rtree_rowid": {
+      "rows": 1077262,
+      "base_sha256": "704f212a9013362d98e89ace6afa240b23d796b5f8ba227eb17d9772a884b297",
+      "inventory_sha256": "704f212a9013362d98e89ace6afa240b23d796b5f8ba227eb17d9772a884b297",
+      "identical": true
+    },
+    "tunnel_way_network": {
+      "rows": 2597,
+      "base_sha256": "47b025fd9df2e9d18ee32e315fcb32e75ea9af4f33fe662d3a45eba31a1b6040",
+      "inventory_sha256": "47b025fd9df2e9d18ee32e315fcb32e75ea9af4f33fe662d3a45eba31a1b6040",
+      "identical": true
+    },
+    "tunnel_way_network_rtree": {
+      "rows": 2597,
+      "base_sha256": "7887674fd1e4877006b16ee349d6424ac1744f9456fb8d59d4c4f6a65ee5d532",
+      "inventory_sha256": "7887674fd1e4877006b16ee349d6424ac1744f9456fb8d59d4c4f6a65ee5d532",
+      "identical": true
+    },
+    "tunnel_way_network_rtree_node": {
+      "rows": 78,
+      "base_sha256": "7219f5608bd57c440501a43375448b387055c0be1826faf246080372a9d97835",
+      "inventory_sha256": "7219f5608bd57c440501a43375448b387055c0be1826faf246080372a9d97835",
+      "identical": true
+    },
+    "tunnel_way_network_rtree_parent": {
+      "rows": 77,
+      "base_sha256": "b4fa7fab8b776aaebd31d06b77707954a4065813cbec079ac7e6e6e95a368710",
+      "inventory_sha256": "b4fa7fab8b776aaebd31d06b77707954a4065813cbec079ac7e6e6e95a368710",
+      "identical": true
+    },
+    "tunnel_way_network_rtree_rowid": {
+      "rows": 2597,
+      "base_sha256": "afaf6655cf5148d9d5b884dc593f2af4d14834e293a9617abc181b534f8e4371",
+      "inventory_sha256": "afaf6655cf5148d9d5b884dc593f2af4d14834e293a9617abc181b534f8e4371",
+      "identical": true
+    },
+    "way_continuity_group": {
+      "rows": 80196,
+      "base_sha256": "460bb9671df4dcf137c5ef0faa08777694ddf87048059563257b5e16029f2dea",
+      "inventory_sha256": "460bb9671df4dcf137c5ef0faa08777694ddf87048059563257b5e16029f2dea",
+      "identical": true
+    },
+    "way_continuity_membership": {
+      "rows": 495439,
+      "base_sha256": "68cdb23b8cdaebbaccf675e57419e6b26db4d84dd0be9715f2744d8068031c0e",
+      "inventory_sha256": "68cdb23b8cdaebbaccf675e57419e6b26db4d84dd0be9715f2744d8068031c0e",
+      "identical": true
+    },
+    "way_endpoints": {
+      "rows": 1085790,
+      "base_sha256": "1f7eacb926d822658095c38efa3036cc4cd631458f022e2beb1ab7081fbbb063",
+      "inventory_sha256": "1f7eacb926d822658095c38efa3036cc4cd631458f022e2beb1ab7081fbbb063",
+      "identical": true
+    },
+    "way_geom": {
+      "rows": 1085790,
+      "base_sha256": "c8676e9638f4354f8fbafbafd8552dfe7869f0cf0412d8be6edffcc2ee5c5988",
+      "inventory_sha256": "c8676e9638f4354f8fbafbafd8552dfe7869f0cf0412d8be6edffcc2ee5c5988",
+      "identical": true
+    },
+    "ways": {
+      "rows": 1085790,
+      "base_sha256": "415da08412fdc8fa7a66d96c9dcf682d26c38bac057ac654ae96aa2412f9c3d4",
+      "inventory_sha256": "415da08412fdc8fa7a66d96c9dcf682d26c38bac057ac654ae96aa2412f9c3d4",
+      "identical": true
+    },
+    "ways_rtree": {
+      "rows": 1085790,
+      "base_sha256": "c0407d9cb163f95111f668f608f1c6bdc26e0048af31b0bb80ff4e2d90cc6bb3",
+      "inventory_sha256": "c0407d9cb163f95111f668f608f1c6bdc26e0048af31b0bb80ff4e2d90cc6bb3",
+      "identical": true
+    },
+    "ways_rtree_node": {
+      "rows": 32398,
+      "base_sha256": "0267e8f70f389cd665aa76de7d23ae6e8e3b2f22cf2b8803deb6fb9f5907d41e",
+      "inventory_sha256": "0267e8f70f389cd665aa76de7d23ae6e8e3b2f22cf2b8803deb6fb9f5907d41e",
+      "identical": true
+    },
+    "ways_rtree_parent": {
+      "rows": 32397,
+      "base_sha256": "aa41dc0c7a74336b09e5e41d3d33cfc90a2ea3ccc69d0599bbd2359230f8afef",
+      "inventory_sha256": "aa41dc0c7a74336b09e5e41d3d33cfc90a2ea3ccc69d0599bbd2359230f8afef",
+      "identical": true
+    },
+    "ways_rtree_rowid": {
+      "rows": 1085790,
+      "base_sha256": "2881918bdc0fe1059e31dd89ea8b3b49fddab738304bef419cbdaf2d97ae1de9",
+      "inventory_sha256": "2881918bdc0fe1059e31dd89ea8b3b49fddab738304bef419cbdaf2d97ae1de9",
+      "identical": true
+    }
+  },
+  "all_original_tables_identical": true,
+  "original_schema_objects_identical": true,
+  "hash_encoding": "Python pickle protocol 4 of SQLite rows in unchanged natural table order, SHA-256",
+  "inventory_counts": {
+    "DE:101": 1932,
+    "DE:101-15": 164,
+    "DE:101-51": 316,
+    "DE:101-52": 16,
+    "DE:103-10": 459,
+    "DE:103-20": 568,
+    "DE:105-10": 107,
+    "DE:105-20": 118,
+    "DE:112": 414,
+    "DE:114": 463,
+    "DE:117-10": 134,
+    "DE:124": 203,
+    "DE:125": 191,
+    "DE:142-10": 746,
+    "DE:151": 6,
+    "DE:156-10": 148,
+    "DE:205": 432,
+    "DE:206": 1429,
+    "DE:209": 836,
+    "DE:215": 317,
+    "DE:222": 6214,
+    "DE:222-10": 47,
+    "DE:223.1-50": 186,
+    "DE:267": 4460,
+    "DE:274-10": 267,
+    "DE:274-100": 1694,
+    "DE:274-120": 1706,
+    "DE:274-130": 95,
+    "DE:274-20": 703,
+    "DE:274-30": 35423,
+    "DE:274-40": 4196,
+    "DE:274-50": 12981,
+    "DE:274-50[WVZ Rombachtunnel]": 1,
+    "DE:274-60": 3251,
+    "DE:274-70": 19307,
+    "DE:274-80": 3582,
+    "DE:274-90": 70,
+    "DE:276": 6911,
+    "DE:277": 1126,
+    "DE:278": 9769,
+    "DE:280": 440,
+    "DE:282": 1567,
+    "DE:310": 13788,
+    "DE:311": 9312,
+    "DE:325.1": 10,
+    "DE:325.2": 3,
+    "DE:330.1": 1216,
+    "DE:330.2": 994,
+    "DE:331.1": 6,
+    "DE:331.2": 3,
+    "DE:331.2[]": 1,
+    "DE:350-10": 15175,
+    "DE:460-20": 1
+  },
+  "quick_check": [
+    [
+      "ok"
+    ]
+  ],
+  "base_structural_validation": {
+    "counts": {
+      "areas": 144334,
+      "areas_rtree": 144334,
+      "city_boundary": 2857,
+      "city_boundary_rtree": 2857,
+      "city_place": 8745,
+      "city_place_rtree": 8745,
+      "city_ring": 3403,
+      "city_tile": 37949,
+      "motorway_way_network": 5931,
+      "motorway_way_network_rtree": 5931,
+      "settlement_area": 40188,
+      "settlement_ring": 44226,
+      "settlement_segment": 1294198,
+      "settlement_sign": 32886,
+      "surface_way_network": 1077262,
+      "surface_way_network_rtree": 1077262,
+      "tunnel_way_network": 2597,
+      "tunnel_way_network_rtree": 2597,
+      "way_continuity_group": 80196,
+      "way_continuity_membership": 495439,
+      "way_endpoints": 1085790,
+      "way_geom": 1085790,
+      "ways": 1085790,
+      "ways_rtree": 1085790
+    },
+    "db": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v3/baden-wuerttemberg-settlement-pilot/speeds_v3.sqlite",
+    "elapsed_seconds": 44.098,
+    "errors": [
+      {
+        "code": "missing_table",
+        "message": "Missing table: way_links"
+      },
+      {
+        "code": "missing_table",
+        "message": "Missing table: motorway_exit_approach"
+      },
+      {
+        "code": "capability_metadata",
+        "message": "way_links_mode: expected 'shared_endpoint_detailed', found 'none'"
+      },
+      {
+        "code": "capability_metadata",
+        "message": "road_geometry_policy: expected 'source_vertices_v1', found None"
+      },
+      {
+        "code": "capability_metadata",
+        "message": "road_geometry_max_error_m: expected '0', found None"
+      },
+      {
+        "code": "capability_metadata",
+        "message": "motorway_exit_approach_version: expected '1', found None"
+      },
+      {
+        "code": "corridor_mode",
+        "message": "Unknown or missing corridor_progress_mode: None"
+      },
+      {
+        "code": "missing_table",
+        "message": "Missing table: corridor_progress"
+      },
+      {
+        "code": "missing_table",
+        "message": "Missing table: corridor_pairs"
+      },
+      {
+        "code": "source_geometry_coverage",
+        "message": "road_geometry_source_way_count must cover every admitted way"
+      }
+    ],
+    "format": "youspeed.v3.testing-readiness",
+    "geometry_checks": {
+      "areas": {
+        "checked": 144334,
+        "invalid": 0,
+        "nullable_missing": 10595,
+        "unknown_empty": 0
+      },
+      "city_ring": {
+        "checked": 3403,
+        "invalid": 0,
+        "nullable_missing": 0,
+        "unknown_empty": 0
+      },
+      "settlement_ring": {
+        "checked": 44226,
+        "invalid": 0,
+        "nullable_missing": 0,
+        "unknown_empty": 0
+      },
+      "settlement_segment": {
+        "checked": 1294198,
+        "invalid": 0,
+        "nullable_missing": 0,
+        "unknown_empty": 0
+      },
+      "way_geom": {
+        "checked": 1085790,
+        "invalid": 0,
+        "nullable_missing": 0,
+        "unknown_empty": 0
+      }
+    },
+    "manifest": {
+      "bundle_version": "2026-09-14-settlement-pilot",
+      "country_code": "DEU",
+      "created_at_utc": "2026-09-14T15:22:53Z",
+      "min_app_version": "1.1",
+      "path": "/Users/raphaelvolz/Github/youspeed.de/mapdata/bundles/v3/baden-wuerttemberg/2026-09-14-settlement-pilot/baden-wuerttemberg_manifest.json",
+      "region": "baden-wuerttemberg"
+    },
+    "metadata": {
+      "backend": "sqlite_rtree",
+      "city_boundaries": "2857",
+      "city_boundary_admin_levels": "6,8,9",
+      "city_places": "8745",
+      "city_rings": "3403",
+      "city_tile_fallback_boundaries": "0",
+      "city_tile_size_m": "4096",
+      "city_tiles": "37949",
+      "max_city_ring_points": "96",
+      "max_city_tiles": "512",
+      "motorway_way_network_count": "5931",
+      "schema_version": "1",
+      "settlement_context_version": "1",
+      "settlement_country_code": "DE",
+      "settlement_fallback_way_count": "0",
+      "settlement_geometry_tolerance_m": "2.0",
+      "settlement_incomplete_way_count": "0",
+      "settlement_invalid_area_count": "0",
+      "settlement_segment_count": "1294198",
+      "settlement_sign_association_counts": "{\"ambiguous_ways\":665,\"collinear_way_split\":15304,\"direction_unknown\":11962,\"node_membership\":2565,\"unassociated\":2385,\"way_tag_location_unknown\":5}",
+      "settlement_source_way_count": "1085790",
+      "settlement_state_counts": "{\"inside_high\":86448,\"inside_low\":745551,\"outside_high\":38929,\"unknown_unknown\":423270}",
+      "settlement_zero_length_way_count": "0",
+      "source_input_pbf": "mapdata/raw/baden-wuerttemberg-260913.osm.pbf",
+      "source_v1_dist": "mapdata/dist/baden-wuerttemberg-settlement-pilot",
+      "surface_way_network_count": "1077262",
+      "tunnel_way_network_count": "2597",
+      "way_continuity_group_count": "80196",
+      "way_continuity_membership_count": "495439",
+      "way_continuity_mode": "route_relation_connected+same_street_name_connected",
+      "way_continuity_relation_group_count": "4490",
+      "way_continuity_same_name_group_count": "75706",
+      "way_endpoints_count": "1085790",
+      "way_endpoints_mode": "coord_key_length_v1",
+      "way_links_mode": "none",
+      "way_network_mode": "surface_tunnel_motorway_split_v1"
+    },
+    "quick_check": [
+      "ok"
+    ],
+    "ready": false,
+    "require_settlement": true,
+    "scope": "Structural readiness only; not driving accuracy or source-data freshness.",
+    "settlement_evidence_counts": [
+      {
+        "confidence": "unknown",
+        "count": 528,
+        "inside_city": null,
+        "source": "conflict"
+      },
+      {
+        "confidence": "low",
+        "count": 745551,
+        "inside_city": 1,
+        "source": "landuse"
+      },
+      {
+        "confidence": "high",
+        "count": 5516,
+        "inside_city": 0,
+        "source": "maxspeed_type"
+      },
+      {
+        "confidence": "high",
+        "count": 14876,
+        "inside_city": 1,
+        "source": "maxspeed_type"
+      },
+      {
+        "confidence": "unknown",
+        "count": 422742,
+        "inside_city": null,
+        "source": "missing"
+      },
+      {
+        "confidence": "high",
+        "count": 7606,
+        "inside_city": 0,
+        "source": "source_maxspeed"
+      },
+      {
+        "confidence": "high",
+        "count": 20256,
+        "inside_city": 1,
+        "source": "source_maxspeed"
+      },
+      {
+        "confidence": "high",
+        "count": 4474,
+        "inside_city": 0,
+        "source": "traffic_sign"
+      },
+      {
+        "confidence": "high",
+        "count": 5497,
+        "inside_city": 1,
+        "source": "traffic_sign"
+      },
+      {
+        "confidence": "high",
+        "count": 3,
+        "inside_city": 0,
+        "source": "urban_polygon"
+      },
+      {
+        "confidence": "high",
+        "count": 334,
+        "inside_city": 1,
+        "source": "urban_polygon"
+      },
+      {
+        "confidence": "high",
+        "count": 21330,
+        "inside_city": 0,
+        "source": "zone_traffic"
+      },
+      {
+        "confidence": "high",
+        "count": 45485,
+        "inside_city": 1,
+        "source": "zone_traffic"
+      }
+    ],
+    "sha256": "1938df90ffa6b9ff0f5dfb2b4f09c622f4208cb03102fc5fb2c2f5ebc531a183",
+    "warnings": []
+  },
+  "inventory_structural_validation": {
+    "counts": {
+      "areas": 144334,
+      "areas_rtree": 144334,
+      "city_boundary": 2857,
+      "city_boundary_rtree": 2857,
+      "city_place": 8745,
+      "city_place_rtree": 8745,
+      "city_ring": 3403,
+      "city_tile": 37949,
+      "motorway_way_network": 5931,
+      "motorway_way_network_rtree": 5931,
+      "settlement_area": 40188,
+      "settlement_ring": 44226,
+      "settlement_segment": 1294198,
+      "settlement_sign": 32886,
+      "surface_way_network": 1077262,
+      "surface_way_network_rtree": 1077262,
+      "tunnel_way_network": 2597,
+      "tunnel_way_network_rtree": 2597,
+      "way_continuity_group": 80196,
+      "way_continuity_membership": 495439,
+      "way_endpoints": 1085790,
+      "way_geom": 1085790,
+      "ways": 1085790,
+      "ways_rtree": 1085790
+    },
+    "db": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v3/baden-wuerttemberg-inventory/speeds_v3.sqlite",
+    "elapsed_seconds": 39.758,
+    "errors": [
+      {
+        "code": "missing_table",
+        "message": "Missing table: way_links"
+      },
+      {
+        "code": "missing_table",
+        "message": "Missing table: motorway_exit_approach"
+      },
+      {
+        "code": "capability_metadata",
+        "message": "way_links_mode: expected 'shared_endpoint_detailed', found 'none'"
+      },
+      {
+        "code": "capability_metadata",
+        "message": "road_geometry_policy: expected 'source_vertices_v1', found None"
+      },
+      {
+        "code": "capability_metadata",
+        "message": "road_geometry_max_error_m: expected '0', found None"
+      },
+      {
+        "code": "capability_metadata",
+        "message": "motorway_exit_approach_version: expected '1', found None"
+      },
+      {
+        "code": "corridor_mode",
+        "message": "Unknown or missing corridor_progress_mode: None"
+      },
+      {
+        "code": "missing_table",
+        "message": "Missing table: corridor_progress"
+      },
+      {
+        "code": "missing_table",
+        "message": "Missing table: corridor_pairs"
+      },
+      {
+        "code": "source_geometry_coverage",
+        "message": "road_geometry_source_way_count must cover every admitted way"
+      }
+    ],
+    "format": "youspeed.v3.testing-readiness",
+    "geometry_checks": {
+      "areas": {
+        "checked": 144334,
+        "invalid": 0,
+        "nullable_missing": 10595,
+        "unknown_empty": 0
+      },
+      "city_ring": {
+        "checked": 3403,
+        "invalid": 0,
+        "nullable_missing": 0,
+        "unknown_empty": 0
+      },
+      "settlement_ring": {
+        "checked": 44226,
+        "invalid": 0,
+        "nullable_missing": 0,
+        "unknown_empty": 0
+      },
+      "settlement_segment": {
+        "checked": 1294198,
+        "invalid": 0,
+        "nullable_missing": 0,
+        "unknown_empty": 0
+      },
+      "way_geom": {
+        "checked": 1085790,
+        "invalid": 0,
+        "nullable_missing": 0,
+        "unknown_empty": 0
+      }
+    },
+    "manifest": {
+      "bundle_version": "2026-10-20-mobidata-inventory",
+      "country_code": "DEU",
+      "created_at_utc": "2026-10-20T20:39:26Z",
+      "min_app_version": "1.1",
+      "path": "/Users/raphaelvolz/Github/youspeed.de/mapdata/bundles/v3/baden-wuerttemberg/2026-10-20-mobidata-inventory/baden-wuerttemberg_manifest.json",
+      "region": "baden-wuerttemberg"
+    },
+    "metadata": {
+      "backend": "sqlite_rtree",
+      "city_boundaries": "2857",
+      "city_boundary_admin_levels": "6,8,9",
+      "city_places": "8745",
+      "city_rings": "3403",
+      "city_tile_fallback_boundaries": "0",
+      "city_tile_size_m": "4096",
+      "city_tiles": "37949",
+      "max_city_ring_points": "96",
+      "max_city_tiles": "512",
+      "motorway_way_network_count": "5931",
+      "schema_version": "1",
+      "settlement_context_version": "1",
+      "settlement_country_code": "DE",
+      "settlement_fallback_way_count": "0",
+      "settlement_geometry_tolerance_m": "2.0",
+      "settlement_incomplete_way_count": "0",
+      "settlement_invalid_area_count": "0",
+      "settlement_segment_count": "1294198",
+      "settlement_sign_association_counts": "{\"ambiguous_ways\":665,\"collinear_way_split\":15304,\"direction_unknown\":11962,\"node_membership\":2565,\"unassociated\":2385,\"way_tag_location_unknown\":5}",
+      "settlement_source_way_count": "1085790",
+      "settlement_state_counts": "{\"inside_high\":86448,\"inside_low\":745551,\"outside_high\":38929,\"unknown_unknown\":423270}",
+      "settlement_zero_length_way_count": "0",
+      "source_input_pbf": "mapdata/raw/baden-wuerttemberg-260913.osm.pbf",
+      "source_v1_dist": "mapdata/dist/baden-wuerttemberg-settlement-pilot",
+      "surface_way_network_count": "1077262",
+      "tunnel_way_network_count": "2597",
+      "way_continuity_group_count": "80196",
+      "way_continuity_membership_count": "495439",
+      "way_continuity_mode": "route_relation_connected+same_street_name_connected",
+      "way_continuity_relation_group_count": "4490",
+      "way_continuity_same_name_group_count": "75706",
+      "way_endpoints_count": "1085790",
+      "way_endpoints_mode": "coord_key_length_v1",
+      "way_links_mode": "none",
+      "way_network_mode": "surface_tunnel_motorway_split_v1"
+    },
+    "quick_check": [
+      "ok"
+    ],
+    "ready": false,
+    "require_settlement": true,
+    "scope": "Structural readiness only; not driving accuracy or source-data freshness.",
+    "settlement_evidence_counts": [
+      {
+        "confidence": "unknown",
+        "count": 528,
+        "inside_city": null,
+        "source": "conflict"
+      },
+      {
+        "confidence": "low",
+        "count": 745551,
+        "inside_city": 1,
+        "source": "landuse"
+      },
+      {
+        "confidence": "high",
+        "count": 5516,
+        "inside_city": 0,
+        "source": "maxspeed_type"
+      },
+      {
+        "confidence": "high",
+        "count": 14876,
+        "inside_city": 1,
+        "source": "maxspeed_type"
+      },
+      {
+        "confidence": "unknown",
+        "count": 422742,
+        "inside_city": null,
+        "source": "missing"
+      },
+      {
+        "confidence": "high",
+        "count": 7606,
+        "inside_city": 0,
+        "source": "source_maxspeed"
+      },
+      {
+        "confidence": "high",
+        "count": 20256,
+        "inside_city": 1,
+        "source": "source_maxspeed"
+      },
+      {
+        "confidence": "high",
+        "count": 4474,
+        "inside_city": 0,
+        "source": "traffic_sign"
+      },
+      {
+        "confidence": "high",
+        "count": 5497,
+        "inside_city": 1,
+        "source": "traffic_sign"
+      },
+      {
+        "confidence": "high",
+        "count": 3,
+        "inside_city": 0,
+        "source": "urban_polygon"
+      },
+      {
+        "confidence": "high",
+        "count": 334,
+        "inside_city": 1,
+        "source": "urban_polygon"
+      },
+      {
+        "confidence": "high",
+        "count": 21330,
+        "inside_city": 0,
+        "source": "zone_traffic"
+      },
+      {
+        "confidence": "high",
+        "count": 45485,
+        "inside_city": 1,
+        "source": "zone_traffic"
+      }
+    ],
+    "sha256": "33e635306bb8515f994857628f019bfcc34b71b320556e9195905b2c0e6b2ee5",
+    "warnings": []
+  },
+  "unchanged_legacy_errors": true,
+  "coverage": {
+    "same_catalogue_snapshot": "2026-10-11",
+    "counts": [
+      {
+        "class": "DE:310",
+        "within_10m": 1605,
+        "within_25m": 2243,
+        "within_50m": 2538
+      },
+      {
+        "class": "DE:311",
+        "within_10m": 1125,
+        "within_25m": 1556,
+        "within_50m": 1687
+      }
+    ],
+    "total_within_10m": 2730,
+    "total_within_25m": 3799,
+    "total_within_50m": 4225,
+    "denominator": 23100,
+    "distance_method": "Squared local equirectangular distance, metres per latitude degree 111320, longitude scaled by cosine of mean latitude; catalogue positions, not visible signs."
+  },
+  "automated_checks": {
+    "inventory_import_and_build_selection": 7,
+    "bundle_publisher_and_delta": 9,
+    "rebuild_publication_gates": 10,
+    "v3_v4_builder_pipeline": 13,
+    "region_manager_contracts": 6,
+    "inspector_javascript": 85,
+    "failures": 0
+  },
+  "actual_archive_integrity": {
+    "hashed_files_verified": 75,
+    "zip_crc_ok": true,
+    "full_images": 13,
+    "crops": 13,
+    "approved_files": 0
+  },
+  "inventory_rtree_all_rows_present_and_containing": true,
+  "inventory_foreign_key_check": [],
+  "gzip_round_trip_sha256": "33e635306bb8515f994857628f019bfcc34b71b320556e9195905b2c0e6b2ee5",
+  "browser_checks": [
+    "full_regional_database_163504_rows_53_codes",
+    "DE310_municipality_and_group_UUID_search",
+    "DE311_municipality_search",
+    "source_attributes_and_shared_artwork",
+    "map_markers_and_visibility_toggle",
+    "older_database_disables_controls_and_clears_markers_and_details"
+  ]
+}

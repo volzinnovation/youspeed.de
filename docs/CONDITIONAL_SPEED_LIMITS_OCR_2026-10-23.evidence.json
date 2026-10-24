@@ -1,0 +1,705 @@
+{
+  "schema_version": 1,
+  "purpose": "Read-only source evidence for a proposed conditional-speed specification; these annotations are not reviewed runtime rules.",
+  "retrieved_at_utc": "2026-10-22T22:09:19.950567+00:00",
+  "retrieved_on_europe_berlin": "2026-10-23",
+  "query": {
+    "url": "https://panoramax.youspeed.de/api/search",
+    "parameters": {
+      "filter": "\"semantics.youspeed|ocr_source\" = 'plate-ocr-v1'",
+      "limit": 100,
+      "sortby": "-updated"
+    }
+  },
+  "response_sha256": "6b6dd11fd8e1a406c450ba509e3dd734b527996d8ef48b4460a31944d7046acc",
+  "snapshot_counts": {
+    "returned_items": 91,
+    "plate_ocr_annotations": 94,
+    "status": {
+      "unparsed": 14,
+      "informational": 30,
+      "candidate": 50
+    },
+    "evaluation_enabled": {
+      "false": 94
+    }
+  },
+  "scope_note": "One public plate-ocr-v1 query snapshot, with no next link returned. Counts describe annotations, not unique physical signs, coverage, accuracy, or source-image review. General sign-text-v1 OCR and private collection events are outside this count.",
+  "source_image_review_performed": false,
+  "examples": [
+    {
+      "collection_id": "71750bfd-17df-4a62-b11a-ee5e35c8ce36",
+      "item_id": "8e0020b0-b22b-490f-a287-cbcf4ad0b6c6",
+      "annotation_id": "c00223ff-0ea7-58f0-9d91-c4846feb9d17",
+      "item_url": "https://panoramax.youspeed.de/api/collections/71750bfd-17df-4a62-b11a-ee5e35c8ce36/items/8e0020b0-b22b-490f-a287-cbcf4ad0b6c6",
+      "capture_datetime": "2026-10-16T10:44:04.439000+00:00",
+      "parent_sign": "DE:274-30",
+      "raw_text": "Mo-Fr\n630-1730h",
+      "semantics": {
+        "youspeed|conditional_candidate": "30 @ (Mo-Fr 06:30-17:30)",
+        "youspeed|conditional_osm_key": "maxspeed:conditional",
+        "youspeed|conditional_parser": "speed-plate-conditional-v1",
+        "youspeed|conditional_status": "candidate",
+        "youspeed|evaluation_enabled": "false",
+        "youspeed|ocr_attempt": "8e9d297b-850a-40a5-b1ed-04312cc9516c",
+        "youspeed|ocr_evidence": "2b5fd809d9df960b6d5b31b39ac0b37570c40cb963a4ec77cdba69133d5a61bb",
+        "youspeed|ocr_pipeline": "45b69f2470c3ca2809f7e58e99833f777c6448b6d9217b9e20d3baedc9b44177",
+        "youspeed|ocr_source": "plate-ocr-v1",
+        "youspeed|ocr_text": "Mo-Fr\n630-1730h",
+        "youspeed|parent_annotation": "21ce0cc4-3286-45e3-918f-53fe4ab5a739"
+      },
+      "shape": {
+        "coordinates": [
+          [
+            [
+              3447,
+              715
+            ],
+            [
+              3785,
+              715
+            ],
+            [
+              3785,
+              891
+            ],
+            [
+              3447,
+              891
+            ],
+            [
+              3447,
+              715
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "parent_shape": {
+        "coordinates": [
+          [
+            [
+              3436,
+              326
+            ],
+            [
+              3820,
+              326
+            ],
+            [
+              3820,
+              703
+            ],
+            [
+              3436,
+              703
+            ],
+            [
+              3436,
+              326
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "collection_id": "b23c42f0-217d-4a50-96ad-0ed96ab0dbab",
+      "item_id": "efbc0fce-e8f0-4abe-b336-2f2b38a38aae",
+      "annotation_id": "d91d22a6-6d19-5524-bbd0-573a5868f016",
+      "item_url": "https://panoramax.youspeed.de/api/collections/b23c42f0-217d-4a50-96ad-0ed96ab0dbab/items/efbc0fce-e8f0-4abe-b336-2f2b38a38aae",
+      "capture_datetime": "2026-10-19T07:55:11.443000+00:00",
+      "parent_sign": "DE:274-30",
+      "raw_text": "22-6h",
+      "semantics": {
+        "youspeed|conditional_candidate": "30 @ (22:00-06:00)",
+        "youspeed|conditional_osm_key": "maxspeed:conditional",
+        "youspeed|conditional_parser": "speed-plate-conditional-v1",
+        "youspeed|conditional_status": "candidate",
+        "youspeed|evaluation_enabled": "false",
+        "youspeed|ocr_attempt": "be568348-d74b-4893-af12-cfa15360a8ca",
+        "youspeed|ocr_evidence": "fd764b743f18c51f33105b785de89eb8868b397ea4b1e607cfc898f7306f3526",
+        "youspeed|ocr_pipeline": "45b69f2470c3ca2809f7e58e99833f777c6448b6d9217b9e20d3baedc9b44177",
+        "youspeed|ocr_source": "plate-ocr-v1",
+        "youspeed|ocr_text": "22-6h",
+        "youspeed|parent_annotation": "5d162bf1-c977-4bb9-9f36-1152df660f3e"
+      },
+      "shape": {
+        "coordinates": [
+          [
+            [
+              829,
+              1111
+            ],
+            [
+              896,
+              1111
+            ],
+            [
+              896,
+              1150
+            ],
+            [
+              829,
+              1150
+            ],
+            [
+              829,
+              1111
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "parent_shape": {
+        "coordinates": [
+          [
+            [
+              829,
+              1036
+            ],
+            [
+              907,
+              1036
+            ],
+            [
+              907,
+              1111
+            ],
+            [
+              829,
+              1111
+            ],
+            [
+              829,
+              1036
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "collection_id": "994aa2f1-336f-4c60-8309-771124138e2f",
+      "item_id": "03e92c17-732a-4323-8e09-5c5db4de235e",
+      "annotation_id": "2163360f-2981-593e-9d14-1f11575bbe41",
+      "item_url": "https://panoramax.youspeed.de/api/collections/994aa2f1-336f-4c60-8309-771124138e2f/items/03e92c17-732a-4323-8e09-5c5db4de235e",
+      "capture_datetime": "2026-10-14T13:41:58.432000+00:00",
+      "parent_sign": "DE:274-30",
+      "raw_text": "Lärmschutz\n22-6h",
+      "semantics": {
+        "youspeed|conditional_candidate": "30 @ (22:00-06:00)",
+        "youspeed|conditional_osm_key": "maxspeed:conditional",
+        "youspeed|conditional_parser": "speed-plate-conditional-v1",
+        "youspeed|conditional_status": "candidate",
+        "youspeed|evaluation_enabled": "false",
+        "youspeed|ocr_attempt": "2ecb93d8-9e7d-4253-b032-9979a79b227c",
+        "youspeed|ocr_evidence": "d5ed4a4c247fea09eddea09d3f256386bd116599918ec26e8cfb825f74359773",
+        "youspeed|ocr_pipeline": "45b69f2470c3ca2809f7e58e99833f777c6448b6d9217b9e20d3baedc9b44177",
+        "youspeed|ocr_source": "plate-ocr-v1",
+        "youspeed|ocr_text": "Lärmschutz\n22-6h",
+        "youspeed|parent_annotation": "edac89cf-1fbd-4a71-bd57-7b4fbb81b4fc"
+      },
+      "shape": {
+        "coordinates": [
+          [
+            [
+              3518,
+              645
+            ],
+            [
+              3761,
+              645
+            ],
+            [
+              3761,
+              896
+            ],
+            [
+              3518,
+              896
+            ],
+            [
+              3518,
+              645
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "parent_shape": {
+        "coordinates": [
+          [
+            [
+              3514,
+              390
+            ],
+            [
+              3770,
+              390
+            ],
+            [
+              3770,
+              645
+            ],
+            [
+              3514,
+              645
+            ],
+            [
+              3514,
+              390
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "collection_id": "4ec8407b-d2f8-4780-be2a-9e2836c1201a",
+      "item_id": "009e89e8-6a28-460b-a573-23ec4ecc2257",
+      "annotation_id": "c8a37bc3-3e5d-5e8b-9233-f3962e26cb76",
+      "item_url": "https://panoramax.youspeed.de/api/collections/4ec8407b-d2f8-4780-be2a-9e2836c1201a/items/009e89e8-6a28-460b-a573-23ec4ecc2257",
+      "capture_datetime": "2026-10-14T08:52:50.834000+00:00",
+      "parent_sign": "DE:274-120",
+      "raw_text": "bei\nNässe",
+      "semantics": {
+        "youspeed|conditional_candidate": "120 @ (wet)",
+        "youspeed|conditional_osm_key": "maxspeed:conditional",
+        "youspeed|conditional_parser": "speed-plate-conditional-v1",
+        "youspeed|conditional_status": "candidate",
+        "youspeed|evaluation_enabled": "false",
+        "youspeed|ocr_attempt": "d382648b-51f1-4eba-a185-6926a5a54608",
+        "youspeed|ocr_evidence": "32e782603a8d46517e2a7f09f6f59c249f1d48183a9b000add09086abbf3e8cb",
+        "youspeed|ocr_pipeline": "45b69f2470c3ca2809f7e58e99833f777c6448b6d9217b9e20d3baedc9b44177",
+        "youspeed|ocr_source": "plate-ocr-v1",
+        "youspeed|ocr_text": "bei\nNässe",
+        "youspeed|parent_annotation": "3541f851-e904-441a-9dc5-134fb2ef1831"
+      },
+      "shape": {
+        "coordinates": [
+          [
+            [
+              367,
+              959
+            ],
+            [
+              515,
+              959
+            ],
+            [
+              515,
+              1001
+            ],
+            [
+              367,
+              1001
+            ],
+            [
+              367,
+              959
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "parent_shape": {
+        "coordinates": [
+          [
+            [
+              342,
+              563
+            ],
+            [
+              576,
+              563
+            ],
+            [
+              576,
+              782
+            ],
+            [
+              342,
+              782
+            ],
+            [
+              342,
+              563
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "collection_id": "59260499-9b13-4bdc-abfe-58122ea6d7c8",
+      "item_id": "66f4c467-bdd2-4c10-81f6-d6bd40dd7395",
+      "annotation_id": "ce6deb7a-fb5d-5b86-83e9-0535712bfced",
+      "item_url": "https://panoramax.youspeed.de/api/collections/59260499-9b13-4bdc-abfe-58122ea6d7c8/items/66f4c467-bdd2-4c10-81f6-d6bd40dd7395",
+      "capture_datetime": "2026-10-17T15:23:03.174000+00:00",
+      "parent_sign": "DE:274-30",
+      "raw_text": "Mo-Fr\n630-1730h\nKindergarten",
+      "semantics": {
+        "youspeed|conditional_parser": "speed-plate-conditional-v1",
+        "youspeed|conditional_status": "unparsed",
+        "youspeed|evaluation_enabled": "false",
+        "youspeed|ocr_attempt": "aecec18f-06f8-400e-8dbb-b30abdbe70a9",
+        "youspeed|ocr_evidence": "ddb2a57c1c836a86cc9f0d5fc21c9bfe3694a0d16159ca6bb85bfdfade917302",
+        "youspeed|ocr_pipeline": "45b69f2470c3ca2809f7e58e99833f777c6448b6d9217b9e20d3baedc9b44177",
+        "youspeed|ocr_source": "plate-ocr-v1",
+        "youspeed|ocr_text": "Mo-Fr\n630-1730h\nKindergarten",
+        "youspeed|parent_annotation": "54788601-18a9-4c7c-aca5-f710977c08dc"
+      },
+      "shape": {
+        "coordinates": [
+          [
+            [
+              2211,
+              1307
+            ],
+            [
+              2322,
+              1307
+            ],
+            [
+              2322,
+              1425
+            ],
+            [
+              2211,
+              1425
+            ],
+            [
+              2211,
+              1307
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "parent_shape": {
+        "coordinates": [
+          [
+            [
+              2208,
+              1177
+            ],
+            [
+              2328,
+              1177
+            ],
+            [
+              2328,
+              1307
+            ],
+            [
+              2208,
+              1307
+            ],
+            [
+              2208,
+              1177
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "collection_id": "efd72ea4-79a6-4db9-90f3-a370daa0b585",
+      "item_id": "18e7e6be-9bdc-476c-92bf-1efc6466d4c9",
+      "annotation_id": "94a5f081-af09-5816-a0c1-df72584b8755",
+      "item_url": "https://panoramax.youspeed.de/api/collections/efd72ea4-79a6-4db9-90f3-a370daa0b585/items/18e7e6be-9bdc-476c-92bf-1efc6466d4c9",
+      "capture_datetime": "2026-10-21T12:36:41.467000+00:00",
+      "parent_sign": "DE:274-30",
+      "raw_text": "Lärmschutz",
+      "semantics": {
+        "youspeed|conditional_parser": "speed-plate-conditional-v1",
+        "youspeed|conditional_status": "informational",
+        "youspeed|evaluation_enabled": "false",
+        "youspeed|ocr_attempt": "841709db-8f76-4d94-bbe0-d0e2e959f6e4",
+        "youspeed|ocr_evidence": "08b3a2b90b630c4f9eb8f7a64f2265ae2245f2da92f718d108807005ae9688c0",
+        "youspeed|ocr_pipeline": "45b69f2470c3ca2809f7e58e99833f777c6448b6d9217b9e20d3baedc9b44177",
+        "youspeed|ocr_source": "plate-ocr-v1",
+        "youspeed|ocr_text": "Lärmschutz",
+        "youspeed|parent_annotation": "7d3b194f-05af-47ed-afd9-93bf8b362034"
+      },
+      "shape": {
+        "coordinates": [
+          [
+            [
+              2349,
+              1275
+            ],
+            [
+              2484,
+              1275
+            ],
+            [
+              2484,
+              1352
+            ],
+            [
+              2349,
+              1352
+            ],
+            [
+              2349,
+              1275
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "parent_shape": {
+        "coordinates": [
+          [
+            [
+              2344,
+              1127
+            ],
+            [
+              2484,
+              1127
+            ],
+            [
+              2484,
+              1275
+            ],
+            [
+              2344,
+              1275
+            ],
+            [
+              2344,
+              1127
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "collection_id": "47a66010-716a-42f5-b63f-1c805e191ce5",
+      "item_id": "73f0e93a-49f6-4189-9fd7-39b47bd183a9",
+      "annotation_id": "e38b6e2c-58e4-5da7-84f9-f334c0c036e4",
+      "item_url": "https://panoramax.youspeed.de/api/collections/47a66010-716a-42f5-b63f-1c805e191ce5/items/73f0e93a-49f6-4189-9fd7-39b47bd183a9",
+      "capture_datetime": "2026-10-14T14:13:38.490000+00:00",
+      "parent_sign": "DE:274-80",
+      "raw_text": "↑5km↑\nUnfall-\nstrecke",
+      "semantics": {
+        "youspeed|conditional_parser": "speed-plate-conditional-v1",
+        "youspeed|conditional_status": "informational",
+        "youspeed|evaluation_enabled": "false",
+        "youspeed|ocr_attempt": "c02a54e6-9d37-4554-b575-0e3cc0139fb8",
+        "youspeed|ocr_evidence": "25d6cf23e7599b18faf142a601be16359b3b4303708c9019e589b8c75fcb6fbd",
+        "youspeed|ocr_pipeline": "45b69f2470c3ca2809f7e58e99833f777c6448b6d9217b9e20d3baedc9b44177",
+        "youspeed|ocr_source": "plate-ocr-v1",
+        "youspeed|ocr_text": "↑5km↑\nUnfall-\nstrecke",
+        "youspeed|parent_annotation": "5e8f0ea2-1e61-4928-ba8f-b12e940185c9"
+      },
+      "shape": {
+        "coordinates": [
+          [
+            [
+              3141,
+              798
+            ],
+            [
+              3332,
+              798
+            ],
+            [
+              3332,
+              992
+            ],
+            [
+              3141,
+              992
+            ],
+            [
+              3141,
+              798
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "parent_shape": {
+        "coordinates": [
+          [
+            [
+              3102,
+              556
+            ],
+            [
+              3370,
+              556
+            ],
+            [
+              3370,
+              798
+            ],
+            [
+              3102,
+              798
+            ],
+            [
+              3102,
+              556
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "collection_id": "3b6d4e27-177c-4eb6-a299-cb6af68f8533",
+      "item_id": "e834c1bb-3ac0-4640-9565-8aa8aa59b96c",
+      "annotation_id": "69394960-b716-5d7c-8918-b6ecf7cb02fd",
+      "item_url": "https://panoramax.youspeed.de/api/collections/3b6d4e27-177c-4eb6-a299-cb6af68f8533/items/e834c1bb-3ac0-4640-9565-8aa8aa59b96c",
+      "capture_datetime": "2026-10-21T12:37:58.352000+00:00",
+      "parent_sign": "DE:274-30",
+      "raw_text": "Lärmschu",
+      "semantics": {
+        "youspeed|conditional_parser": "speed-plate-conditional-v1",
+        "youspeed|conditional_status": "unparsed",
+        "youspeed|evaluation_enabled": "false",
+        "youspeed|ocr_attempt": "0774b924-6398-4d80-9d67-08b940fa7b72",
+        "youspeed|ocr_evidence": "0a54c4dde1021eead12d2b2c533692cd7c364595e48de80373a0a505f4088f2f",
+        "youspeed|ocr_pipeline": "45b69f2470c3ca2809f7e58e99833f777c6448b6d9217b9e20d3baedc9b44177",
+        "youspeed|ocr_source": "plate-ocr-v1",
+        "youspeed|ocr_text": "Lärmschu",
+        "youspeed|parent_annotation": "4535cfe0-62a7-43b7-924e-ddb383da9eac"
+      },
+      "shape": {
+        "coordinates": [
+          [
+            [
+              2510,
+              1062
+            ],
+            [
+              2748,
+              1062
+            ],
+            [
+              2748,
+              1189
+            ],
+            [
+              2510,
+              1189
+            ],
+            [
+              2510,
+              1062
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "parent_shape": {
+        "coordinates": [
+          [
+            [
+              2492,
+              818
+            ],
+            [
+              2748,
+              818
+            ],
+            [
+              2748,
+              1062
+            ],
+            [
+              2492,
+              1062
+            ],
+            [
+              2492,
+              818
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "collection_id": "a51c7809-78fb-464d-804b-0a570ae9c595",
+      "item_id": "3202b338-ba3c-442d-ac5b-ed729d579452",
+      "annotation_id": "98cd56fd-e70c-5144-ac06-d7c8a68fd09a",
+      "item_url": "https://panoramax.youspeed.de/api/collections/a51c7809-78fb-464d-804b-0a570ae9c595/items/3202b338-ba3c-442d-ac5b-ed729d579452",
+      "capture_datetime": "2026-09-27T16:56:30.789000+00:00",
+      "parent_sign": "FR:B14[80]",
+      "raw_text": "3,5 t\nRAPPEL",
+      "semantics": {
+        "youspeed|conditional_parser": "speed-plate-conditional-v1",
+        "youspeed|conditional_status": "unparsed",
+        "youspeed|evaluation_enabled": "false",
+        "youspeed|ocr_attempt": "85e438a2-cdad-4676-b1b7-0aec53035fb6",
+        "youspeed|ocr_evidence": "4aa2d45457301f6d7e05a1ab2652d0aeec4b51fe6a44582cce1261b8251c3df7",
+        "youspeed|ocr_pipeline": "45b69f2470c3ca2809f7e58e99833f777c6448b6d9217b9e20d3baedc9b44177",
+        "youspeed|ocr_source": "plate-ocr-v1",
+        "youspeed|ocr_text": "3,5 t\nRAPPEL",
+        "youspeed|parent_annotation": "9b568d4e-ccc6-4f7d-b47a-f4511375bc8b"
+      },
+      "shape": {
+        "coordinates": [
+          [
+            [
+              2144,
+              1570
+            ],
+            [
+              2263,
+              1570
+            ],
+            [
+              2263,
+              1645
+            ],
+            [
+              2144,
+              1645
+            ],
+            [
+              2144,
+              1570
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      },
+      "parent_shape": {
+        "coordinates": [
+          [
+            [
+              2144,
+              1444
+            ],
+            [
+              2264,
+              1444
+            ],
+            [
+              2264,
+              1570
+            ],
+            [
+              2144,
+              1570
+            ],
+            [
+              2144,
+              1444
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    }
+  ]
+}

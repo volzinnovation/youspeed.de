@@ -1,0 +1,890 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "YouSpeed Baden Württemberg roadworks API",
+    "version": "0.1.0",
+    "description": "Proposed contract, not a deployed service. Companion: MOBIDATA_BW_ROADWORKS_LIVE_SERVICE_SPEC.md. Stateful location tracking, sign-contribution identity and speed-limit changes are outside this service."
+  },
+  "servers": [
+    {
+      "url": "https://live-eu.woladen.de/youspeed/live/v1",
+      "description": "Proposed production route; not activated by this specification."
+    }
+  ],
+  "security": [],
+  "paths": {
+    "/regions/DE-BW": {
+      "get": {
+        "operationId": "getBwRoadworksManifest",
+        "summary": "Read current generation and source freshness",
+        "parameters": [
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Known region, including delayed or unavailable source state.",
+            "headers": {
+              "ETag": {
+                "description": "Representation-correct validator. Supports If-None-Match.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Manifest"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Cached representation still matches. No body.",
+            "headers": {
+              "ETag": {
+                "description": "Representation-correct validator. Supports If-None-Match.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; retry no earlier than Retry-After.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service cannot read region metadata.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/regions/DE-BW/snapshots/{snapshot_id}": {
+      "get": {
+        "operationId": "getBwRoadworksSnapshot",
+        "summary": "Download an immutable complete region snapshot",
+        "parameters": [
+          {
+            "name": "snapshot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Immutable content; application/geo+json; charset=utf-8. Verify hash after HTTP content decoding.",
+            "headers": {
+              "ETag": {
+                "description": "Representation-correct validator. Supports If-None-Match.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Cached representation still matches. No body.",
+            "headers": {
+              "ETag": {
+                "description": "Representation-correct validator. Supports If-None-Match.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown snapshot hash.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Previously known snapshot expired; refresh manifest.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid hash syntax.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; retry no earlier than Retry-After.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Snapshot storage unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/regions/DE-BW/roadworks/nearby": {
+      "post": {
+        "operationId": "queryNearbyBwRoadworks",
+        "summary": "Optional stateless query for consumers without a statewide cache",
+        "description": "Not used by the proposed iPhone/Android clients. Disable body logging/tracing, retain no coordinates or query history, and return Cache-Control: no-store. Scheduled activity is evaluated by the consumer.",
+        "x-optional": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NearbyQuery"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Spatial results, including a valid empty set.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NearbyResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid coordinates/radius/body.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited; retry no earlier than Retry-After.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No usable accepted generation; inspect region manifest.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Interval": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "additionalProperties": false,
+        "description": "Half-open UTC interval. end must be strictly after start. Serialize timestamps with Z."
+      },
+      "Attribution": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "dataset_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "license_id": {
+            "type": "string",
+            "enum": [
+              "dl-de/by-2-0"
+            ]
+          },
+          "license_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "changes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "dataset_url",
+          "license_id",
+          "license_url",
+          "changes"
+        ],
+        "additionalProperties": false
+      },
+      "Freshness": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "fresh",
+              "delayed",
+              "unknown",
+              "unavailable"
+            ]
+          },
+          "server_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_publication_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "source_modified_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "last_checked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "last_ingested_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "status",
+          "server_time",
+          "source_publication_at",
+          "source_modified_at",
+          "last_checked_at",
+          "last_ingested_at"
+        ],
+        "additionalProperties": false,
+        "description": "See the specification for source-age and check-age thresholds. A successful check or 304 never resets publisher age. Null is unknown, not current."
+      },
+      "Coverage": {
+        "type": "object",
+        "properties": {
+          "region": {
+            "type": "string",
+            "enum": [
+              "DE-BW"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "complete_road_coverage": {
+            "const": false
+          },
+          "autobahn_included": {
+            "const": false
+          }
+        },
+        "required": [
+          "region",
+          "description",
+          "complete_road_coverage",
+          "autobahn_included"
+        ],
+        "additionalProperties": false
+      },
+      "Manifest": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "region": {
+            "type": "string",
+            "enum": [
+              "DE-BW"
+            ]
+          },
+          "feature_enabled": {
+            "type": "boolean"
+          },
+          "snapshot_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "snapshot_path": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Same-origin relative path under /youspeed/live/v1/regions/DE-BW/snapshots/. Null when no accepted generation exists."
+          },
+          "snapshot_bytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 8388608
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          },
+          "attributions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attribution"
+            },
+            "minItems": 1
+          },
+          "next_poll_after_seconds": {
+            "type": "integer",
+            "minimum": 60,
+            "default": 300
+          }
+        },
+        "required": [
+          "schema_version",
+          "region",
+          "feature_enabled",
+          "snapshot_id",
+          "snapshot_path",
+          "snapshot_bytes",
+          "freshness",
+          "coverage",
+          "attributions",
+          "next_poll_after_seconds"
+        ],
+        "additionalProperties": false,
+        "description": "A disabled or source-stale region may still reference a retained snapshot for parked inspection. A null snapshot reference means no accepted generation exists; id/path/bytes must be null together."
+      },
+      "Point": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "Point"
+          },
+          "coordinates": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "WGS84 [longitude, latitude]; finite longitude in [-180,180] and latitude in [-90,90], with BW regional checks."
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "additionalProperties": false
+      },
+      "LineString": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "LineString"
+          },
+          "coordinates": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "WGS84 [longitude, latitude]; finite longitude in [-180,180] and latitude in [-90,90], with BW regional checks."
+            },
+            "minItems": 2,
+            "maxItems": 200000
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "additionalProperties": false
+      },
+      "RoadworkProperties": {
+        "type": "object",
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "revision": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "roadworks",
+              "closure",
+              "unknown"
+            ]
+          },
+          "source_type": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "source_subtype": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 80
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "description_language": {
+            "type": "string",
+            "enum": [
+              "de"
+            ]
+          },
+          "road_label": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "source_direction": {
+            "type": "string",
+            "enum": [
+              "BOTH_DIRECTIONS",
+              "ONE_DIRECTION",
+              "UNKNOWN"
+            ]
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "both",
+              "along_geometry",
+              "unknown"
+            ]
+          },
+          "outer_start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "outer_end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "schedule_status": {
+            "type": "string",
+            "enum": [
+              "resolved",
+              "unknown"
+            ]
+          },
+          "active_intervals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Interval"
+            },
+            "maxItems": 1024
+          },
+          "operator_status": {
+            "type": "string",
+            "enum": [
+              "requested",
+              "approved",
+              "implemented",
+              "unknown"
+            ]
+          },
+          "source_version_time": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "quality_flags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "source_id",
+          "revision",
+          "kind",
+          "source_type",
+          "source_subtype",
+          "description",
+          "description_language",
+          "road_label",
+          "source_direction",
+          "direction",
+          "outer_start",
+          "outer_end",
+          "schedule_status",
+          "active_intervals",
+          "operator_status",
+          "source_version_time",
+          "quality_flags"
+        ],
+        "additionalProperties": false,
+        "description": "active_intervals describe reported schedule eligibility, not verified physical activity. Unknown schedules have no usable active intervals. Resolved intervals are clipped to outer validity and snapshot evaluation_window. Directed applicability is unknown for Points. No speed-limit offer is exposed."
+      },
+      "RoadworkFeature": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "Feature"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^mobidata-bw:bemas:.+",
+            "maxLength": 300
+          },
+          "geometry": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Point"
+              },
+              {
+                "$ref": "#/components/schemas/LineString"
+              }
+            ]
+          },
+          "properties": {
+            "$ref": "#/components/schemas/RoadworkProperties"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "geometry",
+          "properties"
+        ],
+        "additionalProperties": false
+      },
+      "Snapshot": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "const": "FeatureCollection"
+          },
+          "schema_version": {
+            "const": 1
+          },
+          "normalization_version": {
+            "type": "string"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "evaluation_window": {
+            "$ref": "#/components/schemas/Interval"
+          },
+          "attributions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attribution"
+            },
+            "minItems": 1
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoadworkFeature"
+            },
+            "maxItems": 10000
+          }
+        },
+        "required": [
+          "type",
+          "schema_version",
+          "normalization_version",
+          "generated_at",
+          "evaluation_window",
+          "attributions",
+          "features"
+        ],
+        "additionalProperties": false,
+        "description": "Complete immutable region snapshot within its evaluation window. snapshot_id is SHA-256 of these exact uncompressed UTF-8 JSON bytes, so the body does not embed its own hash. Vertex total <=200,000 and decoded size <=8 MiB. Contains reported works and plans, never an assertion that all roads are covered."
+      },
+      "NearbyQuery": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "radius_m": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 10000,
+            "default": 5000
+          }
+        },
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "additionalProperties": false,
+        "description": "Stateless query. Reject non-finite values. No user identity or trace is accepted."
+      },
+      "NearbyItem": {
+        "type": "object",
+        "properties": {
+          "feature": {
+            "$ref": "#/components/schemas/RoadworkFeature"
+          },
+          "distance_m": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "feature",
+          "distance_m"
+        ],
+        "additionalProperties": false
+      },
+      "NearbyResult": {
+        "type": "object",
+        "properties": {
+          "snapshot_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "evaluation_window": {
+            "$ref": "#/components/schemas/Interval"
+          },
+          "attributions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attribution"
+            },
+            "minItems": 1
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NearbyItem"
+            },
+            "maxItems": 200
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "freshness",
+          "evaluation_window",
+          "attributions",
+          "items",
+          "truncated"
+        ],
+        "additionalProperties": false,
+        "description": "Sorted by exact distance to geometry then feature ID. Includes time candidates across evaluation_window; consumers must evaluate intervals. No route/ahead claim. truncated=true means more spatial candidates exist."
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

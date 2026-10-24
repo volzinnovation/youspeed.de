@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "verified_at_utc": "2026-10-21T19:58:52.578759+00:00",
+  "branch": "codex/youspeed-v1.5-mobidata-bw",
+  "status": "installed_verified_settings_readiness_pending_connection",
+  "device": {
+    "model": "iPhone 14 Pro",
+    "os": "iOS 26.6.2",
+    "connection": "USB",
+    "physical_device": true
+  },
+  "app": {
+    "bundle_id": "de.youspeed.SpeedConsumer",
+    "version": "1.5",
+    "build": "10057",
+    "updated_in_place": true,
+    "uninstalled": false,
+    "artifact": "/private/tmp/youspeed-v15-iphone-device-build/Build/Products/Debug-iphoneos/SpeedConsumer.app",
+    "built_app": {
+      "CFBundleIdentifier": "de.youspeed.SpeedConsumer",
+      "CFBundleShortVersionString": "1.5",
+      "CFBundleVersion": "10057",
+      "DTPlatformName": "iphoneos",
+      "MinimumOSVersion": "17.0",
+      "SpeedConsumer_sha256": "3b15f4cfceb6448a4dedc1cb1fa05f48442c1c92c140a8d654f8a4da8a5a102e"
+    },
+    "installed_version_verified": true,
+    "artifact_hash_scope": "The recorded executable hash identifies the device build at installation time. The local build-output path was subsequently reused for a UI-runner build; those newer products were not installed over the normal app.",
+    "current_local_executable_sha256": "ce2fb012206ed3a51f8c4125000dce488c314a8af7224b2162a6b9142ca8fc06",
+    "local_build_output_reused_after_install": true
+  },
+  "bundle": {
+    "region": "baden-wuerttemberg",
+    "version": "2026-10-21-v1.5-runtime",
+    "device_relative_directory": "Library/Application Support/SpeedConsumer/bundles/baden-wuerttemberg-2026-10-21-v1.5-runtime",
+    "full_database_readback": {
+      "bytes": 2122903552,
+      "sha256": "e1a36e56cc4809cc69d2d5161b993eff21a1c08264e8d9300e79ec7546ccd00b",
+      "matches": true
+    },
+    "active_state_readback_matches": true,
+    "activation_written_after_database_verification": true,
+    "runtime_sign_count": 172304,
+    "geofences": {
+      "ordinary_signs_metres": 10,
+      "town_boundaries_metres": 30
+    }
+  },
+  "settings": {
+    "requested_settings": {
+      "youspeed.drive_recorder.tsr_enabled": {
+        "before": true,
+        "after": false,
+        "after_type": "bool"
+      },
+      "youspeed.drive_recorder.tsr_independent_enabled": {
+        "before": true,
+        "after": false,
+        "after_type": "bool"
+      },
+      "youspeed.drive_recorder.tsr_pictogram_enabled": {
+        "before": true,
+        "after": true,
+        "after_type": "bool"
+      },
+      "youspeed.drive_recorder.panoramax_enabled": {
+        "before": false,
+        "after": true,
+        "after_type": "bool"
+      },
+      "youspeed.panoramax.inventory_signs_only": {
+        "before": null,
+        "after": true,
+        "after_type": "bool"
+      },
+      "youspeed.panoramax.recognized_signs_only": {
+        "before": null,
+        "after": false,
+        "after_type": "bool"
+      },
+      "youspeed.debug.logging_enabled": {
+        "before": null,
+        "after": true,
+        "after_type": "bool"
+      }
+    },
+    "other_existing_preferences_changed_keys": [],
+    "original_existing_preference_count": 18,
+    "current_preference_count": 21
+  },
+  "data_preservation": {
+    "app_updated_without_uninstall": true,
+    "old_maps_not_removed": true,
+    "existing_media_not_removed": true,
+    "startup_logs_preserved": true,
+    "other_original_preferences_unchanged": true,
+    "preferences_and_old_active_state_backed_up_locally": true
+  },
+  "physical_ui": {
+    "inspection": "QuickTime Player attached iPhone screen preview; no screen recording",
+    "startup_log_review": "Actual QuickTime preview showed keep-or-delete prompt; existing logs retained; keep-and-continue UI check not yet run.",
+    "normal_dashboard_ready_verified": false,
+    "live_camera_ready_verified": false,
+    "pending_reason": "iPhone disconnected from USB before the bounded UI runner could be installed.",
+    "prepared_test": "InstalledV15ReadinessUITests/testInstalledBWReadinessWithRecognitionOff",
+    "prepared_xctestrun": "/private/tmp/youspeed-v15-iphone-install/installed-v15-readiness.xctestrun",
+    "synthetic_state_used": false
+  },
+  "behavior": {
+    "camera_based_tsr": false,
+    "independent_camera_tsr": false,
+    "secondary_sign_display": true,
+    "inventory_sign_photo_capture": true,
+    "recognized_signs_only_capture": false,
+    "capture_encounters_without_tsr_logged_as": "camera_off",
+    "visual_confirmation_claimed": false,
+    "synthetic_gps_used": false,
+    "real_drive_test_completed": false
+  },
+  "evidence_directory": "/private/tmp/youspeed-v15-iphone-install",
+  "prior_isolated_test_acceptance": "docs/MOBIDATA_BW_V1_5_IPHONE_ACCEPTANCE.json"
+}

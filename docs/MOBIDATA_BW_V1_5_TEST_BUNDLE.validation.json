@@ -1,0 +1,459 @@
+{
+  "format": "youspeed.mobidata.v1.5.validation.1",
+  "base_database": "mapdata/dist-v3/baden-wuerttemberg-inventory/speeds_v3.sqlite",
+  "pilot_database": "mapdata/dist-v3/baden-wuerttemberg-v1.5-mobidata-pilot/speeds_v3.sqlite",
+  "hash_method": "SHA-256 over repr(tuple(row)) + newline, ordered by rowid; schema SQL compared exactly",
+  "tables": {
+    "areas": {
+      "base_rows": 144334,
+      "pilot_rows": 144334,
+      "base_sha256": "35e6033db668d7c0ea206de3eaeb1937c17f6352b13faec2e9cf4477482a839c",
+      "pilot_sha256": "35e6033db668d7c0ea206de3eaeb1937c17f6352b13faec2e9cf4477482a839c",
+      "schema_and_rows_identical": true
+    },
+    "areas_rtree": {
+      "base_rows": 144334,
+      "pilot_rows": 144334,
+      "base_sha256": "5f25691612821630676914d315fc56245ac7311c47bf5164844c0d247c251582",
+      "pilot_sha256": "5f25691612821630676914d315fc56245ac7311c47bf5164844c0d247c251582",
+      "schema_and_rows_identical": true
+    },
+    "areas_rtree_node": {
+      "base_rows": 4356,
+      "pilot_rows": 4356,
+      "base_sha256": "5318fe7ce0e973e231631644cc490a75ce0474a84a11fa050a8d9df00f6dd89c",
+      "pilot_sha256": "5318fe7ce0e973e231631644cc490a75ce0474a84a11fa050a8d9df00f6dd89c",
+      "schema_and_rows_identical": true
+    },
+    "areas_rtree_parent": {
+      "base_rows": 4355,
+      "pilot_rows": 4355,
+      "base_sha256": "b07ea43bc5b1bae98bc2766484df1af30cc7f2b28a070541d37c1d265dc872d6",
+      "pilot_sha256": "b07ea43bc5b1bae98bc2766484df1af30cc7f2b28a070541d37c1d265dc872d6",
+      "schema_and_rows_identical": true
+    },
+    "areas_rtree_rowid": {
+      "base_rows": 144334,
+      "pilot_rows": 144334,
+      "base_sha256": "ba98742c5cb963fcc72fa95002fd1f13752a37dd2d0309a7ca88347d03b7f801",
+      "pilot_sha256": "ba98742c5cb963fcc72fa95002fd1f13752a37dd2d0309a7ca88347d03b7f801",
+      "schema_and_rows_identical": true
+    },
+    "city_boundary": {
+      "base_rows": 2857,
+      "pilot_rows": 2857,
+      "base_sha256": "24b1edd6b67ec59858b8b7ad8adc5d41e8cf55015f2d77a2f488424e8ddc6f0c",
+      "pilot_sha256": "24b1edd6b67ec59858b8b7ad8adc5d41e8cf55015f2d77a2f488424e8ddc6f0c",
+      "schema_and_rows_identical": true
+    },
+    "city_boundary_rtree": {
+      "base_rows": 2857,
+      "pilot_rows": 2857,
+      "base_sha256": "25ea03edded94425e2824f8e1ec8e7a8162cd6780bdf97731e0af9970bd8d844",
+      "pilot_sha256": "25ea03edded94425e2824f8e1ec8e7a8162cd6780bdf97731e0af9970bd8d844",
+      "schema_and_rows_identical": true
+    },
+    "city_boundary_rtree_node": {
+      "base_rows": 83,
+      "pilot_rows": 83,
+      "base_sha256": "762c403c4d1d0918021e6e0bf925dd794011983776572fb91037ed1422123682",
+      "pilot_sha256": "762c403c4d1d0918021e6e0bf925dd794011983776572fb91037ed1422123682",
+      "schema_and_rows_identical": true
+    },
+    "city_boundary_rtree_parent": {
+      "base_rows": 82,
+      "pilot_rows": 82,
+      "base_sha256": "aacc6a2721b3b0c1913075c2dc3b6656bf3e4145420888c46af85cf21e9a06f1",
+      "pilot_sha256": "aacc6a2721b3b0c1913075c2dc3b6656bf3e4145420888c46af85cf21e9a06f1",
+      "schema_and_rows_identical": true
+    },
+    "city_boundary_rtree_rowid": {
+      "base_rows": 2857,
+      "pilot_rows": 2857,
+      "base_sha256": "fca0669c792e37bdae19896b2bfd77c7d62861381e50074d75b672f0ada64606",
+      "pilot_sha256": "fca0669c792e37bdae19896b2bfd77c7d62861381e50074d75b672f0ada64606",
+      "schema_and_rows_identical": true
+    },
+    "city_place": {
+      "base_rows": 8745,
+      "pilot_rows": 8745,
+      "base_sha256": "fe82d5179013bcb157be42b2692c2b3bee77f4fb9c7cb76cbccbad9e4a11e884",
+      "pilot_sha256": "fe82d5179013bcb157be42b2692c2b3bee77f4fb9c7cb76cbccbad9e4a11e884",
+      "schema_and_rows_identical": true
+    },
+    "city_place_rtree": {
+      "base_rows": 8745,
+      "pilot_rows": 8745,
+      "base_sha256": "cd927f5adc82dc6d699297b78a897a4be9a9150dccf2137ede00ff6be89c2631",
+      "pilot_sha256": "cd927f5adc82dc6d699297b78a897a4be9a9150dccf2137ede00ff6be89c2631",
+      "schema_and_rows_identical": true
+    },
+    "city_place_rtree_node": {
+      "base_rows": 255,
+      "pilot_rows": 255,
+      "base_sha256": "cb68276d529c7ead3c20586d2ae0a32b2dc73800531ffc75b2f3a476d740303d",
+      "pilot_sha256": "cb68276d529c7ead3c20586d2ae0a32b2dc73800531ffc75b2f3a476d740303d",
+      "schema_and_rows_identical": true
+    },
+    "city_place_rtree_parent": {
+      "base_rows": 254,
+      "pilot_rows": 254,
+      "base_sha256": "fab37e9fb0b564f9c631245c7eb89ec4c0ccbae327725a56d6e8d7dd434ec13c",
+      "pilot_sha256": "fab37e9fb0b564f9c631245c7eb89ec4c0ccbae327725a56d6e8d7dd434ec13c",
+      "schema_and_rows_identical": true
+    },
+    "city_place_rtree_rowid": {
+      "base_rows": 8745,
+      "pilot_rows": 8745,
+      "base_sha256": "3292e9552fab7bb5b71be7d1d55b187f283d515ab9ddb92c869e916c7395b844",
+      "pilot_sha256": "3292e9552fab7bb5b71be7d1d55b187f283d515ab9ddb92c869e916c7395b844",
+      "schema_and_rows_identical": true
+    },
+    "city_ring": {
+      "base_rows": 3403,
+      "pilot_rows": 3403,
+      "base_sha256": "d33fdd3562850be3e75ceeff7857d518e8e32a6e64faf833d258fb1f90d92c10",
+      "pilot_sha256": "d33fdd3562850be3e75ceeff7857d518e8e32a6e64faf833d258fb1f90d92c10",
+      "schema_and_rows_identical": true
+    },
+    "city_tile": {
+      "base_rows": 37949,
+      "pilot_rows": 37949,
+      "base_sha256": "de12345589ebb64152fd7084001fa0b5f3d2213043b4a8c1efab4648ee8dc87c",
+      "pilot_sha256": "de12345589ebb64152fd7084001fa0b5f3d2213043b4a8c1efab4648ee8dc87c",
+      "schema_and_rows_identical": true
+    },
+    "metadata": {
+      "base_rows": 36,
+      "pilot_rows": 36,
+      "base_sha256": "ce4d3d629014fd1bbc254cb421d2ee927ba35092e0e07ff142f6286c87b0297f",
+      "pilot_sha256": "ce4d3d629014fd1bbc254cb421d2ee927ba35092e0e07ff142f6286c87b0297f",
+      "schema_and_rows_identical": true
+    },
+    "motorway_way_network": {
+      "base_rows": 5931,
+      "pilot_rows": 5931,
+      "base_sha256": "969afb995d6d712eb68db9c8752e8b48cf84e5300a09c863802e0da26834bc8b",
+      "pilot_sha256": "969afb995d6d712eb68db9c8752e8b48cf84e5300a09c863802e0da26834bc8b",
+      "schema_and_rows_identical": true
+    },
+    "motorway_way_network_rtree": {
+      "base_rows": 5931,
+      "pilot_rows": 5931,
+      "base_sha256": "99f2a31e3e19fb75fe0ba69f2fa2d0fc9566bbb5c8ff92683988d3ca92490d76",
+      "pilot_sha256": "99f2a31e3e19fb75fe0ba69f2fa2d0fc9566bbb5c8ff92683988d3ca92490d76",
+      "schema_and_rows_identical": true
+    },
+    "motorway_way_network_rtree_node": {
+      "base_rows": 177,
+      "pilot_rows": 177,
+      "base_sha256": "dc63cd588e4a651678861b957f152237ff613d8b8f73e6b40ae319ffe9e31b2e",
+      "pilot_sha256": "dc63cd588e4a651678861b957f152237ff613d8b8f73e6b40ae319ffe9e31b2e",
+      "schema_and_rows_identical": true
+    },
+    "motorway_way_network_rtree_parent": {
+      "base_rows": 176,
+      "pilot_rows": 176,
+      "base_sha256": "895b6fdd5ce922a40bd60f24d2055508d5038f7da188ab94b0e36e772743edee",
+      "pilot_sha256": "895b6fdd5ce922a40bd60f24d2055508d5038f7da188ab94b0e36e772743edee",
+      "schema_and_rows_identical": true
+    },
+    "motorway_way_network_rtree_rowid": {
+      "base_rows": 5931,
+      "pilot_rows": 5931,
+      "base_sha256": "3755484fce9f99d17c7133a23d75304249eb5aa10adb619a6720ba6451aba638",
+      "pilot_sha256": "3755484fce9f99d17c7133a23d75304249eb5aa10adb619a6720ba6451aba638",
+      "schema_and_rows_identical": true
+    },
+    "settlement_area": {
+      "base_rows": 40188,
+      "pilot_rows": 40188,
+      "base_sha256": "0cf951790505b6872569960de586780b9ce95c660b8e8a1152ed82a92874e732",
+      "pilot_sha256": "0cf951790505b6872569960de586780b9ce95c660b8e8a1152ed82a92874e732",
+      "schema_and_rows_identical": true
+    },
+    "settlement_ring": {
+      "base_rows": 44226,
+      "pilot_rows": 44226,
+      "base_sha256": "122a68793e3c9ac0dd28469281d8ba68d104c03a15b688ffd2e1403bd2b85cd2",
+      "pilot_sha256": "122a68793e3c9ac0dd28469281d8ba68d104c03a15b688ffd2e1403bd2b85cd2",
+      "schema_and_rows_identical": true
+    },
+    "settlement_segment": {
+      "base_rows": 1294198,
+      "pilot_rows": 1294198,
+      "base_sha256": "a3fe87456e585babba5b3580e48c30ba581a036104e53790f270e045659bdfb3",
+      "pilot_sha256": "a3fe87456e585babba5b3580e48c30ba581a036104e53790f270e045659bdfb3",
+      "schema_and_rows_identical": true
+    },
+    "settlement_sign": {
+      "base_rows": 32886,
+      "pilot_rows": 32886,
+      "base_sha256": "ff4ca68c02a813f90db3d5a956032b9f3bb3a88cfb75fbf0365425b529e97236",
+      "pilot_sha256": "ff4ca68c02a813f90db3d5a956032b9f3bb3a88cfb75fbf0365425b529e97236",
+      "schema_and_rows_identical": true
+    },
+    "surface_way_network": {
+      "base_rows": 1077262,
+      "pilot_rows": 1077262,
+      "base_sha256": "f88b7fc643be196fec672d76db24b7b37fb8d0dfedaad7b83eaacc1a0b2c06ec",
+      "pilot_sha256": "f88b7fc643be196fec672d76db24b7b37fb8d0dfedaad7b83eaacc1a0b2c06ec",
+      "schema_and_rows_identical": true
+    },
+    "surface_way_network_rtree": {
+      "base_rows": 1077262,
+      "pilot_rows": 1077262,
+      "base_sha256": "dfdcd28f10f4da7ed308dafc305cfbd1f357e7139a07d6c797bbfefc18856a06",
+      "pilot_sha256": "dfdcd28f10f4da7ed308dafc305cfbd1f357e7139a07d6c797bbfefc18856a06",
+      "schema_and_rows_identical": true
+    },
+    "surface_way_network_rtree_node": {
+      "base_rows": 32145,
+      "pilot_rows": 32145,
+      "base_sha256": "206e7debc221962f0f2f9532b74dfcafbf19d8f6063ff2b0f4732221c6e65098",
+      "pilot_sha256": "206e7debc221962f0f2f9532b74dfcafbf19d8f6063ff2b0f4732221c6e65098",
+      "schema_and_rows_identical": true
+    },
+    "surface_way_network_rtree_parent": {
+      "base_rows": 32144,
+      "pilot_rows": 32144,
+      "base_sha256": "baef01d615014cb4ae9200ed85ba3e9db5c72d271babb57f32b367a4e070a115",
+      "pilot_sha256": "baef01d615014cb4ae9200ed85ba3e9db5c72d271babb57f32b367a4e070a115",
+      "schema_and_rows_identical": true
+    },
+    "surface_way_network_rtree_rowid": {
+      "base_rows": 1077262,
+      "pilot_rows": 1077262,
+      "base_sha256": "da4f4132a7cb9d2d98f8c0ca30ba6266a4ede8b92da22a0fcfe2d80e6e828f9d",
+      "pilot_sha256": "da4f4132a7cb9d2d98f8c0ca30ba6266a4ede8b92da22a0fcfe2d80e6e828f9d",
+      "schema_and_rows_identical": true
+    },
+    "traffic_sign_inventory": {
+      "base_rows": 163504,
+      "pilot_rows": 163504,
+      "base_sha256": "27b89fe3ec4df3a86d2d0346310c12a8ed5660ce8059f0fbdd21d1cf11957f93",
+      "pilot_sha256": "27b89fe3ec4df3a86d2d0346310c12a8ed5660ce8059f0fbdd21d1cf11957f93",
+      "schema_and_rows_identical": true
+    },
+    "traffic_sign_inventory_rtree": {
+      "base_rows": 163504,
+      "pilot_rows": 163504,
+      "base_sha256": "cd7b9da2270dd7659491cb40343dc6973422d58277960d98ea99a2a8ebfcdeb2",
+      "pilot_sha256": "cd7b9da2270dd7659491cb40343dc6973422d58277960d98ea99a2a8ebfcdeb2",
+      "schema_and_rows_identical": true
+    },
+    "traffic_sign_inventory_rtree_node": {
+      "base_rows": 4857,
+      "pilot_rows": 4857,
+      "base_sha256": "50ae3db98d8010adb90537781834b090c4bafbd4f0e4752d171491f2bcaa4e9e",
+      "pilot_sha256": "50ae3db98d8010adb90537781834b090c4bafbd4f0e4752d171491f2bcaa4e9e",
+      "schema_and_rows_identical": true
+    },
+    "traffic_sign_inventory_rtree_parent": {
+      "base_rows": 4856,
+      "pilot_rows": 4856,
+      "base_sha256": "4a60ce9c8f3b93a2b89d36c483a7aeb1e4aec464986f869b268555588d5ea980",
+      "pilot_sha256": "4a60ce9c8f3b93a2b89d36c483a7aeb1e4aec464986f869b268555588d5ea980",
+      "schema_and_rows_identical": true
+    },
+    "traffic_sign_inventory_rtree_rowid": {
+      "base_rows": 163504,
+      "pilot_rows": 163504,
+      "base_sha256": "e5f2dc9ec6fede7d330a02d2f06045125b7fddc8a33f8ac75638029f780790f6",
+      "pilot_sha256": "e5f2dc9ec6fede7d330a02d2f06045125b7fddc8a33f8ac75638029f780790f6",
+      "schema_and_rows_identical": true
+    },
+    "traffic_sign_source": {
+      "base_rows": 1,
+      "pilot_rows": 1,
+      "base_sha256": "948b238229764724bb89e2f90562128a2dd77b8089b8dbcd4e0393f38e4e99d9",
+      "pilot_sha256": "948b238229764724bb89e2f90562128a2dd77b8089b8dbcd4e0393f38e4e99d9",
+      "schema_and_rows_identical": true
+    },
+    "tunnel_way_network": {
+      "base_rows": 2597,
+      "pilot_rows": 2597,
+      "base_sha256": "6bc4dc82c9ddd4704e3093d8937db6bf05839efa263a470e7d3b68e105a27343",
+      "pilot_sha256": "6bc4dc82c9ddd4704e3093d8937db6bf05839efa263a470e7d3b68e105a27343",
+      "schema_and_rows_identical": true
+    },
+    "tunnel_way_network_rtree": {
+      "base_rows": 2597,
+      "pilot_rows": 2597,
+      "base_sha256": "c033321d73b4a586f1af33adf03d8827b198405025f88d7ef19e5617422edf82",
+      "pilot_sha256": "c033321d73b4a586f1af33adf03d8827b198405025f88d7ef19e5617422edf82",
+      "schema_and_rows_identical": true
+    },
+    "tunnel_way_network_rtree_node": {
+      "base_rows": 78,
+      "pilot_rows": 78,
+      "base_sha256": "4d0f6f47ea48fb116ebed52e04c582035e4598cb23f0f6bcc95451e3cf303ec2",
+      "pilot_sha256": "4d0f6f47ea48fb116ebed52e04c582035e4598cb23f0f6bcc95451e3cf303ec2",
+      "schema_and_rows_identical": true
+    },
+    "tunnel_way_network_rtree_parent": {
+      "base_rows": 77,
+      "pilot_rows": 77,
+      "base_sha256": "60ccac9d31eca2b173d9b6111641b28d215b9a553862d14ea8da91809ec642c0",
+      "pilot_sha256": "60ccac9d31eca2b173d9b6111641b28d215b9a553862d14ea8da91809ec642c0",
+      "schema_and_rows_identical": true
+    },
+    "tunnel_way_network_rtree_rowid": {
+      "base_rows": 2597,
+      "pilot_rows": 2597,
+      "base_sha256": "4178af4c8720128ec126dca2c9960b5ae06099156993da744cf93c96122e1908",
+      "pilot_sha256": "4178af4c8720128ec126dca2c9960b5ae06099156993da744cf93c96122e1908",
+      "schema_and_rows_identical": true
+    },
+    "way_continuity_group": {
+      "base_rows": 80196,
+      "pilot_rows": 80196,
+      "base_sha256": "2069090d1714ea55b78d29b358afa930f2d0ce86feba18f329d06aa5fdc93ef4",
+      "pilot_sha256": "2069090d1714ea55b78d29b358afa930f2d0ce86feba18f329d06aa5fdc93ef4",
+      "schema_and_rows_identical": true
+    },
+    "way_continuity_membership": {
+      "base_rows": 495439,
+      "pilot_rows": 495439,
+      "base_sha256": "58b23b1b4dffacb928be64b8cec21aa9fd425903f0b9ff8583dc4b8299fc8e0d",
+      "pilot_sha256": "58b23b1b4dffacb928be64b8cec21aa9fd425903f0b9ff8583dc4b8299fc8e0d",
+      "schema_and_rows_identical": true
+    },
+    "way_endpoints": {
+      "base_rows": 1085790,
+      "pilot_rows": 1085790,
+      "base_sha256": "554e668a68d59d62a1d3c02f9cc625d565fc3e04264944637e6f9b81a4fc0c39",
+      "pilot_sha256": "554e668a68d59d62a1d3c02f9cc625d565fc3e04264944637e6f9b81a4fc0c39",
+      "schema_and_rows_identical": true
+    },
+    "way_geom": {
+      "base_rows": 1085790,
+      "pilot_rows": 1085790,
+      "base_sha256": "edafd8fa6bfbae23f7d3f001f197f2efd17fb64af71efe6fb399be804f6daf8e",
+      "pilot_sha256": "edafd8fa6bfbae23f7d3f001f197f2efd17fb64af71efe6fb399be804f6daf8e",
+      "schema_and_rows_identical": true
+    },
+    "ways": {
+      "base_rows": 1085790,
+      "pilot_rows": 1085790,
+      "base_sha256": "7ae4cc8b3a5b548c468f0d07328035830fd279b521aa8309cc75fcfd3bf9e605",
+      "pilot_sha256": "7ae4cc8b3a5b548c468f0d07328035830fd279b521aa8309cc75fcfd3bf9e605",
+      "schema_and_rows_identical": true
+    },
+    "ways_rtree": {
+      "base_rows": 1085790,
+      "pilot_rows": 1085790,
+      "base_sha256": "b1c8f15188f265654c0ab421d9a14d4730415f14403d8451977c47a713e9e1ed",
+      "pilot_sha256": "b1c8f15188f265654c0ab421d9a14d4730415f14403d8451977c47a713e9e1ed",
+      "schema_and_rows_identical": true
+    },
+    "ways_rtree_node": {
+      "base_rows": 32398,
+      "pilot_rows": 32398,
+      "base_sha256": "8430d7d0747f59c6f4780af56ccd6c9b1a4ead6c216f497db0d6bdc121540f23",
+      "pilot_sha256": "8430d7d0747f59c6f4780af56ccd6c9b1a4ead6c216f497db0d6bdc121540f23",
+      "schema_and_rows_identical": true
+    },
+    "ways_rtree_parent": {
+      "base_rows": 32397,
+      "pilot_rows": 32397,
+      "base_sha256": "d5f7679f38a7a20ce52943954e742852c399f6d7bec595da74cd2e91e5099ce0",
+      "pilot_sha256": "d5f7679f38a7a20ce52943954e742852c399f6d7bec595da74cd2e91e5099ce0",
+      "schema_and_rows_identical": true
+    },
+    "ways_rtree_rowid": {
+      "base_rows": 1085790,
+      "pilot_rows": 1085790,
+      "base_sha256": "b501df25b765cd8daac397e77a1e3cb69c8edd7d4419e4b5c637cb9dc3dc1a90",
+      "pilot_sha256": "b501df25b765cd8daac397e77a1e3cb69c8edd7d4419e4b5c637cb9dc3dc1a90",
+      "schema_and_rows_identical": true
+    }
+  },
+  "all_original_tables_unchanged": true,
+  "quick_check": [
+    "ok"
+  ],
+  "foreign_key_check": [],
+  "pilot_counts": {
+    "traffic_sign_v15_rule": 163504,
+    "traffic_sign_v15_way_candidate": 586706
+  },
+  "checks": {
+    "one_rule_per_source_record": true,
+    "all_rules_disabled": true,
+    "all_candidates_disabled_unknown_direction": true,
+    "radii_match_request": true,
+    "candidate_distances_bounded": true,
+    "source_remains_inventory_only": true
+  },
+  "passed": true,
+  "standard_manifest_db": {
+    "bytes": 519128855,
+    "compression": "gzip",
+    "file": "baden-wuerttemberg_speeds.sqlite",
+    "sha256": "4b3ecbdc3787de83e0c32764ea9b3da7d9803a10088fe9951c074b31a297217b",
+    "uncompressed_bytes": 1556500480,
+    "uncompressed_sha256": "8dc18a7939248fd3a15b3a524fb2251d0e3016730fe8a1767dce3e0accef0633",
+    "url": "baden-wuerttemberg_speeds.sqlite.gz"
+  },
+  "gzip_roundtrip_verified": true,
+  "shared_artwork_pairs_verified": 111,
+  "packaged_artwork_pairs": 43,
+  "focused_tests": {
+    "pilot": 13,
+    "inventory": 7,
+    "artwork_packager": 4
+  },
+  "shared_policy_checks": {
+    "scenarios": 39,
+    "steps": 171,
+    "transitions": 16,
+    "states": 5,
+    "pins_unchanged": true
+  },
+  "field_ready": false,
+  "structural_errors_unchanged_from_base": true,
+  "structural_errors": [
+    {
+      "code": "missing_table",
+      "message": "Missing table: way_links"
+    },
+    {
+      "code": "missing_table",
+      "message": "Missing table: motorway_exit_approach"
+    },
+    {
+      "code": "capability_metadata",
+      "message": "way_links_mode: expected 'shared_endpoint_detailed', found 'none'"
+    },
+    {
+      "code": "capability_metadata",
+      "message": "road_geometry_policy: expected 'source_vertices_v1', found None"
+    },
+    {
+      "code": "capability_metadata",
+      "message": "road_geometry_max_error_m: expected '0', found None"
+    },
+    {
+      "code": "capability_metadata",
+      "message": "motorway_exit_approach_version: expected '1', found None"
+    },
+    {
+      "code": "corridor_mode",
+      "message": "Unknown or missing corridor_progress_mode: None"
+    },
+    {
+      "code": "missing_table",
+      "message": "Missing table: corridor_progress"
+    },
+    {
+      "code": "missing_table",
+      "message": "Missing table: corridor_pairs"
+    },
+    {
+      "code": "source_geometry_coverage",
+      "message": "road_geometry_source_way_count must cover every admitted way"
+    }
+  ],
+  "mobile_implementation_or_device_validation": false
+}

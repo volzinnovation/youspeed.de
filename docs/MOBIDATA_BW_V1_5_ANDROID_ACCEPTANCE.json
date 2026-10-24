@@ -1,0 +1,219 @@
+{
+  "format": "youspeed.android.v1.5.acceptance.v1",
+  "accepted_at_utc": "2026-10-21T18:29:54.222664+00:00",
+  "branch": "codex/youspeed-v1.5-mobidata-bw",
+  "package": {
+    "application_id": "de.youspeed.android.testhost",
+    "version_name": "1.5-debug",
+    "map_compatibility_app_version": "1.5",
+    "version_code": 10057,
+    "build_type": "debug",
+    "isolated": true
+  },
+  "artifacts": {
+    "apk": {
+      "path": "android/app/build/outputs/apk/v1.5-isolated-10057/youspeed-testhost-1.5-10057.apk",
+      "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/android/app/build/outputs/apk/v1.5-isolated-10057/youspeed-testhost-1.5-10057.apk",
+      "bytes": 631154704,
+      "sha256": "e5e47b78072f52b691e6b2577c1975ea249de61020eb35e255c69b15764e9ce0"
+    },
+    "instrumentation_apk": {
+      "path": "android/app/build/outputs/apk/v1.5-isolated-10057/youspeed-testhost-tests-1.5-10057.apk",
+      "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/android/app/build/outputs/apk/v1.5-isolated-10057/youspeed-testhost-tests-1.5-10057.apk",
+      "bytes": 14806601,
+      "sha256": "fd11bb5fde16fa7087368d78fa23b88ed915020ee192379f304d115b9caafeec"
+    }
+  },
+  "emulator": {
+    "serial": "emulator-5554",
+    "avd": "Pixel_API_36",
+    "api_level": 36,
+    "build_fingerprint": "google/sdk_gphone64_arm64/emu64a:16/BE2A.250530.026.D1/13818094:user/release-keys"
+  },
+  "bundle": {
+    "manifest": {
+      "path": "mapdata/bundles/v3/baden-wuerttemberg/2026-10-21-v1.5-runtime/baden-wuerttemberg_manifest.json",
+      "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/mapdata/bundles/v3/baden-wuerttemberg/2026-10-21-v1.5-runtime/baden-wuerttemberg_manifest.json",
+      "bytes": 3665,
+      "sha256": "2220805639e4281628a6f434c08eda34aa8fdbacc1556e611aada4d3a8105a82"
+    },
+    "region": "baden-wuerttemberg",
+    "version": "2026-10-21-v1.5-runtime",
+    "download_bytes": 695751651,
+    "download_sha256": "6585f7de172e7f6301590cd97066b235b537504b7dd5f9d0118757b28937a204",
+    "uncompressed_bytes": 2122903552,
+    "uncompressed_sha256": "e1a36e56cc4809cc69d2d5161b993eff21a1c08264e8d9300e79ec7546ccd00b",
+    "installed_db_path": "/data/user/0/de.youspeed.android.testhost/files/bundle/bundles/baden-wuerttemberg/2026-10-21-v1.5-runtime/baden-wuerttemberg_speeds.sqlite",
+    "runtime_counts": {
+      "associations": {
+        "accepted": 110639,
+        "ambiguous_directed_path": 42704,
+        "conflicting_source_values": 1169,
+        "low_source_confidence": 7447,
+        "missing_openlr": 46,
+        "no_verified_directed_path": 10297,
+        "unverified_source_annotation": 2
+      },
+      "continuation_rules": 37807,
+      "decoder": "openlr-1.0.1",
+      "format": "youspeed.traffic-sign-runtime.v1",
+      "known_lanes": 211353,
+      "matcher": "directed-lrp-path-v1",
+      "mobidata_signs": 163504,
+      "osm_town_fallbacks": 8800,
+      "road_directions": 1085790,
+      "rules": 118400,
+      "signs": 172304,
+      "source_snapshots": {
+        "mobidata-bw-vzk": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+        "osm-settlement": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3"
+      },
+      "unresolved_lane_rules": 1954,
+      "version": "1"
+    },
+    "installer_log": "android/app/build/reports/instrumentation/v15-bw-final-install.txt",
+    "active_state_log": "android/app/build/reports/instrumentation/v15-bw-final-active.json"
+  },
+  "unit_tests": {
+    "passed": 152,
+    "failures": 0,
+    "suites": [
+      {
+        "suite": "de.youspeed.android.alpha.InventorySignRuntimeTests",
+        "tests": 46,
+        "failures": 0,
+        "errors": 0,
+        "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.InventorySignRuntimeTests.xml"
+      },
+      {
+        "suite": "de.youspeed.android.alpha.PanoramaxCaptureTests",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.PanoramaxCaptureTests.xml"
+      },
+      {
+        "suite": "de.youspeed.android.alpha.PanoramaxJournalTests",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.PanoramaxJournalTests.xml"
+      },
+      {
+        "suite": "de.youspeed.android.alpha.SettlementContextTests",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.SettlementContextTests.xml"
+      },
+      {
+        "suite": "de.youspeed.android.alpha.SpeedLimitReferenceModelTests",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.SpeedLimitReferenceModelTests.xml"
+      },
+      {
+        "suite": "de.youspeed.android.alpha.TrafficSignDisplayTests",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.TrafficSignDisplayTests.xml"
+      },
+      {
+        "suite": "de.youspeed.android.alpha.TrafficSignPassageTests",
+        "tests": 64,
+        "failures": 0,
+        "errors": 0,
+        "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.TrafficSignPassageTests.xml"
+      }
+    ],
+    "html_report": "android/app/build/reports/tests/testDebugUnitTest/index.html"
+  },
+  "emulator_instrumentation": {
+    "passed": 17,
+    "failures": 0,
+    "duration_seconds": 119.755,
+    "log": "android/app/build/reports/instrumentation/v15-bw-final.txt",
+    "suites": [
+      {
+        "suite": "InventorySignDatabaseInstrumentedTest",
+        "tests": 3
+      },
+      {
+        "suite": "SettlementContextInstrumentedTest",
+        "tests": 13
+      },
+      {
+        "suite": "LocalInventoryBundleInstrumentedTest",
+        "tests": 1
+      }
+    ],
+    "full_bundle_checks": [
+      "actual Android SQLite quick_check",
+      "actual settlement capability install validation",
+      "BW coverage routing at Stuttgart with no fallback DB",
+      "more than 160000 runtime records",
+      "accepted all-lane directional numeric interval from full bundle through production InventorySignDatabase and InventorySignRuntime",
+      "legacy/missing and future inventory capability fallback fixtures",
+      "query-independent spherical chainage fixture",
+      "unresolved lane exclusion and independent town station fixture"
+    ]
+  },
+  "pictograms": {
+    "shared_png_count": 117,
+    "all_apk_bytes_match_shared_manifest": true,
+    "new_official_artworks": [
+      {
+        "sign_code": "DE:101-15",
+        "png_sha256": "b6b77897295e22cb2bd76fb82caa92b50067c2c6265340094d435d9b16b2add6"
+      },
+      {
+        "sign_code": "DE:156-10",
+        "png_sha256": "d3b2b5d226d597ee04f0dec7042b2e3ad2319b478485621f6d057c2ef7af38a5"
+      },
+      {
+        "sign_code": "DE:223.1-50",
+        "png_sha256": "ce527264f86debec20050d3a7998591a33a1889f63aaf8c8dbad921441632c4f"
+      },
+      {
+        "sign_code": "DE:325.1",
+        "png_sha256": "b2450655d3d98c6392a2ebc61ba42e07138452faa4b7864cd454f48a43ea931d"
+      },
+      {
+        "sign_code": "DE:325.2",
+        "png_sha256": "b126b1b702a1f4bfb984de355c4a525ac66eb597ae5cf8e4861c3e13a7aa8bb9"
+      },
+      {
+        "sign_code": "DE:460-20",
+        "png_sha256": "942189aa14207458cb731d0fc1ed4d00efe60315ff0888ee49b8afe934e11cc2"
+      }
+    ]
+  },
+  "ui_smoke": {
+    "provisional_bundle_ui_log": "android/app/build/reports/instrumentation/v15-ui-smoke.json",
+    "scope": "On same v1.5 UI before final non-UI capture/source guards; provisional data was superseded and final data independently passed the full probe.",
+    "observations": [
+      "downloaded map ready in onboarding",
+      "Stuttgart / Charlottenplatz(B27) / speed40 in normal app",
+      "inventory/recognized capture modes exclude each other",
+      "cadence25m restored with both sign modes off",
+      "zero saved photos and camera permission denied"
+    ],
+    "final_binary_map_log": "android/app/build/reports/instrumentation/v15-final-ui.xml",
+    "final_binary_map_observations": [
+      "final APK and corrected BW map open normally",
+      "Charlottenplatz (B 27), Stuttgart-Mitte, Stuttgart and speed40 shown",
+      "camera permission denied; no live-camera claim"
+    ]
+  },
+  "reproduction": "android/README.md#local-v15-traffic-sign-bundle-test-emulator",
+  "scope_limits": {
+    "physical_device_deployment": false,
+    "live_camera_validation": false,
+    "real_drive_validation": false,
+    "external_publication": false,
+    "photo_upload": false,
+    "note": "Confirmation state transitions, capture linking, typed source values and town/end resets are fixture-verified; this receipt does not claim physical sign visibility or new trained TSR outputs."
+  }
+}

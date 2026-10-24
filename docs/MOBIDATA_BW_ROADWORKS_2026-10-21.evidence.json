@@ -1,0 +1,236 @@
+{
+  "as_of_utc": "2026-10-21T18:10:38+00:00",
+  "catalogue": {
+    "author": "Verkehrsministerium Baden-Württemberg",
+    "license_id": "http://dcat-ap.de/def/licenses/dl-by-de/2.0",
+    "license_url": "https://www.govdata.de/dl-de/by-2-0",
+    "metadata_modified": "2026-10-21T01:29:37.012594",
+    "title": "Baustelleninformationen Baden-Württemberg"
+  },
+  "cifs": {
+    "id_set_equal_to_geojson": true,
+    "incidents": 1043,
+    "line_geometry_comparison": {
+      "matched": 1039
+    },
+    "timestamp_raw": "2026-10-21T11:50:31.359963"
+  },
+  "conditional_geojson_response": [
+    "HTTP/1.1 304 Not Modified",
+    "Access-Control-Allow-Origin: *",
+    "Access-Control-Expose-Headers: Content-Type,User-Agent",
+    "Date: Wed, 21 Oct 2026 18:12:12 GMT",
+    "Etag: \"dmahskxyljpu4hb0\"",
+    "Server: Caddy",
+    "Vary: Accept-Encoding",
+    ""
+  ],
+  "datex": {
+    "joined_geojson": {
+      "matched": 1043,
+      "operator_status_approved": 80,
+      "operator_status_implemented": 424,
+      "operator_status_requested": 539,
+      "with_exceptions": 1,
+      "with_recurrence": 12,
+      "with_valid_periods": 164
+    },
+    "main_speed_limits": {
+      "30.0": 56,
+      "50.0": 135,
+      "60.0": 6,
+      "70.0": 13,
+      "80.0": 40
+    },
+    "missing_candidate_joins": [],
+    "publication_time": "2026-10-21T13:07:09.686+02:00",
+    "record_types": {
+      "ConstructionWorks": 531,
+      "MaintenanceWorks": 1803,
+      "RoadOrCarriagewayOrLaneManagement": 1176
+    },
+    "records": 3510,
+    "root_namespace": "{http://datex2.eu/schema/2/2_0}d2LogicalModel",
+    "situations": 627
+  },
+  "files": {
+    "cifs": {
+      "bytes": 992134,
+      "headers": {
+        "accept-ranges": "bytes",
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "Content-Type,User-Agent",
+        "content-type": "application/json",
+        "date": "Wed, 21 Oct 2026 18:10:41 GMT",
+        "etag": "\"dmahsks7eq914ico\"",
+        "last-modified": "Wed, 21 Oct 2026 11:50:33 GMT",
+        "server": "Caddy",
+        "transfer-encoding": "chunked",
+        "vary": "Accept-Encoding"
+      },
+      "sha256": "d43955cceec038b027f82dcf9fd5ae14e38ff957a19740bc993489e1cc964fc7",
+      "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_cifs.json"
+    },
+    "datex": {
+      "bytes": 30593055,
+      "headers": {
+        "accept-ranges": "bytes",
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "Content-Type,User-Agent",
+        "content-type": "text/xml; charset=utf-8",
+        "date": "Wed, 21 Oct 2026 18:10:38 GMT",
+        "etag": "\"dmahsictgpwiq5cr\"",
+        "last-modified": "Wed, 21 Oct 2026 11:50:26 GMT",
+        "server": "Caddy",
+        "transfer-encoding": "chunked",
+        "vary": "Accept-Encoding"
+      },
+      "sha256": "e039209081525ae9d719c61af67869b20dc72e53a5349d7d5e20a447291c75fd",
+      "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_svzbw.datex2.xml"
+    },
+    "geojson": {
+      "bytes": 1167154,
+      "headers": {
+        "accept-ranges": "bytes",
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "Content-Type,User-Agent",
+        "content-type": "application/json",
+        "date": "Wed, 21 Oct 2026 18:10:38 GMT",
+        "etag": "\"dmahskxyljpu4hb0\"",
+        "last-modified": "Wed, 21 Oct 2026 11:50:33 GMT",
+        "server": "Caddy",
+        "transfer-encoding": "chunked",
+        "vary": "Accept-Encoding"
+      },
+      "sha256": "ac512b1106ff6a2ce7df4c4d561c8ce27b248608fa9c5864908e4a48ddb9b030",
+      "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_geojson.json"
+    }
+  },
+  "geojson": {
+    "bbox_as_published": [
+      7.567617,
+      8.575247,
+      49.399162,
+      49.768277
+    ],
+    "bbox_without_suspect_features": [
+      7.567617,
+      47.54302,
+      10.370114,
+      49.768277
+    ],
+    "directions": {
+      "BOTH_DIRECTIONS": 685,
+      "ONE_DIRECTION": 358
+    },
+    "duplicate_features_excluding_id": 17,
+    "empty_properties": {
+      "description": 0,
+      "direction": 0,
+      "endtime": 0,
+      "id": 0,
+      "reference": 0,
+      "starttime": 0,
+      "street": 0,
+      "subtype": 582,
+      "type": 0
+    },
+    "features": 1043,
+    "generic_bauphase_descriptions": 342,
+    "generic_gemeindestrasse_labels": 350,
+    "geometry_types": {
+      "LineString": 1039,
+      "Point": 4
+    },
+    "gzip_bytes_mtime_zero": 209025,
+    "outer_interval_counts": {
+      "expired": 30,
+      "future": 278,
+      "within_outer_window": 735
+    },
+    "property_presence": {
+      "description": 1043,
+      "direction": 1043,
+      "endtime": 1043,
+      "id": 1043,
+      "reference": 1043,
+      "starttime": 1043,
+      "street": 1043,
+      "subtype": 1043,
+      "type": 1043
+    },
+    "regional_geometry_issues": [
+      {
+        "datex_named_lon_lat": [
+          8.575976,
+          49.398903
+        ],
+        "datex_record_id": "138434891-138481357-138481358-138492397-0-sperrung",
+        "equals_reversed_published_point": true,
+        "id": "138434891-138481357-138481358-138492397-0-sperrung.001",
+        "outside_coordinates": [
+          [
+            49.398903,
+            8.575976
+          ]
+        ],
+        "type": "Point"
+      },
+      {
+        "datex_named_lon_lat": [
+          8.575247,
+          49.399162
+        ],
+        "datex_record_id": "138434891-138481357-138481358-138492397-1-sperrung",
+        "equals_reversed_published_point": true,
+        "id": "138434891-138481357-138481358-138492397-1-sperrung.001",
+        "outside_coordinates": [
+          [
+            49.399162,
+            8.575247
+          ]
+        ],
+        "type": "Point"
+      },
+      {
+        "datex_named_lon_lat": [
+          8.575976,
+          49.398903
+        ],
+        "datex_record_id": "138434891-138481357-138492799-138492803-0-sperrung",
+        "equals_reversed_published_point": true,
+        "id": "138434891-138481357-138492799-138492803-0-sperrung.001",
+        "outside_coordinates": [
+          [
+            49.398903,
+            8.575976
+          ]
+        ],
+        "type": "Point"
+      },
+      {
+        "datex_named_lon_lat": [
+          8.575247,
+          49.399162
+        ],
+        "datex_record_id": "138434891-138481357-138492799-138492803-1-sperrung",
+        "equals_reversed_published_point": true,
+        "id": "138434891-138481357-138492799-138492803-1-sperrung.001",
+        "outside_coordinates": [
+          [
+            49.399162,
+            8.575247
+          ]
+        ],
+        "type": "Point"
+      }
+    ],
+    "types": {
+      "CONSTRUCTION": 582,
+      "ROAD_CLOSED": 461
+    },
+    "unique_ids": 1043,
+    "vertices": 31284
+  },
+  "method": "One public snapshot per format; temporal counts use outer intervals only. No longitudinal freshness measurement or production ingestion acceptance."
+}

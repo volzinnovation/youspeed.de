@@ -1,0 +1,232 @@
+{
+  "generated_at": "2026-10-23T16:50:17.230417+00:00",
+  "status": "implemented_with_documented_enablement_and_acceptance_gates",
+  "working_tree": true,
+  "branch": "codex/youspeed-v1.5-mobidata-bw",
+  "deployed": false,
+  "physical_device_installation": false,
+  "committed": false,
+  "published": false,
+  "scope": {
+    "native_platforms": [
+      "iPhone",
+      "Android"
+    ],
+    "button_position": "second from right immediately left of settings",
+    "source_preference": [
+      "own_correction",
+      "accepted_camera",
+      "applicable_government_bw_only_mobidata",
+      "osm"
+    ],
+    "representation_optimization": false,
+    "sqlite_real_counters_retained": true,
+    "protected_speed_reference_policy_changed": false
+  },
+  "initial_native_validation": {
+    "iphone": {
+      "tests": 36,
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0,
+      "platform": "iPhone simulator isolated TestHost",
+      "log": "/private/tmp/youspeed-v15-final-iphone.log",
+      "xcresult": "/private/tmp/youspeed-iphone-journal-20261023/Logs/Test/Test-SpeedConsumer-2026.10.23_18-12-37-+0200.xcresult"
+    },
+    "android_receipt": "output/fahrtenbuch-v15-2026-10-23/android/validation.json"
+  },
+  "backend": {
+    "repository": "/Users/raphaelvolz/Github/Woladen.de-analytics",
+    "tests": 35,
+    "passed": 35,
+    "compose_model_valid": true,
+    "sampled_outputs_openapi_valid": true,
+    "enabled_by_default": false,
+    "scheduler_installed": false,
+    "sample": {
+      "source_ids": 1050,
+      "evaluation_window_features": 875,
+      "quarantined_points": 4,
+      "resolved_schedule_count": 0,
+      "reason": "cross_format_publisher_clock_skew_over_15_minutes"
+    }
+  },
+  "map_tests": [
+    {
+      "suite": "conditional_speed_rules",
+      "tests": 8,
+      "passed": 8
+    },
+    {
+      "suite": "v3_context_delta",
+      "tests": 11,
+      "passed": 11
+    },
+    {
+      "suite": "v3_bundle_publish_and_delta",
+      "tests": 10,
+      "passed": 10
+    },
+    {
+      "suite": "spatialite_v3_v4_pipeline",
+      "tests": 16,
+      "passed": 14,
+      "skipped": 2,
+      "skip_reason": "Shapely>=2/openlr dependencies unavailable"
+    },
+    {
+      "suite": "generate_v3_country_bundles",
+      "tests": 16,
+      "passed": 16
+    }
+  ],
+  "protected_policy": {
+    "passed": true,
+    "scenarios": 39,
+    "steps": 171,
+    "transitions": 16,
+    "states": 5,
+    "artifact_hashes_and_app_pins_match": true
+  },
+  "benchmark_simulator_build": {
+    "passed": true,
+    "log": "output/fahrtenbuch-v15-2026-10-23/benchmark-build.log"
+  },
+  "bundle_receipt": "output/fahrtenbuch-v15-2026-10-23/bundle/validation.json",
+  "exports": {
+    "schema": "shared/trip-journal/export-v1.schema.json",
+    "schema_sha256": "3982ed3fcf2388806d9c1a5a675d35ae9bf231e2ad0d049bd80f1fd56c228d05",
+    "cases": [
+      {
+        "path": "output/fahrtenbuch-v15-2026-10-23/iphone-journal-canonical.json",
+        "sha256": "a5252a75b896115db5c659c429493f6e478d16def1f11d5f14f532a33eff636b",
+        "valid": true,
+        "formats_checked": true
+      },
+      {
+        "path": "output/fahrtenbuch-v15-2026-10-23/android/journal-canonical.json",
+        "sha256": "b0f4fc702a7ae22f0917e0d38c76d1db19a712353b959b870c15aadbc2505bfc",
+        "valid": true,
+        "formats_checked": true
+      },
+      {
+        "path": "output/fahrtenbuch-v15-2026-10-23/android/journal-masked.json",
+        "sha256": "7bc28e509811c23e2eb0bf660541db76ed0b83cdbc03a9a443c911274d056550",
+        "valid": true,
+        "formats_checked": true
+      }
+    ]
+  },
+  "limitations": [
+    "No physical device deployment/drive, sustained storage-full/reboot/load acceptance or new-model accuracy claim.",
+    "Native media callback anchors remain explicitly estimated up to 2 seconds; no exact frame/presentation alignment claim.",
+    "Complete-assembly OCR proof and qualified wetness/calendar/lane/profile context are not fabricated.",
+    "Backend remains disabled; no service deployment/scheduler/public activation.",
+    "OSM bundle source remains the recorded 13 September 2026 snapshot.",
+    "Deferred representation/storage optimization."
+  ],
+  "shared_artwork_validation": {
+    "suite": "tests/tsr/test_sign_pictogram_sets.py",
+    "passed": 2,
+    "failed": 0
+  },
+  "final_native_validation": {
+    "iphone": {
+      "tests": 108,
+      "passed": 107,
+      "failed": 0,
+      "skipped": 1,
+      "skipped_case": "UpcomingSpeedLimitTests.testPhysicalInstalledFullBWLookaheadPerformance",
+      "platform": "iPhone simulator isolated TestHost",
+      "log": "output/fahrtenbuch-v15-2026-10-23/iphone-expanded-tests.log",
+      "xcresult": "/private/tmp/youspeed-iphone-journal-20261023/Logs/Test/Test-SpeedConsumer-2026.10.23_18-47-53-+0200.xcresult",
+      "source_snapshot": {
+        "file": "output/fahrtenbuch-v15-2026-10-23/iphone-final-source-hashes.json",
+        "sha256": "17178c1d96d8e20e62dd93071635805b0fd53aa767951fa80f87079baa726b16",
+        "files": 152
+      },
+      "compact_button_row": {
+        "passed": true,
+        "test_methods": 1,
+        "mounts": [
+          "portrait",
+          "landscape_camera_lower_right",
+          "landscape_camera_upper_left"
+        ],
+        "simulator": "iPhone SE (3rd generation), temporary simulator deleted",
+        "log": "output/fahrtenbuch-v15-2026-10-23/iphone-action-row-validation.log",
+        "xcresult": "/private/tmp/youspeed-iphone-journal-20261023/Logs/Test/Test-SpeedConsumer-2026.10.23_18-45-58-+0200.xcresult",
+        "button_sizes_pt": [
+          44,
+          40
+        ],
+        "margin_pt": 8,
+        "styles_retained": true
+      }
+    },
+    "android": {
+      "unit": {
+        "tests": 846,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1,
+        "passed": 845,
+        "skipped_cases": [
+          "de.youspeed.android.alpha.SignCollectionRepeatCropTests.recordedDashcamTraceMatchesSwiftCropSelection"
+        ],
+        "report_directory": "android/app/build/test-results/testDebugUnitTest",
+        "complete_suite": true
+      },
+      "instrumentation": {
+        "tests": 53,
+        "passed": 52,
+        "skipped": 1,
+        "failed": 0,
+        "duration_s": 23.403,
+        "last_run_includes_photo_orientation_regression": true,
+        "button_row_validation": "Existing 48dp controls remain unclipped and nonoverlapping; journal immediately left of Settings in all12 mount/recorder/font states and at360dp portrait with1.5font scale."
+      },
+      "source_snapshot": {
+        "file": "final-source-hashes.json",
+        "sha256": "23c02b9264c26dee32236b776d6ac13c5c068cd069019a12a2e851174b8bd1d9",
+        "files": 531,
+        "changed_since_final_build": []
+      },
+      "source_hashes_verified_by_root": true,
+      "apks": [
+        {
+          "path": "android/app/build/outputs/apk/debug/app-debug.apk",
+          "sha256": "3f1177dd643c0cc9533cc2b8f69f888addba889f309c577cb4d283902f3a949a"
+        },
+        {
+          "path": "android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+          "sha256": "899f211a53640efb6c6d72202bff2e6dc9e4761c92cd7e6c94ae5eecde936fd3"
+        }
+      ],
+      "receipt": "output/fahrtenbuch-v15-2026-10-23/android/validation.json"
+    }
+  },
+  "preview_read_probe": {
+    "dataset": "existing full BW lookahead bundle, not the new conditional bundle",
+    "cases": 21,
+    "warm_samples": 42,
+    "final_budget_misses": 0,
+    "final_p95_ms": 6.01975,
+    "final_max_ms": 7.0675,
+    "production_budget_ms_unchanged": 25,
+    "earlier_cold_budget_miss": {
+      "reason": "budget_exceeded",
+      "case": "bw-long-horizon-4",
+      "log": "output/fahrtenbuch-v15-2026-10-23/iphone-cold-budget-diagnostic.log",
+      "result": "Preview correctly withheld; fixture now verifies empty output and exact target recovery on one subsequent normal lookup, retaining warm misses in measured samples."
+    },
+    "claim": "Functional reader recovery only; no guarantee every fix meets budget, timed GPS recovery or performance improvement."
+  },
+  "remaining_enablement_gates": [
+    "Positive complete-assembly OCR verification and measured new-model visual recall.",
+    "Proven camera-to-bundle same-rule identity for duplicate-source quarantine; no guessed association.",
+    "Measured frame-to-presentation clock mapping within 250 ms; callback anchors are estimated up to 2 s.",
+    "Physical driving/camera capture, sustained storage-full/reboot/load and large-history accessibility acceptance.",
+    "Roadworks source-cadence/operational pilot and explicit activation/deployment."
+  ]
+}

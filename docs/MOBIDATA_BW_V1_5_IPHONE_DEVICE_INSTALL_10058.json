@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "verified_at_utc": "2026-10-21T20:41:57.101449+00:00",
+  "branch": "codex/youspeed-v1.5-mobidata-bw",
+  "status": "installed_verified_normal_launch_dashboard_unverified",
+  "device": {
+    "model": "iPhone 14 Pro",
+    "os": "iOS 26.6.2",
+    "connection": "USB",
+    "physical_device": true
+  },
+  "app": {
+    "bundle_id": "de.youspeed.SpeedConsumer",
+    "version": "1.5",
+    "build": "10058",
+    "path": "/private/tmp/youspeed-v15-iphone-install-10058/SpeedConsumer-10058.app",
+    "executable_sha256": "9a6ef442145b3bc20da5da1a79162fc2f14fa5e096dfc253b4495cfeb7806ebf",
+    "files": 1406,
+    "file_manifest_sha256": "07efcc5e87e9229a9fd29557ec9df429e38744fec6b714163e8ad2ada88eca30",
+    "packaged_shared_assets_verified": 234,
+    "test_plugins_present": false,
+    "apfs_clone": true,
+    "updated_in_place": true,
+    "uninstalled": false,
+    "installed_version_verified": true,
+    "immutable_artifact_installed": true,
+    "normal_build_log": "/private/tmp/youspeed-v15-iphone-install-10058/normal-device-build.log",
+    "install_receipt": "/private/tmp/youspeed-v15-iphone-install-10058/app-install.json",
+    "derived_data_reused_for_ui_runner_after_immutable_clone": true
+  },
+  "bundle": {
+    "region": "baden-wuerttemberg",
+    "version": "2026-10-21-v1.5-runtime",
+    "device_relative_directory": "Library/Application Support/SpeedConsumer/bundles/baden-wuerttemberg-2026-10-21-v1.5-runtime",
+    "bytes": 2122903552,
+    "sha256": "e1a36e56cc4809cc69d2d5161b993eff21a1c08264e8d9300e79ec7546ccd00b",
+    "active_state_before_after_install_identical": true,
+    "physical_database_sha_scope": "Full readback verified during build10057 installation. Build10058 preserved the existing database filename and size and identical active state; no replacement database was transferred.",
+    "runtime_sign_count": 172304,
+    "geofences_metres": {
+      "ordinary_signs": 10,
+      "town_boundaries": 30
+    },
+    "active_state_rechecked_after_unlock": true
+  },
+  "settings": {
+    "preserved_actual_driver_preferences": {
+      "youspeed.drive_recorder.tsr_enabled": true,
+      "youspeed.drive_recorder.tsr_independent_enabled": true,
+      "youspeed.drive_recorder.tsr_pictogram_enabled": true,
+      "youspeed.drive_recorder.panoramax_enabled": false,
+      "youspeed.panoramax.inventory_signs_only": true,
+      "youspeed.panoramax.recognized_signs_only": false,
+      "youspeed.debug.logging_enabled": true
+    },
+    "all_existing_keys_preserved": true,
+    "existing_key_count": 22,
+    "changed_keys": [],
+    "added_keys": [],
+    "removed_keys": [],
+    "all_existing_keys_preserved_after_readiness": true
+  },
+  "data_preservation": {
+    "existing_preference_keys": 22,
+    "changed_preference_keys": [],
+    "removed_preference_keys": [],
+    "added_preference_keys": [],
+    "active_bundle_identical": true,
+    "file_count_before": 1302,
+    "file_count_after": 1302,
+    "missing_existing_files": [],
+    "changed_file_sizes": [],
+    "media_files_before": 755,
+    "media_missing_after": [],
+    "snapshot_scope": "Recursive Application Support file inventory before and after in-place install; filename and size comparison. No app launch had succeeded at this point.",
+    "full_content_rehash_performed": false
+  },
+  "validation": {
+    "regression_tests": {
+      "passed": 52,
+      "failed": 0,
+      "unit_tests": 51,
+      "simulator_ui_tests": 1,
+      "xcresult": "/private/tmp/youspeed-v15-iphone-drive-review/drive-fixes-final.xcresult",
+      "log": "/private/tmp/youspeed-v15-iphone-drive-review/drive-fixes-final.log"
+    },
+    "actual_full_bw_bundle": {
+      "passed": 1,
+      "failed": 0,
+      "production_loader": true,
+      "route_projection": true,
+      "production_speed_service": true,
+      "controller": true,
+      "xcresult": "/private/tmp/youspeed-v15-iphone-drive-review/full-bundle-10058.xcresult",
+      "log": "/private/tmp/youspeed-v15-iphone-drive-review/full-bundle-10058.log"
+    },
+    "shared_assets_bytes_verified": 234
+  },
+  "physical_ui": {
+    "normal_dashboard_ready_verified": false,
+    "live_camera_ready_verified": false,
+    "pending_reason": "The user reported starting the app. A fresh preference read succeeded, but the subsequent read-only UI retry could not find its physical iPhone destination; CoreDevice then reported the paired iPhone unavailable. QuickTime remained black. Full dashboard labels remain unverified.",
+    "prepared_test": "InstalledV15ReadinessUITests/testInstalled10058StatusWithoutRecording",
+    "prepared_runner": "/private/tmp/youspeed-v15-iphone-install-10058/run-installed-read-only.sh",
+    "test_scope": "Read actual dashboard source, selected/running TSR and photo-camera status only. Keep existing startup logs if prompted. Never start recording, change settings, supply GPS, or operate uploads.",
+    "normal_app_launch_arguments": [],
+    "synthetic_state_used": false,
+    "normal_app_launch_verified": true,
+    "test_runner_status": "failed_to_initialize_automation_mode",
+    "test_cases_executed": 0,
+    "quicktime_preview": "fresh New Movie Recording preview with attached iPhone selected; remained black; recording not started",
+    "normal_launch_receipt": "/private/tmp/youspeed-v15-iphone-install-10058/normal-launch-after-unlock.json",
+    "failed_ui_run_result": "/private/tmp/youspeed-v15-iphone-install-10058/read-only-ui.xcresult",
+    "failed_ui_run_log": "/private/tmp/youspeed-v15-iphone-install-10058/read-only-ui-test.log",
+    "user_reported_app_started": true,
+    "user_reported_app_started_on": "2026-10-22",
+    "latest_screen_check": "not_completed_device_connection_became_unavailable",
+    "latest_ui_retry_log": "/private/tmp/youspeed-v15-iphone-install-10058/read-only-ui-after-user-start-20261022.log",
+    "latest_ui_retry_result": "/private/tmp/youspeed-v15-iphone-install-10058/read-only-ui-after-user-start-20261022.xcresult",
+    "latest_connection_state": "unavailable"
+  },
+  "source_fix_scope": [
+    "Keep secondary signs after their geofence trigger until an applicable replacement or invalidation; preserve through GPS and camera gaps.",
+    "Reject known opposite-facing ordinary signs when accepted source orientation and qualified vehicle heading show more than90 degrees opposition. Unknown source direction retains proximity behavior.",
+    "Expose selected TSR separately from running recognition and explain existing night pause. Photo-camera readiness is separate.",
+    "Carry optional actual bundle speed provenance and respect effective camera, voice, local and stale authority in displayed source.",
+    "Log UI presentation lifecycle from the mounted view, independently of candidate selection and camera confirmation."
+  ],
+  "scope_limits": [
+    "No new drive or photo recording was started during installation/readiness.",
+    "No live-camera sign confirmation is claimed.",
+    "No protected speed-reference policy, model admission or night policy was changed.",
+    "Historical drive sign-presentation counts remain unknown; candidate reconstruction does not establish old screen pixels."
+  ],
+  "evidence_directory": "/private/tmp/youspeed-v15-iphone-install-10058",
+  "readiness_checked_at_utc": "2026-10-22T05:20:24.279821+00:00",
+  "last_read_settings_before_connection_loss": {
+    "tsr_selected": true,
+    "independent_tsr_selected": true,
+    "automatic_photos_selected": false,
+    "inventory_sign_capture_mode": true,
+    "identical_to_prior_readiness_snapshot": true
+  }
+}

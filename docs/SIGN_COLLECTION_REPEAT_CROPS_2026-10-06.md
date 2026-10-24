@@ -33,6 +33,43 @@ explicit sighting-level fallback only for old manifests lacking the field.
 The crop-position extension was subsequently installed on the attached iPhone as
 version 1.4, build 10041; see the deployment record below.
 
+## Capture metadata update — 24 October 2026
+
+New phone captures use `capture_metadata_version: 1`; sightings identify
+`sighting-observer-2`. Every sighting and every independently timed crop includes
+`device_id` (the persistent installation UUID), `vehicle_position`, and
+`camera_viewing_direction`. The latter records rear-camera optical-axis azimuth
+clockwise from true north, elevation above the horizon, measurement time, signed
+frame/measurement offset, sensor accuracy status and source. GPS course remains
+a separate driving-direction measurement. Rotating the UI or the phone around
+the lens does not change the camera optical axis.
+
+Collection uses the camera capture timestamp converted to UTC, a bounded GPS
+history (120 fixes) and a sensor history (240 samples at 20 Hz). Both clients
+freeze the nearest valid measurements before storage. New records require a
+known camera clock, a GPS fix within 5 seconds and a calibrated camera direction
+within 500 ms of the frame; missing or stale metadata suppresses contribution
+records and resets encounter qualification. Sign recognition continues. There is
+no fallback to vehicle course, screen orientation or a later frame's pose.
+Consent, camera stop, session end and deletion stop sensors and clear histories.
+On iPhone, Core Motion uses the true-north reference frame; Android corrects an
+absolute magnetic rotation vector using declination at the frame's GPS fix.
+Camera azimuth is unavailable when the optical axis is nearly vertical.
+
+The backend checks completeness, frame alignment and device/installation
+binding on its fast capture routes before acknowledging new records. Both
+local queues and raw archives retain this JSON unchanged; PNG metadata remains
+stripped. Historical records and archived replay manifests remain readable with
+missing fields and are never assigned invented coordinates or direction.
+
+The current-model registry is generated in the backend repository with exact
+manifest byte hashes and exported classifier hashes for all ten country/platform
+packs. Check it after every model-manifest update with
+`scripts/youspeed/build_crop_registry.py --check --app-root APP_ROOT --revision client-packs-2026-10-24-v1 --output deploy/onboarded-ingest/youspeed-interest`.
+The registry and backend must be released before the updated apps. A newly
+published plan is fetched at the existing app-start/TSR-enable activation boundary.
+These source changes have not been deployed or installed on devices.
+
 ## Replay evidence
 
 The newest saved recording copied from the attached iPhone was completed on

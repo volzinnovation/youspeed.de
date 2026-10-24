@@ -1,0 +1,79 @@
+{
+  "generated_at": "2026-10-23T18:56:10.126968+00:00",
+  "status": "implemented_and_installed_for_testing",
+  "version": "1.5",
+  "build": 10061,
+  "platforms": [
+    "iPhone",
+    "Android"
+  ],
+  "features": {
+    "recording_preference": "directly in normal Settings",
+    "history_data_columns": [
+      "date_and_time",
+      "start_location_name",
+      "end_location_name",
+      "distance_km_one_localized_decimal",
+      "car_end_odometer_km"
+    ],
+    "row_actions": [
+      "native GPS/TSR/track sharing",
+      "confirmed deletion"
+    ],
+    "row_selection": "optional write-once ending car odometer; existing details remain available",
+    "dialog_background": "white",
+    "dialog_close": "explicit X",
+    "source_priority": [
+      "own corrections",
+      "camera visual evidence",
+      "applicable government data (MobiData BW only)",
+      "OSM bundle"
+    ]
+  },
+  "validation": {
+    "iphone": {
+      "unit_passed": 21,
+      "ui_passed": 3,
+      "failed": 0,
+      "receipt": "output/fahrtenbuch-ui-2026-10-23/iphone/validation.json"
+    },
+    "android": {
+      "unit": {
+        "tests": 848,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1,
+        "passed": 847
+      },
+      "emulator": {
+        "tests": 24,
+        "passed": 24,
+        "failed": 0,
+        "skipped": 0
+      },
+      "receipt": "output/fahrtenbuch-table-2026-10-23/android/validation.json"
+    }
+  },
+  "devices": {
+    "iphone": {
+      "installed_build": 10061,
+      "receipt": "output/v1.5-device-10061-2026-10-23/iphone/validation.json"
+    },
+    "android": {
+      "installed_build": 10061,
+      "installed_apk_sha256": "4e7b6d911e8c26c69af9f8072d04d86731a7658983329fa9e4f00a3ebc4ef7eb",
+      "receipt": "output/v1.5-device-10061-2026-10-23/android/validation.json"
+    }
+  },
+  "scope_limits": [
+    "No real-road drive performed",
+    "Physical iPhone dashboard viewed; journal interactions verified on simulator",
+    "Existing Android startup maintenance removed 37 empty queue batch/journal metadata pairs; photos and recordings preserved",
+    "Physical Android Settings and history hierarchy checked; GPS safety gate returned to Settings before history screenshot. White/per-trip interaction verified on emulator."
+  ],
+  "schema_changed": false,
+  "data_structure_optimization": false,
+  "new_map_transferred": false,
+  "protected_speed_reference_policy_changed": false,
+  "store_or_backend_publication": false
+}

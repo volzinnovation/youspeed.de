@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-10-23T19:48:30.382263+00:00",
+  "build": 10062,
+  "version": "1.5",
+  "status": "both_installed_verified",
+  "requirements": {
+    "simple_five_column_history": true,
+    "white_dialogs_and_X": true,
+    "compact_odometer_row_tap": true,
+    "per_row_gps_tsr_share_and_delete": true,
+    "settings_inline": true,
+    "flat_desk_keeps_controls_and_submenus_at_every_reported_speed": true,
+    "source_priority_unchanged": true,
+    "journal_storage_representation_unchanged": true
+  },
+  "tests": {
+    "passed": 32,
+    "failed": 0,
+    "iphone_posture": 14,
+    "iphone_ui": 3,
+    "android_policy": 10,
+    "android_ui_including_desk": 5,
+    "receipts": [
+      "output/fahrtenbuch-simple-2026-10-23/iphone/validation.json",
+      "output/fahrtenbuch-simple-2026-10-23/android/validation.json"
+    ]
+  },
+  "visual_review": "Both complete opening screens, final columns and compact prompts reviewed by root and independent read-only reviewer",
+  "devices": {
+    "iphone": {
+      "installed_build": 10062,
+      "receipt": "output/v1.5-device-10062-2026-10-23/iphone/validation.json",
+      "launch_verified": true,
+      "existing_files_retained": true,
+      "preferences_retained": true,
+      "active_map_retained": true,
+      "normal_process_verified": true,
+      "physical_dashboard_verified": true
+    },
+    "android": {
+      "installed_build": 10062,
+      "receipt": "output/v1.5-device-10062-2026-10-23/android/validation.json",
+      "launch_verified": true,
+      "physical_simple_table_verified": true,
+      "preferences_retained": true,
+      "media_metadata_retained": true
+    }
+  },
+  "limits": [
+    "No real-road run",
+    "High reported-speed flat posture verified with isolated controller fixtures; no physical OS GPS injection",
+    "iPhone table and row interactions simulator-verified; actual dashboard viewed through QuickTime, which does not provide phone touch control"
+  ],
+  "no_store_or_backend_publication": true
+}

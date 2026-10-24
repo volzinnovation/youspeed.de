@@ -1,5 +1,9 @@
 # Driving controls, Gernsbach tunnel and nighttime TSR — 18 October 2026
 
+Historical record: the 23 October owner instruction supersedes the posture/speed
+rules below. Face-up desk posture now keeps buttons, Settings and submenus usable
+at every reported speed; see [current posture behavior](MANUAL_ORIENTATION.md#phone-posture-and-controls).
+
 ## Changes
 
 Both apps now show ordinary controls only when the screen faces up within 10°

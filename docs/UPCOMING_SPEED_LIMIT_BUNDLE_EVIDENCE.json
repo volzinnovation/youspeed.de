@@ -1,0 +1,969 @@
+{
+  "generated_at_utc": "2026-10-22T22:14:31.086616+00:00",
+  "method": "SQLite URI mode=ro; all production databases read-only. No database hashes computed. Native preexisting indexes only; host hot-cache measurements are not mobile end-to-end latency.",
+  "databases": {
+    "optional_runtime": {
+      "bytes": 2122903552,
+      "mtime_utc": "2026-10-21T18:23:44.822762+00:00",
+      "sqlite_version": "3.39.0",
+      "metadata": {
+        "backend": "sqlite_rtree",
+        "schema_version": "1",
+        "source_input_pbf": "mapdata/raw/baden-wuerttemberg-260913.osm.pbf",
+        "way_continuity_group_count": "80196",
+        "way_continuity_membership_count": "495439",
+        "way_continuity_mode": "route_relation_connected+same_street_name_connected",
+        "way_continuity_relation_group_count": "4490",
+        "way_continuity_same_name_group_count": "75706",
+        "way_endpoints_mode": "coord_key_length_v1",
+        "way_links_mode": "shared_endpoint_detailed",
+        "road_geometry_policy": "source_vertices_v1",
+        "road_geometry_source_way_count": "1085790",
+        "road_geometry_max_error_m": "0"
+      },
+      "tables": [
+        "areas",
+        "areas_rtree",
+        "areas_rtree_node",
+        "areas_rtree_parent",
+        "areas_rtree_rowid",
+        "city_boundary",
+        "city_boundary_rtree",
+        "city_boundary_rtree_node",
+        "city_boundary_rtree_parent",
+        "city_boundary_rtree_rowid",
+        "city_place",
+        "city_place_rtree",
+        "city_place_rtree_node",
+        "city_place_rtree_parent",
+        "city_place_rtree_rowid",
+        "city_ring",
+        "city_tile",
+        "corridor_pairs",
+        "corridor_progress",
+        "metadata",
+        "motorway_exit_approach",
+        "motorway_way_network",
+        "motorway_way_network_rtree",
+        "motorway_way_network_rtree_node",
+        "motorway_way_network_rtree_parent",
+        "motorway_way_network_rtree_rowid",
+        "settlement_area",
+        "settlement_ring",
+        "settlement_segment",
+        "settlement_sign",
+        "surface_way_network",
+        "surface_way_network_rtree",
+        "surface_way_network_rtree_node",
+        "surface_way_network_rtree_parent",
+        "surface_way_network_rtree_rowid",
+        "traffic_sign_association",
+        "traffic_sign_capability",
+        "traffic_sign_inventory",
+        "traffic_sign_inventory_rtree",
+        "traffic_sign_inventory_rtree_node",
+        "traffic_sign_inventory_rtree_parent",
+        "traffic_sign_inventory_rtree_rowid",
+        "traffic_sign_lane",
+        "traffic_sign_rule_path",
+        "traffic_sign_runtime",
+        "traffic_sign_source",
+        "traffic_sign_way_direction",
+        "traffic_sign_way_rule",
+        "tunnel_way_network",
+        "tunnel_way_network_rtree",
+        "tunnel_way_network_rtree_node",
+        "tunnel_way_network_rtree_parent",
+        "tunnel_way_network_rtree_rowid",
+        "way_continuity_group",
+        "way_continuity_membership",
+        "way_endpoints",
+        "way_geom",
+        "way_links",
+        "ways",
+        "ways_rtree",
+        "ways_rtree_node",
+        "ways_rtree_parent",
+        "ways_rtree_rowid"
+      ],
+      "counts": {
+        "ways": 1085790,
+        "way_continuity_group": 80196,
+        "way_continuity_membership": 495439,
+        "traffic_sign_runtime": 172304,
+        "traffic_sign_association": 172304,
+        "traffic_sign_way_rule": 118400,
+        "traffic_sign_way_direction": 1085790
+      },
+      "indexes": [
+        {
+          "name": "idx_traffic_sign_association_way",
+          "tbl_name": "traffic_sign_association",
+          "sql": "CREATE INDEX idx_traffic_sign_association_way ON traffic_sign_association(way_id,direction,status)"
+        },
+        {
+          "name": "sqlite_autoindex_traffic_sign_association_1",
+          "tbl_name": "traffic_sign_association",
+          "sql": null
+        },
+        {
+          "name": "idx_sign_direction_end",
+          "tbl_name": "traffic_sign_way_direction",
+          "sql": "CREATE INDEX idx_sign_direction_end ON traffic_sign_way_direction(end_node_key)"
+        },
+        {
+          "name": "idx_sign_direction_start",
+          "tbl_name": "traffic_sign_way_direction",
+          "sql": "CREATE INDEX idx_sign_direction_start ON traffic_sign_way_direction(start_node_key)"
+        },
+        {
+          "name": "idx_sign_way_rule_way",
+          "tbl_name": "traffic_sign_way_rule",
+          "sql": "CREATE INDEX idx_sign_way_rule_way ON traffic_sign_way_rule(way_id,direction,start_chainage_m)"
+        },
+        {
+          "name": "sqlite_autoindex_traffic_sign_way_rule_1",
+          "tbl_name": "traffic_sign_way_rule",
+          "sql": null
+        },
+        {
+          "name": "idx_way_continuity_membership_group_id",
+          "tbl_name": "way_continuity_membership",
+          "sql": "CREATE INDEX idx_way_continuity_membership_group_id ON way_continuity_membership(continuity_group_id)"
+        },
+        {
+          "name": "idx_way_continuity_membership_way_id",
+          "tbl_name": "way_continuity_membership",
+          "sql": "CREATE INDEX idx_way_continuity_membership_way_id ON way_continuity_membership(way_id)"
+        },
+        {
+          "name": "sqlite_autoindex_way_continuity_membership_1",
+          "tbl_name": "way_continuity_membership",
+          "sql": null
+        },
+        {
+          "name": "idx_way_endpoints_end_node_key",
+          "tbl_name": "way_endpoints",
+          "sql": "CREATE INDEX idx_way_endpoints_end_node_key ON way_endpoints(end_node_key)"
+        },
+        {
+          "name": "idx_way_endpoints_start_node_key",
+          "tbl_name": "way_endpoints",
+          "sql": "CREATE INDEX idx_way_endpoints_start_node_key ON way_endpoints(start_node_key)"
+        }
+      ],
+      "capability": {
+        "version": "1",
+        "report_json": "{\"associations\":{\"accepted\":110639,\"ambiguous_directed_path\":42704,\"conflicting_source_values\":1169,\"low_source_confidence\":7447,\"missing_openlr\":46,\"no_verified_directed_path\":10297,\"unverified_source_annotation\":2},\"continuation_rules\":37807,\"decoder\":\"openlr-1.0.1\",\"format\":\"youspeed.traffic-sign-runtime.v1\",\"known_lanes\":211353,\"matcher\":\"directed-lrp-path-v1\",\"mobidata_signs\":163504,\"osm_town_fallbacks\":8800,\"road_directions\":1085790,\"rules\":118400,\"signs\":172304,\"source_snapshots\":{\"mobidata-bw-vzk\":\"cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3\",\"osm-settlement\":\"1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3\"},\"unresolved_lane_rules\":1954,\"version\":\"1\"}",
+        "interval_scope": "directed_way_with_unbranched_continuation",
+        "lane_support": "explicit_osm_directional",
+        "orientation_basis": "openlr_point_orientation",
+        "osm_town_fallback": "materialized",
+        "road_snapshot_sha256": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3"
+      },
+      "speed_rule_scopes": [
+        {
+          "lane_scope": "all",
+          "rows": 78227,
+          "distinct_signs": 52377
+        },
+        {
+          "lane_scope": "conditional",
+          "rows": 1943,
+          "distinct_signs": 1943
+        },
+        {
+          "lane_scope": "unresolved",
+          "rows": 11,
+          "distinct_signs": 11
+        }
+      ],
+      "accepted_association_rows_per_directed_way": {
+        "groups": 77535,
+        "median": 1,
+        "p95": 3,
+        "max": 48,
+        "note": "All accepted sign kinds; null/unassociated-way bucket excluded."
+      },
+      "route_grouped_physical_all_lane_speed_signs": {
+        "count": 30858,
+        "sql": "SELECT count(DISTINCT a.sign_id) FROM traffic_sign_association a JOIN traffic_sign_runtime s USING(sign_id) WHERE a.status='accepted' AND s.kind='speed_limit' AND EXISTS (SELECT 1 FROM traffic_sign_way_rule r WHERE r.way_id=a.way_id AND r.direction=a.direction AND r.sign_id=a.sign_id AND r.association_status='accepted' AND r.lane_scope='all') AND EXISTS (SELECT 1 FROM way_continuity_membership m WHERE m.way_id=a.way_id AND m.continuity_kind='route_relation_connected')"
+      },
+      "repository_relative_path": "mapdata/dist-v3/baden-wuerttemberg-v1.5-runtime/speeds_v3.sqlite"
+    },
+    "base_only": {
+      "bytes": 836677632,
+      "mtime_utc": "2026-09-23T18:05:55.112547+00:00",
+      "sqlite_version": "3.39.0",
+      "metadata": {
+        "backend": "sqlite_rtree",
+        "schema_version": "1",
+        "source_input_pbf": "provence-alpes-cote-d-azur-260922.osm.pbf",
+        "way_continuity_group_count": "33279",
+        "way_continuity_membership_count": "152897",
+        "way_continuity_mode": "route_relation_connected+same_street_name_connected",
+        "way_continuity_relation_group_count": "639",
+        "way_continuity_same_name_group_count": "32640",
+        "way_endpoints_mode": "coord_key_length_v1",
+        "way_links_mode": "shared_endpoint_detailed"
+      },
+      "tables": [
+        "areas",
+        "areas_rtree",
+        "areas_rtree_node",
+        "areas_rtree_parent",
+        "areas_rtree_rowid",
+        "city_boundary",
+        "city_boundary_rtree",
+        "city_boundary_rtree_node",
+        "city_boundary_rtree_parent",
+        "city_boundary_rtree_rowid",
+        "city_place",
+        "city_place_rtree",
+        "city_place_rtree_node",
+        "city_place_rtree_parent",
+        "city_place_rtree_rowid",
+        "city_ring",
+        "city_tile",
+        "metadata",
+        "motorway_exit_approach",
+        "motorway_way_network",
+        "motorway_way_network_rtree",
+        "motorway_way_network_rtree_node",
+        "motorway_way_network_rtree_parent",
+        "motorway_way_network_rtree_rowid",
+        "settlement_area",
+        "settlement_ring",
+        "settlement_segment",
+        "settlement_sign",
+        "surface_way_network",
+        "surface_way_network_rtree",
+        "surface_way_network_rtree_node",
+        "surface_way_network_rtree_parent",
+        "surface_way_network_rtree_rowid",
+        "tunnel_way_network",
+        "tunnel_way_network_rtree",
+        "tunnel_way_network_rtree_node",
+        "tunnel_way_network_rtree_parent",
+        "tunnel_way_network_rtree_rowid",
+        "way_continuity_group",
+        "way_continuity_membership",
+        "way_endpoints",
+        "way_geom",
+        "way_links",
+        "ways",
+        "ways_rtree",
+        "ways_rtree_node",
+        "ways_rtree_parent",
+        "ways_rtree_rowid"
+      ],
+      "counts": {
+        "ways": 568730,
+        "way_continuity_group": 33279,
+        "way_continuity_membership": 152897
+      },
+      "indexes": [
+        {
+          "name": "idx_way_continuity_membership_group_id",
+          "tbl_name": "way_continuity_membership",
+          "sql": "CREATE INDEX idx_way_continuity_membership_group_id ON way_continuity_membership(continuity_group_id)"
+        },
+        {
+          "name": "idx_way_continuity_membership_way_id",
+          "tbl_name": "way_continuity_membership",
+          "sql": "CREATE INDEX idx_way_continuity_membership_way_id ON way_continuity_membership(way_id)"
+        },
+        {
+          "name": "sqlite_autoindex_way_continuity_membership_1",
+          "tbl_name": "way_continuity_membership",
+          "sql": null
+        },
+        {
+          "name": "idx_way_endpoints_end_node_key",
+          "tbl_name": "way_endpoints",
+          "sql": "CREATE INDEX idx_way_endpoints_end_node_key ON way_endpoints(end_node_key)"
+        },
+        {
+          "name": "idx_way_endpoints_start_node_key",
+          "tbl_name": "way_endpoints",
+          "sql": "CREATE INDEX idx_way_endpoints_start_node_key ON way_endpoints(start_node_key)"
+        }
+      ],
+      "repository_relative_path": "mapdata/dist-v3/provence-alpes-cote-d-azur/speeds_v3.sqlite"
+    },
+    "v4_benchmark": {
+      "bytes": 502030336,
+      "mtime_utc": "2026-05-02T10:44:54.828531+00:00",
+      "sqlite_version": "3.39.0",
+      "metadata": {
+        "backend": "sqlite_rtree",
+        "schema_version": "2",
+        "source_input_pbf": "tmp/pbf/baden-wuerttemberg-latest.osm.pbf"
+      },
+      "tables": [
+        "areas",
+        "areas_rtree",
+        "areas_rtree_node",
+        "areas_rtree_parent",
+        "areas_rtree_rowid",
+        "city_boundary",
+        "city_boundary_rtree",
+        "city_boundary_rtree_node",
+        "city_boundary_rtree_parent",
+        "city_boundary_rtree_rowid",
+        "city_place",
+        "city_place_rtree",
+        "city_place_rtree_node",
+        "city_place_rtree_parent",
+        "city_place_rtree_rowid",
+        "city_ring",
+        "city_tile",
+        "metadata",
+        "motorway_way_network",
+        "motorway_way_network_rtree",
+        "motorway_way_network_rtree_node",
+        "motorway_way_network_rtree_parent",
+        "motorway_way_network_rtree_rowid",
+        "surface_way_network",
+        "surface_way_network_rtree",
+        "surface_way_network_rtree_node",
+        "surface_way_network_rtree_parent",
+        "surface_way_network_rtree_rowid",
+        "tunnel_way_network",
+        "tunnel_way_network_rtree",
+        "tunnel_way_network_rtree_node",
+        "tunnel_way_network_rtree_parent",
+        "tunnel_way_network_rtree_rowid",
+        "way_geom",
+        "way_tile",
+        "ways",
+        "ways_rtree",
+        "ways_rtree_node",
+        "ways_rtree_parent",
+        "ways_rtree_rowid"
+      ],
+      "counts": {
+        "ways": 1059905
+      },
+      "indexes": [],
+      "repository_relative_path": "mapdata/dist-v4/baden-wuerttemberg-bench/speeds_v4.sqlite"
+    }
+  },
+  "proposed_indexes": {
+    "applied": false,
+    "sql": [
+      "CREATE INDEX idx_traffic_sign_association_station ON traffic_sign_association(way_id,direction,station_chainage_m,sign_id);"
+    ],
+    "note": "Full all-status station index proposed by specification so located conflict barriers are retained. Not applied or benchmarked. All recorded timing uses existing indexes."
+  },
+  "native_physical_speed_candidate_lookup": {
+    "sql": {
+      "forward": "SELECT a.sign_id,a.way_id,a.direction,a.station_chainage_m,s.sign_code,s.numeric_value,s.unit\nFROM traffic_sign_association a JOIN traffic_sign_runtime s ON s.sign_id=a.sign_id\nWHERE a.way_id=? AND a.direction=1 AND a.status='accepted'\n  AND a.station_chainage_m>? AND a.station_chainage_m<=?\n  AND s.kind='speed_limit' AND s.parameter_status='parsed_source_value' AND s.unit='km/h'\n  AND s.numeric_value>0 AND s.numeric_value<?\n  AND EXISTS(SELECT 1 FROM traffic_sign_way_rule r\n             WHERE r.way_id=a.way_id AND r.direction=a.direction AND r.sign_id=a.sign_id\n               AND r.association_status='accepted' AND r.lane_scope='all' AND r.speed_kmh=s.numeric_value)\nORDER BY a.station_chainage_m ASC,a.sign_id LIMIT 1",
+      "reverse": "SELECT a.sign_id,a.way_id,a.direction,a.station_chainage_m,s.sign_code,s.numeric_value,s.unit\nFROM traffic_sign_association a JOIN traffic_sign_runtime s ON s.sign_id=a.sign_id\nWHERE a.way_id=? AND a.direction=-1 AND a.status='accepted'\n  AND a.station_chainage_m>=? AND a.station_chainage_m<?\n  AND s.kind='speed_limit' AND s.parameter_status='parsed_source_value' AND s.unit='km/h'\n  AND s.numeric_value>0 AND s.numeric_value<?\n  AND EXISTS(SELECT 1 FROM traffic_sign_way_rule r\n             WHERE r.way_id=a.way_id AND r.direction=a.direction AND r.sign_id=a.sign_id\n               AND r.association_status='accepted' AND r.lane_scope='all' AND r.speed_kmh=s.numeric_value)\nORDER BY a.station_chainage_m DESC,a.sign_id LIMIT 1"
+    },
+    "sampling_sql": "SELECT a.sign_id,a.way_id,a.direction,a.station_chainage_m,d.way_length_m,s.numeric_value\nFROM traffic_sign_association a JOIN traffic_sign_runtime s USING(sign_id)\nJOIN traffic_sign_way_direction d USING(way_id)\nWHERE a.status='accepted' AND s.kind='speed_limit' AND s.parameter_status='parsed_source_value'\nAND EXISTS(SELECT 1 FROM traffic_sign_way_rule r WHERE r.way_id=a.way_id AND r.direction=a.direction\nAND r.sign_id=a.sign_id AND r.association_status='accepted' AND r.lane_scope='all' AND r.speed_kmh=s.numeric_value)\nORDER BY a.sign_id",
+    "parameters": "way_id, ascending chainage window low, ascending chainage window high, current_speed_kmh. Window <=300m, lower current speed only. Forward interval (low,high], reverse [low,high).",
+    "warmup_queries": 100,
+    "sample_count": 1000,
+    "sampling": "Random seed 20261023, 1000 existing accepted all-lane physical speed sign stations; upstream position at most 250m within source way, current speed 130 km/h. Query may return an earlier sign; samples with no lower candidate remain included.",
+    "median_ms": 0.0223125,
+    "p95_ms": 0.036208,
+    "max_ms": 0.093208,
+    "nonempty_results": 994,
+    "sample_rows": [
+      {
+        "parameters": [
+          22949111,
+          72.47026316524239,
+          372.4702631652424,
+          130
+        ],
+        "direction": -1,
+        "source_sample": {
+          "sign_id": "mobidata-bw-vzk:789e714c695a63b671baec1bcc1b1c87b4e52c52f2d7aaf972b60fa0e76da3d3",
+          "way_id": 22949111,
+          "direction": -1,
+          "station_chainage_m": 122.4702631652424,
+          "way_length_m": 889.2494445105215,
+          "numeric_value": 30.0
+        },
+        "rows": [
+          {
+            "sign_id": "mobidata-bw-vzk:789e714c695a63b671baec1bcc1b1c87b4e52c52f2d7aaf972b60fa0e76da3d3",
+            "way_id": 22949111,
+            "direction": -1,
+            "station_chainage_m": 122.4702631652424,
+            "sign_code": "DE:274-30",
+            "numeric_value": 30.0,
+            "unit": "km/h"
+          }
+        ]
+      },
+      {
+        "parameters": [
+          265297224,
+          0,
+          60.84819184749547,
+          130
+        ],
+        "direction": 1,
+        "source_sample": {
+          "sign_id": "mobidata-bw-vzk:7f3e66898cf329306c882b424cf96bf2742da9bb0a7b37449423a883965444c9",
+          "way_id": 265297224,
+          "direction": 1,
+          "station_chainage_m": 41.215968372802095,
+          "way_length_m": 60.84819184749547,
+          "numeric_value": 70.0
+        },
+        "rows": [
+          {
+            "sign_id": "mobidata-bw-vzk:7f3e66898cf329306c882b424cf96bf2742da9bb0a7b37449423a883965444c9",
+            "way_id": 265297224,
+            "direction": 1,
+            "station_chainage_m": 41.215968372802095,
+            "sign_code": "DE:274-70",
+            "numeric_value": 70.0,
+            "unit": "km/h"
+          }
+        ]
+      },
+      {
+        "parameters": [
+          568700173,
+          729.8668059602633,
+          1029.8668059602633,
+          130
+        ],
+        "direction": 1,
+        "source_sample": {
+          "sign_id": "mobidata-bw-vzk:42acfe5cd707a5c166f220eaea59ed7461a78eac8ed4363c600044a5ff2a9044",
+          "way_id": 568700173,
+          "direction": 1,
+          "station_chainage_m": 979.8668059602633,
+          "way_length_m": 1245.947273909441,
+          "numeric_value": 100.0
+        },
+        "rows": [
+          {
+            "sign_id": "mobidata-bw-vzk:080a9ecc9adba3fb3214ff308869124c424d90295e8f9d7f636ac3391532507b",
+            "way_id": 568700173,
+            "direction": 1,
+            "station_chainage_m": 914.5850292901188,
+            "sign_code": "DE:274-120",
+            "numeric_value": 120.0,
+            "unit": "km/h"
+          }
+        ]
+      },
+      {
+        "parameters": [
+          1099820420,
+          0,
+          29.810901856483227,
+          130
+        ],
+        "direction": 1,
+        "source_sample": {
+          "sign_id": "mobidata-bw-vzk:37566b1c570e8a444fdb628918ef3289f7b3b014bcad8226ed579153e4bafc49",
+          "way_id": 1099820420,
+          "direction": 1,
+          "station_chainage_m": 11.14843461404237,
+          "way_length_m": 29.810901856483227,
+          "numeric_value": 120.0
+        },
+        "rows": [
+          {
+            "sign_id": "mobidata-bw-vzk:5a29b2486bad3a58d1ffddbb915217760dda62a81b913bbbd73c8811667580e9",
+            "way_id": 1099820420,
+            "direction": 1,
+            "station_chainage_m": 10.705532363897586,
+            "sign_code": "DE:274-120",
+            "numeric_value": 120.0,
+            "unit": "km/h"
+          }
+        ]
+      },
+      {
+        "parameters": [
+          34350310,
+          0,
+          285.1828700669822,
+          130
+        ],
+        "direction": 1,
+        "source_sample": {
+          "sign_id": "mobidata-bw-vzk:c88cc56aa5ee6fb4923e1891538d5fc43611e46134a92ff25dad3dd3dbbe5e76",
+          "way_id": 34350310,
+          "direction": 1,
+          "station_chainage_m": 73.46023847429686,
+          "way_length_m": 285.1828700669822,
+          "numeric_value": 70.0
+        },
+        "rows": [
+          {
+            "sign_id": "mobidata-bw-vzk:c88cc56aa5ee6fb4923e1891538d5fc43611e46134a92ff25dad3dd3dbbe5e76",
+            "way_id": 34350310,
+            "direction": 1,
+            "station_chainage_m": 73.46023847429686,
+            "sign_code": "DE:274-70",
+            "numeric_value": 70.0,
+            "unit": "km/h"
+          }
+        ]
+      },
+      {
+        "parameters": [
+          312645520,
+          0,
+          193.71515979550057,
+          130
+        ],
+        "direction": 1,
+        "source_sample": {
+          "sign_id": "mobidata-bw-vzk:0b36485dabf8b9db3a879f30e68c2035e26ea145508588fbe474d65e8e1176b8",
+          "way_id": 312645520,
+          "direction": 1,
+          "station_chainage_m": 69.71139360925483,
+          "way_length_m": 193.71515979550057,
+          "numeric_value": 100.0
+        },
+        "rows": [
+          {
+            "sign_id": "mobidata-bw-vzk:0b36485dabf8b9db3a879f30e68c2035e26ea145508588fbe474d65e8e1176b8",
+            "way_id": 312645520,
+            "direction": 1,
+            "station_chainage_m": 69.71139360925483,
+            "sign_code": "DE:274-100",
+            "numeric_value": 100.0,
+            "unit": "km/h"
+          }
+        ]
+      },
+      {
+        "parameters": [
+          35534832,
+          114.9030850630295,
+          414.9030850630295,
+          130
+        ],
+        "direction": -1,
+        "source_sample": {
+          "sign_id": "mobidata-bw-vzk:9db1ba2602c1a68a4d8f3ac5498f12b2e02f51e6f28c9f920a8a231fe1813f53",
+          "way_id": 35534832,
+          "direction": -1,
+          "station_chainage_m": 217.39082118376834,
+          "way_length_m": 414.9030850630295,
+          "numeric_value": 40.0
+        },
+        "rows": [
+          {
+            "sign_id": "mobidata-bw-vzk:e8373adf408b6c80c6c307992c3f73232aff09d307a918cd674729e1949650e2",
+            "way_id": 35534832,
+            "direction": -1,
+            "station_chainage_m": 363.9922853935867,
+            "sign_code": "DE:274-40",
+            "numeric_value": 40.0,
+            "unit": "km/h"
+          }
+        ]
+      },
+      {
+        "parameters": [
+          314274342,
+          0,
+          64.65647313662107,
+          130
+        ],
+        "direction": -1,
+        "source_sample": {
+          "sign_id": "mobidata-bw-vzk:4ff387640bff36353a13a20696d00f5b401a116342a193f844e8749077e8cafe",
+          "way_id": 314274342,
+          "direction": -1,
+          "station_chainage_m": 27.904171880950074,
+          "way_length_m": 64.65647313662107,
+          "numeric_value": 50.0
+        },
+        "rows": [
+          {
+            "sign_id": "mobidata-bw-vzk:4ff387640bff36353a13a20696d00f5b401a116342a193f844e8749077e8cafe",
+            "way_id": 314274342,
+            "direction": -1,
+            "station_chainage_m": 27.904171880950074,
+            "sign_code": "DE:274-50",
+            "numeric_value": 50.0,
+            "unit": "km/h"
+          }
+        ]
+      }
+    ],
+    "plans": {
+      "forward": {
+        "parameters": [
+          265297224,
+          0,
+          60.84819184749547,
+          130
+        ],
+        "rows": [
+          {
+            "id": 7,
+            "parent": 0,
+            "notused": 0,
+            "detail": "SEARCH a USING INDEX idx_traffic_sign_association_way (way_id=? AND direction=? AND status=?)"
+          },
+          {
+            "id": 22,
+            "parent": 0,
+            "notused": 0,
+            "detail": "SEARCH s USING INDEX sqlite_autoindex_traffic_sign_runtime_1 (sign_id=?)"
+          },
+          {
+            "id": 41,
+            "parent": 0,
+            "notused": 0,
+            "detail": "CORRELATED SCALAR SUBQUERY 1"
+          },
+          {
+            "id": 46,
+            "parent": 41,
+            "notused": 0,
+            "detail": "SEARCH r USING INDEX idx_sign_way_rule_way (way_id=? AND direction=?)"
+          },
+          {
+            "id": 92,
+            "parent": 0,
+            "notused": 0,
+            "detail": "USE TEMP B-TREE FOR ORDER BY"
+          }
+        ]
+      },
+      "reverse": {
+        "parameters": [
+          22949111,
+          72.47026316524239,
+          372.4702631652424,
+          130
+        ],
+        "rows": [
+          {
+            "id": 7,
+            "parent": 0,
+            "notused": 0,
+            "detail": "SEARCH a USING INDEX idx_traffic_sign_association_way (way_id=? AND direction=? AND status=?)"
+          },
+          {
+            "id": 22,
+            "parent": 0,
+            "notused": 0,
+            "detail": "SEARCH s USING INDEX sqlite_autoindex_traffic_sign_runtime_1 (sign_id=?)"
+          },
+          {
+            "id": 41,
+            "parent": 0,
+            "notused": 0,
+            "detail": "CORRELATED SCALAR SUBQUERY 1"
+          },
+          {
+            "id": 46,
+            "parent": 41,
+            "notused": 0,
+            "detail": "SEARCH r USING INDEX idx_sign_way_rule_way (way_id=? AND direction=?)"
+          },
+          {
+            "id": 92,
+            "parent": 0,
+            "notused": 0,
+            "detail": "USE TEMP B-TREE FOR ORDER BY"
+          }
+        ]
+      }
+    }
+  },
+  "native_topology_probes": {
+    "relation_memberships": {
+      "sql": "SELECT m.continuity_group_id,g.source_relation_id\nFROM way_continuity_membership m JOIN way_continuity_group g USING(continuity_group_id)\nWHERE m.way_id=? AND g.continuity_kind='route_relation_connected'\nORDER BY m.continuity_group_id",
+      "parameters": [
+        8584638
+      ],
+      "rows": [
+        {
+          "continuity_group_id": 75707,
+          "source_relation_id": 2180
+        }
+      ],
+      "plan": [
+        {
+          "id": 4,
+          "parent": 0,
+          "notused": 0,
+          "detail": "SEARCH m USING COVERING INDEX sqlite_autoindex_way_continuity_membership_1 (way_id=?)"
+        },
+        {
+          "id": 10,
+          "parent": 0,
+          "notused": 0,
+          "detail": "SEARCH g USING INTEGER PRIMARY KEY (rowid=?)"
+        }
+      ]
+    },
+    "directed_same_relation_outgoing": {
+      "sql": "SELECT d.way_id,1 AS direction,d.end_node_key AS next_node,d.way_length_m\nFROM traffic_sign_way_direction d JOIN way_continuity_membership m ON m.way_id=d.way_id\nWHERE d.start_node_key=? AND d.forward_allowed=1 AND m.continuity_group_id=?\nUNION ALL\nSELECT d.way_id,-1,d.start_node_key,d.way_length_m\nFROM traffic_sign_way_direction d JOIN way_continuity_membership m ON m.way_id=d.way_id\nWHERE d.end_node_key=? AND d.backward_allowed=1 AND m.continuity_group_id=?",
+      "parameters": [
+        "85659875:493234517",
+        75707,
+        "85659875:493234517",
+        75707
+      ],
+      "rows": [
+        {
+          "way_id": 8584639,
+          "direction": 1,
+          "next_node": "85667564:493237819",
+          "way_length_m": 66.73470063024766
+        },
+        {
+          "way_id": 8584638,
+          "direction": -1,
+          "next_node": "85618106:493222950",
+          "way_length_m": 330.6245744949416
+        }
+      ],
+      "plan": [
+        {
+          "id": 1,
+          "parent": 0,
+          "notused": 0,
+          "detail": "COMPOUND QUERY"
+        },
+        {
+          "id": 2,
+          "parent": 1,
+          "notused": 0,
+          "detail": "LEFT-MOST SUBQUERY"
+        },
+        {
+          "id": 6,
+          "parent": 2,
+          "notused": 0,
+          "detail": "SEARCH d USING INDEX idx_sign_direction_start (start_node_key=?)"
+        },
+        {
+          "id": 15,
+          "parent": 2,
+          "notused": 0,
+          "detail": "SEARCH m USING COVERING INDEX sqlite_autoindex_way_continuity_membership_1 (way_id=? AND continuity_group_id=?)"
+        },
+        {
+          "id": 29,
+          "parent": 1,
+          "notused": 0,
+          "detail": "UNION ALL"
+        },
+        {
+          "id": 33,
+          "parent": 29,
+          "notused": 0,
+          "detail": "SEARCH d USING INDEX idx_sign_direction_end (end_node_key=?)"
+        },
+        {
+          "id": 42,
+          "parent": 29,
+          "notused": 0,
+          "detail": "SEARCH m USING COVERING INDEX sqlite_autoindex_way_continuity_membership_1 (way_id=? AND continuity_group_id=?)"
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Timing covers a single source-way physical-sign candidate query, not map matching, geometry projection, full bounded graph traversal, display, or cold-cache/device latency.",
+    "The current association index restricts way/direction/status but not station range; ORDER BY station requires a temporary B-tree. Measured per-way cardinality is reported rather than asserting strict station-range complexity.",
+    "Physical source station anchors are mandatory: traffic_sign_way_rule continuation rows start at an interval boundary and are not physical sign locations.",
+    "Relation groups are undirected endpoint-connected sets: builder drops relation member ordering and member roles; relation identity alone cannot select a future branch.",
+    "Base-only v3 does not retain full motorcar permitted directions, lanes, or maxspeed:conditional metadata; optional traffic_sign_way_direction adds them. No safe exact-sign forecast should be claimed from maxspeed-tag-only segment boundaries.",
+    "The separate v4 benchmark lacks continuity/endpoints/runtime and is not a substitute for v3 runtime capability.",
+    "Prototype SQL finds candidate numeric signs only. Production selector must also stop at an earlier contextual/end/conflicting event, suppress ambiguous branches and intervening applicability changes, validate match/direction confidence, and compare against the authoritative current effective limit.",
+    "way_links and way_endpoints are constructed only from rounded start/end coordinates. They omit source OSM node identity, interior junction incidence, grade/layer incidence semantics and turn-restriction relations; a unique outgoing endpoint candidate is not proof of a unique route continuation.",
+    "traffic_sign_rule_path records the downstream propagation of an already-passed sign; it is not a proof of an upstream approach path toward an upcoming sign.",
+    "Warm-cache sample generation first reads all qualified source signs. Measurement is intentionally an existence/efficiency check of indexed lookup, not a cache-cold benchmark.",
+    "Unlocated or unknown-direction rejected signs cannot be safely assigned as directed barriers from current fields; source and applicability coverage remain incomplete."
+  ],
+  "production_shape_physical_event_and_rule_reads": {
+    "measured_at_utc": "2026-10-22T22:20:29.139835+00:00",
+    "host": "macOS-26.5.1-arm64-arm-64bit",
+    "sql": {
+      "forward_events": "SELECT a.sign_id, a.status, a.station_chainage_m,\n       s.kind, s.sign_code, s.numeric_value, s.unit, s.parameter_status,\n       s.source_id, s.snapshot_sha256\nFROM traffic_sign_association AS a\nJOIN traffic_sign_runtime AS s ON s.sign_id = a.sign_id\nWHERE a.way_id = ? AND a.direction = 1\n  AND a.station_chainage_m > ? AND a.station_chainage_m <= ?\nORDER BY a.station_chainage_m ASC, a.sign_id ASC",
+      "reverse_events": "SELECT a.sign_id, a.status, a.station_chainage_m,\n       s.kind, s.sign_code, s.numeric_value, s.unit, s.parameter_status,\n       s.source_id, s.snapshot_sha256\nFROM traffic_sign_association AS a\nJOIN traffic_sign_runtime AS s ON s.sign_id = a.sign_id\nWHERE a.way_id = ? AND a.direction = -1\n  AND a.station_chainage_m >= ? AND a.station_chainage_m < ?\nORDER BY a.station_chainage_m DESC, a.sign_id ASC",
+      "current_way_rules": "SELECT rule_id,sign_id,direction,start_chainage_m,end_chainage_m,\n       station_chainage_m,speed_kmh,inside_city,association_status,lane_scope\nFROM traffic_sign_way_rule\nWHERE way_id=? AND direction=? AND association_status='accepted'\nORDER BY start_chainage_m,rule_id"
+    },
+    "sample_count": 1000,
+    "warmup_cases": 100,
+    "sampling": "Same deterministic 1000 source-station cases as numeric prototype; both event and current-way rule statements fetched per case; row conversion to dictionaries included.",
+    "median_ms": 0.033708,
+    "p95_ms": 0.058375,
+    "max_ms": 0.708042,
+    "max_events_in_sample_window": 13,
+    "max_rules_in_sample_way_direction": 20,
+    "nonaccepted_event_rows_in_sample_windows": 9,
+    "sample_rows": [
+      {
+        "parameters": [
+          22949111,
+          72.47026316524239,
+          372.4702631652424
+        ],
+        "rule_parameters": [
+          22949111,
+          -1
+        ],
+        "events": [
+          {
+            "sign_id": "mobidata-bw-vzk:c128a9699fc5eb64cb2e65bf14bb2ac71fbce003760e502cdb3b941d93822b5d",
+            "status": "accepted",
+            "station_chainage_m": 122.7783594399286,
+            "kind": "secondary",
+            "sign_code": "DE:276",
+            "numeric_value": null,
+            "unit": null,
+            "parameter_status": "not_applicable",
+            "source_id": "mobidata-bw-vzk",
+            "snapshot_sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3"
+          },
+          {
+            "sign_id": "mobidata-bw-vzk:789e714c695a63b671baec1bcc1b1c87b4e52c52f2d7aaf972b60fa0e76da3d3",
+            "status": "accepted",
+            "station_chainage_m": 122.4702631652424,
+            "kind": "speed_limit",
+            "sign_code": "DE:274-30",
+            "numeric_value": 30.0,
+            "unit": "km/h",
+            "parameter_status": "parsed_source_value",
+            "source_id": "mobidata-bw-vzk",
+            "snapshot_sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3"
+          }
+        ],
+        "rules": [
+          {
+            "rule_id": "baaaf519696d79d05f8a3a4871287e6920850d6a85d3c45701f8e3248fbd6a93",
+            "sign_id": "mobidata-bw-vzk:789e714c695a63b671baec1bcc1b1c87b4e52c52f2d7aaf972b60fa0e76da3d3",
+            "direction": -1,
+            "start_chainage_m": 0.0,
+            "end_chainage_m": 122.4702631652424,
+            "station_chainage_m": 122.4702631652424,
+            "speed_kmh": 30.0,
+            "inside_city": null,
+            "association_status": "accepted",
+            "lane_scope": "all"
+          },
+          {
+            "rule_id": "98e2aa872b0353186bf24b38eb3fb66578a61f5cf0cee6c10bbe8b8f47c8b51b",
+            "sign_id": "mobidata-bw-vzk:72cf79eb0b412e2fb34ff898e14bb40b9c083876715ee3a107db5c6647d1a365",
+            "direction": -1,
+            "start_chainage_m": 122.4702631652424,
+            "end_chainage_m": 854.0389437606111,
+            "station_chainage_m": 854.0389437606111,
+            "speed_kmh": 80.0,
+            "inside_city": null,
+            "association_status": "accepted",
+            "lane_scope": "all"
+          }
+        ]
+      },
+      {
+        "parameters": [
+          265297224,
+          0,
+          60.84819184749547
+        ],
+        "rule_parameters": [
+          265297224,
+          1
+        ],
+        "events": [
+          {
+            "sign_id": "mobidata-bw-vzk:7f3e66898cf329306c882b424cf96bf2742da9bb0a7b37449423a883965444c9",
+            "status": "accepted",
+            "station_chainage_m": 41.215968372802095,
+            "kind": "speed_limit",
+            "sign_code": "DE:274-70",
+            "numeric_value": 70.0,
+            "unit": "km/h",
+            "parameter_status": "parsed_source_value",
+            "source_id": "mobidata-bw-vzk",
+            "snapshot_sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3"
+          }
+        ],
+        "rules": [
+          {
+            "rule_id": "369a867adf343a097fd1deb05132353dce1f6455b036fefc251928b67edb580c",
+            "sign_id": "mobidata-bw-vzk:7f3e66898cf329306c882b424cf96bf2742da9bb0a7b37449423a883965444c9",
+            "direction": 1,
+            "start_chainage_m": 41.215968372802095,
+            "end_chainage_m": 60.84819184749547,
+            "station_chainage_m": 41.215968372802095,
+            "speed_kmh": 70.0,
+            "inside_city": null,
+            "association_status": "accepted",
+            "lane_scope": "all"
+          }
+        ]
+      }
+    ],
+    "plans": {
+      "forward": [
+        {
+          "id": 6,
+          "parent": 0,
+          "notused": 0,
+          "detail": "SEARCH a USING INDEX idx_traffic_sign_association_way (way_id=? AND direction=?)"
+        },
+        {
+          "id": 20,
+          "parent": 0,
+          "notused": 0,
+          "detail": "SEARCH s USING INDEX sqlite_autoindex_traffic_sign_runtime_1 (sign_id=?)"
+        },
+        {
+          "id": 42,
+          "parent": 0,
+          "notused": 0,
+          "detail": "USE TEMP B-TREE FOR ORDER BY"
+        }
+      ],
+      "reverse": [
+        {
+          "id": 6,
+          "parent": 0,
+          "notused": 0,
+          "detail": "SEARCH a USING INDEX idx_traffic_sign_association_way (way_id=? AND direction=?)"
+        },
+        {
+          "id": 20,
+          "parent": 0,
+          "notused": 0,
+          "detail": "SEARCH s USING INDEX sqlite_autoindex_traffic_sign_runtime_1 (sign_id=?)"
+        },
+        {
+          "id": 42,
+          "parent": 0,
+          "notused": 0,
+          "detail": "USE TEMP B-TREE FOR ORDER BY"
+        }
+      ]
+    },
+    "limitations": "Read cost only; no semantic selection, projection, path topology, controller, rendering, cold cache or device measurement. Rules include propagated intervals and require physical-origin/interval resolution in production."
+  },
+  "located_conflicting_associations": [
+    {
+      "kind": "settlement_boundary",
+      "count": 20
+    },
+    {
+      "kind": "speed_limit",
+      "count": 1145
+    },
+    {
+      "kind": "speed_limit_end",
+      "count": 4
+    }
+  ]
+}

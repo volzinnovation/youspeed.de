@@ -36,17 +36,19 @@ Unknown saved values fall back to portrait.
 ## Phone posture and controls
 
 Both clients use gravity to measure the angle of the screen plane relative to
-horizontal, independently of the saved screen orientation. Ordinary controls are
-available only with the phone face up within 10° of horizontal and speed at or
-below 20 km/h. Either raw or displayed speed above 20 km/h hides them regardless
-of posture. Unknown posture cannot establish that the phone is flat. Inclines,
-declines and acceleration must not unlock controls in a mounted phone.
+horizontal, independently of the saved screen orientation. Following the owner's
+23 October 2026 desk-use revision, face up within 10° of horizontal keeps buttons
+and submenus available at every reported speed. Settings stays in its normal slot
+in that posture, including when GPS speed drifts. Unknown posture cannot establish
+that the phone is flat. When the phone is not flat, the existing below-4-km/h or
+no-GPS navigation behavior applies; inclines and declines do not establish a desk
+posture.
 
-Posture changes update availability immediately; fresh low-speed GPS evidence
-restores the speed gate. Permission and review prompts still require fresh GPS
-evidence of exactly zero speed. The manual driving shutter remains the sole
-moving control, replacing Settings in the same bottom-right action-row slot.
-Showing it never adds a second row or moves the other controls upward.
+Posture changes update availability immediately. Permission and review prompts
+still require fresh GPS evidence of exactly zero speed. Away from flat posture,
+the manual driving shutter replaces Settings from 4 km/h in the same bottom-right
+action-row slot. Showing it never adds a second row or moves the other controls
+upward. The dashcam finalization gate still applies to button actions.
 
 ## Portrait layout
 

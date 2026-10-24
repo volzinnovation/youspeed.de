@@ -1,0 +1,238 @@
+{
+  "recorded_at_utc": "2026-10-21T20:46:05.615794+00:00",
+  "status": "installed_preservation_and_physical_dashboard_verified",
+  "device": {
+    "model": "moto g86 5G",
+    "platform": "Android",
+    "api_level": 36,
+    "identifier_policy": "Device serial and precise GPS retained only in private local evidence."
+  },
+  "app": {
+    "package": "de.youspeed.android.debug",
+    "version_name": "1.5-debug",
+    "version_code": 10058,
+    "installation": "in_place_adb_install_r",
+    "first_install_time_preserved": "2026-09-24 22:45:49",
+    "apk_path": "android/app/build/outputs/apk/v1.5-device-10058-dashboard/youspeed-android-debug-1.5-10058-dashboard.apk",
+    "apk_sha256": "b910c3c49f000bc9b811586fab6b5505d85af1c569966bc236fa8a764d96d41f",
+    "apk_bytes": 625795310,
+    "installed_apk_sha256": "b910c3c49f000bc9b811586fab6b5505d85af1c569966bc236fa8a764d96d41f",
+    "installed_apk_matches": true,
+    "replaced_earlier_10058_candidate_sha256": "b837adf6f7b685fd562dd2d79b1a15e6532c2759b5afecd8e05a5b29a0ee0b56",
+    "replacement_reason": "Physical dashboard check found dim night-mode provenance and missing idle TSR/photo statuses; corrected to match the iPhone dashboard. Indexed lookup and all runtime behavior retained.",
+    "previous_10058_artifacts": [
+      {
+        "apk_path": "android/app/build/outputs/apk/v1.5-device-10058-indexed/youspeed-android-debug-1.5-10058-indexed.apk",
+        "apk_sha256": "5e93afcc5cdd667e51c9d6a3754c36fa269f1d9ad1921428a58f85ec84729ce5",
+        "apk_bytes": 625795310
+      }
+    ]
+  },
+  "bundle": {
+    "region": "baden-wuerttemberg",
+    "version": "2026-10-21-v1.5-runtime",
+    "manifest": "mapdata/bundles/v3/baden-wuerttemberg/2026-10-21-v1.5-runtime/baden-wuerttemberg_manifest.json",
+    "uncompressed_sha256": "e1a36e56cc4809cc69d2d5161b993eff21a1c08264e8d9300e79ec7546ccd00b",
+    "uncompressed_bytes": 2122903552,
+    "runtime_signs": 172304,
+    "mobidata_signs": 163504,
+    "osm_town_fallback_signs": 8800,
+    "way_rule_intervals": 118400,
+    "continuation_intervals": 37807,
+    "active_metadata_identical": true,
+    "file_size_verified": true,
+    "verification_scope": "Previously SHA-verified installed bundle retained; final app-only update rechecked active metadata and file size without re-reading 2.12GB. Frozen bundle and manifest were not modified."
+  },
+  "preservation": {
+    "preferences_count": 28,
+    "all_preferences_identical": true,
+    "all_original_preferences_identical": true,
+    "media_inventory_scope": [
+      "no_backup/panoramax/",
+      "files/dashcam/"
+    ],
+    "media_file_count": 1839,
+    "media_bytes": 8862250902,
+    "media_names_and_sizes_identical": true,
+    "existing_logs_present_and_not_truncated": true,
+    "selected_preferences": {
+      "traffic_sign_recognition": false,
+      "independent_traffic_sign_recognition": false,
+      "automatic_photos": false,
+      "inventory_sign_capture_mode": true,
+      "recognized_sign_capture_mode": false,
+      "secondary_sign_display": true
+    },
+    "settings_policy": "Preserved current user choices, cadence, privacy, consent and upload settings. No recording, synthetic GPS, uploads, deletions or normal-app unit fixtures were initiated.",
+    "all_preferences_identical_after_launch": true,
+    "current_map_packages_preserved": 16,
+    "all_preferences_identical_after_dashboard_check": true,
+    "existing_media_and_queue_files_before_dashboard_update": 2630,
+    "existing_media_and_queue_files_missing_after_dashboard_update": 0,
+    "existing_media_and_queue_file_sizes_changed": 0
+  },
+  "changes": [
+    "Geofence triggers persistent secondary cards from inventory and camera; numeric observations no longer erase the secondary card. Applicable admitted end/town events, replacement signs and drive/bundle/country lifecycle reset the card.",
+    "Ordinary secondary signs with an accepted source association and reliable vehicle heading reject known opposite-facing signs above 90 degrees. Unknown face retains proximity behavior. Primary directed acceptance thresholds are unchanged.",
+    "Source badges and optional bundleSpeedProvenance distinguish OSM tags, road defaults, inventory signs, inventory town context and inventory reset context while effective camera/local/stale authority overrides the bundle badge.",
+    "TSR status distinguishes selected from running or paused at night; shared photo-camera status is neutral. Inventory capture reason appears in the gallery.",
+    "Lookup stages, fix age, inventory query/publication delay, selection and deduplicated Compose lifecycle presentation events support future observed sign counts. Compose lifecycle is not compositor paint or physical camera confirmation.",
+    "Indexed outgoing way-link lookup replaces the full-table OR scan; legacy endpoint fallback remains unchanged. No protected speed-reference policy change."
+  ],
+  "validation": {
+    "unit_tests": {
+      "passed": 155,
+      "failed": 0,
+      "suites": [
+        {
+          "suite": "de.youspeed.android.alpha.DriveEvidencePresentationTests",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "suite": "de.youspeed.android.alpha.ConsumerLifecycleParityTests",
+          "tests": 8,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "suite": "de.youspeed.android.alpha.TrafficSignDisplayTests",
+          "tests": 6,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "suite": "de.youspeed.android.alpha.TrafficSignPassageTests",
+          "tests": 64,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "suite": "de.youspeed.android.alpha.InventorySignRuntimeTests",
+          "tests": 56,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "suite": "de.youspeed.android.alpha.SpeedLimitReferenceModelTests",
+          "tests": 15,
+          "failures": 0,
+          "errors": 0
+        }
+      ],
+      "log": "/private/tmp/youspeed-v15-android-drive-review/indexed-isolated-build.log",
+      "reports": "android/app/build/test-results/testDebugUnitTest"
+    },
+    "inventory_database_and_full_bw": {
+      "passed": 4,
+      "failed": 0,
+      "suites": [
+        "InventorySignDatabaseInstrumentedTest",
+        "LocalInventoryBundleInstrumentedTest"
+      ],
+      "log": "/private/tmp/youspeed-v15-android-drive-review/emulator-10058-instrumentation.log",
+      "scope": "Isolated emulator; actual final frozen BW bundle lookup, optional-schema behavior and source-heading join."
+    },
+    "matching_compatibility": {
+      "passed": 21,
+      "failed": 0,
+      "suites": {
+        "MatcherParityInstrumentedTest": 10,
+        "V3SpeedLimitLookupInstrumentedTest": 9,
+        "DirectionalSpeedLookupInstrumentedTest": 2
+      },
+      "logs": [
+        "/private/tmp/youspeed-v15-android-drive-review/indexed-matcher-regressions-final.log",
+        "/private/tmp/youspeed-v15-android-drive-review/historical-directional-regression-final.log"
+      ],
+      "historical_fixture": "tests/map/fixtures/baden-wuerttemberg-directional-speeds-20260913.osm",
+      "scope": "Isolated emulator; legacy fallback, generated historical directional fixture, controller authority and directed matching. An initial missing staged fixture precondition was corrected before the final passing run."
+    },
+    "read_only_profiling": {
+      "passing_executions": 2,
+      "suite": "InstalledBundleLookupInstrumentedTest#profileReadOnlyProductionLookupStages",
+      "comparison": {
+        "points": 10,
+        "lookup_outputs_identical": true,
+        "before_query_ms_median": 632.235625,
+        "after_query_ms_median": 137.129875,
+        "before_stage_medians": {
+          "candidate_query_ms": 277.73160399999995,
+          "city_context_ms": 109.599625,
+          "topology_ms": 246.059167,
+          "selection_ms": 0.587375,
+          "route_membership_ms": 1.7822915,
+          "settlement_context_ms": 2.0303959999999996,
+          "presentation_geometry_ms": 0.134583
+        },
+        "after_stage_medians": {
+          "candidate_query_ms": 13.085458,
+          "city_context_ms": 114.0926665,
+          "topology_ms": 0.530937,
+          "selection_ms": 0.6579375000000001,
+          "route_membership_ms": 1.6785,
+          "settlement_context_ms": 2.5853335,
+          "presentation_geometry_ms": 0.160771
+        },
+        "scope": "Read-only isolated emulator productionM7 SQLite replay; not physical device drive latency and not GPS injection."
+      },
+      "query_plan_before": "SCAN way_links",
+      "query_plan_after": "Indexed SEARCH using idx_way_links_way_id",
+      "road_link_rows": 1753356,
+      "missing_exact_reverse_rows": 0,
+      "evidence": "/private/tmp/youspeed-v15-android-drive-review/lookup-profile-comparison.json",
+      "scope": "Controlled isolated emulator productionM7 replay of ten private historical fixes; selected way, speed, city, direction and candidate count identical. This is not measured physical drive latency."
+    },
+    "physical_device": {
+      "installed_and_hash_verified": true,
+      "normal_app_launched": true,
+      "dashboard_ui": "verified",
+      "visible_surface": "YouSpeed landscape dashboard",
+      "no_lock_bypass": true,
+      "scope": "Actual retained BW bundle and current user settings; normal dashboard labels verified through accessibility and screenshot. No drive/photo recording was started. No live camera recognition or geofence encounter was simulated.",
+      "readiness_verified_at_utc": "2026-10-22T05:13:51.935076+00:00",
+      "observed_speed_source": "OSM-Karte",
+      "observed_tsr_status": "TSR · Aus",
+      "observed_photo_status": "Automatische Fotos aus",
+      "capture_button": "Fotoaufnahme starten",
+      "startup_keep_logs_selected": true
+    },
+    "dashboard_correction": {
+      "build": "passed; offline normal application build",
+      "packaged_shared_svg_png_byte_pairs": 117,
+      "packaged_shared_asset_files_verified": 234,
+      "physical_dashboard_labels_verified": true,
+      "night_mode_provenance_readable": true,
+      "runtime_or_bundle_changes": false,
+      "prior_155_unit_and_25_integration_result_scope": "Passed on the preceding indexed10058 artifact with identical runtime; final dashboard-only correction compiled and was checked on the physical device. Full runtime suite was not repeated."
+    }
+  },
+  "historical_drive": {
+    "inventory_event_rows": 273,
+    "unique_sign_ids": 199,
+    "camera_off_outcomes": 273,
+    "historical_displayed_count": null,
+    "historical_displayed_count_reason": "Build10057 did not log selected secondary cards or Compose presentation. Encounter counts are not displayed counts. Historical EXPLICIT_TAG conflated OSM and inventory origin.",
+    "runtime_recognition_enabled_events": 0,
+    "inference_events": 0,
+    "night_allowed_samples": 0,
+    "night_samples": 3009,
+    "map_lookup_query_ms_p50": 866.142385,
+    "raw_gps_committed": false
+  },
+  "local_evidence_directory": "/private/tmp/youspeed-v15-android-drive-review",
+  "evidence": {
+    "install_log": "/private/tmp/youspeed-v15-android-drive-review/device-install-indexed-10058.log",
+    "preservation": "/private/tmp/youspeed-v15-android-drive-review/post-indexed-preservation.json",
+    "active_bundle": "/private/tmp/youspeed-v15-android-drive-review/active-after-indexed.json",
+    "package": "/private/tmp/youspeed-v15-android-drive-review/package-after-indexed.txt",
+    "locked_ui": "/private/tmp/youspeed-v15-android-drive-review/ui-startup-indexed-10058.xml",
+    "archive_integrity": "/private/tmp/youspeed-v15-android-drive-review/archive-integrity.json",
+    "dashboard_xml": "/private/tmp/youspeed-v15-android-drive-review/ui-dashboard-final-20261022.xml",
+    "dashboard_screenshot": "/private/tmp/youspeed-v15-android-drive-review/dashboard-final-20261022.png",
+    "dashboard_apk": "/private/tmp/youspeed-v15-android-drive-review/dashboard-apk-20261022.json",
+    "dashboard_preservation": "/private/tmp/youspeed-v15-android-drive-review/dashboard-preservation-20261022.json"
+  },
+  "readiness_verified_at_utc": "2026-10-22T05:13:51.935076+00:00"
+}

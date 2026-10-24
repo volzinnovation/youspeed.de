@@ -1,0 +1,100 @@
+{
+  "format": "youspeed.v15.drive-review.v1",
+  "date": "2026-10-21",
+  "scope": "Read-only historical drive review and Panoramax-first comparison; no new real-drive acceptance claim",
+  "frozen_bundle": {
+    "id": "baden-wuerttemberg-2026-10-21-v1.5-runtime",
+    "database_bytes": 2122903552,
+    "database_sha256": "e1a36e56cc4809cc69d2d5161b993eff21a1c08264e8d9300e79ec7546ccd00b",
+    "modified_by_review": false
+  },
+  "drive": {
+    "iphone_fixes": 2701,
+    "android_overlap_fixes": 2630,
+    "iphone_sampled_geofence_sign_ids": 209,
+    "android_sampled_geofence_sign_ids": 198,
+    "iphone_encounter_sign_ids": 209,
+    "android_encounter_sign_ids": 199,
+    "iphone_inferred_old_secondary_selection_ids": 81,
+    "iphone_old_selected_ids_with_qualified_opposite_heading": 23,
+    "android_ordinary_secondary_selection_lower_bound": 63,
+    "camera_analyzed_frames_both_devices": 0,
+    "actual_painted_screen_count": null,
+    "retrospective_ui_display_count_available": false
+  },
+  "panoramax_first": {
+    "origin": "https://panoramax.woladen.de/",
+    "unit": "photo sign annotation observations, including repeated views",
+    "photos_in_bounding_box": 2147,
+    "aligned_photos": 516,
+    "opposite_direction_photos_excluded": 881,
+    "outside_route_corridor_photos_excluded": 750,
+    "annotations": 1029,
+    "same_code_value_one_directional_candidate": 40,
+    "same_code_value_uncertain_identity_or_direction": 55,
+    "same_kind_variant_unclear": 18,
+    "possible_different_number": 3,
+    "sign_type_absent_from_full_bundle_sign_inventory": 418,
+    "type_present_no_matching_nearby_entry_established": 308,
+    "unknown_or_incomplete_annotation": 187,
+    "exclusive_categories_sum": 1029,
+    "absent_sign_families": 31,
+    "runtime_class_coverage_checked_records": 172304,
+    "distinct_physical_sign_count": null,
+    "confirmed_physical_object_mismatches": null,
+    "all_annotation_labels_independently_visually_verified": false,
+    "manual_numeric_image_review": {
+      "photo": "https://panoramax.woladen.de/?pic=ae36cd6e-8f0b-43d1-b73d-333b5b601d95&focus=pic",
+      "visible_speed_kmh": 70,
+      "nearby_bundle_candidate_speed_kmh": 50,
+      "same_physical_object_established": false
+    }
+  },
+  "verification": {
+    "route_and_panoramax_research_tests": 17,
+    "research_test_failures": 0,
+    "map_javascript_syntax_check": "passed",
+    "map_browser_errors": 0,
+    "map_primary_view": "Panoramax photos to bundle",
+    "map_all_annotations_included": true,
+    "map_number_conflict_drilldown_checked": true,
+    "map_app_trigger_device_and_radius_controls_checked": true,
+    "map_primary_rendered_width_px": 735,
+    "map_horizontal_overflow": false
+  },
+  "android_indexed_topology_correction": {
+    "indexed_query_matches_iphone": true,
+    "frozen_bundle_link_rows": 1753356,
+    "rows_without_exact_reverse": 0,
+    "frozen_database_modified": false,
+    "controlled_replay_environment": "Android production M7 matcher in emulator; recorded positions supplied only as read-only query arguments",
+    "locations_before_and_after": 10,
+    "road_speed_city_direction_candidate_outputs_identical": true,
+    "median_lookup_ms_before": 632.24,
+    "median_lookup_ms_after": 137.13,
+    "median_topology_ms_before": 246.06,
+    "median_topology_ms_after": 0.53,
+    "physical_drive_improvement_measured": false,
+    "focused_unit_tests_passed": 155,
+    "adapter_and_full_bundle_tests_passed": 4,
+    "matcher_directional_integration_tests_passed": 21,
+    "profiled_indexed_10058_apk_sha256": "5e93afcc5cdd667e51c9d6a3754c36fa269f1d9ad1921428a58f85ec84729ce5",
+    "installed_dashboard_10058_apk_sha256": "b910c3c49f000bc9b811586fab6b5505d85af1c569966bc236fa8a764d96d41f",
+    "dashboard_only_followup": {
+      "date": "2026-10-22",
+      "normal_app_build": "passed",
+      "shared_asset_files_byte_verified": 234,
+      "physical_android_dashboard": "verified",
+      "observed_speed_source": "OSM-Karte",
+      "observed_tsr_status": "TSR · Aus",
+      "observed_photo_status": "Automatische Fotos aus",
+      "runtime_or_bundle_changed": false,
+      "all_28_preferences_identical": true,
+      "all_1839_media_files_retained": true
+    }
+  },
+  "privacy": {
+    "raw_logs_or_drive_coordinates_in_this_receipt": false,
+    "private_evidence_uploaded_by_review": false
+  }
+}

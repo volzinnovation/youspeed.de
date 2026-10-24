@@ -1,0 +1,97 @@
+{
+  "format": "youspeed.android.v1.5.physical-device-install.v1",
+  "completed_at_utc": "2026-10-21T18:53:26.874945+00:00",
+  "branch": "codex/youspeed-v1.5-mobidata-bw",
+  "device": {
+    "model": "moto g86 5G",
+    "api_level": 36,
+    "physical": true,
+    "identity_evidence": "private local evidence only"
+  },
+  "application": {
+    "id": "de.youspeed.android.debug",
+    "previous_version": "1.4-debug",
+    "previous_build": 10056,
+    "version": "1.5-debug",
+    "build": 10057,
+    "installation": "adb install -r; no uninstall or app-data clearing",
+    "first_install_time_preserved": true,
+    "apk": {
+      "path": "android/app/build/outputs/apk/v1.5-device-10057/youspeed-android-debug-1.5-10057.apk",
+      "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/android/app/build/outputs/apk/v1.5-device-10057/youspeed-android-debug-1.5-10057.apk",
+      "sha256": "ba12e310d82afcbe8a0609bd43646f99c16216ade9bc6312b3b023f8022d4ae7",
+      "bytes": 625746162
+    },
+    "installed_apk_readback_sha256": "ba12e310d82afcbe8a0609bd43646f99c16216ade9bc6312b3b023f8022d4ae7"
+  },
+  "bundle": {
+    "manifest": "mapdata/bundles/v3/baden-wuerttemberg/2026-10-21-v1.5-runtime/baden-wuerttemberg_manifest.json",
+    "manifest_sha256": "2220805639e4281628a6f434c08eda34aa8fdbacc1556e611aada4d3a8105a82",
+    "region": "baden-wuerttemberg",
+    "version": "2026-10-21-v1.5-runtime",
+    "download_sha256": "6585f7de172e7f6301590cd97066b235b537504b7dd5f9d0118757b28937a204",
+    "uncompressed_sha256": "e1a36e56cc4809cc69d2d5161b993eff21a1c08264e8d9300e79ec7546ccd00b",
+    "uncompressed_bytes": 2122903552,
+    "installed_path": "/data/user/0/de.youspeed.android.debug/files/bundle/bundles/baden-wuerttemberg/2026-10-21-v1.5-runtime/baden-wuerttemberg_speeds.sqlite",
+    "on_device_hash_verified": true,
+    "active_after_launch": true,
+    "runtime_signs": 172304,
+    "installer_log": "/private/tmp/youspeed-v15-android-physical/bundle-install.log"
+  },
+  "requested_configuration": {
+    "camera_based_tsr_enabled": false,
+    "independent_tsr_enabled": false,
+    "secondary_sign_display_enabled": true,
+    "inventory_sign_capture_only": true,
+    "recognized_sign_capture_only": false,
+    "automatic_photo_capture_enabled": true,
+    "verified_in_shared_preferences_and_ui": true
+  },
+  "preservation": {
+    "previous_map_packages": 15,
+    "current_map_packages": 16,
+    "all_previous_map_packages_retained": true,
+    "existing_media_files": 1839,
+    "existing_media_bytes": 8862250902,
+    "all_existing_media_paths_and_sizes_preserved": true,
+    "saved_photo_count_shown_in_ui": 918,
+    "all_existing_nonrequested_main_preference_values_unchanged": true,
+    "sign_collection_consent_preferences_unchanged": true,
+    "cadence_privacy_account_settings_preserved": true,
+    "startup_log_retention_prompt": "kept existing logs and continued",
+    "settings_backup_private_directory": "/private/tmp/youspeed-v15-android-physical"
+  },
+  "readiness": {
+    "normal_app_main_screen_open": true,
+    "lookup_database_connection_opened": true,
+    "camera_permission_granted": true,
+    "precise_location_permission_granted": true,
+    "system_location_enabled": true,
+    "photo_camera_runtime_state": "active",
+    "photo_output_bound": true,
+    "runtime_photos_enabled": true,
+    "runtime_recognition_enabled": false,
+    "runtime_configuration_timestamp_utc": "2026-10-21T18:47:30.340914Z",
+    "awaiting_natural_gnss_fix": true,
+    "gps_injection_used": false,
+    "synthetic_drive_or_confirmation_recorded": false,
+    "destructive_test_fixtures_run_on_driver_app": false,
+    "validation_reference": "docs/MOBIDATA_BW_V1_5_ANDROID_ACCEPTANCE.json",
+    "note": "Camera is available for normal photos while TSR processing is disabled. No real-drive or camera-confirmation result is claimed."
+  },
+  "private_evidence": {
+    "directory": "/private/tmp/youspeed-v15-android-physical",
+    "ui_sign_settings": "ui-sign-settings.xml",
+    "ui_inventory_capture": "ui-inventory-capture-settings.xml",
+    "ui_main": "ui-final-ready-main.xml",
+    "runtime_diagnostics": "runtime-tail-final.ndjson",
+    "package_before": "package-before.txt",
+    "package_after": "package-after-install.txt"
+  },
+  "scope": {
+    "physical_app_and_bundle_install_completed": true,
+    "real_drive_test_performed": false,
+    "camera_visual_confirmation_test_performed": false,
+    "agent_initiated_upload_or_publication": false
+  }
+}
