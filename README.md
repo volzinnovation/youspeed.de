@@ -4,6 +4,8 @@
 
 YouSpeed is an open source app. Version 1.4 turns your iPhone or Android phone into a driving companion with on-device traffic-sign recognition, supplementary-sign text recognition (OCR), speed alerts, country-specific penalty estimates, local dashcam recordings and offline maps. No vehicle integration is needed, whatever your car’s age. Core driving features need no account; there are no advertising or tracking SDKs.
 
+[**Latest stable release: YouSpeed v1.4 — release notes and Android downloads**](https://github.com/volzinnovation/youspeed.de/releases/tag/android-v1.4)
+
 *YouSpeed is an advisory aid: road signs and traffic rules always take precedence. Recognition and penalty estimates can be incomplete or incorrect.*
 
 <img src="store/android/listing/en-US/feature-graphic-1024x500.png" alt="YouSpeed 1.4: Drive safely. In any car. Sign recognition, speed alerts and dashcam." width="900">
@@ -37,7 +39,7 @@ Originally launched on 29 August 2026 at the State of the Map conference in Pari
 
 ## Demo
 
-[**Watch the YouSpeed 1.3 feature film on YouTube**](https://www.youtube.com/watch?v=89oEyuqHVMw) — sign recognition, dashcam recording, street photos and setup before driving, in English with captions.
+[**Watch the YouSpeed feature film on YouTube**](https://www.youtube.com/watch?v=89oEyuqHVMw) — sign recognition, dashcam recording, street photos and setup before driving, in English with captions. Filmed for an earlier release.
 
 Original speed-display and warning-level demonstration from the 1.0 release:
 
