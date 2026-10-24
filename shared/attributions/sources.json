@@ -33,6 +33,16 @@
       "category": "data"
     },
     {
+      "id": "mobidata-bw-roadworks",
+      "title": "Baden-Württemberg reported roadworks (BEMaS)",
+      "attribution": "Verkehrsministerium Baden-Württemberg, BEMaS, via MobiData BW",
+      "license": "dl-de/by-2-0",
+      "source_url": "https://mobidata-bw.de/dataset/baustelleninformationen-baden-wurttemberg",
+      "license_url": "https://www.govdata.de/dl-de/by-2-0",
+      "changes": "Reported roadworks normalized and spatially filtered by YouSpeed. Where independently source-verified, reversed coordinates are corrected. Publisher reports do not verify physical signs or change speed limits. Coverage is partial and may be delayed.",
+      "category": "data"
+    },
+    {
       "id": "sign-plate",
       "title": "German traffic-sign image selection",
       "attribution": "Wikimedia Commons image contributors; Wikipedia editors (reference page)",
@@ -2490,7 +2500,67 @@
       "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
       "source_url": "https://commons.wikimedia.org/w/index.php?curid=989006&oldid=1091385473",
       "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
-      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+      "changes": "Unmodified original SVG; rasterized locally with ImageMagick 7.1.2-31 to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped. Regenerated on 2026-10-21 to correct missing white face and outline from the previous rendering; only the exterior remains transparent."
+    },
+    {
+      "id": "sign-DE:101-15",
+      "title": "DE:101-15 · Zeichen 101-15 - Steinschlag, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch:  Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61810796&oldid=1189189506",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:156-10",
+      "title": "DE:156-10 · Zeichen 156-10 - Bahnübergang mit dreistreifiger Bake, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "digital interpretiert und umgesetzt durch  Mediatus; Verordnung zur Neufassung der Straßenverkehrs-Ordnung (StVO), Bundesgesetzblatt Teil I, 2013, Nr. 12 vom 12.03.2013",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=58524665&oldid=714313812",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:223.1-50",
+      "title": "DE:223.1-50 · Zeichen 223.1-50 - Seitenstreifen befahren, 2 Fahrstreifen u. Seitenstreifen, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch:  Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61867042&oldid=906770502",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:325.1",
+      "title": "DE:325.1 · Zeichen 325.1 - Beginn eines verkehrsberuhigten Bereichs, StVO 2009.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Own work",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=997980&oldid=1188268302",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:325.2",
+      "title": "DE:325.2 · Zeichen 325.2 - Ende eines verkehrsberuhigten Bereichs, StVO 2009.svg",
+      "category": "sign",
+      "attribution": "erstes Hochladen einer Datei durch:  Andreas 06 ; eine im Jahr 2017 nach dem Verkehrsblatt interpretierte und digital umgesetzte neue Datei entstand durch  Mediatus; Image taken from the  de:Straßenverkehrsordnung  (German Road Regulations) as published by the  de:Bundesministerium für Verkehr, Bau- und Wohnungswesen  (German  Federal Ministry of Traffic, Building and Housing )",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=998015&oldid=1080972552",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:460-20",
+      "title": "DE:460-20 · Zeichen 460-20 - Bedarfsumleitung, rechtsweisend (900x600), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "nach den Vorgaben 2017 korrekt interpretiert und digital umgesetzt durch  Mediatus; siehe oben!",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=62668297&oldid=714314630",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped."
     }
   ]
 }

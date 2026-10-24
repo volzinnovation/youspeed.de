@@ -3,6 +3,8 @@
 Run: python3 tests/tsr/test_sign_speech_catalog.py -v
 Contract fingerprints pin all non-label/non-speech fields to reviewed baseline
 366132efd566da0e46833738f13e8ddf255bf199, including Swiss review gates.
+The German fingerprint additionally pins the six v1.5 inventory-only artwork
+entries; the reviewed classifier and speech scope remain unchanged.
 """
 import copy
 import hashlib
@@ -15,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 TSR = ROOT / "shared/tsr"
 LANGUAGES = {"de", "en", "fr", "nl"}
 
-CONTRACT_FINGERPRINTS = {'DE': 'b16e9d410c37d88149f411271b5681850b215c051437a7882d3edfcd396389a4',
+CONTRACT_FINGERPRINTS = {'DE': '2838df1b7c17793d1dfb469840ef0cb9a353345c3d65d1ed1594dc3c411433fb',
  'FR': 'af47677bc545972d8f6b0827a386b45eea1f8ae03479b8358179942bdd4d791b',
  'NL': '5d34aa7123089b08faaa5ed84ef76de202fbe9d1f515be60d9af0fa35f61903a',
  'BE': 'c85e61eb87d6c9c2eb6ad6c5214c7f07d93ee4584ceb12ae8e237f685ed0b4a8',

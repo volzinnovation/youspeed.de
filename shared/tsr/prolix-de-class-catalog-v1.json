@@ -2526,6 +2526,84 @@
       },
       "display_eligible": true,
       "notes": "Reference-only semantic alias absent from the pinned classifier class_labels; requires genuine model output support."
+    },
+    {
+      "class_id": "DE:101-15",
+      "sign_code": "DE:101-15",
+      "image_path": "tsr/sign-pictograms/png/de-101-15.png",
+      "label": {
+        "de": "Steinschlag rechts",
+        "en": "Rockfall on right",
+        "fr": "Chutes de pierres à droite",
+        "nl": "Vallende stenen rechts"
+      },
+      "display_eligible": true,
+      "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
+    },
+    {
+      "class_id": "DE:156-10",
+      "sign_code": "DE:156-10",
+      "image_path": "tsr/sign-pictograms/png/de-156-10.png",
+      "label": {
+        "de": "Bahnübergang mit dreistreifiger Bake",
+        "en": "Railway crossing with three-stripe beacon",
+        "fr": "Passage à niveau avec balise à trois bandes",
+        "nl": "Overweg met baken met drie strepen"
+      },
+      "display_eligible": true,
+      "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
+    },
+    {
+      "class_id": "DE:223.1-50",
+      "sign_code": "DE:223.1-50",
+      "image_path": "tsr/sign-pictograms/png/de-223.1-50.png",
+      "label": {
+        "de": "Seitenstreifen befahren",
+        "en": "Use hard shoulder",
+        "fr": "Circulation sur la bande d’arrêt d’urgence",
+        "nl": "Vluchtstrook gebruiken"
+      },
+      "display_eligible": true,
+      "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
+    },
+    {
+      "class_id": "DE:325.1",
+      "sign_code": "DE:325.1",
+      "image_path": "tsr/sign-pictograms/png/de-325.1.png",
+      "label": {
+        "de": "Beginn eines verkehrsberuhigten Bereichs",
+        "en": "Start of traffic-calmed area",
+        "fr": "Début d’une zone de circulation apaisée",
+        "nl": "Begin verkeersluw gebied"
+      },
+      "display_eligible": true,
+      "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
+    },
+    {
+      "class_id": "DE:325.2",
+      "sign_code": "DE:325.2",
+      "image_path": "tsr/sign-pictograms/png/de-325.2.png",
+      "label": {
+        "de": "Ende eines verkehrsberuhigten Bereichs",
+        "en": "End of traffic-calmed area",
+        "fr": "Fin d’une zone de circulation apaisée",
+        "nl": "Einde verkeersluw gebied"
+      },
+      "display_eligible": true,
+      "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
+    },
+    {
+      "class_id": "DE:460-20",
+      "sign_code": "DE:460-20",
+      "image_path": "tsr/sign-pictograms/png/de-460-20.png",
+      "label": {
+        "de": "Bedarfsumleitung rechts",
+        "en": "Motorway diversion right",
+        "fr": "Déviation autoroutière à droite",
+        "nl": "Omleidingsroute naar rechts"
+      },
+      "display_eligible": true,
+      "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
     }
   ],
   "provenance": {

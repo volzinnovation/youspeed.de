@@ -48,6 +48,19 @@ model's actual output vocabulary.
 - `originals/`: original Commons SVG bytes, without artwork edits.
 - `png/`: 8-bit PNG renditions fitted inside 256 × 256 pixels, preserving aspect
   ratio and transparency. Both mobile apps use these same bytes.
+- `contours/`: separate white source contours with a dark backing edge for the
+  MobiData cue. These contain no sign artwork. Both apps draw the same bytes
+  behind an unchanged German pictogram, at 1.125 times its square image frame.
+  A 16 px transparent margin surrounds the 256 px reference square. The contour
+  leaves a gap outside the sign and ignores interior lettering/cutouts.
+  Regenerate with `python3 scripts/tsr/generate_mobidata_contours.py` (Pillow and
+  NumPy); `--check` verifies every pinned input and deterministic output.
+  `contours/manifest.json` records both hashes. This decoration does not change
+  artwork eligibility, recognition, map authority or the speed-reference policy.
+  The cue requires the exact source ID `mobidata-bw-vzk`. Primary limits also
+  require current bundle authority and an inventory sign/town/reset origin;
+  pending camera limits, camera end-sign overlays, stale/unknown values and
+  speed capture suppress it. OSM inventory fallbacks never acquire this cue.
 - `national/CH/originals/` is the source-preparation exception: the ASTRA
   converted vectors are normalized to their artwork bounds and carry the
   `data-normalized="artwork-bounds"` marker. Their pre-normalization hashes are
@@ -103,7 +116,7 @@ render different bytes and correctly fail that reproducibility check.
 
 Render the PNG alpha directly, without a white card or background outside the
 physical sign outline. White sign faces, lettering and borders remain opaque.
-All 111 assets already have transparent exteriors; do not turn white pixels
+All 117 assets already have transparent exteriors; do not turn white pixels
 globally transparent, which would also erase required parts of the signs.
 
 `display_eligible` means that a faithful pictogram exists for the entry. It does

@@ -38,6 +38,15 @@ Changes: Extract boundaries converted into the offline region catalog; source UR
 
 ================================================================================
 
+Baden-Württemberg reported roadworks (BEMaS)
+Verkehrsministerium Baden-Württemberg, BEMaS, via MobiData BW
+dl-de/by-2-0
+Source: https://mobidata-bw.de/dataset/baustelleninformationen-baden-wurttemberg
+Licence / legal basis: https://www.govdata.de/dl-de/by-2-0
+Changes: Reported roadworks normalized and spatially filtered by YouSpeed. Where independently source-verified, reversed coordinates are corrected. Publisher reports do not verify physical signs or change speed limits. Coverage is partial and may be delayed.
+
+================================================================================
+
 German traffic-sign image selection
 Wikimedia Commons image contributors; Wikipedia editors (reference page)
 Individual images: public domain as declared on their Commons pages
@@ -2254,7 +2263,61 @@ Nach den amtlichen Vorgaben von 1992 digital umgesetzt durch: Mediatus; Straßen
 Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
 Source: https://commons.wikimedia.org/w/index.php?curid=989006&oldid=1091385473
 Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
-Changes: Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped.
+Changes: Unmodified original SVG; rasterized locally with ImageMagick 7.1.2-31 to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped. Regenerated on 2026-10-21 to correct missing white face and outline from the previous rendering; only the exterior remains transparent.
+
+================================================================================
+
+DE:101-15 · Zeichen 101-15 - Steinschlag, StVO 2017.svg
+Nach den amtlichen Vorgaben digital umgesetzt durch:  Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt
+Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=61810796&oldid=1189189506
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped.
+
+================================================================================
+
+DE:156-10 · Zeichen 156-10 - Bahnübergang mit dreistreifiger Bake, StVO 2013.svg
+digital interpretiert und umgesetzt durch  Mediatus; Verordnung zur Neufassung der Straßenverkehrs-Ordnung (StVO), Bundesgesetzblatt Teil I, 2013, Nr. 12 vom 12.03.2013
+Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=58524665&oldid=714313812
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped.
+
+================================================================================
+
+DE:223.1-50 · Zeichen 223.1-50 - Seitenstreifen befahren, 2 Fahrstreifen u. Seitenstreifen, StVO 2017.svg
+Nach den amtlichen Vorgaben digital umgesetzt durch:  Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt
+Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=61867042&oldid=906770502
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped.
+
+================================================================================
+
+DE:325.1 · Zeichen 325.1 - Beginn eines verkehrsberuhigten Bereichs, StVO 2009.svg
+vectorized by; Own work
+Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=997980&oldid=1188268302
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped.
+
+================================================================================
+
+DE:325.2 · Zeichen 325.2 - Ende eines verkehrsberuhigten Bereichs, StVO 2009.svg
+erstes Hochladen einer Datei durch:  Andreas 06 ; eine im Jahr 2017 nach dem Verkehrsblatt interpretierte und digital umgesetzte neue Datei entstand durch  Mediatus; Image taken from the  de:Straßenverkehrsordnung  (German Road Regulations) as published by the  de:Bundesministerium für Verkehr, Bau- und Wohnungswesen  (German  Federal Ministry of Traffic, Building and Housing )
+Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=998015&oldid=1080972552
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped.
+
+================================================================================
+
+DE:460-20 · Zeichen 460-20 - Bedarfsumleitung, rechtsweisend (900x600), StVO 1992.svg
+nach den Vorgaben 2017 korrekt interpretiert und digital umgesetzt durch  Mediatus; siehe oben!
+Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=62668297&oldid=714314630
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped.
 
 ================================================================================
 
@@ -2265,6 +2328,9 @@ GERMAN TRAFFIC-SIGN PICTOGRAMS
 Source: Wikimedia Commons originals selected from the German sign plate:
 https://de.wikipedia.org/wiki/Bildtafel_der_Verkehrszeichen_in_der_Bundesrepublik_Deutschland_seit_2017
 Reviewed and retrieved: 2026-09-10.
+Six additional BW inventory reference variants retrieved: 2026-10-21;
+DE:101-15, DE:156-10, DE:223.1-50, DE:325.1, DE:325.2 and DE:460-20.
+Their individual source revisions and hashes are retained in manifest.json.
 
 Each selected image is declared Public domain by its Commons file description,
 under German copyright law, § 5(1) UrhG, as an official-work traffic-sign image.

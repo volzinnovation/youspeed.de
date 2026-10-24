@@ -30,6 +30,16 @@
     "category": "data"
   },
   {
+    "id": "mobidata-bw-roadworks",
+    "title": "Baden-Württemberg reported roadworks (BEMaS)",
+    "attribution": "Verkehrsministerium Baden-Württemberg, BEMaS, via MobiData BW",
+    "license": "dl-de/by-2-0",
+    "source_url": "https://mobidata-bw.de/dataset/baustelleninformationen-baden-wurttemberg",
+    "license_url": "https://www.govdata.de/dl-de/by-2-0",
+    "changes": "Reported roadworks normalized and spatially filtered by YouSpeed. Where independently source-verified, reversed coordinates are corrected. Publisher reports do not verify physical signs or change speed limits. Coverage is partial and may be delayed.",
+    "category": "data"
+  },
+  {
     "id": "sign-plate",
     "title": "German traffic-sign image selection",
     "attribution": "Wikimedia Commons image contributors; Wikipedia editors (reference page)",

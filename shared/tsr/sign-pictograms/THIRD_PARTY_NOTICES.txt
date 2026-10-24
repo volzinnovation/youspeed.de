@@ -3,6 +3,9 @@ GERMAN TRAFFIC-SIGN PICTOGRAMS
 Source: Wikimedia Commons originals selected from the German sign plate:
 https://de.wikipedia.org/wiki/Bildtafel_der_Verkehrszeichen_in_der_Bundesrepublik_Deutschland_seit_2017
 Reviewed and retrieved: 2026-09-10.
+Six additional BW inventory reference variants retrieved: 2026-10-21;
+DE:101-15, DE:156-10, DE:223.1-50, DE:325.1, DE:325.2 and DE:460-20.
+Their individual source revisions and hashes are retained in manifest.json.
 
 Each selected image is declared Public domain by its Commons file description,
 under German copyright law, § 5(1) UrhG, as an official-work traffic-sign image.
