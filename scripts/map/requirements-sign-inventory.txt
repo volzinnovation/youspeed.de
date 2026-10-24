@@ -1,0 +1,2 @@
+-r requirements-settlement.txt
+openlr==1.0.1

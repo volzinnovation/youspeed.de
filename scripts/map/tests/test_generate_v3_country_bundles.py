@@ -41,10 +41,12 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
             max_geom_points=24, db_compression="gzip", release_tag="",
             skip_release_urls=True, build_settlement_context=True,
         )
-        self.assertIn("--build-settlement-context", commands[1])
-        self.assertEqual(commands[1][commands[1].index("--country-code") + 1], "DE")
-        self.assertEqual(commands[2][commands[2].index("--bundle-dir-name") + 1], "2026-09-14-settlement-pilot")
-        self.assertNotIn("--github-release-tag", commands[2])
+        build = next(c for c in commands if any(x.endswith("build_spatialite_v3.py") for x in c))
+        package = next(c for c in commands if any(x.endswith("publish_v3_bundle.py") for x in c))
+        self.assertIn("--build-settlement-context", build)
+        self.assertEqual(build[build.index("--country-code") + 1], "DE")
+        self.assertEqual(package[package.index("--bundle-dir-name") + 1], "2026-09-14-settlement-pilot")
+        self.assertNotIn("--github-release-tag", package)
 
     def test_french_settlement_bundle_includes_rules_and_supported_app_version(self):
         commands = MODULE._bundle_commands(

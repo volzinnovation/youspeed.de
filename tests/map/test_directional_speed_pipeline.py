@@ -97,27 +97,40 @@ class DirectionalSpeedPipelineTests(unittest.TestCase):
                    "--diff-file", diff, "--from-version", "base", "--to-version", "target",
                    "--out-dir", self.folder / "delta", "--validate-on-copy", check=check)
 
-    def test_direction_only_updates_and_removals_are_lossless_in_exact_delta(self):
+    def legacy_delta_source(self):
+        # New bundles advertise conditional rules and require full delivery.
+        # Keep these delta regressions scoped to the pre-capability schema.
+        legacy = self.folder / "legacy-delta-source.sqlite"
+        shutil.copy2(self.db, legacy)
+        with sqlite3.connect(legacy) as conn:
+            for table in ("road_speed_capability", "road_speed_source_tag", "road_speed_rule_set",
+                          "road_speed_rule", "road_speed_condition", "road_speed_interpretation"):
+                conn.execute("DROP TABLE " + table)
+        return legacy
+
+    def test_direction_only_updates_and_removals_are_lossless_in_legacy_exact_delta(self):
+        base = self.legacy_delta_source()
         target = self.folder / "target.sqlite"
-        shutil.copy2(self.db, target)
+        shutil.copy2(base, target)
         with sqlite3.connect(target) as conn:
             conn.execute("UPDATE ways SET maxspeed_forward='60' WHERE way_id=81302142")
             conn.execute("UPDATE ways SET maxspeed_backward=NULL WHERE way_id=1302655171")
-        self.delta(self.db, target)
+        self.delta(base, target)
         patch = zlib.decompress((self.folder / "delta/v3_patch.sql.zlib").read_bytes()).decode()
-        with sqlite3.connect(self.db) as conn:
+        with sqlite3.connect(base) as conn:
             conn.executescript(patch)
             self.assertEqual(conn.execute("SELECT maxspeed_forward,maxspeed_backward FROM ways WHERE way_id=81302142").fetchone(), ("60", "100"))
             self.assertEqual(conn.execute("SELECT maxspeed_forward,maxspeed_backward FROM ways WHERE way_id=1302655171").fetchone(), ("100", None))
             self.assertEqual(conn.execute("SELECT COUNT(*) FROM settlement_segment WHERE inside_city IS NOT NULL").fetchone(), (0,))
 
     def test_legacy_column_transition_requires_full_bundle(self):
+        target = self.legacy_delta_source()
         legacy = self.folder / "legacy.sqlite"
-        shutil.copy2(self.db, legacy)
+        shutil.copy2(target, legacy)
         with sqlite3.connect(legacy) as conn:
             conn.execute("ALTER TABLE ways DROP COLUMN maxspeed_forward")
             conn.execute("ALTER TABLE ways DROP COLUMN maxspeed_backward")
-        result = self.delta(legacy, self.db, check=False)
+        result = self.delta(legacy, target, check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("deliver a full rebuilt bundle", result.stderr)
         self.assertFalse((self.folder / "delta/v3_patch.sql.zlib").exists())

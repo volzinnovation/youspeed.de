@@ -1,5 +1,23 @@
 # YouSpeed Web Inspector
 
+## Verkehrszeichen im Offline-Bestand
+
+Nach dem Laden eines Bundles mit `traffic_sign_inventory` zeigt **Karte & TSR**
+den MobiData-BW-Bestand mit Klassen- und Gemeindefilter sowie Suche nach
+Standort-/Gruppen-ID. Treffer zentrieren die Karte und zeigen Quellattribute,
+Ausrichtung, Aktualisierungsstand, Herkunft und Lizenz. Ab Zoom 13 erscheinen
+höchstens 400 Zeichen je Ausschnitt; bei Bedarf näher zoomen oder filtern.
+Piktogramme kommen aus dem gemeinsamen offiziellen Asset-Bestand; fehlt ein
+passendes Asset, erscheint der Quellcode. Referenz-Ortstafeln sind Klassenbilder,
+keine Beschriftung des tatsächlichen Standorts. Ältere Bundles deaktivieren die
+Bestandskontrollen. Dieser Bestand beeinflusst keine Geschwindigkeitsberechnung.
+
+Lokalen BW-Build öffnen (Repository-Wurzel als HTTP-Root):
+`/inspector/?db=../mapdata/dist-v3/baden-wuerttemberg-inventory/speeds_v3.sqlite`.
+Die Datenbank wird vollständig in den Browserspeicher geladen; Kartenkacheln und
+JS-Abhängigkeiten behalten ihre bisherigen Netzanforderungen.
+[Quelle, Build und Prüfungen](../docs/MOBIDATA_BW_INVENTORY_2026-10-20.md).
+
 ## Gespeicherte Backend-Crops (volz-db / VPN)
 
 **Backend-Crops** (`/inspector/#crops`) zeigt die gespeicherten PNG-/JPEG-Bytes,

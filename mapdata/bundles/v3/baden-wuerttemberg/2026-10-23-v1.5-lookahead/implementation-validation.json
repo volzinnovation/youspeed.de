@@ -1,0 +1,264 @@
+{
+  "format": "youspeed.upcoming-speed-limit.implementation-validation.v1",
+  "date": "2026-10-23",
+  "branch": "codex/youspeed-v1.5-mobidata-bw",
+  "state": "implemented_in_working_tree",
+  "bundle": {
+    "manifest": "mapdata/bundles/v3/baden-wuerttemberg/2026-10-23-v1.5-lookahead/baden-wuerttemberg_manifest.json",
+    "verification": {
+      "format": "youspeed.upcoming.bundle-verification.v1",
+      "bundle_version": "2026-10-23-v1.5-lookahead",
+      "compressed_sha256": "d07ce7bd06481d5ff915206bbbec1d2cd990a607bbc1a0b385cdf8f23b99ed3f",
+      "compressed_bytes": 974577648,
+      "uncompressed_sha256": "34b31aac1dc5a6abacce959afb8ec44043146f5aa4f1ea488c07cb4a68efe09c",
+      "uncompressed_bytes": 3099021312,
+      "gzip_crc_and_stream": "passed",
+      "manifest_hashes": "passed",
+      "local_only": true,
+      "original_runtime": {
+        "path": "mapdata/dist-v3/baden-wuerttemberg-v1.5-runtime/speeds_v3.sqlite",
+        "bytes": 2122903552,
+        "sha256": "e1a36e56cc4809cc69d2d5161b993eff21a1c08264e8d9300e79ec7546ccd00b",
+        "matches_original_runtime_receipt": true
+      }
+    },
+    "topologyBuild": {
+      "format": "youspeed.upcoming-path.build.v1",
+      "source_sha256": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3",
+      "source_highways": 2388797,
+      "source_nodes": 12936372,
+      "source_restrictions": 24152,
+      "admitted_ways": 1085790,
+      "counts": {
+        "upcoming_path_successor": 4346282,
+        "upcoming_path_segment": 4346282,
+        "upcoming_path_node": 1941024,
+        "upcoming_path_way": 1085790
+      },
+      "successors": {
+        "certified": 284670,
+        "stop": 4061612
+      }
+    },
+    "topologyValidation": {
+      "format": "youspeed.upcoming-path.validation.v1",
+      "supported": true,
+      "ready": true,
+      "errors": [],
+      "counts": {
+        "upcoming_path_node": 1941024,
+        "upcoming_path_segment": 4346282,
+        "upcoming_path_successor": 4346282,
+        "upcoming_path_way": 1085790
+      },
+      "failed_rows": {
+        "unverified_admitted_geometry": 0,
+        "invalid_segment_geometry_or_permission": 0,
+        "missing_segment_successor_or_node_audit": 0,
+        "invalid_certified_successor": 0,
+        "invalid_stop_successor": 0,
+        "segment_coverage_gaps": 0,
+        "segment_coverage_bounds": 0
+      },
+      "successors": {
+        "certified": 284670,
+        "stop": 4061612
+      }
+    },
+    "runtimeValidation": {
+      "format": "youspeed.traffic-sign-runtime.validation.v1",
+      "supported": true,
+      "ready": true,
+      "errors": [],
+      "counts": {
+        "traffic_sign_association": 172304,
+        "traffic_sign_inventory": 163504,
+        "traffic_sign_lane": 211353,
+        "traffic_sign_rule_path": 37807,
+        "traffic_sign_runtime": 172304,
+        "traffic_sign_source": 2,
+        "traffic_sign_way_direction": 1085790,
+        "traffic_sign_way_rule": 118400
+      },
+      "failed_rows": {
+        "all_inventory_records_materialized": 0,
+        "all_runtime_signs_have_current_source": 0,
+        "directions_cover_admitted_ways": 0,
+        "accepted_associations_permitted": 0,
+        "radii_match_exact_classes": 0,
+        "rules_have_accepted_association": 0,
+        "rule_geometry_bounds": 0,
+        "unverified_parameters_never_active": 0,
+        "source_speed_value_matches_rule": 0,
+        "boundary_context_correct": 0,
+        "lane_conflicts_stay_unresolved": 0,
+        "no_overlapping_rule_interiors": 0,
+        "osm_fallback_has_source_station": 0,
+        "invalid_continuation_paths": 0
+      },
+      "associations": {
+        "accepted": 110639,
+        "ambiguous_directed_path": 42704,
+        "conflicting_source_values": 1169,
+        "low_source_confidence": 7447,
+        "missing_openlr": 46,
+        "no_verified_directed_path": 10297,
+        "unverified_source_annotation": 2
+      }
+    },
+    "structuralValidation": {
+      "report": "mapdata/bundles/v3/baden-wuerttemberg/2026-10-23-v1.5-lookahead/structural-validation.json",
+      "ready": true,
+      "errors": [],
+      "warnings": [],
+      "allWayGeometryChecked": 1085790
+    }
+  },
+  "iphone": {
+    "versionName": "1.5",
+    "versionCode": 10059,
+    "device": "iPhone 17 Pro simulator",
+    "nativeTests": {
+      "passed": 33,
+      "featureTests": 19,
+      "existingReferenceTests": 14,
+      "failures": 0,
+      "skipped": 0
+    },
+    "uiTests": {
+      "passed": 1,
+      "combinations": 6,
+      "failures": 0
+    },
+    "sharedCorpus": {
+      "scenarios": 22,
+      "steps": 34
+    },
+    "realBWApproaches": 5,
+    "probeWarmTimingMs": {
+      "samples": 145,
+      "p95": 0.111792,
+      "p99": 0.143125,
+      "max": 0.191833,
+      "scope": "196608-byte extracted fixture, simulator; not full bundle physical-device latency"
+    },
+    "logs": [
+      "output/upcoming-speed-limit-iphone/native-final.log",
+      "output/upcoming-speed-limit-iphone/ui-final.log"
+    ],
+    "results": [
+      "iphone/.derived/MainDataManagerSimulator/Logs/Test/Test-SpeedConsumer-2026.10.23_10-01-27-+0200.xcresult",
+      "iphone/.derived/MainDataManagerSimulator/Logs/Test/Test-SpeedConsumer-2026.10.23_09-58-52-+0200.xcresult"
+    ],
+    "screenshots": [
+      "output/upcoming-speed-limit-iphone/screenshots/landscape-lower-right-telemetry.png",
+      "output/upcoming-speed-limit-iphone/screenshots/landscape-upper-left-dashcam.png",
+      "output/upcoming-speed-limit-iphone/screenshots/portrait-telemetry.png"
+    ],
+    "simulatorShutdown": true
+  },
+  "android": {
+    "receipt": "output/upcoming-speed-limit-android/build-validation.json",
+    "versionName": "1.5-debug",
+    "versionCode": 10059,
+    "applicationID": "de.youspeed.android.testhost",
+    "unitTests": [
+      {
+        "name": "de.youspeed.android.alpha.UpcomingSpeedLimitTests",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.013"
+      },
+      {
+        "name": "de.youspeed.android.alpha.InventorySignRuntimeTests",
+        "tests": "56",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.126"
+      },
+      {
+        "name": "de.youspeed.android.alpha.SpeedLimitReferenceModelTests",
+        "tests": "15",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.071"
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "/Users/raphaelvolz/Github/youspeed.de/android/app/build/outputs/apk/debug/app-debug.apk",
+        "bytes": 631968707,
+        "sha256": "c827132fba880f52e2e9957aec45c9a44f51fbf486abdc8d5da3a49901fd41a5"
+      },
+      {
+        "path": "/Users/raphaelvolz/Github/youspeed.de/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+        "bytes": 14859685,
+        "sha256": "6e77b29ae680121db3d3cbc0e4f0bcba5c6528d8e03df80d14a6c8f53c65693a"
+      }
+    ],
+    "nativeTests": {
+      "corePassed": 7,
+      "finalExpiryClockRollbackPassed": 1,
+      "realBWApproaches": 5,
+      "layoutCombinations": 12,
+      "logs": [
+        "instrumentation.txt",
+        "expiry-final.txt",
+        "layout-final.txt"
+      ],
+      "finalLayoutAndExpiryPassed": 2,
+      "circleSeparationLayoutCombinations": 12
+    },
+    "probeResults": "bw-native-results.json",
+    "emulatorShutdown": true,
+    "probeTimingScope": "196608-byte extracted fixture, emulator; not full bundle physical-device latency"
+  },
+  "sharedCorpus": {
+    "path": "shared/upcoming-speed-limit/scenarios-v1.json",
+    "scenarios": 22,
+    "steps": 34
+  },
+  "pythonRegression": {
+    "passed": 66,
+    "skipped": 1,
+    "subtestsPassed": 10,
+    "command": "PYTHONPATH=/private/tmp/youspeed-lookahead-test-deps python3 -m pytest tests/map/test_upcoming_path.py tests/map/test_traffic_sign_runtime.py tests/map/test_spatialite_v3_v4_pipeline.py tests/map/test_v3_context_delta.py tests/map/test_v3_bundle_publish_and_delta.py -q",
+    "skip": {
+      "test": "SpatialiteV3V4PipelineTests.test_complete_v3_build_passes_current_testing_readiness",
+      "reason": "complete settlement build requires Shapely >= 2"
+    },
+    "publisherFinalRerun": {
+      "passed": 10,
+      "command": "python3 -m pytest -q tests/map/test_v3_bundle_publish_and_delta.py"
+    },
+    "countsOverlap": true
+  },
+  "protectedReferencePolicy": {
+    "changed": false,
+    "scenarios": 39,
+    "steps": 171,
+    "transitions": 16,
+    "states": 5,
+    "checker": "python3 scripts/speed_limit_reference/check.py",
+    "passed": true
+  },
+  "delivery": {
+    "localOnly": true,
+    "physicalDeviceInstalled": false,
+    "externallyPublished": false,
+    "merged": false,
+    "fullBundleRequired": true,
+    "deltaCLIRejectsBeforeArtifactCreation": true,
+    "automaticDeltaFallback": false
+  },
+  "unmeasured": [
+    "Full-bundle latency on physical iPhone/Android hardware",
+    "Road-drive acceptance"
+  ],
+  "scope": "Predeployment implementation validation; subsequent physical deployment is recorded separately.",
+  "subsequent_physical_validation": "physical-device-validation.json"
+}

@@ -1,0 +1,62 @@
+{
+  "bundle_version": "2026-10-20-mobidata-inventory",
+  "country_code": "DEU",
+  "coverage": {
+    "bbox": {
+      "max_lat": 49.79456,
+      "max_lon": 10.51495,
+      "min_lat": 47.53076,
+      "min_lon": 7.506494
+    },
+    "poly": {
+      "bytes": 11113,
+      "file": "baden-wuerttemberg-settlement-pilot.poly",
+      "sha256": "7f6efa982f9e22cad15bba8b01120c2ff61f8d45c40e9e0c8d6d77c2e81af541",
+      "url": null
+    }
+  },
+  "created_at_utc": "2026-10-20T20:39:26Z",
+  "db": {
+    "bytes": 470446667,
+    "compression": "gzip",
+    "file": "baden-wuerttemberg_speeds.sqlite",
+    "sha256": "26d28a2d17274f1697d13dd4d871e802545b88dced6ae9a5eb3b8812866f0195",
+    "uncompressed_bytes": 1449623552,
+    "uncompressed_sha256": "33e635306bb8515f994857628f019bfcc34b71b320556e9195905b2c0e6b2ee5",
+    "url": "baden-wuerttemberg_speeds.sqlite.gz"
+  },
+  "delta_index": null,
+  "format": "youspeed.v3.bundle.manifest",
+  "min_app_version": "1.1",
+  "region": "baden-wuerttemberg",
+  "schema_version": 1,
+  "self": {
+    "file": "baden-wuerttemberg_manifest.json",
+    "url": null
+  },
+  "source": {
+    "base_bundle": {
+      "bundle_version": "2026-09-14-settlement-pilot",
+      "manifest_sha256": "eb539a70b01018b13b63fd61586866a9c2b7630b65f87c75ff3d680a870608c4",
+      "osm_refreshed": false,
+      "runtime_tables_unchanged": true,
+      "uncompressed_database_sha256": "1938df90ffa6b9ff0f5dfb2b4f09c622f4208cb03102fc5fb2c2f5ebc531a183"
+    },
+    "traffic_sign_inventory": [
+      {
+        "dataset_url": "https://mobidata-bw.de/dataset/verkehrszeichen-baden-wurttemberg",
+        "license_id": "dl-de/by-2-0",
+        "license_url": "https://www.govdata.de/dl-de/by-2-0",
+        "modification_notice": "GeoJSON transformed to SQLite inventory tables; codes and raw properties preserved. No speed-rule interpretation.",
+        "publisher": "Verkehrsministerium Baden-W\u00fcrttemberg / MobiData BW",
+        "record_count": 163504,
+        "snapshot_sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+        "snapshot_timestamp": "2026-10-17T22:00:00.013Z",
+        "source_id": "mobidata-bw-vzk",
+        "source_url": "https://mobidata-bw.de/daten/portal/VZ-Daten/signs.geojson",
+        "usage_role": "inventory_only"
+      }
+    ]
+  },
+  "variant": "v3"
+}

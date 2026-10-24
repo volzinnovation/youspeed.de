@@ -81,6 +81,13 @@ def context_metadata(connection, alias):
 
 
 def _compatible_tables(connection, base, target):
+    if any(_exists(connection, alias, 'road_speed_capability') for alias in (base, target)):
+        raise SystemExit('Conditional-speed rules require a full bundle; delta delivery is unsupported')
+    # Topology and physical-sign source snapshots form one coherent bundle.
+    # Until their complete row/index deltas are supported, never retain old
+    # certified paths while changing roads underneath them.
+    if any(_exists(connection, alias, 'upcoming_path_capability') for alias in (base, target)):
+        raise SystemExit('Upcoming-path topology requires a full bundle; delta delivery is unsupported')
     before, after = context_metadata(connection, base), context_metadata(connection, target)
     for key in ("schema_version", "settlement_context_version"):
         if (key in before) != (key in after) or before.get(key) != after.get(key):

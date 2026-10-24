@@ -1,0 +1,265 @@
+{
+  "audit_sha256": "d11378c198012439c7a75f2ab32cf62289a0f02070d9c8b3330ce613949b5b66",
+  "classifier_record_counts": {
+    "absent": 418,
+    "exact_label": 113998,
+    "family_only": 25988,
+    "reference_only": 23100
+  },
+  "classifier_source_code_counts": {
+    "absent": 6,
+    "exact_label": 40,
+    "family_only": 5,
+    "reference_only": 2
+  },
+  "missing_or_blocked_entries": [
+    {
+      "classifier_capability": "family_only",
+      "count": 164,
+      "display_eligible": false,
+      "notes": [
+        "hazard:rocks is a wildcard family label, currently display-blocked; it is not an exact DE:101-15 prediction."
+      ],
+      "pictogram_status": "missing_official_artwork",
+      "source_code": "DE:101-15"
+    },
+    {
+      "classifier_capability": "absent",
+      "count": 148,
+      "display_eligible": false,
+      "notes": [],
+      "pictogram_status": "missing_official_artwork",
+      "source_code": "DE:156-10"
+    },
+    {
+      "classifier_capability": "absent",
+      "count": 186,
+      "display_eligible": false,
+      "notes": [],
+      "pictogram_status": "missing_official_artwork",
+      "source_code": "DE:223.1-50"
+    },
+    {
+      "classifier_capability": "exact_label",
+      "count": 1,
+      "display_eligible": false,
+      "notes": [
+        "Preserve complete literal source code; normalized_code is an inspection aid only. Empty brackets are not a value. WVZ text does not prove the current variable-message state."
+      ],
+      "pictogram_status": "source_annotation_requires_review",
+      "source_code": "DE:274-50[WVZ Rombachtunnel]"
+    },
+    {
+      "classifier_capability": "family_only",
+      "count": 9769,
+      "display_eligible": false,
+      "notes": [
+        "Source omits the ended numeric speed. Store null; do not display fabricated crossed-out speed or substitute DE:282."
+      ],
+      "pictogram_status": "missing_printed_speed",
+      "source_code": "DE:278"
+    },
+    {
+      "classifier_capability": "absent",
+      "count": 10,
+      "display_eligible": false,
+      "notes": [],
+      "pictogram_status": "missing_official_artwork",
+      "source_code": "DE:325.1"
+    },
+    {
+      "classifier_capability": "absent",
+      "count": 3,
+      "display_eligible": false,
+      "notes": [],
+      "pictogram_status": "missing_official_artwork",
+      "source_code": "DE:325.2"
+    },
+    {
+      "classifier_capability": "exact_label",
+      "count": 1,
+      "display_eligible": false,
+      "notes": [
+        "Preserve complete literal source code; normalized_code is an inspection aid only. Empty brackets are not a value. WVZ text does not prove the current variable-message state."
+      ],
+      "pictogram_status": "source_annotation_requires_review",
+      "source_code": "DE:331.2[]"
+    },
+    {
+      "classifier_capability": "absent",
+      "count": 1,
+      "display_eligible": false,
+      "notes": [
+        "Do not map to classifier exit; that existing mapping is explicitly unresolved and refers to a different semantic purpose."
+      ],
+      "pictogram_status": "missing_official_artwork",
+      "source_code": "DE:460-20"
+    }
+  ],
+  "packaged_pair_count": 43,
+  "packaged_sign_codes": [
+    "DE:101",
+    "DE:101-51",
+    "DE:101-52",
+    "DE:103-10",
+    "DE:103-20",
+    "DE:105-10",
+    "DE:105-20",
+    "DE:112",
+    "DE:114",
+    "DE:117",
+    "DE:124",
+    "DE:125",
+    "DE:142",
+    "DE:151",
+    "DE:205",
+    "DE:206",
+    "DE:209",
+    "DE:215",
+    "DE:222",
+    "DE:222-10",
+    "DE:267",
+    "DE:274-10",
+    "DE:274-100",
+    "DE:274-120",
+    "DE:274-130",
+    "DE:274-20",
+    "DE:274-30",
+    "DE:274-40",
+    "DE:274-50",
+    "DE:274-60",
+    "DE:274-70",
+    "DE:274-80",
+    "DE:276",
+    "DE:277",
+    "DE:280",
+    "DE:282",
+    "DE:310",
+    "DE:311",
+    "DE:330.1",
+    "DE:330.2",
+    "DE:331.1",
+    "DE:331.2",
+    "DE:350"
+  ],
+  "purpose": "Existing review artwork only; packaging does not enable display, recognition or runtime actions.",
+  "schema_version": 1,
+  "shared_manifest_sha256": "cd9503dc1e125cc8ca190dfd0ad1d579c265016a269d2bef5fdfa96de3ba14da",
+  "source_code_count": 53,
+  "source_record_count": 163504,
+  "source_snapshot_sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+  "status_record_counts": {
+    "existing_exact": 53891,
+    "existing_reviewed_alias": 16055,
+    "missing_official_artwork": 512,
+    "missing_printed_speed": 9769,
+    "numeric_speed_schematic_exception": 83275,
+    "source_annotation_requires_review": 2
+  },
+  "status_source_code_counts": {
+    "existing_exact": 29,
+    "existing_reviewed_alias": 3,
+    "missing_official_artwork": 6,
+    "missing_printed_speed": 1,
+    "numeric_speed_schematic_exception": 12,
+    "source_annotation_requires_review": 2
+  },
+  "visual_confirmation_limitations": [
+    {
+      "classifier_capability": "family_only",
+      "count": 164,
+      "notes": [
+        "hazard:rocks is a wildcard family label, currently display-blocked; it is not an exact DE:101-15 prediction."
+      ],
+      "source_code": "DE:101-15"
+    },
+    {
+      "classifier_capability": "family_only",
+      "count": 134,
+      "notes": [
+        "Classifier emits sign family; direction subtype comes only from inventory and is not visually confirmed by that label."
+      ],
+      "source_code": "DE:117-10"
+    },
+    {
+      "classifier_capability": "family_only",
+      "count": 746,
+      "notes": [
+        "Classifier emits sign family; direction subtype comes only from inventory and is not visually confirmed by that label."
+      ],
+      "source_code": "DE:142-10"
+    },
+    {
+      "classifier_capability": "absent",
+      "count": 148,
+      "notes": [],
+      "source_code": "DE:156-10"
+    },
+    {
+      "classifier_capability": "absent",
+      "count": 186,
+      "notes": [],
+      "source_code": "DE:223.1-50"
+    },
+    {
+      "classifier_capability": "absent",
+      "count": 70,
+      "notes": [
+        "The schematic numeric UI can represent 90; the pinned classifier has no maxspeed:90 output."
+      ],
+      "source_code": "DE:274-90"
+    },
+    {
+      "classifier_capability": "family_only",
+      "count": 9769,
+      "notes": [
+        "Source omits the ended numeric speed. Store null; do not display fabricated crossed-out speed or substitute DE:282."
+      ],
+      "source_code": "DE:278"
+    },
+    {
+      "classifier_capability": "reference_only",
+      "count": 13788,
+      "notes": [
+        "Existing reference-only town art and aliases do not add town-entry/exit outputs to the pinned 134-label classifier."
+      ],
+      "source_code": "DE:310"
+    },
+    {
+      "classifier_capability": "reference_only",
+      "count": 9312,
+      "notes": [
+        "Existing reference-only town art and aliases do not add town-entry/exit outputs to the pinned 134-label classifier."
+      ],
+      "source_code": "DE:311"
+    },
+    {
+      "classifier_capability": "absent",
+      "count": 10,
+      "notes": [],
+      "source_code": "DE:325.1"
+    },
+    {
+      "classifier_capability": "absent",
+      "count": 3,
+      "notes": [],
+      "source_code": "DE:325.2"
+    },
+    {
+      "classifier_capability": "family_only",
+      "count": 15175,
+      "notes": [
+        "Existing DE:350 official-work illustration is family artwork; classifier does not identify right/left installation subtype."
+      ],
+      "source_code": "DE:350-10"
+    },
+    {
+      "classifier_capability": "absent",
+      "count": 1,
+      "notes": [
+        "Do not map to classifier exit; that existing mapping is explicitly unresolved and refers to a different semantic purpose."
+      ],
+      "source_code": "DE:460-20"
+    }
+  ]
+}

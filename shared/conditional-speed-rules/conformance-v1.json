@@ -1,0 +1,1782 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "night-30",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "50",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 50.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "30 @ (22:00-06:00)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 30.0
+                },
+                "condition": {
+                  "kind": "schedule",
+                  "weekdays": [],
+                  "holidays": [],
+                  "windows": [
+                    [
+                      1320,
+                      360
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 50,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 30,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "day-base",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "50",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 50.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "30 @ (22:00-06:00)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 30.0
+                },
+                "condition": {
+                  "kind": "schedule",
+                  "weekdays": [],
+                  "holidays": [],
+                  "windows": [
+                    [
+                      1320,
+                      360
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T10:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 50,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 50,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "night-unlimited",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "120",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 120.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "none @ (22:00-06:00)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "unlimited"
+                },
+                "condition": {
+                  "kind": "schedule",
+                  "weekdays": [],
+                  "holidays": [],
+                  "windows": [
+                    [
+                      1320,
+                      360
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 120,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": null,
+        "unlimited": true,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "wet-unknown",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "120",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 120.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "100 @ wet",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 100.0
+                },
+                "condition": {
+                  "kind": "context",
+                  "field": "road_surface_wet"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 120,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": null,
+        "unlimited": false,
+        "unresolved": true
+      }
+    },
+    {
+      "id": "wet-dry",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "120",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 120.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "100 @ wet",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 100.0
+                },
+                "condition": {
+                  "kind": "context",
+                  "field": "road_surface_wet"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1,
+        "facts": {
+          "road_surface_wet": false
+        }
+      },
+      "base_kmh": 120,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 120,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "wet-known",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "120",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 120.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "100 @ wet",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 100.0
+                },
+                "condition": {
+                  "kind": "context",
+                  "field": "road_surface_wet"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1,
+        "facts": {
+          "road_surface_wet": true
+        }
+      },
+      "base_kmh": 120,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 100,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "redundant-unknown",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "120",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 120.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "120 @ wet",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 120.0
+                },
+                "condition": {
+                  "kind": "context",
+                  "field": "road_surface_wet"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 120,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 120,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "later-known-dominates",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "120",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 120.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "100 @ wet; 80 @ (22:00-06:00)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 100.0
+                },
+                "condition": {
+                  "kind": "context",
+                  "field": "road_surface_wet"
+                }
+              },
+              {
+                "index": 1,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 80.0
+                },
+                "condition": {
+                  "kind": "schedule",
+                  "weekdays": [],
+                  "holidays": [],
+                  "windows": [
+                    [
+                      1320,
+                      360
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 120,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 80,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "later-unknown-blocks",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "120",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 120.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "80 @ (22:00-06:00); 100 @ wet",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 80.0
+                },
+                "condition": {
+                  "kind": "schedule",
+                  "weekdays": [],
+                  "holidays": [],
+                  "windows": [
+                    [
+                      1320,
+                      360
+                    ]
+                  ]
+                }
+              },
+              {
+                "index": 1,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 100.0
+                },
+                "condition": {
+                  "kind": "context",
+                  "field": "road_surface_wet"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 120,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": null,
+        "unlimited": false,
+        "unresolved": true
+      }
+    },
+    {
+      "id": "correlated-wet",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "120",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 120.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "80 @ wet; 120 @ wet",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 80.0
+                },
+                "condition": {
+                  "kind": "context",
+                  "field": "road_surface_wet"
+                }
+              },
+              {
+                "index": 1,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 120.0
+                },
+                "condition": {
+                  "kind": "context",
+                  "field": "road_surface_wet"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 120,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 120,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "motorcar-ignores-hgv",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "50",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 50.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:hgv:conditional",
+            "raw": "30 @ (weight>7.5)",
+            "role": "speed",
+            "vehicle": "hgv",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 30,
+            "status": "unsupported",
+            "clauses": [],
+            "issue": "unsupported_condition"
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 50,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 50,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "lanes-unknown",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "100",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 100.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:lanes:conditional",
+            "raw": "80 @ wet|80 @ wet|",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": true,
+            "conditional": true,
+            "priority": 0,
+            "status": "unsupported",
+            "clauses": [],
+            "issue": "unsupported_scope"
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 100,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": null,
+        "unlimited": false,
+        "unresolved": true
+      }
+    },
+    {
+      "id": "variable-unknown",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "120",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 120.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:variable",
+            "raw": "yes",
+            "role": "variable",
+            "status": "supported",
+            "clauses": []
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 120,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": null,
+        "unlimited": false,
+        "unresolved": true
+      }
+    },
+    {
+      "id": "variable-no",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "120",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 120.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:variable",
+            "raw": "no",
+            "role": "variable",
+            "status": "supported",
+            "clauses": []
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 120,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 120,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "directional-static-beats-generic-conditional",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "100",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 100.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "30 @ (22:00-06:00)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 30.0
+                },
+                "condition": {
+                  "kind": "schedule",
+                  "weekdays": [],
+                  "holidays": [],
+                  "windows": [
+                    [
+                      1320,
+                      360
+                    ]
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:forward",
+            "raw": "80",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 1,
+            "lane": false,
+            "conditional": false,
+            "priority": 1,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 80.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 80,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 80,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "holiday-exclusion-unknown",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "50",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 50.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "30 @ (Mo-Fr 07:00-17:00; PH off)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 30.0
+                },
+                "condition": {
+                  "kind": "all",
+                  "items": [
+                    {
+                      "kind": "schedule",
+                      "weekdays": [
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                      ],
+                      "holidays": [],
+                      "windows": [
+                        [
+                          420,
+                          1020
+                        ]
+                      ]
+                    },
+                    {
+                      "kind": "not",
+                      "item": {
+                        "kind": "schedule",
+                        "weekdays": [],
+                        "holidays": [
+                          "PH"
+                        ],
+                        "windows": []
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T10:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 50,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": null,
+        "unlimited": false,
+        "unresolved": true
+      }
+    },
+    {
+      "id": "holiday-exclusion-known",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "50",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 50.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "30 @ (Mo-Fr 07:00-17:00; PH off)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 30.0
+                },
+                "condition": {
+                  "kind": "all",
+                  "items": [
+                    {
+                      "kind": "schedule",
+                      "weekdays": [
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                      ],
+                      "holidays": [],
+                      "windows": [
+                        [
+                          420,
+                          1020
+                        ]
+                      ]
+                    },
+                    {
+                      "kind": "not",
+                      "item": {
+                        "kind": "schedule",
+                        "weekdays": [],
+                        "holidays": [
+                          "PH"
+                        ],
+                        "windows": []
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T10:00:00Z",
+        "country_code": "DE",
+        "direction": 1,
+        "facts": {
+          "PH:2026-1023": false
+        }
+      },
+      "base_kmh": 50,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 30,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "friday-overnight-anchor",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "50",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 50.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "30 @ (Fr 22:00-06:00)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 30.0
+                },
+                "condition": {
+                  "kind": "schedule",
+                  "weekdays": [
+                    5
+                  ],
+                  "holidays": [],
+                  "windows": [
+                    [
+                      1320,
+                      360
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-24T01:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 50,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 30,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "saturday-night-not-friday",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "50",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 50.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "30 @ (Fr 22:00-06:00)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 30.0
+                },
+                "condition": {
+                  "kind": "schedule",
+                  "weekdays": [
+                    5
+                  ],
+                  "holidays": [],
+                  "windows": [
+                    [
+                      1320,
+                      360
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-24T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 50,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 50,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "annual-wrap",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "50",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 50.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "30 @ (Oct-Apr)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 30.0
+                },
+                "condition": {
+                  "kind": "schedule",
+                  "weekdays": [],
+                  "holidays": [],
+                  "windows": [],
+                  "annual_start": 1001,
+                  "annual_end": 430
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 50,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 30,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "clock-untrusted",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "50",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 50.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "30 @ (22:00-06:00)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 30.0
+                },
+                "condition": {
+                  "kind": "schedule",
+                  "weekdays": [],
+                  "holidays": [],
+                  "windows": [
+                    [
+                      1320,
+                      360
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1,
+        "clock_trusted": false
+      },
+      "base_kmh": 50,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": null,
+        "unlimited": false,
+        "unresolved": true
+      }
+    },
+    {
+      "id": "dst-fall-first",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "50",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 50.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "30 @ (Su 02:00-03:00)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 30.0
+                },
+                "condition": {
+                  "kind": "schedule",
+                  "weekdays": [
+                    7
+                  ],
+                  "holidays": [],
+                  "windows": [
+                    [
+                      120,
+                      180
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-25T00:30:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 50,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 30,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "dst-fall-second",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "50",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 50.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "30 @ (Su 02:00-03:00)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 30.0
+                },
+                "condition": {
+                  "kind": "schedule",
+                  "weekdays": [
+                    7
+                  ],
+                  "holidays": [],
+                  "windows": [
+                    [
+                      120,
+                      180
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-25T01:30:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 50,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": 30,
+        "unlimited": false,
+        "unresolved": false
+      }
+    },
+    {
+      "id": "malformed-clock-retained",
+      "rules": {
+        "version": 1,
+        "grammar": "youspeed-osm-speed-1",
+        "tags": [
+          {
+            "key": "maxspeed",
+            "raw": "50",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": false,
+            "priority": 0,
+            "status": "supported",
+            "clauses": [
+              {
+                "index": 0,
+                "limit": {
+                  "kind": "numeric",
+                  "kmh": 50.0
+                },
+                "condition": {
+                  "kind": "true"
+                }
+              }
+            ]
+          },
+          {
+            "key": "maxspeed:conditional",
+            "raw": "30 @ (07:00-17:030)",
+            "role": "speed",
+            "vehicle": "all",
+            "direction": 0,
+            "lane": false,
+            "conditional": true,
+            "priority": 0,
+            "status": "unsupported",
+            "clauses": [],
+            "issue": "unsupported_condition"
+          }
+        ]
+      },
+      "context": {
+        "at": "2026-10-23T21:00:00Z",
+        "country_code": "DE",
+        "direction": 1
+      },
+      "base_kmh": 50,
+      "base_unlimited": false,
+      "expected": {
+        "kmh": null,
+        "unlimited": false,
+        "unresolved": true
+      }
+    }
+  ]
+}

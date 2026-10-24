@@ -8,6 +8,7 @@ Files:
 - `v3_bundle_manifest.schema.json`: v3 consumer full-bundle contract.
   - supports optional `db_parts` array for multi-part DB delivery when single-file assets exceed host limits.
 - `v3_delta_manifest.schema.json`: v3 incremental patch contract.
+- [`upcoming_path_v1.md`](upcoming_path_v1.md) and [`upcoming_path_v1.sql`](upcoming_path_v1.sql): optional source-node topology, certified directed continuations and station indexing for offline upcoming speed-limit previews.
 - `examples/catalog.v2.example.json`: concrete catalog example.
 - `examples/tile_manifest.v2.example.json`: concrete tile-manifest example.
 

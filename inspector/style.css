@@ -1963,3 +1963,14 @@ a:focus-visible,
 .track-video-panel.lane-annotating { max-height: calc(100vh - 100px); }
 .lane-annotating .track-path-panel, .lane-annotating .track-video-alignment, .lane-annotating #track-video-clock { display: none; }
 .lane-annotating .track-video-stage { position: sticky; top: 0; z-index: 2; background: #000; }
+/* Optional source-inventory overlay in the local SQLite viewer. */
+.inventory-panel { border-top: 1px solid var(--border, #d8dfe3); margin-top: 20px; padding-top: 14px; }
+.inventory-results { display: grid; gap: 5px; max-height: 240px; overflow: auto; margin-top: 8px; }
+.inventory-result { text-align: left; width: 100%; }
+.inventory-map-marker { display: flex; align-items: center; justify-content: center; }
+.inventory-map-marker img { width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 1px 2px #3338); }
+.inventory-map-marker span { padding: 3px 5px; border: 1px solid #856400; border-radius: 3px; background: #fff5cb; color: #332900; font: 11px sans-serif; white-space: nowrap; }
+.inventory-detail dl { display: grid; grid-template-columns: minmax(100px, .8fr) minmax(0, 1.5fr); gap: 5px 10px; font-size: 12px; }
+.inventory-detail dd { margin: 0; overflow-wrap: anywhere; }
+.inventory-detail dt { font-weight: 600; }
+.inventory-detail-icon { width: 72px; height: 72px; object-fit: contain; float: right; margin: 0 0 8px 12px; }

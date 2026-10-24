@@ -1,0 +1,18 @@
+{
+  "format": "youspeed.upcoming-path.build.v1",
+  "source_sha256": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3",
+  "source_highways": 2388797,
+  "source_nodes": 12936372,
+  "source_restrictions": 24152,
+  "admitted_ways": 1085790,
+  "counts": {
+    "upcoming_path_successor": 4346282,
+    "upcoming_path_segment": 4346282,
+    "upcoming_path_node": 1941024,
+    "upcoming_path_way": 1085790
+  },
+  "successors": {
+    "certified": 284670,
+    "stop": 4061612
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "format": "youspeed.mobidata.v1.5.proposal-only.1",
+  "usage_role": "proposal_only",
+  "enabled": false,
+  "field_ready": false,
+  "candidate_radius_m": 30.0,
+  "way_candidates_computed": true,
+  "direction_semantics": "unknown; local heading follows stored OSM geometry only",
+  "limitations": [
+    "OpenLR not decoded",
+    "Source orientation convention not verified",
+    "No legal/directional speed-rule application",
+    "No mobile runtime integration"
+  ],
+  "counts": {
+    "signs": 163504,
+    "way_candidates": 586706
+  },
+  "kinds": {
+    "secondary": 47359,
+    "settlement_boundary": 23100,
+    "speed_limit": 83276,
+    "speed_limit_end": 9769
+  },
+  "parameter_statuses": {
+    "annotation_unverified": 1,
+    "dynamic_unverified": 1,
+    "missing_value": 9769,
+    "not_applicable": 70458,
+    "parsed_source_value": 83275
+  },
+  "associations": {
+    "ambiguous": 135469,
+    "no_candidate": 62,
+    "single_candidate_direction_unverified": 27973
+  },
+  "invalid_geometry_ways": 0,
+  "sources": [
+    {
+      "source_id": "mobidata-bw-vzk",
+      "snapshot_sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+      "snapshot_timestamp": "2026-10-17T22:00:00.013Z",
+      "record_count": 163504
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "format": "youspeed.upcoming-path.validation.v1",
+  "supported": true,
+  "ready": true,
+  "errors": [],
+  "counts": {
+    "upcoming_path_node": 1941024,
+    "upcoming_path_segment": 4346282,
+    "upcoming_path_successor": 4346282,
+    "upcoming_path_way": 1085790
+  },
+  "failed_rows": {
+    "unverified_admitted_geometry": 0,
+    "invalid_segment_geometry_or_permission": 0,
+    "missing_segment_successor_or_node_audit": 0,
+    "invalid_certified_successor": 0,
+    "invalid_stop_successor": 0,
+    "segment_coverage_gaps": 0,
+    "segment_coverage_bounds": 0
+  },
+  "successors": {
+    "certified": 284670,
+    "stop": 4061612
+  }
+}

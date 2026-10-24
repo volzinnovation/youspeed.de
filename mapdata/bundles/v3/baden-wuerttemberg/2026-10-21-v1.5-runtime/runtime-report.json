@@ -1,0 +1,27 @@
+{
+  "format": "youspeed.traffic-sign-runtime.v1",
+  "version": "1",
+  "signs": 172304,
+  "mobidata_signs": 163504,
+  "osm_town_fallbacks": 8800,
+  "rules": 118400,
+  "associations": {
+    "accepted": 110639,
+    "ambiguous_directed_path": 42704,
+    "conflicting_source_values": 1169,
+    "low_source_confidence": 7447,
+    "missing_openlr": 46,
+    "no_verified_directed_path": 10297,
+    "unverified_source_annotation": 2
+  },
+  "road_directions": 1085790,
+  "known_lanes": 211353,
+  "unresolved_lane_rules": 1954,
+  "continuation_rules": 37807,
+  "matcher": "directed-lrp-path-v1",
+  "decoder": "openlr-1.0.1",
+  "source_snapshots": {
+    "mobidata-bw-vzk": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+    "osm-settlement": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3"
+  }
+}

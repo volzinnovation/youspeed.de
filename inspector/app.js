@@ -82,6 +82,9 @@ let selectedDriveLogIndex = -1;
 let availableTables = new Set();
 let selectedAdminBoundaryLevelFilter = "all";
 let matcherDataLoadPromise = null;
+let signInventoryController = null;
+const requestedDatabase = new URLSearchParams(window.location.search).get("db");
+if (requestedDatabase) dbURLInput.value = requestedDatabase;
 
 const replayWayColors = {
   logged: "#00e4ff",
@@ -480,6 +483,7 @@ function closeCurrentDatabase() {
   }
   sqlDatabase = null;
   availableTables = new Set();
+  void signInventoryController?.databaseChanged();
   clearAdminBoundaryLayers();
   clearPortalOverlay();
   setAdminValue(null);
@@ -619,6 +623,7 @@ async function loadDatabaseFromBytes(bytes, sourceLabel) {
   closeCurrentDatabase();
   sqlDatabase = new SQL.Database(new Uint8Array(bytes));
   validateRequiredTables();
+  void signInventoryController?.databaseChanged();
 
   const schemaVersion = safeString(querySingleValue("SELECT value FROM metadata WHERE key='schema_version' LIMIT 1"));
   const sourceDist = safeString(querySingleValue("SELECT value FROM metadata WHERE key='source_v1_dist' LIMIT 1"));
@@ -2952,6 +2957,7 @@ function identifyStreetUnderCrosshair() {
   setStatus(`Identifiziert: ${street} (Way ${wayID}, ~${Math.round(best.distanceM)} m) · Admin: ${adminSummary}.`);
 }
 
+signInventoryController = window.YouSpeedTrafficSignInventory.createController({map, executeRows, tableExists});
 dbLoadBtn.addEventListener("click", loadDatabaseFromURL);
 dbFileInput.addEventListener("change", async (event) => {
   const file = event.target.files?.[0];

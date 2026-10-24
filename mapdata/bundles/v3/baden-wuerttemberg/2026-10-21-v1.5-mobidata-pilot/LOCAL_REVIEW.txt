@@ -1,0 +1,8 @@
+Local v1.5 MobiData BW data-contract pilot, 2026-10-21.
+163504 source records; 586706 geometric OSM candidates.
+Every pilot rule/candidate is disabled (CHECK enabled=0); directions are unknown.
+No mobile geofence, confirmation-log, camera-trigger or new classifier implementation.
+43 existing official SVG/PNG pairs; missing assets remain documented.
+OSM road/settlement base unchanged from September. Ten current field-readiness errors remain.
+Read IMPLEMENTATION_SPEC.md and BUILD_RECORD.md before review.
+No deployment, release, upload or publication was performed.

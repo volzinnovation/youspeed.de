@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
+
+from traffic_sign_inventory import is_bw_region, download_snapshot
 import re
 import shutil
 import subprocess
@@ -111,6 +113,11 @@ def main(argv=None):
              '--build-way-links', '--way-links-schema', 'detailed']
     if settlement:
         build.append('--build-settlement-context')
+    if iso2 == 'DE' and is_bw_region(region):
+        snapshot = Path('mapdata/raw/mobidata-bw-signs.geojson')
+        download_snapshot(snapshot)
+        build[build.index('--corridor-mode') + 1] = 'paired'
+        build += ['--traffic-sign-geojson', snapshot, '--build-traffic-sign-runtime']
     run(*build)
     package = Path('mapdata/bundles/v3') / region / args.bundle_version
     package.mkdir(parents=True, exist_ok=False)
@@ -133,8 +140,8 @@ def main(argv=None):
     run(*publish)
     manifest_path = package / plan['bundle_manifest_asset']
     manifest = json.loads(manifest_path.read_text())
-    manifest['source'] = {'commit': args.source_commit, 'pbf_timestamp': source_timestamp,
-                          'pbf_sha256': source_hash, 'pbf_url': plan['pbf_url']}
+    manifest.setdefault('source', {}).update({'commit': args.source_commit, 'pbf_timestamp': source_timestamp,
+                          'pbf_sha256': source_hash, 'pbf_url': plan['pbf_url']})
     write_json(manifest_path, manifest)
     report = validate_bundle(db, manifest_path, require_settlement=settlement)
     write_json(package / f'{prefix}_validation.json', report)

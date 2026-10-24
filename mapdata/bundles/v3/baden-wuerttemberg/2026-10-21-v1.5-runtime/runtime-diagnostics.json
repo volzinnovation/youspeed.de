@@ -1,0 +1,325 @@
+{
+  "purpose": "Inspect source-backed Karlsruhe-area test targets. Coordinates are inventory claims, not surveyed camera sightings. Directed fixes require <=25m accuracy, <=3s age, stable way, <=35deg heading+heading accuracy.",
+  "coverage_by_kind": [
+    {
+      "kind": "secondary",
+      "records": 47359,
+      "accepted": 30965
+    },
+    {
+      "kind": "settlement_boundary",
+      "records": 31900,
+      "accepted": 19335
+    },
+    {
+      "kind": "speed_limit",
+      "records": 83276,
+      "accepted": 54331
+    },
+    {
+      "kind": "speed_limit_end",
+      "records": 9769,
+      "accepted": 6008
+    }
+  ],
+  "rule_scopes": [
+    {
+      "lane_scope": "all",
+      "rules": 116446
+    },
+    {
+      "lane_scope": "conditional",
+      "rules": 1943
+    },
+    {
+      "lane_scope": "unresolved",
+      "rules": 11
+    }
+  ],
+  "samples": [
+    {
+      "sign_id": "mobidata-bw-vzk:d48e7d44d0f313afadefcf627440e013f4e6de9e0dd05d054bb7bfd476b8e6fc",
+      "sign_code": "DE:274-30",
+      "lon": 8.397941,
+      "lat": 49.002151,
+      "display_radius_m": 10.0,
+      "way_id": 576888977,
+      "direction": -1,
+      "station_chainage_m": 54.238992063479444,
+      "local_heading_deg": 9.152874486478751,
+      "model_classes": [
+        "maxspeed:30"
+      ],
+      "association_evidence": {
+        "candidates": [
+          {
+            "direction": -1,
+            "distance_m": 6.316952940686996,
+            "local_heading_deg": 9.152874486478751,
+            "offset_error_m": 0.7203752389301297,
+            "orientation_error_deg": 11.152874486478765,
+            "path": [
+              [
+                576888977,
+                -1
+              ]
+            ],
+            "score": 12.447508461728908,
+            "station_chainage_m": 54.238992063479444,
+            "way_id": 576888977
+          },
+          {
+            "direction": 1,
+            "distance_m": 9.572018529478312,
+            "local_heading_deg": 137.21558388947795,
+            "offset_error_m": 10.594938458159307,
+            "orientation_error_deg": 40.784416110522045,
+            "path": [
+              [
+                251351720,
+                1
+              ],
+              [
+                145344284,
+                1
+              ],
+              [
+                576888977,
+                -1
+              ]
+            ],
+            "score": 38.10890074568751,
+            "station_chainage_m": 21.396169093795848,
+            "way_id": 145344284
+          },
+          {
+            "direction": 1,
+            "distance_m": 25.886909481437677,
+            "local_heading_deg": 179.5118586961965,
+            "offset_error_m": 10.80123063546503,
+            "orientation_error_deg": 1.511858696196498,
+            "path": [
+              [
+                251351720,
+                1
+              ],
+              [
+                145344284,
+                1
+              ],
+              [
+                576888977,
+                -1
+              ]
+            ],
+            "score": 50.54810900054075,
+            "station_chainage_m": 6.09215530734783,
+            "way_id": 251351720
+          }
+        ],
+        "decoder": "openlr-1.0.1",
+        "matcher": "directed-lrp-path-v1"
+      }
+    },
+    {
+      "sign_id": "mobidata-bw-vzk:76d69e9c8f77380bb0c9d130fb00686a6827a830a8aa3fe379322edb3b3e8b15",
+      "sign_code": "DE:274-70",
+      "lon": 8.38199,
+      "lat": 48.994354,
+      "display_radius_m": 10.0,
+      "way_id": 158782996,
+      "direction": 1,
+      "station_chainage_m": 10.608898837242636,
+      "local_heading_deg": 216.7406911862437,
+      "model_classes": [
+        "maxspeed:70"
+      ],
+      "association_evidence": {
+        "candidates": [
+          {
+            "direction": 1,
+            "distance_m": 4.878470060913225,
+            "local_heading_deg": 216.7406911862437,
+            "offset_error_m": 2.087580460876909,
+            "orientation_error_deg": 0.25930881375629156,
+            "path": [
+              [
+                158782999,
+                1
+              ],
+              [
+                158782996,
+                1
+              ]
+            ],
+            "score": 8.187522280986212,
+            "station_chainage_m": 10.608898837242636,
+            "way_id": 158782996
+          },
+          {
+            "direction": 1,
+            "distance_m": 11.676834042575726,
+            "local_heading_deg": 217.0062033010152,
+            "offset_error_m": 8.521318376351125,
+            "orientation_error_deg": 0.006203301015204943,
+            "path": [
+              [
+                158782999,
+                1
+              ],
+              [
+                158782996,
+                1
+              ]
+            ],
+            "score": 16.569010190243155,
+            "station_chainage_m": 60.57034370618027,
+            "way_id": 158782999
+          },
+          {
+            "direction": 1,
+            "distance_m": 29.00387780224195,
+            "local_heading_deg": 212.97393902793777,
+            "offset_error_m": 30.490053947951097,
+            "orientation_error_deg": 4.026060972062226,
+            "path": [
+              [
+                158782999,
+                1
+              ],
+              [
+                158782996,
+                1
+              ],
+              [
+                61241943,
+                1
+              ]
+            ],
+            "score": 40.2895301138037,
+            "station_chainage_m": 0.0,
+            "way_id": 61241943
+          },
+          {
+            "direction": 1,
+            "distance_m": 29.00387780224195,
+            "local_heading_deg": 236.65114143877014,
+            "offset_error_m": 30.490053947951097,
+            "orientation_error_deg": 19.65114143877014,
+            "path": [
+              [
+                158782999,
+                1
+              ],
+              [
+                158782996,
+                1
+              ],
+              [
+                3677948,
+                1
+              ]
+            ],
+            "score": 41.85203816047449,
+            "station_chainage_m": 0.0,
+            "way_id": 3677948
+          }
+        ],
+        "decoder": "openlr-1.0.1",
+        "matcher": "directed-lrp-path-v1"
+      }
+    },
+    {
+      "sign_id": "mobidata-bw-vzk:f9c203b89fe9cb109bf381080d2f67efa695367040feaeae5c70f7659cf7dc06",
+      "sign_code": "DE:310",
+      "lon": 8.394071,
+      "lat": 49.008008,
+      "display_radius_m": 30.0,
+      "way_id": 4212342,
+      "direction": 1,
+      "station_chainage_m": 11.616190534617763,
+      "local_heading_deg": 226.9984966630705,
+      "model_classes": [],
+      "association_evidence": {
+        "candidates": [
+          {
+            "direction": 1,
+            "distance_m": 0.2810210391406346,
+            "local_heading_deg": 226.9984966630705,
+            "offset_error_m": 0.37697863841775536,
+            "orientation_error_deg": 10.998496663070512,
+            "path": [
+              [
+                4212342,
+                1
+              ]
+            ],
+            "score": 5.180814060013228,
+            "station_chainage_m": 11.616190534617763,
+            "way_id": 4212342
+          }
+        ],
+        "decoder": "openlr-1.0.1",
+        "matcher": "directed-lrp-path-v1"
+      }
+    },
+    {
+      "sign_id": "mobidata-bw-vzk:0d7be6b795980df979bdb727acc343ef77d93e64cfeb62dd14d83dbcf70558c4",
+      "sign_code": "DE:311",
+      "lon": 8.394651,
+      "lat": 48.979715,
+      "display_radius_m": 30.0,
+      "way_id": 249826919,
+      "direction": 1,
+      "station_chainage_m": 14.97313726758424,
+      "local_heading_deg": 126.4591973422484,
+      "model_classes": [],
+      "association_evidence": {
+        "candidates": [
+          {
+            "direction": 1,
+            "distance_m": 5.846117557061715,
+            "local_heading_deg": 126.4591973422484,
+            "offset_error_m": 3.328660467444779,
+            "orientation_error_deg": 0.5408026577516125,
+            "path": [
+              [
+                255576049,
+                1
+              ],
+              [
+                249826919,
+                1
+              ]
+            ],
+            "score": 8.171185505047772,
+            "station_chainage_m": 14.97313726758424,
+            "way_id": 249826919
+          },
+          {
+            "direction": 1,
+            "distance_m": 15.793234926997815,
+            "local_heading_deg": 127.00829616145306,
+            "offset_error_m": 18.301797735261978,
+            "orientation_error_deg": 0.008296161453074546,
+            "path": [
+              [
+                255576049,
+                1
+              ],
+              [
+                249826919,
+                1
+              ]
+            ],
+            "score": 21.808336542308314,
+            "station_chainage_m": 36.391834612136414,
+            "way_id": 255576049
+          }
+        ],
+        "decoder": "openlr-1.0.1",
+        "matcher": "directed-lrp-path-v1"
+      }
+    }
+  ]
+}

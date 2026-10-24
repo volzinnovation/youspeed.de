@@ -1,0 +1,1255 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-10-21",
+  "purpose": "v1.5 MobiData BW test-bundle mapping audit; not an approved runtime recognition/action registry",
+  "source": {
+    "url": "https://mobidata-bw.de/daten/portal/VZ-Daten/signs.geojson",
+    "sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+    "timestamp": "2026-10-17T22:00:00.013Z",
+    "record_count": 163504,
+    "exact_code_count": 53,
+    "property_keys": [
+      "ARS",
+      "AbstandFahrbahnrand",
+      "AufstellungsDatum",
+      "GruppenAusrichtung",
+      "GruppenID",
+      "GruppenReihung",
+      "Lage",
+      "LetzteAktualisierung",
+      "OpenLRBinary",
+      "OpenLRConfidence",
+      "StandortAusfuehrung",
+      "StandortID",
+      "Verkehrszeichennummer",
+      "Verwaltungsebene"
+    ]
+  },
+  "classifier": {
+    "catalog": "shared/tsr/prolix-de-class-catalog-v1.json",
+    "checkpoint_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+    "label_count": 134,
+    "scope": "Pinned classifier vocabulary only; class availability does not establish calibrated detection, end-to-end recognition, legal applicability, or runtime action approval."
+  },
+  "official_meaning_reference": "https://www.verwaltungsvorschriften-im-internet.de/BMVBW-S32-0001-KF10-BS-A008.htm",
+  "artwork_manifest": "shared/tsr/sign-pictograms/manifest.json",
+  "summary": {
+    "pictogram_status_exact_code_counts": {
+      "existing_exact": 29,
+      "missing_official_artwork": 6,
+      "existing_reviewed_alias": 3,
+      "numeric_speed_schematic_exception": 12,
+      "source_annotation_requires_review": 2,
+      "missing_printed_speed": 1
+    },
+    "pictogram_status_record_counts": {
+      "existing_exact": 53891,
+      "missing_official_artwork": 512,
+      "existing_reviewed_alias": 16055,
+      "numeric_speed_schematic_exception": 83275,
+      "source_annotation_requires_review": 2,
+      "missing_printed_speed": 9769
+    },
+    "missing_official_artwork_codes": [
+      "DE:101-15",
+      "DE:156-10",
+      "DE:223.1-50",
+      "DE:325.1",
+      "DE:325.2",
+      "DE:460-20"
+    ]
+  },
+  "future_parameter_contract": {
+    "observed_grade_mass_dimension_record_count": 0,
+    "property_values_available": false,
+    "families": [
+      {
+        "sign_family": "DE:108",
+        "parameter_kind": "descent_percent",
+        "unit": "%",
+        "classifier_label": "hazard:incline",
+        "classifier_direction_or_value_supported": false
+      },
+      {
+        "sign_family": "DE:110",
+        "parameter_kind": "ascent_percent",
+        "unit": "%",
+        "classifier_label": "hazard:incline",
+        "classifier_direction_or_value_supported": false
+      },
+      {
+        "sign_family": "DE:262",
+        "parameter_kind": "max_mass_tonnes",
+        "unit": "t",
+        "classifier_label": "maxweight",
+        "classifier_direction_or_value_supported": false
+      },
+      {
+        "sign_family": "DE:263",
+        "parameter_kind": "max_axle_mass_tonnes",
+        "unit": "t",
+        "classifier_label": "maxaxleweight",
+        "classifier_direction_or_value_supported": false
+      },
+      {
+        "sign_family": "DE:264",
+        "parameter_kind": "max_width_metres",
+        "unit": "m",
+        "classifier_label": "maxwidth",
+        "classifier_direction_or_value_supported": false
+      },
+      {
+        "sign_family": "DE:265",
+        "parameter_kind": "max_height_metres",
+        "unit": "m",
+        "classifier_label": "maxheight",
+        "classifier_direction_or_value_supported": false
+      },
+      {
+        "sign_family": "DE:266",
+        "parameter_kind": "max_length_metres",
+        "unit": "m",
+        "classifier_label": "maxlength",
+        "classifier_direction_or_value_supported": false
+      }
+    ],
+    "requirements": [
+      "Keep raw lexical value, exact source code, normalized finite decimal value, unit, provenance and parse status.",
+      "Use null for missing values; never default to the number in illustrative artwork.",
+      "Direction is a distinct field for incline/descent. Distinguish total mass from axle mass and width/height/length.",
+      "Render an officially sourced exact-value pictogram plus accessible value text; do not replace sign artwork with platform drawing. Numeric speed limits are the approved schematic exception.",
+      "Unknown, range or malformed values remain non-actionable. Add explicit fixtures; this snapshot cannot supply positive real-world parameter examples."
+    ]
+  },
+  "entries": [
+    {
+      "source_code": "DE:101",
+      "count": 1932,
+      "normalized_code": "DE:101",
+      "source_annotation": null,
+      "pictogram_key": "DE:101",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-101.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-101.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:101-15",
+      "count": 164,
+      "normalized_code": "DE:101-15",
+      "source_annotation": null,
+      "pictogram_key": null,
+      "pictogram_original_path": null,
+      "pictogram_png_path": null,
+      "pictogram_status": "missing_official_artwork",
+      "display_eligible": false,
+      "classifier_labels": [
+        "hazard:rocks"
+      ],
+      "classifier_capability": "family_only",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": [
+        "hazard:rocks is a wildcard family label, currently display-blocked; it is not an exact DE:101-15 prediction."
+      ]
+    },
+    {
+      "source_code": "DE:101-51",
+      "count": 316,
+      "normalized_code": "DE:101-51",
+      "source_annotation": null,
+      "pictogram_key": "DE:101-51",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-101-51.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-101-51.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:ice"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:101-52",
+      "count": 16,
+      "normalized_code": "DE:101-52",
+      "source_annotation": null,
+      "pictogram_key": "DE:101-52",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-101-52.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-101-52.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:gravel"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:103-10",
+      "count": 459,
+      "normalized_code": "DE:103-10",
+      "source_annotation": null,
+      "pictogram_key": "DE:103-10",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-103-10.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-103-10.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:left_turn"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:103-20",
+      "count": 568,
+      "normalized_code": "DE:103-20",
+      "source_annotation": null,
+      "pictogram_key": "DE:103-20",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-103-20.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-103-20.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:right_turn"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:105-10",
+      "count": 107,
+      "normalized_code": "DE:105-10",
+      "source_annotation": null,
+      "pictogram_key": "DE:105-10",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-105-10.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-105-10.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:zigzag:left"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:105-20",
+      "count": 118,
+      "normalized_code": "DE:105-20",
+      "source_annotation": null,
+      "pictogram_key": "DE:105-20",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-105-20.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-105-20.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:zigzag"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:112",
+      "count": 414,
+      "normalized_code": "DE:112",
+      "source_annotation": null,
+      "pictogram_key": "DE:112",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-112.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-112.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:bumps"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:114",
+      "count": 463,
+      "normalized_code": "DE:114",
+      "source_annotation": null,
+      "pictogram_key": "DE:114",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-114.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-114.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:slippery"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:117-10",
+      "count": 134,
+      "normalized_code": "DE:117-10",
+      "source_annotation": null,
+      "pictogram_key": "DE:117",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-117-10.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-117-10.png",
+      "pictogram_status": "existing_reviewed_alias",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:wind"
+      ],
+      "classifier_capability": "family_only",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": [
+        "Classifier emits sign family; direction subtype comes only from inventory and is not visually confirmed by that label."
+      ]
+    },
+    {
+      "source_code": "DE:124",
+      "count": 203,
+      "normalized_code": "DE:124",
+      "source_annotation": null,
+      "pictogram_key": "DE:124",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-124.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-124.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:traffic_jam"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:125",
+      "count": 191,
+      "normalized_code": "DE:125",
+      "source_annotation": null,
+      "pictogram_key": "DE:125",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-125.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-125.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:bothways"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:142-10",
+      "count": 746,
+      "normalized_code": "DE:142-10",
+      "source_annotation": null,
+      "pictogram_key": "DE:142",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-142-10.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-142-10.png",
+      "pictogram_status": "existing_reviewed_alias",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:wild_animals"
+      ],
+      "classifier_capability": "family_only",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": [
+        "Classifier emits sign family; direction subtype comes only from inventory and is not visually confirmed by that label."
+      ]
+    },
+    {
+      "source_code": "DE:151",
+      "count": 6,
+      "normalized_code": "DE:151",
+      "source_annotation": null,
+      "pictogram_key": "DE:151",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-151.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-151.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "hazard:level_crossing",
+        "hazard:train",
+        "hazard:train2"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:156-10",
+      "count": 148,
+      "normalized_code": "DE:156-10",
+      "source_annotation": null,
+      "pictogram_key": null,
+      "pictogram_original_path": null,
+      "pictogram_png_path": null,
+      "pictogram_status": "missing_official_artwork",
+      "display_eligible": false,
+      "classifier_labels": [],
+      "classifier_capability": "absent",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:205",
+      "count": 432,
+      "normalized_code": "DE:205",
+      "source_annotation": null,
+      "pictogram_key": "DE:205",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-205.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-205.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "give_way"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:206",
+      "count": 1429,
+      "normalized_code": "DE:206",
+      "source_annotation": null,
+      "pictogram_key": "DE:206",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-206.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-206.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "stop"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:209",
+      "count": 836,
+      "normalized_code": "DE:209",
+      "source_annotation": null,
+      "pictogram_key": "DE:209",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-209.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-209.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "arrow_turn_right"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:215",
+      "count": 317,
+      "normalized_code": "DE:215",
+      "source_annotation": null,
+      "pictogram_key": "DE:215",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-215.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-215.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "roundabout"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:222",
+      "count": 6214,
+      "normalized_code": "DE:222",
+      "source_annotation": null,
+      "pictogram_key": "DE:222",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-222.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-222.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "arrow_right_down"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:222-10",
+      "count": 47,
+      "normalized_code": "DE:222-10",
+      "source_annotation": null,
+      "pictogram_key": "DE:222-10",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-222-10.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-222-10.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "arrow_left_down"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:223.1-50",
+      "count": 186,
+      "normalized_code": "DE:223.1-50",
+      "source_annotation": null,
+      "pictogram_key": null,
+      "pictogram_original_path": null,
+      "pictogram_png_path": null,
+      "pictogram_status": "missing_official_artwork",
+      "display_eligible": false,
+      "classifier_labels": [],
+      "classifier_capability": "absent",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:267",
+      "count": 4460,
+      "normalized_code": "DE:267",
+      "source_annotation": null,
+      "pictogram_key": "DE:267",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-267.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-267.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "no_entry"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:274-10",
+      "count": 267,
+      "normalized_code": "DE:274-10",
+      "source_annotation": null,
+      "pictogram_key": "DE:274-10",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-10.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-10.png",
+      "pictogram_status": "numeric_speed_schematic_exception",
+      "display_eligible": true,
+      "classifier_labels": [
+        "maxspeed:10"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 10,
+      "parameter_unit": "km/h",
+      "notes": []
+    },
+    {
+      "source_code": "DE:274-100",
+      "count": 1694,
+      "normalized_code": "DE:274-100",
+      "source_annotation": null,
+      "pictogram_key": "DE:274-100",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-100.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-100.png",
+      "pictogram_status": "numeric_speed_schematic_exception",
+      "display_eligible": true,
+      "classifier_labels": [
+        "maxspeed:100"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 100,
+      "parameter_unit": "km/h",
+      "notes": []
+    },
+    {
+      "source_code": "DE:274-120",
+      "count": 1706,
+      "normalized_code": "DE:274-120",
+      "source_annotation": null,
+      "pictogram_key": "DE:274-120",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-120.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-120.png",
+      "pictogram_status": "numeric_speed_schematic_exception",
+      "display_eligible": true,
+      "classifier_labels": [
+        "maxspeed:120"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 120,
+      "parameter_unit": "km/h",
+      "notes": []
+    },
+    {
+      "source_code": "DE:274-130",
+      "count": 95,
+      "normalized_code": "DE:274-130",
+      "source_annotation": null,
+      "pictogram_key": "DE:274-130",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-130.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-130.png",
+      "pictogram_status": "numeric_speed_schematic_exception",
+      "display_eligible": true,
+      "classifier_labels": [
+        "maxspeed:130"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 130,
+      "parameter_unit": "km/h",
+      "notes": []
+    },
+    {
+      "source_code": "DE:274-20",
+      "count": 703,
+      "normalized_code": "DE:274-20",
+      "source_annotation": null,
+      "pictogram_key": "DE:274-20",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-20.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-20.png",
+      "pictogram_status": "numeric_speed_schematic_exception",
+      "display_eligible": true,
+      "classifier_labels": [
+        "maxspeed:20"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 20,
+      "parameter_unit": "km/h",
+      "notes": []
+    },
+    {
+      "source_code": "DE:274-30",
+      "count": 35423,
+      "normalized_code": "DE:274-30",
+      "source_annotation": null,
+      "pictogram_key": "DE:274-30",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-30.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-30.png",
+      "pictogram_status": "numeric_speed_schematic_exception",
+      "display_eligible": true,
+      "classifier_labels": [
+        "maxspeed:30"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 30,
+      "parameter_unit": "km/h",
+      "notes": []
+    },
+    {
+      "source_code": "DE:274-40",
+      "count": 4196,
+      "normalized_code": "DE:274-40",
+      "source_annotation": null,
+      "pictogram_key": "DE:274-40",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-40.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-40.png",
+      "pictogram_status": "numeric_speed_schematic_exception",
+      "display_eligible": true,
+      "classifier_labels": [
+        "maxspeed:40"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 40,
+      "parameter_unit": "km/h",
+      "notes": []
+    },
+    {
+      "source_code": "DE:274-50",
+      "count": 12981,
+      "normalized_code": "DE:274-50",
+      "source_annotation": null,
+      "pictogram_key": "DE:274-50",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-50.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-50.png",
+      "pictogram_status": "numeric_speed_schematic_exception",
+      "display_eligible": true,
+      "classifier_labels": [
+        "maxspeed:50"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 50,
+      "parameter_unit": "km/h",
+      "notes": []
+    },
+    {
+      "source_code": "DE:274-50[WVZ Rombachtunnel]",
+      "count": 1,
+      "normalized_code": "DE:274-50",
+      "source_annotation": "WVZ Rombachtunnel",
+      "pictogram_key": "DE:274-50",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-50.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-50.png",
+      "pictogram_status": "source_annotation_requires_review",
+      "display_eligible": false,
+      "classifier_labels": [
+        "maxspeed:50"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 50,
+      "parameter_unit": "km/h",
+      "notes": [
+        "Preserve complete literal source code; normalized_code is an inspection aid only. Empty brackets are not a value. WVZ text does not prove the current variable-message state."
+      ]
+    },
+    {
+      "source_code": "DE:274-60",
+      "count": 3251,
+      "normalized_code": "DE:274-60",
+      "source_annotation": null,
+      "pictogram_key": "DE:274-60",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-60.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-60.png",
+      "pictogram_status": "numeric_speed_schematic_exception",
+      "display_eligible": true,
+      "classifier_labels": [
+        "maxspeed:60"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 60,
+      "parameter_unit": "km/h",
+      "notes": []
+    },
+    {
+      "source_code": "DE:274-70",
+      "count": 19307,
+      "normalized_code": "DE:274-70",
+      "source_annotation": null,
+      "pictogram_key": "DE:274-70",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-70.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-70.png",
+      "pictogram_status": "numeric_speed_schematic_exception",
+      "display_eligible": true,
+      "classifier_labels": [
+        "maxspeed:70"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 70,
+      "parameter_unit": "km/h",
+      "notes": []
+    },
+    {
+      "source_code": "DE:274-80",
+      "count": 3582,
+      "normalized_code": "DE:274-80",
+      "source_annotation": null,
+      "pictogram_key": "DE:274-80",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-80.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-80.png",
+      "pictogram_status": "numeric_speed_schematic_exception",
+      "display_eligible": true,
+      "classifier_labels": [
+        "maxspeed:80"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 80,
+      "parameter_unit": "km/h",
+      "notes": []
+    },
+    {
+      "source_code": "DE:274-90",
+      "count": 70,
+      "normalized_code": "DE:274-90",
+      "source_annotation": null,
+      "pictogram_key": null,
+      "pictogram_original_path": null,
+      "pictogram_png_path": null,
+      "pictogram_status": "numeric_speed_schematic_exception",
+      "display_eligible": true,
+      "classifier_labels": [],
+      "classifier_capability": "absent",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [],
+      "parameter_kind": "maxspeed",
+      "parameter_value": 90,
+      "parameter_unit": "km/h",
+      "notes": [
+        "The schematic numeric UI can represent 90; the pinned classifier has no maxspeed:90 output."
+      ]
+    },
+    {
+      "source_code": "DE:276",
+      "count": 6911,
+      "normalized_code": "DE:276",
+      "source_annotation": null,
+      "pictogram_key": "DE:276",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-276.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-276.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "no_overtaking"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:277",
+      "count": 1126,
+      "normalized_code": "DE:277",
+      "source_annotation": null,
+      "pictogram_key": "DE:277",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-277.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-277.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "no_overtaking:hgv"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:278",
+      "count": 9769,
+      "normalized_code": "DE:278",
+      "source_annotation": null,
+      "pictogram_key": null,
+      "pictogram_original_path": null,
+      "pictogram_png_path": null,
+      "pictogram_status": "missing_printed_speed",
+      "display_eligible": false,
+      "classifier_labels": [
+        "maxspeed:end"
+      ],
+      "classifier_capability": "family_only",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": [
+        "Source omits the ended numeric speed. Store null; do not display fabricated crossed-out speed or substitute DE:282."
+      ]
+    },
+    {
+      "source_code": "DE:280",
+      "count": 440,
+      "normalized_code": "DE:280",
+      "source_annotation": null,
+      "pictogram_key": "DE:280",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-280.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-280.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "no_overtaking:end"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:282",
+      "count": 1567,
+      "normalized_code": "DE:282",
+      "source_annotation": null,
+      "pictogram_key": "DE:282",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-282.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-282.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "no:end"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [
+        "DE:282"
+      ],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:310",
+      "count": 13788,
+      "normalized_code": "DE:310",
+      "source_annotation": null,
+      "pictogram_key": "DE:310",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-310.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-310.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [],
+      "classifier_capability": "reference_only",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [
+        "DE:310",
+        "city:start"
+      ],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": [
+        "Existing reference-only town art and aliases do not add town-entry/exit outputs to the pinned 134-label classifier."
+      ]
+    },
+    {
+      "source_code": "DE:311",
+      "count": 9312,
+      "normalized_code": "DE:311",
+      "source_annotation": null,
+      "pictogram_key": "DE:311",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-311.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-311.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [],
+      "classifier_capability": "reference_only",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [
+        "DE:311",
+        "city:end"
+      ],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": [
+        "Existing reference-only town art and aliases do not add town-entry/exit outputs to the pinned 134-label classifier."
+      ]
+    },
+    {
+      "source_code": "DE:325.1",
+      "count": 10,
+      "normalized_code": "DE:325.1",
+      "source_annotation": null,
+      "pictogram_key": null,
+      "pictogram_original_path": null,
+      "pictogram_png_path": null,
+      "pictogram_status": "missing_official_artwork",
+      "display_eligible": false,
+      "classifier_labels": [],
+      "classifier_capability": "absent",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:325.2",
+      "count": 3,
+      "normalized_code": "DE:325.2",
+      "source_annotation": null,
+      "pictogram_key": null,
+      "pictogram_original_path": null,
+      "pictogram_png_path": null,
+      "pictogram_status": "missing_official_artwork",
+      "display_eligible": false,
+      "classifier_labels": [],
+      "classifier_capability": "absent",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:330.1",
+      "count": 1216,
+      "normalized_code": "DE:330.1",
+      "source_annotation": null,
+      "pictogram_key": "DE:330.1",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-330.1.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-330.1.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "motorway:start"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:330.2",
+      "count": 994,
+      "normalized_code": "DE:330.2",
+      "source_annotation": null,
+      "pictogram_key": "DE:330.2",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-330.2.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-330.2.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "motorway:end"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:331.1",
+      "count": 6,
+      "normalized_code": "DE:331.1",
+      "source_annotation": null,
+      "pictogram_key": "DE:331.1",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-331.1.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-331.1.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "trunk:start"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:331.2",
+      "count": 3,
+      "normalized_code": "DE:331.2",
+      "source_annotation": null,
+      "pictogram_key": "DE:331.2",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-331.2.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-331.2.png",
+      "pictogram_status": "existing_exact",
+      "display_eligible": true,
+      "classifier_labels": [
+        "trunk:end"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": []
+    },
+    {
+      "source_code": "DE:331.2[]",
+      "count": 1,
+      "normalized_code": "DE:331.2",
+      "source_annotation": "",
+      "pictogram_key": "DE:331.2",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-331.2.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-331.2.png",
+      "pictogram_status": "source_annotation_requires_review",
+      "display_eligible": false,
+      "classifier_labels": [
+        "trunk:end"
+      ],
+      "classifier_capability": "exact_label",
+      "classifier_exact_variant_supported": true,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": [
+        "Preserve complete literal source code; normalized_code is an inspection aid only. Empty brackets are not a value. WVZ text does not prove the current variable-message state."
+      ]
+    },
+    {
+      "source_code": "DE:350-10",
+      "count": 15175,
+      "normalized_code": "DE:350-10",
+      "source_annotation": null,
+      "pictogram_key": "DE:350",
+      "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-350.svg",
+      "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-350.png",
+      "pictogram_status": "existing_reviewed_alias",
+      "display_eligible": true,
+      "classifier_labels": [
+        "pedestrian_crossing"
+      ],
+      "classifier_capability": "family_only",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": [
+        "Existing DE:350 official-work illustration is family artwork; classifier does not identify right/left installation subtype."
+      ]
+    },
+    {
+      "source_code": "DE:460-20",
+      "count": 1,
+      "normalized_code": "DE:460-20",
+      "source_annotation": null,
+      "pictogram_key": null,
+      "pictogram_original_path": null,
+      "pictogram_png_path": null,
+      "pictogram_status": "missing_official_artwork",
+      "display_eligible": false,
+      "classifier_labels": [],
+      "classifier_capability": "absent",
+      "classifier_exact_variant_supported": false,
+      "reference_only_aliases": [],
+      "parameter_kind": null,
+      "parameter_value": null,
+      "parameter_unit": null,
+      "notes": [
+        "Do not map to classifier exit; that existing mapping is explicitly unresolved and refers to a different semantic purpose."
+      ]
+    }
+  ]
+}

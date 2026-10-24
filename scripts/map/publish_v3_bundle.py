@@ -8,6 +8,7 @@ import gzip
 import hashlib
 import json
 import shutil
+import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -440,6 +441,36 @@ def main() -> int:
         },
     }
     country_code = args.country_code.strip().upper()
+    # Preserve the packager's opaque-byte contract for legacy callers/fixtures.
+    # Real SQLite inputs may additionally advertise optional source capabilities.
+    with src_db.open("rb") as source_file:
+        sqlite_input = source_file.read(16) == b"SQLite format 3\x00"
+    if sqlite_input:
+        with sqlite3.connect(f"{src_db.resolve().as_uri()}?mode=ro", uri=True) as inventory_db:
+            if inventory_db.execute("SELECT 1 FROM sqlite_master WHERE name='road_speed_capability' AND type='table'").fetchone():
+                row = inventory_db.execute("SELECT version,grammar,compiler_sha256 FROM road_speed_capability").fetchone()
+                if not row or row[0] != 1:
+                    raise SystemExit("Unsupported conditional-speed capability")
+                manifest["source"]["conditional_speed_rules"] = {"version": row[0], "grammar": row[1], "compiler_sha256": row[2], "delivery": "full_only"}
+                version = tuple(int(p) for p in args.min_app_version.split("."))
+                if version < (1, 5):
+                    manifest["min_app_version"] = "1.5"
+            if inventory_db.execute("SELECT 1 FROM sqlite_master WHERE name='traffic_sign_source' AND type='table'").fetchone():
+                inventory_db.row_factory = sqlite3.Row
+                manifest["source"]["traffic_sign_inventory"] = [dict(row) for row in inventory_db.execute(
+                    "SELECT source_id,publisher,dataset_url,source_url,license_id,license_url,snapshot_sha256,"
+                    "snapshot_timestamp,record_count,usage_role,modification_notice FROM traffic_sign_source ORDER BY source_id")]
+            if inventory_db.execute("SELECT 1 FROM sqlite_master WHERE name='traffic_sign_capability' AND type='table'").fetchone():
+                capability = dict(inventory_db.execute("SELECT key,value FROM traffic_sign_capability"))
+                if capability.get("version") == "1":
+                    manifest["source"]["traffic_sign_runtime"] = json.loads(capability["report_json"])
+            if inventory_db.execute("SELECT 1 FROM sqlite_master WHERE name='upcoming_path_capability' AND type='table'").fetchone():
+                capability = dict(inventory_db.execute("SELECT key,value FROM upcoming_path_capability"))
+                if capability.get("version") == "1" and capability.get("completeness") == "complete":
+                    manifest["source"]["upcoming_path"] = {
+                        key: value for key, value in capability.items() if key != "report_json"
+                    }
+                    manifest["source"]["upcoming_path"]["report"] = json.loads(capability["report_json"])
     if country_code:
         if len(country_code) != 3 or not country_code.isalpha():
             raise SystemExit(f"--country-code must be a 3-letter ISO alpha-3 code, got: {args.country_code!r}")

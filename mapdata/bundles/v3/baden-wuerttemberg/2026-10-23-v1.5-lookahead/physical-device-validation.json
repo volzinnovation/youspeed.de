@@ -1,0 +1,163 @@
+{
+  "format": "youspeed.upcoming-speed-limit.physical-validation-summary.v1",
+  "date": "2026-10-23",
+  "status": "installed_native_measured_offline_controller_validated_awaiting_real_drive_evidence",
+  "build": 10059,
+  "version": "1.5",
+  "bundle": {
+    "region": "baden-wuerttemberg",
+    "version": "2026-10-23-v1.5-lookahead",
+    "database_bytes": 3099021312,
+    "sha256": "34b31aac1dc5a6abacce959afb8ec44043146f5aa4f1ea488c07cb4a68efe09c",
+    "full_hash_verified_on_both_phones": true
+  },
+  "iphone": {
+    "model": "iPhone 14 Pro",
+    "os": "26.6.2",
+    "bundle_id": "de.youspeed.SpeedConsumer",
+    "executable_sha256": "8f712749739d6207008f11ed9fecd13fe68befa7131b0166e26bd50ccbe0e8cf",
+    "receipt": "output/upcoming-speed-limit-physical-10059/iphone/physical-install-validation.json",
+    "reader_attempts": 1025,
+    "reader_correct": 1025,
+    "fresh_connection_wall": {
+      "count": 250,
+      "max_ms": 10.949625,
+      "over_25ms": 0,
+      "p50_ms": 1.210208,
+      "p95_ms": 5.5135,
+      "p99_ms": 7.19425
+    },
+    "warm_wall": {
+      "count": 750,
+      "max_ms": 3.184708,
+      "over_25ms": 0,
+      "p50_ms": 0.831125,
+      "p95_ms": 2.996334,
+      "p99_ms": 3.14575
+    },
+    "full_service_fresh_connection_wall": {
+      "count": 25,
+      "max_ms": 461.0165,
+      "over_25ms": 20,
+      "p50_ms": 33.32775,
+      "p95_ms": 56.28075,
+      "p99_ms": 461.0165
+    },
+    "full_service_warm_wall": {
+      "count": 750,
+      "max_ms": 25.042709,
+      "over_25ms": 1,
+      "p50_ms": 12.944916,
+      "p95_ms": 23.325958,
+      "p99_ms": 24.48425
+    },
+    "full_service_expected_road_attempts": 651,
+    "full_service_expected_road_preview_failures": 0,
+    "full_service_other_road_or_no_match_attempts": 124,
+    "physical_ui": "not_executed_locked_then_disconnected",
+    "restored_normal_artifact_has_unused_old_test_plugin": true,
+    "clean_artifact_prepared_not_installed": true,
+    "real_controller_replay": "passed_full_database_normal_pipeline_and_approach"
+  },
+  "android": {
+    "model": "moto g86 5G",
+    "api": 36,
+    "package": "de.youspeed.android.debug",
+    "apk_sha256": "7fdcb48186846c9131431319425a5d776ce9d435ce661ff25ead06a2016704cb",
+    "apk_digest_scope": "Local installed artifact digest; exact device APK digest not collected before disconnect. Package version and native running build metadata verified.",
+    "receipt": "output/upcoming-speed-limit-physical-10059/android/device-install-validation.json",
+    "reader_attempts": 675,
+    "reader_correct": 675,
+    "fresh_connection_wall": {
+      "count": 50,
+      "p50": 5.130846,
+      "p95": 10.828923,
+      "p99": 29.303923,
+      "max": 29.303923,
+      "gt25ms": 1
+    },
+    "warm_wall": {
+      "count": 625,
+      "p50": 1.166384,
+      "p95": 2.290462,
+      "p99": 2.873308,
+      "max": 4.513846,
+      "gt25ms": 0
+    },
+    "full_service_fresh_connection_wall": {
+      "count": 5,
+      "p50": 168.086077,
+      "p95": 322.925,
+      "p99": 322.925,
+      "max": 322.925,
+      "gt25ms": 5
+    },
+    "full_service_warm_wall": {
+      "count": 125,
+      "p50": 123.381846,
+      "p95": 186.806769,
+      "p99": 203.871461,
+      "max": 205.029846,
+      "gt25ms": 101
+    },
+    "full_service_expected_road_attempts": 104,
+    "full_service_expected_road_preview_failures": 0,
+    "full_service_no_match_attempts": 26,
+    "physical_ui": "incomplete_first_fixture_assertion_then_disconnected",
+    "real_controller_replay": {
+      "scope": "Isolated emulator; unchanged production startup, regional routing, matcher, inventory resolver, governed reference, worker and UI state. Public source coordinates dispatched to the normal listener method at1Hz; no main/reference/snapshot stubs, no system GPS injection or real drive.",
+      "outcomes": [
+        {
+          "case": "bw-cross-way-3",
+          "visibleTargetFrames": 17,
+          "rawTargetFrames": 17
+        },
+        {
+          "case": "bw-cross-way-5",
+          "visibleTargetFrames": 17,
+          "rawTargetFrames": 17
+        },
+        {
+          "case": "bw-cross-way-4",
+          "visibleTargetFrames": 0,
+          "rawTargetFrames": 17
+        }
+      ],
+      "frames": 54,
+      "routedBundleVersions": [
+        "2026-10-23-v1.5-lookahead"
+      ],
+      "mainCurrentFrames": 54,
+      "pendingContextFrames": 0
+    },
+    "final_media_comparison": "not_available_after_disconnect"
+  },
+  "methodology": {
+    "complete_installed_database": true,
+    "small_probe_used_for_timing": false,
+    "known_road_direct_reader_cases": 25,
+    "storage_cold_claim": false,
+    "filesystem_cache": "uncontrolled",
+    "all_attempts_retained": true,
+    "reader_boundaries_differ_by_platform": true,
+    "full_service_workloads_differ": "iPhone25cases; Android5anchors",
+    "no_authority_injection_in_offline_controller_replays": true,
+    "real_drive_validation": "user_reports_no_preview; actual_drive_logs_unavailable_until_devices_return",
+    "reference_policy_changed": false
+  },
+  "no_preview_investigation": {
+    "data_coverage_report": "output/upcoming-speed-limit-no-preview-investigation-2026-10-23/data-coverage.json",
+    "unique_numeric_poststation_origins": 51660,
+    "positive_same_way_windows": 51192,
+    "median_same_way_window_m": 25.62250669401074,
+    "certified_cross_way_approaches": 6247,
+    "settlement_boundaries_not_previewed": 31900,
+    "confirmed_replay_behavior": "OSM main limit can become target50 before physical station, triggering not_lower; no_target after passage",
+    "drive_specific_cause": "unconfirmed"
+  },
+  "documents": [
+    "docs/UPCOMING_SPEED_LIMIT_PHYSICAL_VALIDATION_2026-10-23.md",
+    "docs/UPCOMING_SPEED_LIMIT_NO_PREVIEW_INVESTIGATION_2026-10-23.md",
+    "docs/MAP_RUNTIME_ENCODING_INVESTIGATION_2026-10-23.md"
+  ]
+}

@@ -46,6 +46,28 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
     def tearDown(self):
         self.tmp_ctx.cleanup()
 
+    def test_publish_advertises_complete_optional_lookahead_without_changing_db(self):
+        capability = {
+            "version": "1", "completeness": "complete", "road_snapshot_sha256": "a" * 64,
+            "geometry_convention": "source_vertices_spherical_6371000m_v1",
+            "report_json": json.dumps({"counts": {"upcoming_path_segment": 4}, "successors": {"certified": 2, "stop": 2}}),
+        }
+        with sqlite3.connect(self.base_db) as db:
+            db.execute("CREATE TABLE upcoming_path_capability(key TEXT PRIMARY KEY,value TEXT NOT NULL)")
+            db.executemany("INSERT INTO upcoming_path_capability VALUES(?,?)", capability.items())
+        before = self.base_db.read_bytes()
+        run_cmd([sys.executable, str(PUBLISH_V3), "--region", "fixture", "--db", str(self.base_db),
+                 "--bundle-version", "lookahead-v1", "--min-app-version", "1.5",
+                 "--out-root", str(self.tmpdir / "bundles")])
+        bundle = self.tmpdir / "bundles" / "fixture" / "lookahead-v1"
+        manifest = json.loads((bundle / "fixture_manifest.json").read_text())
+        advertised = manifest["source"]["upcoming_path"]
+        self.assertEqual(advertised["road_snapshot_sha256"], "a" * 64)
+        self.assertEqual(advertised["report"]["successors"]["certified"], 2)
+        self.assertNotIn("report_json", advertised)
+        self.assertEqual(self.base_db.read_bytes(), before)
+        self.assertEqual((bundle / "fixture_speeds.sqlite").read_bytes(), before)
+
     @staticmethod
     def _create_fixture_db(path: Path) -> None:
         conn = sqlite3.connect(path)

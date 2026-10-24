@@ -1,0 +1,108 @@
+{
+  "format": "youspeed.bw.v1.5.road-readiness.1",
+  "validated_date": "2026-10-21",
+  "source_pbf": {
+    "file": "mapdata/raw/baden-wuerttemberg-260913.osm.pbf",
+    "bytes": 647326315,
+    "sha256": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3",
+    "replication_timestamp": "2026-09-13T20:21:20Z",
+    "refreshed_from_network": false
+  },
+  "traffic_sign_inventory": {
+    "snapshot_timestamp": "2026-10-17T22:00:00.013Z",
+    "sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+    "records": 163504
+  },
+  "capabilities": {
+    "schema_version": "1",
+    "road_geometry_policy": "source_vertices_v1",
+    "road_geometry_max_error_m": "0",
+    "road_geometry_source_way_count": "1085790",
+    "way_links_mode": "shared_endpoint_detailed",
+    "corridor_progress_mode": "paired_portal_chain_v1",
+    "motorway_exit_approach_version": "1",
+    "settlement_context_version": "1"
+  },
+  "counts": {
+    "areas": 144334,
+    "areas_rtree": 144334,
+    "city_boundary": 2857,
+    "city_boundary_rtree": 2857,
+    "city_place": 8745,
+    "city_place_rtree": 8745,
+    "city_ring": 3403,
+    "city_tile": 37949,
+    "corridor_pairs": 5634,
+    "corridor_progress": 45674,
+    "motorway_exit_approach": 1497,
+    "motorway_way_network": 5931,
+    "motorway_way_network_rtree": 5931,
+    "settlement_area": 40190,
+    "settlement_ring": 44228,
+    "settlement_segment": 1294214,
+    "settlement_sign": 32858,
+    "surface_way_network": 1077262,
+    "surface_way_network_rtree": 1077262,
+    "tunnel_way_network": 2597,
+    "tunnel_way_network_rtree": 2597,
+    "way_continuity_group": 80196,
+    "way_continuity_membership": 495439,
+    "way_endpoints": 1085790,
+    "way_geom": 1085790,
+    "way_links": 1753356,
+    "ways": 1085790,
+    "ways_rtree": 1085790
+  },
+  "ready": true,
+  "errors": [],
+  "warnings": [],
+  "quick_check": [
+    "ok"
+  ],
+  "geometry_checks": {
+    "areas": {
+      "checked": 144334,
+      "invalid": 0,
+      "nullable_missing": 10595,
+      "unknown_empty": 0
+    },
+    "city_ring": {
+      "checked": 3403,
+      "invalid": 0,
+      "nullable_missing": 0,
+      "unknown_empty": 0
+    },
+    "settlement_ring": {
+      "checked": 44228,
+      "invalid": 0,
+      "nullable_missing": 0,
+      "unknown_empty": 0
+    },
+    "settlement_segment": {
+      "checked": 1294214,
+      "invalid": 0,
+      "nullable_missing": 0,
+      "unknown_empty": 0
+    },
+    "way_geom": {
+      "checked": 1085790,
+      "invalid": 0,
+      "nullable_missing": 0,
+      "unknown_empty": 0
+    }
+  },
+  "validation_report_file": "mapdata/dist-v3/baden-wuerttemberg-v1.5-roads/structural-validation.json",
+  "validation_report_sha256": "3d1ebe1b89112711357d03fa565797b80197588038e9b162ac0ce0ea928cf61f",
+  "validation_elapsed_seconds": 34.394,
+  "scope": "Road/settlement/inventory base before optional v1.5 directed runtime overlay. Structural readiness only; not source freshness or on-device driving accuracy.",
+  "focused_tests": {
+    "v3_v4_pipeline": 16,
+    "readiness_validator": 16
+  },
+  "build_entrypoint": "scripts/map/rebuild_bw_v15_roads.py",
+  "dependencies": {
+    "osmium": "4.3.0",
+    "shapely": "2.1.2",
+    "numpy": "2.2.6"
+  }
+}

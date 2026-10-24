@@ -180,6 +180,37 @@ class ContextDeltaTests(unittest.TestCase):
         self.assertEqual(build_context_delta(self.base, self.target)[0], [])
         self.assert_equivalent(self.base, self.target)
 
+    def test_upcoming_topology_on_either_side_requires_full_bundle(self):
+        for enabled in ((self.base,), (self.target,), (self.base, self.target)):
+            with self.subTest(enabled=enabled):
+                for path in (self.base, self.target):
+                    with sqlite3.connect(path) as connection:
+                        connection.execute('DROP TABLE IF EXISTS upcoming_path_capability')
+                        if path in enabled:
+                            connection.executescript('''CREATE TABLE upcoming_path_capability(key TEXT PRIMARY KEY,value TEXT);
+                                INSERT INTO upcoming_path_capability VALUES('version','1');''')
+                with self.assertRaisesRegex(SystemExit, 'Upcoming-path topology requires a full bundle'):
+                    build_context_delta(self.base, self.target)
+
+    def test_upcoming_topology_cannot_emit_heuristic_or_exact_delta_artifacts(self):
+        with sqlite3.connect(self.base) as connection:
+            connection.executescript('''CREATE TABLE ways(way_id INTEGER PRIMARY KEY);
+                CREATE TABLE upcoming_path_capability(key TEXT PRIMARY KEY,value TEXT);
+                INSERT INTO upcoming_path_capability VALUES('version','1');''')
+        diff = Path(self.tmp.name)/'empty.osc'
+        diff.write_text('<osmChange version="0.6"/>')
+        for exact in (False, True):
+            out = Path(self.tmp.name)/('exact-delta' if exact else 'heuristic-delta')
+            args = [sys.executable, str(MAP_SCRIPTS/'build_v3_delta_pack.py'),
+                '--base-db', str(self.base), '--diff-file', str(diff),
+                '--from-version', 'old', '--to-version', 'new', '--out-dir', str(out)]
+            if exact:
+                args += ['--target-db', str(self.target)]
+            result = subprocess.run(args, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('Upcoming-path topology requires a full bundle', result.stderr)
+            self.assertFalse(out.exists())
+
     def test_capability_migration_requires_full_bundle(self):
         with sqlite3.connect(self.target) as connection:
             connection.execute("UPDATE metadata SET value='2' WHERE key='settlement_context_version'")

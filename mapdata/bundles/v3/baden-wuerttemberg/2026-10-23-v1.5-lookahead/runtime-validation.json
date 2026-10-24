@@ -1,0 +1,41 @@
+{
+  "format": "youspeed.traffic-sign-runtime.validation.v1",
+  "supported": true,
+  "ready": true,
+  "errors": [],
+  "counts": {
+    "traffic_sign_association": 172304,
+    "traffic_sign_inventory": 163504,
+    "traffic_sign_lane": 211353,
+    "traffic_sign_rule_path": 37807,
+    "traffic_sign_runtime": 172304,
+    "traffic_sign_source": 2,
+    "traffic_sign_way_direction": 1085790,
+    "traffic_sign_way_rule": 118400
+  },
+  "failed_rows": {
+    "all_inventory_records_materialized": 0,
+    "all_runtime_signs_have_current_source": 0,
+    "directions_cover_admitted_ways": 0,
+    "accepted_associations_permitted": 0,
+    "radii_match_exact_classes": 0,
+    "rules_have_accepted_association": 0,
+    "rule_geometry_bounds": 0,
+    "unverified_parameters_never_active": 0,
+    "source_speed_value_matches_rule": 0,
+    "boundary_context_correct": 0,
+    "lane_conflicts_stay_unresolved": 0,
+    "no_overlapping_rule_interiors": 0,
+    "osm_fallback_has_source_station": 0,
+    "invalid_continuation_paths": 0
+  },
+  "associations": {
+    "accepted": 110639,
+    "ambiguous_directed_path": 42704,
+    "conflicting_source_values": 1169,
+    "low_source_confidence": 7447,
+    "missing_openlr": 46,
+    "no_verified_directed_path": 10297,
+    "unverified_source_annotation": 2
+  }
+}

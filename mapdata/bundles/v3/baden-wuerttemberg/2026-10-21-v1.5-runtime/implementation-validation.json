@@ -1,0 +1,925 @@
+{
+  "format": "youspeed.mobidata-bw-v1.5.implementation.validation.v1",
+  "generated_at_utc": "2026-10-21T18:30:58.363998+00:00",
+  "status": "local_acceptance_complete",
+  "branch": "codex/youspeed-v1.5-mobidata-bw",
+  "base_commit": "bf1f3bb5bd7e2dd842af841f3fc9d6cee2d1a505",
+  "source_state": "uncommitted_working_tree_with_preexisting_changes_preserved",
+  "manifest": {
+    "path": "mapdata/bundles/v3/baden-wuerttemberg/2026-10-21-v1.5-runtime/baden-wuerttemberg_manifest.json",
+    "sha256": "2220805639e4281628a6f434c08eda34aa8fdbacc1556e611aada4d3a8105a82"
+  },
+  "database_artifact": {
+    "bytes": 695751651,
+    "compression": "gzip",
+    "file": "baden-wuerttemberg_speeds.sqlite",
+    "sha256": "6585f7de172e7f6301590cd97066b235b537504b7dd5f9d0118757b28937a204",
+    "uncompressed_bytes": 2122903552,
+    "uncompressed_sha256": "e1a36e56cc4809cc69d2d5161b993eff21a1c08264e8d9300e79ec7546ccd00b",
+    "url": "baden-wuerttemberg_speeds.sqlite.gz"
+  },
+  "runtime": {
+    "format": "youspeed.traffic-sign-runtime.v1",
+    "version": "1",
+    "signs": 172304,
+    "mobidata_signs": 163504,
+    "osm_town_fallbacks": 8800,
+    "rules": 118400,
+    "associations": {
+      "accepted": 110639,
+      "ambiguous_directed_path": 42704,
+      "conflicting_source_values": 1169,
+      "low_source_confidence": 7447,
+      "missing_openlr": 46,
+      "no_verified_directed_path": 10297,
+      "unverified_source_annotation": 2
+    },
+    "road_directions": 1085790,
+    "known_lanes": 211353,
+    "unresolved_lane_rules": 1954,
+    "continuation_rules": 37807,
+    "matcher": "directed-lrp-path-v1",
+    "decoder": "openlr-1.0.1",
+    "source_snapshots": {
+      "mobidata-bw-vzk": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+      "osm-settlement": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3"
+    }
+  },
+  "structural_validation": {
+    "counts": {
+      "areas": 144334,
+      "areas_rtree": 144334,
+      "city_boundary": 2857,
+      "city_boundary_rtree": 2857,
+      "city_place": 8745,
+      "city_place_rtree": 8745,
+      "city_ring": 3403,
+      "city_tile": 37949,
+      "corridor_pairs": 5634,
+      "corridor_progress": 45674,
+      "motorway_exit_approach": 1497,
+      "motorway_way_network": 5931,
+      "motorway_way_network_rtree": 5931,
+      "settlement_area": 40190,
+      "settlement_ring": 44228,
+      "settlement_segment": 1294214,
+      "settlement_sign": 32858,
+      "surface_way_network": 1077262,
+      "surface_way_network_rtree": 1077262,
+      "tunnel_way_network": 2597,
+      "tunnel_way_network_rtree": 2597,
+      "way_continuity_group": 80196,
+      "way_continuity_membership": 495439,
+      "way_endpoints": 1085790,
+      "way_geom": 1085790,
+      "way_links": 1753356,
+      "ways": 1085790,
+      "ways_rtree": 1085790
+    },
+    "db": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v3/baden-wuerttemberg-v1.5-runtime/speeds_v3.sqlite",
+    "elapsed_seconds": 42.635,
+    "errors": [],
+    "format": "youspeed.v3.testing-readiness",
+    "geometry_checks": {
+      "areas": {
+        "checked": 144334,
+        "invalid": 0,
+        "nullable_missing": 10595,
+        "unknown_empty": 0
+      },
+      "city_ring": {
+        "checked": 3403,
+        "invalid": 0,
+        "nullable_missing": 0,
+        "unknown_empty": 0
+      },
+      "settlement_ring": {
+        "checked": 44228,
+        "invalid": 0,
+        "nullable_missing": 0,
+        "unknown_empty": 0
+      },
+      "settlement_segment": {
+        "checked": 1294214,
+        "invalid": 0,
+        "nullable_missing": 0,
+        "unknown_empty": 0
+      },
+      "way_geom": {
+        "checked": 1085790,
+        "invalid": 0,
+        "nullable_missing": 0,
+        "unknown_empty": 0
+      }
+    },
+    "manifest": {
+      "bundle_version": "2026-10-21-v1.5-runtime",
+      "country_code": "DEU",
+      "created_at_utc": "2026-10-21T18:25:26Z",
+      "min_app_version": "1.5",
+      "path": "/Users/raphaelvolz/Github/youspeed.de/mapdata/bundles/v3/baden-wuerttemberg/2026-10-21-v1.5-runtime/baden-wuerttemberg_manifest.json",
+      "region": "baden-wuerttemberg"
+    },
+    "metadata": {
+      "backend": "sqlite_rtree",
+      "city_boundaries": "2857",
+      "city_boundary_admin_levels": "6,8,9",
+      "city_places": "8745",
+      "city_rings": "3403",
+      "city_tile_fallback_boundaries": "0",
+      "city_tile_size_m": "4096",
+      "city_tiles": "37949",
+      "corridor_count": "7756",
+      "corridor_pair_count": "5634",
+      "corridor_progress_count": "45674",
+      "corridor_progress_mode": "paired_portal_chain_v1",
+      "country_code": "DE",
+      "max_city_ring_points": "96",
+      "max_city_tiles": "512",
+      "motorway_exit_approach_count": "1497",
+      "motorway_exit_approach_distance_m": "350.0",
+      "motorway_exit_approach_version": "1",
+      "motorway_way_network_count": "5931",
+      "road_geometry_max_error_m": "0",
+      "road_geometry_policy": "source_vertices_v1",
+      "road_geometry_source_way_count": "1085790",
+      "schema_version": "1",
+      "settlement_context_version": "1",
+      "settlement_country_code": "DE",
+      "settlement_fallback_way_count": "0",
+      "settlement_geometry_tolerance_m": "2.0",
+      "settlement_incomplete_way_count": "0",
+      "settlement_invalid_area_count": "0",
+      "settlement_segment_count": "1294214",
+      "settlement_sign_association_counts": "{\"ambiguous_ways\":665,\"collinear_way_split\":15292,\"direction_unknown\":11962,\"node_membership\":2556,\"unassociated\":2378,\"way_tag_location_unknown\":5}",
+      "settlement_source_way_count": "1085790",
+      "settlement_state_counts": "{\"inside_high\":86544,\"inside_low\":745507,\"outside_high\":38919,\"unknown_unknown\":423244}",
+      "settlement_zero_length_way_count": "0",
+      "source_input_pbf": "mapdata/raw/baden-wuerttemberg-260913.osm.pbf",
+      "source_v1_dist": "mapdata/dist/baden-wuerttemberg-v1.5-roads",
+      "surface_way_network_count": "1077262",
+      "tunnel_way_network_count": "2597",
+      "way_continuity_group_count": "80196",
+      "way_continuity_membership_count": "495439",
+      "way_continuity_mode": "route_relation_connected+same_street_name_connected",
+      "way_continuity_relation_group_count": "4490",
+      "way_continuity_same_name_group_count": "75706",
+      "way_endpoints_count": "1085790",
+      "way_endpoints_mode": "coord_key_length_v1",
+      "way_links_count": "1753356",
+      "way_links_mode": "shared_endpoint_detailed",
+      "way_network_mode": "surface_tunnel_motorway_split_v1"
+    },
+    "quick_check": [
+      "ok"
+    ],
+    "ready": true,
+    "require_settlement": true,
+    "scope": "Structural readiness only; not driving accuracy or source-data freshness.",
+    "settlement_evidence_counts": [
+      {
+        "confidence": "unknown",
+        "count": 525,
+        "inside_city": null,
+        "source": "conflict"
+      },
+      {
+        "confidence": "low",
+        "count": 745507,
+        "inside_city": 1,
+        "source": "landuse"
+      },
+      {
+        "confidence": "high",
+        "count": 5516,
+        "inside_city": 0,
+        "source": "maxspeed_type"
+      },
+      {
+        "confidence": "high",
+        "count": 14876,
+        "inside_city": 1,
+        "source": "maxspeed_type"
+      },
+      {
+        "confidence": "unknown",
+        "count": 422719,
+        "inside_city": null,
+        "source": "missing"
+      },
+      {
+        "confidence": "high",
+        "count": 7597,
+        "inside_city": 0,
+        "source": "source_maxspeed"
+      },
+      {
+        "confidence": "high",
+        "count": 20236,
+        "inside_city": 1,
+        "source": "source_maxspeed"
+      },
+      {
+        "confidence": "high",
+        "count": 4467,
+        "inside_city": 0,
+        "source": "traffic_sign"
+      },
+      {
+        "confidence": "high",
+        "count": 5489,
+        "inside_city": 1,
+        "source": "traffic_sign"
+      },
+      {
+        "confidence": "high",
+        "count": 3,
+        "inside_city": 0,
+        "source": "urban_polygon"
+      },
+      {
+        "confidence": "high",
+        "count": 334,
+        "inside_city": 1,
+        "source": "urban_polygon"
+      },
+      {
+        "confidence": "high",
+        "count": 21336,
+        "inside_city": 0,
+        "source": "zone_traffic"
+      },
+      {
+        "confidence": "high",
+        "count": 45609,
+        "inside_city": 1,
+        "source": "zone_traffic"
+      }
+    ],
+    "sha256": "e1a36e56cc4809cc69d2d5161b993eff21a1c08264e8d9300e79ec7546ccd00b",
+    "warnings": []
+  },
+  "sign_validation": {
+    "format": "youspeed.traffic-sign-runtime.validation.v1",
+    "supported": true,
+    "ready": true,
+    "errors": [],
+    "counts": {
+      "traffic_sign_association": 172304,
+      "traffic_sign_inventory": 163504,
+      "traffic_sign_lane": 211353,
+      "traffic_sign_rule_path": 37807,
+      "traffic_sign_runtime": 172304,
+      "traffic_sign_source": 2,
+      "traffic_sign_way_direction": 1085790,
+      "traffic_sign_way_rule": 118400
+    },
+    "failed_rows": {
+      "all_inventory_records_materialized": 0,
+      "all_runtime_signs_have_current_source": 0,
+      "directions_cover_admitted_ways": 0,
+      "accepted_associations_permitted": 0,
+      "radii_match_exact_classes": 0,
+      "rules_have_accepted_association": 0,
+      "rule_geometry_bounds": 0,
+      "unverified_parameters_never_active": 0,
+      "source_speed_value_matches_rule": 0,
+      "boundary_context_correct": 0,
+      "lane_conflicts_stay_unresolved": 0,
+      "no_overlapping_rule_interiors": 0,
+      "osm_fallback_has_source_station": 0,
+      "invalid_continuation_paths": 0
+    },
+    "associations": {
+      "accepted": 110639,
+      "ambiguous_directed_path": 42704,
+      "conflicting_source_values": 1169,
+      "low_source_confidence": 7447,
+      "missing_openlr": 46,
+      "no_verified_directed_path": 10297,
+      "unverified_source_annotation": 2
+    }
+  },
+  "artwork": {
+    "shared_verified_pairs": 117,
+    "packaged_pairs": 49,
+    "coverage": {
+      "path": "mapdata/bundles/v3/baden-wuerttemberg/2026-10-21-v1.5-runtime/sign-pictograms/coverage.json",
+      "sha256": "af59d48a7a7a031e5f9e9546cf84ee3e70f024d517fa98b540c4d555189bef72"
+    }
+  },
+  "automated_checks": [
+    {
+      "scope": "map runtime, full road pipeline, raw inventory, packaging/deltas, regional generation and artwork packager",
+      "passed": 73,
+      "subtests_passed": 15
+    },
+    {
+      "scope": "historical pilot compatibility, artwork packaging and structural validator",
+      "passed": 33,
+      "subtests_passed": 51
+    },
+    {
+      "scope": "shared mobile sign catalog, national sets and mapping review",
+      "passed": 47
+    },
+    {
+      "scope": "Inspector traffic-sign inventory",
+      "passed": 4
+    },
+    {
+      "scope": "protected speed-limit reference policy",
+      "scenarios": 39,
+      "steps": 171,
+      "transitions": 16,
+      "states": 5,
+      "pins_and_artifact_hashes_match": true
+    },
+    {
+      "scope": "git diff whitespace",
+      "passed": true
+    }
+  ],
+  "mobile_acceptance": {
+    "iphone": {
+      "receipt": {
+        "path": "docs/MOBIDATA_BW_V1_5_IPHONE_ACCEPTANCE.json",
+        "sha256": "26fef35aabe323efc230d96a45b3a27f4fd4d9a7716d386864698b6941d43eba"
+      },
+      "results": {
+        "schema_version": 1,
+        "validated_at_utc": "2026-10-21T18:29:32.711075+00:00",
+        "branch": "codex/youspeed-v1.5-mobidata-bw",
+        "status": "passed",
+        "app": {
+          "bundle_id": "de.youspeed.SpeedConsumer.TestHost",
+          "version": "1.5",
+          "build": "10057",
+          "path": "/private/tmp/youspeed-v15-iphone-build/Build/Products/Debug-iphonesimulator/SpeedConsumer.app",
+          "executable_sha256": "90273c875c3f2c259501e75fa73d989b10e49eab1f6bfe986d8abd66d072cc36",
+          "debug_dylib_sha256": "76ee69e3e728c51fcf5fc622f1ce2927b9f8cd5ca0a5f6ce27808cf6d21fe350",
+          "normal_app_launch": "de.youspeed.SpeedConsumer.TestHost: 33845",
+          "normal_startup_ready": true,
+          "normal_startup_log": [
+            "2026-10-21 20:29:33.737 Df SpeedConsumer[33845:173e13] [de.youspeed.SpeedConsumer:session] startup begin force=false",
+            "2026-10-21 20:29:33.746 Df SpeedConsumer[33845:173e50] [de.youspeed.SpeedConsumer:bundle-manager] startup_recovery begin",
+            "2026-10-21 20:29:33.747 Df SpeedConsumer[33845:173e50] [de.youspeed.SpeedConsumer:bundle-manager] startup_recovery active_state candidate version=2026-10-21-v1.5-runtime db=baden-wuerttemberg_speeds.sqlite",
+            "2026-10-21 20:29:33.748 Df SpeedConsumer[33845:173e50] [de.youspeed.SpeedConsumer:bundle-manager] startup_recovery active_state available version=2026-10-21-v1.5-runtime",
+            "2026-10-21 20:29:33.748 Df SpeedConsumer[33845:173e50] [de.youspeed.SpeedConsumer:bundle-manager] startup_recovery active_state recovered version=2026-10-21-v1.5-runtime",
+            "2026-10-21 20:29:33.764 Df SpeedConsumer[33845:173e13] [de.youspeed.SpeedConsumer:session] startup recovered_local mode=upToDate version=2026-10-21-v1.5-runtime",
+            "2026-10-21 20:29:33.806 Df SpeedConsumer[33845:173e13] [de.youspeed.SpeedConsumer:session] startup ready mode=upToDate version=2026-10-21-v1.5-runtime db=/Users/raphaelvolz/Library/Developer/CoreSimulator/Devices/D2831F96-C73E-4F84-BCB2-6B1B611A5FC8/data/Containers/Data/Application/B0705D3A-245C-4E09-9AAC-3BB2E3F05381/Library/Application Support/SpeedConsumer/bundles/baden-wuerttemberg-2026-10-21-v1.5-runtime/baden-wuerttemberg_speeds.sqlite"
+          ]
+        },
+        "simulator": {
+          "name": "iPhone 17 Pro",
+          "udid": "D2831F96-C73E-4F84-BCB2-6B1B611A5FC8",
+          "os": "iOS 26.5",
+          "data_container": "/Users/raphaelvolz/Library/Developer/CoreSimulator/Devices/D2831F96-C73E-4F84-BCB2-6B1B611A5FC8/data/Containers/Data/Application/B0705D3A-245C-4E09-9AAC-3BB2E3F05381"
+        },
+        "tests": {
+          "distinct_passed": 131,
+          "failures": 0,
+          "unit_compatibility": {
+            "passed": 130,
+            "failed": 0,
+            "skipped": 1,
+            "skip_reason": "Existing GPSRouting compatibility fixture intentionally deletes all isolated map data; the optional full-data probe was subsequently run alone after reinstall.",
+            "xcresult": "/private/tmp/youspeed-v15-iphone-full-final.xcresult",
+            "log": "/private/tmp/youspeed-v15-iphone-full-final.log",
+            "passed_test_names": [
+              "PanoramaxCaptureToggleTests/testDisablePreservesAcceptedPhotoAndManualShutterInBothSessionPurposes",
+              "PanoramaxCaptureToggleTests/testEnableAfterStationaryDisablePreparesNewBatchWithoutRestart",
+              "PanoramaxCaptureToggleTests/testSavedSelectionUpdatesRetainedDriveRecordingSession",
+              "PanoramaxCaptureToggleTests/testUnavailablePhotoOutputKeepsIntentButDoesNotClaimActiveCapture",
+              "SpeedConsumerTests/testDrivingPhotoDecelerationFinishesPhotoBeforeReview",
+              "SpeedConsumerTests/testDrivingPhotoFailedExposureStillBecomesReviewableAfterDeceleration",
+              "SpeedConsumerTests/testDrivingPhotoInjectedSessionIgnoresHardwareFailureNotifications",
+              "SpeedConsumerTests/testDrivingPhotoLateCompletionCannotEnterNewSession",
+              "SpeedConsumerTests/testDrivingPhotoManualPipelineIgnoresAutomaticFiltersAndRejectsRepeatedTaps",
+              "SpeedConsumerTests/testDrivingPhotoSharesBusyGateWithoutStoppingDashcam",
+              "SpeedConsumerTests/testDrivingPhotoThresholdAndReadiness",
+              "SpeedConsumerTests/testGPSRoutingLeavesCoverageAndReusesReadersWhenReturning",
+              "SpeedConsumerTests/testInventoryV15ActualTenAndThirtyMetreRadii",
+              "SpeedConsumerTests/testInventoryV15AmbiguousAndMismatchingNumericEvidenceStayUnconfirmed",
+              "SpeedConsumerTests/testInventoryV15CameraConfirmationRequiresDistinctFramesGeometryAndRoadContext",
+              "SpeedConsumerTests/testInventoryV15CameraNeedsAnalyzedFramesBeforeNotObservedAndRearmsAfterOff",
+              "SpeedConsumerTests/testInventoryV15CancellationDefaultsCannotReviveOldPostedSpeed",
+              "SpeedConsumerTests/testInventoryV15CapabilityAbsenceAndUnknownVersionPreserveOldBundles",
+              "SpeedConsumerTests/testInventoryV15CaptureFailureRetriesAndOnlyDurableSuccessConsumes",
+              "SpeedConsumerTests/testInventoryV15CaptureModesMigrateOldPreferenceWithoutChangingCadence",
+              "SpeedConsumerTests/testInventoryV15CaptureUsesProductionJPEGQueueAndRetriesFailedExposure",
+              "SpeedConsumerTests/testInventoryV15ConflictingIntervalsFailClosed",
+              "SpeedConsumerTests/testInventoryV15ControllerTownResetDropsVoiceEvenWhenInsideCityDoesNotChange",
+              "SpeedConsumerTests/testInventoryV15DetachedCaptureAndFinishRetainOriginalFixProvenance",
+              "SpeedConsumerTests/testInventoryV15DirectedRuleCannotApplyToOppositeRoadDirectionOrPoorGPS",
+              "SpeedConsumerTests/testInventoryV15EndMaskSurvivesUnknownDirectionButQualifiedReversalAdmitsOppositeOSM",
+              "SpeedConsumerTests/testInventoryV15FailedJournalCannotClaimEncounterOrConfirmation",
+              "SpeedConsumerTests/testInventoryV15FirstFixInitializationNeedsRadiusButKnownCrossingCanSkipIt",
+              "SpeedConsumerTests/testInventoryV15HighFrameRateConfirmationIsBoundedAndPreservesFirstFrame",
+              "SpeedConsumerTests/testInventoryV15OppositeFaceAndParallelTargetsCannotDisplayCaptureOrConfirm",
+              "SpeedConsumerTests/testInventoryV15PartialOptionalSchemaCannotActivateOnlyOneSubstream",
+              "SpeedConsumerTests/testInventoryV15PendingCaptureKeepsOriginalEncounterAcrossExitAndReentry",
+              "SpeedConsumerTests/testInventoryV15PoorFixDoesNotRearmTownBoundaryInsideItsGeofence",
+              "SpeedConsumerTests/testInventoryV15ReverseIntervalOwnsStationEndpoint",
+              "SpeedConsumerTests/testInventoryV15SourceChainageDoesNotChangeWithOffRoadQueryLatitude",
+              "SpeedConsumerTests/testInventoryV15TownContextSurvivesUnsignedRoadAndDerivedConflictingContext",
+              "SpeedConsumerTests/testInventoryV15TownRearmsOnlyAfterKnownPhysicalExitAcrossAnotherWay",
+              "SpeedConsumerTests/testInventoryV15UnstableRoadMatchKeepsProximityButCannotApplyRule",
+              "SpeedConsumerTests/testInventoryV15UnsupportedTownAndCameraOffAreLoggedWithoutConfirmation",
+              "SpeedConsumerTests/testInventoryV15UnverifiedSourceAnnotationCannotBecomeCameraConfirmationFromVocabularyCoverage",
+              "SpeedConsumerTests/testInventoryV15ZeroLengthTownStationStillCrossesBeforeFreshPostedLimit",
+              "TrafficSignCameraReferenceOfferTests/testChangedConfirmedPreviewIsSelectedOverOlderResolverCameraValue",
+              "TrafficSignCameraReferenceOfferTests/testFinalizedPassageAndResolverKeepTheirExistingIdentityAndType",
+              "TrafficSignCameraReferenceOfferTests/testFreshImmediate80Replaces70UsingItsOwnEvidenceIdentity",
+              "TrafficSignCameraReferenceOfferTests/testOrdinaryImmediate30DoesNotBorrowAnExistingZonesEnclosingType",
+              "TrafficSignCameraReferenceOfferTests/testRecognizedZoneKeepsNumericPreviewUntilItsFinalizedEnclosingPassage",
+              "TrafficSignCameraReferenceOfferTests/testUnchangedOrStalePreviewCannotReplaceResolverSelection",
+              "TrafficSignCameraReferenceOfferTests/testUnmatchedImmediateValueCannotBorrowAnOlderAssertionsIdentity",
+              "TrafficSignPassageEvaluationTests/testAccidentalNearbyTrackSplitIsSuppressedBySemanticAndLocation",
+              "TrafficSignPassageEvaluationTests/testAdjacentVisibleSignDebouncesOldPassageAndKeepsNewTrack",
+              "TrafficSignPassageEvaluationTests/testAppliedZoneEndCannotLeaveTheEnclosingCameraRuleAuthoritative",
+              "TrafficSignPassageEvaluationTests/testBoundaryCannotAcquireRelationOutsideNarrowedRecognitionScope",
+              "TrafficSignPassageEvaluationTests/testBulkExportRetainsManualLocalOnlyCompatibilityButRequiresCameraApproval",
+              "TrafficSignPassageEvaluationTests/testBundleRouteCoverageGapNeverUsesActiveDatabase",
+              "TrafficSignPassageEvaluationTests/testCameraLimitIndicatorOnlyShowsWhenCameraLimitIsActive",
+              "TrafficSignPassageEvaluationTests/testCameraLimitSurvivesWaySplitsButExpiresAfterFiveMinutes",
+              "TrafficSignPassageEvaluationTests/testCanonicalPassageWireEncodingPreservesContractAndEvidenceLineage",
+              "TrafficSignPassageEvaluationTests/testConfirmedPassageSurvivesNearbySplitOfSameNumberedRoad",
+              "TrafficSignPassageEvaluationTests/testCoveringBundleExcludesForeignActiveRouteBeforeRoadEvidence",
+              "TrafficSignPassageEvaluationTests/testDelayedOlderPassageDoesNotStaleNewerPendingExport",
+              "TrafficSignPassageEvaluationTests/testDelayedPassageIsSideEffectFreeAfterLatestRoadScopeChanges",
+              "TrafficSignPassageEvaluationTests/testDifferentVisibleCandidateAndTraversalEpochReplacePendingTrack",
+              "TrafficSignPassageEvaluationTests/testDiscardingNewerCorrectionRestoresExportSupersededRuntimeHistory",
+              "TrafficSignPassageEvaluationTests/testDisregardVisionReturnsToRoadAndClearsCameraMemory",
+              "TrafficSignPassageEvaluationTests/testEntirelyUnmatchedVisibleTrackCannotAcquireWayOnlyAfterLoss",
+              "TrafficSignPassageEvaluationTests/testEqualRoadCountsPreferMoreSpeedFeaturesThenKeepExistingHysteresis",
+              "TrafficSignPassageEvaluationTests/testExplicitlyIneligibleLiveFrameStillCannotArmButRawScoreMayTrack",
+              "TrafficSignPassageEvaluationTests/testFrenchDefaultsAndStrictSpeedTags",
+              "TrafficSignPassageEvaluationTests/testInventoryV15EndPreservesPedestrianEvidenceAndDoesNotFabricateCameraFallback",
+              "TrafficSignPassageEvaluationTests/testInventoryV15EndsRetainRealCameraEnclosureAndTownResetClearsIt",
+              "TrafficSignPassageEvaluationTests/testInventoryV15TypedEndMismatchPreservesCameraPostedLayer",
+              "TrafficSignPassageEvaluationTests/testLastKnownPresentationPreservesLatestValueAcrossMissingRoadAndEnd",
+              "TrafficSignPassageEvaluationTests/testMapAndCameraUpdatesCannotReplaceActiveVoiceCapturePresentation",
+              "TrafficSignPassageEvaluationTests/testMaximumEndMismatchPreservesCameraRuleButMatchingEndMasksStaleBase",
+              "TrafficSignPassageEvaluationTests/testMaximumEndUsesCityDefaultOrExplicitWayFallback",
+              "TrafficSignPassageEvaluationTests/testMoreNearbyRoadFeaturesSwitchImmediatelyInBothBorderDirections",
+              "TrafficSignPassageEvaluationTests/testMotorwayAndMotorroadExitsClearPostedLayerAndOnlyRestoreVerifiedEnclosingRule",
+              "TrafficSignPassageEvaluationTests/testNationalEndAndCityTransitionsDiscardPreviousPostedLimits",
+              "TrafficSignPassageEvaluationTests/testNearbyFeatureCountsNeverOverrideCoverageEligibility",
+              "TrafficSignPassageEvaluationTests/testNightWithdrawsCameraAuthorityAndRestoresBundledLimit",
+              "TrafficSignPassageEvaluationTests/testNumberedRoadContinuityRejectsChangedScopeTurnsAndUnverifiedBundles",
+              "TrafficSignPassageEvaluationTests/testOverlappingBundleRouteKeepsCurrentOnTieAndSwitchesToOnlyRoadMatch",
+              "TrafficSignPassageEvaluationTests/testPassageNormalizationAndResolverEnforceSharedSpeedValueRange",
+              "TrafficSignPassageEvaluationTests/testPersistedDirectionalCameraEvidenceCannotReviveExpiredRuntimeLimit",
+              "TrafficSignPassageEvaluationTests/testPostedTimeoutRetainsEnclosingZone",
+              "TrafficSignPassageEvaluationTests/testRawScoreTrackCanCommitDuringLiveTesting",
+              "TrafficSignPassageEvaluationTests/testRecognitionTimeRelationSetIsNotPreNarrowed",
+              "TrafficSignPassageEvaluationTests/testRepeatedTrackCommitsOnSecondMissingFrameAndFreezesFirstBoundary",
+              "TrafficSignPassageEvaluationTests/testResolverKeepsCameraAcrossRelatedWayAndBaseRefreshThenClearsOnScopeLoss",
+              "TrafficSignPassageEvaluationTests/testResolverRequiresVerifiedBundleAndSupportsGermanCityEntryAndUnlimitedBase",
+              "TrafficSignPassageEvaluationTests/testReusedPhysicalTrackIDOnlySuppressesTheCommittedStructuralAction",
+              "TrafficSignPassageEvaluationTests/testRoadDefaultsUseCountryRegionAndKnownRoadContext",
+              "TrafficSignPassageEvaluationTests/testRoadReferenceChangeClearsCameraEvenWithinSameRouteRelation",
+              "TrafficSignPassageEvaluationTests/testRuntimeLookupSkipsNewerFutureAndMalformedRowsForLookupAndEquivalence",
+              "TrafficSignPassageEvaluationTests/testSettlementCameraContextReportsHighConfidenceExitAndReentry",
+              "TrafficSignPassageEvaluationTests/testSettlementCameraEntryExpiresByTimeAndDistanceWithoutWeakRefresh",
+              "TrafficSignPassageEvaluationTests/testSettlementCameraEntryRejectsInvalidSamplesAndResetsLifecycle",
+              "TrafficSignPassageEvaluationTests/testSettlementCameraEntryRetainsConfirmationAcrossWeakGaps",
+              "TrafficSignPassageEvaluationTests/testSettlementCameraThirtySurvivesShortUnknownAndLowConfidenceGaps",
+              "TrafficSignPassageEvaluationTests/testSingleStructuralSignRequiresStableContextAndThreeNegativeFrames",
+              "TrafficSignPassageEvaluationTests/testSpatialSuppressionAllowsFarRepeatAndInterveningSemantic",
+              "TrafficSignPassageEvaluationTests/testStaleBundleStateIsExplicitAndNotCameraEvidence",
+              "TrafficSignPassageEvaluationTests/testStrongPassGeometryAllowsOneMissingFrameOnlyForRepeatedTrack",
+              "TrafficSignPassageEvaluationTests/testTraversalEpochUsesAdjacentContinuityWhileAssertionPreventsTransitiveHop",
+              "TrafficSignPassageEvaluationTests/testTypedCorrectionSupersessionCoversWayWideAndDirectionalScopes",
+              "TrafficSignPassageEvaluationTests/testUnknownMapRetainsCameraLimitInGreyWithoutWarnings",
+              "TrafficSignPassageEvaluationTests/testUnresolvedEndCannotRepeatedlyClearSuccessfulRoadMatches",
+              "TrafficSignPassageEvaluationTests/testUnsafeAndConditionalZoneEndMismatchPreservesActiveCameraZone",
+              "TrafficSignPassageEvaluationTests/testUnsafeEndMasksDatabaseAndUnknownDirectionAppliesWayWide",
+              "TrafficSignPassageEvaluationTests/testUserRecordingPrecedesEveryCameraActionAndReconciliation",
+              "TrafficSignPassageEvaluationTests/testVisualReappearanceDuringNoMatchCancelsLossAndPreservesTrack",
+              "TrafficSignSupplementaryPresentationTests/testCombinedAnnouncementRecordsRestrictionEvenInsideSecondaryCooldown",
+              "TrafficSignSupplementaryPresentationTests/testControllerExpiryKeepsDisplayTextAfterThreeSeconds",
+              "TrafficSignSupplementaryPresentationTests/testDisplayRetainsReadAcrossMissesAndSameClassTracksUntilClassReplacement",
+              "TrafficSignSupplementaryPresentationTests/testEnglishMidnightAndNoonAndFrenchSingularHour",
+              "TrafficSignSupplementaryPresentationTests/testFailedOrEmptyOCRCannotDisplayOrSpeakARestriction",
+              "TrafficSignSupplementaryPresentationTests/testFreshnessIncludesBothBoundariesAndRejectsFutureStaleAndNonFiniteDates",
+              "TrafficSignSupplementaryPresentationTests/testMatchingTextlessPrimaryRefreshesSuccessfulTextWithoutChangingOCRSource",
+              "TrafficSignSupplementaryPresentationTests/testNumericRestrictionRequiresMatchingCameraSpeedAndFreshEvidence",
+              "TrafficSignSupplementaryPresentationTests/testOvernightSpeechUsesTheFourAppLanguages",
+              "TrafficSignSupplementaryPresentationTests/testParsedTimeIsFormattedForPresentationWithoutEvaluatingTheClock",
+              "TrafficSignSupplementaryPresentationTests/testPictogramRestrictionRequiresExactClassAndCannotBorrowNumericEvidence",
+              "TrafficSignSupplementaryPresentationTests/testPublicPanoramaxWeekdayAndSuperscriptMinutesRetainAllClauses",
+              "TrafficSignSupplementaryPresentationTests/testRawPictogramRestrictionMatchesOnlyItsOwnVisibleClass",
+              "TrafficSignSupplementaryPresentationTests/testRawRestrictionIsPresentedAndSpokenWithoutDiscardingConditions",
+              "TrafficSignSupplementaryPresentationTests/testSpeechKeyIgnoresTrackerFragmentsButSeparatesClassAndInterval",
+              "TrafficSignSupplementaryPresentationTests/testSpeechRetainsMinutesInAllFourLanguages",
+              "TrafficSignSupplementaryPresentationTests/testTextlessPrimaryCannotReviveEmptyFailedOrFutureOCR",
+              "TrafficSignSupplementaryPresentationTests/testTextlessReplacementCannotBorrowTextFromAnotherPhysicalSignClassOrSpeed",
+              "TrafficSignSupplementaryPresentationTests/testVisualMissKeepsOriginalExpiryButClassAloneCannotBorrowText"
+            ]
+          },
+          "full_bundle": {
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "xcresult": "/private/tmp/youspeed-v15-iphone-full-bundle-probe.xcresult",
+            "log": "/private/tmp/youspeed-v15-iphone-full-bundle-probe.log",
+            "passed_test_names": [
+              "SpeedConsumerTests/testInventoryV15InstalledFullBWBundleLoadsAndProbesProductionRuntime"
+            ]
+          },
+          "targeted_last_reset_run": {
+            "passed": 7,
+            "failed": 0,
+            "skipped": 0,
+            "xcresult": "/private/tmp/youspeed-v15-iphone-reset-mask.xcresult"
+          },
+          "schema_last_run": {
+            "passed": 4,
+            "failed": 0,
+            "skipped": 0,
+            "xcresult": "/private/tmp/youspeed-v15-iphone-schema-final.xcresult"
+          }
+        },
+        "installed_bundle": {
+          "manifest": "/Users/raphaelvolz/Library/Developer/CoreSimulator/Devices/D2831F96-C73E-4F84-BCB2-6B1B611A5FC8/data/Containers/Data/Application/B0705D3A-245C-4E09-9AAC-3BB2E3F05381/Library/Application Support/SpeedConsumer/bundles/baden-wuerttemberg-2026-10-21-v1.5-runtime/bundle-manifest.v3.json",
+          "manifest_sha256": "2220805639e4281628a6f434c08eda34aa8fdbacc1556e611aada4d3a8105a82",
+          "version": "2026-10-21-v1.5-runtime",
+          "region": "baden-wuerttemberg",
+          "db": "/Users/raphaelvolz/Library/Developer/CoreSimulator/Devices/D2831F96-C73E-4F84-BCB2-6B1B611A5FC8/data/Containers/Data/Application/B0705D3A-245C-4E09-9AAC-3BB2E3F05381/Library/Application Support/SpeedConsumer/bundles/baden-wuerttemberg-2026-10-21-v1.5-runtime/baden-wuerttemberg_speeds.sqlite",
+          "uncompressed_sha256": "e1a36e56cc4809cc69d2d5161b993eff21a1c08264e8d9300e79ec7546ccd00b",
+          "uncompressed_bytes": 2122903552,
+          "poly_sha256": "7f6efa982f9e22cad15bba8b01120c2ff61f8d45c40e9e0c8d6d77c2e81af541",
+          "method": "APFS clone followed by full installed DB SHA verification and ordinary active_bundle.json/manifest loader"
+        },
+        "production_probe": {
+          "bundle_version": "2026-10-21-v1.5-runtime",
+          "controller": true,
+          "db_sha256": "e1a36e56cc4809cc69d2d5161b993eff21a1c08264e8d9300e79ec7546ccd00b",
+          "direction": 1,
+          "heading_deg": 68.69133888817157,
+          "latitude": 48.76960647543189,
+          "loader": true,
+          "longitude": 9.154387023651738,
+          "mobidata_signs": 163504,
+          "osm_town_fallbacks": 8800,
+          "route": true,
+          "runtime_signs": 172304,
+          "sign_id": "mobidata-bw-vzk:a4045ac5cf9a812f7e46abb0ee522f303b00e31d2d2b0183e11553390abff782",
+          "speed_kmh": 40,
+          "v3_service": true,
+          "way_id": "1677893"
+        },
+        "assets": {
+          "shared_manifest": "/Users/raphaelvolz/Github/youspeed.de/shared/tsr/sign-pictograms/manifest.json",
+          "shared_manifest_sha256": "16b95a86deddfc665d63d9bcccc3f26ac85e74d0b6ec44b20472f7fe55a7e915",
+          "packaged_manifest_sha256": "16b95a86deddfc665d63d9bcccc3f26ac85e74d0b6ec44b20472f7fe55a7e915",
+          "artworks": 117,
+          "verified_svg": 117,
+          "verified_png": 117,
+          "failures": [],
+          "new_codes": [
+            "DE:101-15",
+            "DE:156-10",
+            "DE:223.1-50",
+            "DE:325.1",
+            "DE:325.2",
+            "DE:460-20"
+          ]
+        },
+        "scope_limits": [
+          "No physical-device deployment, road trial or live-camera visual-recall validation.",
+          "Synthetic detector/frame observations exercise the actual encounter reducer; generated JPEGs exercise the production capture queue and metadata. Simulator camera-unavailable states remain explicit.",
+          "The full-bundle controller probe supplies synthetic GPS on actual bundle geometry.",
+          "Artwork does not extend the trained classifier; unsupported source classes remain unconfirmed.",
+          "TestHost 1.5 build overrides preserve pending 1.4 release defaults.",
+          "No merge, external publication, upload or protected shared-policy modification."
+        ],
+        "retest": {
+          "build_settings": [
+            "YOUSPEED_TEST_BUNDLE_SUFFIX=.TestHost",
+            "MARKETING_VERSION=1.5",
+            "CURRENT_PROJECT_VERSION=10057",
+            "ONLY_ACTIVE_ARCH=YES"
+          ],
+          "full_bundle_test": "SpeedConsumerTests/SpeedConsumerTests/testInventoryV15InstalledFullBWBundleLoadsAndProbesProductionRuntime",
+          "parallel_testing_enabled": false,
+          "note": "Install the bundle after running the GPSRouting compatibility fixture, which intentionally clears isolated maps."
+        }
+      }
+    },
+    "android": {
+      "receipt": {
+        "path": "docs/MOBIDATA_BW_V1_5_ANDROID_ACCEPTANCE.json",
+        "sha256": "e1ba5fdf364ccda2fb6642087fe59c82c376ad04ded8071c3598aff12bec05c5"
+      },
+      "results": {
+        "format": "youspeed.android.v1.5.acceptance.v1",
+        "accepted_at_utc": "2026-10-21T18:29:54.222664+00:00",
+        "branch": "codex/youspeed-v1.5-mobidata-bw",
+        "package": {
+          "application_id": "de.youspeed.android.testhost",
+          "version_name": "1.5-debug",
+          "map_compatibility_app_version": "1.5",
+          "version_code": 10057,
+          "build_type": "debug",
+          "isolated": true
+        },
+        "artifacts": {
+          "apk": {
+            "path": "android/app/build/outputs/apk/debug/app-debug.apk",
+            "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/android/app/build/outputs/apk/debug/app-debug.apk",
+            "bytes": 631154704,
+            "sha256": "e5e47b78072f52b691e6b2577c1975ea249de61020eb35e255c69b15764e9ce0"
+          },
+          "instrumentation_apk": {
+            "path": "android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+            "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+            "bytes": 14806601,
+            "sha256": "fd11bb5fde16fa7087368d78fa23b88ed915020ee192379f304d115b9caafeec"
+          }
+        },
+        "emulator": {
+          "serial": "emulator-5554",
+          "avd": "Pixel_API_36",
+          "api_level": 36,
+          "build_fingerprint": "google/sdk_gphone64_arm64/emu64a:16/BE2A.250530.026.D1/13818094:user/release-keys"
+        },
+        "bundle": {
+          "manifest": {
+            "path": "mapdata/bundles/v3/baden-wuerttemberg/2026-10-21-v1.5-runtime/baden-wuerttemberg_manifest.json",
+            "absolute_path": "/Users/raphaelvolz/Github/youspeed.de/mapdata/bundles/v3/baden-wuerttemberg/2026-10-21-v1.5-runtime/baden-wuerttemberg_manifest.json",
+            "bytes": 3665,
+            "sha256": "2220805639e4281628a6f434c08eda34aa8fdbacc1556e611aada4d3a8105a82"
+          },
+          "region": "baden-wuerttemberg",
+          "version": "2026-10-21-v1.5-runtime",
+          "download_bytes": 695751651,
+          "download_sha256": "6585f7de172e7f6301590cd97066b235b537504b7dd5f9d0118757b28937a204",
+          "uncompressed_bytes": 2122903552,
+          "uncompressed_sha256": "e1a36e56cc4809cc69d2d5161b993eff21a1c08264e8d9300e79ec7546ccd00b",
+          "installed_db_path": "/data/user/0/de.youspeed.android.testhost/files/bundle/bundles/baden-wuerttemberg/2026-10-21-v1.5-runtime/baden-wuerttemberg_speeds.sqlite",
+          "runtime_counts": {
+            "associations": {
+              "accepted": 110639,
+              "ambiguous_directed_path": 42704,
+              "conflicting_source_values": 1169,
+              "low_source_confidence": 7447,
+              "missing_openlr": 46,
+              "no_verified_directed_path": 10297,
+              "unverified_source_annotation": 2
+            },
+            "continuation_rules": 37807,
+            "decoder": "openlr-1.0.1",
+            "format": "youspeed.traffic-sign-runtime.v1",
+            "known_lanes": 211353,
+            "matcher": "directed-lrp-path-v1",
+            "mobidata_signs": 163504,
+            "osm_town_fallbacks": 8800,
+            "road_directions": 1085790,
+            "rules": 118400,
+            "signs": 172304,
+            "source_snapshots": {
+              "mobidata-bw-vzk": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+              "osm-settlement": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3"
+            },
+            "unresolved_lane_rules": 1954,
+            "version": "1"
+          },
+          "installer_log": "android/app/build/reports/instrumentation/v15-bw-final-install.txt",
+          "active_state_log": "android/app/build/reports/instrumentation/v15-bw-final-active.json"
+        },
+        "unit_tests": {
+          "passed": 152,
+          "failures": 0,
+          "suites": [
+            {
+              "suite": "de.youspeed.android.alpha.InventorySignRuntimeTests",
+              "tests": 46,
+              "failures": 0,
+              "errors": 0,
+              "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.InventorySignRuntimeTests.xml"
+            },
+            {
+              "suite": "de.youspeed.android.alpha.PanoramaxCaptureTests",
+              "tests": 10,
+              "failures": 0,
+              "errors": 0,
+              "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.PanoramaxCaptureTests.xml"
+            },
+            {
+              "suite": "de.youspeed.android.alpha.PanoramaxJournalTests",
+              "tests": 6,
+              "failures": 0,
+              "errors": 0,
+              "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.PanoramaxJournalTests.xml"
+            },
+            {
+              "suite": "de.youspeed.android.alpha.SettlementContextTests",
+              "tests": 6,
+              "failures": 0,
+              "errors": 0,
+              "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.SettlementContextTests.xml"
+            },
+            {
+              "suite": "de.youspeed.android.alpha.SpeedLimitReferenceModelTests",
+              "tests": 15,
+              "failures": 0,
+              "errors": 0,
+              "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.SpeedLimitReferenceModelTests.xml"
+            },
+            {
+              "suite": "de.youspeed.android.alpha.TrafficSignDisplayTests",
+              "tests": 5,
+              "failures": 0,
+              "errors": 0,
+              "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.TrafficSignDisplayTests.xml"
+            },
+            {
+              "suite": "de.youspeed.android.alpha.TrafficSignPassageTests",
+              "tests": 64,
+              "failures": 0,
+              "errors": 0,
+              "report": "android/app/build/test-results/testDebugUnitTest/TEST-de.youspeed.android.alpha.TrafficSignPassageTests.xml"
+            }
+          ],
+          "html_report": "android/app/build/reports/tests/testDebugUnitTest/index.html"
+        },
+        "emulator_instrumentation": {
+          "passed": 17,
+          "failures": 0,
+          "duration_seconds": 119.755,
+          "log": "android/app/build/reports/instrumentation/v15-bw-final.txt",
+          "suites": [
+            {
+              "suite": "InventorySignDatabaseInstrumentedTest",
+              "tests": 3
+            },
+            {
+              "suite": "SettlementContextInstrumentedTest",
+              "tests": 13
+            },
+            {
+              "suite": "LocalInventoryBundleInstrumentedTest",
+              "tests": 1
+            }
+          ],
+          "full_bundle_checks": [
+            "actual Android SQLite quick_check",
+            "actual settlement capability install validation",
+            "BW coverage routing at Stuttgart with no fallback DB",
+            "more than 160000 runtime records",
+            "accepted all-lane directional numeric interval from full bundle through production InventorySignDatabase and InventorySignRuntime",
+            "legacy/missing and future inventory capability fallback fixtures",
+            "query-independent spherical chainage fixture",
+            "unresolved lane exclusion and independent town station fixture"
+          ]
+        },
+        "pictograms": {
+          "shared_png_count": 117,
+          "all_apk_bytes_match_shared_manifest": true,
+          "new_official_artworks": [
+            {
+              "sign_code": "DE:101-15",
+              "png_sha256": "b6b77897295e22cb2bd76fb82caa92b50067c2c6265340094d435d9b16b2add6"
+            },
+            {
+              "sign_code": "DE:156-10",
+              "png_sha256": "d3b2b5d226d597ee04f0dec7042b2e3ad2319b478485621f6d057c2ef7af38a5"
+            },
+            {
+              "sign_code": "DE:223.1-50",
+              "png_sha256": "ce527264f86debec20050d3a7998591a33a1889f63aaf8c8dbad921441632c4f"
+            },
+            {
+              "sign_code": "DE:325.1",
+              "png_sha256": "b2450655d3d98c6392a2ebc61ba42e07138452faa4b7864cd454f48a43ea931d"
+            },
+            {
+              "sign_code": "DE:325.2",
+              "png_sha256": "b126b1b702a1f4bfb984de355c4a525ac66eb597ae5cf8e4861c3e13a7aa8bb9"
+            },
+            {
+              "sign_code": "DE:460-20",
+              "png_sha256": "942189aa14207458cb731d0fc1ed4d00efe60315ff0888ee49b8afe934e11cc2"
+            }
+          ]
+        },
+        "ui_smoke": {
+          "provisional_bundle_ui_log": "android/app/build/reports/instrumentation/v15-ui-smoke.json",
+          "scope": "On same v1.5 UI before final non-UI capture/source guards; provisional data was superseded and final data independently passed the full probe.",
+          "observations": [
+            "downloaded map ready in onboarding",
+            "Stuttgart / Charlottenplatz(B27) / speed40 in normal app",
+            "inventory/recognized capture modes exclude each other",
+            "cadence25m restored with both sign modes off",
+            "zero saved photos and camera permission denied"
+          ],
+          "final_binary_map_log": "android/app/build/reports/instrumentation/v15-final-ui.xml",
+          "final_binary_map_observations": [
+            "final APK and corrected BW map open normally",
+            "Charlottenplatz (B 27), Stuttgart-Mitte, Stuttgart and speed40 shown",
+            "camera permission denied; no live-camera claim"
+          ]
+        },
+        "reproduction": "android/README.md#local-v15-traffic-sign-bundle-test-emulator",
+        "scope_limits": {
+          "physical_device_deployment": false,
+          "live_camera_validation": false,
+          "real_drive_validation": false,
+          "external_publication": false,
+          "photo_upload": false,
+          "note": "Confirmation state transitions, capture linking, typed source values and town/end resets are fixture-verified; this receipt does not claim physical sign visibility or new trained TSR outputs."
+        }
+      }
+    }
+  },
+  "source_file_digests": [
+    {
+      "path": "scripts/map/build_traffic_sign_runtime.py",
+      "sha256": "b7f4ba15101169802149c039a73130d8c8b191a2e37eda04a51d0cacdde632b6"
+    },
+    {
+      "path": "scripts/map/validate_traffic_sign_runtime.py",
+      "sha256": "022aa4d1f50973483b9fffa35e9b5baab5b785710e4d78caa5c37b10296cae61"
+    },
+    {
+      "path": "scripts/map/build_spatialite_v3.py",
+      "sha256": "d88815ea62bbeb1f921c7dc18a82ff8422a5c65c8238e2de252384e226c4379e"
+    },
+    {
+      "path": "scripts/map/rebuild_bw_v15_roads.py",
+      "sha256": "44c2a4439597ba51aca2723e7e9337f68c2cb502ed0c7052ffe63e05c136533e"
+    },
+    {
+      "path": "scripts/map/generate_v3_country_bundles.py",
+      "sha256": "527a65a0b9173afcba2e6ecb0fd5f16365a291d709edc1d0721456282c445ba4"
+    },
+    {
+      "path": "scripts/map/publish_v3_bundle.py",
+      "sha256": "9e7824ae7fae18b0ca3ecf31b313464cda3f83fc2d52abb3e9be0bb452c4d4b0"
+    },
+    {
+      "path": "scripts/map/requirements-sign-inventory.txt",
+      "sha256": "5b119535f4fde3cc8a20fcb40a2268de9399b5090f23208168b535c461b1f353"
+    },
+    {
+      "path": "mapdata/spec/traffic_sign_runtime_v1.sql",
+      "sha256": "1ff78d233fef4ad75f713387f5b8265dae7c46d94d6a76b04e1b7bca360e8491"
+    },
+    {
+      "path": "mapdata/spec/traffic_sign_runtime_v1.md",
+      "sha256": "87af691d454ee01eede9cd1882e00f5116f1bd76b8082fd0ad23d942d26e8b99"
+    },
+    {
+      "path": "iphone/SpeedConsumerApp/InventorySignRuntime.swift",
+      "sha256": "7fefa57e722968cfedd271b03440ba8c147721519810669d3c7bd4abafa59bf2"
+    },
+    {
+      "path": "iphone/SpeedConsumerApp/DriveSessionViewModel.swift",
+      "sha256": "f94a4aa41541d3ee2d41d7edf257cb7bc8452e9107cfb08120c5fd935bc2292d"
+    },
+    {
+      "path": "iphone/SpeedConsumerApp/V3SpeedLimitService.swift",
+      "sha256": "8a4c21a6941e483ff355aba445a525866f83d2a162bcf7b0de1276b9515f21c6"
+    },
+    {
+      "path": "android/app/src/main/java/de/youspeed/android/alpha/InventorySignRuntime.kt",
+      "sha256": "293481ce2e9bad703690d39a236e531430c08a390f66bc7908060e80d3eaa53d"
+    },
+    {
+      "path": "android/app/src/main/java/de/youspeed/android/alpha/ConsumerSessionController.kt",
+      "sha256": "8ea791f774d3c2b7b77887642ffff82c8906c33fa6fb02dafa08f31e3fb57098"
+    },
+    {
+      "path": "android/scripts/install-local-v3-test-bundle.py",
+      "sha256": "9110b2f830cdb57ead31820e2d48bb2fe1b32723aae3833f1f8975e58c064c04"
+    },
+    {
+      "path": "shared/tsr/sign-pictograms/manifest.json",
+      "sha256": "16b95a86deddfc665d63d9bcccc3f26ac85e74d0b6ec44b20472f7fe55a7e915"
+    },
+    {
+      "path": "shared/tsr/prolix-de-class-catalog-v1.json",
+      "sha256": "bcda5ec655942f1cd79fea1d720180a4b2a4b6fabceb5f11375e810f9ab1b807"
+    }
+  ],
+  "retained_geojson": {
+    "path": "mapdata/raw/mobidata-bw-signs-20261021.geojson",
+    "bytes": 87275340,
+    "sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3"
+  },
+  "limits": [
+    "Local simulator/emulator acceptance only; no physical-camera drive or surveyed sign accuracy claim.",
+    "Missing classifier classes including DE310/311 and numeric 90 remain unsupported for exact visual confirmation; new training imagery/model work is pending.",
+    "Pinned road extract replication timestamp is 2026-09-13T20:21:20Z; this is not an October OSM refresh.",
+    "BW contains no incline/decline, tonnage or dimension source records; typed parameter support is implemented but no values are invented.",
+    "Unknown direction, ambiguous association, conditional speed uncertainty and conflicting lane applicability cannot activate inventory speed rules."
+  ],
+  "publication": {
+    "merged": false,
+    "release_uploaded": false,
+    "physical_device_deployed": false
+  }
+}

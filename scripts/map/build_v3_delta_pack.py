@@ -919,6 +919,10 @@ def main() -> int:
     context_statements = []
     with sqlite3.connect(base_db) as base:
         directional_columns = _directional_columns(base, "main")
+        if _table_exists(base, "main", "upcoming_path_capability"):
+            raise SystemExit("Upcoming-path topology requires a full bundle; delta delivery is unsupported")
+        if _table_exists(base, "main", "road_speed_capability"):
+            raise SystemExit("Conditional-speed rules require a full bundle; delta delivery is unsupported")
 
     if target_db is not None:
         context_statements, context_stats = build_context_delta(base_db, target_db)

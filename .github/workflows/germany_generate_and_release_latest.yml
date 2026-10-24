@@ -81,7 +81,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install osmium
+          python -m pip install -r scripts/map/requirements-sign-inventory.txt
           chmod +x scripts/map/publish_v3_release_assets.sh
           chmod +x scripts/map/build_v3_delta_index.py
           chmod +x scripts/map/build_v3_delta_pack.py
@@ -322,11 +322,22 @@ jobs:
             --engine pyosmium \
             --max-geom-points "${MAX_GEOM_POINTS}"
 
+          sign_args=()
+          corridor_mode=none
+          case "${REGION}" in
+            baden-wuerttemberg|germany-baden-wuerttemberg)
+              python3 scripts/map/traffic_sign_inventory.py download --output mapdata/raw/mobidata-bw-signs.geojson
+              corridor_mode=paired
+              sign_args=(--traffic-sign-geojson mapdata/raw/mobidata-bw-signs.geojson
+                --build-traffic-sign-runtime --build-way-links --way-links-schema detailed
+                --build-settlement-context --country-code DE)
+              ;;
+          esac
           python3 scripts/map/build_spatialite_v3.py \
             --v1-dist "mapdata/dist/${REGION}" \
             --out-db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite" \
             --input-pbf "${INPUT_PBF}" \
-            --corridor-mode none
+            --corridor-mode "${corridor_mode}" "${sign_args[@]}"
 
       - name: Regression Check (paper benchmark smoke contract)
         if: steps.compare.outputs.needs_publish == '1'

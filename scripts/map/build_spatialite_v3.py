@@ -1101,6 +1101,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--v1-dist", required=True, help="Path to mapdata/dist/<region>")
     parser.add_argument("--out-db", required=True, help="Output SQLite database path")
     parser.add_argument("--input-pbf", help="Optional source PBF to build exact city polygon tables")
+    parser.add_argument("--traffic-sign-geojson", type=Path, help="Optional MobiData BW source inventory; directed interpretation requires --build-traffic-sign-runtime")
+    parser.add_argument("--build-traffic-sign-runtime", action="store_true", help="Build optional directed traffic-sign runtime overlay; requires --traffic-sign-geojson and its decoder dependencies")
+    parser.add_argument("--build-upcoming-path", action="store_true", help="Build conservative source-node lookahead topology; requires --build-traffic-sign-runtime and --input-pbf")
     parser.add_argument("--build-settlement-context", action="store_true", help="Build opt-in directed settlement context from original PBF")
     parser.add_argument("--country-code", default="DE", help="Two-letter ISO country code for settlement context")
     parser.add_argument("--settlement-geometry-tolerance-m", type=float, default=2.0, help="Metric topology-preserving polygon simplification tolerance")
@@ -1136,6 +1139,23 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    if args.build_upcoming_path and (not args.build_traffic_sign_runtime or not args.input_pbf):
+        print("--build-upcoming-path requires --build-traffic-sign-runtime and --input-pbf", file=sys.stderr)
+        return 1
+    if args.build_traffic_sign_runtime:
+        if not args.traffic_sign_geojson:
+            print("--build-traffic-sign-runtime requires --traffic-sign-geojson", file=sys.stderr)
+            return 1
+        try:
+            import openlr
+            if not callable(openlr.binary_decode):
+                raise ImportError("openlr.binary_decode is unavailable")
+        except (ImportError, AttributeError) as exc:
+            print(f"Traffic-sign runtime requires requirements-sign-inventory.txt: {exc}", file=sys.stderr)
+            return 1
+    if args.traffic_sign_geojson:
+        from traffic_sign_inventory import parse_snapshot
+        parse_snapshot(args.traffic_sign_geojson)
     v1_dist = Path(args.v1_dist)
     out_db = Path(args.out_db)
     try:
@@ -1893,11 +1913,29 @@ def main() -> int:
     ):
         conn.execute("INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)", (key, value))
 
+    from conditional_speed_rules import build as build_conditional_speed_rules
+    conditional_rules = build_conditional_speed_rules(conn, ways_meta, str(input_pbf or ""))
+    print(f"Conditional road-speed rules: {conditional_rules}", file=sys.stderr)
+
     if args.build_settlement_context:
         settlement_metadata = build_settlement_context(
             conn, input_pbf, country_code, args.settlement_geometry_tolerance_m
         )
         print(f"Settlement context: {settlement_metadata}", file=sys.stderr)
+
+    if args.traffic_sign_geojson:
+        from traffic_sign_inventory import import_inventory
+        inventory = import_inventory(conn, args.traffic_sign_geojson)
+        print(f"Traffic-sign inventory: {inventory}", file=sys.stderr)
+    if args.build_traffic_sign_runtime:
+        from build_traffic_sign_runtime import build_runtime
+        runtime = build_runtime(conn, v1_dist / "ways.meta")
+        print(f"Traffic-sign runtime: {runtime}", file=sys.stderr)
+
+    if args.build_upcoming_path:
+        from build_upcoming_path import build as build_upcoming_path
+        upcoming_path = build_upcoming_path(conn, input_pbf)
+        print(f"Upcoming path: {upcoming_path}", file=sys.stderr)
 
     conn.commit()
     conn.close()

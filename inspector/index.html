@@ -97,6 +97,22 @@
         </div>
         <p id="status" class="status">Bereit.</p>
 
+        <section id="inventory-panel" class="inventory-panel" aria-labelledby="inventory-title">
+          <h2 id="inventory-title">Verkehrszeichen im Offline-Bestand</h2>
+          <p id="inventory-summary" class="hint">Noch kein Bundle geladen.</p>
+          <p class="hint compact">Katasterstandorte als Bestandsdaten. Aufstellung und Aktualität sind nicht garantiert;
+            der Bestand wird nicht für die Geschwindigkeitsberechnung verwendet.</p>
+          <label class="track-tsr-check"><input id="inventory-show" type="checkbox" checked disabled /> Zeichen auf der Karte anzeigen</label>
+          <label for="inventory-class">Zeichenklasse</label>
+          <select id="inventory-class" disabled><option value="">Alle Zeichenklassen</option></select>
+          <label for="inventory-query">Gemeinde / Standort- oder Gruppen-ID</label>
+          <div class="way-row"><input id="inventory-query" type="search" maxlength="160" placeholder="z. B. Neuenbürg" disabled />
+            <button id="inventory-search" type="button" disabled>Bestand durchsuchen</button></div>
+          <p id="inventory-status" class="hint compact" role="status"></p>
+          <div id="inventory-results" class="inventory-results" aria-label="Bestandstreffer"></div>
+          <div id="inventory-detail" class="inventory-detail" aria-live="polite"></div>
+        </section>
+
         <section class="track-tsr-panel" aria-labelledby="track-tsr-title">
           <h2 id="track-tsr-title">Verkehrszeichen auf der Fahrt</h2>
           <p class="hint">Drive-Log oben und zugehöriges TSR-Log hier öffnen. Kein SQLite-Bundle nötig.
@@ -555,6 +571,7 @@
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
+    <script src="./traffic-sign-inventory.js"></script>
     <script src="./app.js"></script>
     <script src="./track-tsr-core.js"></script>
     <script src="./track-tsr.js"></script>

@@ -2,6 +2,17 @@
 
 Directory layout for offline OpenStreetMap preprocessing artifacts.
 
+Baden-Württemberg bundles also carry the optional MobiData BW traffic-sign
+inventory in separate `traffic_sign_source`, `traffic_sign_inventory` and
+`traffic_sign_inventory_rtree` tables. These are display/QA data and do not feed
+speed or settlement decisions. BW country-generation/rebuild commands fetch the
+GeoJSON automatically; direct builds accept `--traffic-sign-geojson FILE`.
+Source hash, timestamp, attribution and license accompany the DB and manifest.
+See [the integration and local build record](../docs/MOBIDATA_BW_INVENTORY_2026-10-20.md).
+
+Downloaded `raw/mobidata-bw-signs*.geojson` snapshots are local inputs excluded
+from Git. Keep their source hashes in the build records and bundle manifests.
+
 - `raw/`: source `.osm.pbf` files (immutable inputs)
 - `build/`: intermediate outputs created by extraction steps
 - `dist/`: runtime artifact packs consumed by the app

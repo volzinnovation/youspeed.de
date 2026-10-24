@@ -1,0 +1,126 @@
+{
+  "synthetic": true,
+  "scope": "Parser fixtures only. These are not assertions that such records exist in the BW source; no rows are added to the DB.",
+  "examples": [
+    {
+      "literal_code": "DE:108-12",
+      "normalized_code": "DE:108-12",
+      "sign_family": "DE:108",
+      "kind": "descent",
+      "numeric_value": 12.0,
+      "unit": "%",
+      "parameter_status": "parsed_source_value",
+      "display_radius_m": 10,
+      "proposed_boundary_event": null,
+      "proposed_reset_prior_speed_limits": 0
+    },
+    {
+      "literal_code": "DE:110[15 %]",
+      "normalized_code": "DE:110",
+      "sign_family": "DE:110",
+      "kind": "incline",
+      "numeric_value": 15.0,
+      "unit": "%",
+      "parameter_status": "parsed_source_value",
+      "display_radius_m": 10,
+      "proposed_boundary_event": null,
+      "proposed_reset_prior_speed_limits": 0
+    },
+    {
+      "literal_code": "DE:262-7,5",
+      "normalized_code": "DE:262-7,5",
+      "sign_family": "DE:262",
+      "kind": "maximum_weight",
+      "numeric_value": 7.5,
+      "unit": "t",
+      "parameter_status": "parsed_source_value",
+      "display_radius_m": 10,
+      "proposed_boundary_event": null,
+      "proposed_reset_prior_speed_limits": 0
+    },
+    {
+      "literal_code": "DE:263[11.5 t]",
+      "normalized_code": "DE:263",
+      "sign_family": "DE:263",
+      "kind": "maximum_axle_weight",
+      "numeric_value": 11.5,
+      "unit": "t",
+      "parameter_status": "parsed_source_value",
+      "display_radius_m": 10,
+      "proposed_boundary_event": null,
+      "proposed_reset_prior_speed_limits": 0
+    },
+    {
+      "literal_code": "DE:264-2.2",
+      "normalized_code": "DE:264-2.2",
+      "sign_family": "DE:264",
+      "kind": "maximum_width",
+      "numeric_value": 2.2,
+      "unit": "m",
+      "parameter_status": "parsed_source_value",
+      "display_radius_m": 10,
+      "proposed_boundary_event": null,
+      "proposed_reset_prior_speed_limits": 0
+    },
+    {
+      "literal_code": "DE:265-3,8",
+      "normalized_code": "DE:265-3,8",
+      "sign_family": "DE:265",
+      "kind": "maximum_height",
+      "numeric_value": 3.8,
+      "unit": "m",
+      "parameter_status": "parsed_source_value",
+      "display_radius_m": 10,
+      "proposed_boundary_event": null,
+      "proposed_reset_prior_speed_limits": 0
+    },
+    {
+      "literal_code": "DE:266-12",
+      "normalized_code": "DE:266-12",
+      "sign_family": "DE:266",
+      "kind": "maximum_length",
+      "numeric_value": 12.0,
+      "unit": "m",
+      "parameter_status": "parsed_source_value",
+      "display_radius_m": 10,
+      "proposed_boundary_event": null,
+      "proposed_reset_prior_speed_limits": 0
+    },
+    {
+      "literal_code": "DE:265[]",
+      "normalized_code": "DE:265",
+      "sign_family": "DE:265",
+      "kind": "maximum_height",
+      "numeric_value": null,
+      "unit": "m",
+      "parameter_status": "annotation_unverified",
+      "display_radius_m": 10,
+      "proposed_boundary_event": null,
+      "proposed_reset_prior_speed_limits": 0
+    },
+    {
+      "literal_code": "DE:274-50[WVZ Rombachtunnel]",
+      "normalized_code": "DE:274-50",
+      "sign_family": "DE:274",
+      "kind": "speed_limit",
+      "numeric_value": 50.0,
+      "unit": "km/h",
+      "parameter_status": "dynamic_unverified",
+      "display_radius_m": 10,
+      "proposed_boundary_event": null,
+      "proposed_reset_prior_speed_limits": 0
+    },
+    {
+      "literal_code": "DE:274-banana",
+      "normalized_code": "DE:274-banana",
+      "sign_family": "DE:274",
+      "kind": "speed_limit",
+      "numeric_value": null,
+      "unit": "km/h",
+      "parameter_status": "invalid_value",
+      "display_radius_m": 10,
+      "proposed_boundary_event": null,
+      "proposed_reset_prior_speed_limits": 0
+    }
+  ]
+}

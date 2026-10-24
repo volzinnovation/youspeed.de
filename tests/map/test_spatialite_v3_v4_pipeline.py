@@ -1,4 +1,5 @@
 import json
+import importlib.util
 import sqlite3
 import subprocess
 import sys
@@ -247,6 +248,60 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
             args.extend(["--distance-mode", distance_mode])
         result = run_cmd(args)
         return result, json.loads(result.stdout)
+
+    @unittest.skipUnless(importlib.util.find_spec("shapely"), "complete settlement build requires Shapely >= 2")
+    def test_complete_v3_build_passes_current_testing_readiness(self):
+        complete_db = self.tmpdir / "complete_v3.sqlite"
+        report_path = self.tmpdir / "complete_v3.readiness.json"
+        run_cmd([
+            sys.executable, str(BUILD_V3), "--v1-dist", str(self.dist_v1),
+            "--out-db", str(complete_db), "--input-pbf", str(self.input_osm),
+            "--country-code", "DE", "--build-settlement-context", "--build-way-links",
+            "--way-links-schema", "detailed", "--corridor-mode", "paired",
+        ])
+        run_cmd([
+            sys.executable, str(REPO_ROOT / "scripts/map/validate_v3_testing_bundle.py"),
+            "--db", str(complete_db), "--require-settlement", "--out-json", str(report_path),
+        ])
+        report = json.loads(report_path.read_text())
+        self.assertTrue(report["ready"], report["errors"])
+        self.assertEqual(report["metadata"]["road_geometry_policy"], "source_vertices_v1")
+        self.assertEqual(report["metadata"]["way_links_mode"], "shared_endpoint_detailed")
+        self.assertEqual(report["metadata"]["motorway_exit_approach_version"], "1")
+
+    def test_runtime_requires_inventory_before_replacing_an_existing_database(self):
+        existing = self.tmpdir / "runtime_missing_inventory.sqlite"
+        existing.write_bytes(b"preserve-existing-output")
+        result = run_cmd([
+            sys.executable, str(BUILD_V3), "--v1-dist", str(self.dist_v1),
+            "--out-db", str(existing), "--build-traffic-sign-runtime",
+        ], check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("requires --traffic-sign-geojson", result.stderr)
+        self.assertEqual(existing.read_bytes(), b"preserve-existing-output")
+
+    @unittest.skipUnless(importlib.util.find_spec("openlr"), "optional traffic-sign build requires openlr")
+    def test_optional_inventory_runtime_is_built_after_the_road_tables(self):
+        runtime_db = self.tmpdir / "runtime_overlay.sqlite"
+        inventory = self.tmpdir / "inventory.geojson"
+        inventory.write_text(json.dumps({"type": "FeatureCollection", "numberReturned": 1, "features": [{
+            "type": "Feature", "geometry": {"type": "Point", "coordinates": [8.031, 49.03]},
+            "properties": {"GruppenID": "00000000-0000-0000-0000-000000000001",
+                           "StandortID": "00000000-0000-0000-0000-000000000002",
+                           "Verkehrszeichennummer": "DE:274-30"},
+        }]}))
+        run_cmd([
+            sys.executable, str(BUILD_V3), "--v1-dist", str(self.dist_v1),
+            "--out-db", str(runtime_db), "--traffic-sign-geojson", str(inventory),
+            "--build-traffic-sign-runtime",
+        ])
+        with sqlite3.connect(runtime_db) as db:
+            self.assertEqual(db.execute("SELECT value FROM traffic_sign_capability WHERE key='version'").fetchone()[0], "1")
+            self.assertEqual(db.execute("SELECT count(*) FROM traffic_sign_runtime").fetchone()[0], 1)
+            # A raw point with no decoded directed OpenLR link is never promoted
+            # to a speed action merely because a source speed number exists.
+            self.assertEqual(db.execute("SELECT count(*) FROM traffic_sign_way_rule").fetchone()[0], 0)
+            self.assertEqual(db.execute("SELECT status FROM traffic_sign_association").fetchone()[0], "missing_openlr")
 
     def test_build_outputs_databases(self):
         self.assertTrue(self.db_v3.exists())

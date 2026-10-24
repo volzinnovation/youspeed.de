@@ -610,6 +610,17 @@ def _bundle_commands(
                 release_tag,
             ]
         )
+    from traffic_sign_inventory import is_bw_region
+    if target.iso2 == "DE" and is_bw_region(target.region_id):
+        snapshot = raw_dir / "mobidata-bw-signs.geojson"
+        build = commands[1]
+        build[build.index("--corridor-mode") + 1] = "paired"
+        build.extend(["--traffic-sign-geojson", str(snapshot), "--build-traffic-sign-runtime",
+                      "--build-way-links", "--way-links-schema", "detailed"])
+        if "--build-settlement-context" not in build:
+            build.extend(["--build-settlement-context", "--country-code", target.iso2])
+        commands.insert(0, ["python3", str(repo_root / "scripts/map/traffic_sign_inventory.py"),
+                            "download", "--output", str(snapshot)])
     return commands
 
 

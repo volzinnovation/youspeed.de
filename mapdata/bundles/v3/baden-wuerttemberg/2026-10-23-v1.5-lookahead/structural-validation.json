@@ -1,0 +1,205 @@
+{
+  "counts": {
+    "areas": 144334,
+    "areas_rtree": 144334,
+    "city_boundary": 2857,
+    "city_boundary_rtree": 2857,
+    "city_place": 8745,
+    "city_place_rtree": 8745,
+    "city_ring": 3403,
+    "city_tile": 37949,
+    "corridor_pairs": 5634,
+    "corridor_progress": 45674,
+    "motorway_exit_approach": 1497,
+    "motorway_way_network": 5931,
+    "motorway_way_network_rtree": 5931,
+    "settlement_area": 40190,
+    "settlement_ring": 44228,
+    "settlement_segment": 1294214,
+    "settlement_sign": 32858,
+    "surface_way_network": 1077262,
+    "surface_way_network_rtree": 1077262,
+    "tunnel_way_network": 2597,
+    "tunnel_way_network_rtree": 2597,
+    "way_continuity_group": 80196,
+    "way_continuity_membership": 495439,
+    "way_endpoints": 1085790,
+    "way_geom": 1085790,
+    "way_links": 1753356,
+    "ways": 1085790,
+    "ways_rtree": 1085790
+  },
+  "db": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v3/baden-wuerttemberg-v1.5-lookahead/speeds_v3.sqlite",
+  "elapsed_seconds": 43.041,
+  "errors": [],
+  "format": "youspeed.v3.testing-readiness",
+  "geometry_checks": {
+    "areas": {
+      "checked": 144334,
+      "invalid": 0,
+      "nullable_missing": 10595,
+      "unknown_empty": 0
+    },
+    "city_ring": {
+      "checked": 3403,
+      "invalid": 0,
+      "nullable_missing": 0,
+      "unknown_empty": 0
+    },
+    "settlement_ring": {
+      "checked": 44228,
+      "invalid": 0,
+      "nullable_missing": 0,
+      "unknown_empty": 0
+    },
+    "settlement_segment": {
+      "checked": 1294214,
+      "invalid": 0,
+      "nullable_missing": 0,
+      "unknown_empty": 0
+    },
+    "way_geom": {
+      "checked": 1085790,
+      "invalid": 0,
+      "nullable_missing": 0,
+      "unknown_empty": 0
+    }
+  },
+  "metadata": {
+    "backend": "sqlite_rtree",
+    "city_boundaries": "2857",
+    "city_boundary_admin_levels": "6,8,9",
+    "city_places": "8745",
+    "city_rings": "3403",
+    "city_tile_fallback_boundaries": "0",
+    "city_tile_size_m": "4096",
+    "city_tiles": "37949",
+    "corridor_count": "7756",
+    "corridor_pair_count": "5634",
+    "corridor_progress_count": "45674",
+    "corridor_progress_mode": "paired_portal_chain_v1",
+    "country_code": "DE",
+    "max_city_ring_points": "96",
+    "max_city_tiles": "512",
+    "motorway_exit_approach_count": "1497",
+    "motorway_exit_approach_distance_m": "350.0",
+    "motorway_exit_approach_version": "1",
+    "motorway_way_network_count": "5931",
+    "road_geometry_max_error_m": "0",
+    "road_geometry_policy": "source_vertices_v1",
+    "road_geometry_source_way_count": "1085790",
+    "schema_version": "1",
+    "settlement_context_version": "1",
+    "settlement_country_code": "DE",
+    "settlement_fallback_way_count": "0",
+    "settlement_geometry_tolerance_m": "2.0",
+    "settlement_incomplete_way_count": "0",
+    "settlement_invalid_area_count": "0",
+    "settlement_segment_count": "1294214",
+    "settlement_sign_association_counts": "{\"ambiguous_ways\":665,\"collinear_way_split\":15292,\"direction_unknown\":11962,\"node_membership\":2556,\"unassociated\":2378,\"way_tag_location_unknown\":5}",
+    "settlement_source_way_count": "1085790",
+    "settlement_state_counts": "{\"inside_high\":86544,\"inside_low\":745507,\"outside_high\":38919,\"unknown_unknown\":423244}",
+    "settlement_zero_length_way_count": "0",
+    "source_input_pbf": "mapdata/raw/baden-wuerttemberg-260913.osm.pbf",
+    "source_v1_dist": "mapdata/dist/baden-wuerttemberg-v1.5-roads",
+    "surface_way_network_count": "1077262",
+    "tunnel_way_network_count": "2597",
+    "way_continuity_group_count": "80196",
+    "way_continuity_membership_count": "495439",
+    "way_continuity_mode": "route_relation_connected+same_street_name_connected",
+    "way_continuity_relation_group_count": "4490",
+    "way_continuity_same_name_group_count": "75706",
+    "way_endpoints_count": "1085790",
+    "way_endpoints_mode": "coord_key_length_v1",
+    "way_links_count": "1753356",
+    "way_links_mode": "shared_endpoint_detailed",
+    "way_network_mode": "surface_tunnel_motorway_split_v1"
+  },
+  "quick_check": [
+    "ok"
+  ],
+  "ready": true,
+  "require_settlement": true,
+  "scope": "Structural readiness only; not driving accuracy or source-data freshness.",
+  "settlement_evidence_counts": [
+    {
+      "confidence": "unknown",
+      "count": 525,
+      "inside_city": null,
+      "source": "conflict"
+    },
+    {
+      "confidence": "low",
+      "count": 745507,
+      "inside_city": 1,
+      "source": "landuse"
+    },
+    {
+      "confidence": "high",
+      "count": 5516,
+      "inside_city": 0,
+      "source": "maxspeed_type"
+    },
+    {
+      "confidence": "high",
+      "count": 14876,
+      "inside_city": 1,
+      "source": "maxspeed_type"
+    },
+    {
+      "confidence": "unknown",
+      "count": 422719,
+      "inside_city": null,
+      "source": "missing"
+    },
+    {
+      "confidence": "high",
+      "count": 7597,
+      "inside_city": 0,
+      "source": "source_maxspeed"
+    },
+    {
+      "confidence": "high",
+      "count": 20236,
+      "inside_city": 1,
+      "source": "source_maxspeed"
+    },
+    {
+      "confidence": "high",
+      "count": 4467,
+      "inside_city": 0,
+      "source": "traffic_sign"
+    },
+    {
+      "confidence": "high",
+      "count": 5489,
+      "inside_city": 1,
+      "source": "traffic_sign"
+    },
+    {
+      "confidence": "high",
+      "count": 3,
+      "inside_city": 0,
+      "source": "urban_polygon"
+    },
+    {
+      "confidence": "high",
+      "count": 334,
+      "inside_city": 1,
+      "source": "urban_polygon"
+    },
+    {
+      "confidence": "high",
+      "count": 21336,
+      "inside_city": 0,
+      "source": "zone_traffic"
+    },
+    {
+      "confidence": "high",
+      "count": 45609,
+      "inside_city": 1,
+      "source": "zone_traffic"
+    }
+  ],
+  "warnings": []
+}

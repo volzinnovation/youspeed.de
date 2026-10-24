@@ -1,0 +1,122 @@
+{
+  "bundle_version": "2026-10-23-v1.5-lookahead",
+  "country_code": "DEU",
+  "coverage": {
+    "bbox": {
+      "max_lat": 49.79456,
+      "max_lon": 10.51495,
+      "min_lat": 47.53076,
+      "min_lon": 7.506494
+    },
+    "poly": {
+      "bytes": 11113,
+      "file": "baden-wuerttemberg-settlement-pilot.poly",
+      "sha256": "7f6efa982f9e22cad15bba8b01120c2ff61f8d45c40e9e0c8d6d77c2e81af541",
+      "url": null
+    }
+  },
+  "created_at_utc": "2026-10-23T08:09:09Z",
+  "db": {
+    "bytes": 974577648,
+    "compression": "gzip",
+    "file": "baden-wuerttemberg_speeds.sqlite",
+    "sha256": "d07ce7bd06481d5ff915206bbbec1d2cd990a607bbc1a0b385cdf8f23b99ed3f",
+    "uncompressed_bytes": 3099021312,
+    "uncompressed_sha256": "34b31aac1dc5a6abacce959afb8ec44043146f5aa4f1ea488c07cb4a68efe09c",
+    "url": "baden-wuerttemberg_speeds.sqlite.gz"
+  },
+  "delta_index": null,
+  "format": "youspeed.v3.bundle.manifest",
+  "min_app_version": "1.5",
+  "region": "baden-wuerttemberg",
+  "schema_version": 1,
+  "self": {
+    "file": "baden-wuerttemberg_manifest.json",
+    "url": null
+  },
+  "source": {
+    "traffic_sign_inventory": [
+      {
+        "dataset_url": "https://mobidata-bw.de/dataset/verkehrszeichen-baden-wurttemberg",
+        "license_id": "dl-de/by-2-0",
+        "license_url": "https://www.govdata.de/dl-de/by-2-0",
+        "modification_notice": "GeoJSON transformed to SQLite inventory tables; codes and raw properties preserved. No speed-rule interpretation.",
+        "publisher": "Verkehrsministerium Baden-W\u00fcrttemberg / MobiData BW",
+        "record_count": 163504,
+        "snapshot_sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+        "snapshot_timestamp": "2026-10-17T22:00:00.013Z",
+        "source_id": "mobidata-bw-vzk",
+        "source_url": "https://mobidata-bw.de/daten/portal/VZ-Daten/signs.geojson",
+        "usage_role": "inventory_only"
+      },
+      {
+        "dataset_url": "https://www.openstreetmap.org/copyright",
+        "license_id": "ODbL-1.0",
+        "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+        "modification_notice": "Existing source-backed directed OSM town stations materialized as optional runtime boundaries; MobiData duplicates suppressed and original OSM tables retained.",
+        "publisher": "OpenStreetMap contributors",
+        "record_count": 8800,
+        "snapshot_sha256": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3",
+        "snapshot_timestamp": null,
+        "source_id": "osm-settlement",
+        "source_url": "https://download.geofabrik.de/europe/germany/baden-wuerttemberg.html",
+        "usage_role": "inventory_only"
+      }
+    ],
+    "traffic_sign_runtime": {
+      "associations": {
+        "accepted": 110639,
+        "ambiguous_directed_path": 42704,
+        "conflicting_source_values": 1169,
+        "low_source_confidence": 7447,
+        "missing_openlr": 46,
+        "no_verified_directed_path": 10297,
+        "unverified_source_annotation": 2
+      },
+      "continuation_rules": 37807,
+      "decoder": "openlr-1.0.1",
+      "format": "youspeed.traffic-sign-runtime.v1",
+      "known_lanes": 211353,
+      "matcher": "directed-lrp-path-v1",
+      "mobidata_signs": 163504,
+      "osm_town_fallbacks": 8800,
+      "road_directions": 1085790,
+      "rules": 118400,
+      "signs": 172304,
+      "source_snapshots": {
+        "mobidata-bw-vzk": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+        "osm-settlement": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3"
+      },
+      "unresolved_lane_rules": 1954,
+      "version": "1"
+    },
+    "upcoming_path": {
+      "completeness": "complete",
+      "geometry_convention": "source_vertices_spherical_6371000m_v1",
+      "motorcar_profile": "existing_runtime_direction_v1",
+      "report": {
+        "admitted_ways": 1085790,
+        "counts": {
+          "upcoming_path_node": 1941024,
+          "upcoming_path_segment": 4346282,
+          "upcoming_path_successor": 4346282,
+          "upcoming_path_way": 1085790
+        },
+        "format": "youspeed.upcoming-path.build.v1",
+        "source_highways": 2388797,
+        "source_nodes": 12936372,
+        "source_restrictions": 24152,
+        "source_sha256": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3",
+        "successors": {
+          "certified": 284670,
+          "stop": 4061612
+        }
+      },
+      "restrictions": "all_involved_ways_stop_v1",
+      "road_snapshot_sha256": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3",
+      "source_node_incidence": "complete_pbf_highway_v1",
+      "version": "1"
+    }
+  },
+  "variant": "v3"
+}

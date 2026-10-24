@@ -1,0 +1,6 @@
+Local MobiData BW inventory review build, 2026-10-20.
+163504 inventory records; inventory_only, no speed/settlement interpretation.
+Base: 2026-09-14-settlement-pilot; OSM/runtime data unchanged.
+Current strict field-readiness validation retains the same ten legacy errors as the base.
+See docs/MOBIDATA_BW_INVENTORY_2026-10-20.md and its .validation.json evidence.
+No release was published.
