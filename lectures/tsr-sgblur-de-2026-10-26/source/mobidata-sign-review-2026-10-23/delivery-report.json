@@ -1,0 +1,63 @@
+{
+  "format": "youspeed-mobidata-sign-review-delivery-v1",
+  "created_at": "2026-10-22T22:30:04.877197+00:00",
+  "role": "student_multiclass_review_supplement",
+  "candidate_views": 85,
+  "unique_full_images": 84,
+  "review_crop_files": 85,
+  "crop_roles": {
+    "sign_candidate": 42,
+    "context_region": 27,
+    "other_sign": 16
+  },
+  "unique_sequences": 78,
+  "conservative_groups": 64,
+  "registry_code_counts": {
+    "DE:325.1": 15,
+    "DE:325.2": 6,
+    "DE:274-90": 8,
+    "DE:156-10": 8,
+    "DE:223.1-50": 8,
+    "DE:101-15": 8,
+    "DE:117-10": 8,
+    "DE:142-10": 8,
+    "DE:278": 8,
+    "DE:350-10": 8
+  },
+  "unconfirmed_target_views": 47,
+  "prior_manifest_picture_overlaps": [],
+  "prior_manifest_sequence_overlaps": [
+    "0496c7f4-6e8c-4e2c-a369-719b54f8297a",
+    "18a6c0fd-a0fb-4cdc-9170-c48d0375405e",
+    "842ffb53-9856-4034-bfff-64b37c276bb4",
+    "b5235ee6-eb21-4c2f-b6b3-54c7b878335e",
+    "b58b6f77-922f-48aa-aac1-9acd324ff07b",
+    "c8a159dc-b842-45b9-b4ef-ef5376563a84"
+  ],
+  "licenses": {
+    "CC-BY-SA-4.0": 81,
+    "etalab-2.0": 3
+  },
+  "human_approved": false,
+  "eligible_for_training": false,
+  "approved_for_evaluation": false,
+  "normal_course_importer_compatible": false,
+  "source_annotations_changed": false,
+  "training_performed": false,
+  "classifier_run": false,
+  "crop_localization_detector_used": true,
+  "limitations": [
+    "85 view-to-inventory associations contain only 84 unique photos. R19 and S22 reference the same original image.",
+    "A review crop may be an uncertain context region or another visible sign; crop_role distinguishes these from proposed target signs.",
+    "All variants and readings are unapproved proposals. Proximity does not establish physical identity or exact source code.",
+    "The eight DE:223.1-50 candidates do not confirm hard-shoulder use.",
+    "DE:278 supplies no printed speed in MobiData.",
+    "No candidate exists for DE:460-20 within the searched 100m radius.",
+    "Images and crops are not a blinded test or a course-import-ready training export.",
+    "Conservative groups and prior-manifest overlap hints do not replace physical sign/journey checks across every package.",
+    "Detector outputs only locate possible signs; no classifier was run and no model quality metrics are claimed."
+  ],
+  "archive_file": "panoramax-mobidata-sign-review-2026-10-23.zip",
+  "archive_bytes": 265110968,
+  "archive_sha256": "4d56b962a81b7b6476e31a2e03005540ec731c562d6d07a5d78e0ec9accb536d"
+}

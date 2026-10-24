@@ -2,7 +2,7 @@
 
 Diese Anleitung verwendet den öffentlichen Datensatz [loffenauer/ws26_hspf_imo](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo). Sie benötigen dafür weder ein Hugging-Face-Konto noch einen Token. Sie laden die Daten direkt im Terminal Ihres KI-Server-Zugangs herunter; ein vorheriger Download auf Ihren eigenen Rechner ist nicht erforderlich.
 
-Alle Befehle verwenden den festgelegten Datensatzstand **`c02d4163a58a7fcc6e97b0195abc22ae0b0dd249`**. Damit beziehen alle Kursteilnehmenden dieselben Dateien. Die Pakete enthalten **ungeprüfte Beispiele und Vorschläge, keine menschlich freigegebene Ground Truth**. Der Modellcheckpoint und der kuratierte Korpus der 134 Bestandsklassen werden zusätzlich vom Dozenten bereitgestellt.
+Alle Befehle verwenden den festgelegten Datensatzstand **`42ed75dd292a56a83b5736f940ca4ce5ab80eef8`**. Damit beziehen alle Kursteilnehmenden dieselben Dateien. Die Pakete enthalten **ungeprüfte Beispiele und Vorschläge, keine menschlich freigegebene Ground Truth**. Der Modellcheckpoint und der kuratierte Korpus der 134 Bestandsklassen werden zusätzlich vom Dozenten bereitgestellt.
 
 ## 1. Vollständige Lernsammlung und Arbeitsordner
 
@@ -13,13 +13,16 @@ Alle Befehle verwenden den festgelegten Datensatzstand **`c02d4163a58a7fcc6e97b0
 | `panoramax-mobidata-bw-review-2026-10-20-additions.zip` | 63 weitere Original-Vollbilder und 63 Crops aus 63 neuen Sequenzen; 58 DE:310- und 5 DE:311-Vorschläge | **Ergänzung zu Datensatz 2.** Ebenfalls herunterladen; eigener Sichtungsordner und manueller Review vor dem Kurs-Export. |
 | `mapillary-mobidata-bw-review-2026-10-21.zip` | 5 zusätzliche Vollbilder und 5 native Crops; 4 DE:310- und 1 DE:311-Vorschlag, 4 Sequenzen | **Dritter Lerndatensatz: Mapillary anhand MobiData BW.** Eigener Sichtungsordner; vollständige 2048-Pixel-Downloads und Teilannotation, kein fertiger Trainingssatz. |
 | `mapillary-mobidata-bw-review-2026-10-21-additions.zip` | 70 weitere Crop-/Vollbildpaare: 52 DE:310, 18 DE:311; 70 Sequenzen, 66 Gemeinden | **Ergänzung zu Datensatz 3.** 69 native Originalauflösungs-JPEGs und eine gekennzeichnete Panorama-Perspektive mit erhaltenem Original; getrennte Sichtung. |
+| `panoramax-mobidata-sign-review-2026-10-23.zip` | 85 Katasterzuordnungen, 84 Originalfotos und 85 native Prüfausschnitte; 42 Zielcrop-Vorschläge, 16 andere Schilder, 27 Kontextbereiche | **Zusätzliche Multiklassen-Review-Galerie.** Getrennt unter `data/review-mobidata-signs/`; kein fertiger Trainings-/Testexport. |
 | `panoramax-beispiele-v6.zip` | 2 Vollbilder und 6 Crops; Teilmenge der Lernsammlung | Kleiner technischer Einstieg. Die Ortstafel-Crops sind nur 27 × 22 beziehungsweise 27 × 17 Pixel groß. |
 | `panoramax-testkandidaten-2026-10-20.zip` | 39 HD-Vollbilder, 77 Crops; außerdem 246 SD-Bilder derselben acht Sequenzen | Für den Dozenten und einen späteren gesonderten Abschlusstest reserviert. Die 39 HD-Bilder sind eine Teilmenge der 246 SD-Bilder. |
 | `panoramax-externe-testkandidaten-2026-10-20.zip` | 15 Zielansichten: 2 Ortseingangs- und 13 Ortsausgangsvorschläge; 13 Standortkandidaten, 12 konservative Gruppen | Ebenfalls reserviert. 11 native 2D-Ansichten und 4 Perspektivansichten aus Panoramen; keine bestätigten unabhängigen Testfälle. |
 
-Die **vollständige Lernsammlung besteht aus fünf Archiven**: Datensatz 1, MobiData BW v2, die zusätzliche 63er-Sammlung und beide Mapillary-Archive. Zusammen sind das **295 Vollbilder und 409 unterschiedliche Crop-Dateien**. **265 Ortstafel-Kandidaten** tragen Quell-Tags beziehungsweise visuelle Vorschläge: **200 DE:310 und 65 DE:311**. Dies sind keine bestätigten Klassenlabels oder unabhängigen Standorte. Fünf Ortstafel-Crops in Datensatz 1 besitzen gemischte Quell-Tags und benötigen besondere Prüfung.
+Die **Ortstafel-Lernsammlung besteht weiterhin aus fünf Archiven**: Datensatz 1, MobiData BW v2, die zusätzliche 63er-Sammlung und beide Mapillary-Archive. Zusammen sind das **295 Vollbilder und 409 unterschiedliche Crop-Dateien**. **265 Ortstafel-Kandidaten** tragen Quell-Tags beziehungsweise visuelle Vorschläge: **200 DE:310 und 65 DE:311**. Dies sind keine bestätigten Klassenlabels oder unabhängigen Standorte. Fünf Ortstafel-Crops in Datensatz 1 besitzen gemischte Quell-Tags und benötigen besondere Prüfung.
 
-[LEARNING_COLLECTION.json](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/c02d4163a58a7fcc6e97b0195abc22ae0b0dd249/LEARNING_COLLECTION.json) benennt die fünf Lernarchive samt Prüfsummen und Archivwurzeln. Laden Sie alle fünf gemäß Abschnitt 3 herunter. Entpacken Sie Datensatz 1 nach Abschnitt 5 und beide MobiData-Archive getrennt nach Abschnitt 5a sowie beide Mapillary-Archive nach den Abschnitten 5b und 5c. Die Lernarchive benötigen zusammen etwa **1,64 GB**; alle acht ZIP-Dateien einschließlich Demo und reservierter Pakete etwa **2,68 GB**. Entpackte Daten und Arbeitskopien benötigen weiteren Speicherplatz.
+[LEARNING_COLLECTION.json](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/42ed75dd292a56a83b5736f940ca4ce5ab80eef8/LEARNING_COLLECTION.json) benennt die fünf Lernarchive samt Prüfsummen und Archivwurzeln. Laden Sie diese fünf Archive und zusätzlich die 85-Kandidaten-Review-Galerie gemäß Abschnitt 3 herunter. Entpacken Sie Datensatz 1 nach Abschnitt 5 und beide MobiData-Archive getrennt nach Abschnitt 5a sowie beide Mapillary-Archive nach den Abschnitten 5b und 5c. Die fünf Lernarchive benötigen zusammen etwa **1,64 GB**, mit Review-Galerie etwa **1,91 GB**. Alle neun ZIP-Dateien einschließlich Demo und reservierter Pakete benötigen etwa **2,95 GB**. Entpackte Daten und Arbeitskopien benötigen weiteren Speicherplatz.
+
+Die neue Galerie ist unter `review_supplements` verzeichnet und wird getrennt nach [Abschnitt 5d](#5d-review-galerie-85-weitere-verkehrszeichen) entpackt. Ihre 85 Zuordnungen werden nicht zu den bisherigen 295 Vollbildern und 409 Crops addiert.
 
 Die beiden reservierten Pakete gehören nicht in Training, Validierung, Epochenwahl oder den normalen 70/15/15-Import. Das kleine Demo ist bereits Teil von Datensatz 1 und wird nicht zusätzlich gezählt.
 
@@ -28,10 +31,10 @@ Wechseln Sie im KI-Server-Terminal vom Repository-Hauptordner in das Praktikum:
 ```sh
 cd lectures/tsr-sgblur-de-2026-10-26/praktikum
 mkdir -p data/downloads/packages
-tsr_dataset_revision='c02d4163a58a7fcc6e97b0195abc22ae0b0dd249'
+tsr_dataset_revision='42ed75dd292a56a83b5736f940ca4ce5ab80eef8'
 ```
 
-Führen Sie die weiteren Befehle im selben Terminal und in diesem Ordner aus. Für Download, Prüfsummen und Entpacken wird keine GPU benötigt.
+Wenn Sie das Praktikums-ZIP verwenden, arbeiten Sie direkt im vollständig entpackten Ordner `praktikum/`; der obige `cd`-Befehl gilt für die Repository-Ordnerstruktur. Führen Sie die weiteren Befehle im selben Terminal und in diesem Ordner aus. Für Download, Prüfsummen und Entpacken wird keine GPU benötigt.
 
 ## 2. Die Download-CLI getrennt installieren
 
@@ -46,7 +49,7 @@ python3 -m venv .venv-hf
 
 Die CLI heißt `hf`. Installieren Sie die drei festgelegten Versionen gemeinsam. Damit steht auch die von dieser CLI benötigte `click`-Abhängigkeit bereit. Aktivieren Sie diese Download-Umgebung nicht anstelle der vom Dozenten vorbereiteten Trainingsumgebung. Hintergrund: [offizielle Hugging-Face-CLI-Dokumentation](https://huggingface.co/docs/huggingface_hub/guides/cli).
 
-## 3. Alle fünf Lernarchive herunterladen
+## 3. Die fünf Lernarchive und die Review-Galerie herunterladen
 
 ```sh
 .venv-hf/bin/hf download loffenauer/ws26_hspf_imo \
@@ -55,12 +58,13 @@ Die CLI heißt `hf`. Installieren Sie die drei festgelegten Versionen gemeinsam.
   packages/panoramax-mobidata-bw-review-2026-10-20-additions.zip \
   packages/mapillary-mobidata-bw-review-2026-10-21.zip \
   packages/mapillary-mobidata-bw-review-2026-10-21-additions.zip \
+  packages/panoramax-mobidata-sign-review-2026-10-23.zip \
   LEARNING_COLLECTION.json SHA256SUMS.txt \
   --type dataset --revision "$tsr_dataset_revision" \
   --local-dir data/downloads
 ```
 
-Die fünf ZIP-Dateien liegen anschließend unter `data/downloads/packages/`; Index und Prüfsummenliste unter `data/downloads/`. `--revision` legt den festen Stand fest. Wenn Sie schon ältere Pakete besitzen, laden Sie Index und Prüfsummenliste aus dieser Revision erneut und ergänzen Sie fehlende Archive. Erhalten Sie bereits bearbeitete Sichtungsordner.
+Die sechs ZIP-Dateien liegen anschließend unter `data/downloads/packages/`; Index und Prüfsummenliste unter `data/downloads/`. `--revision` legt den festen Stand fest. Wenn Sie schon ältere Pakete besitzen, laden Sie Index und Prüfsummenliste aus dieser Revision erneut und ergänzen Sie fehlende Archive. Erhalten Sie bereits bearbeitete Sichtungsordner.
 
 Falls Sie die CLI nicht verwenden können, laden diese HTTPS-Befehle dieselben Dateien. Fahren Sie anschließend mit Abschnitt 4 fort:
 
@@ -86,12 +90,15 @@ curl --fail --location --retry 3 \
   "$tsr_dataset_base/packages/mapillary-mobidata-bw-review-2026-10-21.zip" &&
 curl --fail --location --retry 3 \
   --output data/downloads/packages/mapillary-mobidata-bw-review-2026-10-21-additions.zip \
-  "$tsr_dataset_base/packages/mapillary-mobidata-bw-review-2026-10-21-additions.zip"
+  "$tsr_dataset_base/packages/mapillary-mobidata-bw-review-2026-10-21-additions.zip" &&
+curl --fail --location --retry 3 \
+  --output data/downloads/packages/panoramax-mobidata-sign-review-2026-10-23.zip \
+  "$tsr_dataset_base/packages/panoramax-mobidata-sign-review-2026-10-23.zip"
 ```
 
 ## 4. Prüfsumme vor dem Entpacken vergleichen
 
-Die veröffentlichte Liste enthält auch Dateien für Demo und reservierte Tests. Der folgende Befehl wählt **genau die fünf Lernarchive und den Sammlungsindex** aus. Jede erwartete Zeile muss genau einmal vorhanden sein:
+Die veröffentlichte Liste enthält auch Dateien für Demo und reservierte Tests. Der folgende Befehl wählt **genau die fünf Lernarchive, die zusätzliche Review-Galerie und den Sammlungsindex** aus. Jede erwartete Zeile muss genau einmal vorhanden sein:
 
 ```sh
 awk '
@@ -101,6 +108,7 @@ BEGIN {
   expected["packages/panoramax-mobidata-bw-review-2026-10-20-additions.zip"] = 1
   expected["packages/mapillary-mobidata-bw-review-2026-10-21.zip"] = 1
   expected["packages/mapillary-mobidata-bw-review-2026-10-21-additions.zip"] = 1
+  expected["packages/panoramax-mobidata-sign-review-2026-10-23.zip"] = 1
   expected["LEARNING_COLLECTION.json"] = 1
 }
 $2 in expected {print; seen[$2]++}
@@ -109,7 +117,7 @@ END {for (path in expected) if (seen[path] != 1) exit 1}
   (cd data/downloads && sha256sum --strict -c SHA256SUMS-lern.txt)
 ```
 
-Erwartet werden **sechs Meldungen mit `OK`**: fünf ZIP-Dateien und `LEARNING_COLLECTION.json`. Nur dann dürfen Sie entpacken. Bei einer Abweichung oder einem Downloadfehler stoppen Sie und klären die Ursache mit dem Dozenten. Fehlermeldungen werden nicht mit `--ignore-missing` oder ähnlichen Optionen unterdrückt.
+Erwartet werden **sieben Meldungen mit `OK`**: sechs ZIP-Dateien und `LEARNING_COLLECTION.json`. Nur dann dürfen Sie entpacken. Bei einer Abweichung oder einem Downloadfehler stoppen Sie und klären die Ursache mit dem Dozenten. Fehlermeldungen werden nicht mit `--ignore-missing` oder ähnlichen Optionen unterdrückt.
 
 ## 5. Die Lernsammlung nach `data/collection/` entpacken
 
@@ -151,8 +159,8 @@ Zu Datensatz 2 gehören **beide** bereits in Abschnitt 3 geladenen MobiData-Arch
 
 | Archiv | Umfang | SHA-256 |
 | --- | --- | --- |
-| [MobiData BW · v2](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/c02d4163a58a7fcc6e97b0195abc22ae0b0dd249/packages/panoramax-mobidata-bw-review-2026-10-20-v2.zip?download=true) | 114.226.639 Byte; 57 Vollbilder und 57 Crops | `935e5aeceff8b55764fa5ff076777e391ad330a3ed6af74c1111b59c89626729` |
-| [MobiData BW · zusätzliche 63 Paare](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/c02d4163a58a7fcc6e97b0195abc22ae0b0dd249/packages/panoramax-mobidata-bw-review-2026-10-20-additions.zip?download=true) | 119.848.545 Byte; 63 Vollbilder und 63 Crops | `88be269f7c0d06111a5e5822252a40744140c722ff2c211396aef4876501da64` |
+| [MobiData BW · v2](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/42ed75dd292a56a83b5736f940ca4ce5ab80eef8/packages/panoramax-mobidata-bw-review-2026-10-20-v2.zip?download=true) | 114.226.639 Byte; 57 Vollbilder und 57 Crops | `935e5aeceff8b55764fa5ff076777e391ad330a3ed6af74c1111b59c89626729` |
+| [MobiData BW · zusätzliche 63 Paare](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/42ed75dd292a56a83b5736f940ca4ce5ab80eef8/packages/panoramax-mobidata-bw-review-2026-10-20-additions.zip?download=true) | 119.848.545 Byte; 63 Vollbilder und 63 Crops | `88be269f7c0d06111a5e5822252a40744140c722ff2c211396aef4876501da64` |
 
 Zusammen enthalten sie **120 Crop-/Vollbildpaare** mit **95 DE:310- und 25 DE:311-Vorschlägen**. Entpacken Sie erst nach der erfolgreichen Prüfung in Abschnitt 4. Verwenden Sie getrennte Ordner, damit bestehende Reviews erhalten bleiben.
 
@@ -197,7 +205,7 @@ Gleiche Tafeln, nahe Ansichten und mögliche gemeinsame Fahrten müssen in derse
 
 ## 5b. Dritter Lerndatensatz: Mapillary anhand MobiData BW
 
-Die [Mapillary-Ergänzung](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/c02d4163a58a7fcc6e97b0195abc22ae0b0dd249/packages/mapillary-mobidata-bw-review-2026-10-21.zip?download=true) umfasst **5 native Perspektiv-Vollbilder und 5 Crops**: **4 DE:310- und 1 DE:311-Vorschlag** aus vier Gemeinden und vier Sequenzen. Die vollständigen JPEG-Downloads sind von Mapillary auf **2048 Pixel Breite** skaliert; sie wurden lokal nicht verändert. Die Crops enthalten exakt die dokumentierten Pixel ohne Vergrößerung. Das Archiv ist **3.129.044 Byte** groß; SHA-256: `4c04a802d5e0a53a3a31eaf0884a1307460fd68ae52a71abe444b899bc6071a9`.
+Die [Mapillary-Ergänzung](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/42ed75dd292a56a83b5736f940ca4ce5ab80eef8/packages/mapillary-mobidata-bw-review-2026-10-21.zip?download=true) umfasst **5 native Perspektiv-Vollbilder und 5 Crops**: **4 DE:310- und 1 DE:311-Vorschlag** aus vier Gemeinden und vier Sequenzen. Die vollständigen JPEG-Downloads sind von Mapillary auf **2048 Pixel Breite** skaliert; sie wurden lokal nicht verändert. Die Crops enthalten exakt die dokumentierten Pixel ohne Vergrößerung. Das Archiv ist **3.129.044 Byte** groß; SHA-256: `4c04a802d5e0a53a3a31eaf0884a1307460fd68ae52a71abe444b899bc6071a9`.
 
 Das bereits in Abschnitt 3 geladene Archiv wird nach erfolgreicher Prüfung in Abschnitt 4 getrennt entpackt:
 
@@ -219,7 +227,7 @@ Bewahren Sie **Urheber, Bild-ID, Mapillary-Quelllink, Lizenz und Änderungshinwe
 
 ## 5c. Weitere 70 Mapillary-Paare aus der MobiData-Suche
 
-Die [API-Ergänzung](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/c02d4163a58a7fcc6e97b0195abc22ae0b0dd249/packages/mapillary-mobidata-bw-review-2026-10-21-additions.zip?download=true) liefert **70 weitere Crop-/Vollbildpaare**: **52 DE:310- und 18 DE:311-Vorschläge** aus **70 Sequenzen und 66 Gemeinden**. Das Archiv enthält 69 unveränderte JPEGs in der über die API verfügbaren Originalauflösung und eine geometrische 1920 × 1080-Perspektivansicht aus einem 5760 × 2880-Panorama. Das unveränderte Panorama und die Projektionsparameter bleiben beigefügt; es zählt nicht als zusätzliches Lernbeispiel. Archivgröße: **144.587.464 Byte**; SHA-256: `8eaf4e62db93cd0fcb2ccf695da57fec9ec34b04b216212a3a2bb8e32df7e4d7`.
+Die [API-Ergänzung](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/42ed75dd292a56a83b5736f940ca4ce5ab80eef8/packages/mapillary-mobidata-bw-review-2026-10-21-additions.zip?download=true) liefert **70 weitere Crop-/Vollbildpaare**: **52 DE:310- und 18 DE:311-Vorschläge** aus **70 Sequenzen und 66 Gemeinden**. Das Archiv enthält 69 unveränderte JPEGs in der über die API verfügbaren Originalauflösung und eine geometrische 1920 × 1080-Perspektivansicht aus einem 5760 × 2880-Panorama. Das unveränderte Panorama und die Projektionsparameter bleiben beigefügt; es zählt nicht als zusätzliches Lernbeispiel. Archivgröße: **144.587.464 Byte**; SHA-256: `8eaf4e62db93cd0fcb2ccf695da57fec9ec34b04b216212a3a2bb8e32df7e4d7`.
 
 Die eingefrorene Suche verwendete 1.001 MobiData-Punkte in 511 Gemeinden mit einem Kameraradius von 50 Metern. An 656 Punkten gab es eine Kameraposition innerhalb von 10 Metern, an 756 Punkten innerhalb von 50 Metern. Das belegt keine Sichtbarkeit des Schildes. Aus 2.158 nach Richtung und Ranking ausgewählten Bildkandidaten wurden 280 Vorschauen gesichtet und 88 Originalauflösungen geprüft; davon wurden 69 übernommen. Hinzu kommt das separat benannte Panorama. Das ist keine Vollerhebung Baden-Württembergs und keine vollständige Sichtung der früheren 2.730 Panoramax-Treffer.
 
@@ -240,6 +248,50 @@ test ! -e data/collection-mapillary-mobidata-bw-additions &&
 Die **68 konservativen Gruppenvorschläge** verbinden gleiche Urheber/Aufnahmetage und Registerpunkte innerhalb von 100 Metern. Zwei neue Bilder besitzen zusätzlich Querverweise zum älteren Mapillary-Paket. Führen Sie die unter `cross_package_group_merge_proposals` genannten Gruppen vor einer Aufteilung zusammen und gleichen Sie Tafeln und Fahrten auch mit Panoramax sowie dem bereitgestellten Bestandskorpus ab. Die anhand der Zielbox ausgerichtete Panoramaansicht ist kein blinder Detektortest; behandeln Sie sie bei einer späteren Auswertung gesondert. Projektionen erzeugen keine neuen Bilddetails.
 
 Alle Freigaben stehen zunächst auf `NEIN`. Für den Klassifikator exportieren Sie nur bestätigte Crops mit Herkunft und Gruppe. Für den Detektor müssen Sie alle relevanten Schilder, Kennzeichen und Gesichter im Vollbild prüfen und vollständig annotieren. Die einzelne Zielbox reicht dafür nicht. Native Ansichten heißen `image.jpg`, die projizierte Ansicht `image.png`; `box-proposals.json` enthält Teilannotation. Der normale Kursimport übernimmt diese Ordner nicht unverändert. Erhalten Sie Quellenanonymisierung, `HERKUNFT.csv`, Urheber, Bild-ID, Quelllink, CC-BY-SA-4.0-Lizenz und Änderungshinweise. Die Downloadbefehle benötigen weiterhin keinen Mapillary-Token. Trainings- und Modellresultate erarbeiten Sie selbst.
+
+## 5d. Review-Galerie: 85 weitere Verkehrszeichen
+
+Die [Online-Galerie](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/blob/42ed75dd292a56a83b5736f940ca4ce5ab80eef8/reviews/panoramax-mobidata-sign-review-2026-10-23/README.md) und das [Offline-ZIP](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/42ed75dd292a56a83b5736f940ca4ce5ab80eef8/packages/panoramax-mobidata-sign-review-2026-10-23.zip?download=true) enthalten **85 Katasterzuordnungen, 84 unveränderte Originalfotos und 85 native Prüfausschnitte**. Das Archiv ist **265.110.968 Byte** groß. Seine SHA-256 lautet:
+
+```text
+4d56b962a81b7b6476e31a2e03005540ec731c562d6d07a5d78e0ec9accb536d
+```
+
+Die Galerie ergänzt die Sichtung weiterer Verkehrszeichen; sie ersetzt keinen der fünf Ortstafel-Lernbestände. `LEARNING_COLLECTION.json` führt sie unter `review_supplements`. Verwenden Sie die Archive und ihre Manifeste: Automatisch aus Ordnernamen erzeugte Hugging-Face-Klassen oder Splits sind keine geprüften Verkehrszeichenlabels.
+
+**Wenn Sie Abschnitt 3 und 4 bereits mit dem neuen Stand ausgeführt haben, fahren Sie direkt mit dem Entpacken fort.** Wenn Sie bisher nur die ältere Lernsammlung geladen haben, ergänzen Sie ausschließlich das neue Archiv und die aktualisierten Begleitdateien; erhalten Sie Ihre bisherigen Reviews:
+
+```sh
+tsr_dataset_revision='42ed75dd292a56a83b5736f940ca4ce5ab80eef8'
+.venv-hf/bin/hf download loffenauer/ws26_hspf_imo \
+  packages/panoramax-mobidata-sign-review-2026-10-23.zip \
+  LEARNING_COLLECTION.json SHA256SUMS.txt \
+  --type dataset --revision "$tsr_dataset_revision" \
+  --local-dir data/downloads
+awk '
+$2 == "packages/panoramax-mobidata-sign-review-2026-10-23.zip" || $2 == "LEARNING_COLLECTION.json" {print; seen[$2]++}
+END {if (seen["packages/panoramax-mobidata-sign-review-2026-10-23.zip"] != 1 || seen["LEARNING_COLLECTION.json"] != 1) exit 1}
+' data/downloads/SHA256SUMS.txt > data/downloads/SHA256SUMS-galerie.txt &&
+  (cd data/downloads && sha256sum --strict -c SHA256SUMS-galerie.txt)
+```
+
+Erwartet werden hier **zwei Meldungen mit `OK`**: die Galerie und der Sammlungsindex. Ohne CLI können Sie den Galerie-Download und die beiden Begleitdateien mit den HTTPS-Befehlen aus Abschnitt 3 einzeln laden. Verwenden Sie auch dabei die hier festgelegte Revision. Entpacken Sie erst nach erfolgreicher Prüfsummenprüfung in einen neuen Ordner:
+
+```sh
+test ! -e data/review-mobidata-signs &&
+  test ! -e data/entpackt-mobidata-signs &&
+  python3 -m zipfile -e \
+    data/downloads/packages/panoramax-mobidata-sign-review-2026-10-23.zip \
+    data/entpackt-mobidata-signs &&
+  mv data/entpackt-mobidata-signs/panoramax-mobidata-sign-review-2026-10-23 \
+    data/review-mobidata-signs
+```
+
+Öffnen Sie **`data/review-mobidata-signs/SICHTUNG.html`** in einer lokalen Arbeitskopie im Browser. Wenn Sie am KI-Server ohne grafische Oberfläche arbeiten, laden Sie für die Sichtung dasselbe ZIP über den obigen Browserlink auf Ihren Rechner und entpacken Sie es dort vollständig. Kopieren Sie nicht nur die HTML-Datei: Die Ordner `originals/`, `previews/`, `thumbnails/`, `crops/` und `metadata/` müssen zusammenbleiben. Das entpackte Archiv lässt sich ohne Login und ohne Internet ansehen; Panoramax- und Lizenzlinks benötigen eine Internetverbindung.
+
+Filtern Sie nach **MobiData-Code**, **Prüfbedarf**, Ort oder Kennung. Vergleichen Sie Vollbild, markierten Ausschnitt und Originalauflösung. Die [Review-Anleitung mit der vollständigen Flag-Legende](SAMMELN_UND_SORTIEREN.md#8-review-der-85-kandidaten-galerie) beschreibt die Prüfung und den Export Ihrer Notizen. Die Online-Galerie auf Hugging Face bietet die Bild-/Crop-Paare und Quelllinks; die interaktiven Filter und lokalen Notizen stehen in der entpackten `SICHTUNG.html` bereit.
+
+Die 85 Ausschnitte bestehen aus **42 Zielcrop-Vorschlägen**, **16 Crops anderer sichtbarer Schilder** und **27 Kontext-Prüfbereichen ohne bestätigtes Zielschild**. Alle Varianten und Ablesungen bleiben zunächst ungeprüft. Kontextbereiche dürfen weder als bestätigte Schildklassen noch als objektfreie Negativbeispiele übernommen werden. Die Galerie besitzt `normal_course_importer_compatible=false`; ändern Sie die feste Liste der 136 Modellklassen nicht aufgrund eines Katastercodes.
 
 ## 6. Optional: das kleine Demo getrennt öffnen
 
@@ -299,4 +351,4 @@ Reservieren Sie alle Ansichten derselben Tafel und mögliche zusammengehörige F
 
 ## Herkunft aufbewahren
 
-Bewahren Sie Archive, heruntergeladene Prüfsummenliste, festen Revisionswert und die enthaltenen bildbezogenen Herkunftsangaben auf. Bild-/Annotationsdaten stehen gemäß Quellen unter **CC BY-SA 4.0**; beigefügter Projektcode bleibt unter **AGPLv3**. Lesen Sie die [Dataset Card am festgelegten Stand](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/blob/c02d4163a58a7fcc6e97b0195abc22ae0b0dd249/README.md) und die beiliegenden Lizenzangaben. Erhalten Sie auch die Mapillary-Urheber und Quelllinks; das offizielle Logo ist eine Marke von Mapillary und wird durch die Datenlizenz nicht umlizenziert. Verändern Sie beim Einsortieren keine Quellmanifeste oder Originaldateien.
+Bewahren Sie Archive, heruntergeladene Prüfsummenliste, festen Revisionswert und die enthaltenen bildbezogenen Herkunftsangaben auf. Die bisherigen Bild-/Annotationspakete stehen gemäß Quellen unter **CC BY-SA 4.0**. Die neue 85-Kandidaten-Galerie enthält **81 Originalfotos unter CC BY-SA 4.0 und drei unter Etalab Licence Ouverte 2.0**; erhalten Sie deren bildbezogene Lizenzlinks auch für Crops und Vorschauen. Beigefügter Projektcode bleibt unter **AGPLv3**. Lesen Sie die [Dataset Card am festgelegten Stand](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/blob/42ed75dd292a56a83b5736f940ca4ce5ab80eef8/README.md) und die beiliegenden Lizenzangaben. Erhalten Sie auch die Mapillary-Urheber und Quelllinks; das offizielle Logo ist eine Marke von Mapillary und wird durch die Datenlizenz nicht umlizenziert. Verändern Sie beim Einsortieren keine Quellmanifeste oder Originaldateien.

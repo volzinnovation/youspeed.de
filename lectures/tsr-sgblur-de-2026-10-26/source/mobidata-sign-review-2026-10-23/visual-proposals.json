@@ -1,0 +1,616 @@
+{
+  "format": "youspeed-sign-gallery-visual-proposals-v1",
+  "human_approved": false,
+  "exact_codes_verified": false,
+  "box_coordinate_system": "native_pixel_edges_right_bottom_exclusive; normalized overrides scale to native dimensions",
+  "selections": {
+    "R01": {
+      "bbox_normalized": [
+        0.744,
+        0.688,
+        0.808,
+        0.817
+      ],
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Blaues Schild zum verkehrsberuhigten Bereich rechts im Bild. Variante und konkrete Katasterzuordnung bleiben ungeprüft."
+    },
+    "R02": {
+      "bbox_normalized": [
+        0.67,
+        0.57,
+        0.86,
+        0.86
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Kreuzungsansicht; das Zielschild ist in diesem Prüfbereich nicht bestätigt."
+    },
+    "R03": {
+      "bbox_normalized": [
+        0.76,
+        0.56,
+        0.96,
+        0.88
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Gegenansicht der Kreuzung; kein bestätigter Zielcrop."
+    },
+    "R04": {
+      "bbox_normalized": [
+        0.632,
+        0.628,
+        0.667,
+        0.681
+      ],
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Blaues Schild neben der Kirche; genaue Zielbox und Katasterzuordnung benötigen Prüfung."
+    },
+    "R05": {
+      "bbox_normalized": [
+        0.51,
+        0.52,
+        0.68,
+        0.77
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Blick auf Kreuzung und Schildrückseiten; Zielvorderseite nicht bestätigt."
+    },
+    "R06": {
+      "bbox_normalized": [
+        0.26,
+        0.58,
+        0.5,
+        0.79
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Verkehrsszene mit Fahrzeugen; das gesuchte Schild ist nicht sicher zuzuordnen."
+    },
+    "R07": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Verkehrsberuhigter Bereich sichtbar. Panorama, Box und genaue Variante bleiben ungeprüft."
+    },
+    "R08": {
+      "bbox_normalized": [
+        0.37,
+        0.17,
+        0.59,
+        0.4
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Panorama des Standorts; Zielvorderseite nicht bestätigt."
+    },
+    "R09": {
+      "bbox_normalized": [
+        0.35,
+        0.19,
+        0.56,
+        0.42
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Panorama des Standorts; sichtbare Wegweiser und Verkehrsinsel bestätigen den Zielcode nicht."
+    },
+    "R10": {
+      "detector_box": "D1",
+      "crop_role": "other_sign",
+      "visual_note_de": "Sichtbar ist ein 50-km/h-Schild; dies bestätigt den Katastercode DE:325.1 nicht."
+    },
+    "R11": {
+      "bbox_normalized": [
+        0.42,
+        0.23,
+        0.65,
+        0.46
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Panorama einer Wohnstraße. Dieser Prüfbereich ist kein bestätigter Schildcrop."
+    },
+    "R12": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Blaues Schild des verkehrsberuhigten Bereichs sichtbar; kleine Panoramaansicht, genaue Variante ungeprüft."
+    },
+    "R13": {
+      "bbox_normalized": [
+        0.55,
+        0.18,
+        0.8,
+        0.46
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Panorama an der Einmündung; Zielschild nicht bestätigt. Eine Werbetafel ist kein Schildnachweis."
+    },
+    "R14": {
+      "bbox_normalized": [
+        0.34,
+        0.17,
+        0.62,
+        0.44
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Panorama am Standort; das Ende des verkehrsberuhigten Bereichs ist nicht bestätigt."
+    },
+    "R15": {
+      "detector_box": "D4",
+      "crop_role": "other_sign",
+      "visual_note_de": "Fußgänger-Gebotsschild sichtbar; kein Nachweis für DE:325.2."
+    },
+    "R16": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Blaues Schild des verkehrsberuhigten Bereichs sichtbar; konkrete Katasterzuordnung ungeprüft."
+    },
+    "R17": {
+      "detector_box": "D1",
+      "crop_role": "other_sign",
+      "visual_note_de": "Sackgassenschild sichtbar; das gesuchte Schild ist damit nicht bestätigt."
+    },
+    "R18": {
+      "bbox_normalized": [
+        0.53,
+        0.54,
+        0.78,
+        0.82
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Fahrzeuge und Straßenszene am Standort; Zielvorderseite nicht bestätigt."
+    },
+    "R19": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Verkehrsberuhigter Bereich mit rotem Diagonalstrich sichtbar. Exakter Code und Zuordnung bleiben ungeprüft."
+    },
+    "R20": {
+      "bbox_normalized": [
+        0.44,
+        0.28,
+        0.63,
+        0.55
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Panorama am Standort; kein bestätigter Zielcrop. Gleiches Gebiet wie R19/R21."
+    },
+    "R21": {
+      "bbox_normalized": [
+        0.44,
+        0.28,
+        0.63,
+        0.55
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Panorama am Standort; kein bestätigter Zielcrop. Gleiches Gebiet wie R19/R20."
+    },
+    "S01": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Die Ziffern 90 sind visuell lesbar. Dies ist ein Ablesevorschlag, keine menschliche Freigabe.",
+      "visible_value_proposal": 90
+    },
+    "S02": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Die sichtbare Zahl lautet 70, während der Suchcode DE:274-90 lautet. Identität mit dem Katasterobjekt ist nicht bewiesen.",
+      "visible_value_proposal": 70,
+      "extra_flags": [
+        "source_label_disagrees"
+      ]
+    },
+    "S03": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Die Ziffern 90 sind visuell lesbar. Dies ist ein Ablesevorschlag, keine menschliche Freigabe.",
+      "visible_value_proposal": 90
+    },
+    "S04": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Die sichtbare Zahl lautet 70, während der Suchcode DE:274-90 lautet. Identität mit dem Katasterobjekt ist nicht bewiesen.",
+      "visible_value_proposal": 70,
+      "extra_flags": [
+        "source_label_disagrees"
+      ]
+    },
+    "S05": {
+      "bbox_normalized": [
+        0.46,
+        0.34,
+        0.74,
+        0.64
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Kein bestätigtes 90-km/h-Schild im Prüfbereich; Original nur 1280 × 720 Pixel.",
+      "extra_flags": [
+        "low_resolution"
+      ]
+    },
+    "S06": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Kleine Geschwindigkeitsbeschilderung in der Ferne; gedruckter Wert und Zielidentität bleiben offen."
+    },
+    "S07": {
+      "bbox_normalized": [
+        0.47,
+        0.4,
+        0.72,
+        0.68
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Autobahnansicht ohne bestätigten Zielcrop; Wert 90 nicht aus dem Suchcode übernehmen."
+    },
+    "S08": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Sehr kleine Geschwindigkeitsbeschilderung; Wert und genaue Schildzuordnung ungeprüft."
+    },
+    "S09": {
+      "bbox_normalized": [
+        0.45,
+        0.51,
+        0.72,
+        0.81
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Ein Lastwagen verdeckt einen Teil des Straßenrandes; die gesuchte Bake ist nicht bestätigt."
+    },
+    "S10": {
+      "detector_box": "D1",
+      "crop_role": "other_sign",
+      "visual_note_de": "Fußgängerüberweg sichtbar; eine Bahnübergangs-Bake ist hier nicht bestätigt."
+    },
+    "S11": {
+      "detector_box": "D3",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Bahnwarnschild mit darunterliegender gestreifter Bake. Streifenzahl, Richtung und exakter Bakencode bleiben ungeprüft.",
+      "extend_down": 2.7
+    },
+    "S12": {
+      "detector_box": "D8",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Bahnwarnschild sichtbar; der erweiterte Ausschnitt soll den Bereich darunter zeigen. Die gesuchte Bake ist nicht bestätigt.",
+      "extend_down": 2.5,
+      "extra_flags": [
+        "target_not_confirmed"
+      ]
+    },
+    "S13": {
+      "bbox_normalized": [
+        0.58,
+        0.5,
+        0.79,
+        0.77
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Straßenrand und Brückenbereich; die gesuchte Bake ist nicht bestätigt."
+    },
+    "S14": {
+      "bbox_normalized": [
+        0.63,
+        0.36,
+        0.82,
+        0.72
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Kleines Objekt am Straßenrand; eine genaue Bake und ihre Variante sind nicht sicher erkennbar."
+    },
+    "S15": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Bahnwarnschild und gestreifter Bereich darunter. Bitte prüfen Sie Streifenzahl, Ausrichtung und genaue Zielbox.",
+      "extend_down": 2.8
+    },
+    "S16": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Bahnwarnschild im erweiterten Ausschnitt; exakte Bake und Zielzuordnung bleiben offen.",
+      "extend_down": 2.7,
+      "extra_flags": [
+        "target_not_confirmed"
+      ]
+    },
+    "S17": {
+      "bbox_normalized": [
+        0.39,
+        0.47,
+        0.69,
+        0.79
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Wohnstraße; im Prüfbereich kein bestätigtes Schild zur Seitenstreifenfreigabe."
+    },
+    "S18": {
+      "detector_box": "D1",
+      "crop_role": "other_sign",
+      "visual_note_de": "Sichtbar ist ein Ende des verkehrsberuhigten Bereichs, keine bestätigte Seitenstreifenfreigabe.",
+      "visible_code_proposal": "DE:325.2"
+    },
+    "S19": {
+      "detector_box": "D1",
+      "crop_role": "other_sign",
+      "visual_note_de": "Sichtbar ist ein verkehrsberuhigter Bereich, keine bestätigte Seitenstreifenfreigabe.",
+      "visible_code_proposal": "DE:325.1"
+    },
+    "S20": {
+      "detector_box": "D1",
+      "crop_role": "other_sign",
+      "visual_note_de": "Fußgängerüberweg und weitere Stadtschilder; keine bestätigte Seitenstreifenfreigabe."
+    },
+    "S21": {
+      "bbox_normalized": [
+        0.44,
+        0.5,
+        0.75,
+        0.84
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Wohnbebauung und Straßenrand; keine bestätigte Seitenstreifenfreigabe. Ein Fenster ist kein Schildcrop."
+    },
+    "S22": {
+      "detector_box": "D1",
+      "crop_role": "other_sign",
+      "visual_note_de": "Dasselbe Foto wie R19, aber anderer Katastercode: sichtbar ist das Ende eines verkehrsberuhigten Bereichs.",
+      "visible_code_proposal": "DE:325.2"
+    },
+    "S23": {
+      "detector_box": "D2",
+      "crop_role": "other_sign",
+      "visual_note_de": "Parkbeschilderung sichtbar; der Katastercode zur Seitenstreifenfreigabe ist nicht bestätigt."
+    },
+    "S24": {
+      "detector_box": "D2",
+      "crop_role": "other_sign",
+      "visual_note_de": "Haltverbotszone sichtbar; kein bestätigtes Schild zur Seitenstreifenfreigabe."
+    },
+    "S25": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Steinschlag-Piktogramm sichtbar. Die genaue Seiten-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S26": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Steinschlag-Piktogramm sichtbar. Die genaue Seiten-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S27": {
+      "detector_box": "D3",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Steinschlag-Piktogramm sichtbar. Die genaue Seiten-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S28": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Steinschlag-Piktogramm sichtbar. Die genaue Seiten-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S30": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Steinschlag-Piktogramm sichtbar. Die genaue Seiten-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S32": {
+      "detector_box": "D4",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Steinschlag-Piktogramm sichtbar. Die genaue Seiten-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S29": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Sehr kleines, unscharfes Schildobjekt. Steinschlag und genaue Variante sind nicht bestätigt.",
+      "extra_flags": [
+        "target_not_confirmed"
+      ]
+    },
+    "S31": {
+      "bbox_normalized": [
+        0.49,
+        0.38,
+        0.77,
+        0.68
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Straßenansicht; kein sicherer Steinschlag-Zielcrop."
+    },
+    "S33": {
+      "bbox_normalized": [
+        0.45,
+        0.42,
+        0.76,
+        0.73
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Straßenansicht ohne bestätigtes Seitenwind-Zielschild im Prüfbereich."
+    },
+    "S34": {
+      "bbox_normalized": [
+        0.45,
+        0.42,
+        0.76,
+        0.73
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Straßenansicht ohne bestätigtes Seitenwind-Zielschild im Prüfbereich."
+    },
+    "S38": {
+      "bbox_normalized": [
+        0.45,
+        0.42,
+        0.76,
+        0.73
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Straßenansicht ohne bestätigtes Seitenwind-Zielschild im Prüfbereich."
+    },
+    "S35": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Windsack-Piktogramm sichtbar; genaue Richtung und Variante bleiben ungeprüft."
+    },
+    "S36": {
+      "detector_box": "D2",
+      "crop_role": "other_sign",
+      "visual_note_de": "Vorfahrt-gewähren-Schild sichtbar; Seitenwind ist hier nicht bestätigt."
+    },
+    "S37": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Windsack-Piktogramm sichtbar; genaue Richtung und Variante bleiben ungeprüft."
+    },
+    "S39": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Kleine Warnbeschilderung in der Ferne; Seitenwind-Piktogramm und genaue Variante nicht bestätigt.",
+      "extra_flags": [
+        "target_not_confirmed"
+      ]
+    },
+    "S40": {
+      "detector_box": "D3",
+      "crop_role": "other_sign",
+      "visual_note_de": "Geschwindigkeitsanzeige sichtbar; kein bestätigter Seitenwind-Zielcrop."
+    },
+    "S41": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Wildwechsel-Piktogramm sichtbar. Tier-/Richtungsvariante und konkrete Katasterzuordnung bleiben ungeprüft."
+    },
+    "S42": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Wildwechsel-Piktogramm sichtbar. Tier-/Richtungsvariante und konkrete Katasterzuordnung bleiben ungeprüft."
+    },
+    "S43": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Wildwechsel-Piktogramm sichtbar. Tier-/Richtungsvariante und konkrete Katasterzuordnung bleiben ungeprüft."
+    },
+    "S44": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Wildwechsel-Piktogramm sichtbar. Tier-/Richtungsvariante und konkrete Katasterzuordnung bleiben ungeprüft."
+    },
+    "S45": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Wildwechsel-Piktogramm sichtbar. Tier-/Richtungsvariante und konkrete Katasterzuordnung bleiben ungeprüft."
+    },
+    "S47": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Wildwechsel-Piktogramm sichtbar. Tier-/Richtungsvariante und konkrete Katasterzuordnung bleiben ungeprüft."
+    },
+    "S48": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Wildwechsel-Piktogramm sichtbar. Tier-/Richtungsvariante und konkrete Katasterzuordnung bleiben ungeprüft."
+    },
+    "S46": {
+      "bbox_normalized": [
+        0.4,
+        0.49,
+        0.7,
+        0.79
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Straßenansicht im Gegenlicht; Wildwechsel-Zielschild nicht bestätigt."
+    },
+    "S49": {
+      "bbox_normalized": [
+        0.49,
+        0.39,
+        0.78,
+        0.71
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Autobahnansicht; Ende einer konkreten Geschwindigkeitsbeschränkung nicht bestätigt."
+    },
+    "S50": {
+      "detector_box": "D1",
+      "crop_role": "other_sign",
+      "visual_note_de": "Richtungspfeil sichtbar; kein bestätigtes Ende einer Geschwindigkeitsbeschränkung."
+    },
+    "S51": {
+      "bbox_normalized": [
+        0.34,
+        0.4,
+        0.51,
+        0.68
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Runde Schildrückseite beziehungsweise Straßenrandobjekt; Klasse und gedruckter Wert nicht feststellbar."
+    },
+    "S52": {
+      "detector_box": "D2",
+      "crop_role": "other_sign",
+      "visual_note_de": "Wildwechsel-Warnschild sichtbar; kein bestätigtes Ende einer Geschwindigkeitsbeschränkung."
+    },
+    "S53": {
+      "bbox_normalized": [
+        0.46,
+        0.39,
+        0.77,
+        0.71
+      ],
+      "crop_role": "context_region",
+      "visual_note_de": "Autobahnansicht ohne bestätigten Zielcrop; aus DE:278 folgt kein gedruckter Geschwindigkeitswert."
+    },
+    "S54": {
+      "detector_box": "D2",
+      "crop_role": "other_sign",
+      "visual_note_de": "Kreisverkehrsschild sichtbar; der Zielcode DE:278 ist nicht bestätigt."
+    },
+    "S55": {
+      "bbox_normalized": [
+        0.55,
+        0.582,
+        0.579,
+        0.622
+      ],
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Ein Ende der 70-km/h-Beschränkung ist visuell lesbar. Der Katastercode DE:278 enthält selbst keinen gedruckten Wert; 70 bleibt ein ungeprüfter Bildablesevorschlag.",
+      "visible_value_proposal": 70
+    },
+    "S56": {
+      "detector_box": "D1",
+      "crop_role": "other_sign",
+      "visual_note_de": "Richtungspfeil sichtbar; kein bestätigter DE:278-Zielcrop."
+    },
+    "S57": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Fußgängerüberweg-Piktogramm sichtbar. Die genaue Geh-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S58": {
+      "detector_box": "D3",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Fußgängerüberweg-Piktogramm sichtbar. Die genaue Geh-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S59": {
+      "detector_box": "D3",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Fußgängerüberweg-Piktogramm sichtbar. Die genaue Geh-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S60": {
+      "detector_box": "D3",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Fußgängerüberweg-Piktogramm sichtbar. Die genaue Geh-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S61": {
+      "detector_box": "D2",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Fußgängerüberweg-Piktogramm sichtbar. Die genaue Geh-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S62": {
+      "detector_box": "D1",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Fußgängerüberweg-Piktogramm sichtbar. Die genaue Geh-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S63": {
+      "detector_box": "D4",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Fußgängerüberweg-Piktogramm sichtbar. Die genaue Geh-/Richtungsvariante bleibt ungeprüft."
+    },
+    "S64": {
+      "detector_box": "D5",
+      "crop_role": "sign_candidate",
+      "visual_note_de": "Fußgängerüberweg-Piktogramm sichtbar. Die genaue Geh-/Richtungsvariante bleibt ungeprüft."
+    }
+  }
+}

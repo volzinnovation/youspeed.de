@@ -1,0 +1,27 @@
+{
+  "repository_id": "loffenauer/ws26_hspf_imo",
+  "revision": "8a18036ee9403a3487a55f397f82999a3911b99c",
+  "commit_url": "https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/commit/8a18036ee9403a3487a55f397f82999a3911b99c",
+  "parent_revision": "42ed75dd292a56a83b5736f940ca4ce5ab80eef8",
+  "uploaded_paths": [
+    "MANIFEST.json",
+    "README.md",
+    "SHA256SUMS.txt",
+    "course/praktikum-de310-de311-v7.9.zip",
+    "instructions/DATEN_HERUNTERLADEN.md",
+    "instructions/README.md",
+    "instructions/SAMMELN_UND_SORTIEREN.md",
+    "instructions/class-index.json",
+    "metadata/student-instructions-2026-10-23-verification.json"
+  ],
+  "course_archive": "course/praktikum-de310-de311-v7.9.zip",
+  "course_archive_sha256": "f90c6b98687355d96f18a156a7909e64e229e2c5bb0bd6e6f46021b28d420532",
+  "pinned_data_revision": "42ed75dd292a56a83b5736f940ca4ce5ab80eef8",
+  "checked_at_utc": "2026-10-23T07:32:36.858640+00:00",
+  "all_uploaded_file_identities_verified": true,
+  "existing_gallery_and_nine_image_archives_unchanged": true,
+  "anonymous_course_download_sha256_verified": true,
+  "immutable_files_checked": 534,
+  "training_code_changed": false,
+  "class_index_changed": false
+}

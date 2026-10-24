@@ -1,0 +1,22 @@
+{
+  "checked_at": "2026-10-22T22:33:47.581617+00:00",
+  "checks_passed": true,
+  "candidate_views": 85,
+  "unique_original_photos": 84,
+  "review_crop_files": 85,
+  "unique_crop_sha256": 84,
+  "package_file_count": 525,
+  "all_native_crop_pixels_verified": true,
+  "all_original_hashes_verified": true,
+  "all_item_attributions_present": true,
+  "zip_crc_verified": true,
+  "all_source_codes_unapproved": true,
+  "desktop_browser_verified": true,
+  "mobile_no_horizontal_overflow": true,
+  "code_filter_verified": true,
+  "missing_value_filter_verified": true,
+  "empty_detour_filter_verified": true,
+  "local_notes_roundtrip_and_export_verified": true,
+  "archive_sha256": "4d56b962a81b7b6476e31a2e03005540ec731c562d6d07a5d78e0ec9accb536d",
+  "archive_bytes": 265110968
+}

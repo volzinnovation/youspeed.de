@@ -10,13 +10,15 @@ Diese Anleitung setzt den vorbereiteten Kurszugang voraus. Öffnen Sie ein Termi
 
 ## 1. Mit der veröffentlichten Lernsammlung beginnen
 
-Die acht Straßenbildpakete sind im öffentlichen Datensatz [loffenauer/ws26_hspf_imo](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo) verfügbar. Verwenden Sie die [Downloadanleitung für den KI-Server](DATEN_HERUNTERLADEN.md): Sie enthält die konkreten CLI-/HTTPS-Befehle ohne Login, die SHA-256-Prüfung und die tatsächlichen Archivordner. Der Kurs verwendet fest die Revision **`c02d4163a58a7fcc6e97b0195abc22ae0b0dd249`**. Die Download-CLI wird getrennt von der Trainingsumgebung installiert.
+Die neun Straßenbildpakete sind im öffentlichen Datensatz [loffenauer/ws26_hspf_imo](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo) verfügbar. Verwenden Sie die [Downloadanleitung für den KI-Server](DATEN_HERUNTERLADEN.md): Sie enthält die konkreten CLI-/HTTPS-Befehle ohne Login, die SHA-256-Prüfung und die tatsächlichen Archivordner. Der Kurs verwendet fest die Revision **`42ed75dd292a56a83b5736f940ca4ce5ab80eef8`**. Die Download-CLI wird getrennt von der Trainingsumgebung installiert.
 
 Übernehmen Sie **Datensatz 1 mit 100 Vollbildern und 214 Crops nach `data/collection/`**. Alle Beispiele sind ungeprüft. Lesen Sie deren `BITTE_ZUERST_LESEN.txt` und setzen Sie anschließend direkt bei Abschnitt 2 dieser Anleitung fort. Die folgenden Standardpfade und Importbefehle passen zu dieser Sammlung. Das kleine Demo liegt getrennt unter `data/demo/collection-demo/` und enthält zwei bereits in der Lernsammlung enthaltene Bilder.
 
-Die zwei weiteren Pakete sind **Testkandidaten für den Dozenten**. Sie bleiben unter `data/teacher-reserved/` und werden nicht in den normalen Import, ins Training oder in die Validierung übernommen. Kein Paket enthält bereits menschlich freigegebene Ground Truth. Die ursprünglichen Gruppen der Lernsammlung haben außerdem keine Ortstafel-Testabdeckung. Zusätzliche geeignete unabhängige Gruppen und der kuratierte Korpus der 134 Bestandsklassen müssen vor dem Modellversuch mit dem Dozenten bereitgestellt werden.
+Die beiden ausdrücklich als Testkandidaten bezeichneten Pakete sind **für den Dozenten reserviert**. Sie bleiben unter `data/teacher-reserved/` und werden nicht in den normalen Import, ins Training oder in die Validierung übernommen. Kein Paket enthält bereits menschlich freigegebene Ground Truth. Die ursprünglichen Gruppen der Lernsammlung haben außerdem keine Ortstafel-Testabdeckung. Zusätzliche geeignete unabhängige Gruppen und der kuratierte Korpus der 134 Bestandsklassen müssen vor dem Modellversuch mit dem Dozenten bereitgestellt werden.
 
-**Datensatz 2: MobiData BW** umfasst [v2 mit 57 Paaren](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/c02d4163a58a7fcc6e97b0195abc22ae0b0dd249/packages/panoramax-mobidata-bw-review-2026-10-20-v2.zip?download=true) und die [zusätzlichen 63 Crop-/Vollbildpaare](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/c02d4163a58a7fcc6e97b0195abc22ae0b0dd249/packages/panoramax-mobidata-bw-review-2026-10-20-additions.zip?download=true). Laden Sie beide Archive gemäß [Abschnitt 5a der Downloadanleitung](DATEN_HERUNTERLADEN.md#5a-zweiter-lerndatensatz-mobidata-bw) und entpacken Sie sie in getrennte Sichtungsordner. Zusammen mit Datensatz 1 stehen **220 Vollbilder und 334 Crops**, darunter **190 Ortstafel-Kandidaten (144 DE:310, 46 DE:311)**, zur Prüfung bereit. Die beiden MobiData-Pakete ergeben 120 Paare mit 95 DE:310- und 25 DE:311-Vorschlägen. Öffnen Sie jeweils `SICHTUNG.html`; prüfen Sie Klassen und vollständige Vollbildannotation vor einem passenden Kurs-Export. Der Standardimport übernimmt die Teilannotation nicht direkt. Seine bisherigen Pfade beziehen sich auf Datensatz 1.
+**Datensatz 2: MobiData BW** umfasst [v2 mit 57 Paaren](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/42ed75dd292a56a83b5736f940ca4ce5ab80eef8/packages/panoramax-mobidata-bw-review-2026-10-20-v2.zip?download=true) und die [zusätzlichen 63 Crop-/Vollbildpaare](https://huggingface.co/datasets/loffenauer/ws26_hspf_imo/resolve/42ed75dd292a56a83b5736f940ca4ce5ab80eef8/packages/panoramax-mobidata-bw-review-2026-10-20-additions.zip?download=true). Laden Sie beide Archive gemäß [Abschnitt 5a der Downloadanleitung](DATEN_HERUNTERLADEN.md#5a-zweiter-lerndatensatz-mobidata-bw) und entpacken Sie sie in getrennte Sichtungsordner. Zusammen mit Datensatz 1 stehen **220 Vollbilder und 334 Crops**, darunter **190 Ortstafel-Kandidaten (144 DE:310, 46 DE:311)**, zur Prüfung bereit. Die beiden MobiData-Pakete ergeben 120 Paare mit 95 DE:310- und 25 DE:311-Vorschlägen. Öffnen Sie jeweils `SICHTUNG.html`; prüfen Sie Klassen und vollständige Vollbildannotation vor einem passenden Kurs-Export. Der Standardimport übernimmt die Teilannotation nicht direkt. Seine bisherigen Pfade beziehen sich auf Datensatz 1.
+
+**Zusätzliche Review-Galerie:** Die [85 Kandidaten weiterer Verkehrszeichen](DATEN_HERUNTERLADEN.md#5d-review-galerie-85-weitere-verkehrszeichen) liegen getrennt unter `data/review-mobidata-signs/`. Sie enthalten auch andere Schilder und Kontextbereiche ohne bestätigtes Ziel. Verwenden Sie dafür [Abschnitt 8 mit der Flag-Legende und dem Notizexport](#8-review-der-85-kandidaten-galerie); die folgenden Standard-Sortierbefehle für `data/collection/` gelten nicht unverändert für diese Galerie.
 
 ### Optional: einen neuen begrenzten Bestand crawlen
 
@@ -221,3 +223,52 @@ Ein Vergleich auf bereits verwischten öffentlichen Bildern gilt nur für diesen
 ## Mapillary-Ergänzung mit MobiData BW
 
 Die [Downloadanleitung](DATEN_HERUNTERLADEN.md#5b-dritter-lerndatensatz-mapillary-anhand-mobidata-bw) beschreibt beide Mapillary-Archive mit insgesamt 75 Crop-/Vollbildpaaren (56 DE:310, 19 DE:311). Öffnen Sie beide `SICHTUNG.html`-Dateien in getrennten Ordnern und bearbeiten Sie die dortigen Arbeitslisten. Der Katastercode kann die andere Schildseite beschreiben. Prüfen Sie Klasse und alle relevanten Vollbildboxen vor einem passenden Kurs-Export; der Standardimport übernimmt die Teilannotation nicht direkt. Gleiche Tafeln und Fahrten bleiben auch über Panoramax und Mapillary hinweg zusammen. Beachten Sie die paketübergreifenden Gruppenvorschläge und die gekennzeichnete Panorama-Perspektive. Bewahren Sie Urheber, Bild-ID, Quelllink, CC-BY-SA-4.0-Lizenz und Änderungshinweise auf. Die vollständige Lernsammlung umfasst fünf Archive mit 295 Vollbildern und 409 Crops; alle Klassen bleiben bis zum Review Vorschläge.
+
+## 8. Review der 85-Kandidaten-Galerie
+
+Laden und entpacken Sie die Galerie gemäß [Abschnitt 5d der Downloadanleitung](DATEN_HERUNTERLADEN.md#5d-review-galerie-85-weitere-verkehrszeichen). Öffnen Sie `data/review-mobidata-signs/SICHTUNG.html`. Die Galerie enthält **85 Zuordnungen zu 84 Originalfotos und 85 Prüfausschnitte**; sie wird als eigene Review-Ergänzung geführt. Die fünf Ortstafel-Lernarchive behalten ihre bisherigen Rollen und Summen.
+
+### Vollbild und Ausschnitt gemeinsam lesen
+
+Wählen Sie einen Kandidaten über Filter oder Vorschaubild; die Pfeiltasten sowie „Zurück“ und „Weiter“ wechseln die Ansicht. Vergleichen Sie den markierten Ausschnitt mit dem Vollbild. „Originalauflösung“ öffnet das unveränderte Foto, „Panoramax“ den öffentlichen Quellkontext. Eine Vergrößerung erzeugt keine zusätzlichen Bilddetails.
+
+Der angezeigte **MobiData-Katastercode beschreibt den Suchpunkt**, nicht automatisch das sichtbare Schild. Der Datensatz enthält **42 vorgeschlagene Ziel-Schildcrops** (`crop_role=sign_candidate`), **16 Crops anderer sichtbarer Schilder** (`other_sign`) und **27 Kontext-Prüfbereiche ohne bestätigtes Zielschild** (`context_region`). Auch ein Zielcrop-Vorschlag benötigt Ihre Prüfung. In der Vollbildansicht kennzeichnet ein gestrichelter Rahmen einen Kontextbereich. Ein vorhandener Crop belegt weder die gesuchte Klasse noch eine vollständige Vollbildannotation.
+
+### Unsicherheitsflags lesen
+
+| Anzeige in der Galerie | Feld in `uncertainty_flags` | Bedeutung und Ihre Prüfung |
+| --- | --- | --- |
+| **Variante offen** | `variant_unverified` | Die genaue Ausführung ist ungeprüft. Vergleichen Sie beispielsweise Geh-/Tierrichtung, Steinschlagseite, Windsackrichtung, Bakenausrichtung und Streifenzahl oder einen roten Diagonalstrich am sichtbaren Original. Ein Familienlabel reicht dafür nicht. |
+| **Wert offen** | `value_unverified` | Ein gedruckter Zahlenwert ist nicht freigegeben. Lesen Sie ihn am Bild ab; übernehmen Sie weder „90“ aus dem Suchcode noch einen vermuteten aufgehobenen Wert. Bleibt die Zahl unlesbar, lassen Sie Ihre Ablesung leer. |
+| **Wert fehlt im Kataster** | `source_value_missing` | Die `DE:278`-Datensätze nennen keinen gedruckten Geschwindigkeitswert. Eine Bildablesung wird getrennt dokumentiert und ergänzt nicht automatisch den Quellkataster. |
+| **Zielschild unbestätigt** | `target_not_confirmed` | Die gesuchte Schildvorderseite ist nicht bestätigt. Prüfen Sie, ob der Ausschnitt ein anderes Schild, eine Rückseite, eine Verdeckung oder nur Umgebung zeigt. Geben Sie den Suchcode nicht allein wegen der Nähe frei. |
+| **Nur Prüfbereich** | `context_region` | Der Ausschnitt zeigt einen Kontextbereich ohne bestätigtes Zielschild. Verwenden Sie ihn nicht als bestätigten Schildcrop und nicht als Beweis eines objektfreien Negativbilds. |
+| **360°-Aufnahme** | `panorama` | Das Original ist ein Panorama. In dieser Galerie wurde keine Perspektivprojektion erzeugt. Prüfen Sie Lage, Verzerrung und Lesbarkeit; ein kleiner Ausschnitt bestätigt die Ausrichtung nicht automatisch. |
+| **Abweichende Bildablesung** | `source_label_disagrees` | Ein visueller Ablesevorschlag weicht vom Suchcode ab. S02 und S04 zeigen beispielsweise „70“, obwohl sie über `DE:274-90` gefunden wurden. Das beweist noch nicht, dass dasselbe physische Katasterobjekt falsch beschriftet ist. |
+| **Geringe Auflösung** | `low_resolution` | Das verfügbare Original besitzt wenig Bildauflösung; S05 hat 1280 × 720 Pixel. Prüfen Sie die Lesbarkeit. Hochrechnen oder Nachschärfen ersetzt keinen sicheren Zahlen-/Variantennachweis. |
+
+Die Flags sind **Prüfhinweise, keine Fehlerwahrscheinlichkeiten und keine Modellbewertungen**. Mehrere Flags können gleichzeitig gelten. Ein in der Notiz lesbar erscheinender Wert bleibt ein ungeprüfter Vorschlag, bis Ihre Prüfung und die erforderliche zweite Sichtung erfolgt sind.
+
+### Auffällige Beispiele getrennt dokumentieren
+
+- **S02/S04:** Halten Sie Suchcode `DE:274-90` und den 70-Ablesevorschlag auseinander. Prüfen Sie Wert, Schildseite und Standortidentität.
+- **S55:** Das Bild liefert einen 70-Ablesevorschlag für das Ende einer Beschränkung. Der Katastercode bleibt `DE:278` ohne gedruckten Wert; ersetzen Sie ihn nicht durch Ihre Bildablesung.
+- **S17–S24 (`DE:223.1-50`):** In diesen acht Kandidaten wurde keine Seitenstreifenfreigabe bestätigt. Andere sichtbare Schilder sind kein Ersatz für den Zielcode.
+- **R19/S22:** Dasselbe Originalfoto ist zwei unterschiedlichen Katastercodes zugeordnet. Behalten Sie beide Review-Zeilen, behandeln Sie das Foto aber nicht als zwei unabhängige Bilder oder zwei bestätigte Klassen.
+- **`DE:460-20`:** Im geprüften 100-m-Radius lag kein Bildkandidat vor. Der Filter zeigt deshalb null Ansichten. Daraus folgt keine allgemeine Abwesenheit des Schildes.
+
+### Ihre Notizen sichern
+
+1. Öffnen Sie **„Ihre Sichtungsnotiz“**. Wählen Sie „Ungeprüft“, „Schild sichtbar“, „Anderes Schild“ oder „Zielschild nicht sichtbar“ und notieren Sie nur erkennbare Zahlen beziehungsweise Varianten. „Schild sichtbar“ bestätigt allein noch keinen exakten Code und keine Trainingseignung.
+2. Trennen Sie in der Notiz die tatsächliche Beobachtung vom Suchhinweis. Lassen Sie unbekannte Werte leer und nennen Sie die Ursache, etwa Verdeckung, geringe Auflösung oder unbekannte Schildseite.
+3. Wählen Sie **„Notizen exportieren“** und bewahren Sie `sichtungsnotizen-2026-10-23.json` mit Ihrer Arbeitskopie auf. Notizen liegen zunächst nur im lokalen Browser; sie werden nicht auf Hugging Face, Panoramax oder den KI-Server synchronisiert. Exportieren Sie vor Browser-/Gerätewechsel oder dem Löschen lokaler Browserdaten.
+4. Übertragen Sie nachvollziehbare Review-Ergebnisse bei Bedarf in eine Arbeitskopie von `SICHTUNG_CROPS.csv`: `reviewed_class`, `reviewed_value`, `reviewer`, `review_note`. Der JSON-Export verändert diese CSV nicht. Erhalten Sie `candidate_id`, Bild-/Sequenzkennungen und die ursprünglichen Katasterfelder. Lassen Sie `approved=NEIN`, solange die erforderliche Prüfung nicht abgeschlossen ist.
+5. Lassen Sie genaue Klasse, Zahlenwert und Box zusätzlich von einer zweiten Person prüfen. Bewahren Sie Originaldateien und Quellmanifeste unverändert; die Galerie-Notizen selbst erzeugen keinen freigegebenen Kurs-Export.
+
+### Gruppen, Export und Herkunft erhalten
+
+Die Galerie nennt **64 konservative Gruppenvorschläge**; **sechs Sequenzen überschneiden sich mit früheren Manifesten**. Gleiche Fotos, physische Schilder und gemeinsame Fahrten bleiben vor jeder späteren Aufteilung zusammen, auch über Pakete und Plattformen hinweg. Diese Vorschläge sind kein Nachweis unabhängiger Testfälle.
+
+Übergeben Sie `data/review-mobidata-signs/` nicht unverändert an `import_sorted_folders.py`. Die Galerie ist unter `normal_course_importer_compatible=false` geführt; Sichtungsnotizen schalten diesen Vertrag nicht um. Ändern Sie `class-index.json` oder die 136 Ausgänge des Kursmodells nicht aufgrund der zusätzlichen MobiData-Codes. Besprechen Sie einen getrennten, geprüften Export mit dem Dozenten. Für eine Detektorauswertung müssen außerdem **alle** relevanten Schild-, Kennzeichen- und Gesichtsboxen im Vollbild geprüft und ergänzt werden.
+
+Erhalten Sie die Zuordnung aus `HERKUNFT.csv` und `manifest.json`: Autor, Lizenzlink, Bild-/Sequenz-ID, Panoramax-URL, Hash und Änderungshinweis. **81 Originalfotos stehen unter CC BY-SA 4.0, drei unter Etalab Licence Ouverte 2.0**; Crops und Vorschauen behalten ihre bildbezogene Attribution. Der unveränderte Detektor wurde nur zur Crop-Lokalisierung verwendet; kein Klassifikator wurde ausgeführt und kein Modell trainiert. Diese bereits gesichtete Ergänzung bleibt Review-/Lernmaterial und ist kein Blindtest.
