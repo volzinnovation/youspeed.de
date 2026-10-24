@@ -419,14 +419,6 @@ final class TripJournalTests: XCTestCase {
             let rows = (canonical["events"] as! [[String: Any]]).filter { $0["kind"] as? String == "gps" }
             XCTAssertEqual(rows.count, 4)
             XCTAssertTrue((rows[1]["payload"] as? [String: Any])?["latitude"] is NSNull)
-            // Synthetic evidence only. Exporting a fixture is optional when the simulator sandbox forbids host writes.
-            let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-            let destination = repository.appendingPathComponent("output/fahrtenbuch-v15-2026-10-23/iphone-journal-canonical.json")
-            do {
-                try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try canonicalBytes.write(to: destination, options: .atomic)
-                print("JOURNAL_CANONICAL_FIXTURE=\(destination.path)")
-            } catch { print("JOURNAL_CANONICAL_FIXTURE_SKIPPED=\(error.localizedDescription)") }
         }
     }
     func testCustomHistoryDatesIncludeBothLocalDaysAndHonorDSTBoundaries() throws {

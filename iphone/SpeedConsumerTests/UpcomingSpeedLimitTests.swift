@@ -911,7 +911,9 @@ extension UpcomingSpeedLimitTests {
         let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let fullDB = repo.appendingPathComponent("mapdata/dist-v3/baden-wuerttemberg-v1.5-lookahead/speeds_v3.sqlite")
         guard FileManager.default.fileExists(atPath: fullDB.path) else { throw XCTSkip("Local full BW lookahead bundle unavailable") }
-        let cases = try JSONDecoder().decode(Cases.self, from: Data(contentsOf: repo.appendingPathComponent("output/upcoming-speed-limit-physical-10059/iphone/physical-cases.json"))).cases
+        let casesURL = repo.appendingPathComponent("output/upcoming-speed-limit-physical-10059/iphone/physical-cases.json")
+        guard FileManager.default.fileExists(atPath: casesURL.path) else { throw XCTSkip("Local full BW controller replay cases unavailable") }
+        let cases = try JSONDecoder().decode(Cases.self, from: Data(contentsOf: casesURL)).cases
         let item = try XCTUnwrap(cases.first { $0.id == "bw-cross-way-3" })
         let fm = FileManager.default, support = try V3BundleManager.applicationSupportDirectory()
         let activeURL = support.appendingPathComponent("active_bundle.json")
