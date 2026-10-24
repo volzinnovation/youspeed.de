@@ -27,6 +27,14 @@ Originally launched on 29 August 2026 at the State of the Map conference in Pari
 - **Regional map management:** search countries and regions, inspect package dates and download sizes, and download or delete packages independently. Maps and country advisories include Germany, France, Switzerland, Belgium and the Netherlands.
 - **Cross-border continuity:** improved map switching at borders, GPS fix handling and road matching. The app supports English, German, French and Dutch.
 
+## Roadmap
+
+| Target version | Planned work |
+| --- | --- |
+| **1.5** | Trip journal (Fahrtenbuch), use of OCR recognition results to interpret supplementary-sign conditions, and upload of OCR results. |
+| **1.6** | Lane detection, selection of relevant traffic signs for the vehicle's lane and path, and track visualization. |
+| **1.7** | Apple CarPlay and Android Auto integration. |
+
 ## Demo
 
 [**Watch the YouSpeed 1.3 feature film on YouTube**](https://www.youtube.com/watch?v=89oEyuqHVMw) — sign recognition, dashcam recording, street photos and setup before driving, in English with captions.
