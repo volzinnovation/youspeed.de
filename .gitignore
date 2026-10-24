@@ -15,6 +15,7 @@ npm-debug.log*
 coverage/
 
 # Local build/runtime outputs
+/output/
 .codex-tmp/
 .tmp/
 tmp/
@@ -35,6 +36,7 @@ shared/tsr/generated/
 
 # Map data generated artifacts (very large)
 mapdata/raw/*.osm.pbf
+mapdata/raw/mobidata-bw-signs*.geojson
 mapdata/raw/archive/
 mapdata/build/**
 mapdata/dist/**
