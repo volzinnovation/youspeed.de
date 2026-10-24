@@ -1,0 +1,390 @@
+{
+  "de": {
+    "title": "YouSpeed.de – Fahrassistenz für jedes Auto · Version 1.4",
+    "description": "YouSpeed 1.4: Schilderkennung mit OCR für Zusatzschilder, Tempohinweise, Dashcam und Offline-Karten. Jetzt für iPhone im App Store und Android bei Google Play.",
+    "hero": {
+      "badge": "Version 1.4 · iPhone & Android",
+      "title": "YouSpeed.de",
+      "kicker": "Fahr sicher. In jedem Auto.",
+      "lead": "Dein Smartphone wird zum Begleiter unterwegs: automatische Verkehrszeichenerkennung mit Texterkennung (OCR) für Zusatzschilder, Tempohinweise, Bußgeldschätzung und Dashcam. Unabhängig vom Baujahr deines Autos.",
+      "googlePlay": [
+        "Android-App",
+        "Google Play"
+      ],
+      "appStore": [
+        "iPhone-App",
+        "App Store"
+      ],
+      "facts": [
+        "Offline-Karten",
+        "Keine Werbung",
+        "Fahrtfunktionen ohne Konto"
+      ]
+    },
+    "release": {
+      "nav": "Funktionen",
+      "eyebrow": "Funktionen der App",
+      "title": "Assistenzsystem für jedes Auto",
+      "body": "Neu in 1.4: Text auf Zusatzschildern lesen, klarere Aufnahmefunktionen und einfachere Fotoauswahl. Dazu kommen Tempohinweise, Dashcam und Offline-Karten.",
+      "items": [
+        [
+          "Verkehrszeichen automatisch erkennen",
+          "Die Smartphone-Kamera erkennt Tempolimits und weitere Schilder auf dem Gerät. Wähle Tonhinweise oder Sprachausgabe. Verfügbare Zeichen hängen von Land und installiertem Modell ab."
+        ],
+        [
+          "Zusatzschilder mit OCR lesen",
+          "YouSpeed liest Text unter unterstützten Tempolimit- und Verkehrszeichen direkt auf dem Gerät, etwa Uhrzeiten oder Wochentage. Der Text erscheint beim erkannten Schild und kann bei aktivierter Sprachausgabe vorgelesen werden. Bedingungen werden nicht automatisch ausgewertet; erkannter Text kann Fehler enthalten."
+        ],
+        [
+          "Liveassistenz und Bußgeldschätzung",
+          "Behalte dein Tempo neben dem Referenz-Tempolimit im Blick. Tempohinweise und länderspezifische Bußgeldschätzungen zeigen, welche Folgen eine Überschreitung haben könnte."
+        ],
+        [
+          "Fahrten mit der Dashcam aufnehmen",
+          "Speichere Videos lokal und sieh sie im Stand an. Du kannst Aufnahmen teilen oder löschen und entscheidest, was du behältst."
+        ],
+        [
+          "Straßenfotos aufnehmen, prüfen und teilen",
+          "Nimm Straßenfotos auch manuell auf und wähle sie in der Galerie aus. Version 1.4 verbessert die Fotoauswahl und Panoramax-Uploads. Ein optionaler Upload startet erst nach deiner Auswahl und benötigt ein verbundenes Konto und Internet."
+        ],
+        [
+          "Kartenpakete einfacher verwalten",
+          "Suche Länder und Regionen, sieh Paketdatum und Downloadgröße und lade Karten unabhängig voneinander herunter oder lösche sie. Unterstützt werden unter anderem Deutschland, Frankreich, die Schweiz, Belgien und die Niederlande."
+        ],
+        [
+          "Über Grenzen hinweg unterwegs",
+          "YouSpeed unterstützt Kartenwechsel an Landesgrenzen, GPS-Verarbeitung und die kontinuierliche Zuordnung zur Straße. Die App ist auf Deutsch, Englisch, Französisch und Niederländisch verfügbar."
+        ],
+        [
+          "Bußgelder und Verkehrszeichen nachschlagen",
+          "Unter Info findest du länderspezifische Bußgeldtabellen und einen Verkehrszeichenkatalog mit Piktogrammen und gesprochenen Namen. Offline verfügbar, ohne Rechtsberatung."
+        ]
+      ],
+      "gallery": [
+        [
+          "recognition",
+          "YouSpeed 1.4 auf dem iPhone: automatische Verkehrszeichenerkennung"
+        ],
+        [
+          "signs",
+          "YouSpeed 1.4 auf dem iPhone: weitere Verkehrszeichen mit Ton oder Sprache"
+        ],
+        [
+          "fine-calculation",
+          "YouSpeed 1.4: Bußgeldschätzung während der Fahrt"
+        ],
+        [
+          "dashcam",
+          "YouSpeed 1.4 auf dem iPhone: lokale Dashcam-Aufnahme"
+        ],
+        [
+          "panoramax",
+          "YouSpeed 1.4: Fotos prüfen und zu Panoramax hochladen"
+        ]
+      ],
+      "artworkNote": "Native iPhone-Demonstrationsansichten für Version 1.4. Die Dashcam-Illustration kombiniert die App-Oberfläche mit einem echten Aufnahmebild.",
+      "androidAlt": "Android-Dashcam in YouSpeed 1.4 mit einem echten Straßenbild in der Demonstrationsansicht",
+      "androidCaption": "YouSpeed 1.4 · Dashcam auf Android",
+      "artworkAlt": "YouSpeed 1.4: Fahr sicher. In jedem Auto. Release-Artwork mit fünf Verkehrszeichen im Kreis."
+    },
+    "download": {
+      "nav": "Download",
+      "title": "YouSpeed 1.4 herunterladen",
+      "body": "Jetzt für iPhone im App Store und für Android bei Google Play. Lade vor der Fahrt deine Karten herunter und richte die App im Stand ein.",
+      "other": "Ältere Android-APKs & Release-Details",
+      "compatibility": "iPhone: iOS 17 oder neuer · Android: Android 14 oder neuer",
+      "storeStatus": "Version 1.4 ist im App Store und bei Google Play veröffentlicht."
+    }
+  },
+  "en": {
+    "title": "YouSpeed.de – Driver assistance for any car · Version 1.4",
+    "description": "YouSpeed 1.4: traffic sign recognition with supplementary-sign OCR, speed alerts, a dashcam and offline maps. Now on the App Store for iPhone and Google Play for Android.",
+    "hero": {
+      "badge": "Version 1.4 · iPhone & Android",
+      "title": "YouSpeed.de",
+      "kicker": "Drive safely. In any car.",
+      "lead": "Your smartphone becomes your driving companion: automatic traffic sign recognition with text recognition (OCR) for supplementary signs, speed alerts, fine estimates and a dashcam. Whatever your car’s age.",
+      "googlePlay": [
+        "Android app",
+        "Google Play"
+      ],
+      "appStore": [
+        "iPhone app",
+        "App Store"
+      ],
+      "facts": [
+        "Offline maps",
+        "No ads",
+        "No account for driving features"
+      ]
+    },
+    "release": {
+      "nav": "Features",
+      "eyebrow": "App features",
+      "title": "Driver assistance for any car",
+      "body": "New in 1.4: read supplementary-sign text, clearer recording controls and easier photo selection. Alongside speed alerts, a dashcam and offline maps.",
+      "items": [
+        [
+          "Recognize traffic signs automatically",
+          "Your phone’s camera recognizes speed limits and additional road signs on your device. Choose sound or spoken feedback. Supported signs depend on the country and installed model."
+        ],
+        [
+          "Read supplementary signs with OCR",
+          "YouSpeed reads text below supported speed-limit and traffic signs on your device, such as times or weekdays. The text appears with the recognized sign and can be read aloud when spoken feedback is enabled. Conditions are not evaluated automatically; recognized text can contain errors."
+        ],
+        [
+          "Live assistance and fine estimates",
+          "See your speed alongside the speed-limit reference. Speed alerts and country-specific fine estimates show what exceeding the limit could mean."
+        ],
+        [
+          "Record your drive with the dashcam",
+          "Keep videos locally and play them back when parked. Share or delete recordings and choose what to keep."
+        ],
+        [
+          "Capture street photos, review and share",
+          "Take street photos manually too, then select them in the gallery. Version 1.4 improves photo selection and Panoramax uploads. Optional uploads start only after your selection and require a connected account and internet access."
+        ],
+        [
+          "Manage map packages more easily",
+          "Search countries and regions, see package dates and download sizes, and download or delete maps independently. Supported countries include Germany, France, Switzerland, Belgium and the Netherlands."
+        ],
+        [
+          "Travel across borders",
+          "YouSpeed supports cross-border map switching, GPS fix handling and road-matching continuity. The app is available in English, German, French and Dutch."
+        ],
+        [
+          "Look up fines and traffic signs",
+          "Behind Info, browse country-specific speeding fine tables and a traffic-sign catalogue with pictograms and spoken names. Available offline; the information is advisory."
+        ]
+      ],
+      "gallery": [
+        [
+          "recognition",
+          "YouSpeed 1.4 on iPhone: automatic traffic sign recognition"
+        ],
+        [
+          "signs",
+          "YouSpeed 1.4 on iPhone: additional signs with sound or spoken feedback"
+        ],
+        [
+          "fine-calculation",
+          "YouSpeed 1.4: live speeding penalty estimate"
+        ],
+        [
+          "dashcam",
+          "YouSpeed 1.4 on iPhone: local dashcam recording"
+        ],
+        [
+          "panoramax",
+          "YouSpeed 1.4: review photos and upload to Panoramax"
+        ]
+      ],
+      "artworkNote": "Native iPhone demonstration screens prepared for version 1.4. The dashcam illustration combines the app interface with a genuine recording frame.",
+      "androidAlt": "YouSpeed 1.4 Android dashcam demonstration with a genuine road recording frame",
+      "androidCaption": "YouSpeed 1.4 · Dashcam on Android",
+      "artworkAlt": "YouSpeed 1.4: Drive safely. In any car. Release artwork with five traffic signs arranged in a circle."
+    },
+    "download": {
+      "nav": "Download",
+      "title": "Get YouSpeed 1.4",
+      "body": "Now on the App Store for iPhone and Google Play for Android. Download your maps before driving and set up the app while parked.",
+      "other": "Older Android APKs & release details",
+      "compatibility": "iPhone: iOS 17 or later · Android: Android 14 or later",
+      "storeStatus": "Version 1.4 is released on the App Store and Google Play."
+    }
+  },
+  "fr": {
+    "title": "YouSpeed.de – Aide à la conduite pour toute voiture · Version 1.4",
+    "description": "YouSpeed 1.4 : reconnaissance des panneaux avec OCR des panonceaux, alertes de vitesse, dashcam et cartes hors ligne. Disponible sur l’App Store et Google Play.",
+    "hero": {
+      "badge": "Version 1.4 · iPhone & Android",
+      "title": "YouSpeed.de",
+      "kicker": "Roulez prudemment. Dans toute voiture.",
+      "lead": "Votre smartphone devient votre compagnon de route : reconnaissance automatique des panneaux avec lecture de texte (OCR) des panonceaux, alertes de vitesse, estimation des sanctions et dashcam. Quel que soit l’âge de votre voiture.",
+      "googlePlay": [
+        "App Android",
+        "Google Play"
+      ],
+      "appStore": [
+        "App iPhone",
+        "App Store"
+      ],
+      "facts": [
+        "Cartes hors ligne",
+        "Sans publicité",
+        "Conduite sans compte"
+      ]
+    },
+    "release": {
+      "nav": "Fonctions",
+      "eyebrow": "Fonctions de l’app",
+      "title": "Aide à la conduite pour toute voiture",
+      "body": "Nouveautés de la 1.4 : lecture des panonceaux, commandes d’enregistrement plus claires et sélection des photos simplifiée. Avec alertes de vitesse, dashcam et cartes hors ligne.",
+      "items": [
+        [
+          "Reconnaître les panneaux automatiquement",
+          "La caméra reconnaît les limitations et d’autres panneaux sur votre appareil. Choisissez un son ou une annonce vocale. Les panneaux pris en charge dépendent du pays et du modèle installé."
+        ],
+        [
+          "Lire les panonceaux avec l’OCR",
+          "YouSpeed lit sur votre appareil le texte sous les panneaux de limitation et autres panneaux pris en charge, par exemple les horaires ou les jours. Le texte s’affiche avec le panneau reconnu et peut être lu à voix haute si les annonces vocales sont activées. Les conditions ne sont pas évaluées automatiquement ; le texte reconnu peut contenir des erreurs."
+        ],
+        [
+          "Assistance en direct et estimation des amendes",
+          "Gardez votre vitesse et la limitation de référence en vue. Les alertes et les estimations selon le pays indiquent les conséquences possibles d’un dépassement."
+        ],
+        [
+          "Enregistrer vos trajets avec la dashcam",
+          "Conservez les vidéos localement et regardez-les à l’arrêt. Partagez ou supprimez les enregistrements et choisissez ce que vous gardez."
+        ],
+        [
+          "Prendre, vérifier et partager des photos de rues",
+          "Prenez aussi des photos manuellement, puis sélectionnez-les dans la galerie. La version 1.4 améliore la sélection et les envois vers Panoramax. L’envoi optionnel ne démarre qu’après votre sélection et nécessite un compte connecté et Internet."
+        ],
+        [
+          "Gérer les cartes plus facilement",
+          "Recherchez des pays et des régions, consultez les dates et tailles des paquets, puis téléchargez ou supprimez chaque carte indépendamment. Les pays pris en charge comprennent l’Allemagne, la France, la Suisse, la Belgique et les Pays-Bas."
+        ],
+        [
+          "Voyager au-delà des frontières",
+          "YouSpeed prend en charge le changement de cartes aux frontières, le traitement GPS et la continuité du positionnement sur la route. L’app est disponible en français, allemand, anglais et néerlandais."
+        ],
+        [
+          "Consulter les sanctions et les panneaux",
+          "Dans Info, consultez les barèmes d’amendes par pays et un catalogue de panneaux avec pictogrammes et noms prononcés. Disponibles hors ligne, à titre indicatif."
+        ]
+      ],
+      "gallery": [
+        [
+          "recognition",
+          "YouSpeed 1.4 sur iPhone : reconnaissance automatique des panneaux"
+        ],
+        [
+          "signs",
+          "YouSpeed 1.4 sur iPhone : panneaux supplémentaires avec son ou voix"
+        ],
+        [
+          "fine-calculation",
+          "YouSpeed 1.4 : estimation des amendes pendant le trajet"
+        ],
+        [
+          "dashcam",
+          "YouSpeed 1.4 sur iPhone : enregistrement local avec la dashcam"
+        ],
+        [
+          "panoramax",
+          "YouSpeed 1.4 : vérifier les photos et envoyer vers Panoramax"
+        ]
+      ],
+      "artworkNote": "Vues de démonstration natives sur iPhone préparées pour la version 1.4. L’illustration dashcam associe l’interface de l’app à une image réelle enregistrée.",
+      "androidAlt": "Démonstration de la dashcam Android YouSpeed 1.4 avec une véritable image de route",
+      "androidCaption": "YouSpeed 1.4 · Dashcam sur Android",
+      "artworkAlt": "YouSpeed 1.4 : Roulez prudemment. Dans toute voiture. Visuel avec cinq panneaux disposés en cercle."
+    },
+    "download": {
+      "nav": "Télécharger",
+      "title": "Téléchargez YouSpeed 1.4",
+      "body": "Disponible sur l’App Store pour iPhone et Google Play pour Android. Téléchargez vos cartes avant de partir et configurez l’app à l’arrêt.",
+      "other": "Anciens APK Android et détails des versions",
+      "compatibility": "iPhone : iOS 17 ou ultérieur · Android : Android 14 ou ultérieur",
+      "storeStatus": "La version 1.4 est publiée sur l’App Store et Google Play."
+    }
+  },
+  "nl": {
+    "title": "YouSpeed.de – Rijassistentie voor elke auto · Versie 1.4",
+    "description": "YouSpeed 1.4: verkeersbordherkenning met OCR voor onderborden, snelheidswaarschuwingen, dashcam en offline kaarten. Nu in de App Store en op Google Play.",
+    "hero": {
+      "badge": "Versie 1.4 · iPhone & Android",
+      "title": "YouSpeed.de",
+      "kicker": "Rijd veilig. In elke auto.",
+      "lead": "Je smartphone wordt je rijmaatje: automatische verkeersbordherkenning met tekstherkenning (OCR) voor onderborden, snelheidswaarschuwingen, boeteschattingen en een dashcam. Hoe oud je auto ook is.",
+      "googlePlay": [
+        "Android-app",
+        "Google Play"
+      ],
+      "appStore": [
+        "iPhone-app",
+        "App Store"
+      ],
+      "facts": [
+        "Offline kaarten",
+        "Geen advertenties",
+        "Rijfuncties zonder account"
+      ]
+    },
+    "release": {
+      "nav": "Functies",
+      "eyebrow": "Functies van de app",
+      "title": "Rijassistentie voor elke auto",
+      "body": "Nieuw in 1.4: tekst op onderborden lezen, duidelijkere opnameknoppen en eenvoudiger foto’s selecteren. Met snelheidswaarschuwingen, dashcam en offline kaarten.",
+      "items": [
+        [
+          "Verkeersborden automatisch herkennen",
+          "Je camera herkent snelheidslimieten en andere borden op je toestel. Kies geluid of gesproken feedback. Ondersteunde borden hangen af van het land en het geïnstalleerde model."
+        ],
+        [
+          "Onderborden lezen met OCR",
+          "YouSpeed leest tekst onder ondersteunde snelheids- en verkeersborden op je apparaat, zoals tijden of weekdagen. De tekst verschijnt bij het herkende bord en kan worden voorgelezen als gesproken meldingen zijn ingeschakeld. Voorwaarden worden niet automatisch beoordeeld; herkende tekst kan fouten bevatten."
+        ],
+        [
+          "Live rijhulp en boeteschattingen",
+          "Bekijk je snelheid naast de referentielimiet. Snelheidswaarschuwingen en boeteschattingen per land tonen de mogelijke gevolgen van een overschrijding."
+        ],
+        [
+          "Je rit opnemen met de dashcam",
+          "Bewaar video’s lokaal en bekijk ze wanneer je stilstaat. Deel of verwijder opnamen en kies wat je bewaart."
+        ],
+        [
+          "Straatfoto’s maken, bekijken en delen",
+          "Maak ook handmatig straatfoto’s en selecteer ze in de galerij. Versie 1.4 verbetert de fotoselectie en uploads naar Panoramax. Optionele uploads starten pas na jouw selectie en vereisen een gekoppeld account en internet."
+        ],
+        [
+          "Kaartpakketten eenvoudiger beheren",
+          "Zoek landen en regio’s, bekijk pakketdatums en downloadgroottes en download of verwijder kaarten afzonderlijk. Ondersteunde landen omvatten Duitsland, Frankrijk, Zwitserland, België en Nederland."
+        ],
+        [
+          "Over grenzen reizen",
+          "YouSpeed ondersteunt kaartwissels aan landsgrenzen, GPS-verwerking en doorlopende koppeling aan de weg. De app is beschikbaar in Nederlands, Duits, Engels en Frans."
+        ],
+        [
+          "Boetes en verkeersborden opzoeken",
+          "Onder Info vind je boetetabellen per land en een verkeersbordencatalogus met pictogrammen en gesproken namen. Offline beschikbaar; de informatie is adviserend."
+        ]
+      ],
+      "gallery": [
+        [
+          "recognition",
+          "YouSpeed 1.4 op iPhone: automatische verkeersbordherkenning"
+        ],
+        [
+          "signs",
+          "YouSpeed 1.4 op iPhone: extra verkeersborden met geluid of spraak"
+        ],
+        [
+          "fine-calculation",
+          "YouSpeed 1.4: boeteschatting tijdens de rit"
+        ],
+        [
+          "dashcam",
+          "YouSpeed 1.4 op iPhone: lokale dashcam-opname"
+        ],
+        [
+          "panoramax",
+          "YouSpeed 1.4: foto’s controleren en naar Panoramax uploaden"
+        ]
+      ],
+      "artworkNote": "Native iPhone-demonstratieschermen gemaakt voor versie 1.4. De dashcamillustratie combineert de appinterface met een echt opnamebeeld.",
+      "androidAlt": "Android-dashcamdemonstratie in YouSpeed 1.4 met een echt beeld van de weg",
+      "androidCaption": "YouSpeed 1.4 · Dashcam op Android",
+      "artworkAlt": "YouSpeed 1.4: Rijd veilig. In elke auto. Release-artwork met vijf verkeersborden in een cirkel."
+    },
+    "download": {
+      "nav": "Download",
+      "title": "Download YouSpeed 1.4",
+      "body": "Nu in de App Store voor iPhone en op Google Play voor Android. Download je kaarten voor vertrek en stel de app in terwijl je geparkeerd staat.",
+      "other": "Oudere Android-APK’s en releasedetails",
+      "compatibility": "iPhone: iOS 17 of nieuwer · Android: Android 14 of nieuwer",
+      "storeStatus": "Versie 1.4 is uitgebracht in de App Store en op Google Play."
+    }
+  }
+}
