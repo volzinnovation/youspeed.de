@@ -1,6 +1,8 @@
 # YouSpeed store handoff
 
-Current preparation: **1.4 alpha (18 October 2026)**. See the [release handoff](../docs/release/RELEASE_1.4_ALPHA_2026-10-18.md) and [English/German release notes](../docs/release/RELEASE_NOTES_1.4_ALPHA.md). Apple 1.4 (10052) is uploaded, internally testable, and submitted for external beta review. The manual-release 1.4 draft contains the refreshed four-language galleries. Android uses the valid version string `1.4-alpha` for GitHub prerelease testing.
+Current store submission: **1.4 (10056), 21 October 2026**. The [submission record](../docs/release/STORE_DRAFTS_1.4_2026-10-21.md) and [artifact receipt](../docs/release/BUILD_10056_STORE_DRAFTS_2026-10-21.json) cover the binaries, metadata, validation and review requests. Apple is `WAITING_FOR_REVIEW` with `MANUAL` release. Google Play accepted the production release and 18 listing changes into the review flow; automatic pre-review checks were running at the final observation. Managed publishing is enabled. Neither update was published. Prepared metadata covers four Apple and nine Play languages; 24 Apple and 54 Play screenshots were verified.
+
+Earlier alpha preparation (18–19 October 2026): see the [alpha handoff](../docs/release/RELEASE_1.4_ALPHA_2026-10-18.md) and [English/German release notes](../docs/release/RELEASE_NOTES_1.4_ALPHA.md). Build **1.4 (10056)** is now **approved for external TestFlight testing** and assigned to the existing public **Beta-Ext** group ([invitation](https://testflight.apple.com/join/k3a1pgce)). Its test instructions and reviewer notes were verified. Existing group settings and GitHub prerelease assets were retained; no new GitHub release was created.
 
 ## Historical 1.3 handoff (2–4 October 2026)
 

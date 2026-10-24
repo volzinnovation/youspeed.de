@@ -1,0 +1,444 @@
+{
+  "format": "youspeed.store-draft-receipt.v1",
+  "release_date": "2026-10-21",
+  "version": "1.4",
+  "base_build": 10056,
+  "app_source_commit": "bf1f3bb5bd7e2dd842af841f3fc9d6cee2d1a505",
+  "apple": {
+    "version": "1.4",
+    "build": "10056",
+    "bundle": "de.youspeed.SpeedConsumer",
+    "ipa_bytes": 248987380,
+    "ipa_sha256": "2e037e6a5c880caf85b5308daac66e13602366ea1852ba8dd53f419e558889fb",
+    "sdk": "iphoneos26.5",
+    "forbidden_release_credentials_absent": true,
+    "versionId": "6e138df5-32ab-4050-919f-8b574159133b",
+    "buildId": "a56abfc9-328e-4370-99b5-628f8f942b61",
+    "processingState": "VALID",
+    "selectedBuildVerified": true,
+    "state": "WAITING_FOR_REVIEW",
+    "releaseType": "MANUAL",
+    "reviewSubmitted": true,
+    "published": false,
+    "metadata_locales": [
+      "de-DE",
+      "en-US",
+      "fr-FR",
+      "nl-NL"
+    ],
+    "metadata_verified": true,
+    "galleries": [
+      {
+        "locale": "en-US",
+        "displayType": "APP_IPHONE_67",
+        "screenshots": [
+          {
+            "file": "01-camera-speed-limit.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "02-live-assistance.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "03-fine-calculation.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "04-dashcam.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "05-panoramax-upload.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "06-reference-signs-DE.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          }
+        ],
+        "verified": true
+      },
+      {
+        "locale": "de-DE",
+        "displayType": "APP_IPHONE_67",
+        "screenshots": [
+          {
+            "file": "01-camera-speed-limit.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "02-live-assistance.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "03-fine-calculation.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "04-dashcam.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "05-panoramax-upload.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "06-reference-signs-DE.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          }
+        ],
+        "verified": true
+      },
+      {
+        "locale": "fr-FR",
+        "displayType": "APP_IPHONE_67",
+        "screenshots": [
+          {
+            "file": "01-camera-speed-limit.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "02-live-assistance.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "03-fine-calculation.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "04-dashcam.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "05-panoramax-upload.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "06-reference-signs-DE.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          }
+        ],
+        "verified": true
+      },
+      {
+        "locale": "nl-NL",
+        "displayType": "APP_IPHONE_67",
+        "screenshots": [
+          {
+            "file": "01-camera-speed-limit.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "02-live-assistance.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "03-fine-calculation.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "04-dashcam.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "05-panoramax-upload.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          },
+          {
+            "file": "06-reference-signs-DE.png",
+            "deliveryState": "COMPLETE",
+            "checksumMatches": true
+          }
+        ],
+        "verified": true
+      }
+    ],
+    "upload_delivery_id": "a56abfc9-328e-4370-99b5-628f8f942b61",
+    "reviewSubmissionId": "70230301-d02d-4096-843c-285cc4f92e37",
+    "reviewState": "WAITING_FOR_REVIEW",
+    "submittedDate": "2026-10-21T14:59:11.064Z",
+    "externalTestFlight": {
+      "reviewSubmitted": true,
+      "reviewSubmissionId": "a56abfc9-328e-4370-99b5-628f8f942b61",
+      "reviewState": "APPROVED",
+      "externalBuildState": "IN_BETA_TESTING",
+      "internalBuildState": "IN_BETA_TESTING",
+      "autoNotifyEnabled": true,
+      "groupId": "83dbaee5-d7ac-439f-8a48-090730fe31ab",
+      "groupName": "Beta-Ext",
+      "buildAssignedVerified": true,
+      "publicLinkEnabled": true,
+      "publicLink": "https://testflight.apple.com/join/k3a1pgce",
+      "publicLinkLimit": 100,
+      "groupSettingsUnchanged": true,
+      "testInstructionsLocale": "de-DE",
+      "testInstructionsVerified": true,
+      "reviewerNotesUpdatedForBuild": 10056,
+      "checkedAt": "2026-10-21T15:24:49.498587+00:00"
+    }
+  },
+  "android": {
+    "status": "review_requested_prechecks_running",
+    "build_source_commit": "b1af7751cb8ebd091e94c1667727a942138e80a9",
+    "workflow": "https://github.com/volzinnovation/youspeed.de/actions/runs/39616850329",
+    "runtime_matches_app_source": false,
+    "draft_release_number": 3,
+    "draft_release_name": "1.4 (10056)",
+    "review_submitted": true,
+    "published": false,
+    "runtime_delta": "SolarDaylight declination expression is grouped to preserve all terms, matching the unchanged iPhone calculation.",
+    "listing_verification": [
+      {
+        "locale": "de-DE",
+        "fields": [
+          "title.txt",
+          "short_description.txt",
+          "full_description.txt"
+        ],
+        "screenshots": [
+          "de-DE-01-camera-recognition.png",
+          "de-DE-02-live-assistance.png",
+          "de-DE-03-fine-calculation.png",
+          "de-DE-04-dashcam.png",
+          "de-DE-05-panoramax-upload.png",
+          "de-DE-06-reference-signs-DE.png"
+        ]
+      },
+      {
+        "locale": "en-US",
+        "fields": [
+          "title.txt",
+          "short_description.txt",
+          "full_description.txt"
+        ],
+        "screenshots": [
+          "en-US-01-camera-recognition.png",
+          "en-US-02-live-assistance.png",
+          "en-US-03-fine-calculation.png",
+          "en-US-04-dashcam.png",
+          "en-US-05-panoramax-upload.png",
+          "en-US-06-reference-signs-DE.png"
+        ]
+      },
+      {
+        "locale": "fr-FR",
+        "fields": [
+          "title.txt",
+          "short_description.txt",
+          "full_description.txt"
+        ],
+        "screenshots": [
+          "fr-FR-01-camera-recognition.png",
+          "fr-FR-02-live-assistance.png",
+          "fr-FR-03-fine-calculation.png",
+          "fr-FR-04-dashcam.png",
+          "fr-FR-05-panoramax-upload.png",
+          "fr-FR-06-reference-signs-DE.png"
+        ]
+      },
+      {
+        "locale": "it-IT",
+        "fields": [
+          "title.txt",
+          "short_description.txt",
+          "full_description.txt"
+        ],
+        "screenshots": [
+          "it-IT-01-camera-recognition.png",
+          "it-IT-02-live-assistance.png",
+          "it-IT-03-fine-calculation.png",
+          "it-IT-04-dashcam.png",
+          "it-IT-05-panoramax-upload.png",
+          "it-IT-06-reference-signs-DE.png"
+        ]
+      },
+      {
+        "locale": "nl-NL",
+        "fields": [
+          "title.txt",
+          "short_description.txt",
+          "full_description.txt"
+        ],
+        "screenshots": [
+          "nl-NL-01-camera-recognition.png",
+          "nl-NL-02-live-assistance.png",
+          "nl-NL-03-fine-calculation.png",
+          "nl-NL-04-dashcam.png",
+          "nl-NL-05-panoramax-upload.png",
+          "nl-NL-06-reference-signs-DE.png"
+        ]
+      },
+      {
+        "locale": "pl-PL",
+        "fields": [
+          "title.txt",
+          "short_description.txt",
+          "full_description.txt"
+        ],
+        "screenshots": [
+          "pl-PL-01-camera-recognition.png",
+          "pl-PL-02-live-assistance.png",
+          "pl-PL-03-fine-calculation.png",
+          "pl-PL-04-dashcam.png",
+          "pl-PL-05-panoramax-upload.png",
+          "pl-PL-06-reference-signs-DE.png"
+        ]
+      },
+      {
+        "locale": "pt-BR",
+        "fields": [
+          "title.txt",
+          "short_description.txt",
+          "full_description.txt"
+        ],
+        "screenshots": [
+          "pt-BR-01-camera-recognition.png",
+          "pt-BR-02-live-assistance.png",
+          "pt-BR-03-fine-calculation.png",
+          "pt-BR-04-dashcam.png",
+          "pt-BR-05-panoramax-upload.png",
+          "pt-BR-06-reference-signs-DE.png"
+        ]
+      },
+      {
+        "locale": "sv-SE",
+        "fields": [
+          "title.txt",
+          "short_description.txt",
+          "full_description.txt"
+        ],
+        "screenshots": [
+          "sv-SE-01-camera-recognition.png",
+          "sv-SE-02-live-assistance.png",
+          "sv-SE-03-fine-calculation.png",
+          "sv-SE-04-dashcam.png",
+          "sv-SE-05-panoramax-upload.png",
+          "sv-SE-06-reference-signs-DE.png"
+        ]
+      },
+      {
+        "locale": "es-ES",
+        "fields": [
+          "title.txt",
+          "short_description.txt",
+          "full_description.txt"
+        ],
+        "screenshots": [
+          "es-ES-01-camera-recognition.png",
+          "es-ES-02-live-assistance.png",
+          "es-ES-03-fine-calculation.png",
+          "es-ES-04-dashcam.png",
+          "es-ES-05-panoramax-upload.png",
+          "es-ES-06-reference-signs-DE.png"
+        ]
+      }
+    ],
+    "version": "1.4",
+    "versionCode": 10056,
+    "package": "de.youspeed.android",
+    "aabBytes": 366907654,
+    "aabSha256": "d8e8e70ad98603d081060ea5298fa97034b50a8d74a00db3e17ae44bfb9c3fbb",
+    "signed": true,
+    "signatureVerified": true,
+    "uploadCertificateSha256": "79b38431153de1b1776ea83e1970662d0a40c6a41aecbca958d73e3fe509e08a",
+    "checksumsVerified": true,
+    "releaseTestResults": {
+      "tests": 742,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "debuggable": false,
+    "native64Load16kPass": true,
+    "native64Relro16kPass": false,
+    "runtime16kVerified": false,
+    "workflow_conclusion": "success",
+    "release_notes_verification": {
+      "verified": true,
+      "locales": [
+        "de-DE",
+        "en-US",
+        "es-ES",
+        "fr-FR",
+        "it-IT",
+        "nl-NL",
+        "pl-PL",
+        "pt-BR",
+        "sv-SE"
+      ]
+    },
+    "upload_filename": "YouSpeed-1.4-10056-Play.aab",
+    "upload_method": "Authenticated existing Chrome window, native file picker",
+    "uploaded": true,
+    "play_processing_complete": true,
+    "draft_saved": true,
+    "selected_version_code": 10056,
+    "previous_version_10033_included": false,
+    "draft_url": "https://play.google.com/console/u/0/developers/5138521418106883804/app/4974352973939108666/tracks/4697360213117564323/releases/3/prepare",
+    "screenshot_evidence": "docs/release/store-drafts-2026-10-21/play-draft-10056.jpg",
+    "managed_publishing_enabled": true,
+    "review_change_count": 19,
+    "review_change_scope": {
+      "production_release": "1.4 (10056)",
+      "full_descriptions": 9,
+      "phone_screenshot_galleries": 9
+    },
+    "review_requested_date": "2026-10-21",
+    "submission_observed_at": "2026-10-21T15:01:34Z",
+    "review_ui_state": "Änderungen, die überprüft werden",
+    "pre_review_checks": "running; automatically proceeds to review after checks",
+    "submission_screenshot": "docs/release/store-drafts-2026-10-21/play-review-submitted-10056.jpg",
+    "validation_warnings": [
+      "Native debug symbols not uploaded (nonblocking)"
+    ]
+  },
+  "checks": {
+    "store_package": {
+      "files": 186,
+      "errors": 0
+    },
+    "apple_validation": "passed",
+    "apple_distribution_signature": "verified",
+    "android_focused_contract_tests": "passed",
+    "android_release_unit": {
+      "tests": 742,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "android_release_lint": "passed locally and in signed CI",
+    "solar_parity": "Three numerical elevations computed by the unchanged Swift source, plus a sunset boundary regression, passed on Android.",
+    "android_release_unit_ci": {
+      "tests": 742,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    }
+  },
+  "local_artifact_root": "/private/tmp/youspeed-store-1.4-10056-2026-10-21",
+  "checked_at": "2026-10-21T16:49:19.255414+02:00"
+}
