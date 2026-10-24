@@ -125,7 +125,7 @@ def main() -> None:
     ICON_ROOT.mkdir(parents=True, exist_ok=True)
     render_icons()
     render_release_artwork()
-    print("Rendered 1.3 release, social and icon assets")
+    print("Rendered website release, social and icon assets")
 
 
 if __name__ == "__main__":

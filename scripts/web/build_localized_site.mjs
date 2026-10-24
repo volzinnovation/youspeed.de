@@ -8,10 +8,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 const webRoot = path.join(repoRoot, "Web");
 const siteBase = "https://youspeed.de";
-const release = JSON.parse(readFileSync(path.join(__dirname, "release-1.3.json"), "utf8"));
-const releaseUrl = "https://github.com/volzinnovation/youspeed.de/releases/tag/android-v1.3";
-const apkUrl = "https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.3/YouSpeed-1.3-100332.apk";
-const checksumsUrl = "https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.3/SHA256SUMS";
+const release = JSON.parse(readFileSync(path.join(__dirname, "release-1.4.json"), "utf8"));
+const androidArchiveUrl = "https://github.com/volzinnovation/youspeed.de/releases/tag/android-v1.3";
 
 const locales = {
   de: {
@@ -423,10 +421,8 @@ function renderStructuredData(locale, content) {
         url: "https://studios.moonshots.gmbh",
       },
       sameAs: ["https://github.com/volzinnovation/youspeed.de"],
-      softwareVersion: "1.3",
-      downloadUrl: apkUrl,
-      releaseNotes: releaseUrl,
-      installUrl: [googlePlayUrl, appStoreUrl, apkUrl],
+      softwareVersion: "1.4",
+      installUrl: [googlePlayUrl, appStoreUrl],
     },
     null,
     2,
@@ -518,7 +514,7 @@ ${renderLanguageSwitch(locale)}
             <p class="hero-kicker">${escapeHtml(content.hero.kicker)}</p>
             <p class="lead">${escapeHtml(content.hero.lead)}</p>
             <div class="hero-actions">
-              <a class="btn btn-primary" href="${apkUrl}">${escapeHtml(content.download.primary)}</a>
+              <a class="btn btn-primary" href="#download">${escapeHtml(content.download.nav)}</a>
               <a class="btn btn-secondary" href="#launch">${escapeHtml(content.release.nav)}</a>
             </div>
             <p class="download-hint">${escapeHtml(content.download.compatibility)}</p>
@@ -582,17 +578,13 @@ ${renderLanguageSwitch(locale)}
             <p class="eyebrow">${escapeHtml(content.download.nav)}</p>
             <h2>${escapeHtml(content.download.title)}</h2>
             <p>${escapeHtml(content.download.body)}</p>
-            <div class="hero-actions">
-              <a class="btn btn-primary" href="${apkUrl}">${escapeHtml(content.download.primary)}</a>
-              <a class="btn btn-secondary" href="${releaseUrl}" target="_blank" rel="noreferrer">${escapeHtml(content.download.other)}</a>
-            </div>
             <div class="store-links">
               <a class="btn store-btn store-btn-google" href="${googlePlayUrl}" target="_blank" rel="noreferrer"><span><small>${escapeHtml(content.hero.googlePlay[0])}</small>${escapeHtml(content.hero.googlePlay[1])}</span></a>
               <a class="btn store-btn store-btn-apple" href="${appStoreUrl}" target="_blank" rel="noreferrer"><span><small>${escapeHtml(content.hero.appStore[0])}</small>${escapeHtml(content.hero.appStore[1])}</span></a>
             </div>
             <p class="download-hint">${escapeHtml(content.download.compatibility)}</p>
-            <p class="download-hint"><a href="${checksumsUrl}">${escapeHtml(content.download.checksums)}</a></p>
             <p class="download-hint">${escapeHtml(content.download.storeStatus)}</p>
+            <p class="download-hint"><a href="${androidArchiveUrl}" target="_blank" rel="noreferrer">${escapeHtml(content.download.other)}</a></p>
           </div>
           <figure class="android-artwork reveal reveal-d2">
             <img src="${rootRelative(locale, `assets/release-1.3/${locale}/android-dashcam.webp`)}" alt="${escapeHtml(content.release.androidAlt)}" loading="lazy" width="960" height="540" />
@@ -615,7 +607,7 @@ ${renderLanguageSwitch(locale)}
       <section class="section demo-showcase" id="demo">
         <div class="container">
           <div class="demo-copy reveal">
-            <p class="eyebrow">YouTube · 1.3</p>
+            <p class="eyebrow">YouTube</p>
             <h2>${escapeHtml(referenceCopy[locale].videoTitle)}</h2>
             <p>${escapeHtml(referenceCopy[locale].videoBody)}</p>
           </div>
