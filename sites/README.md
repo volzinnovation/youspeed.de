@@ -19,14 +19,15 @@ node ./scripts/web/check_static_site.mjs sites
 
 Der Test prueft lokale Links, referenzierte Assets und In-Page-Anker im GitHub-Pages-Artefakt.
 
-## Version 1.3 website
+## Version 1.4 website
 
-- Localized release copy: `scripts/web/release-1.3.json` (DE/EN/FR/NL).
+- Localized release copy: `scripts/web/release-1.4.json` (DE/EN/FR/NL).
 - Page generator: `node scripts/web/build_localized_site.mjs`.
-- Artwork generator: `python3 scripts/web/render_social_assets.py` (Pillow). Reuses approved Apple/Android 1.3 artwork and its retained native demonstration captures; The hero arranges five original shared traffic-sign PNGs in a circle, following the feature graphic’s sign selection. Gallery WebP renditions are scaled without cropping. Social previews reuse the complete localized Android feature graphic.
+- Artwork generator: `python3 scripts/web/render_social_assets.py` (Pillow). Reuses the Apple/Android artwork prepared for 1.4 and its retained native demonstration captures; The hero arranges five original shared traffic-sign PNGs in a circle, following the feature graphic’s sign selection. Gallery WebP renditions are scaled without cropping. Social previews reuse the complete localized Android feature graphic.
 - Original artwork and provenance: `store/README.md` and `store/artwork/dashcam-preview.json`.
-- Direct download: signed Android 1.3 `arm64-v8a` APK, with other architectures and checksums linked from the download section. Android 14 or later is required.
-- The 1.3 store rollout was pending when this copy was prepared on 4 October 2026. Update the download status once a store release is published.
+- Downloads: version 1.4 is available on the App Store and Google Play. Both stores are the primary download options. The GitHub link is explicitly an archive of older Android APKs; no unverified 1.4 APK URL is advertised. iOS 17 / Android 14 or later is required.
+- Release copy updated on 24 October 2026 following the product owner’s confirmation that both stores released 1.4. OCR reads, displays and optionally speaks supplementary-sign text; it does not automatically evaluate its conditions.
+- Existing `assets/release-1.3/` paths are retained for stable asset URLs and do not identify the current app version. The original feature film is retained with a version-neutral title; it is not presented as a new 1.4 recording.
 
 ## Country references and film
 

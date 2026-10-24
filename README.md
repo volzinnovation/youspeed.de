@@ -2,15 +2,23 @@
 
 **Drive safely. Driver assistance for any car.**
 
-YouSpeed is an open source app. Version 1.3 turns your iPhone or Android phone into a driving companion with on-device traffic-sign recognition, speed alerts, country-specific penalty estimates, local dashcam recordings and offline maps. No vehicle integration is needed, whatever your car’s age. Core driving features need no account; there are no advertising or tracking SDKs.
+YouSpeed is an open source app. Version 1.4 turns your iPhone or Android phone into a driving companion with on-device traffic-sign recognition, supplementary-sign text recognition (OCR), speed alerts, country-specific penalty estimates, local dashcam recordings and offline maps. No vehicle integration is needed, whatever your car’s age. Core driving features need no account; there are no advertising or tracking SDKs.
 
 *YouSpeed is an advisory aid: road signs and traffic rules always take precedence. Recognition and penalty estimates can be incomplete or incorrect.*
 
-<img src="store/android/listing/en-US/feature-graphic-1024x500.png" alt="YouSpeed 1.3: Drive safely. Avoid fines. In any car. Sign recognition, speed alerts and dashcam." width="900">
+<img src="store/android/listing/en-US/feature-graphic-1024x500.png" alt="YouSpeed 1.4: Drive safely. In any car. Sign recognition, speed alerts and dashcam." width="900">
 
 Originally launched on 29 August 2026 at the State of the Map conference in Paris, France.
 
-## New since 1.0
+## New in 1.4
+
+- **Supplementary-sign OCR:** read text such as times and weekdays below supported signs on the device. Recognized text appears with the sign and can be spoken aloud. Conditions are not evaluated automatically, and OCR can contain errors.
+- **Clearer capture controls:** control sign recognition, dashcam recording and Panoramax photos independently. Take manual street photos without stopping a dashcam recording, with aligned controls on iPhone and Android.
+- **Improved photo review and uploads:** easier photo selection, clearer gallery and batch states, and more reliable Panoramax uploads and capture transitions.
+- **Better driving and data management:** improved driving-control visibility, road and tunnel matching, map downloads, storage information and source attribution. Camera recognition pauses after sunset and uses installed map data.
+- **Optional sign-database contributions:** with consent, share sign observations and selected sign crops automatically, including over mobile data. Recognition remains available when contribution consent is declined. This is separate from reviewed Panoramax street-photo uploads.
+
+## Features
 
 - **Automatic traffic-sign recognition:** recognize speed limits and additional road signs on the device, with sound or spoken feedback. Supported signs depend on the country and installed model.
 - **Local dashcam:** record drives and play back, share or delete videos when parked.
@@ -27,16 +35,16 @@ Original speed-display and warning-level demonstration from the 1.0 release:
 
 <img src="docs/2026-youspeed.de-demo.webp" alt="Animated demo of YouSpeed showing speed-limit detection and warning levels" width="320">
 
-## Get YouSpeed 1.3
+## Get YouSpeed 1.4
 
-[**Download the signed Android 1.3 APK**](https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.3/YouSpeed-1.3-100332.apk) — Android 14 or later, **arm64-v8a** (most current phones), approximately 348 MB.
+Version 1.4 is available on both stores:
 
-For other devices, choose **armeabi-v7a**, **x86** or **x86_64** on the [Android 1.3 release page](https://github.com/volzinnovation/youspeed.de/releases/tag/android-v1.3). [SHA-256 checksums](https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.3/SHA256SUMS) accompany the APKs. Download a map package before using offline road lookup.
+- [Android on Google Play](https://play.google.com/store/apps/details?id=de.youspeed.android) — Android 14 or later.
+- [iPhone on the App Store](https://apps.apple.com/de/app/youspeed-de/id6787469256) — iOS 17 or later.
 
-The direct Android release is available. The 1.3 rollout on Google Play and the App Store is pending; the store links open the version currently available there.
+[**Download the signed Android 1.4 APK**](https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.4/YouSpeed-1.4-100562.apk) — **arm64-v8a** (most current phones), approximately 362 MB, base build **10056**.
 
-- [Google Play](https://play.google.com/store/apps/details?id=de.youspeed.android)
-- [iPhone on the App Store](https://apps.apple.com/de/app/youspeed-de/id6787469256)
+For other devices, choose **armeabi-v7a**, **x86** or **x86_64** on the [Android 1.4 release page](https://github.com/volzinnovation/youspeed.de/releases/tag/android-v1.4). [SHA-256 checksums](https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.4/SHA256SUMS) and a [release verification record](https://github.com/volzinnovation/youspeed.de/releases/download/android-v1.4/release-verification.json) accompany the APKs. Download a map package before using offline road lookup.
 
 Scan to download the app or open its source code:
 
@@ -64,32 +72,34 @@ Website references: [Traffic-sign catalogue](https://youspeed.de/en/traffic-sign
 
 The mobile apps perform matching and warning logic on the device. Map bundles are downloaded from public GitHub releases and checked against their published metadata. No account or client-side GitHub credential is required.
 
-## Version 1.3 artwork
+## Version 1.4 artwork
 
 <table>
   <tr>
-    <td><img src="store/apple/screenshots/en-US/iphone-6.9/02-camera-speed-limit.png" alt="YouSpeed 1.3 on iPhone: automatic traffic sign recognition and clear speed display" width="260"></td>
-    <td><img src="store/apple/screenshots/en-US/iphone-6.9/03-secondary-sign.png" alt="YouSpeed 1.3 on iPhone: additional signs with sound or spoken feedback" width="260"></td>
-    <td><img src="store/apple/screenshots/en-US/iphone-6.9/04-dashcam.png" alt="YouSpeed 1.3 on iPhone: local dashcam recording" width="260"></td>
+    <td><img src="store/apple/screenshots/en-US/iphone-6.9/01-camera-speed-limit.png" alt="YouSpeed 1.4 on iPhone: automatic traffic sign recognition and clear speed display" width="260"></td>
+    <td><img src="store/apple/screenshots/en-US/iphone-6.9/02-live-assistance.png" alt="YouSpeed 1.4 on iPhone: live assistance and additional traffic signs" width="260"></td>
+    <td><img src="store/apple/screenshots/en-US/iphone-6.9/04-dashcam.png" alt="YouSpeed 1.4 on iPhone: local dashcam recording" width="260"></td>
   </tr>
 </table>
 
-<img src="store/android/listing/en-US/phone-screenshots/02-dashcam.png" alt="YouSpeed 1.3 on Android: local dashcam recording" width="800">
+<img src="store/android/listing/en-US/phone-screenshots/04-dashcam.png" alt="YouSpeed 1.4 on Android: local dashcam recording" width="800">
 
-These are native demonstration views from the 1.3 store artwork. The dashcam illustrations combine the app interface with a genuine recording frame; they are not live screenshots of that recording session. [Artwork provenance](store/README.md) and [dashcam composition details](docs/release/dashcam-composites-2026-10-03/README.md) are retained.
+These are native demonstration views prepared for the 1.4 store artwork. The dashcam illustrations combine the app interface with a genuine recording frame; they are not live screenshots of that recording session. [Artwork provenance](store/README.md) and [dashcam composition details](docs/release/dashcam-composites-2026-10-03/README.md) are retained.
 
 ## Camera features and current limitations
 
-Version 1.3 adds on-device recognition, dashcam recording and Panoramax photo capture on iPhone and Android. Recognition availability depends on the installed country model and device; field testing and country coverage continue to improve. Contributions and field testing in additional countries are welcome.
+Version 1.4 provides on-device recognition with supplementary-sign OCR, dashcam recording and Panoramax photo capture on iPhone and Android. Recognition availability depends on the installed country model and device; field testing and country coverage continue to improve. Contributions and field testing in additional countries are welcome.
 
 - **On-device traffic-sign recognition (TSR):** opt-in live recognition uses Core ML
   on iPhone and LiteRT with CameraX on Android. A detector/classifier pipeline
   combines candidate bursts over time and only a validated sign passage may
   affect the active speed context. Country models cover Belgium, Switzerland, Germany, France and the Netherlands.
-  Display coverage and live speed interpretation differ; supplementary plates
-  are displayed but are not interpreted in live inference. **The town-entry recognition is still under improvement.**
+  Display coverage and live speed interpretation differ; supplementary-sign text
+  can be read, displayed and spoken, but its conditions are not automatically
+  evaluated. **The town-entry recognition is still under improvement.**
 
-  *Ordinary recognition keeps no frame stream and sends no video or inference to the cloud.* See the [TSR contracts](shared/tsr/README.md) and
+  *Recognition runs on the device without uploading a video stream. Consented sign-database contributions automatically upload observations and selected sign crops separately.* See the [TSR contracts](shared/tsr/README.md),
+  [1.4 contribution behavior](docs/YOUSPEED_1_4_APP_IMPLEMENTATION.md) and
   [implementation specification](docs/VIDEO_TRAFFIC_SIGN_RECOGNITION_YOLO_SPEC.md).
 - **Dashcam:** the same camera session can independently provide an explicit,
   local-only dashcam recording, live preview, TSR frames, and Panoramax stills.
@@ -178,7 +188,7 @@ See [`android/README.md`](android/README.md), [`iphone/SpeedConsumerApp/README.m
 
 ## Privacy and safety
 
-YouSpeed keeps driving data, dashcam videos and captured photos on the device until the user chooses to share or upload them. Optional Panoramax uploads include location and capture metadata and require a connected account. Local diagnostic logging is enabled by default and can be switched off. Local recordings and build products are excluded from version control. The apps must not embed repository credentials or private release tokens.
+YouSpeed keeps dashcam videos and full street photos on the device until the user chooses to share or upload them. Optional Panoramax uploads include location and capture metadata and require a connected account. Separately, sign-database contributions require camera-use consent and automatically upload sign observations and selected sign crops, including over mobile data. Recognition works without contribution consent. Local diagnostic logging is enabled by default and can be switched off. Local recordings and build products are excluded from version control. The apps must not embed repository credentials or private release tokens.
 
 The software is provided without warranty and does not replace attentive driving, posted signs, or applicable law. See [`LICENSE`](LICENSE), [`SECURITY.md`](SECURITY.md), and the in-app legal and privacy information.
 

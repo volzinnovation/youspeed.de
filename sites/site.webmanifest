@@ -1,7 +1,7 @@
 {
   "name": "YouSpeed.de",
   "short_name": "YouSpeed.de",
-  "description": "YouSpeed 1.3 brings on-device traffic sign recognition, speed alerts, a dashcam and offline maps. Download Android directly or find the app in the stores.",
+  "description": "YouSpeed 1.4: traffic sign recognition with supplementary-sign OCR, speed alerts, a dashcam and offline maps. Now on the App Store for iPhone and Google Play for Android.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0b0e10",
