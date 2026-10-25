@@ -230,10 +230,12 @@ extension ConditionalOCRInterpretation {
                 && min(other.y+other.height,lower.y+lower.height) > max(other.y,lower.y)
         }) else { return .unresolved("ambiguous_parent") }
         if evidence.scan.status == .plain {
-            return evidence.scan.components.isEmpty && evidence.scan.decision == "quiet_lower_context"
+            let quiet = evidence.scan.decision == "quiet_lower_context"
                 && evidence.scan.lowerMinimum.map({ $0 >= 40 }) == true
                 && evidence.scan.lowerMinimum.flatMap({ low in evidence.scan.lowerMaximum.map { $0 >= low && $0-low <= 24 } }) == true
-                ? .plain : .unresolved("unproven_plain")
+            let background = evidence.scan.decision == "natural_background_without_panel" && evidence.scan.backgroundVerified
+                && c.width >= 80 && c.height >= 128
+            return evidence.scan.components.isEmpty && (quiet || background) ? .plain : .unresolved("unproven_plain")
         }
         guard evidence.scan.status == .complete, !evidence.scan.components.isEmpty,
               evidence.scan.components.count <= 3, let union = evidence.scan.union,

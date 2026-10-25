@@ -21,6 +21,7 @@ class TrafficSignConditionalAssemblyEvidence internal constructor(
     internal val passes:List<TrafficSignOCRPass>,
     internal val otherPrimaryBoxes:List<NormalizedTrafficSignBoundingBox>,
     internal val sourceContentRect:TrafficSignSupplementaryPixelRect=TrafficSignSupplementaryPixelRect(0,0,sourceWidth,sourceHeight),
+    internal val backgroundVerified:Boolean=false,
 ) {
     val revision="live-assembly-pixels-v1"
     internal enum class Kind { PLAIN, CONDITIONAL, UNRESOLVED }
@@ -43,8 +44,9 @@ class TrafficSignConditionalAssemblyEvidence internal constructor(
         if(otherPrimaryBoxes.any {it.x<contextRight && it.x+it.width>box.x && it.y<contextBottom && it.y+it.height>lowerTop})
             return unknown("another_primary_in_lower_context")
         if(scanStatus=="plain") {
-            return if(plateRects.isEmpty() && rawText.isNullOrBlank() && decision=="quiet_lower_context" &&
-                lowerLumaStd.isFinite() && lowerLumaStd in 0.0..18.0 && lowerEdgeFraction.isFinite() && lowerEdgeFraction in 0.0..0.015)
+            val quiet=decision=="quiet_lower_context" && lowerLumaStd.isFinite() && lowerLumaStd in 0.0..18.0 && lowerEdgeFraction.isFinite() && lowerEdgeFraction in 0.0..0.015
+            val background=decision=="natural_background_without_panel" && backgroundVerified && contextRect.width>=80 && contextRect.height>=128
+            return if(plateRects.isEmpty() && rawText.isNullOrBlank() && (quiet || background))
                 Validation(Kind.PLAIN,"measured_clear_lower_region") else unknown("plain_pixels_not_proven")
         }
         if(scanStatus!="complete" || plateRects.isEmpty() || plateRects.size>3) return unknown("assembly_scan_unresolved")

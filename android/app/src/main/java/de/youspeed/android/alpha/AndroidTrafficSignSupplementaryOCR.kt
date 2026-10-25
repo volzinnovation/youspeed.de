@@ -149,7 +149,7 @@ internal object AndroidTrafficSignSupplementaryOCR {
                     (y+it.y).toDouble()/sourceHeight, it.width.toDouble()/sourceWidth, it.height.toDouble()/sourceHeight) }
                 val evidence=read.scan?.let {scan -> TrafficSignConditionalAssemblyEvidence(request.physicalSignId,request.frameId,request.observedAt,sourceWidth,sourceHeight,context,
                     request.candidate.boundingBox,scan.plates,scan.status,read.decision,scan.lowerLumaStd,scan.lowerEdgeFraction,
-                    read.passes,request.otherPrimaryBoxes,sourceContentRect)}
+                    read.passes,request.otherPrimaryBoxes,sourceContentRect=sourceContentRect,backgroundVerified=scan.backgroundVerified)}
                 completion(request.annotation(read.raw, failed = read.failed, ocrBox = roi,
                     admitted = read.decision == "accepted", decision = read.decision, passes = read.passes,assemblyEvidence=evidence))
             }) { owned.recycle(); completion(request.annotation(null, failed = true)) }

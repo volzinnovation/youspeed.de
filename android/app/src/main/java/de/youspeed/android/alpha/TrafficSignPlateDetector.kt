@@ -7,7 +7,7 @@ data class TrafficSignPlateRect(val x: Int, val y: Int, val width: Int, val heig
 internal object TrafficSignPlateDetector {
     const val revision = "bounded-plate-frame-v1"
     data class Scan(val rect:TrafficSignPlateRect?,val plates:List<TrafficSignPlateRect>,val status:String,
-        val decision:String,val lowerLumaStd:Double,val lowerEdgeFraction:Double)
+        val decision:String,val lowerLumaStd:Double,val lowerEdgeFraction:Double,val backgroundVerified:Boolean=false)
     fun select(width:Int,height:Int,argb:IntArray):TrafficSignPlateRect? = scan(width,height,argb).rect
     fun scan(width: Int, height: Int, argb: IntArray): Scan {
         fun unresolved(reason:String)=Scan(null,emptyList(),"unresolved",reason,Double.POSITIVE_INFINITY,1.0)
@@ -99,9 +99,39 @@ internal object TrafficSignPlateDetector {
         // quiet lower region can supply negative plate evidence; busy scenes fail closed.
         val fullLower=(half until height).flatMap {y -> (0 until width).map {x ->val pixel=argb[y*width+x];((pixel ushr 16 and 255)+(pixel ushr 8 and 255)+(pixel and 255))/3}}
         val plain=fullLower.isNotEmpty() && fullLower.min()>=40 && fullLower.max()-fullLower.min()<=24
-        return Scan(null,emptyList(),if(plain) "plain" else "unresolved",
-            if(plain) "quiet_lower_context" else if(ambiguousPanel) "unread_or_ambiguous_panel" else "unresolved_lower_region",lowerStd,lowerEdges)
+        val background=!plain && !ambiguousPanel && naturalBackground(width,height,argb)
+        return Scan(null,emptyList(),if(plain || background) "plain" else "unresolved",
+            if(plain) "quiet_lower_context" else if(background) "natural_background_without_panel" else if(ambiguousPanel) "unread_or_ambiguous_panel" else "unresolved_lower_region",lowerStd,lowerEdges,background)
     }
+    fun naturalBackground(width:Int,height:Int,argb:IntArray):Boolean {
+        if(width<80 || height<128 || argb.size!=width*height) return false
+        val w=64;val h=48;val colors=IntArray(w*h);var vegetation=0;var dark=0
+        for(y in 0 until h)for(x in 0 until w) {
+            val p=argb[(height/2+y*(height-height/2)/h)*width+x*width/w]
+            val r=p ushr 16 and 255;val g=p ushr 8 and 255;val b=p and 255;val level=(r+g+b)/3
+            if(g>=b+8 && g>=r*.85 && maxOf(r,g,b)-minOf(r,g,b)>=24 && level>=30)vegetation++
+            if(level<25)dark++
+            colors[y*w+x]=(r/32)*64+(g/32)*8+b/32
+        }
+        if(vegetation.toDouble()/(w*h)<.60 || dark.toDouble()/(w*h)>=.12)return false
+        val visited=BooleanArray(w*h)
+        for(start in colors.indices) {
+            if(visited[start])continue
+            val queue=mutableListOf(start);var cursor=0;var left=start%w;var right=left;var top=start/w;var bottom=top
+            visited[start]=true
+            while(cursor<queue.size) {
+                val point=queue[cursor++];val x=point%w;val y=point/w
+                left=min(left,x);right=max(right,x);top=min(top,y);bottom=max(bottom,y)
+                for(next in listOf(if(x>0)point-1 else -1,if(x+1<w)point+1 else -1,if(y>0)point-w else -1,if(y+1<h)point+w else -1)) {
+                    if(next>=0 && !visited[next] && colors[next]==colors[start]){visited[next]=true;queue.add(next)}
+                }
+            }
+            val cw=right-left+1;val ch=bottom-top+1
+            if(cw>=14 && ch>=4 && queue.size>=max(18,cw*ch/2))return false
+        }
+        return true
+    }
+
     fun isPrimaryGraphic(width:Int,height:Int,argb:IntArray):Boolean {
         if(width<=0 || height<=0 || argb.size.toLong()!=width.toLong()*height)return true
         var count=0;var left=width;var right=0;var top=height

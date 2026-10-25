@@ -223,6 +223,7 @@
 		E79B104C239ECE5204DB66F2 /* RoadBoundaryMotionHint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38532CE100FF815E74A1BB2F /* RoadBoundaryMotionHint.swift */; };
 		EB295A5EF92B103765FD9F12 /* TrafficSignCountryPackRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 451AB91452C045D0505BEBD1 /* TrafficSignCountryPackRegistry.swift */; };
 		EBBAE7DC4BD4EAE590C1D7BB /* V3SpeedLimitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */; };
+		EE2B86AC7A530911AB8F68C5 /* conditional-ocr in Resources */ = {isa = PBXBuildFile; fileRef = DF842DA15A5D2241BA324109 /* conditional-ocr */; };
 		EE34AF79955C15D89CF73057 /* InventorySignRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09D11F15BE94BE98CEE272AA /* InventorySignRuntime.swift */; };
 		F165DD25454B37CA0C0D0156 /* collection-contract-v1 in Resources */ = {isa = PBXBuildFile; fileRef = A10A47E6F78B1DFA38EBE5F7 /* collection-contract-v1 */; };
 		F4619697F0D218CA52A31C65 /* GravityAlignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E65A06FABB9BD2F9609312D6 /* GravityAlignment.swift */; };
@@ -466,6 +467,7 @@
 		D9C66D2A672060D95BF1EC4E /* PenaltyDocumentationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PenaltyDocumentationView.swift; sourceTree = "<group>"; };
 		DA192C699CF631C166F2D212 /* TrafficSignSupplementaryPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignSupplementaryPresentationTests.swift; sourceTree = "<group>"; };
 		DD9CC95F2104420AF1B222D3 /* thueringen.poly */ = {isa = PBXFileReference; path = thueringen.poly; sourceTree = "<group>"; };
+		DF842DA15A5D2241BA324109 /* conditional-ocr */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "conditional-ocr"; path = "../shared/conditional-ocr"; sourceTree = SOURCE_ROOT; };
 		E1EF5534FE6EF8015DB05730 /* nl.lproj */ = {isa = PBXFileReference; path = nl.lproj; sourceTree = "<group>"; };
 		E28DFD331C3E008787B72552 /* SignCollectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionViews.swift; sourceTree = "<group>"; };
 		E4F90C183F635778082F98C2 /* TrafficSignDocumentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignDocumentationTests.swift; sourceTree = "<group>"; };
@@ -780,6 +782,7 @@
 			isa = PBXGroup;
 			children = (
 				8C96B1695E93488607A5558F /* attributions */,
+				DF842DA15A5D2241BA324109 /* conditional-ocr */,
 				04C2F0D2C62B67E17CA605B3 /* penalty-documentation */,
 				874EA64854A26F82F3A96D84 /* RegionalCoverage */,
 				55D16BE42ECC5E6CF4A4F7E3 /* speed-limit-reference */,
@@ -1044,6 +1047,7 @@
 				32B48593532676958DA45749 /* NLD-cases.json in Resources */,
 				CEEC3BFC77BC5AB78B80529C /* candidate-admission-v1.json in Resources */,
 				219944FAA45C0C35CADBEFA5 /* candidate-admission-v1.sql in Resources */,
+				EE2B86AC7A530911AB8F68C5 /* conditional-ocr in Resources */,
 				0A0D6E44B30C0B7BD65F3D08 /* fixtures in Resources */,
 				D4F2236AB2A34C2B9B460901 /* golden-vectors-v1.json in Resources */,
 				2FAC8A35F937FFD6B2E72A76 /* paca-exit-topology-v1.sql in Resources */,

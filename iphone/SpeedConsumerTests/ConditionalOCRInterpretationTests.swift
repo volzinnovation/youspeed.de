@@ -94,7 +94,8 @@ final class ConditionalOCRInterpretationTests: XCTestCase {
     }
     func testSharedTemplatesNeverDiscardResidualOrTruncatedText() throws {
         let root=URL(fileURLWithPath:#filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let data=try Data(contentsOf:root.appendingPathComponent("shared/conditional-ocr/templates-v1.json"))
+        let bundled=Bundle(for:Self.self).url(forResource:"templates-v1",withExtension:"json",subdirectory:"conditional-ocr")
+        let data=try Data(contentsOf:bundled ?? root.appendingPathComponent("shared/conditional-ocr/templates-v1.json"))
         let corpus=try XCTUnwrap(JSONSerialization.jsonObject(with:data) as? [String:Any])
         for item in try XCTUnwrap(corpus["cases"] as? [[String:Any]]) {
             let raw=try XCTUnwrap(item["raw"] as? String),parsed=ConditionalOCRInterpretation.parse(raw)
@@ -362,5 +363,24 @@ extension ConditionalOCRInterpretationTests {
             let at=iso(stamp),record=verified("22-6h",at:at)
             XCTAssertEqual(record.verdict(at:at,distanceM:100,scopeID:"road:10:forward",generation:1),expected)
         }
+    }
+}
+
+final class TrafficSignNaturalBackgroundTests: XCTestCase {
+    func testTexturedVegetationAllowsBareInspectionButPanelsAndDarknessDoNot() {
+        let width=160,height=256
+        var pixels=[UInt8](repeating:255,count:width*height*4)
+        for y in 0..<height {for x in 0..<width {let i=(y*width+x)*4
+            pixels[i]=UInt8(40+(x*13+y*17)%70);pixels[i+1]=UInt8(120+(x*11+y*7)%90);pixels[i+2]=UInt8(20+(x*5+y*23)%30)
+        }}
+        XCTAssertTrue(TrafficSignPlateDetector.naturalBackground(width:width,height:height,rgba:pixels))
+        XCTAssertEqual(TrafficSignPlateDetector.scan(width:width,height:height,rgba:pixels).status,.plain)
+        for y in 155..<195 {for x in 30..<130 {let i=(y*width+x)*4
+            pixels[i]=230;pixels[i+1]=230;pixels[i+2]=230
+        }}
+        XCTAssertFalse(TrafficSignPlateDetector.naturalBackground(width:width,height:height,rgba:pixels),"An unread panel must not become a bare sign")
+        XCTAssertNotEqual(TrafficSignPlateDetector.scan(width:width,height:height,rgba:pixels).status,.plain)
+        XCTAssertFalse(TrafficSignPlateDetector.naturalBackground(width:width,height:height,rgba:[UInt8](repeating:0,count:width*height*4)))
+        XCTAssertFalse(TrafficSignPlateDetector.naturalBackground(width:40,height:64,rgba:[UInt8](repeating:120,count:40*64*4)))
     }
 }

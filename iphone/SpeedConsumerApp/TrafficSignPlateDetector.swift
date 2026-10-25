@@ -15,6 +15,7 @@ struct TrafficSignPlateScan: Equatable, Sendable {
     let decision: String
     var lowerMinimum: Int? = nil
     var lowerMaximum: Int? = nil
+    var backgroundVerified = false
 }
 
 enum TrafficSignPlateDetector {
@@ -23,7 +24,8 @@ enum TrafficSignPlateDetector {
         scan(width: width, height: height, rgba: rgba).union
     }
     static func scan(width: Int, height: Int, rgba: [UInt8]) -> TrafficSignPlateScan {
-        if let detected = detect(width: width, height: height, rgba: rgba) { return detected }
+        var ambiguousPanel=false
+        if let detected = detect(width: width, height: height, rgba: rgba,ambiguousPanel:&ambiguousPanel) { return detected }
         guard width >= 48, height >= 64, width * height <= 4_000_000, rgba.count == width * height * 4 else {
             return .init(status: .unresolved, union: nil, components: [], decision: "native_context_invalid")
         }
@@ -36,10 +38,44 @@ enum TrafficSignPlateDetector {
             low = min(low, value); high = max(high, value)
         } }
         let clear = low >= 40 && high - low <= 24
-        return .init(status: clear ? .plain : .unresolved, union: nil, components: [],
-                     decision: clear ? "quiet_lower_context" : "ambiguous_or_incomplete_context", lowerMinimum: low, lowerMaximum: high)
+        let background = !clear && !ambiguousPanel && naturalBackground(width:width,height:height,rgba:rgba)
+        return .init(status: clear || background ? .plain : .unresolved, union: nil, components: [],
+                     decision: clear ? "quiet_lower_context" : background ? "natural_background_without_panel" : "ambiguous_or_incomplete_context",
+                     lowerMinimum: low, lowerMaximum: high, backgroundVerified:background)
     }
-    private static func detect(width: Int, height: Int, rgba: [UInt8]) -> TrafficSignPlateScan? {
+    /// Negative plate evidence may contain trees/grass rather than a flat wall.
+    /// Inspect native lower pixels, reject panel-sized coherent surfaces of ANY
+    /// colour, and require a predominantly textured vegetation background.
+    static func naturalBackground(width:Int,height:Int,rgba:[UInt8]) -> Bool {
+        guard width>=80,height>=128,rgba.count==width*height*4 else {return false}
+        let w=64,h=48
+        var colors=[Int](repeating:0,count:w*h),vegetation=0,dark=0
+        for y in 0..<h {for x in 0..<w {
+            let sx=x*width/w,sy=height/2+y*(height-height/2)/h,i=(sy*width+sx)*4
+            let r=Int(rgba[i]),g=Int(rgba[i+1]),b=Int(rgba[i+2]),level=(r+g+b)/3
+            if g>=b+8 && Double(g)>=Double(r)*0.85 && max(r,g,b)-min(r,g,b)>=24 && level>=30 {vegetation+=1}
+            if level<25 {dark+=1}
+            colors[y*w+x]=(r/32)*64+(g/32)*8+b/32
+        }}
+        guard Double(vegetation)/Double(w*h)>=0.60, Double(dark)/Double(w*h)<0.12 else {return false}
+        var visited=[Bool](repeating:false,count:w*h)
+        for start in 0..<(w*h) where !visited[start] {
+            var queue=[start],cursor=0,left=start%w,right=left,top=start/w,bottom=top
+            visited[start]=true
+            while cursor<queue.count {
+                let point=queue[cursor];cursor+=1;let x=point%w,y=point/w
+                left=min(left,x);right=max(right,x);top=min(top,y);bottom=max(bottom,y)
+                for next in [x>0 ? point-1 : -1,x+1<w ? point+1 : -1,y>0 ? point-w : -1,y+1<h ? point+w : -1] where next>=0 {
+                    if !visited[next] && colors[next]==colors[start] {visited[next]=true;queue.append(next)}
+                }
+            }
+            let cw=right-left+1,ch=bottom-top+1
+            if cw>=14 && ch>=4 && queue.count>=max(18,cw*ch/2) {return false}
+        }
+        return true
+    }
+
+    private static func detect(width: Int, height: Int, rgba: [UInt8],ambiguousPanel:inout Bool) -> TrafficSignPlateScan? {
         guard width >= 48, height >= 64, width * height <= 4_000_000, rgba.count == width * height * 4 else { return nil }
         let half = height / 2, overlap = min(half, max(5, min(16, Int((Double(width) * 0.08).rounded()))))
         let start = half - overlap, nativeHeight = height - start
@@ -146,6 +182,7 @@ enum TrafficSignPlateDetector {
                     decision: complete ? "all_framed_panels" : "clipped_or_parent_overlap")
             }
         }
+        ambiguousPanel=unsafePanel
         return nil
     }
 
