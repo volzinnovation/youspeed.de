@@ -2771,6 +2771,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if trafficSignApplicationIsActive != isActive { trafficSignBundleContextTracker.reset() }
         if trafficSignApplicationIsActive != isActive { invalidateUpcomingSpeedLimit(reason: "lifecycle_changed") }
         trafficSignApplicationIsActive = isActive
+        if isActive && !isScreenshotMode {
+            Task { [weak self] in await self?.refreshSelectedBundleAfterForeground() }
+        }
         RoadworksService.shared.session(driving: isDriving, foreground: isActive)
         if isActive && !isScreenshotMode {
             drivingControlPostureMotion.start { [weak self] angle in
@@ -2793,6 +2796,31 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         updateTrafficSignWriteGate()
         refreshTrafficSignFrameSnapshot()
         reconcileAutomaticCapture(allowTerminalRetry: isActive)
+    }
+
+    /// Reconcile the persisted selection before retaining a background session's
+    /// SQLite connection. Routing still resolves border/coverage choices on GPS.
+    private func refreshSelectedBundleAfterForeground() async {
+        guard startupDataState == .ready, !isScreenshotMode else { return }
+        let generation = trafficSignContextGeneration
+        do {
+            guard let route = try await bundleManager.selectedLocalBundleRoute(),
+                  trafficSignApplicationIsActive, generation == trafficSignContextGeneration,
+                  route.dbPath != activeDBPath || route.bundleVersion != activeBundleVersion || route.dbSHA256 != activeBundleDBSHA256 else { return }
+            // A different regional selection must not override a currently
+            // routed foreign-country map merely because the app foregrounded.
+            if let activeMapCountryCode, let selectedCountry = normalizedCountryCode(route.countryCode),
+               activeMapCountryCode != selectedCountry { return }
+            mapLookupWorker.cancel()
+            invalidateTrafficSignOverrideForBaseSourceMutation()
+            speedReference.boundary("bundle_changed")
+            conditionalOCRLive.removeAll(); conditionalOCRLiveAliases.removeAll()
+            speedLimitServicePool.removeAll()
+            activeDBPath = route.dbPath; activeBundleVersion = route.bundleVersion; activeBundleDBSHA256 = route.dbSHA256
+            speedLimitService = makeSpeedLimitService(dbPath: route.dbPath)
+            await applyCountryContextForActiveBundle()
+            appendTSRLog("active_bundle_reconciled version=\(route.bundleVersion) sha256=\(route.dbSHA256 ?? "unverified")",timestamp:Date())
+        } catch { Self.logger.error("active bundle refresh failed: \(error.localizedDescription,privacy:.public)") }
     }
 
     /// Re-evaluate with wall-clock time, even without a new GPS fix (e.g. at sunset).

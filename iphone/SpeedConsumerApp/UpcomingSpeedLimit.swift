@@ -316,6 +316,50 @@ enum UpcomingSpeedLimitBundle {
         guard result?.startNode == via else { return nil }; return result
     }
 
+    /// A preview may remain on this exact directed OSM way through a side
+    /// junction. It does not choose another road or change current authority.
+    private static func sameWaySuccessor(_ db:OpaquePointer,_ resources:V3LookupResources,_ current:Segment) -> Segment? {
+        guard let endNode=current.endNode else {return nil}
+        var found:[Segment]=[]
+        let sql="SELECT \(segmentColumns.split(separator:",").map { "s."+$0 }.joined(separator:",")) FROM upcoming_path_segment s JOIN upcoming_path_way w ON w.way_id=s.way_id JOIN upcoming_path_node n ON n.node_id=s.start_node_id WHERE s.way_id=? AND s.direction=? AND s.start_node_id=? AND s.segment_id<>? AND s.permission_status='allowed' AND w.geometry_verified=1 AND w.restriction_barrier=0 AND n.restriction_barrier=0 LIMIT 2"
+        _ = rows(db,resources,sql,bind:{q in
+            text(q,1,current.way);sqlite3_bind_int(q,2,Int32(current.direction));sqlite3_bind_int64(q,3,endNode);sqlite3_bind_int64(q,4,current.id ?? -1)
+        },body:{q in if let item=decodeSegment(q) {found.append(item)}})
+        guard found.count==1,let next=found.first,
+              abs((current.direction==1 ? current.end : current.start)-(current.direction==1 ? next.start : next.end))<=0.01 else {return nil}
+        return next
+    }
+    private static func previewSuccessor(_ db:OpaquePointer,_ resources:V3LookupResources,_ current:Segment) -> Segment? {
+        successor(db,resources,current) ?? sameWaySuccessor(db,resources,current)
+    }
+    /// Explicit OSM road limits can be previewed at a certified road boundary.
+    /// This is map evidence, never a fabricated physical sign or a camera claim.
+    private static func mappedBoundary(_ db:OpaquePointer,_ resources:V3LookupResources,_ segment:Segment,distance:Double) -> UpcomingSpeedLimitCandidate? {
+        guard distance>0 else {return nil}
+        let supported=resources.capability("upcoming:road_tags") {
+            var found=false
+            _ = rows(db,resources,"SELECT version FROM road_speed_capability LIMIT 1",body:{found=sqlite3_column_int($0,0)==1})
+            return found
+        }
+        guard supported else {return nil}
+        var values:[String:String]=[:],snapshots:[String:String]=[:]
+        _ = rows(db,resources,"SELECT key,raw_value,source_snapshot FROM road_speed_source_tag WHERE way_id=?",bind:{text($0,1,segment.way)},body:{q in
+            if let key=string(q,0),let value=string(q,1) {values[key]=value;snapshots[key]=string(q,2)}
+        })
+        let allowed:Set<String>=["maxspeed","maxspeed:forward","maxspeed:backward","maxspeed:type","maxspeed:source"]
+        guard !values.keys.contains(where:{$0.contains("conditional") || ($0.hasPrefix("maxspeed:") && !allowed.contains($0))}) else {return nil}
+        let directional=segment.direction==1 ? "maxspeed:forward" : "maxspeed:backward"
+        let key=values[directional] == nil ? "maxspeed" : directional
+        guard let raw=values[key],let sha=snapshots[key],sha.count==64,sha.allSatisfy({$0.isHexDigit}),let value=Int(raw.trimmingCharacters(in:.whitespacesAndNewlines)),(1...300).contains(value) else {return nil}
+        let station=segment.direction==1 ? segment.start : segment.end,probe=station+Double(segment.direction)*0.001
+        var physical=false
+        _ = rows(db,resources,"SELECT 1 FROM traffic_sign_way_rule WHERE way_id=? AND direction=? AND speed_kmh IS NOT NULL AND association_status='accepted' AND lane_scope='all' AND start_chainage_m<=? AND end_chainage_m>=? LIMIT 1",bind:{q in
+            text(q,1,segment.way);sqlite3_bind_int(q,2,Int32(segment.direction));sqlite3_bind_double(q,3,probe);sqlite3_bind_double(q,4,probe)
+        },body:{_ in physical=true})
+        guard !physical else {return nil}
+        return .init(signID:"osm-road-boundary:\(segment.way):\(segment.direction)",sourceID:"osm-road-tag",snapshotSHA256:sha,ruleID:"osm-way:\(segment.way)",originWayID:segment.way,direction:segment.direction,stationM:station,speedKmh:value,distanceM:distance)
+    }
+
     /// Produces provisional split geometry; the controller must verify the retained path certificate.
     /// Primary inventory admission stays unchanged.
     static func previewContext(db: OpaquePointer, resources: V3LookupResources, inventory: InventorySignLookup?,
@@ -455,6 +499,11 @@ enum UpcomingSpeedLimitBundle {
                         continuing = ok && childOffers.count == 1 && childOffers.first?.0 == event.id
                             && (townEntry ? childOffers.first?.1 == nil && childOffers.first?.4 == 1 : childOffers.first?.1 == value)
                             && childOffers.first?.2 == "accepted" && childOffers.first?.3 == "all"
+                        if !continuing, !townEntry, rule.start == rule.end,
+                           let mapped=mappedBoundary(db,resources,next,distance:travelled+Double(current.direction)*(event.station-origin)),mapped.speedKmh==Int(value) {
+                            clusterCandidates.append(mapped)
+                            continue
+                        }
                     }
                     guard continuing else { blocked = true; break }
                     // The SQL range already proves the horizon. Clamp cancellation at the
@@ -481,8 +530,9 @@ enum UpcomingSpeedLimitBundle {
                 }
             }
             guard travelled < lookaheadDistance, span >= available - 0.001, canTraverse, !common.isEmpty,
-                  let next = successor(db, resources, current) else { break }
+                  let next = previewSuccessor(db, resources, current) else { break }
             guard segmentIndex + 1 < maximumSegments else { reason = "work_cap"; break }
+            if next.way != current.way, !common.isDisjoint(with:groups(db,resources,next.way)), let mapped=mappedBoundary(db,resources,next,distance:travelled) {candidates.append(mapped)}
             current = next; origin = next.direction == 1 ? next.start : next.end; includeEntry = true
         }
         if DispatchTime.now().uptimeNanoseconds > deadline { candidates = []; reason = "budget_exceeded" }

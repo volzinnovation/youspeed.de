@@ -22,3 +22,15 @@ Native SQLite tests and the Python topology builder tests separately verify
 physical station queries, interval applicability, source-node connectivity,
 conflicts, junction stops and path distances. Preview fixtures do not change the
 protected speed-limit-reference policy.
+
+The 24 October turnaround repair permits a preview to follow unique contiguous
+segments of the **same directed OSM way** through a side junction, with verified
+geometry, allowed motorcar travel and no way/node restriction barrier. Choosing
+a different way still requires the certified unbranched source-node successor
+and a shared followed relation. A plain numeric `road_speed_capability=1` OSM
+tag may supply a map-boundary preview there, carrying its real source snapshot
+and an `osm-road-boundary:` identity. It does not assert a physical sign or alter
+the current limit. Conditional/vehicle-specific tags remain withheld. An
+endpoint-only physical numeric rule may be supported by an equal independently
+verified mapped boundary; the preview then retains the map identity. Town
+locality does not suppress an explicit mapped numeric limit at the boundary.

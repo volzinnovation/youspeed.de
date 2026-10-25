@@ -142,13 +142,14 @@ final class UpcomingSpeedLimitTests: XCTestCase {
                 let id: String; let wayID: String; let direction: Int; let chainageM: Double
                 let points: [[Double]]; let lat: Double; let lon: Double; let headingDeg: Double
                 let relationGroupIDs: [Int]; let expectedSignID: String; let expectedSpeedKmh: Int
-                let expectedDistanceM: Double; let expectedOriginWayID: String
+                let expectedDistanceM: Double; let expectedOriginWayID: String; let drivingSpeedKmh:Double?
             }
             let format: String; let cases: [Case]
         }
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let staged=FileManager.default.urls(for:.documentDirectory,in:.userDomainMask)[0].appendingPathComponent("turnaround-probe")
         let directory = ProcessInfo.processInfo.environment["YOUSPEED_UPCOMING_BW_PROBE_DIR"].map { URL(fileURLWithPath: $0) }
-            ?? root.appendingPathComponent("output/upcoming-speed-limit-bw-probe")
+            ?? (FileManager.default.fileExists(atPath:staged.appendingPathComponent("cases.json").path) ? staged : root.appendingPathComponent("output/upcoming-speed-limit-bw-probe"))
         guard FileManager.default.fileExists(atPath: directory.appendingPathComponent("cases.json").path) else {
             throw XCTSkip("Optional BW source-derived probe is not present")
         }
@@ -168,8 +169,8 @@ final class UpcomingSpeedLimitTests: XCTestCase {
             for iteration in 0..<30 {
                 let result = try XCTUnwrap(UpcomingSpeedLimitBundle.lookup(db: session.db, resources: resources,
                     inventory: .init(signs: [], activeRule: nil, wayID: item.wayID, direction: item.direction, chainageM: item.chainageM),
-                    points: points, relationGroupIDs: item.relationGroupIDs))
-                let candidate = try XCTUnwrap(result.candidates.first, item.id + ": " + result.reason)
+                    points: points, relationGroupIDs: item.relationGroupIDs,speedKmh:item.drivingSpeedKmh))
+                let candidate = try XCTUnwrap(result.candidates.first(where:{$0.signID==item.expectedSignID}), item.id + ": " + result.reason)
                 XCTAssertTrue(result.topologyAvailable, item.id)
                 XCTAssertEqual(candidate.signID, item.expectedSignID, item.id)
                 XCTAssertEqual(candidate.speedKmh, item.expectedSpeedKmh, item.id)

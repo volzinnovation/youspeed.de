@@ -6,6 +6,18 @@ the local BW 1.5 bundle are recorded in
 Date: 23 October 2026. Applies equally to iPhone and Android.
 Assessment: current working tree, including the local v1.5 sign-runtime work.
 
+24 October repair: the owner's missing-preview request adds explicitly sourced
+map-boundary previews to the physical-station implementation below. A verified
+plain numeric OSM tag at a certified cross-way boundary may supply a candidate
+with `sourceID=osm-road-tag`, its actual source snapshot, and an
+`osm-road-boundary:<way>:<direction>` identity. It must share the followed
+relation and cannot contain unresolved conditional/vehicle-specific maxspeed
+tags. It never represents a physical sign or changes current authority.
+Unique contiguous segments of the same directed way can continue through side
+junctions when geometry/access are verified and no restriction barrier exists.
+Different-way choices retain the certified unbranched successor requirement.
+All existing horizon, freshness, lower-value, passage and display guards apply.
+
 ## 1. Requested behavior and feasibility
 
 Show one upcoming **lower numeric speed limit and its remaining distance** when

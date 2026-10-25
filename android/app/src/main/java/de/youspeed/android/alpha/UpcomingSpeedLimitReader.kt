@@ -4,7 +4,7 @@ import android.database.sqlite.SQLiteDatabase
 import org.json.JSONArray
 import kotlin.math.*
 
-/** Bounded indexed reads. Never substitutes nearby artwork or way-speed boundaries for signs. */
+/** Bounded directed previews from physical origins and explicit mapped road boundaries. */
 internal class UpcomingSpeedLimitReader(private val db: SQLiteDatabase, private val allowMobiData: Boolean = true) {
     private data class Segment(val id: String?, val way: String, val direction: Int, val start: Double, val end: Double, val length: Double, val startNode: String? = null, val endNode: String? = null)
     private data class Event(val sign: String, val source: String, val snapshot: String, val kind: String,
@@ -96,9 +96,10 @@ internal class UpcomingSpeedLimitReader(private val db: SQLiteDatabase, private 
             val exitDistance = entryDistance + segment.length
             if (exitDistance >= lookaheadDistanceM && candidates.none { it.originWayID == segment.way && abs(it.distanceM-exitDistance) < 1e-6 }) break
             if (!topology || common.isEmpty()) { reason = if (!topology) "same_way_only" else "no_relation"; break }
-            val next = successor(segment)
+            val next = successor(segment) ?: sameWaySuccessor(segment)
             if (next == null) { reason = "topology_stop"; break }
             if (geometry(next.way) == null) { reason = "missing_geometry"; break }
+            if(next.way!=segment.way && common.intersect(relations(next.way)).isNotEmpty()) mappedBoundary(next,exitDistance)?.let {candidates+=it}
             entryDistance = exitDistance
             segment = next
             if (index == UpcomingSpeedLimitHorizon.maxPathSegments - 1) reason = "work_cap"
@@ -123,6 +124,27 @@ internal class UpcomingSpeedLimitReader(private val db: SQLiteDatabase, private 
     }
     private fun successor(segment: Segment): Segment? = db.rawQuery("SELECT s.segment_id,s.way_id,s.direction,s.start_chainage_m,s.end_chainage_m,s.length_m,s.start_node_id,s.end_node_id,n.via_node_id FROM upcoming_path_successor n JOIN upcoming_path_segment s ON s.segment_id=n.to_segment_id WHERE n.from_segment_id=? AND n.status='certified' AND n.proof='source_node_unbranched_unmerged_v1' AND s.permission_status='allowed'", arrayOf(segment.id)).use { c ->
         if(!c.moveToFirst() || c.getType(8)!=android.database.Cursor.FIELD_TYPE_INTEGER || c.getLong(8)<=0) null else decodeSegment(c)?.takeIf { segment.endNode == c.getString(8) && it.startNode == c.getString(8) }
+    }
+    private fun sameWaySuccessor(segment:Segment):Segment? = runCatching {
+        val found=db.rawQuery("SELECT s.segment_id,s.way_id,s.direction,s.start_chainage_m,s.end_chainage_m,s.length_m,s.start_node_id,s.end_node_id FROM upcoming_path_segment s JOIN upcoming_path_way w ON w.way_id=s.way_id JOIN upcoming_path_node n ON n.node_id=s.start_node_id WHERE s.way_id=? AND s.direction=? AND s.start_node_id=? AND s.segment_id<>? AND s.permission_status='allowed' AND w.geometry_verified=1 AND w.restriction_barrier=0 AND n.restriction_barrier=0 LIMIT 2",arrayOf(segment.way,"${segment.direction}",segment.endNode,segment.id)).use {c ->buildList {while(c.moveToNext()) decodeSegment(c)?.let {add(it)}}}
+        found.singleOrNull()?.takeIf {abs((if(segment.direction>0)segment.end else segment.start)-(if(segment.direction>0)it.start else it.end))<=.01}
+    }.getOrNull()
+    private fun mappedBoundary(segment:Segment,distance:Double):UpcomingSpeedLimitCandidate? {
+        if(distance<=0) return null
+        val supported=runCatching {db.rawQuery("SELECT version FROM road_speed_capability LIMIT 1",null).use {it.moveToFirst() && it.getInt(0)==1}}.getOrDefault(false)
+        if(!supported)return null
+        val snapshots=mutableMapOf<String,String>()
+        val tags=db.rawQuery("SELECT key,raw_value,source_snapshot FROM road_speed_source_tag WHERE way_id=?",arrayOf(segment.way)).use {c->buildMap {while(c.moveToNext()){put(c.getString(0),c.getString(1));if(!c.isNull(2))snapshots[c.getString(0)]=c.getString(2)}}}
+        val allowed=setOf("maxspeed","maxspeed:forward","maxspeed:backward","maxspeed:type","maxspeed:source")
+        if(tags.keys.any {it.contains("conditional") || (it.startsWith("maxspeed:") && it !in allowed)}) return null
+        val directional=if(segment.direction>0)"maxspeed:forward" else "maxspeed:backward"
+        val key=if(tags.containsKey(directional))directional else "maxspeed"
+        val snapshot=snapshots[key]?.takeIf {it.matches(Regex("[0-9a-fA-F]{64}"))} ?: return null
+        val value=tags[key]?.trim()?.toIntOrNull()?.takeIf {it in 1..300} ?: return null
+        val station=if(segment.direction>0)segment.start else segment.end;val probe=station+segment.direction*.001
+        val physical=db.rawQuery("SELECT 1 FROM traffic_sign_way_rule WHERE way_id=? AND direction=? AND speed_kmh IS NOT NULL AND association_status='accepted' AND lane_scope='all' AND start_chainage_m<=? AND end_chainage_m>=? LIMIT 1",arrayOf(segment.way,"${segment.direction}","$probe","$probe")).use {it.moveToFirst()}
+        if(physical)return null
+        return UpcomingSpeedLimitCandidate("osm-road-boundary:${segment.way}:${segment.direction}","osm-road-tag",snapshot,"osm-way:${segment.way}",segment.way,segment.direction,station,value,distance)
     }
     private fun events(segment: Segment, entryDistance: Double, lookaheadDistanceM: Double): List<Event> {
         val entry = if(segment.direction>0) segment.start else segment.end
@@ -161,7 +183,8 @@ internal class UpcomingSpeedLimitReader(private val db: SQLiteDatabase, private 
         val nextLength=geometry(next.way)?.zipWithNext()?.sumOf { distance(it.first,it.second) } ?: return null
         val post = db.rawQuery("SELECT sign_id,speed_kmh,association_status,lane_scope,start_chainage_m,end_chainage_m,station_chainage_m,${if (hasCityRule) "inside_city" else "NULL"} FROM traffic_sign_way_rule WHERE way_id=? AND direction=? AND ((direction=1 AND start_chainage_m<=? AND end_chainage_m>?) OR (direction=-1 AND start_chainage_m<? AND end_chainage_m>=?)) LIMIT 3", arrayOf(next.way,"${next.direction}","$entry","$entry","$entry","$entry")).use { c -> c.count==1 && c.moveToFirst() && listOf(4,5,6).all { number(c,it) } && c.getString(0)==event.sign &&
             (if (townEntry) c.isNull(1) && number(c,7) && c.getInt(7)==1 else number(c,1) && c.getDouble(1)==speed.toDouble()) && c.getString(2)=="accepted" && c.getString(3)=="all" && c.getDouble(4)>=0 && c.getDouble(5)>c.getDouble(4) && c.getDouble(5)<=nextLength+0.01 && abs(c.getDouble(6)-entry)<1e-6 }
-        return if(post) UpcomingSpeedLimitCandidate(event.sign,event.source,event.snapshot,origin,segment.way,segment.direction,event.station,speed,remaining) else null
+        return if(post) UpcomingSpeedLimitCandidate(event.sign,event.source,event.snapshot,origin,segment.way,segment.direction,event.station,speed,remaining)
+            else if(!townEntry) mappedBoundary(next,remaining)?.takeIf {it.speedKmh==speed} else null
     }
     private fun geometry(way: String): List<Pair<Double,Double>>? {
         geometryCache[way]?.let { return it }

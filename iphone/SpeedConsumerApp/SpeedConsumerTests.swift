@@ -7541,19 +7541,20 @@ final class SpeedConsumerTests: XCTestCase {
         let old=try install("baden-wuerttemberg","2026-10-23-v1.5-lookahead","old.sqlite")
         let adjacent=try install("alsace","v1","alsace.sqlite")
         let manager=V3BundleManager(fileManager:fm,session:URLSession(configuration:.ephemeral))
+        func canonical(_ url:URL)->String {url.resolvingSymlinksInPath().standardizedFileURL.path}
         let initial=try await manager.resolveLocalBundleRoutes(lat:48.5,lon:8.5,fallbackDBPath:nil)
-        XCTAssertEqual(Set(initial.map(\.dbPath)),Set([old.path,adjacent.path]))
+        XCTAssertEqual(Set(initial.map(\.dbPath)),Set([canonical(old),canonical(adjacent)]))
         func activate(_ db:URL,_ version:String) throws {
             let state=ActiveBundleState(region:"baden-wuerttemberg",bundleVersion:version,dbFileName:db.lastPathComponent,activatedAtUTC:"2026-10-24T10:00:00Z",dbPath:db.path)
             try JSONEncoder().encode(state).write(to:root.appendingPathComponent("active_bundle.json"),options:.atomic)
         }
         try activate(selected,"2026-10-23-v1.5-journal-conditional")
         let updated=try await manager.resolveLocalBundleRoutes(lat:48.5,lon:8.5,fallbackDBPath:nil)
-        XCTAssertEqual(Set(updated.map(\.dbPath)),Set([selected.path,adjacent.path]))
+        XCTAssertEqual(Set(updated.map(\.dbPath)),Set([canonical(selected),canonical(adjacent)]))
         XCTAssertTrue(fm.fileExists(atPath:old.path))
         try activate(old,"2026-10-23-v1.5-lookahead")
         let rollback=try await manager.resolveLocalBundleRoutes(lat:48.5,lon:8.5,fallbackDBPath:nil)
-        XCTAssertEqual(Set(rollback.map(\.dbPath)),Set([old.path,adjacent.path]))
+        XCTAssertEqual(Set(rollback.map(\.dbPath)),Set([canonical(old),canonical(adjacent)]))
     }
 
     func testResolvePenaltyRuleContextUsesManifestCountryAndRulesFile() async throws {

@@ -294,6 +294,14 @@ actor V3BundleManager {
         return try decoder.decode(ActiveBundleState.self, from: data)
     }
 
+    func selectedLocalBundleRoute() throws -> LocalBundleRoute? {
+        guard let state = try activeState() else { return nil }
+        let url = try resolveDatabaseURL(for: state).resolvingSymlinksInPath().standardizedFileURL
+        guard installedDatabaseIsAvailable(at:url) else { return nil }
+        return LocalBundleRoute(region:state.region,bundleVersion:state.bundleVersion,countryCode:decodeManifestIfPresent(at:url.deletingLastPathComponent().appendingPathComponent("bundle-manifest.v3.json"))?.countryCode,
+            dbPath:url.path,dbSHA256:state.dbSHA256)
+    }
+
     func activeDatabaseURL() throws -> URL? {
         guard let state = try activeState() else {
             return nil
@@ -1471,7 +1479,7 @@ actor V3BundleManager {
 
     private func loadCoverageEntriesIfNeeded(forceReload: Bool = false) throws -> [CoverageEntry] {
         let now = Date()
-        let selectedDBPath = try activeDatabaseURL()?.path
+        let selectedDBPath = try activeDatabaseURL()?.resolvingSymlinksInPath().standardizedFileURL.path
         if !forceReload,
            let updatedAt = coverageCacheUpdatedAt,
            selectedDBPath == coverageCacheSelectedDBPath,
@@ -1524,7 +1532,7 @@ actor V3BundleManager {
                     region: manifest.region,
                     bundleVersion: manifest.bundleVersion,
                     countryCode: manifest.countryCode,
-                    dbPath: dbURL.path,
+                    dbPath: dbURL.resolvingSymlinksInPath().standardizedFileURL.path,
                     dbSHA256: expectedInstalledSHA256(for: manifest.db),
                     bbox: coverage.bbox,
                     rings: rings
