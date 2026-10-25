@@ -87,7 +87,7 @@ final class TripJournalTests: XCTestCase {
             let unknown = JournalHistoryPresentation.endpointNames(trip: [:], events: gps + [remote])
             XCTAssertEqual(unknown.start, journalText("location_unknown")); XCTAssertEqual(unknown.end, journalText("location_unknown"))
             let gap = JournalEvent(["seq": 501.0, "kind": "gap", "time": at.addingTimeInterval(-2).timeIntervalSince1970, "payload": "{}"])
-            let onlyStart = events.filter { $0.kind != "place" || $0.time < at }
+            let onlyStart = events.filter { $0.kind != "place" || $0.payload["street_name"] as? String != "Zielstraße" }
             XCTAssertEqual(JournalHistoryPresentation.endpointNames(trip: [:], events: onlyStart + [gap]).end, journalText("location_unknown"))
             let boundaryGap = JournalEvent(["seq": 502.0, "kind": "gap", "time": at.timeIntervalSince1970, "payload": "{}"])
             XCTAssertEqual(JournalHistoryPresentation.endpointNames(trip: [:], events: events + [boundaryGap]).end, "Zielstraße, Karlsruhe")
@@ -523,6 +523,60 @@ extension TripJournalTests {
 }
 
 extension TripJournalTests {
+    func testDelayedPlaceCallbacksAreIncludedBeforeHistoryIsFrozen() throws {
+        try withJournal { journal, _ in
+            journal.setEnabled(true); journal.start()
+            let id = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String), at = Date()
+            journal.location(fix(49, at: at))
+            journal.location(fix(49.0001, at: at.addingTimeInterval(0.5)))
+            journal.stop(at: at.addingTimeInterval(0.75))
+            let pending = try XCTUnwrap(journal.snapshot().trips.first)
+            XCTAssertEqual(pending["history_version"] as? Double, 0)
+            journal.matchedPlace(at: at, streetName: "Startstraße", cityName: "Karlsruhe", latitude: 49, longitude: 8, accuracy: 3)
+            journal.matchedPlace(at: at.addingTimeInterval(0.5), streetName: "Zielstraße", cityName: "Karlsruhe", latitude: 49.0001, longitude: 8, accuracy: 3)
+            _ = journal.snapshot(); journal.completeFinalizerForTesting()
+            let saved = try XCTUnwrap(journal.snapshot().trips.first)
+            XCTAssertEqual(saved["start_place"] as? String, "Startstraße, Karlsruhe")
+            XCTAssertEqual(saved["end_place"] as? String, "Zielstraße, Karlsruhe")
+            XCTAssertEqual(saved["history_version"] as? Double, 2)
+            for key in ["distance", "end", "duration"] { XCTAssertEqual(saved[key] as? Double, pending[key] as? Double, key) }
+        }
+    }
+
+    func testMissingVersionOneNamesAreRepairedOnceWithoutReplacingSavedNames() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite = "history-repair-\(UUID().uuidString)", prefs = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { prefs.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: root) }
+        let journal = TripJournal(directory: root, preferences: prefs, heartbeat: false)
+        journal.setEnabled(true); journal.start(); _ = journal.snapshot()
+        let at = Date()
+        journal.location(fix(49, at: at))
+        journal.matchedPlace(at: at, streetName: "Captured", cityName: nil, latitude: 49, longitude: 8, accuracy: 3)
+        journal.stop(); _ = journal.snapshot(); journal.completeFinalizerForTesting()
+        let before = try XCTUnwrap(journal.snapshot().trips.first)
+        journal.close()
+        var connection: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("trips.sqlite").path, &connection), SQLITE_OK)
+        XCTAssertEqual(sqlite3_exec(connection, "UPDATE trips SET start_place='Preserved',end_place=NULL,history_version=1", nil, nil, nil), SQLITE_OK)
+        sqlite3_close(connection)
+        let repaired = TripJournal(directory: root, preferences: prefs, heartbeat: false)
+        let after = try XCTUnwrap(repaired.snapshot().trips.first)
+        XCTAssertEqual(after["start_place"] as? String, "Preserved")
+        XCTAssertEqual(after["end_place"] as? String, "Captured")
+        XCTAssertEqual(after["history_version"] as? Double, 2)
+        for key in ["distance", "end", "duration"] { XCTAssertEqual(after[key] as? Double, before[key] as? Double, key) }
+        repaired.close()
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("trips.sqlite").path, &connection), SQLITE_OK)
+        XCTAssertEqual(sqlite3_exec(connection, "DELETE FROM events; UPDATE trips SET end_place=NULL", nil, nil, nil), SQLITE_OK)
+        sqlite3_close(connection)
+        let reopened = TripJournal(directory: root, preferences: prefs, heartbeat: false)
+        defer { reopened.close() }
+        let stable = try XCTUnwrap(reopened.snapshot().trips.first)
+        XCTAssertEqual(stable["start_place"] as? String, "Preserved")
+        XCTAssertNil(stable["end_place"])
+        XCTAssertEqual(stable["history_version"] as? Double, 2)
+    }
+
     func testExplicitStopFreezesMetadataBeforeOdometerEntryAndSurvivesNewFixes() throws {
         try withJournal { journal, _ in
             journal.setEnabled(true); journal.start()
@@ -540,7 +594,7 @@ extension TripJournalTests {
             XCTAssertEqual(saved["state"] as? String,"ended")
             XCTAssertEqual(saved["start_place"] as? String,"Startstraße, Karlsruhe")
             XCTAssertEqual(saved["end_place"] as? String,"Zielstraße, Karlsruhe")
-            XCTAssertEqual(saved["history_version"] as? Double,1)
+            XCTAssertEqual(saved["history_version"] as? Double,2)
             XCTAssertNil(saved["odo_end"])
             journal.location(CLLocation(coordinate:.init(latitude:49.01,longitude:8),altitude:0,horizontalAccuracy:3,verticalAccuracy:3,course:0,speed:0,timestamp:Date()))
             journal.lifecycle(false); journal.lifecycle(true)
@@ -604,7 +658,7 @@ extension TripJournalTests {
         let saved=try XCTUnwrap(reopened.snapshot().trips.first)
         XCTAssertEqual(saved["start_place"] as? String,"Legacy")
         XCTAssertEqual(saved["end_place"] as? String,"Legacy")
-        XCTAssertEqual(saved["history_version"] as? Double,1)
+        XCTAssertEqual(saved["history_version"] as? Double,2)
         XCTAssertEqual(saved["id"] as? String,id)
     }
 }

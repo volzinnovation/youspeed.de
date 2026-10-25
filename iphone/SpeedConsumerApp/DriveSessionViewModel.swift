@@ -2781,7 +2781,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         } else {
             drivingControlPostureMotion.stop()
-            if !isScreenshotMode { updateDrivingControlPosture(angleDegrees: nil) }
+            // A permission/share sheet can make the scene inactive while the
+            // phone remains flat. Keep its confirmed posture until live intake
+            // resumes instead of dismissing the underlying navigation.
         }
         if !isActive {
             retainedTrafficSignSupplementaryText = nil

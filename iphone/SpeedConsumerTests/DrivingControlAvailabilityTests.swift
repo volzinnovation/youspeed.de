@@ -1,6 +1,34 @@
 import XCTest
 @testable import SpeedConsumer
 
+final class LiveDeskPostureDeviceTests: XCTestCase {
+    @MainActor
+    func testLiveFaceUpDeskProvidesFlatPosture() async throws {
+        #if targetEnvironment(simulator)
+        throw XCTSkip("Requires an attached phone lying face up on the desk.")
+        #else
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["YOUSPEED_LIVE_DESK_POSTURE"] == "1",
+                          "Explicitly opt in with the phone lying face up on the desk.")
+        let model=DriveSessionViewModel()
+        let motion=DrivingControlPostureMotion()
+        let received=expectation(description:"A usable live gravity reading")
+        var angle: Double?
+        motion.start { value in
+            guard angle == nil, let value else { return }
+            angle=value; model.testSetDrivingControlAngle(value); received.fulfill()
+        }
+        defer { motion.stop() }
+        await fulfillment(of:[received],timeout:5)
+        XCTAssertTrue(DrivingControlPosturePolicy.isFlat(angleDegrees:angle), "Desk angle: \(String(describing:angle))")
+        for speed in [4.0,21,70,180] {
+            model.testObserveDrivingControlSpeed(rawMetersPerSecond:speed/3.6,displayedKmh:speed)
+            XCTAssertTrue(model.drivingControlsAllowed)
+            XCTAssertFalse(model.replacesSettingsWithDrivingPhotoButton)
+        }
+        #endif
+    }
+}
+
 final class DrivingControlAvailabilityTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 10_000)
 
@@ -111,6 +139,20 @@ final class DrivingControlAvailabilityTests: XCTestCase {
     }
 
     #if canImport(UIKit)
+    @MainActor
+    func testFlatPostureSurvivesSystemSheetInterruptionAtMovingSpeed() {
+        let model=DriveSessionViewModel()
+        model.testSetDrivingControlAngle(2)
+        model.testObserveDrivingControlSpeed(rawMetersPerSecond:50,displayedKmh:180)
+        model.setTrafficSignApplicationActive(false)
+        XCTAssertTrue(model.phoneIsFlat)
+        XCTAssertTrue(model.drivingControlsAllowed)
+        XCTAssertFalse(model.replacesSettingsWithDrivingPhotoButton)
+        // The next actual posture still applies immediately after the interruption.
+        model.testSetDrivingControlAngle(90)
+        XCTAssertFalse(model.drivingControlsAllowed)
+    }
+
     @MainActor
     func testPostureImmediatelyReappliesBothGates() {
         let model = DriveSessionViewModel()

@@ -20,6 +20,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
@@ -31,6 +34,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -39,11 +43,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -106,40 +112,70 @@ internal fun TripJournalSetupOption(journal:TripJournal) {
     }
 }
 
-private val TRIP_COLUMN_WIDTHS=listOf(160.dp,220.dp,220.dp,110.dp,180.dp)
-private val TRIP_TABLE_WIDTH=890.dp
-private fun tripDateCell(trip:JSONObject):String {
+private val TRIP_ACTION_WIDTH=48.dp
+private val TRIP_COLUMN_WEIGHTS=listOf(1.2f,1.25f,1.25f,0.9f,1.4f)
+private fun tripDateCell(trip:JSONObject,compact:Boolean):String {
     val zone=ZoneId.systemDefault();val start=Instant.ofEpochMilli((trip.optDouble("start")*1000).toLong()).atZone(zone)
     val end=Instant.ofEpochMilli((trip.optDouble("end",trip.optDouble("start"))*1000).toLong()).atZone(zone)
     val date=DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT);val time=DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-    return date.format(start)+"\n"+time.format(start)+" – "+(if(start.toLocalDate()!=end.toLocalDate()) date.format(end)+"\n" else "")+time.format(end)
+    return date.format(start)+"\n"+time.format(start)+(if(compact) "\n– " else " – ")+(if(start.toLocalDate()!=end.toLocalDate()) date.format(end)+"\n" else "")+time.format(end)
 }
 @Composable
-private fun TripHistoryCell(text:String,index:Int,tag:String,header:Boolean=false,onClick:(()->Unit)?=null) {
-    Text(text,modifier=Modifier.width(TRIP_COLUMN_WIDTHS[index]).then(if(onClick!=null) Modifier.clickable(onClick=onClick) else Modifier).padding(8.dp).testTag(tag),fontWeight=if(header) FontWeight.Bold else FontWeight.Normal,style=MaterialTheme.typography.bodyMedium)
-}
-@Composable
-private fun TripHistoryHeader() {
-    Column(Modifier.width(TRIP_TABLE_WIDTH).testTag("trip-journal-table-header")) {
-        Row {listOf(jt("Date / time","Datum / Uhrzeit","Date / heure","Datum / tijd"),jt("Start location","Startort","Lieu de départ","Beginlocatie"),jt("End location","Zielort","Lieu d’arrivée","Eindlocatie"),jt("Distance (km)","Distanz (km)","Distance (km)","Afstand (km)"),jt("Car end odometer (km)","Fahrzeug-Endstand (km)","Compteur final (km)","Eindstand voertuig (km)")).forEachIndexed {index,text->TripHistoryCell(text,index,"trip-journal-column-$index",true)}}
-        HorizontalDivider()
+private fun RowScope.TripHistoryCell(text:String,index:Int,tag:String,compact:Boolean,header:Boolean=false,onClick:(()->Unit)?=null) {
+    val style=(if(compact) MaterialTheme.typography.bodySmall.copy(fontSize=if(header) 11.sp else 12.sp,lineHeight=16.sp) else MaterialTheme.typography.bodyMedium)
+        .copy(fontWeight=if(header) FontWeight.Bold else FontWeight.Normal)
+    val display=if(compact && header) text.replace(" / "," /\n").replace(" (","\n(") else text
+    BoxWithConstraints(Modifier.weight(TRIP_COLUMN_WEIGHTS[index]).testTag(tag).semantics(mergeDescendants=true) {}.then(if(onClick!=null) Modifier.clickable(onClick=onClick) else Modifier).padding(horizontal=if(compact) 2.dp else 8.dp,vertical=8.dp)) {
+        val fitLines=header || index==0 || index>=3
+        val measurer=rememberTextMeasurer();val density=LocalDensity.current
+        val fontScale=if(fitLines) {
+            val available=with(density) {maxWidth.toPx()}
+            val needed=display.lines().maxOf {measurer.measure(it,style=style,softWrap=false).size.width}.coerceAtLeast(1)
+            (available/needed).coerceIn(0.1f,1f)
+        } else 1f
+        Text(display,style=style.copy(fontSize=style.fontSize*fontScale),softWrap=!fitLines)
     }
 }
 @Composable
-private fun TripHistoryRow(trip:JSONObject,enabled:Boolean,onClick:()->Unit,onDetails:()->Unit,onShare:()->Unit,onDelete:()->Unit) {
-    val id=trip.getString("id");val unknown=jt("Unknown location","Unbekannter Ort","Lieu inconnu","Onbekende locatie")
-    Column(Modifier.width(TRIP_TABLE_WIDTH)) {
-        Row(Modifier.width(TRIP_TABLE_WIDTH).testTag("trip-$id"),verticalAlignment=Alignment.Top) {
-            listOf(tripDateCell(trip),trip.optString("start_place").ifBlank {unknown},trip.optString("end_place").ifBlank {unknown},TripJournalPresentation.distanceKilometres(trip.optDouble("distance"))).forEachIndexed {index,text->TripHistoryCell(text,index,"trip-$id-cell-$index",onClick=onClick)}
-            Column(Modifier.width(TRIP_COLUMN_WIDTHS[4]).padding(8.dp).testTag("trip-$id-cell-4")) {
-                Text(if(trip.has("odo_end")) TripJournalPresentation.odometerKilometres(trip.optDouble("odo_end")) else "—",modifier=Modifier.fillMaxWidth().clickable(onClick=onClick).padding(vertical=4.dp))
-                Row(Modifier.testTag("trip-$id-actions")) {
-                    TextButton(onShare,enabled=enabled,modifier=Modifier.testTag("trip-$id-share")) {Text(jt("Share","Teilen","Partager","Delen"))}
-                    TextButton(onDelete,enabled=enabled,modifier=Modifier.testTag("trip-$id-delete")) {Text(jt("Delete","Löschen","Supprimer","Verwijderen"))}
-                }
+private fun TripHistoryHeader() {
+    BoxWithConstraints(Modifier.fillMaxWidth().testTag("trip-journal-table-header")) {
+        val compact=maxWidth<600.dp
+        Column {
+        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.Top) {
+            Spacer(Modifier.width(TRIP_ACTION_WIDTH))
+            listOf(jt("Date / time","Datum / Uhrzeit","Date / heure","Datum / tijd"),jt("Start location","Startort","Lieu de départ","Beginlocatie"),jt("End location","Zielort","Lieu d’arrivée","Eindlocatie"),jt("Distance (km)","Distanz (km)","Distance (km)","Afstand (km)"),jt("Car (km)","Auto (km)","Voiture (km)","Auto (km)")).forEachIndexed {index,text->TripHistoryCell(text,index,"trip-journal-column-$index",compact,true)}
+            Spacer(Modifier.width(TRIP_ACTION_WIDTH))
+        }
+        HorizontalDivider()
+        }
+    }
+}
+@Composable
+private fun TripHistoryRow(trip:JSONObject,enabled:Boolean,onClick:()->Unit,onShare:()->Unit,onDelete:()->Unit) {
+    val id=trip.getString("id");val unknown=jt("Unknown location","Ort unbekannt","Lieu inconnu","Onbekende locatie")
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val compact=maxWidth<600.dp
+        Column {
+        Row(Modifier.fillMaxWidth().testTag("trip-$id"),verticalAlignment=Alignment.Top) {
+            TripHistoryAction(enabled,onShare,"trip-$id-share",jt("Share drive with GPS and TSR logs","Fahrt mit GPS- und TSR-Protokollen teilen","Partager le trajet et les journaux GPS et TSR","Rit met GPS- en TSR-logboeken delen")) {
+                Icon(Icons.Default.Share,contentDescription=null,modifier=Modifier.size(20.dp))
+            }
+            listOf(tripDateCell(trip,compact),trip.optString("start_place").ifBlank {unknown},trip.optString("end_place").ifBlank {unknown},TripJournalPresentation.distanceKilometres(trip.optDouble("distance"))).forEachIndexed {index,text->TripHistoryCell(text,index,"trip-$id-cell-$index",compact,onClick=onClick)}
+            TripHistoryCell(if(trip.has("odo_end")) TripJournalPresentation.odometerKilometres(trip.optDouble("odo_end")) else "—",4,"trip-$id-cell-4",compact,onClick=onClick)
+            TripHistoryAction(enabled,onDelete,"trip-$id-delete",jt("Delete","Löschen","Supprimer","Verwijderen")) {
+                Icon(Icons.Default.Delete,contentDescription=null,tint=MaterialTheme.colorScheme.error,modifier=Modifier.size(20.dp))
             }
         }
         HorizontalDivider()
+        }
+    }
+}
+
+@Composable
+private fun TripHistoryAction(enabled:Boolean,onClick:()->Unit,tag:String,label:String,icon:@Composable ()->Unit) {
+    // Keep the full touch target while aligning the pictogram with the text's top inset.
+    IconButton(onClick,enabled=enabled,modifier=Modifier.size(TRIP_ACTION_WIDTH).testTag(tag).semantics {contentDescription=label}) {
+        Box(Modifier.fillMaxSize().padding(top=8.dp),contentAlignment=Alignment.TopCenter) {icon()}
     }
 }
 
@@ -152,22 +188,31 @@ internal fun TripJournalScreen(journal:TripJournal,mediaCleanup:((List<JSONObjec
     var endingTrip by remember {mutableStateOf<String?>(null)};var endingInput by remember {mutableStateOf("")}
     var deletion by remember {mutableStateOf<String?>(null)};var deleteMedia by remember {mutableStateOf(false)}
     var deletionMedia by remember {mutableStateOf(emptyList<JSONObject>())};var cleanupPreview by remember {mutableStateOf("")}
-    val tableScroll=rememberScrollState()
+    var deletionMediaLoading by remember {mutableStateOf(false)};var deletionMediaReady by remember {mutableStateOf(false)}
     fun share(file:File,type:String) {
         runCatching {
             val uri=FileProvider.getUriForFile(context,"${context.packageName}.fileprovider",file)
             context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { this.type=type;putExtra(Intent.EXTRA_STREAM,uri);addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) },jt("Share","Teilen","Partager","Delen")))
         }.onFailure { failure=it.message }
     }
-    fun task(body:suspend ()->Unit) {scope.launch {busy=true;runCatching {body()}.onFailure {failure=it.cause?.message ?: it.message};busy=false}}
+    fun task(body:suspend ()->Unit) {
+        if(busy) return
+        busy=true;failure=null
+        scope.launch {
+            try {body()} catch(cancelled:CancellationException) {throw cancelled}
+            catch(error:Throwable) {failure=error.cause?.message ?: error.message ?: jt("Unable to complete this action.","Aktion konnte nicht abgeschlossen werden.","Impossible de terminer cette action.","Deze actie kan niet worden voltooid.")}
+            finally {busy=false}
+        }
+    }
     LaunchedEffect(journal) {while(true) {
         withContext(Dispatchers.IO) {runCatching {journal.history()}}.onSuccess {trips=it}.onFailure {failure=it.cause?.message ?: it.message ?: "Unable to read journal"}
         recordingEnabled=journal.enabled
         delay(2000)
     }}
-    SheetScaffold(jt("Trip journal","Fahrtenbuch","Carnet de trajets","Rittenboek"),onDismiss,"trip-journal-sheet",containerColor=Color.White) {
+    SheetScaffold(jt("Trips","Fahrten","Trajets","Ritten"),onDismiss,"trip-journal-sheet",containerColor=Color.White) {
+        Box(Modifier.fillMaxSize()) {
         LazyColumn(Modifier.fillMaxSize().testTag("trip-journal-list")) {
-            item {Box(Modifier.fillMaxWidth().horizontalScroll(tableScroll)) {TripHistoryHeader()}}
+            item {TripHistoryHeader()}
             if(!recordingEnabled) item {
                 Column(Modifier.widthIn(max=280.dp).padding(8.dp)) {
                     Text(jt("Trip recording is off. Enable it in Settings to save future trips.","Fahrtenaufzeichnung ist aus. In den Einstellungen aktivieren, um künftige Fahrten zu speichern.","L’enregistrement des trajets est désactivé. Activez-le dans les réglages pour enregistrer les prochains trajets.","Ritten opnemen staat uit. Schakel dit in bij Instellingen om toekomstige ritten op te slaan."),modifier=Modifier.testTag("trip-journal-recording-off"))
@@ -176,15 +221,20 @@ internal fun TripJournalScreen(journal:TripJournal,mediaCleanup:((List<JSONObjec
             }
             items(trips,key={it.getString("id")}) {trip ->
                 val id=trip.getString("id")
-                Box(Modifier.fillMaxWidth().horizontalScroll(tableScroll)) {
-                    TripHistoryRow(trip,!busy,{endingInput="";endingTrip=id},{},{task {val archive=withContext(Dispatchers.IO) {journal.archive(id,TripExportOptions(includeRawLogs=true))};share(archive,"application/zip")}},{task {
-                        deletionMedia=withContext(Dispatchers.IO) {TripJournalProjection.media(journal.events(id))};deleteMedia=false
-                        cleanupPreview=withContext(Dispatchers.IO) {mediaCleanup?.invoke(deletionMedia,false).orEmpty()};deletion=id
-                    }})
-                }
+                TripHistoryRow(trip,!busy,{if(!busy) {endingInput="";endingTrip=id}},{task {val archive=withContext(Dispatchers.IO) {journal.archive(id,TripExportOptions(includeRawLogs=true))};share(archive,"application/zip")}},{
+                    deletionMedia=emptyList();deleteMedia=false;cleanupPreview=""
+                    deletionMediaReady=false;deletionMediaLoading=mediaCleanup!=null;deletion=id
+                })
             }
             if(trips.isEmpty() && recordingEnabled) item {Text(jt("No saved trips.","Keine gespeicherten Fahrten.","Aucun trajet enregistré.","Geen bewaarde ritten."),modifier=Modifier.padding(8.dp).testTag("trip-journal-empty"))}
-            (failure ?: journal.error)?.let {message ->item {Text(message,color=MaterialTheme.colorScheme.error,modifier=Modifier.testTag("trip-journal-error"))}}
+            journal.error?.let {message ->item {Text(message,color=MaterialTheme.colorScheme.error,modifier=Modifier.testTag("trip-journal-error"))}}
+        }
+        if(busy) Surface(Modifier.align(Alignment.Center).testTag("trip-journal-busy"),shape=MaterialTheme.shapes.medium,shadowElevation=6.dp,color=Color.White) {
+            Column(Modifier.padding(20.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(12.dp)) {
+                CircularProgressIndicator()
+                Text(jt("Please wait…","Bitte warten…","Veuillez patienter…","Even wachten…"))
+            }
+        }
         }
     }
     endingTrip?.let {id ->trips.firstOrNull {it.optString("id")==id}?.let {target ->
@@ -200,7 +250,27 @@ internal fun TripJournalScreen(journal:TripJournal,mediaCleanup:((List<JSONObjec
             }
         }
     }}
-    deletion?.let { id -> AlertDialog({deletion=null},title={Text(jt("Delete trip?","Fahrt löschen?","Supprimer ce trajet ?","Rit verwijderen?"))},text={Column { Text(jt("GPS/TSR logs, signs, optional odometer, trip media links and temporary exports are deleted. Library files and public copies remain. Lifetime app counters remain; saved-history totals decrease.","GPS-/TSR-Protokolle, Zeichen, optionale Kilometerstände, Medienverknüpfungen und temporäre Exporte werden gelöscht. Bibliotheksdateien und öffentliche Kopien bleiben. App-Gesamtzähler bleiben; die gespeicherte Fahrtsumme sinkt.","Journaux, panneaux, compteur facultatif, liens et exports temporaires supprimés. Fichiers de bibliothèque et copies publiques conservés. Compteurs globaux inchangés ; total conservé réduit.","Logs, borden, optionele standen, koppelingen en tijdelijke exports worden gewist. Bibliotheek en openbare kopieën blijven. Levenslange tellers blijven; bewaarde totalen dalen."));if(mediaCleanup!=null) {Text(cleanupPreview);Row {Checkbox(deleteMedia,{deleteMedia=it});Text(jt("Also delete eligible local media","Löschbare lokale Medien ebenfalls löschen","Supprimer aussi les médias locaux autorisés","Ook verwijderbare lokale media wissen"))}} }},confirmButton={TextButton({task {if(deleteMedia) failure=withContext(Dispatchers.IO) {mediaCleanup?.invoke(deletionMedia,true)};journal.delete(id);trips=withContext(Dispatchers.IO) {journal.history()};deletion=null}}) {Text(jt("Delete","Löschen","Supprimer","Verwijderen"))}},dismissButton={TextButton({deletion=null}) {Text(jt("Cancel","Abbrechen","Annuler","Annuleren"))}}) }
+    deletion?.let { id ->
+        LaunchedEffect(id) {
+            if(mediaCleanup!=null) {
+                try {
+                    val media=withContext(Dispatchers.IO) {TripJournalProjection.media(journal.mediaEvents(id))}
+                    val preview=withContext(Dispatchers.IO) {mediaCleanup(media,false)}
+                    deletionMedia=media;cleanupPreview=preview;deletionMediaReady=true
+                } catch(cancelled:CancellationException) {throw cancelled}
+                catch(error:Throwable) {cleanupPreview=error.message.orEmpty()}
+                finally {deletionMediaLoading=false}
+            }
+        }
+        AlertDialog({if(!busy) deletion=null},title={Text(jt("Delete trip?","Fahrt löschen?","Supprimer ce trajet ?","Rit verwijderen?"))},text={Column(Modifier.verticalScroll(rememberScrollState())) {
+            Text(jt("GPS/TSR logs, signs, optional odometer, trip media links and temporary exports are deleted. Library files and public copies remain. Lifetime app counters remain; saved-history totals decrease.","GPS-/TSR-Protokolle, Zeichen, optionale Kilometerstände, Medienverknüpfungen und temporäre Exporte werden gelöscht. Bibliotheksdateien und öffentliche Kopien bleiben. App-Gesamtzähler bleiben; die gespeicherte Fahrtsumme sinkt.","Journaux, panneaux, compteur facultatif, liens et exports temporaires supprimés. Fichiers de bibliothèque et copies publiques conservés. Compteurs globaux inchangés ; total conservé réduit.","Logs, borden, optionele standen, koppelingen en tijdelijke exports worden gewist. Bibliotheek en openbare kopieën blijven. Levenslange tellers blijven; bewaarde totalen dalen."))
+            if(mediaCleanup!=null) {
+                if(deletionMediaLoading) Text(jt("Checking linked media…","Verknüpfte Medien werden geprüft…","Vérification des médias liés…","Gekoppelde media controleren…"),modifier=Modifier.testTag("trip-delete-media-loading")) else Text(cleanupPreview)
+                Row {Checkbox(deleteMedia,{deleteMedia=it},enabled=deletionMediaReady && !busy);Text(jt("Also delete eligible local media","Löschbare lokale Medien ebenfalls löschen","Supprimer aussi les médias locaux autorisés","Ook verwijderbare lokale media wissen"))}
+            }
+        }},confirmButton={TextButton({task {if(deleteMedia) failure=withContext(Dispatchers.IO) {mediaCleanup?.invoke(deletionMedia,true)};journal.delete(id);trips=withContext(Dispatchers.IO) {journal.history()};deletion=null}},enabled=!busy && (!deleteMedia || deletionMediaReady)) {Text(jt("Delete","Löschen","Supprimer","Verwijderen"))}},dismissButton={TextButton({deletion=null},enabled=!busy) {Text(jt("Cancel","Abbrechen","Annuler","Annuleren"))}})
+    }
+    failure?.let {message ->AlertDialog({failure=null},title={Text(jt("Trips","Fahrten","Trajets","Ritten"))},text={Text(message)},confirmButton={TextButton({failure=null}) {Text("OK")}},modifier=Modifier.testTag("trip-journal-operation-error"))}
 }
 
 @Composable
@@ -264,7 +334,6 @@ private fun ArchivedTripJournalDetailScreen(journal:TripJournal,mediaCleanup:((L
     var reading by remember { mutableStateOf("") };var vehicle by remember { mutableStateOf("") };var deletion by remember { mutableStateOf<String?>(null) }
     var deleteMedia by remember { mutableStateOf(false) };var cleanupPreview by remember { mutableStateOf("") };var deletionMedia by remember {mutableStateOf(emptyList<JSONObject>())}
     var endingTrip by remember {mutableStateOf<String?>(null)};var endingInput by remember {mutableStateOf("")}
-    val tableScroll=rememberScrollState()
     var clear by remember { mutableStateOf(false) };var exportOptions by remember { mutableStateOf(false) };var busy by remember { mutableStateOf(false) }
     var selectedMedia by remember { mutableStateOf(emptySet<String>()) };var maskHome by remember { mutableStateOf(false) };var includeOdometer by remember { mutableStateOf(false) }
     var privateShare by remember { mutableStateOf(false) };var maskRadius by remember { mutableStateOf("300") };var logs by remember { mutableStateOf(true) };var includeMedia by remember { mutableStateOf(false) }
@@ -347,12 +416,10 @@ private fun ArchivedTripJournalDetailScreen(journal:TripJournal,mediaCleanup:((L
                 if(filtered.isEmpty()) item { Text(jt("No saved trips in this period.","Keine gespeicherten Fahrten in diesem Zeitraum.","Aucun trajet conservé sur cette période.","Geen bewaarde ritten in deze periode.")) }
             }
             if(selected==null) {
-                item {Box(Modifier.fillMaxWidth().horizontalScroll(tableScroll)) {TripHistoryHeader()}}
+                item {TripHistoryHeader()}
                 items(filtered,key={it.getString("id")}) { t ->
                     val id=t.getString("id")
-                    Box(Modifier.fillMaxWidth().horizontalScroll(tableScroll)) {
-                        TripHistoryRow(t,!busy,{endingInput="";endingTrip=id},{selected=id;logLimit=100;selectedTime=null},{shareTrip(id)},{requestDelete(id)})
-                    }
+                    TripHistoryRow(t,!busy,{endingInput="";endingTrip=id},{shareTrip(id)},{requestDelete(id)})
                 }
             } else if(trip!=null) item {Text(tripDate(trip.optDouble("start"))+" · "+stateText(trip),style=MaterialTheme.typography.titleMedium)}
             if(trip!=null) {

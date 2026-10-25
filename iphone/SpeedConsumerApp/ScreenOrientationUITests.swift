@@ -469,17 +469,33 @@ final class ScreenOrientationUITests: XCTestCase {
         let table = app.descendants(matching: .any)["journal.history.table"].firstMatch
         XCTAssertTrue(app.navigationBars.firstMatch.waitForExistence(timeout: 15))
         XCTAssertTrue(table.waitForExistence(timeout: 5))
+        let share = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "journal.history.share.")).firstMatch
+        let date = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "journal.history.cell.0.")).firstMatch
+        XCTAssertTrue(share.isHittable)
+        XCTAssertLessThanOrEqual(share.frame.maxX, date.frame.minX)
+        XCTAssertEqual(share.frame.minY, date.frame.minY, accuracy: 1)
+        XCTAssertEqual(app.staticTexts["journal.history.column.3"].label, "Distanz (km)")
+        XCTAssertEqual(app.staticTexts["journal.history.column.4"].label, "Auto (km)")
         table.swipeLeft()
         let actionScreenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         actionScreenshot.name = "fahrtenbuch-simple-table-last-columns"; actionScreenshot.lifetime = .keepAlways; add(actionScreenshot)
         let delete = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "journal.history.delete.")).firstMatch
-        XCTAssertTrue(delete.waitForExistence(timeout: 5)); delete.tap()
+        XCTAssertTrue(delete.waitForExistence(timeout: 5))
+        let odometer = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "journal.history.cell.4.")).firstMatch
+        XCTAssertGreaterThanOrEqual(delete.frame.minX, odometer.frame.maxX)
+        XCTAssertEqual(delete.frame.minY, odometer.frame.minY, accuracy: 1)
+        delete.tap()
         XCTAssertFalse(app.textFields["journal.odometer.input"].exists)
         XCTAssertFalse(app.buttons["journal.odometer.details"].exists)
-        XCTAssertTrue(app.buttons["Abbrechen"].waitForExistence(timeout: 5))
-        app.buttons["Abbrechen"].tap()
-        let share = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "journal.history.share.")).firstMatch
-        XCTAssertTrue(share.exists); share.tap()
+        if app.buttons["Abbrechen"].waitForExistence(timeout: 2) {
+            app.buttons["Abbrechen"].tap()
+        } else {
+            XCTAssertTrue(app.buttons["Fahrt löschen"].exists)
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8)).tap()
+            XCTAssertFalse(app.popovers.firstMatch.exists)
+        }
+        table.swipeRight()
+        XCTAssertTrue(share.isHittable); share.tap()
         let nativeShare = NSPredicate { _, _ in
             app.otherElements["ActivityListView"].exists || app.staticTexts["AirDrop"].exists || app.buttons["Kopieren"].exists || app.buttons["Copy"].exists
         }
@@ -488,6 +504,25 @@ final class ScreenOrientationUITests: XCTestCase {
         XCTAssertFalse(app.buttons["journal.odometer.details"].exists)
         let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         screenshot.name = "fahrtenbuch-per-drive-native-share"; screenshot.lifetime = .keepAlways; add(screenshot)
+    }
+
+    func testFlatDeskKeepsSettingsAndNestedJournalAtHighReportedSpeed() {
+        continueAfterFailure=false
+        let app=XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"]="camera-limit-active"
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_SPEED_KMH"]="180"
+        app.launchArguments=["-youspeed.screen_orientation","portrait","-AppleLanguages","(de)","-AppleLocale","de_DE"]
+        app.launch()
+        let settings=app.buttons["dashboard.settingsButton"]
+        XCTAssertTrue(settings.waitForExistence(timeout:15));settings.tap()
+        let trips=app.buttons["settings.trips"]
+        XCTAssertTrue(trips.waitForExistence(timeout:5));trips.tap()
+        let history=app.descendants(matching:.any)["journal.history.table"].firstMatch
+        XCTAssertTrue(history.waitForExistence(timeout:5))
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(history.waitForExistence(timeout:10))
+        app.terminate()
     }
 
     func testJournalRecordingPreferenceLivesDirectlyInNormalSettings() {

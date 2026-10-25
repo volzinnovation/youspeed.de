@@ -172,9 +172,15 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
         let trips = rows("SELECT * FROM trips ORDER BY start DESC")
         DispatchQueue.main.async { self.historyTrips = trips }
     }
-    /// Called once at closure (or once for legacy rows), never by a view.
+    /// Called once after closure/finalization (or once for metadata repair), never by a view.
     private func storeHistoryMetadata(_ id: String) {
-        guard let trip = rows("SELECT * FROM trips WHERE id=? AND COALESCE(history_version,0)=0", [id]).first else { return }
+        guard let trip = rows("SELECT * FROM trips WHERE id=? AND COALESCE(history_version,0)<2", [id]).first else { return }
+        let startName = (trip["start_place"] as? String).flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
+        let endName = (trip["end_place"] as? String).flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
+        if let startName, let endName {
+            sql("UPDATE trips SET start_place=?,end_place=?,history_version=2 WHERE id=?", [startName, endName, id])
+            return
+        }
         let points = rows("SELECT * FROM events WHERE trip=? AND kind='gps' ORDER BY time,seq", [id]).map(JournalEvent.init).filter { $0.trackEligible && $0.coordinate != nil }
         func label(_ point: JournalEvent?) -> Any {
             guard let point else { return NSNull() }
@@ -185,10 +191,10 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
             if names.start == journalText("location_unknown") { return NSNull() }
             return names.start
         }
-        sql("UPDATE trips SET start_place=?,end_place=?,history_version=1 WHERE id=?", [trip["start_place"] ?? label(points.first), trip["end_place"] ?? label(points.last), id])
+        sql("UPDATE trips SET start_place=?,end_place=?,history_version=2 WHERE id=?", [(startName as Any?) ?? label(points.first), (endName as Any?) ?? label(points.last), id])
     }
     private func backfillHistoryMetadata() {
-        for row in rows("SELECT id FROM trips WHERE state NOT IN ('active','finalizing') AND COALESCE(history_version,0)=0") {
+        for row in rows("SELECT id FROM trips WHERE state NOT IN ('active','finalizing') AND COALESCE(history_version,0)<2") {
             if let id = row["id"] as? String { storeHistoryMetadata(id) }
         }
     }
@@ -255,7 +261,8 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
             let endpoint = intent?.timeIntervalSince1970 ?? (rows("SELECT end FROM trips WHERE id=?", [id]).first?["end"] as? Double ?? Date().timeIntervalSince1970)
             let lag = intent.map { max(0, Date().timeIntervalSince($0)) } ?? 0
             sql("UPDATE trips SET state=?,end_reason=?,end=MIN(end,?),duration=MAX(0,duration-?) WHERE id=?", [state, reason, endpoint, lag, id])
-            storeHistoryMetadata(id)
+            // Map callbacks for the original fixes can still arrive during the finalizer window.
+            if state != "finalizing" { storeHistoryMetadata(id) }
         }
         active = nil; previous = nil; lastFixTime = nil
         publishHistory()
@@ -1216,7 +1223,7 @@ struct TripJournalView: View {
                         Divider()
                     }
                 }
-                .frame(minWidth: 690, alignment: .leading)
+                .frame(minWidth: tableWidth, alignment: .leading)
                 .padding(.horizontal, 12)
                 }
                 .fixedSize(horizontal: false, vertical: true)
@@ -1271,13 +1278,17 @@ struct TripJournalView: View {
     }
     private struct HistoryItem { let id: String; let trip: [String: Any] }
     private let columnWidths: [CGFloat] = [130, 155, 155, 90, 160]
+    private let actionWidth: CGFloat = 44
+    private var tableWidth: CGFloat { columnWidths.reduce(0,+) + 2 * actionWidth }
     private var tableHeader: some View {
         HStack(alignment: .top, spacing: 0) {
+            Color.clear.frame(width: actionWidth, height: 1).accessibilityHidden(true)
             ForEach(Array(["table_datetime", "table_start", "table_end", "table_distance", "table_odo_end"].enumerated()), id: \.offset) { index, key in
                 Text(journalText(key)).font(.caption.weight(.semibold))
                     .frame(width: columnWidths[index] - 16, alignment: .leading).padding(.horizontal, 8)
                     .accessibilityIdentifier("journal.history.column.\(index)")
             }
+            Color.clear.frame(width: actionWidth, height: 1).accessibilityHidden(true)
         }.padding(.vertical, 8)
     }
     private func historyCell<Content: View>(id: String, column: Int, @ViewBuilder content: () -> Content) -> some View {
@@ -1292,6 +1303,11 @@ struct TripJournalView: View {
         let start = Date(timeIntervalSince1970: trip["start"] as? Double ?? 0)
         let end = Date(timeIntervalSince1970: trip["end"] as? Double ?? 0)
         return HStack(alignment: .top, spacing: 0) {
+            Button { run { [try journal.archive(id, options: TripExportOptions(includeRawLogs: true))] } } label: {
+                Image(systemName: "square.and.arrow.up").frame(width: actionWidth, height: 44, alignment: .top)
+                    .contentShape(Rectangle())
+            }.buttonStyle(.borderless).accessibilityLabel(journalText("share_drive"))
+                .accessibilityIdentifier("journal.history.share.\(id)").disabled(busy)
             historyCell(id: id, column: 0) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(start.formatted(date: .numeric, time: .omitted))
@@ -1301,20 +1317,14 @@ struct TripJournalView: View {
             historyCell(id: id, column: 1) { Text(names.start) }
             historyCell(id: id, column: 2) { Text(names.end) }
             historyCell(id: id, column: 3) { Text(JournalHistoryPresentation.number((trip["distance"] as? Double ?? 0) / 1000)).monospacedDigit() }
-            VStack(alignment: .leading, spacing: 2) {
-                Button { selectedTrip = JournalTripSelection(id: id) } label: {
-                    Text((trip["odo_end"] as? Double).map { JournalHistoryPresentation.number($0) } ?? "—")
-                        .monospacedDigit().frame(maxWidth: .infinity, minHeight: 22, alignment: .topLeading).contentShape(Rectangle())
-                }.buttonStyle(.plain)
-                HStack(spacing: 12) {
-                    Button { run { [try journal.archive(id, options: TripExportOptions(includeRawLogs: true))] } } label: {
-                        Image(systemName: "square.and.arrow.up").frame(minWidth: 44, minHeight: 44)
-                    }.accessibilityLabel(journalText("share_drive")).accessibilityIdentifier("journal.history.share.\(id)").disabled(busy)
-                    Button(role: .destructive) { pendingDelete = id } label: {
-                        Image(systemName: "trash").frame(minWidth: 44, minHeight: 44)
-                    }.accessibilityLabel(journalText("delete")).accessibilityIdentifier("journal.history.delete.\(id)")
-                }.buttonStyle(.borderless)
-            }.frame(width: columnWidths[4] - 16, alignment: .leading).padding(.horizontal, 8)
+            historyCell(id: id, column: 4) {
+                Text((trip["odo_end"] as? Double).map { JournalHistoryPresentation.number($0) } ?? "—").monospacedDigit()
+            }
+            Button(role: .destructive) { pendingDelete = id } label: {
+                Image(systemName: "trash").frame(width: actionWidth, height: 44, alignment: .top)
+                    .contentShape(Rectangle())
+            }.buttonStyle(.borderless).accessibilityLabel(journalText("delete"))
+                .accessibilityIdentifier("journal.history.delete.\(id)").disabled(busy)
         }
         .font(.subheadline)
         .padding(.vertical, 6)
@@ -1736,8 +1746,8 @@ func journalText(_ key: String) -> String {
         "table_datetime": ["Date / time", "Datum / Uhrzeit", "Date / heure", "Datum / tijd"],
         "table_start": ["Start location", "Startort", "Lieu de départ", "Vertrekplaats"],
         "table_end": ["End location", "Zielort", "Lieu d’arrivée", "Aankomstplaats"],
-        "table_distance": ["Distance (km)", "Strecke (km)", "Distance (km)", "Afstand (km)"],
-        "table_odo_end": ["Car end reading (km)", "Auto-Endstand (km)", "Compteur final (km)", "Eindstand auto (km)"],
+        "table_distance": ["Distance (km)", "Distanz (km)", "Distance (km)", "Afstand (km)"],
+        "table_odo_end": ["Car (km)", "Auto (km)", "Voiture (km)", "Auto (km)"],
         "location_unknown": ["Unknown location", "Ort unbekannt", "Lieu inconnu", "Onbekende locatie"],
         "details": ["Details, map and logs", "Details, Karte und Protokolle", "Détails, carte et journaux", "Details, kaart en logboeken"],
         "share_drive": ["Share drive with GPS and TSR logs", "Fahrt mit GPS- und TSR-Protokollen teilen", "Partager le trajet et les journaux GPS et TSR", "Rit met GPS- en TSR-logboeken delen"],

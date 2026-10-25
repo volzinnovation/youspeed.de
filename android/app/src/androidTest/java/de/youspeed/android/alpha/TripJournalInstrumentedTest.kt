@@ -170,8 +170,75 @@ class TripJournalInstrumentedTest {
         TripJournal(context,heartbeat=false).use {reopened ->
             val saved=reopened.history().single()
             assertEquals("Startstraße\nKarlsruhe",saved.getString("start_place"))
-            assertEquals(1,saved.getInt("history_version"))
+            assertEquals(2,saved.getInt("history_version"))
         }
     }
 
+    @Test fun delayedPlaceCallbacksAreIncludedBeforeHistoryIsFrozen() = withJournalRoot {context,_ ->
+        var wall=System.currentTimeMillis()/1000.0
+        var elapsed=10000L
+        TripJournal(context,heartbeat=false,wallClock={wall},elapsedClock={elapsed}).use {journal ->
+            journal.setEnabled(true);journal.start()
+            val id=journal.snapshot().first.single().getString("id")
+            val at=wall
+            fun feed(lat:Double) {journal.location(android.location.Location("gps").apply {
+                latitude=lat;longitude=8.0;accuracy=3f;speed=10f;time=(wall*1000).toLong();elapsedRealtimeNanos=elapsed*1_000_000
+            });journal.snapshot()}
+            feed(49.0);wall+=1;elapsed+=1000;feed(49.0001)
+            journal.stop()
+            val pending=journal.history().single()
+            assertEquals(0,pending.getInt("history_version"))
+            journal.matchedPlace(at,"Startstraße","Karlsruhe",49.0,8.0,3.0)
+            journal.matchedPlace(at+1,"Zielstraße","Karlsruhe",49.0001,8.0,3.0)
+            assertEquals(2,journal.events(id).count {it.optString("kind")=="place"})
+            journal.setEnabled(false)
+            journal.matchedPlace(at,"Declined",null,49.0,8.0,3.0)
+            assertEquals(2,journal.events(id).count {it.optString("kind")=="place"})
+            journal.setEnabled(true);journal.lifecycle(false)
+            journal.matchedPlace(at,"Background",null,49.0,8.0,3.0)
+            assertEquals(2,journal.events(id).count {it.optString("kind")=="place"})
+            journal.lifecycle(true)
+            journal.completeFinalizerForTesting()
+            val saved=journal.history().single()
+            assertEquals("Startstraße\nKarlsruhe",saved.getString("start_place"))
+            assertEquals("Zielstraße\nKarlsruhe",saved.getString("end_place"))
+            assertEquals(2,saved.getInt("history_version"))
+            listOf("distance","end","duration").forEach {assertEquals(it,pending.opt(it),saved.opt(it))}
+            journal.matchedPlace(at,"Too late",null,49.0,8.0,3.0)
+            assertEquals(2,journal.events(id).count {it.optString("kind")=="place"})
+        }
+    }
+
+    @Test fun missingVersionOneNamesAreRepairedOnceWithoutReplacingSavedNames() = withJournalRoot {context,_ ->
+        val wall=System.currentTimeMillis()/1000.0
+        var before=org.json.JSONObject()
+        TripJournal(context,heartbeat=false,wallClock={wall}).use {journal ->
+            journal.setEnabled(true);journal.start();journal.snapshot()
+            journal.location(android.location.Location("gps").apply {
+                latitude=49.0;longitude=8.0;accuracy=3f;speed=10f;time=(wall*1000).toLong();elapsedRealtimeNanos=1_000_000_000
+            })
+            journal.matchedPlace(wall,"Captured",null,49.0,8.0,3.0)
+            journal.stop();journal.completeFinalizerForTesting()
+            before=journal.history().single()
+        }
+        val database=File(context.filesDir,"trip-journal/trips.sqlite")
+        SQLiteDatabase.openDatabase(database.path,null,SQLiteDatabase.OPEN_READWRITE).use {db ->
+            db.execSQL("UPDATE trips SET start_place='Preserved',end_place=NULL,history_version=1")
+        }
+        TripJournal(context,heartbeat=false).use {repaired ->
+            val after=repaired.history().single()
+            assertEquals("Preserved",after.getString("start_place"))
+            assertEquals("Captured",after.getString("end_place"))
+            assertEquals(2,after.getInt("history_version"))
+            listOf("distance","end","duration").forEach {assertEquals(it,before.opt(it),after.opt(it))}
+        }
+        SQLiteDatabase.openDatabase(database.path,null,SQLiteDatabase.OPEN_READWRITE).use {db ->
+            db.execSQL("DELETE FROM events");db.execSQL("UPDATE trips SET end_place=NULL")
+        }
+        TripJournal(context,heartbeat=false).use {reopened ->
+            val stable=reopened.history().single()
+            assertEquals("Preserved",stable.getString("start_place"));assertFalse(stable.has("end_place"))
+            assertEquals(2,stable.getInt("history_version"))
+        }
+    }
 }

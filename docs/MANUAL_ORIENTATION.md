@@ -44,6 +44,16 @@ that the phone is flat. When the phone is not flat, the existing below-4-km/h or
 no-GPS navigation behavior applies; inclines and declines do not establish a desk
 posture.
 
+Android validates gravity samples by their finite components and plausible
+magnitude: the Moto g86 reports valid face-up vectors with an accuracy status of
+zero. That status alone must not discard a gravity sample. The raw accelerometer
+fallback retains its accuracy check and low-pass filter.
+
+Pausing motion intake for a system sheet or background transition retains the
+last confirmed posture on both platforms. It must not dismiss an open Settings
+or trip-history screen merely because intake paused. The next live sample (or a
+live sensor failure) reapplies the posture gate normally.
+
 Posture changes update availability immediately. Permission and review prompts
 still require fresh GPS evidence of exactly zero speed. Away from flat posture,
 the manual driving shutter replaces Settings from 4 km/h in the same bottom-right

@@ -5,6 +5,9 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.content.SharedPreferences
 import android.location.Location
+import android.os.SystemClock
+import android.view.WindowInsets
+import android.view.inspector.WindowInspector
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
@@ -24,7 +27,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 import java.util.UUID
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
 
 @RunWith(AndroidJUnit4::class)
@@ -73,7 +79,29 @@ class TripJournalTableUiInstrumentedTest {
         val visible=mutableStateOf(true)
         val pictures=File(base.filesDir,"journal-simple-validation").apply {mkdirs()}
         fun picture(tag:String,name:String) {compose.onNodeWithTag(tag).captureToImage().asAndroidBitmap().let {bitmap->File(pictures,name).outputStream().use {bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}}}
+        val previousLocale=Locale.getDefault()
+        fun dismissKeyboard() {
+            compose.waitForIdle()
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                WindowInspector.getGlobalWindowViews().last {it.hasWindowFocus()}
+                    .windowInsetsController?.hide(WindowInsets.Type.ime())
+            }
+            var previous="";var stableSince=SystemClock.uptimeMillis()
+            compose.waitUntil(10000) {
+                var geometry="";var imeVisible=false
+                InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                    val window=WindowInspector.getGlobalWindowViews().last {it.hasWindowFocus()}
+                    imeVisible=window.rootWindowInsets?.isVisible(WindowInsets.Type.ime())==true
+                    geometry="${window.width}:${window.height}:${window.rootWindowInsets?.getInsets(WindowInsets.Type.ime())?.bottom}"
+                }
+                val now=SystemClock.uptimeMillis()
+                if(imeVisible || geometry!=previous) {stableSince=now;previous=geometry}
+                now-stableSince>=400
+            }
+        }
+        val cleanupGate=CountDownLatch(1)
         try {
+            Locale.setDefault(Locale.GERMANY)
             journal.setEnabled(true)
             journal.start();val id=journal.snapshot().first.single().getString("id");journal.odometer(id,12000.0,null)
             val startName="Long unabridged street name with several words at the beginning"
@@ -84,19 +112,38 @@ class TripJournalTableUiInstrumentedTest {
                 journal.matchedPlace(wall,if(i==0) startName else endName,"Town",lat,8.0,3.0)
                 journal.snapshot();wall+=1;elapsed+=1000
             }
-            journal.tsr("fixture_tsr",mapOf("state" to "read"));journal.stop();journal.snapshot();wall+=6;elapsed+=6000;journal.snapshot()
+            journal.tsr("fixture_tsr",mapOf("state" to "read"));journal.stop();journal.snapshot();wall+=6;elapsed+=6000;journal.completeFinalizerForTesting()
             compose.setContent {
                 val host=LocalContext.current
                 val shareContext=remember(host) {object:ContextWrapper(host) {override fun startActivity(intent:Intent) {shared.set(intent)}}}
-                if(visible.value) CompositionLocalProvider(LocalContext provides shareContext) {TripJournalScreen(journal) {}}
+                if(visible.value) CompositionLocalProvider(LocalContext provides shareContext) {TripJournalScreen(journal,mediaCleanup={_,_->
+                    check(cleanupGate.await(15,TimeUnit.SECONDS));"Synthetic media preview"
+                }) {}}
             }
             compose.waitUntil(10000) {compose.onAllNodesWithTag("trip-$id").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithTag("trip-journal-table-header").assertIsDisplayed()
             compose.onNodeWithTag("trip-$id-cell-0").assertIsDisplayed()
+            compose.onNodeWithTag("trip-$id-share").assertIsDisplayed()
+            val shareBounds=compose.onNodeWithTag("trip-$id-share").getUnclippedBoundsInRoot()
+            val dateBounds=compose.onNodeWithTag("trip-$id-cell-0").getUnclippedBoundsInRoot()
+            assertTrue("Share must precede date/time",shareBounds.right<=dateBounds.left)
+            assertEquals("Share must align with the row top",dateBounds.top.value,shareBounds.top.value,1f)
+            val tableBounds=compose.onNodeWithTag("trip-journal-list").getUnclippedBoundsInRoot()
+            for(i in 0..4) {
+                compose.onNodeWithTag("trip-journal-column-$i").assertIsDisplayed()
+                compose.onNodeWithTag("trip-$id-cell-$i").assertIsDisplayed()
+                val bounds=compose.onNodeWithTag("trip-$id-cell-$i").getUnclippedBoundsInRoot()
+                assertTrue("Column $i must fit without horizontal scrolling",bounds.left>=tableBounds.left && bounds.right<=tableBounds.right)
+            }
+            compose.onNodeWithTag("trip-$id-delete").assertIsDisplayed()
+            assertTrue(compose.onNodeWithTag("trip-$id-delete").getUnclippedBoundsInRoot().right<=tableBounds.right)
             for(tag in listOf("trip-journal-filters","trip-journal-backup","trip-journal-restore","trip-journal-clear","trip-journal-data-disclosure","trip-$id-details")) compose.onNodeWithTag(tag).assertDoesNotExist()
             for(label in listOf("Filters","Saved trips","New trip","Details","Encrypted backup","Clear all trips and counters")) compose.onAllNodesWithText(label).assertCountEquals(0)
             compose.onNodeWithTag("trip-journal-recording-toggle").assertDoesNotExist()
             for(i in 0..4) compose.onNodeWithTag("trip-journal-column-$i").assertExists()
+            compose.onNodeWithTag("trip-journal-sheet-title").assertTextEquals("Fahrten")
+            compose.onNodeWithTag("trip-journal-column-3").assertTextContains("Distanz",substring=true)
+            compose.onNodeWithTag("trip-journal-column-4").assertTextContains("Auto",substring=true)
             compose.onNodeWithTag("trip-journal-column-5").assertDoesNotExist()
             compose.onNodeWithTag("trip-$id-cell-1").assertTextEquals(startName+"\nTown")
             compose.onNodeWithTag("trip-$id-cell-2").assertTextEquals(endName+"\nTown")
@@ -110,19 +157,22 @@ class TripJournalTableUiInstrumentedTest {
             val odoWhite=compose.onNodeWithTag("trip-ending-odometer-sheet").captureToImage().toPixelMap()
             assertEquals(Color.White,odoWhite[odoWhite.width/2,5])
             compose.onNodeWithTag("trip-ending-odometer-input").performTextInput("11999")
-            compose.onNodeWithTag("trip-ending-odometer-error").assertIsDisplayed()
+            dismissKeyboard()
+            compose.onNodeWithTag("trip-ending-odometer-error").performScrollTo().assertIsDisplayed()
             compose.onNodeWithTag("trip-ending-odometer-save").assertIsNotEnabled()
             compose.onNodeWithTag("trip-ending-odometer-input").performTextClearance()
             compose.onNodeWithTag("trip-ending-odometer-input").performTextInput("12000,5")
+            dismissKeyboard()
             picture("trip-ending-odometer-sheet","odometer.png")
             compose.onNodeWithTag("trip-ending-odometer-sheet-close").performClick()
             assertFalse(journal.snapshot().first.single().has("odo_end"))
             compose.onNodeWithTag("trip-$id-cell-0").performClick()
             compose.onNodeWithTag("trip-ending-odometer-input").performTextInput("12000,5")
-            compose.onNodeWithTag("trip-ending-odometer-save").performClick()
+            dismissKeyboard()
+            compose.onNodeWithTag("trip-ending-odometer-save").performScrollTo().performClick()
             compose.waitUntil(10000) {compose.onAllNodesWithTag("trip-ending-odometer-sheet").fetchSemanticsNodes().isEmpty()}
             assertEquals(12000.5,journal.snapshot().first.single().getDouble("odo_end"),0.0)
-            compose.onNodeWithTag("trip-$id-share").performScrollTo().performClick()
+            compose.onNodeWithTag("trip-$id-share").performScrollTo().performTouchInput {click(center)}
             compose.waitUntil(10000) {shared.get()!=null}
             assertEquals(Intent.ACTION_CHOOSER,shared.get()!!.action)
             val send=shared.get()!!.getParcelableExtra(Intent.EXTRA_INTENT,Intent::class.java)!!
@@ -135,10 +185,19 @@ class TripJournalTableUiInstrumentedTest {
                 val trip=JSONObject(zip.getInputStream(zip.getEntry("trip.json")).reader().readText()).getJSONObject("trip")
                 assertFalse(trip.has("odo_end"));assertFalse(zip.entries().asSequence().any {it.name.startsWith("media/")})
             }
+            compose.onNodeWithTag("trip-$id-delete").performScrollTo()
+            val deleteBounds=compose.onNodeWithTag("trip-$id-delete").getUnclippedBoundsInRoot()
+            val odometerBounds=compose.onNodeWithTag("trip-$id-cell-4").getUnclippedBoundsInRoot()
+            assertTrue("Delete must follow the odometer",deleteBounds.left>=odometerBounds.right)
+            assertEquals("Delete must align with the row top",odometerBounds.top.value,deleteBounds.top.value,1f)
             picture("trip-journal-sheet","history-right.png")
-            compose.onNodeWithTag("trip-$id-delete").performScrollTo().performClick()
+            compose.onNodeWithTag("trip-$id-delete").performTouchInput {click(center)}
             val deleteTitle=ConsumerUiStrings.text("Delete trip?","Fahrt löschen?","Supprimer ce trajet ?","Rit verwijderen?")
             compose.waitUntil(10000) {compose.onAllNodesWithText(deleteTitle).fetchSemanticsNodes().isNotEmpty()}
+            compose.onNodeWithTag("trip-delete-media-loading").assertExists()
+            assertEquals("Confirmation must open before the library scan completes",1L,cleanupGate.count)
+            cleanupGate.countDown()
+            compose.waitUntil(10000) {compose.onAllNodesWithTag("trip-delete-media-loading").fetchSemanticsNodes().isEmpty()}
             compose.onNodeWithTag("trip-ending-odometer-sheet").assertDoesNotExist()
             compose.onNodeWithText(ConsumerUiStrings.text("Cancel","Abbrechen","Annuler","Annuleren")).performClick();assertEquals(1,journal.snapshot().first.size)
             compose.onNodeWithTag("trip-$id-details").assertDoesNotExist()
@@ -146,12 +205,17 @@ class TripJournalTableUiInstrumentedTest {
             compose.onNodeWithTag("trip-ending-odometer-saved").assertIsDisplayed()
             compose.onNodeWithTag("trip-ending-odometer-input").assertDoesNotExist()
             compose.onNodeWithTag("trip-ending-odometer-details").assertDoesNotExist()
+            compose.onNodeWithTag("trip-ending-odometer-sheet-close").performClick()
+            compose.onNodeWithTag("trip-$id-delete").performTouchInput {click(center)}
+            compose.onNodeWithText(ConsumerUiStrings.text("Delete","Löschen","Supprimer","Verwijderen")).performTouchInput {click(center)}
+            compose.waitUntil(10000) {compose.onAllNodesWithTag("trip-journal-empty").fetchSemanticsNodes().isNotEmpty()}
+            assertTrue(journal.history().isEmpty())
 
 
         } catch(error:Throwable) {
             runCatching {picture("trip-journal-sheet","failure.png")}
-            val tree=runCatching {compose.onNodeWithTag("trip-journal-sheet").printToString()}.getOrElse {compose.onRoot(useUnmergedTree=true).printToString()}
+            val tree=runCatching {compose.onNodeWithTag("trip-journal-sheet").printToString()}.getOrElse {runCatching {compose.onRoot(useUnmergedTree=true).printToString()}.getOrDefault("Compose host is not foreground")}
             throw AssertionError(error.message+"\n"+tree+"\nSnapshot: "+journal.snapshot().first,error)
-        } finally {compose.runOnIdle {visible.value=false};compose.waitForIdle();journal.close();base.deleteSharedPreferences(preferenceName);root.deleteRecursively()}
+        } finally {cleanupGate.countDown();compose.runOnIdle {visible.value=false};compose.waitForIdle();Locale.setDefault(previousLocale);journal.close();base.deleteSharedPreferences(preferenceName);root.deleteRecursively()}
     }
 }

@@ -16,7 +16,13 @@ silently regenerated. Logs are independent of diagnostic logging settings.
 
 The 23 October 2026 history revision moves recording consent directly into normal
 Settings. The five-column history shows date/time, start/end location names,
-measured kilometres to one decimal, and the ending car odometer. A missing ending
+measured kilometres to one decimal, and the ending car odometer. The odometer
+is headed **Auto (km)** in German; distance uses **Distanz (km)** on both
+clients. Each row has a share icon before date/time and a delete icon after the
+odometer, both aligned with the top of the row text.
+Android's column widths adapt to the available screen width; dates and place
+names wrap vertically so all five columns and both actions remain visible
+without horizontal scrolling. A missing ending
 reading may be entered once from an existing trip's row, including after closure;
 existing values stay immutable. A finite nonnegative value must be at least the
 stored start reading. Its entry event belongs to that explicit trip and never
@@ -33,9 +39,14 @@ next trip begins on movement.
 Optional `place` events retain offline matcher street/locality names at the
 original GPS fix time. SQLite schema 3 stores `start_place`, `end_place` and
 `history_version` with the trip. Closure resolves the endpoints once from nearby
-valid fixes and captured place evidence, with gap/time/distance checks. A
-background one-time migration does the same for legacy completed/interrupted
-trips; versioned metadata, including an unavailable name, is never recomputed.
+valid fixes and captured place evidence, with gap/time/distance checks. Where a
+five-second finalizer is used, names are resolved after that window so delayed
+map callbacks for the original fixes are included. Metadata version 2 repairs
+missing version-1 names once from existing local evidence, preserving every
+already saved name. Trips without nearby captured names still show an unknown
+location. A background one-time migration also handles legacy completed or
+interrupted trips; version-2 metadata, including an unavailable name, is never
+recomputed.
 No history screen calls map/geocoding services or replays event payloads. iPhone
 publishes a ready-to-display trip-table cache; Android history reads only the
 trip table. Distance remains the incrementally recorded value. Optional stored

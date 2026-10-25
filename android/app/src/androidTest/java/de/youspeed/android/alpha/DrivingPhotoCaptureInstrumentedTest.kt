@@ -24,9 +24,11 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -98,8 +100,27 @@ class DrivingPhotoCaptureInstrumentedTest {
                 }
                 compose.onNodeWithTag("settings-button").performClick()
                 compose.onNodeWithTag("settings-sheet").assertExists()
-                scenario.onActivity { fixture.movingGpsFix() }
+                for(speed in listOf(4.0,21.0,70.0,180.0)) {
+                    scenario.onActivity { fixture.movingGpsFix(speed) }
+                    compose.onNodeWithTag("settings-sheet").assertExists()
+                }
+                scenario.onActivity { fixture.controller.setApplicationActive(false) }
                 compose.onNodeWithTag("settings-sheet").assertExists()
+                scenario.onActivity {
+                    fixture.controller.setApplicationActive(true)
+                    // Keep this transition test independent of physical posture.
+                    fixture.stopLivePosture()
+                    fixture.movingGpsFix()
+                }
+                compose.onNodeWithTag("settings-sheet").assertExists()
+                compose.onNodeWithTag("settings-list").performScrollToNode(hasTestTag("settings-trip-history"))
+                compose.onNodeWithTag("settings-trip-history").performClick()
+                compose.onNodeWithTag("trip-journal-sheet").assertExists()
+                scenario.onActivity {fixture.movingGpsFix(180.0);fixture.controller.setApplicationActive(false)}
+                compose.onNodeWithTag("trip-journal-sheet").assertExists()
+                scenario.onActivity {fixture.controller.setApplicationActive(true);fixture.stopLivePosture()}
+                compose.onNodeWithTag("trip-journal-sheet").assertExists()
+                compose.onNodeWithTag("trip-journal-sheet-close").performClick()
                 compose.onNodeWithTag("settings-sheet-close").performClick()
             }
             for (angle in listOf(45.0, 79.0, 101.0, 180.0)) {
@@ -415,7 +436,7 @@ class DrivingPhotoCaptureInstrumentedTest {
 
         fun prepareInteractionTest() {
             // Use controller-level samples only; never register an OS mock-location provider.
-            (field("drivingControlPostureMotion").get(controller) as DrivingControlPostureMotion).stop()
+            stopLivePosture()
             clock.freeze()
             context.locationGranted = true
             context.cameraGranted = false
@@ -431,6 +452,8 @@ class DrivingPhotoCaptureInstrumentedTest {
             posture(0.0)
         }
 
+        fun stopLivePosture() = (field("drivingControlPostureMotion").get(controller) as DrivingControlPostureMotion).stop()
+
         fun posture(angleDegrees: Double?) = ConsumerSessionController::class.java
             .getDeclaredMethod("updateDrivingControlPosture", java.lang.Double::class.java)
             .apply { isAccessible = true }.invoke(controller, angleDegrees)
@@ -445,10 +468,10 @@ class DrivingPhotoCaptureInstrumentedTest {
             .getDeclaredMethod("updateBundledSpeedReference", String::class.java, SpeedReferenceValue::class.java)
             .apply { isAccessible = true }.invoke(controller, "installed-bundle:way", value)
 
-        fun movingGpsFix() {
+        fun movingGpsFix(speedKmh:Double=36.0) {
             clock.advanceMillis(1)
             val sample = Location(LocationManager.GPS_PROVIDER).apply {
-                latitude = 48.0; longitude = 8.0; accuracy = 5f; speed = 10f; bearing = 90f
+                latitude = 48.0; longitude = 8.0; accuracy = 5f; speed = (speedKmh/3.6).toFloat(); bearing = 90f
                 time = clock.millis(); elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos()
             }
             ConsumerSessionController::class.java.getDeclaredMethod("consumeLocation", Location::class.java)

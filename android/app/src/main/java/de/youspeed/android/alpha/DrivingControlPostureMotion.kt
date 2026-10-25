@@ -17,7 +17,7 @@ internal class DrivingControlPostureMotion(context: Context, private val onAngle
     private var filtered: DoubleArray? = null
     private val listener = object : SensorEventListener {
         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-            if (registered && accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
+            if (registered && sensor?.type != Sensor.TYPE_GRAVITY && accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
                 filtered = null
                 onAngleChanged(null)
             }
@@ -25,7 +25,10 @@ internal class DrivingControlPostureMotion(context: Context, private val onAngle
 
         override fun onSensorChanged(event: SensorEvent) {
             if (!registered) return
-            if (event.accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE || event.values.size < 3) {
+            // The Moto's gravity sensor reports accuracy=0 even for stable, valid
+            // face-up vectors. Validate gravity by its finite components and
+            // magnitude below; retain the accuracy gate for raw acceleration.
+            if ((event.sensor.type != Sensor.TYPE_GRAVITY && event.accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) || event.values.size < 3) {
                 filtered = null
                 onAngleChanged(null)
                 return
@@ -58,6 +61,7 @@ internal class DrivingControlPostureMotion(context: Context, private val onAngle
         registered = false
         manager?.unregisterListener(listener)
         filtered = null
-        onAngleChanged(null)
+        // A system chooser/background transition pauses intake; it is not a new
+        // non-flat reading. Keep open sheets until the next foreground sample.
     }
 }

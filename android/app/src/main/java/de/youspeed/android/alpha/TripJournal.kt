@@ -141,10 +141,17 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         trips to (rows("SELECT * FROM counters").firstOrNull() ?: JSONObject())
     } }.get()
     fun events(id:String):List<JSONObject> = worker.submit<List<JSONObject>> { withDatabase { rows("SELECT * FROM events WHERE trip=? ORDER BY time,seq",arrayOf(id)) } }.get()
+    internal fun mediaEvents(id:String):List<JSONObject> = worker.submit<List<JSONObject>> {withDatabase {rows("SELECT * FROM events WHERE trip=? AND kind='media' ORDER BY time,seq",arrayOf(id))}}.get()
     /** The history table reads saved facts only, independent of the number/size of events. */
     fun history():List<JSONObject> = worker.submit<List<JSONObject>> {withDatabase {rows("SELECT * FROM trips ORDER BY start DESC")}}.get()
     private fun storeHistoryMetadata(id:String) {
-        val trip=rows("SELECT * FROM trips WHERE id=? AND COALESCE(history_version,0)=0",arrayOf(id)).firstOrNull() ?: return
+        val trip=rows("SELECT * FROM trips WHERE id=? AND COALESCE(history_version,0)<2",arrayOf(id)).firstOrNull() ?: return
+        val startName=trip.optString("start_place").takeIf {it.isNotBlank()}
+        val endName=trip.optString("end_place").takeIf {it.isNotBlank()}
+        if(startName!=null && endName!=null) {
+            db.execSQL("UPDATE trips SET history_version=2 WHERE id=?",arrayOf(id))
+            return
+        }
         val points=rows("SELECT * FROM events WHERE trip=? AND kind='gps' ORDER BY time,seq",arrayOf(id)).filter {TripJournalProjection.trackEligible(TripJournalProjection.payload(it))}
         fun label(point:JSONObject?):String? {
             if(point==null) return null
@@ -153,10 +160,10 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
                 .map {if(it.optString("kind")=="gps") JSONObject(it.toString()).put("kind","place") else it}
             return TripJournalProjection.endpointPlaces(JSONObject(),listOf(point)+context).first
         }
-        db.execSQL("UPDATE trips SET start_place=?,end_place=?,history_version=1 WHERE id=?",arrayOf(trip.optString("start_place").takeIf {it.isNotBlank()} ?: label(points.firstOrNull()),trip.optString("end_place").takeIf {it.isNotBlank()} ?: label(points.lastOrNull()),id))
+        db.execSQL("UPDATE trips SET start_place=?,end_place=?,history_version=2 WHERE id=?",arrayOf(startName ?: label(points.firstOrNull()),endName ?: label(points.lastOrNull()),id))
     }
     private fun backfillHistoryMetadata() {
-        rows("SELECT id FROM trips WHERE state NOT IN ('active','finalizing') AND COALESCE(history_version,0)=0").forEach {storeHistoryMetadata(it.getString("id"))}
+        rows("SELECT id FROM trips WHERE state NOT IN ('active','finalizing') AND COALESCE(history_version,0)<2").forEach {storeHistoryMetadata(it.getString("id"))}
     }
     fun storageBytes():Long=File(context.filesDir,"trip-journal").walkTopDown().filter { it.isFile }.sumOf { it.length() }
     fun setEnabled(value:Boolean) { prefs.edit().putBoolean("enabled",value).apply(); worker.execute { attempt {
@@ -204,7 +211,8 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         checkpoint()
         active?.let {
             db.execSQL("UPDATE trips SET state=?,end_reason=? WHERE id=?",arrayOf(if(state=="disabled") "ended" else state,state,it))
-            storeHistoryMetadata(it)
+            // Include delayed map callbacks admitted during the finalizer window.
+            if(state!="finalizing") storeHistoryMetadata(it)
         }
         active=null; previous=null
     }
@@ -241,7 +249,7 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
     } }
     /** Offline matcher context is evidence at the original fix, never a reverse-geocoding guess. */
     fun matchedPlace(timeSeconds:Double,streetName:String?,cityName:String?,latitude:Double,longitude:Double,accuracy:Double) { submit {
-        if(!enabled || !requested || !foreground || endedLatch || active==null || !timeSeconds.isFinite() || timeSeconds>now()+1 || !latitude.isFinite() || latitude !in -90.0..90.0 || !longitude.isFinite() || longitude !in -180.0..180.0 || !accuracy.isFinite() || accuracy !in 0.0..50.0) return@submit
+        if(!enabled || !foreground || !timeSeconds.isFinite() || timeSeconds>now()+1 || !latitude.isFinite() || latitude !in -90.0..90.0 || !longitude.isFinite() || longitude !in -180.0..180.0 || !accuracy.isFinite() || accuracy !in 0.0..50.0) return@submit
         val street=streetName?.trim()?.takeIf {it.isNotEmpty()};val city=cityName?.trim()?.takeIf {it.isNotEmpty()}
         if(street==null && city==null) return@submit
         eventOwner(timeSeconds)?.let {id ->record("place",JSONObject().put("source","offline_matcher").put("street_name",street ?: JSONObject.NULL).put("city_name",city ?: JSONObject.NULL).put("latitude",latitude).put("longitude",longitude).put("accuracy",accuracy),id,timeSeconds)}
