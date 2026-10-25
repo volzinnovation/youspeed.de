@@ -11,12 +11,12 @@ final class SpeedLimitReferenceModelTests: XCTestCase {
     }
     func testPackagedPolicyIsTheSharedRuntimePolicy() throws {
         let model = try SpeedLimitReferenceModel.bundled()
-        XCTAssertEqual(model.version, "1.1.0")
+        XCTAssertEqual(model.version, "1.2.0")
         XCTAssertEqual(model.policy["priority"] as? [String], ["voice", "camera", "bundle"])
     }
     func testFrozenScenariosThroughNativeInterpreter() throws {
         let model = try SpeedLimitReferenceModel.load(read: read)
-        let corpus = try JSONSerialization.jsonObject(with: read("scenarios-v1.1.0.json")) as! [String: Any]
+        let corpus = try JSONSerialization.jsonObject(with: read("scenarios-v1.2.0.json")) as! [String: Any]
         for scenario in corpus["scenarios"] as! [[String: Any]] {
             let machine = SpeedReferenceMachine(model: model)
             for (index, row) in (scenario["steps"] as! [[String: Any]]).enumerated() {
@@ -166,7 +166,7 @@ final class SpeedLimitReferenceModelTests: XCTestCase {
         XCTAssertTrue(gate.permits(track: "new-sign", observedAt: now.addingTimeInterval(3)))
     }
     func testRejectsChangedPolicyAndApprovalLock() throws {
-        for changed in ["policy-v1.1.0.json", "approval-lock.json"] {
+        for changed in ["policy-v1.2.0.json", "approval-lock.json"] {
             XCTAssertThrowsError(try SpeedLimitReferenceModel.load { name in
                 var data = try self.read(name); if name == changed { data.append(32) }; return data
             })
@@ -241,5 +241,51 @@ final class SpeedLimitReferenceModelTests: XCTestCase {
         let fields = try XCTUnwrap(rejected.diagnosticFields["after"] as? [String: Any])
         XCTAssertEqual(fields["rejection"] as? String, "invalid_value")
         XCTAssertNil(SpeedReferenceRuntime(model: nil, now: { 0 }).camera(id: "sign", value: .init(kind: "numeric", kmh: 70)))
+    }
+}
+
+extension SpeedLimitReferenceModelTests {
+    func testReturnAcrossWaysConfirmsReversalAndClearsOldCamera() throws {
+        var now = 0.0
+        let runtime = SpeedReferenceRuntime(model: try SpeedLimitReferenceModel.load(read: read), now: { now })
+        runtime.context(way:"723493085",road:"ref:L340",relations:["144648"],direction:"forward",stable:true)
+        runtime.bundle(id:"map100",value:.init(kind:"numeric",kmh:100))
+        runtime.camera(id:"outbound-sign",value:.init(kind:"numeric",kmh:100))
+        for (at,way,road,direction) in [(1.0,"178845215","ref:L340","reverse"),(2.0,"935939126","service","forward"),(3.0,"178845215","ref:L340","forward"),(4.0,"723493085","ref:L340","reverse")] {
+            now=at;runtime.context(way:way,road:road,relations:road == "ref:L340" ? ["144648"] : [],direction:direction,stable:true)
+        }
+        XCTAssertTrue(runtime.machine!.pendingContext)
+        now=11
+        runtime.context(way:"723493085",road:"ref:L340",relations:["144648"],direction:"reverse",stable:true)
+        XCTAssertEqual(runtime.output?.generation,1)
+        runtime.bundle(id:"map60",value:.init(kind:"numeric",kmh:60))
+        XCTAssertEqual(runtime.output?.state,"BUNDLE")
+        XCTAssertEqual(runtime.output?.baselineKmh,60)
+        runtime.camera(id:"outbound-sign",value:.init(kind:"numeric",kmh:100))
+        XCTAssertEqual(runtime.output?.baselineKmh,60,"An old producer ID must not resurrect across the confirmed turn")
+    }
+}
+
+extension SpeedLimitReferenceModelTests {
+    func testVersionedVerifiedBundleRoadChangeCases() throws {
+        let corpus=try JSONSerialization.jsonObject(with:read("road-context-scenarios-v1.2.0.json")) as! [String:Any]
+        for scenario in corpus["scenarios"] as! [[String:Any]] {
+            var now=0.0
+            let runtime=SpeedReferenceRuntime(model:try SpeedLimitReferenceModel.load(read:read),now:{now})
+            runtime.context(way:"old",road:"name:old",relations:[],direction:"forward",stable:true)
+            runtime.bundle(id:"old-map",value:.init(kind:"numeric",kmh:70))
+            if scenario["initial_source"] as? String == "camera" {_=runtime.camera(id:"old-camera",value:.init(kind:"numeric",kmh:70))}
+            if scenario["initial_source"] as? String == "voice" {runtime.voice(id:"old-voice",value:.init(kind:"numeric",kmh:70))}
+            for fix in scenario["fixes"] as! [[String:Any]] {
+                now=fix["time"] as! Double
+                runtime.context(way:fix["way"] as? String,road:fix["road"] as? String,relations:[],direction:fix["direction"] as! String,stable:fix["stable"] as! Bool,
+                    bundleFix:.init(sourceTime:fix["source_time"] as! Double,ageSeconds:fix["age_s"] as! Double,accuracyMetres:fix["accuracy_m"] as! Double,matchDistanceMetres:fix["match_distance_m"] as! Double,applicable:fix["applicable"] as! Bool))
+                runtime.bundle(id:"new-map",value:fix["applicable"] as! Bool ? .init(kind:"numeric",kmh:50) : nil)
+            }
+            let expected=scenario["expect"] as! [String:Any],id=scenario["id"] as! String
+            XCTAssertEqual(runtime.output?.generation,expected["generation"] as? Int,id)
+            XCTAssertEqual(runtime.output?.state,expected["state"] as? String,id)
+            XCTAssertEqual(runtime.output?.baselineKmh,expected["baseline"] as? Int,id)
+        }
     }
 }

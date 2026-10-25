@@ -1,5 +1,36 @@
 # Speed-limit reference model history
 
+## 1.2.0 — 2026-10-25
+
+Explicit product-owner authorization: accept fresh, stable map limits after a
+confirmed road change without the eight-second stale interval, with Android
+kept in line with iPhone. The 24 October evening iPhone drive contains 79 stale
+outputs despite 78 of those lookups having a selected way.
+
+Ordinary different-road departures now confirm after two consecutive distinct
+fixes on the same pending road/way/relation. Both must have age 0–3 seconds,
+accuracy 0–20 m, selected-way distance 0–10 m, an applicable typed map value,
+and no more than three seconds between fixes. Duplicate timestamps cannot add
+proof; missing/unusable fixes reset it. The controller retires old-scope camera
+and voice producers before publishing the fresh map reference on that lookup.
+Unqualified/ambiguous departures and direction reversals retain eight seconds.
+Priority, ordinary expiry, missing-context bounds and camera applicability do
+not change. Published 1.0.0 and 1.1.0 files remain immutable.
+
+The new policy and conformance corpus, plus twelve shared native adapter cases,
+are hash-pinned in the updated owner approval lock. See the controller validation
+and device-log review in `docs/IPHONE_TRIP_AND_REFERENCE_REVIEW_2026-10-25.md`.
+
+## Adapter repair — 2026-10-24
+
+Explicit owner request: clear the outbound camera limit after a turnaround,
+including a return across intervening ways on the same road/relation. Both
+adapters retain bounded per-way accepted directions and preserve the pending
+reversal through those intervening ways. The existing eight-second confirmation
+still applies. Controllers retire the old camera producers when the confirmed
+scope generation changes. Policy 1.1.0, its interpreter semantics, versioned
+artifacts and approval lock are unchanged.
+
 ## 1.1.0 — 2026-09-27
 
 Owner-approved disregard-vision button: `camera_dismissed` withdraws ordinary

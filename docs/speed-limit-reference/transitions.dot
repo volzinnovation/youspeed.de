@@ -1,5 +1,5 @@
 digraph reference { rankdir=LR; node [shape=box, fontname="Helvetica"];
-label="Speed-limit reference 1.1.0 — first matching transition, then source projection";
+label="Speed-limit reference 1.2.0 — first matching transition, then source projection";
 input [label="Validated normalized event\nAdvance clock/distance and expire claims"];
 select [shape=diamond, label="SELECT\nfirst present register"];
 T01 [label="T01: reset\nnew_session\nreset_session"];

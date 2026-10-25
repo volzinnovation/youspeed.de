@@ -2,6 +2,8 @@ package de.youspeed.android.alpha
 
 import java.util.UUID
 
+internal data class SpeedReferenceBundleFix(val sourceTime:Double,val ageSeconds:Double,val accuracyMetres:Double,val matchDistanceMetres:Double,val applicable:Boolean)
+
 /** Observation of one offer; never grants authority or retries withheld evidence. */
 internal data class SpeedReferenceCameraReceipt(
     val offeredId: String,
@@ -40,6 +42,7 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
     private var road: String? = null
     private var relations = emptySet<String>()
     private var direction = "unknown"
+    private val acceptedDirections = linkedMapOf<String, String>()
     private data class Departure(
         val way: String,
         val road: String?,
@@ -47,6 +50,8 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
         val direction: String,
         val startedAt: Double,
         val reason: String,
+        val verifiedFixCount: Int = 0,
+        val lastVerifiedFixTime: Double? = null,
     ) {
         fun continues(nextWay: String, nextRoad: String?, nextRelations: Set<String>, nextDirection: String): Boolean {
             // Forward/reverse are relative to an OSM way's digitization. They
@@ -67,7 +72,7 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
     @Synchronized fun reset() {
         session = UUID.randomUUID().toString(); sequence = 0; origin = now(); meters = 0.0
         withdrawnCameraEvidence.clear()
-        cameraOrigins.clear();cameraEnvelopes.clear();bundleEnvelope=null; way = null; road = null; relations = emptySet(); departure = null; direction = "unknown"
+        cameraOrigins.clear();cameraEnvelopes.clear();bundleEnvelope=null; way = null; road = null; relations = emptySet(); departure = null; direction = "unknown"; acceptedDirections.clear()
         send("reset")
     }
     @Synchronized fun output() = machine?.project()
@@ -141,14 +146,20 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
         if (withdrawnCameraEvidence.add(evidenceId)) send("camera_scope_invalidated")
     }
     @Synchronized fun dismissCamera() { send("camera_dismissed") }
-    @Synchronized fun boundary(reason: String) { tick(); send("context_confirmed", mapOf("id" to UUID.randomUUID().toString(), "confirmed" to true, "reason" to reason)); departure = null }
-    @Synchronized fun context(nextWay: String?, nextRoad: String?, nextRelations: Set<String>, nextDirection: String, stable: Boolean) {
+    @Synchronized fun boundary(reason: String) { tick(); send("context_confirmed", mapOf("id" to UUID.randomUUID().toString(), "confirmed" to true, "reason" to reason)); departure = null; acceptedDirections.clear() }
+    @Synchronized fun context(nextWay: String?, nextRoad: String?, nextRelations: Set<String>, nextDirection: String, stable: Boolean, bundleFix:SpeedReferenceBundleFix?=null) {
         tick()
-        if (nextWay.isNullOrBlank()) { send("context_missing"); return }
+        if (nextWay.isNullOrBlank()) {
+            departure=departure?.copy(verifiedFixCount=0,lastVerifiedFixTime=null)
+            send("context_missing"); return
+        }
         var acceptedDirection = nextDirection
         val comparisonDirection = if (nextDirection == "unknown" && departure?.way == nextWay) departure!!.direction else nextDirection
-        val reversed = way == nextWay && direction != "unknown" && comparisonDirection != "unknown" && direction != comparisonDirection
-        val continues = !reversed && (way == null || way == nextWay || (road != null && road == nextRoad) || relations.intersect(nextRelations).isNotEmpty())
+        val originalDirection = acceptedDirections[nextWay] ?: if (way == nextWay) direction else "unknown"
+        val reversed = originalDirection != "unknown" && comparisonDirection != "unknown" && originalDirection != comparisonDirection
+        val returningOriginalDirection = originalDirection != "unknown" && nextDirection == originalDirection
+        val pendingReversal = departure?.reason == "direction_reversal" && !returningOriginalDirection
+        val continues = !reversed && !pendingReversal && (way == null || way == nextWay || (road != null && road == nextRoad) || relations.intersect(nextRelations).isNotEmpty())
         if (continues) { send("context_restored", mapOf("verified" to true)); departure = null }
         else {
             val candidate = departure
@@ -158,13 +169,28 @@ internal class SpeedReferenceRuntime(model: SpeedLimitReferenceModel?, private v
                 if (reversed) "direction_reversal" else "road_relation_exit")
             send("context_pending")
             val m = machine ?: return
-            if (!stable || m.time - departure!!.startedAt < m.limit("road_departure_confirmation_s")) return
+            val fix=bundleFix
+            if(stable && fix!=null && fix.applicable && fix.sourceTime.isFinite() && fix.sourceTime>=0 &&
+                fix.ageSeconds.isFinite() && fix.ageSeconds in 0.0..m.limit("verified_bundle_max_fix_age_s") &&
+                fix.accuracyMetres.isFinite() && fix.accuracyMetres in 0.0..m.limit("verified_bundle_max_accuracy_m") &&
+                fix.matchDistanceMetres.isFinite() && fix.matchDistanceMetres in 0.0..m.limit("verified_bundle_max_match_distance_m")) {
+                val last=departure!!.lastVerifiedFixTime
+                if(last==null || fix.sourceTime>last) departure=departure!!.copy(
+                    verifiedFixCount=if(last!=null && fix.sourceTime-last<=m.limit("verified_bundle_max_fix_gap_s")) departure!!.verifiedFixCount+1 else 1,
+                    lastVerifiedFixTime=fix.sourceTime)
+            } else departure=departure!!.copy(verifiedFixCount=0,lastVerifiedFixTime=null)
+            val verifiedBundle=departure!!.reason=="road_relation_exit" && departure!!.verifiedFixCount>=m.limit("verified_bundle_confirmation_fixes")
+            if (!stable || (!verifiedBundle && m.time - departure!!.startedAt < m.limit("road_departure_confirmation_s"))) return
             if (departure!!.reason == "direction_reversal" && nextDirection == "unknown") return
             acceptedDirection = departure!!.direction
             boundary(departure!!.reason)
         }
         if (way != nextWay || acceptedDirection != "unknown") direction = acceptedDirection
         way = nextWay; road = nextRoad; relations = nextRelations
+        if (stable && acceptedDirection != "unknown") {
+            acceptedDirections[nextWay] = acceptedDirection
+            if (acceptedDirections.size > 128) acceptedDirections.remove(acceptedDirections.keys.first())
+        }
     }
 }
 

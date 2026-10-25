@@ -13,6 +13,68 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class UpcomingSpeedLimitControllerInstrumentedTest {
+    @Test fun verifiedBundleRoadChangePublishesOnSecondFixAndRetiresOldCamera() {
+        val instrumentation=InstrumentationRegistry.getInstrumentation();val context=instrumentation.targetContext
+        check(context.packageName.endsWith(".testhost"))
+        instrumentation.runOnMainSync {
+            val controller=ConsumerSessionController(context,File(context.cacheDir,"verified-road-controller"),context.getSharedPreferences("verified-road-controller",Context.MODE_PRIVATE),Clock.systemUTC(),launchScreenshotState=AppScreenshotState.CAMERA_LIMIT_ACTIVE)
+            try {
+                val runtime=field("speedReference").get(controller) as SpeedReferenceRuntime;runtime.reset()
+                val apply=ConsumerSessionController::class.java.getDeclaredMethod("applyActiveLocalSpeedCorrectionIfNeeded",SpeedLookupResult::class.java,Location::class.java).apply {isAccessible=true}
+                val bundle=ConsumerSessionController::class.java.getDeclaredMethod("updateBundledSpeedReference",String::class.java,SpeedReferenceValue::class.java).apply {isAccessible=true}
+                val at=System.currentTimeMillis()-2000
+                fun fix(way:String,ref:String,t:Long) {
+                    val location=Location("gps").apply {time=t;accuracy=4.7f;speed=10f;bearing=90f;bearingAccuracyDegrees=1f}
+                    val candidate=MatcherCandidateTrace(1,way,1.0,1.0,null,10.0,"none","secondary",null,"road",ref,null,true,true,false,true)
+                    apply.invoke(controller,lookup().copy(wayId=way,streetRef=ref,travelDirection=TrafficSignTravelDirection.FORWARD,candidateTraces=listOf(candidate)),location)
+                    bundle.invoke(controller,"verified-road-map",SpeedReferenceValue("numeric",60))
+                }
+                fix("old","L 340",at);runtime.camera("old-road-camera",SpeedReferenceValue("numeric",100))
+                val gate=field("trafficSignGeneration").get(controller) as TrafficSignWriteGate;val generation=gate.get()
+                fix("new","L 564",at+1000);assertEquals(100,runtime.output()?.value?.kmh)
+                fix("new","L 564",at+2000);assertEquals(60,runtime.output()?.baselineKmh)
+                assertEquals("BUNDLE",runtime.output()?.state);assertTrue(gate.get()>generation)
+                runtime.camera("old-road-camera",SpeedReferenceValue("numeric",100));assertEquals(60,runtime.output()?.baselineKmh)
+            } finally {controller.dispose()}
+        }
+    }
+    @Test fun turnaroundAcrossWaysClearsOldCameraAndAdvancesProducerGeneration() {
+        val instrumentation=InstrumentationRegistry.getInstrumentation();val context=instrumentation.targetContext
+        check(context.packageName.endsWith(".testhost"))
+        lateinit var controller:ConsumerSessionController
+        lateinit var runtime:SpeedReferenceRuntime
+        lateinit var apply:java.lang.reflect.Method
+        fun fix(way:String,direction:TrafficSignTravelDirection) {
+            val location=Location("gps").apply {time=System.currentTimeMillis();accuracy=3f;speed=10f;bearing=90f;bearingAccuracyDegrees=1f}
+            apply.invoke(controller,lookup().copy(wayId=way,travelDirection=direction,streetRef="L 340",streetBaseName="turnaround-test",sourceRelationIds=setOf(10)),location)
+            ConsumerSessionController::class.java.getDeclaredMethod("updateBundledSpeedReference",String::class.java,SpeedReferenceValue::class.java).apply {isAccessible=true}
+                .invoke(controller,"turnaround-map",SpeedReferenceValue("numeric",60))
+        }
+        instrumentation.runOnMainSync {
+            controller=ConsumerSessionController(context,File(context.cacheDir,"turnaround-controller"),context.getSharedPreferences("turnaround-controller",Context.MODE_PRIVATE),Clock.systemUTC(),launchScreenshotState=AppScreenshotState.CAMERA_LIMIT_ACTIVE)
+            runtime=field("speedReference").get(controller) as SpeedReferenceRuntime
+            runtime.reset()
+            apply=ConsumerSessionController::class.java.getDeclaredMethod("applyActiveLocalSpeedCorrectionIfNeeded",SpeedLookupResult::class.java,Location::class.java).apply {isAccessible=true}
+            fix("723493085",TrafficSignTravelDirection.FORWARD)
+            ConsumerSessionController::class.java.getDeclaredMethod("updateBundledSpeedReference",String::class.java,SpeedReferenceValue::class.java).apply {isAccessible=true}
+                .invoke(controller,"turnaround-map",SpeedReferenceValue("numeric",60))
+            runtime.camera("turnaround-old-camera",SpeedReferenceValue("numeric",100))
+            fix("178845215",TrafficSignTravelDirection.FORWARD)
+            fix("723493085",TrafficSignTravelDirection.REVERSE)
+            assertEquals(100,runtime.output()?.value?.kmh)
+        }
+        val gate=field("trafficSignGeneration").get(controller) as TrafficSignWriteGate;val generation=gate.get()
+        try {
+            Thread.sleep(8100)
+            instrumentation.runOnMainSync {
+                fix("935939126",TrafficSignTravelDirection.REVERSE)
+                assertEquals("${runtime.output()} reason=${runtime.lastEventReason}",60,runtime.output()?.value?.kmh)
+                assertNotEquals(generation,gate.get())
+                runtime.camera("turnaround-old-camera",SpeedReferenceValue("numeric",100))
+                assertEquals(60,runtime.output()?.value?.kmh)
+            }
+        } finally {instrumentation.runOnMainSync {controller.dispose()}}
+    }
     @Test fun cameraTownPassageControlsLocalityDefaultsAndKeepsExplicitNumericLimit() {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
         val context=instrumentation.targetContext

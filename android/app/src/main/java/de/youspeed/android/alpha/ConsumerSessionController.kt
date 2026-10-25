@@ -6092,7 +6092,8 @@ class ConsumerSessionController(
                 val overlayMs = (System.nanoTime() - overlayStartedAtNanos) / 1_000_000.0
                 val inventoryQueryCompletedAt = clock.instant()
                 if (!lookupIsFresh("after_inventory_query")) return@lookup
-                val activeCorrectionOverrideValue = applyActiveLocalSpeedCorrectionIfNeeded(result = result, location = location)
+                val activeCorrectionOverrideValue = applyActiveLocalSpeedCorrectionIfNeeded(result = result, location = location,
+                    onScopeConfirmed = { expectedGeneration = it })
                 // Saved observations remain review/export evidence; expired
                 // voice/camera assertions must not return through the map index.
                 val localOverrideValue = activeCorrectionOverrideValue
@@ -6845,13 +6846,35 @@ class ConsumerSessionController(
     }
 
     private fun applyActiveLocalSpeedCorrectionIfNeeded(result: SpeedLookupResult, location: Location): String? {
+        return applyActiveLocalSpeedCorrectionIfNeeded(result,location,null)
+    }
+    private fun applyActiveLocalSpeedCorrectionIfNeeded(result: SpeedLookupResult, location: Location,onScopeConfirmed:((Long)->Unit)?): String? {
         val referenceDirection = SpeedReferenceRoadInput.direction(result.travelDirection,
             location.speed.toDouble().takeIf { location.hasSpeed() },
             location.bearing.toDouble().takeIf { location.hasBearing() },
             location.bearingAccuracyDegrees.toDouble().takeIf { location.hasBearingAccuracy() },
             location.accuracy.toDouble().takeIf { location.hasAccuracy() }, location.time, clock.millis())
+        val referenceGeneration = speedReference.output()?.generation
+        val selected=trafficSignBaseLimit(null,null,result,activeMapCountryCode ?: "ZZZ").resolution
+        val selectedDistance=result.candidateTraces.firstOrNull {it.isSelected && it.wayId==result.wayId}?.distanceM
+        val bundleFix=selectedDistance?.let {distance ->
+            SpeedReferenceBundleFix(location.time/1000.0,(clock.millis()-location.time)/1000.0,
+                if(location.hasAccuracy()) location.accuracy.toDouble() else Double.NaN,distance,
+                selected?.referenceValue()!=null)
+        }
         speedReference.context(result.wayId, DrivingRoadIdentity.key(result.streetRef, result.streetBaseName, result.highway),
-            result.sourceRelationIds.map { it.toString() }.toSet(), referenceDirection.name.lowercase(Locale.US), result.wayId != null)
+            result.sourceRelationIds.map { it.toString() }.toSet(), referenceDirection.name.lowercase(Locale.US), result.wayId != null,bundleFix)
+        if (speedReference.output()?.generation != referenceGeneration &&
+            speedReference.lastEventReason in setOf("direction_reversal", "road_relation_exit")) {
+            synchronized(trafficSignStateLock) {
+                trafficSignResolver.clear(); immediateTrafficSignOverride = null
+                conditionalCameraTracks.values.forEach { it.retired = true }
+                latestTrafficSignContext = null; latestTrafficSignMatchedPosition = null
+                val generation=trafficSignGeneration.incrementAndGet(isDriving && isTrafficSignRecognitionRuntimeEnabled())
+                onScopeConfirmed?.invoke(generation)
+                resetTrafficSignTraversalLocked()
+            }
+        }
         val value = speedReference.voice()
         if (value == null) { activeLocalSpeedCorrection = null; return null }
         return when (value.kind) { "numeric" -> value.kmh?.toString(); "walk" -> "walk"; "unlimited" -> "none"; else -> null }

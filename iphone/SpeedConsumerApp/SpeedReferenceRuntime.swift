@@ -1,5 +1,14 @@
 import Foundation
 
+/// Evidence from the selected map way, never from the nearest competing candidate.
+struct SpeedReferenceBundleFix {
+    let sourceTime: Double
+    let ageSeconds: Double
+    let accuracyMetres: Double
+    let matchDistanceMetres: Double
+    let applicable: Bool
+}
+
 /// Observation of one offer; never grants authority or retries withheld evidence.
 struct SpeedReferenceCameraReceipt {
     let offeredID: String
@@ -41,6 +50,8 @@ final class SpeedReferenceRuntime {
     private var road: String?
     private var relations = Set<String>()
     private var direction = "unknown"
+    private var acceptedDirections: [String: String] = [:]
+    private var directionOrder: [String] = []
     private struct Departure {
         var way: String
         var road: String?
@@ -48,6 +59,8 @@ final class SpeedReferenceRuntime {
         var direction: String
         let startedAt: Double
         let reason: String
+        var verifiedFixCount = 0
+        var lastVerifiedFixTime: Double?
 
         func continues(way nextWay: String, road nextRoad: String?, relations nextRelations: Set<String>, direction nextDirection: String) -> Bool {
             // Forward/reverse describe an OSM way's digitization, not the road's
@@ -70,7 +83,7 @@ final class SpeedReferenceRuntime {
     func reset() {
         session = UUID().uuidString; sequence = 0; origin = now(); meters = 0
         withdrawnCameraEvidence = []
-        cameraOrigins = [:]; cachedBundleApplicability = nil; way = nil; road = nil; relations = []; departure = nil; direction = "unknown"
+        cameraOrigins = [:]; cachedBundleApplicability = nil; way = nil; road = nil; relations = []; departure = nil; direction = "unknown"; acceptedDirections = [:]; directionOrder = []
         _ = send("reset")
     }
     var output: SpeedReferenceOutput? { machine?.project() }
@@ -164,15 +177,25 @@ final class SpeedReferenceRuntime {
     func dismissCamera() { _ = send("camera_dismissed") }
     func boundary(_ reason: String) {
         tick(); _ = send("context_confirmed", ["id": UUID().uuidString, "confirmed": true, "reason": reason]); departure = nil
+        acceptedDirections = [:]; directionOrder = []
     }
-    func context(way nextWay: String?, road nextRoad: String?, relations nextRelations: Set<String>, direction nextDirection: String, stable: Bool) {
+    func context(way nextWay: String?, road nextRoad: String?, relations nextRelations: Set<String>, direction nextDirection: String, stable: Bool, bundleFix: SpeedReferenceBundleFix? = nil) {
         tick()
-        guard let nextWay, !nextWay.isEmpty else { _ = send("context_missing"); return }
+        guard let nextWay, !nextWay.isEmpty else {
+            departure?.verifiedFixCount=0; departure?.lastVerifiedFixTime=nil
+            _ = send("context_missing"); return
+        }
         var acceptedDirection = nextDirection
         let comparisonDirection = nextDirection == "unknown" && departure?.way == nextWay
             ? departure?.direction ?? nextDirection : nextDirection
-        let reversed = way == nextWay && direction != "unknown" && comparisonDirection != "unknown" && direction != comparisonDirection
-        let continues = !reversed && (way == nil || way == nextWay || (road != nil && road == nextRoad) || !relations.intersection(nextRelations).isEmpty)
+        // Compare revisited ways in their own digitization, across intervening
+        // segments and brief side-road excursions. Never compare raw forward/
+        // reverse values belonging to different OSM ways.
+        let originalDirection = acceptedDirections[nextWay] ?? (way == nextWay ? direction : "unknown")
+        let reversed = originalDirection != "unknown" && comparisonDirection != "unknown" && originalDirection != comparisonDirection
+        let returningOriginalDirection = originalDirection != "unknown" && nextDirection == originalDirection
+        let pendingReversal = departure?.reason == "direction_reversal" && !returningOriginalDirection
+        let continues = !reversed && !pendingReversal && (way == nil || way == nextWay || (road != nil && road == nextRoad) || !relations.intersection(nextRelations).isEmpty)
         if continues {
             _ = send("context_restored", ["verified": true]); departure = nil
         } else {
@@ -183,13 +206,34 @@ final class SpeedReferenceRuntime {
                 departure?.observe(way: nextWay, road: nextRoad, relations: nextRelations, direction: nextDirection)
             }
             _ = send("context_pending")
-            guard stable, let departure, let machine, machine.time - departure.startedAt >= machine.limit("road_departure_confirmation_s") else { return }
+            guard let machine else { return }
+            if stable, let fix=bundleFix, fix.applicable,
+               fix.sourceTime.isFinite, fix.sourceTime >= 0,
+               fix.ageSeconds.isFinite, (0...machine.limit("verified_bundle_max_fix_age_s")).contains(fix.ageSeconds),
+               fix.accuracyMetres.isFinite, (0...machine.limit("verified_bundle_max_accuracy_m")).contains(fix.accuracyMetres),
+               fix.matchDistanceMetres.isFinite, (0...machine.limit("verified_bundle_max_match_distance_m")).contains(fix.matchDistanceMetres) {
+                let last=departure?.lastVerifiedFixTime
+                if last == nil || fix.sourceTime > last! {
+                    let nextCount = last.map { fix.sourceTime-$0 <= machine.limit("verified_bundle_max_fix_gap_s") } == true ? (departure?.verifiedFixCount ?? 0)+1 : 1
+                    departure?.verifiedFixCount = nextCount
+                    departure?.lastVerifiedFixTime=fix.sourceTime
+                }
+            } else { departure?.verifiedFixCount=0; departure?.lastVerifiedFixTime=nil }
+            guard stable, let departure else { return }
+            let verifiedBundle = departure.reason == "road_relation_exit"
+                && Double(departure.verifiedFixCount) >= machine.limit("verified_bundle_confirmation_fixes")
+            guard verifiedBundle || machine.time-departure.startedAt >= machine.limit("road_departure_confirmation_s") else { return }
             guard departure.reason != "direction_reversal" || nextDirection != "unknown" else { return }
             acceptedDirection = departure.direction
             boundary(departure.reason)
         }
         if way != nextWay || acceptedDirection != "unknown" { direction = acceptedDirection }
         way = nextWay; road = nextRoad; relations = nextRelations
+        if stable && acceptedDirection != "unknown" {
+            if acceptedDirections[nextWay] == nil { directionOrder.append(nextWay) }
+            acceptedDirections[nextWay] = acceptedDirection
+            if directionOrder.count > 128 { acceptedDirections.removeValue(forKey: directionOrder.removeFirst()) }
+        }
     }
 }
 

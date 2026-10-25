@@ -1,6 +1,6 @@
-# Applicable speed-limit reference — runtime policy 1.1.0
+# Applicable speed-limit reference — runtime policy 1.2.0
 
-The [versioned JSON](../../shared/speed-limit-reference/policy-v1.1.0.json) is a
+The [versioned JSON](../../shared/speed-limit-reference/policy-v1.2.0.json) is a
 **deterministic extended finite-state machine (EFSM)**. Both apps load its exact
 packaged bytes, interpret its transition table, selection order and limits, and
 use its selected reference for the displayed limit and overspeed/penalty baseline.
@@ -165,7 +165,7 @@ required: a new frame is not a new sign.
 uses immutable original evidence `t₀,d₀`. `clear_X` removes authority. Other
 primitives increment scope or applicability revision, mark/clear pending context,
 start a gap once, clear the gap, or reset every register for a new drive.
-The full [JSON transition table](../../shared/speed-limit-reference/policy-v1.1.0.json)
+The full [JSON transition table](../../shared/speed-limit-reference/policy-v1.2.0.json)
 is normative; Swift, Kotlin and the Python reference oracle interpret it.
 
 A new voice correction replaces voice and clears ordinary/enclosing camera
@@ -184,13 +184,23 @@ typed pipeline property, rather than inferred from a numeric value.
 
 An OSM way split alone is not a road-relation departure. The runtime adapters
 use directed road identity, source relation IDs and way continuity. A different
-road starts `context_pending`; a consistently matched different identity/direction
-for **8 seconds** (`road_departure_confirmation_s`) confirms departure. Returning
-to the original road first restores context without renewing the claim. The
-Android ~6.45 s A8 → A57 ramp → A8 excursion is explicitly covered, including a
-250 m excursion that must not be confused with the 160 m *missing-context* bound.
-The 8-second confirmation is a conservative adapter rule, not proof of actual
-lane position; improving matcher confidence/topology remains separate work.
+road starts `context_pending`. Under owner-approved policy 1.2.0, two
+consecutive distinct fixes with an applicable typed bundle value confirm an
+ordinary different-road departure: each is at most three seconds old, accuracy
+at most 20 m, selected-way distance at most 10 m, and the fix interval at most
+three seconds. The selected candidate supplies that distance; a nearby competing
+way cannot qualify it. Missing/unusable evidence resets the consecutive proof.
+The existing confirmed-boundary transition retires old scope before the same
+lookup publishes its fresh map value.
+
+Without that proof, a consistently matched different identity/direction for
+**8 seconds** (`road_departure_confirmation_s`) still confirms departure.
+Direction reversals retain the eight-second confirmation. Returning to the
+original road first restores context without renewing claim origins. A single
+competing ramp fix cannot take the fast path. The shared native adapter corpus
+covers these cases, poor accuracy, stale/missing limits, repeated timestamps,
+changing pending roads and gaps between fixes. This remains evidence-based
+confirmation, not ground-truth lane position.
 
 Confirmed city entry/exit, relation departure, direction reversal or an applicable
 end clears old-scope authority and advances `g`. Fresh evidence must then be

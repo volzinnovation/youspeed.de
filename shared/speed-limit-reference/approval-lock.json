@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "target_version": "1.1.0",
+  "target_version": "1.2.0",
   "runtime_active": true,
-  "approval_date": "2026-09-27",
-  "approval_basis": "Product owner requested a disregard-vision action on 2026-09-27 and approved its design and implementation: drop incorrect visual evidence and return to road. Preserve voice corrections, clear rejected camera memory, and keep TSR active. Other priorities, expiry and context thresholds remain unchanged.",
+  "approval_date": "2026-10-25",
+  "approval_basis": "Explicit product-owner authorization on 2026-10-25: accept fresh, stable applicable map limits after a confirmed road change without the eight-second stale interval; keep Android in line with iPhone. Two distinct qualified fixes confirm ordinary different-road departure. Ambiguous evidence and direction reversals retain eight seconds. Priority, expiry and gap limits are unchanged.",
   "artifacts": [
     {
-      "file": "policy-v1.1.0.json",
+      "file": "policy-v1.2.0.json",
       "role": "target",
-      "sha256": "497e157de2d04ed067897ecc9abde29ecf304a4147c9897b26e71d5c5fc0fcd9"
+      "sha256": "35d1a9b68d5e3abc6b5e200ec9b1a110bcfe5fea80b5de3639344e278e9037ce"
     },
     {
       "file": "current-v0.1.0.json",
@@ -16,9 +16,14 @@
       "sha256": "0bc9fb4f9a89658bad3674f4d6e0a5d74b62767783f9c4f9c1a8da7272de7b0e"
     },
     {
-      "file": "scenarios-v1.1.0.json",
+      "file": "scenarios-v1.2.0.json",
       "role": "scenarios",
-      "sha256": "33873a7d0c6b52927c1ba0212f6ec3faf15d3dfa72b5546a45b5e877d5e6aa50"
+      "sha256": "c0e9c31394e577ac4864b380986de07f6d94599675735deaab3e14ffefd74bed"
+    },
+    {
+      "file": "road-context-scenarios-v1.2.0.json",
+      "role": "adapter_scenarios",
+      "sha256": "f3afe3ea44850b521723944da70f6f4646d385f94f246b049bba51544d6c5d17"
     }
   ]
 }

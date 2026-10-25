@@ -6,6 +6,40 @@ import UIKit
 @testable import SpeedConsumer
 
 final class UpcomingSpeedLimitTests: XCTestCase {
+    @MainActor func testVerifiedBundleRoadChangePublishesOnSecondFixAndRetiresOldCamera() async throws {
+        let model=DriveSessionViewModel();Self.controllerLifetimes.append(model)
+        defer {model.stopDriving()}
+        try await model.testWaitForStartupDataLoad()
+        let at=Date().addingTimeInterval(-2)
+        try model.testApplyTurnaroundLookup(way:"old",direction:.forward,at:at,seedCamera:true,roadRef:"L 340",verifiedBundle:true)
+        let generation=model.testMapContextGeneration
+        try model.testApplyTurnaroundLookup(way:"new",direction:.forward,at:at.addingTimeInterval(1),roadRef:"L 564",verifiedBundle:true)
+        XCTAssertEqual(model.speedLimitKmh,100)
+        try model.testApplyTurnaroundLookup(way:"new",direction:.forward,at:at.addingTimeInterval(2),roadRef:"L 564",verifiedBundle:true)
+        XCTAssertEqual(model.speedLimitKmh,60)
+        XCTAssertEqual(model.effectiveSpeedLimitState.source,.bundle)
+        XCTAssertGreaterThan(model.testMapContextGeneration,generation)
+        model.testOfferIndependentCamera(id:"turnaround-old-camera",speed:100)
+        XCTAssertEqual(model.speedLimitKmh,60)
+    }
+    @MainActor func testControllerTurnaroundRetiresOldCameraAndProducerGeneration() async throws {
+        let model=DriveSessionViewModel();Self.controllerLifetimes.append(model)
+        defer {model.stopDriving()}
+        try await model.testWaitForStartupDataLoad()
+        let at=Date()
+        try model.testApplyTurnaroundLookup(way:"723493085",direction:.forward,at:at,seedCamera:true)
+        XCTAssertEqual(model.speedLimitKmh,100)
+        try model.testApplyTurnaroundLookup(way:"178845215",direction:.forward,at:at.addingTimeInterval(1))
+        try model.testApplyTurnaroundLookup(way:"723493085",direction:.reverse,at:at.addingTimeInterval(2))
+        let generation=model.testMapContextGeneration
+        try model.testApplyTurnaroundLookup(way:"935939126",direction:.reverse,at:at.addingTimeInterval(6))
+        XCTAssertEqual(model.speedLimitKmh,100)
+        try model.testApplyTurnaroundLookup(way:"935939126",direction:.reverse,at:at.addingTimeInterval(11))
+        XCTAssertEqual(model.speedLimitKmh,60)
+        XCTAssertGreaterThan(model.testMapContextGeneration,generation)
+        model.testOfferIndependentCamera(id:"turnaround-old-camera",speed:100)
+        XCTAssertEqual(model.speedLimitKmh,60)
+    }
     @MainActor
     func testCameraTownPassageControlsLocalityDefaultsAndKeepsExactNumericLimit() throws {
         let model = DriveSessionViewModel()

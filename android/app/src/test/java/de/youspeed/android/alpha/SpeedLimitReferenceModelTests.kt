@@ -16,11 +16,11 @@ class SpeedLimitReferenceModelTests {
     }
     @Test fun packagedPolicyIsTheSharedRuntimePolicy() {
         val model = model()
-        assertEquals("1.1.0", model.version)
+        assertEquals("1.2.0", model.version)
         assertEquals(listOf("voice", "camera", "bundle"), model.policy["priority"])
     }
     @Test fun frozenScenariosThroughNativeInterpreter() {
-        val corpus = SpeedLimitReferenceModel.decode(bytes("scenarios-v1.1.0.json"))
+        val corpus = SpeedLimitReferenceModel.decode(bytes("scenarios-v1.2.0.json"))
         for (scenario in corpus["scenarios"] as List<Map<String, Any?>>) {
             val machine = SpeedReferenceMachine(model())
             for ((index, row) in (scenario["steps"] as List<Map<String, Any?>>).withIndex()) {
@@ -166,7 +166,7 @@ class SpeedLimitReferenceModelTests {
         assertTrue(gate.permits("new-sign", now.plusSeconds(3)))
     }
     @Test fun rejectsChangedPolicyAndApprovalLock() {
-        for (changed in listOf("policy-v1.1.0.json", "approval-lock.json")) {
+        for (changed in listOf("policy-v1.2.0.json", "approval-lock.json")) {
             assertTrue(runCatching { SpeedLimitReferenceModel.load { name -> if (name == changed) bytes(name) + byteArrayOf(32) else bytes(name) } }.isFailure)
         }
         assertTrue(runCatching { SpeedLimitReferenceModel.load { error("missing resource") } }.isFailure)
@@ -256,4 +256,48 @@ class SpeedLimitReferenceModelTests {
         assertEquals("invalid_value", fields["rejection"])
         assertNull(SpeedReferenceRuntime(null) { 0.0 }.camera("sign", SpeedReferenceValue("numeric", 70)))
     }
+    @Test fun returnAcrossWaysClearsOutboundCamera() {
+        var now=0.0
+        val runtime=SpeedReferenceRuntime(model()){now}
+        runtime.context("723493085","ref:L340",setOf("144648"),"forward",true)
+        runtime.bundle("map100",SpeedReferenceValue("numeric",100))
+        runtime.camera("outbound-sign",SpeedReferenceValue("numeric",100))
+        val steps=listOf(Triple(1.0,"178845215","reverse"),Triple(2.0,"935939126","forward"),Triple(3.0,"178845215","forward"),Triple(4.0,"723493085","reverse"))
+        for((at,way,direction) in steps) {
+            now=at;runtime.context(way,if(way=="935939126") "service" else "ref:L340",if(way=="935939126") emptySet() else setOf("144648"),direction,true)
+        }
+        assertTrue(runtime.contextPending())
+        now=11.0;runtime.context("723493085","ref:L340",setOf("144648"),"reverse",true)
+        assertEquals(1,runtime.output()?.generation)
+        runtime.bundle("map60",SpeedReferenceValue("numeric",60))
+        assertEquals("BUNDLE",runtime.output()?.state);assertEquals(60,runtime.output()?.baselineKmh)
+        runtime.camera("outbound-sign",SpeedReferenceValue("numeric",100))
+        assertEquals(60,runtime.output()?.baselineKmh)
+    }
+
+    @Test fun versionedVerifiedBundleRoadChangeCases() {
+        val corpus=SpeedLimitReferenceModel.decode(bytes("road-context-scenarios-v1.2.0.json"))
+        for(scenario in corpus["scenarios"] as List<Map<String,Any?>>) {
+            var now=0.0
+            val runtime=SpeedReferenceRuntime(model()){now}
+            runtime.context("old","name:old",emptySet(),"forward",true)
+            runtime.bundle("old-map",SpeedReferenceValue("numeric",70))
+            when(scenario["initial_source"]) {
+                "camera" -> runtime.camera("old-camera",SpeedReferenceValue("numeric",70))
+                "voice" -> runtime.voice("old-voice",SpeedReferenceValue("numeric",70))
+            }
+            for(fix in scenario["fixes"] as List<Map<String,Any?>>) {
+                fun n(key:String)=(fix[key] as Number).toDouble()
+                now=n("time")
+                runtime.context(fix["way"] as? String,fix["road"] as? String,emptySet(),fix["direction"] as String,fix["stable"] as Boolean,
+                    SpeedReferenceBundleFix(n("source_time"),n("age_s"),n("accuracy_m"),n("match_distance_m"),fix["applicable"] as Boolean))
+                runtime.bundle("new-map",if(fix["applicable"]==true) SpeedReferenceValue("numeric",50) else null)
+            }
+            val expected=scenario["expect"] as Map<String,Any?>;val id=scenario["id"] as String
+            assertEquals(id,(expected["generation"] as Number).toInt(),runtime.output()?.generation)
+            assertEquals(id,expected["state"],runtime.output()?.state)
+            assertEquals(id,(expected["baseline"] as? Number)?.toInt(),runtime.output()?.baselineKmh)
+        }
+    }
+
 }

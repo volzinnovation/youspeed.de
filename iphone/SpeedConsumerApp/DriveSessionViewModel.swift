@@ -8733,11 +8733,26 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignOverridePolicy.clear()
     }
 
-    private func applyActiveLocalSpeedCorrectionIfNeeded(for result: SpeedLimitResult, lat _: Double, lon _: Double, timestamp: Date = Date(), direction: TrafficSignTravelDirection = .unknown) -> String? {
+    private func applyActiveLocalSpeedCorrectionIfNeeded(for result: SpeedLimitResult, lat _: Double, lon _: Double, timestamp: Date = Date(), direction: TrafficSignTravelDirection = .unknown, horizontalAccuracyM:Double? = nil) -> String? {
+        let referenceGeneration = speedReference.output?.generation
+        let selectedValue = SpeedReferenceValue(EffectiveSpeedLimitState.base(localValue:nil,
+            bundledSpeedKmh:result.speedLimitKmh,bundledUnlimited:isBundledExplicitUnlimitedMatch(result:result,localOverrideValue:nil)).value)
+        let selectedDistance = result.candidateTraces.first { $0.isSelected && $0.wayID == result.wayID }?.distanceM
+        let bundleFix = horizontalAccuracyM.flatMap { accuracy in selectedDistance.map { distance in
+            SpeedReferenceBundleFix(sourceTime:timestamp.timeIntervalSince1970,ageSeconds:Date().timeIntervalSince(timestamp),
+                accuracyMetres:accuracy,matchDistanceMetres:distance,applicable:selectedValue != nil)
+        }}
         speedReference.context(way: result.wayID,
             road: DrivingRoadIdentity.key(ref: result.streetRef, name: result.streetBaseName, highway: result.highway),
             relations: Set((result.routeRelationMemberships ?? []).compactMap { $0.sourceRelationID.map(String.init) }),
-            direction: direction.rawValue, stable: result.wayID != nil)
+            direction: direction.rawValue, stable: result.wayID != nil, bundleFix:bundleFix)
+        if speedReference.output?.generation != referenceGeneration,
+           ["direction_reversal", "road_relation_exit"].contains(speedReference.lastEventReason) {
+            // Retire producer assertions as well, so their old physical IDs
+            // cannot be re-offered under the newly confirmed road scope.
+            conditionalOCRLive.removeAll(); conditionalOCRLiveAliases.removeAll()
+            invalidateTrafficSignOverrideForBaseSourceMutation()
+        }
         guard let value = speedReference.voice else { clearActiveLocalSpeedCorrection(); return nil }
         switch value.kind { case "numeric": return value.kmh.map(String.init); case "walk": return "walk"; case "unlimited": return "none"; default: return nil }
     }
@@ -9327,7 +9342,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     result = self.cameraTownLocality.applying(to: result, countryCode: self.activeMapCountryCode,
                         region: SpeedRegulationRegions.bundled?.region(latitude: lat, longitude: lon))
                     let referenceDirection = Self.reliableReferenceTravelDirection(for: result, location: location)
-                    let propagatedOverrideValue = self.applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: lat, lon: lon, timestamp: location.timestamp, direction: referenceDirection)
+                    let propagatedOverrideValue = self.applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: lat, lon: lon, timestamp: location.timestamp, direction: referenceDirection, horizontalAccuracyM:hAcc)
                     let localOverrideValue = propagatedOverrideValue
                     let localOverride = localOverrideValue.flatMap(Int.init)
                     let sourceSignature = self.makeTrafficSignSourceSignature(
@@ -10186,6 +10201,24 @@ extension DriveSessionViewModel {
     var testLookupResourceStatistics: V3LookupResources.Statistics? { speedLimitService?.resourceStatistics }
     var testMapCountryCode: String? { activeMapCountryCode }
     var testMapContextGeneration: UInt64 { trafficSignContextGeneration }
+    func testApplyTurnaroundLookup(way:String,direction:TrafficSignTravelDirection,at:Date,seedCamera:Bool=false,roadRef:String="L 340",verifiedBundle:Bool=false) throws {
+        testReferenceClock=at
+        if seedCamera {
+            speedReference=SpeedReferenceRuntime(now:{[weak self] in self?.testReferenceClock?.timeIntervalSinceReferenceDate ?? 0})
+            isDriving=true;trafficSignApplicationIsActive=true;cameraTSRDaylightAllowed=true
+        }
+        let candidates:[[String:Any]]=verifiedBundle ? [["rank":1,"wayID":way,"distanceM":1.0,"score":1.0,"continuityClass":"none","tunnelSelectable":true,"isSelected":true]] : []
+        let row:[String:Any]=["wayID":way,"highway":"secondary","streetBaseName":"turnaround-test","streetRef":roadRef,"speedLimitKmh":60,
+            "isTunnelSegment":false,"cityResolveMs":0,"cityCandidateBoundaries":0,"cityContainingBoundaries":0,"cityPlaceCandidates":0,
+            "queryTimeMs":0,"candidateCount":1,"speedCandidateCount":1,"nearbyTunnelCandidateWayIDs":[String](),"nearbyTunnelCandidateRefs":[String](),
+            "usedMiniHMM":false,"miniHMMCandidateCount":0,"matchHypotheses":[Any](),"candidateTraces":candidates,"selectionTrace":[Any]()]
+        let result=try JSONDecoder().decode(SpeedLimitResult.self,from:JSONSerialization.data(withJSONObject:row))
+        currentBundledSpeedLimitKmh=60;currentBundledUnlimitedSpeedLimitActive=false
+        _=applyActiveLocalSpeedCorrectionIfNeeded(for:result,lat:0,lon:0,timestamp:at,direction:direction,horizontalAccuracyM:verifiedBundle ? 4.7 : nil)
+        speedReference.bundle(id:"turnaround-map",value:.init(kind:"numeric",kmh:60))
+        if seedCamera {_=speedReference.camera(id:"turnaround-old-camera",value:.init(kind:"numeric",kmh:100))}
+        publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
+    }
 
     func testRunGPSLookup(latitude: Double, longitude: Double, headingDegrees: Double = 90,
         speedKmh: Double = 0, headingAccuracyDegrees: Double = 5) async {

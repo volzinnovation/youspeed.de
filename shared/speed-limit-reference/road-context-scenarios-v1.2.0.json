@@ -1,0 +1,474 @@
+{
+  "schema_version": 1,
+  "policy_version": "1.2.0",
+  "scenarios": [
+    {
+      "id": "confirmed-new-road-within-one-second",
+      "initial_source": "bundle",
+      "fixes": [
+        {
+          "time": 1,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 2,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 2,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        }
+      ],
+      "expect": {
+        "generation": 1,
+        "state": "BUNDLE",
+        "baseline": 50
+      }
+    },
+    {
+      "id": "old-camera-retired-on-confirmed-new-road",
+      "initial_source": "camera",
+      "fixes": [
+        {
+          "time": 1,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 2,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 2,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        }
+      ],
+      "expect": {
+        "generation": 1,
+        "state": "BUNDLE",
+        "baseline": 50
+      }
+    },
+    {
+      "id": "old-voice-retired-on-confirmed-new-road",
+      "initial_source": "voice",
+      "fixes": [
+        {
+          "time": 1,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 2,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 2,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        }
+      ],
+      "expect": {
+        "generation": 1,
+        "state": "BUNDLE",
+        "baseline": 50
+      }
+    },
+    {
+      "id": "single-ramp-fix-restores-original-road",
+      "initial_source": "camera",
+      "fixes": [
+        {
+          "time": 1,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 2,
+          "way": "old",
+          "road": "name:old",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 2,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        }
+      ],
+      "expect": {
+        "generation": 0,
+        "state": "CAMERA",
+        "baseline": 70
+      }
+    },
+    {
+      "id": "withhold-age_s",
+      "initial_source": "bundle",
+      "fixes": [
+        {
+          "time": 1,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 2,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 2,
+          "age_s": 4,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 3,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 3,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        }
+      ],
+      "expect": {
+        "generation": 0,
+        "state": "LAST_KNOWN",
+        "baseline": null
+      }
+    },
+    {
+      "id": "withhold-accuracy_m",
+      "initial_source": "bundle",
+      "fixes": [
+        {
+          "time": 1,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 2,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 2,
+          "age_s": 0.1,
+          "accuracy_m": 21,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 3,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 3,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        }
+      ],
+      "expect": {
+        "generation": 0,
+        "state": "LAST_KNOWN",
+        "baseline": null
+      }
+    },
+    {
+      "id": "withhold-match_distance_m",
+      "initial_source": "bundle",
+      "fixes": [
+        {
+          "time": 1,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 2,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 2,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 11,
+          "applicable": true
+        },
+        {
+          "time": 3,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 3,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        }
+      ],
+      "expect": {
+        "generation": 0,
+        "state": "LAST_KNOWN",
+        "baseline": null
+      }
+    },
+    {
+      "id": "withhold-applicable",
+      "initial_source": "bundle",
+      "fixes": [
+        {
+          "time": 1,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 2,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 2,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": false
+        },
+        {
+          "time": 3,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 3,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        }
+      ],
+      "expect": {
+        "generation": 0,
+        "state": "LAST_KNOWN",
+        "baseline": null
+      }
+    },
+    {
+      "id": "duplicate-timestamp-is-not-second-proof",
+      "initial_source": "bundle",
+      "fixes": [
+        {
+          "time": 1,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 2,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        }
+      ],
+      "expect": {
+        "generation": 0,
+        "state": "LAST_KNOWN",
+        "baseline": null
+      }
+    },
+    {
+      "id": "fix-gap-resets-proof",
+      "initial_source": "bundle",
+      "fixes": [
+        {
+          "time": 1,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 5,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 5,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        }
+      ],
+      "expect": {
+        "generation": 0,
+        "state": "LAST_KNOWN",
+        "baseline": null
+      }
+    },
+    {
+      "id": "turnaround-retains-eight-second-confirmation",
+      "initial_source": "bundle",
+      "fixes": [
+        {
+          "time": 1,
+          "way": "old",
+          "road": "name:old",
+          "direction": "reverse",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 2,
+          "way": "old",
+          "road": "name:old",
+          "direction": "reverse",
+          "stable": true,
+          "source_time": 2,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        }
+      ],
+      "expect": {
+        "generation": 0,
+        "state": "LAST_KNOWN",
+        "baseline": null
+      }
+    },
+    {
+      "id": "different-pending-road-restarts-proof",
+      "initial_source": "bundle",
+      "fixes": [
+        {
+          "time": 1,
+          "way": "new",
+          "road": "name:new",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 1,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        },
+        {
+          "time": 2,
+          "way": "different",
+          "road": "name:different",
+          "direction": "forward",
+          "stable": true,
+          "source_time": 2,
+          "age_s": 0.1,
+          "accuracy_m": 4.7,
+          "match_distance_m": 1.0,
+          "applicable": true
+        }
+      ],
+      "expect": {
+        "generation": 0,
+        "state": "LAST_KNOWN",
+        "baseline": null
+      }
+    }
+  ]
+}
