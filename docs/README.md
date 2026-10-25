@@ -7,6 +7,11 @@ That directory was removed at the owner's request on 24 October 2026 to reclaim
 disk space and is excluded from Git. The summaries and receipts in `docs/` and
 the lightweight bundle metadata remain available.
 
+- [`V1_5_DEVICE_INSTALL_10067_2026-10-25.md`](V1_5_DEVICE_INSTALL_10067_2026-10-25.md): build 10067 installation and physical checks on both phones, retained Android history and owner-confirmed iPhone journal deletion
+- [`IPHONE_TRIP_AND_REFERENCE_REVIEW_2026-10-25.md`](IPHONE_TRIP_AND_REFERENCE_REVIEW_2026-10-25.md): persistent odometer entry after Stop, stored history metadata and owner-approved shared reference policy 1.2.0
+- [`TURNAROUND_FIX_AND_TRIP_STOP_2026-10-24.md`](TURNAROUND_FIX_AND_TRIP_STOP_2026-10-24.md): historical build 10066 turnaround, camera/preview and selected-map repairs, plus the odometer flow superseded by build 10067
+- [`TURNAROUND_DEVICE_LOG_REVIEW_2026-10-24.md`](TURNAROUND_DEVICE_LOG_REVIEW_2026-10-24.md): shared stale camera limit after turnaround, preview/map evidence and saved-trip diagnosis
+- [`CITY_ENTRY_PRE_DRIVE_CHECK_2026-10-24.md`](CITY_ENTRY_PRE_DRIVE_CHECK_2026-10-24.md): city-entry 50 km/h previews checked against real bundle examples on both native readers, active phone maps and physical Android button follow-up
 - [`FAHRTENBUCH_BUTTON_STATE_2026-10-24.md`](FAHRTENBUCH_BUTTON_STATE_2026-10-24.md): recording-off strike-through matching Panoramax, live recording-state updates and build 10065 verification
 - [`V1_5_BUILD_10064_2026-10-24.md`](V1_5_BUILD_10064_2026-10-24.md): final device builds, optional Fahrtenbuch setup and disabled-status shortcut, derived town-entry previews, conditional map, verification and cleanup
 - [`CONDITIONAL_RESTRICTIONS_2026-10-24.md`](CONDITIONAL_RESTRICTIONS_2026-10-24.md): OSM/camera restriction evaluation, inactive time windows, native OCR evidence and conditional-bundle deployment

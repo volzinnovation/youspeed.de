@@ -1,0 +1,106 @@
+{
+  "date": "2026-10-24",
+  "status": "passed_native_and_bundle_preflight; real_drive_confirmation_pending",
+  "git_head": "bb8032819bbe3b3dac6a685249b8a5e30d0a0e48",
+  "active_bundle_version": "2026-10-23-v1.5-journal-conditional",
+  "full_db_bytes": 3185627136,
+  "full_db_sha256": "e973d279de2803b13037b9e87132be72f28a22d8f9c9bbef79d73093772b1849",
+  "both_phone_active_metadata_match": true,
+  "independent_local_full_db_hash_matches": true,
+  "accepted_city_entries": {
+    "mobidata-bw-vzk": 6351,
+    "osm-settlement": 4358
+  },
+  "native_real_source_examples": [
+    {
+      "id": "bw-city-entry-1",
+      "direction": 1,
+      "expectedSignID": "mobidata-bw-vzk:00040b2261fc1db94e7028d71cdc1bc4e6a9367d53d8aef6fdcdc75e2e458e87",
+      "expectedSpeedKmh": 50,
+      "expectedDistanceM": 17.303951828198414,
+      "sourceID": "mobidata-bw-vzk"
+    },
+    {
+      "id": "bw-city-entry-2",
+      "direction": -1,
+      "expectedSignID": "mobidata-bw-vzk:0009b6893860cf1716fec06e5d53c8fa2261c61b2e895c4167cb3d832e31a693",
+      "expectedSpeedKmh": 50,
+      "expectedDistanceM": 80,
+      "sourceID": "mobidata-bw-vzk"
+    },
+    {
+      "id": "bw-city-entry-3",
+      "direction": 1,
+      "expectedSignID": "osm-settlement:n:1002581211:main:begin",
+      "expectedSpeedKmh": 50,
+      "expectedDistanceM": 51.159123458474255,
+      "sourceID": "osm-settlement"
+    },
+    {
+      "id": "bw-city-entry-4",
+      "direction": -1,
+      "expectedSignID": "osm-settlement:n:1001104549:main:begin",
+      "expectedSpeedKmh": 50,
+      "expectedDistanceM": 74.19597112928979,
+      "sourceID": "osm-settlement"
+    },
+    {
+      "id": "bw-city-entry-5",
+      "direction": 1,
+      "expectedSignID": "mobidata-bw-vzk:001d37641055bcb74d2383631e10888e978daf0a59347ab774377aa4cdcaf189",
+      "expectedSpeedKmh": 50,
+      "expectedDistanceM": 80,
+      "sourceID": "mobidata-bw-vzk"
+    }
+  ],
+  "iphone": {
+    "environment": "iPhone 17 Pro iOS 26.5 simulator, existing cached native test bundle",
+    "tests_passed": 5,
+    "tests_failed": 0,
+    "real_examples": 5,
+    "reader_calls": 150,
+    "warm_samples": 145,
+    "log_sha256": "2b9dd48d7bccf44ea40a69b7f56fc359269d8e15944de571fa83ad6268bd09b5"
+  },
+  "android": {
+    "environment": "physical moto g86 5G, isolated testhost build 10065",
+    "tests_passed": 5,
+    "tests_failed": 0,
+    "real_examples": 5,
+    "all_expected_targets_kmh": 50,
+    "probe_sha256_verified_on_device": "2ae3931260ff8a90d08f9c17c5b33207ddd2971ab4ffbf30be6b712557f43751",
+    "log_sha256": "e654856ee1869ee6956e6d528b6c6de11119895cc4d71c756f18bf280b5bada9",
+    "physical_fahrtenbuch_ui_tests_passed": 1,
+    "driver_app_reopened": true,
+    "driver_recording_choice_unchanged": true
+  },
+  "presentation": {
+    "city_entry_sign": "DE:310",
+    "derived_speed_kmh": 50,
+    "explicit_same_station_limit_wins": true,
+    "direction_and_condition_checks_retained": true,
+    "requires_lower_than_current_limit": true,
+    "already_50_suppresses_duplicate_preview": true,
+    "lead_time_seconds": 30,
+    "minimum_horizon_m": 300,
+    "source_priority": "own corrections > camera visual evidence > accepted government (MobiData only BW) > OSM"
+  },
+  "changes": {
+    "production_code": false,
+    "bundle": false,
+    "reference_policy": false,
+    "driver_gps_tsr_contents_read_or_exported": false
+  },
+  "temporary_full_db_removed_bytes": 3185627136,
+  "evidence_directory": "/private/tmp/youspeed-town-entry-check-20261024",
+  "initial_attempts": {
+    "incomplete_probe": "Correctly failed closed because temporary subset omitted road_speed_capability; corrected exact source table. Android first retry still had old staged directory; final staged SHA verified.",
+    "cached_controller_startup": "Initial extra controller test hit missing simulator Roadworks/previous-manifest.json; unrelated to city reader. Excluded from final five city-only checks; no startup fix claimed."
+  },
+  "source_sha256": {
+    "iphone/SpeedConsumerApp/UpcomingSpeedLimit.swift": "fdd5050a7dd9e65f8ef6be89dd1726168a27e4312f0ba375320a305ee10bb03b",
+    "android/app/src/main/java/de/youspeed/android/alpha/UpcomingSpeedLimitReader.kt": "1391f4968a99cc6f823a0bbc0a7888caf3176383b1b129c6904ca09f1d821b13",
+    "iphone/SpeedConsumerTests/UpcomingSpeedLimitTests.swift": "03e9025d1002dcdb9a1d0b80ae3aacbc78a7fb159ee9c89a615ab77fea9ff922",
+    "android/app/src/androidTest/java/de/youspeed/android/alpha/UpcomingSpeedLimitReaderInstrumentedTest.kt": "d192dd9aff7c7bd411e9d784f1cc18c9352bee3e1a3f109a3a46396ba73da95a"
+  }
+}

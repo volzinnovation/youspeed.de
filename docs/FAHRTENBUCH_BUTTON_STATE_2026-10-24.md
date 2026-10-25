@@ -26,7 +26,10 @@ No recording defaults, journal schema, map or source-priority behavior changed.
   recording off. All saved preferences and active conditional-map metadata
   match the pre-install values. Android build 10065 is installed on the Moto g86
   5G; the installed APK hash matches the tested package, and the conditional map
-  remains active. The physical Android button check awaits unlocking the phone.
+  remains active. The off/on/off and history/normal-Settings navigation UI check
+  subsequently passed on the physical Moto g86 in the isolated testhost. The
+  crossed-out normal-app button was visually confirmed; its original recording
+  choice remains unconfigured/off. The normal app is open again for driving.
 - No physical-phone recording preference was changed, and no physical GPS/TSR
   contents were read or exported for this UI change.
 
