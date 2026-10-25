@@ -132,6 +132,7 @@ enum LegalDisclaimerText {
 
 struct MainView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+    var tripJournal: TripJournal = .shared
     @Environment(\.requestReview) private var requestReview
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
@@ -143,6 +144,9 @@ struct MainView: View {
     @State private var showingLegalInfo = false
     @State private var showingDebug = false
     @State private var showingTripJournal = false
+    @State private var stoppedTrip: TripStopPromptSnapshot?
+    @State private var tripStopCandidate: TripStopPromptSnapshot?
+    @State private var stoppedTripError: String?
     @State private var journalSettingsAfterDismiss = false
     @State private var showingPanoramaxGallery = false
     @State private var showingTrafficSignDetails = false
@@ -421,6 +425,28 @@ struct MainView: View {
                     .environment(\.layoutDirection, .leftToRight)
             }
 
+        }
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { tripStopCandidate = nil; return }
+            while !Task.isCancelled {
+                tripStopCandidate = await Task.detached { tripJournal.stoppedTripSnapshot() }.value
+                try? await Task.sleep(for:.milliseconds(500))
+            }
+        }
+        .sheet(item: $stoppedTrip) { snapshot in
+            VStack(spacing:12) {
+                TripStoppedOdometerView(snapshot:snapshot,foreground:.black,save:{ reading in
+                    Task { @MainActor in
+                        do {
+                            try await Task.detached { try tripJournal.saveEndedTripOdometer(snapshot.tripID,odometer:reading) }.value
+                            stoppedTrip=nil; stoppedTripError=nil
+                        } catch { stoppedTripError=error.localizedDescription }
+                    }
+                },continueTrip:{ stoppedTrip=nil; stoppedTripError=nil })
+                if let stoppedTripError { Text(stoppedTripError).font(.caption).foregroundStyle(.red) }
+            }
+            .padding(20).preferredColorScheme(.light)
+            .presentationDetents([.height(280)])
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
@@ -1407,7 +1433,23 @@ struct MainView: View {
 
         VStack(spacing: 0) {
             VStack(spacing: valueUnitSpacing) {
-                if shouldShowTunnelCurrentSpeedIcon {
+                if let candidate = tripStopCandidate, dashboardPresentationVisible, tripJournal.enabled,
+                   viewModel.currentSpeedKmh == 0, !viewModel.isInSpeedCaptureMode,
+                   let observed = viewModel.stationarySpeedObservedAt, (0...3).contains(Date().timeIntervalSince(observed)) {
+                    Text(primaryMetricText).font(primaryMetricFont(size:primaryFont))
+                    Button {
+                        Task { @MainActor in
+                            do {
+                                try await Task.detached { try tripJournal.endStoppedTrip(candidate.tripID) }.value
+                                stoppedTripError=nil; stoppedTrip=candidate; tripStopCandidate=nil
+                            } catch { stoppedTripError=error.localizedDescription }
+                        }
+                    } label: {
+                        Label(tripStopText("Stop trip", "Fahrt beenden", "Terminer le trajet", "Rit stoppen"),systemImage:"stop.fill")
+                    }
+                    .buttonStyle(.bordered).accessibilityIdentifier("trip.stop.end")
+                    if let stoppedTripError { Text(stoppedTripError).font(.caption).foregroundStyle(.red) }
+                } else if shouldShowTunnelCurrentSpeedIcon {
                     Image(systemName: "tunnel.fill")
                         .font(.system(size: primaryFont * 0.72, weight: .bold, design: .rounded))
                     Text("Tunnel")

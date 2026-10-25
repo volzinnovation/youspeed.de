@@ -1527,3 +1527,38 @@ final class TestFlightFeedbackUITests: XCTestCase {
         }
     }
 }
+
+final class TripStopOdometerUITests:XCTestCase {
+    func testStopFreezesTripAndDialsSurviveGPSUpdates() {
+        continueAfterFailure=false
+        let app=XCUIApplication()
+        app.launchArguments=["--trip-stop-preview","-AppleLanguages","(de)","-AppleLocale","de_DE"]
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"]="camera-limit-active"
+        app.launch()
+        let stop=app.buttons["trip.stop.end"]
+        XCTAssertTrue(stop.waitForExistence(timeout:20))
+        stop.tap()
+        let prompt=app.descendants(matching:.any)["trip.stop.prompt"].firstMatch
+        XCTAssertTrue(prompt.waitForExistence(timeout:5))
+        XCTAssertEqual(app.pickerWheels.count,6)
+        let wheel=app.pickerWheels.element(boundBy:5)
+        let previousValue=wheel.value as? String
+        wheel.swipeUp()
+        let editedValue=wheel.value as? String
+        XCTAssertNotEqual(previousValue,editedValue)
+        // The fixture publishes fresh GPS/dashboard state every 400 ms.
+        sleep(4)
+        XCTAssertTrue(prompt.exists)
+        XCTAssertEqual(app.pickerWheels.element(boundBy:5).value as? String,editedValue)
+        let shot=XCTAttachment(screenshot:app.screenshot());shot.name="stopped-trip-persistent-odometer";shot.lifetime = .keepAlways;add(shot)
+        app.buttons["trip.stop.save"].tap()
+        expectation(for:NSPredicate {_,_ in !prompt.exists},evaluatedWith:nil);waitForExpectations(timeout:5)
+        XCTAssertFalse(stop.exists)
+        app.buttons["trip.stop.test.rearm"].tap()
+        XCTAssertTrue(stop.waitForExistence(timeout:5))
+        stop.tap();XCTAssertTrue(prompt.waitForExistence(timeout:5))
+        app.buttons["trip.stop.continue"].tap()
+        expectation(for:NSPredicate {_,_ in !prompt.exists},evaluatedWith:nil);waitForExpectations(timeout:5)
+        app.terminate()
+    }
+}

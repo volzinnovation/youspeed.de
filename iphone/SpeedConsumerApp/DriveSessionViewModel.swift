@@ -10443,6 +10443,12 @@ extension DriveSessionViewModel {
         publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
     }
 
+    func testSetTripStopPreviewMoving(_ moving:Bool) {
+        currentSpeedKmh = moving ? 20 : 0
+        stationarySpeedObservedAt = moving ? nil : Date()
+        speedControlsAllowed = !moving
+        refreshDrivingControlAvailability()
+    }
     var testUpcomingGeneration: UInt64 { upcomingSpeedLimitGeneration }
     var testUpcomingDiagnosticState: [String: String] {
         let snapshot = upcomingSpeedLimitTracker.snapshot

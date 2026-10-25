@@ -2,6 +2,7 @@ import XCTest
 import CoreLocation
 import UIKit
 import ImageIO
+import SQLite3
 @testable import SpeedConsumer
 
 final class TripJournalTests: XCTestCase {
@@ -485,4 +486,150 @@ final class TripJournalTests: XCTestCase {
         try test(journal, root)
     }
 
+}
+
+extension TripJournalTests {
+    func testStandstillSaveRemembersOdometerAndResumesOnlyOnMovement() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite="trip-stop-\(UUID().uuidString)",prefs=try XCTUnwrap(UserDefaults(suiteName:suite))
+        var clock=0.0
+        let journal=TripJournal(directory:root,preferences:prefs,heartbeat:false,promptClock:{clock})
+        defer {journal.close();prefs.removePersistentDomain(forName:suite);try? FileManager.default.removeItem(at:root)}
+        journal.setEnabled(true);journal.start();_ = journal.snapshot()
+        let at=Date().addingTimeInterval(-0.5)
+        func feed(_ speed:Double,_ tick:Int) {
+            clock=Double(tick)
+            journal.location(CLLocation(coordinate:.init(latitude:49,longitude:8),altitude:0,horizontalAccuracy:3,verticalAccuracy:3,course:0,speed:speed,timestamp:at.addingTimeInterval(Double(tick)*0.01)))
+            _ = journal.snapshot()
+        }
+        feed(10,0)
+        for t in 1...16 {feed(0,t)}
+        let prompt=try XCTUnwrap(journal.stoppedTripSnapshot())
+        XCTAssertFalse(prompt.estimated)
+        try journal.saveStoppedTrip(prompt.tripID,odometer:123456)
+        XCTAssertNil(journal.stoppedTripSnapshot())
+        let ended=try XCTUnwrap(journal.snapshot().trips.first)
+        XCTAssertEqual(ended["state"] as? String,"ended");XCTAssertEqual(ended["odo_end"] as? Double,123456)
+        feed(0,17);XCTAssertEqual(journal.snapshot().trips.count,1)
+        journal.lifecycle(false);journal.lifecycle(true);XCTAssertEqual(journal.snapshot().trips.count,1)
+        feed(10,18);XCTAssertEqual(journal.snapshot().trips.count,2)
+        for t in 19...34 {feed(0,t)}
+        let next=try XCTUnwrap(journal.stoppedTripSnapshot())
+        XCTAssertEqual(next.reading,123456);XCTAssertTrue(next.estimated)
+        journal.continueStoppedTrip(next.tripID);XCTAssertNil(journal.stoppedTripSnapshot())
+        feed(1,35)
+        XCTAssertThrowsError(try journal.saveStoppedTrip(next.tripID,odometer:123457))
+    }
+}
+
+extension TripJournalTests {
+    func testExplicitStopFreezesMetadataBeforeOdometerEntryAndSurvivesNewFixes() throws {
+        try withJournal { journal, _ in
+            journal.setEnabled(true); journal.start()
+            let id=try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
+            let at=Date()
+            journal.location(fix(49,at:at))
+            journal.matchedPlace(at:at,streetName:"Startstraße",cityName:"Karlsruhe",latitude:49,longitude:8,accuracy:3)
+            journal.location(fix(49.0001,at:at.addingTimeInterval(0.5)))
+            journal.matchedPlace(at:at.addingTimeInterval(0.5),streetName:"Zielstraße",cityName:"Karlsruhe",latitude:49.0001,longitude:8,accuracy:3)
+            journal.location(CLLocation(coordinate:.init(latitude:49.0001,longitude:8),altitude:0,horizontalAccuracy:3,verticalAccuracy:3,course:0,speed:0,timestamp:at.addingTimeInterval(0.6)))
+            let candidate=try XCTUnwrap(journal.stoppedTripSnapshot())
+            XCTAssertEqual(candidate.tripID,id) // No fifteen-second wait.
+            try journal.endStoppedTrip(id)
+            let saved=try XCTUnwrap(journal.snapshot().trips.first)
+            XCTAssertEqual(saved["state"] as? String,"ended")
+            XCTAssertEqual(saved["start_place"] as? String,"Startstraße, Karlsruhe")
+            XCTAssertEqual(saved["end_place"] as? String,"Zielstraße, Karlsruhe")
+            XCTAssertEqual(saved["history_version"] as? Double,1)
+            XCTAssertNil(saved["odo_end"])
+            journal.location(CLLocation(coordinate:.init(latitude:49.01,longitude:8),altitude:0,horizontalAccuracy:3,verticalAccuracy:3,course:0,speed:0,timestamp:Date()))
+            journal.lifecycle(false); journal.lifecycle(true)
+            _ = journal.snapshot()
+            try journal.saveEndedTripOdometer(id,odometer:123456)
+            let after=try XCTUnwrap(journal.snapshot().trips.first { $0["id"] as? String == id })
+            XCTAssertEqual(after["odo_end"] as? Double,123456)
+            for key in ["start","end","distance","duration"] {XCTAssertEqual(saved[key] as? Double,after[key] as? Double,key)}
+            for key in ["start_place","end_place"] {XCTAssertEqual(saved[key] as? String,after[key] as? String,key)}
+            let exported=try journal.export(id)
+            let canonical=try JSONSerialization.jsonObject(with:Data(contentsOf:exported.appendingPathComponent("journal.json"))) as! [String:Any]
+            XCTAssertEqual((canonical["trip"] as? [String:Any])?["start_place"] as? String,"Startstraße, Karlsruhe")
+            let masked=try journal.export(id,options:.init(masked:true))
+            let maskedCanonical=try JSONSerialization.jsonObject(with:Data(contentsOf:masked.appendingPathComponent("journal.json"))) as! [String:Any]
+            XCTAssertNil((maskedCanonical["trip"] as? [String:Any])?["start_place"])
+            XCTAssertNil((maskedCanonical["trip"] as? [String:Any])?["end_place"])
+            XCTAssertThrowsError(try journal.saveEndedTripOdometer(id,odometer:123457))
+        }
+    }
+    func testSavedEndpointMetadataSurvivesReopenWithoutReprojection() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite="history-reopen-\(UUID().uuidString)",prefs=try XCTUnwrap(UserDefaults(suiteName:suite))
+        defer {prefs.removePersistentDomain(forName:suite);try? FileManager.default.removeItem(at:root)}
+        let journal=TripJournal(directory:root,preferences:prefs,heartbeat:false)
+        journal.setEnabled(true);journal.start()
+        let id=try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
+        let at=Date()
+        journal.location(fix(49,at:at));journal.matchedPlace(at:at,streetName:"Gespeichert",cityName:nil,latitude:49,longitude:8,accuracy:3)
+        journal.stop();_ = journal.snapshot();journal.completeFinalizerForTesting()
+        let before=try XCTUnwrap(journal.snapshot().trips.first)
+        journal.close()
+        // Saved metadata must survive even if old event evidence is unavailable.
+        var connection:OpaquePointer?
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("trips.sqlite").path,&connection),SQLITE_OK)
+        XCTAssertEqual(sqlite3_exec(connection,"DELETE FROM events",nil,nil,nil),SQLITE_OK)
+        sqlite3_close(connection)
+        let reopened=TripJournal(directory:root,preferences:prefs,heartbeat:false)
+        defer {reopened.close()}
+        let after=try XCTUnwrap(reopened.snapshot().trips.first)
+        XCTAssertEqual(after["id"] as? String,id)
+        XCTAssertEqual(after["start_place"] as? String,"Gespeichert")
+        XCTAssertEqual(after["end_place"] as? String,before["end_place"] as? String)
+        XCTAssertEqual(after["distance"] as? Double,before["distance"] as? Double)
+        XCTAssertTrue(reopened.events(id).isEmpty)
+    }
+    func testLegacyHistoryIsBackfilledOnceBeforeDisplay() throws {
+        let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite="history-migrate-\(UUID().uuidString)",prefs=try XCTUnwrap(UserDefaults(suiteName:suite))
+        defer {prefs.removePersistentDomain(forName:suite);try? FileManager.default.removeItem(at:root)}
+        let journal=TripJournal(directory:root,preferences:prefs,heartbeat:false)
+        journal.setEnabled(true);journal.start()
+        let id=try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String),at=Date()
+        journal.location(fix(49,at:at));journal.matchedPlace(at:at,streetName:"Legacy",cityName:nil,latitude:49,longitude:8,accuracy:3)
+        journal.stop();_ = journal.snapshot();journal.completeFinalizerForTesting();journal.close()
+        var connection:OpaquePointer?
+        XCTAssertEqual(sqlite3_open(root.appendingPathComponent("trips.sqlite").path,&connection),SQLITE_OK)
+        XCTAssertEqual(sqlite3_exec(connection,"UPDATE trips SET start_place=NULL,end_place=NULL,history_version=0",nil,nil,nil),SQLITE_OK)
+        sqlite3_close(connection)
+        let reopened=TripJournal(directory:root,preferences:prefs,heartbeat:false)
+        defer {reopened.close()}
+        let saved=try XCTUnwrap(reopened.snapshot().trips.first)
+        XCTAssertEqual(saved["start_place"] as? String,"Legacy")
+        XCTAssertEqual(saved["end_place"] as? String,"Legacy")
+        XCTAssertEqual(saved["history_version"] as? Double,1)
+        XCTAssertEqual(saved["id"] as? String,id)
+    }
+}
+
+final class TripStopPromptPolicyTests: XCTestCase {
+    func testStopDelayContinueRearmFreshnessAndDigits() {
+        var policy=TripStopPromptPolicy()
+        for t in 0...30 {policy.observe(speed:0,at:Double(t),usable:true,recording:true)}
+        XCTAssertFalse(policy.visible(at:30),"Initial parking is not a driven trip")
+        policy.observe(speed:10,at:31,usable:true,recording:true)
+        for t in 32...46 {policy.observe(speed:0,at:Double(t),usable:true,recording:true)}
+        XCTAssertFalse(policy.visible(at:46))
+        policy.observe(speed:0,at:47,usable:true,recording:true)
+        XCTAssertTrue(policy.visible(at:47));XCTAssertFalse(policy.visible(at:51))
+        policy.continueTrip()
+        for t in 48...70 {policy.observe(speed:0,at:Double(t),usable:true,recording:true)}
+        XCTAssertFalse(policy.visible(at:70))
+        policy.observe(speed:4,at:71,usable:true,recording:true)
+        for t in 72...87 {policy.observe(speed:0,at:Double(t),usable:true,recording:true)}
+        XCTAssertTrue(policy.visible(at:87))
+        policy.observe(speed:1,at:88,usable:true,recording:true)
+        XCTAssertFalse(policy.visible(at:88))
+        XCTAssertEqual(TripOdometer.estimate(last:123450,distance:4405),123454)
+        XCTAssertEqual(TripOdometer.estimate(last:nil,distance:4405),0)
+        XCTAssertEqual(TripOdometer.estimate(last:999999,distance:9000),999999)
+        XCTAssertEqual(TripOdometer.replacingDigit(123456,index:2,digit:9),129456)
+    }
 }

@@ -32,11 +32,14 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.FileProvider
@@ -158,7 +161,7 @@ internal fun TripJournalScreen(journal:TripJournal,mediaCleanup:((List<JSONObjec
     }
     fun task(body:suspend ()->Unit) {scope.launch {busy=true;runCatching {body()}.onFailure {failure=it.cause?.message ?: it.message};busy=false}}
     LaunchedEffect(journal) {while(true) {
-        withContext(Dispatchers.IO) {runCatching {journal.snapshot().first}}.onSuccess {trips=it}.onFailure {failure=it.cause?.message ?: it.message ?: "Unable to read journal"}
+        withContext(Dispatchers.IO) {runCatching {journal.history()}}.onSuccess {trips=it}.onFailure {failure=it.cause?.message ?: it.message ?: "Unable to read journal"}
         recordingEnabled=journal.enabled
         delay(2000)
     }}
@@ -193,11 +196,11 @@ internal fun TripJournalScreen(journal:TripJournal,mediaCleanup:((List<JSONObjec
                     OutlinedTextField(endingInput,{endingInput=it},label={Text(jt("Ending odometer (km)","Endkilometerstand (km)","Compteur final (km)","Eindkilometerstand (km)"))},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Decimal),isError=endingInput.isNotBlank() && entered==null,modifier=Modifier.fillMaxWidth().testTag("trip-ending-odometer-input"))
                     if(endingInput.isNotBlank() && entered==null) Text(jt("Enter a valid value at least as large as the starting odometer.","Gültigen Wert mindestens in Höhe des Startkilometerstands eingeben.","Saisissez une valeur valide au moins égale au compteur de départ.","Vul een geldige stand in die minstens gelijk is aan de beginstand."),color=MaterialTheme.colorScheme.error,modifier=Modifier.testTag("trip-ending-odometer-error"))
                 }
-                Button({task {if(!target.has("odo_end") && entered!=null) withContext(Dispatchers.IO) {journal.setEndingOdometer(id,entered)};trips=withContext(Dispatchers.IO) {journal.snapshot().first};endingTrip=null}},enabled=!busy && (target.has("odo_end") || endingInput.isBlank() || entered!=null),modifier=Modifier.testTag("trip-ending-odometer-save")) {Text(jt("Save","Speichern","Enregistrer","Opslaan"))}
+                Button({task {if(!target.has("odo_end") && entered!=null) withContext(Dispatchers.IO) {journal.setEndingOdometer(id,entered)};trips=withContext(Dispatchers.IO) {journal.history()};endingTrip=null}},enabled=!busy && (target.has("odo_end") || endingInput.isBlank() || entered!=null),modifier=Modifier.testTag("trip-ending-odometer-save")) {Text(jt("Save","Speichern","Enregistrer","Opslaan"))}
             }
         }
     }}
-    deletion?.let { id -> AlertDialog({deletion=null},title={Text(jt("Delete trip?","Fahrt löschen?","Supprimer ce trajet ?","Rit verwijderen?"))},text={Column { Text(jt("GPS/TSR logs, signs, optional odometer, trip media links and temporary exports are deleted. Library files and public copies remain. Lifetime app counters remain; saved-history totals decrease.","GPS-/TSR-Protokolle, Zeichen, optionale Kilometerstände, Medienverknüpfungen und temporäre Exporte werden gelöscht. Bibliotheksdateien und öffentliche Kopien bleiben. App-Gesamtzähler bleiben; die gespeicherte Fahrtsumme sinkt.","Journaux, panneaux, compteur facultatif, liens et exports temporaires supprimés. Fichiers de bibliothèque et copies publiques conservés. Compteurs globaux inchangés ; total conservé réduit.","Logs, borden, optionele standen, koppelingen en tijdelijke exports worden gewist. Bibliotheek en openbare kopieën blijven. Levenslange tellers blijven; bewaarde totalen dalen."));if(mediaCleanup!=null) {Text(cleanupPreview);Row {Checkbox(deleteMedia,{deleteMedia=it});Text(jt("Also delete eligible local media","Löschbare lokale Medien ebenfalls löschen","Supprimer aussi les médias locaux autorisés","Ook verwijderbare lokale media wissen"))}} }},confirmButton={TextButton({task {if(deleteMedia) failure=withContext(Dispatchers.IO) {mediaCleanup?.invoke(deletionMedia,true)};journal.delete(id);trips=withContext(Dispatchers.IO) {journal.snapshot().first};deletion=null}}) {Text(jt("Delete","Löschen","Supprimer","Verwijderen"))}},dismissButton={TextButton({deletion=null}) {Text(jt("Cancel","Abbrechen","Annuler","Annuleren"))}}) }
+    deletion?.let { id -> AlertDialog({deletion=null},title={Text(jt("Delete trip?","Fahrt löschen?","Supprimer ce trajet ?","Rit verwijderen?"))},text={Column { Text(jt("GPS/TSR logs, signs, optional odometer, trip media links and temporary exports are deleted. Library files and public copies remain. Lifetime app counters remain; saved-history totals decrease.","GPS-/TSR-Protokolle, Zeichen, optionale Kilometerstände, Medienverknüpfungen und temporäre Exporte werden gelöscht. Bibliotheksdateien und öffentliche Kopien bleiben. App-Gesamtzähler bleiben; die gespeicherte Fahrtsumme sinkt.","Journaux, panneaux, compteur facultatif, liens et exports temporaires supprimés. Fichiers de bibliothèque et copies publiques conservés. Compteurs globaux inchangés ; total conservé réduit.","Logs, borden, optionele standen, koppelingen en tijdelijke exports worden gewist. Bibliotheek en openbare kopieën blijven. Levenslange tellers blijven; bewaarde totalen dalen."));if(mediaCleanup!=null) {Text(cleanupPreview);Row {Checkbox(deleteMedia,{deleteMedia=it});Text(jt("Also delete eligible local media","Löschbare lokale Medien ebenfalls löschen","Supprimer aussi les médias locaux autorisés","Ook verwijderbare lokale media wissen"))}} }},confirmButton={TextButton({task {if(deleteMedia) failure=withContext(Dispatchers.IO) {mediaCleanup?.invoke(deletionMedia,true)};journal.delete(id);trips=withContext(Dispatchers.IO) {journal.history()};deletion=null}}) {Text(jt("Delete","Löschen","Supprimer","Verwijderen"))}},dismissButton={TextButton({deletion=null}) {Text(jt("Cancel","Abbrechen","Annuler","Annuleren"))}}) }
 }
 
 @Composable
@@ -546,6 +549,52 @@ internal fun TripJournalLibrary(controller:ConsumerSessionController,media:List<
         Column(Modifier.fillMaxSize()) {
             Row {TextButton({videoTab=false}) {Text(jt("Photos","Fotos","Photos","Foto’s"))};TextButton({videoTab=true}) {Text(jt("Videos","Videos","Vidéos","Video’s"))}}
             if(videoTab) DashcamLibraryContent(controller,tripPaths=paths) else PanoramaxGalleryContent(controller,tripPaths=paths)
+        }
+    }
+}
+
+@Composable
+internal fun TripStoppedOdometerPrompt(snapshot:TripStopPromptSnapshot,foreground:Color,save:(Int)->Unit,continueTrip:()->Unit) {
+    var reading by remember(snapshot.tripID) {mutableStateOf(snapshot.reading)}
+    Column(horizontalAlignment=Alignment.CenterHorizontally,modifier=Modifier.fillMaxWidth().testTag("trip-stop-prompt")) {
+        Text(jt("Trip stopped · odometer","Fahrt beendet · Kilometerstand","Trajet terminé · compteur","Rit beëindigd · kilometerstand"),color=foreground,fontWeight=FontWeight.SemiBold)
+        Row(Modifier.fillMaxWidth().height(76.dp)) {
+            repeat(6) {index ->
+                val place=listOf(100000,10000,1000,100,10,1)[index]
+                val digit=reading/place%10
+                val update:(Int)->Unit={value->reading=TripOdometer.replacingDigit(reading,index,(value+10)%10)}
+                val latestUpdate by rememberUpdatedState(update)
+                val latestDigit by rememberUpdatedState(digit)
+                val threshold=with(androidx.compose.ui.platform.LocalDensity.current){22.dp.toPx()}
+                Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.Center,
+                    modifier=Modifier.weight(1f).fillMaxHeight().testTag("trip-stop-digit-$index")
+                        .semantics {
+                            contentDescription=jt("Odometer digit","Kilometerstand Ziffer","Chiffre du compteur","Kilometerstand cijfer")+" ${index+1}: $digit"
+                            customActions=listOf(
+                                androidx.compose.ui.semantics.CustomAccessibilityAction(jt("Increase","Erhöhen","Augmenter","Verhogen")){update(digit+1);true},
+                                androidx.compose.ui.semantics.CustomAccessibilityAction(jt("Decrease","Verringern","Diminuer","Verlagen")){update(digit-1);true})
+                        }
+                        .pointerInput(index,threshold) {
+                            var drag=0f
+                            detectVerticalDragGestures(onDragStart={drag=0f}) {change,amount->
+                                change.consume();drag-=amount
+                                var value=latestDigit
+                                while(kotlin.math.abs(drag)>=threshold) {
+                                    val step=if(drag>0) 1 else -1
+                                    value=(value+step+10)%10;latestUpdate(value);drag-=step*threshold
+                                }
+                            }
+                        }) {
+                    Text(((digit+9)%10).toString(),color=foreground.copy(alpha=.3f),fontSize=12.sp)
+                    Text(digit.toString(),color=foreground,fontSize=32.sp,fontWeight=FontWeight.Bold,fontFamily=androidx.compose.ui.text.font.FontFamily.Monospace)
+                    Text(((digit+1)%10).toString(),color=foreground.copy(alpha=.3f),fontSize=12.sp)
+                }
+            }
+        }
+        Text(if(snapshot.estimated) jt("Estimated odometer · km","Geschätzter Kilometerstand · km","Compteur estimé · km","Geschatte kilometerstand · km") else jt("Car odometer · km","Fahrzeug-Kilometerstand · km","Compteur du véhicule · km","Kilometerstand auto · km"),color=foreground,fontSize=12.sp)
+        Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+            TextButton(continueTrip,modifier=Modifier.testTag("trip-stop-continue")) {Text(jt("Later","Später","Plus tard","Later"),color=foreground)}
+            TextButton({save(reading)},modifier=Modifier.testTag("trip-stop-save")) {Text(jt("Save odometer","Kilometerstand speichern","Enregistrer le compteur","Kilometerstand opslaan"),color=foreground,fontWeight=FontWeight.Bold)}
         }
     }
 }

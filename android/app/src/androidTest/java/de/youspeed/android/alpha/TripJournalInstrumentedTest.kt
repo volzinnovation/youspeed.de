@@ -102,4 +102,76 @@ class TripJournalInstrumentedTest {
             assertNull(journal.error)
         }
     }
+    @Test fun standstillSaveRemembersOdometerAndResumesOnMovement() = withJournalRoot {context,_ ->
+        var tick=0L
+        val wall=System.currentTimeMillis()/1000.0
+        TripJournal(context,heartbeat=false,wallClock={wall+tick},elapsedClock={tick*1000}).use {journal ->
+            journal.setEnabled(true);journal.start();journal.snapshot()
+            fun feed(speed:Float,at:Long) {
+                tick=at
+                journal.location(android.location.Location("gps").apply {
+                    latitude=49.0;longitude=8.0;accuracy=3f;this.speed=speed
+                    time=((wall+tick)*1000).toLong();elapsedRealtimeNanos=(tick+1)*1_000_000_000L
+                });journal.snapshot()
+            }
+            feed(10f,0)
+            for(t in 1L..16L)feed(0f,t)
+            val prompt=requireNotNull(journal.stoppedTripSnapshot())
+            assertFalse(prompt.estimated);journal.saveStoppedTrip(prompt.tripID,123456)
+            assertNull(journal.stoppedTripSnapshot())
+            val ended=journal.snapshot().first.single()
+            assertEquals("ended",ended.getString("state"));assertEquals(123456,ended.getInt("odo_end"))
+            feed(0f,17);assertEquals(1,journal.snapshot().first.size)
+            journal.lifecycle(false);journal.lifecycle(true);assertEquals(1,journal.snapshot().first.size)
+            feed(10f,18);assertEquals(2,journal.snapshot().first.size)
+            for(t in 19L..34L)feed(0f,t)
+            val next=requireNotNull(journal.stoppedTripSnapshot())
+            assertEquals(123456,next.reading);assertTrue(next.estimated)
+            journal.continueStoppedTrip(next.tripID);assertNull(journal.stoppedTripSnapshot())
+            feed(1f,35);assertTrue(runCatching {journal.saveStoppedTrip(next.tripID,123457)}.isFailure)
+        }
+    }
+
+    @Test fun explicitStopFreezesMetadataAndAllowsOdometerAfterGPSChanges() = withJournalRoot {context,_ ->
+        var tick=0L
+        val wall=System.currentTimeMillis()/1000.0
+        TripJournal(context,heartbeat=false,wallClock={wall+tick},elapsedClock={tick*1000}).use {journal ->
+            journal.setEnabled(true);journal.start()
+            val id=journal.snapshot().first.single().getString("id")
+            fun feed(speed:Float,t:Long,lat:Double) {tick=t;journal.location(android.location.Location("gps").apply {
+                latitude=lat;longitude=8.0;accuracy=3f;this.speed=speed;time=((wall+tick)*1000).toLong();elapsedRealtimeNanos=(tick+1)*1_000_000_000L
+            });journal.snapshot()}
+            feed(10f,0,49.0)
+            journal.matchedPlace(wall,"Startstraße","Karlsruhe",49.0,8.0,3.0)
+            feed(10f,1,49.0001)
+            journal.matchedPlace(wall+1,"Zielstraße","Karlsruhe",49.0001,8.0,3.0)
+            feed(0f,2,49.0001)
+            assertNotNull(journal.stoppedTripSnapshot())
+            journal.endStoppedTrip(id)
+            val saved=journal.history().single()
+            assertEquals("ended",saved.getString("state"));assertFalse(saved.has("odo_end"))
+            assertEquals("Startstraße\nKarlsruhe",saved.getString("start_place"))
+            assertEquals("Zielstraße\nKarlsruhe",saved.getString("end_place"))
+            feed(0f,3,49.01)
+            journal.lifecycle(false);journal.lifecycle(true)
+            journal.saveEndedTripOdometer(id,123456)
+            val after=journal.history().single()
+            assertEquals(123456,after.getInt("odo_end"))
+            listOf("start","end","distance","duration","start_place","end_place").forEach {assertEquals(it,saved.opt(it),after.opt(it))}
+            val canonical=org.json.JSONObject(File(journal.export(id),"journal.json").readText()).getJSONObject("trip")
+            assertEquals("Startstraße\nKarlsruhe",canonical.getString("start_place"))
+            java.util.zip.ZipFile(journal.archive(id,TripExportOptions(masked=true))).use {zip ->
+                val masked=org.json.JSONObject(zip.getInputStream(zip.getEntry("journal.json")).bufferedReader().readText()).getJSONObject("trip")
+                assertFalse(masked.has("start_place"));assertFalse(masked.has("end_place"))
+            }
+
+        }
+        SQLiteDatabase.openDatabase(File(context.filesDir,"trip-journal/trips.sqlite").path,null,SQLiteDatabase.OPEN_READWRITE).use {db ->db.execSQL("DELETE FROM events")}
+        TripJournal(context,heartbeat=false).use {reopened ->
+            val saved=reopened.history().single()
+            assertEquals("Startstraße\nKarlsruhe",saved.getString("start_place"))
+            assertEquals(1,saved.getInt("history_version"))
+        }
+    }
+
 }

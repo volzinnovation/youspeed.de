@@ -137,9 +137,10 @@ class TripJournalTableUiInstrumentedTest {
             }
             picture("trip-journal-sheet","history-right.png")
             compose.onNodeWithTag("trip-$id-delete").performScrollTo().performClick()
-            compose.waitUntil(10000) {compose.onAllNodesWithText("Delete trip?").fetchSemanticsNodes().isNotEmpty()}
+            val deleteTitle=ConsumerUiStrings.text("Delete trip?","Fahrt löschen?","Supprimer ce trajet ?","Rit verwijderen?")
+            compose.waitUntil(10000) {compose.onAllNodesWithText(deleteTitle).fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithTag("trip-ending-odometer-sheet").assertDoesNotExist()
-            compose.onNodeWithText("Cancel").performClick();assertEquals(1,journal.snapshot().first.size)
+            compose.onNodeWithText(ConsumerUiStrings.text("Cancel","Abbrechen","Annuler","Annuleren")).performClick();assertEquals(1,journal.snapshot().first.size)
             compose.onNodeWithTag("trip-$id-details").assertDoesNotExist()
             compose.onNodeWithTag("trip-$id-cell-0").performScrollTo().performClick()
             compose.onNodeWithTag("trip-ending-odometer-saved").assertIsDisplayed()

@@ -4,7 +4,11 @@ package de.youspeed.android.alpha
 
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.Lifecycle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Checkbox
 
@@ -535,6 +539,45 @@ internal fun MainScreen(
     onCapture: () -> Unit,
 ) {
     val journalRecordingEnabled = rememberTripJournalRecordingEnabled(controller.tripJournal)
+    val tripScope=rememberCoroutineScope()
+    var stopCandidate by remember { mutableStateOf<TripStopPromptSnapshot?>(null) }
+    var stoppedTrip by remember { mutableStateOf<TripStopPromptSnapshot?>(null) }
+    var stoppedTripError by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(controller, journalRecordingEnabled) {
+        while(true) {
+            stopCandidate=withContext(Dispatchers.IO) {controller.tripJournal.stoppedTripSnapshot()}
+            delay(500)
+        }
+    }
+    stoppedTrip?.let {snapshot ->
+        SheetScaffold(ConsumerUiStrings.text("Trip stopped","Fahrt beendet","Trajet terminé","Rit beëindigd"),{stoppedTrip=null},"trip-stop-editor",containerColor=Color.White,compact=true) {
+            TripStoppedOdometerPrompt(snapshot,foreground=Color.Black,save={reading ->
+                tripScope.launch {
+                    runCatching {withContext(Dispatchers.IO) {controller.tripJournal.saveEndedTripOdometer(snapshot.tripID,reading)}}
+                        .onSuccess {stoppedTrip=null;stoppedTripError=null}.onFailure {stoppedTripError=it.cause?.message ?: it.message}
+                }
+            },continueTrip={stoppedTrip=null;stoppedTripError=null})
+            stoppedTripError?.let {Text(it,color=Color.Red)}
+        }
+    }
+    val stopPromptVisible=stopCandidate!=null && journalRecordingEnabled && ui.presentationForeground && presentationVisible && ui.currentSpeedKmh==0.0 &&
+        ui.stationarySpeedObservedAt?.let {java.time.Duration.between(it,Instant.now()).toMillis() in 0..3000}==true && !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)
+    val stopPromptContent: (@Composable (Color) -> Unit)? = if(!stopPromptVisible) null else { { promptForeground ->
+        val snapshot=stopCandidate
+        if(snapshot!=null) {
+            Text("0",color=promptForeground,style=MaterialTheme.typography.displayLarge,modifier=Modifier.testTag("primary-metric"))
+            TextButton({
+                tripScope.launch {
+                    runCatching {withContext(Dispatchers.IO) {controller.tripJournal.endStoppedTrip(snapshot.tripID)}}
+                        .onSuccess {stoppedTrip=snapshot;stopCandidate=null;stoppedTripError=null}.onFailure {stoppedTripError=it.cause?.message ?: it.message}
+                }
+            },modifier=Modifier.testTag("trip-stop-end")) {
+                Icon(Icons.Default.Stop,contentDescription=null,tint=promptForeground)
+                Text(ConsumerUiStrings.text("Stop trip","Fahrt beenden","Terminer le trajet","Rit stoppen"),color=promptForeground)
+            }
+            stoppedTripError?.let {Text(it,color=Color.Red)}
+        }
+    }}
     val hasInventorySecondary = ui.inventorySignPictogram != null || ui.inventorySignCode != null
     val secondaryIdentity = if (hasInventorySecondary) ui.inventorySignPresentationId else ui.cameraSecondaryPresentationId
         ?: ui.lastTrafficSignPictogram?.classId?.let { "camera:$it" }
@@ -825,7 +868,7 @@ internal fun MainScreen(
                                 MetricStatusBlock(
                                     primaryMetric, secondaryMetric, foreground, ui,
                                     primaryMetricFont, secondaryFont, metricSlotMinHeight,
-                                    alignContentToTop = true,
+                                    alignContentToTop = true, stopPrompt = stopPromptContent,
                                 )
                                 LocationStatusBlock(
                                     ui, foreground, debugFont, max(2f, minDimension * 0.004f).dp,
@@ -843,7 +886,7 @@ internal fun MainScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 MetricStatusBlock(primaryMetric, secondaryMetric, foreground, ui,
-                                    primaryMetricFont * metricScale, secondaryFont * metricScale, fittedMetricHeight)
+                                    primaryMetricFont * metricScale, secondaryFont * metricScale, fittedMetricHeight, stopPrompt=stopPromptContent)
                                 Spacer(Modifier.height(4.dp))
                                 Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                                     LocationStatusBlock(ui, foreground, debugFont, max(2f, minDimension * 0.004f).dp,
@@ -1380,6 +1423,7 @@ private fun MetricStatusBlock(
     secondaryFont: androidx.compose.ui.unit.TextUnit,
     metricSlotMinHeight: androidx.compose.ui.unit.Dp,
     alignContentToTop: Boolean = false,
+    stopPrompt: (@Composable (Color) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -1390,6 +1434,13 @@ private fun MetricStatusBlock(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = if (alignContentToTop) Arrangement.Top else Arrangement.Center,
     ) {
+        val safeStop=ui.currentSpeedKmh==0.0 && ui.presentationForeground && !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui) &&
+            ui.stationarySpeedObservedAt?.let {java.time.Duration.between(it,Instant.now()).toMillis() in 0..3000}==true
+        if(stopPrompt!=null && safeStop) {
+            // The slot still needs the ordinary metric if no journal prompt is armed.
+            stopPrompt(foreground)
+        }
+        if(stopPrompt==null || !safeStop) {
         Text(
             displayedPrimaryMetric,
             color = foreground,
@@ -1408,6 +1459,7 @@ private fun MetricStatusBlock(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+        }
     }
 }
 

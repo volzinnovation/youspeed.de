@@ -22,11 +22,24 @@ existing values stay immutable. A finite nonnegative value must be at least the
 stored start reading. Its entry event belongs to that explicit trip and never
 changes measured distance, timestamps, state or aggregate counters.
 
-Optional `place` events retain fresh, stable offline matcher street/locality names
-at the original GPS fix time. Endpoint labels are a read-only projection of
-nearby valid endpoint fixes and place evidence, with gap/time/distance checks.
-Unavailable names remain unavailable. This adds no schema fields or geocoding
-network calls. Place evidence is private and excluded from masked shares.
+A **Stop trip** button is available at zero displayed speed with a fresh,
+accurate stationary fix while recording is enabled. Stop durably ends the trip
+and freezes its measured distance before opening the six-digit car-odometer
+editor. New GPS/map results cannot dismiss or reset that editor, and odometer
+saving no longer requires another stationary fix. Later/dismiss leaves a saved
+trip with a missing optional ending reading. Recording stays enabled and the
+next trip begins on movement.
+
+Optional `place` events retain offline matcher street/locality names at the
+original GPS fix time. SQLite schema 3 stores `start_place`, `end_place` and
+`history_version` with the trip. Closure resolves the endpoints once from nearby
+valid fixes and captured place evidence, with gap/time/distance checks. A
+background one-time migration does the same for legacy completed/interrupted
+trips; versioned metadata, including an unavailable name, is never recomputed.
+No history screen calls map/geocoding services or replays event payloads. iPhone
+publishes a ready-to-display trip-table cache; Android history reads only the
+trip table. Distance remains the incrementally recorded value. Optional stored
+names survive backup/restore and unmasked exports; masked shares exclude them.
 
 `TripMeasurement` version 1 is mirrored in Swift/Kotlin: accept an increment only
 for increasing time within 15 seconds, travel at most 70 m/s, displacement at

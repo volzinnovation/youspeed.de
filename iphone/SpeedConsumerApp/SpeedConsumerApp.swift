@@ -14,7 +14,9 @@ struct SpeedConsumerApp: App {
                     .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
             } else {
 #if DEBUG
-                if ProcessInfo.processInfo.arguments.contains("--trip-journal-preview") || ProcessInfo.processInfo.arguments.contains("--trip-journal-detail-preview") {
+                if ProcessInfo.processInfo.arguments.contains("--trip-stop-preview") {
+                    TripStopPreviewRoot()
+                } else if ProcessInfo.processInfo.arguments.contains("--trip-journal-preview") || ProcessInfo.processInfo.arguments.contains("--trip-journal-detail-preview") {
                     TripJournalPreviewRoot()
                 } else { SpeedConsumerRootView() }
 #else

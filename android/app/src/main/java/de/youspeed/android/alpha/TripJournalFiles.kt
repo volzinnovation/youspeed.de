@@ -62,7 +62,7 @@ internal object TripJournalFiles {
         val masked=options.masked
         val radius=if(masked) options.maskRadiusMetres else 0.0
         val logs=options.includeRawLogs && !masked
-        val trip=JSONObject(original.toString()).apply {remove("sign_classes")}
+        val trip=JSONObject(original.toString()).apply {remove("sign_classes");remove("history_version");remove("counter_distance_end")}
         val id=trip.getString("id")
         val root=File(context.filesDir,"trip-exports/$id/youspeed-trip-${iso(trip.getDouble("start")).take(10)}-${UUID.randomUUID()}")
         check(root.mkdirs()) { "Unable to prepare export; check available storage" }
@@ -195,6 +195,7 @@ internal object TripJournalFiles {
             val journalTrip=JSONObject().put("id",trip.getString("id")).put("started_at",trip.optDouble("start")).put("ended_at",trip.opt("end") ?: JSONObject.NULL)
                 .put("distance_m",trip.optDouble("distance")).put("duration_s",trip.optDouble("duration")).put("state",when(trip.optString("state")) {"disabled" -> "ended";"finalizing" -> "active";else -> trip.optString("state")})
                 .put("vehicle",trip.opt("vehicle") ?: JSONObject.NULL).put("odometer_start_km",trip.opt("odo_start") ?: JSONObject.NULL).put("odometer_end_km",trip.opt("odo_end") ?: JSONObject.NULL)
+            listOf("start_place","end_place").forEach {key ->if(trip.has(key)) journalTrip.put(key,trip.get(key))}
             File(root,"journal.json").writeText(JSONObject().put("schema_version",1).put("generated_at",iso(generated)).put("measurement_policy_version",1)
                 .put("units",JSONObject().put("distance","metre").put("duration","second").put("speed","metres_per_second").put("coordinates","longitude,latitude").put("event_time","unix_seconds_utc"))
                 .put("trip",journalTrip).put("events",JSONArray(events.filter { logs || it.optString("kind") !in listOf("gps","tsr","media") }.map(::envelope))).put("media",portableMedia)
