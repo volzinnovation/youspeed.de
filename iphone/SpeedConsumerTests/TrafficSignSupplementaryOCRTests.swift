@@ -255,7 +255,7 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
     }
 
     #if os(iOS)
-    func testRuntimeDeliversConfirmedPendingThenCompletedWithoutReprocessingFrame() throws {
+    func testRuntimeDeliversConfirmedPrimaryThenAuxiliaryCompletionWithoutReprocessingFrame() throws {
         try assertRuntimeOCRDelivery(thermal: .nominal)
     }
 
@@ -312,7 +312,7 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
             formatDescription: try XCTUnwrap(format), sampleTiming: &timing, sampleBufferOut: &sample), noErr)
         let buffer = try XCTUnwrap(sample)
         let store = SupplementaryOCREmissionStore()
-        let done = expectation(description: "provisional, confirmed pending, confirmed completed")
+        let done = expectation(description: "provisional primary, confirmed primary, auxiliary completion")
         done.expectedFulfillmentCount = retry ? 5 : 3
         let runtime = TrafficSignRuntime(verifiedPack: verified,
             backend: SupplementaryOCRTestBackend(retry ? [detection, detection, larger] : [detection]),
@@ -349,7 +349,9 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
         XCTAssertEqual(values[2].ocrAttemptAnnotation?.assemblyEvidence?.sourceWidth,230)
         XCTAssertEqual(values[2].ocrAttemptAnnotation?.assemblyEvidence?.nativeContentRect?.width,136)
         XCTAssertTrue(diagnosticFields["raw_text"] is NSNull)
-        XCTAssertEqual(values[2].supplementaryOCROnly, pictogram)
+        XCTAssertTrue(values[2].supplementaryOCROnly, "Every OCR completion refines evidence without replaying the primary")
+        XCTAssertTrue(values.filter { !$0.supplementaryOCROnly }.allSatisfy { $0.ocrAnnotation == nil && $0.ocrAttemptAnnotation == nil },
+            "Cached OCR never becomes fresh evidence on a normal primary emission")
         if pictogram {
             XCTAssertNil(values[2].ocrAttemptAnnotation?.primarySpeedKmh)
             XCTAssertEqual(values[2].ocrAttemptAnnotation?.primaryClassID, "hazard:school")
@@ -357,10 +359,169 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
         if retry {
             XCTAssertEqual(values[3].event.frameId, values[4].event.frameId)
             XCTAssertFalse(values[3].supplementaryOCROnly)
+            XCTAssertEqual(values[3].ocrPhase,.pending)
             XCTAssertTrue(values[4].supplementaryOCROnly)
             XCTAssertNotNil(values[4].ocrAttemptAnnotation)
             XCTAssertEqual(runtime.metrics.completedInferences, 3)
         } else { XCTAssertEqual(runtime.metrics.completedInferences, 2) }
+    }
+
+    func testStrongerNumericAndWeakerSecondaryPublishIndependentlyFromTheSameFrames() throws {
+        let fixture = try blockedRuntimeFixture()
+        let speed = blockedDetection(speed:60)
+        let school = TrafficSignDetection(rawClassId:"hazard:school",rawLabel:"hazard:school",
+            semantic:.init(kind:.unknown,value:nil,unit:nil),rawScore:0.94,calibratedConfidence:nil,
+            boundingBox:.init(x:0.65,y:0.15,width:0.2,height:0.3),classThreshold:0.7)
+        let store = SupplementaryOCREmissionStore()
+        let primaryFrames = expectation(description:"two simultaneous primary and secondary frame results")
+        primaryFrames.expectedFulfillmentCount = 2
+        let runtime = TrafficSignRuntime(verifiedPack:fixture.verified,
+            backend:SupplementaryOCRTestBackend(frames:[[speed,school]]),snapshotProvider:{fixture.snapshot},
+            callbackQueue:DispatchQueue(label:"simultaneous-numeric-secondary-test"),eventHandler:{
+                store.append($0)
+                if !$0.supplementaryOCROnly {primaryFrames.fulfill()}
+            },supplementaryOCRReader:{_ in .init(rawText:nil,modelVersion:"simultaneous-test",readStatus:.noText)})
+        defer {runtime.stop()}
+        runtime.consumeVideoFrame(fixture.buffer,orientation:.up)
+        DispatchQueue.global().asyncAfter(deadline:.now()+0.6) {runtime.consumeVideoFrame(fixture.buffer,orientation:.up)}
+        wait(for:[primaryFrames],timeout:4)
+        let values = store.snapshot().filter {!$0.supplementaryOCROnly}
+        XCTAssertEqual(values.count,2)
+        for value in values {
+            XCTAssertEqual(value.event.candidate?.rawClassId,"maxspeed:60")
+            XCTAssertEqual(value.event.candidate?.value,60,"A weaker secondary sign never takes the primary fusion lane")
+            XCTAssertEqual(value.displayObservation?.classID,"hazard:school",
+                "A stronger numeric sign cannot hide an independently qualified secondary sign")
+            XCTAssertEqual(value.displayObservation?.classifierScore,0.94)
+            XCTAssertFalse(value.displayObservation?.affectsSpeed ?? true)
+            let displayTrack = try XCTUnwrap(value.displayObservation?.applicabilityDecision?.trackId)
+            let numericTrack = try XCTUnwrap(value.event.applicabilityDecision?.trackId)
+            XCTAssertNotEqual(displayTrack,numericTrack,"Each stream retains the applicability decision for its own sign")
+        }
+        XCTAssertEqual(values.last?.event.state,.confirmed)
+        XCTAssertEqual(runtime.metrics.completedInferences,2)
+    }
+
+    func testBlockedOCRAllowsFollowingNumericAndSecondaryDetectionsAndStopRejectsItsCompletion() throws {
+        let fixture = try blockedRuntimeFixture()
+        let entered = expectation(description: "OCR worker entered")
+        let finished = expectation(description: "OCR worker exited")
+        let primaries = expectation(description: "all five detector results delivered while OCR is blocked")
+        primaries.expectedFulfillmentCount = 5
+        let staleAuxiliary = expectation(description: "stopped OCR cannot publish")
+        staleAuxiliary.isInverted = true
+        let release = DispatchSemaphore(value: 0)
+        let store = SupplementaryOCREmissionStore()
+        let speed30 = blockedDetection(speed: 30)
+        let speed60 = blockedDetection(speed: 60)
+        let school = TrafficSignDetection(rawClassId: "hazard:school", rawLabel: "hazard:school",
+            semantic: .init(kind: .unknown, value: nil, unit: nil), rawScore: 0.99, calibratedConfidence: nil,
+            boundingBox: speed60.boundingBox, classThreshold: 0.7)
+        let runtime = TrafficSignRuntime(verifiedPack: fixture.verified,
+            backend: SupplementaryOCRTestBackend([speed30,speed30,speed60,speed60,school]),
+            snapshotProvider: { fixture.snapshot }, callbackQueue: DispatchQueue(label: "blocked-ocr-primary-test"),
+            eventHandler: {
+                store.append($0)
+                if $0.supplementaryOCROnly { staleAuxiliary.fulfill() } else { primaries.fulfill() }
+            }, supplementaryOCRReader: { _ in
+                entered.fulfill()
+                _ = release.wait(timeout: .now() + 10)
+                defer { finished.fulfill() }
+                return .init(rawText: "bei Nässe", modelVersion: "blocked-test", readStatus: .read)
+            })
+        defer { runtime.stop(); release.signal() }
+        for index in 0..<5 {
+            DispatchQueue.global().asyncAfter(deadline: .now() + Double(index) * 0.6) {
+                runtime.consumeVideoFrame(fixture.buffer, orientation: .up)
+            }
+        }
+        wait(for: [entered,primaries], timeout: 7)
+        let values = store.snapshot()
+        XCTAssertEqual(runtime.metrics.completedInferences,5,"OCR does not occupy the detector's scheduling slot")
+        XCTAssertEqual(values.count,5,"The stalled auxiliary job cannot delay or replay a primary result")
+        if values.count == 5 {
+            XCTAssertEqual(values[1].event.state,.confirmed)
+            XCTAssertEqual(values[1].event.candidate?.value,30)
+            XCTAssertEqual(values[3].event.state,.confirmed)
+            XCTAssertEqual(values[3].event.candidate?.value,60)
+            XCTAssertEqual(values[4].displayObservation?.classID,"hazard:school",
+                "Secondary signs continue updating while lower-priority OCR is blocked")
+        }
+        runtime.stop()
+        release.signal()
+        wait(for: [finished,staleAuxiliary], timeout: 0.5)
+        XCTAssertEqual(store.snapshot().count,5)
+    }
+
+    func testGenerationChangeRejectsBlockedOCRCompletionWithoutReplayingOldPrimary() throws {
+        let fixture = try blockedRuntimeFixture()
+        let state = TrafficSignAtomicFrameState(value:fixture.snapshot)
+        let entered = expectation(description: "OCR worker entered")
+        let finished = expectation(description: "OCR worker exited")
+        let primaries = expectation(description: "two original-generation detector results")
+        primaries.expectedFulfillmentCount = 2
+        let staleAuxiliary = expectation(description: "previous-generation OCR cannot publish")
+        staleAuxiliary.isInverted = true
+        let release = DispatchSemaphore(value:0)
+        let store = SupplementaryOCREmissionStore()
+        let runtime = TrafficSignRuntime(verifiedPack:fixture.verified,
+            backend:SupplementaryOCRTestBackend([blockedDetection(speed:60)]),
+            snapshotProvider:{state.snapshot()},callbackQueue:DispatchQueue(label:"blocked-ocr-generation-test"),
+            eventHandler:{
+                store.append($0)
+                if $0.supplementaryOCROnly {staleAuxiliary.fulfill()} else {primaries.fulfill()}
+            },supplementaryOCRReader:{_ in
+                entered.fulfill()
+                _ = release.wait(timeout:.now()+10)
+                defer {finished.fulfill()}
+                return .init(rawText:"bei Nässe",modelVersion:"blocked-test",readStatus:.read)
+            })
+        defer {runtime.stop();release.signal()}
+        runtime.consumeVideoFrame(fixture.buffer,orientation:.up)
+        DispatchQueue.global().asyncAfter(deadline:.now()+0.6) {runtime.consumeVideoFrame(fixture.buffer,orientation:.up)}
+        wait(for:[entered,primaries],timeout:4)
+        state.update(.init(context:fixture.snapshot.context,conditions:fixture.snapshot.conditions,
+            sessionGeneration:fixture.snapshot.sessionGeneration+1,contextGeneration:fixture.snapshot.contextGeneration+1,
+            captureSessionId:"replacement-session"))
+        release.signal()
+        wait(for:[finished,staleAuxiliary],timeout:0.5)
+        XCTAssertEqual(store.snapshot().count,2)
+        XCTAssertEqual(runtime.metrics.completedInferences,2)
+    }
+
+    private func blockedDetection(speed:Int) -> TrafficSignDetection {
+        .init(rawClassId:"maxspeed:\(speed)",rawLabel:String(speed),
+            semantic:.init(kind:.maximumSpeed,value:speed,unit:"km/h"),rawScore:0.99,calibratedConfidence:nil,
+            boundingBox:.init(x:0.02,y:0.02,width:0.95,height:0.48),classThreshold:0.7)
+    }
+
+    private func blockedRuntimeFixture() throws -> (verified:TrafficSignVerifiedModelPack,snapshot:TrafficSignFrameSnapshot,buffer:CMSampleBuffer) {
+        let url = try XCTUnwrap(Bundle.main.url(forResource:"DE.panoramax-bootstrap",withExtension:"tsrmodelpack",subdirectory:"TSRModelPacks"))
+        let manifest = try TrafficSignPackJSON.decoder().decode(TrafficSignModelPackManifest.self,
+            from:Data(contentsOf:url.appendingPathComponent("manifest.json")))
+        let artifact = try XCTUnwrap(manifest.detector.artifacts.first {$0.platform == .ios})
+        let verified = TrafficSignVerifiedModelPack(directoryURL:url,manifest:manifest,
+            detectorArtifact:artifact,detectorArtifactURL:url.appendingPathComponent(artifact.path))
+        let context = TrafficSignDetectionContext(wayId:"123",latitude:49.0069,longitude:8.4037,
+            headingDegrees:82,travelDirection:.forward,sourceSignature:.init(osmRevision:"blocked-test",localCorrectionRevision:nil))
+        let snapshot = TrafficSignFrameSnapshot(context:context,
+            conditions:.init(speedKmh:50,candidateRecentlySeen:false,lowPowerMode:false,thermalState:.nominal,appIsActive:true),
+            captureSessionId:"blocked-test")
+        var pixel:CVPixelBuffer?
+        XCTAssertEqual(CVPixelBufferCreate(kCFAllocatorDefault,136,230,kCVPixelFormatType_32BGRA,
+            [kCVPixelBufferCGImageCompatibilityKey:true,kCVPixelBufferCGBitmapContextCompatibilityKey:true] as CFDictionary,&pixel),kCVReturnSuccess)
+        let image = try XCTUnwrap(pixel)
+        CVPixelBufferLockBaseAddress(image,[])
+        memset(try XCTUnwrap(CVPixelBufferGetBaseAddress(image)),255,CVPixelBufferGetBytesPerRow(image)*CVPixelBufferGetHeight(image))
+        CVPixelBufferUnlockBaseAddress(image,[])
+        var format:CMVideoFormatDescription?
+        XCTAssertEqual(CMVideoFormatDescriptionCreateForImageBuffer(allocator:kCFAllocatorDefault,
+            imageBuffer:image,formatDescriptionOut:&format),noErr)
+        var timing = CMSampleTimingInfo(duration:.invalid,presentationTimeStamp:.zero,decodeTimeStamp:.invalid)
+        var sample:CMSampleBuffer?
+        XCTAssertEqual(CMSampleBufferCreateReadyWithImageBuffer(allocator:kCFAllocatorDefault,imageBuffer:image,
+            formatDescription:try XCTUnwrap(format),sampleTiming:&timing,sampleBufferOut:&sample),noErr)
+        return (verified,snapshot,try XCTUnwrap(sample))
     }
     #endif
 
@@ -389,12 +550,13 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
 
 #if os(iOS)
 private final class SupplementaryOCRTestBackend: TrafficSignInferenceBackend, @unchecked Sendable {
-    let values: [TrafficSignDetection]
+    let frames: [[TrafficSignDetection]]
     private var index = 0
-    init(_ values: [TrafficSignDetection]) { self.values = values }
+    init(_ values: [TrafficSignDetection]) { frames = values.map {[$0]} }
+    init(frames: [[TrafficSignDetection]]) { self.frames = frames }
     private func next() -> [TrafficSignDetection] {
         defer { index += 1 }
-        return [values[min(index, values.count - 1)]]
+        return frames[min(index,frames.count-1)]
     }
     func detections(in pixelBuffer: CVPixelBuffer, orientation: CGImagePropertyOrientation) throws -> [TrafficSignDetection] {
         XCTAssertEqual(CVPixelBufferGetWidth(pixelBuffer), 136); XCTAssertEqual(CVPixelBufferGetHeight(pixelBuffer), 230)

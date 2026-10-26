@@ -6,6 +6,90 @@ import SQLite3
 @testable import SpeedConsumer
 
 final class TripJournalTests: XCTestCase {
+    func testEndpointSeparationUsesStrictHundredMetreBoundary() {
+        let origin = CLLocationCoordinate2D(latitude: 0, longitude: 0)
+        for metres in [99.999, 100.001, 1000] {
+            let end = CLLocationCoordinate2D(latitude: metres / 6_371_008.8 * 180 / .pi, longitude: 0)
+            XCTAssertEqual(TripJournal.endpointSeparationMeters(origin, end), metres, accuracy: 0.000_001)
+        }
+    }
+    func testShortLoopIsDiscardedOnStopWithoutResurrectionAndCountersSurvive() throws {
+        try withJournal { journal, _ in
+            journal.setEnabled(true); journal.start()
+            let id = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
+            let at = Date().addingTimeInterval(-6)
+            for (index, latitude) in [49, 49.0005, 49.001, 49.0005, 49].enumerated() {
+                journal.location(fix(latitude, at: at.addingTimeInterval(Double(index))))
+            }
+            journal.bind("short-loop")
+            let before = journal.snapshot()
+            XCTAssertGreaterThan(before.trips.first?["distance"] as? Double ?? 0, 200)
+            let exported = try journal.export(id)
+            journal.location(CLLocation(coordinate: .init(latitude: 49, longitude: 8), altitude: 0,
+                horizontalAccuracy: 3, verticalAccuracy: 3, course: 0, speed: 0, timestamp: Date()))
+            _ = journal.snapshot()
+            XCTAssertNil(journal.stoppedTripSnapshot(), "A short loop must never offer the stop button")
+            XCTAssertThrowsError(try journal.endStoppedTrip(id), "A stale stop action must not save a short loop")
+            journal.stop(); _ = journal.snapshot(); journal.completeFinalizerForTesting()
+            XCTAssertTrue(journal.snapshot().trips.isEmpty)
+            XCTAssertEqual(journal.snapshot().counters["distance"] as? Double, before.counters["distance"] as? Double)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: exported.path))
+            journal.media(session: "short-loop", id: "late", path: "/missing.jpg", kind: "photo")
+            journal.tsr("late callback"); XCTAssertTrue(journal.events(id).isEmpty)
+            journal.newTrip();journal.location(fix(49.0001, at: Date().addingTimeInterval(0.1)))
+            XCTAssertEqual(journal.snapshot().trips.count, 1)
+            XCTAssertNotEqual(journal.snapshot().trips.first?["id"] as? String, id)
+        }
+    }
+    func testStopAndVisibleHistoryRequireCurrentEndpointSeparationOfHundredMetres() throws {
+        try withJournal { journal, _ in
+            journal.setEnabled(true); journal.start()
+            let id = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
+            let at = Date().addingTimeInterval(-1)
+            var tick = 0
+            func feed(_ metres: Double, accuracy: Double = 3) {
+                journal.location(CLLocation(coordinate: .init(latitude: 49 + metres / 6_371_008.8 * 180 / .pi, longitude: 8),
+                    altitude: 0, horizontalAccuracy: accuracy, verticalAccuracy: 3, course: 0, speed: 0,
+                    timestamp: at.addingTimeInterval(Double(tick) * 0.05)))
+                tick += 1; _ = journal.snapshot()
+            }
+            func assertVisibleHistoryCount(_ count: Int) {
+                let published = expectation(description: "Published history has \(count) trips")
+                DispatchQueue.main.async { XCTAssertEqual(journal.historyTrips.count, count); published.fulfill() }
+                wait(for: [published], timeout: 5)
+            }
+            assertVisibleHistoryCount(0)
+            feed(0); feed(50); feed(99.999)
+            XCTAssertNil(journal.stoppedTripSnapshot()); assertVisibleHistoryCount(0)
+            XCTAssertEqual(journal.snapshot().trips.count, 1, "Keep evidence buffered before the threshold")
+            feed(100.001)
+            XCTAssertNotNil(journal.stoppedTripSnapshot()); assertVisibleHistoryCount(1)
+            feed(0, accuracy: 100)
+            assertVisibleHistoryCount(1)
+            feed(10)
+            XCTAssertNil(journal.stoppedTripSnapshot()); assertVisibleHistoryCount(0)
+            XCTAssertThrowsError(try journal.endStoppedTrip(id))
+            XCTAssertEqual(journal.snapshot().trips.count, 1, "Returning near the start hides the active trip without deleting it")
+            feed(150)
+            XCTAssertNotNil(journal.stoppedTripSnapshot()); assertVisibleHistoryCount(1)
+        }
+    }
+    func testFinalizerDropsShortTripAndRecoveryDropsEmptySession() throws {
+        try withJournal { journal, root in
+            journal.setEnabled(true); journal.start()
+            let id = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
+            let at = Date()
+            journal.location(fix(49, at: at)); journal.location(fix(49.0001, at: at.addingTimeInterval(1)))
+            journal.stop(); _ = journal.snapshot()
+            XCTAssertEqual(journal.snapshot().trips.first?["state"] as? String, "finalizing")
+            journal.completeFinalizerForTesting()
+            XCTAssertTrue(journal.snapshot().trips.isEmpty); XCTAssertTrue(journal.events(id).isEmpty)
+            journal.newTrip(); _ = journal.snapshot(); journal.close()
+            let recovered = TripJournal(directory: root, heartbeat: false)
+            defer { recovered.close() }
+            XCTAssertTrue(recovered.snapshot().trips.isEmpty)
+        }
+    }
     func testUnsetPreferenceStaysOffUntilExplicitChoiceThenCurrentDrivingUseSavesNewLogs() throws {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let suite="trip-choice-\(UUID().uuidString)",prefs=try XCTUnwrap(UserDefaults(suiteName:suite))
@@ -53,6 +137,7 @@ final class TripJournalTests: XCTestCase {
             journal.setEnabled(true); journal.start()
             let first = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
             journal.odometer(first, start: 100, end: nil)
+            seedRetainedEndpoints(journal)
             journal.stop(); _ = journal.snapshot(); journal.completeFinalizerForTesting()
             let before = journal.snapshot()
             journal.newTrip()
@@ -211,6 +296,7 @@ final class TripJournalTests: XCTestCase {
         try withJournal { journal, _ in
             journal.setEnabled(true); journal.start()
             let first = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
+            seedRetainedEndpoints(journal)
             let at = Date()
             journal.lifecycle(false, at: at); journal.lifecycle(true, at: at.addingTimeInterval(120))
             XCTAssertEqual(journal.snapshot().trips.count, 1)
@@ -228,6 +314,7 @@ final class TripJournalTests: XCTestCase {
         try withJournal { journal, _ in
             journal.setEnabled(true); journal.start(); let initial = journal.snapshot()
             let id = try XCTUnwrap(initial.trips.first?["id"] as? String)
+            seedRetainedEndpoints(journal)
             let captured = Date(), end = captured.addingTimeInterval(0.001)
             journal.stop(at: end)
             journal.signEvent(["class_code": "DE:310"], at: captured)
@@ -341,6 +428,7 @@ final class TripJournalTests: XCTestCase {
             let trip = try XCTUnwrap(journal.snapshot().trips.first)
             XCTAssertEqual(trip["odo_start"] as? Double, 100)
             XCTAssertEqual(trip["odo_end"] as? Double, 101)
+            seedRetainedEndpoints(journal)
             journal.stop(); journal.completeFinalizerForTesting()
             journal.odometer(id, start: nil, end: 102)
             XCTAssertEqual(journal.snapshot().trips.first?["odo_end"] as? Double, 101)
@@ -477,6 +565,11 @@ final class TripJournalTests: XCTestCase {
     private func fix(_ latitude: Double, at timestamp: Date) -> CLLocation {
         CLLocation(coordinate: .init(latitude: latitude, longitude: 8), altitude: 10, horizontalAccuracy: 3, verticalAccuracy: 3, course: 0, speed: 3, timestamp: timestamp)
     }
+    private func seedRetainedEndpoints(_ journal: TripJournal) {
+        let at = Date()
+        journal.location(fix(49, at: at)); journal.location(fix(49.001, at: at.addingTimeInterval(2)))
+        _ = journal.snapshot()
+    }
     private func withJournal(_ test: (TripJournal, URL) throws -> Void) throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let suite = "trip-feature-test-\(UUID().uuidString)", prefs = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -499,7 +592,7 @@ extension TripJournalTests {
         let at=Date().addingTimeInterval(-0.5)
         func feed(_ speed:Double,_ tick:Int) {
             clock=Double(tick)
-            journal.location(CLLocation(coordinate:.init(latitude:49,longitude:8),altitude:0,horizontalAccuracy:3,verticalAccuracy:3,course:0,speed:speed,timestamp:at.addingTimeInterval(Double(tick)*0.01)))
+            journal.location(CLLocation(coordinate:.init(latitude:tick == 0 ? 49 : (tick <= 18 ? 49.001 : 49.002),longitude:8),altitude:0,horizontalAccuracy:3,verticalAccuracy:3,course:0,speed:speed,timestamp:at.addingTimeInterval((tick == 0 ? 0 : 2)+Double(tick)*0.01)))
             _ = journal.snapshot()
         }
         feed(10,0)
@@ -528,12 +621,12 @@ extension TripJournalTests {
             journal.setEnabled(true); journal.start()
             let id = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String), at = Date()
             journal.location(fix(49, at: at))
-            journal.location(fix(49.0001, at: at.addingTimeInterval(0.5)))
-            journal.stop(at: at.addingTimeInterval(0.75))
+            journal.location(fix(49.001, at: at.addingTimeInterval(2)))
+            journal.stop(at: at.addingTimeInterval(2.25))
             let pending = try XCTUnwrap(journal.snapshot().trips.first)
             XCTAssertEqual(pending["history_version"] as? Double, 0)
             journal.matchedPlace(at: at, streetName: "Startstraße", cityName: "Karlsruhe", latitude: 49, longitude: 8, accuracy: 3)
-            journal.matchedPlace(at: at.addingTimeInterval(0.5), streetName: "Zielstraße", cityName: "Karlsruhe", latitude: 49.0001, longitude: 8, accuracy: 3)
+            journal.matchedPlace(at: at.addingTimeInterval(2), streetName: "Zielstraße", cityName: "Karlsruhe", latitude: 49.001, longitude: 8, accuracy: 3)
             _ = journal.snapshot(); journal.completeFinalizerForTesting()
             let saved = try XCTUnwrap(journal.snapshot().trips.first)
             XCTAssertEqual(saved["start_place"] as? String, "Startstraße, Karlsruhe")
@@ -552,6 +645,8 @@ extension TripJournalTests {
         let at = Date()
         journal.location(fix(49, at: at))
         journal.matchedPlace(at: at, streetName: "Captured", cityName: nil, latitude: 49, longitude: 8, accuracy: 3)
+        journal.location(fix(49.001, at: at.addingTimeInterval(2)))
+        journal.matchedPlace(at: at.addingTimeInterval(2), streetName: "Captured", cityName: nil, latitude: 49.001, longitude: 8, accuracy: 3)
         journal.stop(); _ = journal.snapshot(); journal.completeFinalizerForTesting()
         let before = try XCTUnwrap(journal.snapshot().trips.first)
         journal.close()
@@ -584,9 +679,9 @@ extension TripJournalTests {
             let at=Date()
             journal.location(fix(49,at:at))
             journal.matchedPlace(at:at,streetName:"Startstraße",cityName:"Karlsruhe",latitude:49,longitude:8,accuracy:3)
-            journal.location(fix(49.0001,at:at.addingTimeInterval(0.5)))
-            journal.matchedPlace(at:at.addingTimeInterval(0.5),streetName:"Zielstraße",cityName:"Karlsruhe",latitude:49.0001,longitude:8,accuracy:3)
-            journal.location(CLLocation(coordinate:.init(latitude:49.0001,longitude:8),altitude:0,horizontalAccuracy:3,verticalAccuracy:3,course:0,speed:0,timestamp:at.addingTimeInterval(0.6)))
+            journal.location(fix(49.001,at:at.addingTimeInterval(2)))
+            journal.matchedPlace(at:at.addingTimeInterval(2),streetName:"Zielstraße",cityName:"Karlsruhe",latitude:49.001,longitude:8,accuracy:3)
+            journal.location(CLLocation(coordinate:.init(latitude:49.001,longitude:8),altitude:0,horizontalAccuracy:3,verticalAccuracy:3,course:0,speed:0,timestamp:at.addingTimeInterval(2.1)))
             let candidate=try XCTUnwrap(journal.stoppedTripSnapshot())
             XCTAssertEqual(candidate.tripID,id) // No fifteen-second wait.
             try journal.endStoppedTrip(id)
@@ -623,6 +718,8 @@ extension TripJournalTests {
         let id=try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
         let at=Date()
         journal.location(fix(49,at:at));journal.matchedPlace(at:at,streetName:"Gespeichert",cityName:nil,latitude:49,longitude:8,accuracy:3)
+        journal.location(fix(49.001, at: at.addingTimeInterval(2)))
+        journal.matchedPlace(at: at.addingTimeInterval(2), streetName: "Gespeichert", cityName: nil, latitude: 49.001, longitude: 8, accuracy: 3)
         journal.stop();_ = journal.snapshot();journal.completeFinalizerForTesting()
         let before=try XCTUnwrap(journal.snapshot().trips.first)
         journal.close()
@@ -648,6 +745,8 @@ extension TripJournalTests {
         journal.setEnabled(true);journal.start()
         let id=try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String),at=Date()
         journal.location(fix(49,at:at));journal.matchedPlace(at:at,streetName:"Legacy",cityName:nil,latitude:49,longitude:8,accuracy:3)
+        journal.location(fix(49.001, at: at.addingTimeInterval(2)))
+        journal.matchedPlace(at: at.addingTimeInterval(2), streetName: "Legacy", cityName: nil, latitude: 49.001, longitude: 8, accuracy: 3)
         journal.stop();_ = journal.snapshot();journal.completeFinalizerForTesting();journal.close()
         var connection:OpaquePointer?
         XCTAssertEqual(sqlite3_open(root.appendingPathComponent("trips.sqlite").path,&connection),SQLITE_OK)

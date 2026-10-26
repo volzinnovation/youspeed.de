@@ -357,8 +357,9 @@ internal object AndroidYoloSignDecoder {
     }
 }
 
-internal fun primaryDetection(detections: List<TrafficSignDetection>): TrafficSignDetection? = detections
-    .filter { it.candidate.normalizedPrimarySemantic().kind !in setOf(TrafficSignSemanticKind.UNKNOWN, TrafficSignSemanticKind.NON_SPEED_RESTRICTION_END) }
+internal fun primaryDetection(detections: List<TrafficSignDetection>): TrafficSignDetection? =
+    detections.filter { it.candidate.numericSupplementarySpeed() != null }.maxByOrNull { it.candidate.rawScore }
+    ?: detections.filter { it.candidate.normalizedPrimarySemantic().kind !in setOf(TrafficSignSemanticKind.UNKNOWN, TrafficSignSemanticKind.NON_SPEED_RESTRICTION_END) }
     .maxByOrNull { it.candidate.rawScore }
     ?: detections.maxByOrNull { it.candidate.rawScore }
 
@@ -702,6 +703,7 @@ internal class AndroidLiteRtTrafficSignBackend(
     private val cropRequested: (List<String>) -> Boolean = { false },
 ) : TrafficSignRecognitionBackend<CameraXTrafficSignFrame>, AutoCloseable {
     private val closed = AtomicBoolean(false)
+    private val modelPack = verifiedPack.modelPack
     private val supplementaryPictogramClassIds = verifiedPack.displayCatalog.classLabels.filter {
         verifiedPack.displayCatalog.pictogram(it)?.imagePath != null
     }.toSet()
@@ -778,8 +780,17 @@ internal class AndroidLiteRtTrafficSignBackend(
                     val nativeContent = AndroidTrafficSignDetectorInput.nativeContentRect(bitmap)
                     try {
                     val detections = inference.detections
+                    val hasQualifiedOrdinarySpeed = detections.any { detection ->
+                        val candidate = detection.candidate
+                        candidate.normalizedPrimarySemantic().kind == TrafficSignSemanticKind.MAXIMUM_SPEED &&
+                            candidate.isQualifiedObservation(modelPack.calibration.runtimeOutput,
+                                modelPack.thresholds.unknown,
+                                modelPack.classFor(candidate.rawClassId)?.threshold ?: 0.0)
+                    }
+                    // A competing zone-panel read must not delay an ordinary
+                    // numeric sign. Zone-only frames still require native proof.
                     val verifiedZones = detections.withIndex().filter {
-                        it.value.candidate.semantic.kind == TrafficSignSemanticKind.ZONE_START
+                        !hasQualifiedOrdinarySpeed && it.value.candidate.semantic.kind == TrafficSignSemanticKind.ZONE_START
                     }.sortedByDescending { it.value.candidate.rawScore }.take(2).filter {
                         AndroidTrafficSignSupplementaryOCR.verifiesZone(window, it.value.candidate)
                     }.map { it.index }.toSet()

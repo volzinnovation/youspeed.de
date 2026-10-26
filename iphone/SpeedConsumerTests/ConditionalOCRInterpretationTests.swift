@@ -2,7 +2,7 @@ import XCTest
 @testable import SpeedConsumer
 
 final class ConditionalOCRInterpretationTests: XCTestCase {
-    @MainActor func testControllerWithdrawsLateUnverifiedParentRetainsMapVoiceAndUnrelatedCamera() {
+    @MainActor func testControllerWithdrawsPositivePlateButEmptyReadRetainsNumericMapVoiceAndUnrelatedCamera() {
         let model = DriveSessionViewModel()
         let at = Date()
         let box = TrafficSignNormalizedRect(x: 0.2, y: 0.2, width: 0.1, height: 0.1)
@@ -27,12 +27,14 @@ final class ConditionalOCRInterpretationTests: XCTestCase {
             let unreadModel = DriveSessionViewModel()
             unreadModel.testSeedConditionalOCRReference(cameraID: "conditional-parent")
             let unread = TrafficSignSupplementaryOCRAnnotation(primaryClassID: "maxspeed:30", primarySpeedKmh: 30,
-                physicalSignID: "conditional-parent", frameID: "unread", sourceObservedAt: at, observedAt: at, firstSeenAt: at,
+                physicalSignID: "conditional-parent", frameID: "first", sourceObservedAt: at, observedAt: at, firstSeenAt: at,
                 rawText: nil, window: nil, readStatus: status, primaryBoundingBox: box, ocrBoundingBox: box,
                 engine: "test", modelVersion: "test")
             unreadModel.testMaskConditionalOCRParent(TrafficSignRuntimeEmission(event: event, frameContext: nil,
                 ocrAttemptAnnotation: unread, supplementaryOCROnly: true))
-            XCTAssertEqual(unreadModel.speedLimitKmh, 80, "A failed/empty actual read cannot promote the parent")
+            XCTAssertEqual(unreadModel.speedLimitKmh, 30, "A failed/empty read without positive plate evidence cannot block its recognized parent")
+            XCTAssertEqual(unreadModel.effectiveSpeedLimitState.source, .camera)
+            XCTAssertFalse(unreadModel.testConditionalOCRParentIsBlocked("conditional-parent"))
         }
         model.testSeedConditionalOCRReference(cameraID: "conditional-parent", ownCorrection: 70)
         model.testMaskConditionalOCRParent(emission)
@@ -63,8 +65,8 @@ final class ConditionalOCRInterpretationTests: XCTestCase {
         XCTAssertEqual(model.speedLimitKmh, 80, "Deferred plate evidence cannot expire into an unconditional parent")
         model.testSeedConditionalOCRReference(cameraID: "unrelated-bare")
         model.testMaskConditionalOCRParent(emission("unrelated-bare", condition: .none))
-        XCTAssertEqual(model.speedLimitKmh, 80, "No pixel absence proof cannot admit a new bare parent")
-        XCTAssertEqual(model.effectiveSpeedLimitState.source, .bundle)
+        XCTAssertEqual(model.speedLimitKmh, 30, "A separate numeric parent must not wait for negative plate proof")
+        XCTAssertEqual(model.effectiveSpeedLimitState.source, .camera)
     }
     func testUnverifiedPlateCannotRenewNumericParentAndIsScopedToPhysicalGeneration() {
         var gate = ConditionalOCRInterpretation.AuthorityGate()
@@ -75,8 +77,12 @@ final class ConditionalOCRInterpretationTests: XCTestCase {
             XCTAssertTrue(gate.blocks(text, scope: "1:1"), "A later unread frame must not renew the numeric parent")
         }
         XCTAssertFalse(gate.blocks("unrelated", scope: "1:1"))
-        XCTAssertTrue(gate.observe(parentID: "unread-first", primaryClassID: "maxspeed:30", speedKmh: 30, rawText: nil, scope: "1:1"))
-        XCTAssertTrue(gate.blocks("unread-first", scope: "1:1"), "No text/failure cannot prove an unconditional parent")
+        for text in [nil, "", " \n\t"] as [String?] {
+            XCTAssertFalse(gate.observe(parentID: "unread-first", primaryClassID: "maxspeed:30", speedKmh: 30, rawText: text, scope: "1:1"))
+            XCTAssertFalse(gate.blocks("unread-first", scope: "1:1"), "Missing OCR is independent of primary speed admission")
+        }
+        XCTAssertTrue(gate.observe(parentID: "known-unread", primaryClassID: "maxspeed:60", speedKmh: 60, rawText: nil, scope: "1:1", knownPlate: true))
+        XCTAssertTrue(gate.blocks("known-unread", scope: "1:1"), "An observed unread plate remains restrictive")
         XCTAssertFalse(gate.blocks("bei Nässe", scope: "1:2"))
         XCTAssertFalse(gate.observe(parentID: "secondary", primaryClassID: "warning:children", speedKmh: nil, rawText: "Schule", scope: "1:2"))
     }
@@ -143,13 +149,14 @@ extension ConditionalOCRInterpretationTests {
     private func pixelAnnotation(frame:String, at:Date, parent:String="live", raw:String?="12-13h", plain:Bool=false,
                                  wrongFrame:Bool=false, componentCount:Int=1) -> TrafficSignSupplementaryOCRAnnotation {
         let box=TrafficSignNormalizedRect(x:0.25,y:0.1,width:0.4,height:0.3)
+        let sourceText=plain ? nil:raw
         let scan=TrafficSignPlateScan(status:plain ? .plain : .complete,
             union:plain ? nil : .init(x:10,y:135,width:140,height:60),
             components:plain ? [] : (0..<componentCount).map { .init(x:10,y:135+$0*65,width:140,height:60) },
             decision:plain ? "quiet_lower_context" : "bounded_complete_panels",lowerMinimum:plain ? 180:nil,lowerMaximum:plain ? 180:nil)
-        let passes=raw.map { [TrafficSignOCRPass(text:$0,confidence:0.99,scale:1),.init(text:$0,confidence:0.99,scale:2)] } ?? []
+        let passes=sourceText.map { [TrafficSignOCRPass(text:$0,confidence:0.99,scale:1),.init(text:$0,confidence:0.99,scale:2)] } ?? []
         return .init(primaryClassID:"maxspeed:30",primarySpeedKmh:30,physicalSignID:parent,frameID:frame,
-            sourceObservedAt:at,observedAt:at,firstSeenAt:at,rawText:raw,window:nil,readStatus:raw == nil ? .noText:.read,
+            sourceObservedAt:at,observedAt:at,firstSeenAt:at,rawText:sourceText,window:nil,readStatus:sourceText == nil ? .noText:.read,
             primaryBoundingBox:box,ocrBoundingBox:nil,engine:"fixture",modelVersion:"fixture",
             assemblyEvidence:.init(sourceWidth:400,sourceHeight:400,sourceFrameID:wrongFrame ? "other":frame,capturedAt:at,
                 physicalSignID:parent,primaryBox:box,contextRect:.init(x:100,y:40,width:160,height:240),otherPrimaryBoxes:[],
@@ -157,10 +164,11 @@ extension ConditionalOCRInterpretationTests {
     }
     private func liveEmission(_ annotation:TrafficSignSupplementaryOCRAnnotation, eventParent:String?=nil,
                               eventSpeed:Int=30, decision:TSRApplicabilityDecision?=nil,
-                              condition:TrafficSignConditionState = .none,includeDecision:Bool=true) -> TrafficSignRuntimeEmission {
+                              condition:TrafficSignConditionState = .none,includeDecision:Bool=true,
+                              eventFrame:String?=nil,eventAt:Date?=nil) -> TrafficSignRuntimeEmission {
         var event=TrafficSignRecognitionEvent(schemaVersion:1,packId:"fixture",artifactSha256:String(repeating:"a",count:64),
-            preprocessingVersion:"fixture",frameId:annotation.frameID,driveSessionId:"fixture",analysisEligible:true,
-            source:.liveFrame,frameTimestampUtc:annotation.sourceObservedAt,state:.confirmed,
+            preprocessingVersion:"fixture",frameId:eventFrame ?? annotation.frameID,driveSessionId:"fixture",analysisEligible:true,
+            source:.liveFrame,frameTimestampUtc:eventAt ?? annotation.sourceObservedAt,state:.confirmed,
             candidate:.init(rawClassId:"maxspeed:\(eventSpeed)",rawLabel:String(eventSpeed),semanticKind:"maximum_speed",value:eventSpeed,
                 unit:"km/h",rawScore:0.99,calibratedConfidence:nil,boundingBox:annotation.primaryBoundingBox,
                 trackId:eventParent ?? annotation.physicalSignID,evidenceFrames:2,conditionState:condition),roadContext:context,latencyMs:0,thermalState:"nominal")
@@ -174,6 +182,125 @@ extension ConditionalOCRInterpretationTests {
         return .init(event:event,frameContext:context,ocrAttemptAnnotation:annotation,supplementaryOCROnly:true)
     }
     private func iso(_ value:String) -> Date { ISO8601DateFormatter().date(from:value)! }
+    @MainActor func testUnmatchedPlateCompletionCannotBlockOrWithdrawNumericParent() {
+        let start=iso("2026-10-23T10:00:00Z")
+        let annotation=pixelAnnotation(frame:"source",at:start)
+        let mismatched:[TrafficSignRuntimeEmission] = [
+            liveEmission(annotation,eventParent:"different-parent"),
+            liveEmission(annotation,eventSpeed:60),
+            liveEmission(annotation,eventFrame:"different-frame"),
+            liveEmission(annotation,eventAt:start.addingTimeInterval(0.1))
+        ]
+        for (index,emission) in mismatched.enumerated() {
+            let model=DriveSessionViewModel();model.testConfigureLiveConditionalOCR(at:start,context:context)
+            let id=emission.event.candidate!.trackId!
+            model.testOfferIndependentCamera(id:id,speed:60)
+            model.testMaskConditionalOCRParent(emission)
+            XCTAssertEqual(model.speedLimitKmh,60,"Mismatched evidence \(index) cannot change its event's numeric parent")
+            XCTAssertFalse(model.testConditionalOCRParentIsBlocked(id),"Mismatched evidence \(index) cannot latch a restriction")
+        }
+    }
+    @MainActor func testPendingAndUnavailableOCRDoNotWithdrawConfirmedSixty() {
+        let start=iso("2026-10-23T10:00:00Z")
+        let source=pixelAnnotation(frame:"sixty",at:start)
+        let event=liveEmission(source,eventSpeed:60).event
+        for phase in [TrafficSignSupplementaryOCRPhase.notRequired,.pending] {
+            let model=DriveSessionViewModel();model.testConfigureLiveConditionalOCR(at:start,context:context)
+            model.testOfferIndependentCamera(id:"live",speed:60)
+            model.testMaskConditionalOCRParent(.init(event:event,frameContext:context,ocrPhase:phase))
+            XCTAssertEqual(model.speedLimitKmh,60,"A confirmed primary stays active while the plate task is \(phase)")
+            XCTAssertFalse(model.testConditionalOCRParentIsBlocked("live"))
+        }
+    }
+    @MainActor func testFourSecondOldPlateCompletionCannotWithdrawItsCurrentNumericParent() {
+        let start=iso("2026-10-23T10:00:00Z")
+        let model=DriveSessionViewModel();model.testConfigureLiveConditionalOCR(at:start,context:context)
+        let source=pixelAnnotation(frame:"stalled-source",at:start)
+        model.testMaskConditionalOCRParent(.init(event:liveEmission(source).event,frameContext:context))
+        model.testOfferIndependentCamera(id:"live",speed:30)
+        model.testReevaluateLiveConditionalOCR(at:start.addingTimeInterval(4))
+        XCTAssertEqual(model.speedLimitKmh,30)
+        model.testMaskConditionalOCRParent(liveEmission(source))
+        XCTAssertFalse(model.testConditionalOCRParentIsBlocked("live"),
+            "Same-generation OCR must still satisfy the source-frame age limit")
+        XCTAssertEqual(model.speedLimitKmh,30,"A stalled old plate task cannot retroactively withdraw its current primary")
+    }
+    private func dismissalEmission(at:Date,annotation:TrafficSignSupplementaryOCRAnnotation?=nil,
+                                  supplementaryOnly:Bool=false) throws -> TrafficSignRuntimeEmission {
+        let source=pixelAnnotation(frame:"independent-streams",at:at,parent:"numeric",raw:nil,plain:true)
+        let base=liveEmission(source)
+        let catalog=try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
+        var display=TrafficSignDisplayObservation(classID:"hazard:school",classifierScore:0.94,timestamp:at,
+            affectsSpeed:false,classifierCheckpointSHA256:catalog.classifierCheckpointSHA256)
+        let primaryDecision=try XCTUnwrap(base.event.applicabilityDecision)
+        display.applicabilityDecision = .init(schemaVersion:primaryDecision.schemaVersion,
+            policyVersion:primaryDecision.policyVersion,configHash:primaryDecision.configHash,
+            frameId:primaryDecision.frameId,trackId:"secondary",scope:primaryDecision.scope,
+            roadSnapshotId:primaryDecision.roadSnapshotId,classification:primaryDecision.classification,
+            reasons:[],evidence:[],imageSupport:1,displayEligible:true,immediateEligible:true,passageEligible:true)
+        return .init(event:base.event,frameContext:context,displayObservation:display,
+            ocrPhase:annotation == nil ? .pending:.completed,ocrAnnotation:annotation,
+            ocrAttemptAnnotation:annotation,supplementaryOCROnly:supplementaryOnly)
+    }
+    private func dismissalAnnotation(classID:String,speed:Int?,parent:String,at:Date,text:String) -> TrafficSignSupplementaryOCRAnnotation {
+        .init(primaryClassID:classID,primarySpeedKmh:speed,physicalSignID:parent,frameID:"independent-streams",
+            sourceObservedAt:at,observedAt:at,firstSeenAt:at,rawText:text,window:nil,readStatus:.read,
+            primaryBoundingBox:pixelAnnotation(frame:"box",at:at).primaryBoundingBox,ocrBoundingBox:nil,
+            engine:"fixture",modelVersion:"fixture")
+    }
+    @MainActor func testDismissedNumericParentDoesNotBlockNewSecondaryOrItsOwnSupplementaryText() throws {
+        let at=Date().addingTimeInterval(-0.5)
+        let model=DriveSessionViewModel();model.testConfigureLiveConditionalOCR(at:at,context:context)
+        let pictograms=model.trafficSignPictogramEnabled
+        model.trafficSignPictogramEnabled=true
+        defer {model.trafficSignPictogramEnabled=pictograms}
+        model.testDismissTrafficSignTracks(["numeric"],at:at.addingTimeInterval(-0.2))
+        model.testConsumeAdmittedTrafficSignRuntimeEmission(try dismissalEmission(at:at))
+        XCTAssertEqual(model.trafficSignPictogram?.classID,"hazard:school",
+            "A dismissed primary must not suppress a separately admitted secondary sign")
+        XCTAssertNil(model.trafficSignRecognitionLastEvent,"The dismissed primary is not republished")
+        XCTAssertEqual(model.speedLimitKmh,50)
+        let secondary=dismissalAnnotation(classID:"hazard:school",speed:nil,parent:"secondary",at:at,text:"Schule")
+        model.testConsumeAdmittedTrafficSignRuntimeEmission(try dismissalEmission(at:at,annotation:secondary,supplementaryOnly:true))
+        XCTAssertEqual(model.trafficSignSupplementaryText?.physicalSignID,"secondary")
+        let numeric=dismissalAnnotation(classID:"maxspeed:30",speed:30,parent:"numeric",at:at,text:"bei Nässe")
+        model.testConsumeAdmittedTrafficSignRuntimeEmission(try dismissalEmission(at:at,annotation:numeric,supplementaryOnly:true))
+        XCTAssertEqual(model.trafficSignSupplementaryText?.physicalSignID,"secondary",
+            "The dismissed numeric parent's delayed text cannot replace independent secondary text")
+    }
+    @MainActor func testDismissedSecondaryDoesNotBlockPrimaryOrItsOwnSupplementaryText() throws {
+        let at=Date().addingTimeInterval(-0.5)
+        let model=DriveSessionViewModel();model.testConfigureLiveConditionalOCR(at:at,context:context)
+        let pictograms=model.trafficSignPictogramEnabled
+        model.trafficSignPictogramEnabled=true
+        defer {model.trafficSignPictogramEnabled=pictograms}
+        model.testDismissTrafficSignTracks(["secondary"],at:at.addingTimeInterval(-0.2))
+        model.testConsumeAdmittedTrafficSignRuntimeEmission(try dismissalEmission(at:at))
+        XCTAssertEqual(model.trafficSignRecognitionLastEvent?.candidate?.trackId,"numeric")
+        XCTAssertNil(model.trafficSignPictogram,"The dismissed secondary's own lane remains suppressed")
+        let numeric=dismissalAnnotation(classID:"maxspeed:30",speed:30,parent:"numeric",at:at,text:"bei Nässe")
+        model.testConsumeAdmittedTrafficSignRuntimeEmission(try dismissalEmission(at:at,annotation:numeric,supplementaryOnly:true))
+        XCTAssertEqual(model.trafficSignSupplementaryText?.physicalSignID,"numeric",
+            "Numeric supplementary text uses its own primary applicability and dismissal")
+        let secondary=dismissalAnnotation(classID:"hazard:school",speed:nil,parent:"secondary",at:at,text:"Schule")
+        model.testConsumeAdmittedTrafficSignRuntimeEmission(try dismissalEmission(at:at,annotation:secondary,supplementaryOnly:true))
+        XCTAssertEqual(model.trafficSignSupplementaryText?.physicalSignID,"numeric")
+    }
+    @MainActor func testOlderParentPlateCompletionCannotWithdrawOrReplaceNewerCamera() {
+        let start=iso("2026-10-23T10:00:00Z")
+        let model=DriveSessionViewModel();model.testConfigureLiveConditionalOCR(at:start,context:context)
+        let first=pixelAnnotation(frame:"old-first",at:start,parent:"old-parent")
+        model.testMaskConditionalOCRParent(.init(event:liveEmission(first).event,frameContext:context))
+        model.testOfferIndependentCamera(id:"old-parent",speed:30)
+        model.testReevaluateLiveConditionalOCR(at:start.addingTimeInterval(0.6))
+        model.testOfferIndependentCamera(id:"newer-parent",speed:60)
+        for annotation in [first,pixelAnnotation(frame:"old-second",at:start.addingTimeInterval(0.3),parent:"old-parent")] {
+            model.testMaskConditionalOCRParent(liveEmission(annotation))
+            XCTAssertEqual(model.speedLimitKmh,60,"A delayed older-parent restriction must leave the newer sign authoritative")
+        }
+        model.testReevaluateLiveConditionalOCR(at:start.addingTimeInterval(1))
+        XCTAssertEqual(model.speedLimitKmh,60,"Clock reevaluation cannot promote the older completed OCR over the newer parent")
+    }
     func testLivePixelProofBindsFrameParentAndPlainAgreementScope() {
         let at=now
         XCTAssertEqual(ConditionalOCRInterpretation.assess(pixelAnnotation(frame:"a",at:at)),.conditional(ConditionalOCRInterpretation.parse("12-13h")!))

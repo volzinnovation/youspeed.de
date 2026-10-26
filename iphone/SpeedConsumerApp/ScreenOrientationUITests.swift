@@ -1572,6 +1572,8 @@ final class TripStopOdometerUITests:XCTestCase {
         app.launch()
         let stop=app.buttons["trip.stop.end"]
         XCTAssertTrue(stop.waitForExistence(timeout:20))
+        XCTAssertFalse(app.staticTexts["primary-metric"].exists)
+        let stopShot=XCTAttachment(screenshot:app.screenshot());stopShot.name="stopped-trip-dashboard-no-zero";stopShot.lifetime = .keepAlways;add(stopShot)
         stop.tap()
         let prompt=app.descendants(matching:.any)["trip.stop.prompt"].firstMatch
         XCTAssertTrue(prompt.waitForExistence(timeout:5))
@@ -1589,6 +1591,8 @@ final class TripStopOdometerUITests:XCTestCase {
         app.buttons["trip.stop.save"].tap()
         expectation(for:NSPredicate {_,_ in !prompt.exists},evaluatedWith:nil);waitForExpectations(timeout:5)
         XCTAssertFalse(stop.exists)
+        XCTAssertTrue(app.staticTexts["primary-metric"].waitForExistence(timeout:5))
+        XCTAssertEqual(app.staticTexts["primary-metric"].label,"0")
         app.buttons["trip.stop.test.rearm"].tap()
         XCTAssertTrue(stop.waitForExistence(timeout:5))
         stop.tap();XCTAssertTrue(prompt.waitForExistence(timeout:5))

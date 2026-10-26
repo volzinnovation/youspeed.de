@@ -102,6 +102,7 @@ struct TrafficSignDisplayObservation: Equatable, Sendable {
     let affectsSpeed: Bool
     let isSpeedLimitEnd: Bool
     let classifierCheckpointSHA256: String
+    var applicabilityDecision: TSRApplicabilityDecision? = nil
 
     init(
         classID: String,
@@ -119,9 +120,9 @@ struct TrafficSignDisplayObservation: Equatable, Sendable {
         self.classifierCheckpointSHA256 = classifierCheckpointSHA256
     }
 
-    static func accepted(from primaryDetections: [TrafficSignDetection], timestamp: Date, classifierCheckpointSHA256: String?) -> Self? {
+    static func accepted(from primaryDetections: [TrafficSignDetection], timestamp: Date, classifierCheckpointSHA256: String?, preferSecondary: Bool = false) -> Self? {
         guard let classifierCheckpointSHA256 else { return nil }
-        guard let detection = acceptedDetection(from: primaryDetections) else { return nil }
+        guard let detection = acceptedDetection(from: primaryDetections, preferSecondary: preferSecondary) else { return nil }
         let candidate = TrafficSignRecognitionCandidate(
             rawClassId: detection.rawClassId, rawLabel: detection.rawLabel,
             semanticKind: detection.semantic.kind.rawValue, value: detection.semantic.value,
@@ -139,7 +140,7 @@ struct TrafficSignDisplayObservation: Equatable, Sendable {
     }
 
     /// Shared selection keeps the OCR source attached to the exact admitted sign.
-    static func acceptedDetection(from primaryDetections: [TrafficSignDetection]) -> TrafficSignDetection? {
+    static func acceptedDetection(from primaryDetections: [TrafficSignDetection], preferSecondary: Bool = false) -> TrafficSignDetection? {
         let accepted = primaryDetections.filter {
             let score = $0.classifierRawScore ?? $0.rawScore
             let detectorScore = $0.detectorRawScore ?? $0.rawScore
@@ -154,7 +155,7 @@ struct TrafficSignDisplayObservation: Equatable, Sendable {
             if $0.boundingBox.area != $1.boundingBox.area { return $0.boundingBox.area > $1.boundingBox.area }
             return $0.rawClassId < $1.rawClassId
         }
-        return accepted.first
+        return (preferSecondary ? accepted.first { $0.semantic.kind == .unknown } : nil) ?? accepted.first
     }
 }
 

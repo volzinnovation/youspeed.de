@@ -3,17 +3,15 @@ import Foundation
 /// Executable interpretation is separate from immutable collection OCR.
 /// A parser match alone never verifies a sign assembly or grants authority.
 enum ConditionalOCRInterpretation {
-    /// Existing OCR DTOs cannot establish complete-assembly verification. A later
-    /// clearer read must therefore never renew the plain numeric parent.
+    /// Only positive parent-matched plate evidence withholds a numeric parent.
+    /// Missing, failed or deferred auxiliary work does not block recognition.
     struct AuthorityGate {
         private var scope = ""
         private var blocked = Set<String>()
-        mutating func observe(parentID: String, primaryClassID: String, speedKmh: Int?, rawText: String?, scope: String) -> Bool {
+        mutating func observe(parentID: String, primaryClassID: String, speedKmh: Int?, rawText: String?, scope: String, knownPlate: Bool = false) -> Bool {
             select(scope)
-            // An attempted read with no text or a failure is not proof that the
-            // complete assembly is unconditional. The caller only supplies an
-            // annotation belonging to this exact physical parent.
-            guard let speedKmh, primaryClassID == "maxspeed:\(speedKmh)", !parentID.isEmpty else { return false }
+            guard let speedKmh, primaryClassID == "maxspeed:\(speedKmh)", !parentID.isEmpty,
+                  knownPlate || rawText?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false else { return false }
             return blocked.insert(parentID).inserted
         }
         mutating func blocks(_ parentID: String?, scope: String) -> Bool {

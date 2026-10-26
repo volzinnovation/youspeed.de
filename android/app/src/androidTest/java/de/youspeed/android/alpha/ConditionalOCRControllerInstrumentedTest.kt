@@ -10,7 +10,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ConditionalOCRControllerInstrumentedTest {
-    @Test fun lateUnverifiedParentWithdrawsCameraRetainsMapVoiceAndUnrelatedCamera() {
+    @Test fun positivePlateWithdrawsOnlyItsParentWhilePendingAndFailedOcrKeepPrimary() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         check(context.packageName.endsWith(".testhost"))
@@ -31,7 +31,7 @@ class ConditionalOCRControllerInstrumentedTest {
                 val candidate = TrafficSignCandidate("maxspeed:30", "30", TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, 30, "km/h"),
                     .99, null, box, trackId = "conditional-parent", evidenceFrames = 2)
                 val event = TrafficSignRecognitionEvent(1, "test", "a".repeat(64), "test", TrafficSignInputSource.LIVE_FRAME,
-                    at, TrafficSignRecognitionState.CONFIRMED, candidate, latencyMs = 0.0, thermalState = "nominal", driveSessionId = name)
+                    at, TrafficSignRecognitionState.CONFIRMED, candidate, latencyMs = 0.0, thermalState = "nominal", frameId = "ocr", driveSessionId = name)
                 val annotation = TrafficSignSupplementaryTextAnnotation("maxspeed:30", 30, "conditional-parent", "ocr", at, at,
                     "bei Nässe", null, TrafficSignSupplementaryOCRStatus.READ, box, generation = generation, driveSessionId = name)
                 val runtime = field("speedReference").get(controller) as SpeedReferenceRuntime
@@ -51,7 +51,7 @@ class ConditionalOCRControllerInstrumentedTest {
                     seed(unreadId)
                     controller.onTrafficSignSupplementaryAuthority(event.copy(candidate = candidate.copy(trackId = unreadId)),
                         annotation.copy(physicalSignId = unreadId, rawText = null, status = status))
-                    assertEquals("A failed/empty actual read cannot promote its parent", 80, runtime.output()?.value?.kmh)
+                    assertEquals("A failed/empty actual read must not suppress its qualified primary", 30, runtime.output()?.value?.kmh)
                 }
                 seed("conditional-parent", voice = true)
                 controller.onTrafficSignSupplementaryAuthority(event, annotation)
@@ -69,7 +69,7 @@ class ConditionalOCRControllerInstrumentedTest {
                 assertEquals("A deferred plate cannot expire into an unconditional parent", 80, runtime.output()?.value?.kmh)
                 seed("unrelated-bare")
                 controller.onTrafficSignUnverifiedAssembly(event.copy(candidate = candidate.copy(trackId = "unrelated-bare")), generation)
-                assertEquals("A bare frame without native inspection cannot reinstate a numeric parent",80,runtime.output()?.value?.kmh)
+                assertEquals("A bare primary never waits for lower-context inspection",30,runtime.output()?.value?.kmh)
             }
         } finally {
             instrumentation.runOnMainSync { controller.dispose() }

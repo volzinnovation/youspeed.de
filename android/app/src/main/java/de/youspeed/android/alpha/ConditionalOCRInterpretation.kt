@@ -15,8 +15,9 @@ internal object ConditionalOCRInterpretation {
         fun pending(parentId:String,primaryClassId:String,speedKmh:Int?,scope:String,knownPlate:Boolean=false):Boolean {
             select(scope)
             if(speedKmh==null || primaryClassId !in setOf("maxspeed:$speedKmh","zone:$speedKmh") || parentId.isEmpty()) return false
-            if(knownPlate) {restricted.add(parentId);plain.remove(parentId)}
-            return if(parentId in plain && parentId !in restricted) false else blocked.add(parentId)
+            if(!knownPlate) return false
+            restricted.add(parentId);plain.remove(parentId)
+            return blocked.add(parentId)
         }
         fun admitPlain(parentId:String,scope:String):Boolean {
             select(scope);if(parentId in restricted) return false
@@ -30,7 +31,7 @@ internal object ConditionalOCRInterpretation {
             restricted.add(parentId);plain.remove(parentId)
             return blocked.add(parentId)
         }
-        fun permitsPlain(parentId:String?,scope:String):Boolean {select(scope);return parentId in plain && parentId !in restricted}
+        fun permitsPlain(parentId:String?,scope:String):Boolean {select(scope);return parentId !in restricted && parentId !in blocked}
         fun blocks(parentId: String?, scope: String): Boolean { select(scope); return parentId in blocked }
         private fun select(next: String) { if (scope != next) { scope = next; blocked.clear();restricted.clear();plain.clear() } }
     }

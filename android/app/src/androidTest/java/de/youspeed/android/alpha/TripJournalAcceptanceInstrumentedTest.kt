@@ -36,8 +36,8 @@ class TripJournalAcceptanceInstrumentedTest {
     }
     @Test fun gpsRetriesAndStorageOptOutDoNotDuplicateOrRetainPrivateTrack()=isolated { _,clock,journal ->
         journal.setEnabled(true);journal.start();val id=journal.snapshot().first.single().getString("id")
-        journal.location(clock.fix(48.0));journal.snapshot();clock.advance(1.0)
-        val second=clock.fix(48.0001);journal.location(second)
+        journal.location(clock.fix(48.0));journal.snapshot();clock.advance(2.0)
+        val second=clock.fix(48.001);journal.location(second)
         val after=journal.snapshot();val measured=after.second.getDouble("distance");assertTrue(measured>10)
         journal.location(second);assertEquals(measured,journal.snapshot().second.getDouble("distance"),0.0)
         assertEquals("duplicate_or_out_of_order",TripJournalProjection.payload(journal.events(id).last()).getString("reason"))
@@ -89,7 +89,8 @@ class TripJournalAcceptanceInstrumentedTest {
     }
     @Test fun suspensionGracePreservesGapsAndNeverExtendsAbandonedEndpoint()=isolated { _,clock,journal ->
         journal.setEnabled(true);journal.start();val initial=journal.snapshot().first.single().getString("id")
-        clock.advance(10.0);journal.lifecycle(false);val checkpoint=journal.snapshot().first.single().getDouble("end")
+        journal.location(clock.fix(48.0));journal.snapshot();clock.advance(2.0);journal.location(clock.fix(48.001));journal.snapshot()
+        clock.advance(8.0);journal.lifecycle(false);val checkpoint=journal.snapshot().first.single().getDouble("end")
         clock.advance(120.0);journal.lifecycle(true)
         assertEquals(initial,journal.snapshot().first.single().getString("id"))
         assertEquals(10.0,journal.snapshot().second.getDouble("usage"),0.001)
@@ -121,7 +122,7 @@ class TripJournalAcceptanceInstrumentedTest {
     }
     @Test fun savedTripEndingOdometerIsOptionalWriteOnceAndNeverChangesActiveTripOrCounters()=isolated { _,clock,journal ->
         journal.setEnabled(true);journal.start();val id=journal.snapshot().first.single().getString("id")
-        journal.odometer(id,12000.0,null);journal.snapshot();journal.location(clock.fix(48.0));journal.snapshot();clock.advance(1.0);journal.location(clock.fix(48.0001));journal.stop();journal.snapshot();clock.advance(6.0);journal.completeFinalizerForTesting();journal.snapshot()
+        journal.odometer(id,12000.0,null);journal.snapshot();journal.location(clock.fix(48.0));journal.snapshot();clock.advance(2.0);journal.location(clock.fix(48.001));journal.stop();journal.snapshot();clock.advance(6.0);journal.completeFinalizerForTesting();journal.snapshot()
         assertEquals("ended",journal.snapshot().first.single().getString("state"))
         journal.newTrip();val current=journal.snapshot().first.first {it.getString("id")!=id}.getString("id");val before=journal.snapshot().second.toString()
         for(value in listOf(Double.NaN,Double.POSITIVE_INFINITY,-1.0,11999.9)) assertTrue(runCatching {journal.setEndingOdometer(id,value)}.isFailure)
@@ -144,10 +145,12 @@ class TripJournalAcceptanceInstrumentedTest {
     @Test fun matchedPlaceKeepsStorageOptOutForegroundAndEndedLatch()=isolated { _,clock,journal ->
         journal.start();journal.matchedPlace(clock.wall,"Ignored","Town",48.0,8.0,3.0);assertTrue(journal.snapshot().first.isEmpty())
         journal.setEnabled(true);val id=journal.snapshot().first.single().getString("id");journal.location(clock.fix(48.0));journal.matchedPlace(clock.wall,"Street","Town",48.0,8.0,3.0)
-        assertEquals("Street\nTown",journal.snapshot().first.single().getString("start_place"))
+        // Active rows have no frozen endpoint metadata; check the captured evidence.
+        assertEquals("Street\nTown",TripJournalProjection.endpointPlaces(JSONObject(),journal.events(id)).first)
         journal.lifecycle(false);journal.matchedPlace(clock.wall,"Background","Town",48.0,8.0,3.0);journal.lifecycle(true);journal.snapshot()
         journal.stop();journal.matchedPlace(clock.wall,"Late","Town",48.0,8.0,3.0);journal.snapshot();journal.setEnabled(false);journal.matchedPlace(clock.wall,"Disabled","Town",48.0,8.0,3.0)
-        journal.snapshot();assertEquals(1,journal.events(id).count {it.optString("kind")=="place"})
+        journal.snapshot()
+        assertEquals(listOf("Street","Late"),journal.events(id).filter {it.optString("kind")=="place"}.map {TripJournalProjection.payload(it).getString("street_name")})
     }
     @Test fun canonicalArchiveIncludesLosslessLogsAndMaskedCopyCannotLeakRawEvidence()=isolated { _,clock,journal ->
         journal.setEnabled(true);journal.start();val id=journal.snapshot().first.single().getString("id")
@@ -240,7 +243,8 @@ class TripJournalAcceptanceInstrumentedTest {
 
     @Test fun stopIntentDrainsOnlyOwnedPreEndSignsAndLatchPreventsRecompositionRestart()=isolated { _,clock,journal ->
         journal.setEnabled(true);journal.start();val id=journal.snapshot().first.single().getString("id")
-        clock.advance(10.0);val intent=clock.wall;journal.stop();journal.snapshot()
+        journal.location(clock.fix(48.0));journal.snapshot();clock.advance(2.0);journal.location(clock.fix(48.001));journal.snapshot()
+        clock.advance(8.0);val intent=clock.wall;journal.stop();journal.snapshot()
         assertEquals("finalizing",journal.snapshot().first.single().getString("state"))
         clock.advance(1.0);journal.signEvent(mapOf("evidence_id" to "inside","class_code" to "DE:310","source" to "camera"),intent-0.5)
         journal.signEvent(mapOf("evidence_id" to "outside","class_code" to "DE:311","source" to "camera"),clock.wall)

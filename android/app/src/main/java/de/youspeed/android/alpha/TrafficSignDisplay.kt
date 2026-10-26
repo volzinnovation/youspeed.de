@@ -206,15 +206,19 @@ internal object SecondaryTrafficSignSpeechPolicy {
 internal object TrafficSignDisplayPolicy {
     const val MINIMUM_SCORE = 0.90
 
-    fun accepted(detections: List<TrafficSignDetection>): TrafficSignCandidate? = detections
-        .map(TrafficSignDetection::candidate)
+    fun accepted(detections: List<TrafficSignDetection>, preferSecondary: Boolean = false): TrafficSignCandidate? {
+        val accepted = detections.map(TrafficSignDetection::candidate)
         .filter { candidate ->
             !candidate.rawClassId.startsWith("bad") && !candidate.rawClassId.startsWith("classifier:") &&
                 (candidate.classifierRawScore ?: candidate.rawScore).let { it.isFinite() && it in MINIMUM_SCORE..1.0 } &&
                 candidate.rawScore.isFinite() && candidate.rawScore in 0.25..1.0 &&
                 (candidate.proposalRawScore?.let { it.isFinite() && it in 0.25..1.0 } != false)
         }
-        .maxWithOrNull(compareBy<TrafficSignCandidate> { it.classifierRawScore ?: it.rawScore }.thenBy { it.rawScore })
+        val candidates = if (preferSecondary) accepted.filter {
+            it.normalizedPrimarySemantic().kind == TrafficSignSemanticKind.UNKNOWN
+        }.takeIf { it.isNotEmpty() } ?: accepted else accepted
+        return candidates.maxWithOrNull(compareBy<TrafficSignCandidate> { it.classifierRawScore ?: it.rawScore }.thenBy { it.rawScore })
+    }
 
     fun next(current: TrafficSignPictogram?, observation: TrafficSignDisplayObservation?, catalog: TrafficSignDisplayCatalog): TrafficSignPictogram? {
         val candidate = observation?.candidate ?: return current

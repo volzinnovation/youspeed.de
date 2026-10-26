@@ -998,6 +998,22 @@ class TrafficSignPassageTests {
         assertTrue(order.isEmpty())
     }
 
+    @Test fun supplementaryCallbackDoesNotReplayParentAdmission() {
+        val admissions = mutableListOf<String>()
+        val annotations = mutableListOf<String>()
+        val event = recognition(t0)
+        val annotation = TrafficSignSupplementaryTextAnnotation("maxspeed:30", 30, "physical-1", "ocr", t0, t0,
+            "bei Nässe", null, TrafficSignSupplementaryOCRStatus.READ, NormalizedTrafficSignBoundingBox(.2, .2, .1, .1))
+        val forwarder = TrafficSignFinalizedPassageForwarder(
+            submitUnverifiedAssembly = { _, _ -> admissions += "parent" },
+            submitSupplementaryAuthority = { _, _ -> annotations += "plate" },
+            submitFinalizedPassage = { true })
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(event, null))
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(event, null, ocrAnnotation = annotation, supplementaryOCROnly = true))
+        assertEquals(listOf("parent"), admissions)
+        assertEquals(listOf("plate"), annotations)
+    }
+
     @Test fun deferredAssemblyAuthorityMaskPrecedesPassageWithoutAnOcrAnnotation() {
         val order = mutableListOf<String>()
         val event = recognition(t0).let { it.copy(candidate = it.candidate!!.copy(conditionState = TrafficSignConditionState.UNRESOLVED)) }
@@ -1052,6 +1068,20 @@ class TrafficSignPassageTests {
         assertTrue(failures.isEmpty())
         forwarder.onRecognition(TrafficSignOrchestrationOutput(event, null, backendFailureReason = "stopped", terminalBackendFailure = true, contextGeneration = 8))
         assertEquals(listOf("stopped" to 8L), failures)
+    }
+
+    @Test fun primaryPrecedesSecondaryAndPlateCollectionWork() {
+        val order = mutableListOf<String>()
+        val event = recognition(t0).copy(driveSessionId = "priority-test")
+        val forwarder = TrafficSignFinalizedPassageForwarder(
+            submitRecognitionEvent = { _, _ -> order += "primary" },
+            submitDisplayObservation = { order += "secondary" },
+            submitSupplementaryText = { order += "plate" },
+            submitCollectionFrame = { _, _, _, _ -> order += "collection" },
+            submitFinalizedPassage = { true })
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(event, null,
+            displayObservation = TrafficSignDisplayObservation(requireNotNull(event.candidate), 0, requireNotNull(event.driveSessionId))))
+        assertEquals(listOf("primary", "secondary", "plate", "collection"), order)
     }
 
     @Test

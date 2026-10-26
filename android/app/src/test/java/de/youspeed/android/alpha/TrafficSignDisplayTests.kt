@@ -89,6 +89,23 @@ class TrafficSignDisplayTests {
         assertThrows(IllegalArgumentException::class.java) { NormalizedTrafficSignBoundingBox(0.9, 0.2, 0.5, 0.2) }
     }
 
+    @Test fun presentationPrefersValidSecondaryAndRetainsNumericAndEndFallbacks() {
+        val numeric = candidate("maxspeed:60", TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, 60, "km/h"))
+            .copy(rawScore = .99, classifierRawScore = .99)
+        val school = candidate("hazard:school").copy(rawScore = .94, classifierRawScore = .94)
+        val detections = listOf(TrafficSignDetection(numeric), TrafficSignDetection(school))
+        assertEquals(numeric, TrafficSignDisplayPolicy.accepted(detections))
+        val chosen = TrafficSignDisplayPolicy.accepted(detections, preferSecondary = true)
+        assertEquals(school, chosen)
+        assertEquals("hazard:school", TrafficSignDisplayPolicy.next(null,
+            TrafficSignDisplayObservation(requireNotNull(chosen), 1, "drive-test"), catalog)?.classId)
+        assertEquals(numeric, TrafficSignDisplayPolicy.accepted(listOf(TrafficSignDetection(numeric)), preferSecondary = true))
+        val end = candidate("maxspeed:end", TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED_END))
+        assertEquals(end, TrafficSignDisplayPolicy.accepted(listOf(TrafficSignDetection(end)), preferSecondary = true))
+        assertEquals(numeric, TrafficSignDisplayPolicy.accepted(listOf(TrafficSignDetection(numeric),
+            TrafficSignDetection(school.copy(classifierRawScore = .89))), preferSecondary = true))
+    }
+
     @Test fun explicitNumberedEndsAndCityAliasesNormalizeWithoutTurning281IntoSpeedEnd() {
         for (speed in listOf(5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130)) {
             val action = candidate("DE:278-$speed").toAction("DE")

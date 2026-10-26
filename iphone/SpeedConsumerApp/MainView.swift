@@ -1436,18 +1436,32 @@ struct MainView: View {
                 if let candidate = tripStopCandidate, dashboardPresentationVisible, tripJournal.enabled,
                    viewModel.currentSpeedKmh == 0, !viewModel.isInSpeedCaptureMode,
                    let observed = viewModel.stationarySpeedObservedAt, (0...3).contains(Date().timeIntervalSince(observed)) {
-                    Text(primaryMetricText).font(primaryMetricFont(size:primaryFont))
                     Button {
                         Task { @MainActor in
                             do {
-                                try await Task.detached { try tripJournal.endStoppedTrip(candidate.tripID) }.value
-                                stoppedTripError=nil; stoppedTrip=candidate; tripStopCandidate=nil
+                                let saved = try await Task.detached { try tripJournal.endStoppedTrip(candidate.tripID) }.value
+                                stoppedTripError=nil; stoppedTrip=saved ? candidate : nil; tripStopCandidate=nil
                             } catch { stoppedTripError=error.localizedDescription }
                         }
                     } label: {
-                        Label(tripStopText("Stop trip", "Fahrt beenden", "Terminer le trajet", "Rit stoppen"),systemImage:"stop.fill")
+                        HStack(spacing: 8) {
+                            Image(systemName: "stop.fill")
+                                .resizable()
+                                .frame(width: 18, height: 18)
+                            Text(tripStopText("Stop trip", "Fahrt beenden", "Terminer le trajet", "Rit stoppen"))
+                                .font(.system(size: 17, weight: .semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                        }
+                        .padding(.horizontal, 16)
+                        .frame(minHeight: 48)
+                        .background(primaryForegroundColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 8)
+                                .strokeBorder(primaryForegroundColor.opacity(0.24), lineWidth: 1)
+                        }
                     }
-                    .buttonStyle(.bordered).accessibilityIdentifier("trip.stop.end")
+                    .buttonStyle(.plain).accessibilityIdentifier("trip.stop.end")
                     if let stoppedTripError { Text(stoppedTripError).font(.caption).foregroundStyle(.red) }
                 } else if shouldShowTunnelCurrentSpeedIcon {
                     Image(systemName: "tunnel.fill")

@@ -36,7 +36,15 @@ class TripJournalNativeShareInstrumentedTest {
         }
         val journal=TripJournal(context,false)
         journal.setEnabled(true);journal.start()
-        val id=journal.history().single().getString("id")
+        val id=journal.snapshot().first.single().getString("id")
+        val at=System.currentTimeMillis()
+        for((index,latitude) in listOf(49.0,49.001).withIndex()) {
+            journal.location(android.location.Location("gps").apply {
+                this.latitude=latitude;longitude=8.0;accuracy=3f;speed=10f
+                time=at+index*2000;elapsedRealtimeNanos=(index+1)*2_000_000_000L
+            })
+        }
+        journal.snapshot()
         journal.stop();journal.completeFinalizerForTesting()
         val scenario=ActivityScenario.launch<MainActivity>(Intent(base,MainActivity::class.java).putExtra("screenshot_state","camera-limit-active"))
         val device=UiDevice.getInstance(instrumentation)

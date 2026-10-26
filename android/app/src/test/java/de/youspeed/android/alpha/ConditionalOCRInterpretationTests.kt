@@ -21,6 +21,21 @@ class ConditionalOCRInterpretationTests {
         assertFalse(gate.blocks("bei Nässe", "1:2"))
         assertFalse(gate.observe("secondary", "warning:children", null, "Schule", "1:2"))
     }
+    @Test fun pendingAndUnresolvedNoPlateEvidenceNeverBlocksQualifiedNumericParent() {
+        val gate = ConditionalOCRInterpretation.AuthorityGate()
+        assertTrue(gate.permitsPlain("primary", "1:1"))
+        assertFalse(gate.pending("primary", "maxspeed:60", 60, "1:1"))
+        assertTrue(gate.permitsPlain("primary", "1:1"))
+        assertFalse(gate.blocks("primary", "1:1"))
+        assertTrue(gate.pending("primary", "maxspeed:60", 60, "1:1", knownPlate = true))
+        assertTrue(gate.blocks("primary", "1:1"))
+        assertFalse(gate.permitsPlain("primary", "1:1"))
+        assertFalse(gate.pending("primary", "maxspeed:60", 60, "1:1"))
+        assertFalse(gate.admitPlain("primary", "1:1"))
+        assertTrue(gate.blocks("primary", "1:1"))
+        assertTrue(gate.permitsPlain("newer-parent", "1:1"))
+        assertTrue(gate.permitsPlain("primary", "1:2"))
+    }
     private val now=Instant.parse("2026-10-23T10:00:00Z")
     // Temporal unit fixtures derive geometry from rasterized framed panels. The
     // Android instrumentation suite separately proves actual bundled OCR output.

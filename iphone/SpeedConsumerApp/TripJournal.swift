@@ -17,6 +17,9 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
     private var db: OpaquePointer?
     private var directory: URL?
     private var active: String?
+    // Live eligibility is separate from the buffered evidence and driven-distance counter.
+    private var activeStartCoordinate: CLLocationCoordinate2D?
+    private var hiddenShortTrips = Set<String>()
     private var finalizing: (id: String, start: Double, end: Double, deadline: Double)?
     private var requested = false
     private var endedLatch = false
@@ -93,6 +96,7 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
         db = connection
         sqlite3_busy_timeout(connection, 3000)
         let setup = sql("PRAGMA journal_mode=WAL") && sql("PRAGMA secure_delete=ON")
+        var recovered = [String]()
         let committed = transaction {
             self.sql("CREATE TABLE IF NOT EXISTS trips(id TEXT PRIMARY KEY,start REAL,end REAL,state TEXT,distance REAL DEFAULT 0,duration REAL DEFAULT 0,odo_start REAL,odo_end REAL)")
             let columns = Set(self.rows("PRAGMA table_info(trips)").compactMap { $0["name"] as? String })
@@ -105,11 +109,13 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
             self.sql("CREATE TABLE IF NOT EXISTS bindings(session TEXT PRIMARY KEY,trip TEXT)")
             self.sql("CREATE TABLE IF NOT EXISTS counters(id INTEGER PRIMARY KEY CHECK(id=1),origin REAL,distance REAL,usage REAL)")
             self.sql("INSERT OR IGNORE INTO counters VALUES(1,?,0,0)", [Date().timeIntervalSince1970])
+            recovered = self.rows("SELECT id FROM trips WHERE state IN ('active','finalizing')").compactMap { $0["id"] as? String }
             self.sql("UPDATE trips SET last_observed=COALESCE(last_observed,end,start),end_reason='process_recovered',state='interrupted' WHERE state IN ('active','finalizing')")
             self.sql("PRAGMA user_version=3")
             self.backfillHistoryMetadata()
         }
         guard setup && committed else { sqlite3_close_v2(db); db = nil; throw CocoaError(.fileWriteUnknown) }
+        for id in recovered { _ = discardShortTrip(id) }
         try? FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: directory.path)
         DispatchQueue.main.async { self.error = nil }
         publishHistory()
@@ -169,7 +175,7 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
     }
     func events(_ id: String) -> [[String: Any]] { queue.sync { rows("SELECT * FROM events WHERE trip=? ORDER BY time,seq", [id]) } }
     private func publishHistory() {
-        let trips = rows("SELECT * FROM trips ORDER BY start DESC")
+        let trips = rows("SELECT * FROM trips ORDER BY start DESC").filter { !hiddenShortTrips.contains($0["id"] as? String ?? "") }
         DispatchQueue.main.async { self.historyTrips = trips }
     }
     /// Called once after closure/finalization (or once for metadata repair), never by a view.
@@ -198,6 +204,34 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
             if let id = row["id"] as? String { storeHistoryMetadata(id) }
         }
     }
+    /// Use the first/last usable fixes, including stationary endpoints. Driven distance
+    /// is deliberately irrelevant: the owner requested straight-line separation.
+    @discardableResult private func discardShortTrip(_ id: String) -> Bool {
+        guard let trip = rows("SELECT * FROM trips WHERE id=? AND state NOT IN ('active','finalizing')", [id]).first else { return false }
+        let points = rows("SELECT * FROM events WHERE trip=? AND kind='gps' ORDER BY time,seq", [id]).map(JournalEvent.init).filter {
+            ($0.payload["valid"] as? Bool ?? $0.trackEligible) && $0.coordinate != nil
+                && !["duplicate_or_out_of_order", "network_only"].contains($0.payload["reason"] as? String ?? "")
+        }
+        if points.count >= 2, let first = points.first?.coordinate, let last = points.last?.coordinate {
+            guard Self.endpointSeparationMeters(first, last) < 100 else { return false }
+        } else {
+            guard (trip["distance"] as? Double ?? 0) == 0 else { return false }
+        }
+        guard transaction({
+            sql("DELETE FROM events WHERE trip=?", [id]); sql("DELETE FROM bindings WHERE trip=?", [id]); sql("DELETE FROM trips WHERE id=?", [id])
+        }) else { return false }
+        hiddenShortTrips.remove(id)
+        for key in Array(liveVideoOwners.keys) { liveVideoOwners[key]?.remove(id) }
+        try? FileManager.default.removeItem(at: Self.exportDirectory(id))
+        removeTemporaryBackups()
+        return true
+    }
+    static func endpointSeparationMeters(_ first: CLLocationCoordinate2D, _ last: CLLocationCoordinate2D) -> Double {
+        let radians = Double.pi / 180
+        let a = pow(sin((last.latitude-first.latitude)*radians/2), 2)
+            + cos(first.latitude*radians)*cos(last.latitude*radians)*pow(sin((last.longitude-first.longitude)*radians/2), 2)
+        return 6_371_008.8 * 2 * asin(sqrt(min(1, max(0, a))))
+    }
     func setEnabled(_ value: Bool) {
         preferences.set(value, forKey: "youspeed.journal.enabled")
         queue.async {
@@ -221,7 +255,8 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
         let id = UUID().uuidString, now = date.timeIntervalSince1970
         guard sql("INSERT INTO trips(id,start,end,state,last_observed,timezone_seconds) VALUES(?,?,?,'active',?,?)", [id, now, now, now, TimeZone.current.secondsFromGMT()]) else { return }
         stopPrompt = .init(); resumeOnMovement = false
-        active = id; previous = nil; lastFixTime = nil; tripAnchor = Self.monotonic()
+        active = id; activeStartCoordinate = nil; hiddenShortTrips.insert(id)
+        previous = nil; lastFixTime = nil; tripAnchor = Self.monotonic()
         record("coverage", ["gps": "awaiting_location", "tsr": "existing_camera_setting", "measurement_policy": 1])
         for (captureID, payload) in liveVideos {
             liveVideoOwners[captureID, default: []].insert(id)
@@ -244,7 +279,7 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
         guard finalizing?.id == id else { return }
         self.record("coverage", ["state": "sign_finalizer_closed", "window_s": 5], trip: id)
         self.sql("UPDATE trips SET state='ended' WHERE id=? AND state='finalizing'", [id]); finalizing = nil
-        storeHistoryMetadata(id); publishHistory()
+        if !discardShortTrip(id) { storeHistoryMetadata(id) }; hiddenShortTrips.remove(id); publishHistory()
     }
 #if DEBUG
     func completeFinalizerForTesting() { queue.sync { if let id = finalizing?.id { completeFinalizer(id) } } }
@@ -262,7 +297,10 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
             let lag = intent.map { max(0, Date().timeIntervalSince($0)) } ?? 0
             sql("UPDATE trips SET state=?,end_reason=?,end=MIN(end,?),duration=MAX(0,duration-?) WHERE id=?", [state, reason, endpoint, lag, id])
             // Map callbacks for the original fixes can still arrive during the finalizer window.
-            if state != "finalizing" { storeHistoryMetadata(id) }
+            if state != "finalizing" {
+                if !discardShortTrip(id) { storeHistoryMetadata(id) }
+                hiddenShortTrips.remove(id)
+            }
         }
         active = nil; previous = nil; lastFixTime = nil
         publishHistory()
@@ -377,6 +415,14 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
                 self.sql("UPDATE counters SET distance=distance+? WHERE id=1", [distance])
             }
             guard success else { return }
+            if valid && ordered, let id = self.active {
+                let first = self.activeStartCoordinate ?? fix.coordinate
+                self.activeStartCoordinate = first
+                let wasHidden = self.hiddenShortTrips.contains(id)
+                if Self.endpointSeparationMeters(first, fix.coordinate) < 100 { self.hiddenShortTrips.insert(id) }
+                else { self.hiddenShortTrips.remove(id) }
+                if wasHidden != self.hiddenShortTrips.contains(id) { self.publishHistory() }
+            }
             if !valid { self.previous = nil }
             guard ordered else { return }
             self.lastFixTime = fix.timestamp
@@ -385,7 +431,7 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
     }
     func stoppedTripSnapshot(now: Date = Date()) -> TripStopPromptSnapshot? {
         queue.sync {
-            guard enabled, foreground, let id = active, stopPrompt.canStop(at: promptClock()),
+            guard enabled, foreground, let id = active, !hiddenShortTrips.contains(id), stopPrompt.canStop(at: promptClock()),
                   let row = rows("SELECT distance FROM trips WHERE id=?", [id]).first else { return nil }
             let distance = row["distance"] as? Double ?? 0
             let total = rows("SELECT distance FROM counters WHERE id=1").first?["distance"] as? Double ?? 0
@@ -397,9 +443,9 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
     }
     func continueStoppedTrip(_ id: String) { queue.sync { if active == id { stopPrompt.continueTrip() } } }
     /// Freeze the trip before presenting an editor. GPS updates cannot withdraw this action.
-    func endStoppedTrip(_ id: String, now: Date = Date()) throws {
+    @discardableResult func endStoppedTrip(_ id: String, now: Date = Date()) throws -> Bool {
         try queue.sync {
-            guard enabled, foreground, active == id, stopPrompt.canStop(at: promptClock()) else {
+            guard enabled, foreground, active == id, !hiddenShortTrips.contains(id), stopPrompt.canStop(at: promptClock()) else {
                 throw JournalFailure(tripStopText("Stop the car before ending the trip.", "Zum Beenden der Fahrt anhalten.", "Arrêtez-vous avant de terminer le trajet.", "Stop de auto om de rit te beëindigen."))
             }
             checkpoint()
@@ -409,7 +455,10 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
             }) else { throw JournalFailure(journalText("write_failed")) }
             active=nil; previous=nil; lastFixTime=nil
             stopPrompt = .init(); endedLatch=true; resumeOnMovement=true
+            let discarded = discardShortTrip(id)
+            hiddenShortTrips.remove(id)
             publishHistory()
+            return !discarded
         }
     }
     func saveEndedTripOdometer(_ id: String, odometer: Int) throws {
@@ -426,7 +475,7 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
     }
     func saveStoppedTrip(_ id: String, odometer: Int, now: Date = Date()) throws {
         try queue.sync {
-            guard enabled, foreground, active == id, stopPrompt.visible(at: promptClock()),
+            guard enabled, foreground, active == id, !hiddenShortTrips.contains(id), stopPrompt.visible(at: promptClock()),
                   (0...999999).contains(odometer), let trip = rows("SELECT * FROM trips WHERE id=?", [id]).first,
                   Double(odometer) >= (trip["odo_start"] as? Double ?? 0), trip["odo_end"] == nil else {
                 throw JournalFailure(tripStopText("Wait for a fresh GPS fix while stopped.","Im Stand auf ein aktuelles GPS-Signal warten.","Attendez un signal GPS récent à l’arrêt.","Wacht stilstaand op een actuele GPS-positie."))
@@ -443,6 +492,8 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
             preferences.set(total, forKey:"youspeed.journal.odometer_distance_m")
             active=nil;previous=nil;lastFixTime=nil
             stopPrompt = .init(); endedLatch = true; resumeOnMovement = true
+            _ = discardShortTrip(id)
+            hiddenShortTrips.remove(id)
             publishHistory()
         }
     }
@@ -527,6 +578,7 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
             for key in Array(self.liveVideoOwners.keys) { self.liveVideoOwners[key]?.remove(id) }
             if self.active == id { self.requested = false; self.endedLatch = true; self.finish("ended", reason: "deleted") }
             guard self.transaction({ self.sql("DELETE FROM events WHERE trip=?", [id]); self.sql("DELETE FROM bindings WHERE trip=?", [id]); self.sql("DELETE FROM trips WHERE id=?", [id]) }) else { return }
+            self.hiddenShortTrips.remove(id)
             try? FileManager.default.removeItem(at: Self.exportDirectory(id))
             self.removeTemporaryBackups()
             self.sql("PRAGMA wal_checkpoint(TRUNCATE)")
@@ -544,6 +596,7 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
                 self.sql("UPDATE counters SET origin=?,distance=0,usage=0 WHERE id=1", [Date().timeIntervalSince1970])
             }) else { return }
             self.active = nil; self.finalizing = nil; self.liveVideoOwners.removeAll(); self.requested = false; self.endedLatch = true; self.previous = nil; self.lastFixTime = nil; self.usageAnchor = Self.monotonic()
+            self.activeStartCoordinate = nil; self.hiddenShortTrips.removeAll()
             if let roots = try? FileManager.default.contentsOfDirectory(at: FileManager.default.temporaryDirectory, includingPropertiesForKeys: nil) {
                 for root in roots where root.lastPathComponent.hasPrefix("trip-") || root.lastPathComponent.hasPrefix("youspeed-journal-") { try? FileManager.default.removeItem(at: root) }
             }
@@ -624,6 +677,7 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
             }
             guard ok else { throw JournalFailure("Restore failed; existing journal was preserved") }
             active = nil; finalizing = nil; liveVideoOwners.removeAll(); requested = false; endedLatch = true; previous = nil; lastFixTime = nil; usageAnchor = Self.monotonic()
+            activeStartCoordinate = nil; hiddenShortTrips.removeAll()
             if let exports = try? FileManager.default.contentsOfDirectory(at: FileManager.default.temporaryDirectory, includingPropertiesForKeys: nil) {
                 for file in exports where file.lastPathComponent.hasPrefix("trip-") { try? FileManager.default.removeItem(at: file) }
             }
@@ -1907,7 +1961,7 @@ private final class TripStopPreviewClock { var time=0.0 }
     private func feed(_ speed:Double) {
         clock.time=Double(step)
         lastTimestamp=Date(timeIntervalSince1970:max(Date().timeIntervalSince1970-0.1,lastTimestamp.timeIntervalSince1970+0.001))
-        journal.location(CLLocation(coordinate:.init(latitude:49,longitude:8),altitude:0,horizontalAccuracy:3,verticalAccuracy:3,course:0,speed:speed,timestamp:lastTimestamp))
+        journal.location(CLLocation(coordinate:.init(latitude:speed == 0 ? 49.001 : 49,longitude:8),altitude:0,horizontalAccuracy:3,verticalAccuracy:3,course:0,speed:speed,timestamp:lastTimestamp))
         _ = journal.snapshot();step+=1
     }
     func driveAndStop() { feed(10);for _ in 0..<16 {feed(0)};viewModel.testSetTripStopPreviewMoving(false) }

@@ -14,6 +14,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import java.time.Instant
+import java.util.Locale
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -23,6 +24,8 @@ class TripStopDashboardInstrumentedTest {
     @Test fun stopButtonOpensPersistentEditorInBothOrientations() {
         val base=InstrumentationRegistry.getInstrumentation().targetContext
         check(base.packageName.endsWith(".testhost"))
+        val previousLocale=Locale.getDefault()
+        Locale.setDefault(Locale.GERMANY)
         val fixture="trip-stop-dashboard-${java.util.UUID.randomUUID()}"
         val root=File(base.cacheDir,fixture).apply {mkdirs()}
         val isolated=object:ContextWrapper(base) {
@@ -32,7 +35,7 @@ class TripStopDashboardInstrumentedTest {
         var tick=0L;val wall=System.currentTimeMillis()/1000.0
         val journal=TripJournal(isolated,heartbeat=false,wallClock={wall+tick},elapsedClock={tick*1000})
         journal.setEnabled(true);journal.start();journal.snapshot()
-        fun feed(speed:Float,t:Long) {tick=t;journal.location(android.location.Location("gps").apply {latitude=49.0;longitude=8.0;accuracy=3f;this.speed=speed;time=((wall+tick)*1000).toLong();elapsedRealtimeNanos=(tick+1)*1_000_000_000L});journal.snapshot()}
+        fun feed(speed:Float,t:Long) {tick=t;journal.location(android.location.Location("gps").apply {latitude=if(t==0L) 49.0 else 49.001;longitude=8.0;accuracy=3f;this.speed=speed;time=((wall+tick)*1000).toLong();elapsedRealtimeNanos=(tick+1)*1_000_000_000L});journal.snapshot()}
         feed(10f,0);for(t in 1L..16)feed(0f,t)
         val scenario=ActivityScenario.launch<MainActivity>(Intent(base,MainActivity::class.java).putExtra("screenshot_state","camera-limit-active"))
         lateinit var controller:ConsumerSessionController
@@ -41,13 +44,20 @@ class TripStopDashboardInstrumentedTest {
         try {
             scenario.onActivity {activity->activity.setContent {
                 LaunchedEffect(Unit) {while(true) {if(ui.value.currentSpeedKmh==0.0)ui.value=ui.value.copy(stationarySpeedObservedAt=Instant.now());kotlinx.coroutines.delay(400)}}
-                MaterialTheme {MainScreen(controller,ui.value,true,{},{},{},{},{},{},{},{},{})}
+                MaterialTheme {
+                    val dashboard=ui.value
+                    // Reset alongside state reads: orientation may recompose only this content lambda.
+                    Locale.setDefault(Locale.GERMANY)
+                    MainScreen(controller,dashboard,true,{},{},{},{},{},{},{},{},{})
+                }
             }}
             for(orientation in listOf(ManualOrientation.PORTRAIT,ManualOrientation.LANDSCAPE_CAMERA_UPPER_LEFT)) {
                 scenario.onActivity {it.applyManualOrientation(orientation)}
                 compose.runOnIdle {ui.value=ui.value.copy(manualOrientation=orientation)}
                 compose.waitUntil(15_000){compose.onAllNodesWithTag("trip-stop-end").fetchSemanticsNodes().isNotEmpty()}
+                compose.waitUntil(5_000){compose.onAllNodesWithText("Fahrt beenden").fetchSemanticsNodes().isNotEmpty()}
                 compose.onNodeWithTag("trip-stop-end").assertIsDisplayed()
+                compose.onNodeWithTag("primary-metric").assertDoesNotExist()
                 val image=compose.onNodeWithTag("main-root").captureToImage().asAndroidBitmap()
                 File(base.cacheDir,"trip-stop-${orientation.storageValue}.png").outputStream().use {image.compress(Bitmap.CompressFormat.PNG,100,it)}
             }
@@ -61,11 +71,18 @@ class TripStopDashboardInstrumentedTest {
             compose.onNodeWithTag("trip-stop-prompt").assertIsDisplayed()
             compose.onNodeWithTag("trip-stop-save").performClick()
             compose.waitUntil(5_000){compose.onAllNodesWithTag("trip-stop-prompt").fetchSemanticsNodes().isEmpty()}
+            journal.newTrip();journal.snapshot()
+            compose.runOnIdle {ui.value=ui.value.copy(currentSpeedKmh=0.0,stationarySpeedObservedAt=Instant.now())}
+            compose.onNodeWithTag("trip-stop-end").assertDoesNotExist()
+            compose.onNodeWithTag("primary-metric").assertIsDisplayed().assertTextEquals("0")
+            val initialImage=compose.onNodeWithTag("main-root").captureToImage().asAndroidBitmap()
+            File(base.cacheDir,"trip-initial-zero.png").outputStream().use {initialImage.compress(Bitmap.CompressFormat.PNG,100,it)}
             assertTrue(journal.history().single().has("odo_end"))
             assertEquals(saved.getDouble("distance"),journal.history().single().getDouble("distance"),0.0)
         } finally {
             scenario.onActivity {it.applyManualOrientation(ManualOrientation.PORTRAIT)}
             scenario.close();journal.close();base.deleteSharedPreferences(fixture);root.deleteRecursively()
+            Locale.setDefault(previousLocale)
         }
     }
 }

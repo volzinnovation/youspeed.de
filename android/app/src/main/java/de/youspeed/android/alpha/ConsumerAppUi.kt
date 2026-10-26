@@ -565,15 +565,20 @@ internal fun MainScreen(
     val stopPromptContent: (@Composable (Color) -> Unit)? = if(!stopPromptVisible) null else { { promptForeground ->
         val snapshot=stopCandidate
         if(snapshot!=null) {
-            Text("0",color=promptForeground,style=MaterialTheme.typography.displayLarge,modifier=Modifier.testTag("primary-metric"))
             TextButton({
                 tripScope.launch {
                     runCatching {withContext(Dispatchers.IO) {controller.tripJournal.endStoppedTrip(snapshot.tripID)}}
-                        .onSuccess {stoppedTrip=snapshot;stopCandidate=null;stoppedTripError=null}.onFailure {stoppedTripError=it.cause?.message ?: it.message}
+                        .onSuccess {saved -> stoppedTrip=if(saved) snapshot else null;stopCandidate=null;stoppedTripError=null}.onFailure {stoppedTripError=it.cause?.message ?: it.message}
                 }
-            },modifier=Modifier.testTag("trip-stop-end")) {
-                Icon(Icons.Default.Stop,contentDescription=null,tint=promptForeground)
-                Text(ConsumerUiStrings.text("Stop trip","Fahrt beenden","Terminer le trajet","Rit stoppen"),color=promptForeground)
+            },modifier=Modifier.heightIn(min = 48.dp).testTag("trip-stop-end")
+                .background(promptForeground.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
+                .border(1.dp, promptForeground.copy(alpha = 0.24f), RoundedCornerShape(8.dp)),
+                shape=RoundedCornerShape(8.dp),
+                contentPadding=androidx.compose.foundation.layout.PaddingValues(horizontal=16.dp,vertical=8.dp)) {
+                Box(Modifier.size(18.dp).background(promptForeground, RoundedCornerShape(1.dp)))
+                Spacer(Modifier.width(8.dp))
+                Text(ConsumerUiStrings.text("Stop trip","Fahrt beenden","Terminer le trajet","Rit stoppen"),color=promptForeground,
+                    fontSize=17.sp,fontWeight=FontWeight.SemiBold,maxLines=1)
             }
             stoppedTripError?.let {Text(it,color=Color.Red)}
         }
@@ -1426,19 +1431,19 @@ private fun MetricStatusBlock(
     stopPrompt: (@Composable (Color) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val safeStop=ui.currentSpeedKmh==0.0 && ui.presentationForeground && !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui) &&
+        ui.stationarySpeedObservedAt?.let {java.time.Duration.between(it,Instant.now()).toMillis() in 0..3000}==true
+    val showsStopPrompt=stopPrompt!=null && safeStop
     Column(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = metricSlotMinHeight)
             .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = if (alignContentToTop) Arrangement.Top else Arrangement.Center,
+        verticalArrangement = if (alignContentToTop && !showsStopPrompt) Arrangement.Top else Arrangement.Center,
     ) {
-        val safeStop=ui.currentSpeedKmh==0.0 && ui.presentationForeground && !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui) &&
-            ui.stationarySpeedObservedAt?.let {java.time.Duration.between(it,Instant.now()).toMillis() in 0..3000}==true
-        if(stopPrompt!=null && safeStop) {
-            // The slot still needs the ordinary metric if no journal prompt is armed.
-            stopPrompt(foreground)
+        if(showsStopPrompt) {
+            stopPrompt?.invoke(foreground)
         }
         if(stopPrompt==null || !safeStop) {
         Text(

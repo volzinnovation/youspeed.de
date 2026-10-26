@@ -14,6 +14,82 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class TripJournalInstrumentedTest {
+    @Test fun endpointSeparationUsesStrictHundredMetreBoundary() {
+        for(metres in listOf(99.999,100.001,1000.0)) {
+            val latitude=metres/6_371_008.8*180/Math.PI
+            assertEquals(metres,TripJournal.endpointSeparationMeters(0.0,0.0,latitude,0.0),0.000001)
+        }
+    }
+    @Test fun shortLoopIsDiscardedWithoutEditorAndCountersOrMediaAreNotDeleted() = withJournalRoot {context,_ ->
+        var tick=0L
+        val wall=System.currentTimeMillis()/1000.0
+        TripJournal(context,heartbeat=false,wallClock={wall+tick},elapsedClock={tick*1000}).use {journal ->
+            journal.setEnabled(true);journal.start()
+            val id=journal.snapshot().first.single().getString("id")
+            fun feed(latitude:Double,speed:Float=10f) {
+                journal.location(android.location.Location("gps").apply {
+                    this.latitude=latitude;longitude=8.0;accuracy=3f;this.speed=speed
+                    time=((wall+tick)*1000).toLong();elapsedRealtimeNanos=(tick+1)*1_000_000_000L
+                });journal.snapshot();tick++
+            }
+            for(latitude in listOf(49.0,49.0005,49.001,49.0005,49.0)) feed(latitude)
+            journal.bind("short-loop")
+            val before=journal.snapshot()
+            assertTrue(before.first.single().getDouble("distance")>200)
+            val exported=journal.export(id)
+            val media=File(context.filesDir,"independent.jpg").apply {writeText("retained media")}
+            feed(49.0,0f)
+            assertNull(journal.stoppedTripSnapshot())
+            assertTrue(runCatching {journal.endStoppedTrip(id)}.isFailure)
+            journal.stop();journal.completeFinalizerForTesting()
+            assertTrue(journal.history().isEmpty())
+            assertEquals(before.second.getDouble("distance"),journal.snapshot().second.getDouble("distance"),0.0)
+            assertFalse(exported.exists());assertTrue(media.exists())
+            journal.media("short-loop","late",media.path,"photo");journal.tsr("late",emptyMap())
+            assertTrue(journal.events(id).isEmpty())
+            journal.newTrip();feed(49.0001)
+            assertTrue(journal.history().isEmpty());assertNotEquals(id,journal.snapshot().first.single().getString("id"))
+        }
+    }
+    @Test fun finalizerDropsShortTripAndRecoveryDropsEmptySession() = withJournalRoot {context,_ ->
+        TripJournal(context,heartbeat=false).use {journal ->
+            journal.setEnabled(true);journal.start()
+            val id=journal.snapshot().first.single().getString("id")
+            journal.stop();assertEquals("finalizing",journal.snapshot().first.single().getString("state"))
+            assertTrue(journal.history().isEmpty())
+            journal.completeFinalizerForTesting()
+            assertTrue(journal.history().isEmpty());assertTrue(journal.events(id).isEmpty())
+            journal.newTrip();assertEquals(1,journal.snapshot().first.size);assertTrue(journal.history().isEmpty())
+        }
+        TripJournal(context,heartbeat=false).use {journal -> assertTrue(journal.history().isEmpty())}
+    }
+    @Test fun stopAndVisibleHistoryRequireCurrentEndpointSeparationOfHundredMetres() = withJournalRoot {context,_ ->
+        var tick=0L
+        val wall=System.currentTimeMillis()/1000.0
+        TripJournal(context,heartbeat=false,wallClock={wall+tick},elapsedClock={tick*1000}).use {journal ->
+            journal.setEnabled(true);journal.start()
+            val id=journal.snapshot().first.single().getString("id")
+            fun feed(metres:Double,accuracyMetres:Float=3f) {
+                journal.location(android.location.Location("gps").apply {
+                    latitude=49+metres/6_371_008.8*180/Math.PI;longitude=8.0;accuracy=accuracyMetres;speed=0f
+                    time=((wall+tick)*1000).toLong();elapsedRealtimeNanos=(tick+1)*1_000_000_000L
+                });journal.snapshot();tick++
+            }
+            assertTrue(journal.history().isEmpty())
+            feed(0.0);feed(50.0);feed(99.999)
+            assertNull(journal.stoppedTripSnapshot());assertTrue(journal.history().isEmpty())
+            assertEquals("Keep evidence buffered before the threshold",1,journal.snapshot().first.size)
+            feed(100.001)
+            assertNotNull(journal.stoppedTripSnapshot());assertEquals(1,journal.history().size)
+            feed(0.0,100f);assertEquals(1,journal.history().size)
+            feed(10.0)
+            assertNull(journal.stoppedTripSnapshot());assertTrue(journal.history().isEmpty())
+            assertTrue(runCatching {journal.endStoppedTrip(id)}.isFailure)
+            assertEquals("Returning near the start hides the active trip without deleting it",1,journal.snapshot().first.size)
+            feed(150.0)
+            assertNotNull(journal.stoppedTripSnapshot());assertEquals(1,journal.history().size)
+        }
+    }
     private fun withJournalRoot(test: (Context,File) -> Unit) {
         val base=InstrumentationRegistry.getInstrumentation().targetContext
         val root=File(base.cacheDir,"trip-regression-${UUID.randomUUID()}").apply { mkdirs() }
@@ -40,13 +116,18 @@ class TripJournalInstrumentedTest {
             tripID=recorded.first.single().getString("id")
             assertEquals("active",recorded.first.single().getString("state"))
             assertEquals("tsr",journal.events(tripID).single {it.optString("kind")=="tsr"}.getString("kind"))
+            val at=System.currentTimeMillis()
+            for((index,lat) in listOf(49.0,49.001).withIndex()) journal.location(android.location.Location("gps").apply {
+                latitude=lat;longitude=8.0;accuracy=3f;speed=10f;time=at+index*2000;elapsedRealtimeNanos=(index+1)*2_000_000_000L
+            })
+            journal.snapshot()
             assertNull(journal.error)
         }
         TripJournal(context,heartbeat=false).use { reopened ->
             val saved=reopened.snapshot().first.single()
             assertEquals(tripID,saved.getString("id"))
             assertEquals("interrupted",saved.getString("state"))
-            assertEquals(2,reopened.events(tripID).size)
+            assertEquals(4,reopened.events(tripID).size)
             assertNull(reopened.error)
         }
     }
@@ -110,7 +191,7 @@ class TripJournalInstrumentedTest {
             fun feed(speed:Float,at:Long) {
                 tick=at
                 journal.location(android.location.Location("gps").apply {
-                    latitude=49.0;longitude=8.0;accuracy=3f;this.speed=speed
+                    latitude=if(at==0L) 49.0 else if(at<=18L) 49.001 else 49.002;longitude=8.0;accuracy=3f;this.speed=speed
                     time=((wall+tick)*1000).toLong();elapsedRealtimeNanos=(tick+1)*1_000_000_000L
                 });journal.snapshot()
             }
@@ -143,16 +224,16 @@ class TripJournalInstrumentedTest {
             });journal.snapshot()}
             feed(10f,0,49.0)
             journal.matchedPlace(wall,"Startstraße","Karlsruhe",49.0,8.0,3.0)
-            feed(10f,1,49.0001)
-            journal.matchedPlace(wall+1,"Zielstraße","Karlsruhe",49.0001,8.0,3.0)
-            feed(0f,2,49.0001)
+            feed(10f,2,49.001)
+            journal.matchedPlace(wall+2,"Zielstraße","Karlsruhe",49.001,8.0,3.0)
+            feed(0f,3,49.001)
             assertNotNull(journal.stoppedTripSnapshot())
             journal.endStoppedTrip(id)
             val saved=journal.history().single()
             assertEquals("ended",saved.getString("state"));assertFalse(saved.has("odo_end"))
             assertEquals("Startstraße\nKarlsruhe",saved.getString("start_place"))
             assertEquals("Zielstraße\nKarlsruhe",saved.getString("end_place"))
-            feed(0f,3,49.01)
+            feed(0f,4,49.01)
             journal.lifecycle(false);journal.lifecycle(true)
             journal.saveEndedTripOdometer(id,123456)
             val after=journal.history().single()
@@ -184,12 +265,12 @@ class TripJournalInstrumentedTest {
             fun feed(lat:Double) {journal.location(android.location.Location("gps").apply {
                 latitude=lat;longitude=8.0;accuracy=3f;speed=10f;time=(wall*1000).toLong();elapsedRealtimeNanos=elapsed*1_000_000
             });journal.snapshot()}
-            feed(49.0);wall+=1;elapsed+=1000;feed(49.0001)
+            feed(49.0);wall+=2;elapsed+=2000;feed(49.001)
             journal.stop()
             val pending=journal.history().single()
             assertEquals(0,pending.getInt("history_version"))
             journal.matchedPlace(at,"Startstraße","Karlsruhe",49.0,8.0,3.0)
-            journal.matchedPlace(at+1,"Zielstraße","Karlsruhe",49.0001,8.0,3.0)
+            journal.matchedPlace(at+2,"Zielstraße","Karlsruhe",49.001,8.0,3.0)
             assertEquals(2,journal.events(id).count {it.optString("kind")=="place"})
             journal.setEnabled(false)
             journal.matchedPlace(at,"Declined",null,49.0,8.0,3.0)
@@ -210,7 +291,7 @@ class TripJournalInstrumentedTest {
     }
 
     @Test fun missingVersionOneNamesAreRepairedOnceWithoutReplacingSavedNames() = withJournalRoot {context,_ ->
-        val wall=System.currentTimeMillis()/1000.0
+        var wall=System.currentTimeMillis()/1000.0
         var before=org.json.JSONObject()
         TripJournal(context,heartbeat=false,wallClock={wall}).use {journal ->
             journal.setEnabled(true);journal.start();journal.snapshot()
@@ -218,6 +299,11 @@ class TripJournalInstrumentedTest {
                 latitude=49.0;longitude=8.0;accuracy=3f;speed=10f;time=(wall*1000).toLong();elapsedRealtimeNanos=1_000_000_000
             })
             journal.matchedPlace(wall,"Captured",null,49.0,8.0,3.0)
+            wall+=2
+            journal.location(android.location.Location("gps").apply {
+                latitude=49.001;longitude=8.0;accuracy=3f;speed=10f;time=(wall*1000).toLong();elapsedRealtimeNanos=3_000_000_000
+            })
+            journal.matchedPlace(wall,"Captured",null,49.001,8.0,3.0)
             journal.stop();journal.completeFinalizerForTesting()
             before=journal.history().single()
         }

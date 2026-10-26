@@ -93,7 +93,7 @@ internal class TrafficSignFinalizedPassageForwarder(
 ) : TrafficSignRecognitionObserver {
     override fun onRecognition(output: TrafficSignOrchestrationOutput) {
         if (output.contextIsCurrent) {
-            submitUnverifiedAssembly(output.event, output.contextGeneration)
+            if (!output.supplementaryOCROnly) submitUnverifiedAssembly(output.event, output.contextGeneration)
             // Authority masking precedes both the immediate and finalized paths,
             // including clearer-view OCR callbacks after the original detection.
             listOfNotNull(output.ocrAttemptAnnotation, output.ocrAnnotation).distinct().forEach {
@@ -119,17 +119,17 @@ internal class TrafficSignFinalizedPassageForwarder(
         // output; finalized passages still carry durable activation.
         output.passageEvent?.let(submitFinalizedPassage)
         if (!output.terminalBackendFailure && output.backendFailureReason == null) {
+            submitRecognitionEvent(output.event, output.contextGeneration)
+            output.displayObservation?.let(submitDisplayObservation)
+            output.event.driveSessionId?.let { session -> submitSupplementaryText(TrafficSignSupplementaryTextUpdate(
+                TrafficSignSupplementaryScope(output.contextGeneration, session), output.ocrAnnotation, output.ocrPrimaryPresent || output.event.candidate != null)) }
             if (submitAnnotatedCollectionFrame != null) submitAnnotatedCollectionFrame.invoke(output.event, output.collectionDetections,
                 output.contextGeneration, output.collectionFrame, output.ocrAttemptAnnotation, output.collectionCaptureAtUtc)
             else submitCollectionFrame(output.event, output.collectionDetections, output.contextGeneration, output.collectionFrame)
-            output.event.driveSessionId?.let { session -> submitSupplementaryText(TrafficSignSupplementaryTextUpdate(
-                TrafficSignSupplementaryScope(output.contextGeneration, session), output.ocrAnnotation, output.ocrPrimaryPresent || output.event.candidate != null)) }
-            submitRecognitionEvent(output.event, output.contextGeneration)
             // Window boxes cannot be projected onto full-size Panoramax photos.
             if (!output.usesDetectorWindow) submitAnnotationEvent(output.annotationEvent ?: output.event, output.contextGeneration)
         }
         if (output.terminalBackendFailure || output.backendFailureReason != null) output.collectionFrame?.close()
-        output.displayObservation?.let(submitDisplayObservation)
         onInferenceDiagnostics(output)
     }
 

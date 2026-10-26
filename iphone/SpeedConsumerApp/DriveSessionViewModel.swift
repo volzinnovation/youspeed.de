@@ -4216,7 +4216,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private func liveConditionalEntryID(_ id: String?) -> String? { id.map { conditionalOCRLiveAliases[$0] ?? $0 } }
     private func blocksUnverifiedOCRParent(_ id: String?) -> Bool {
         guard let id else { return false }
-        if let key = liveConditionalEntryID(id), let entry = conditionalOCRLive[key], entry.plain, entry.plainEligible, !entry.superseded,
+        if let key = liveConditionalEntryID(id), let entry = conditionalOCRLive[key], !entry.knownPlate, entry.plain, entry.plainEligible, !entry.superseded,
            liveConditionalScopeIsCurrent(entry), conditionalOCRNow.timeIntervalSince(entry.originAt) < 300,
            speedReference.traveledMeters-entry.originDistance < 5000 { return false }
         return conditionalOCRAuthorityGate.blocks(id, scope: conditionalOCRAuthorityScope)
@@ -4245,13 +4245,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let actual = proposed.flatMap { annotation in
             eventIDs.contains(annotation.physicalSignID)
                 && annotation.primaryClassID == event.candidate?.rawClassId
-                && annotation.primarySpeedKmh == event.candidate?.value ? annotation : nil
+                && annotation.primarySpeedKmh == event.candidate?.value
+                && annotation.frameID == event.frameId
+                && annotation.sourceObservedAt == event.frameTimestampUtc
+                && (0...3).contains(conditionalOCRNow.timeIntervalSince(annotation.sourceObservedAt))
+                && annotation.primaryBoundingBox == event.candidate?.boundingBox ? annotation : nil
         }
         let ids = eventIDs
         let speed = event.candidate?.value
         let classID = event.candidate?.rawClassId ?? ""
         guard let speed, classID == "maxspeed:\(speed)", !ids.isEmpty else { return }
-        for id in ids { _ = conditionalOCRAuthorityGate.observe(parentID:id,primaryClassID:classID,speedKmh:speed,rawText:actual?.rawText,scope:conditionalOCRAuthorityScope) }
+        let positivePlate = event.candidate?.conditionState != TrafficSignConditionState.none
+            || event.candidate?.restrictions.isEmpty == false
+            || actual?.assemblyEvidence?.scan.components.isEmpty == false
+            || actual?.rawText?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        for id in ids { _ = conditionalOCRAuthorityGate.observe(parentID:id,primaryClassID:classID,speedKmh:speed,
+            rawText:actual?.rawText,scope:conditionalOCRAuthorityScope,knownPlate:positivePlate) }
         if conditionalOCRLiveScope != conditionalOCRAuthorityScope {
             conditionalOCRLive.removeAll(); conditionalOCRLiveAliases.removeAll(); conditionalOCRLiveScope = conditionalOCRAuthorityScope
         }
@@ -4284,7 +4293,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         && decision.scope.generation == trafficSignRecorderGeneration
                         && decision.scope.contextGeneration == trafficSignContextGeneration
                 } == true
-            if event.candidate?.conditionState != TrafficSignConditionState.none || event.candidate?.restrictions.isEmpty == false {
+            if positivePlate {
                 entry.knownPlate = true; entry.plain = false
             }
             if speedReference.voice != nil {
@@ -4309,7 +4318,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     // Even a blocked/unread real frame invalidates that parent's
                     // older proof. Later bare callbacks cannot resurrect it.
                     entry.tracker = .init(); entry.record = nil; entry.plain = false
-                    entry.reason = "applicability_not_verified"; entry.lastVerdict = nil
+                    entry.reason = entry.knownPlate ? "applicability_not_verified" : "auxiliary_unverified_nonblocking"; entry.lastVerdict = nil
                 }
             }
             conditionalOCRLive[key] = entry
@@ -4346,12 +4355,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let ordered = conditionalOCRLive.keys.sorted { conditionalOCRLive[$0]!.originAt > conditionalOCRLive[$1]!.originAt }
         for key in ordered {
             guard var entry = conditionalOCRLive[key] else { continue }
-            if let ordinary = speedReference.machine?.claims["camera"], ordinary.id != key,
+            if let ordinary = speedReference.machine?.claims["camera"], liveConditionalEntryID(ordinary.id) != key,
                ordinary.time > entry.originElapsed { entry.superseded = true }
             if conditionalOCRLive.contains(where: { otherKey, other in
                 otherKey != key && other.originAt > entry.originAt && (other.plain || other.offered)
             }) { entry.superseded = true }
-            if entry.plain { conditionalOCRLive[key] = entry; continue }
+            // Auxiliary uncertainty alone never withdraws the independently admitted primary.
+            if !entry.knownPlate || entry.plain { conditionalOCRLive[key] = entry; continue }
             let verdict: ConditionalOCRInterpretation.Verdict
             if entry.authorityEligible, liveConditionalScopeIsCurrent(entry), let record = entry.record {
                 verdict = record.verdict(at:now,distanceM:speedReference.traveledMeters,scopeID:entry.scope,
@@ -4387,67 +4397,67 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func acceptTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
+    private func trafficSignPrimaryDisplayPermitted(_ emission: TrafficSignRuntimeEmission) -> Bool {
+        emission.event.permitsApplicability("display") && (TSRApplicabilityConfiguration.defaultMode == "shadow" || (
+            emission.event.applicabilityDecision?.scope.generation == trafficSignRecorderGeneration &&
+            emission.event.applicabilityDecision?.scope.contextGeneration == trafficSignContextGeneration &&
+            emission.event.roadContext?.traversalEpoch == latestTrafficSignDetectionContext?.traversalEpoch &&
+            emission.event.roadContext?.sourceSignature.bundleSHA256 == latestTrafficSignDetectionContext?.sourceSignature.bundleSHA256))
+    }
+
+    private func trafficSignPrimaryDismissalPermitted(_ emission: TrafficSignRuntimeEmission, observedAt: Date? = nil) -> Bool {
+        let at = observedAt ?? emission.event.frameTimestampUtc
+        return visionDismissalGate.permits(track: emission.event.candidate?.trackId, observedAt: at)
+            && visionDismissalGate.permits(track: emission.event.applicabilityDecision?.trackId, observedAt: at)
+    }
+
+    private func trafficSignDisplayPermitted(_ emission: TrafficSignRuntimeEmission) -> Bool {
+        let observation = emission.displayObservation
+        let track = observation?.applicabilityDecision?.trackId
+            ?? (observation?.classID == emission.event.candidate?.rawClassId ? emission.event.candidate?.trackId : nil)
+        guard visionDismissalGate.permits(track: track,
+            observedAt: observation?.timestamp ?? emission.event.frameTimestampUtc) else { return false }
+        guard let decision = emission.displayObservation?.applicabilityDecision else {
+            if TSRApplicabilityConfiguration.defaultMode != "shadow",
+               let observation = emission.displayObservation, observation.classID != emission.event.candidate?.rawClassId { return false }
+            return trafficSignPrimaryDisplayPermitted(emission)
+        }
+        guard !TSRLiveSignAdmission.blocks(decision) else { return false }
+        if TSRApplicabilityConfiguration.defaultMode == "shadow" { return true }
+        guard decision.scope.generation == trafficSignRecorderGeneration,
+              decision.scope.contextGeneration == trafficSignContextGeneration,
+              decision.scope.sessionId == emission.event.driveSessionId,
+              decision.scope.traversalEpoch == latestTrafficSignDetectionContext?.traversalEpoch,
+              decision.scope.bundleId == latestTrafficSignDetectionContext?.sourceSignature.bundleSHA256,
+              decision.frameId == emission.event.frameId else { return false }
+        return TSRApplicabilityAuthority.allows(decision, scope: decision.scope, frameId: decision.frameId,
+            trackId: decision.trackId, sink: "display", mode: TSRApplicabilityConfiguration.defaultMode)
+    }
+
+    private func trafficSignSupplementaryPresentationPermitted(_ emission: TrafficSignRuntimeEmission) -> Bool {
+        let annotation = emission.ocrAnnotation ?? emission.ocrAttemptAnnotation ?? trafficSignSupplementaryText
+        guard let annotation else { return trafficSignDisplayPermitted(emission) }
+        guard visionDismissalGate.permits(track: annotation.physicalSignID,
+            observedAt: annotation.sourceObservedAt) else { return false }
+        if annotation.primarySpeedKmh != nil {
+            return trafficSignPrimaryDisplayPermitted(emission)
+                && trafficSignPrimaryDismissalPermitted(emission, observedAt: annotation.sourceObservedAt)
+        }
+        return trafficSignDisplayPermitted(emission)
+    }
+
+    private func recordTrafficSignJournal(_ emission: TrafficSignRuntimeEmission) {
         let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
         if let data = try? encoder.encode(emission.event),
            let event = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             TripJournal.shared.tsrEvent(["event": event, "session_generation": emission.sessionGeneration,
                 "context_generation": emission.contextGeneration,
+                "supplementary_ocr_only": emission.supplementaryOCROnly,
                 "capture_session_id": emission.captureSessionId ?? "",
                 "received_at": Date().timeIntervalSince1970], at: emission.event.frameTimestampUtc)
         }
-        guard trafficSignMutationIsEnabled else { return }
-        let generationMatches = emission.sessionGeneration == trafficSignRecorderGeneration
-        let contextMatches = emission.contextGeneration == trafficSignContextGeneration
-        let captureSessionMatches = emission.captureSessionId == driveCaptureCoordinator?.activeCaptureSessionID
-        guard generationMatches, contextMatches, captureSessionMatches else {
-            noteTrafficSignDebugIssue(
-                issue: "generation_session_context_mismatch",
-                reason: "runtime_emission_rejected",
-                detail: "emission=\(emission.sessionGeneration):\(emission.contextGeneration):\(emission.captureSessionId ?? "none") active=\(trafficSignRecorderGeneration):\(trafficSignContextGeneration):\(driveCaptureCoordinator?.activeCaptureSessionID ?? "none")"
-            )
-            return
-        }
-        // A current runtime emission proves that the active generation and
-        // capture session are coherent again. Do not leave the debug badge
-        // yellow because of a stale callback that arrived during a normal
-        // context refresh.
-        trafficSignDebugGenerationSessionContextMismatch = false
-        withholdUnverifiedOCRParent(from: emission)
-        if let diagnostic = emission.ocrDiagnostic { appendTSRLog(diagnostic, timestamp: emission.event.frameTimestampUtc) }
-        if emission.supplementaryOCROnly {
-            // The immutable OCR source above has already reevaluated conditional
-            // authority. Keep passage/capture feedback single-shot for this retry.
-            if let actual = emission.ocrAttemptAnnotation { signCollection.updateSupplementaryOCR(actual) }
-            let displayPermitted = !TSRLiveSignAdmission.blocks(emission.event.applicabilityDecision) && (TSRApplicabilityConfiguration.defaultMode == "shadow" || (
-                emission.event.permitsApplicability("display") &&
-                emission.event.applicabilityDecision?.scope.generation == trafficSignRecorderGeneration &&
-                emission.event.applicabilityDecision?.scope.contextGeneration == trafficSignContextGeneration &&
-                emission.event.roadContext?.traversalEpoch == latestTrafficSignDetectionContext?.traversalEpoch &&
-                emission.event.roadContext?.sourceSignature.bundleSHA256 == latestTrafficSignDetectionContext?.sourceSignature.bundleSHA256))
-            guard trafficSignApplicationIsActive, displayPermitted,
-                  visionDismissalGate.permits(track: emission.event.candidate?.trackId,
-                    observedAt: emission.event.frameTimestampUtc) else { return }
-            acceptTrafficSignSupplementaryText(from: emission)
-            maybeSpeakTrafficSignSupplementaryText()
-            return
-        }
-        if emission.ocrPhase == .pending {
-            // The confirmed sign may be drawn while its initial eligible read runs.
-            // Collection, feedback and authoritative publication wait for the
-            // completed callback below, so this event is never ingested twice.
-            guard trafficSignApplicationIsActive, emission.event.source == .liveFrame,
-                  emission.event.state == .confirmed,
-                  let candidate = emission.event.candidate, candidate.evidenceFrames >= 2,
-                  let speed = candidate.value, speed > 0,
-                  visionDismissalGate.permits(track: candidate.trackId,
-                    observedAt: emission.event.frameTimestampUtc),
-                  emission.event.permitsApplicability("display") else { return }
-            acceptTrafficSignSupplementaryText(from: emission)
-            trafficSignPendingSpeedKmh = speed
-            return
-        }
-        trafficSignPendingSpeedKmh = nil
+    }
+    private func recordTrafficSignAuxiliarySinks(_ emission: TrafficSignRuntimeEmission) {
         if panoramaxRecognizedSignsOnly, trafficSignApplicationIsActive, emission.event.source == .liveFrame, let location = locationManager.location {
             let detections = emission.collectionDetections.filter { $0.boundingBox.isValid && $0.rawScore.isFinite && $0.rawScore >= $0.classThreshold }.map { d in
                 SignCaptureFilter.Detection(key: emission.event.packId + ":" + d.rawLabel, label: d.rawLabel,
@@ -4503,10 +4513,50 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 frameDirection:emission.event.roadContext?.travelDirection == .forward ? 1 : emission.event.roadContext?.travelDirection == .reverse ? -1 : nil,
                 frameBundle:emission.event.roadContext?.sourceSignature.bundleSHA256)
         }
-        guard visionDismissalGate.permits(track: emission.event.candidate?.trackId,
-                                          observedAt: emission.event.frameTimestampUtc) else { return }
+    }
+
+    private func acceptTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
+        defer { recordTrafficSignJournal(emission) }
+        guard trafficSignMutationIsEnabled else { return }
+        let generationMatches = emission.sessionGeneration == trafficSignRecorderGeneration
+        let contextMatches = emission.contextGeneration == trafficSignContextGeneration
+        let captureSessionMatches = emission.captureSessionId == driveCaptureCoordinator?.activeCaptureSessionID
+        guard generationMatches, contextMatches, captureSessionMatches else {
+            noteTrafficSignDebugIssue(
+                issue: "generation_session_context_mismatch",
+                reason: "runtime_emission_rejected",
+                detail: "emission=\(emission.sessionGeneration):\(emission.contextGeneration):\(emission.captureSessionId ?? "none") active=\(trafficSignRecorderGeneration):\(trafficSignContextGeneration):\(driveCaptureCoordinator?.activeCaptureSessionID ?? "none")"
+            )
+            return
+        }
+        // A current runtime emission proves that the active generation and
+        // capture session are coherent again. Do not leave the debug badge
+        // yellow because of a stale callback that arrived during a normal
+        // context refresh.
+        trafficSignDebugGenerationSessionContextMismatch = false
+        consumeAdmittedTrafficSignRuntimeEmission(emission)
+    }
+
+    private func consumeAdmittedTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
+        withholdUnverifiedOCRParent(from: emission)
+        if let diagnostic = emission.ocrDiagnostic { appendTSRLog(diagnostic, timestamp: emission.event.frameTimestampUtc) }
+        if emission.supplementaryOCROnly {
+            // The immutable OCR source above has already reevaluated conditional
+            // authority. Keep passage/capture feedback single-shot for this retry.
+            if let actual = emission.ocrAttemptAnnotation { signCollection.updateSupplementaryOCR(actual) }
+            guard trafficSignApplicationIsActive, trafficSignSupplementaryPresentationPermitted(emission),
+                  (trafficSignRecognitionLastEvent?.frameTimestampUtc ?? .distantPast) <= emission.event.frameTimestampUtc else { return }
+            acceptTrafficSignSupplementaryText(from: emission)
+            maybeSpeakTrafficSignSupplementaryText()
+            return
+        }
+        trafficSignPendingSpeedKmh = nil
+        // Source collection is independent and runs after primary/secondary publication.
+        defer { recordTrafficSignAuxiliarySinks(emission) }
+        let primaryPermitted = trafficSignPrimaryDismissalPermitted(emission)
         let immediateOverrideChanged: Bool
-        if !blocksUnverifiedOCRParent(emission.event.candidate?.trackId),
+        if primaryPermitted,
+           !blocksUnverifiedOCRParent(emission.event.candidate?.trackId),
            !blocksUnverifiedOCRParent(emission.event.applicabilityDecision?.trackId),
            emission.event.permitsApplicability("immediate"),
            (TSRApplicabilityConfiguration.defaultMode == "shadow" || (
@@ -4546,20 +4596,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             publishLegacyTrafficSignOverride(from: effective)
         }
         logTrafficSignRuntimeEmission(emission)
-        let displayPermitted = !TSRLiveSignAdmission.blocks(emission.event.applicabilityDecision) && (TSRApplicabilityConfiguration.defaultMode == "shadow" || (
-            emission.event.permitsApplicability("display") &&
-            emission.event.applicabilityDecision?.scope.generation == trafficSignRecorderGeneration &&
-            emission.event.applicabilityDecision?.scope.contextGeneration == trafficSignContextGeneration &&
-            emission.event.roadContext?.traversalEpoch == latestTrafficSignDetectionContext?.traversalEpoch &&
-            emission.event.roadContext?.sourceSignature.bundleSHA256 == latestTrafficSignDetectionContext?.sourceSignature.bundleSHA256))
+        let displayPermitted = trafficSignDisplayPermitted(emission)
+        let supplementaryPermitted = trafficSignSupplementaryPresentationPermitted(emission)
         // Speech follows this exact admitted display stream. A speed passage
         // gets first use of the audio lane, and dismissed/inapplicable frames
         // cannot announce a previously retained pictogram of the same class.
         defer {
-            if displayPermitted {
-                maybeSpeakSecondaryTrafficSign(from: emission)
-                maybeSpeakTrafficSignSupplementaryText()
-            }
+            if displayPermitted { maybeSpeakSecondaryTrafficSign(from: emission) }
+            if supplementaryPermitted { maybeSpeakTrafficSignSupplementaryText() }
         }
         if displayPermitted, let observation = emission.displayObservation, observation.isSpeedLimitEnd {
             pendingTrafficSignEndDisplay = (observation.classID, emission.event.frameTimestampUtc)
@@ -4583,13 +4627,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             retainedTrafficSignSupplementaryText = TrafficSignSupplementaryPresentation.retainedForDisplay(
                 retainedTrafficSignSupplementaryText, primaryClassID: observation.classID, now: Date())
         }
-        if displayPermitted, emission.event.source == .liveFrame {
+        if supplementaryPermitted, emission.event.source == .liveFrame {
             acceptTrafficSignSupplementaryText(from: emission)
         } else {
             resetTrafficSignSupplementaryText(resetSpeechGate: false)
         }
         driveCaptureCoordinator?.recordTrafficSignRecognition(emission)
-        publishTrafficSignRecognitionState(for: emission.event)
+        if primaryPermitted { publishTrafficSignRecognitionState(for: emission.event) }
         trafficSignPassageUpdate = emission.passageUpdate
         refreshTrafficSignFrameSnapshot()
 
@@ -10423,6 +10467,13 @@ extension DriveSessionViewModel {
     }
     func testMaskConditionalOCRParent(_ emission: TrafficSignRuntimeEmission) {
         withholdUnverifiedOCRParent(from: emission)
+    }
+    func testDismissTrafficSignTracks(_ tracks: [String], at timestamp: Date) {
+        visionDismissalGate.dismiss(at: timestamp, tracks: tracks)
+    }
+    func testConsumeAdmittedTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
+        trafficSignApplicationIsActive = true
+        consumeAdmittedTrafficSignRuntimeEmission(emission)
     }
 
     func testRefreshRoadPreservingTrafficSignAssertion() {

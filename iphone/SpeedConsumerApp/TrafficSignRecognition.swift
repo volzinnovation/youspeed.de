@@ -1574,6 +1574,9 @@ struct TrafficSignFusionEngine: Sendable {
                     && detection.isQualifiedObservation(runtimeOutput: runtimeOutput, unknownThreshold: thresholds.unknown)
             }
             .sorted { lhs, rhs in
+                let lhsNumeric = lhs.semantic.value != nil && [.maximumSpeed, .zoneStart, .temporary].contains(lhs.semantic.kind)
+                let rhsNumeric = rhs.semantic.value != nil && [.maximumSpeed, .zoneStart, .temporary].contains(rhs.semantic.kind)
+                if lhsNumeric != rhsNumeric { return lhsNumeric }
                 let lhsScore = effectiveScore(for: lhs) ?? -.infinity
                 let rhsScore = effectiveScore(for: rhs) ?? -.infinity
                 if lhsScore != rhsScore { return lhsScore > rhsScore }

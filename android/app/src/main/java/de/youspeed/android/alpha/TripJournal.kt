@@ -19,6 +19,12 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         fun get(context: Context): TripJournal = instance ?: synchronized(this) {
             instance ?: TripJournal(context.applicationContext).also { instance = it }
         }
+        internal fun endpointSeparationMeters(firstLat:Double,firstLon:Double,lastLat:Double,lastLon:Double):Double {
+            val radians=Math.PI/180
+            val a=kotlin.math.sin((lastLat-firstLat)*radians/2).let {it*it} +
+                kotlin.math.cos(firstLat*radians)*kotlin.math.cos(lastLat*radians)*kotlin.math.sin((lastLon-firstLon)*radians/2).let {it*it}
+            return 6_371_008.8*2*kotlin.math.asin(kotlin.math.sqrt(a.coerceIn(0.0,1.0)))
+        }
     }
     private val worker = Executors.newSingleThreadScheduledExecutor()
     private val backlog=java.util.concurrent.atomic.AtomicInteger()
@@ -48,6 +54,9 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         return { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
     }
     private var active: String?=null
+    // Live eligibility is separate from the buffered evidence and driven-distance counter.
+    private var activeStartCoordinate:Pair<Double,Double>?=null
+    private val hiddenShortTrips=mutableSetOf<String>()
     private data class Finalizing(val id:String,val start:Double,val end:Double,val deadline:Long)
     private var finalizing:Finalizing?=null
     private var requested=false
@@ -86,6 +95,7 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         try {
             opened.enableWriteAheadLogging()
             opened.rawQuery("PRAGMA secure_delete=ON",null).use { check(it.moveToFirst() && it.getInt(0)==1) { "Unable to protect deleted trip data" } }
+            var recovered = emptyList<String>()
             opened.beginTransaction()
             try {
                 opened.execSQL("CREATE TABLE IF NOT EXISTS trips(id TEXT PRIMARY KEY,start REAL,end REAL,state TEXT,distance REAL DEFAULT 0,duration REAL DEFAULT 0,odo_start REAL,odo_end REAL)")
@@ -99,11 +109,13 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
                 opened.execSQL("CREATE TABLE IF NOT EXISTS bindings(session TEXT PRIMARY KEY,trip TEXT)")
                 opened.execSQL("CREATE TABLE IF NOT EXISTS counters(id INTEGER PRIMARY KEY CHECK(id=1),origin REAL,distance REAL,usage REAL)")
                 opened.execSQL("INSERT OR IGNORE INTO counters VALUES(1,?,0,0)",arrayOf(now()))
+                recovered = opened.rawQuery("SELECT id FROM trips WHERE state IN ('active','finalizing')",null).use { c -> buildList {while(c.moveToNext()) add(c.getString(0))} }
                 opened.execSQL("UPDATE trips SET state='interrupted',end_reason='process_recovery',last_observed=COALESCE(last_observed,end) WHERE state IN ('active','finalizing')")
                 opened.setTransactionSuccessful()
             } finally { opened.endTransaction() }
             db=opened
             transaction {backfillHistoryMetadata()}
+            recovered.forEach {discardShortTrip(it)}
             databaseReady=true; error=null
         } catch(failure:Exception) { opened.close(); throw failure }
     }
@@ -143,7 +155,7 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
     fun events(id:String):List<JSONObject> = worker.submit<List<JSONObject>> { withDatabase { rows("SELECT * FROM events WHERE trip=? ORDER BY time,seq",arrayOf(id)) } }.get()
     internal fun mediaEvents(id:String):List<JSONObject> = worker.submit<List<JSONObject>> {withDatabase {rows("SELECT * FROM events WHERE trip=? AND kind='media' ORDER BY time,seq",arrayOf(id))}}.get()
     /** The history table reads saved facts only, independent of the number/size of events. */
-    fun history():List<JSONObject> = worker.submit<List<JSONObject>> {withDatabase {rows("SELECT * FROM trips ORDER BY start DESC")}}.get()
+    fun history():List<JSONObject> = worker.submit<List<JSONObject>> {withDatabase {rows("SELECT * FROM trips ORDER BY start DESC").filterNot {it.optString("id") in hiddenShortTrips}}}.get()
     private fun storeHistoryMetadata(id:String) {
         val trip=rows("SELECT * FROM trips WHERE id=? AND COALESCE(history_version,0)<2",arrayOf(id)).firstOrNull() ?: return
         val startName=trip.optString("start_place").takeIf {it.isNotBlank()}
@@ -165,6 +177,28 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
     private fun backfillHistoryMetadata() {
         rows("SELECT id FROM trips WHERE state NOT IN ('active','finalizing') AND COALESCE(history_version,0)<2").forEach {storeHistoryMetadata(it.getString("id"))}
     }
+    /** The owner requested straight-line separation, including stationary endpoint fixes. */
+    private fun discardShortTrip(id:String):Boolean {
+        val trip=rows("SELECT * FROM trips WHERE id=? AND state NOT IN ('active','finalizing')",arrayOf(id)).firstOrNull() ?: return false
+        val points=rows("SELECT * FROM events WHERE trip=? AND kind='gps' ORDER BY time,seq",arrayOf(id))
+            .map(TripJournalProjection::payload).filter {
+                it.optBoolean("valid",TripJournalProjection.trackEligible(it)) &&
+                    it.optDouble("latitude").let {v -> v.isFinite() && v in -90.0..90.0} &&
+                    it.optDouble("longitude").let {v -> v.isFinite() && v in -180.0..180.0} &&
+                    it.optString("reason") !in listOf("duplicate_or_out_of_order","network_only")
+            }
+        if(points.size>=2) {
+            val first=points.first();val last=points.last()
+            if(endpointSeparationMeters(first.optDouble("latitude"),first.optDouble("longitude"),last.optDouble("latitude"),last.optDouble("longitude"))>=100) return false
+        } else if(trip.optDouble("distance",0.0)!=0.0) return false
+        transaction {
+            db.execSQL("DELETE FROM events WHERE trip=?",arrayOf(id));db.execSQL("DELETE FROM bindings WHERE trip=?",arrayOf(id));db.execSQL("DELETE FROM trips WHERE id=?",arrayOf(id))
+        }
+        hiddenShortTrips.remove(id)
+        File(context.cacheDir,"trip-$id").deleteRecursively();File(context.filesDir,"trip-exports/$id").deleteRecursively()
+        File(context.filesDir,"trip-exports/backups").deleteRecursively()
+        return true
+    }
     fun storageBytes():Long=File(context.filesDir,"trip-journal").walkTopDown().filter { it.isFile }.sumOf { it.length() }
     fun setEnabled(value:Boolean) { prefs.edit().putBoolean("enabled",value).apply(); worker.execute { attempt {
         if(value && requested) {endedLatch=false;begin()} else if(!value) finish("disabled")
@@ -177,7 +211,8 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         val id=UUID.randomUUID().toString(); val t=now()
         db.execSQL("INSERT INTO trips(id,start,end,state,last_observed,timezone_seconds) VALUES(?,?,?,'active',?,?)",arrayOf(id,t,t,t,java.util.TimeZone.getDefault().getOffset((t*1000).toLong())/1000))
         stopPrompt=TripStopPromptPolicy();resumeOnMovement=false
-        active=id; previous=null; lastFixTime=0; lastFixNanos=0; tripAnchor=elapsedClock()
+        active=id;activeStartCoordinate=null;hiddenShortTrips.add(id)
+        previous=null; lastFixTime=0; lastFixNanos=0; tripAnchor=elapsedClock()
         record("coverage",JSONObject().put("gps","awaiting_location").put("tsr","existing_camera_setting").put("measurement_policy",1))
     }
     fun stop() {
@@ -200,7 +235,8 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         if(finalizing?.id!=id) return
         record("coverage",JSONObject().put("state","sign_finalizer_closed").put("window_s",5),id)
         db.execSQL("UPDATE trips SET state='ended' WHERE id=? AND state='finalizing'",arrayOf(id));finalizing=null
-        storeHistoryMetadata(id)
+        if(!discardShortTrip(id)) storeHistoryMetadata(id)
+        hiddenShortTrips.remove(id)
     }
     private fun eventOwner(time:Double):String? {
         active?.let {id -> val trip=rows("SELECT start,end FROM trips WHERE id=?",arrayOf(id)).firstOrNull()
@@ -212,7 +248,10 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         active?.let {
             db.execSQL("UPDATE trips SET state=?,end_reason=? WHERE id=?",arrayOf(if(state=="disabled") "ended" else state,state,it))
             // Include delayed map callbacks admitted during the finalizer window.
-            if(state!="finalizing") storeHistoryMetadata(it)
+            if(state!="finalizing") {
+                if(!discardShortTrip(it)) storeHistoryMetadata(it)
+                hiddenShortTrips.remove(it)
+            }
         }
         active=null; previous=null
     }
@@ -280,6 +319,12 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
             active?.let { db.execSQL("UPDATE trips SET distance=distance+?,end=MAX(end,?),last_observed=MAX(last_observed,?) WHERE id=?",arrayOf(distance,fix.time/1000.0,fix.time/1000.0,it)) }
             db.execSQL("UPDATE counters SET distance=distance+? WHERE id=1",arrayOf(distance))
         }
+        if(valid) active?.let {id ->
+            val first=activeStartCoordinate ?: (fix.latitude to fix.longitude)
+            activeStartCoordinate=first
+            if(endpointSeparationMeters(first.first,first.second,fix.latitude,fix.longitude)<100) hiddenShortTrips.add(id)
+            else hiddenShortTrips.remove(id)
+        }
         if(!duplicate) {
             lastFixTime=maxOf(lastFixTime,fix.time); lastFixNanos=maxOf(lastFixNanos,fix.elapsedRealtimeNanos)
             if(!valid) previous=null else if(previous==null || distance>0 || fix.time-previous!!.time>15000) previous=fix
@@ -287,7 +332,7 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
     } }
     internal fun stoppedTripSnapshot(at:Double=now()):TripStopPromptSnapshot?=worker.submit<TripStopPromptSnapshot?> {withDatabase {
         val id=active
-        if(!enabled || !foreground || id==null || !stopPrompt.canStop(elapsedClock()/1000.0)) return@withDatabase null
+        if(!enabled || !foreground || id==null || id in hiddenShortTrips || !stopPrompt.canStop(elapsedClock()/1000.0)) return@withDatabase null
         val distance=rows("SELECT distance FROM trips WHERE id=?",arrayOf(id)).firstOrNull()?.optDouble("distance") ?: 0.0
         val total=rows("SELECT distance FROM counters WHERE id=1").firstOrNull()?.optDouble("distance") ?: 0.0
         val last=if(prefs.contains("odometer_km")) prefs.getFloat("odometer_km",0f).toDouble() else rows("SELECT odo_end FROM trips WHERE odo_end IS NOT NULL ORDER BY end DESC LIMIT 1").firstOrNull()?.optDouble("odo_end")
@@ -295,15 +340,18 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         TripStopPromptSnapshot(id,TripOdometer.estimate(last,(total-anchor).coerceAtLeast(0.0)),last!=null)
     }}.get()
     internal fun continueStoppedTrip(id:String) {worker.submit {if(active==id) stopPrompt.continueTrip()}.get()}
-    internal fun endStoppedTrip(id:String,at:Double=now()) {worker.submit {withDatabase {
-        check(enabled && foreground && active==id && stopPrompt.canStop(elapsedClock()/1000.0)) {"Stop the car before ending the trip"}
+    internal fun endStoppedTrip(id:String,at:Double=now()):Boolean=worker.submit<Boolean> {withDatabase {
+        check(enabled && foreground && active==id && id !in hiddenShortTrips && stopPrompt.canStop(elapsedClock()/1000.0)) {"Stop the car before ending the trip"}
         checkpoint()
         transaction {
             db.execSQL("UPDATE trips SET state='ended',end_reason='user_stopped',end=MIN(end,?),counter_distance_end=(SELECT distance FROM counters WHERE id=1) WHERE id=?",arrayOf(at,id))
             storeHistoryMetadata(id)
         }
         active=null;previous=null;stopPrompt=TripStopPromptPolicy();endedLatch=true;resumeOnMovement=true
-    }}.get()}
+        val saved = !discardShortTrip(id)
+        hiddenShortTrips.remove(id)
+        saved
+    }}.get()
     internal fun saveEndedTripOdometer(id:String,odometer:Int) {
         require(odometer in 0..999999)
         check(setEndingOdometer(id,odometer.toDouble())) {"Ending odometer is already saved"}
@@ -315,7 +363,7 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         }}.get()
     }
     internal fun saveStoppedTrip(id:String,odometer:Int,at:Double=now()) {worker.submit {withDatabase {
-        check(enabled && foreground && active==id && stopPrompt.visible(elapsedClock()/1000.0)) {"Car must remain stopped with a fresh GPS fix"}
+        check(enabled && foreground && active==id && id !in hiddenShortTrips && stopPrompt.visible(elapsedClock()/1000.0)) {"Car must remain stopped with a fresh GPS fix"}
         require(odometer in 0..999999)
         val trip=rows("SELECT * FROM trips WHERE id=?",arrayOf(id)).first()
         check(!trip.has("odo_end") && odometer>=trip.optDouble("odo_start",0.0)) {"Invalid ending odometer"}
@@ -330,6 +378,8 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         prefs.edit().putFloat("odometer_km",odometer.toFloat()).putLong("odometer_distance_m",java.lang.Double.doubleToRawLongBits(total)).apply()
         active=null;previous=null
         stopPrompt=TripStopPromptPolicy();endedLatch=true;resumeOnMovement=true
+        discardShortTrip(id)
+        hiddenShortTrips.remove(id)
     }}.get()}
     fun bind(session:String) { worker.execute { attempt { active?.let { db.execSQL("INSERT OR IGNORE INTO bindings VALUES(?,?)",arrayOf(session,it)) } } } }
     fun media(session:String,id:String,path:String,kind:String,time:Double=System.currentTimeMillis()/1000.0,binding:String?=null,metadata:Map<String,Any?> = emptyMap()) { submit {
@@ -382,12 +432,14 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         if(id==active) { requested=false; endedLatch=true; finish("ended") }
         if(finalizing?.id==id) finalizing=null
         transaction { db.execSQL("DELETE FROM events WHERE trip=?",arrayOf(id)); db.execSQL("DELETE FROM bindings WHERE trip=?",arrayOf(id)); db.execSQL("DELETE FROM trips WHERE id=?",arrayOf(id)) }
+        hiddenShortTrips.remove(id)
         File(context.cacheDir,"trip-$id").deleteRecursively(); File(context.filesDir,"trip-exports/$id").deleteRecursively()
         File(context.filesDir,"trip-exports/backups").deleteRecursively()
         db.rawQuery("PRAGMA wal_checkpoint(TRUNCATE)",null).use { while(it.moveToNext()) {} }
     } } }
     fun clearAll() { worker.submit { withDatabase {
         requested=false; endedLatch=true; active=null; finalizing=null; previous=null; videoAnchors.clear()
+        activeStartCoordinate=null;hiddenShortTrips.clear()
         transaction { db.execSQL("DELETE FROM events"); db.execSQL("DELETE FROM bindings"); db.execSQL("DELETE FROM trips"); db.execSQL("UPDATE counters SET origin=?,distance=0,usage=0 WHERE id=1",arrayOf(now())) }
         usageAnchor=elapsedClock()
         File(context.filesDir,"trip-exports").deleteRecursively()
@@ -415,6 +467,7 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
             backfillHistoryMetadata()
         }
         active=null; finalizing=null; requested=false; endedLatch=true; previous=null; lastFixNanos=0; lastFixTime=0; usageAnchor=elapsedClock(); videoAnchors.clear()
+        activeStartCoordinate=null;hiddenShortTrips.clear()
         // Keep explicitly selected backup snapshots so a user may restore the same archive again.
         File(context.filesDir,"trip-exports").listFiles()?.filter {it.name!="backups"}?.forEach {it.deleteRecursively()}
         error=null

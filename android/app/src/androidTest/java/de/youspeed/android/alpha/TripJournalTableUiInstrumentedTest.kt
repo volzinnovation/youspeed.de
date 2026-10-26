@@ -107,7 +107,7 @@ class TripJournalTableUiInstrumentedTest {
             val startName="Long unabridged street name with several words at the beginning"
             val endName="Another complete destination street name with several words"
             for(i in 0..2) {
-                val lat=48.0+i*0.00015
+                val lat=48.0+i*0.0005
                 journal.location(Location("gps").apply {latitude=lat;longitude=8.0;accuracy=3f;speed=10f;time=(wall*1000).toLong();elapsedRealtimeNanos=elapsed*1_000_000})
                 journal.matchedPlace(wall,if(i==0) startName else endName,"Town",lat,8.0,3.0)
                 journal.snapshot();wall+=1;elapsed+=1000

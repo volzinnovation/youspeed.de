@@ -33,7 +33,7 @@ class TrafficSignRecognitionOrchestratorTests {
             else assertNull(harness.orchestrator.speedOverride())
         }
     }
-    @Test fun numericOcrRunsOnceOnlyAfterSecondConfirmedSightingAndAuthorityWaitsForCompletion() {
+    @Test fun numericPrimaryPublishesBeforeDelayedOcrAndReleasesItsFrame() {
         val harness = Harness(pack = twoFramePack())
         var calls = 0
         var request: TrafficSignSupplementaryOCRRequest? = null
@@ -53,16 +53,18 @@ class TrafficSignRecognitionOrchestratorTests {
         val currentBox = NormalizedTrafficSignBoundingBox(.68, .16, .09, .13)
         val second = frame(201_000_000, "confirmed-second", detection().let { it.copy(candidate = it.candidate.copy(boundingBox = currentBox), cropQuality = .1) })
         assertEquals(1, calls)
-        assertEquals(1, harness.observer.pendingOcr.size)
-        assertEquals(1, harness.observer.outputs.size)
-        assertNull(harness.orchestrator.speedOverride())
-        assertEquals(0, second.releaseCount)
+        assertTrue(harness.observer.pendingOcr.isEmpty())
+        assertEquals(2, harness.observer.outputs.size)
+        assertEquals(30, harness.orchestrator.speedOverride()?.speedKmh)
+        assertEquals(TrafficSignSupplementaryOCRPhase.PENDING, harness.observer.outputs.last().ocrPhase)
+        assertEquals(1, second.releaseCount)
         assertEquals(currentBox, requireNotNull(request).candidate.boundingBox)
         val annotation = requireNotNull(request).annotation("bei Nässe")
         requireNotNull(finish)(annotation)
         assertEquals(1, second.releaseCount)
         assertEquals(30, harness.orchestrator.speedOverride()?.speedKmh)
         val completed = harness.observer.outputs.last()
+        assertTrue(completed.supplementaryOCROnly)
         assertEquals(TrafficSignSupplementaryOCRPhase.COMPLETED, completed.ocrPhase)
         assertEquals("bei Nässe", completed.ocrAnnotation?.rawText)
         assertNull(completed.ocrAnnotation?.window)
@@ -72,7 +74,60 @@ class TrafficSignRecognitionOrchestratorTests {
         assertEquals("confirmed-second", harness.observer.outputs.last().ocrAnnotation?.frameId)
         assertEquals(annotation.sourceObservedAt, harness.observer.outputs.last().ocrAnnotation?.sourceObservedAt)
         requireNotNull(finish)(annotation) // Duplicate SDK completion cannot publish twice.
-        assertEquals(3, harness.observer.outputs.size)
+        assertEquals(4, harness.observer.outputs.size)
+    }
+
+    @Test fun stalledPlateReadCannotBlockNewNumericAndSecondaryFrames() {
+        val harness = Harness(pack = twoFramePack())
+        var readCount = 0
+        val stalled = TrafficSignSupplementaryTextRecognition { _, _ -> readCount++ }
+        val speed60 = detection().let { it.copy(candidate = it.candidate.copy(rawClassId = "maxspeed:60",
+            semantic = TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, 60, "km/h"))) }
+        val secondary = detection().let { it.copy(candidate = it.candidate.copy(rawClassId = "hazard:school",
+            semantic = TrafficSignSemantic(TrafficSignSemanticKind.UNKNOWN), rawScore = .99,
+            calibratedConfidence = .99, classifierRawScore = .99,
+            boundingBox = NormalizedTrafficSignBoundingBox(.45, .15, .08, .12))) }
+        repeat(6) { index ->
+            harness.clockNanos = index * 500_000_000L
+            val frame = harness.frame("parallel-$index", capturedAtNanos = harness.clockNanos)
+            assertTrue(harness.orchestrator.submit(frame, retainWhileBusy = false))
+            val speed = if (index < 2) detection() else speed60
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(secondary,
+                displayDetections = listOf(secondary, speed), supplementaryTextRecognition = stalled))
+            assertEquals("OCR retained a completed camera frame", 1, frame.releaseCount)
+            assertTrue(harness.backend.activeFrameIds().isEmpty())
+        }
+        assertEquals("Only one bounded OCR operation may remain pending", 1, readCount)
+        assertEquals(6, harness.observer.outputs.size)
+        assertEquals(60, harness.orchestrator.speedOverride()?.speedKmh)
+        assertEquals("maxspeed:60", harness.observer.outputs.last().event.candidate?.rawClassId)
+        assertEquals("hazard:school", harness.observer.outputs.last().displayObservation?.candidate?.rawClassId)
+    }
+
+    @Test fun strongerNumericPrimaryCannotStarveSecondaryPresentationOrChangeItsSpatialOwner() {
+        val harness = Harness(pack = twoFramePack())
+        val numeric = detection().let { it.copy(candidate = it.candidate.copy(rawClassId = "maxspeed:60",
+            semantic = TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, 60, "km/h"),
+            rawScore = .99, calibratedConfidence = .99, classifierRawScore = .99)) }
+        val school = detection().let { it.copy(candidate = it.candidate.copy(rawClassId = "hazard:school",
+            semantic = TrafficSignSemantic(TrafficSignSemanticKind.UNKNOWN), rawScore = .94,
+            calibratedConfidence = .94, classifierRawScore = .94,
+            boundingBox = NormalizedTrafficSignBoundingBox(.45, .15, .08, .12))) }
+        val requests = mutableListOf<TrafficSignSupplementaryOCRRequest>()
+        repeat(2) { index ->
+            harness.clockNanos = index * 500_000_000L
+            assertTrue(harness.orchestrator.submit(harness.frame("strong-numeric-$index", capturedAtNanos = harness.clockNanos)))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(numeric, displayDetections = listOf(numeric, school),
+                supplementaryTextRecognition = TrafficSignSupplementaryTextRecognition { request, _ -> requests += request }))
+        }
+        val output = harness.observer.outputs.last()
+        assertEquals(60, output.speedOverride?.speedKmh)
+        assertEquals("maxspeed:60", output.event.candidate?.rawClassId)
+        assertEquals("hazard:school", output.displayObservation?.candidate?.rawClassId)
+        val secondaryTrack = output.applicabilityDiagnostic!!.tracks.first { it.samples.last().candidate.candidateId == "strong-numeric-1:1" }
+        assertEquals(secondaryTrack.trackId, output.displayObservation?.applicabilityDecision?.trackId)
+        assertFalse(output.event.applicabilityDecision?.trackId == output.displayObservation?.applicabilityDecision?.trackId)
+        assertEquals("OCR must retain numeric-primary priority", "maxspeed:60", requests.single().candidate.rawClassId)
     }
 
     @Test fun acceptedPictogramGetsOcrAfterTwoFramesEvenWithoutNumericFusion() {
@@ -105,15 +160,15 @@ class TrafficSignRecognitionOrchestratorTests {
             harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection(),
                 supplementaryTextRecognition = TrafficSignSupplementaryTextRecognition { value, done -> request = value; finish = done }))
         }
-        assertEquals(1, harness.observer.outputs.size)
+        assertEquals(2, harness.observer.outputs.size)
         harness.orchestrator.reconcileContext(harness.context, 1)
+        val before = harness.observer.outputs.toList()
         requireNotNull(finish)(requireNotNull(request).annotation("Mo-Fr"))
         assertNull(harness.orchestrator.speedOverride())
-        assertFalse(harness.observer.outputs.last().contextIsCurrent)
-        assertNull(harness.observer.outputs.last().ocrAnnotation)
+        assertEquals(before, harness.observer.outputs)
     }
 
-    @Test fun failedReadsRemainBoundedAndCompleteBeforeNumericDelivery() {
+    @Test fun failedReadsRemainBoundedAndNeverDelayNumericDelivery() {
         val harness = Harness(pack = twoFramePack())
         var calls = 0
         repeat(3) { index ->
@@ -127,7 +182,7 @@ class TrafficSignRecognitionOrchestratorTests {
         assertEquals(30, harness.orchestrator.speedOverride()?.speedKmh)
     }
 
-    @Test fun laterClearerViewWaitsForItsOwnInspectionBeforeNumericDelivery() {
+    @Test fun laterClearerViewUpdatesOnlyItsOwnSupplementaryEvidence() {
         val harness = Harness(pack = twoFramePack())
         val requests = mutableListOf<TrafficSignSupplementaryOCRRequest>()
         val completions = mutableListOf<(TrafficSignSupplementaryTextAnnotation) -> Unit>()
@@ -146,21 +201,21 @@ class TrafficSignRecognitionOrchestratorTests {
             boundingBox = NormalizedTrafficSignBoundingBox(.65, .1, .16, .24))) }
         val third = frame(601_000_000, larger)
         assertEquals(2, requests.size)
-        assertEquals(0, third.releaseCount)
-        assertEquals(2, harness.observer.outputs.count { !it.supplementaryOCROnly })
-        assertEquals(2, harness.observer.pendingOcr.size)
+        assertEquals(1, third.releaseCount)
+        assertEquals(3, harness.observer.outputs.count { !it.supplementaryOCROnly })
+        assertTrue(harness.observer.pendingOcr.isEmpty())
         assertEquals("bei Nässe", harness.observer.outputs.last().ocrAnnotation?.rawText)
         completions[1](requests[1].annotation(null))
         assertEquals(1, third.releaseCount)
         val refinement = harness.observer.outputs.last()
-        assertFalse(refinement.supplementaryOCROnly)
+        assertTrue(refinement.supplementaryOCROnly)
         assertEquals("bei Nässe", refinement.ocrAnnotation?.rawText)
         assertEquals(TrafficSignSupplementaryOCRStatus.NO_TEXT, refinement.ocrAttemptAnnotation?.status)
         assertEquals(3, harness.observer.outputs.count { !it.supplementaryOCROnly })
         assertEquals(30, harness.orchestrator.speedOverride()?.speedKmh)
     }
 
-    @Test fun numericRetryHoldsItsFrameAndDuplicateCompletionCannotOverwriteReplacement() {
+    @Test fun numericRetryDoesNotHoldFrameAndDuplicateCompletionCannotOverwriteReplacement() {
         val harness = Harness(pack = twoFramePack())
         val requests = mutableListOf<TrafficSignSupplementaryOCRRequest>()
         val completions = mutableListOf<(TrafficSignSupplementaryTextAnnotation) -> Unit>()
@@ -174,11 +229,11 @@ class TrafficSignRecognitionOrchestratorTests {
         completions[0](requests[0].annotation(null))
         frame(601_000_000, detection().let { it.copy(candidate = it.candidate.copy(
             boundingBox = NormalizedTrafficSignBoundingBox(.65, .1, .16, .24))) })
-        assertEquals(2,harness.observer.outputs.size)
+        assertEquals(4,harness.observer.outputs.size)
         val annotation=requests[1].annotation("bei Nässe")
         completions[1](annotation)
         val completed=harness.observer.outputs.last()
-        assertFalse(completed.supplementaryOCROnly)
+        assertTrue(completed.supplementaryOCROnly)
         assertEquals("frame-601000000",completed.ocrAttemptAnnotation?.frameId)
         val replacement = detection().let { it.copy(candidate = it.candidate.copy(rawClassId = "hazard:school",
             semantic = TrafficSignSemantic(TrafficSignSemanticKind.UNKNOWN))) }
@@ -1161,7 +1216,10 @@ class TrafficSignRecognitionOrchestratorTests {
         assertEquals("drive-test", output.displayObservation?.driveSessionId)
         assertEquals(Instant.parse("2026-09-01T10:00:00Z"), output.displayObservation?.capturedAtUtc)
         assertEquals(TrafficSignInputSource.LIVE_FRAME, output.displayObservation?.source)
-        assertEquals(output.event.applicabilityDecision, output.displayObservation?.applicabilityDecision)
+        val displayTrack = output.applicabilityDiagnostic?.tracks?.first { it.samples.lastOrNull()?.candidate?.candidateId == "both:1" }
+        assertEquals(displayTrack?.trackId, output.displayObservation?.applicabilityDecision?.trackId)
+        assertFalse("Secondary signs cannot borrow primary spatial authority",
+            output.event.applicabilityDecision?.trackId == output.displayObservation?.applicabilityDecision?.trackId)
         assertEquals(false, output.displayObservation?.hasPrimaryFeedback)
         assertNull(output.passageEvent)
         assertNull(harness.orchestrator.speedOverride())

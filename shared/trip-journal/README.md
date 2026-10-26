@@ -36,6 +36,30 @@ saving no longer requires another stationary fix. Later/dismiss leaves a saved
 trip with a missing optional ending reading. Recording stays enabled and the
 next trip begins on movement.
 
+On closure (including interrupted-session recovery), automatically discard a
+trip whose first and last usable GPS fixes are **less than 100 m apart in a
+straight line**. A loop ending near its start is discarded even if its recorded
+driven distance exceeds 100 m. Both clients use the same haversine calculation
+with mean Earth radius 6,371,008.8 m; exactly 100 m is retained. Stationary usable
+fixes count as endpoints; duplicate, out-of-order, network-only and invalid fixes
+do not. Empty zero-distance sessions are discarded too. Missing endpoint
+evidence on a nonzero-distance trip does not establish a short trip.
+While the current start/end separation is below 100 m (or endpoints are not yet
+known), buffer the active session's evidence without showing it in **Fahrten**
+or offering the stop button. Reaching 100 m enables that history row and the
+ordinary stationary stop control; returning below 100 m hides both again.
+This visibility check uses cached usable endpoints and never replays event logs
+from the dashboard or history view. The normal speed display still shows zero
+when stopped before the threshold. When the stop button is shown, it replaces
+the zero on both platforms, using the same 17 pt/sp semibold label, 18 pt/dp stop
+symbol and 48 pt/dp minimum height.
+
+Cleanup removes the trip's events, bindings and temporary exports, preserves
+lifetime counters and independent media, and prevents late callbacks from
+recreating the discarded trip. A finished short trip has no odometer editor;
+stale stop actions for an active short trip are rejected. Existing completed history and explicit
+backup restores are not retrospectively filtered.
+
 Optional `place` events retain offline matcher street/locality names at the
 original GPS fix time. SQLite schema 3 stores `start_place`, `end_place` and
 `history_version` with the trip. Closure resolves the endpoints once from nearby

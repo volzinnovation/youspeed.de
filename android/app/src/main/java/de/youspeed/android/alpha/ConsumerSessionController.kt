@@ -651,11 +651,13 @@ class ConsumerSessionController(
         val aliases=mutableSetOf(id)
         val tracker=ConditionalOCRInterpretation.Tracker()
         var record:ConditionalOCRInterpretation.Record?=null
+        var knownPlate=false
         var plainFirst:TrafficSignSupplementaryTextAnnotation?=null
         var plainModelKey:String?=null
         var lastFrame:String?=null
         var freshVerification=false
         var suppressedByVoice=false
+        var voiceBarrierAt:Instant?=null
         var retired=false
         var applied=false
         var lastVerdict:ConditionalOCRInterpretation.Verdict?=null
@@ -2363,20 +2365,23 @@ class ConsumerSessionController(
             ?: ConditionalOCRInterpretation.Verdict.UNRESOLVED
     }
 
-    /** Every numeric parent waits for actual native lower-context inspection, including deferred/small frames. */
+    /** Positive detector plate evidence masks only its own numeric parent; pending OCR does not. */
     internal fun onTrafficSignUnverifiedAssembly(event:TrafficSignRecognitionEvent,generation:Long) {
         if(generation!=trafficSignGeneration.get() || event.driveSessionId!=trafficSignDriveSessionId || event.source!=TrafficSignInputSource.LIVE_FRAME) return
         val candidate=event.candidate ?: return
         val speed=candidate.numericSupplementarySpeed() ?: return
+        val knownPlate=candidate.conditionState!=TrafficSignConditionState.NONE || candidate.restrictions.isNotEmpty()
         val ids=setOfNotNull(candidate.trackId,event.applicabilityDecision?.trackId)
         if(ids.isEmpty()) return
         synchronized(trafficSignStateLock) {
             val track=conditionalCameraTrackLocked(candidate.trackId ?: ids.first(),event)
-            track.aliases.addAll(ids);conditionalCameraLeader=track.id
+            track.aliases.addAll(ids);track.knownPlate=track.knownPlate || knownPlate
+            if(speedReference.voice()!=null) {track.suppressedByVoice=true;track.voiceBarrierAt=clock.instant()}
+            if(conditionalCameraTracks[conditionalCameraLeader]?.originAt?.let {it>track.originAt} != true) conditionalCameraLeader=track.id
             ids.forEach {conditionalOCRAuthorityGate.pending(it,candidate.rawClassId,speed,conditionalOCRAuthorityScope(),
                 candidate.conditionState!=TrafficSignConditionState.NONE || candidate.restrictions.isNotEmpty())}
         }
-        withholdUnverifiedOCRParent(ids,candidate.rawClassId,speed,null,generation,event.driveSessionId,knownPlate=false)
+        if(knownPlate) withholdUnverifiedOCRParent(ids,candidate.rawClassId,speed,null,generation,event.driveSessionId,knownPlate=true)
     }
 
     /** Authority is derived from complete pixel/crop/OCR evidence on two actual source frames. */
@@ -2385,13 +2390,24 @@ class ConsumerSessionController(
             event.driveSessionId!=trafficSignDriveSessionId || event.source!=TrafficSignInputSource.LIVE_FRAME ||
             annotation.physicalSignId!=event.candidate?.trackId && annotation.physicalSignId!=event.applicabilityDecision?.trackId) return
         val speed=annotation.primarySpeedKmh ?: return
-        val ids=setOfNotNull(annotation.physicalSignId,event.candidate?.trackId,event.applicabilityDecision?.trackId)
+        if(event.frameId!=annotation.frameId || event.frameTimestampUtc!=annotation.sourceObservedAt ||
+            event.candidate?.rawClassId!=annotation.primaryClassId || event.candidate.numericSupplementarySpeed()!=speed ||
+            event.candidate.boundingBox!=annotation.primaryBoundingBox) return
+        val ids=setOfNotNull(annotation.physicalSignId,event.candidate.trackId,event.applicabilityDecision?.trackId)
+        if(Duration.between(annotation.sourceObservedAt,clock.instant()).let {it.isNegative || it>Duration.ofSeconds(3)}) return
+        val evidence=annotation.assemblyEvidence
+        val knownPlate=!annotation.rawText.isNullOrBlank() || evidence?.plateRects?.isNotEmpty()==true ||
+            event.candidate?.conditionState!=TrafficSignConditionState.NONE || event.candidate?.restrictions?.isNotEmpty()==true
         synchronized(trafficSignStateLock) {
+            // Absence, failure and ambiguous lower pixels cannot withhold a bare
+            // numeric sign. Once a real plate is known it remains parent-scoped.
+            val existing=conditionalCameraTracks.values.firstOrNull {track -> ids.any {it in track.aliases}}
+            if(!knownPlate && existing?.knownPlate != true) return
             val track=conditionalCameraTrackLocked(annotation.physicalSignId,event);track.aliases.addAll(ids)
+            track.knownPlate=track.knownPlate || knownPlate
+            if(conditionalCameraTracks[conditionalCameraLeader]?.originAt?.let {it>track.originAt} != true) conditionalCameraLeader=track.id
             if(track.lastFrame==annotation.frameId) return@synchronized
             track.lastFrame=annotation.frameId
-            if(Duration.between(annotation.sourceObservedAt,clock.instant()).let {it.isNegative || it>Duration.ofSeconds(3)}) return@synchronized
-            val evidence=annotation.assemblyEvidence
             val sourceMatches=event.frameId==annotation.frameId && event.frameTimestampUtc==annotation.sourceObservedAt &&
                 event.candidate?.rawClassId==annotation.primaryClassId && event.candidate.numericSupplementarySpeed()==speed &&
                 conditionalCameraScopeCurrentLocked(track) && isDriving && isTrafficSignRecognitionRuntimeEnabled() &&
@@ -2403,13 +2419,12 @@ class ConsumerSessionController(
             }==true
             val validation=evidence?.takeIf {sourceMatches && (it.scanStatus=="plain" || annotation.status==TrafficSignSupplementaryOCRStatus.READ)}?.validate(annotation.primaryBoundingBox,annotation.rawText,annotation.frameId,annotation.sourceObservedAt,annotation.physicalSignId)
             val modelKey="${event.packId}:${event.artifactSha256}:${event.preprocessingVersion}:${event.modelComponents}"
-            val knownPlate=annotation.rawText!=null || evidence?.plateRects?.isNotEmpty()==true ||
-                event.candidate?.conditionState!=TrafficSignConditionState.NONE || event.candidate?.restrictions?.isNotEmpty()==true
             ids.forEach {conditionalOCRAuthorityGate.pending(it,annotation.primaryClassId,speed,conditionalOCRAuthorityScope(),knownPlate)}
             if(speedReference.voice()!=null) {
-                track.suppressedByVoice=true;track.tracker.reset();track.record=null;track.plainFirst=null;track.applied=false
+                track.suppressedByVoice=true;track.voiceBarrierAt=clock.instant();track.tracker.reset();track.record=null;track.plainFirst=null;track.applied=false
                 return@synchronized
             }
+            if(track.voiceBarrierAt?.let {annotation.sourceObservedAt<=it} == true) return@synchronized
             if(track.suppressedByVoice) {track.suppressedByVoice=false;track.tracker.reset();track.record=null;track.plainFirst=null}
             if(validation?.kind==TrafficSignConditionalAssemblyEvidence.Kind.PLAIN) {
                 val prior=track.plainFirst
@@ -2445,12 +2460,13 @@ class ConsumerSessionController(
             val voiceActive=speedReference.voice()!=null
             conditionalCameraTracks.values.forEach {track ->
                 if(voiceActive) {
-                    track.suppressedByVoice=true;track.record=null;track.tracker.reset();track.plainFirst=null;track.applied=false
+                    track.suppressedByVoice=true;track.voiceBarrierAt=clock.instant();track.record=null;track.tracker.reset();track.plainFirst=null;track.applied=false
                     return@forEach
                 }
+                if(!track.knownPlate) return@forEach
                 val ordinary=speedReference.ordinaryCameraEvidenceId()
                 val newerCamera=speedReference.ordinaryCameraOrigin()?.first?.let {it>track.originElapsed}==true
-                if(ordinary!=null && ordinary !in track.aliases && (track.applied || newerCamera) && !track.freshVerification) track.retired=true
+                if(ordinary!=null && ordinary !in track.aliases && (track.applied || newerCamera)) track.retired=true
                 val verdict=if(isDriving && isTrafficSignRecognitionRuntimeEnabled()) conditionalCameraVerdictLocked(track) else ConditionalOCRInterpretation.Verdict.UNRESOLVED
                 val ownsCurrent=speedReference.cameraEvidenceIds().any {it in track.aliases}
                 val canOffer=verdict==ConditionalOCRInterpretation.Verdict.APPLICABLE && !track.suppressedByVoice &&
