@@ -209,4 +209,5 @@ reviewed sources, validation logs and layout screenshots.
 At completion of this initial review, no driving app had been replaced and no
 deployment, commit, push, merge or publication had been performed. The owner's
 subsequent commit, push and attached-device deployment request is a separate
-follow-up to this review.
+follow-up to this review, completed as
+[version 1.5 / build 10072](V1_5_DEVICE_INSTALL_10072_2026-10-26.md).
