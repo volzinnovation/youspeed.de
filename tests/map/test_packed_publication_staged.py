@@ -46,8 +46,8 @@ class PackedStagedPublicationTests(unittest.TestCase):
             'packed_download_bytes': 500, 'source_download_bytes': 1000, 'release_files': self.files}
         self.result_path = self.root / 'result.json'; self.result_path.write_text(json.dumps(self.result))
         self.qa_path = self.root / 'qa.json'; self.qa_path.write_text('{}')
-        self.remote = {'draft': True, 'target_commitish': self.commit,
-            'html_url': 'https://github.com/' + self.repo + '/releases/tag/' + self.tag,
+        self.remote = {'draft': True, 'target_commitish': self.commit, 'tag_name': self.tag,
+            'html_url': 'https://github.com/' + self.repo + '/releases/tag/untagged-draft',
             'assets': [{'name': item['file'], 'id': index + 1, 'size': item['bytes'], 'digest': 'sha256:' + item['sha256']}
                        for index, item in enumerate(self.files)]}
         self.view = SimpleNamespace(returncode=0, stdout=json.dumps({'isDraft': True, 'targetCommitish': self.commit}), stderr='')
@@ -69,6 +69,11 @@ class PackedStagedPublicationTests(unittest.TestCase):
              patch.object(publisher, 'validate_qa') as qa, \
              patch.object(publisher, 'tag_commit', return_value=tag_commit or self.commit), \
              patch.object(publisher, 'run') as mutations:
+            def publish(args):
+                if '--draft=false' in args:
+                    self.remote['draft'] = False
+                    self.remote['html_url'] = 'https://github.com/' + self.repo + '/releases/tag/' + self.tag
+            mutations.side_effect = publish
             if expected_error:
                 with self.assertRaisesRegex(ValueError, expected_error): publisher.main()
                 mutations.assert_not_called()
@@ -89,6 +94,7 @@ class PackedStagedPublicationTests(unittest.TestCase):
         self.assertTrue(receipt['published'])
         self.assertTrue(receipt['all_asset_hashes_verified'])
         self.assertEqual(receipt['asset_count'], 4)
+        self.assertEqual(receipt['url'], 'https://github.com/' + self.repo + '/releases/tag/' + self.tag)
 
     def test_staged_release_cannot_create_replacement_after_missing_or_failed_view(self):
         for error in ['HTTP 404', 'network connection failed']:

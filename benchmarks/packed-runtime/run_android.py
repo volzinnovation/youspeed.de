@@ -31,7 +31,7 @@ def main():
     require(received.returncode==0,'Native benchmark process failed after producing a report')
     if a.reference:
         reference=json.loads(a.reference.read_text());require(report['query_results']==reference['query_results'],'Original source SQL result mismatch');require(report['result_fnv1a64']==reference['result_fnv1a64'],'Source result digest mismatch')
-    print(json.dumps({'report':str(path),'mode':a.mode,'memory_gate_pass':report['memory_gate_pass'],'incremental_rss_bytes':report['incremental_rss_bytes']},indent=2))
+    print(json.dumps({'report':str(path),'mode':a.mode,'memory_gate_pass':report['memory_gate_pass'],'observed_incremental_rss_bytes':report['observed_snapshot_incremental_rss_bytes']},indent=2))
 
 
 if __name__=='__main__':main()

@@ -53,12 +53,17 @@ def validate_qa(qa,result,manifest,source_commit):
 
 
 def tag_commit(repo,tag):
-    response=subprocess.run(['gh','api',f'repos/{repo}/commits/{quote(tag,safe="")}'],capture_output=True,text=True)
+    response=subprocess.run(['gh','api',f'repos/{repo}/git/ref/tags/{quote(tag,safe="")}'],capture_output=True,text=True)
     if response.returncode:
         # GitHub creates a missing tag when a draft is published, not staged.
         require('HTTP 404' in response.stderr,'Could not verify existing tag commit')
         return None
-    return json.loads(response.stdout)['sha']
+    value=json.loads(response.stdout)['object']
+    for _ in range(8):
+        if value['type']=='commit':return value['sha']
+        require(value['type']=='tag' and re.fullmatch('[0-9a-f]{40}',value['sha']),'Invalid tag object')
+        value=json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/git/tags/{value["sha"]}'],text=True))['object']
+    raise ValueError('Excessively nested annotated tag')
 
 
 def main():
@@ -134,7 +139,10 @@ def main():
     for name,item in assets.items():
         require(received.get(name,{}).get('size')==item['bytes'] and received.get(name,{}).get('digest')=='sha256:'+item['sha256'],'GitHub asset differs: '+name)
     if a.publish:run(['release','edit',tag,'--repo',a.repo,'--draft=false','--latest=false','--notes-file',str(notes)])
-    if a.publish:require(tag_commit(a.repo,tag)==a.source_commit,'Published tag differs from builder commit')
+    if a.publish:
+        require(tag_commit(a.repo,tag)==a.source_commit,'Published tag differs from builder commit')
+        remote=json.loads(subprocess.check_output(['gh','api',f'repos/{a.repo}/releases/tags/{tag}'],text=True))
+        require(remote['draft'] is False and remote['tag_name']==tag,'Publication status not confirmed')
     receipt={'release_tag':tag,'url':remote['html_url'],'source_commit':a.source_commit,
              'all_asset_hashes_verified':True,'asset_count':len(assets),'published':a.publish}
     (a.result.parent/'github-verified.json').write_text(json.dumps(receipt,indent=2)+'\n')

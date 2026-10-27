@@ -46,7 +46,7 @@ def main():
                 if a.reference:
                     reference=json.loads(a.reference.read_text());require(report['query_results']==reference['query_results'],'Original source SQL result mismatch')
                     require(report['result_fnv1a64']==reference['result_fnv1a64'],'Source result digest mismatch')
-                print(json.dumps({'report':str(report_path),'mode':a.mode,'memory_gate_pass':report['memory_gate_pass'],'incremental_rss_bytes':report['incremental_rss_bytes']},indent=2));return
+                print(json.dumps({'report':str(report_path),'mode':a.mode,'memory_gate_pass':report['memory_gate_pass'],'observed_incremental_rss_bytes':report['observed_snapshot_incremental_rss_bytes']},indent=2));return
         time.sleep(2)
     subprocess.run(base+['device','copy','from',*domain,'--source','Documents/packed-runtime-progress.json','--destination',str(results/(prefix+'-progress.json'))],timeout=75)
     raise TimeoutError('No fresh isolated benchmark report; progress receipt retained. '+last)

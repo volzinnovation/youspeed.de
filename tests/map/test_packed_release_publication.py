@@ -26,10 +26,22 @@ class PackedPublicationTests(unittest.TestCase):
             stderr = 'gh: Not Found (HTTP 404)'
         with patch.object(publisher.subprocess, 'run', return_value=Response()):
             self.assertIsNone(publisher.tag_commit('owner/repo', 'draft'))
+            self.assertIn('/git/ref/tags/draft', publisher.subprocess.run.call_args.args[0][2])
         Response.stderr = 'network connection failed'
         with patch.object(publisher.subprocess, 'run', return_value=Response()):
             with self.assertRaisesRegex(ValueError, 'Could not verify'):
                 publisher.tag_commit('owner/repo', 'draft')
+
+    def test_lightweight_and_annotated_tags_resolve_exact_commit(self):
+        class Response:
+            returncode = 0
+            stdout = json.dumps({'object': {'type': 'commit', 'sha': 'a'*40}})
+        with patch.object(publisher.subprocess, 'run', return_value=Response()):
+            self.assertEqual(publisher.tag_commit('owner/repo', 'tag'), 'a'*40)
+        Response.stdout = json.dumps({'object': {'type': 'tag', 'sha': 'b'*40}})
+        with patch.object(publisher.subprocess, 'run', return_value=Response()), patch.object(
+            publisher.subprocess, 'check_output', return_value=json.dumps({'object': {'type': 'commit', 'sha': 'a'*40}})):
+            self.assertEqual(publisher.tag_commit('owner/repo', 'tag'), 'a'*40)
 
     def test_v3_delta_dependency_is_rejected_before_network(self):
         with tempfile.TemporaryDirectory() as temp:
