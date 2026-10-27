@@ -1,0 +1,17 @@
+{
+  "source_sqlite_sha256": "e973d279de2803b13037b9e87132be72f28a22d8f9c9bbef79d73093772b1849",
+  "checks": [
+    {
+      "kind": "penalty_rules",
+      "bytes": 5756,
+      "sha256": "fceebeb611d114d0bd97acd17ea0bc002d795210a2a18c3b1129a9a3c5904580",
+      "upgraded_source_and_pinned_published_companion_identical": true
+    },
+    {
+      "kind": "poly",
+      "bytes": 11113,
+      "sha256": "7f6efa982f9e22cad15bba8b01120c2ff61f8d45c40e9e0c8d6d77c2e81af541",
+      "upgraded_source_and_pinned_published_companion_identical": true
+    }
+  ]
+}

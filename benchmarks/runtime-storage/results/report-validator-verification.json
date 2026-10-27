@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "optimized_python_actual_android_exports_match_timed_digests": true,
+  "all_three_android_exports_have_expected_6446_results": true,
+  "optimized_python_empty_export_rejected": true,
+  "acceptance_uses_explicit_exceptions": true,
+  "iphone_report_freshness": "per-launch UUID nonce in configuration; required exact match",
+  "optimized_python_complete_six_backend_evidence_replay": true,
+  "cross_phone_numerical_parity_verified": true,
+  "retained_compressed_exports_match_all_original_backend_hashes": true
+}

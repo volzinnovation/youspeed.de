@@ -4009,6 +4009,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard bundleVersion != activeBundleVersion
                 || dbPath != activeDBPath
                 || normalizedSHA != activeSHA else { return }
+        speedLimitServicePool.resetMapAmendmentPassages()
         invalidateTrafficSignOverrideForBaseSourceMutation()
     }
 
@@ -7511,6 +7512,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard isScreenshotMode || (onboardingStateLoaded && !shouldPresentOnboarding) else { return }
         mapLookupWorker.cancel()
         if !isDriving {
+            speedLimitServicePool.resetMapAmendmentPassages()
             cameraTownLocality.reset()
             invalidateUpcomingSpeedLimit(reason: "drive_started", newDrive: true)
             roadPathSession.resetTrajectory()
@@ -7598,6 +7600,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         secondaryDisplayChangeReason="drive_ended"
         inventorySecondarySign = nil
         inventoryBoundaryPassageTracker.reset()
+        speedLimitServicePool.resetMapAmendmentPassages()
         inventoryBundleIdentity = nil
         lastInventoryCancellationID = nil
         inventoryEstablishedCityContext = nil
@@ -9362,7 +9365,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     horizontalAccuracyM: hAcc,
                     gpsSignalBars: gpsBars,
                     inventoryFixUsable: location.timestamp <= Date().addingTimeInterval(1)
-                        && Date().timeIntervalSince(location.timestamp) <= 3
+                        && Date().timeIntervalSince(location.timestamp) <= 3,
+                    observationTimestamp: location.timestamp
                 )
                 let lookupCompletedAt=Date()
                 let travelDirection = Self.trafficSignTravelDirection(

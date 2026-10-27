@@ -10,9 +10,30 @@ interface BundleDeltaDatabase {
     fun applyPatch(database: File, sql: String)
     fun validate(database: File)
     fun validateSettlementCapability(database: File)
+    fun validatePackedGeneration(database: File, manifest: V3BundleManifest) = Unit
 }
 
 internal class AndroidBundleDeltaDatabase : BundleDeltaDatabase {
+    override fun validatePackedGeneration(database: File, manifest: V3BundleManifest) {
+        val base = manifest.packedBase ?: return
+        require(RuntimeMapDatabase.isPackedFile(database)) { "V4 context has the wrong format" }
+        RuntimeMapDatabase.open(database.path).use { runtime ->
+            fun metadata(key: String): String? = runtime.database.rawQuery(
+                "SELECT value FROM metadata WHERE key=? LIMIT 1", arrayOf(key),
+            ).use { if (it.moveToFirst()) it.getString(0) else null }
+            require(metadata("packed_generation") == manifest.bundleVersion) { "Packed generation identity mismatch" }
+            require(metadata("packed_geometry_file") == base.roads.file) { "Packed geometry file identity mismatch" }
+            val installedSha = if (base.roads.compression.isNullOrBlank() || base.roads.compression.equals("none", true))
+                base.roads.sha256 else base.roads.uncompressedSha256
+            require(metadata("packed_geometry_sha256").equals(installedSha, true)) { "Packed geometry checksum identity mismatch" }
+        }
+        base.nodes?.let { artifact ->
+            val path = RuntimeMapDatabase.companionFile(requireNotNull(database.parentFile), artifact.file)
+            val handle = RuntimePackedNative.nodesOpen(path.path)
+            RuntimePackedNative.nodesClose(handle)
+        }
+    }
+
     override fun applyPatch(database: File, sql: String) {
         SQLiteDatabase.openDatabase(database.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
             for (statement in DeltaUpdatePolicy.sqlStatements(sql)) db.execSQL(statement)
@@ -23,7 +44,8 @@ internal class AndroidBundleDeltaDatabase : BundleDeltaDatabase {
     }
 
     override fun validateSettlementCapability(database: File) {
-        SQLiteDatabase.openDatabase(database.path, null, SQLiteDatabase.OPEN_READONLY).use { db ->
+        RuntimeMapDatabase.open(database.path).use { runtime ->
+            val db = runtime.database
             val hasMetadata = db.rawQuery("SELECT 1 FROM sqlite_master WHERE type='table' AND name='metadata'", null).use { it.moveToFirst() }
             val version = if (hasMetadata) db.rawQuery("SELECT value FROM metadata WHERE key='settlement_context_version'", null).use {
                 if (it.moveToFirst()) it.getString(0) ?: "" else null
@@ -48,9 +70,10 @@ internal class AndroidBundleDeltaDatabase : BundleDeltaDatabase {
     }
 
     override fun validate(database: File) {
-        SQLiteDatabase.openDatabase(database.path, null, SQLiteDatabase.OPEN_READONLY).use { db ->
+        RuntimeMapDatabase.open(database.path).use { runtime ->
+            val db = runtime.database
             for (table in listOf("ways", "ways_rtree", "way_geom")) {
-                db.rawQuery("SELECT 1 FROM sqlite_master WHERE type='table' AND name=? LIMIT 1", arrayOf(table)).use {
+                db.rawQuery("SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name=? LIMIT 1", arrayOf(table)).use {
                     check(it.moveToFirst()) { "Missing table in v3 database: $table" }
                 }
             }

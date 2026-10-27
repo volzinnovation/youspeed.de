@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "33c42ed5f0c646a31492096ff06d3d9568be71de74f8ff5a7b3169c3ee7ecbad",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -12.00336752987219,
+  "elapsed_seconds": 60.33507167299996,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -69.35637903128705,
+  "local_source_upgrade": false,
+  "node_count": 10134,
+  "packed_download_bytes": 118766048,
+  "packed_installed_bytes": 122812651,
+  "previous_published_download_bytes": 134966583,
+  "region": "schleswig-holstein",
+  "release_files": [
+    {
+      "bytes": 103462537,
+      "file": "schleswig-holstein_2026-10-27-packed-v1.context.yspc",
+      "sha256": "1a05b4830e5f966b5b320769a679a51822b5a9dffe754095077feb156609dc98"
+    },
+    {
+      "bytes": 2822078,
+      "file": "schleswig-holstein_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "3ba451fc753fd8d8db11ffcf2f5f2ebc59c88a4304bb5b484dad4794b0287aa7"
+    },
+    {
+      "bytes": 12481433,
+      "file": "schleswig-holstein_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "7dc6ee6e3a688d42340579c48367f40338221f63c0063992b9f77cbec234648e"
+    },
+    {
+      "bytes": 3425,
+      "file": "schleswig-holstein_2026-10-27-packed-v1_schleswig-holstein_2026-09-28-refresh-8177c59.poly",
+      "sha256": "768414bfdf4b55355b84ab8560f8292389158bc9a6e1e399d4dec762b41366f4"
+    },
+    {
+      "bytes": 5756,
+      "file": "schleswig-holstein_2026-10-27-packed-v1_schleswig-holstein_2026-09-28-refresh-8177c59_DEU-rules.json",
+      "sha256": "fceebeb611d114d0bd97acd17ea0bc002d795210a2a18c3b1129a9a3c5904580"
+    },
+    {
+      "bytes": 1915,
+      "file": "schleswig-holstein_2026-10-27-packed-v1_validation.json",
+      "sha256": "ac7a998a1511f6a527c7825bedd6828266a96f5da7a51f66d9ae22239e474779"
+    },
+    {
+      "bytes": 5297,
+      "file": "schleswig-holstein_manifest.json",
+      "sha256": "cba557d58f46d942ce26a61a86f8305bc9f9da689f8a1e126e7ea6a9825f6214"
+    }
+  ],
+  "release_tag": "schleswig-holstein-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 134966583,
+  "source_installed_bytes": 400777216,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 332,
+    "membership_count": 13002,
+    "node_count": 10134,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "63fd499997433b1772b38723c077331e68a02a3e3e4907fb5569d586f628cb12",
+    "source_pbf_timestamp": "2026-07-04T20:21:16Z",
+    "source_sqlite_sha256": "bedd947ee99c6f3ced6f21e3a90ae5ec937527589bc42ae1918aa119673020e6",
+    "unassociated_node_count": 2447
+  },
+  "source_release_tag": "schleswig-holstein",
+  "source_sqlite_sha256": "bedd947ee99c6f3ced6f21e3a90ae5ec937527589bc42ae1918aa119673020e6",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 284535,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 56324
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 56324
+      },
+      {
+        "name": "city_boundary",
+        "rows": 1201
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 1201
+      },
+      {
+        "name": "city_place",
+        "rows": 3753
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 3753
+      },
+      {
+        "name": "city_ring",
+        "rows": 1476
+      },
+      {
+        "name": "city_tile",
+        "rows": 13597
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 637
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 2472
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 2472
+      },
+      {
+        "name": "settlement_area",
+        "rows": 32017
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 33235
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 349205
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 15223
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 281752
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 281752
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 311
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 311
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 20601
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 115706
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 284535
+      },
+      {
+        "name": "way_geom",
+        "rows": 284535
+      },
+      {
+        "name": "way_links",
+        "rows": 414954
+      },
+      {
+        "name": "ways",
+        "rows": 284535
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 284535
+      }
+    ]
+  }
+}

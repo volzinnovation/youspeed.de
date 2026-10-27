@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "cd84d8ae27fcce6c88354a0f244a27b2e06edcd1d96c04d5108609bddc09f7f7",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -15.90564040512621,
+  "elapsed_seconds": 199.07752170899997,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -73.28137333042774,
+  "local_source_upgrade": false,
+  "node_count": 4401,
+  "packed_download_bytes": 216676411,
+  "packed_installed_bytes": 224225109,
+  "previous_published_download_bytes": 257658673,
+  "region": "provence-alpes-cote-d-azur",
+  "release_files": [
+    {
+      "bytes": 185470595,
+      "file": "provence-alpes-cote-d-azur_2026-10-27-packed-v1.context.yspc",
+      "sha256": "0df8a97ceae4eeb7a25218b577e88f7c44594b131960a1877d26d0f35b9dda17"
+    },
+    {
+      "bytes": 1224621,
+      "file": "provence-alpes-cote-d-azur_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "91b1f81615700efd7245a4e74e40b06035eeed47a62ad0249155dbf96a1f05c5"
+    },
+    {
+      "bytes": 29981195,
+      "file": "provence-alpes-cote-d-azur_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "924308feb194cd4fd2095c2eb0ade2ec698170ddd06594c9918774aa03ebfb21"
+    },
+    {
+      "bytes": 14430,
+      "file": "provence-alpes-cote-d-azur_2026-10-27-packed-v1_provence-alpes-cote-d-azur_2026-09-28-refresh-8177c59.poly",
+      "sha256": "1abf1a2149aa4710bbdb07dfbfb6f9a989254b9ed07c79b6ca6f1e231ad53abb"
+    },
+    {
+      "bytes": 9366,
+      "file": "provence-alpes-cote-d-azur_2026-10-27-packed-v1_provence-alpes-cote-d-azur_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1916,
+      "file": "provence-alpes-cote-d-azur_2026-10-27-packed-v1_validation.json",
+      "sha256": "8ed95a7e9c52af672d8d2eda65b151a6d4c290af385137b6dc82dfd053adc70e"
+    },
+    {
+      "bytes": 5497,
+      "file": "provence-alpes-cote-d-azur_manifest.json",
+      "sha256": "f16645efcbbf5b40925665e1f981aa3ba98e00296583137b9841bf6a46cd5420"
+    }
+  ],
+  "release_tag": "provence-alpes-cote-d-azur-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 257658673,
+  "source_installed_bytes": 839208960,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 220,
+    "membership_count": 5134,
+    "node_count": 4401,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "d8065f437a77e0b56651ae19a187a2288d9971809eeb211d36016b7ecf3f37aa",
+    "source_pbf_timestamp": "2026-07-03T04:51:13Z",
+    "source_sqlite_sha256": "71a4ead403e2efa23abb0f5b1dbf32bb08acd8cfded05e49e17679ae44334188",
+    "unassociated_node_count": 1308
+  },
+  "source_release_tag": "provence-alpes-cote-d-azur",
+  "source_sqlite_sha256": "71a4ead403e2efa23abb0f5b1dbf32bb08acd8cfded05e49e17679ae44334188",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 569350,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 68241
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 68241
+      },
+      {
+        "name": "city_boundary",
+        "rows": 1032
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 1032
+      },
+      {
+        "name": "city_place",
+        "rows": 4365
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 4365
+      },
+      {
+        "name": "city_ring",
+        "rows": 1525
+      },
+      {
+        "name": "city_tile",
+        "rows": 13389
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 392
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 2243
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 2243
+      },
+      {
+        "name": "settlement_area",
+        "rows": 24914
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 26072
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 668673
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 4210
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 564944
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 564944
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 2163
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 2163
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 33328
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 153371
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 569350
+      },
+      {
+        "name": "way_geom",
+        "rows": 569350
+      },
+      {
+        "name": "way_links",
+        "rows": 816652
+      },
+      {
+        "name": "ways",
+        "rows": 569350
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 569350
+      }
+    ]
+  }
+}

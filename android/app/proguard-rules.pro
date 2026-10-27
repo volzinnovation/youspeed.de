@@ -19,3 +19,6 @@
 }
 
 # LiteRT supplies its own consumer rules for classes used through reflection.
+
+# The shared packed reader exposes a small named JNI ABI.
+-keep class de.youspeed.android.alpha.RuntimePackedNative { *; }

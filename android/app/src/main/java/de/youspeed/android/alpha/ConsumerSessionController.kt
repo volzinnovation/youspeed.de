@@ -6944,6 +6944,7 @@ class ConsumerSessionController(
 
     private fun applyInventorySigns(result: SpeedLookupResult, location: Location, dbPath: String,
                                     version: String, sha256: String?, country: String?, heading: Double?): SpeedLookupResult {
+        var nodePassage:Pair<InventorySignFix,InventorySignDecision>?=null
         return runCatching {
             val lookupStartedAtNanos = System.nanoTime()
             val identity = "$dbPath|$version|${sha256.orEmpty()}"
@@ -6963,6 +6964,7 @@ class ConsumerSessionController(
                 location.bearingAccuracyDegrees.toDouble().takeIf { location.hasBearingAccuracy() }, sha256, version)
             val decision = inventorySignRuntime.evaluate(snapshot, inventoryFix, clock.instant(),
                 isTrafficSignRecognitionRuntimeEnabled(), uiState.trafficSignCameraRuntimeState == TrafficSignCameraRuntimeState.ACTIVE)
+            nodePassage=inventoryFix to decision
             inventorySignRuntime.takePersistenceFailure()?.let {
                 appendRuntimeDiagnosticEvent("inventory_sign_log_error", mapOf("reason" to it.message, "pending_retry" to true))
             }
@@ -7022,6 +7024,10 @@ class ConsumerSessionController(
             inventoryCaptureSignIds = emptyList()
             appendRuntimeDiagnosticEvent("inventory_sign_error", mapOf("reason" to it.message))
             result
+        }.let { inventoryResult ->
+            nodePassage?.let { (fix,decision) ->
+                inventorySignDatabase?.applyNodeAmendments(inventoryResult,fix,decision,country,clock.millis())
+            }?:inventoryResult
         }
     }
 

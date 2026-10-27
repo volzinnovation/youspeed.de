@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "0f5524cc95995d4d51007b9dbd8380244e8aab65ea01984b2b9e334280590b20",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -12.673250119938151,
+  "elapsed_seconds": 112.43245088600003,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -70.00185075054151,
+  "local_source_upgrade": false,
+  "node_count": 19998,
+  "packed_download_bytes": 210713442,
+  "packed_installed_bytes": 218255821,
+  "previous_published_download_bytes": 241293123,
+  "region": "hessen",
+  "release_files": [
+    {
+      "bytes": 183024280,
+      "file": "hessen_2026-10-27-packed-v1.context.yspc",
+      "sha256": "d9656a8a75e742c4d7dd6300f308bb76b00c76cfcb08fcaaeee9e46fd4c2c534"
+    },
+    {
+      "bytes": 5172151,
+      "file": "hessen_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "fabd904a14b93a758e38ff512e5f3ea1fdc5d6daffeb6b29ef17bfe091641ccd"
+    },
+    {
+      "bytes": 22517011,
+      "file": "hessen_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "5eb5ee0dabdb23846950625f8e516979273fbf0ffb6d54dc4ad33a5d54296067"
+    },
+    {
+      "bytes": 9129,
+      "file": "hessen_2026-10-27-packed-v1_hessen_2026-09-28-refresh-8177c59.poly",
+      "sha256": "4637956c85ff0fb64f668b122d48a4abc2255cdaa0331d5203127c15c0152520"
+    },
+    {
+      "bytes": 5756,
+      "file": "hessen_2026-10-27-packed-v1_hessen_2026-09-28-refresh-8177c59_DEU-rules.json",
+      "sha256": "fceebeb611d114d0bd97acd17ea0bc002d795210a2a18c3b1129a9a3c5904580"
+    },
+    {
+      "bytes": 1918,
+      "file": "hessen_2026-10-27-packed-v1_validation.json",
+      "sha256": "ef460bcf35c06c9655756bdbd73c3e78ebadded8a7d7346031b61eb53f8eaaba"
+    },
+    {
+      "bytes": 4999,
+      "file": "hessen_manifest.json",
+      "sha256": "dacf2d40974b20a5e8767d59cb649d96058b71b993ff44a4eeff4056c2509d65"
+    }
+  ],
+  "release_tag": "hessen-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 241293123,
+  "source_installed_bytes": 727564288,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 706,
+    "membership_count": 17700,
+    "node_count": 19998,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "e6e61686d13f2acdf05cd4accaaa7d9c3958dd1998e7817fe4711a5a1b77291d",
+    "source_pbf_timestamp": "2026-07-04T20:21:16Z",
+    "source_sqlite_sha256": "e206de5184893a9befdcfe91c5ac2a5a7ee88e36c9e5a4770f0056f4b3577e3e",
+    "unassociated_node_count": 9084
+  },
+  "source_release_tag": "hessen",
+  "source_sqlite_sha256": "e206de5184893a9befdcfe91c5ac2a5a7ee88e36c9e5a4770f0056f4b3577e3e",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 521125,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 69015
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 69015
+      },
+      {
+        "name": "city_boundary",
+        "rows": 3035
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 3035
+      },
+      {
+        "name": "city_place",
+        "rows": 3284
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 3284
+      },
+      {
+        "name": "city_ring",
+        "rows": 3426
+      },
+      {
+        "name": "city_tile",
+        "rows": 29931
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 1681
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 6297
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 6297
+      },
+      {
+        "name": "settlement_area",
+        "rows": 21218
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 21839
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 620939
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 20183
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 513578
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 513578
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 1250
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 1250
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 44150
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 254212
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 521125
+      },
+      {
+        "name": "way_geom",
+        "rows": 521125
+      },
+      {
+        "name": "way_links",
+        "rows": 957514
+      },
+      {
+        "name": "ways",
+        "rows": 521125
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 521125
+      }
+    ]
+  }
+}

@@ -1,0 +1,262 @@
+{
+  "approved_data_source_commits": [
+    "a4d95ff16d83e1b5c67ee71c2b9106f41f53e352",
+    "97f13e545bef682f03462649ff17951da4b8c28c"
+  ],
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "client_integration_evidence": {
+    "android": {
+      "path": "shared/packed-runtime/results/platform-preflight/android-physical.json",
+      "sha256": "dd5d220bfadaede0ad212f90f8440e55e8021c7cb49134704a0d050119649fa7",
+      "test_results": {
+        "assumption_skipped": 1,
+        "assumption_skipped_case_names": [
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#optionalRealBadenWuerttembergProbe"
+        ],
+        "expected_required_case_set_origin": "Original 27 required emulator cases plus the 3 source-binding regressions; this 30-case report is from the physical Moto, not a fresh emulator run.",
+        "failed": 0,
+        "ignored": 1,
+        "ignored_case_names": [
+          "de.youspeed.android.alpha.PackedProxyDatabaseInstrumentedTest#readonlyProxySupportsSQLiteViewsJoinsAndPackedGeometryCallback"
+        ],
+        "matches_emulator_required_case_set": true,
+        "passed": 30,
+        "passed_case_names": [
+          "de.youspeed.android.alpha.ConditionalSpeedRulesInstrumentedTest#brokenKnownCapabilityCannotRestoreScalarSpeed",
+          "de.youspeed.android.alpha.ConditionalSpeedRulesInstrumentedTest#cachedReevaluationKeepsExplicitTimezoneAndHalfOpenBoundary",
+          "de.youspeed.android.alpha.ConditionalSpeedRulesInstrumentedTest#legacyElectronicMarkerCannotInventRoadDefault",
+          "de.youspeed.android.alpha.ConditionalSpeedRulesInstrumentedTest#outsideWindowUsesIndependentBaseAndNeverInventsOne",
+          "de.youspeed.android.alpha.ConditionalSpeedRulesInstrumentedTest#partialCapabilityCannotExecuteRulesOrRestoreScalarFallback",
+          "de.youspeed.android.alpha.ConditionalSpeedRulesInstrumentedTest#sharedConformance",
+          "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#inactiveNodeClauseReevaluatesTheUnderlyingConditionalAtEveryClockTick",
+          "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#knownSourceRevisionSchemesRejectMismatchedSourceSnapshots",
+          "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#newLocalNodePersistsAmendsRestrictionsAndNeedsCurrentDirectedPassage",
+          "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#nodePassageUsesDirectedCrossingAndKeepsProofUntilItsReviewedScopeEnds",
+          "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#persistedNodePassageCannotAuthorizeASeparateDrive",
+          "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#revisionsPersistAndNumericAmendmentKeepsItsNightRestriction",
+          "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#sameVersionOverlappingRegionAndChangedNodesCannotReuseReviewedAmendments",
+          "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#validityExpiryReevaluatesOriginalBundleInsteadOfRetainingTheAmendment",
+          "de.youspeed.android.alpha.PackedProductionLookupInstrumentedTest#completePilotSQLAndProductionMatcherMatchOriginalSQLite",
+          "de.youspeed.android.alpha.PackedProxyDatabaseInstrumentedTest#completeBaseAndKnownWayRevisionSeparateSameVersionOverlappingRegions",
+          "de.youspeed.android.alpha.PackedProxyDatabaseInstrumentedTest#compressedContextAndGeometryPreserveSQLAndLargeSourceIdentities",
+          "de.youspeed.android.alpha.PackedProxyDatabaseInstrumentedTest#nativeCursorPreservesBindingsTypesUnicodeMovementAndOwnerLifetime",
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#ambiguousPostStationAndZeroLengthRulesCannotPromiseHandoff",
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#certifiedSourceTopologyCrossesReversedWayAndStopHidesOnlyBeyondJunction",
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#conditionalOsmContextBlocksImpliedTownFiftyWithoutSuppressingGovernmentBoundary",
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#conditionalStationCannotBecomeAnUnconditionalPreview",
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#directedTownEntryPreviewsFiftyAndExitOrUnresolvedLocalityDoesNot",
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#longerCrossWayReverseApproachRemainsConsumedAfterPassageAndJitter",
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#originAssociationNotChildEntryAndAllStatusEventsBlockBeyond",
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#physicalStationProvidesAlongWayDistanceAndLegacyCapabilityIsOptional",
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#thirtySecondHorizonsReadBeyondThreeHundredMetresAndExcludeJustOutside",
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#townEntryAtCertifiedSplitUsesPhysicalOriginAndReverseChildLocality",
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#townEntryKeepsFreshExplicitLimitAndCannotHideItsConditionalScope",
+          "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#workCapRemainsBoundedAndCannotExposeATargetBeyondItsProof"
+        ]
+      }
+    },
+    "iphone": {
+      "path": "shared/packed-runtime/results/platform-preflight/iphone-physical-swift.json",
+      "sha256": "11c37dd6c44952bfd6863f9b53eeefdb5669b80bf4b767a9775804c1b225984e",
+      "test_results": {
+        "expected_failures": 0,
+        "failed": 0,
+        "passed": 33,
+        "passed_case_names": [
+          "ConditionalSpeedRulesTests#testCachedReevaluationKeepsExplicitTimezoneAndHalfOpenBoundary",
+          "ConditionalSpeedRulesTests#testKnownBrokenCapabilityCannotFallBackToScalarSpeed",
+          "ConditionalSpeedRulesTests#testLegacyElectronicMarkerCannotInventRoadClassDefault",
+          "ConditionalSpeedRulesTests#testOutsideWindowUsesIndependentBaseAndNeverInventsOne",
+          "ConditionalSpeedRulesTests#testPartialCapabilityCannotExecuteRulesOrRestoreScalarFallback",
+          "ConditionalSpeedRulesTests#testSharedConditionalConformance",
+          "LookupResourceTests#testCachesHaveCountAndPayloadBoundsAndDoNotCacheCapabilityErrors",
+          "LookupResourceTests#testConcurrentCallersSerializeOneConnectionAndStatement",
+          "LookupResourceTests#testGeometryCacheKeepsStrictSettlementDecodingSeparateFromCoordinatePairs",
+          "LookupResourceTests#testLazyConnectionReusesStatementsAndClearsBindings",
+          "LookupResourceTests#testMissingFailedAndMalformedBundlesCanRecoverWithoutRetainedHandles",
+          "LookupResourceTests#testProductionGeometryPayloadBudgetEvictsAndReloadsExactCoordinates",
+          "LookupResourceTests#testRouteProbePoolIsBoundedReusesServicesAndReleasesEvictedGenerations",
+          "LookupResourceTests#testSamePathAtomicReplacementInvalidatesAllCachesIncludingAbsentCapabilities",
+          "LookupResourceTests#testServiceRefreshesSpeedNamesGeometryAndCapabilitiesAfterBundleReplacement",
+          "LookupResourceTests#testServiceReusesResourcesAcrossSpeedAndStreetNameLookupsForM7ThroughM12",
+          "MapDataAmendmentStoreTests#testChangedGenerationPendingReviewAndOverlapsDoNotInventPrecedence",
+          "MapDataAmendmentStoreTests#testKnownNodeRevisionIsByteBoundAndLegacyIncomingVersionIsInert",
+          "MapDataAmendmentStoreTests#testLocalMissingSignPersistsAmendsPassesExpiresAndTombstones",
+          "MapDataAmendmentStoreTests#testMalformedIndexedTargetCannotApplyToAnotherWay",
+          "MapDataAmendmentStoreTests#testNodeConditionalReevaluatesItsChangingBaselineAndExpiry",
+          "MapDataAmendmentStoreTests#testNodeNeedsCurrentDrivePassageInAdditionToHistoricalEvidence",
+          "MapDataAmendmentStoreTests#testPersistentRestrictedAmendmentCASAndTombstone",
+          "MapDataAmendmentStoreTests#testReviewedNodeUsesExistingPassageAndHoldsUntilScopeEndOrReset",
+          "MapDataAmendmentStoreTests#testValiditySurvivesReevaluationAndUnknownDirectionCannotApply",
+          "PackedBundleRuntimeTests#testAmendmentsBindCompleteSourceAcrossOverlappingSameVersionRegions",
+          "PackedBundleRuntimeTests#testCorruptGeometryFailsClosedAndURIEscapesPaths",
+          "PackedBundleRuntimeTests#testGenericNodeKeepsRawRestrictionAndUnknownBinding",
+          "PackedBundleRuntimeTests#testMissingCompanionFailsBeforeQuery",
+          "PackedBundleRuntimeTests#testPackedAndLegacyQueriesPreserveExactSourceJSONAndGlobals",
+          "PackedBundleRuntimeTests#testPackedCompanionGzipInstallIsAtomicAndMissingUpdateKeepsActiveGeneration",
+          "PackedBundleRuntimeTests#testPackedManifestCompatibilityAndCatalogValidation",
+          "PackedBundleRuntimeTests#testZstdPackedQueriesPreserveOriginalBytesAndCodecOneRemainsReadable"
+        ],
+        "skipped": 0
+      }
+    }
+  },
+  "client_integration_source_commit": null,
+  "created_at_utc": "2026-10-27T10:28:49.881588+00:00",
+  "format": "youspeed.packed-runtime.rollout-qa",
+  "mapped_payload_bytes": 0,
+  "native_build_input_equivalence": {
+    "all_native_inputs_identical": true,
+    "file_count": 24,
+    "path": "benchmarks/packed-runtime/results/native-C-to-H-equivalence-2026-10-27.json",
+    "sha256": "611988fd9332c95617ae06b32bf17af41b63b464e56e776d63f11687dd2c8774"
+  },
+  "native_pool_observed_incremental_rss_bytes": 51462144,
+  "native_pool_reader_count": 8,
+  "native_pool_rss_gate_bytes": 58720256,
+  "native_validation_report": {
+    "path": "benchmarks/packed-runtime/results/native-validation-2026-10-27.json",
+    "sha256": "1e9041544ccd3d826ff3e17fd4ca57576377d584e6228ac2a1f69a810a46ab59",
+    "source_commit_binding_verified": "a4d95ff16d83e1b5c67ee71c2b9106f41f53e352"
+  },
+  "notes": [
+    "Physical full BW storage parity/memory gates pass on both phones; all generic sign nodes match.",
+    "Final source-bound corrections pass physical iPhone33 and Android30 required tests; isolated hosts only.",
+    "Data C and F use byte-identical four builder sources. Runtime F differs only in client correction binding and delivery tooling; all23 native build inputs match C.",
+    "The legacy Karlsruhe alias is an explicit canonical data refresh, with old and actual-source sizes separated.",
+    "Physical functional baseline F is retained unchanged. H only corrects numeric observation projection; focused Android66/Swift2 checks and both builds validate that pure-logic delta."
+  ],
+  "observed_incremental_rss_gate_bytes": 67108864,
+  "physical_device_evidence": {
+    "android": {
+      "lookup_results_identical": true,
+      "mapped_payload_bytes": 0,
+      "observed_incremental_rss_bytes": 7692288,
+      "pool_lookup_results_identical": true,
+      "pool_observed_incremental_rss_bytes": 50262016,
+      "pool_report_sha256": "f95c3eefca86d7f65055d303e01818b601bd33bdbc4d0310816fcecdd59fd20b",
+      "report_sha256": "22ede459008663e64ada9026b73e5f5fb079495d67dca8bd6725754ec5dfb563",
+      "retained_reader_count": 8,
+      "storage_kernel_source_commit": "a4d95ff16d83e1b5c67ee71c2b9106f41f53e352"
+    },
+    "iphone": {
+      "lookup_results_identical": true,
+      "mapped_payload_bytes": 0,
+      "observed_incremental_rss_bytes": 8192000,
+      "pool_lookup_results_identical": true,
+      "pool_observed_incremental_rss_bytes": 48496640,
+      "pool_report_sha256": "37cc93cba40ac1f3702209a056c571d474f6c6310ee08bae8960409e5eaec106",
+      "report_sha256": "1e9ed5266d4bb52216803e011033d1e3e27912eac69f5cb650b9ef3f30a3db58",
+      "retained_reader_count": 8,
+      "storage_kernel_source_commit": "a4d95ff16d83e1b5c67ee71c2b9106f41f53e352"
+    }
+  },
+  "physical_devices_passed": [
+    "iphone",
+    "android"
+  ],
+  "physical_functional_baseline_commit": "97f13e545bef682f03462649ff17951da4b8c28c",
+  "physical_native_report_paths": {
+    "android": "benchmarks/packed-runtime/results/android-physical-validation-2026-10-27.json",
+    "iphone": "benchmarks/packed-runtime/results/iphone-physical-validation-2026-10-27.json"
+  },
+  "post_physical_baseline_validation": {
+    "android_arm64_build_passed": true,
+    "android_focused_tests_passed": 66,
+    "evidence": {
+      "android": {
+        "path": "shared/packed-runtime/results/platform-preflight/android-node-observation-projection.json",
+        "sha256": "dd03fbd8ddb4dbbbbd5c89a92d9c603d2845a022684eaf62a4fb37138fefc519"
+      },
+      "iphone_build": {
+        "path": "shared/packed-runtime/results/platform-preflight/ysp-ios-packed-projection-H-build-receipt.json",
+        "sha256": "886472b153c7ab466dd381c54cf423ef47ab11e3290192693b6b993f720e7435"
+      },
+      "iphone_tests": {
+        "path": "shared/packed-runtime/results/platform-preflight/ysp-ios-packed-projection-H-tests-summary.json",
+        "sha256": "6c66ac67c337878375403100e7f9e5c373113846d53dad02df7a6a28185c4c05"
+      }
+    },
+    "iphone_focused_tests_passed": 2,
+    "iphone_physical_architecture_build_passed": true,
+    "phone_reinstall_performed": false,
+    "runtime_source_commit": "e8cd2f56149a0fad90b8a9cca4f69564244c1101",
+    "scope": "Pure node numeric-observation projection only; no reference-policy, passage-lifecycle, native, data or cache-budget changes."
+  },
+  "publication_validator_required_sources": [
+    "android/app/src/main/cpp/packed_sqlite_jni.cpp",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeSqlDatabase.kt",
+    "iphone/SpeedConsumerApp/PackedBundleRuntime.swift",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp",
+    "shared/runtime-storage-prototype/packed_runtime.cpp",
+    "shared/runtime-storage-prototype/packed_runtime.h",
+    "shared/runtime-storage-prototype/packed_sqlite_vfs.cpp"
+  ],
+  "ready_for_rollout": true,
+  "runtime_source_commit": "e8cd2f56149a0fad90b8a9cca4f69564244c1101",
+  "runtime_source_sha256": {
+    "android/app/src/main/cpp/CMakeLists.txt": "dabc83678bdc77c0909cea0e0828e38d69cf768eb4ef3a6f347d0f63fac89939",
+    "android/app/src/main/cpp/packed_runtime_jni.cpp": "207bd719aeabaf4d624796f227c2867a2d77fd8c114ef0eb9fd63b6207a7db70",
+    "android/app/src/main/cpp/packed_sqlite_jni.cpp": "6b49421783d7667bd377af0280e130e7a5c6377f24e72223c72d97e658b43eb9",
+    "android/app/src/main/cpp/vendor/sqlite/sqlite3.c": "dc58f0b5b74e8416cc29b49163a00d6b8bf08a24dd4127652beaaae307bd1839",
+    "android/app/src/main/cpp/vendor/sqlite/sqlite3.h": "05c48cbf0a0d7bda2b6d0145ac4f2d3a5e9e1cb98b5d4fa9d88ef620e1940046",
+    "android/app/src/main/java/de/youspeed/android/alpha/AmendedNodePassageRuntime.kt": "76842545291cd508914254542f7d689fc9f4b01333c20fe0557192824f41e6a0",
+    "android/app/src/main/java/de/youspeed/android/alpha/ConditionalSpeedRules.kt": "38f42863b28550275050210147e3424920bab5220aa0f049d7414a0d32231920",
+    "android/app/src/main/java/de/youspeed/android/alpha/InventorySignRuntime.kt": "5a4e0ed90a355fd22d249ebe286661bda2b9fe21b9fa174fb89589a1184e1094",
+    "android/app/src/main/java/de/youspeed/android/alpha/MapDataAmendmentStore.kt": "db4de518e42ec8b81ae8bae7036786a08dd08c1deca01680bc12c55a2cf38efb",
+    "android/app/src/main/java/de/youspeed/android/alpha/PackedAmendmentBaseIdentity.kt": "2f9aa4dab97e7404c4a99a35b6ad4755e55b7fa54969f308ac7d73da9f0fd30c",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeGenericSpeedNodes.kt": "7eaf017438307e48858d9aa93df9212a2097dbc9dd918575c83af3ccfb7a5dc0",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeMapDatabase.kt": "4c6b4aefd2f8c36bdd9790e7a84d97e11a6e4dae6293efcf62f265050b049acc",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeSqlDatabase.kt": "ea6904243049a34de457bb5e0e913f9e18e10cf75c3ad5bb3173802f7f743a50",
+    "android/app/src/main/java/de/youspeed/android/alpha/V3SpeedLimitLookup.kt": "d994621ac7beb083a00ea625834c729026bf3ae30b772a94b7188858bb3c584b",
+    "iphone/SpeedConsumerApp/ConditionalSpeedRules.swift": "c7e14c5a24544ebb96fe51d7815dac5ee63d933c5eea8a877a8bde938b221de5",
+    "iphone/SpeedConsumerApp/InventorySignRuntime.swift": "7d72d933255b703204fe71674bacf519b5fc8979c057d16046b39298a7deabd9",
+    "iphone/SpeedConsumerApp/MapDataAmendmentStore.swift": "06a16736dd03fa4b3646f6f30625c690d0f454de9118cbcb2692071a86483835",
+    "iphone/SpeedConsumerApp/PackedBundleRuntime.swift": "0e5d8c5a96dff7bcd23475833a4b0f69748c397505556c58d09a1333ccb45af1",
+    "iphone/SpeedConsumerApp/PackedGenericSpeedSigns.swift": "faa757edebaa103633ef0eaac9a61eeb4b51939361d769a1cad83213e5300b00",
+    "iphone/SpeedConsumerApp/V3LookupResources.swift": "acfb1a7a5f3e62c8e4985fc8487543555dff7e8ff17f95ebd1d606daeef4188a",
+    "iphone/SpeedConsumerApp/V3SpeedLimitService.swift": "f04bc3aaf11c8494543295ac9edb3df921a85263622c2b9e165e5ee975dd8b4f",
+    "shared/packed-runtime/vendor/zstd/zstd.h": "9b4bc8245565c98ccfc61c07749928b57e7c0f6fddb0530c4f6aa1971893d88b",
+    "shared/packed-runtime/vendor/zstd/zstd_errors.h": "66a8c3f71d12ea6e797e4f622f31f3f8f81c41b36f48cad4f5de7d8bfb6aac0a",
+    "shared/packed-runtime/vendor/zstd/zstddeclib.c": "5eb38abe0a7eea13674b312a006df72002d4192f0f0b4d09e6f03fb927a1f3d0",
+    "shared/runtime-sign-nodes-prototype/CMakeLists.txt": "77000a0a178219087f0309e1326b09cefe12c369ad6714f66cb4f88c1dfd9d7f",
+    "shared/runtime-sign-nodes-prototype/main.cpp": "d613eb2ead548a99cf02e539bc198fb72847486b2b31b4c095813cecff285654",
+    "shared/runtime-sign-nodes-prototype/packed_nodes.h": "c66f7d78fe5fbf3e1ade6fb3c65002cc4b4dda7f3071deb175f2a00e424dd0a2",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp": "cf7be70c6c4b8d948ad32d764152a4e83963bd4c9eb2d34ff0c0992d5f169fef",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.h": "887323b28596b39347fd73b085237309d059bb17d518523146b6b9432b7239e0",
+    "shared/runtime-storage-prototype/CMakeLists.txt": "ccf246e1551a782b2fb77f0889e88c81b64fbdb0cce657ace3634a3fbe420cb7",
+    "shared/runtime-storage-prototype/bounded_file.h": "c33d6475718326a337c9273b51e61d90a4e2df57e92c602b310aa070778dfc31",
+    "shared/runtime-storage-prototype/main.cpp": "24296c67784de49b5cc383696ac339608fd312526f18eeca794eb45e4cdeed43",
+    "shared/runtime-storage-prototype/packed_runtime.cpp": "135846b20c2bbfaa14c488c6523884d295e9cc414bdcf952a0439cfa997cd78e",
+    "shared/runtime-storage-prototype/packed_runtime.h": "e1b1aecfd4cdf014cfe68bcec45a2770a7f94fe33f8b3309daea5ca82aab5ae3",
+    "shared/runtime-storage-prototype/packed_runtime_check.cpp": "29cd12d14d06908422a491ccdf00f052dbdcbc71cc636a94d63a09b05ba0f523",
+    "shared/runtime-storage-prototype/packed_sqlite_vfs.cpp": "ea69107b4e014dca760e28d615c08129f28abb09e3aa0ea570902b62c3739fa1",
+    "shared/runtime-storage-prototype/runtime_storage.cpp": "a6930f324aa1d7877c1d5b17df45af77e5bb7f4472dd4a891ca2407892e1632d",
+    "shared/runtime-storage-prototype/runtime_storage.h": "b4c47464ba0c3d18d21df0c05e7c4ef90b69ce648ef0c8d3b38e536098161eb6",
+    "shared/runtime-storage-prototype/zstd_decoder.c": "c38d437c7f19959656dbbcf0236554210e85a2bdd31dbeca4d349cec5f2baa1f"
+  },
+  "schema_version": 1,
+  "source_commit": "a4d95ff16d83e1b5c67ee71c2b9106f41f53e352",
+  "tested_bw_artifacts": {
+    "context": {
+      "bytes": 804040013,
+      "sha256": "66bff716fa57500f482f7a8707fb1fcfa059beadcecab260b34934b7576666e5"
+    },
+    "nodes": {
+      "bytes": 21205532,
+      "sha256": "1d56425b5628ce037e8e5a7e8b81e884adcc51f6af549c0b60aee3c3860358ec"
+    },
+    "roads": {
+      "bytes": 60413284,
+      "sha256": "14ebf59778ecaff7e5cd270363b97091a4f691ccac6083d438c2108090ca0f9e"
+    }
+  },
+  "uncommitted_driver_changes": "Approved isolated iPhone full-node proof only; production runtime/app/builder source is unchanged from source_commit.",
+  "validated_bw_result_path": "mapdata/build/packed-v4-2026-10-27/release-ready/baden-wuerttemberg/result.json",
+  "validated_bw_result_sha256": "81b83782561529e98c279eac8d37b4bafa7718cec2025e73d124cd28eeab8157"
+}

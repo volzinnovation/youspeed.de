@@ -35,6 +35,7 @@ actor V3BundleManager {
     private var coverageCacheUpdatedAt: Date?
     private var coverageCacheSelectedDBPath: String?
     private var cachedCoverageEntries: [CoverageEntry] = []
+    private var packedCatalogCache: (at: Date, value: PackedBundleCatalog?)?
 
     func configuredShardRegions(forCountryCode countryCode: String) -> [String] {
         guard let config = try? V3BundleTargetsConfig.loadBundled(),
@@ -188,7 +189,14 @@ actor V3BundleManager {
             guard installedDatabaseIsAvailable(at: dbURL) else {
                 continue
             }
-            let installedSize = (try? fileManager.attributesOfItem(atPath: dbURL.path))?[.size] as? NSNumber
+            var installedSize: Int64? = 0
+            for artifact in [manifest.db] + (manifest.packedBase?.artifacts ?? []) {
+                guard let size = try? fileSize(entry.appendingPathComponent(artifact.file)), let current = installedSize else {
+                    installedSize = nil; break
+                }
+                let addition = current.addingReportingOverflow(size)
+                installedSize = addition.overflow ? nil : addition.partialValue
+            }
             out.append(
                 DownloadedBundleInfo(
                     region: manifest.region,
@@ -197,7 +205,7 @@ actor V3BundleManager {
                     dbFileName: manifest.db.file,
                     dbPath: dbURL.path,
                     createdAtUTC: manifest.createdAtUTC,
-                    installedBytes: installedSize?.int64Value
+                    installedBytes: installedSize
                 )
             )
         }
@@ -401,6 +409,7 @@ actor V3BundleManager {
             "local_overrides.sqlite",
             "local_observation_store.sqlite",
             "local_overlay_cache.sqlite",
+            "map_data_amendments.sqlite",
             "osm-editor-export-outbox.sqlite",
         ]
         let sqliteCompanionSuffixes = ["", "-shm", "-wal"]
@@ -616,9 +625,10 @@ actor V3BundleManager {
     }
 
     func syncFromManifestURL(
-        _ manifestURL: URL,
+        _ requestedManifestURL: URL,
         onProgress: (@Sendable (BundleSyncProgress) -> Void)? = nil
     ) async throws -> BundleSyncResult {
+        var manifestURL = requestedManifestURL
         Self.logger.notice("sync manifest begin url=\(manifestURL.absoluteString, privacy: .public)")
         try? cleanupStagingArtifacts()
         emitProgress(
@@ -628,8 +638,29 @@ actor V3BundleManager {
             completedBytes: 0,
             totalBytes: 0
         )
-        let manifestData = try await downloadData(from: manifestURL)
-        let manifest = try decoder.decode(V3BundleManifest.self, from: manifestData)
+        var manifestData = try await downloadData(from: manifestURL)
+        var manifest = try decoder.decode(V3BundleManifest.self, from: manifestData)
+        // Existing/custom endpoints remain usable. The separate packed catalog
+        // is consulted only for the official repository's legacy manifests.
+        if manifest.packedBase == nil,
+           requestedManifestURL.host?.lowercased() == "github.com",
+           requestedManifestURL.path.lowercased().hasPrefix("/volzinnovation/youspeed.de/"),
+           let entry = try await packedCatalogEntry(region: manifest.region),
+           let candidate = entry.manifest.url.flatMap(URL.init(string:)) {
+            let packedData = try await downloadData(from: candidate)
+            guard packedData.count == entry.manifest.bytes else {
+                throw ConsumerAppError.checksum("Packed catalog manifest byte-count mismatch")
+            }
+            try validateSHA256(data: packedData, expectedHex: entry.manifest.sha256, label: "packed bundle manifest")
+            let packedManifest = try decoder.decode(V3BundleManifest.self, from: packedData)
+            guard packedManifest.region == manifest.region, packedManifest.bundleVersion == entry.bundleVersion,
+                  packedManifest.countryCode?.uppercased() == entry.countryCode.uppercased(), packedManifest.packedBase != nil else {
+                throw ConsumerAppError.invalidManifest("Packed catalog manifest identity mismatch")
+            }
+            manifestURL = candidate
+            manifestData = packedData
+            manifest = packedManifest
+        }
         try validateManifestCompatibility(manifest)
         Self.logger.notice(
             "sync manifest loaded version=\(manifest.bundleVersion, privacy: .public) region=\(manifest.region, privacy: .public) has_parts=\((manifest.dbParts?.isEmpty == false), privacy: .public)"
@@ -644,6 +675,9 @@ actor V3BundleManager {
                let currentDB = try activeDatabaseURL() {
                 let installedSHA = installedDatabaseSHA256(current, at: currentDB)
                 targetIdentityChanged = installedSHA != nil && installedSHA != expectedInstalledSHA256(for: manifest.db)
+                let savedManifest = decodeManifestIfPresent(at: currentDB.deletingLastPathComponent().appendingPathComponent("bundle-manifest.v3.json"))
+                targetIdentityChanged = targetIdentityChanged
+                    || packedIdentity(savedManifest?.packedBase) != packedIdentity(manifest.packedBase)
                 if !targetIdentityChanged {
                     emitProgress(
                         onProgress,
@@ -669,7 +703,7 @@ actor V3BundleManager {
             // A date/version is only meaningful within one region. Reusing a
             // different region's DB produces an invalid zero-hop delta when
             // releases share a date, or patches the wrong base on later dates.
-            if !forceFullReload,
+            if manifest.packedBase == nil, !forceFullReload,
                let current,
                current.region == manifest.region,
                current.bundleVersion != manifest.bundleVersion,
@@ -713,6 +747,34 @@ actor V3BundleManager {
             Self.logger.error("sync manifest failed error=\(String(describing: error), privacy: .public)")
             throw error
         }
+    }
+
+    private func packedCatalogEntry(region: String) async throws -> PackedBundleCatalog.Entry? {
+        if let cache = packedCatalogCache, Date().timeIntervalSince(cache.at) < 60 {
+            return cache.value?.bundles.first { $0.region == region }
+        }
+        let catalogURL = PackedBundleCatalog.releaseURL
+        let resolved: URL
+        do { resolved = try await resolveGitHubReleaseAssetAPIURLIfNeeded(catalogURL) }
+        catch {
+            if error.localizedDescription.contains("status=404") {
+                packedCatalogCache = (Date(), nil)
+                return nil
+            }
+            throw error
+        }
+        let (data, response) = try await session.data(for: makeRequest(url: resolved))
+        guard let response = response as? HTTPURLResponse else { throw ConsumerAppError.network("Non-HTTP packed catalog response") }
+        if response.statusCode == 404 {
+            packedCatalogCache = (Date(), nil)
+            return nil
+        }
+        guard (200...299).contains(response.statusCode) else {
+            throw ConsumerAppError.network("Packed catalog HTTP status=\(response.statusCode)")
+        }
+        let catalog = try PackedBundleCatalog.decode(data)
+        packedCatalogCache = (Date(), catalog)
+        return catalog.bundles.first { $0.region == region }
     }
 
     private func tryApplyDelta(
@@ -939,10 +1001,13 @@ actor V3BundleManager {
             completedBytes: 0,
             totalBytes: 0
         )
-        let requiredBytes = requiredDiskBytes(for: manifest.db)
+        let requiredBytes = ([manifest.db] + (manifest.packedBase?.artifacts ?? [])).reduce(Int64(0)) { total, artifact in
+            let next = requiredDiskBytes(for: artifact)
+            return total > Int64.max - next ? Int64.max : total + next
+        }
         try ensureSufficientDiskSpace(requiredBytes: requiredBytes, reason: "bundle download")
 
-        let stagingDB: URL
+        var stagingDB: URL
         if let dbParts = manifest.dbParts, !dbParts.isEmpty {
             stagingDB = try await writeMultipartStagingDB(
                 parts: dbParts,
@@ -988,6 +1053,13 @@ actor V3BundleManager {
             )
         }
 
+        if manifest.packedBase != nil {
+            stagingDB = try await stagePackedGeneration(database: stagingDB, manifest: manifest,
+                                                       manifestURL: manifestURL, onProgress: onProgress)
+        }
+        let packedStagingDirectory = manifest.packedBase == nil ? nil : stagingDB.deletingLastPathComponent()
+        defer { if let packedStagingDirectory { try? removeItemIfExists(at: packedStagingDirectory) } }
+
         let installedSHA: String
         do {
             emitProgress(
@@ -1000,10 +1072,9 @@ actor V3BundleManager {
             // Full-file SHA256 was already validated during download/assembly.
             // Keep startup responsive by skipping heavy PRAGMA quick_check here.
             try quickValidateDB(at: stagingDB, runQuickCheck: false)
-            let bundleDir = try bundlesDir().appendingPathComponent(
-                bundleDirectoryName(region: manifest.region, bundleVersion: manifest.bundleVersion),
-                isDirectory: true
-            )
+            try validatePackedGeneration(database: stagingDB, manifest: manifest)
+            let bundleDir = try packedStagingDirectory ?? bundlesDir().appendingPathComponent(
+                bundleDirectoryName(region: manifest.region, bundleVersion: manifest.bundleVersion), isDirectory: true)
             try await installPenaltyRules(
                 manifest: manifest,
                 manifestURL: manifestURL,
@@ -1031,6 +1102,45 @@ actor V3BundleManager {
             details: "full bundle activated",
             dbSHA256: installedSHA
         )
+    }
+
+    /// All immutable files are validated in one private staging directory. A
+    /// partially downloaded generation is never exposed by active_bundle.json.
+    private func stagePackedGeneration(
+        database: URL, manifest: V3BundleManifest, manifestURL: URL,
+        onProgress: (@Sendable (BundleSyncProgress) -> Void)?
+    ) async throws -> URL {
+        guard let packed = manifest.packedBase else { return database }
+        try packed.validate(databaseFile: manifest.db.file)
+        let directory = try stagingDirectory().appendingPathComponent("packed-\(UUID().uuidString)", isDirectory: true)
+        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        do {
+            let context = directory.appendingPathComponent(manifest.db.file)
+            try fileManager.moveItem(at: database, to: context)
+            for artifact in packed.artifacts {
+                let source = try resolveArtifactURL(artifact, relativeTo: manifestURL)
+                let download = try await downloadFile(from: source) { completed, total in
+                    onProgress?(BundleSyncProgress(stage: .downloading, detail: "Downloading \(artifact.file)",
+                        completedBytes: completed, totalBytes: total ?? artifact.bytes, partDownloads: []))
+                }
+                defer { try? removeItemIfExists(at: download) }
+                guard try fileSize(download) == artifact.bytes else {
+                    throw ConsumerAppError.checksum("Byte-count mismatch for packed artifact \(artifact.file)")
+                }
+                try validateSHA256(fileAt: download, expectedHex: artifact.sha256, label: artifact.file)
+                let materialized = try prepareDownloadedDB(artifactFile: download, artifact: artifact,
+                    version: manifest.bundleVersion, onProgress: onProgress)
+                defer { try? removeItemIfExists(at: materialized) }
+                _ = try validatePreparedDatabase(at: materialized, artifact: artifact, label: artifact.file,
+                    verifiedSHA256: normalizedCompression(for: artifact) == nil ? artifact.sha256 : expectedInstalledSHA256(for: artifact))
+                try fileManager.moveItem(at: materialized, to: directory.appendingPathComponent(artifact.file))
+            }
+            try JSONEncoder().encode(manifest).write(to: directory.appendingPathComponent("bundle-manifest.v3.json"), options: .atomic)
+            return context
+        } catch {
+            try? removeItemIfExists(at: directory)
+            throw error
+        }
     }
 
     private func installPenaltyRules(
@@ -1098,10 +1208,21 @@ actor V3BundleManager {
             label: "materialized bundle db",
             verifiedSHA256: verifiedDatabaseSHA256
         )
+        let baseDirectoryName = bundleDirectoryName(region: manifest.region, bundleVersion: manifest.bundleVersion)
+        let directoryName: String
+        if let packed = manifest.packedBase {
+            let identities = ([manifest.db] + packed.artifacts).map { expectedInstalledSHA256(for: $0) }.joined(separator: "|")
+            let digest = SHA256.hash(data: Data(identities.utf8)).map { String(format: "%02x", $0) }.joined()
+            directoryName = baseDirectoryName + "-" + digest.prefix(16)
+        } else { directoryName = baseDirectoryName }
         let bundleDir = try bundlesDir().appendingPathComponent(
-            bundleDirectoryName(region: manifest.region, bundleVersion: manifest.bundleVersion),
+            directoryName,
             isDirectory: true
         )
+        if manifest.packedBase != nil {
+            return try activatePreparedPackedGeneration(database: preparedDB, directory: bundleDir,
+                                                       manifest: manifest, verifiedSHA: verifiedSHA)
+        }
         if !fileManager.fileExists(atPath: bundleDir.path) {
             try fileManager.createDirectory(at: bundleDir, withIntermediateDirectories: true)
         }
@@ -1163,6 +1284,56 @@ actor V3BundleManager {
         _ = mode
         _ = details
         return verifiedSHA
+    }
+
+    private func activatePreparedPackedGeneration(database: URL, directory: URL,
+                                                   manifest: V3BundleManifest, verifiedSHA: String) throws -> String {
+        guard let packed = manifest.packedBase else { throw ConsumerAppError.invalidManifest("Missing packed generation") }
+        let staged = database.deletingLastPathComponent()
+        for artifact in packed.artifacts {
+            _ = try validatePreparedDatabase(at: staged.appendingPathComponent(artifact.file), artifact: artifact,
+                label: artifact.file, verifiedSHA256: expectedInstalledSHA256(for: artifact))
+        }
+        try JSONEncoder().encode(manifest).write(to: staged.appendingPathComponent("bundle-manifest.v3.json"), options: .atomic)
+        if fileManager.fileExists(atPath: directory.path) {
+            // An existing generation is immutable. Reuse it only after proving
+            // every byte matches; never replace files underneath live readers.
+            for artifact in [manifest.db] + packed.artifacts {
+                _ = try validatePreparedDatabase(at: directory.appendingPathComponent(artifact.file),
+                    artifact: artifact, label: "existing packed generation \(artifact.file)")
+            }
+            try removeItemIfExists(at: staged)
+        } else {
+            try fileManager.moveItem(at: staged, to: directory)
+        }
+        try writeActiveState(ActiveBundleState(region: manifest.region, bundleVersion: manifest.bundleVersion,
+            dbFileName: manifest.db.file, activatedAtUTC: nowUTC(),
+            dbPath: directory.appendingPathComponent(manifest.db.file).path, dbSHA256: verifiedSHA))
+        try? pruneInactiveBundles(keepingVersions: [manifest.bundleVersion])
+        return verifiedSHA
+    }
+
+    private func packedIdentity(_ packed: BundlePackedBase?) -> String? {
+        packed.map { base in
+            "\(base.version)|" + base.artifacts.map { "\($0.file):\(expectedInstalledSHA256(for: $0)):\(expectedInstalledBytes(for: $0))" }.joined(separator: "|")
+        }
+    }
+
+    private func validatePackedGeneration(database: URL, manifest: V3BundleManifest) throws {
+        guard let packed = manifest.packedBase else { return }
+        guard try PackedBundleRuntime.isPackedContext(at: database) else {
+            throw ConsumerAppError.invalidManifest("V4 context artifact is not a packed SQLite image")
+        }
+        let db = try PackedBundleRuntime.openReadOnly(path: database.path)
+        defer { sqlite3_close(db) }
+        guard PackedBundleRuntime.metadata("packed_generation", database: db) == manifest.bundleVersion,
+              PackedBundleRuntime.metadata("packed_geometry_file", database: db) == packed.roads.file,
+              PackedBundleRuntime.metadata("packed_geometry_sha256", database: db)?.lowercased() == expectedInstalledSHA256(for: packed.roads) else {
+            throw ConsumerAppError.invalidManifest("Packed context and manifest refer to different generations")
+        }
+        if let nodes = packed.nodes {
+            _ = try PackedGenericSpeedSignSource(url: database.deletingLastPathComponent().appendingPathComponent(nodes.file))
+        }
     }
 
     private func recoverFromActiveState(
@@ -1253,7 +1424,8 @@ actor V3BundleManager {
                 continue
             }
 
-            guard (try? quickValidateDB(at: dbURL, runQuickCheck: false)) != nil else { continue }
+            guard (try? quickValidateDB(at: dbURL, runQuickCheck: false)) != nil,
+                  (try? validatePackedGeneration(database: dbURL, manifest: manifest)) != nil else { continue }
             Self.logger.notice("startup_recovery bundles available version=\(versionName, privacy: .public) db=\(dbFileName, privacy: .public)")
 
             let state = ActiveBundleState(
@@ -1261,6 +1433,7 @@ actor V3BundleManager {
                 bundleVersion: manifest.bundleVersion,
                 dbFileName: dbFileName,
                 activatedAtUTC: nowUTC(),
+                dbPath: manifest.packedBase == nil ? nil : dbURL.path,
                 dbSHA256: expectedInstalledSHA256(for: manifest.db)
             )
             try writeActiveState(state)
@@ -2685,7 +2858,19 @@ actor V3BundleManager {
               attributes[.type] as? FileAttributeType == .typeRegular else {
             return false
         }
-        return ((attributes[.size] as? NSNumber)?.int64Value ?? 0) > 0
+        guard ((attributes[.size] as? NSNumber)?.int64Value ?? 0) > 0 else { return false }
+        let manifestURL = url.deletingLastPathComponent().appendingPathComponent("bundle-manifest.v3.json")
+        if let manifest = decodeManifestIfPresent(at: manifestURL), let packed = manifest.packedBase {
+            guard (try? packed.validate(databaseFile: manifest.db.file)) != nil else { return false }
+            for artifact in packed.artifacts {
+                let companion = url.deletingLastPathComponent().appendingPathComponent(artifact.file)
+                guard let size = try? fileSize(companion), size == expectedInstalledBytes(for: artifact) else { return false }
+            }
+        } else if url.pathExtension.lowercased() == "yspc" {
+            // A packed context without its generation manifest is incomplete.
+            return false
+        }
+        return true
     }
 
     private func fileSHA256(at url: URL) throws -> String {
@@ -2837,19 +3022,15 @@ actor V3BundleManager {
     }
 
     func quickValidateDB(at url: URL, runQuickCheck: Bool = true) throws {
-        var db: OpaquePointer?
-        let encodedPath = url.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? url.path
-        let uri = "file:\(encodedPath)?mode=ro&immutable=1"
-        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK, let db else {
-            throw ConsumerAppError.sqlite("sqlite open failed for \(url.path)")
-        }
+        let db = try PackedBundleRuntime.openReadOnly(path: url.path)
         defer { sqlite3_close(db) }
 
         try BundleCompatibility.validateSettlementCapability(db: db)
         let required = ["ways", "ways_rtree", "way_geom"]
         for table in required {
             let escaped = table.replacingOccurrences(of: "'", with: "''")
-            let sql = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='\(escaped)' LIMIT 1"
+            let acceptedKinds = table == "way_geom" ? "('table','view')" : "('table')"
+            let sql = "SELECT 1 FROM sqlite_master WHERE type IN \(acceptedKinds) AND name='\(escaped)' LIMIT 1"
             var stmt: OpaquePointer?
             guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK,
                   let stmt else {

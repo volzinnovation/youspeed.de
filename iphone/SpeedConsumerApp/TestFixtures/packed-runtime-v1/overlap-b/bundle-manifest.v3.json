@@ -1,0 +1,28 @@
+{
+  "bundle_version": "overlap-shared-v1",
+  "country_code": "DEU",
+  "created_at_utc": "2026-10-27T00:00:00Z",
+  "db": {
+    "bytes": 1126,
+    "file": "context.yspc",
+    "sha256": "8f13c97a74a8160f6a6988f32863c9d1ffb1540be9a3bbb58223bfb202ae9304"
+  },
+  "format": "youspeed.v4.bundle.manifest",
+  "min_app_version": "1.6",
+  "packed_base": {
+    "nodes": {
+      "bytes": 453,
+      "file": "nodes.yspn",
+      "sha256": "2e9920bff651819a8ec0529f00ed4f0338ed71a6256b830391258c11f9dff99d"
+    },
+    "roads": {
+      "bytes": 210,
+      "file": "roads.yspg",
+      "sha256": "17135c12503f3cf0a5f645b01df71e4ff0adac7ccd53957b1b1b76c3da3fb789"
+    },
+    "version": 1
+  },
+  "region": "overlap-b",
+  "schema_version": 1,
+  "variant": "v4"
+}

@@ -1,0 +1,31 @@
+{
+  "release_tag": "packed-runtime-v1-latest",
+  "url": "https://github.com/volzinnovation/youspeed.de/releases/tag/packed-runtime-v1-latest",
+  "source_commit": "e8cd2f56149a0fad90b8a9cca4f69564244c1101",
+  "published": true,
+  "all_asset_hashes_verified": true,
+  "assets": [
+    {
+      "file": "catalog.json",
+      "bytes": 27533,
+      "sha256": "f06bbf124a0a1cc52fc8e16170de5a31ddcf1f48d33ed1fde03ca2b873394155"
+    },
+    {
+      "file": "size-comparison.csv",
+      "bytes": 15143,
+      "sha256": "c04ebb319f6372d54c265b76aef917cadd04550f604f98d6cf19be74b8b608a8"
+    },
+    {
+      "file": "size-comparison.json",
+      "bytes": 64089,
+      "sha256": "a0e56667106607db79f64196a5f2368717425e8c5a54cd84f1496a8a671f4584"
+    },
+    {
+      "file": "rollout-qa-2026-10-27.json",
+      "bytes": 20334,
+      "sha256": "a80680f216f1dac735e1587f8a0cb8449288c1863c12ff1ea2444beecbeb6f58"
+    }
+  ],
+  "data_release_count": 55,
+  "catalog_region_count": 54
+}

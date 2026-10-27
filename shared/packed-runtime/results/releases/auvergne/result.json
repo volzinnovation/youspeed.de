@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "d7200831b9730e1f075846d09a4ea2d609de7cfbe072ac08d2cee7b84eb670b3",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -16.7160255502679,
+  "elapsed_seconds": 53.01231802800001,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -73.5037710978125,
+  "local_source_upgrade": false,
+  "node_count": 3122,
+  "packed_download_bytes": 108853458,
+  "packed_installed_bytes": 112076352,
+  "previous_published_download_bytes": 130701565,
+  "region": "auvergne",
+  "release_files": [
+    {
+      "bytes": 92580772,
+      "file": "auvergne_2026-10-27-packed-v1.context.yspc",
+      "sha256": "c5a204a634490d173fa0c6729ae698432ac5f1d4e217c86a7e1eedf183bb1f30"
+    },
+    {
+      "bytes": 891406,
+      "file": "auvergne_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "bf4f684f8cd3b18f9678e97430d8d5d700fdec66c103e4efdeab670301774b59"
+    },
+    {
+      "bytes": 15381280,
+      "file": "auvergne_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "b632903b39ebacf7f894c22c2e35e17f92c988951b256ec7d0b4d482f0af17ae"
+    },
+    {
+      "bytes": 29558,
+      "file": "auvergne_2026-10-27-packed-v1_auvergne_2026-09-28-refresh-8177c59.poly",
+      "sha256": "65525522ac09a0762f1d65cc78816de8ab850bd79613d0b1c0622eb7fa883ad5"
+    },
+    {
+      "bytes": 9366,
+      "file": "auvergne_2026-10-27-packed-v1_auvergne_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1915,
+      "file": "auvergne_2026-10-27-packed-v1_validation.json",
+      "sha256": "f028217b7e95454964c800a68015404c1a949995cfe75192527fb09b0885e55d"
+    },
+    {
+      "bytes": 5043,
+      "file": "auvergne_manifest.json",
+      "sha256": "4b7a62fbc0119ac07e5f4639433ca8f7d0158c7b715781787f58a4f1064be049"
+    }
+  ],
+  "release_tag": "auvergne-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 130701565,
+  "source_installed_bytes": 422989824,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 174,
+    "membership_count": 3881,
+    "node_count": 3122,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "49fffeec510de5f5daa5c5c0d77524d5a1c9309b25819561ebebebe727312682",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "4e74d0a179be6881a5f9ed561d6b51e6b7e3d14bebc3df5f914494011126cf0e",
+    "unassociated_node_count": 692
+  },
+  "source_release_tag": "auvergne",
+  "source_sqlite_sha256": "4e74d0a179be6881a5f9ed561d6b51e6b7e3d14bebc3df5f914494011126cf0e",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 241672,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 44014
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 44014
+      },
+      {
+        "name": "city_boundary",
+        "rows": 1359
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 1359
+      },
+      {
+        "name": "city_place",
+        "rows": 15283
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 15283
+      },
+      {
+        "name": "city_ring",
+        "rows": 1364
+      },
+      {
+        "name": "city_tile",
+        "rows": 13246
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 246
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 1089
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 1089
+      },
+      {
+        "name": "settlement_area",
+        "rows": 12855
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 13685
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 290164
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 3203
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 240113
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 240113
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 470
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 470
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 17729
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 75183
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 241672
+      },
+      {
+        "name": "way_geom",
+        "rows": 241672
+      },
+      {
+        "name": "way_links",
+        "rows": 359770
+      },
+      {
+        "name": "ways",
+        "rows": 241672
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 241672
+      }
+    ]
+  }
+}

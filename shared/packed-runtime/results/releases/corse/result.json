@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "fba4b4fe5e13cea52af6f5c2a6b73dd2b37e53cc9dbd571053cfd9cb72a84ca2",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -19.07807182077016,
+  "elapsed_seconds": 17.482587534999965,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -74.73799832250776,
+  "local_source_upgrade": false,
+  "node_count": 287,
+  "packed_download_bytes": 20074327,
+  "packed_installed_bytes": 20639791,
+  "previous_published_download_bytes": 24807030,
+  "region": "corse",
+  "release_files": [
+    {
+      "bytes": 16848130,
+      "file": "corse_2026-10-27-packed-v1.context.yspc",
+      "sha256": "c10cda6f841e679c4a675fe2f0424ad6c51370b5157b8f9adfe6644df33201f5"
+    },
+    {
+      "bytes": 65870,
+      "file": "corse_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "1959601d16d3249e8540eee7e49f472ae504e6de135f7f1d540924ae2c9428db"
+    },
+    {
+      "bytes": 3160327,
+      "file": "corse_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "591807100e18b9762629d3528fa2ae1a3a1ce9e54f3280b8f92446690be3771f"
+    },
+    {
+      "bytes": 294,
+      "file": "corse_2026-10-27-packed-v1_corse_2026-09-28-refresh-8177c59.poly",
+      "sha256": "2288b4a29bb119ed981191f2d13e50a4ca99fded8d34c1292e235eb27e338efc"
+    },
+    {
+      "bytes": 9366,
+      "file": "corse_2026-10-27-packed-v1_corse_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1883,
+      "file": "corse_2026-10-27-packed-v1_validation.json",
+      "sha256": "c1913a5ded1e96393728e2a9d59caab6352a4760e702b65e48d09a0096a12123"
+    },
+    {
+      "bytes": 4958,
+      "file": "corse_manifest.json",
+      "sha256": "d6d08ec124b1c5946cd27d78eb232d91f7e9add6a10783703eb1d3ed61629bb9"
+    }
+  ],
+  "release_tag": "corse-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 24807030,
+  "source_installed_bytes": 81702912,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 6,
+    "membership_count": 122,
+    "node_count": 287,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "41c9fc5ab84ac7f2c107f34d38b63f2908973c4d7b81447387a93d7a6d6767fe",
+    "source_pbf_timestamp": "2026-07-03T04:51:13Z",
+    "source_sqlite_sha256": "888d723cc2a10b14d29f878b3a5bf1a2ac9dda1d9e4a4166f933c6ad2cd29ac2",
+    "unassociated_node_count": 205
+  },
+  "source_release_tag": "corse",
+  "source_sqlite_sha256": "888d723cc2a10b14d29f878b3a5bf1a2ac9dda1d9e4a4166f933c6ad2cd29ac2",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 43679,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 6788
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 6788
+      },
+      {
+        "name": "city_boundary",
+        "rows": 364
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 364
+      },
+      {
+        "name": "city_place",
+        "rows": 1559
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 1559
+      },
+      {
+        "name": "city_ring",
+        "rows": 839
+      },
+      {
+        "name": "city_tile",
+        "rows": 3893
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 0
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 0
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 0
+      },
+      {
+        "name": "settlement_area",
+        "rows": 2484
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 2567
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 52430
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 205
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 43628
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 43628
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 51
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 51
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 2202
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 8753
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 43679
+      },
+      {
+        "name": "way_geom",
+        "rows": 43679
+      },
+      {
+        "name": "way_links",
+        "rows": 55822
+      },
+      {
+        "name": "ways",
+        "rows": 43679
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 43679
+      }
+    ]
+  }
+}

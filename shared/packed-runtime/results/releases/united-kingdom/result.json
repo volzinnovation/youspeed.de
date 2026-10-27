@@ -1,0 +1,122 @@
+{
+  "build_cache_identity": "ecac81e4bc3fd3c54ae54cc67a9eccdaad7ee89bb1c585bfa98287e76f27438b",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -11.666341355281062,
+  "elapsed_seconds": 1098.689747965,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -60.050840596323866,
+  "local_source_upgrade": false,
+  "node_count": 16419,
+  "packed_download_bytes": 685138908,
+  "packed_installed_bytes": 749919433,
+  "previous_published_download_bytes": 775626096,
+  "region": "united-kingdom",
+  "release_files": [
+    {
+      "bytes": 462726869,
+      "file": "united-kingdom_2026-10-27-packed-v1.context.yspc",
+      "sha256": "91e3fec9b0abd721449a1c58409de55d1d88e02d5677a6674f6cc5deb8ad4d8a"
+    },
+    {
+      "bytes": 4168818,
+      "file": "united-kingdom_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "c2f1829c79ff531bf0a8fdbaabf11a638f5f06879c3314dfafc4edd81fe8c278"
+    },
+    {
+      "bytes": 218243221,
+      "file": "united-kingdom_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "f656e47518d4c002e55f24da70f2ab6965d2e1f8f0787cf050b5af1966862e43"
+    },
+    {
+      "bytes": 4809,
+      "file": "united-kingdom_2026-10-27-packed-v1_united-kingdom.poly",
+      "sha256": "ba333290c6eb03f983eb63b3b56e3bd25476ff64acb730287e5c105953665439"
+    },
+    {
+      "bytes": 863,
+      "file": "united-kingdom_2026-10-27-packed-v1_validation.json",
+      "sha256": "18e01f97c191d0363c7e6914dc08b7d646fe5436ce6467e306c41148f319cbcf"
+    },
+    {
+      "bytes": 4406,
+      "file": "united-kingdom_manifest.json",
+      "sha256": "61f8a7bdc6fcc67c3809bc6a1422b39f84864715aa1ddd07cd8f48303158575d"
+    }
+  ],
+  "release_tag": "united-kingdom-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-03-16",
+  "source_download_bytes": 775626096,
+  "source_installed_bytes": 1877184512,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 713,
+    "membership_count": 8538,
+    "node_count": 16419,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "a8fd42d5c3037b20f07093d33788afcd016ebb4fd652e38c773fd405ccc9b9ad",
+    "source_pbf_timestamp": "2026-03-16T21:21:01Z",
+    "source_sqlite_sha256": "b949ef0a6e815ddd991d6b58eb88fa06fd5257dedb3bf7d94adb1b4a42cdc546",
+    "unassociated_node_count": 9045
+  },
+  "source_release_tag": "united-kingdom",
+  "source_sqlite_sha256": "b949ef0a6e815ddd991d6b58eb88fa06fd5257dedb3bf7d94adb1b4a42cdc546",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 4883542,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 754804
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 754804
+      },
+      {
+        "name": "city_boundary",
+        "rows": 0
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 0
+      },
+      {
+        "name": "city_place",
+        "rows": 36797
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 36797
+      },
+      {
+        "name": "city_ring",
+        "rows": 0
+      },
+      {
+        "name": "city_tile",
+        "rows": 0
+      },
+      {
+        "name": "way_geom",
+        "rows": 4883542
+      },
+      {
+        "name": "ways",
+        "rows": 4883542
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 4883542
+      }
+    ]
+  }
+}

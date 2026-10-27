@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "89b0c8e1c062a94665948779d01756310b051d0eacfdf9de6699e3b4082c4fa9",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -15.969614193631632,
+  "elapsed_seconds": 130.60227485499996,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -73.22632373261804,
+  "local_source_upgrade": false,
+  "node_count": 2296,
+  "packed_download_bytes": 132994295,
+  "packed_installed_bytes": 137026390,
+  "previous_published_download_bytes": 158269290,
+  "region": "poitou-charentes",
+  "release_files": [
+    {
+      "bytes": 114016679,
+      "file": "poitou-charentes_2026-10-27-packed-v1.context.yspc",
+      "sha256": "12115eaaba1eaea7d7e89ee9656f1396991a7774a941d3d025d98960042891d8"
+    },
+    {
+      "bytes": 565666,
+      "file": "poitou-charentes_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "64b0135102f983f20c1088d985e63a5d1d4ede6b62b26f2fcad2cabad2df1c21"
+    },
+    {
+      "bytes": 18411950,
+      "file": "poitou-charentes_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "da98ee749c75f54451b367a318f1ff2ce1ffa842081e71fd0513048e7f2cf915"
+    },
+    {
+      "bytes": 21371,
+      "file": "poitou-charentes_2026-10-27-packed-v1_poitou-charentes_2026-09-28-refresh-8177c59.poly",
+      "sha256": "ee04dd34e92ccfd7a74ebf4d05b04b280fe3fc531af431e464be99db0a1962c9"
+    },
+    {
+      "bytes": 9366,
+      "file": "poitou-charentes_2026-10-27-packed-v1_poitou-charentes_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1912,
+      "file": "poitou-charentes_2026-10-27-packed-v1_validation.json",
+      "sha256": "ef84399b7cc630da7d906af4d8864e70b4679ee11c7b85a3d50ac9bfc4d74754"
+    },
+    {
+      "bytes": 5244,
+      "file": "poitou-charentes_manifest.json",
+      "sha256": "e13e95b0e3675229f2d2f646e77b86ef4bee4f0b2017815b8823393db272bc39"
+    }
+  ],
+  "release_tag": "poitou-charentes-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 158269290,
+  "source_installed_bytes": 511795200,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 38,
+    "membership_count": 1487,
+    "node_count": 2296,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "e049f1632f0d24e9c835eda4fbc535b279e67b1c95e5f2f578b1adf02515a82d",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "6ce5ef4b39ade7425e1fc7e0b6ab6ce7f09275fbe906ce3118b039177f632609",
+    "unassociated_node_count": 1299
+  },
+  "source_release_tag": "poitou-charentes",
+  "source_sqlite_sha256": "6ce5ef4b39ade7425e1fc7e0b6ab6ce7f09275fbe906ce3118b039177f632609",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 309817,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 49687
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 49687
+      },
+      {
+        "name": "city_boundary",
+        "rows": 1603
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 1603
+      },
+      {
+        "name": "city_place",
+        "rows": 15478
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 15478
+      },
+      {
+        "name": "city_ring",
+        "rows": 1639
+      },
+      {
+        "name": "city_tile",
+        "rows": 14981
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 84
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 388
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 388
+      },
+      {
+        "name": "settlement_area",
+        "rows": 12262
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 12558
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 383038
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 1765
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 308943
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 308943
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 486
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 486
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 18060
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 65071
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 309817
+      },
+      {
+        "name": "way_geom",
+        "rows": 309817
+      },
+      {
+        "name": "way_links",
+        "rows": 433182
+      },
+      {
+        "name": "ways",
+        "rows": 309817
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 309817
+      }
+    ]
+  }
+}

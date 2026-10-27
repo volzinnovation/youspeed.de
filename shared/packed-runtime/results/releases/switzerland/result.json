@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "821b6770b0ac098290b6dbe44391fa7f577f6bab25f011a549f76cada10508d9",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -15.918535205357076,
+  "elapsed_seconds": 290.78013840799997,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -71.23843474237486,
+  "local_source_upgrade": false,
+  "node_count": 10464,
+  "packed_download_bytes": 350072691,
+  "packed_installed_bytes": 361990244,
+  "previous_published_download_bytes": 416349420,
+  "region": "switzerland",
+  "release_files": [
+    {
+      "bytes": 301153370,
+      "file": "switzerland_2026-10-27-packed-v1.context.yspc",
+      "sha256": "c834b0f50e953cc7ae327b926db890cb0b0ff07087472a66fcf8c705050e21a8"
+    },
+    {
+      "bytes": 2499473,
+      "file": "switzerland_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "2f83ed6845a280afa92483254382c9e94870a2ef97c31766374a8ca73b816dd9"
+    },
+    {
+      "bytes": 46419848,
+      "file": "switzerland_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "69be968786ec30230b85394fa3e89377ea5a22534c1a3e7db6a27c08f14b09ce"
+    },
+    {
+      "bytes": 26551,
+      "file": "switzerland_2026-10-27-packed-v1_switzerland_2026-09-28-refresh-8177c59.poly",
+      "sha256": "4f254d87aaa51f0903df76052c114685672ccf2de043a334c246d7a3fb8db179"
+    },
+    {
+      "bytes": 6980,
+      "file": "switzerland_2026-10-27-packed-v1_switzerland_2026-09-28-refresh-8177c59_CHE-rules.json",
+      "sha256": "ce06277387b3de4420ecf5cf52f923c9ca46261f8b4f195c6e07bcc09478c8e2"
+    },
+    {
+      "bytes": 1923,
+      "file": "switzerland_2026-10-27-packed-v1_validation.json",
+      "sha256": "783941a494986cf29490b7aa1e69728e22f8bf9a16cb5c3e504a7ce902640561"
+    },
+    {
+      "bytes": 5115,
+      "file": "switzerland_manifest.json",
+      "sha256": "621c6a53f63667d3d01db04e6a9fa39bbde4267599687e2fa25c144c14ecb4f7"
+    }
+  ],
+  "release_tag": "switzerland-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 416349420,
+  "source_installed_bytes": 1258590208,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 14,
+    "membership_count": 5859,
+    "node_count": 10464,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "b82dadd12a069f5667c7bfdd3d038962b88e8fb1c70185c41555c4adab40ea8e",
+    "source_pbf_timestamp": "2026-09-15T20:20:37Z",
+    "source_sqlite_sha256": "3ad91096c6c7dc057eedf26bf1b2555cc95b50d7cb02d7c9b3dd9d05fec44401",
+    "unassociated_node_count": 6536
+  },
+  "source_release_tag": "switzerland",
+  "source_sqlite_sha256": "3ad91096c6c7dc057eedf26bf1b2555cc95b50d7cb02d7c9b3dd9d05fec44401",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 888501,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 131970
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 131970
+      },
+      {
+        "name": "city_boundary",
+        "rows": 2521
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 2521
+      },
+      {
+        "name": "city_place",
+        "rows": 10571
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 10571
+      },
+      {
+        "name": "city_ring",
+        "rows": 2665
+      },
+      {
+        "name": "city_tile",
+        "rows": 34182
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 2292
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 8401
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 8401
+      },
+      {
+        "name": "settlement_area",
+        "rows": 27147
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 30134
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 1123761
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 4063
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 873807
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 873807
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 6293
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 6293
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 64814
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 348150
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 888501
+      },
+      {
+        "name": "way_geom",
+        "rows": 888501
+      },
+      {
+        "name": "way_links",
+        "rows": 1303186
+      },
+      {
+        "name": "ways",
+        "rows": 888501
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 888501
+      }
+    ]
+  }
+}

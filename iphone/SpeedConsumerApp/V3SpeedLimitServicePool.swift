@@ -53,4 +53,9 @@ final class V3SpeedLimitServicePool: @unchecked Sendable {
         defer { lock.unlock() }
         entries.removeAll()
     }
+
+    func resetMapAmendmentPassages() {
+        lock.lock(); defer { lock.unlock() }
+        for entry in entries.values { entry.service.resetMapAmendmentPassages() }
+    }
 }

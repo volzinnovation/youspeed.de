@@ -1,0 +1,18 @@
+{
+  "suite": "production-iPhone-source-bound-corrections-build",
+  "build_passed": true,
+  "configuration": "Debug",
+  "platform": "iphoneos",
+  "code_signing_allowed": false,
+  "marketing_version": "1.6",
+  "build_version": "10074",
+  "app_path": "/private/tmp/ysp-ios-packed-device-build/Build/Products/Debug-iphoneos/SpeedConsumer.app",
+  "log": "/private/tmp/ysp-ios-packed-source-bound-frozen-device-build.log",
+  "source_sha256": {
+    "iphone/SpeedConsumerApp/PackedBundleRuntime.swift": "0e5d8c5a96dff7bcd23475833a4b0f69748c397505556c58d09a1333ccb45af1",
+    "iphone/SpeedConsumerApp/MapDataAmendmentStore.swift": "90d79e904a621dd3c8bf409104817ab17f9635c06810ba00cef1dc33f7b2f0f2",
+    "iphone/SpeedConsumerApp/V3LookupResources.swift": "acfb1a7a5f3e62c8e4985fc8487543555dff7e8ff17f95ebd1d606daeef4188a",
+    "iphone/SpeedConsumerApp/V3SpeedLimitService.swift": "f04bc3aaf11c8494543295ac9edb3df921a85263622c2b9e165e5ee975dd8b4f",
+    "iphone/SpeedConsumerApp/ConditionalSpeedRules.swift": "c7e14c5a24544ebb96fe51d7815dac5ee63d933c5eea8a877a8bde938b221de5"
+  }
+}

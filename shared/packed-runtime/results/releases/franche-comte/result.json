@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "160aad3493ad50ea3688cadf8f6b837d1c4edea6d5c200de7162f685277af1cc",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -15.992911063836157,
+  "elapsed_seconds": 70.18858077499999,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -73.46122743966146,
+  "local_source_upgrade": false,
+  "node_count": 4195,
+  "packed_download_bytes": 81578029,
+  "packed_installed_bytes": 84143586,
+  "previous_published_download_bytes": 97108506,
+  "region": "franche-comte",
+  "release_files": [
+    {
+      "bytes": 70317723,
+      "file": "franche-comte_2026-10-27-packed-v1.context.yspc",
+      "sha256": "6101a9419850807ff4742de1e310650d8056ee4294072eee8b5af68f7791dc2b"
+    },
+    {
+      "bytes": 1001713,
+      "file": "franche-comte_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "1a48895876094a37bf7c121f5e96f1dc7ffa40336054e81af822fd8e335aac98"
+    },
+    {
+      "bytes": 10258593,
+      "file": "franche-comte_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "0e97c50cd1dc45b3d6dc85cdeba15d708182255b4ead35b5205b70c86e91fd75"
+    },
+    {
+      "bytes": 19576,
+      "file": "franche-comte_2026-10-27-packed-v1_franche-comte_2026-09-28-refresh-8177c59.poly",
+      "sha256": "e1c449f1343b2766b6632176d89321836de7f95d1bff602ac3001b7582bc4bd5"
+    },
+    {
+      "bytes": 9366,
+      "file": "franche-comte_2026-10-27-packed-v1_franche-comte_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1909,
+      "file": "franche-comte_2026-10-27-packed-v1_validation.json",
+      "sha256": "a6fc0b4e2f447826a843dc20076314138764b83fcaf67699ed5ea31531035085"
+    },
+    {
+      "bytes": 5168,
+      "file": "franche-comte_manifest.json",
+      "sha256": "94305870d854ec7ec744af080c5df037d110be32e66be11f0fe718dbe7811f98"
+    }
+  ],
+  "release_tag": "franche-comte-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 97108506,
+  "source_installed_bytes": 317059072,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 85,
+    "membership_count": 3684,
+    "node_count": 4195,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "4c378b59a62b4978f9ab82b84c582d2ed053d07d4a5b43ad7959179d75e50a52",
+    "source_pbf_timestamp": "2026-07-03T04:51:13Z",
+    "source_sqlite_sha256": "7c50687b7b48260d228cfb9561ef1a06826212e6e34eeb01721310215ae23e85",
+    "unassociated_node_count": 2145
+  },
+  "source_release_tag": "franche-comte",
+  "source_sqlite_sha256": "7c50687b7b48260d228cfb9561ef1a06826212e6e34eeb01721310215ae23e85",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 183958,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 45210
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 45210
+      },
+      {
+        "name": "city_boundary",
+        "rows": 1958
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 1958
+      },
+      {
+        "name": "city_place",
+        "rows": 4022
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 4022
+      },
+      {
+        "name": "city_ring",
+        "rows": 1970
+      },
+      {
+        "name": "city_tile",
+        "rows": 12719
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 146
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 589
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 589
+      },
+      {
+        "name": "settlement_area",
+        "rows": 8290
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 8528
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 216916
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 3267
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 182956
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 182956
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 413
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 413
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 14455
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 63049
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 183958
+      },
+      {
+        "name": "way_geom",
+        "rows": 183958
+      },
+      {
+        "name": "way_links",
+        "rows": 288304
+      },
+      {
+        "name": "ways",
+        "rows": 183958
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 183958
+      }
+    ]
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "1b8125a2719da0f7d18b2d5314b16402505ac50b4bc9ac92c42ab9669801ebcf",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -12.808440776703222,
+  "elapsed_seconds": 463.95276228499995,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -69.01400335420533,
+  "local_source_upgrade": false,
+  "node_count": 33993,
+  "packed_download_bytes": 573846414,
+  "packed_installed_bytes": 594164547,
+  "previous_published_download_bytes": 658144457,
+  "region": "nordrhein-westfalen",
+  "release_files": [
+    {
+      "bytes": 505171397,
+      "file": "nordrhein-westfalen_2026-10-27-packed-v1.context.yspc",
+      "sha256": "8459f9298a6a64698573eb734125dbef1c485b6c84a0eca1930868159f67d363"
+    },
+    {
+      "bytes": 8217963,
+      "file": "nordrhein-westfalen_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "65a27c96cdc7eda931656c36d3a4a3902bfa380fbecd157652aa2dcab7fac05a"
+    },
+    {
+      "bytes": 60457054,
+      "file": "nordrhein-westfalen_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "4033d6cfd8c34695e687c0647f2636d10aea5df06daddbd2563301e5a8569d2c"
+    },
+    {
+      "bytes": 21715,
+      "file": "nordrhein-westfalen_2026-10-27-packed-v1_nordrhein-westfalen_2026-09-28-refresh-8177c59.poly",
+      "sha256": "39de2fba930a668dd4babfe356c3ff485c0852ef20ce2706e6a7c086395c4f49"
+    },
+    {
+      "bytes": 5756,
+      "file": "nordrhein-westfalen_2026-10-27-packed-v1_nordrhein-westfalen_2026-09-28-refresh-8177c59_DEU-rules.json",
+      "sha256": "fceebeb611d114d0bd97acd17ea0bc002d795210a2a18c3b1129a9a3c5904580"
+    },
+    {
+      "bytes": 1931,
+      "file": "nordrhein-westfalen_2026-10-27-packed-v1_validation.json",
+      "sha256": "88509ccaba0d1e094d1944ee3b051e85390b3f0973e8fca4556ea64c00ddac73"
+    },
+    {
+      "bytes": 5326,
+      "file": "nordrhein-westfalen_manifest.json",
+      "sha256": "5d47d3e135c204bab5c9d67705d66578977b607d813f30db4f0366a3231437d0"
+    }
+  ],
+  "release_tag": "nordrhein-westfalen-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 658144457,
+  "source_installed_bytes": 1917526016,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 426,
+    "membership_count": 20778,
+    "node_count": 33993,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "276ca9436087801c6bb3bc611f103483b044016e5be5ba235b2e974669404c3e",
+    "source_pbf_timestamp": "2026-07-04T20:21:16Z",
+    "source_sqlite_sha256": "2c49f802ae74a0bac64fff29b86b07712813faf9891a99013563f7bddbd77f17",
+    "unassociated_node_count": 20053
+  },
+  "source_release_tag": "nordrhein-westfalen",
+  "source_sqlite_sha256": "2c49f802ae74a0bac64fff29b86b07712813faf9891a99013563f7bddbd77f17",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 1445159,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 301569
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 301569
+      },
+      {
+        "name": "city_boundary",
+        "rows": 895
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 895
+      },
+      {
+        "name": "city_place",
+        "rows": 7539
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 7539
+      },
+      {
+        "name": "city_ring",
+        "rows": 919
+      },
+      {
+        "name": "city_tile",
+        "rows": 25780
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 4046
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 14389
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 14389
+      },
+      {
+        "name": "settlement_area",
+        "rows": 132941
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 137128
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 1742748
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 21532
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 1427421
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 1427421
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 3349
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 3349
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 105131
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 688900
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 1445159
+      },
+      {
+        "name": "way_geom",
+        "rows": 1445159
+      },
+      {
+        "name": "way_links",
+        "rows": 2347656
+      },
+      {
+        "name": "ways",
+        "rows": 1445159
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 1445159
+      }
+    ]
+  }
+}

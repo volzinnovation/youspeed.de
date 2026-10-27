@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "800c8d7712fce790fc208e584f7be3d6ff322b7c50c0c03b2972efff6364705e",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -19.50114558499163,
+  "elapsed_seconds": 6.917933908000009,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -76.32958758748981,
+  "local_source_upgrade": false,
+  "node_count": 27,
+  "packed_download_bytes": 3465656,
+  "packed_installed_bytes": 3566938,
+  "previous_published_download_bytes": 4305224,
+  "region": "mayotte",
+  "release_files": [
+    {
+      "bytes": 2913237,
+      "file": "mayotte_2026-10-27-packed-v1.context.yspc",
+      "sha256": "fac57e5db5dd3ad99c093a6724c14d912ac4d046aa68d84673b9125947634fdb"
+    },
+    {
+      "bytes": 8406,
+      "file": "mayotte_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "2dffbf6e54a44630e4dc58b6e189a6194fe01a4d80be342943aef5d2192a3ebf"
+    },
+    {
+      "bytes": 544013,
+      "file": "mayotte_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "31d008f3365222698072d025b8d55b04a0cef8b4e458563b5e985302fc531f0e"
+    },
+    {
+      "bytes": 175,
+      "file": "mayotte_2026-10-27-packed-v1_mayotte_2026-09-28-refresh-8177c59.poly",
+      "sha256": "2b2d0ea514d8c3e59a14230cfb2007f8f644862df72b1f2abf0008c896a13ecd"
+    },
+    {
+      "bytes": 9366,
+      "file": "mayotte_2026-10-27-packed-v1_mayotte_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1862,
+      "file": "mayotte_2026-10-27-packed-v1_validation.json",
+      "sha256": "a6d32a2fa465de5cfc56a94142c87e3b953f7fff6a6bae1b511c725d934f9bd1"
+    },
+    {
+      "bytes": 5000,
+      "file": "mayotte_manifest.json",
+      "sha256": "45c8bdb2f7eb8ada3f6c123c30ab8bd8b2c28e3bccd3ca19ab4ebee8011317ca"
+    }
+  ],
+  "release_tag": "mayotte-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 4305224,
+  "source_installed_bytes": 15069184,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 0,
+    "membership_count": 25,
+    "node_count": 27,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "37c757bd7284244b3e8edf2e8676e01cfb4e6f270d9717ac4559f3fdcd448409",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "32237863952c4b0505b5730ed565e2561945942565f6f3ae6a71fae58c6aade9",
+    "unassociated_node_count": 5
+  },
+  "source_release_tag": "mayotte",
+  "source_sqlite_sha256": "32237863952c4b0505b5730ed565e2561945942565f6f3ae6a71fae58c6aade9",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 8191,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 1109
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 1109
+      },
+      {
+        "name": "city_boundary",
+        "rows": 18
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 18
+      },
+      {
+        "name": "city_place",
+        "rows": 77
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 77
+      },
+      {
+        "name": "city_ring",
+        "rows": 113
+      },
+      {
+        "name": "city_tile",
+        "rows": 226
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 0
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 0
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 0
+      },
+      {
+        "name": "settlement_area",
+        "rows": 160
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 162
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 9770
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 27
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 8188
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 8188
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 3
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 3
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 845
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 3316
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 8191
+      },
+      {
+        "name": "way_geom",
+        "rows": 8191
+      },
+      {
+        "name": "way_links",
+        "rows": 12054
+      },
+      {
+        "name": "ways",
+        "rows": 8191
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 8191
+      }
+    ]
+  }
+}

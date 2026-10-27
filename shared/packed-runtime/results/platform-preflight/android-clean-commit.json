@@ -1,0 +1,107 @@
+{
+  "build_artifacts": {
+    "native_arm64": {
+      "bytes": 10185144,
+      "path": "mapdata/build/packed-v4-2026-10-27/clean-commit-build/android/app/build/intermediates/cxx/Debug/253y1f3d/obj/arm64-v8a/libyouspeed_packed_runtime.so",
+      "sha256": "9b99147249eff3a4d185557f0dbc5946ce0871cb07a807c997baa36135be50ee"
+    },
+    "production_classes_jar": {
+      "bytes": 17532655,
+      "path": "mapdata/build/packed-v4-2026-10-27/clean-commit-build/android/app/build/intermediates/runtime_app_classes_jar/debug/bundleDebugClassesToRuntimeJar/classes.jar",
+      "sha256": "2718c640e1972d7340aa93fac942e2586e34f757320a2de1b4081e80a59ee375"
+    }
+  },
+  "build_command": [
+    "./gradlew",
+    ":app:compileDebugKotlin",
+    ":app:testDebugUnitTest",
+    ":app:externalNativeBuildDebug",
+    "-PyouspeedAbi=arm64-v8a",
+    "--offline",
+    "--no-daemon",
+    "--console=plain"
+  ],
+  "compile_debug_kotlin_passed": true,
+  "created_at_utc": "2026-10-27T11:37:38.569022+00:00",
+  "device_operations": false,
+  "export": {
+    "additional_tracked_test_fixtures": [
+      {
+        "bytes": 20377,
+        "path": "tests/tsr/collection/canonical-edge-cases.json",
+        "sha256": "23a6b48272286d65a1ae08a43d0919e2961d98e9268f978390ea929930377fb9"
+      },
+      {
+        "bytes": 5290,
+        "path": "tests/tsr/collection/repeat-crops-v1.json",
+        "sha256": "2c5bfd9aaff4317416e2fcecefec663f842844bbe776395805e477717919c6fc"
+      }
+    ],
+    "all_exported_blobs_or_pinned_lfs_objects_match_commit": true,
+    "expanded_committed_lfs_assets": [
+      {
+        "bytes": 109673852,
+        "path": "android/app/src/main/assets/tsr/FR.panoramax-bootstrap.tsrmodelpack/classify_fr_road_signs_float16.tflite",
+        "pointer_git_blob": "e0f116ee3a8615463231091a116a928b02c9a9dc",
+        "sha256": "a4652db06265013f10610b984bc7ab55d7ca32a5ec8e040785db47c276ae00ea"
+      }
+    ],
+    "export_receipt_path": "mapdata/build/packed-v4-2026-10-27/clean-commit-build/export-receipt.json",
+    "export_receipt_sha256": "3c2bf04c76c023cd3fe7a02163d35994a363f397904e793230e552b32264e849",
+    "initial_export_bytes": 605981561,
+    "initial_verified_tracked_files": 2181,
+    "paths": [
+      "android",
+      "shared"
+    ]
+  },
+  "external_native_build_debug_arm64_passed": true,
+  "format": "youspeed.android.clean-commit-preflight",
+  "junit_report_index_sha256": "f39933bf5d45ecf99bd0413743fe9eb4404d90053678f52813e619a060794247",
+  "junit_suite_count": 103,
+  "logs": {
+    "final": {
+      "path": "mapdata/build/packed-v4-2026-10-27/clean-commit-build/gradle-clean-F-with-fixtures.log",
+      "sha256": "11798d255691df1e29c2255e3d166bbd7bd4644f90c2c95a1a6a0d06502d7e2d"
+    },
+    "initial": {
+      "path": "mapdata/build/packed-v4-2026-10-27/clean-commit-build/gradle-clean-F.log",
+      "sha256": "1c9f30d28ae7bae28aa951aa635ab711dc4ed4c9a0359e5b16ce77b03d73323f"
+    }
+  },
+  "normal_app_updated": false,
+  "normal_project_build_outputs_reused": false,
+  "normal_working_tree_sources_copied": false,
+  "notes": [
+    "Initial full test attempt had two missing JSON inputs outside android/shared; only those exact committed F fixtures were then archived, with no source edits.",
+    "One tracked FR classifier was expanded by Git LFS and independently verified against the committed SHA-256 OID/size.",
+    "876 tests discovered,875 executed successfully; optional private replay test skipped because YOUSPEED_REPEAT_CROP_REPLAY_TRACE was unset.",
+    "Only installed SDK/NDK/CMake, Java17 and Gradle dependency caches/configuration were reused. No device was connected, queried, installed or launched by this check."
+  ],
+  "overall_success": true,
+  "schema_version": 1,
+  "selected_committed_source_sha256": {
+    "android/app/src/main/java/de/youspeed/android/alpha/ConsumerParityUi.kt": "e74a0b9776a0958fcd634c0861f4c4b6d3f442c9a3f513bac6780e7a5ed2cc2c",
+    "android/app/src/main/java/de/youspeed/android/alpha/ConsumerSessionController.kt": "c0be6745f0f4cfbb4e547367a493405cec5cab82dd2c2b79ea6271e7e7e530ea",
+    "android/app/src/main/java/de/youspeed/android/alpha/MapDataAmendmentStore.kt": "db4de518e42ec8b81ae8bae7036786a08dd08c1deca01680bc12c55a2cf38efb",
+    "android/app/src/main/java/de/youspeed/android/alpha/PanoramaxQueuePolicy.kt": "e291f8c09c4fff600790768ddc2cb06c8e431ad4a0eea2e6ae464bce437db1c8",
+    "android/app/src/main/java/de/youspeed/android/alpha/PanoramaxUploadClient.kt": "8275f0a6f8cb66f1ad70afb3deacbb43b512b6d93ebd8d717712aedeeb139e56",
+    "android/app/src/main/java/de/youspeed/android/alpha/PanoramaxUploadCoordinator.kt": "a3d3a59409304e57851072a06724030b4353a4aca6f78f27f5194e7104b36f69",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeMapDatabase.kt": "4c6b4aefd2f8c36bdd9790e7a84d97e11a6e4dae6293efcf62f265050b049acc",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeSqlDatabase.kt": "ea6904243049a34de457bb5e0e913f9e18e10cf75c3ad5bb3173802f7f743a50"
+  },
+  "skipped_tests": [
+    {
+      "class": "de.youspeed.android.alpha.SignCollectionRepeatCropTests",
+      "test": "recordedDashcamTraceMatchesSwiftCropSelection"
+    }
+  ],
+  "source_commit": "97f13e545bef682f03462649ff17951da4b8c28c",
+  "unit_test_counts": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 1,
+    "tests": 876
+  },
+  "untracked_source_assets_copied": false
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "youspeed.geodesk-full-source-inclusion.v1",
+  "gol_bytes": 94564632,
+  "gol_sha256": "cf25dad4e541dcb7ea8d544dce8b58407752e7da3b4b986a57255035428ad5f4",
+  "source_pbf_sha256": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3",
+  "ways": {
+    "source_count": 1085790,
+    "gol_feature_count": 1085790,
+    "source_sorted_id_sha256_le_i64": "243685b2ca1b45be464889d94c2e6f9248df2f94f11bfba8e8abf5e54cf6ab6f",
+    "missing_count": 0,
+    "missing_ids": []
+  },
+  "generic_speed_nodes": {
+    "source_count": 20141,
+    "gol_feature_count": 301066,
+    "source_sorted_id_sha256_le_i64": "9f0c469c26ef8da721661d3fef11afc410c6b48220a6aad7b867590194adab49",
+    "missing_count": 0,
+    "missing_ids": []
+  },
+  "all_source_ids_present": true
+}

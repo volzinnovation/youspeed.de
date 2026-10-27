@@ -48,18 +48,23 @@ on:
         required: false
         default: ""
         type: string
+      packed_refresh:
+        description: "Build draft packed releases from pinned sources; countries selects exact source release tags"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   actions: write
   contents: read
 
 concurrency:
-  group: top-country-delta-sequence
+  group: ${{ inputs.packed_refresh && format('packed-runtime-{0}', inputs.countries || 'all') || 'top-country-delta-sequence' }}
   cancel-in-progress: false
 
 jobs:
   dispatch:
-    if: ${{ !inputs.full_refresh }}
+    if: ${{ !inputs.full_refresh && !inputs.packed_refresh }}
     runs-on: ubuntu-latest
     timeout-minutes: 480
     env:
@@ -107,7 +112,7 @@ jobs:
           "${cmd[@]}"
 
   plan-refresh:
-    if: ${{ inputs.full_refresh }}
+    if: ${{ inputs.full_refresh && !inputs.packed_refresh }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -131,7 +136,7 @@ jobs:
 
   refresh-region:
     needs: plan-refresh
-    if: ${{ inputs.full_refresh }}
+    if: ${{ inputs.full_refresh && !inputs.packed_refresh }}
     runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
@@ -176,5 +181,126 @@ jobs:
         with:
           name: bundle-refresh-${{ matrix.target }}-${{ github.sha }}
           path: mapdata/reports/full-refresh/${{ matrix.target }}/
+          if-no-files-found: warn
+          retention-days: 30
+
+  packed-plan:
+    if: ${{ inputs.packed_refresh }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      targets: ${{ steps.plan.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Select pinned packed source releases
+        id: plan
+        env:
+          TARGET_OVERRIDE: ${{ inputs.countries }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import re
+
+          plan = json.loads(Path("shared/packed-runtime/releases/source-plan-2026-10-27.json").read_text())
+          assert plan["format"] == "youspeed.v4.pinned-release-plan" and plan["schema_version"] == 1, "Unsupported pinned plan"
+          assert not plan["failures"] and len(plan["bundles"]) == 55, "Pinned source plan is incomplete"
+          entries = [entry for entry in plan["bundles"] if entry["region"] != "baden-wuerttemberg"]
+          targets = [entry["source_release_tag"] for entry in entries]
+          assert len(targets) == 54 and len(set(targets)) == len(targets), "Duplicate or missing packed targets"
+          assert all(re.fullmatch(r"[a-z0-9][a-z0-9._-]*", tag) for tag in targets), "Unsafe packed target"
+          assert all(isinstance(entry.get("source_manifest_document"), dict) for entry in entries), "Pinned manifest document missing"
+          override = os.environ.get("TARGET_OVERRIDE", "").strip()
+          if override:
+              selected = [value.strip() for value in override.split(",")]
+              assert all(selected) and len(set(selected)) == len(selected), "Use unique comma-separated source release tags"
+              assert set(selected) <= set(targets), "Unknown source release tag (full BW is built separately): " + ",".join(sorted(set(selected) - set(targets)))
+              targets = [tag for tag in targets if tag in selected]
+          assert targets, "No packed sources selected"
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("targets=" + json.dumps(targets, separators=(",", ":")) + "\n")
+          print("Selected", len(targets), "pinned source releases; full BW is built separately")
+          PY
+
+  packed-build:
+    needs: packed-plan
+    if: ${{ inputs.packed_refresh }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: write
+    concurrency:
+      group: packed-bundle-${{ matrix.target }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        target: ${{ fromJson(needs.packed-plan.outputs.targets) }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PYTHONUNBUFFERED: "1"
+      TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Free runner disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          docker image prune -af >/dev/null 2>&1 || true
+          df -h
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install packed build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libzstd1
+          python3 -m pip install osmium==4.3.0
+      - name: Test packed release codecs, source fidelity and generic nodes
+        run: python3 -m unittest discover -s tests/map -p 'test_packed*.py' -v
+      - name: Build and verify pinned packed generation
+        run: |
+          set -euo pipefail
+          mkdir -p "mapdata/build/packed-rollout/$TARGET"
+          if [[ "$TARGET" == "deu-v3-data-karlsruhe-latest" ]]; then
+            python3 scripts/map/refresh_packed_alias.py \
+              --plan shared/packed-runtime/releases/source-plan-2026-10-27.json \
+              --workspace mapdata/build/packed-rollout \
+              --target "$TARGET" \
+              2>&1 | tee "mapdata/build/packed-rollout/$TARGET/build.log"
+          else
+            python3 scripts/map/build_packed_release.py \
+              --plan shared/packed-runtime/releases/source-plan-2026-10-27.json \
+              --workspace mapdata/build/packed-rollout \
+              --target "$TARGET" \
+              --published-source-only \
+              2>&1 | tee "mapdata/build/packed-rollout/$TARGET/build.log"
+          fi
+      - name: Stage verified draft release
+        run: |
+          set -euo pipefail
+          python3 scripts/map/publish_packed_release.py \
+            --result "mapdata/build/packed-rollout/$TARGET/result.json" \
+            --source-commit "$GITHUB_SHA" \
+            --repo "$GITHUB_REPOSITORY" \
+            2>&1 | tee -a "mapdata/build/packed-rollout/$TARGET/build.log"
+      - name: Retain small packed validation and draft receipts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: packed-draft-${{ matrix.target }}-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            mapdata/build/packed-rollout/${{ matrix.target }}/result.json
+            mapdata/build/packed-rollout/${{ matrix.target }}/github-verified.json
+            mapdata/build/packed-rollout/${{ matrix.target }}/build.log
           if-no-files-found: warn
           retention-days: 30

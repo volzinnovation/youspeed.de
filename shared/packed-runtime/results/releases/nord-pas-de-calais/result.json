@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "fe7ad1f381d416cf59c52bfbbe20765016697c0a7976298a03f0afaa173afa57",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -16.41685538081087,
+  "elapsed_seconds": 122.503996314,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -73.8328026301093,
+  "local_source_upgrade": false,
+  "node_count": 6378,
+  "packed_download_bytes": 136337646,
+  "packed_installed_bytes": 140641627,
+  "previous_published_download_bytes": 163116196,
+  "region": "nord-pas-de-calais",
+  "release_files": [
+    {
+      "bytes": 115756188,
+      "file": "nord-pas-de-calais_2026-10-27-packed-v1.context.yspc",
+      "sha256": "c9384d01297003eec9fcb5403ff03e41534ea2b8719a672b7d9096cb6dcea3f2"
+    },
+    {
+      "bytes": 1456266,
+      "file": "nord-pas-de-calais_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "0f7003f6758bda07cf070d39e06cc737a05dae1e6632dd53e6b4d39b24f95d47"
+    },
+    {
+      "bytes": 19125192,
+      "file": "nord-pas-de-calais_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "418c79354720ee246f76090993f6cd925885fdf57d4efe10d6d5926403ac3b38"
+    },
+    {
+      "bytes": 13500,
+      "file": "nord-pas-de-calais_2026-10-27-packed-v1_nord-pas-de-calais_2026-09-28-refresh-8177c59.poly",
+      "sha256": "b2bfcde132f6d9aa7fc0b43ece6a15c377660292eccffbdcdba1d92bc7c74b42"
+    },
+    {
+      "bytes": 9366,
+      "file": "nord-pas-de-calais_2026-10-27-packed-v1_nord-pas-de-calais_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1913,
+      "file": "nord-pas-de-calais_2026-10-27-packed-v1_validation.json",
+      "sha256": "4f712e6e189e5b480e51946ff71cc82bddcc110f23f8a975741f23943cba5125"
+    },
+    {
+      "bytes": 5297,
+      "file": "nord-pas-de-calais_manifest.json",
+      "sha256": "494ac27aa687be774b78310b98e632b5dede3dfc00ea766864b6bac90bc4b344"
+    }
+  ],
+  "release_tag": "nord-pas-de-calais-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 163116196,
+  "source_installed_bytes": 537473024,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 154,
+    "membership_count": 3357,
+    "node_count": 6378,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "9983300e2913e5250b93471ddcb8fcaefaf51e850f3e8432bf55bf404f400324",
+    "source_pbf_timestamp": "2026-07-03T04:51:13Z",
+    "source_sqlite_sha256": "aa6865f1dec970da081b5de0bd05ade47461714484f0e94a6bbce5c34ac11269",
+    "unassociated_node_count": 4001
+  },
+  "source_release_tag": "nord-pas-de-calais",
+  "source_sqlite_sha256": "aa6865f1dec970da081b5de0bd05ade47461714484f0e94a6bbce5c34ac11269",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 312930,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 42654
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 42654
+      },
+      {
+        "name": "city_boundary",
+        "rows": 1590
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 1590
+      },
+      {
+        "name": "city_place",
+        "rows": 2426
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 2426
+      },
+      {
+        "name": "city_ring",
+        "rows": 1598
+      },
+      {
+        "name": "city_tile",
+        "rows": 9766
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 608
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 2448
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 2448
+      },
+      {
+        "name": "settlement_area",
+        "rows": 14906
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 15546
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 391672
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 2610
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 309955
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 309955
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 527
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 527
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 27355
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 112971
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 312930
+      },
+      {
+        "name": "way_geom",
+        "rows": 312930
+      },
+      {
+        "name": "way_links",
+        "rows": 587820
+      },
+      {
+        "name": "ways",
+        "rows": 312930
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 312930
+      }
+    ]
+  }
+}

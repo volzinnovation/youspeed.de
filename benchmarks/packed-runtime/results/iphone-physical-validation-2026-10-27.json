@@ -1,0 +1,97 @@
+{
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "created_at_utc": "2026-10-27T10:40:24.913467+00:00",
+  "format": "youspeed.packed-runtime.iphone-physical-validation",
+  "generic_nodes": {
+    "full_metadata_validated": true,
+    "nodes": 73991,
+    "semantic_fnv1a64": "d68039707ce2c166"
+  },
+  "isolated_benchmark_only": true,
+  "node_proof_harness": {
+    "binary_sha256": "d942bd8488be6fc423bd3a5f0cd436355789765630335d944f3d9198c63c116f",
+    "compile_definition": "YSP_NODES_PACKED_ONLY=1",
+    "executed_after_timing_runs": true,
+    "harness_base_commit": "a4d95ff16d83e1b5c67ee71c2b9106f41f53e352",
+    "production_native_sources_unchanged": true,
+    "source_sha256": {
+      "benchmarks/packed-runtime/README.md": "0cf983eecd3c77b56704b80b449e4cff273074722669d55583eed3ece89e2715",
+      "benchmarks/packed-runtime/build_iphone.py": "773b5462c607c25ba1b612140f15a0bbb98119319cf05cef25e53ad05c581bd5",
+      "benchmarks/packed-runtime/iphone/BenchmarkApp.mm": "501707938d2c5f74f6587c28a6a0073dc55f2d4058e5d40de5aa33d851d3264d",
+      "benchmarks/packed-runtime/run_iphone.py": "0e05ec95adee269377ea0e7d83d04f7d3e9591e7513ef90a9143c5a8cb7bb6ce"
+    }
+  },
+  "normal_app_updated": false,
+  "notes": [
+    "All586 source SQL queries/8163 rows match exactly, and every one of8 retained native readers returns identical results.",
+    "Native8-readerRSS gate is56MiB, leaving8MiB relative to64MiB storage delta criterion; this is not a whole-app RSS cap.",
+    "All73991 full source node records pass CRC/semantic digest, identical to host and Moto. Source bindings remain unresolved until verified by production rules.",
+    "Artifact hashes identify the locally verified files staged by successful CoreDevice copy receipts; no claim of a separate on-device cryptographic whole-context file hash.",
+    "Physical production Swift integration uses a separately named testhost and is reported separately."
+  ],
+  "original_source_sql_report_sha256": "97c5b0f2d4c14e2bea184857fa3fc4824a4dedb2dd74acaf7ad9420c873d7f39",
+  "physical_device_evidence": {
+    "lookup_results_identical": true,
+    "mapped_payload_bytes": 0,
+    "observed_incremental_rss_bytes": 8192000,
+    "pool_lookup_results_identical": true,
+    "pool_observed_incremental_rss_bytes": 48496640,
+    "pool_report_sha256": "37cc93cba40ac1f3702209a056c571d474f6c6310ee08bae8960409e5eaec106",
+    "report_sha256": "1e9ed5266d4bb52216803e011033d1e3e27912eac69f5cb650b9ef3f30a3db58",
+    "retained_reader_count": 8
+  },
+  "reports": {
+    "nodes_roundtrip": {
+      "path": "benchmarks/packed-runtime/results/iphone-bw-nodes-roundtrip-2026-10-27.json",
+      "sha256": "6f73d01267e6a57682bcf4afdd10a57bc938bc8d63272e6b80a57339d7ee1cd7"
+    },
+    "pool8": {
+      "path": "benchmarks/packed-runtime/results/iphone-bw-pool8-2026-10-27.json",
+      "sha256": "37cc93cba40ac1f3702209a056c571d474f6c6310ee08bae8960409e5eaec106"
+    },
+    "single": {
+      "path": "benchmarks/packed-runtime/results/iphone-bw-context-2026-10-27.json",
+      "sha256": "1e9ed5266d4bb52216803e011033d1e3e27912eac69f5cb650b9ef3f30a3db58"
+    }
+  },
+  "runtime_source_sha256": {
+    "android/app/src/main/cpp/packed_sqlite_jni.cpp": "6b49421783d7667bd377af0280e130e7a5c6377f24e72223c72d97e658b43eb9",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeSqlDatabase.kt": "18ee5c1bfc193b9ce84639858cffe065d604ba19eae9c62e19e30452b7c6e9a0",
+    "iphone/SpeedConsumerApp/PackedBundleRuntime.swift": "83acb5e6f54112821a415b324f17296ff3d56a168bcda27900b97be0dbcf521d",
+    "shared/runtime-sign-nodes-prototype/packed_nodes.h": "c66f7d78fe5fbf3e1ade6fb3c65002cc4b4dda7f3071deb175f2a00e424dd0a2",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp": "cf7be70c6c4b8d948ad32d764152a4e83963bd4c9eb2d34ff0c0992d5f169fef",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.h": "887323b28596b39347fd73b085237309d059bb17d518523146b6b9432b7239e0",
+    "shared/runtime-storage-prototype/bounded_file.h": "c33d6475718326a337c9273b51e61d90a4e2df57e92c602b310aa070778dfc31",
+    "shared/runtime-storage-prototype/packed_runtime.cpp": "135846b20c2bbfaa14c488c6523884d295e9cc414bdcf952a0439cfa997cd78e",
+    "shared/runtime-storage-prototype/packed_runtime.h": "e1b1aecfd4cdf014cfe68bcec45a2770a7f94fe33f8b3309daea5ca82aab5ae3",
+    "shared/runtime-storage-prototype/packed_sqlite_vfs.cpp": "ea69107b4e014dca760e28d615c08129f28abb09e3aa0ea570902b62c3739fa1",
+    "shared/runtime-storage-prototype/runtime_storage.cpp": "a6930f324aa1d7877c1d5b17df45af77e5bb7f4472dd4a891ca2407892e1632d",
+    "shared/runtime-storage-prototype/runtime_storage.h": "b4c47464ba0c3d18d21df0c05e7c4ef90b69ce648ef0c8d3b38e536098161eb6",
+    "shared/runtime-storage-prototype/zstd_decoder.c": "c38d437c7f19959656dbbcf0236554210e85a2bdd31dbeca4d349cec5f2baa1f"
+  },
+  "schema_version": 1,
+  "source_commit": "a4d95ff16d83e1b5c67ee71c2b9106f41f53e352",
+  "system_version": "26.6.2",
+  "tested_bw_artifacts": {
+    "context": {
+      "bytes": 804040013,
+      "sha256": "66bff716fa57500f482f7a8707fb1fcfa059beadcecab260b34934b7576666e5"
+    },
+    "nodes": {
+      "bytes": 21205532,
+      "sha256": "1d56425b5628ce037e8e5a7e8b81e884adcc51f6af549c0b60aee3c3860358ec"
+    },
+    "roads": {
+      "bytes": 60413284,
+      "sha256": "14ebf59778ecaff7e5cd270363b97091a4f691ccac6083d438c2108090ca0f9e"
+    }
+  },
+  "thermal_state_after": 0,
+  "thermal_state_before": 0,
+  "timing_harness_binary_sha256": "f08202b015a9d5c1ed611916deb79732b42dda73f034a451b37bc8d06a3be803"
+}

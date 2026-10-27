@@ -1,0 +1,1026 @@
+{
+  "alias_refresh": {
+    "canonical": {
+      "manifest_server_sha256": "db22450af15dbf7d1328e55ae60cdc3ea63ab7e2a107ae4d3be1eedcedbc932d",
+      "packed_release_id": 425331829,
+      "packed_release_tag": "karlsruhe-regbez-packed-v1-2026-10-27",
+      "packed_source_commit": "a4d95ff16d83e1b5c67ee71c2b9106f41f53e352",
+      "source_release_tag": "karlsruhe-regbez",
+      "source_release_url": "https://github.com/volzinnovation/youspeed.de/releases/tag/karlsruhe-regbez",
+      "source_sqlite_sha256": "a64d7c61d08058818084c0f33d3021d7dad70b0051ed13864475e455b62a3c9b",
+      "validation_server_sha256": "9ab60acf3f474a1b543e7a3b61143cf604b2579372a0609e57bd1bd6b2c4645f"
+    },
+    "comparison_basis": "Lossless data proof and source compression compare against canonical region input. Historical alias bytes are a separate previous-published baseline.",
+    "data_bytes_reused_identically": true,
+    "kind": "canonical-region-alias",
+    "legacy": {
+      "bundle_version": "2026-03-01",
+      "download_bytes": 80994304,
+      "installed_bytes": 80994304,
+      "manifest": {
+        "bundle_version": "2026-03-01",
+        "created_at_utc": "2026-03-01T19:58:55Z",
+        "db": {
+          "bytes": 80994304,
+          "file": "DEU-latest.speeds_v3.sqlite",
+          "sha256": "b15793b9fc0d969cd5d7532ea9a1d6b13c1fc764a0d9d42f14704920c3a66d0a",
+          "url": "https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-karlsruhe-latest/DEU-latest.speeds_v3.sqlite"
+        },
+        "delta_index": null,
+        "format": "youspeed.v3.bundle.manifest",
+        "min_app_version": "1.0.0",
+        "region": "karlsruhe-regbez",
+        "schema_version": 1,
+        "self": {
+          "file": "DEU-latest.bundle-manifest.v3.json",
+          "url": "https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-karlsruhe-latest/DEU-latest.bundle-manifest.v3.json"
+        },
+        "variant": "v3"
+      },
+      "manifest_server_sha256": "66c9c70b0434f1fbc060119d5285c319a09008c8c9503409bdd21ab783288dd6",
+      "release_tag": "deu-v3-data-karlsruhe-latest",
+      "release_url": "https://github.com/volzinnovation/youspeed.de/releases/tag/deu-v3-data-karlsruhe-latest",
+      "schema_audit": {
+        "current_way_id_queries_compatible": false,
+        "geometry_join": "way_geom.row_id = ways.row_id",
+        "metadata": [
+          [
+            "backend",
+            "sqlite_rtree"
+          ],
+          [
+            "schema_version",
+            "1"
+          ],
+          [
+            "source_v1_dist",
+            "mapdata/dist/karlsruhe-regbez"
+          ],
+          [
+            "tunnel_portal_count",
+            "5106"
+          ]
+        ],
+        "quick_check": "ok",
+        "road_rtree_join": "ways_rtree.row_id = ways.row_id",
+        "schema": "legacy-row-id-geometry-v1",
+        "tables": [
+          {
+            "columns": [
+              [
+                0,
+                "row_id",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "area_id",
+                "TEXT",
+                1,
+                null,
+                0
+              ],
+              [
+                2,
+                "geometry_type",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                3,
+                "name",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                4,
+                "place",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                5,
+                "boundary",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                6,
+                "admin_level",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                7,
+                "residential",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                8,
+                "points_json",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                9,
+                "min_lon",
+                "REAL",
+                1,
+                null,
+                0
+              ],
+              [
+                10,
+                "min_lat",
+                "REAL",
+                1,
+                null,
+                0
+              ],
+              [
+                11,
+                "max_lon",
+                "REAL",
+                1,
+                null,
+                0
+              ],
+              [
+                12,
+                "max_lat",
+                "REAL",
+                1,
+                null,
+                0
+              ]
+            ],
+            "name": "areas",
+            "rows": 32858,
+            "sql": "CREATE TABLE areas (\n          row_id INTEGER PRIMARY KEY,\n          area_id TEXT NOT NULL UNIQUE,\n          geometry_type TEXT,\n          name TEXT,\n          place TEXT,\n          boundary TEXT,\n          admin_level TEXT,\n          residential TEXT,\n          points_json TEXT,\n          min_lon REAL NOT NULL,\n          min_lat REAL NOT NULL,\n          max_lon REAL NOT NULL,\n          max_lat REAL NOT NULL\n        )"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "row_id",
+                "INT",
+                0,
+                null,
+                0
+              ],
+              [
+                1,
+                "min_lon",
+                "REAL",
+                0,
+                null,
+                0
+              ],
+              [
+                2,
+                "max_lon",
+                "REAL",
+                0,
+                null,
+                0
+              ],
+              [
+                3,
+                "min_lat",
+                "REAL",
+                0,
+                null,
+                0
+              ],
+              [
+                4,
+                "max_lat",
+                "REAL",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "areas_rtree",
+            "rows": 32858,
+            "sql": "CREATE VIRTUAL TABLE areas_rtree USING rtree(\n          row_id,\n          min_lon, max_lon,\n          min_lat, max_lat\n        )"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "nodeno",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "data",
+                "",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "areas_rtree_node",
+            "rows": 1023,
+            "sql": "CREATE TABLE \"areas_rtree_node\"(nodeno INTEGER PRIMARY KEY,data)"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "nodeno",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "parentnode",
+                "",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "areas_rtree_parent",
+            "rows": 1022,
+            "sql": "CREATE TABLE \"areas_rtree_parent\"(nodeno INTEGER PRIMARY KEY,parentnode)"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "rowid",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "nodeno",
+                "",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "areas_rtree_rowid",
+            "rows": 32858,
+            "sql": "CREATE TABLE \"areas_rtree_rowid\"(rowid INTEGER PRIMARY KEY,nodeno)"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "key",
+                "TEXT",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "value",
+                "TEXT",
+                1,
+                null,
+                0
+              ]
+            ],
+            "name": "metadata",
+            "rows": 4,
+            "sql": "CREATE TABLE metadata (\n          key TEXT PRIMARY KEY,\n          value TEXT NOT NULL\n        )"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "row_id",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "way_row_id",
+                "INTEGER",
+                1,
+                null,
+                0
+              ],
+              [
+                2,
+                "way_id",
+                "INTEGER",
+                1,
+                null,
+                0
+              ],
+              [
+                3,
+                "portal_index",
+                "INTEGER",
+                1,
+                null,
+                0
+              ],
+              [
+                4,
+                "lon",
+                "REAL",
+                1,
+                null,
+                0
+              ],
+              [
+                5,
+                "lat",
+                "REAL",
+                1,
+                null,
+                0
+              ],
+              [
+                6,
+                "tunnel",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                7,
+                "location",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                8,
+                "layer",
+                "REAL",
+                0,
+                null,
+                0
+              ],
+              [
+                9,
+                "level",
+                "REAL",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "tunnel_portal",
+            "rows": 5106,
+            "sql": "CREATE TABLE tunnel_portal (\n          row_id INTEGER PRIMARY KEY,\n          way_row_id INTEGER NOT NULL,\n          way_id INTEGER NOT NULL,\n          portal_index INTEGER NOT NULL,\n          lon REAL NOT NULL,\n          lat REAL NOT NULL,\n          tunnel TEXT,\n          location TEXT,\n          layer REAL,\n          level REAL\n        )"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "row_id",
+                "INT",
+                0,
+                null,
+                0
+              ],
+              [
+                1,
+                "min_lon",
+                "REAL",
+                0,
+                null,
+                0
+              ],
+              [
+                2,
+                "max_lon",
+                "REAL",
+                0,
+                null,
+                0
+              ],
+              [
+                3,
+                "min_lat",
+                "REAL",
+                0,
+                null,
+                0
+              ],
+              [
+                4,
+                "max_lat",
+                "REAL",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "tunnel_portal_rtree",
+            "rows": 5106,
+            "sql": "CREATE VIRTUAL TABLE tunnel_portal_rtree USING rtree(\n          row_id,\n          min_lon, max_lon,\n          min_lat, max_lat\n        )"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "nodeno",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "data",
+                "",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "tunnel_portal_rtree_node",
+            "rows": 155,
+            "sql": "CREATE TABLE \"tunnel_portal_rtree_node\"(nodeno INTEGER PRIMARY KEY,data)"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "nodeno",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "parentnode",
+                "",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "tunnel_portal_rtree_parent",
+            "rows": 154,
+            "sql": "CREATE TABLE \"tunnel_portal_rtree_parent\"(nodeno INTEGER PRIMARY KEY,parentnode)"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "rowid",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "nodeno",
+                "",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "tunnel_portal_rtree_rowid",
+            "rows": 5106,
+            "sql": "CREATE TABLE \"tunnel_portal_rtree_rowid\"(rowid INTEGER PRIMARY KEY,nodeno)"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "row_id",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "points_json",
+                "TEXT",
+                1,
+                null,
+                0
+              ]
+            ],
+            "name": "way_geom",
+            "rows": 242299,
+            "sql": "CREATE TABLE way_geom (\n          row_id INTEGER PRIMARY KEY,\n          points_json TEXT NOT NULL\n        )"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "row_id",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "way_id",
+                "INTEGER",
+                1,
+                null,
+                0
+              ],
+              [
+                2,
+                "highway",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                3,
+                "street_name",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                4,
+                "ref",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                5,
+                "maxspeed",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                6,
+                "maxspeed_type",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                7,
+                "source_maxspeed",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                8,
+                "approx_heading_deg",
+                "REAL",
+                0,
+                null,
+                0
+              ],
+              [
+                9,
+                "service",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                10,
+                "tunnel",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                11,
+                "bridge",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                12,
+                "covered",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                13,
+                "location",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                14,
+                "layer",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                15,
+                "level",
+                "TEXT",
+                0,
+                null,
+                0
+              ],
+              [
+                16,
+                "min_lon",
+                "REAL",
+                1,
+                null,
+                0
+              ],
+              [
+                17,
+                "min_lat",
+                "REAL",
+                1,
+                null,
+                0
+              ],
+              [
+                18,
+                "max_lon",
+                "REAL",
+                1,
+                null,
+                0
+              ],
+              [
+                19,
+                "max_lat",
+                "REAL",
+                1,
+                null,
+                0
+              ]
+            ],
+            "name": "ways",
+            "rows": 242299,
+            "sql": "CREATE TABLE ways (\n          row_id INTEGER PRIMARY KEY,\n          way_id INTEGER NOT NULL UNIQUE,\n          highway TEXT,\n          street_name TEXT,\n          ref TEXT,\n          maxspeed TEXT,\n          maxspeed_type TEXT,\n          source_maxspeed TEXT,\n          approx_heading_deg REAL,\n          service TEXT,\n          tunnel TEXT,\n          bridge TEXT,\n          covered TEXT,\n          location TEXT,\n          layer TEXT,\n          level TEXT,\n          min_lon REAL NOT NULL,\n          min_lat REAL NOT NULL,\n          max_lon REAL NOT NULL,\n          max_lat REAL NOT NULL\n        )"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "row_id",
+                "INT",
+                0,
+                null,
+                0
+              ],
+              [
+                1,
+                "min_lon",
+                "REAL",
+                0,
+                null,
+                0
+              ],
+              [
+                2,
+                "max_lon",
+                "REAL",
+                0,
+                null,
+                0
+              ],
+              [
+                3,
+                "min_lat",
+                "REAL",
+                0,
+                null,
+                0
+              ],
+              [
+                4,
+                "max_lat",
+                "REAL",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "ways_rtree",
+            "rows": 242299,
+            "sql": "CREATE VIRTUAL TABLE ways_rtree USING rtree(\n          row_id,\n          min_lon, max_lon,\n          min_lat, max_lat\n        )"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "nodeno",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "data",
+                "",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "ways_rtree_node",
+            "rows": 7392,
+            "sql": "CREATE TABLE \"ways_rtree_node\"(nodeno INTEGER PRIMARY KEY,data)"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "nodeno",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "parentnode",
+                "",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "ways_rtree_parent",
+            "rows": 7391,
+            "sql": "CREATE TABLE \"ways_rtree_parent\"(nodeno INTEGER PRIMARY KEY,parentnode)"
+          },
+          {
+            "columns": [
+              [
+                0,
+                "rowid",
+                "INTEGER",
+                0,
+                null,
+                1
+              ],
+              [
+                1,
+                "nodeno",
+                "",
+                0,
+                null,
+                0
+              ]
+            ],
+            "name": "ways_rtree_rowid",
+            "rows": 242299,
+            "sql": "CREATE TABLE \"ways_rtree_rowid\"(rowid INTEGER PRIMARY KEY,nodeno)"
+          }
+        ]
+      },
+      "sqlite_sha256": "b15793b9fc0d969cd5d7532ea9a1d6b13c1fc764a0d9d42f14704920c3a66d0a"
+    },
+    "repackaged_at_utc": "2026-10-27T11:16:47.632214+00:00",
+    "repackager": {
+      "file": "scripts/map/refresh_packed_alias.py",
+      "sha256": "85d2e9b0578a2ac8edb634529da4da06785c94ee17fd4472b12a6791c5ec5ae0"
+    }
+  },
+  "build_cache_identity": "8e822c499520de9c04a0c2d6ed2a705b184d2cad367c8cd731d2d31fc79f1d91",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "converted_source_release_tag": "karlsruhe-regbez",
+  "download_change_percent": -9.346716208603967,
+  "elapsed_seconds": 6.5075167859999965,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -68.43315477186393,
+  "local_source_upgrade": false,
+  "node_count": 21028,
+  "packed_download_bytes": 98822732,
+  "packed_installed_bytes": 102877086,
+  "previous_published_download_bytes": 80994304,
+  "previous_published_installed_bytes": 80994304,
+  "region": "karlsruhe-regbez",
+  "release_files": [
+    {
+      "bytes": 83261040,
+      "file": "karlsruhe-regbez_2026-10-27-packed-v1.context.yspc",
+      "sha256": "ec39815a9cb0901ee060935c3504c72eaf47d5567d2913206fc5c3baae67b8fb"
+    },
+    {
+      "bytes": 5502707,
+      "file": "karlsruhe-regbez_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "096c7e24e812391bbc106354088f592c37ead5fc44491a68dd208d268488d693"
+    },
+    {
+      "bytes": 10058985,
+      "file": "karlsruhe-regbez_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "5cfde1f08d737d6f25f74e4ada0e6f46a40e3575eb176fd2e3aa5ce22800c0cf"
+    },
+    {
+      "bytes": 13785,
+      "file": "karlsruhe-regbez_2026-10-27-packed-v1_karlsruhe-regbez_2026-09-28-refresh-8177c59.poly",
+      "sha256": "e095b750d697d2fdbc383d239fc3473638914575114c14781d1deada8b518bc5"
+    },
+    {
+      "bytes": 5756,
+      "file": "karlsruhe-regbez_2026-10-27-packed-v1_karlsruhe-regbez_2026-09-28-refresh-8177c59_DEU-rules.json",
+      "sha256": "fceebeb611d114d0bd97acd17ea0bc002d795210a2a18c3b1129a9a3c5904580"
+    },
+    {
+      "bytes": 1908,
+      "file": "karlsruhe-regbez_2026-10-27-packed-v1_validation.json",
+      "sha256": "9ab60acf3f474a1b543e7a3b61143cf604b2579372a0609e57bd1bd6b2c4645f"
+    },
+    {
+      "bytes": 28437,
+      "file": "karlsruhe-regbez_manifest.json",
+      "sha256": "97bfcf07160327d965c51574df3421cfa57f5ccb017b1f5b2fedfb09de8e482b"
+    }
+  ],
+  "release_tag": "deu-v3-data-karlsruhe-latest-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 109011751,
+  "source_installed_bytes": 325902336,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 1094,
+    "membership_count": 17338,
+    "node_count": 21028,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "2614e966854bd33afdfc626e100d49c382550210022ef17eb028ac997bb78ae7",
+    "source_pbf_timestamp": "2026-03-16T21:21:01Z",
+    "source_sqlite_sha256": "a64d7c61d08058818084c0f33d3021d7dad70b0051ed13864475e455b62a3c9b",
+    "unassociated_node_count": 8807
+  },
+  "source_release_tag": "deu-v3-data-karlsruhe-latest",
+  "source_sqlite_sha256": "a64d7c61d08058818084c0f33d3021d7dad70b0051ed13864475e455b62a3c9b",
+  "source_upgrade_kind": "canonical-region-alias",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 249686,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 33092
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 33092
+      },
+      {
+        "name": "city_boundary",
+        "rows": 563
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 563
+      },
+      {
+        "name": "city_place",
+        "rows": 1087
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 1087
+      },
+      {
+        "name": "city_ring",
+        "rows": 680
+      },
+      {
+        "name": "city_tile",
+        "rows": 7463
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 376
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 1650
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 1650
+      },
+      {
+        "name": "settlement_area",
+        "rows": 7962
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 8722
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 294553
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 7437
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 247130
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 247130
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 906
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 906
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 19136
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 130629
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 249686
+      },
+      {
+        "name": "way_geom",
+        "rows": 249686
+      },
+      {
+        "name": "way_links",
+        "rows": 446202
+      },
+      {
+        "name": "ways",
+        "rows": 249686
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 249686
+      }
+    ]
+  },
+  "verification_source_release_tag": "karlsruhe-regbez"
+}

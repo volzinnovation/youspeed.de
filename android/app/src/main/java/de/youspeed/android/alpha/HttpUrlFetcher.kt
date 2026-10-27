@@ -12,6 +12,8 @@ data class GitHubReleaseAssetPath(
     val assetName: String,
 )
 
+class HttpStatusException(val statusCode: Int, url: String, detail: String) : IOException("HTTP $statusCode for $url: $detail")
+
 class HttpUrlFetcher(
     private val connectionFactory: (URL) -> HttpURLConnection = { it.openConnection() as HttpURLConnection },
 ) : HttpFetcher {
@@ -84,7 +86,7 @@ class HttpUrlFetcher(
             return
         }
         val detail = connection.errorStream?.use { it.readBytes().toString(Charsets.UTF_8).take(160) }.orEmpty()
-        throw IOException("HTTP $status for $url: $detail")
+        throw HttpStatusException(status, url, detail)
     }
 
     companion object {

@@ -1,0 +1,166 @@
+{
+  "build_cache_identity": "ae2aab46380ade5d825931ed93ad25e5145c90883e4d62a4fd711a1b2555a73a",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -16.282451531910436,
+  "elapsed_seconds": 26.522854660999997,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -66.39623869063635,
+  "local_source_upgrade": false,
+  "node_count": 121,
+  "packed_download_bytes": 19660538,
+  "packed_installed_bytes": 20461712,
+  "previous_published_download_bytes": 23484369,
+  "region": "iceland",
+  "release_files": [
+    {
+      "bytes": 15427570,
+      "file": "iceland_2026-10-27-packed-v1.context.yspc",
+      "sha256": "0fbc8cce42c78b48737668d9e1e679d0b35757bd4eb37c5272db9b1429eb8864"
+    },
+    {
+      "bytes": 38337,
+      "file": "iceland_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "6d0172106a7b3da2fe04ca952b1c96d0cf9944d6b49a6b729560a04b6d5ac9a2"
+    },
+    {
+      "bytes": 4194631,
+      "file": "iceland_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "03910e4f695efc17583bbb5b796a066ea3908b8e5bb0e6798917a852a2f8701c"
+    },
+    {
+      "bytes": 207,
+      "file": "iceland_2026-10-27-packed-v1_iceland_2026-09-28-refresh-8177c59.poly",
+      "sha256": "2c19f514be888d1b89802a20fbe43157188183dc9a0b49277ee891e68962bb79"
+    },
+    {
+      "bytes": 1617,
+      "file": "iceland_2026-10-27-packed-v1_validation.json",
+      "sha256": "89e3f2491b915edb0f86b002ee5ca9a6aec2959fa9361e2dee042c114ef23d23"
+    },
+    {
+      "bytes": 4592,
+      "file": "iceland_manifest.json",
+      "sha256": "c56bf2659dd76cdcc782d6ed8e8c69dbe1e327ff78031fe88d7afa6e1cdb9e5b"
+    }
+  ],
+  "release_tag": "iceland-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 23484369,
+  "source_installed_bytes": 60891136,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 0,
+    "membership_count": 190,
+    "node_count": 121,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "53a3a5f62b8697c4e597f05dc60d3775791b2626b2b7bfff25a1fb7103d19527",
+    "source_pbf_timestamp": "2026-09-15T20:20:37Z",
+    "source_sqlite_sha256": "71418cc6fc4cc6f2a16ced35d51f4d40c72326fe8c0748be00a08931c5c79f32",
+    "unassociated_node_count": 19
+  },
+  "source_release_tag": "iceland",
+  "source_sqlite_sha256": "71418cc6fc4cc6f2a16ced35d51f4d40c72326fe8c0748be00a08931c5c79f32",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 62461,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 7841
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 7841
+      },
+      {
+        "name": "city_boundary",
+        "rows": 79
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 79
+      },
+      {
+        "name": "city_place",
+        "rows": 130
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 130
+      },
+      {
+        "name": "city_ring",
+        "rows": 220
+      },
+      {
+        "name": "city_tile",
+        "rows": 5474
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 0
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 0
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 0
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 62405
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 62405
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 56
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 56
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 4558
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 25655
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 62461
+      },
+      {
+        "name": "way_geom",
+        "rows": 62461
+      },
+      {
+        "name": "way_links",
+        "rows": 77622
+      },
+      {
+        "name": "ways",
+        "rows": 62461
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 62461
+      }
+    ]
+  }
+}

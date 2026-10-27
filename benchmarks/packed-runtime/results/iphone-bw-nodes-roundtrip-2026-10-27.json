@@ -1,0 +1,24 @@
+{
+  "configuration" : {
+    "database" : "data\/bw.nodes.yspn",
+    "geometry" : "-",
+    "mode" : "nodes-packed",
+    "queries" : "data\/queries.csv",
+    "repetitions" : 3,
+    "rss_gate_bytes" : 67108864,
+    "run_id" : "2ce00f8c-3bb5-4abf-9ab6-e55d71a67377"
+  },
+  "device_model" : "iPhone",
+  "finished_at_epoch_s" : 1793097500.9648199,
+  "node_roundtrip" : {
+    "full_metadata_validated" : true,
+    "nodes" : 73991,
+    "semantic_fnv1a64" : "d68039707ce2c166"
+  },
+  "overall_success" : true,
+  "platform" : "iPhone isolated native packed storage",
+  "started_at_epoch_s" : 1793097500.362545,
+  "system_version" : "26.6.2",
+  "thermal_state_after" : 0,
+  "thermal_state_before" : 0
+}

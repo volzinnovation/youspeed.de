@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "3d629ccc41222223e7be4bbbd0fb82aae226f24ec214a0bf609121e1ac788a6c",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -15.71577789132812,
+  "elapsed_seconds": 299.946991626,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -73.24297877529224,
+  "local_source_upgrade": false,
+  "node_count": 14822,
+  "packed_download_bytes": 341940800,
+  "packed_installed_bytes": 353604079,
+  "previous_published_download_bytes": 405699657,
+  "region": "rhone-alpes",
+  "release_files": [
+    {
+      "bytes": 291999143,
+      "file": "rhone-alpes_2026-10-27-packed-v1.context.yspc",
+      "sha256": "39203a03e2137b11167cd870391fc88c8e1dbed98a52b865205ecb4a69fbe4e5"
+    },
+    {
+      "bytes": 3805134,
+      "file": "rhone-alpes_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "8f81d8cf91998a046c953a3884ae5def1806065d5ae6eb05261a5f8bbc0ece6b"
+    },
+    {
+      "bytes": 46136523,
+      "file": "rhone-alpes_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "2ca0d1ae17ef8f560dd08f668627a0ec78307465d437c611cfe5582c95575305"
+    },
+    {
+      "bytes": 29961,
+      "file": "rhone-alpes_2026-10-27-packed-v1_rhone-alpes_2026-09-28-refresh-8177c59.poly",
+      "sha256": "18ec17a989da2211d44f85385cc3b42af97b53d59d8404b3c3c5b26376b5e342"
+    },
+    {
+      "bytes": 9366,
+      "file": "rhone-alpes_2026-10-27-packed-v1_rhone-alpes_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1922,
+      "file": "rhone-alpes_2026-10-27-packed-v1_validation.json",
+      "sha256": "31f26fb5de28e86b4ced3b0736a9e3233f9b2e246cb7f841cf423ee11d0c8f39"
+    },
+    {
+      "bytes": 5123,
+      "file": "rhone-alpes_manifest.json",
+      "sha256": "d25d3978fe79d9cf1b7d077d29a0f8ef92e932bfca56f22a7f2e7ceb78941788"
+    }
+  ],
+  "release_tag": "rhone-alpes-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 405699657,
+  "source_installed_bytes": 1321537536,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 391,
+    "membership_count": 10628,
+    "node_count": 14822,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "52589e5a62bc29272c7ff2d2e252b70924c221f3f06143fa2f1fa1dd638b53be",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "a32958135ef640b2f3f48c577829423c65ee2d1545448f4bf5a3658e21f8b87c",
+    "unassociated_node_count": 7813
+  },
+  "source_release_tag": "rhone-alpes",
+  "source_sqlite_sha256": "a32958135ef640b2f3f48c577829423c65ee2d1545448f4bf5a3658e21f8b87c",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 856516,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 135564
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 135564
+      },
+      {
+        "name": "city_boundary",
+        "rows": 3054
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 3054
+      },
+      {
+        "name": "city_place",
+        "rows": 23763
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 23763
+      },
+      {
+        "name": "city_ring",
+        "rows": 3064
+      },
+      {
+        "name": "city_tile",
+        "rows": 25845
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 976
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 4007
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 4007
+      },
+      {
+        "name": "settlement_area",
+        "rows": 34786
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 36334
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 1006606
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 9066
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 850369
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 850369
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 2140
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 2140
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 60084
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 269945
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 856516
+      },
+      {
+        "name": "way_geom",
+        "rows": 856516
+      },
+      {
+        "name": "way_links",
+        "rows": 1205914
+      },
+      {
+        "name": "ways",
+        "rows": 856516
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 856516
+      }
+    ]
+  }
+}

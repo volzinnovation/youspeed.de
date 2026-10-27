@@ -1,0 +1,13 @@
+{
+  "schema": "youspeed.geodesk-build-resources.v1",
+  "filtered_pbf_preparation_seconds": 191.8076375000237,
+  "native_compile_seconds": 7.46,
+  "native_maximum_rss_bytes": 6279905280,
+  "native_peak_memory_footprint_bytes": 6191998216,
+  "native_swaps": 0,
+  "threads": 2,
+  "temporary_index_mode": "private RAM mappings; read-only builds only",
+  "patch_sha256": "df1aee61aeb34870f6b9104f02cc7dc63c91df842357ea4f68140aaa2ead2bfb",
+  "reader_modified": false,
+  "format_modified": false
+}

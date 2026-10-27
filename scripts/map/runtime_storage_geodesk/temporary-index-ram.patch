@@ -1,0 +1,66 @@
+--- a/src/build/util/MappedIndex.cpp
++++ b/src/build/util/MappedIndex.cpp
+@@ -3,6 +3,11 @@
+ 
+ #include "MappedIndex.h"
+ #include <clarisma/cli/Console.h>
++#include <cstdlib>
++#include <stdexcept>
++#ifndef _WIN32
++#include <sys/mman.h>
++#endif
+ 
+ using namespace clarisma;
+ 
+@@ -30,8 +35,20 @@
+                 File::OpenMode::TRUNCATE | File::OpenMode::SPARSE);
+ 	uint64_t totalBytes = calculateMappingSize();
+ 	file_.setSize(totalBytes);
+-	index_ = reinterpret_cast<uint64_t*>(file_.map(0, totalBytes,
+-		MappedFile::MappingMode::READ | MappedFile::MappingMode::WRITE));
++#ifndef _WIN32
++	if (std::getenv("YOUSPEED_GOL_RAM_INDEXES"))
++	{
++		void* address = mmap(nullptr, totalBytes, PROT_READ | PROT_WRITE,
++			MAP_PRIVATE, file_.native(), 0);
++		if (address == MAP_FAILED) throw IOException();
++		index_ = static_cast<uint64_t*>(address);
++	}
++	else
++#endif
++	{
++		index_ = reinterpret_cast<uint64_t*>(file_.map(0, totalBytes,
++			MappedFile::MappingMode::READ | MappedFile::MappingMode::WRITE));
++	}
+ }
+ 
+ 
+@@ -47,6 +64,8 @@
+ 
+ void MappedIndex::sync()
+ {
++	if (std::getenv("YOUSPEED_GOL_RAM_INDEXES"))
++		throw std::runtime_error("Temporary RAM indexes cannot be persisted");
+ 	// TODO: store the size of the index instead of recalculating
+ 	if(index_) file_.sync(index_, calculateMappingSize());
+ }
+--- a/src/build/GolBuilder.cpp
++++ b/src/build/GolBuilder.cpp
+@@ -2,6 +2,8 @@
+ // SPDX-License-Identifier: AGPL-3.0-only
+ 
+ #include "GolBuilder.h"
++#include <cstdlib>
++#include <stdexcept>
+ 
+ #include <clarisma/io/FilePath.h>
+ #include <clarisma/io/FileSystem.h>
+@@ -28,6 +30,8 @@
+ 
+ void GolBuilder::build(const char* golPath, int startPhase)
+ {
++	if (std::getenv("YOUSPEED_GOL_RAM_INDEXES") && settings_.keepIndexes())
++		throw std::runtime_error("Temporary RAM indexes are only supported for read-only GOL builds");
+ 	int cores = std::thread::hardware_concurrency();
+ 	threadCount_ = settings_.threadCount();
+ 	if (threadCount_ == 0)

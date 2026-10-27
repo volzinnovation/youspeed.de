@@ -62,6 +62,75 @@ struct BundleCoverage: Codable, Sendable {
     let poly: BundleArtifact?
 }
 
+/// Immutable companions of the compressed, queryable SQLite context image.
+/// Writable observations/amendments are deliberately outside this generation.
+struct BundlePackedBase: Codable, Sendable {
+    let version: Int
+    let roads: BundleArtifact
+    let nodes: BundleArtifact?
+
+    var artifacts: [BundleArtifact] { [roads] + (nodes.map { [$0] } ?? []) }
+
+    func validate(databaseFile: String) throws {
+        guard version == 1 else { throw ConsumerAppError.invalidManifest("Unsupported packed base version") }
+        guard !databaseFile.isEmpty, databaseFile == URL(fileURLWithPath: databaseFile).lastPathComponent,
+              databaseFile != ".", databaseFile != "..", !databaseFile.contains("\\") else {
+            throw ConsumerAppError.invalidManifest("Invalid packed context filename")
+        }
+        var names: Set<String> = [databaseFile]
+        for artifact in artifacts {
+            guard !artifact.file.isEmpty,
+                  artifact.file == URL(fileURLWithPath: artifact.file).lastPathComponent,
+                  artifact.file != ".", artifact.file != "..",
+                  !artifact.file.contains("\\"),
+                  names.insert(artifact.file).inserted,
+                  artifact.bytes > 0,
+                  artifact.sha256.range(of: "^[0-9a-fA-F]{64}$", options: .regularExpression) != nil else {
+                throw ConsumerAppError.invalidManifest("Invalid packed base artifact metadata")
+            }
+        }
+    }
+}
+
+struct PackedBundleCatalog: Decodable, Sendable {
+    struct Entry: Decodable, Sendable {
+        let region: String
+        let countryCode: String
+        let releaseTag: String
+        let bundleVersion: String
+        let manifest: BundleArtifact
+        enum CodingKeys: String, CodingKey {
+            case region, manifest
+            case countryCode = "country_code"
+            case releaseTag = "release_tag"
+            case bundleVersion = "bundle_version"
+        }
+    }
+    let format: String
+    let schemaVersion: Int
+    let variant: String
+    let bundles: [Entry]
+    enum CodingKeys: String, CodingKey {
+        case format, variant, bundles
+        case schemaVersion = "schema_version"
+    }
+    static let releaseURL = URL(string: "https://github.com/volzinnovation/youspeed.de/releases/download/packed-runtime-v1-latest/catalog.json")!
+
+    static func decode(_ data: Data) throws -> PackedBundleCatalog {
+        guard data.count <= 1024 * 1024 else { throw ConsumerAppError.invalidManifest("Packed catalog exceeds size limit") }
+        let catalog = try JSONDecoder().decode(Self.self, from: data)
+        guard catalog.format == "youspeed.v4.bundle.catalog", catalog.schemaVersion == 1, catalog.variant == "v4",
+              Set(catalog.bundles.map(\.region)).count == catalog.bundles.count,
+              catalog.bundles.allSatisfy({ entry in
+                  !entry.region.isEmpty && !entry.countryCode.isEmpty && !entry.releaseTag.isEmpty && !entry.bundleVersion.isEmpty
+                    && entry.manifest.bytes > 0 && entry.manifest.bytes <= 1024 * 1024
+                    && entry.manifest.sha256.range(of: "^[0-9a-fA-F]{64}$", options: .regularExpression) != nil
+                    && entry.manifest.url.flatMap(URL.init(string:))?.scheme == "https"
+              }) else { throw ConsumerAppError.invalidManifest("Invalid packed bundle catalog") }
+        return catalog
+    }
+}
+
 struct V3BundleManifest: Codable {
     let format: String
     let schemaVersion: Int
@@ -76,6 +145,7 @@ struct V3BundleManifest: Codable {
     let deltaIndex: BundleArtifact?
     let penaltyRules: BundleArtifact?
     let coverage: BundleCoverage?
+    let packedBase: BundlePackedBase?
 
     enum CodingKeys: String, CodingKey {
         case format
@@ -91,6 +161,7 @@ struct V3BundleManifest: Codable {
         case deltaIndex = "delta_index"
         case penaltyRules = "penalty_rules"
         case coverage
+        case packedBase = "packed_base"
     }
 
     init(
@@ -106,7 +177,8 @@ struct V3BundleManifest: Codable {
         dbParts: [BundleArtifact]?,
         deltaIndex: BundleArtifact?,
         penaltyRules: BundleArtifact? = nil,
-        coverage: BundleCoverage? = nil
+        coverage: BundleCoverage? = nil,
+        packedBase: BundlePackedBase? = nil
     ) {
         self.format = format
         self.schemaVersion = schemaVersion
@@ -121,14 +193,23 @@ struct V3BundleManifest: Codable {
         self.deltaIndex = deltaIndex
         self.penaltyRules = penaltyRules
         self.coverage = coverage
+        self.packedBase = packedBase
     }
 }
 
 enum BundleCompatibility {
     static func validate(_ manifest: V3BundleManifest, appVersion: String?) throws {
-        guard manifest.format == "youspeed.v3.bundle.manifest", manifest.variant == "v3",
-              manifest.schemaVersion == 1 else {
+        let legacy = manifest.format == "youspeed.v3.bundle.manifest" && manifest.variant == "v3" && manifest.packedBase == nil
+        let packed = manifest.format == "youspeed.v4.bundle.manifest" && manifest.variant == "v4" && manifest.packedBase != nil
+        guard (legacy || packed), manifest.schemaVersion == 1 else {
             throw ConsumerAppError.invalidManifest("Unsupported bundle manifest format, variant, or schema version")
+        }
+        if let base = manifest.packedBase {
+            try base.validate(databaseFile: manifest.db.file)
+            guard manifest.deltaIndex == nil,
+                  version(manifest.minAppVersion, satisfiesMinimum: "1.6") else {
+                throw ConsumerAppError.invalidManifest("Packed bundles require app 1.6 or later and complete generation updates")
+            }
         }
         guard let appVersion, version(appVersion, satisfiesMinimum: manifest.minAppVersion) else {
             throw ConsumerAppError.invalidManifest("Bundle requires app version \(manifest.minAppVersion)")
@@ -3573,8 +3654,13 @@ struct BundleDisplayMetadata: Equatable, Sendable {
             if part.bytes <= 0 || addition.overflow { validParts = false; break }
             total = addition.partialValue
         }
-        self.init(version: manifest.bundleVersion, createdAtUTC: manifest.createdAtUTC,
-                  bytes: parts.isEmpty ? manifest.db.bytes : (validParts ? total : nil))
+        var downloadBytes = parts.isEmpty ? manifest.db.bytes : (validParts ? total : nil)
+        for artifact in manifest.packedBase?.artifacts ?? [] {
+            guard let current = downloadBytes else { break }
+            let addition = current.addingReportingOverflow(artifact.bytes)
+            downloadBytes = artifact.bytes > 0 && !addition.overflow ? addition.partialValue : nil
+        }
+        self.init(version: manifest.bundleVersion, createdAtUTC: manifest.createdAtUTC, bytes: downloadBytes)
     }
 
     var packageDate: Date? {

@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "a752162dd45d35eb364e31f10bbd0545cb66e179be099c1ca839dd813d32aefe",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -16.30652051380531,
+  "elapsed_seconds": 204.51421545200003,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -73.27411316764707,
+  "local_source_upgrade": false,
+  "node_count": 4724,
+  "packed_download_bytes": 235807474,
+  "packed_installed_bytes": 243274570,
+  "previous_published_download_bytes": 281751309,
+  "region": "midi-pyrenees",
+  "release_files": [
+    {
+      "bytes": 201707983,
+      "file": "midi-pyrenees_2026-10-27-packed-v1.context.yspc",
+      "sha256": "775eeb7ae055fd9645090d77d73c144f940bd7942a95bbf1929b5a51725d5c5d"
+    },
+    {
+      "bytes": 1098891,
+      "file": "midi-pyrenees_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "5f54fc9aeea6418bda8cea1ca06e2c8a8f2dc19bab280f93f024eafbe31fa902"
+    },
+    {
+      "bytes": 33000600,
+      "file": "midi-pyrenees_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "c50e7bcdfbd645571457f45c8adc7a9f941d28ef4efe8ae8a2e6adbefed81c0f"
+    },
+    {
+      "bytes": 48139,
+      "file": "midi-pyrenees_2026-10-27-packed-v1_midi-pyrenees_2026-09-28-refresh-8177c59.poly",
+      "sha256": "4a3b87a2b1d75ad5f89fff3280803442dd7dda3cf1dbc29fd7b029aa9bd4a0b4"
+    },
+    {
+      "bytes": 9366,
+      "file": "midi-pyrenees_2026-10-27-packed-v1_midi-pyrenees_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1916,
+      "file": "midi-pyrenees_2026-10-27-packed-v1_validation.json",
+      "sha256": "653d3c5184ab5c455b21f54282c6ab1c6ceec7dd5abe984652716b7aa982d9bc"
+    },
+    {
+      "bytes": 5172,
+      "file": "midi-pyrenees_manifest.json",
+      "sha256": "f2aef8a7b319dc26b5ea0becc87bad68d6573c2eedc738eee4d44abf3be15039"
+    }
+  ],
+  "release_tag": "midi-pyrenees-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 281751309,
+  "source_installed_bytes": 910258176,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 69,
+    "membership_count": 1713,
+    "node_count": 4724,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "e413adc4b71e100df681b8c35e598a7a40148237f3c09cfd13cbd405b03737ed",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "7d4c27ea5e63fb130d485a9e71d70001b28558e99c224125353a6bd35256975b",
+    "unassociated_node_count": 3635
+  },
+  "source_release_tag": "midi-pyrenees",
+  "source_sqlite_sha256": "7d4c27ea5e63fb130d485a9e71d70001b28558e99c224125353a6bd35256975b",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 563349,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 77647
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 77647
+      },
+      {
+        "name": "city_boundary",
+        "rows": 3119
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 3119
+      },
+      {
+        "name": "city_place",
+        "rows": 11987
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 11987
+      },
+      {
+        "name": "city_ring",
+        "rows": 3141
+      },
+      {
+        "name": "city_tile",
+        "rows": 24415
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 446
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 1586
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 1586
+      },
+      {
+        "name": "settlement_area",
+        "rows": 37784
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 40489
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 669125
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 3409
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 560878
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 560878
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 885
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 885
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 37014
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 145283
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 563349
+      },
+      {
+        "name": "way_geom",
+        "rows": 563349
+      },
+      {
+        "name": "way_links",
+        "rows": 740846
+      },
+      {
+        "name": "ways",
+        "rows": 563349
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 563349
+      }
+    ]
+  }
+}

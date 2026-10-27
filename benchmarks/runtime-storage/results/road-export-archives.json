@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "format": "One exact raw query-array export per platform; all three backend files were byte-identical within each platform",
+  "archives": {
+    "android": {
+      "file": "android-road-results.json.gz",
+      "raw_bytes": 1716561,
+      "raw_sha256": "b62be597a7bbb10501630c124a48c793293166c3e65a935ffcfca42c0878c44a",
+      "gzip_bytes": 328973,
+      "gzip_sha256": "cd20040bdc945af818d4d41ceac7a2daa798a26e7d10115c10ed15ba87d57bb1",
+      "all_three_backend_exports_byte_identical": true
+    },
+    "iphone": {
+      "file": "iphone-road-results.json.gz",
+      "raw_bytes": 1716561,
+      "raw_sha256": "d1754570540b3e22bd8f0c3d3b2e1eab7b35113d93fe220fa11085ff2b3f3cbf",
+      "gzip_bytes": 328997,
+      "gzip_sha256": "ee00477677715390b9e59e6834068af04e25defcb9273f9a4bbaab736ac089cf",
+      "all_three_backend_exports_byte_identical": true
+    }
+  }
+}

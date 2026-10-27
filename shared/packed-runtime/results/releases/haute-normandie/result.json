@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "5d0ade19adad71f6a64a2509dde52f240243f93f8d8cbb0edad0fdbe4bc48ad1",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -14.796011096986083,
+  "elapsed_seconds": 65.413962828,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -72.58251350208394,
+  "local_source_upgrade": false,
+  "node_count": 1772,
+  "packed_download_bytes": 78537645,
+  "packed_installed_bytes": 81036018,
+  "previous_published_download_bytes": 92176019,
+  "region": "haute-normandie",
+  "release_files": [
+    {
+      "bytes": 68462205,
+      "file": "haute-normandie_2026-10-27-packed-v1.context.yspc",
+      "sha256": "44f24e6b97dba1d1e9b593508f2b0a4020138c84c8410ba4194f2b5fb0037af3"
+    },
+    {
+      "bytes": 491421,
+      "file": "haute-normandie_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "15cb5e73ed1462331a6a7d9a410ff6fc466e64926c4db5a250c2a8a029ae26de"
+    },
+    {
+      "bytes": 9584019,
+      "file": "haute-normandie_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "f480c5662c4407e7c806e0daef9d599031e5a0576eabc27ffd5af561c3adfb7a"
+    },
+    {
+      "bytes": 16290,
+      "file": "haute-normandie_2026-10-27-packed-v1_haute-normandie_2026-09-28-refresh-8177c59.poly",
+      "sha256": "a44fd2952a8b6fa4276dcc6c9801dba119703ed73f2808a35a179058b29fc4ba"
+    },
+    {
+      "bytes": 9366,
+      "file": "haute-normandie_2026-10-27-packed-v1_haute-normandie_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1908,
+      "file": "haute-normandie_2026-10-27-packed-v1_validation.json",
+      "sha256": "a961f6d5d518a14b75b8fbc569d29ffd5383fb9f94477fd5376dee1e48e028af"
+    },
+    {
+      "bytes": 5216,
+      "file": "haute-normandie_manifest.json",
+      "sha256": "f893bbbf7396a10afb6bb0f09df3db5107dac39624b10aaefe2d2b89b8984e57"
+    }
+  ],
+  "release_tag": "haute-normandie-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 92176019,
+  "source_installed_bytes": 295563264,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 23,
+    "membership_count": 2177,
+    "node_count": 1772,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "ac3c99a731a931b79c29ccafa55b771c79ceddc5865e2dad8bcefcb090aca405",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "c06c42eef22fdfbb346896ceddd1cdcb3b0233816ff20fcddb5ed6170324f23d",
+    "unassociated_node_count": 524
+  },
+  "source_release_tag": "haute-normandie",
+  "source_sqlite_sha256": "c06c42eef22fdfbb346896ceddd1cdcb3b0233816ff20fcddb5ed6170324f23d",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 187970,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 39686
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 39686
+      },
+      {
+        "name": "city_boundary",
+        "rows": 1490
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 1490
+      },
+      {
+        "name": "city_place",
+        "rows": 3289
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 3289
+      },
+      {
+        "name": "city_ring",
+        "rows": 1500
+      },
+      {
+        "name": "city_tile",
+        "rows": 9818
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 223
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 997
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 997
+      },
+      {
+        "name": "settlement_area",
+        "rows": 7354
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 7645
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 227933
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 3124
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 186489
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 186489
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 484
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 484
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 13534
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 51788
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 187970
+      },
+      {
+        "name": "way_geom",
+        "rows": 187970
+      },
+      {
+        "name": "way_links",
+        "rows": 294190
+      },
+      {
+        "name": "ways",
+        "rows": 187970
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 187970
+      }
+    ]
+  }
+}

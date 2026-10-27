@@ -1,0 +1,31 @@
+{
+  "storage_proof_source_commit": "a4d95ff16d83e1b5c67ee71c2b9106f41f53e352",
+  "accepted_runtime_source_commit": "97f13e545bef682f03462649ff17951da4b8c28c",
+  "all_native_inputs_byte_identical": true,
+  "file_count": 23,
+  "files_sha256": {
+    "android/app/src/main/cpp/CMakeLists.txt": "dabc83678bdc77c0909cea0e0828e38d69cf768eb4ef3a6f347d0f63fac89939",
+    "android/app/src/main/cpp/packed_runtime_jni.cpp": "207bd719aeabaf4d624796f227c2867a2d77fd8c114ef0eb9fd63b6207a7db70",
+    "android/app/src/main/cpp/packed_sqlite_jni.cpp": "6b49421783d7667bd377af0280e130e7a5c6377f24e72223c72d97e658b43eb9",
+    "android/app/src/main/cpp/vendor/sqlite/sqlite3.c": "dc58f0b5b74e8416cc29b49163a00d6b8bf08a24dd4127652beaaae307bd1839",
+    "android/app/src/main/cpp/vendor/sqlite/sqlite3.h": "05c48cbf0a0d7bda2b6d0145ac4f2d3a5e9e1cb98b5d4fa9d88ef620e1940046",
+    "shared/packed-runtime/vendor/zstd/zstd.h": "9b4bc8245565c98ccfc61c07749928b57e7c0f6fddb0530c4f6aa1971893d88b",
+    "shared/packed-runtime/vendor/zstd/zstd_errors.h": "66a8c3f71d12ea6e797e4f622f31f3f8f81c41b36f48cad4f5de7d8bfb6aac0a",
+    "shared/packed-runtime/vendor/zstd/zstddeclib.c": "5eb38abe0a7eea13674b312a006df72002d4192f0f0b4d09e6f03fb927a1f3d0",
+    "shared/runtime-sign-nodes-prototype/CMakeLists.txt": "77000a0a178219087f0309e1326b09cefe12c369ad6714f66cb4f88c1dfd9d7f",
+    "shared/runtime-sign-nodes-prototype/main.cpp": "d613eb2ead548a99cf02e539bc198fb72847486b2b31b4c095813cecff285654",
+    "shared/runtime-sign-nodes-prototype/packed_nodes.h": "c66f7d78fe5fbf3e1ade6fb3c65002cc4b4dda7f3071deb175f2a00e424dd0a2",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp": "cf7be70c6c4b8d948ad32d764152a4e83963bd4c9eb2d34ff0c0992d5f169fef",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.h": "887323b28596b39347fd73b085237309d059bb17d518523146b6b9432b7239e0",
+    "shared/runtime-storage-prototype/CMakeLists.txt": "ccf246e1551a782b2fb77f0889e88c81b64fbdb0cce657ace3634a3fbe420cb7",
+    "shared/runtime-storage-prototype/bounded_file.h": "c33d6475718326a337c9273b51e61d90a4e2df57e92c602b310aa070778dfc31",
+    "shared/runtime-storage-prototype/main.cpp": "24296c67784de49b5cc383696ac339608fd312526f18eeca794eb45e4cdeed43",
+    "shared/runtime-storage-prototype/packed_runtime.cpp": "135846b20c2bbfaa14c488c6523884d295e9cc414bdcf952a0439cfa997cd78e",
+    "shared/runtime-storage-prototype/packed_runtime.h": "e1b1aecfd4cdf014cfe68bcec45a2770a7f94fe33f8b3309daea5ca82aab5ae3",
+    "shared/runtime-storage-prototype/packed_runtime_check.cpp": "29cd12d14d06908422a491ccdf00f052dbdcbc71cc636a94d63a09b05ba0f523",
+    "shared/runtime-storage-prototype/packed_sqlite_vfs.cpp": "ea69107b4e014dca760e28d615c08129f28abb09e3aa0ea570902b62c3739fa1",
+    "shared/runtime-storage-prototype/runtime_storage.cpp": "a6930f324aa1d7877c1d5b17df45af77e5bb7f4472dd4a891ca2407892e1632d",
+    "shared/runtime-storage-prototype/runtime_storage.h": "b4c47464ba0c3d18d21df0c05e7c4ef90b69ce648ef0c8d3b38e536098161eb6",
+    "shared/runtime-storage-prototype/zstd_decoder.c": "c38d437c7f19959656dbbcf0236554210e85a2bdd31dbeca4d349cec5f2baa1f"
+  }
+}

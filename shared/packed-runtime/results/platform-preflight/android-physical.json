@@ -1,0 +1,137 @@
+{
+  "apks": {
+    "app-debug-androidTest.apk-test": {
+      "bytes": 22569223,
+      "sha256": "a49d319af8eb598a0121bdca10ab98983dd17d770e9c78b7f0d0b425f58c6b33"
+    },
+    "app-debug.apk": {
+      "bytes": 549116324,
+      "sha256": "192145c36336319471c0147e21bdf6980590923b884e6557296308cb1b0a9547"
+    }
+  },
+  "commit_binding_status": "Every recorded tested runtime source SHA-256 matches both current bytes and Git runtime_source_commit; the tested app/native bytes are unchanged from the D/E snapshot.",
+  "data_builder_commit": "0c4e608c78f06afc835f534c9e707d0852ab5eda",
+  "device": {
+    "android_release": "16",
+    "build_fingerprint": "motorola/nice_g_sysen/nice:16/W1VNS36H.60-66-10/658587-0613f2:user/release-keys",
+    "manufacturer": "motorola",
+    "model": "moto g86 5G",
+    "sdk": "36",
+    "serial": "ZY32M7QBXR"
+  },
+  "elapsed_wall_seconds": 4.075411290999909,
+  "format": "youspeed.packed-runtime.physical-platform-acceptance",
+  "instrumentation_log_sha256": "cadea49d0246de08fd730fffaf6290c93843829c3bcf1cc706c9df9eee8d4914",
+  "isolated_application_id": "de.youspeed.android.testhost",
+  "limits": {
+    "context_block_cache_bytes": 2097152,
+    "decoded_ring_cache": {
+      "entries": 128,
+      "points": 8192
+    },
+    "decoded_way_cache": {
+      "entries": 1024,
+      "points": 16384
+    },
+    "generic_nodes_cache_bytes": 524288,
+    "geometry_block_cache_bytes": 524288,
+    "owner_inventory": {
+      "basis": "Static owner audit; pool4 plus inventory1, maintenance1, serialized trip1",
+      "normal_worst_context_geometry_pairs": 7,
+      "persistent_context_geometry_pairs": 5,
+      "trip_journal_concurrent_map_loads": 1
+    },
+    "sqlite_cache_kib": 1536
+  },
+  "monaco_codec2": {
+    "comparison_excludes": "timing fields only",
+    "complete_matcher_results": 27,
+    "exact_geometry_rows": 1232,
+    "original_table_counts": 44
+  },
+  "normal_application_modified": false,
+  "pilot_file_sha256": {
+    "monaco.context.yspc": "bbd1b7149fb19b2ec413ffc0b07f5978ac2535a103f1b40778b9c3a12dd87965",
+    "monaco.ways.yspg": "0193088fd2fa84afc58a1e6e40a3d9b96c0caa43a07094d9d63327b70dc9a7c3",
+    "source.sqlite": "6b68ce6ed6f1dec41b834e621da757ae5e999d7f84542b67a78ef416b83dfb51"
+  },
+  "platform": "android",
+  "platform_passed": true,
+  "ready_for_rollout": false,
+  "runtime_source_commit": "97f13e545bef682f03462649ff17951da4b8c28c",
+  "runtime_source_sha256": {
+    "android/app/src/main/cpp/CMakeLists.txt": "dabc83678bdc77c0909cea0e0828e38d69cf768eb4ef3a6f347d0f63fac89939",
+    "android/app/src/main/cpp/packed_runtime_jni.cpp": "207bd719aeabaf4d624796f227c2867a2d77fd8c114ef0eb9fd63b6207a7db70",
+    "android/app/src/main/cpp/packed_sqlite_jni.cpp": "6b49421783d7667bd377af0280e130e7a5c6377f24e72223c72d97e658b43eb9",
+    "android/app/src/main/cpp/vendor/sqlite/sqlite3.c": "dc58f0b5b74e8416cc29b49163a00d6b8bf08a24dd4127652beaaae307bd1839",
+    "android/app/src/main/cpp/vendor/sqlite/sqlite3.h": "05c48cbf0a0d7bda2b6d0145ac4f2d3a5e9e1cb98b5d4fa9d88ef620e1940046",
+    "android/app/src/main/java/de/youspeed/android/alpha/AmendedNodePassageRuntime.kt": "76842545291cd508914254542f7d689fc9f4b01333c20fe0557192824f41e6a0",
+    "android/app/src/main/java/de/youspeed/android/alpha/ConditionalSpeedRules.kt": "38f42863b28550275050210147e3424920bab5220aa0f049d7414a0d32231920",
+    "android/app/src/main/java/de/youspeed/android/alpha/InventorySignRuntime.kt": "b37f909bb7d7bb84f134fe7712bd99776bcf3c9e6ca9ac9741dc1bb94a451a49",
+    "android/app/src/main/java/de/youspeed/android/alpha/LookupSessionResources.kt": "3a0b32fa786df8d9f3d4ae8ef67f1c9a2e8f09771b4e4ecc5e8b5fad41ecc2eb",
+    "android/app/src/main/java/de/youspeed/android/alpha/MapDataAmendmentStore.kt": "db4de518e42ec8b81ae8bae7036786a08dd08c1deca01680bc12c55a2cf38efb",
+    "android/app/src/main/java/de/youspeed/android/alpha/PackedAmendmentBaseIdentity.kt": "2f9aa4dab97e7404c4a99a35b6ad4755e55b7fa54969f308ac7d73da9f0fd30c",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeGenericSpeedNodes.kt": "7eaf017438307e48858d9aa93df9212a2097dbc9dd918575c83af3ccfb7a5dc0",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeMapDatabase.kt": "4c6b4aefd2f8c36bdd9790e7a84d97e11a6e4dae6293efcf62f265050b049acc",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimePackedNative.kt": "5f95dc1380d95a1b2b86b7f0156fe8fb3252a1c484c23a36855c5ebe68fef387",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeSqlDatabase.kt": "ea6904243049a34de457bb5e0e913f9e18e10cf75c3ad5bb3173802f7f743a50",
+    "android/app/src/main/java/de/youspeed/android/alpha/TripJournalMapContext.kt": "69ac8195786076a8942fba63708c8f43735221b47cc4f9f35d49cb8780b4753b",
+    "android/app/src/main/java/de/youspeed/android/alpha/V3SpeedLimitLookup.kt": "d994621ac7beb083a00ea625834c729026bf3ae30b772a94b7188858bb3c584b",
+    "shared/runtime-sign-nodes-prototype/packed_nodes.h": "c66f7d78fe5fbf3e1ade6fb3c65002cc4b4dda7f3071deb175f2a00e424dd0a2",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp": "cf7be70c6c4b8d948ad32d764152a4e83963bd4c9eb2d34ff0c0992d5f169fef",
+    "shared/runtime-storage-prototype/packed_runtime.cpp": "135846b20c2bbfaa14c488c6523884d295e9cc414bdcf952a0439cfa997cd78e",
+    "shared/runtime-storage-prototype/packed_runtime.h": "e1b1aecfd4cdf014cfe68bcec45a2770a7f94fe33f8b3309daea5ca82aab5ae3",
+    "shared/runtime-storage-prototype/packed_sqlite_vfs.cpp": "ea69107b4e014dca760e28d615c08129f28abb09e3aa0ea570902b62c3739fa1",
+    "shared/runtime-storage-prototype/zstd_decoder.c": "c38d437c7f19959656dbbcf0236554210e85a2bdd31dbeca4d349cec5f2baa1f"
+  },
+  "schema_version": 1,
+  "scope": "Production JNI/facade/corrections + real codec2 Monaco matcher; full-BW memory/latency measured separately in native single/pool8 harness.",
+  "source_commit": "97f13e545bef682f03462649ff17951da4b8c28c",
+  "test_results": {
+    "assumption_skipped": 1,
+    "assumption_skipped_case_names": [
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#optionalRealBadenWuerttembergProbe"
+    ],
+    "expected_required_case_set_origin": "Original 27 required emulator cases plus the 3 source-binding regressions; this 30-case report is from the physical Moto, not a fresh emulator run.",
+    "failed": 0,
+    "ignored": 1,
+    "ignored_case_names": [
+      "de.youspeed.android.alpha.PackedProxyDatabaseInstrumentedTest#readonlyProxySupportsSQLiteViewsJoinsAndPackedGeometryCallback"
+    ],
+    "matches_emulator_required_case_set": true,
+    "passed": 30,
+    "passed_case_names": [
+      "de.youspeed.android.alpha.ConditionalSpeedRulesInstrumentedTest#brokenKnownCapabilityCannotRestoreScalarSpeed",
+      "de.youspeed.android.alpha.ConditionalSpeedRulesInstrumentedTest#cachedReevaluationKeepsExplicitTimezoneAndHalfOpenBoundary",
+      "de.youspeed.android.alpha.ConditionalSpeedRulesInstrumentedTest#legacyElectronicMarkerCannotInventRoadDefault",
+      "de.youspeed.android.alpha.ConditionalSpeedRulesInstrumentedTest#outsideWindowUsesIndependentBaseAndNeverInventsOne",
+      "de.youspeed.android.alpha.ConditionalSpeedRulesInstrumentedTest#partialCapabilityCannotExecuteRulesOrRestoreScalarFallback",
+      "de.youspeed.android.alpha.ConditionalSpeedRulesInstrumentedTest#sharedConformance",
+      "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#inactiveNodeClauseReevaluatesTheUnderlyingConditionalAtEveryClockTick",
+      "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#knownSourceRevisionSchemesRejectMismatchedSourceSnapshots",
+      "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#newLocalNodePersistsAmendsRestrictionsAndNeedsCurrentDirectedPassage",
+      "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#nodePassageUsesDirectedCrossingAndKeepsProofUntilItsReviewedScopeEnds",
+      "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#persistedNodePassageCannotAuthorizeASeparateDrive",
+      "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#revisionsPersistAndNumericAmendmentKeepsItsNightRestriction",
+      "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#sameVersionOverlappingRegionAndChangedNodesCannotReuseReviewedAmendments",
+      "de.youspeed.android.alpha.MapDataAmendmentStoreInstrumentedTest#validityExpiryReevaluatesOriginalBundleInsteadOfRetainingTheAmendment",
+      "de.youspeed.android.alpha.PackedProductionLookupInstrumentedTest#completePilotSQLAndProductionMatcherMatchOriginalSQLite",
+      "de.youspeed.android.alpha.PackedProxyDatabaseInstrumentedTest#completeBaseAndKnownWayRevisionSeparateSameVersionOverlappingRegions",
+      "de.youspeed.android.alpha.PackedProxyDatabaseInstrumentedTest#compressedContextAndGeometryPreserveSQLAndLargeSourceIdentities",
+      "de.youspeed.android.alpha.PackedProxyDatabaseInstrumentedTest#nativeCursorPreservesBindingsTypesUnicodeMovementAndOwnerLifetime",
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#ambiguousPostStationAndZeroLengthRulesCannotPromiseHandoff",
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#certifiedSourceTopologyCrossesReversedWayAndStopHidesOnlyBeyondJunction",
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#conditionalOsmContextBlocksImpliedTownFiftyWithoutSuppressingGovernmentBoundary",
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#conditionalStationCannotBecomeAnUnconditionalPreview",
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#directedTownEntryPreviewsFiftyAndExitOrUnresolvedLocalityDoesNot",
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#longerCrossWayReverseApproachRemainsConsumedAfterPassageAndJitter",
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#originAssociationNotChildEntryAndAllStatusEventsBlockBeyond",
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#physicalStationProvidesAlongWayDistanceAndLegacyCapabilityIsOptional",
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#thirtySecondHorizonsReadBeyondThreeHundredMetresAndExcludeJustOutside",
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#townEntryAtCertifiedSplitUsesPhysicalOriginAndReverseChildLocality",
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#townEntryKeepsFreshExplicitLimitAndCannotHideItsConditionalScope",
+      "de.youspeed.android.alpha.UpcomingSpeedLimitReaderInstrumentedTest#workCapRemainsBoundedAndCannotExposeATargetBeyondItsProof"
+    ]
+  },
+  "unrelated_preexisting_build_tree_changes": "APK built with existing Panoramax/UI working-tree changes; all tested packed-runtime sources match the pinned commit. Test suite does not launch the controller UI."
+}

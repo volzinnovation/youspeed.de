@@ -1,0 +1,98 @@
+{
+  "build_cache_identity": "d8fe368de33d38e49adcd69b58a5de27e3d430fbbf3635d1c0ba043571aad492",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -56.35426098167542,
+  "elapsed_seconds": 1814.6489573879999,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -51.60035546432227,
+  "local_source_upgrade": false,
+  "node_count": 361631,
+  "packed_download_bytes": 1096137386,
+  "packed_installed_bytes": 1215528962,
+  "previous_published_download_bytes": 2511441920,
+  "region": "germany",
+  "release_files": [
+    {
+      "bytes": 716102535,
+      "file": "germany_2026-10-27-packed-v1.context.yspc",
+      "sha256": "9189ce5eb1c0a1c6d56d5ef56fcf5e0273bcc59f989f97823ca71823184a9e10"
+    },
+    {
+      "bytes": 93436798,
+      "file": "germany_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "0ff395a771172e215bef9b275256f97bf5b61b4ca61c697da4aa26e6730fc73a"
+    },
+    {
+      "bytes": 286598053,
+      "file": "germany_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "0ebec647972f1086894880c3297a19b84c153f076fbf266467d7ca3702c2fdc9"
+    },
+    {
+      "bytes": 46174,
+      "file": "germany_2026-10-27-packed-v1_germany.poly",
+      "sha256": "95a1710cb613629c6cf2875c852a9af09935b6e9ee7b873c5d604a56a7e5e0bd"
+    },
+    {
+      "bytes": 499,
+      "file": "germany_2026-10-27-packed-v1_validation.json",
+      "sha256": "db24b8165ccb20e0ad1cca41188571e3b5334b257165eacab1e90e5284e553f2"
+    },
+    {
+      "bytes": 4286,
+      "file": "germany_manifest.json",
+      "sha256": "02eaa0b6056b8f60e54e3bdb4815e7334fbc7a549436e2723072adf140889ee8"
+    }
+  ],
+  "release_tag": "germany-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-02-22",
+  "source_download_bytes": 2511441920,
+  "source_installed_bytes": 2511441920,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 101875,
+    "membership_count": 208296,
+    "node_count": 361631,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "33dda96a4ba889851bbf26563efb368d1242728b3cc9d7129001e1d35c5acb0e",
+    "source_pbf_timestamp": "2026-02-22T21:21:05Z",
+    "source_sqlite_sha256": "d35c5fe86fc4f3e58ed90d108699e14946691e75a9390be0e86cbb6af8b2ecc7",
+    "unassociated_node_count": 204660
+  },
+  "source_release_tag": "germany",
+  "source_sqlite_sha256": "d35c5fe86fc4f3e58ed90d108699e14946691e75a9390be0e86cbb6af8b2ecc7",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 7964480,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 1336619
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 1336619
+      },
+      {
+        "name": "way_geom",
+        "rows": 7964480
+      },
+      {
+        "name": "ways",
+        "rows": 7964480
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 7964480
+      }
+    ]
+  }
+}

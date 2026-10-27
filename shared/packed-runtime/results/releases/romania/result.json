@@ -1,0 +1,166 @@
+{
+  "build_cache_identity": "10471d6ec7ac525ac0993d2e27b493d960a11a0fd77890f2d506dfbceb5ab42a",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -15.161407483531452,
+  "elapsed_seconds": 205.03706338499998,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -67.09672895723928,
+  "local_source_upgrade": false,
+  "node_count": 7311,
+  "packed_download_bytes": 220884643,
+  "packed_installed_bytes": 230077023,
+  "previous_published_download_bytes": 260358684,
+  "region": "romania",
+  "release_files": [
+    {
+      "bytes": 174048816,
+      "file": "romania_2026-10-27-packed-v1.context.yspc",
+      "sha256": "a96e2959aeb35d44042acdfa92fe9a968ffaa8c90da578f10a0920d3128af28a"
+    },
+    {
+      "bytes": 1870411,
+      "file": "romania_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "62cad920357cc0ea8ab18c62fbf28ba06acca6f0b4a4b273274235e47558698f"
+    },
+    {
+      "bytes": 44965416,
+      "file": "romania_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "35bf71d7e7fdf1c48e132025761c87ce60023e0548ccdf23a2354a86761027fd"
+    },
+    {
+      "bytes": 9253,
+      "file": "romania_2026-10-27-packed-v1_romania_2026-09-28-refresh-8177c59.poly",
+      "sha256": "6cea4b19e32bf0a7ea4dc69b755a136b4e85db24ebc631ea4f296477d6d12610"
+    },
+    {
+      "bytes": 1650,
+      "file": "romania_2026-10-27-packed-v1_validation.json",
+      "sha256": "f6e34e064f125e92cffa036ef6478883a0be539ad9b12c49e8299592a9682b2c"
+    },
+    {
+      "bytes": 4607,
+      "file": "romania_manifest.json",
+      "sha256": "b76bd4d588dc4c741b91f051cb72e5f99771990336f42abc6d473b63369550e1"
+    }
+  ],
+  "release_tag": "romania-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 260358684,
+  "source_installed_bytes": 699252736,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 47,
+    "membership_count": 7579,
+    "node_count": 7311,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "7a458c244b92cfc4e108f99eca1f9bff83a1b9ba86f588b1c6cd6c66b9a05d60",
+    "source_pbf_timestamp": "2026-09-15T20:20:37Z",
+    "source_sqlite_sha256": "a6c221a7ee0c5875e039c0ff84a9366652079738a9f14a688756342624dfc273",
+    "unassociated_node_count": 2429
+  },
+  "source_release_tag": "romania",
+  "source_sqlite_sha256": "a6c221a7ee0c5875e039c0ff84a9366652079738a9f14a688756342624dfc273",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 687817,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 64509
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 64509
+      },
+      {
+        "name": "city_boundary",
+        "rows": 3308
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 3308
+      },
+      {
+        "name": "city_place",
+        "rows": 13972
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 13972
+      },
+      {
+        "name": "city_ring",
+        "rows": 3375
+      },
+      {
+        "name": "city_tile",
+        "rows": 89060
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 553
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 3545
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 3545
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 683426
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 683426
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 846
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 846
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 45740
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 287326
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 687817
+      },
+      {
+        "name": "way_geom",
+        "rows": 687817
+      },
+      {
+        "name": "way_links",
+        "rows": 1006304
+      },
+      {
+        "name": "ways",
+        "rows": 687817
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 687817
+      }
+    ]
+  }
+}

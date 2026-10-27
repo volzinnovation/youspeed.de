@@ -1,0 +1,15 @@
+{
+  "schema": 2,
+  "completed_date_berlin": "2026-10-27",
+  "android": "complete: all three backends, full query parity, memory, latency, real-source correction checks",
+  "iphone": "complete: all three backends, full query parity, memory, latency, real-source correction checks",
+  "iphone_model": "iPhone 14 Pro",
+  "iphone_os": "26.6.2",
+  "android_model": "moto g86 5G",
+  "android_api": 36,
+  "cross_phone_comparison_complete": true,
+  "protected_policy_changed": false,
+  "production_apps_replaced": false,
+  "large_artifacts": "Isolated phone containers; host build/data caches are temporary",
+  "retained_raw_evidence": "android-road-results.json.gz + iphone-road-results.json.gz; all six reports and SHA receipts"
+}

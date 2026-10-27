@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "source_sha256": {
+    "benchmarks/runtime-storage/CMakeLists.txt": "9c4b9bc52cff7cb3b8311d98639e33ebda24cc6325b97a462a846839b47c930b",
+    "benchmarks/runtime-storage/build_iphone.py": "ba18be98eb8d69e9981e5fca67a477ebcb9f86d06b34b460fe864845a844115b",
+    "benchmarks/runtime-storage/compare_reports.py": "0ba8bce2dfeef3b64f71bb31793454eb28bc19e310da06554798c5f45b18961d",
+    "benchmarks/runtime-storage/iphone/BenchmarkApp.mm": "d55bb99535fc36ab6f690e572f4c753d82433533b28a1cdba3c40da98abc2a7b",
+    "benchmarks/runtime-storage/phone_main.cpp": "23f2514df661411657e7704b6ba01ebf2127caca8a2f1d16c9594552f759fef1",
+    "benchmarks/runtime-storage/run_devices.py": "acdb192eff838676ddf71602fefc4ec9af9bd44bade220cdb131977c1647a796",
+    "shared/runtime-storage-prototype/CMakeLists.txt": "87b360ab1ab0b669419c57e39a7f5fbbf35eaa7036e5108b2889e52de1731ac7",
+    "shared/runtime-storage-prototype/main.cpp": "24296c67784de49b5cc383696ac339608fd312526f18eeca794eb45e4cdeed43",
+    "shared/runtime-storage-prototype/runtime_storage.cpp": "284a61a872cf7dbd341f7dc7f2d8dafcf927340269ed6887cc1500959abf9f5d",
+    "shared/runtime-storage-prototype/runtime_storage.h": "b4c47464ba0c3d18d21df0c05e7c4ef90b69ce648ef0c8d3b38e536098161eb6",
+    "shared/runtime-storage-geodesk/CMakeLists.txt": "22e6f2e1d7c30dd17be64a2da9fc51918daade8ac9107f8306f41bb4f54adbf7",
+    "shared/runtime-storage-geodesk/geodesk_adapter.cpp": "8b7ecc0f2a0eabf35b792677d5e5f6d1e1520272238fa11cbfc62e11f72013d7",
+    "shared/runtime-storage-geodesk/geodesk_adapter.h": "5aa5a9fd2f4a73bde10169f454f9fa92e9e89599dc2379556c4a4434940cb9de",
+    "shared/runtime-storage-geodesk/verify_native_bounds.cpp": "4f9f4de9da42d689465fe9b38f94b71768941d509b2fe7a3ee9b5a9d04994c88",
+    "shared/runtime-corrections-prototype/runtime_corrections.cpp": "3f9bd862150bc5804e313521fcd81cb4097fb8b5b2bc0faec340acc77a719824",
+    "shared/runtime-corrections-prototype/runtime_corrections.hpp": "6bf690dd3af8c8d10a50a1e226072677bde71c2c20ae9bb62c78ff8abc5c04b4",
+    "shared/runtime-corrections-prototype/tests/main.cpp": "ac2b24a339e830fab44d8f17d7a79c39c4caa8266446bf233e684153c213cc1c",
+    "shared/runtime-sign-nodes-prototype/CMakeLists.txt": "7187cdd9a356d877bb7ce2d586496573febdece0982324f808436917aeb4bb33",
+    "shared/runtime-sign-nodes-prototype/main.cpp": "d613eb2ead548a99cf02e539bc198fb72847486b2b31b4c095813cecff285654",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp": "51e18fb854589af68f0debac84160f4783c33e84ce7b7328a3df70b765766bea",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.h": "887323b28596b39347fd73b085237309d059bb17d518523146b6b9432b7239e0",
+    "scripts/map/runtime_storage/build.py": "c49f82b2eae3b610f231185e8bca037c0ab1fff428f2d1497d35e0dc5cbeedc7",
+    "scripts/map/runtime_storage/compact_globals.py": "3659cb4ecd573714aa7135856347287ebe43267be3fe85478fab38f77b392791",
+    "scripts/map/runtime_storage/corpus.py": "8c913099dd97b52cf7a82e795aa2e6c35356ffc6987ea3d0060165182c12fa78",
+    "scripts/map/runtime_storage/finalize.py": "e00599e60809a2b338eab15dec2d43472fd8db917fd8bc273ac810f850342711",
+    "scripts/map/runtime_storage/measure_sizes.py": "18098bb943308a6344e2f27df05048ca2543882386d777ad5a492666f6db11a0",
+    "scripts/map/runtime_storage/test_storage.py": "ae7a60d3dfd2959118ed01401d0beab675cc8f8a9a8b48ea1c3bb92f9b00a128",
+    "scripts/map/runtime_storage/verify.py": "38b22bb1375378d95e257bad00206cb93c0d3e5a30e77b8754ddc4f5ebbf36fd",
+    "scripts/map/runtime_storage/verify_queries.py": "15c7ddf2ec153c67bffa678f0a65cd3307aafb3e73ce4d61d1c74d7f3003cea8",
+    "scripts/map/runtime_storage_geodesk/build.py": "2c060acb0b30232536a02731128f66182d68f65cc80628a2f5ef1556f5a59e05",
+    "scripts/map/runtime_storage_geodesk/filter_runtime_pbf.py": "2abd18a71a058b415a73bb94a740a0aac3d0a56bf428ddd42ce5e4c73133a903",
+    "scripts/map/runtime_storage_geodesk/temporary-index-ram.patch": "df1aee61aeb34870f6b9104f02cc7dc63c91df842357ea4f68140aaa2ead2bfb",
+    "scripts/map/runtime_storage_geodesk/verify_source.py": "e0524f16ce79450e357cfd4c9d4311878353ba785a416d532d0af4f77e776c85",
+    "scripts/map/runtime_storage_nodes/build.py": "0ac5f6901d798b26f742ef2cfd6981fc14265bfd0271548488af3af4962c06ab",
+    "scripts/map/runtime_storage_nodes/test_format.py": "526395d4b71db16f1cd9c6b18f21b4dcd235ad1d7b57179f2c29f88192f01b2e",
+    "scripts/map/runtime_storage_nodes/verify.py": "5d04c3a53758f47ffa72a66d1c39d178c342a2d19a56101c38267fe248701c24",
+    "scripts/map/extract_runtime_speed_nodes.py": "1795ee08982233ee19668e6e7ad7ac8d7eaa45c7df1b4600680776875ab0f2a6",
+    "benchmarks/runtime-storage/replay_evidence.py": "5a8766c9dd729f36f842df3fc269188f202632f1e0c1a6845083625ec132e7d9"
+  },
+  "native_binary_sha256": {
+    "phone-android/storage_phone_runner": {
+      "sha256": "3ca4af1b32d94478a44b2d57c6da31f4176ff3fdb9dc66c746e4c55ee305303e",
+      "bytes": 21095704
+    },
+    "iphone-build/Build/Products/Release-iphoneos/StoragePrototypeBenchmark.app/StoragePrototypeBenchmark": {
+      "sha256": "2c584fa8b69e9ce987b5167946564d730b2de012e067c1115af27f8f54281ab8",
+      "bytes": 1896080
+    }
+  },
+  "toolchain": {
+    "sqlite": "3.51.0",
+    "android_ndk": "30.0.16248370",
+    "ios_minimum_target": "18.0",
+    "configuration": "Release"
+  },
+  "android_replay_binary_sha256_verified": "3ca4af1b32d94478a44b2d57c6da31f4176ff3fdb9dc66c746e4c55ee305303e"
+}

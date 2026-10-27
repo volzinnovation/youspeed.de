@@ -8,8 +8,8 @@ val releaseStorePassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEA
 val releaseKeyAlias = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_ALIAS").orNull
 val releaseKeyPassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_PASSWORD").orNull
 
-val releaseBaseVersionCode = providers.gradleProperty("youspeedBuildNumber").orElse("10056").get().toInt()
-val releaseVersionName = providers.gradleProperty("youspeedVersionName").orElse("1.4").get()
+val releaseBaseVersionCode = providers.gradleProperty("youspeedBuildNumber").orElse("10074").get().toInt()
+val releaseVersionName = providers.gradleProperty("youspeedVersionName").orElse("1.6").get()
 val releaseAbiCodes = linkedMapOf(
     "armeabi-v7a" to 1,
     "arm64-v8a" to 2,
@@ -24,6 +24,7 @@ require(releaseAbi == null || releaseAbi in releaseAbiCodes) {
 android {
     namespace = "de.youspeed.android.alpha"
     compileSdk = 36
+    ndkVersion = "30.0.16248370"
 
     dependenciesInfo {
         // F-Droid rejects AGP's Google-encrypted dependency metadata block.
@@ -45,6 +46,9 @@ android {
             // Vosk only supplies these four ABIs. Exclude obsolete JNA-only ABIs so
             // every APK advertised as supported contains the speech recognizer.
             abiFilters += releaseAbi?.let(::setOf) ?: releaseAbiCodes.keys
+        }
+        externalNativeBuild {
+            cmake { arguments += "-DANDROID_STL=c++_static" }
         }
     }
 
@@ -110,9 +114,15 @@ android {
     }
 
     sourceSets {
-        getByName("androidTest") { assets.srcDirs("../../tests/fixtures") }
+        getByName("androidTest") { assets.srcDirs("../../tests/fixtures", "../../iphone/SpeedConsumerApp/TestFixtures/packed-runtime-v1") }
         getByName("main") {
             assets.srcDirs("src/main/assets", "../../shared")
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
         }
     }
 }

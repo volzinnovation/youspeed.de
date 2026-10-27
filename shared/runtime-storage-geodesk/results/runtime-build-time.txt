@@ -1,0 +1,20 @@
+Building bw-runtime.gol from bw-runtime.osm.pbf:
+00:00:07 Done.
+        7.46 real         5.33 user         5.38 sys
+          6279905280  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               24795  page reclaims
+              362524  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                 155  voluntary context switches
+               39285  involuntary context switches
+         29894460703  instructions retired
+         24718858459  cycles elapsed
+          6191998216  peak memory footprint

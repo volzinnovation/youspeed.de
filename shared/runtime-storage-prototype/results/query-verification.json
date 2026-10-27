@@ -1,0 +1,19 @@
+{
+  "queries": 586,
+  "candidate_results": 6446,
+  "backends": [
+    "packed",
+    "sqlite",
+    "geodesk"
+  ],
+  "original_sql_candidate_sets_identical": true,
+  "native_backend_outputs_exactly_identical": true,
+  "original_python_projection_max_abs_error": {
+    "packed": 9.094947017729282e-13,
+    "sqlite": 9.094947017729282e-13,
+    "geodesk": 9.094947017729282e-13
+  },
+  "projection_absolute_tolerance": 1e-07,
+  "elapsed_seconds": 3.834700875013368,
+  "corpus": "/private/tmp/youspeed-storage-prototype-20261026/stratified.csv"
+}
