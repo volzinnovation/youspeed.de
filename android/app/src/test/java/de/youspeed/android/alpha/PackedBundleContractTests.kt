@@ -15,7 +15,7 @@ class PackedBundleContractTests {
         val f=Fixture(temporary.newFolder());val parsed=ContractJson.decodeBundleManifest(f.manifest())
         parsed.validateLaunchContract("1.6")
         assertEquals("roads.yspg",parsed.packedBase?.roads?.file)
-        assertThrows(IllegalArgumentException::class.java){parsed.validateLaunchContract("1.5")}
+        parsed.validateLaunchContract("1.5")
         assertThrows(IllegalArgumentException::class.java){parsed.copy(packedBase=parsed.packedBase?.copy(version=2)).validateLaunchContract("1.6")}
         assertThrows(IllegalArgumentException::class.java){parsed.copy(format="youspeed.v3.bundle.manifest",variant="v3").validateLaunchContract("1.6")}
         assertThrows(IllegalArgumentException::class.java){parsed.copy(deltaIndex=parsed.db).validateLaunchContract("1.6")}
@@ -23,6 +23,23 @@ class PackedBundleContractTests {
         val base=requireNotNull(parsed.packedBase)
         assertThrows(IllegalArgumentException::class.java){parsed.copy(packedBase=base.copy(
             roads=base.roads.copy(uncompressedSha256=null))).validateLaunchContract("1.6")}
+    }
+    @Test fun packedReaderCapabilityIsIndependentOfMarketingAndDoesNotRelaxLegacyOrFutureGates() {
+        val f=Fixture(temporary.newFolder());val packed=ContractJson.decodeBundleManifest(f.manifest())
+        packed.validateLaunchContract("1.5")
+        packed.validateLaunchContract("1.5-debug")
+        packed.validateLaunchContract()
+        assertEquals("1.6",PackedBundleReaderCompatibility.VERSION)
+        assertEquals("1.6",packed.minAppVersion) // Published metadata stays unchanged.
+        for (marketing in listOf("1.5","1.6","1.7","99.0")) {
+            assertThrows(IllegalArgumentException::class.java){packed.copy(minAppVersion="1.7").validateLaunchContract(marketing)}
+        }
+        assertThrows(IllegalArgumentException::class.java){packed.copy(minAppVersion="1.5").validateLaunchContract("1.5")}
+        assertThrows(IllegalArgumentException::class.java){packed.validateLaunchContract("invalid")}
+        val legacy=ContractJson.decodeBundleManifest(f.legacyManifest())
+        legacy.copy(minAppVersion="1.5").validateLaunchContract("1.5")
+        assertThrows(IllegalArgumentException::class.java){legacy.copy(minAppVersion="1.6").validateLaunchContract("1.5")}
+        assertThrows(IllegalArgumentException::class.java){legacy.copy(minAppVersion="1.7").validateLaunchContract("1.5")}
     }
     @Test fun amendmentBaseIdentitySeparatesOverlappingSourcesAtTheSameDisplayVersion() {
         val f=Fixture(temporary.newFolder())

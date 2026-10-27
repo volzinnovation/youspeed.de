@@ -25,6 +25,9 @@ Developer documentation and Mermaid/Graphviz diagrams are in
 
 ## Git workflow
 
+- The active development branch is `codex/youspeed-v1.5-mobidata-bw`. Consolidate ongoing app work there.
+- Keep both native apps at marketing version `1.5` until the product owner explicitly requests a version change; build numbers may continue increasing.
+
 - Do not assume the default branch is `master` or `main`; inspect repository configuration first.
 - Never merge, deploy, publish, or delete a branch without explicit user approval.
 

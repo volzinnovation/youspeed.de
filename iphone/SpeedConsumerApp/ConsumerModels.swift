@@ -198,6 +198,11 @@ struct V3BundleManifest: Codable {
 }
 
 enum BundleCompatibility {
+    /// The generation-one native v4 reader ships in the 1.5 dev app. Keep its
+    /// capability separate from marketing versions and immutable published
+    /// manifest gates; a newer marketing version cannot claim future support.
+    static let packedReaderCompatibilityVersion = "1.6"
+
     static func validate(_ manifest: V3BundleManifest, appVersion: String?) throws {
         let legacy = manifest.format == "youspeed.v3.bundle.manifest" && manifest.variant == "v3" && manifest.packedBase == nil
         let packed = manifest.format == "youspeed.v4.bundle.manifest" && manifest.variant == "v4" && manifest.packedBase != nil
@@ -208,11 +213,16 @@ enum BundleCompatibility {
             try base.validate(databaseFile: manifest.db.file)
             guard manifest.deltaIndex == nil,
                   version(manifest.minAppVersion, satisfiesMinimum: "1.6") else {
-                throw ConsumerAppError.invalidManifest("Packed bundles require app 1.6 or later and complete generation updates")
+                throw ConsumerAppError.invalidManifest("Packed bundles require reader compatibility 1.6 or later and complete generation updates")
             }
         }
-        guard let appVersion, version(appVersion, satisfiesMinimum: manifest.minAppVersion) else {
-            throw ConsumerAppError.invalidManifest("Bundle requires app version \(manifest.minAppVersion)")
+        guard let appVersion, version(appVersion, satisfiesMinimum: appVersion) else {
+            throw ConsumerAppError.invalidManifest("Invalid app version")
+        }
+        let compatibilityVersion = packed ? packedReaderCompatibilityVersion : appVersion
+        guard version(compatibilityVersion, satisfiesMinimum: manifest.minAppVersion) else {
+            let kind = packed ? "packed reader compatibility" : "app version"
+            throw ConsumerAppError.invalidManifest("Bundle requires \(kind) \(manifest.minAppVersion)")
         }
     }
 

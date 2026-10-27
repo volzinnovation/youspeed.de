@@ -81,3 +81,22 @@ Das simulierte Beispiel 50 → 30 aus diesem Handbuch wurde bewusst **nicht hoch
 - **Die Export-Schaltfläche erzeugt keine brauchbare Datei:** Prüfe, ob mindestens eine gültige lokale Erfassung aufgelistet ist.
 - **JOSM meldet unvollständige oder widersprüchliche Daten:** Erzwinge den Upload nicht. Lade den aktuellen Weg und seine Umgebung erneut, übertrage den geprüften Tag auf dieses vollständige Objekt und führe die Prüfung nochmals aus.
 - **Regionale Liste oder Download nicht verfügbar:** Prüfe die Internetverbindung, öffne die Einstellungen erneut und versuche es noch einmal. Bereits heruntergeladene Karten funktionieren weiterhin offline.
+
+
+## Fahrtarchiv kompakt teilen
+
+Der normale ZIP-Export unter **Fahrten** ist kompakt: Track, Zeichenbeobachtungen,
+strukturierte Kamera-/OCR-Evidenz, Medienverweise, Übersicht und Prüfsummen sind
+enthalten. Ereignisse stehen einmal in `journal.json`; große doppelte
+JSON-/CSV-/NDJSON-Protokolle entfallen. Textdateien werden im ZIP komprimiert.
+
+**Ausführliche Diagnosemeldungen beifügen (groß)** ist standardmäßig aus und nur
+für eine vollständige Fehlersuche gedacht. Diese Option ergänzt die ausführlichen
+Textmeldungen innerhalb desselben Journals. Die Aufzeichnung auf dem Gerät und
+Backups werden dadurch nicht verändert. Die Option zum privaten, maskierten
+Teilen behält ihre bisherigen Schutzregeln.
+
+Eigene Fotos/Crops müssen beim Export ausdrücklich ausgewählt und noch auf dem
+Gerät vorhanden sein. Ein Fotoeintrag mit Zeit/ID allein enthält keine Bilddatei.
+Für die Prüfung von Geschwindigkeitsänderungen kann das kompakte Fahrt-ZIP unter
+[osm.youspeed.de](https://osm.youspeed.de/) geöffnet werden.

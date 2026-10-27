@@ -63,7 +63,11 @@ activation. Existing table capability checks must admit this view.
 Metadata keys are `packed_geometry_version=1`, `packed_geometry_file`,
 `packed_geometry_sha256` (installed geometry bytes), and `packed_generation`.
 The manifest format is `youspeed.v4.bundle.manifest`, schema version 1, minimum
-app version 1.6. Its `db` artifact is the context pack; `packed_base` contains
+packed-reader compatibility level 1.6. This capability is implemented in the
+1.5 development apps independently of their marketing version. Published
+`min_app_version: 1.6` metadata remains immutable; clients apply that gate to
+the explicit v4 reader capability, while legacy manifests use the actual app
+version and future reader requirements remain rejected. Its `db` artifact is the context pack; `packed_base` contains
 `version:1`, `roads:BundleArtifact`, and `nodes:BundleArtifact`. Artifact byte
 counts and SHA-256 follow the existing installed/download distinction.
 V4 catalogs/releases are separate from existing V3 URLs. All dependencies must

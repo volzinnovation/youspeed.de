@@ -89,8 +89,9 @@ and cannot be undone by a late callback for the deleted capture session. A new
 process marks previously active trips interrupted. GPS/TSR are not enabled by
 journal consent. Logging location use still requires existing OS permission.
 
-Exports include trip JSON, GPX, GPS/TSR/media NDJSON, a readable PDF overview and
-a file/checksum manifest. They contain private locations and are user-shared
+Exports contain one canonical event representation in `journal.json`, GPX,
+a readable PDF overview and a file/checksum manifest. Per-kind event JSON, CSV
+and NDJSON copies are no longer written. They contain private locations and are user-shared
 snapshots, not tax-compliance certification. Media bytes remain in the existing
 libraries and are not included automatically.
 
@@ -118,3 +119,30 @@ anchor (up to 2 s). Sidecars preserve monotonic/UTC origin, duration and detecte
 alignment error. Uncertain or out-of-interval moments have no seek action.
 `presentation_clock` may be used only for a measured frame-to-presentation mapping
 within 250 ms; callback-time estimates never acquire that label.
+
+## Compact export profile
+
+Both clients default to `export_profile: "compact"`. Normal sharing and the
+export-options sheet keep verbose diagnostics off. Compact exports preserve
+original event sequence IDs/timestamps and all payloads except message-only TSR
+rows: `kind == "tsr"`, string `payload.message`, and payload keys limited to
+`message` and optional `received_at`. A TSR row containing any other field is
+retained, including structured recognition frames, model lineage, road context,
+candidates, bounding boxes, tracked signs, restrictions and supplementary OCR.
+GPS (including rejected fixes), signs, gaps, media references and unknown event
+kinds remain intact. Recorded source events and encrypted backups are unchanged.
+
+The explicit diagnostic option retains the complete event stream once in
+`journal.json`, sets `export_profile: "diagnostic"` and `raw_logs_included: true`.
+The default compact profile sets `raw_logs_included: false`; this now means the
+verbose prose diagnostics are excluded, not that typed GPS/frame evidence is
+missing. `omitted_verbose_message_events` records the omitted count in journal
+and manifest. Both fields are optional additions to portable schema v1. Masked
+exports retain their existing sanitization and use `export_profile: "masked"`.
+
+Text entries use standard ZIP DEFLATE, including on iPhone; media bytes are not
+re-encoded except under the existing masked-photo option. Media selection stays
+explicit: a media metadata record is not proof that its original image/video
+bytes were included. Small reports/tracks and the media index remain useful
+alternative views; the full raw event stream is no longer repeated in several
+sidecars. The web importer and its upload limits are unchanged.

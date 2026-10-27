@@ -158,9 +158,9 @@ class TripJournalAcceptanceInstrumentedTest {
         journal.tsr("recognition",mapOf("private_road" to "SECRET-HOME-ROAD"))
         journal.signEvent(mapOf("class_code" to "DE:274-50","source" to "camera","evidence_id" to "endpoint-sign","latitude" to 48.0,"longitude" to 8.0))
         journal.snapshot()
-        val full=journal.archive(id)
+        val full=journal.archive(id,TripExportOptions(includeRawLogs=true))
         ZipFile(full).use { zip ->
-            listOf("journal.json","trip.json","track.gpx","track.geojson","gps.ndjson","tsr.ndjson","sign.json","media.json","overview.pdf","manifest.json").forEach {assertNotNull(it,zip.getEntry(it))}
+            listOf("journal.json","trip.json","track.gpx","track.geojson","media.json","overview.pdf","manifest.json").forEach {assertNotNull(it,zip.getEntry(it))}
             val normalized=JSONObject(zip.getInputStream(zip.getEntry("journal.json")).bufferedReader().readText())
             assertEquals("metre",normalized.getJSONObject("units").getString("distance"))
             assertTrue(normalized.getJSONArray("events").length()>6)
@@ -174,12 +174,50 @@ class TripJournalAcceptanceInstrumentedTest {
                 val text=zip.getInputStream(entry).bufferedReader().readText()
                 assertFalse(entry.name,text.contains("SECRET-HOME-ROAD"));assertFalse(entry.name,text.contains("endpoint-sign"))
             }
-            assertEquals("",zip.getInputStream(zip.getEntry("gps.ndjson")).bufferedReader().readText())
+            assertNull(zip.getEntry("gps.ndjson"))
             val manifest=JSONObject(zip.getInputStream(zip.getEntry("manifest.json")).bufferedReader().readText())
             assertTrue(manifest.getBoolean("masked"));assertFalse(manifest.getBoolean("raw_logs_included"))
             File(InstrumentationRegistry.getInstrumentation().targetContext.filesDir,"journal-validation-masked.json").writeText(zip.getInputStream(zip.getEntry("journal.json")).bufferedReader().readText())
         }
         journal.delete(id);assertTrue(journal.snapshot().first.isEmpty());assertFalse(full.exists());assertFalse(masked.exists())
+    }
+    @Test fun compactArchiveKeepsTypedEvidenceOnceAndVerboseDiagnosticsRequireOptIn()=isolated { context,clock,_ ->
+        fun event(seq:Long,kind:String,p:JSONObject)=JSONObject().put("seq",seq).put("time",clock.wall+seq).put("kind",kind).put("payload",p.toString())
+        val trip=JSONObject().put("id",UUID.randomUUID().toString()).put("start",clock.wall).put("end",clock.wall+20).put("distance",200.0).put("duration",20.0).put("state","ended")
+        val camera=JSONObject().put("class_code","DE:274-30").put("source","camera").put("evidence_id","camera-sign").put("ocr", "22–6 h").put("parent_annotation","main-sign").put("latitude",48.001).put("longitude",8.0)
+        val frame=JSONObject().put("event","traffic_sign_inference").put("details",JSONObject().put("frame_id","frame-7").put("supplementary_ocr_only",true).put("ocr","22–6 h").put("parent_annotation","main-sign"))
+        val diagnostic=JSONObject().put("message","verbose diagnostic ".repeat(20000)).put("received_at",clock.wall)
+        val evidenceWithMessage=JSONObject().put("message","OCR crop details").put("frame_id","frame-8")
+        val events=listOf(
+            event(1,"gps",JSONObject().put("latitude",48.001).put("longitude",8.0).put("valid",true).put("track_eligible",true).put("reason","accepted")),
+            event(2,"tsr",diagnostic),event(3,"tsr",frame),event(4,"tsr",evidenceWithMessage),event(5,"sign",camera),
+            event(6,"gap",JSONObject().put("reason","sampling_gap")),event(7,"media",JSONObject().put("id","photo-7").put("type","photo").put("path","/not-selected.jpg")),
+            event(8,"place",JSONObject().put("street_name","Public sample street")))
+        val original=events.map {it.toString()};val counters=JSONObject().put("origin",0.0).put("distance",200.0).put("usage",20.0)
+        assertFalse(TripExportOptions().includeRawLogs)
+        val compact=TripJournalFiles.archive(context,trip,events,counters,TripExportOptions())
+        ZipFile(compact).use {zip ->
+            val journal=JSONObject(zip.getInputStream(zip.getEntry("journal.json")).bufferedReader().readText())
+            val saved=journal.getJSONArray("events");val byId=(0 until saved.length()).associate {saved.getJSONObject(it).getLong("seq") to saved.getJSONObject(it)}
+            assertEquals(original.size-1,saved.length());assertFalse(byId.containsKey(2));assertEquals(setOf(1L,3L,4L,5L,6L,7L,8L),byId.keys)
+            assertEquals("frame-7",byId.getValue(3).getJSONObject("payload").getJSONObject("details").getString("frame_id"))
+            assertTrue(byId.getValue(3).getJSONObject("payload").getJSONObject("details").getBoolean("supplementary_ocr_only"))
+            assertEquals("22–6 h",byId.getValue(5).getJSONObject("payload").getString("ocr"));assertEquals("main-sign",byId.getValue(5).getJSONObject("payload").getString("parent_annotation"))
+            assertEquals("frame-8",byId.getValue(4).getJSONObject("payload").getString("frame_id"))
+            assertEquals("compact",journal.getString("export_profile"));assertEquals(1,journal.getInt("omitted_verbose_message_events"));assertFalse(journal.getJSONObject("privacy").getBoolean("raw_logs_included"))
+            listOf("gps","tsr","sign","gap").forEach {kind ->listOf("json","csv","ndjson").forEach {ext ->assertNull("Redundant $kind.$ext",zip.getEntry("$kind.$ext"))}}
+            listOf("sign_events.ndjson","media.ndjson","media-index.json").forEach {assertNull(zip.getEntry(it))}
+            val manifest=JSONObject(zip.getInputStream(zip.getEntry("manifest.json")).bufferedReader().readText());assertEquals("compact",manifest.getString("export_profile"));assertEquals(1,manifest.getInt("omitted_verbose_message_events"))
+        }
+        val full=TripJournalFiles.archive(context,trip,events,counters,TripExportOptions(includeRawLogs=true))
+        ZipFile(full).use {zip ->
+            val entry=zip.getEntry("journal.json");assertEquals(java.util.zip.ZipEntry.DEFLATED,entry.method);assertTrue(entry.compressedSize<entry.size/2)
+            val journal=JSONObject(zip.getInputStream(entry).bufferedReader().readText());val saved=journal.getJSONArray("events")
+            assertEquals(original.size,saved.length());assertEquals(diagnostic.getString("message"),saved.getJSONObject(1).getJSONObject("payload").getString("message"))
+            assertEquals("diagnostic",journal.getString("export_profile"));assertEquals(0,journal.getInt("omitted_verbose_message_events"));assertTrue(journal.getJSONObject("privacy").getBoolean("raw_logs_included"))
+            assertNull(zip.getEntry("tsr.ndjson"))
+        }
+        assertEquals(original,events.map {it.toString()})
     }
     @Test fun maskedSelectedPhotoStripsGpsAndPreservesOriginalAndUnknownPositionIsExcluded()=isolated { context,clock,journal ->
         journal.setEnabled(true);journal.start();val id=journal.snapshot().first.single().getString("id")

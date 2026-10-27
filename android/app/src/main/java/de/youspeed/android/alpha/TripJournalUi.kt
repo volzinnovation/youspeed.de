@@ -221,7 +221,7 @@ internal fun TripJournalScreen(journal:TripJournal,mediaCleanup:((List<JSONObjec
             }
             items(trips,key={it.getString("id")}) {trip ->
                 val id=trip.getString("id")
-                TripHistoryRow(trip,!busy,{if(!busy) {endingInput="";endingTrip=id}},{task {val archive=withContext(Dispatchers.IO) {journal.archive(id,TripExportOptions(includeRawLogs=true))};share(archive,"application/zip")}},{
+                TripHistoryRow(trip,!busy,{if(!busy) {endingInput="";endingTrip=id}},{task {val archive=withContext(Dispatchers.IO) {journal.archive(id,TripExportOptions())};share(archive,"application/zip")}},{
                     deletionMedia=emptyList();deleteMedia=false;cleanupPreview=""
                     deletionMediaReady=false;deletionMediaLoading=mediaCleanup!=null;deletion=id
                 })
@@ -336,7 +336,7 @@ private fun ArchivedTripJournalDetailScreen(journal:TripJournal,mediaCleanup:((L
     var endingTrip by remember {mutableStateOf<String?>(null)};var endingInput by remember {mutableStateOf("")}
     var clear by remember { mutableStateOf(false) };var exportOptions by remember { mutableStateOf(false) };var busy by remember { mutableStateOf(false) }
     var selectedMedia by remember { mutableStateOf(emptySet<String>()) };var maskHome by remember { mutableStateOf(false) };var includeOdometer by remember { mutableStateOf(false) }
-    var privateShare by remember { mutableStateOf(false) };var maskRadius by remember { mutableStateOf("300") };var logs by remember { mutableStateOf(true) };var includeMedia by remember { mutableStateOf(false) }
+    var privateShare by remember { mutableStateOf(false) };var maskRadius by remember { mutableStateOf("300") };var logs by remember { mutableStateOf(false) };var includeMedia by remember { mutableStateOf(false) }
     var backupDialog by remember { mutableStateOf(false) };var passphrase by remember { mutableStateOf("") };var restoreFile by remember { mutableStateOf<File?>(null) };var restorePreview by remember { mutableStateOf<JSONObject?>(null) }
     var library by remember {mutableStateOf(false)}
     var playing by remember { mutableStateOf<TripJournalProjection.Seek?>(null) };var photo by remember { mutableStateOf<String?>(null) };var replay by remember { mutableStateOf(false) }
@@ -352,7 +352,7 @@ private fun ArchivedTripJournalDetailScreen(journal:TripJournal,mediaCleanup:((L
         deletionMedia=owned;deleteMedia=false
         cleanupPreview=withContext(Dispatchers.IO) {mediaCleanup?.invoke(owned,false).orEmpty()};deletion=id
     }}
-    fun shareTrip(id:String) {task {val archive=withContext(Dispatchers.IO) {journal.archive(id,TripExportOptions(includeRawLogs=true))};share(archive,"application/zip")}}
+    fun shareTrip(id:String) {task {val archive=withContext(Dispatchers.IO) {journal.archive(id,TripExportOptions())};share(archive,"application/zip")}}
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if(uri!=null) task {
             val f=withContext(Dispatchers.IO) {
@@ -504,10 +504,13 @@ private fun ArchivedTripJournalDetailScreen(journal:TripJournal,mediaCleanup:((L
     if(clear) AlertDialog({clear=false},title={Text(jt("Clear all trips and counters?","Alle Fahrtdaten und Zähler löschen?","Tout effacer ?","Alle ritten en tellers wissen?"))},text={Text(jt("This removes the entire private journal and creates a new zero counter epoch. Library media and already shared files remain.","Das gesamte private Journal wird entfernt und eine neue Zählerepoche bei null beginnt. Bibliotheksmedien und bereits geteilte Dateien bleiben.","Le journal privé est supprimé et les compteurs repartent à zéro. Médias de bibliothèque et fichiers partagés conservés.","Het privélogboek wordt verwijderd en een nieuw teltijdvak begint op nul. Bibliotheekmedia en gedeelde bestanden blijven."))},confirmButton={TextButton({task {withContext(Dispatchers.IO) {journal.clearAll()};selected=null;clear=false}}) {Text(jt("Clear everything","Alles löschen","Tout effacer","Alles wissen"))}},dismissButton={TextButton({clear=false}) {Text(jt("Cancel","Abbrechen","Annuler","Annuleren"))}})
     if(exportOptions && trip!=null) AlertDialog({exportOptions=false},title={Text(jt("Export preview","Exportvorschau","Aperçu de l’export","Exportvoorbeeld"))},text={Column(Modifier.heightIn(max=460.dp).verticalScroll(rememberScrollState()),verticalArrangement=Arrangement.spacedBy(8.dp)) {
         Text("1 ${jt("trip","Fahrt","trajet","rit")} · ${tripDate(trip.optDouble("start"))} · ${stateText(trip)}")
-        Row { Checkbox(privateShare,{privateShare=it;logs=!it;includeMedia=false;selectedMedia=emptySet()});Text(jt("Privately share (hide endpoints)","Privat teilen (Endpunkte ausblenden)","Partager en privé (masquer extrémités)","Privé delen (eindpunten verbergen)")) }
+        Text(jt("Compact archive with the track, sign/OCR evidence, overview and checksums. Verbose diagnostic messages are optional. Select original media explicitly. Locations are private.","Kompaktes Archiv mit Track, Zeichen-/OCR-Evidenz, Übersicht und Prüfsummen. Ausführliche Diagnosemeldungen sind optional. Originalmedien ausdrücklich auswählen. Standorte sind privat.","Archive compacte avec trace, preuves panneaux/OCR, synthèse et sommes de contrôle. Diagnostics détaillés facultatifs. Sélectionnez explicitement les médias. Les positions sont privées.","Compact archief met route, bord-/OCR-bewijs, overzicht en controlesommen. Uitgebreide diagnosemeldingen zijn optioneel. Selecteer media expliciet. Locaties zijn privé."),style=MaterialTheme.typography.bodySmall)
+        val exportTsrCount=if(privateShare) 0 else events.count {it.optString("kind")=="tsr" && (logs || !TripJournalFiles.isVerboseDiagnosticMessage(it))}
+        Text("${events.count {it.optString("kind")=="gps"}} GPS · $exportTsrCount TSR · ${media.size} ${jt("media","Medien","médias","media")}")
+        Row { Checkbox(privateShare,{privateShare=it;logs=false;includeMedia=false;selectedMedia=emptySet()});Text(jt("Privately share (hide endpoints)","Privat teilen (Endpunkte ausblenden)","Partager en privé (masquer extrémités)","Privé delen (eindpunten verbergen)")) }
         if(privateShare) OutlinedTextField(maskRadius,{maskRadius=it},label={Text(jt("Endpoint radius, metres","Endpunktradius, Meter","Rayon aux extrémités, mètres","Straal eindpunten, meter"))})
         if(privateShare) Row {Checkbox(maskHome,{maskHome=it},enabled=selectedTime!=null);Text(jt("Also hide selected map location","Ausgewählten Kartenort ebenfalls verbergen","Masquer aussi le point sélectionné","Geselecteerde kaartlocatie ook verbergen"))}
-        Row { Checkbox(logs,{logs=it},enabled=!privateShare);Text(jt("GPS/TSR logs","GPS-/TSR-Protokolle","Journaux GPS/TSR","GPS/TSR-logboeken")) }
+        Row { Checkbox(logs,{logs=it},enabled=!privateShare);Text(jt("Include verbose diagnostic messages (large)","Ausführliche Diagnosemeldungen beifügen (groß)","Inclure les messages de diagnostic détaillés (volumineux)","Uitgebreide diagnosemeldingen bijvoegen (groot)")) }
         Row {Checkbox(includeOdometer,{includeOdometer=it});Text(jt("Disclose optional odometer","Optionale Kilometerstände offenlegen","Inclure le compteur facultatif","Optionele standen delen"))}
         Column(Modifier.heightIn(max=140.dp).verticalScroll(rememberScrollState())) {media.filter {it.optString("availability")=="local_original" && (!privateShare || it.optString("type")=="photo")}.forEach { m ->
             val id=m.optString("id");Row {Checkbox(id in selectedMedia,{checked -> selectedMedia=if(checked) selectedMedia+id else selectedMedia-id});Text("${m.optString("type")} · ${tripDate(m.optDouble("time"))}")}

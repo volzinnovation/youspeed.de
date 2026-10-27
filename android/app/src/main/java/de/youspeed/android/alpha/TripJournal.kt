@@ -483,7 +483,7 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         val snapshot=snapshot();val trip=snapshot.first.firstOrNull {it.optString("id")==id} ?: kotlin.error("Trip unavailable")
         return TripJournalFiles.archive(context,trip,events(id),snapshot.second,options)
     }
-    fun archive(id:String,maskRadiusMetres:Double=0.0,includeLogs:Boolean=maskRadiusMetres==0.0,includeMedia:Boolean=false):File {
+    fun archive(id:String,maskRadiusMetres:Double=0.0,includeLogs:Boolean=false,includeMedia:Boolean=false):File {
         val snapshot=snapshot(); val trip=snapshot.first.firstOrNull { it.optString("id")==id } ?: error("Trip unavailable")
         return TripJournalFiles.archive(context,trip,events(id),snapshot.second,maskRadiusMetres,includeLogs,includeMedia)
     }

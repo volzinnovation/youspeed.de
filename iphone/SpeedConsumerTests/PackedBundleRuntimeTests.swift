@@ -148,7 +148,7 @@ final class PackedBundleRuntimeTests: XCTestCase {
             db: artifact, dbParts: nil, deltaIndex: nil, packedBase: BundlePackedBase(version: 1, roads: roads, nodes: nil))
         XCTAssertNoThrow(try BundleCompatibility.validate(manifest, appVersion: "1.6"))
         XCTAssertEqual(BundleDisplayMetadata(manifest: manifest).bytes, 200)
-        XCTAssertThrowsError(try BundleCompatibility.validate(manifest, appVersion: "1.5"))
+        XCTAssertNoThrow(try BundleCompatibility.validate(manifest, appVersion: "1.5"))
         XCTAssertThrowsError(try BundlePackedBase(version: 2, roads: roads, nodes: nil).validate(databaseFile: artifact.file))
         XCTAssertThrowsError(try BundlePackedBase(version: 1, roads: artifact, nodes: nil).validate(databaseFile: artifact.file))
         let entry: [String: Any] = ["region": "fixture", "country_code": "DEU", "release_tag": "packed-v1", "bundle_version": "v1",
@@ -157,6 +157,34 @@ final class PackedBundleRuntimeTests: XCTestCase {
         XCTAssertEqual(try PackedBundleCatalog.decode(JSONSerialization.data(withJSONObject: catalog)).bundles.first?.region, "fixture")
         var duplicate = catalog; duplicate["bundles"] = [entry, entry]
         XCTAssertThrowsError(try PackedBundleCatalog.decode(JSONSerialization.data(withJSONObject: duplicate)))
+    }
+
+    func testPackedReaderCapabilityDoesNotRelaxLegacyOrFutureMinimumVersions() throws {
+        let hash = String(repeating: "a", count: 64)
+        let context = BundleArtifact(file: "context.yspc", bytes: 100, sha256: hash, url: nil)
+        let roads = BundleArtifact(file: "ways.yspg", bytes: 100, sha256: hash, url: nil)
+        func manifest(minimum: String, packed: Bool = true) -> V3BundleManifest {
+            V3BundleManifest(format: packed ? "youspeed.v4.bundle.manifest" : "youspeed.v3.bundle.manifest",
+                schemaVersion: 1, variant: packed ? "v4" : "v3", region: "fixture", bundleVersion: "v1",
+                createdAtUTC: "2026-10-27T00:00:00Z", minAppVersion: minimum, db: context,
+                dbParts: nil, deltaIndex: nil,
+                packedBase: packed ? BundlePackedBase(version: 1, roads: roads, nodes: nil) : nil)
+        }
+        let published = manifest(minimum: "1.6")
+        XCTAssertEqual(BundleCompatibility.packedReaderCompatibilityVersion, "1.6")
+        XCTAssertEqual(published.minAppVersion, "1.6")
+        XCTAssertNoThrow(try BundleCompatibility.validate(published, appVersion: "1.5"))
+        XCTAssertNoThrow(try BundleCompatibility.validate(published, appVersion: "1.5-debug"))
+        XCTAssertNoThrow(try BundleCompatibility.validate(published, appVersion: "1.6"))
+        for marketing in ["1.5", "1.6", "1.7", "99.0"] {
+            XCTAssertThrowsError(try BundleCompatibility.validate(manifest(minimum: "1.7"), appVersion: marketing))
+        }
+        XCTAssertThrowsError(try BundleCompatibility.validate(manifest(minimum: "1.5"), appVersion: "1.5"))
+        XCTAssertThrowsError(try BundleCompatibility.validate(published, appVersion: "invalid"))
+        XCTAssertThrowsError(try BundleCompatibility.validate(published, appVersion: nil))
+        XCTAssertNoThrow(try BundleCompatibility.validate(manifest(minimum: "1.5", packed: false), appVersion: "1.5"))
+        XCTAssertThrowsError(try BundleCompatibility.validate(manifest(minimum: "1.6", packed: false), appVersion: "1.5"))
+        XCTAssertThrowsError(try BundleCompatibility.validate(manifest(minimum: "1.7", packed: false), appVersion: "1.5"))
     }
 
     func testPackedCompanionGzipInstallIsAtomicAndMissingUpdateKeepsActiveGeneration() async throws {

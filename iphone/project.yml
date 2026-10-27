@@ -7,8 +7,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.10"
-    CURRENT_PROJECT_VERSION: 10074
-    MARKETING_VERSION: "1.6"
+    CURRENT_PROJECT_VERSION: 10076
+    MARKETING_VERSION: "1.5"
 targets:
   SpeedConsumer:
     type: application
@@ -196,6 +196,11 @@ targets:
       - path: SpeedConsumerApp/LaneDetectionTests.swift
       - path: SpeedConsumerApp/LaneDetectionRuntimeTests.swift
       - path: SpeedConsumerApp/TestFixtures
+        excludes:
+          - "packed-runtime-v1/**"
+        buildPhase: resources
+      - path: SpeedConsumerApp/TestFixtures/packed-runtime-v1
+        type: folder
         buildPhase: resources
       - path: ../shared/penalty-rules-tests/CHE-cases.json
         buildPhase: resources

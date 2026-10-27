@@ -621,7 +621,7 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
     }
     func archive(_ id: String, options: TripExportOptions = .init()) throws -> URL {
         let root = try export(id, options: options)
-        let url = root.appendingPathComponent("youspeed-trip-\(id).zip")
+        let url = root.deletingLastPathComponent().appendingPathComponent("youspeed-trip-\(id)-\(root.lastPathComponent).zip")
         try JournalZIP.write(directory: root, to: url)
         return url
     }
@@ -703,7 +703,7 @@ struct TripExportOptions {
     var masked = false
     var maskRadiusMetres = 300.0
     var homeCoordinate: CLLocationCoordinate2D?
-    var includeRawLogs = true
+    var includeRawLogs = false
     var includeOdometer = false
     var selectedMedia = Set<String>()
 }
@@ -717,6 +717,10 @@ struct JournalEvent: Identifiable {
         id = Int(row["seq"] as? Double ?? 0); kind = row["kind"] as? String ?? "unknown"
         time = Date(timeIntervalSince1970: row["time"] as? Double ?? 0)
         payload = (row["payload"] as? String).flatMap { $0.data(using: .utf8) }.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
+    }
+    var isVerboseDiagnosticMessage: Bool {
+        kind == "tsr" && payload["message"] is String
+            && Set(payload.keys).isSubset(of: ["message", "received_at"])
     }
     var coordinate: CLLocationCoordinate2D? {
         let nested = payload["position"] as? [String: Any] ?? payload["location"] as? [String: Any] ?? [:]
@@ -848,26 +852,20 @@ private enum TripJournalExport {
         try json(["type": "Feature", "geometry": ["type": "MultiLineString", "coordinates": segments.filter { $0.count >= 2 }], "properties": ["masked": options.masked, "measured_distance_m": original["distance"] ?? 0, "shared_geometry_distance_m": visibleDistance]], to: root.appendingPathComponent("track.geojson"))
         // Free-text TSR diagnostics can contain unstructured coordinates/road IDs. Never place them in a private sharing copy.
         let allowedRaw = !options.masked && options.includeRawLogs
+        // journal.json is the only event representation in the archive.
+        // Plain diagnostic strings are opt-in; typed frame/OCR evidence is retained.
+        let exportProfile = options.masked ? "masked" : allowedRaw ? "diagnostic" : "compact"
+        let omittedVerboseMessages = !options.masked && !allowedRaw ? all.filter(\.isVerboseDiagnosticMessage).count : 0
         var safeEvents = [[String: Any]]()
-        for kind in ["gps", "tsr", "gap", "sign"] {
-            let events = (kind == "sign" ? JournalDiscoveries.project(visible) : all).filter { $0.kind == kind && (allowedRaw || kind == "sign" || kind == "gap") }
-            var rows = [[String: Any]]()
-            for event in events {
-                var payload = event.payload
-                if options.masked {
+        if options.masked {
+            for kind in ["gps", "tsr", "gap", "sign"] {
+                let events = (kind == "sign" ? JournalDiscoveries.project(visible) : all).filter { $0.kind == kind && (kind == "sign" || kind == "gap") }
+                for event in events {
                     let safe = Set(["class_code", "latitude", "longitude", "lat", "lon", "source", "evidence_source", "sign_code", "normalized_code", "normalized_class", "class", "code", "confidence", "score", "numeric_value", "unit", "outcome", "reason"])
-                    payload = payload.filter { safe.contains($0.key) }
+                    let payload = event.payload.filter { safe.contains($0.key) }
+                    safeEvents.append(["schema_version": 1, "seq": event.id, "time": event.time.timeIntervalSince1970, "kind": event.kind, "payload": payload])
                 }
-                rows.append(["schema_version": 1, "seq": event.id, "time": event.time.timeIntervalSince1970, "kind": event.kind, "payload": payload])
             }
-            safeEvents.append(contentsOf: rows)
-            let lines = try rows.map { String(data: try JSONSerialization.data(withJSONObject: $0, options: .sortedKeys), encoding: .utf8)! }.joined(separator: "\n")
-            try Data(lines.utf8).write(to: root.appendingPathComponent("\(kind).ndjson"), options: .atomic)
-            try json(["schema_version": 1, "events": rows], to: root.appendingPathComponent("\(kind).json"))
-            let text = "sequence,time_utc,payload_json\n" + (try rows.map { row in
-                [csv(row["seq"]), csv(ISO8601DateFormatter().string(from: Date(timeIntervalSince1970: row["time"] as! Double))), csv(String(data: try JSONSerialization.data(withJSONObject: row["payload"]!, options: .sortedKeys), encoding: .utf8)!)].joined(separator: ",")
-            }).joined(separator: "\n")
-            try Data(text.utf8).write(to: root.appendingPathComponent("\(kind).csv"), options: .atomic)
         }
         var mediaRows = [[String: Any]](), omitted = [[String: String]]()
         for media in JournalMedia.project(all) {
@@ -893,11 +891,9 @@ private enum TripJournalExport {
             mediaRows.append(row)
         }
         try json(["schema_version": 1, "media": mediaRows, "omitted": omitted], to: root.appendingPathComponent("media.json"))
-        let canonicalEvents: [[String: Any]] = allowedRaw ? all.map { ["seq": $0.id, "time": $0.time.timeIntervalSince1970, "kind": $0.kind, "payload": $0.payload] } : safeEvents
-        let rawSignEvents = allowedRaw ? all.filter { $0.kind == "sign" }.map { ["seq": $0.id, "time": $0.time.timeIntervalSince1970, "kind": $0.kind, "payload": $0.payload] as [String: Any] } : []
-        try Data(try rawSignEvents.map { String(data: try JSONSerialization.data(withJSONObject: $0, options: .sortedKeys), encoding: .utf8)! }.joined(separator: "\n").utf8).write(to: root.appendingPathComponent("sign_events.ndjson"))
-        let mediaEvents = canonicalEvents.filter { $0["kind"] as? String == "media" }
-        try Data(try mediaEvents.map { String(data: try JSONSerialization.data(withJSONObject: $0, options: .sortedKeys), encoding: .utf8)! }.joined(separator: "\n").utf8).write(to: root.appendingPathComponent("media.ndjson"))
+        let canonicalEvents: [[String: Any]] = options.masked ? safeEvents : all.filter { allowedRaw || !$0.isVerboseDiagnosticMessage }.map {
+            ["seq": $0.id, "time": $0.time.timeIntervalSince1970, "kind": $0.kind, "payload": $0.payload]
+        }
         let state = trip["state"] as? String ?? "interrupted"
         var canonicalTrip: [String: Any] = ["id": trip["id"] ?? "", "started_at": trip["start"] ?? 0, "ended_at": trip["end"] ?? NSNull(), "distance_m": trip["distance"] ?? 0, "duration_s": trip["duration"] ?? 0, "state": state == "disabled" ? "ended" : state == "finalizing" ? "active" : state]
         for key in ["start_place","end_place"] { if let name=trip[key] { canonicalTrip[key]=name } }
@@ -907,7 +903,7 @@ private enum TripJournalExport {
         if options.includeOdometer { canonicalTrip["odometer_entries"] = all.filter { $0.kind == "odometer_entry" }.map(\.payload) }
         try json(["schema_version": 1, "generated_at": ISO8601DateFormatter().string(from: Date()), "measurement_policy_version": 1,
                   "units": ["distance": "metre", "duration": "second", "speed": "metres_per_second", "coordinates": "longitude,latitude", "event_time": "unix_seconds_utc"],
-                  "trip": canonicalTrip, "events": canonicalEvents, "media": mediaRows, "privacy": ["masked": options.masked, "raw_logs_included": allowedRaw]], to: root.appendingPathComponent("journal.json"))
+                  "trip": canonicalTrip, "events": canonicalEvents, "media": mediaRows, "export_profile": exportProfile, "omitted_verbose_message_events": omittedVerboseMessages, "privacy": ["masked": options.masked, "raw_logs_included": allowedRaw]], to: root.appendingPathComponent("journal.json"))
         let summary = "YouSpeed Fahrtenbuch\n\n" + journalText("scope") + "\n\n" + trip.keys.sorted().map { "\($0): \(trip[$0]!)" }.joined(separator: "\n") + "\n\n\(journalText("distance")): \(original["distance"] ?? 0) m\nShared geometry: \(visibleDistance) m\nMasked: \(options.masked)\n\(journalText("share_residual"))"
         let pdf = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 595, height: 842)).pdfData { context in
             let lines = summary.components(separatedBy: "\n")
@@ -923,35 +919,7 @@ private enum TripJournalExport {
                 let bytes = try Data(contentsOf: file); files.append(["file": String(file.path.dropFirst(root.path.count + 1)), "bytes": bytes.count, "sha256": hash(bytes)])
             }
         }
-        try json(["schema_version": 1, "generated_at": ISO8601DateFormatter().string(from: Date()), "files": files, "masked": options.masked, "raw_logs_included": allowedRaw, "omitted_media": omitted, "coverage_gaps": all.filter { $0.kind == "gap" }.count, "snapshot_state": trip["state"] ?? "unknown"], to: root.appendingPathComponent("manifest.json"))
-    }
-}
-
-/// Portable store-only ZIP. Media already uses compressed codecs; no shell or external archiver is required.
-private enum JournalZIP {
-    static func write(directory: URL, to output: URL) throws {
-        let files = (FileManager.default.enumerator(at: directory, includingPropertiesForKeys: [.isRegularFileKey])?.allObjects as? [URL] ?? []).filter { $0 != output && ((try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true) }.sorted { $0.path < $1.path }
-        guard files.count <= 65535 else { throw JournalFailure("Archive has too many files") }
-        FileManager.default.createFile(atPath: output.path, contents: nil)
-        let handle = try FileHandle(forWritingTo: output); defer { try? handle.close() }
-        var central = Data(), offset: UInt64 = 0
-        func u16(_ n: UInt16) -> Data { var v = n.littleEndian; return withUnsafeBytes(of: &v) { Data($0) } }
-        func u32(_ n: UInt32) -> Data { var v = n.littleEndian; return withUnsafeBytes(of: &v) { Data($0) } }
-        for file in files {
-            let bytes = try Data(contentsOf: file, options: .mappedIfSafe), name = Data(String(file.path.dropFirst(directory.path.count + 1)).utf8)
-            guard bytes.count <= UInt32.max, offset <= UInt32.max, name.count <= UInt16.max else { throw JournalFailure("Archive exceeds 4 GB; export fewer videos") }
-            var crc: UInt32 = 0xffffffff
-            for byte in bytes { crc ^= UInt32(byte); for _ in 0..<8 { crc = (crc >> 1) ^ (crc & 1 == 1 ? 0xedb88320 : 0) } }
-            crc ^= 0xffffffff
-            var local = u32(0x04034b50); local += u16(20); local += u16(0x800); local += u16(0); local += u16(0); local += u16(0x21); local += u32(crc); local += u32(UInt32(bytes.count)); local += u32(UInt32(bytes.count)); local += u16(UInt16(name.count)); local += u16(0); local += name
-            try handle.write(contentsOf: local); try handle.write(contentsOf: bytes)
-            central += u32(0x02014b50); central += u16(20); central += u16(20); central += u16(0x800); central += u16(0); central += u16(0); central += u16(0x21); central += u32(crc); central += u32(UInt32(bytes.count)); central += u32(UInt32(bytes.count)); central += u16(UInt16(name.count)); central += u16(0); central += u16(0); central += u16(0); central += u16(0); central += u32(0); central += u32(UInt32(offset)); central += name
-            offset += UInt64(local.count + bytes.count)
-        }
-        guard offset <= UInt32.max, central.count <= UInt32.max else { throw JournalFailure("Archive exceeds 4 GB; export fewer videos") }
-        try handle.write(contentsOf: central)
-        var end = u32(0x06054b50); end += u16(0); end += u16(0); end += u16(UInt16(files.count)); end += u16(UInt16(files.count)); end += u32(UInt32(central.count)); end += u32(UInt32(offset)); end += u16(0)
-        try handle.write(contentsOf: end)
+        try json(["schema_version": 1, "generated_at": ISO8601DateFormatter().string(from: Date()), "files": files, "masked": options.masked, "raw_logs_included": allowedRaw, "export_profile": exportProfile, "omitted_verbose_message_events": omittedVerboseMessages, "omitted_media": omitted, "coverage_gaps": all.filter { $0.kind == "gap" }.count, "snapshot_state": trip["state"] ?? "unknown"], to: root.appendingPathComponent("manifest.json"))
     }
 }
 
@@ -1357,7 +1325,7 @@ struct TripJournalView: View {
         let start = Date(timeIntervalSince1970: trip["start"] as? Double ?? 0)
         let end = Date(timeIntervalSince1970: trip["end"] as? Double ?? 0)
         return HStack(alignment: .top, spacing: 0) {
-            Button { run { [try journal.archive(id, options: TripExportOptions(includeRawLogs: true))] } } label: {
+            Button { run { [try journal.archive(id, options: TripExportOptions())] } } label: {
                 Image(systemName: "square.and.arrow.up").frame(width: actionWidth, height: 44, alignment: .top)
                     .contentShape(Rectangle())
             }.buttonStyle(.borderless).accessibilityLabel(journalText("share_drive"))
@@ -1408,7 +1376,7 @@ private struct TripJournalDetailView: View {
     @State private var masked = false
     @State private var maskHome = false
     @State private var radius = 300.0
-    @State private var includeLogs = true
+    @State private var includeLogs = false
     @State private var includeOdometer = false
     @State private var selectedMedia = Set<String>()
     @State private var busy = false
@@ -1572,7 +1540,7 @@ private struct TripJournalDetailView: View {
     @ViewBuilder private func exportSection(_ trip: [String: Any], events: [JournalEvent], media: [JournalMedia], selection: JournalEvent?) -> some View {
         Section(journalText("export")) {
             Text(journalText("export_preview")).font(.footnote)
-            Text("\(events.filter { $0.kind == "gps" }.count) GPS · \(events.filter { $0.kind == "tsr" }.count) TSR · \(media.count) " + journalText("media"))
+            Text("\(events.filter { $0.kind == "gps" }.count) GPS · \(events.filter { $0.kind == "tsr" && !masked && (includeLogs || !$0.isVerboseDiagnosticMessage) }.count) TSR · \(media.count) " + journalText("media"))
             if trip["state"] as? String == "active" { Label(journalText("active_export"), systemImage: "clock").font(.caption) }
             Toggle(journalText("private_share"), isOn: $masked)
                 .onChange(of: masked) { _, value in if value { includeLogs = false; selectedMedia = [] } }
@@ -1787,13 +1755,13 @@ func journalText(_ key: String) -> String {
         "media_missing": ["Local original missing, deleted or evicted", "Lokales Original fehlt, wurde gelöscht oder verdrängt", "Original local absent, supprimé ou évincé", "Lokaal origineel ontbreekt of is verwijderd"],
         "panoramax_open": ["Open in Panoramax", "In Panoramax öffnen", "Ouvrir dans Panoramax", "In Panoramax openen"],
         "timing_unavailable": ["No reliable recording-clock anchor; open from beginning", "Kein verlässlicher Aufnahmezeitanker; vom Anfang öffnen", "Sans repère temporel fiable ; ouvrir depuis le début", "Geen betrouwbare opnameklok; vanaf begin openen"],
-        "export_preview": ["Archive includes trip, GPX/GeoJSON track, discovery log, overview PDF/CSV, counters and a checksum manifest. Select original media explicitly. Locations are private.", "Das Archiv enthält Fahrt, GPX-/GeoJSON-Track, Zeichenprotokoll, PDF-/CSV-Übersicht, Zähler und Prüfsummen. Originalmedien ausdrücklich auswählen. Standorte sind privat.", "L’archive contient trajet, trace GPX/GeoJSON, panneaux, synthèse PDF/CSV, compteurs et sommes de contrôle. Sélectionnez explicitement les médias. Les positions sont privées.", "Het archief bevat rit, GPX-/GeoJSON-route, bordenlogboek, PDF-/CSV-overzicht, tellers en controlesommen. Selecteer media expliciet. Locaties zijn privé."],
+        "export_preview": ["Compact archive with the track, sign/OCR evidence, overview and checksums. Verbose diagnostic messages are optional. Select original media explicitly. Locations are private.", "Kompaktes Archiv mit Track, Zeichen-/OCR-Evidenz, Übersicht und Prüfsummen. Ausführliche Diagnosemeldungen sind optional. Originalmedien ausdrücklich auswählen. Standorte sind privat.", "Archive compacte avec trace, preuves panneaux/OCR, synthèse et sommes de contrôle. Diagnostics détaillés facultatifs. Sélectionnez explicitement les médias. Les positions sont privées.", "Compact archief met route, bord-/OCR-bewijs, overzicht en controlesommen. Uitgebreide diagnosemeldingen zijn optioneel. Selecteer media expliciet. Locaties zijn privé."],
         "active_export": ["In-progress snapshot of an active trip", "Zwischenstand einer laufenden Fahrt", "Instantané d’un trajet en cours", "Momentopname van een actieve rit"],
         "private_share": ["Share privately · mask endpoint areas", "Privat teilen · Start-/Zielbereiche maskieren", "Partager en privé · masquer départ/arrivée", "Privé delen · begin/eindgebieden maskeren"],
         "mask_radius": ["Hidden-area radius", "Radius der verborgenen Bereiche", "Rayon masqué", "Straal verborgen gebied"],
         "mask_home": ["Also hide the selected map location", "Ausgewählten Kartenort ebenfalls verbergen", "Masquer aussi le point sélectionné", "Geselecteerde kaartlocatie ook verbergen"],
         "mask_help": ["Removes fixes and sign pins within the radius, raw logs, road/place identifiers, videos and remote links. Selected photos outside hidden areas are re-encoded without GPS metadata. Original facts and counters stay unchanged.", "Entfernt Positionen und Zeichen-Pins im Radius, Rohprotokolle, Straßen-/Ortskennungen, Videos und Fernlinks. Ausgewählte Fotos außerhalb verborgener Bereiche werden ohne GPS-Metadaten neu kodiert. Originale und Zähler bleiben unverändert.", "Retire positions et panneaux dans le rayon, journaux bruts, identifiants routiers/lieux, vidéos et liens distants. Les photos choisies hors zone sont réencodées sans GPS. Les originaux et compteurs restent inchangés.", "Verwijdert posities en bordpins binnen de straal, ruwe logboeken, weg-/plaatskenmerken, video’s en externe links. Geselecteerde foto’s buiten verborgen gebieden worden zonder GPS-metadata opgeslagen. Originelen en tellers blijven gelijk."],
-        "include_logs": ["Include complete GPS/TSR logs", "Vollständige GPS-/TSR-Protokolle beifügen", "Inclure les journaux GPS/panneaux complets", "Volledige GPS-/bordlogboeken bijvoegen"],
+        "include_logs": ["Include verbose diagnostic messages (large)", "Ausführliche Diagnosemeldungen beifügen (groß)", "Inclure les messages de diagnostic détaillés (volumineux)", "Uitgebreide diagnosemeldingen bijvoegen (groot)"],
         "include_odo": ["Include optional vehicle odometer", "Optionalen Fahrzeug-Kilometerstand beifügen", "Inclure le compteur facultatif", "Optionele kilometerstand bijvoegen"],
         "share_residual": ["Visible route, times, measured distance and photo content can still reveal locations. A shared copy cannot be recalled. Masked geometry length may differ from measured distance.", "Sichtbare Route, Zeiten, gemessene Strecke und Bildinhalte können weiterhin Orte verraten. Geteilte Kopien können nicht zurückgerufen werden. Die maskierte Geometrie kann von der gemessenen Strecke abweichen.", "Trace visible, horaires, distance et images peuvent encore révéler des lieux. Une copie partagée ne peut être rappelée. La longueur masquée peut différer de la distance mesurée.", "Zichtbare route, tijden, afstand en foto-inhoud kunnen nog locaties onthullen. Een gedeelde kopie kan niet worden teruggehaald. Gemaskeerde lengte kan afwijken van gemeten afstand."],
         "share_archive": ["Share trip archive", "Fahrtarchiv teilen", "Partager l’archive du trajet", "Ritarchief delen"],

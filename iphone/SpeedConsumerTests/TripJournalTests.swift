@@ -181,7 +181,7 @@ final class TripJournalTests: XCTestCase {
             XCTAssertEqual(JournalHistoryPresentation.number(12.36, locale: Locale(identifier: "en_US")), "12.4")
         }
     }
-    func testDefaultRawShareIncludesGPSAndTSRButExcludesAllOdometerEvidence() throws {
+    func testDiagnosticShareIncludesGPSAndTSRButExcludesAllOdometerEvidence() throws {
         try withJournal { journal, _ in
             journal.setEnabled(true); journal.start()
             let id = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
@@ -193,8 +193,8 @@ final class TripJournalTests: XCTestCase {
             XCTAssertNil(trip["odometer_start_km"]); XCTAssertNil(trip["odometer_end_km"]); XCTAssertNil(trip["odometer_entries"])
             XCTAssertFalse(events.contains { $0["kind"] as? String == "odometer_entry" })
             XCTAssertTrue(events.contains { $0["kind"] as? String == "gps" }); XCTAssertTrue(events.contains { $0["kind"] as? String == "tsr" })
-            XCTAssertFalse(try Data(contentsOf: exported.appendingPathComponent("gps.ndjson")).isEmpty)
-            XCTAssertFalse(try Data(contentsOf: exported.appendingPathComponent("tsr.ndjson")).isEmpty)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: exported.appendingPathComponent("gps.ndjson").path))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: exported.appendingPathComponent("tsr.ndjson").path))
             let optedIn = try journal.export(id, options: TripExportOptions(includeRawLogs: true, includeOdometer: true))
             let withReadings = try JSONSerialization.jsonObject(with: Data(contentsOf: optedIn.appendingPathComponent("journal.json"))) as! [String: Any]
             XCTAssertEqual(((withReadings["events"] as? [[String: Any]]) ?? []).filter { $0["kind"] as? String == "odometer_entry" }.count, 2)
@@ -366,8 +366,8 @@ final class TripJournalTests: XCTestCase {
             journal.media(session: "unknown-photo", id: "unknown-photo", path: photo.path, kind: "photo", at: at.addingTimeInterval(60))
             let snapshot = journal.snapshot(), id = try XCTUnwrap(snapshot.trips.first?["id"] as? String)
             let exported = try journal.export(id, options: TripExportOptions(masked: true, selectedMedia: ["unknown-photo"]))
-            XCTAssertTrue(try String(contentsOf: exported.appendingPathComponent("gps.ndjson")).isEmpty)
-            XCTAssertTrue(try String(contentsOf: exported.appendingPathComponent("tsr.ndjson")).isEmpty)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: exported.appendingPathComponent("gps.ndjson").path))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: exported.appendingPathComponent("tsr.ndjson").path))
             let gpx = try String(contentsOf: exported.appendingPathComponent("track.gpx"))
             XCTAssertFalse(gpx.contains("lat=\""))
             let media = try JSONSerialization.jsonObject(with: Data(contentsOf: exported.appendingPathComponent("media.json"))) as! [String: Any]
@@ -784,5 +784,43 @@ final class TripStopPromptPolicyTests: XCTestCase {
         XCTAssertEqual(TripOdometer.estimate(last:nil,distance:4405),0)
         XCTAssertEqual(TripOdometer.estimate(last:999999,distance:9000),999999)
         XCTAssertEqual(TripOdometer.replacingDigit(123456,index:2,digit:9),129456)
+    }
+}
+
+
+extension TripJournalTests {
+    func testCompactExportKeepsTypedOCRFrameEvidenceAndOnlyOmitsVerboseMessages() throws {
+        try withJournal { journal, _ in
+            journal.setEnabled(true); journal.start()
+            let at = Date(), id = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
+            journal.location(fix(49, at: at))
+            journal.tsr(String(repeating: "diagnostic only ", count: 400), at: at)
+            journal.tsrEvent(["event": "frame", "frame_id": "frame-1", "supplementary_ocr_only": true,
+                              "candidate": ["assemblyId": "sign-1", "restrictions": ["22-6h"], "rawClassId": "DE:274-30"],
+                              "message": "This message has structured evidence and must stay"], at: at)
+            journal.signEvent(["class_code": "DE:274-30", "source": "camera", "frame_id": "frame-1", "ocr": "22-6h"], at: at)
+            let original = journal.events(id).map(JournalEvent.init)
+            let root = try journal.export(id)
+            let output = try JSONSerialization.jsonObject(with: Data(contentsOf: root.appendingPathComponent("journal.json"))) as! [String: Any]
+            let events = output["events"] as! [[String: Any]], expected = original.filter { !$0.isVerboseDiagnosticMessage }
+            XCTAssertEqual(events.map { $0["seq"] as! Int }, expected.map(\.id))
+            XCTAssertEqual(output["export_profile"] as? String, "compact")
+            XCTAssertEqual(output["omitted_verbose_message_events"] as? Int, 1)
+            XCTAssertEqual((output["privacy"] as? [String: Any])?["raw_logs_included"] as? Bool, false)
+            let frame = try XCTUnwrap(events.first { ($0["payload"] as? [String: Any])?["frame_id"] as? String == "frame-1" })
+            XCTAssertEqual((frame["payload"] as? [String: Any])?["supplementary_ocr_only"] as? Bool, true)
+            let camera = try XCTUnwrap(events.first { $0["kind"] as? String == "sign" })
+            XCTAssertEqual((camera["payload"] as? [String: Any])?["ocr"] as? String, "22-6h")
+            for name in ["gps", "tsr", "gap", "sign"] {
+                for ext in ["json", "ndjson", "csv"] { XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(name + "." + ext).path)) }
+            }
+            for name in ["sign_events.ndjson", "media.ndjson"] { XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(name).path)) }
+            let diagnosticRoot = try journal.export(id, options: .init(includeRawLogs: true))
+            let diagnostic = try JSONSerialization.jsonObject(with: Data(contentsOf: diagnosticRoot.appendingPathComponent("journal.json"))) as! [String: Any]
+            XCTAssertEqual((diagnostic["events"] as? [[String: Any]])?.map { $0["seq"] as! Int }, original.map(\.id))
+            XCTAssertEqual(diagnostic["export_profile"] as? String, "diagnostic")
+            XCTAssertEqual(diagnostic["omitted_verbose_message_events"] as? Int, 0)
+            XCTAssertEqual(journal.events(id).map(JournalEvent.init).map(\.id), original.map(\.id))
+        }
     }
 }

@@ -37,6 +37,13 @@ data class PackedBundleBase(
     val nodes: BundleArtifact? = null,
 )
 
+/** The native v4 generation-one reader is already implemented in the 1.5 dev
+ * app. Published packed manifests retain their immutable 1.6 capability gate;
+ * marketing versions must neither disable this reader nor claim future support. */
+internal object PackedBundleReaderCompatibility {
+    const val VERSION = "1.6"
+}
+
 data class V3BundleManifest(
     val format: String,
     val schemaVersion: Int,
@@ -58,11 +65,13 @@ data class V3BundleManifest(
         require(packed || format == "youspeed.v3.bundle.manifest") { "Unexpected manifest format: $format" }
         require(variant == if (packed) "v4" else "v3") { "Unexpected manifest variant: $variant" }
         require(schemaVersion == 1) { "Unsupported manifest schema version: $schemaVersion" }
-        require(BundleAppVersion.isAtLeast(currentAppVersion, minAppVersion)) {
-            "Bundle requires app $minAppVersion; current app is $currentAppVersion"
+        require(BundleAppVersion.isAtLeast(currentAppVersion, currentAppVersion)) { "Invalid app version" }
+        val compatibilityVersion = if (packed) PackedBundleReaderCompatibility.VERSION else currentAppVersion
+        require(BundleAppVersion.isAtLeast(compatibilityVersion, minAppVersion)) {
+            "Bundle requires ${if (packed) "packed reader compatibility" else "app"} $minAppVersion; current compatibility is $compatibilityVersion"
         }
         if (packed) {
-            require(BundleAppVersion.isAtLeast(minAppVersion, "1.6")) { "Packed bundles require app 1.6 or later" }
+            require(BundleAppVersion.isAtLeast(minAppVersion, "1.6")) { "Packed bundles require reader compatibility 1.6 or later" }
             val base = requireNotNull(packedBase) { "Packed base is missing" }
             require(base.version == 1) { "Unsupported packed base version" }
             require(deltaIndex == null) { "SQL deltas cannot mutate packed generations" }

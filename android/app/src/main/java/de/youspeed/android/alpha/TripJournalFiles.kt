@@ -20,7 +20,16 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 import kotlin.math.*
 
-internal data class TripExportOptions(val masked:Boolean=false,val maskRadiusMetres:Double=300.0,val homeLatitude:Double?=null,val homeLongitude:Double?=null,val includeRawLogs:Boolean=true,val includeOdometer:Boolean=false,val selectedMedia:Set<String> = emptySet())
+internal data class TripExportOptions(val masked:Boolean=false,val maskRadiusMetres:Double=300.0,val homeLatitude:Double?=null,val homeLongitude:Double?=null,val includeRawLogs:Boolean=false,val includeOdometer:Boolean=false,val selectedMedia:Set<String> = emptySet())
+
+/** Export-only projection; original events and all typed evidence remain untouched. */
+internal object TripJournalExportSelection {
+    private val diagnosticMessageKeys=setOf("message","received_at")
+    fun isVerboseDiagnosticMessage(kind:String,payload:Map<String,Any?>):Boolean =
+        kind=="tsr" && payload["message"] is String && payload.keys.all {it in diagnosticMessageKeys}
+    fun <T> select(events:List<T>,includeRawLogs:Boolean,kind:(T)->String,payload:(T)->Map<String,Any?>):List<T> =
+        if(includeRawLogs) events else events.filterNot {isVerboseDiagnosticMessage(kind(it),payload(it))}
+}
 
 /** Portable snapshots. No export silently publishes media or contacts a service. */
 internal object TripJournalFiles {
@@ -32,6 +41,8 @@ internal object TripJournalFiles {
     }
     private fun iso(seconds:Double)=Instant.ofEpochMilli((seconds*1000).toLong()).toString()
     private fun payload(event:JSONObject)=runCatching { JSONObject(event.optString("payload")) }.getOrDefault(JSONObject())
+    private fun exportPayload(event:JSONObject):Map<String,Any?> = payload(event).let {value -> value.keys().asSequence().associateWith {value.opt(it)}}
+    fun isVerboseDiagnosticMessage(event:JSONObject)=TripJournalExportSelection.isVerboseDiagnosticMessage(event.optString("kind"),exportPayload(event))
     private fun csv(value:Any?):String {
         val raw=if(value==null || value==JSONObject.NULL) "" else value.toString()
         val safe=if(raw.trimStart().firstOrNull() in listOf('=','+','-','@','\t','\r')) "'$raw" else raw
@@ -140,14 +151,15 @@ internal object TripJournalFiles {
             if(segment.length()>0) coordinates.put(segment)
             File(root,"track.gpx").writeText(gpx.append("</trk></gpx>").toString())
             File(root,"track.geojson").writeText(JSONObject().put("type","Feature").put("properties",metadata).put("geometry",JSONObject().put("type","MultiLineString").put("coordinates",coordinates)).toString())
-            val kinds=listOf("gps","tsr","sign","gap")
             fun envelope(e:JSONObject)=JSONObject().put("schema_version",1).put("seq",e.optLong("seq")).put("time",e.optDouble("time")).put("kind",e.optString("kind")).put("payload",payload(e))
-            kinds.forEach { kind ->
-                val values=events.filter { it.optString("kind")==kind && (logs || kind in listOf("sign","gap")) }.map(::envelope)
-                File(root,"$kind.ndjson").writeText(values.joinToString("\n"))
-                File(root,"$kind.json").writeText(JSONObject().put("schema_version",1).put("events",JSONArray(values)).toString())
-                File(root,"$kind.csv").writeText("sequence,time_utc,payload_json\n"+values.joinToString("\n") { e -> "${e.optLong("seq")},${csv(iso(e.optDouble("time")))},${csv(e.optString("payload"))}" })
+            // Typed observations, OCR/frame lineage and GPS remain lossless. Only
+            // message-only diagnostic prose is optional in the compact profile.
+            val canonicalEvents=when {
+                masked -> events.filter {it.optString("kind") !in listOf("gps","tsr","media")}
+                else -> TripJournalExportSelection.select(events,logs,{it.optString("kind")},::exportPayload)
             }
+            val omittedVerboseMessageEvents=if(masked || logs) 0 else events.count(::isVerboseDiagnosticMessage)
+            val exportProfile=if(masked) "masked" else if(logs) "diagnostic" else "compact"
             val discoveries=TripJournalProjection.discoveries(events)
             File(root,"discoveries.json").writeText(JSONObject(metadata.toString()).put("discoveries",JSONArray(discoveries)).toString())
             File(root,"discoveries.csv").writeText("event_id,time_utc,class_code,source,latitude,longitude,confidence,value,units,media_id\n"+discoveries.joinToString("\n") { p -> listOf(p.opt("event_id"),iso(p.optDouble("time")),p.opt("class_code"),p.opt("source"),p.opt("latitude"),p.opt("longitude"),p.opt("confidence"),p.opt("value"),p.opt("units"),p.opt("media_id")).joinToString(",",transform=::csv) })
@@ -191,14 +203,14 @@ internal object TripJournalFiles {
             }
             val mediaDocument=JSONObject().put("schema_version",1).put("media",portableMedia).put("omitted",omissions)
             File(root,"media.json").writeText(mediaDocument.toString())
-            File(root,"media-index.json").writeText(mediaDocument.toString())
             val journalTrip=JSONObject().put("id",trip.getString("id")).put("started_at",trip.optDouble("start")).put("ended_at",trip.opt("end") ?: JSONObject.NULL)
                 .put("distance_m",trip.optDouble("distance")).put("duration_s",trip.optDouble("duration")).put("state",when(trip.optString("state")) {"disabled" -> "ended";"finalizing" -> "active";else -> trip.optString("state")})
                 .put("vehicle",trip.opt("vehicle") ?: JSONObject.NULL).put("odometer_start_km",trip.opt("odo_start") ?: JSONObject.NULL).put("odometer_end_km",trip.opt("odo_end") ?: JSONObject.NULL)
             listOf("start_place","end_place").forEach {key ->if(trip.has(key)) journalTrip.put(key,trip.get(key))}
             File(root,"journal.json").writeText(JSONObject().put("schema_version",1).put("generated_at",iso(generated)).put("measurement_policy_version",1)
                 .put("units",JSONObject().put("distance","metre").put("duration","second").put("speed","metres_per_second").put("coordinates","longitude,latitude").put("event_time","unix_seconds_utc"))
-                .put("trip",journalTrip).put("events",JSONArray(events.filter { logs || it.optString("kind") !in listOf("gps","tsr","media") }.map(::envelope))).put("media",portableMedia)
+                .put("trip",journalTrip).put("events",JSONArray(canonicalEvents.map(::envelope))).put("media",portableMedia)
+                .put("export_profile",exportProfile).put("omitted_verbose_message_events",omittedVerboseMessageEvents)
                 .put("privacy",JSONObject().put("masked",masked).put("raw_logs_included",logs)).toString())
             File(root,"counters.json").writeText(JSONObject(metadata.toString()).put("lifetime",if(masked) JSONObject().put("excluded","privacy") else counters).put("retained_trip_distance_m",original.optDouble("distance",0.0)).toString())
             File(root,"counters.csv").writeText("counter_origin,lifetime_distance_m,lifetime_usage_s,trip_distance_m\n"+listOf(counters.opt("origin"),counters.opt("distance"),counters.opt("usage"),trip.opt("distance")).joinToString(",",transform=::csv))
@@ -233,7 +245,7 @@ internal object TripJournalFiles {
             File(root,"omissions.json").writeText(JSONObject().put("items",omissions).put("raw_logs_included",logs).put("media_included",options.selectedMedia.isNotEmpty()).toString())
             val files=JSONArray()
             root.walkTopDown().filter { it.isFile }.sortedBy { it.relativeTo(root).path }.forEach { f -> files.put(JSONObject().put("file",f.relativeTo(root).invariantSeparatorsPath).put("bytes",f.length()).put("sha256",hash(f))) }
-            File(root,"manifest.json").writeText(JSONObject(metadata.toString()).put("files",files).put("masked",masked).put("raw_logs_included",logs).put("omitted_media",omissions).put("coverage_gaps",allEvents.count {it.optString("kind")=="gap"}).put("snapshot_state",trip.optString("state")).put("coverage",JSONArray(events.filter { it.optString("kind")=="gap" })).put("omissions",omissions).toString(2))
+            File(root,"manifest.json").writeText(JSONObject(metadata.toString()).put("files",files).put("export_profile",exportProfile).put("omitted_verbose_message_events",omittedVerboseMessageEvents).put("masked",masked).put("raw_logs_included",logs).put("omitted_media",omissions).put("coverage_gaps",allEvents.count {it.optString("kind")=="gap"}).put("snapshot_state",trip.optString("state")).put("coverage",JSONArray(events.filter { it.optString("kind")=="gap" })).put("omissions",omissions).toString(2))
             return root
         } catch(failure:Exception) { root.deleteRecursively();throw failure }
     }

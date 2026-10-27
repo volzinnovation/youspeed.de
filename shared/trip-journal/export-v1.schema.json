@@ -39,6 +39,8 @@
         }
       }
     },
+    "export_profile": {"type": "string", "enum": ["compact", "diagnostic", "masked"]},
+    "omitted_verbose_message_events": {"type": "integer", "minimum": 0},
     "media": {"type": "array", "items": {"type": "object"}},
     "privacy": {
       "type": "object",
