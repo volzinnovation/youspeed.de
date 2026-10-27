@@ -266,4 +266,67 @@ final class MapDataAmendmentStoreTests: XCTestCase {
                 context: .init(direction: 1), baseKmh: 50, baseUnlimited: false))
         }
     }
+
+    func testPhysicalCircleProjectionKeepsConditionsAndUnitsSeparate() throws {
+        let source = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(rules.utf8)) as? [String: Any])
+        let tags = try XCTUnwrap(source["tags"] as? [[String: Any]])
+        func project(_ selected: [[String: Any]], raw: String? = "50", grammar: String = "youspeed-osm-speed-1") throws -> Double? {
+            let document: [String: Any] = ["version": 1, "grammar": grammar, "tags": selected]
+            return MapDataAmendmentStore.observationBaseKmh(rulesJSON: String(data: try JSONSerialization.data(withJSONObject: document), encoding: .utf8)!, rawMaxspeed: raw)
+        }
+        XCTAssertEqual(try project(tags), 50, "Wet conditional limits do not change the physical base circle")
+        XCTAssertEqual(try project([tags[1]]), 50, "A conditional-only amendment retains the original physical base")
+        var hgv = tags[1]; hgv["key"] = "maxspeed:hgv:conditional"; hgv["vehicle"] = "hgv"
+        XCTAssertEqual(try project([hgv]), 50)
+        var base = tags[0]
+        base["clauses"] = [["condition": ["kind": "true"], "limit": ["kind": "numeric", "kmh": 40]]]
+        XCTAssertEqual(try project([base, tags[1]]), 40)
+        XCTAssertEqual(try project([base], raw: nil), 40)
+        for raw in ["30 mph", "signals", "variable", "national", "NaN", "0", "401"] { XCTAssertNil(try project([base], raw: raw)) }
+        XCTAssertNil(try project([base], grammar: "unknown"))
+        XCTAssertNil(try project([base, base]))
+        var variable = ["role": "variable", "raw": "yes"] as [String: Any]
+        XCTAssertNil(try project([base, variable])); variable["raw"] = "no"
+        XCTAssertEqual(try project([base, variable]), 40)
+        for (key, value) in [("status", "unsupported" as Any), ("direction", 1 as Any), ("lane", true as Any), ("conditional", "false" as Any)] {
+            var changed = base; changed[key] = value; XCTAssertNil(try project([changed]))
+        }
+        var directional = base; directional["key"] = "maxspeed:forward"; directional["direction"] = 1
+        XCTAssertNil(try project([directional]))
+        for value in [true as Any, "40" as Any, 0 as Any, 401 as Any] {
+            var changed = base; changed["clauses"] = [["condition": ["kind": "true"], "limit": ["kind": "numeric", "kmh": value]]]
+            XCTAssertNil(try project([changed]))
+        }
+        var unlimited = base; unlimited["clauses"] = [["condition": ["kind": "true"], "limit": ["kind": "unlimited"]]]
+        XCTAssertNil(try project([unlimited]))
+    }
+
+    func testNodeObservationUsesAmendedBaseWithoutChangingSourceSnapshot() throws {
+        try run { store, _ in
+            var saved = try store.createLocalNode(latitude: 48.001, longitude: 9,
+                tags: ["traffic_sign": "maxspeed", "maxspeed": "50"], rulesJSON: rules,
+                bundle: baseIdentity, author: "reviewer", evidenceID: "review")
+            let rawSnapshot = saved.nodeJSON
+            saved.boundWayID = "10"; saved.direction = 1; saved.bindingVerified = true
+            saved.passageEvidenceID = "directed-review"; saved.stationChainageM = 111.195
+            saved.scopeStartM = 111.195; saved.scopeEndM = 200
+            saved = try store.put(saved, expectedRevision: 1)
+            saved = try store.amendNumericLimit(saved.id, expectedRevision: 2, tagKey: "maxspeed", clauseIndex: 0, kmh: 40)
+            var runtime = MapDataNodePassageRuntime()
+            let now = Date()
+            _ = runtime.consume(records: [saved], bundle: baseIdentity, wayID: "10", points: [(48,9),(48.002,9)],
+                wayLengthM: 222.3898532891175, lat: 48.0011, lon: 9, heading: 0, headingAccuracy: 5,
+                accuracy: 5, matchStable: true, at: now, now: now)
+            XCTAssertEqual(runtime.observations.first?.numericValue, 40)
+            XCTAssertEqual(runtime.observations.first?.unit, "km/h")
+            XCTAssertEqual(saved.nodeJSON, rawSnapshot)
+            XCTAssertEqual(saved.rawSourceTags["maxspeed"], "50")
+            saved = try store.amendNumericLimit(saved.id, expectedRevision: 3, tagKey: "maxspeed:conditional", clauseIndex: 0, kmh: 25)
+            _ = runtime.consume(records: [saved], bundle: baseIdentity, wayID: "10", points: [(48,9),(48.002,9)],
+                wayLengthM: 222.3898532891175, lat: 48.0011, lon: 9, heading: 0, headingAccuracy: 5,
+                accuracy: 5, matchStable: true, at: now.addingTimeInterval(1), now: now.addingTimeInterval(1))
+            XCTAssertEqual(runtime.observations.first?.numericValue, 40, "A wet-only correction keeps the fixed base circle")
+            XCTAssertEqual(saved.nodeJSON, rawSnapshot)
+        }
+    }
 }

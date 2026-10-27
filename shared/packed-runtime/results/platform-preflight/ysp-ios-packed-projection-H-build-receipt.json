@@ -1,0 +1,14 @@
+{
+  "suite": "post-physical-H-numeric-observation-projection",
+  "build_passed": true,
+  "platform": "iphoneos",
+  "code_signing_allowed": false,
+  "version": "1.6",
+  "build": "10074",
+  "source_sha256": {
+    "iphone/SpeedConsumerApp/MapDataAmendmentStore.swift": "06a16736dd03fa4b3646f6f30625c690d0f454de9118cbcb2692071a86483835"
+  },
+  "native_or_map_data_changed": false,
+  "log": "/private/tmp/ysp-ios-packed-projection-H-device-build.log",
+  "targeted_tests": "/private/tmp/ysp-ios-packed-projection-H-tests-summary.json"
+}

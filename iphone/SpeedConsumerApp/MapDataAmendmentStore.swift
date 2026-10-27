@@ -1,6 +1,7 @@
 import Foundation
 import SQLite3
 import CryptoKit
+import CoreFoundation
 
 /// A data correction to an immutable bundle, separate from voice/camera offers.
 /// Rules use the existing bundle conditional grammar, including unsupported AST
@@ -164,7 +165,8 @@ struct MapDataNodePassageRuntime {
             if distance <= radius {
                 signs.append(InventoryTrafficSign(signID: record.sourceID, sourceID: "local-map-amendment", recordKey: record.id,
                     snapshotSHA256: record.sourceRevision, code: code, kind: "speed_limit",
-                    numericValue: node.tags["maxspeed"].flatMap(Double.init), unit: "km/h", parameterStatus: "parsed_source_value",
+                    numericValue: MapDataAmendmentStore.observationBaseKmh(rulesJSON: record.rulesJSON, rawMaxspeed: node.tags["maxspeed"]),
+                    unit: "km/h", parameterStatus: "parsed_source_value",
                     latitude: node.latitude, longitude: node.longitude, radiusM: radius, pictogramCode: nil, pictogramPath: nil,
                     modelClasses: [], distanceM: distance, associatedWayID: wayID, associatedDirection: direction,
                     associationStatus: "accepted", associatedHeadingDeg: projection.heading))
@@ -221,6 +223,43 @@ final class MapDataAmendmentStore: @unchecked Sendable {
     static func matchesNodeSourceRevision(_ revision: String, json: String?) -> Bool {
         guard revision.hasPrefix("node-json-sha256:") else { return true }
         return json.map { nodeSourceRevision(json: $0) == revision } ?? false
+    }
+
+    /// Physical circle for inventory/camera matching, independent of the
+    /// conditional effective limit. The observation pipeline uses km/h here;
+    /// a raw mph/symbolic source must not receive a normalized-km/h circle.
+    static func observationBaseKmh(rulesJSON: String, rawMaxspeed: String?) -> Double? {
+        var rawValue: Double?
+        if let raw = rawMaxspeed?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty {
+            guard let number = Double(raw), number.isFinite, number > 0, number <= 400 else { return nil }
+            rawValue = number
+        }
+        guard let data = rulesJSON.data(using: .utf8), data.count <= 262_144,
+              let rules = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let version = rules["version"] as? NSNumber, CFGetTypeID(version) != CFBooleanGetTypeID(), version.doubleValue == 1,
+              rules["grammar"] as? String == "youspeed-osm-speed-1",
+              let tags = rules["tags"] as? [[String: Any]], !tags.isEmpty, tags.count <= 128 else { return nil }
+        func boolean(_ value: Any?) -> Bool? {
+            guard let number = value as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() else { return nil }
+            return number.boolValue
+        }
+        if tags.contains(where: { $0["role"] as? String == "variable" && ($0["raw"] as? String ?? "").lowercased() != "no" }) { return nil }
+        let universal = tags.filter { $0["role"] as? String == "speed" && $0["vehicle"] as? String == "all" && boolean($0["conditional"]) != true }
+        if universal.contains(where: { ($0["key"] as? String ?? "").hasPrefix("maxspeed:") }) { return nil }
+        let bases = universal.filter { $0["key"] as? String == "maxspeed" }
+        guard !bases.isEmpty else { return rawValue }
+        guard bases.count == 1 else { return nil }
+        let base = bases[0]
+        guard boolean(base["conditional"]) == false,
+              let direction = base["direction"] as? NSNumber, CFGetTypeID(direction) != CFBooleanGetTypeID(), direction.doubleValue == 0,
+              base["lane"] == nil || boolean(base["lane"]) == false,
+              base["status"] as? String == "supported",
+              let clauses = base["clauses"] as? [[String: Any]], clauses.count == 1,
+              (clauses[0]["condition"] as? [String: Any])?["kind"] as? String == "true",
+              let limit = clauses[0]["limit"] as? [String: Any], limit["kind"] as? String == "numeric",
+              let number = limit["kmh"] as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID(),
+              number.doubleValue.isFinite, number.doubleValue > 0, number.doubleValue <= 400 else { return nil }
+        return number.doubleValue
     }
 
     /// Persists a new, initially unbound survey record. Applying it requires a

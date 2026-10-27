@@ -1,0 +1,59 @@
+{
+  "build": {
+    "abi": "arm64-v8a",
+    "configuration": "Debug",
+    "passed": true,
+    "task": ":app:assembleDebug"
+  },
+  "commit_binding_status": "Source SHA recorded; root will bind the new runtime commit by exact Git-byte comparison.",
+  "covered_cases": [
+    "typed universal fixed40 replaces observation raw50 without mutating source evidence",
+    "HGV/wet-only conditions retain physical50",
+    "unknown, unsupported, variable, unlimited, conflicting or malformed universal bases stay numeric-unknown",
+    "explicit mph/symbolic raw values and unqualified directional/lane base stay numeric-unknown"
+  ],
+  "format": "youspeed.packed-runtime.logic-regression",
+  "historical_evidence_note": "Already-open inventory encounters retain their immutable entry observation; this change corrects fresh node snapshots without resetting visual or passage state.",
+  "native_data_changes": false,
+  "normal_application_modified": false,
+  "phone_reinstall_performed": false,
+  "physical_baseline": "30 required physical Moto cases passed at F; this later projection-only change was checked by focused JVM regressions and an arm64 Debug APK build. No new physical execution is claimed.",
+  "physical_baseline_commit": "97f13e545bef682f03462649ff17951da4b8c28c",
+  "physical_baseline_receipt_sha256": "dd5d220bfadaede0ad212f90f8440e55e8021c7cb49134704a0d050119649fa7",
+  "platform": "android",
+  "platform_passed": true,
+  "ready_for_rollout": false,
+  "runtime_source_commit": null,
+  "schema_version": 1,
+  "scope": "Only generic/local node InventorySign.value projection. Raw immutable source JSON/tags and conditional legal-speed evaluation remain unchanged.",
+  "source_sha256": {
+    "android/app/src/main/java/de/youspeed/android/alpha/InventorySignRuntime.kt": "5a4e0ed90a355fd22d249ebe286661bda2b9fe21b9fa174fb89589a1184e1094",
+    "android/app/src/test/java/de/youspeed/android/alpha/AmendedNodeObservationProjectionTests.kt": "239ccaae680a4ac65d749e5702e1e72e628316e42132e1b87077ac647946b0ab"
+  },
+  "test_results": {
+    "failed": 0,
+    "passed": 66,
+    "skipped": 0,
+    "suites": {
+      "de.youspeed.android.alpha.AmendedNodeObservationProjectionTests": {
+        "case_names": [
+          "correctedFixedBaseChangesObservationWithoutRewritingSourceEvidence",
+          "explicitUnitsAndMalformedUniversalBaseStayUnknown",
+          "unknownVariableUnlimitedOrConflictingBaseCannotInventNumericObservation",
+          "hgvAndWetRestrictionsDoNotBecomeThePhysicalBase"
+        ],
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "xml_sha256": "0223e6ac4868fcb9edabb6cb26811780c61f88bc14d01210918d1589f2ce5583"
+      },
+      "de.youspeed.android.alpha.InventorySignRuntimeTests": {
+        "failed": 0,
+        "passed": 62,
+        "skipped": 0,
+        "xml_sha256": "7c29dd05874ca669f28fda5add694f09facb6dc6ec56a3cf0246145cccd47f1c"
+      }
+    }
+  },
+  "verification_log_sha256": "7bb632dbca26a624bd31ed1e5f787f6da270cdb3e83049abb01583f7e537d8d1"
+}

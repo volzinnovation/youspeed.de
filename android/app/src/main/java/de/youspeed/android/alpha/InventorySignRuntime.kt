@@ -26,6 +26,58 @@ internal object InventorySignSourceScope {
     }
 }
 
+/** Physical observation only: conditional applicability stays in the rule adapter. */
+internal object AmendedNodeObservationProjection {
+    fun numericValue(rulesJSON: String, sourceMaxspeed: String?): Double? {
+        if (rulesJSON.toByteArray(Charsets.UTF_8).size > 262_144) return null
+        return try {
+        fun flag(value: JsonElement?) = (value as? JsonPrimitive)?.takeUnless { it.isString }?.booleanOrNull
+        fun number(value: JsonElement?) = (value as? JsonPrimitive)?.takeUnless { it.isString }?.doubleOrNull
+        // Inventory observations use km/h; symbolic/explicit-unit raw values stay unknown.
+        val raw = sourceMaxspeed?.trim()?.takeIf { it.isNotEmpty() }
+        val physicalBase = raw?.toDoubleOrNull()?.takeIf { it.isFinite() && it > 0 && it <= 400 }
+        if (raw != null && physicalBase == null) null else {
+            val rules = Json.parseToJsonElement(rulesJSON).jsonObject
+            val tags = rules["tags"]?.jsonArray?.map { it.jsonObject }
+            if (number(rules["version"]) != 1.0 ||
+                rules["grammar"]?.jsonPrimitive?.contentOrNull != "youspeed-osm-speed-1" ||
+                tags == null || tags.isEmpty() || tags.size > 128 || tags.any {
+                    (it["role"]?.jsonPrimitive?.contentOrNull == "variable" &&
+                        it["raw"]?.jsonPrimitive?.contentOrNull?.lowercase() != "no") ||
+                        (it["role"]?.jsonPrimitive?.contentOrNull == "speed" &&
+                            it["vehicle"]?.jsonPrimitive?.contentOrNull == "all" &&
+                            flag(it["conditional"]) != true &&
+                            it["key"]?.jsonPrimitive?.contentOrNull?.startsWith("maxspeed:") == true)
+                }) null else {
+                val bases = tags.filter {
+                    it["key"]?.jsonPrimitive?.contentOrNull == "maxspeed" &&
+                        it["role"]?.jsonPrimitive?.contentOrNull == "speed" &&
+                        it["vehicle"]?.jsonPrimitive?.contentOrNull == "all" &&
+                        flag(it["conditional"]) != true
+                }
+                when {
+                    bases.isEmpty() -> physicalBase
+                    bases.size != 1 -> null
+                    else -> {
+                        val base = bases.single()
+                        val clause = base["clauses"]?.jsonArray?.singleOrNull()?.jsonObject
+                        val limit = clause?.get("limit")?.jsonObject
+                        if (flag(base["conditional"]) == false &&
+                            number(base["direction"]) == 0.0 &&
+                            (base["lane"] == null || flag(base["lane"]) == false) &&
+                            base["status"]?.jsonPrimitive?.contentOrNull == "supported" &&
+                            clause?.get("condition")?.jsonObject?.get("kind")?.jsonPrimitive?.takeIf { it.isString }?.contentOrNull == "true" &&
+                            limit?.get("kind")?.jsonPrimitive?.contentOrNull == "numeric")
+                            number(limit["kmh"])?.takeIf { it.isFinite() && it > 0 && it <= 400 }
+                        else null
+                    }
+                }
+            }
+        }
+        } catch (_: Exception) { null }
+    }
+}
+
 internal class CameraTownLocalityLatch {
     var insideCity: Boolean? = null; private set
     var observedAt: Instant? = null; private set
@@ -566,7 +618,7 @@ internal class InventorySignDatabase(private val path: String,
             val tags=source.optJSONObject("tags")
             InventorySign(station.sourceId,"local-map-amendment",record.id,record.sourceRevision,
                 tags?.optString("traffic_sign")?.takeIf{it.isNotBlank()}?:"maxspeed","speed_limit",
-                tags?.optString("maxspeed")?.toDoubleOrNull(),"km/h","parsed_source_value",
+                AmendedNodeObservationProjection.numericValue(record.rulesJSON,tags?.optString("maxspeed")),"km/h","parsed_source_value",
                 station.latitude,station.longitude,station.radius,null,emptySet(),station.wayId,station.direction,"accepted",bestHeading)
         }
         return InventorySignSnapshot(true, signs+amendedSigns, rules + boundaryStations, bestChainage.takeIf { bestDistance <= 30 }, bestHeading.takeIf { bestDistance <= 30 },stations)
