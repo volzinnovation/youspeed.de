@@ -30,6 +30,7 @@ def validate_qa(qa,result,manifest,source_commit):
               'android/app/src/main/java/de/youspeed/android/alpha/RuntimeSqlDatabase.kt',
               'android/app/src/main/java/de/youspeed/android/alpha/MapDataAmendmentStore.kt',
               'android/app/src/main/java/de/youspeed/android/alpha/RuntimeMapDatabase.kt',
+              'android/app/src/main/java/de/youspeed/android/alpha/PackedAmendmentBaseIdentity.kt',
               'android/app/src/main/java/de/youspeed/android/alpha/ConditionalSpeedRules.kt',
               'android/app/src/main/java/de/youspeed/android/alpha/V3SpeedLimitLookup.kt',
               'android/app/src/main/java/de/youspeed/android/alpha/InventorySignRuntime.kt',

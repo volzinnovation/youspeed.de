@@ -112,3 +112,5 @@ android/**/.cxx/
 .playwright-mcp/
 :memory:.ses
 docs/collection-evidence/
+mapdata/bundles/**/*.sqlite-shm
+mapdata/bundles/**/*.sqlite-wal
