@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "03f01851ad28c85368e5326bc1066cc4b3690e7981a0bb9fb198c45f9e50bba3",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -15.984506326829994,
+  "elapsed_seconds": 148.65208888899997,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -73.25469204896575,
+  "local_source_upgrade": false,
+  "node_count": 3592,
+  "packed_download_bytes": 147067848,
+  "packed_installed_bytes": 151877335,
+  "previous_published_download_bytes": 175048484,
+  "region": "languedoc-roussillon",
+  "release_files": [
+    {
+      "bytes": 125700685,
+      "file": "languedoc-roussillon_2026-10-27-packed-v1.context.yspc",
+      "sha256": "cca8628e68b88d3859adec444fe6d89b394d712182e729ec4d2959811e5332bc"
+    },
+    {
+      "bytes": 932148,
+      "file": "languedoc-roussillon_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "08a301c4579000904232c86fc23ddbab1efc2eafa0202a1411744e9dc99b5084"
+    },
+    {
+      "bytes": 20435015,
+      "file": "languedoc-roussillon_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "e5747350e2b95bb660b6496ba275ca32b8103f0252c061c5e8c16e4d775074b8"
+    },
+    {
+      "bytes": 23265,
+      "file": "languedoc-roussillon_2026-10-27-packed-v1_languedoc-roussillon_2026-09-28-refresh-8177c59.poly",
+      "sha256": "0daa6b9b3288837844a33e60932846fd33e7da206aba4363e4b3734dda35898e"
+    },
+    {
+      "bytes": 9366,
+      "file": "languedoc-roussillon_2026-10-27-packed-v1_languedoc-roussillon_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1914,
+      "file": "languedoc-roussillon_2026-10-27-packed-v1_validation.json",
+      "sha256": "7d0b633afcacdd27dd2c486000b60f67956feaefd551174c538f531c1d26b254"
+    },
+    {
+      "bytes": 5345,
+      "file": "languedoc-roussillon_manifest.json",
+      "sha256": "6355d160a8605fa77281d7f2e69dc436613060a79aec96949969b5d7ea9204b9"
+    }
+  ],
+  "release_tag": "languedoc-roussillon-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 175048484,
+  "source_installed_bytes": 567865344,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 75,
+    "membership_count": 2643,
+    "node_count": 3592,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "9d6d436ec7bdebe1891b4e2c76874e9d7675d1e46ecb35da482e45423593c7c2",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "756f0481eb96ff4956b8fde121d9333d751d3f7390bef1493ca49e216fa6b9c8",
+    "unassociated_node_count": 1665
+  },
+  "source_release_tag": "languedoc-roussillon",
+  "source_sqlite_sha256": "756f0481eb96ff4956b8fde121d9333d751d3f7390bef1493ca49e216fa6b9c8",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 362635,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 47056
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 47056
+      },
+      {
+        "name": "city_boundary",
+        "rows": 1600
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 1600
+      },
+      {
+        "name": "city_place",
+        "rows": 4898
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 4898
+      },
+      {
+        "name": "city_ring",
+        "rows": 1609
+      },
+      {
+        "name": "city_tile",
+        "rows": 14082
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 325
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 1687
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 1687
+      },
+      {
+        "name": "settlement_area",
+        "rows": 20645
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 20919
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 413433
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 1962
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 360125
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 360125
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 823
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 823
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 28099
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 107958
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 362635
+      },
+      {
+        "name": "way_geom",
+        "rows": 362635
+      },
+      {
+        "name": "way_links",
+        "rows": 597150
+      },
+      {
+        "name": "ways",
+        "rows": 362635
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 362635
+      }
+    ]
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "3255d3e80579972f1b91be7faa877683342ddd9b8070bc8e33111f3f0b0170c1",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -16.789570389625187,
+  "elapsed_seconds": 14.640417361000004,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -74.5967569575968,
+  "local_source_upgrade": false,
+  "node_count": 77,
+  "packed_download_bytes": 13726484,
+  "packed_installed_bytes": 14215541,
+  "previous_published_download_bytes": 16496110,
+  "region": "guadeloupe",
+  "release_files": [
+    {
+      "bytes": 11803204,
+      "file": "guadeloupe_2026-10-27-packed-v1.context.yspc",
+      "sha256": "6649ec4fe505bb4db14b0f4df8a5f42b410f7be6d41297c23045cb3e1b9baba2"
+    },
+    {
+      "bytes": 19715,
+      "file": "guadeloupe_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "9557492cdc90ff93cb05fb1884affbfb769e5c73106064e8bdc5535d91f11d87"
+    },
+    {
+      "bytes": 1903565,
+      "file": "guadeloupe_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "d07c0929b86285c6b77c13873ca38bb1e84371af2aa14ca59c923ff07bc724d2"
+    },
+    {
+      "bytes": 271,
+      "file": "guadeloupe_2026-10-27-packed-v1_guadeloupe_2026-09-28-refresh-8177c59.poly",
+      "sha256": "a4406ff92b4e8480b7abfc87e62dd482f9ae7df23635b0dbfd09dab92926a905"
+    },
+    {
+      "bytes": 9366,
+      "file": "guadeloupe_2026-10-27-packed-v1_guadeloupe_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1877,
+      "file": "guadeloupe_2026-10-27-packed-v1_validation.json",
+      "sha256": "9ce0e90878066d6dd66cced12da9c543f47436506ff3b29eaad1227aa0cc339d"
+    },
+    {
+      "bytes": 5082,
+      "file": "guadeloupe_manifest.json",
+      "sha256": "6163f85dae031a40ac8876fcd615d4c1f5953deb138ea584f3c4d21c90bea359"
+    }
+  ],
+  "release_tag": "guadeloupe-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 16496110,
+  "source_installed_bytes": 55959552,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 0,
+    "membership_count": 43,
+    "node_count": 77,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "72a5d7e9dcc03eff99ecdd54aeeb24142bb623a523ccfecbffae23e9500093d7",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "37d86b74744f89c941b932b1a084c8d336fd55ae46d488eab94ae262e1327e2f",
+    "unassociated_node_count": 47
+  },
+  "source_release_tag": "guadeloupe",
+  "source_sqlite_sha256": "37d86b74744f89c941b932b1a084c8d336fd55ae46d488eab94ae262e1327e2f",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 37783,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 3338
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 3338
+      },
+      {
+        "name": "city_boundary",
+        "rows": 33
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 33
+      },
+      {
+        "name": "city_place",
+        "rows": 463
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 463
+      },
+      {
+        "name": "city_ring",
+        "rows": 180
+      },
+      {
+        "name": "city_tile",
+        "rows": 897
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 0
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 0
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 0
+      },
+      {
+        "name": "settlement_area",
+        "rows": 1635
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 1678
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 44524
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 16
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 37763
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 37763
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 20
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 20
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 1833
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 7790
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 37783
+      },
+      {
+        "name": "way_geom",
+        "rows": 37783
+      },
+      {
+        "name": "way_links",
+        "rows": 45828
+      },
+      {
+        "name": "ways",
+        "rows": 37783
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 37783
+      }
+    ]
+  }
+}

@@ -42,6 +42,19 @@ host storage measurements, not
 complete driving-matcher or physical-phone acceptance claims. Receipts are in
 [`shared/packed-runtime/results`](../shared/packed-runtime/results/).
 
+The complete BW storage workload subsequently passed on both physical phones:
+
+| Phone | Single-reader RSS increase | Eight-reader RSS increase | Warm SQL p50 / p95 |
+|---|---:|---:|---:|
+| iPhone 14 Pro | 7.81 MiB | 46.25 MiB | 7.94 / 18.47 ms |
+| Moto g86 | 7.34 MiB | 47.93 MiB | 15.52 / 37.22 ms |
+
+Every typed query result matches the original SQLite source, and every one of
+the 73,991 generic node records passes the full semantic/CRC comparison on both
+phones. Payload mappings remain zero. These are observed storage-process RSS
+increases and SQL timings, rather than absolute app memory or complete driving
+pipeline timings. See the [physical receipts](../benchmarks/packed-runtime/results/).
+
 Release conversion verifies original logical table counts, original metadata
 and every original geometry JSON string. Every transport and installed
 companion has an independent SHA-256 and size. Companions activate together in
@@ -58,6 +71,22 @@ Its new release reuses the canonical Karlsruhe packed bytes with verified
 provenance. The old release is preserved. Its comparison separates compression
 of the actual canonical input from the content/schema upgrade over the old
 80,994,304-byte archive; the latter adds modern settlement data and sign nodes.
+
+All 55 packed releases are public. The [published catalog](https://github.com/volzinnovation/youspeed.de/releases/tag/packed-runtime-v1-latest)
+selects 54 unique regions. Their installed totals fall from 35,287,744,512 to
+11,039,786,234 bytes (−68.7%); runtime transport totals fall from 13,447,139,606
+to 10,553,247,709 bytes (−21.5%). Compared with the older published transports,
+the reduction is 18.4%. These are sums of regional bundles, including overlapping
+coverage, rather than one typical phone installation.
+Every installed bundle is smaller than its actual source. Sachsen-Anhalt is
+the single runtime transport increase (+0.88%); the per-bundle comparison
+retains that exception rather than implying every download shrank.
+
+The complete [CSV](../shared/packed-runtime/releases/2026-10-27/size-comparison.csv)
+and [JSON](../shared/packed-runtime/releases/2026-10-27/size-comparison.json)
+retain each actual-source and previous-published baseline, including the two
+explicit content upgrades. Every uploaded asset was checked against GitHub's
+server SHA-256 and byte count before publication. The catalog was published last.
 
 | Full BW runtime | Converted source | Packed generation | Change |
 |---|---:|---:|---:|
@@ -88,6 +117,15 @@ builder source against its data commit and each runtime source against the
 accepted client commit; reused phone storage evidence also records equality of
 the native build inputs.
 
-At this checkpoint, platform tests and host checks pass; physical-device
-acceptance and publication are pending. No production app has been replaced
-and no branch has been merged.
+The source-bound client baseline passes 33 physical iPhone tests and 30 required
+physical Android tests. A clean Android export passes compilation, its arm64
+native build and 875 unit tests, with one optional private replay skipped. The
+subsequent pure numeric-observation projection fix passes 66 focused Android
+checks and two Swift tests with both builds; its native and data inputs remain
+unchanged. Physical baseline and subsequent focused validation are recorded
+separately in the [final QA report](../shared/packed-runtime/results/rollout-qa-2026-10-27.json).
+
+Both apps are version 1.6 (10074) in [PR 35](https://github.com/volzinnovation/youspeed.de/pull/35).
+Normal phone apps were preserved; the functional suites used isolated hosts.
+The shared reference policy check passes all 39 scenarios / 171 steps with
+unchanged policy hashes. No branch was merged and no app-store release was made.

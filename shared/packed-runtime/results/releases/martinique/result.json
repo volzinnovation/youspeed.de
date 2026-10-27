@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "c4a073f05942eb16c26eef3d4c2d4d0308dcbd40ac54a8631262af35cce96abf",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -18.054990193262388,
+  "elapsed_seconds": 8.695337083999988,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -75.2291043514335,
+  "local_source_upgrade": false,
+  "node_count": 24,
+  "packed_download_bytes": 10969327,
+  "packed_installed_bytes": 11368771,
+  "previous_published_download_bytes": 13386205,
+  "region": "martinique",
+  "release_files": [
+    {
+      "bytes": 9176464,
+      "file": "martinique_2026-10-27-packed-v1.context.yspc",
+      "sha256": "96744703e3336bfbc44e95fbf97a1dc1f8587dcaaa2e4ecff37e0a1479bb5bdf"
+    },
+    {
+      "bytes": 5349,
+      "file": "martinique_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "149085d104ffe55e9036c6b4a70dc245a793beb49f7da43aacdf3fffc22d4c8a"
+    },
+    {
+      "bytes": 1787514,
+      "file": "martinique_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "f1e49b94f9261cd271c3ea8540192eec8176faf8f75f4549edb62b4445f3bb67"
+    },
+    {
+      "bytes": 207,
+      "file": "martinique_2026-10-27-packed-v1_martinique_2026-09-28-refresh-8177c59.poly",
+      "sha256": "f05c403b980dfee3291aee41bb40dcbb99a0f09cc4f6b41be26944bb175b8072"
+    },
+    {
+      "bytes": 9366,
+      "file": "martinique_2026-10-27-packed-v1_martinique_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1878,
+      "file": "martinique_2026-10-27-packed-v1_validation.json",
+      "sha256": "8db22b916ef2d3b7527e114ee6af52bf2a38a49890e7f1a063937356fdc2753e"
+    },
+    {
+      "bytes": 5078,
+      "file": "martinique_manifest.json",
+      "sha256": "9e598df16e4a0b4372b68b434665e1918be3722380147dd5bb4f99d13899edd4"
+    }
+  ],
+  "release_tag": "martinique-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 13386205,
+  "source_installed_bytes": 45895680,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 0,
+    "membership_count": 8,
+    "node_count": 24,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "8b1bda2d0237c9d7f325a2174654506c08a96b82310a206ead473b4d5460cea3",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "b74db9a6e02c1d3ea64a6575e7b04094f1262abcd7b5e00cdc4c7862f22804c5",
+    "unassociated_node_count": 18
+  },
+  "source_release_tag": "martinique",
+  "source_sqlite_sha256": "b74db9a6e02c1d3ea64a6575e7b04094f1262abcd7b5e00cdc4c7862f22804c5",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 31094,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 1144
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 1144
+      },
+      {
+        "name": "city_boundary",
+        "rows": 34
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 34
+      },
+      {
+        "name": "city_place",
+        "rows": 176
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 176
+      },
+      {
+        "name": "city_ring",
+        "rows": 97
+      },
+      {
+        "name": "city_tile",
+        "rows": 313
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 22
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 76
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 76
+      },
+      {
+        "name": "settlement_area",
+        "rows": 290
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 294
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 32727
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 3
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 30839
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 30839
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 179
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 179
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 1503
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 5162
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 31094
+      },
+      {
+        "name": "way_geom",
+        "rows": 31094
+      },
+      {
+        "name": "way_links",
+        "rows": 35320
+      },
+      {
+        "name": "ways",
+        "rows": 31094
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 31094
+      }
+    ]
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "2d2904b00de060955686813755e48dff1c01d4aaa5bb632160699fb2a33c2764",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -9.263356964525283,
+  "elapsed_seconds": 31.435124873000007,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -68.88053767768953,
+  "local_source_upgrade": false,
+  "node_count": 7556,
+  "packed_download_bytes": 34429933,
+  "packed_installed_bytes": 35811381,
+  "previous_published_download_bytes": 37944905,
+  "region": "saarland",
+  "release_files": [
+    {
+      "bytes": 28528256,
+      "file": "saarland_2026-10-27-packed-v1.context.yspc",
+      "sha256": "47530d8f9d0dfe3a4cc32bfbbe8291d36a1188bab247b67491befbf0bd4e4ea0"
+    },
+    {
+      "bytes": 2163687,
+      "file": "saarland_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "8bc16deb4be7c14a14d0d4f022264a9254806cc89620b4a8a0f96d161e23a698"
+    },
+    {
+      "bytes": 3737990,
+      "file": "saarland_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "c46ac5e469b8cec46b335608640198c6ea21c4a3012fb2f52b57b4d56a490e66"
+    },
+    {
+      "bytes": 6060,
+      "file": "saarland_2026-10-27-packed-v1_saarland_2026-09-28-refresh-8177c59.poly",
+      "sha256": "8040526158183567be67d876d9a3a88d21b82aeb0913d54d66c2cd2eae75fa03"
+    },
+    {
+      "bytes": 5756,
+      "file": "saarland_2026-10-27-packed-v1_saarland_2026-09-28-refresh-8177c59_DEU-rules.json",
+      "sha256": "fceebeb611d114d0bd97acd17ea0bc002d795210a2a18c3b1129a9a3c5904580"
+    },
+    {
+      "bytes": 1894,
+      "file": "saarland_2026-10-27-packed-v1_validation.json",
+      "sha256": "a8434746683aa3b9e859ff483cdc822dd5a8637ea8391e9b299f618a69887f2d"
+    },
+    {
+      "bytes": 5044,
+      "file": "saarland_manifest.json",
+      "sha256": "ff1327e91f02cf3bb03c6faa6b365fef974078d350b4bff26f7806c9fd54e364"
+    }
+  ],
+  "release_tag": "saarland-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 37944905,
+  "source_installed_bytes": 115077120,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 310,
+    "membership_count": 7607,
+    "node_count": 7556,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "ac7641726bff739a55b0b7e1eb1e73baa0df7a6c0ba3cc652bb3983556e305b8",
+    "source_pbf_timestamp": "2026-07-04T20:21:16Z",
+    "source_sqlite_sha256": "887fe6dff8cb98b02aba337e6ff0713b7fd1efad1e3c0dcdd323aeb16aee4da1",
+    "unassociated_node_count": 1511
+  },
+  "source_release_tag": "saarland",
+  "source_sqlite_sha256": "887fe6dff8cb98b02aba337e6ff0713b7fd1efad1e3c0dcdd323aeb16aee4da1",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 82029,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 9841
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 9841
+      },
+      {
+        "name": "city_boundary",
+        "rows": 416
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 416
+      },
+      {
+        "name": "city_place",
+        "rows": 469
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 469
+      },
+      {
+        "name": "city_ring",
+        "rows": 418
+      },
+      {
+        "name": "city_tile",
+        "rows": 3960
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 468
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 1638
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 1638
+      },
+      {
+        "name": "settlement_area",
+        "rows": 2551
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 2694
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 94603
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 2541
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 80260
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 80260
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 131
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 131
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 6485
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 38183
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 82029
+      },
+      {
+        "name": "way_geom",
+        "rows": 82029
+      },
+      {
+        "name": "way_links",
+        "rows": 132364
+      },
+      {
+        "name": "ways",
+        "rows": 82029
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 82029
+      }
+    ]
+  }
+}

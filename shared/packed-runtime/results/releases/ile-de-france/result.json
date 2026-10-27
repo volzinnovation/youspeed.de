@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "40abcef32e8eee969659c7f0f0db40e0999a843cfddce219ecd82a33e20aa47e",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -13.638462433303644,
+  "elapsed_seconds": 118.486442966,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -71.85191410264144,
+  "local_source_upgrade": false,
+  "node_count": 7744,
+  "packed_download_bytes": 178625837,
+  "packed_installed_bytes": 185122710,
+  "previous_published_download_bytes": 206834943,
+  "region": "ile-de-france",
+  "release_files": [
+    {
+      "bytes": 156077385,
+      "file": "ile-de-france_2026-10-27-packed-v1.context.yspc",
+      "sha256": "f22163a1a72b9aa08ebcf591b165af75f6fe5e1d16ddc024f9f654fea891d423"
+    },
+    {
+      "bytes": 1901632,
+      "file": "ile-de-france_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "05b6a56c1f2044bf221784519d8eb578797f3620a53eb9329b16bddf95fb6352"
+    },
+    {
+      "bytes": 20646820,
+      "file": "ile-de-france_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "4f762c921b88a6eb07e77f4342c2544ad1d150d9152bbc7b68db4e626dac194d"
+    },
+    {
+      "bytes": 24567,
+      "file": "ile-de-france_2026-10-27-packed-v1_ile-de-france_2026-09-28-refresh-8177c59.poly",
+      "sha256": "ebda64b6174c4cff0aa4aedc702d54bf5035bf19b173e0593d83060d16489683"
+    },
+    {
+      "bytes": 9366,
+      "file": "ile-de-france_2026-10-27-packed-v1_ile-de-france_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1914,
+      "file": "ile-de-france_2026-10-27-packed-v1_validation.json",
+      "sha256": "abfbae555b23cc58f0977b66e085fad3e1c3fb09057610e9e70806687e043135"
+    },
+    {
+      "bytes": 5171,
+      "file": "ile-de-france_manifest.json",
+      "sha256": "da6e0b541f4f32cdafeb48e3fecc9c4ef8a7d167fba552ff0e891c343f9accc5"
+    }
+  ],
+  "release_tag": "ile-de-france-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 206834943,
+  "source_installed_bytes": 657674240,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 81,
+    "membership_count": 2949,
+    "node_count": 7744,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "5be60e9bd4cbbde0a995eda23b2b4d82c67ef03d0915b59edf5e9dd49c42da48",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "232fd43e6c1201ff28b168cde9cfb9d681ce365cd376b75aaefb119be60733cc",
+    "unassociated_node_count": 5576
+  },
+  "source_release_tag": "ile-de-france",
+  "source_sqlite_sha256": "232fd43e6c1201ff28b168cde9cfb9d681ce365cd376b75aaefb119be60733cc",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 475707,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 63006
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 63006
+      },
+      {
+        "name": "city_boundary",
+        "rows": 1356
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 1356
+      },
+      {
+        "name": "city_place",
+        "rows": 2576
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 2576
+      },
+      {
+        "name": "city_ring",
+        "rows": 1356
+      },
+      {
+        "name": "city_tile",
+        "rows": 9682
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 727
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 2918
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 2918
+      },
+      {
+        "name": "settlement_area",
+        "rows": 9667
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 10473
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 526942
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 2388
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 469857
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 469857
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 2932
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 2932
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 43969
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 222706
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 475707
+      },
+      {
+        "name": "way_geom",
+        "rows": 475707
+      },
+      {
+        "name": "way_links",
+        "rows": 905466
+      },
+      {
+        "name": "ways",
+        "rows": 475707
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 475707
+      }
+    ]
+  }
+}

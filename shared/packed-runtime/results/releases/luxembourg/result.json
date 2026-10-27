@@ -1,0 +1,166 @@
+{
+  "build_cache_identity": "5533fe87dc298cfab03969850af0f007a558d01069c591d38d5e6776a90e1a45",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -11.72141525277114,
+  "elapsed_seconds": 19.892042785,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -63.25376995288854,
+  "local_source_upgrade": false,
+  "node_count": 1011,
+  "packed_download_bytes": 20206509,
+  "packed_installed_bytes": 20985966,
+  "previous_published_download_bytes": 22889480,
+  "region": "luxembourg",
+  "release_files": [
+    {
+      "bytes": 17177773,
+      "file": "luxembourg_2026-10-27-packed-v1.context.yspc",
+      "sha256": "778925688932872ee5c49dbb291e83bc535bf31ab82b77f116f01bd7b83f409e"
+    },
+    {
+      "bytes": 299514,
+      "file": "luxembourg_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "3ba05e6571022c9e1ed4ed660bbb1805c760efb2224c9a1f58c53604ab1f61e8"
+    },
+    {
+      "bytes": 2729222,
+      "file": "luxembourg_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "dae7f3d390a95553d7a7b8a89d1867d6717a8b446b92730ad0819c8624c50077"
+    },
+    {
+      "bytes": 8602,
+      "file": "luxembourg_2026-10-27-packed-v1_luxembourg_2026-09-28-refresh-8177c59.poly",
+      "sha256": "d5f706e4a3d25d9f51736659b96b018883e7fcf8fe7752e84d6c56d8abfb521a"
+    },
+    {
+      "bytes": 1630,
+      "file": "luxembourg_2026-10-27-packed-v1_validation.json",
+      "sha256": "f4371990774f07b44b04fca007794283e40497a8a1c86b1acdc8286559ac0643"
+    },
+    {
+      "bytes": 4661,
+      "file": "luxembourg_manifest.json",
+      "sha256": "ba6ced8fee232473ced4cb50aa5c17300cca3d8539e24ec65732d590a5dc6480"
+    }
+  ],
+  "release_tag": "luxembourg-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 22889480,
+  "source_installed_bytes": 57110528,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 18,
+    "membership_count": 1606,
+    "node_count": 1011,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "1f62191a7fc9eedf8e135aa3c392efbea1512a6ed54b907b854d40226269aa36",
+    "source_pbf_timestamp": "2026-09-15T20:20:37Z",
+    "source_sqlite_sha256": "f1c18227f9cccf2e96f5ed5359e37619a43f8594dce8eedb3a0a4848c51b5a0f",
+    "unassociated_node_count": 111
+  },
+  "source_release_tag": "luxembourg",
+  "source_sqlite_sha256": "f1c18227f9cccf2e96f5ed5359e37619a43f8594dce8eedb3a0a4848c51b5a0f",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 58166,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 11452
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 11452
+      },
+      {
+        "name": "city_boundary",
+        "rows": 315
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 315
+      },
+      {
+        "name": "city_place",
+        "rows": 693
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 693
+      },
+      {
+        "name": "city_ring",
+        "rows": 317
+      },
+      {
+        "name": "city_tile",
+        "rows": 3576
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 269
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 826
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 826
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 57062
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 57062
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 278
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 278
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 4927
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 29372
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 58166
+      },
+      {
+        "name": "way_geom",
+        "rows": 58166
+      },
+      {
+        "name": "way_links",
+        "rows": 117264
+      },
+      {
+        "name": "ways",
+        "rows": 58166
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 58166
+      }
+    ]
+  }
+}

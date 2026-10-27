@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "43ad68980d657f59e552c3956e5ce7251c69a91027fb90b2e4ce404f109a2d5f",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -16.150502943202362,
+  "elapsed_seconds": 186.93771138999998,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -73.52609385208805,
+  "local_source_upgrade": false,
+  "node_count": 5969,
+  "packed_download_bytes": 209697931,
+  "packed_installed_bytes": 216172651,
+  "previous_published_download_bytes": 250088478,
+  "region": "bretagne",
+  "release_files": [
+    {
+      "bytes": 179687923,
+      "file": "bretagne_2026-10-27-packed-v1.context.yspc",
+      "sha256": "6cc7d6e7c2db21589fb9685d85744db74be94c624e8a92cd6fc24ac06f32bd8a"
+    },
+    {
+      "bytes": 1679410,
+      "file": "bretagne_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "0fdd725c1c2361c091703862d37d30d50d9b9509e8da421d35063b885c594b0b"
+    },
+    {
+      "bytes": 28330598,
+      "file": "bretagne_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "de8c7287e33fecb575482d01e9c0879c4c2e298001f7806621c4028a26a7634a"
+    },
+    {
+      "bytes": 10927,
+      "file": "bretagne_2026-10-27-packed-v1_bretagne_2026-09-28-refresh-8177c59.poly",
+      "sha256": "c9505227564d41b5ab00de81a93cccb859717a22d03c3bcf57822abfeaf63d4d"
+    },
+    {
+      "bytes": 9366,
+      "file": "bretagne_2026-10-27-packed-v1_bretagne_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1913,
+      "file": "bretagne_2026-10-27-packed-v1_validation.json",
+      "sha256": "ede2463ddb1aa956d26b77496faacb6eb269bc39d52b6c36dcfdf398329259cb"
+    },
+    {
+      "bytes": 5049,
+      "file": "bretagne_manifest.json",
+      "sha256": "45a8480243cd969d35707370d6e898faab8d54af0e3331073919dec257dfb6b4"
+    }
+  ],
+  "release_tag": "bretagne-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 250088478,
+  "source_installed_bytes": 816549888,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 244,
+    "membership_count": 5878,
+    "node_count": 5969,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "01359c24bad425a7d7e02b6a572c3328de11b23a30b91ff0cf1238b09ed028d9",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "7c3e6f502964b5dd469c80049ad889e2bb0bbbc5040a547ed547917490a4869c",
+    "unassociated_node_count": 2417
+  },
+  "source_release_tag": "bretagne",
+  "source_sqlite_sha256": "7c3e6f502964b5dd469c80049ad889e2bb0bbbc5040a547ed547917490a4869c",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 487869,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 121558
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 121558
+      },
+      {
+        "name": "city_boundary",
+        "rows": 1338
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 1338
+      },
+      {
+        "name": "city_place",
+        "rows": 62163
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 62163
+      },
+      {
+        "name": "city_ring",
+        "rows": 4139
+      },
+      {
+        "name": "city_tile",
+        "rows": 15108
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 13
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 71
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 71
+      },
+      {
+        "name": "settlement_area",
+        "rows": 22950
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 23546
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 577434
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 5638
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 487054
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 487054
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 744
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 744
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 30569
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 112959
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 487869
+      },
+      {
+        "name": "way_geom",
+        "rows": 487869
+      },
+      {
+        "name": "way_links",
+        "rows": 734078
+      },
+      {
+        "name": "ways",
+        "rows": 487869
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 487869
+      }
+    ]
+  }
+}

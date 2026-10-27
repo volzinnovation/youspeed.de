@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "8a7881821b750d4edebd53d4baf302feaf914ad916dfed0dc632f63808a906ea",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -12.657535106690021,
+  "elapsed_seconds": 152.227056324,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -70.22376769479503,
+  "local_source_upgrade": false,
+  "node_count": 18969,
+  "packed_download_bytes": 169153038,
+  "packed_installed_bytes": 175201712,
+  "previous_published_download_bytes": 193666435,
+  "region": "rheinland-pfalz",
+  "release_files": [
+    {
+      "bytes": 145027894,
+      "file": "rheinland-pfalz_2026-10-27-packed-v1.context.yspc",
+      "sha256": "453a2031c229bae80fd090670ba3dfd1c09e444a7fbcce41c3e2bdb2962356d8"
+    },
+    {
+      "bytes": 4901087,
+      "file": "rheinland-pfalz_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "41621bb20662a1e7d02b90f3b143c55823b87f31a36cf980177382a9c3554e53"
+    },
+    {
+      "bytes": 19224057,
+      "file": "rheinland-pfalz_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "94763bc510663122839d043353c09850e56dd33591374cd63bd68f8c30ff9924"
+    },
+    {
+      "bytes": 20940,
+      "file": "rheinland-pfalz_2026-10-27-packed-v1_rheinland-pfalz_2026-09-28-refresh-8177c59.poly",
+      "sha256": "8222bacc71e3869cec661a457452c8c311a42a1afa0979d561ba6dc0ca8b4c9e"
+    },
+    {
+      "bytes": 5756,
+      "file": "rheinland-pfalz_2026-10-27-packed-v1_rheinland-pfalz_2026-09-28-refresh-8177c59_DEU-rules.json",
+      "sha256": "fceebeb611d114d0bd97acd17ea0bc002d795210a2a18c3b1129a9a3c5904580"
+    },
+    {
+      "bytes": 1916,
+      "file": "rheinland-pfalz_2026-10-27-packed-v1_validation.json",
+      "sha256": "7cdef06d40afec4a8ffd622e231fea11a2ea3c7e51fb09b41c49b161bc43e022"
+    },
+    {
+      "bytes": 5225,
+      "file": "rheinland-pfalz_manifest.json",
+      "sha256": "2538cf8077b16976657bef3bca852cfbe3d6eafbe845498653e82eebbf830944"
+    }
+  ],
+  "release_tag": "rheinland-pfalz-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 193666435,
+  "source_installed_bytes": 588394496,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 722,
+    "membership_count": 18497,
+    "node_count": 18969,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "93fbc02f3ee9c26e87d502eba467157df6920f45ebb8fb70f4f3e359147f11b2",
+    "source_pbf_timestamp": "2026-07-04T20:21:16Z",
+    "source_sqlite_sha256": "c012755bd957e679f954988701454367c617d4756acd3f9a84a11d091f474fe2",
+    "unassociated_node_count": 7757
+  },
+  "source_release_tag": "rheinland-pfalz",
+  "source_sqlite_sha256": "c012755bd957e679f954988701454367c617d4756acd3f9a84a11d091f474fe2",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 407352,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 57928
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 57928
+      },
+      {
+        "name": "city_boundary",
+        "rows": 2531
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 2531
+      },
+      {
+        "name": "city_place",
+        "rows": 4076
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 4076
+      },
+      {
+        "name": "city_ring",
+        "rows": 2651
+      },
+      {
+        "name": "city_tile",
+        "rows": 22493
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 1345
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 4720
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 4720
+      },
+      {
+        "name": "settlement_area",
+        "rows": 19490
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 20794
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 482687
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 18007
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 401969
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 401969
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 663
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 663
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 31995
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 175621
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 407352
+      },
+      {
+        "name": "way_geom",
+        "rows": 407352
+      },
+      {
+        "name": "way_links",
+        "rows": 719896
+      },
+      {
+        "name": "ways",
+        "rows": 407352
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 407352
+      }
+    ]
+  }
+}

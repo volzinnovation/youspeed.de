@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "6ceb7c4afc428ffccf02fb447e60de6540c29bcbe56eb95504dc3b84ce5b50ac",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -15.550284072073882,
+  "elapsed_seconds": 102.03065942199999,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -73.29793523879455,
+  "local_source_upgrade": false,
+  "node_count": 4144,
+  "packed_download_bytes": 104766143,
+  "packed_installed_bytes": 108153257,
+  "previous_published_download_bytes": 124057425,
+  "region": "lorraine",
+  "release_files": [
+    {
+      "bytes": 90632060,
+      "file": "lorraine_2026-10-27-packed-v1.context.yspc",
+      "sha256": "551835a244ff887c61d1c7105e90b0ab72210d00cef76a1e6f0fc781c993190c"
+    },
+    {
+      "bytes": 1111851,
+      "file": "lorraine_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "07bd85559f689306ccee2743e598dc01de2270d334bba742406861a1ae240162"
+    },
+    {
+      "bytes": 13022232,
+      "file": "lorraine_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "e6b3685ca44cd4166a8f15b97e2da472a9fedfc860e59c90afbaeb65e6d2518f"
+    },
+    {
+      "bytes": 21994,
+      "file": "lorraine_2026-10-27-packed-v1_lorraine_2026-09-28-refresh-8177c59.poly",
+      "sha256": "067a3322b69f57a7c6d2f517bfc26d62a93fa9dcac30e34c2b427069ca265ed9"
+    },
+    {
+      "bytes": 9366,
+      "file": "lorraine_2026-10-27-packed-v1_lorraine_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1911,
+      "file": "lorraine_2026-10-27-packed-v1_validation.json",
+      "sha256": "6cd663e3ace2d0b914d6e710610308d2f47b56fe300cf6a5af5c2afea5e367f8"
+    },
+    {
+      "bytes": 5045,
+      "file": "lorraine_manifest.json",
+      "sha256": "db5fba63786f310dbf0305aee0798362f1fcb0c28e0490914b94c3d493b96e48"
+    }
+  ],
+  "release_tag": "lorraine-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 124057425,
+  "source_installed_bytes": 405037056,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 63,
+    "membership_count": 4239,
+    "node_count": 4144,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "aa9b9073c85c42f1bdddea90ac31bbf6358794d802fcc053bfa5719ef988c1a6",
+    "source_pbf_timestamp": "2026-07-03T04:51:13Z",
+    "source_sqlite_sha256": "aacb217d4a2d0bc8aee47fd0e8036b834d9a79585e930a1c1aff4444a249ebed",
+    "unassociated_node_count": 1660
+  },
+  "source_release_tag": "lorraine",
+  "source_sqlite_sha256": "aacb217d4a2d0bc8aee47fd0e8036b834d9a79585e930a1c1aff4444a249ebed",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 249582,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 31547
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 31547
+      },
+      {
+        "name": "city_boundary",
+        "rows": 2502
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 2502
+      },
+      {
+        "name": "city_place",
+        "rows": 3545
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 3545
+      },
+      {
+        "name": "city_ring",
+        "rows": 2520
+      },
+      {
+        "name": "city_tile",
+        "rows": 17266
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 410
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 1714
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 1714
+      },
+      {
+        "name": "settlement_area",
+        "rows": 8547
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 8964
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 294010
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 4646
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 247384
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 247384
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 484
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 484
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 20637
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 90619
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 249582
+      },
+      {
+        "name": "way_geom",
+        "rows": 249582
+      },
+      {
+        "name": "way_links",
+        "rows": 426126
+      },
+      {
+        "name": "ways",
+        "rows": 249582
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 249582
+      }
+    ]
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "76f6564aa51e77b5044fae24d9010f5d21c89fd5cced5ead8d9ecf4c40e1ba27",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -15.135474616236822,
+  "elapsed_seconds": 191.03393219400002,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -72.66575941910548,
+  "local_source_upgrade": false,
+  "node_count": 7301,
+  "packed_download_bytes": 217494723,
+  "packed_installed_bytes": 224536765,
+  "previous_published_download_bytes": 256284616,
+  "region": "pays-de-la-loire",
+  "release_files": [
+    {
+      "bytes": 187383939,
+      "file": "pays-de-la-loire_2026-10-27-packed-v1.context.yspc",
+      "sha256": "6119fa49381655ca3d2c9faaf5b71b18cc00338aa1e7ea6366c73147ae023835"
+    },
+    {
+      "bytes": 1744347,
+      "file": "pays-de-la-loire_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "71a10e65c14dc16f69eaf4bfecd602a6fa674963b62053fbd986d47a6c88e0e8"
+    },
+    {
+      "bytes": 28366437,
+      "file": "pays-de-la-loire_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "6088bb35a964f4fc4b94f429aafcbb067d0f02e0ee568fed14f0658cb7618d97"
+    },
+    {
+      "bytes": 24258,
+      "file": "pays-de-la-loire_2026-10-27-packed-v1_pays-de-la-loire_2026-09-28-refresh-8177c59.poly",
+      "sha256": "407ed00797e0cae132a7acfd9b78bbf0ee5e0720106e97cdacf389e7b94044c7"
+    },
+    {
+      "bytes": 9366,
+      "file": "pays-de-la-loire_2026-10-27-packed-v1_pays-de-la-loire_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1916,
+      "file": "pays-de-la-loire_2026-10-27-packed-v1_validation.json",
+      "sha256": "2dbb83e8828f039efdd88b72db6b01701a1f68b5d2d0ae67ba0193b71d929aca"
+    },
+    {
+      "bytes": 5248,
+      "file": "pays-de-la-loire_manifest.json",
+      "sha256": "feafb53421c070be91723029eef1d21e907b8d990e1285d624f362a2ce6a2ad1"
+    }
+  ],
+  "release_tag": "pays-de-la-loire-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 256284616,
+  "source_installed_bytes": 821448704,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 144,
+    "membership_count": 3307,
+    "node_count": 7301,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "94d72b3d1f3201fbe70acc8e1bd6e968f709791d0d04caf460aeb2ca99c59a02",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "664df48301073d36f2e526c50ede4ed8768a8043bd5b6143828fdfebd9c85803",
+    "unassociated_node_count": 5069
+  },
+  "source_release_tag": "pays-de-la-loire",
+  "source_sqlite_sha256": "664df48301073d36f2e526c50ede4ed8768a8043bd5b6143828fdfebd9c85803",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 524636,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 91394
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 91394
+      },
+      {
+        "name": "city_boundary",
+        "rows": 1644
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 1644
+      },
+      {
+        "name": "city_place",
+        "rows": 28709
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 28709
+      },
+      {
+        "name": "city_ring",
+        "rows": 1666
+      },
+      {
+        "name": "city_tile",
+        "rows": 19186
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 386
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 1504
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 1504
+      },
+      {
+        "name": "settlement_area",
+        "rows": 27084
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 27433
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 614230
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 6448
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 522255
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 522255
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 877
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 877
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 33541
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 122039
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 524636
+      },
+      {
+        "name": "way_geom",
+        "rows": 524636
+      },
+      {
+        "name": "way_links",
+        "rows": 745028
+      },
+      {
+        "name": "ways",
+        "rows": 524636
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 524636
+      }
+    ]
+  }
+}

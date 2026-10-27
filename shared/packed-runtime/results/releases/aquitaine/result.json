@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "2ea70e67f965a1f47a68ff58ba54c9c73e360ffc5f7d726c57f2e8e933eb8be2",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -15.708366552061515,
+  "elapsed_seconds": 174.141057289,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -72.84606148672694,
+  "local_source_upgrade": false,
+  "node_count": 2752,
+  "packed_download_bytes": 198353225,
+  "packed_installed_bytes": 204712856,
+  "previous_published_download_bytes": 235317809,
+  "region": "aquitaine",
+  "release_files": [
+    {
+      "bytes": 170529067,
+      "file": "aquitaine_2026-10-27-packed-v1.context.yspc",
+      "sha256": "2ca32733a26e803eb6ecab43816953c1eaae4270d3e1d758215f9dd20af637ef"
+    },
+    {
+      "bytes": 661421,
+      "file": "aquitaine_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "c2fa0a4b7188bcfc504e7c5292b2d9e77b41847b0c7987618ccb73421faf0dce"
+    },
+    {
+      "bytes": 27162737,
+      "file": "aquitaine_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "77f03cfa19568d4bed659e635436de363613a6e55d6bdc64c95b9158f3238741"
+    },
+    {
+      "bytes": 22820,
+      "file": "aquitaine_2026-10-27-packed-v1_aquitaine_2026-09-28-refresh-8177c59.poly",
+      "sha256": "57095926b499121231a20a2355a30b7a607be011251b882f94b435c36b790285"
+    },
+    {
+      "bytes": 9366,
+      "file": "aquitaine_2026-10-27-packed-v1_aquitaine_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1916,
+      "file": "aquitaine_2026-10-27-packed-v1_validation.json",
+      "sha256": "4f5fd0b92ccdfb3066ea2c10a0f7be4da4585fd2d79dfcb4ab014d15361f55c3"
+    },
+    {
+      "bytes": 5070,
+      "file": "aquitaine_manifest.json",
+      "sha256": "dc4bd8f95b99d293b63059f11b8ff122f8719e19f12dd3bdf7866dfc07a94445"
+    }
+  ],
+  "release_tag": "aquitaine-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 235317809,
+  "source_installed_bytes": 753897472,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 66,
+    "membership_count": 1625,
+    "node_count": 2752,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "9e714f4c903504b87d9b8809c988dc14247c1adb58e6f991dbcc734773932df1",
+    "source_pbf_timestamp": "2026-07-03T20:21:04Z",
+    "source_sqlite_sha256": "70fd53da97514276792e6442e38a34a9c8b04027fb92fc8fd58cabbf4e7c04c3",
+    "unassociated_node_count": 1657
+  },
+  "source_release_tag": "aquitaine",
+  "source_sqlite_sha256": "70fd53da97514276792e6442e38a34a9c8b04027fb92fc8fd58cabbf4e7c04c3",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 487378,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 57372
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 57372
+      },
+      {
+        "name": "city_boundary",
+        "rows": 2391
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 2391
+      },
+      {
+        "name": "city_place",
+        "rows": 13921
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 13921
+      },
+      {
+        "name": "city_ring",
+        "rows": 2468
+      },
+      {
+        "name": "city_tile",
+        "rows": 20750
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 299
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 1314
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 1314
+      },
+      {
+        "name": "settlement_area",
+        "rows": 16570
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 17709
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 562957
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 1365
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 485413
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 485413
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 651
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 651
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 35644
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 129079
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 487378
+      },
+      {
+        "name": "way_geom",
+        "rows": 487378
+      },
+      {
+        "name": "way_links",
+        "rows": 657802
+      },
+      {
+        "name": "ways",
+        "rows": 487378
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 487378
+      }
+    ]
+  }
+}

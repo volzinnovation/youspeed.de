@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "52fbcb475156d5a4d6cddb473291fcf12020e67cc16e3592063114c9862cd508",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -16.356564724453214,
+  "elapsed_seconds": 62.114441768000006,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -74.02389938666218,
+  "local_source_upgrade": false,
+  "node_count": 1777,
+  "packed_download_bytes": 67670424,
+  "packed_installed_bytes": 69736512,
+  "previous_published_download_bytes": 80903449,
+  "region": "champagne-ardenne",
+  "release_files": [
+    {
+      "bytes": 58658718,
+      "file": "champagne-ardenne_2026-10-27-packed-v1.context.yspc",
+      "sha256": "aeb1cff683a90a532018682c19fe765b9aa2b3e9ff57356fa9079320470f9451"
+    },
+    {
+      "bytes": 423005,
+      "file": "champagne-ardenne_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "29a83c6690b27b32f9d867b049a54d4629a6411e50e0a39161f8555cefa55d14"
+    },
+    {
+      "bytes": 8588701,
+      "file": "champagne-ardenne_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "bb7002e2633d3fa5a70eefb56dff0422725893b28dd7cc6266cfe0213f6588ac"
+    },
+    {
+      "bytes": 37432,
+      "file": "champagne-ardenne_2026-10-27-packed-v1_champagne-ardenne_2026-09-28-refresh-8177c59.poly",
+      "sha256": "74ecc282ebd38921cbb94841be2b18d304b23337d3c959da0a1aea639802d8db"
+    },
+    {
+      "bytes": 9366,
+      "file": "champagne-ardenne_2026-10-27-packed-v1_champagne-ardenne_2026-09-28-refresh-8177c59_FRA-rules.json",
+      "sha256": "9f041e2e573bbaa06f3f521ed8273b6ca4d74d50a706f12c26b7a70c31c081d6"
+    },
+    {
+      "bytes": 1911,
+      "file": "champagne-ardenne_2026-10-27-packed-v1_validation.json",
+      "sha256": "3595fdfc135bb0688acd258718fea90717f6f74165f932acf34d9fade9c04006"
+    },
+    {
+      "bytes": 5267,
+      "file": "champagne-ardenne_manifest.json",
+      "sha256": "453412e0a5c1984da3a85964059788c85647302d3c73d84d0b17c51b047a6231"
+    }
+  ],
+  "release_tag": "champagne-ardenne-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 80903449,
+  "source_installed_bytes": 268464128,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 24,
+    "membership_count": 1165,
+    "node_count": 1777,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "e2c3eb8cd8927b07c42a6d718fce3f71b9ff35140d62fe8f613aa4cb871723e6",
+    "source_pbf_timestamp": "2026-07-04T20:21:16Z",
+    "source_sqlite_sha256": "4beb7cf2ad90e24aac0cf530427ac86a0f8d5272a2c097cee2bb75b4831069e9",
+    "unassociated_node_count": 1139
+  },
+  "source_release_tag": "champagne-ardenne",
+  "source_sqlite_sha256": "4beb7cf2ad90e24aac0cf530427ac86a0f8d5272a2c097cee2bb75b4831069e9",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 154568,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 19770
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 19770
+      },
+      {
+        "name": "city_boundary",
+        "rows": 2196
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 2196
+      },
+      {
+        "name": "city_place",
+        "rows": 3148
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 3148
+      },
+      {
+        "name": "city_ring",
+        "rows": 2205
+      },
+      {
+        "name": "city_tile",
+        "rows": 17750
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 248
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 1468
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 1468
+      },
+      {
+        "name": "settlement_area",
+        "rows": 7356
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 7447
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 182926
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 1463
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 152770
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 152770
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 330
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 330
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 12796
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 60357
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 154568
+      },
+      {
+        "name": "way_geom",
+        "rows": 154568
+      },
+      {
+        "name": "way_links",
+        "rows": 257050
+      },
+      {
+        "name": "ways",
+        "rows": 154568
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 154568
+      }
+    ]
+  }
+}

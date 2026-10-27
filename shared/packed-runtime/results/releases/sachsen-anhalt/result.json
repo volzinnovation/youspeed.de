@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "8ce64db76e6bdb522f771e05c36ec0da392e3c4c8e759cffa1618594682d21da",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": 0.8824813188798242,
+  "elapsed_seconds": 111.898339727,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -66.79514263107535,
+  "local_source_upgrade": false,
+  "node_count": 83061,
+  "packed_download_bytes": 135857684,
+  "packed_installed_bytes": 143429003,
+  "previous_published_download_bytes": 134669253,
+  "region": "sachsen-anhalt",
+  "release_files": [
+    {
+      "bytes": 101677965,
+      "file": "sachsen-anhalt_2026-10-27-packed-v1.context.yspc",
+      "sha256": "9670b3513cae907469317fb7d3a732e1568f677edb0222abf602055c4c611232"
+    },
+    {
+      "bytes": 21598758,
+      "file": "sachsen-anhalt_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "7618cc6007c12bbf58600aab847c7871b1979c45ffaf8df5705160f7db79fd63"
+    },
+    {
+      "bytes": 12580961,
+      "file": "sachsen-anhalt_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "ba585ef7aaf1d8a64e82c1c2d5f2675bf28c4737f47a1e8354861abba5a5a4e7"
+    },
+    {
+      "bytes": 4603,
+      "file": "sachsen-anhalt_2026-10-27-packed-v1_sachsen-anhalt_2026-09-28-refresh-8177c59.poly",
+      "sha256": "8cfaba37360087feff109a4e7c5e4462b8f6a3687429f06af3b5b5d6d257a360"
+    },
+    {
+      "bytes": 5756,
+      "file": "sachsen-anhalt_2026-10-27-packed-v1_sachsen-anhalt_2026-09-28-refresh-8177c59_DEU-rules.json",
+      "sha256": "fceebeb611d114d0bd97acd17ea0bc002d795210a2a18c3b1129a9a3c5904580"
+    },
+    {
+      "bytes": 1915,
+      "file": "sachsen-anhalt_2026-10-27-packed-v1_validation.json",
+      "sha256": "227a5188eae912e2cddb9190f02ddda320a2289f75be2e5f8ab970ae4667b3df"
+    },
+    {
+      "bytes": 5202,
+      "file": "sachsen-anhalt_manifest.json",
+      "sha256": "5428a37af8e65eb9dfad9574b97377f9579622f128facbcade75a9594737c3a0"
+    }
+  ],
+  "release_tag": "sachsen-anhalt-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 134669253,
+  "source_installed_bytes": 431951872,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 1303,
+    "membership_count": 77215,
+    "node_count": 83061,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "0a7bcf3312c518e7d0fb6154848cdb59654b58044559bd12e8387392ddbe01ea",
+    "source_pbf_timestamp": "2026-07-04T20:21:16Z",
+    "source_sqlite_sha256": "6424496afc71d5e96820477d13fddf71a4d3bbc17a210541daa0c7ba931425fc",
+    "unassociated_node_count": 22109
+  },
+  "source_release_tag": "sachsen-anhalt",
+  "source_sqlite_sha256": "6424496afc71d5e96820477d13fddf71a4d3bbc17a210541daa0c7ba931425fc",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 278973,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 46262
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 46262
+      },
+      {
+        "name": "city_boundary",
+        "rows": 1455
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 1455
+      },
+      {
+        "name": "city_place",
+        "rows": 3004
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 3004
+      },
+      {
+        "name": "city_ring",
+        "rows": 1848
+      },
+      {
+        "name": "city_tile",
+        "rows": 22149
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 651
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 2797
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 2797
+      },
+      {
+        "name": "settlement_area",
+        "rows": 26180
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 26798
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 342315
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 14886
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 275878
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 275878
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 298
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 298
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 25326
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 150262
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 278973
+      },
+      {
+        "name": "way_geom",
+        "rows": 278973
+      },
+      {
+        "name": "way_links",
+        "rows": 477948
+      },
+      {
+        "name": "ways",
+        "rows": 278973
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 278973
+      }
+    ]
+  }
+}

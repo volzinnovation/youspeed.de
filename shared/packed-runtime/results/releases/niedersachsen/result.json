@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "56e5ca63108cfa620b265eb049ce1ab4a734ce5feaeeaae189c08ff7b1cdb603",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -11.105920320744179,
+  "elapsed_seconds": 238.609361083,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -68.89858389542727,
+  "local_source_upgrade": false,
+  "node_count": 42639,
+  "packed_download_bytes": 372950071,
+  "packed_installed_bytes": 386723348,
+  "previous_published_download_bytes": 419544330,
+  "region": "niedersachsen",
+  "release_files": [
+    {
+      "bytes": 323951503,
+      "file": "niedersachsen_2026-10-27-packed-v1.context.yspc",
+      "sha256": "65443ee0bb5502bfc32d9659a4bf44225b7ac4de85b96151223358b0292ea25f"
+    },
+    {
+      "bytes": 11318092,
+      "file": "niedersachsen_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "06cc2d9e052c522bb71ef5df43938733718536595b16a4af46cc894774ad034b"
+    },
+    {
+      "bytes": 37680476,
+      "file": "niedersachsen_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "4ee2c25fb657da781f85ca6e7e3615a9c761d8e9782f92dbdcd3b835d667401d"
+    },
+    {
+      "bytes": 18305,
+      "file": "niedersachsen_2026-10-27-packed-v1_niedersachsen_2026-09-28-refresh-8177c59.poly",
+      "sha256": "ab6ba13b983e63b7110914446d5ee82d578df4659fa393f1fe2368058c300b80"
+    },
+    {
+      "bytes": 5756,
+      "file": "niedersachsen_2026-10-27-packed-v1_niedersachsen_2026-09-28-refresh-8177c59_DEU-rules.json",
+      "sha256": "fceebeb611d114d0bd97acd17ea0bc002d795210a2a18c3b1129a9a3c5904580"
+    },
+    {
+      "bytes": 1924,
+      "file": "niedersachsen_2026-10-27-packed-v1_validation.json",
+      "sha256": "850b22be82370775d27382085d1590c606b3b4c9830d83ce7a238ba24d3304ec"
+    },
+    {
+      "bytes": 5179,
+      "file": "niedersachsen_manifest.json",
+      "sha256": "825e6a88f8e661934359c2bf50bf84634aad2c08578c6c8eb19570fdaa36cffd"
+    }
+  ],
+  "release_tag": "niedersachsen-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 419544330,
+  "source_installed_bytes": 1243426816,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 1110,
+    "membership_count": 32302,
+    "node_count": 42639,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "6137849acb6a0e69a05dea3d9f2b8c43bd91644c6f34856104cedcbf62028cb4",
+    "source_pbf_timestamp": "2026-07-04T20:21:16Z",
+    "source_sqlite_sha256": "7e835f2c55c902243230e9d69325e29bdc8cf70c4cf02f87990531902451838a",
+    "unassociated_node_count": 23476
+  },
+  "source_release_tag": "niedersachsen",
+  "source_sqlite_sha256": "7e835f2c55c902243230e9d69325e29bdc8cf70c4cf02f87990531902451838a",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 914406,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 169548
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 169548
+      },
+      {
+        "name": "city_boundary",
+        "rows": 2084
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 2084
+      },
+      {
+        "name": "city_place",
+        "rows": 7673
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 7673
+      },
+      {
+        "name": "city_ring",
+        "rows": 3102
+      },
+      {
+        "name": "city_tile",
+        "rows": 41661
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 2302
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 7865
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 7865
+      },
+      {
+        "name": "settlement_area",
+        "rows": 106561
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 109598
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 1146793
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 35446
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 905393
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 905393
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 1148
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 1148
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 69969
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 422687
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 914406
+      },
+      {
+        "name": "way_geom",
+        "rows": 914406
+      },
+      {
+        "name": "way_links",
+        "rows": 1388700
+      },
+      {
+        "name": "ways",
+        "rows": 914406
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 914406
+      }
+    ]
+  }
+}

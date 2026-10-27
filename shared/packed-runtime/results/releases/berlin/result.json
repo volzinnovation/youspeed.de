@@ -1,0 +1,187 @@
+{
+  "build_cache_identity": "a2cde91ca9297041735656f658e337bca9fd27129fc958a3359c6f04bc106ce6",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "bundle_version": "2026-10-27-packed-v1",
+  "download_change_percent": -13.463613792472662,
+  "elapsed_seconds": 71.22465977500002,
+  "format": "youspeed.v4.release-comparison",
+  "installed_change_percent": -69.68739147768413,
+  "local_source_upgrade": false,
+  "node_count": 1948,
+  "packed_download_bytes": 75993133,
+  "packed_installed_bytes": 78880372,
+  "previous_published_download_bytes": 87816393,
+  "region": "berlin",
+  "release_files": [
+    {
+      "bytes": 68709514,
+      "file": "berlin_2026-10-27-packed-v1.context.yspc",
+      "sha256": "64c19087b79b3db303daa3d3e1ac09dc872bd3ea310d9a88275df19964df2605"
+    },
+    {
+      "bytes": 469948,
+      "file": "berlin_2026-10-27-packed-v1.nodes.yspn.gz",
+      "sha256": "fa6cce4d8e9059d4dfd13f02df0283354f52360b6f61951447dd1c4a2f73e051"
+    },
+    {
+      "bytes": 6813671,
+      "file": "berlin_2026-10-27-packed-v1.ways.yspg.gz",
+      "sha256": "0ec0845ff28fc29b1fe68e5d7d04f2a276cff0bd21218db950b3e9047b59fdcd"
+    },
+    {
+      "bytes": 3456,
+      "file": "berlin_2026-10-27-packed-v1_berlin_2026-09-28-refresh-8177c59.poly",
+      "sha256": "6894877c9adfe577e6350b6b0ba01b4e18531851713a2e232e63bc42bc64faac"
+    },
+    {
+      "bytes": 5756,
+      "file": "berlin_2026-10-27-packed-v1_berlin_2026-09-28-refresh-8177c59_DEU-rules.json",
+      "sha256": "fceebeb611d114d0bd97acd17ea0bc002d795210a2a18c3b1129a9a3c5904580"
+    },
+    {
+      "bytes": 1898,
+      "file": "berlin_2026-10-27-packed-v1_validation.json",
+      "sha256": "99d1692637cc9157f928c972c4a5f8db9f4683feba66bd70289363909a55776f"
+    },
+    {
+      "bytes": 4989,
+      "file": "berlin_manifest.json",
+      "sha256": "bf8a4e31dd687a860e8d35b19a3825f14e6da856d973d8a2a308851bdaaf1d7a"
+    }
+  ],
+  "release_tag": "berlin-packed-v1-2026-10-27",
+  "schema_version": 1,
+  "source_bundle_version": "2026-09-28-refresh-8177c59",
+  "source_download_bytes": 87816393,
+  "source_installed_bytes": 260222976,
+  "source_nodes": {
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 11,
+    "membership_count": 675,
+    "node_count": 1948,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "bad57763add69bce202186063abf71098f105cb3f0e99814f386806fcb71b336",
+    "source_pbf_timestamp": "2026-07-04T20:21:16Z",
+    "source_sqlite_sha256": "93428e32938356c8902309d99cab830b61879eb5283c1ba76eff829c23088e41",
+    "unassociated_node_count": 1378
+  },
+  "source_release_tag": "berlin",
+  "source_sqlite_sha256": "93428e32938356c8902309d99cab830b61879eb5283c1ba76eff829c23088e41",
+  "verification": {
+    "all_original_logical_table_counts_preserved": true,
+    "every_original_geometry_text_exact": true,
+    "geometry_rows": 210698,
+    "original_metadata_values_preserved": true,
+    "tables": [
+      {
+        "name": "areas",
+        "rows": 70766
+      },
+      {
+        "name": "areas_rtree",
+        "rows": 70766
+      },
+      {
+        "name": "city_boundary",
+        "rows": 16
+      },
+      {
+        "name": "city_boundary_rtree",
+        "rows": 16
+      },
+      {
+        "name": "city_place",
+        "rows": 29
+      },
+      {
+        "name": "city_place_rtree",
+        "rows": 29
+      },
+      {
+        "name": "city_ring",
+        "rows": 21
+      },
+      {
+        "name": "city_tile",
+        "rows": 413
+      },
+      {
+        "name": "motorway_exit_approach",
+        "rows": 289
+      },
+      {
+        "name": "motorway_way_network",
+        "rows": 663
+      },
+      {
+        "name": "motorway_way_network_rtree",
+        "rows": 663
+      },
+      {
+        "name": "settlement_area",
+        "rows": 16297
+      },
+      {
+        "name": "settlement_ring",
+        "rows": 16483
+      },
+      {
+        "name": "settlement_segment",
+        "rows": 264623
+      },
+      {
+        "name": "settlement_sign",
+        "rows": 338
+      },
+      {
+        "name": "surface_way_network",
+        "rows": 209409
+      },
+      {
+        "name": "surface_way_network_rtree",
+        "rows": 209409
+      },
+      {
+        "name": "tunnel_way_network",
+        "rows": 626
+      },
+      {
+        "name": "tunnel_way_network_rtree",
+        "rows": 626
+      },
+      {
+        "name": "way_continuity_group",
+        "rows": 10891
+      },
+      {
+        "name": "way_continuity_membership",
+        "rows": 98327
+      },
+      {
+        "name": "way_endpoints",
+        "rows": 210698
+      },
+      {
+        "name": "way_geom",
+        "rows": 210698
+      },
+      {
+        "name": "way_links",
+        "rows": 351262
+      },
+      {
+        "name": "ways",
+        "rows": 210698
+      },
+      {
+        "name": "ways_rtree",
+        "rows": 210698
+      }
+    ]
+  }
+}

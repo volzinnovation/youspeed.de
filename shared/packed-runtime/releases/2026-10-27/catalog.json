@@ -1,0 +1,666 @@
+{
+  "bundles": [
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 4991,
+        "file": "alsace_manifest.json",
+        "sha256": "c13dfd2d69550da1a1a772481889639f44aa3622ac780a7d7e9e8e8fd915ccf8",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/alsace-packed-v1-2026-10-27/alsace_manifest.json"
+      },
+      "region": "alsace",
+      "release_tag": "alsace-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5070,
+        "file": "aquitaine_manifest.json",
+        "sha256": "dc4bd8f95b99d293b63059f11b8ff122f8719e19f12dd3bdf7866dfc07a94445",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/aquitaine-packed-v1-2026-10-27/aquitaine_manifest.json"
+      },
+      "region": "aquitaine",
+      "release_tag": "aquitaine-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5043,
+        "file": "auvergne_manifest.json",
+        "sha256": "4b7a62fbc0119ac07e5f4639433ca8f7d0158c7b715781787f58a4f1064be049",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/auvergne-packed-v1-2026-10-27/auvergne_manifest.json"
+      },
+      "region": "auvergne",
+      "release_tag": "auvergne-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 8823,
+        "file": "baden-wuerttemberg_manifest.json",
+        "sha256": "175be901634441dd8ff06023ffb2f0f468e5068e810900497f6ab83a7cacedd7",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/baden-wuerttemberg-packed-v1-2026-10-27/baden-wuerttemberg_manifest.json"
+      },
+      "region": "baden-wuerttemberg",
+      "release_tag": "baden-wuerttemberg-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5219,
+        "file": "basse-normandie_manifest.json",
+        "sha256": "3c4c68dfb7dca85de806bc704e9b438205a3f6f34c3c431f6dc9add769c026a6",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/basse-normandie-packed-v1-2026-10-27/basse-normandie_manifest.json"
+      },
+      "region": "basse-normandie",
+      "release_tag": "basse-normandie-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5004,
+        "file": "bayern_manifest.json",
+        "sha256": "84772fc065c61246f343827eee0382b9fcafcd6b64a876bd0d843f38726dc2be",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/bayern-packed-v1-2026-10-27/bayern_manifest.json"
+      },
+      "region": "bayern",
+      "release_tag": "bayern-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "BEL",
+      "manifest": {
+        "bytes": 5015,
+        "file": "belgium_manifest.json",
+        "sha256": "4acc986b28f9cedbbe77e113c165a687b86b33f7c0c27741d7eaa86fe69c9747",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/belgium-packed-v1-2026-10-27/belgium_manifest.json"
+      },
+      "region": "belgium",
+      "release_tag": "belgium-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 4989,
+        "file": "berlin_manifest.json",
+        "sha256": "bf8a4e31dd687a860e8d35b19a3825f14e6da856d973d8a2a308851bdaaf1d7a",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/berlin-packed-v1-2026-10-27/berlin_manifest.json"
+      },
+      "region": "berlin",
+      "release_tag": "berlin-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5070,
+        "file": "bourgogne_manifest.json",
+        "sha256": "e344807f39b6478eb22754c9729d3221d5095682291d7240b15b97ce92f2830e",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/bourgogne-packed-v1-2026-10-27/bourgogne_manifest.json"
+      },
+      "region": "bourgogne",
+      "release_tag": "bourgogne-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5124,
+        "file": "brandenburg_manifest.json",
+        "sha256": "8fcfef094e0998f5a9b3d48389de29511f83a8b0dfa3a0fd12df2b034daa98ed",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/brandenburg-packed-v1-2026-10-27/brandenburg_manifest.json"
+      },
+      "region": "brandenburg",
+      "release_tag": "brandenburg-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 4987,
+        "file": "bremen_manifest.json",
+        "sha256": "90fcbfbfd7a926abb26e5f4eebe600635d78eb42554df797dae8e8344a29af94",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/bremen-packed-v1-2026-10-27/bremen_manifest.json"
+      },
+      "region": "bremen",
+      "release_tag": "bremen-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5049,
+        "file": "bretagne_manifest.json",
+        "sha256": "45a8480243cd969d35707370d6e898faab8d54af0e3331073919dec257dfb6b4",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/bretagne-packed-v1-2026-10-27/bretagne_manifest.json"
+      },
+      "region": "bretagne",
+      "release_tag": "bretagne-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 4996,
+        "file": "centre_manifest.json",
+        "sha256": "cd597c8693389e80f8ed5d602dbcf3045414e294f89a0b4961336b319e2bc645",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/centre-packed-v1-2026-10-27/centre_manifest.json"
+      },
+      "region": "centre",
+      "release_tag": "centre-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5267,
+        "file": "champagne-ardenne_manifest.json",
+        "sha256": "453412e0a5c1984da3a85964059788c85647302d3c73d84d0b17c51b047a6231",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/champagne-ardenne-packed-v1-2026-10-27/champagne-ardenne_manifest.json"
+      },
+      "region": "champagne-ardenne",
+      "release_tag": "champagne-ardenne-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 4958,
+        "file": "corse_manifest.json",
+        "sha256": "d6d08ec124b1c5946cd27d78eb232d91f7e9add6a10783703eb1d3ed61629bb9",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/corse-packed-v1-2026-10-27/corse_manifest.json"
+      },
+      "region": "corse",
+      "release_tag": "corse-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5168,
+        "file": "franche-comte_manifest.json",
+        "sha256": "94305870d854ec7ec744af080c5df037d110be32e66be11f0fe718dbe7811f98",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/franche-comte-packed-v1-2026-10-27/franche-comte_manifest.json"
+      },
+      "region": "franche-comte",
+      "release_tag": "franche-comte-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 4286,
+        "file": "germany_manifest.json",
+        "sha256": "02eaa0b6056b8f60e54e3bdb4815e7334fbc7a549436e2723072adf140889ee8",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/germany-packed-v1-2026-10-27/germany_manifest.json"
+      },
+      "region": "germany",
+      "release_tag": "germany-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5082,
+        "file": "guadeloupe_manifest.json",
+        "sha256": "6163f85dae031a40ac8876fcd615d4c1f5953deb138ea584f3c4d21c90bea359",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/guadeloupe-packed-v1-2026-10-27/guadeloupe_manifest.json"
+      },
+      "region": "guadeloupe",
+      "release_tag": "guadeloupe-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5013,
+        "file": "hamburg_manifest.json",
+        "sha256": "9d95f23f6319b7af491aac6aa048540260c53a9e81f3052399ccb1d4ea5ad05d",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/hamburg-packed-v1-2026-10-27/hamburg_manifest.json"
+      },
+      "region": "hamburg",
+      "release_tag": "hamburg-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5216,
+        "file": "haute-normandie_manifest.json",
+        "sha256": "f893bbbf7396a10afb6bb0f09df3db5107dac39624b10aaefe2d2b89b8984e57",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/haute-normandie-packed-v1-2026-10-27/haute-normandie_manifest.json"
+      },
+      "region": "haute-normandie",
+      "release_tag": "haute-normandie-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 4999,
+        "file": "hessen_manifest.json",
+        "sha256": "dacf2d40974b20a5e8767d59cb649d96058b71b993ff44a4eeff4056c2509d65",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/hessen-packed-v1-2026-10-27/hessen_manifest.json"
+      },
+      "region": "hessen",
+      "release_tag": "hessen-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "ISL",
+      "manifest": {
+        "bytes": 4592,
+        "file": "iceland_manifest.json",
+        "sha256": "c56bf2659dd76cdcc782d6ed8e8c69dbe1e327ff78031fe88d7afa6e1cdb9e5b",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/iceland-packed-v1-2026-10-27/iceland_manifest.json"
+      },
+      "region": "iceland",
+      "release_tag": "iceland-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5171,
+        "file": "ile-de-france_manifest.json",
+        "sha256": "da6e0b541f4f32cdafeb48e3fecc9c4ef8a7d167fba552ff0e891c343f9accc5",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/ile-de-france-packed-v1-2026-10-27/ile-de-france_manifest.json"
+      },
+      "region": "ile-de-france",
+      "release_tag": "ile-de-france-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5267,
+        "file": "karlsruhe-regbez_manifest.json",
+        "sha256": "db22450af15dbf7d1328e55ae60cdc3ea63ab7e2a107ae4d3be1eedcedbc932d",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/karlsruhe-regbez-packed-v1-2026-10-27/karlsruhe-regbez_manifest.json"
+      },
+      "region": "karlsruhe-regbez",
+      "release_tag": "karlsruhe-regbez-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5345,
+        "file": "languedoc-roussillon_manifest.json",
+        "sha256": "6355d160a8605fa77281d7f2e69dc436613060a79aec96949969b5d7ea9204b9",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/languedoc-roussillon-packed-v1-2026-10-27/languedoc-roussillon_manifest.json"
+      },
+      "region": "languedoc-roussillon",
+      "release_tag": "languedoc-roussillon-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "LIE",
+      "manifest": {
+        "bytes": 4709,
+        "file": "liechtenstein_manifest.json",
+        "sha256": "e82d48dabc2a87da6cc370f203c5650024280aa505f8fce0aed57d7f73a67d6e",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/liechtenstein-packed-v1-2026-10-27/liechtenstein_manifest.json"
+      },
+      "region": "liechtenstein",
+      "release_tag": "liechtenstein-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5039,
+        "file": "limousin_manifest.json",
+        "sha256": "225413fc07170d6f031d581ff931ca6f369b1bdd8df2db781cf74bace88cba66",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/limousin-packed-v1-2026-10-27/limousin_manifest.json"
+      },
+      "region": "limousin",
+      "release_tag": "limousin-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5045,
+        "file": "lorraine_manifest.json",
+        "sha256": "db5fba63786f310dbf0305aee0798362f1fcb0c28e0490914b94c3d493b96e48",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/lorraine-packed-v1-2026-10-27/lorraine_manifest.json"
+      },
+      "region": "lorraine",
+      "release_tag": "lorraine-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "LUX",
+      "manifest": {
+        "bytes": 4661,
+        "file": "luxembourg_manifest.json",
+        "sha256": "ba6ced8fee232473ced4cb50aa5c17300cca3d8539e24ec65732d590a5dc6480",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/luxembourg-packed-v1-2026-10-27/luxembourg_manifest.json"
+      },
+      "region": "luxembourg",
+      "release_tag": "luxembourg-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5078,
+        "file": "martinique_manifest.json",
+        "sha256": "9e598df16e4a0b4372b68b434665e1918be3722380147dd5bb4f99d13899edd4",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/martinique-packed-v1-2026-10-27/martinique_manifest.json"
+      },
+      "region": "martinique",
+      "release_tag": "martinique-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5000,
+        "file": "mayotte_manifest.json",
+        "sha256": "45c8bdb2f7eb8ada3f6c123c30ab8bd8b2c28e3bccd3ca19ab4ebee8011317ca",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/mayotte-packed-v1-2026-10-27/mayotte_manifest.json"
+      },
+      "region": "mayotte",
+      "release_tag": "mayotte-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5394,
+        "file": "mecklenburg-vorpommern_manifest.json",
+        "sha256": "e72f8ee50ecfb570bc71bf53816f1842433261636266a7bac0687aa6facf5e71",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/mecklenburg-vorpommern-packed-v1-2026-10-27/mecklenburg-vorpommern_manifest.json"
+      },
+      "region": "mecklenburg-vorpommern",
+      "release_tag": "mecklenburg-vorpommern-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5172,
+        "file": "midi-pyrenees_manifest.json",
+        "sha256": "f2aef8a7b319dc26b5ea0becc87bad68d6573c2eedc738eee4d44abf3be15039",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/midi-pyrenees-packed-v1-2026-10-27/midi-pyrenees_manifest.json"
+      },
+      "region": "midi-pyrenees",
+      "release_tag": "midi-pyrenees-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "MCO",
+      "manifest": {
+        "bytes": 4563,
+        "file": "monaco_manifest.json",
+        "sha256": "6c71f835f90e301d6fcdb8c8829578cf472eeb94a3ec3dea5078921395b1276d",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/monaco-packed-v1-2026-10-27/monaco_manifest.json"
+      },
+      "region": "monaco",
+      "release_tag": "monaco-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "NLD",
+      "manifest": {
+        "bytes": 5120,
+        "file": "netherlands_manifest.json",
+        "sha256": "ee2276ed4e1d982e9dc691d85956c40e9a298d8bec5fd89c0f3c35ab75e72c2f",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/netherlands-packed-v1-2026-10-27/netherlands_manifest.json"
+      },
+      "region": "netherlands",
+      "release_tag": "netherlands-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5179,
+        "file": "niedersachsen_manifest.json",
+        "sha256": "825e6a88f8e661934359c2bf50bf84634aad2c08578c6c8eb19570fdaa36cffd",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/niedersachsen-packed-v1-2026-10-27/niedersachsen_manifest.json"
+      },
+      "region": "niedersachsen",
+      "release_tag": "niedersachsen-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5297,
+        "file": "nord-pas-de-calais_manifest.json",
+        "sha256": "494ac27aa687be774b78310b98e632b5dede3dfc00ea766864b6bac90bc4b344",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/nord-pas-de-calais-packed-v1-2026-10-27/nord-pas-de-calais_manifest.json"
+      },
+      "region": "nord-pas-de-calais",
+      "release_tag": "nord-pas-de-calais-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5326,
+        "file": "nordrhein-westfalen_manifest.json",
+        "sha256": "5d47d3e135c204bab5c9d67705d66578977b607d813f30db4f0366a3231437d0",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/nordrhein-westfalen-packed-v1-2026-10-27/nordrhein-westfalen_manifest.json"
+      },
+      "region": "nordrhein-westfalen",
+      "release_tag": "nordrhein-westfalen-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5248,
+        "file": "pays-de-la-loire_manifest.json",
+        "sha256": "feafb53421c070be91723029eef1d21e907b8d990e1285d624f362a2ce6a2ad1",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/pays-de-la-loire-packed-v1-2026-10-27/pays-de-la-loire_manifest.json"
+      },
+      "region": "pays-de-la-loire",
+      "release_tag": "pays-de-la-loire-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5047,
+        "file": "picardie_manifest.json",
+        "sha256": "99129d9736f792b133b6814b2080b9ab3dfe114870ca46c19884d8e9c365340e",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/picardie-packed-v1-2026-10-27/picardie_manifest.json"
+      },
+      "region": "picardie",
+      "release_tag": "picardie-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5244,
+        "file": "poitou-charentes_manifest.json",
+        "sha256": "e13e95b0e3675229f2d2f646e77b86ef4bee4f0b2017815b8823393db272bc39",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/poitou-charentes-packed-v1-2026-10-27/poitou-charentes_manifest.json"
+      },
+      "region": "poitou-charentes",
+      "release_tag": "poitou-charentes-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5497,
+        "file": "provence-alpes-cote-d-azur_manifest.json",
+        "sha256": "f16645efcbbf5b40925665e1f981aa3ba98e00296583137b9841bf6a46cd5420",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/provence-alpes-cote-d-azur-packed-v1-2026-10-27/provence-alpes-cote-d-azur_manifest.json"
+      },
+      "region": "provence-alpes-cote-d-azur",
+      "release_tag": "provence-alpes-cote-d-azur-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5009,
+        "file": "reunion_manifest.json",
+        "sha256": "9ac0d520a1487deb8d5c0733b481d0eea7e856f4745f33cea173f19382a42a4c",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/reunion-packed-v1-2026-10-27/reunion_manifest.json"
+      },
+      "region": "reunion",
+      "release_tag": "reunion-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5225,
+        "file": "rheinland-pfalz_manifest.json",
+        "sha256": "2538cf8077b16976657bef3bca852cfbe3d6eafbe845498653e82eebbf830944",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/rheinland-pfalz-packed-v1-2026-10-27/rheinland-pfalz_manifest.json"
+      },
+      "region": "rheinland-pfalz",
+      "release_tag": "rheinland-pfalz-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "FRA",
+      "manifest": {
+        "bytes": 5123,
+        "file": "rhone-alpes_manifest.json",
+        "sha256": "d25d3978fe79d9cf1b7d077d29a0f8ef92e932bfca56f22a7f2e7ceb78941788",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/rhone-alpes-packed-v1-2026-10-27/rhone-alpes_manifest.json"
+      },
+      "region": "rhone-alpes",
+      "release_tag": "rhone-alpes-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "ROU",
+      "manifest": {
+        "bytes": 4607,
+        "file": "romania_manifest.json",
+        "sha256": "b76bd4d588dc4c741b91f051cb72e5f99771990336f42abc6d473b63369550e1",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/romania-packed-v1-2026-10-27/romania_manifest.json"
+      },
+      "region": "romania",
+      "release_tag": "romania-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5044,
+        "file": "saarland_manifest.json",
+        "sha256": "ff1327e91f02cf3bb03c6faa6b365fef974078d350b4bff26f7806c9fd54e364",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/saarland-packed-v1-2026-10-27/saarland_manifest.json"
+      },
+      "region": "saarland",
+      "release_tag": "saarland-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5025,
+        "file": "sachsen_manifest.json",
+        "sha256": "b027be6debf01e8ff173bbd05083ac2fa670eebfdffeb68d56fd1214b016bc99",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/sachsen-packed-v1-2026-10-27/sachsen_manifest.json"
+      },
+      "region": "sachsen",
+      "release_tag": "sachsen-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5202,
+        "file": "sachsen-anhalt_manifest.json",
+        "sha256": "5428a37af8e65eb9dfad9574b97377f9579622f128facbcade75a9594737c3a0",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/sachsen-anhalt-packed-v1-2026-10-27/sachsen-anhalt_manifest.json"
+      },
+      "region": "sachsen-anhalt",
+      "release_tag": "sachsen-anhalt-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5297,
+        "file": "schleswig-holstein_manifest.json",
+        "sha256": "cba557d58f46d942ce26a61a86f8305bc9f9da689f8a1e126e7ea6a9825f6214",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/schleswig-holstein-packed-v1-2026-10-27/schleswig-holstein_manifest.json"
+      },
+      "region": "schleswig-holstein",
+      "release_tag": "schleswig-holstein-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "SWE",
+      "manifest": {
+        "bytes": 4588,
+        "file": "sweden_manifest.json",
+        "sha256": "cb1029a62c5b39acc4154354a049cabf77df0373a10286115ec36e60ab135ba5",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/sweden-packed-v1-2026-10-27/sweden_manifest.json"
+      },
+      "region": "sweden",
+      "release_tag": "sweden-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "CHE",
+      "manifest": {
+        "bytes": 5115,
+        "file": "switzerland_manifest.json",
+        "sha256": "621c6a53f63667d3d01db04e6a9fa39bbde4267599687e2fa25c144c14ecb4f7",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/switzerland-packed-v1-2026-10-27/switzerland_manifest.json"
+      },
+      "region": "switzerland",
+      "release_tag": "switzerland-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "DEU",
+      "manifest": {
+        "bytes": 5098,
+        "file": "thueringen_manifest.json",
+        "sha256": "f15c690df2ac917576b3145e07aea0f8a3286ce34616990635f0f452c37349fd",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/thueringen-packed-v1-2026-10-27/thueringen_manifest.json"
+      },
+      "region": "thueringen",
+      "release_tag": "thueringen-packed-v1-2026-10-27"
+    },
+    {
+      "bundle_version": "2026-10-27-packed-v1",
+      "country_code": "GBR",
+      "manifest": {
+        "bytes": 4406,
+        "file": "united-kingdom_manifest.json",
+        "sha256": "61f8a7bdc6fcc67c3809bc6a1422b39f84864715aa1ddd07cd8f48303158575d",
+        "url": "https://github.com/volzinnovation/youspeed.de/releases/download/united-kingdom-packed-v1-2026-10-27/united-kingdom_manifest.json"
+      },
+      "region": "united-kingdom",
+      "release_tag": "united-kingdom-packed-v1-2026-10-27"
+    }
+  ],
+  "format": "youspeed.v4.bundle.catalog",
+  "schema_version": 1,
+  "source": {
+    "accepted_runtime_commit": "e8cd2f56149a0fad90b8a9cca4f69564244c1101",
+    "data_builder_commits": [
+      "a4d95ff16d83e1b5c67ee71c2b9106f41f53e352",
+      "97f13e545bef682f03462649ff17951da4b8c28c"
+    ],
+    "qa_report": {
+      "file": "rollout-qa-2026-10-27.json",
+      "sha256": "a80680f216f1dac735e1587f8a0cb8449288c1863c12ff1ea2444beecbeb6f58"
+    }
+  },
+  "variant": "v4"
+}
