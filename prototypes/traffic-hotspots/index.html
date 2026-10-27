@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>YouSpeed · Speed candidates</title>
+  <link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="#" class="brand" aria-label="YouSpeed research home"><span class="brand-symbol" aria-hidden="true">↗</span>YouSpeed <span class="brand-divider"></span><span class="research-label">RESEARCH</span></a>
+    <div class="topbar-right"><span class="snapshot-label"><i></i> <span id="snapshot-label">Saved traffic snapshot</span></span><a class="quiet-link" href="report.json" download>Download evidence <span aria-hidden="true">↗</span></a></div>
+  </header>
+  <main>
+    <section class="overview" aria-labelledby="page-title">
+      <div><div class="eyebrow" id="study-eyebrow">TRAFFIC FLOW × OPENSTREETMAP</div><h1 id="page-title">Speed candidates<span class="title-dot">.</span></h1><p class="scope" id="scope">Linked map window</p><p id="speed-basis-description" class="basis-description" hidden></p></div>
+      <div class="scope-meta"><span class="eyebrow" id="time-label">OBSERVATION</span><time id="snapshot-time">Loading snapshot…</time><span class="muted" id="scope-size"></span></div>
+    </section>
+    <section class="metrics" aria-label="Snapshot coverage">
+      <div><strong id="metric-traffic">—</strong><span id="traffic-count-label">traffic sections</span></div>
+      <div><strong id="metric-eligible">—</strong><span>matched &amp; eligible</span></div>
+      <div><strong id="metric-candidates">—</strong><span>distinct candidate sections</span></div>
+      <div><strong id="metric-excluded">—</strong><span>excluded from ranking</span></div>
+      <p><span id="substantial-count">—</span> meet the research threshold: at least +10 km/h and +20%. OSM limits may be outdated.</p>
+    </section>
+    <section id="route-coverage-summary" class="route-coverage-summary" aria-label="Coverage of the GPX route" hidden>
+      <div class="coverage-stat"><span id="source-coverage-label">Measured traffic coverage</span><strong id="measured-route-coverage">—</strong><div class="coverage-track" aria-hidden="true"><i id="measured-route-bar"></i></div></div>
+      <div class="coverage-stat"><span>Eligible comparison coverage</span><strong id="eligible-route-coverage">—</strong><div class="coverage-track" aria-hidden="true"><i id="eligible-route-bar"></i></div></div>
+      <p><span id="route-measured-count"></span>Coverage is the share of route length, counting overlapping links once. Uncovered distance remains unknown.</p>
+    </section>
+    <div class="workspace">
+      <section class="ranking" aria-labelledby="ranking-title">
+        <div class="panel-heading"><h2 id="ranking-title">Top candidates <span id="rank-count">10</span></h2><span class="unit-note">km/h</span></div>
+        <div class="ranking-column-labels" aria-hidden="true"><span>SECTION / DIRECTION</span><span id="speed-column-label">SPEED</span><span>LIMIT</span><span id="difference-column-label">EXCESS</span></div>
+        <div id="candidate-list" class="candidate-list" aria-live="polite"><div class="empty-state">Loading saved evidence…</div></div>
+        <p class="ranking-note" id="ranking-note">Ranked by excess over the mapped limit.</p>
+      </section>
+      <section class="map-panel" aria-label="Map of candidate road sections">
+        <div class="map-heading"><span><i class="map-dot"></i> <span id="map-scope-name">Study area</span></span><span id="map-position"></span></div>
+        <div class="map-wrap" id="map-wrap">
+          <svg id="map" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="map-title map-description" tabindex="0">
+            <title id="map-title">Traffic candidates and OpenStreetMap roads</title><desc id="map-description">Select a ranked road section to inspect it. Drag to pan, use the controls or scroll to zoom.</desc>
+            <defs><filter id="selected-glow"><feGaussianBlur stdDeviation="2.5"/></filter></defs>
+            <g id="map-grid"></g><g id="map-roads"></g><g id="map-traffic"></g><g id="map-route"></g><g id="map-labels"></g><g id="map-candidates"></g><g id="map-markers"></g>
+          </svg>
+          <div class="map-controls"><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><button id="reset-map" aria-label="Reset map to study area" class="reset-map">⌖</button></div>
+          <div class="north" aria-label="North"><span>N</span><span aria-hidden="true">↑</span></div>
+          <div class="map-legend"><span><i class="candidate-key"></i> <span id="positive-map-key">Candidate</span></span><span id="nonpositive-key" hidden><i class="comparison-key"></i> At / below limit</span><span id="route-key" hidden><i class="route-key"></i> GPX route</span><span><i class="traffic-key"></i> Other traffic section</span><label><input id="show-traffic" type="checkbox" checked> Show traffic</label></div>
+          <div class="map-attribution">© OpenStreetMap contributors · INRIX via VerkehrsInfo BW · offline road geometry</div>
+          <div class="map-empty" id="map-empty" hidden>No road geometry is available in this snapshot.</div>
+        </div>
+      </section>
+    </div>
+    <section class="inspector" id="inspector" aria-labelledby="selected-title" aria-live="polite">
+      <div class="inspector-intro"><div class="eyebrow">SELECTED SECTION</div><h2 id="selected-title">Select a candidate</h2><p id="selected-subtitle" class="muted"></p><p id="selected-threshold" class="threshold-note"></p><a class="quiet-link" id="selected-osm" href="https://www.openstreetmap.org/" target="_blank" rel="noopener noreferrer">View OSM source ↗</a></div>
+      <div class="selected-values"><div><span id="selected-speed-label">Traffic speed</span><strong id="selected-speed">—</strong><small id="selected-speed-description">km/h · section aggregate</small></div><div><span>Mapped limit</span><strong id="selected-limit">—</strong><small>km/h · OSM</small></div><div><span id="selected-difference-label">Excess</span><strong class="accent" id="selected-excess">—</strong><small id="selected-pct">over mapped limit</small></div></div>
+      <div class="confidence"><div class="confidence-heading">CONFIDENCE &amp; MATCH EVIDENCE</div><dl><div><dt id="confidence-label">Provider confidence</dt><dd id="selected-confidence">—</dd></div><div id="source-score-row"><dt>Provider source score</dt><dd id="selected-score">—</dd></div><div><dt>Matched geometry</dt><dd id="selected-coverage">—</dd></div><div><dt>95th percentile distance</dt><dd id="selected-distance">—</dd></div><div><dt id="selected-time-label">Observation</dt><dd id="selected-time">—</dd></div></dl><p id="confidence-note">Provider confidence is its 0–100 c-value, not a probability of speeding.</p></div>
+    </section>
+    <section class="evidence-section">
+      <details id="source-details"><summary><span>Sources, exclusions &amp; method</span><span class="details-chevron" aria-hidden="true">+</span></summary><div class="evidence-content"><div><h3>Scope &amp; interpretation</h3><div id="methodology"></div><p id="timestamp-source-note" hidden></p><p id="route-coverage-method" hidden></p><p class="material-note">This snapshot screens for candidate sections. It cannot show the share of drivers speeding, individual violations, or persistent hotspots. A section average does not locate speeding inside a smaller speed-limit zone.</p></div><div><h3 id="exclusions-title">Exclusions</h3><dl id="exclusion-list" class="exclusion-list"></dl><p class="exclusion-count-note">A section can have multiple exclusion reasons; these counts overlap.</p><p id="scope-exclusion-note" hidden></p><h3>Sources</h3><ul id="source-list" class="source-list"></ul></div></div></details>
+      <details id="table-details"><summary><span>Accessible results table</span><span class="details-chevron" aria-hidden="true">+</span></summary><div class="table-wrap"><table><caption id="table-caption">Ranked candidates from the saved traffic snapshot. All speeds are in km/h. Provider confidence is the c-value. The research threshold requires excess of at least 10 km/h and 20%.</caption><thead><tr><th scope="col">Rank</th><th scope="col">Section</th><th scope="col">Direction</th><th scope="col" id="table-speed-label">Speed</th><th scope="col">OSM limit</th><th scope="col" id="table-difference-label">Excess</th><th scope="col">Research threshold</th><th scope="col" id="table-confidence-label">Provider confidence</th><th scope="col">Match coverage</th></tr></thead><tbody id="results-table"></tbody></table></div></details>
+    </section>
+    <footer><span>YouSpeed · Standalone research prototype</span><span id="footer-time">Saved evidence · no automatic refresh</span></footer>
+  </main>
+  <script src="data.js"></script><script src="viewer.js"></script>
+</body>
+</html>

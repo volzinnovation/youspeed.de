@@ -1,0 +1,10 @@
+# Local analysis contains the user's route and source snapshots.
+/inputs/
+/input-metadata.json
+/report.json
+/data.js
+/candidates.csv
+/candidates.geojson
+/preview.png
+/preview-mobile.png
+/validation.json
