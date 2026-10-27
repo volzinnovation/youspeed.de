@@ -19,6 +19,10 @@ and their database/runtime transport bytes. Coverage, penalty and report files
 are excluded consistently. BW and the explicit canonical-region-alias refresh
 retain their previous published sources as separate baselines. Percent changes
 are (packed/source-1)*100.
+
+--draft-comparison-only accepts server-verified drafts for size review, labels
+their release status, and writes only comparison JSON/CSV. It never generates
+a catalog and refuses an output directory already containing catalog.json.
 """
 
 import argparse
@@ -37,7 +41,7 @@ SHA256 = re.compile(r'[0-9a-f]{64}')
 IDENTITY = re.compile(r'[a-z0-9][a-z0-9._-]*')
 CSV_FIELDS = [
     'region', 'country_code', 'source_release_tag', 'release_tag', 'bundle_version',
-    'catalog_selected', 'local_source_upgrade', 'source_upgrade_kind', 'converted_source_release_tag', 'node_count',
+    'catalog_selected', 'release_status', 'local_source_upgrade', 'source_upgrade_kind', 'converted_source_release_tag', 'node_count',
     'source_installed_bytes', 'packed_installed_bytes', 'installed_delta_bytes', 'installed_change_percent',
     'source_download_bytes', 'packed_download_bytes', 'download_delta_bytes', 'download_change_percent',
     'previous_published_installed_bytes', 'previous_published_installed_delta_bytes', 'previous_published_installed_change_percent',
@@ -104,7 +108,7 @@ def plan_entries(plan):
     return repo, by_source
 
 
-def validate_release(result_path, repo, entries):
+def validate_release(result_path, repo, entries, draft_comparison_only=False):
     result_path = Path(result_path)
     result = read_json(result_path)
     receipt = read_json(result_path.with_name('github-verified.json'))
@@ -165,17 +169,25 @@ def validate_release(result_path, repo, entries):
     integer(assets[manifest_name]['bytes'], 'manifest bytes')
     require(assets[manifest_name]['bytes'] <= 1024 * 1024, 'Catalog manifest exceeds client size limit')
     require(receipt.get('release_tag') == result['release_tag'], 'Server receipt names another release')
-    require(receipt.get('published') is True, 'Release is still a draft or publication is unverified')
+    if draft_comparison_only:
+        require(type(receipt.get('published')) is bool, 'Draft/publication status is unverified')
+    else:
+        require(receipt.get('published') is True, 'Release is still a draft or publication is unverified')
     require(receipt.get('all_asset_hashes_verified') is True, 'Not every release asset was server verified')
     require(type(receipt.get('asset_count')) is int and receipt['asset_count'] == len(assets), 'Server verified asset count differs')
     require(isinstance(receipt.get('source_commit'), str) and re.fullmatch(r'[0-9a-f]{40}', receipt['source_commit']),
             'Pinned publisher source commit missing')
     base_url = 'https://github.com/' + repo + '/releases/'
-    require(receipt.get('url') == base_url + 'tag/' + result['release_tag'], 'Unexpected published release URL')
+    public_url = base_url + 'tag/' + result['release_tag']
+    draft_url = receipt.get('url', '')
+    is_draft_url = isinstance(draft_url, str) and re.fullmatch(re.escape(base_url + 'tag/untagged-') + '[0-9a-f]+', draft_url)
+    require(receipt.get('url') == public_url or draft_comparison_only and receipt['published'] is False and is_draft_url,
+            'Unexpected published release URL')
 
     row = {key: result[key] for key in ['region', 'source_release_tag', 'release_tag', 'bundle_version', 'local_source_upgrade']}
     row['country_code'] = entry['country_code']
     row['catalog_selected'] = source == result['region']
+    row['release_status'] = 'published' if receipt['published'] else 'draft'
     row['source_upgrade_kind'] = upgrade_kind or ('local-full-bw' if upgraded else 'unchanged')
     row['converted_source_release_tag'] = converted_source
     row['node_count'] = integer(result.get('node_count'), 'generic node count', minimum=0)
@@ -214,12 +226,12 @@ def validate_release(result_path, repo, entries):
     return row, catalog_entry
 
 
-def documents(plan, result_paths, require_complete=False):
+def documents(plan, result_paths, require_complete=False, draft_comparison_only=False):
     repo, entries = plan_entries(plan)
     require(result_paths, 'No published build results supplied')
     rows, catalog_by_region, seen = [], {}, set()
     for path in result_paths:
-        row, catalog_entry = validate_release(path, repo, entries)
+        row, catalog_entry = validate_release(path, repo, entries, draft_comparison_only=draft_comparison_only)
         source = row['source_release_tag']
         require(source not in seen, 'Duplicate result for source release: ' + source)
         seen.add(source)
@@ -250,12 +262,14 @@ def documents(plan, result_paths, require_complete=False):
     comparison = {
         'format': 'youspeed.v4.size-comparison', 'schema_version': 1, 'units': 'bytes',
         'release_count': len(rows), 'catalog_region_count': len(selected),
+        'comparison_mode': 'draft-comparison-only' if draft_comparison_only else 'published',
+        'catalog_generated': not draft_comparison_only,
         'runtime_scope': 'context + exact geometry + generic speed-sign nodes; excludes coverage, penalty and report files',
         'source_scope': 'source SQLite and its transport; full-BW and canonical-region-alias upgrades retain their separate previous published baselines',
         'percent_formula': '(packed / source - 1) * 100; negative values indicate a reduction',
         'catalog_region_totals': totals, 'bundles': rows,
     }
-    return catalog, comparison
+    return None if draft_comparison_only else catalog, comparison
 
 
 def csv_document(comparison):
@@ -285,14 +299,24 @@ def main():
     parser.add_argument('--results', nargs='+', type=Path, required=True)
     parser.add_argument('--output-dir', type=Path, required=True)
     parser.add_argument('--require-complete', action='store_true')
+    parser.add_argument('--draft-comparison-only', action='store_true',
+                        help='Review verified draft/published sizes without generating any catalog')
     args = parser.parse_args()
-    catalog, comparison = documents(read_json(args.plan), args.results, require_complete=args.require_complete)
+    require(not args.draft_comparison_only or not (args.output_dir / 'catalog.json').exists(),
+            'Draft comparison requires an output directory without catalog.json')
+    catalog, comparison = documents(read_json(args.plan), args.results, require_complete=args.require_complete,
+                                    draft_comparison_only=args.draft_comparison_only)
     # Validate every receipt before touching any existing output.
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    for name, value in [('catalog.json', catalog), ('size-comparison.json', comparison)]:
+    outputs = [('size-comparison.json', comparison)]
+    if catalog is not None:
+        outputs.append(('catalog.json', catalog))
+    for name, value in outputs:
         write_atomic(args.output_dir / name, json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + '\n')
     write_atomic(args.output_dir / 'size-comparison.csv', csv_document(comparison))
-    print(json.dumps({'published_release_count': comparison['release_count'], 'catalog_regions': len(catalog['bundles']),
+    print(json.dumps({'published_release_count': sum(row['release_status'] == 'published' for row in comparison['bundles']),
+                      'draft_release_count': sum(row['release_status'] == 'draft' for row in comparison['bundles']),
+                      'catalog_regions': comparison['catalog_region_count'], 'catalog_written': catalog is not None,
                       'output_directory': str(args.output_dir)}, sort_keys=True))
 
 

@@ -207,6 +207,38 @@ class PackedCatalogTests(unittest.TestCase):
         self.assertEqual(comparison['release_count'], 55)
         self.assertEqual(sum(row['catalog_selected'] for row in comparison['bundles']), 54)
 
+    def test_draft_comparison_requires_verified_status_and_never_returns_catalog(self):
+        path = self.add('monaco')
+        receipt = path.with_name('github-verified.json')
+        self.edit(receipt, 'published', False)
+        self.edit(receipt, 'url', 'https://github.com/owner/maps/releases/tag/untagged-abc123')
+        document, comparison = catalog.documents(self.plan, [path], require_complete=True, draft_comparison_only=True)
+        self.assertIsNone(document)
+        self.assertFalse(comparison['catalog_generated'])
+        self.assertEqual(comparison['bundles'][0]['release_status'], 'draft')
+        self.assertEqual(list(csv.DictReader(io.StringIO(catalog.csv_document(comparison))))[0]['release_status'], 'draft')
+        with self.assertRaises(ValueError): catalog.documents(self.plan, [path])
+        self.add('alsace')
+        with self.assertRaises(ValueError): catalog.documents(self.plan, [path], require_complete=True, draft_comparison_only=True)
+        self.edit(receipt, 'all_asset_hashes_verified', False)
+        with self.assertRaises(ValueError): catalog.documents(self.plan, [path], draft_comparison_only=True)
+
+    def test_draft_comparison_cli_writes_no_catalog_and_preserves_existing_catalog(self):
+        path = self.add('monaco'); self.edit(path.with_name('github-verified.json'), 'published', False)
+        plan = self.root / 'plan.json'; self.write(plan, self.plan)
+        output = self.root / 'draft-output'
+        command = [sys.executable, str(Path(catalog.__file__)), '--plan', str(plan), '--results', str(path),
+                   '--output-dir', str(output), '--require-complete', '--draft-comparison-only']
+        process = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(process.returncode, 0, process.stderr)
+        self.assertEqual(sorted(p.name for p in output.iterdir()), ['size-comparison.csv', 'size-comparison.json'])
+        existing = output / 'catalog.json'; existing.write_text('published-catalog-must-stay')
+        previous = (output / 'size-comparison.json').read_bytes()
+        process = subprocess.run(command, capture_output=True, text=True)
+        self.assertNotEqual(process.returncode, 0)
+        self.assertEqual(existing.read_text(), 'published-catalog-must-stay')
+        self.assertEqual((output / 'size-comparison.json').read_bytes(), previous)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -9,7 +9,7 @@
       "sha256": "192145c36336319471c0147e21bdf6980590923b884e6557296308cb1b0a9547"
     }
   },
-  "commit_binding_status": "Every recorded tested runtime source SHA-256 matches both current bytes and Git source_commit; metadata-only later commits need exact hash verification.",
+  "commit_binding_status": "Every recorded tested runtime source SHA-256 matches both current bytes and Git runtime_source_commit; the tested app/native bytes are unchanged from the D/E snapshot.",
   "data_builder_commit": "0c4e608c78f06afc835f534c9e707d0852ab5eda",
   "device": {
     "android_release": "16",
@@ -58,7 +58,7 @@
   "platform": "android",
   "platform_passed": true,
   "ready_for_rollout": false,
-  "runtime_source_commit": "943e3594031458abbee9492db1e49710b4372a24",
+  "runtime_source_commit": "97f13e545bef682f03462649ff17951da4b8c28c",
   "runtime_source_sha256": {
     "android/app/src/main/cpp/CMakeLists.txt": "dabc83678bdc77c0909cea0e0828e38d69cf768eb4ef3a6f347d0f63fac89939",
     "android/app/src/main/cpp/packed_runtime_jni.cpp": "207bd719aeabaf4d624796f227c2867a2d77fd8c114ef0eb9fd63b6207a7db70",
@@ -86,7 +86,7 @@
   },
   "schema_version": 1,
   "scope": "Production JNI/facade/corrections + real codec2 Monaco matcher; full-BW memory/latency measured separately in native single/pool8 harness.",
-  "source_commit": "943e3594031458abbee9492db1e49710b4372a24",
+  "source_commit": "97f13e545bef682f03462649ff17951da4b8c28c",
   "test_results": {
     "assumption_skipped": 1,
     "assumption_skipped_case_names": [
