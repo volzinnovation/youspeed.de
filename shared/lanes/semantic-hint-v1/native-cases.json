@@ -1,0 +1,1162 @@
+{
+  "schemaVersion": 1,
+  "provenance": "synthetic_engineering_only",
+  "qualificationCases": [
+    {
+      "id": "unknown-field",
+      "hintMutations": [
+        {
+          "path": [
+            "unsupported"
+          ],
+          "value": 1
+        }
+      ],
+      "expectedReason": "invalid_hint"
+    },
+    {
+      "id": "boolean-schema",
+      "hintMutations": [
+        {
+          "path": [
+            "schemaVersion"
+          ],
+          "value": true
+        }
+      ],
+      "expectedReason": "schema_mismatch"
+    },
+    {
+      "id": "floating-schema",
+      "hintMutations": [
+        {
+          "path": [
+            "schemaVersion"
+          ],
+          "value": 1.0
+        }
+      ],
+      "expectedReason": "schema_mismatch"
+    },
+    {
+      "id": "unsafe-source-integer",
+      "hintMutations": [
+        {
+          "path": [
+            "exposure",
+            "sourceTimeNs"
+          ],
+          "value": 9007199254740992
+        }
+      ],
+      "expectedReason": "invalid_exposure"
+    },
+    {
+      "id": "boolean-source-time",
+      "hintMutations": [
+        {
+          "path": [
+            "exposure",
+            "sourceTimeNs"
+          ],
+          "value": true
+        }
+      ],
+      "expectedReason": "invalid_exposure"
+    },
+    {
+      "id": "boolean-score",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "probabilities",
+            0
+          ],
+          "value": true
+        }
+      ],
+      "expectedReason": "invalid_scores"
+    },
+    {
+      "id": "text-score",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "probabilities",
+            0
+          ],
+          "value": "0.5"
+        }
+      ],
+      "expectedReason": "invalid_scores"
+    },
+    {
+      "id": "null-score",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "probabilities",
+            0
+          ],
+          "value": null
+        }
+      ],
+      "expectedReason": "invalid_scores"
+    },
+    {
+      "id": "extreme-score",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "probabilities",
+            0
+          ],
+          "value": 1e+300
+        }
+      ],
+      "expectedReason": "invalid_scores"
+    },
+    {
+      "id": "nan-score",
+      "nonfiniteScore": "nan",
+      "expectedReason": "invalid_scores"
+    },
+    {
+      "id": "positive-infinity-score",
+      "nonfiniteScore": "positive_infinity",
+      "expectedReason": "invalid_scores"
+    },
+    {
+      "id": "negative-infinity-score",
+      "nonfiniteScore": "negative_infinity",
+      "expectedReason": "invalid_scores"
+    },
+    {
+      "id": "exact-age-boundary",
+      "contextMutations": [
+        {
+          "path": [
+            "now",
+            "atNs"
+          ],
+          "value": 10200000000
+        }
+      ],
+      "expectedReason": "qualified"
+    },
+    {
+      "id": "valid-zero-paint-score",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "probabilities",
+            0
+          ],
+          "value": 0.0
+        }
+      ],
+      "expectedReason": "qualified"
+    },
+    {
+      "id": "negative-crop-coordinate",
+      "hintMutations": [
+        {
+          "path": [
+            "geometry",
+            "crop",
+            "x"
+          ],
+          "value": -1
+        }
+      ],
+      "expectedReason": "invalid_geometry"
+    },
+    {
+      "id": "unknown-invalid-cell-score",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "probabilities",
+            2
+          ],
+          "value": -1
+        }
+      ],
+      "expectedReason": "invalid_scores"
+    },
+    {
+      "id": "long-json-decimal-mask",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "probabilities"
+          ],
+          "value": [
+            0.002051664749160409,
+            0.0015906649641692638,
+            0.0007017548778094351,
+            0.00033969536889344454
+          ]
+        }
+      ],
+      "expectedReason": "qualified"
+    },
+    {
+      "id": "unicode-whitespace-provenance",
+      "hintMutations": [
+        {
+          "path": [
+            "provenance",
+            "sourceId"
+          ],
+          "value": "\u0085\u001c"
+        }
+      ],
+      "expectedReason": "invalid_provenance"
+    },
+    {
+      "id": "unicode-scalar-length-source",
+      "hintMutations": [
+        {
+          "path": [
+            "provenance",
+            "sourceId"
+          ],
+          "value": "\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42\ud83d\ude42"
+        }
+      ],
+      "expectedReason": "qualified"
+    },
+    {
+      "id": "unicode-byte-identity-sessionId",
+      "contextMutations": [
+        {
+          "path": [
+            "scope",
+            "sessionId"
+          ],
+          "value": "camera-\u00e9"
+        }
+      ],
+      "hintMutations": [
+        {
+          "path": [
+            "scope",
+            "sessionId"
+          ],
+          "value": "camera-e\u0301"
+        }
+      ],
+      "expectedReason": "scope_mismatch"
+    },
+    {
+      "id": "unicode-byte-identity-cameraId",
+      "contextMutations": [
+        {
+          "path": [
+            "scope",
+            "cameraId"
+          ],
+          "value": "camera-\u00e9"
+        }
+      ],
+      "hintMutations": [
+        {
+          "path": [
+            "scope",
+            "cameraId"
+          ],
+          "value": "camera-e\u0301"
+        }
+      ],
+      "expectedReason": "scope_mismatch"
+    },
+    {
+      "id": "unicode-byte-identity-frameId",
+      "contextMutations": [
+        {
+          "path": [
+            "exposure",
+            "frameId"
+          ],
+          "value": "camera-\u00e9"
+        }
+      ],
+      "hintMutations": [
+        {
+          "path": [
+            "exposure",
+            "frameId"
+          ],
+          "value": "camera-e\u0301"
+        }
+      ],
+      "expectedReason": "exposure_mismatch"
+    },
+    {
+      "id": "unicode-byte-identity-sourceClockId",
+      "contextMutations": [
+        {
+          "path": [
+            "exposure",
+            "sourceClockId"
+          ],
+          "value": "camera-\u00e9"
+        }
+      ],
+      "hintMutations": [
+        {
+          "path": [
+            "exposure",
+            "sourceClockId"
+          ],
+          "value": "camera-e\u0301"
+        }
+      ],
+      "expectedReason": "clock_mismatch"
+    },
+    {
+      "id": "unicode-byte-identity-mappingId",
+      "contextMutations": [
+        {
+          "path": [
+            "geometry",
+            "mappingId"
+          ],
+          "value": "camera-\u00e9"
+        }
+      ],
+      "hintMutations": [
+        {
+          "path": [
+            "geometry",
+            "mappingId"
+          ],
+          "value": "camera-e\u0301"
+        }
+      ],
+      "expectedReason": "geometry_mismatch"
+    },
+    {
+      "id": "unicode-byte-identity-exposure-clock",
+      "contextMutations": [
+        {
+          "path": [
+            "exposure",
+            "clockId"
+          ],
+          "value": "camera-\u00e9"
+        },
+        {
+          "path": [
+            "now",
+            "clockId"
+          ],
+          "value": "camera-\u00e9"
+        }
+      ],
+      "hintMutations": [
+        {
+          "path": [
+            "exposure",
+            "clockId"
+          ],
+          "value": "camera-e\u0301"
+        },
+        {
+          "path": [
+            "arrival",
+            "clockId"
+          ],
+          "value": "camera-e\u0301"
+        }
+      ],
+      "expectedReason": "clock_mismatch"
+    },
+    {
+      "id": "unicode-byte-identity-current-clock",
+      "contextMutations": [
+        {
+          "path": [
+            "exposure",
+            "clockId"
+          ],
+          "value": "camera-\u00e9"
+        },
+        {
+          "path": [
+            "now",
+            "clockId"
+          ],
+          "value": "camera-e\u0301"
+        }
+      ],
+      "hintMutations": [],
+      "expectedReason": "clock_mismatch"
+    },
+    {
+      "id": "unicode-byte-identity-arrival-clock",
+      "contextMutations": [
+        {
+          "path": [
+            "exposure",
+            "clockId"
+          ],
+          "value": "camera-\u00e9"
+        },
+        {
+          "path": [
+            "now",
+            "clockId"
+          ],
+          "value": "camera-\u00e9"
+        }
+      ],
+      "hintMutations": [
+        {
+          "path": [
+            "exposure",
+            "clockId"
+          ],
+          "value": "camera-\u00e9"
+        },
+        {
+          "path": [
+            "arrival",
+            "clockId"
+          ],
+          "value": "camera-e\u0301"
+        }
+      ],
+      "expectedReason": "clock_mismatch"
+    },
+    {
+      "id": "signed-zero-score",
+      "hintMutations": [
+        {
+          "path": [
+            "mask",
+            "probabilities",
+            0
+          ],
+          "value": -0.0
+        }
+      ],
+      "expectedReason": "qualified"
+    },
+    {
+      "id": "unicode-field-name-is-not-schema-key",
+      "hintMutations": [
+        {
+          "path": [
+            "exposure",
+            "clockKnown"
+          ],
+          "remove": true
+        },
+        {
+          "path": [
+            "exposure",
+            "clock\u212anown"
+          ],
+          "value": true
+        }
+      ],
+      "expectedReason": "invalid_exposure"
+    }
+  ],
+  "cacheSequences": [
+    {
+      "id": "duplicate-does-not-overwrite",
+      "operations": [
+        {
+          "op": "offer",
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "offer",
+          "hintMutations": [
+            {
+              "path": [
+                "mask",
+                "probabilities"
+              ],
+              "value": [
+                0.9,
+                0.9,
+                0.9,
+                0.9
+              ]
+            }
+          ],
+          "expectedReason": "duplicate_exposure"
+        },
+        {
+          "op": "current",
+          "expectedReason": "qualified"
+        }
+      ]
+    },
+    {
+      "id": "future-frame-old-arrival",
+      "operations": [
+        {
+          "op": "offer",
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "advance",
+          "frameOffset": 1,
+          "expectedReason": "advanced"
+        },
+        {
+          "op": "current",
+          "expectedReason": "exposure_mismatch"
+        },
+        {
+          "op": "offer",
+          "frameOffset": 1,
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "offer",
+          "hintMutations": [
+            {
+              "path": [
+                "arrival",
+                "atNs"
+              ],
+              "value": 10200000000
+            }
+          ],
+          "expectedReason": "exposure_mismatch"
+        },
+        {
+          "op": "current",
+          "expectedReason": "qualified"
+        }
+      ]
+    },
+    {
+      "id": "owner-exposure-regression",
+      "operations": [
+        {
+          "op": "advance",
+          "frameOffset": 1,
+          "expectedReason": "advanced"
+        },
+        {
+          "op": "offer",
+          "frameOffset": 1,
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "advance",
+          "contextMutations": [
+            {
+              "path": [
+                "now",
+                "atNs"
+              ],
+              "value": 10200000001
+            }
+          ],
+          "expectedReason": "context_exposure_regression"
+        },
+        {
+          "op": "current",
+          "expectedReason": "qualified"
+        }
+      ]
+    },
+    {
+      "id": "owner-reset-old-scope-late-arrival",
+      "operations": [
+        {
+          "op": "offer",
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "advance",
+          "generationOffset": 1,
+          "expectedReason": "context_scope_mismatch"
+        },
+        {
+          "op": "reset",
+          "generationOffset": 1,
+          "expectedReason": "reset"
+        },
+        {
+          "op": "current",
+          "expectedReason": "missing_hint"
+        },
+        {
+          "op": "offer",
+          "expectedReason": "scope_mismatch"
+        },
+        {
+          "op": "offer",
+          "generationOffset": 1,
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "current",
+          "expectedReason": "qualified"
+        }
+      ]
+    },
+    {
+      "id": "capture-age-expiration",
+      "operations": [
+        {
+          "op": "offer",
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "advance",
+          "contextMutations": [
+            {
+              "path": [
+                "now",
+                "atNs"
+              ],
+              "value": 10200000001
+            }
+          ],
+          "expectedReason": "advanced"
+        },
+        {
+          "op": "current",
+          "expectedReason": "stale_hint"
+        }
+      ]
+    },
+    {
+      "id": "conflicting-exposure-and-clock",
+      "operations": [
+        {
+          "op": "offer",
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "advance",
+          "contextMutations": [
+            {
+              "path": [
+                "exposure",
+                "frameId"
+              ],
+              "value": "conflict"
+            }
+          ],
+          "expectedReason": "context_exposure_conflict"
+        },
+        {
+          "op": "advance",
+          "contextMutations": [
+            {
+              "path": [
+                "now",
+                "atNs"
+              ],
+              "value": 10090000000
+            }
+          ],
+          "expectedReason": "context_clock_regression"
+        },
+        {
+          "op": "advance",
+          "frameOffset": 1,
+          "contextMutations": [
+            {
+              "path": [
+                "exposure",
+                "frameId"
+              ],
+              "value": "frame-10"
+            }
+          ],
+          "expectedReason": "context_exposure_conflict"
+        },
+        {
+          "op": "advance",
+          "frameOffset": 1,
+          "contextMutations": [
+            {
+              "path": [
+                "exposure",
+                "capturedAtNs"
+              ],
+              "value": 10000000000
+            }
+          ],
+          "expectedReason": "context_exposure_conflict"
+        },
+        {
+          "op": "current",
+          "expectedReason": "qualified"
+        }
+      ]
+    },
+    {
+      "id": "bad-reset-preserves-current",
+      "operations": [
+        {
+          "op": "offer",
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "reset",
+          "contextMutations": [
+            {
+              "path": [
+                "now",
+                "clockKnown"
+              ],
+              "value": false
+            }
+          ],
+          "expectedReason": "unknown_clock"
+        },
+        {
+          "op": "current",
+          "expectedReason": "qualified"
+        }
+      ]
+    },
+    {
+      "id": "bad-result-preserves-current",
+      "operations": [
+        {
+          "op": "offer",
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "offer",
+          "nonfiniteScore": "nan",
+          "expectedReason": "invalid_scores"
+        },
+        {
+          "op": "current",
+          "expectedReason": "qualified"
+        }
+      ]
+    },
+    {
+      "id": "calibration-reset-clears-old-map",
+      "operations": [
+        {
+          "op": "offer",
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "reset",
+          "contextMutations": [
+            {
+              "path": [
+                "scope",
+                "calibrationGeneration"
+              ],
+              "value": 4
+            }
+          ],
+          "expectedReason": "reset"
+        },
+        {
+          "op": "offer",
+          "expectedReason": "scope_mismatch"
+        },
+        {
+          "op": "current",
+          "expectedReason": "missing_hint"
+        }
+      ]
+    },
+    {
+      "id": "unicode-byte-identity-cache-scope",
+      "contextMutations": [
+        {
+          "path": [
+            "scope",
+            "sessionId"
+          ],
+          "value": "camera-\u00e9"
+        }
+      ],
+      "operations": [
+        {
+          "op": "offer",
+          "hintMutations": [
+            {
+              "path": [
+                "scope",
+                "sessionId"
+              ],
+              "value": "camera-\u00e9"
+            }
+          ],
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "advance",
+          "contextMutations": [
+            {
+              "path": [
+                "scope",
+                "sessionId"
+              ],
+              "value": "camera-e\u0301"
+            }
+          ],
+          "expectedReason": "context_scope_mismatch"
+        },
+        {
+          "op": "current",
+          "expectedReason": "qualified"
+        }
+      ]
+    },
+    {
+      "id": "unicode-distinct-next-frame-id",
+      "contextMutations": [
+        {
+          "path": [
+            "exposure",
+            "frameId"
+          ],
+          "value": "camera-\u00e9"
+        }
+      ],
+      "operations": [
+        {
+          "op": "offer",
+          "hintMutations": [
+            {
+              "path": [
+                "exposure",
+                "frameId"
+              ],
+              "value": "camera-\u00e9"
+            }
+          ],
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "advance",
+          "frameOffset": 1,
+          "contextMutations": [
+            {
+              "path": [
+                "exposure",
+                "frameId"
+              ],
+              "value": "camera-e\u0301"
+            }
+          ],
+          "expectedReason": "advanced"
+        },
+        {
+          "op": "current",
+          "expectedReason": "exposure_mismatch"
+        },
+        {
+          "op": "offer",
+          "frameOffset": 1,
+          "hintMutations": [
+            {
+              "path": [
+                "exposure",
+                "frameId"
+              ],
+              "value": "camera-e\u0301"
+            }
+          ],
+          "expectedReason": "qualified"
+        }
+      ]
+    },
+    {
+      "id": "cache-preserves-owned-score-bits",
+      "operations": [
+        {
+          "op": "offer",
+          "hintMutations": [
+            {
+              "path": [
+                "mask",
+                "probabilities"
+              ],
+              "value": [
+                -0.0,
+                0.0015906649641692638,
+                0.0007017548778094351,
+                0.00033969536889344454
+              ]
+            }
+          ],
+          "expectedReason": "qualified"
+        },
+        {
+          "op": "current",
+          "expectedReason": "qualified"
+        }
+      ]
+    }
+  ],
+  "clockCases": [
+    {
+      "id": "large-monotonic-origin",
+      "epoch": {
+        "clockId": "capture-boot1",
+        "originNs": 1700000000000000000,
+        "role": "capture_monotonic"
+      },
+      "readingNs": 1700000000100000000,
+      "readingClockId": "capture-boot1",
+      "known": true,
+      "expectedReason": "mapped",
+      "expectedRelativeNs": 100000000
+    },
+    {
+      "id": "unknown-clock",
+      "epoch": {
+        "clockId": "capture-boot1",
+        "originNs": 100,
+        "role": "capture_monotonic"
+      },
+      "readingNs": 101,
+      "readingClockId": "capture-boot1",
+      "known": false,
+      "expectedReason": "unknown_clock"
+    },
+    {
+      "id": "mixed-clock",
+      "epoch": {
+        "clockId": "capture-boot1",
+        "originNs": 100,
+        "role": "capture_monotonic"
+      },
+      "readingNs": 101,
+      "readingClockId": "wall-clock",
+      "known": true,
+      "expectedReason": "clock_mismatch"
+    },
+    {
+      "id": "before-origin",
+      "epoch": {
+        "clockId": "capture-boot1",
+        "originNs": 100,
+        "role": "capture_monotonic"
+      },
+      "readingNs": 99,
+      "readingClockId": "capture-boot1",
+      "known": true,
+      "expectedReason": "clock_out_of_range"
+    },
+    {
+      "id": "negative-reading",
+      "epoch": {
+        "clockId": "capture-boot1",
+        "originNs": 100,
+        "role": "capture_monotonic"
+      },
+      "readingNs": -9223372036854775808,
+      "readingClockId": "capture-boot1",
+      "known": true,
+      "expectedReason": "invalid_clock_reading"
+    },
+    {
+      "id": "negative-origin",
+      "epoch": {
+        "clockId": "capture-boot1",
+        "originNs": -1,
+        "role": "capture_monotonic"
+      },
+      "readingNs": 0,
+      "readingClockId": "capture-boot1",
+      "known": true,
+      "expectedReason": "invalid_clock_epoch"
+    },
+    {
+      "id": "maximum-relative",
+      "epoch": {
+        "clockId": "capture-boot1",
+        "originNs": 0,
+        "role": "capture_monotonic"
+      },
+      "readingNs": 9007199254740991,
+      "readingClockId": "capture-boot1",
+      "known": true,
+      "expectedReason": "mapped",
+      "expectedRelativeNs": 9007199254740991
+    },
+    {
+      "id": "unsafe-relative",
+      "epoch": {
+        "clockId": "capture-boot1",
+        "originNs": 0,
+        "role": "capture_monotonic"
+      },
+      "readingNs": 9007199254740992,
+      "readingClockId": "capture-boot1",
+      "known": true,
+      "expectedReason": "clock_out_of_range"
+    },
+    {
+      "id": "maximum-signed-reading",
+      "epoch": {
+        "clockId": "capture-boot1",
+        "originNs": 0,
+        "role": "capture_monotonic"
+      },
+      "readingNs": 9223372036854775807,
+      "readingClockId": "capture-boot1",
+      "known": true,
+      "expectedReason": "clock_out_of_range"
+    },
+    {
+      "id": "unsupported-wall-clock-role",
+      "epoch": {
+        "clockId": "wall",
+        "originNs": 0,
+        "role": "wall_clock"
+      },
+      "readingNs": 1,
+      "readingClockId": "wall",
+      "known": true,
+      "expectedReason": "invalid_clock_role"
+    },
+    {
+      "id": "distinct-source-capture-epochs",
+      "kind": "exposure",
+      "frameId": "camera-frame-1",
+      "source": {
+        "clockId": "pts-session-1",
+        "originNs": 80000000000,
+        "role": "source_presentation"
+      },
+      "capture": {
+        "clockId": "capture-boot-1",
+        "originNs": 1700000000000000000,
+        "role": "capture_monotonic"
+      },
+      "sourceNs": 80100000000,
+      "sourceClockId": "pts-session-1",
+      "captureNs": 1700000000250000000,
+      "captureClockId": "capture-boot-1",
+      "known": true,
+      "expectedReason": "mapped",
+      "expectedExposure": {
+        "frameId": "camera-frame-1",
+        "sourceTimeNs": 100000000,
+        "sourceClockId": "pts-session-1",
+        "capturedAtNs": 250000000,
+        "clockId": "capture-boot-1",
+        "clockKnown": true
+      }
+    },
+    {
+      "id": "source-cannot-stand-in-for-capture",
+      "kind": "exposure",
+      "frameId": "camera-frame-1",
+      "source": {
+        "clockId": "pts-session-1",
+        "originNs": 0,
+        "role": "source_presentation"
+      },
+      "capture": {
+        "clockId": "pts-session-1",
+        "originNs": 0,
+        "role": "source_presentation"
+      },
+      "sourceNs": 100,
+      "sourceClockId": "pts-session-1",
+      "captureNs": 100,
+      "captureClockId": "pts-session-1",
+      "known": true,
+      "expectedReason": "invalid_clock_role"
+    },
+    {
+      "id": "unicode-byte-identity-clock-epoch",
+      "epoch": {
+        "clockId": "camera-\u00e9",
+        "originNs": 0,
+        "role": "capture_monotonic"
+      },
+      "readingNs": 1,
+      "readingClockId": "camera-e\u0301",
+      "known": true,
+      "expectedReason": "clock_mismatch"
+    }
+  ],
+  "policyCases": [
+    {
+      "id": "oversized-mask",
+      "mutations": [
+        {
+          "path": [
+            "maskWidth"
+          ],
+          "value": 513
+        }
+      ],
+      "expectedReason": "invalid_policy"
+    },
+    {
+      "id": "boolean-height",
+      "mutations": [
+        {
+          "path": [
+            "maskHeight"
+          ],
+          "value": true
+        }
+      ],
+      "expectedReason": "invalid_policy"
+    },
+    {
+      "id": "zero-age",
+      "mutations": [
+        {
+          "path": [
+            "maxCaptureAgeNs"
+          ],
+          "value": 0
+        }
+      ],
+      "expectedReason": "invalid_policy"
+    },
+    {
+      "id": "unsafe-age",
+      "mutations": [
+        {
+          "path": [
+            "maxCaptureAgeNs"
+          ],
+          "value": 9007199254740992
+        }
+      ],
+      "expectedReason": "invalid_policy"
+    },
+    {
+      "id": "wrong-output-kind",
+      "mutations": [
+        {
+          "path": [
+            "modelIdentity",
+            "outputKind"
+          ],
+          "value": "boxes"
+        }
+      ],
+      "expectedReason": "invalid_policy"
+    }
+  ]
+}

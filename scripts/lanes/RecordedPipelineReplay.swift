@@ -13,6 +13,7 @@ private struct ReplayFrame: Decodable {
     let visualCalibration: VisualRoadCalibration?
     let orientationKey: String?
     let locationFixes: [ReplayLocation]?
+    let semanticScoreAdjustments: [Double]?
 }
 private struct ReplayLocation: Decodable {
     let time, latitude, longitude, course, speed, accuracy, courseAccuracy: Double
@@ -21,6 +22,7 @@ private struct ReplayManifest: Decodable {
     let schemaVersion: Int
     let variant: String
     let previewMode: Bool?
+    let detectorTrace: Bool?
     let useSearchBands, groupFragments, fragmentTracking, retainTentativeIdentity, jointSelection: Bool?
     let frames: [ReplayFrame]
 }
@@ -97,7 +99,19 @@ private struct ReplayFailure: Error, CustomStringConvertible { let description: 
                 sourceTimestampSeconds: input.time, visualCalibration: input.visualCalibration, orientationKey: input.orientationKey ?? "")
             let scope = TSRApplicabilityScope(sessionId: input.sequenceId, bundleId: "offline-video",
                 cameraGeometryId: geometryId, generation: 1, contextGeneration: 1, traversalEpoch: 1)
+#if LANE_DETECTOR_TRACE
+            var detectorEvents: [[String: Any]] = []
+            let observer: RoadBoundaryTraceObserver? = manifest.detectorTrace == true ? { detectorEvents.append($0) } : nil
+#if LANE_SEMANTIC_SCORE_OPTIONS
+            let prepared = session.prepare(frame: frame, frameId: input.id, scope: scope, detectorTrace: observer, semanticScoreAdjustments: input.semanticScoreAdjustments)
+#else
+            let prepared = session.prepare(frame: frame, frameId: input.id, scope: scope, detectorTrace: observer)
+#endif
+#elseif LANE_SEMANTIC_SCORE_OPTIONS
+            let prepared = session.prepare(frame: frame, frameId: input.id, scope: scope, semanticScoreAdjustments: input.semanticScoreAdjustments)
+#else
             let prepared = session.prepare(frame: frame, frameId: input.id, scope: scope)
+#endif
             let diagnostic = TSRApplicabilityDiagnostic(schemaVersion: 1,
                 batch: TSRFrameCandidateBatch(schemaVersion: 1, frameId: input.id, capturedAtMs: input.time * 1000,
                     scope: scope, status: "analyzed", candidates: [], truncated: false, rawCandidateCount: 0,
@@ -175,6 +189,9 @@ private struct ReplayFailure: Error, CustomStringConvertible { let description: 
 #if LANE_FRAGMENT_OPTIONS
             row["rejectionCounts"] = prepared.geometry.rejectionCounts
             row["detectionVariant"] = prepared.geometry.detectionVariant
+#endif
+#if LANE_DETECTOR_TRACE
+            if manifest.detectorTrace == true { row["detectorTrace"] = detectorEvents }
 #endif
             row["calibrationDiagnostics"] = evaluated["lanePreparationDiagnostics"] ?? NSNull()
             var encoded = try JSONSerialization.data(withJSONObject: row, options: [.sortedKeys])

@@ -124,6 +124,11 @@ func roadBoundaryXAt(_ points: [LanePoint], _ y: Double) -> Double {
 /// Edge-only structures never create corridors. Buildings/shadows can still resemble markings;
 /// these visual hypotheses cannot establish drivable space or sign applicability. A cancelled or
 /// expired call publishes no partial geometry and retains no state from earlier frames.
+/// Optional diagnostic sink, intended for offline replay. Payloads are created only when
+/// supplied; tracing cannot change ranks, operation accounting, or published geometry.
+/// The observer must not mutate caller state used by shouldContinue.
+typealias RoadBoundaryTraceObserver = ([String: Any]) -> Void
+
 struct RoadBoundaryDetector {
     private struct Sample {
         let point: LanePoint
@@ -155,7 +160,17 @@ struct RoadBoundaryDetector {
     func detect(grayscale: [UInt8], width: Int, height: Int, timestampSeconds: Double,
                 maximumOperations: Int = 250_000, guidance: RoadBoundarySearchGuidance? = nil,
                 options: RoadBoundaryDetectionOptions = RoadBoundaryDetectionOptions(),
+                trace: RoadBoundaryTraceObserver? = nil,
                 shouldContinue: () -> Bool = { true }) -> RoadBoundaryFrame {
+        func sampleID(_ sample: Sample) -> Int { sample.row * width + Int((sample.point.x * Double(width-1)).rounded()) }
+        func sampleFields(_ sample: Sample) -> [String: Any] {
+            ["sampleID":sampleID(sample), "point":[sample.point.x,sample.point.y], "strength":sample.strength,
+             "cue":sample.cue.rawValue, "row":sample.row, "stripeWidth":sample.stripeWidth]
+        }
+        func trackFields(_ track: Track, _ outcome: String) -> [String: Any] {
+            ["stage":"track", "trackID":sampleID(track.samples[0]),
+             "samples":track.samples.map(sampleFields), "outcome":outcome]
+        }
         let maximum = max(0, maximumOperations)
         var used = 0
         var rejections: [String: Int] = [:]
@@ -166,7 +181,8 @@ struct RoadBoundaryDetector {
             return shouldContinue()
         }
         func empty(_ exceeded: Bool = false) -> RoadBoundaryFrame {
-            RoadBoundaryFrame(boundaries: [], corridors: [], timestampSeconds: timestampSeconds,
+            trace?(["stage":"completion", "status":exceeded ? "budget_or_cancelled" : "invalid_input", "operationCount":used])
+            return RoadBoundaryFrame(boundaries: [], corridors: [], timestampSeconds: timestampSeconds,
                               budgetExceeded: exceeded, operationCount: used, rejectionCounts: rejections, detectionVariant: options.identifier)
         }
         guard (64...384).contains(width), (64...216).contains(height),
@@ -190,6 +206,8 @@ struct RoadBoundaryDetector {
         }
         let topY = RoadBoundarySamplingRows.top(guidance?.horizonY)
         let rows = RoadBoundarySamplingRows.centers(height:height,horizonY:guidance?.horizonY)
+        trace?(["stage":"configuration", "schemaVersion":1, "width":width, "height":height,
+                "samplingRows":rows, "variant":options.identifier, "guides":guides.map { $0.map { [$0.x,$0.y] } }])
         for row in rows.indices {
             guard check() else { return empty(true) }
             let y = rows[row]
@@ -275,6 +293,8 @@ struct RoadBoundaryDetector {
                 rowCandidates = indices.sorted().map { ranked[$0] }
                 reject("outside_bands_retained",rowCandidates.filter { sample in centers.allSatisfy { abs(sample.point.x-$0)>halfWidth } }.count)
             }
+            trace?(["stage":"row", "row":row, "y":normalizedY,
+                    "preCap":ranked.map(sampleFields), "postCap":rowCandidates.map(sampleFields)])
             reject("candidate_capacity",candidates.count-rowCandidates.count)
             completed.append(contentsOf: active.filter { row - $0.samples[$0.samples.count - 1].row > 4 })
             active.removeAll { row - $0.samples[$0.samples.count - 1].row > 4 }
@@ -299,6 +319,9 @@ struct RoadBoundaryDetector {
                     }
                 }
                 if bestTrack >= 0 {
+                    trace?(["stage":"association", "outcome":"assigned", "row":row,
+                            "sampleID":sampleID(rowCandidates[bestCandidate]), "trackID":sampleID(active[bestTrack].samples[0]),
+                            "distance":bestDistance, "predictedX":active[bestTrack].predictedX(normalizedY)])
                     active[bestTrack].samples.append(rowCandidates[bestCandidate])
                     usedTracks[bestTrack] = true; usedCandidates[bestCandidate] = true
                 }
@@ -308,7 +331,12 @@ struct RoadBoundaryDetector {
                     let sample = rowCandidates[index]
                     let closest = guides.min { abs(sample.point.x-roadBoundaryXAt($0,sample.point.y)) < abs(sample.point.x-roadBoundaryXAt($1,sample.point.y)) }
                     let guide = closest.flatMap { abs(sample.point.x-roadBoundaryXAt($0,sample.point.y)) <= 0.05 ? $0 : nil }
+                    trace?(["stage":"association", "outcome":"created", "row":row,
+                            "sampleID":sampleID(sample), "trackID":sampleID(sample)])
                     active.append(Track(sample,guide:guide,guideCorrectionLimit:1/Double(width-1)))
+                } else if !usedCandidates[index] {
+                    trace?(["stage":"association", "outcome":"active_track_capacity", "row":row,
+                            "sampleID":sampleID(rowCandidates[index])])
                 }
             }
         }
@@ -322,11 +350,13 @@ struct RoadBoundaryDetector {
             let samples = track.samples
             let span = samples[0].point.y - samples[samples.count - 1].point.y
             if samples.count < 8 {
+                trace?(trackFields(track,"track_support"))
                 reject("track_support")
                 if options.groupFragments { fragments.append(samples) }
                 continue
             }
             if span < min(0.16,(0.94-topY)*0.6) {
+                trace?(trackFields(track,"track_span"))
                 reject("track_span")
                 if options.groupFragments { fragments.append(samples) }
                 continue
@@ -337,10 +367,12 @@ struct RoadBoundaryDetector {
             var confidence = min(1, span / 0.32) * density * min(1, samples.reduce(0) { $0 + $1.strength } / Double(samples.count) / 90)
             if cue == .edge { confidence = min(0.40, confidence) }
             if confidence < 0.22 {
+                trace?(trackFields(track,"confidence"))
                 reject("confidence")
                 if options.groupFragments { fragments.append(samples) }
                 continue
             }
+            trace?(trackFields(track,"accepted"))
             evidence.append(RoadBoundaryEvidence(points:samples.reversed().map { $0.point },confidence:confidence,cue:cue,
                 supportRows:samples.count,observedSegments:options.groupFragments && cue == .paint ? paintedSegments(samples) : [],
                 paintOccupancy:options.groupFragments && cue == .paint ? density : nil))
@@ -403,6 +435,16 @@ struct RoadBoundaryDetector {
         let boundaries = (protected+ranked(additions).prefix(6-protected.count)).sorted {
             $0.points[$0.points.count-1].x < $1.points[$1.points.count-1].x
         }
+        if let trace {
+            for (origin, values) in [("measured",evidence),("fragment",additions)] {
+                for boundary in values {
+                    trace(["stage":"fresh_hypothesis", "origin":origin, "points":boundary.points.map { [$0.x,$0.y] },
+                           "confidence":boundary.confidence, "cue":boundary.cue.rawValue, "supportRows":boundary.supportRows,
+                           "observedSegments":boundary.observedSegments.map { $0.map { [$0.x,$0.y] } },
+                           "outputIndex":boundaries.firstIndex(of:boundary) as Any? ?? NSNull()])
+                }
+            }
+        }
         var corridors: [RoadCorridorHypothesis] = []
         for leftIndex in boundaries.indices {
             guard check(32) else { return empty(true) }
@@ -423,6 +465,7 @@ struct RoadBoundaryDetector {
                                                    confidence: min(left.confidence, right.confidence)))
         }
         guard check() else { return empty(true) }
+        trace?(["stage":"completion", "status":"complete", "operationCount":used])
         return RoadBoundaryFrame(boundaries: boundaries, corridors: Array(corridors.sorted {
             $0.confidence == $1.confidence ? $0.leftBoundaryIndex < $1.leftBoundaryIndex : $0.confidence > $1.confidence
         }.prefix(2)), timestampSeconds: timestampSeconds, budgetExceeded: false, operationCount: used, rejectionCounts: rejections, detectionVariant: options.identifier)

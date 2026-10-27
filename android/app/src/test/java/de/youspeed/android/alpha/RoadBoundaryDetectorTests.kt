@@ -9,6 +9,30 @@ import org.junit.Test
 class RoadBoundaryDetectorTests {
     private val detector = RoadBoundaryDetector()
 
+    @Test fun tracePreservesAllDetectionFieldsAndCancellationChecks() {
+        for (kind in listOf("straight","curve","fork","clutter","edge")) {
+            for (options in listOf(RoadBoundaryDetectionOptions(),RoadBoundaryDetectionOptions(useSearchBands=true),
+                RoadBoundaryDetectionOptions(groupFragments=true),RoadBoundaryDetectionOptions(useSearchBands=true,groupFragments=true))) {
+                val pixels=scene(kind)
+                val events=mutableListOf<Map<String,Any?>>()
+                val traced=detector.detect(pixels,384,216,1.0,options=options,trace={ events.add(it) })
+                assertEquals(traced,detector.detect(pixels,384,216,1.0,options=options))
+                assertEquals("configuration",events.first()["stage"])
+                assertEquals("complete",events.last()["status"])
+                assertEquals(24,events.count { it["stage"] == "row" })
+            }
+        }
+        val pixels=scene("straight")
+        var tracedCalls=0; var plainCalls=0
+        val events=mutableListOf<Map<String,Any?>>()
+        val traced=detector.detect(pixels,384,216,1.0,trace={ events.add(it) },shouldContinue={ ++tracedCalls < 100 })
+        val plain=detector.detect(pixels,384,216,1.0,shouldContinue={ ++plainCalls < 100 })
+        assertEquals(traced,plain)
+        assertEquals(tracedCalls,plainCalls)
+        assertTrue(traced.boundaries.isEmpty())
+        assertEquals("budget_or_cancelled",events.last()["status"])
+    }
+
     // Same deterministic fixtures and assertions as RoadBoundaryDetectorTests.swift.
     private fun scene(kind: String, width: Int = 384, height: Int = 216): ByteArray {
         val image = ByteArray(width * height) { 55 }

@@ -230,10 +230,17 @@ final class RoadBoundaryEgoSelector {
     private var jointChallengedAt=0.0
     func reset() { left=Side(); right=Side(); scope=nil; lastTime = -Double.infinity; jointChallenger=nil }
     func select(_ snapshot: RoadBoundaryPresentationSnapshot, boundaries: [RoadBoundaryEvidence],
-                visual: VisualRoadCalibration?, time: Double, key: String, fragmentAware: Bool = false, jointSelection: Bool = false, egoContext: RoadBoundaryEgoContext? = nil) -> RoadBoundaryPresentationSnapshot {
+                visual: VisualRoadCalibration?, time: Double, key: String, fragmentAware: Bool = false, jointSelection: Bool = false, egoContext: RoadBoundaryEgoContext? = nil,
+                semanticScoreAdjustments: [Double]? = nil) -> RoadBoundaryPresentationSnapshot {
         guard snapshot.accepted, time.isFinite else { reset(); return snapshot }
         if scope != key || time <= lastTime || time-lastTime > 0.75 { reset() }
         scope=key; lastTime=time
+        // Explicit offline experiment input. Callers must qualify the exposure and
+        // map raw hypothesis indices first. Missing/malformed arrays are a no-op.
+        // Same-image semantics never add support, maturity or temporal observations.
+        let semantic = semanticScoreAdjustments.flatMap { values -> [Double]? in
+            values.count == boundaries.count && values.allSatisfy { $0.isFinite && (0...0.10).contains($0) } ? values : nil
+        }
         let y=min(0.83,max(0.78,(visual?.horizonY ?? 0.50)+0.20))
         func center(_ row: Double) -> Double {
             guard let v=visual else { return jointSelection ? egoContext?.centerX(row:row,visual:nil) ?? 0.5 : 0.5 }
@@ -258,7 +265,7 @@ final class RoadBoundaryEgoSelector {
             guard abs(delta) >= (fragmentAware ? 0.015 : 0.025) else { decisions[index].reason="center_exclusion"; continue }
             guard abs(delta)<=0.45 else { decisions[index].reason="lateral_distance"; continue }
             let score=b.confidence + min(0.2,(bottom.y-top.y)*0.4) + (b.cue == .paint ? 0.12 : 0) - abs(delta)*0.6 -
-                (jointSelection && b.cue == .edge ? 0.20+(egoContext?.multiLaneEdgePenalty ?? 0) : 0)
+                (jointSelection && b.cue == .edge ? 0.20+(egoContext?.multiLaneEdgePenalty ?? 0) : 0) + (semantic?[index] ?? 0)
             decisions[index].score=score; decisions[index].reason="candidate"
             let candidate=Candidate(index:index,id:id,score:score,points:b.points)
             if delta<0 { l.append(candidate) } else { r.append(candidate) }

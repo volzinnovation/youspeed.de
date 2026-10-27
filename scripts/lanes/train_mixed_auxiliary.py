@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Compute-matched A2D2 versus A2D2+ZOD paint-head experiment, entirely offline.
+"""Compute-matched A2D2, ZOD and mixed paint-head experiments, entirely offline.
 
-Both arms start from identical random head weights. Only A2D2 validation selects
-checkpoints; ZOD holdouts and private videos never choose epochs or thresholds.
+Requested arms start from identical random head weights. The default comparison
+uses A2D2 validation selection; opt-in final-epoch selection uses a fixed budget.
+ZOD holdouts and private videos never choose epochs or thresholds.
 The original detector, its input contract, and the phone apps are not changed.
 """
 from __future__ import annotations
@@ -25,8 +26,19 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import train_a2d2_auxiliary as aux
 
+ARMS = ("a2d2", "zod", "a2d2_zod")
+DEFAULT_ARMS = ("a2d2", "a2d2_zod")
+SELECTION_POLICIES = ("a2d2-validation", "final-epoch")
 
-def validate_zod_manifest(path):
+
+def validate_arms(arms):
+    if (not isinstance(arms, (list, tuple)) or not arms
+            or any(arm not in ARMS for arm in arms) or len(set(arms)) != len(arms)):
+        raise ValueError("Require a nonempty ordered list of distinct known arms")
+    return tuple(arms)
+
+
+def validate_zod_manifest(path, *, input_size=None):
     """Accept only hash-bound, complete visible-paint targets, with split guards."""
     manifest = json.loads(Path(path).read_text())
     if (manifest.get("dataset") != "ZOD" or manifest.get("target_kind") != "paint"
@@ -35,6 +47,14 @@ def validate_zod_manifest(path):
         raise ValueError("Expected pinned ZOD visible-paint manifest with data license")
     if manifest.get("training_eligible") is not True:
         raise ValueError("ZOD importer has not qualified complete targets for training")
+    cohort = manifest.get("cohort_selection")
+    cohort_size = None
+    if cohort is not None:
+        qa_plan = cohort.get("qa_plan") if isinstance(cohort, dict) else None
+        cohort_size = qa_plan.get("training_input_size") if isinstance(qa_plan, dict) else None
+        if (type(cohort_size) is not int or not 32 <= cohort_size <= 1280 or cohort_size % 32
+                or type(input_size) is not int or input_size != cohort_size):
+            raise ValueError("Training input size must match predeclared ZOD cohort eligibility geometry")
     objects = {o["key"]: o for o in manifest["objects"]}
     if len(objects) != len(manifest["objects"]):
         raise ValueError("Duplicate ZOD object key")
@@ -60,9 +80,36 @@ def validate_zod_manifest(path):
         if identity in identities and identities[identity] != split:
             raise ValueError("ZOD image content overlaps partitions")
         identities[identity] = split
-        # All-black masks can legitimately repeat; do not deduplicate by mask hash.
-        load_zod_pair(pair, objects)
-        partitions[split].append(pair)
+        coverage = pair.get("annotation_coverage")
+        receipt_coverage = manifest.get("source_receipt", {}).get("annotation_coverage")
+        if coverage is None:
+            if receipt_coverage == "per_frame" or "coverage_counts" in manifest:
+                raise ValueError("Per-frame coverage manifest has an unqualified row")
+            # Legacy qualified complete-target manifests predate per-row coverage.
+            coverage = receipt_coverage or "complete_lane_markings"
+        if coverage not in ("complete_lane_markings", "positive_only"):
+            raise ValueError("Unsupported ZOD annotation coverage")
+        if coverage == "positive_only" and split != "train":
+            raise ValueError("Positive-only ZOD rows cannot enter held-out evaluation")
+        if receipt_coverage == "per_frame":
+            expected_decision = "positive_only" if coverage == "positive_only" else "accept"
+            if pair.get("coverage_decision") != expected_decision:
+                raise ValueError("Coverage decision differs from the row's supervision")
+        declared_size = pair.get("statistics", {}).get("training_input_size")
+        if cohort_size is not None or declared_size is not None:
+            if type(declared_size) is not int or declared_size != input_size:
+                raise ValueError("ZOD row eligibility geometry differs from training input size")
+        # All-black complete masks can legitimately repeat; do not deduplicate by mask hash.
+        _, positive, valid = load_zod_pair(pair, objects)
+        if coverage == "positive_only" and not np.array_equal(positive, valid):
+            raise ValueError("Positive-only supervision cannot label unknown pixels as negatives")
+        measured = dict(positive_pixels=int(np.count_nonzero(positive)), valid_pixels=int(np.count_nonzero(valid)),
+                        negative_pixels=int(np.count_nonzero(valid & ~positive)))
+        for key, value in measured.items():
+            declared = pair.get("statistics", {}).get(key)
+            if declared is not None and (type(declared) is not int or declared != value):
+                raise ValueError("ZOD pixel statistics differ from source masks")
+        partitions[split].append(dict(pair, annotation_coverage=coverage))
     if not partitions["train"] or not (partitions["validation"] or partitions["test"]):
         raise ValueError("Require nonempty ZOD train and independent held-out groups")
     return manifest, objects, partitions
@@ -87,10 +134,11 @@ def load_zod_pair(pair, objects):
 
 
 def sampled_batches(a2d2, zod, *, arm, seed, epoch, steps, batch_size):
-    """Cycle shuffled source indices. Each arm has identical update/pixel budgets."""
-    if arm not in ("a2d2", "a2d2_zod") or steps < 1 or batch_size < 2 or batch_size % 2:
+    """Cycle source indices with identical update/frame budgets, not valid pixels."""
+    if arm not in ARMS or steps < 1 or batch_size < 2 or batch_size % 2:
         raise ValueError("Use known arm, positive steps and even batch size >=2")
-    if not a2d2 or (arm == "a2d2_zod" and not zod):
+    if ((arm in ("a2d2", "a2d2_zod") and not a2d2)
+            or (arm in ("zod", "a2d2_zod") and not zod)):
         raise ValueError("Empty training source")
     rng = np.random.default_rng(seed + epoch)
 
@@ -103,6 +151,8 @@ def sampled_batches(a2d2, zod, *, arm, seed, epoch, steps, batch_size):
     for _ in range(steps):
         if arm == "a2d2":
             yield [next(a) for _ in range(batch_size)]
+        elif arm == "zod":
+            yield [next(z) for _ in range(batch_size)]
         else:
             # Interleave so every batch has exactly equal source frame weight.
             yield [row for _ in range(batch_size // 2) for row in (next(a), next(z))]
@@ -115,16 +165,115 @@ def aligned_targets(positive, valid, transform):
     return target, validity
 
 
-def checked_evaluate(*args):
-    result = aux.evaluate(*args)
+def checked_evaluate(*args, **kwargs):
+    result = aux.evaluate(*args, **kwargs)
 
     def finite(value):
         if isinstance(value, dict):
             return all(finite(v) for v in value.values())
+        if isinstance(value, list):
+            return all(finite(v) for v in value)
         return not isinstance(value, (int, float)) or math.isfinite(value)
 
     if not finite(result):
         raise ValueError("Non-finite evaluation; checkpoint selection is invalid")
+    return result
+
+
+def feature_cache_plan(partitions_by_source, input_size, maximum_gib):
+    """Bound retained float32 tensors before extraction; this is not peak RSS."""
+    if not 32 <= input_size <= 1280 or input_size % 32:
+        raise ValueError("Cache plan requires supported input geometry")
+    if not math.isfinite(maximum_gib) or maximum_gib <= 0:
+        raise ValueError("Cache tensor budget must be finite and positive")
+    source_counts = {name: sum(map(len, partitions.values()))
+                     for name, partitions in partitions_by_source.items()}
+    # Two fixed feature taps plus full-resolution target and validity tensors.
+    per_frame = 4 * (64 * (input_size // 4)**2 + 128 * (input_size // 8)**2 + 2 * input_size**2)
+    total = sum(source_counts.values()) * per_frame
+    numerator, denominator = maximum_gib.as_integer_ratio()
+    maximum = numerator * 2**30 // denominator
+    if total > maximum:
+        raise ValueError("Feature cache requires %.3f GiB of tensors, above explicit %.3f GiB limit"
+                         % (total / 2**30, maximum_gib))
+    return dict(backend="host_ram", precision="float32", tensorBytesPerFrame=per_frame,
+                sourceFrameCounts=source_counts, totalFrames=sum(source_counts.values()),
+                estimatedTensorBytes=total, maximumTensorBytes=maximum,
+                scope="Retained P2/P3 feature, target and validity tensors only; excludes image decode temporaries, "
+                      "Python metadata, runtime allocations and training batches. Reserve additional process memory.")
+
+
+def cached_tensor_bytes(cache):
+    return sum(tensor.numel() * tensor.element_size()
+               for partitions in cache.values() for rows in partitions.values() for row in rows
+               for tensor in (*row["features"], row["target"], row["valid"]))
+
+
+def declared_training_budget(partitions_by_source, epochs, steps, batch_size,
+                             arms=DEFAULT_ARMS, selection_policy="a2d2-validation"):
+    arms = validate_arms(arms)
+    if selection_policy not in SELECTION_POLICIES:
+        raise ValueError("Unknown checkpoint selection policy")
+    if epochs < 1 or steps < 1 or batch_size < 2 or batch_size % 2:
+        raise ValueError("Invalid comparison update budget")
+    train_counts = {name: len(partitions["train"]) for name, partitions in partitions_by_source.items()}
+    if set(train_counts) != {"A2D2", "ZOD"} or not all(train_counts.values()):
+        raise ValueError("Both sources require nonempty training rows")
+    updates, frames = epochs * steps, epochs * steps * batch_size
+    source_mix = {"a2d2": {"A2D2": frames}, "zod": {"ZOD": frames},
+                  "a2d2_zod": {"A2D2": frames // 2, "ZOD": frames // 2}}
+    exposures = {arm: source_mix[arm] for arm in arms}
+    budget = dict(optimizerUpdatesPerArm=updates, frameExposuresPerArm=frames,
+                selectionEvaluationsPerArm=epochs if selection_policy == "a2d2-validation" else 0,
+                trainingFramesPerSource=train_counts,
+                sourceFrameExposuresByArm=exposures,
+                meanExposuresPerTrainingFrameByArm={arm: {source: count / train_counts[source]
+                                                         for source, count in counts.items()}
+                                                   for arm, counts in exposures.items()},
+                scope="Fixed source-composition comparison; same update/frame budget per arm. "
+                      "Mean exposures do not imply identical per-frame sampling counts.")
+    if selection_policy == "final-epoch":
+        budget["diagnosticValidationEvaluationsPerArm"] = epochs
+    return budget
+
+
+def exposure_distribution(cache, frame_exposures):
+    result = {}
+    for source, partitions in cache.items():
+        counts = [frame_exposures[(source, row["identity"])] for row in partitions["train"]]
+        result[source] = dict(trainingFrames=len(counts), sampledFrames=sum(value > 0 for value in counts),
+                              neverSampledFrames=sum(value == 0 for value in counts),
+                              minimum=min(counts), maximum=max(counts), mean=sum(counts) / len(counts),
+                              histogram={str(value): count for value, count in sorted(Counter(counts).items())})
+    return result
+
+
+def cached_supervision_summary(cache):
+    """Count actual loss-space targets, preserving unknown/ignored pixels."""
+    result = {}
+    for source, partitions in cache.items():
+        result[source] = {}
+        for split, rows in partitions.items():
+            positive = valid = cells = 0
+            coverage, decisions = {}, Counter()
+            for row in rows:
+                p = int((row["target"] * row["valid"]).sum())
+                v = int(row["valid"].sum())
+                positive += p
+                valid += v
+                cells += row["valid"].numel()
+                pair = row.get("pair", {})
+                mode = pair.get("annotation_coverage", "complete_lane_markings") if source == "ZOD" else "dense_semantic"
+                decision = pair.get("coverage_decision", "legacy_complete_target") if source == "ZOD" else "A2D2_class_map"
+                decisions[decision] += 1
+                stats = coverage.setdefault(mode, dict(frames=0, positivePixels=0, validPixels=0, negativePixels=0))
+                stats["frames"] += 1
+                stats["positivePixels"] += p
+                stats["validPixels"] += v
+                stats["negativePixels"] += v - p
+            result[source][split] = dict(frames=len(rows), positivePixels=positive, validPixels=valid,
+                                         negativePixels=valid-positive, ignoredOrPaddingPixels=cells-valid,
+                                         coverage=coverage, coverageDecisions=dict(decisions))
     return result
 
 
@@ -156,11 +305,16 @@ def cache_source(name, partitions, objects, class_map, detector, device, size):
 
 
 def train_arm(arm, cache, initial, config, output, device):
+    selection_policy = config.get("selectionPolicy", "a2d2-validation")
+    if selection_policy not in SELECTION_POLICIES or arm not in ARMS:
+        raise ValueError("Unknown arm or checkpoint selection policy")
+    if "arms" in config and arm not in validate_arms(config["arms"]):
+        raise ValueError("Arm is absent from the predeclared experiment")
     output.mkdir()
     head = aux.AuxiliaryMarkingHead().to(device)
     head.load_state_dict(initial)
     optimizer = torch.optim.AdamW(head.parameters(), lr=.001, weight_decay=.0001)
-    curves, exposures, unique = [], Counter(), set()
+    curves, exposures, frame_exposures = [], Counter(), Counter()
     best_iou, best_state, best_epoch = -1., None, None
     started = time.perf_counter()
     for epoch in range(1, config["epochs"] + 1):
@@ -170,7 +324,7 @@ def train_arm(arm, cache, initial, config, output, device):
                                      seed=config["seed"], epoch=epoch, steps=config["stepsPerEpoch"],
                                      batch_size=config["batchSize"]):
             exposures.update(r["dataset"] for r in batch)
-            unique.update((r["dataset"], r["identity"]) for r in batch)
+            frame_exposures.update((r["dataset"], r["identity"]) for r in batch)
             features, target, valid = aux.batch_tensors(batch, device)
             optimizer.zero_grad(set_to_none=True)
             loss = aux.masked_loss(head(features), target, valid, config["positiveWeight"])
@@ -183,7 +337,10 @@ def train_arm(arm, cache, initial, config, output, device):
                                   config["batchSize"], config["positiveWeight"], config["inputSize"])
         row = dict(epoch=epoch, trainLoss=total_loss / config["stepsPerEpoch"], validation=validation)
         curves.append(row)
-        if validation["marking"]["iou"] > best_iou:
+        # A2D2 validation is recorded but cannot select the fixed final epoch.
+        select = (epoch == config["epochs"] if selection_policy == "final-epoch"
+                  else validation["marking"]["iou"] > best_iou)
+        if select:
             best_iou, best_epoch = validation["marking"]["iou"], epoch
             best_state = {k: v.detach().cpu().clone() for k, v in head.state_dict().items()}
         aux.write_json(output / "curves.json", curves)
@@ -192,7 +349,8 @@ def train_arm(arm, cache, initial, config, output, device):
     # All external holdouts are evaluated only after the arm's selection is final.
     metrics = dict(bestEpoch=best_epoch, validation=curves[best_epoch - 1]["validation"],
                    sourceFrameExposures=dict(exposures),
-                   uniqueSourceFrames=dict(Counter(source for source, _ in unique)),
+                   uniqueSourceFrames=dict(Counter(source for source, _ in frame_exposures)),
+                   sourceFrameExposureDistribution=exposure_distribution(cache, frame_exposures),
                    optimizerUpdates=config["stepsPerEpoch"] * config["epochs"],
                    trainingSeconds=time.perf_counter() - started, evaluation={})
     for name, source in cache.items():
@@ -200,8 +358,9 @@ def train_arm(arm, cache, initial, config, output, device):
             if name == "A2D2" and split == "validation":
                 continue
             if source[split]:
+                details = {"include_frame_counts": True} if config.get("holdoutFrameCounts", False) else {}
                 metrics["evaluation"][name + "/" + split] = checked_evaluate(
-                    head, source[split], device, config["batchSize"], config["positiveWeight"], config["inputSize"])
+                    head, source[split], device, config["batchSize"], config["positiveWeight"], config["inputSize"], **details)
     arm_config = dict(config, arm=arm)
     aux.write_json(output / "config.json", arm_config)
     checkpoint = dict(headState=best_state, config=arm_config,
@@ -212,7 +371,7 @@ def train_arm(arm, cache, initial, config, output, device):
     return metrics, checkpoint
 
 
-def finalize_arm(output, metrics, checkpoint, preservation):
+def finalize_arm(output, metrics, checkpoint, preservation, source_supervision_sha256=None):
     required = ("stateIdentical", "probeEqual", "allParametersFrozen", "allModulesEval")
     if (not all(preservation.get(k) is True for k in required)
             or preservation.get("checkpointHashBefore") != preservation.get("checkpointHashAfter")
@@ -220,27 +379,53 @@ def finalize_arm(output, metrics, checkpoint, preservation):
         raise ValueError("Cannot finalize without successful detector preservation proof")
     checkpoint["provenance"]["detectorPreservation"] = preservation
     checkpoint["provenance"]["configSha256"] = aux.sha256_file(output / "config.json")
+    if source_supervision_sha256 is not None:
+        checkpoint["provenance"]["sourceSupervisionSha256"] = source_supervision_sha256
+        metrics["sourceSupervisionSha256"] = source_supervision_sha256
     torch.save(checkpoint, output / "auxiliary-marking.pt")
     metrics["checkpointSha256"] = aux.sha256_file(output / "auxiliary-marking.pt")
     aux.write_json(output / "metrics.json", metrics)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+def build_parser():
+    parser = argparse.ArgumentParser(description=__doc__, epilog=
+        "CUDA launch environment: CUBLAS_WORKSPACE_CONFIG=:4096:8 and PYTHONHASHSEED matching --seed. "
+        "Isolate the intended GPU with CUDA_VISIBLE_DEVICES or the container GPU selector; "
+        "NVIDIA_TF32_OVERRIDE must be unset or 0. No cross-device bitwise guarantee.")
     parser.add_argument("--a2d2-manifest", type=Path, required=True)
     parser.add_argument("--zod-manifest", type=Path, required=True)
     parser.add_argument("--detector", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--device", choices=("cpu", "mps"), default="mps")
+    parser.add_argument("--device", type=aux.training_device, default="mps",
+                        help="cpu, mps, cuda or cuda:N; index is relative to CUDA_VISIBLE_DEVICES")
+    parser.add_argument("--cuda-determinism", choices=("seeded", "strict"), default="seeded",
+                        help="CUDA: seeded retains unsupported deterministic kernels with recorded warnings; strict fails")
     parser.add_argument("--epochs", type=int, default=15)
     parser.add_argument("--steps-per-epoch", type=int, default=16)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--input-size", type=int, default=640)
     parser.add_argument("--max-source-frames", type=int, default=512,
                         help="Per-source cache bound; default total ceiling ~9.3GB for192 A2D2+512 ZOD at640")
+    parser.add_argument("--max-cache-gib", type=float, default=12.,
+                        help="Retained host tensor budget in GiB; excludes decode/runtime/batch overhead")
+    parser.add_argument("--holdout-frame-counts", action="store_true",
+                        help="Record frame/group-bound confusion counts after checkpoint selection, for grouped analysis")
     parser.add_argument("--seed", type=int, default=20261008)
+    parser.add_argument("--arms", nargs="+", choices=ARMS, default=list(DEFAULT_ARMS),
+                        help="Ordered distinct arms; default preserves the A2D2 versus mixed comparison")
+    parser.add_argument("--selection-policy", choices=SELECTION_POLICIES, default="a2d2-validation",
+                        help="final-epoch records A2D2 validation diagnostically without using it for selection")
+    return parser
+
+
+def main():
+    parser = build_parser()
     args = parser.parse_args()
-    if (not 1 <= args.epochs <= 20 or not 1 <= args.steps_per_epoch <= 64
+    try:
+        validate_arms(args.arms)
+    except ValueError as error:
+        parser.error(str(error))
+    if (not 1 <= args.epochs <= 20 or not 1 <= args.steps_per_epoch <= 256
             or not 2 <= args.batch_size <= 32 or args.batch_size % 2
             or not 32 <= args.input_size <= 1280 or args.input_size % 32):
         parser.error("Use bounded epochs/steps, even batch size and input divisible by32")
@@ -249,10 +434,21 @@ def main():
     repository = Path(__file__).resolve().parents[2]
     if args.output_dir.resolve() == repository or repository in args.output_dir.resolve().parents:
         parser.error("Keep dataset and experiment artifacts outside repository")
+    try:
+        args.device, runtime = aux.configure_execution(args.device, args.seed, args.cuda_determinism)
+        if args.device.startswith("cuda"):
+            runtime["trainingPreflight"] = aux.training_preflight(args.device)
+    except (ValueError, RuntimeError) as error:
+        parser.error(str(error))
+    print(json.dumps(dict(stage="execution", **runtime)), flush=True)
     a_manifest, a_objects, a_parts, class_map = aux.validate_manifest(args.a2d2_manifest)
-    z_manifest, z_objects, z_parts = validate_zod_manifest(args.zod_manifest)
+    z_manifest, z_objects, z_parts = validate_zod_manifest(args.zod_manifest, input_size=args.input_size)
     if args.max_source_frames < 1 or any(sum(map(len, p.values())) > args.max_source_frames for p in (a_parts, z_parts)):
         parser.error("Source exceeds explicit feature-cache frame budget; prepare a bounded subset first")
+    try:
+        cache_plan = feature_cache_plan({"A2D2": a_parts, "ZOD": z_parts}, args.input_size, args.max_cache_gib)
+    except ValueError as error:
+        parser.error(str(error))
     # Cross-corpus identical imagery cannot cross train/holdout either.
     rgb_splits = {}
     for parts, objects in ((a_parts, a_objects), (z_parts, z_objects)):
@@ -262,10 +458,6 @@ def main():
                 if identity in rgb_splits and rgb_splits[identity] != split:
                     raise ValueError("Cross-corpus image content overlaps partitions")
                 rgb_splits[identity] = split
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
-    cv2.setNumThreads(1)
-    torch.set_num_threads(4)
     detector = aux.load_detector(args.detector, args.device)
     initial = {k: v.detach().cpu().clone() for k, v in aux.AuxiliaryMarkingHead().state_dict().items()}
     initial_hash = hashlib.sha256(b"".join(k.encode() + v.numpy().tobytes() for k, v in sorted(initial.items()))).hexdigest()
@@ -278,11 +470,26 @@ def main():
                   featureLayers=[2, 4], featureChannels=[64, 128], hiddenChannels=16, headParameters=3457,
                   detectorSha256=aux.sha256_file(args.detector), detectorPath=str(args.detector.resolve()),
                   seed=args.seed, epochs=args.epochs, stepsPerEpoch=args.steps_per_epoch,
+                  arms=list(args.arms), selectionPolicy=args.selection_policy,
                   batchSize=args.batch_size, positiveWeight=20., device=args.device,
+                  execution=runtime,
+                  featureCache=cache_plan,
+                  computeBudget=declared_training_budget({"A2D2": a_parts, "ZOD": z_parts}, args.epochs,
+                                                        args.steps_per_epoch, args.batch_size,
+                                                        args.arms, args.selection_policy),
+                  holdoutFrameCounts=args.holdout_frame_counts,
                   headInitialStateSha256=initial_hash,
-                  selection="Maximum A2D2 validation paint IoU, threshold0.5, earliest tie, both arms",
-                  sampling="Fixed updates; baseline all A2D2; mixture 50:50 frame counts within every batch; seeded cycles",
-                  loss="Pooled valid-pixel BCE positive weight20 plus soft Dice; identical both arms",
+                  selection=("Final epoch; A2D2 validation diagnostics only; threshold0.5"
+                             if args.selection_policy == "final-epoch" else
+                             "Maximum A2D2 validation paint IoU, threshold0.5, earliest tie, both arms"
+                             if tuple(args.arms) == DEFAULT_ARMS else
+                             "Maximum A2D2 validation paint IoU, threshold0.5, earliest tie, all requested arms"),
+                  sampling=("Fixed updates; baseline all A2D2; mixture 50:50 frame counts within every batch; seeded cycles"
+                            if tuple(args.arms) == DEFAULT_ARMS else
+                            "Fixed updates; a2d2 all A2D2; zod all ZOD; a2d2_zod 50:50 frame counts within every batch; seeded cycles"),
+                  loss=("Pooled valid-pixel BCE positive weight20 plus soft Dice; identical both arms"
+                        if tuple(args.arms) == DEFAULT_ARMS else
+                        "Pooled valid-pixel BCE positive weight20 plus soft Dice; identical across requested arms"),
                   transform="RGB INTER_LINEAR + binary targets INTER_NEAREST_EXACT letterbox; no augmentation",
                   sourceManifestSha256={"A2D2": aux.sha256_file(args.a2d2_manifest), "ZOD": aux.sha256_file(args.zod_manifest)},
                   sourceCodeSha256={Path(p).name: aux.sha256_file(p) for p in (__file__, aux.__file__)},
@@ -294,7 +501,8 @@ def main():
                                  "ZOD holdouts scored after selection; any subsequent tuning requires fresh holdout",
                                  "Entire detector frozen; no phone export/runtime or speed-reference changes",
                                  "Frame-balanced sampling is not equal per-source loss weight; valid pixel counts differ",
-                                 "MPS kernels may not reproduce bitwise on other hardware/software"])
+                                 "Backend kernels may not reproduce bitwise on other hardware/software",
+                                 "CUDA seeded mode records unsupported deterministic kernels; strict mode fails instead"])
     args.output_dir.mkdir(parents=True)
     # Persist protocol before any feature extraction, optimizer step or holdout score.
     aux.write_json(args.output_dir / "protocol.json", config)
@@ -305,8 +513,24 @@ def main():
     (args.output_dir / "environment.txt").write_text(subprocess.check_output([sys.executable, "-m", "pip", "freeze"], text=True))
     cache = {"A2D2": cache_source("A2D2", a_parts, a_objects, class_map, detector, args.device, args.input_size),
              "ZOD": cache_source("ZOD", z_parts, z_objects, None, detector, args.device, args.input_size)}
+    observed_cache_bytes = cached_tensor_bytes(cache)
+    if observed_cache_bytes != cache_plan["estimatedTensorBytes"]:
+        raise RuntimeError("Actual cache tensors differ from the declared allocation plan; training not started")
+    aux.write_json(args.output_dir / "feature-cache.json", dict(cache_plan, observedTensorBytes=observed_cache_bytes))
+    supervision = cached_supervision_summary(cache)
+    if any(arm != "zod" for arm in args.arms) and supervision["A2D2"]["train"]["negativePixels"] <= 0:
+        raise RuntimeError("A2D2 training cache must provide known-negative supervision")
+    supervision_path = args.output_dir / "source-supervision.json"
+    aux.write_json(supervision_path, dict(sourceManifestSha256=config["sourceManifestSha256"],
+                                         inputSize=args.input_size, rasterSpace="letterboxed_loss_input",
+                                         bySource=supervision,
+                                         interpretation="50:50 frame sampling is not equal valid-pixel loss weight. "
+                                                        "Positive-only ZOD rows contribute no negative pixels. "
+                                                        "A2D2 supplies dense negatives only in arms that sample it; ZOD-only uses its complete-coverage rows. "
+                                                        "The existing pooled valid-pixel BCE plus Dice loss is unchanged."))
+    source_supervision_sha256 = aux.sha256_file(supervision_path)
     results, checkpoints = {}, {}
-    for arm in ("a2d2", "a2d2_zod"):
+    for arm in args.arms:
         results[arm], checkpoints[arm] = train_arm(arm, cache, initial, config, args.output_dir / arm, args.device)
     with torch.no_grad():
         probe_after = detector.detector(probe)[0].detach().cpu()
@@ -321,7 +545,7 @@ def main():
             or preservation["checkpointHashBefore"] != preservation["checkpointHashAfter"]):
         raise RuntimeError("Frozen detector preservation failed; experiment not qualified")
     for arm in results:
-        finalize_arm(args.output_dir / arm, results[arm], checkpoints[arm], preservation)
+        finalize_arm(args.output_dir / arm, results[arm], checkpoints[arm], preservation, source_supervision_sha256)
     aux.write_json(args.output_dir / "comparison.json", results)
     print(json.dumps(dict(stage="complete", output=str(args.output_dir))), flush=True)
 

@@ -4,6 +4,33 @@ import XCTest
 final class RoadBoundaryDetectorTests: XCTestCase {
     private let detector = RoadBoundaryDetector()
 
+    func testTracePreservesAllDetectionFieldsAndCancellationChecks() throws {
+        for kind in ["straight","curve","fork","clutter","edge"] {
+            for options in [RoadBoundaryDetectionOptions(),RoadBoundaryDetectionOptions(useSearchBands:true),
+                            RoadBoundaryDetectionOptions(groupFragments:true),RoadBoundaryDetectionOptions(useSearchBands:true,groupFragments:true)] {
+                let pixels=scene(kind)
+                var events: [[String:Any]] = []
+                let traced=detector.detect(grayscale:pixels,width:384,height:216,timestampSeconds:1,options:options,trace:{ events.append($0) })
+                XCTAssertEqual(traced,detector.detect(grayscale:pixels,width:384,height:216,timestampSeconds:1,options:options))
+                XCTAssertEqual(events.first?["stage"] as? String,"configuration")
+                XCTAssertEqual(events.last?["status"] as? String,"complete")
+                XCTAssertEqual(events.filter { $0["stage"] as? String == "row" }.count,24)
+                XCTAssertNoThrow(try JSONSerialization.data(withJSONObject:events))
+            }
+        }
+        let pixels=scene("straight")
+        var tracedCalls=0, plainCalls=0
+        var events: [[String:Any]] = []
+        let traced=detector.detect(grayscale:pixels,width:384,height:216,timestampSeconds:1,trace:{ events.append($0) },
+            shouldContinue:{ tracedCalls += 1; return tracedCalls < 100 })
+        let plain=detector.detect(grayscale:pixels,width:384,height:216,timestampSeconds:1,
+            shouldContinue:{ plainCalls += 1; return plainCalls < 100 })
+        XCTAssertEqual(traced,plain)
+        XCTAssertEqual(tracedCalls,plainCalls)
+        XCTAssertTrue(traced.boundaries.isEmpty)
+        XCTAssertEqual(events.last?["status"] as? String,"budget_or_cancelled")
+    }
+
     func testTopHat5MatchesUnsignedFloorSaturationAndBorderContract() throws {
         // Five-pixel horizontal opening: isolated peaks open to10; 1.5× gain rounds down.
         XCTAssertEqual(RoadBoundaryPreprocessor.topHat5(grayscale:[10,10,11,10,10],width:5,height:1),[10,10,12,10,10])

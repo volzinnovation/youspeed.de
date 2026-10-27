@@ -78,6 +78,15 @@ def normalized_manifest(path, variant):
                 # Decode/encode rejects nonfinite nested metadata before the Swift decoder.
                 json.dumps(frame[key], allow_nan=False)
                 frames[-1][key] = frame[key]
+        if "semanticScoreAdjustments" in frame:
+            values = frame["semanticScoreAdjustments"]
+            if (not isinstance(values, list) or len(values) > 6
+                    or any(type(v) not in (int, float) or not math.isfinite(v) or not 0 <= v <= .10 for v in values)):
+                raise ValueError(f"Invalid bounded semantic score adjustments: {fid}")
+            if frame.get("semanticSourceInputSha256") != actual_hash:
+                raise ValueError(f"Semantic score source exposure mismatch: {fid}")
+            frames[-1]["semanticScoreAdjustments"] = values
+            frames[-1]["semanticSourceInputSha256"] = actual_hash
         if any(frame.get(key) for key in ("calibration", "visualCalibration", "locationFixes")) and not frame.get("metadataProvenance"):
             raise ValueError(f"Optional camera/location metadata requires provenance: {fid}")
         for fix in frame.get("locationFixes", []):
@@ -114,6 +123,7 @@ def main():
     parser.add_argument("--fragment-tracking", action="store_true")
     parser.add_argument("--retain-tentative-identity", action="store_true")
     parser.add_argument("--joint-selection", action="store_true")
+    parser.add_argument("--detector-trace", action="store_true", help="Capture actual native pre/post-cap stripes, associations and fresh hypotheses; diagnostic timing is not performance acceptance")
     parser.add_argument("--reuse-build-dir", type=Path, help="Reuse a previous replay executable only if every frozen source hash and compiler setting matches")
     parser.add_argument("--module-cache-path", type=Path, help="Explicit shared Swift module cache; owned/cleaned by the caller")
     parser.add_argument("--swift-optimization", choices=("-O", "-Onone"), default="-O",
@@ -125,9 +135,11 @@ def main():
         normalized["previewMode"] = args.preview_mode
         normalized.update(useSearchBands=args.use_search_bands, groupFragments=args.group_fragments,
                           fragmentTracking=args.fragment_tracking, retainTentativeIdentity=args.retain_tentative_identity,
-                          jointSelection=args.joint_selection)
+                          jointSelection=args.joint_selection, detectorTrace=args.detector_trace)
         if any((args.use_search_bands,args.group_fragments,args.fragment_tracking,args.retain_tentative_identity,args.joint_selection)) and not args.preview_mode:
             raise ValueError("Experimental lane options require preview mode")
+        if any("semanticScoreAdjustments" in f for f in normalized["frames"]) and not args.preview_mode:
+            raise ValueError("Semantic score experiments require preview mode")
         source_paths = [(args.source_dir / name).resolve(strict=True) for name in SOURCES]
         if args.output_dir.exists():
             raise ValueError("Output directory already exists; choose a new name")
@@ -153,6 +165,12 @@ def main():
     supports_selection = "retainTentativeIdentity:" in (sources / "RoadPathSession.swift").read_text() and "jointSelection:" in (sources / "RoadPathSession.swift").read_text()
     if (args.retain_tentative_identity or args.joint_selection) and not supports_selection:
         raise ValueError("These frozen sources do not expose the requested selection options")
+    supports_trace = "detectorTrace: RoadBoundaryTraceObserver?" in (sources / "RoadPathSession.swift").read_text()
+    if args.detector_trace and not supports_trace:
+        raise ValueError("These frozen sources do not expose detector tracing")
+    supports_semantic_scores = "semanticScoreAdjustments: [Double]?" in (sources / "RoadPathSession.swift").read_text()
+    if any("semanticScoreAdjustments" in f for f in normalized["frames"]) and not supports_semantic_scores:
+        raise ValueError("These frozen sources do not expose semantic score experiments")
     metadata = dict(schemaVersion=1, variant=args.variant, manifest=str(manifest_path),
                     manifestSha256=digest(manifest_path), normalizedManifestSha256=digest(input_file),
                     sourceHashes=hashes, frameCount=len(normalized["frames"]), swiftOptimization=args.swift_optimization,
@@ -164,16 +182,19 @@ def main():
                     previewMode=args.preview_mode, useSearchBands=args.use_search_bands,
                     groupFragments=args.group_fragments, fragmentTracking=args.fragment_tracking,
                     supportsFragments=supports_fragments, supportsSelection=supports_selection,
+                    supportsTrace=supports_trace, detectorTrace=args.detector_trace, supportsSemanticScores=supports_semantic_scores,
                     retainTentativeIdentity=args.retain_tentative_identity, jointSelection=args.joint_selection)
     (work / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
     binary = work / "pipeline-replay"
     compile_command = ["swiftc", args.swift_optimization, "-module-cache-path", str((args.module_cache_path or work / "swift-cache").resolve()),
                        *(["-D", "LANE_FRAGMENT_OPTIONS"] if supports_fragments else []),
                        *(["-D", "LANE_SELECTION_OPTIONS"] if supports_selection else []),
+                       *(["-D", "LANE_DETECTOR_TRACE"] if supports_trace else []),
+                       *(["-D", "LANE_SEMANTIC_SCORE_OPTIONS"] if supports_semantic_scores else []),
                        *(str(sources / name) for name in SOURCES), str(sources / runner.name), "-o", str(binary)]
     if args.reuse_build_dir:
         previous = json.loads((args.reuse_build_dir / "metadata.json").read_text())
-        if previous["sourceHashes"] != hashes or previous.get("swiftOptimization") != args.swift_optimization or previous.get("supportsFragments") != supports_fragments or bool(previous.get("supportsSelection")) != supports_selection:
+        if previous["sourceHashes"] != hashes or previous.get("swiftOptimization") != args.swift_optimization or previous.get("supportsFragments") != supports_fragments or bool(previous.get("supportsSelection")) != supports_selection or bool(previous.get("supportsTrace")) != supports_trace or bool(previous.get("supportsSemanticScores")) != supports_semantic_scores:
             raise ValueError("Refusing to reuse an executable built from different sources/settings")
         shutil.copy2(args.reuse_build_dir / "pipeline-replay", binary)
         (work / "compile.log").write_text(f"Reused verified build: {args.reuse_build_dir.resolve()}\n")

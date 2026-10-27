@@ -180,10 +180,16 @@ class RoadBoundaryEgoSelector {
     private var jointChallenger: String?=null; private var jointChallengedAt=0.0
     fun reset() { left=Side(); right=Side(); scope=null; lastTime=Double.NEGATIVE_INFINITY; jointChallenger=null }
     fun select(snapshot: RoadBoundaryPresentationSnapshot, boundaries: List<RoadBoundaryEvidence>, visual: VisualRoadCalibration?,
-        time: Double, key: String, fragmentAware: Boolean = false, jointSelection: Boolean = false, egoContext: RoadBoundaryEgoContext? = null): RoadBoundaryPresentationSnapshot {
+        time: Double, key: String, fragmentAware: Boolean = false, jointSelection: Boolean = false, egoContext: RoadBoundaryEgoContext? = null,
+        semanticScoreAdjustments: List<Double>? = null): RoadBoundaryPresentationSnapshot {
         if(!snapshot.accepted || !time.isFinite()) { reset(); return snapshot }
         if(scope!=key || time<=lastTime || time-lastTime>.75) reset()
         scope=key; lastTime=time
+        // Explicit offline experiment input, qualified and indexed by the caller.
+        // Missing/malformed arrays never change support, maturity or observations.
+        val semantic=semanticScoreAdjustments?.takeIf { values ->
+            values.size==boundaries.size && values.all { it.isFinite() && it in 0.0..0.10 }
+        }
         val y=min(.83,max(.78,(visual?.horizonY ?: .50)+.20))
         fun center(row: Double): Double {
             val v=visual ?: return if(jointSelection) egoContext?.centerX(row,null) ?: .5 else .5
@@ -209,7 +215,7 @@ class RoadBoundaryEgoSelector {
             if(abs(delta)<(if(fragmentAware) .015 else .025)) { decisions[index].reason="center_exclusion"; continue }
             if(abs(delta)>.45) { decisions[index].reason="lateral_distance"; continue }
             val score=b.confidence+min(.2,(bottom.y-top.y)*.4)+(if(b.cue==RoadBoundaryCue.PAINT) .12 else 0.0)-abs(delta)*.6-
-                (if(jointSelection && b.cue==RoadBoundaryCue.EDGE) .20+(egoContext?.multiLaneEdgePenalty ?: 0.0) else 0.0)
+                (if(jointSelection && b.cue==RoadBoundaryCue.EDGE) .20+(egoContext?.multiLaneEdgePenalty ?: 0.0) else 0.0)+(semantic?.get(index) ?: 0.0)
             decisions[index].score=score; decisions[index].reason="candidate"
             val candidate=Candidate(index,id,score,b.points)
             if(delta<0) l+=candidate else r+=candidate
