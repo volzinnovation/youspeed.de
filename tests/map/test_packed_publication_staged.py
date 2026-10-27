@@ -58,7 +58,8 @@ class PackedStagedPublicationTests(unittest.TestCase):
         return args + (['--publish'] if publish else [])
 
     def output(self, args, **options):
-        if '/releases/tags/' in args[2]: return json.dumps(self.remote)
+        if args[:3] == ['gh', 'release', 'view']: return json.dumps({'databaseId': 42})
+        if args[2].endswith('/releases/42'): return json.dumps(self.remote)
         if '/releases/assets/' in args[2]: return self.raw_manifest
         raise AssertionError('Unexpected network command: ' + repr(args))
 

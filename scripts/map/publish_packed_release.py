@@ -66,6 +66,13 @@ def tag_commit(repo,tag):
     raise ValueError('Excessively nested annotated tag')
 
 
+def release_info(repo,tag):
+    # REST's release-by-tag endpoint omits drafts, even for the owner. Resolve
+    # their release ID through gh first; the ID endpoint supports both states.
+    view=json.loads(subprocess.check_output(['gh','release','view',tag,'--repo',repo,'--json','databaseId'],text=True))
+    return json.loads(subprocess.check_output(['gh','api',f'repos/{repo}/releases/{view["databaseId"]}'],text=True))
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--result',type=Path,required=True)
     p.add_argument('--repo',default='volzinnovation/youspeed.de');p.add_argument('--source-commit',required=True)
@@ -77,7 +84,7 @@ def main():
     require(re.fullmatch(r'[a-z0-9][a-z0-9._-]*',tag),'Unsafe release tag')
     manifest_name=result['region']+'_manifest.json'
     if a.publish_staged:
-        staged=json.loads(subprocess.check_output(['gh','api',f'repos/{a.repo}/releases/tags/{tag}'],text=True))
+        staged=release_info(a.repo,tag)
         require(staged['draft'] and staged['target_commitish']==a.source_commit,'Staged release does not match tested builder commit')
         remote_manifest=next((x for x in staged['assets'] if x['name']==manifest_name),None)
         require(remote_manifest is not None,'Staged manifest missing')
@@ -134,14 +141,14 @@ def main():
     if not a.publish_staged:
         for name in [*sorted(set(assets)-{manifest_name}),manifest_name]:
             run(['release','upload',tag,str(root/name),'--repo',a.repo,'--clobber'])
-    remote=json.loads(subprocess.check_output(['gh','api',f'repos/{a.repo}/releases/tags/{tag}'],text=True))
+    remote=release_info(a.repo,tag)
     received={x['name']:x for x in remote['assets']}
     for name,item in assets.items():
         require(received.get(name,{}).get('size')==item['bytes'] and received.get(name,{}).get('digest')=='sha256:'+item['sha256'],'GitHub asset differs: '+name)
     if a.publish:run(['release','edit',tag,'--repo',a.repo,'--draft=false','--latest=false','--notes-file',str(notes)])
     if a.publish:
         require(tag_commit(a.repo,tag)==a.source_commit,'Published tag differs from builder commit')
-        remote=json.loads(subprocess.check_output(['gh','api',f'repos/{a.repo}/releases/tags/{tag}'],text=True))
+        remote=release_info(a.repo,tag)
         require(remote['draft'] is False and remote['tag_name']==tag,'Publication status not confirmed')
     receipt={'release_tag':tag,'url':remote['html_url'],'source_commit':a.source_commit,
              'all_asset_hashes_verified':True,'asset_count':len(assets),'published':a.publish}

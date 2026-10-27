@@ -10,6 +10,12 @@ import publish_packed_release as publisher
 
 
 class PackedPublicationTests(unittest.TestCase):
+    def test_draft_release_lookup_uses_id_instead_of_published_tag_endpoint(self):
+        with patch.object(publisher.subprocess, 'check_output', side_effect=[
+                json.dumps({'databaseId': 42}), json.dumps({'draft': True, 'id': 42})]) as calls:
+            self.assertTrue(publisher.release_info('owner/repo', 'draft')['draft'])
+            self.assertEqual(calls.call_args_list[1].args[0], ['gh','api','repos/owner/repo/releases/42'])
+
     def test_unbound_qa_cannot_publish(self):
         with self.assertRaisesRegex(ValueError, 'Unknown QA report'):
             publisher.validate_qa({'ready_for_rollout': True, 'physical_devices_passed': ['iphone', 'android']}, {}, {}, 'a'*40)
