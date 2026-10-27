@@ -2,6 +2,7 @@ package de.youspeed.android.alpha
 
 import java.io.File
 import java.io.IOException
+import java.net.SocketTimeoutException
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
@@ -301,6 +302,102 @@ class PanoramaxParityTests {
         assertEquals(listOf("/api/upload_sets/remote"), paths)
         assertEquals(PanoramaxBatchState.PROCESSING, store.getBatch(batch.batchId)?.state)
         assertTrue(store.originalFile(batch.items.single()).exists())
+    }
+
+    @Test fun selectAllUploadsPendingPicturesAndResumesAcceptedBatchesWithoutReapprovingThem() = withQueue { root, store ->
+        val pending = addBatch(root, store, "pending-selection", 2)
+        store.updateBatch(pending.copy(state = PanoramaxBatchState.PARTIAL, remoteUploadSetId = "pending-remote",
+            items = pending.items.mapIndexed { index, item -> item.copy(state =
+                if (index == 0) PanoramaxItemState.UPLOADED else PanoramaxItemState.QUEUED) }))
+        val processing = addBatch(root, store, "processing-selection", 1)
+        store.updateBatch(processing.copy(state = PanoramaxBatchState.PROCESSING, remoteUploadSetId = "processing-remote",
+            items = processing.items.map { it.copy(state = PanoramaxItemState.UPLOADED) }))
+        val accepted = addBatch(root, store, "accepted-selection", 1)
+        store.updateBatch(accepted.copy(state = PanoramaxBatchState.PARTIAL, remoteUploadSetId = "accepted-remote",
+            items = accepted.items.map { it.copy(state = PanoramaxItemState.ACCEPTED) }))
+        val complete = addBatch(root, store, "complete-selection", 1)
+        store.updateBatch(complete.copy(state = PanoramaxBatchState.COMPLETE, remoteUploadSetId = "complete-remote",
+            items = complete.items.map { it.copy(state = PanoramaxItemState.UPLOADED) }))
+        val batches = store.listBatches()
+        val plan = PanoramaxGalleryUploadPlan.create(batches, batches.associate { batch ->
+            batch.batchId to batch.items.mapTo(mutableSetOf()) { it.itemId }
+        })
+        assertEquals(mapOf(pending.batchId to setOf(pending.items.last().itemId)), plan.selections)
+        assertEquals(setOf(processing.batchId, accepted.batchId), plan.resumableBatchIds)
+        assertEquals(1, plan.selectedItemCount)
+        val paths = java.util.Collections.synchronizedList(mutableListOf<String>())
+        coordinator(store, PanoramaxUploadTransport { request, _ ->
+            paths += request.path
+            if (request.path.endsWith("/files")) {
+                val body = requireNotNull(request.bodyFile).readText(Charsets.ISO_8859_1)
+                assertTrue(body.contains(pending.items.last().itemId + ".jpg"))
+                PanoramaxHttpResponse(201)
+            } else response("""{"id":"remote","ready":true}""")
+        }).use { upload ->
+            upload.uploadSelections(plan.selections)
+            plan.resumableBatchIds.forEach(upload::uploadBatch)
+            awaitIdle(upload)
+            assertTrue(upload.statusByBatch.values.all { it == "Upload complete" })
+        }
+        assertEquals(1, paths.count { it.endsWith("/files") })
+        assertEquals(listOf("/api/upload_sets/processing-remote"), paths.filter { it.contains("processing-remote") })
+        assertEquals(listOf("/api/upload_sets/accepted-remote/complete", "/api/upload_sets/accepted-remote"),
+            paths.filter { it.contains("accepted-remote") })
+        assertFalse(paths.any { it.contains("complete-remote") || it == "/api/upload_sets" })
+        assertTrue(store.listBatches().all { it.state == PanoramaxBatchState.COMPLETE })
+    }
+
+    @Test fun galleryCanResumeWithoutSelectingPhotosAndNeverResendsAmbiguousOrFinishedItems() = withQueue { root, store ->
+        val batch = addBatch(root, store, "resume-plan", 6)
+        val states = listOf(PanoramaxItemState.UPLOADED, PanoramaxItemState.ACCEPTED, PanoramaxItemState.DUPLICATE,
+            PanoramaxItemState.ABANDONED, PanoramaxItemState.REJECTED, PanoramaxItemState.PERMANENT_ERROR)
+        val partial = batch.copy(state = PanoramaxBatchState.PARTIAL, remoteUploadSetId = "remote",
+            items = batch.items.mapIndexed { index, item -> item.copy(state = states[index]) })
+        val resume = PanoramaxGalleryUploadPlan.create(listOf(partial), emptyMap())
+        assertTrue(resume.hasWork)
+        assertEquals(0, resume.selectedItemCount)
+        assertEquals(setOf(batch.batchId), resume.resumableBatchIds)
+        val selected = mapOf(batch.batchId to batch.items.mapTo(mutableSetOf()) { it.itemId })
+        assertEquals(resume, PanoramaxGalleryUploadPlan.create(listOf(partial), selected))
+        assertFalse(PanoramaxGalleryUploadPlan.create(listOf(partial), selected, setOf(batch.batchId)).hasWork)
+        assertFalse(PanoramaxGalleryUploadPlan.create(listOf(partial.copy(state = PanoramaxBatchState.COMPLETE)), selected).hasWork)
+        assertFalse(PanoramaxGalleryUploadPlan.create(listOf(batch), selected).hasWork)
+    }
+
+    @Test fun socketTimeoutIsVisibleAndResumePreservesTheUnknownImageOutcome() = withQueue { root, store ->
+        val batch = addBatch(root, store, "socket-timeout", 3)
+        store.approveSelectionAfterClosing(batch)
+        val fileCalls = AtomicInteger()
+        val timedOut = AtomicBoolean(false)
+        val paths = mutableListOf<String>()
+        coordinator(store, PanoramaxUploadTransport { request, _ ->
+            paths += request.path
+            when {
+                request.path == "/api/upload_sets" -> response("""{"id":"remote"}""")
+                request.path.endsWith("/files") -> {
+                    if (fileCalls.incrementAndGet() == 2) { timedOut.set(true); throw SocketTimeoutException("read timed out") }
+                    if (timedOut.get()) {
+                        val body = requireNotNull(request.bodyFile).readText(Charsets.ISO_8859_1)
+                        assertTrue(body.contains(batch.items.last().itemId + ".jpg"))
+                    }
+                    PanoramaxHttpResponse(201)
+                }
+                else -> response("""{"id":"remote","ready":true}""")
+            }
+        }).use { upload ->
+            upload.uploadBatch(batch.batchId)
+            awaitIdle(upload)
+            assertTrue(requireNotNull(upload.statusByBatch[batch.batchId]).startsWith("Connection timed out"))
+            assertEquals(listOf(PanoramaxItemState.UPLOADED, PanoramaxItemState.ABANDONED, PanoramaxItemState.QUEUED),
+                store.getBatch(batch.batchId)?.items?.map { it.state })
+            upload.uploadBatch(batch.batchId)
+            awaitIdle(upload)
+            assertEquals("Upload complete", upload.statusByBatch[batch.batchId])
+        }
+        assertEquals(3, fileCalls.get())
+        assertEquals(1, paths.count { it == "/api/upload_sets" })
+        assertEquals(listOf(PanoramaxItemState.UPLOADED, PanoramaxItemState.ABANDONED, PanoramaxItemState.UPLOADED),
+            store.getBatch(batch.batchId)?.items?.map { it.state })
     }
 
     @Test fun missingSelectedOriginalPreventsRemoteCreationAndPreservesAllRecords() = withQueue { root, store ->

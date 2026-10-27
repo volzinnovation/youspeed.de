@@ -838,6 +838,8 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
     var uploadConfirmation by remember { mutableStateOf(false) }
     var focused by remember { mutableStateOf<Pair<String, String>?>(null) }
     val count = selected.values.sumOf { it.size }
+    val uploadPlan = PanoramaxGalleryUploadPlan.create(ui.panoramaxBatches, selected, ui.panoramaxActiveUploadBatchIds)
+    val resumeOnly = uploadPlan.selectedItemCount == 0 && uploadPlan.resumableBatchIds.isNotEmpty()
     LaunchedEffect(ui.panoramaxBatches) {
         selected = selected.mapNotNull { (batchId, ids) ->
             val available = ui.panoramaxBatches.firstOrNull { it.batchId == batchId }?.items?.filter(::matches)?.map { it.itemId }?.toSet().orEmpty()
@@ -964,9 +966,10 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                     modifier = actionModifier,
                     icon = Icons.Default.Upload,
                     compact = compact,
-                    label = "${parityText("Upload", "Hochladen", "Envoyer", "Uploaden")} ($count)",
+                    label = if (resumeOnly) parityText("Resume upload", "Upload fortsetzen", "Reprendre l’envoi", "Upload hervatten")
+                        else "${parityText("Upload", "Hochladen", "Envoyer", "Uploaden")} (${uploadPlan.selectedItemCount})",
                     // The upload worker validates saved credentials on demand, as on iPhone.
-                    enabled = count > 0 && controller.canProcessPanoramaxUploads(),
+                    enabled = uploadPlan.hasWork && controller.canProcessPanoramaxUploads(),
                     onClick = { uploadConfirmation = true },
                 )
             } else {
@@ -985,8 +988,13 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
         controller.deletePanoramaxItems(selected); selected = emptyMap(); deleteConfirmation = false
     }
     if (uploadConfirmation) AlertDialog(onDismissRequest = { uploadConfirmation = false },
-        title = { Text(parityText("Upload selected photos?", "Ausgewählte Fotos hochladen?", "Envoyer les photos sélectionnées ?", "Geselecteerde foto’s uploaden?")) },
-        text = { Text(parityText("The selected photos and their GPS locations will be sent to Panoramax for publication.",
+        title = { Text(if (resumeOnly) parityText("Resume upload?", "Upload fortsetzen?", "Reprendre l’envoi ?", "Upload hervatten?")
+            else parityText("Upload selected photos?", "Ausgewählte Fotos hochladen?", "Envoyer les photos sélectionnées ?", "Geselecteerde foto’s uploaden?")) },
+        text = { Text(if (resumeOnly) parityText("Previously approved uploads will resume. Photos already transferred will not be sent again.",
+            "Bereits freigegebene Uploads werden fortgesetzt. Schon übertragene Fotos werden nicht erneut gesendet.",
+            "Les envois déjà approuvés reprendront. Les photos déjà transférées ne seront pas renvoyées.",
+            "Eerder goedgekeurde uploads worden hervat. Reeds verzonden foto’s worden niet opnieuw verzonden.")
+            else parityText("The selected photos and their GPS locations will be sent to Panoramax for publication.",
             "Die ausgewählten Fotos und ihre GPS-Positionen werden zur Veröffentlichung an Panoramax gesendet.",
             "Les photos sélectionnées et leurs positions GPS seront envoyées à Panoramax pour publication.",
             "De geselecteerde foto’s en hun GPS-locaties worden naar Panoramax verzonden voor publicatie.")) },

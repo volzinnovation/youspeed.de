@@ -69,7 +69,8 @@ class PanoramaxUploadCoordinator(
                 // File/HTTP errors and cancellation always quarantine any request with an unknown response.
                 val recovery = runCatching { if (store.getBatch(batchId) != null) store.abandonInFlightItems(batchId) }
                 statuses[batchId] = if (recovery.isFailure) "Upload stopped — queue recovery failed; restart before retrying" else
-                    if (job.cancellation.isCancelled || error is InterruptedException || error is InterruptedIOException) "Upload stopped" else
+                    if (job.cancellation.isCancelled || error is InterruptedException ||
+                        (error is InterruptedIOException && error !is java.net.SocketTimeoutException)) "Upload stopped" else
                         if (error is IllegalArgumentException || error is IllegalStateException) error.message ?: "Upload could not start" else
                             PanoramaxUploadClient.userMessage(error)
             } finally {

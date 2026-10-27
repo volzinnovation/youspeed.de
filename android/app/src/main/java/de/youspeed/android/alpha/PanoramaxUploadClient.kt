@@ -5,6 +5,7 @@ import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.SocketTimeoutException
 import java.net.URLEncoder
 import java.util.UUID
 import java.util.concurrent.Semaphore
@@ -195,6 +196,7 @@ class PanoramaxUploadClient(
         fun userMessage(error: Throwable): String = when (error) {
             is PanoramaxHttpException -> "HTTP ${error.statusCode}"
             is PanoramaxProcessingTimeout -> "Panoramax is still processing this upload"
+            is SocketTimeoutException -> "Connection timed out; the last image may have reached Panoramax. Resume to continue the remaining upload."
             is InterruptedIOException, is InterruptedException -> "Upload stopped"
             is IOException -> "Connection interrupted; the last image may have reached Panoramax"
             else -> "The operation could not be completed"

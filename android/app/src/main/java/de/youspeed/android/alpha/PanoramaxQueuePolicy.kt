@@ -38,3 +38,33 @@ object PanoramaxQueuePolicy {
         else -> true
     }
 }
+
+/** Matches the iPhone gallery: local selection also serves deletion, while
+ * upload sends only eligible originals and resumes existing remote work. */
+data class PanoramaxGalleryUploadPlan(
+    val selections: Map<String, Set<String>>,
+    val resumableBatchIds: Set<String>,
+) {
+    val selectedItemCount: Int get() = selections.values.sumOf { it.size }
+    val hasWork: Boolean get() = selections.isNotEmpty() || resumableBatchIds.isNotEmpty()
+
+    companion object {
+        fun create(
+            batches: List<PanoramaxBatchRecord>,
+            selectedItemIds: Map<String, Set<String>>,
+            activeBatchIds: Set<String> = emptySet(),
+        ): PanoramaxGalleryUploadPlan {
+            val available = batches.filter { it.batchId !in activeBatchIds }
+            val selections = available.filter { PanoramaxQueuePolicy.canEditSelection(it.state) }
+                .mapNotNull { batch ->
+                    val selected = selectedItemIds[batch.batchId].orEmpty()
+                    batch.items.filter { it.itemId in selected && PanoramaxQueuePolicy.canSelectItem(it.state) }
+                        .mapTo(mutableSetOf()) { it.itemId }
+                        .takeIf { it.isNotEmpty() }?.let { batch.batchId to it }
+                }.toMap()
+            val resumable = available.filter { it.batchId !in selections && PanoramaxQueuePolicy.canResumeRemoteSet(it) }
+                .mapTo(mutableSetOf()) { it.batchId }
+            return PanoramaxGalleryUploadPlan(selections, resumable)
+        }
+    }
+}

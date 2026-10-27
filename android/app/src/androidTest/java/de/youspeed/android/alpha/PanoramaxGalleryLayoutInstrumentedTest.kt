@@ -19,11 +19,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
@@ -48,6 +50,34 @@ import org.junit.runner.RunWith
 class PanoramaxGalleryLayoutInstrumentedTest {
     @get:Rule val compose = createComposeRule()
     private data class Viewport(val width: Int, val height: Int, val fontScale: Float)
+
+    @Test fun selectAllKeepsCompletedPicturesOutOfTheUploadCountAndOffersResume() = withController { controller ->
+        val original = controller.uiState.panoramaxBatches.single()
+        val completed = original.copy(batchId = "completed-gallery-batch", state = PanoramaxBatchState.COMPLETE,
+            remoteUploadSetId = "completed-remote", items = original.items.map {
+                it.copy(itemId = "completed-${it.itemId}", state = PanoramaxItemState.UPLOADED)
+            })
+        val processing = completed.copy(batchId = "processing-gallery-batch", state = PanoramaxBatchState.PROCESSING,
+            remoteUploadSetId = "processing-remote", items = completed.items.map { it.copy(itemId = "processing-${it.itemId}") })
+        fun publish(batches: List<PanoramaxBatchRecord>) {
+            // UI-only snapshots: this fixture never starts a network job or
+            // mutates any user queue or credentials.
+            val field = ConsumerSessionController::class.java.getDeclaredField("uiState\$delegate").apply { isAccessible = true }
+            @Suppress("UNCHECKED_CAST")
+            val state = field.get(controller) as androidx.compose.runtime.MutableState<ConsumerUiState>
+            state.value = state.value.copy(panoramaxBatches = batches)
+        }
+        compose.runOnIdle { publish(listOf(original, completed, processing)) }
+        compose.setContent { MaterialTheme { PanoramaxGalleryPane(controller) } }
+        compose.onNodeWithText("Alle auswählen").performClick()
+        compose.onNodeWithText("Löschen (9)").assertIsEnabled()
+        compose.onNodeWithText("Hochladen (3)").assertIsEnabled().performClick()
+        compose.onNodeWithText("Ausgewählte Fotos hochladen?").assertIsDisplayed()
+        compose.onNodeWithText("Abbrechen").performClick()
+        compose.runOnIdle { publish(listOf(completed, processing)) }
+        compose.onNodeWithText("Upload fortsetzen").assertIsEnabled().performClick()
+        compose.onNodeWithText("Upload fortsetzen?").assertIsDisplayed()
+    }
 
     @Test fun shortLandscapeAndLargeTextKeepWholePhotosAndAllControlsReachable() = withController { controller ->
         val viewport = mutableStateOf(Viewport(840, 276, 1f))

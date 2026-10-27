@@ -2189,7 +2189,12 @@ class ConsumerSessionController(
     fun connectPanoramaxAccount() { submitBackgroundTask { panoramaxAccount.connect()?.let { url -> mainHandler.post { host?.openExternalUrl(url) } } } }
     fun validatePanoramaxAccount() { submitBackgroundTask { panoramaxAccount.validateConnection() } }
     fun disconnectPanoramaxAccount() { stopPanoramaxUploads(); submitBackgroundTask { panoramaxAccount.disconnect() } }
-    fun uploadPanoramaxSelections(selections: Map<String, Set<String>>) { if (canProcessPanoramaxUploads()) panoramaxUploader.uploadSelections(selections) }
+    fun uploadPanoramaxSelections(selections: Map<String, Set<String>>) {
+        if (!canProcessPanoramaxUploads()) return
+        val plan = PanoramaxGalleryUploadPlan.create(uiState.panoramaxBatches, selections, panoramaxUploader.activeBatchIds)
+        panoramaxUploader.uploadSelections(plan.selections)
+        plan.resumableBatchIds.forEach(panoramaxUploader::uploadBatch)
+    }
     fun resumePanoramaxUpload(batchId: String) { if (canProcessPanoramaxUploads()) panoramaxUploader.uploadBatch(batchId) }
     fun stopPanoramaxUploads() { panoramaxUploader.stopAll() }
 
