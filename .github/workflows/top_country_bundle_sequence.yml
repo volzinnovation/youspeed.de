@@ -59,7 +59,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: top-country-delta-sequence
+  group: ${{ inputs.packed_refresh && format('packed-runtime-{0}', inputs.countries || 'all') || 'top-country-delta-sequence' }}
   cancel-in-progress: false
 
 jobs:
