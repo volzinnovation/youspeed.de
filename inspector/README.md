@@ -368,17 +368,15 @@ Tests: `node --test tests/inspector/*.test.js`.
 
 Eigenständiges Browser-Tool zum visuellen Prüfen von Ways auf OSM-Karte gegen lokale YouSpeed-SQLite.
 
-Die Hintergrundkarte verwendet **Stadia Maps Alidade Smooth**, über den
-EU-Endpunkt `https://tiles-eu.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png`.
-Stadia Maps, OpenMapTiles und OpenStreetMap werden auf der Karte attribuiert.
-[Lokale Entwicklung](https://docs.stadiamaps.com/authentication/) unter
-`localhost` oder `127.0.0.1` benötigt keinen API-Key, unterliegt aber Rate-Limits.
-Andere Hosts (auch VPN-/Intranet-Hosts) benötigen eine passende Stadia-
-Authentifizierung. Der lokale SSH-Tunnel unter `localhost:18080` kann direkt
-verwendet werden. Nur Kachelbilder verwenden `referrerPolicy: "origin"`, damit
-Stadia den lokalen Zugriff erkennt; Pfade, Suchparameter und Crop-Metadaten
-werden dabei nicht als Referrer übertragen. Der sichtbare Kartenausschnitt und
-die IP-Adresse werden an Stadia übertragen. Es gibt keinen Kachel-Prefetch.
+Die Hintergrundkarte verwendet die Standard-OpenStreetMap-Kacheln unter
+`https://tile.openstreetmap.org/{z}/{x}/{y}.png`, mit sichtbarer OpenStreetMap-
+Quellenangabe und maximaler Zoomstufe 19. Der gemeinsame Baustein
+`map-tiles.js` wird auch vom OSM-Korrekturdienst verwendet. Er benötigt keine
+Stadia-Anmeldung und lädt keine Stadia-Kacheln. Nur Kachelbilder verwenden
+`referrerPolicy: "origin"`; Pfade, Suchparameter und Crop-Metadaten werden nicht
+als Referrer übertragen. Der Kartendienst sieht den sichtbaren Ausschnitt und
+die IP-Adresse. Browser-Caching bleibt erhalten; es gibt keinen Kachel-Prefetch.
+Siehe [OSM-Kachelnutzungsrichtlinie](https://operations.osmfoundation.org/policies/tiles/).
 
 ## Features
 
@@ -795,3 +793,25 @@ Der Token bleibt auf volz-db. Der Inspector prüft zusätzlich aktuelle
 Zulässigkeit, Größe und SHA-256. Der Tunnel lautet
 `-L 127.0.0.1:18082:127.0.0.1:8082`. Eine Aktivierung auf volz-db ist ein
 separater, freizugebender Deployment-Schritt.
+
+## OSM-Korrekturen aus einem Fahrt-Export
+
+Der zusätzliche Einstieg **OSM-Korrekturen** öffnet den Dienst unter
+`https://osm.youspeed.de/` in einem neuen Tab. So funktioniert der Einstieg auch
+aus dem privaten lokalen Inspector; dort ist keine zweite OSM-API nötig.
+Die eigentliche Oberfläche liegt in `osm.html`. Die serverseitige
+Verarbeitung gehört in das Schwester-Repository `Woladen.de-analytics`, unter
+`commercial_backend/youspeed/osm_corrections/`; dort liegen auch Compose-Betrieb,
+Bundle-Konfiguration und JOSM-Validierung. Das Frontend und der gemeinsam
+verwendete Kartenkachel-Baustein `map-tiles.js` bleiben hier im Inspector.
+
+Es gibt keine neue Nutzer-/Fahrtendatenbank: Fahrt-ZIP bzw. App-Upload, Crops,
+OCR, Vorschläge und Entscheidungen leben nur in einer begrenzten RAM-Sitzung.
+Die gleichen unveränderten App-Bundles werden über die gemeinsamen nativen
+Packed-Reader (`native_bundle.cpp`) read-only abgefragt. Der Quellbestand ist
+keine automatisch bestätigte Aufstellung oder Geltungsrichtung.
+
+[Readme für Anwender](OSM_REVIEW_README.md) und [Anleitung mit reserviertem
+Erklärvideo-Platz](osm-help.html). Der Video-Bereich hat die ID
+`explanation-video`; eine echte Aufnahme und Untertitel können später ergänzt
+werden. Es wird kein Beispielvideo ausgeliefert.

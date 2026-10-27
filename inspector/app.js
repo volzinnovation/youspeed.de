@@ -42,12 +42,7 @@ let baseTileLayer = null;
 
 function ensureMapTiles() {
   if (!baseTileLayer) {
-    baseTileLayer = L.tileLayer("https://tiles-eu.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png", {
-      maxZoom: 20,
-      // Stadia recognizes localhost via the origin; never send private paths or queries.
-      referrerPolicy: "origin",
-      attribution: '&copy; <a href="https://stadiamaps.com/attribution/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
+    baseTileLayer = YouSpeedInspectorTiles.create(L).addTo(map);
   }
   return baseTileLayer;
 }
